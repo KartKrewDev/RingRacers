@@ -652,7 +652,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	boolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
 
 	// variables used to replicate k_kart's mmap drawer:
-	INT32 lumpnum;
+	INT32 lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 mx, my;
 	INT32 splitflags, minimaptrans;
@@ -738,7 +738,10 @@ static int libd_drawOnMinimap(lua_State *L)
 	if (stplyr != &players[displayplayers[0]])
 		return 0;
 
-	lumpnum = W_CheckNumForLongName(va("%sR", G_BuildMapName(gamemap)));
+	if (mapheaderinfo[gamemap-1])
+	{
+		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
+	}
 
 	if (lumpnum != -1)
 		AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);

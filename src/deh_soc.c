@@ -152,7 +152,10 @@ void clear_levels(void)
 	// we may as well try to save some memory, right?
 	for (i = 0; i < NUMMAPS; ++i)
 	{
-		if (!mapheaderinfo[i] || i == (tutorialmap-1))
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (strcmp(mapheaderinfo[i]->lumpname, tutorialmap) == 0) // Sal: Is this needed...?
 			continue;
 
 		// Custom map header info
@@ -1256,17 +1259,37 @@ void readgametype(MYFILE *f, char *gtname)
 	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
 }
 
-void readlevelheader(MYFILE *f, INT32 num)
+void readlevelheader(MYFILE *f, char * name)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+
 	char *word;
 	char *word2;
 	//char *word3; // Non-uppercase version of word2
+
 	char *tmp;
 	INT32 i;
 
+	const INT32 num = G_MapNumber(name);
+
+	if (num > NUMMAPS)
+	{
+		I_Error("Too many maps!");
+	}
+
+	if (f->wad > mainwads && num <= nummapheaders)
+	{
+		// only mark as a major mod if it replaces an already-existing mapheaderinfo
+		G_SetGameModified(multiplayer, true);
+	}
+
 	// Reset all previous map header information
 	P_AllocMapHeader((INT16)(num-1));
+
+	if (mapheaderinfo[num-1]->lumpname == NULL)
+	{
+		mapheaderinfo[num-1]->lumpname = Z_StrDup(name);
+	}
 
 	do
 	{
@@ -1434,6 +1457,30 @@ void readlevelheader(MYFILE *f, INT32 num)
 			}
 
 			// Strings that can be truncated
+			else if (fastcmp(word, "THUMBNAIL"))
+			{
+				mapheaderinfo[num-1]->thumbnailLump = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "MINIMAP"))
+			{
+				mapheaderinfo[num-1]->minimapLump = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "ENCOREMAP"))
+			{
+				mapheaderinfo[num-1]->encoreLump = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "TWEAKMAP"))
+			{
+				mapheaderinfo[num-1]->tweakLump = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "NEXTLEVEL"))
+			{
+				mapheaderinfo[num-1]->nextlevel = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "MARATHONNEXT"))
+			{
+				mapheaderinfo[num-1]->marathonnext = Z_StrDup(word2);
+			}
 			else if (fastcmp(word, "ZONETITLE"))
 			{
 				deh_strlcpy(mapheaderinfo[num-1]->zonttl, word2,
@@ -1455,38 +1502,6 @@ void readlevelheader(MYFILE *f, INT32 num)
 					mapheaderinfo[num-1]->actnum = (UINT8)i;
 				else
 					deh_warning("Level header %d: invalid act number %d", num, i);
-			}
-			else if (fastcmp(word, "NEXTLEVEL"))
-			{
-				if      (fastcmp(word2, "TITLE"))      i = 1100;
-				else if (fastcmp(word2, "EVALUATION")) i = 1101;
-				else if (fastcmp(word2, "CREDITS"))    i = 1102;
-				else if (fastcmp(word2, "ENDING"))     i = 1103;
-				else
-				// Support using the actual map name,
-				// i.e., Nextlevel = AB, Nextlevel = FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-
-				mapheaderinfo[num-1]->nextlevel = (INT16)i;
-			}
-			else if (fastcmp(word, "MARATHONNEXT"))
-			{
-				if      (fastcmp(word2, "TITLE"))      i = 1100;
-				else if (fastcmp(word2, "EVALUATION")) i = 1101;
-				else if (fastcmp(word2, "CREDITS"))    i = 1102;
-				else if (fastcmp(word2, "ENDING"))     i = 1103;
-				else
-				// Support using the actual map name,
-				// i.e., MarathonNext = AB, MarathonNext = FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-
-				mapheaderinfo[num-1]->marathonnext = (INT16)i;
 			}
 			else if (fastcmp(word, "TYPEOFLEVEL"))
 			{
@@ -1522,19 +1537,6 @@ void readlevelheader(MYFILE *f, INT32 num)
 						sizeof(mapheaderinfo[num-1]->musname), va("Level header %d: music", num));
 				}
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(mapheaderinfo[num-1]->musname, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(mapheaderinfo[num-1]->musname, compat_special_music_slots[i - 1036], 7);
-				else
-					mapheaderinfo[num-1]->musname[0] = 0; // becomes empty string
-				mapheaderinfo[num-1]->musname[6] = 0;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 				mapheaderinfo[num-1]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))
@@ -1777,19 +1779,6 @@ static void readcutscenescene(MYFILE *f, INT32 num, INT32 scenenum)
 				strncpy(cutscenes[num]->scene[scenenum].musswitch, word2, 7);
 				cutscenes[num]->scene[scenenum].musswitch[6] = 0;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(cutscenes[num]->scene[scenenum].musswitch, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(cutscenes[num]->scene[scenenum].musswitch, compat_special_music_slots[i - 1036], 7);
-				else
-					cutscenes[num]->scene[scenenum].musswitch[0] = 0; // becomes empty string
-				cutscenes[num]->scene[scenenum].musswitch[6] = 0;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				cutscenes[num]->scene[scenenum].musswitchflags = ((UINT16)i) & MUSIC_TRACKMASK;
@@ -2052,19 +2041,6 @@ static void readtextpromptpage(MYFILE *f, INT32 num, INT32 pagenum)
 				strncpy(textprompts[num]->page[pagenum].musswitch, word2, 7);
 				textprompts[num]->page[pagenum].musswitch[6] = 0;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(textprompts[num]->page[pagenum].musswitch, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(textprompts[num]->page[pagenum].musswitch, compat_special_music_slots[i - 1036], 7);
-				else
-					textprompts[num]->page[pagenum].musswitch[0] = 0; // becomes empty string
-				textprompts[num]->page[pagenum].musswitch[6] = 0;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				textprompts[num]->page[pagenum].musswitchflags = ((UINT16)i) & MUSIC_TRACKMASK;
@@ -2388,20 +2364,6 @@ void readmenu(MYFILE *f, INT32 num)
 				menupres[num].musname[6] = 0;
 				titlechanged = true;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				value = get_mus(word2, true);
-				if (value && value <= 1035)
-					snprintf(menupres[num].musname, 7, "%sM", G_BuildMapName(value));
-				else if (value && value <= 1050)
-					strncpy(menupres[num].musname, compat_special_music_slots[value - 1036], 7);
-				else
-					menupres[num].musname[0] = 0; // becomes empty string
-				menupres[num].musname[6] = 0;
-				titlechanged = true;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				menupres[num].mustrack = ((UINT16)value - 1);
@@ -2794,14 +2756,7 @@ void reademblemdata(MYFILE *f, INT32 num)
 				emblemlocations[num-1].tag = (INT16)value;
 			else if (fastcmp(word, "MAPNUM"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-
-				emblemlocations[num-1].level = (INT16)value;
+				emblemlocations[num-1].level = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "SPRITE"))
 			{
@@ -3022,13 +2977,7 @@ void readunlockable(MYFILE *f, INT32 num)
 				}
 				else if (fastcmp(word, "VAR"))
 				{
-					// Support using the actual map name,
-					// i.e., Level AB, Level FZ, etc.
-
-					// Convert to map number
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						i = M_MapNumber(word2[0], word2[1]);
-
+					// TODO: different field for level name string
 					unlockables[num].variable = (INT16)i;
 				}
 				else
@@ -3107,12 +3056,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
-
-		// Convert to map number if it appears to be one
-		if (params[1][0] >= 'A' && params[1][0] <= 'Z')
-			re = M_MapNumber(params[1][0], params[1][1]);
-		else
-			re = atoi(params[1]);
+		re = G_MapNumber(params[1]);
 
 		if (re < 0 || re >= NUMMAPS)
 		{
@@ -3125,12 +3069,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		PARAMCHECK(2);
 		ty = UC_MAPTIME;
 		re = atoi(params[2]);
-
-		// Convert to map number if it appears to be one
-		if (params[1][0] >= 'A' && params[1][0] <= 'Z')
-			x1 = (INT16)M_MapNumber(params[1][0], params[1][1]);
-		else
-			x1 = (INT16)atoi(params[1]);
+		x1 = G_MapNumber(params[1]);
 
 		if (x1 < 0 || x1 >= NUMMAPS)
 		{
@@ -3333,56 +3272,23 @@ void readmaincfg(MYFILE *f)
 
 			else if (fastcmp(word, "SPSTAGE_START"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				spstage_start = spmarathon_start = (INT16)value;
+				// TODO: Use map name string
+				// Haven't done it because of how special stage ends are handled
+				// Though, we likely won't be using these for Kart anyhow
+				spstage_start = spmarathon_start = (INT16)G_MapNumber(word2);
 			}
 			else if (fastcmp(word, "SPMARATHON_START"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				spmarathon_start = (INT16)value;
+				spmarathon_start = (INT16)G_MapNumber(word2);
 			}
 			else if (fastcmp(word, "SSTAGE_START"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				sstage_start = (INT16)value;
+				sstage_start = (INT16)G_MapNumber(word2);
 				sstage_end = (INT16)(sstage_start+7); // 7 special stages total plus one weirdo
 			}
 			else if (fastcmp(word, "SMPSTAGE_START"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				smpstage_start = (INT16)value;
+				smpstage_start = (INT16)G_MapNumber(word2);
 				smpstage_end = (INT16)(smpstage_start+6); // 7 special stages total
 			}
 			else if (fastcmp(word, "REDTEAM"))
@@ -3467,16 +3373,7 @@ void readmaincfg(MYFILE *f)
 			}
 			else if (fastcmp(word, "TITLEMAP"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				titlemap = (INT16)value;
+				titlemap = Z_StrDup(word2);
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
@@ -3606,30 +3503,12 @@ void readmaincfg(MYFILE *f)
 			}
 			else if (fastcmp(word, "BOOTMAP"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				bootmap = (INT16)value;
+				bootmap = Z_StrDup(word2);
 				//titlechanged = true;
 			}
 			else if (fastcmp(word, "TUTORIALMAP"))
 			{
-				// Support using the actual map name,
-				// i.e., Level AB, Level FZ, etc.
-
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z')
-					value = M_MapNumber(word2[0], word2[1]);
-				else
-					value = get_number(word2);
-
-				tutorialmap = (INT16)value;
+				tutorialmap = Z_StrDup(word2);
 			}
 			else
 				deh_warning("Maincfg: unknown word '%s'", word);
@@ -3852,37 +3731,23 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 
 				tmp = strtok(word2,",");
 				do {
-					INT32 map = atoi(tmp);
-
-					if (tmp[0] >= 'A' && tmp[0] <= 'Z' && tmp[2] == '\0')
-						map = M_MapNumber(tmp[0], tmp[1]);
-
-					if (!map)
-						break;
-
 					if (cup->numlevels >= MAXLEVELLIST)
 					{
 						deh_warning("%s Cup: reached max levellist (%d)\n", cup->name, MAXLEVELLIST);
 						break;
 					}
 
-					cup->levellist[cup->numlevels] = map - 1;
+					cup->levellist[cup->numlevels] = Z_StrDup(word2);
 					cup->numlevels++;
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "BONUSGAME"))
 			{
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-				cup->bonusgame = (INT16)i - 1;
+				cup->bonusgame = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
-				// Convert to map number
-				if (word2[0] >= 'A' && word2[0] <= 'Z' && word2[2] == '\0')
-					i = M_MapNumber(word2[0], word2[1]);
-				cup->specialstage = (INT16)i - 1;
+				cup->specialstage = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
@@ -4257,46 +4122,6 @@ sfxenum_t get_sfx(const char *word)
 	return sfx_None;
 }
 
-#ifdef MUSICSLOT_COMPATIBILITY
-UINT16 get_mus(const char *word, UINT8 dehacked_mode)
-{ // Returns the value of MUS_ enumerations
-	UINT16 i;
-	char lumptmp[4];
-
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (!word[2] && toupper(word[0]) >= 'A' && toupper(word[0]) <= 'Z')
-		return (UINT16)M_MapNumber(word[0], word[1]);
-
-	if (fastncmp("MUS_",word,4))
-		word += 4; // take off the MUS_
-	else if (fastncmp("O_",word,2) || fastncmp("D_",word,2))
-		word += 2; // take off the O_ or D_
-
-	strncpy(lumptmp, word, 4);
-	lumptmp[3] = 0;
-	if (fasticmp("MAP",lumptmp))
-	{
-		word += 3;
-		if (toupper(word[0]) >= 'A' && toupper(word[0]) <= 'Z')
-			return (UINT16)M_MapNumber(word[0], word[1]);
-		else if ((i = atoi(word)))
-			return i;
-
-		word -= 3;
-		if (dehacked_mode)
-			deh_warning("Couldn't find music named 'MUS_%s'",word);
-		return 0;
-	}
-	for (i = 0; compat_special_music_slots[i][0]; ++i)
-		if (fasticmp(word, compat_special_music_slots[i]))
-			return i + 1036;
-	if (dehacked_mode)
-		deh_warning("Couldn't find music named 'MUS_%s'",word);
-	return 0;
-}
-#endif
-
 hudnum_t get_huditem(const char *word)
 { // Returns the value of HUD_ enumerations
 	hudnum_t i;
@@ -4527,13 +4352,6 @@ static fixed_t find_const(const char **rword)
 		free(word);
 		return r;
 	}
-#ifdef MUSICSLOT_COMPATIBILITY
-	else if (fastncmp("MUS_",word,4) || fastncmp("O_",word,2)) {
-		r = get_mus(word, true);
-		free(word);
-		return r;
-	}
-#endif
 	else if (fastncmp("PW_",word,3)) {
 		r = get_power(word);
 		free(word);

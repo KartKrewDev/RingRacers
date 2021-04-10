@@ -230,16 +230,16 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, smpstage_end);
 		return 1;
 	} else if (fastcmp(word,"titlemap")) {
-		lua_pushinteger(L, titlemap);
+		lua_pushstring(L, titlemap);
 		return 1;
 	} else if (fastcmp(word,"titlemapinaction")) {
 		lua_pushboolean(L, (titlemapinaction != TITLEMAP_OFF));
 		return 1;
 	} else if (fastcmp(word,"bootmap")) {
-		lua_pushinteger(L, bootmap);
+		lua_pushstring(L, bootmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmap")) {
-		lua_pushinteger(L, tutorialmap);
+		lua_pushstring(L, tutorialmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);

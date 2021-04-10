@@ -2791,6 +2791,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
+	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2848,12 +2849,12 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
 
+	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
+	demo.savebutton = 0;
+
 	// Sal: Is this needed?
 	// From experimenting with Lua scripts in vanilla I found a lot of annoying & potentially desync-y things with MapChange.
 	LUAh_MapChange(mapnumber);
-
-	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
-	demo.savebutton = 0;
 
 	G_InitNew(pencoremode, mapnumber, resetplayer, skipprecutscene, FLS);
 	if (demo.playback && !demo.timing)

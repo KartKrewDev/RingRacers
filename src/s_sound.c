@@ -1557,28 +1557,6 @@ void S_InitSfxChannels(INT32 sfxVolume)
 /// Music
 /// ------------------------
 
-#ifdef MUSICSLOT_COMPATIBILITY
-const char *compat_special_music_slots[16] =
-{
-	"_title", // 1036  title screen
-	"_intro", // 1037  intro
-	"_clear", // 1038  level clear
-	"_inv", // 1039  invincibility
-	"_shoes",  // 1040  super sneakers
-	"_minv", // 1041  Mario invincibility
-	"_drown",  // 1042  drowning
-	"_gover", // 1043  game over
-	"_1up", // 1044  extra life
-	"_conti", // 1045  continue screen
-	"_super", // 1046  Super Sonic
-	"_chsel", // 1047  character select
-	"_creds", // 1048  credits
-	"_inter", // 1049  Race Results
-	"_stjr",   // 1050  Sonic Team Jr. Presents
-	""
-};
-#endif
-
 static char      music_name[7]; // up to 6-character name
 static void      *music_data;
 static UINT16    music_flags;

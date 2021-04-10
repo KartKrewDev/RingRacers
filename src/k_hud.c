@@ -3015,7 +3015,7 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	INT32 lumpnum;
+	INT32 lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
@@ -3037,7 +3037,10 @@ static void K_drawKartMinimap(void)
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
-	lumpnum = W_CheckNumForLongName(va("%sR", G_BuildMapName(gamemap)));
+	if (mapheaderinfo[gamemap-1])
+	{
+		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
+	}
 
 	if (lumpnum != -1)
 		AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);

@@ -354,6 +354,42 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
 
+	if (mapheaderinfo[num]->thumbnailLump)
+	{
+		Z_Free(mapheaderinfo[num]->thumbnailLump);
+		mapheaderinfo[num]->thumbnailLump = NULL;
+	}
+
+	if (mapheaderinfo[num]->minimapLump)
+	{
+		Z_Free(mapheaderinfo[num]->minimapLump);
+		mapheaderinfo[num]->minimapLump = NULL;
+	}
+
+	if (mapheaderinfo[num]->encoreLump)
+	{
+		Z_Free(mapheaderinfo[num]->encoreLump);
+		mapheaderinfo[num]->encoreLump = NULL;
+	}
+
+	if (mapheaderinfo[num]->tweakLump)
+	{
+		Z_Free(mapheaderinfo[num]->tweakLump);
+		mapheaderinfo[num]->tweakLump = NULL;
+	}
+
+	if (mapheaderinfo[num]->nextlevel)
+	{
+		Z_Free(mapheaderinfo[num]->nextlevel);
+		mapheaderinfo[num]->nextlevel = NULL;
+	}
+
+	if (mapheaderinfo[num]->marathonnext)
+	{
+		Z_Free(mapheaderinfo[num]->marathonnext);
+		mapheaderinfo[num]->marathonnext = NULL;
+	}
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->selectheading[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
@@ -363,8 +399,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->ltactdiamond[0] = '\0';
 	mapheaderinfo[num]->actnum = 0;
 	mapheaderinfo[num]->typeoflevel = 0;
-	mapheaderinfo[num]->nextlevel = (INT16)(i + 1);
-	mapheaderinfo[num]->marathonnext = 0;
 	mapheaderinfo[num]->startrings = 0;
 	mapheaderinfo[num]->sstimer = 90;
 	mapheaderinfo[num]->ssspheres = 1;
@@ -426,6 +460,12 @@ void P_AllocMapHeader(INT16 i)
 	{
 		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
 		mapheaderinfo[i]->lumpname = NULL;
+		mapheaderinfo[i]->thumbnailLump = NULL;
+		mapheaderinfo[i]->minimapLump = NULL;
+		mapheaderinfo[i]->encoreLump = NULL;
+		mapheaderinfo[i]->tweakLump = NULL;
+		mapheaderinfo[i]->nextlevel = NULL;
+		mapheaderinfo[i]->marathonnext = NULL;
 		mapheaderinfo[i]->flickies = NULL;
 		mapheaderinfo[i]->grades = NULL;
 		nummapheaders++;
@@ -3713,6 +3753,7 @@ static void P_LoadRecordGhosts(void)
 	{
 		lumpnum_t l;
 		UINT8 j = 1;
+		// TODO: Use map header to determine lump name
 		while (j <= 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
 		{
 			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));
@@ -4057,8 +4098,23 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
-	R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette,
-		W_CheckNumForName(va("%s%c", maplumpname, (encoremode ? 'E' : 'T'))));
+	{
+		INT32 encoreLump = LUMPERROR;
+
+		if (mapheaderinfo[gamemap-1])
+		{
+			if (encoremode)
+			{
+				encoreLump = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->encoreLump);
+			}
+			else
+			{
+				encoreLump = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->tweakLump);
+			}
+		}
+
+		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump);
+	}
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.

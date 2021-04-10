@@ -1812,6 +1812,8 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
+	const INT32 titleMapNum = G_MapNumber(titlemap);
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;
@@ -1821,20 +1823,20 @@ void F_StartTitleScreen(void)
 	else
 		wipegamestate = GS_TITLESCREEN;
 
-	if (titlemap)
+	if (mapheaderinfo[titleMapNum])
 	{
 		mapthing_t *startpos;
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
-		gamemap = titlemap;
+		gamemap = titleMapNum;
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
 		G_DoLoadLevel(true);
-		if (!titlemap)
+		if (!titleMapNum)
 			return;
 
 		players[displayplayers[0]].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)

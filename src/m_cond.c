@@ -283,10 +283,17 @@ UINT8 M_CheckLevelEmblems(void)
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
 	{
+		INT32 checkLevel;
+
 		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
 			continue;
 
-		levelnum = emblemlocations[i].level;
+		checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (!mapheaderinfo[checkLevel])
+			continue;
+
+		levelnum = checkLevel;
 		valToReach = emblemlocations[i].var;
 
 		switch (emblemlocations[i].type)
@@ -316,10 +323,17 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].type != ET_MAP || emblemlocations[i].collected)
+		INT32 checkLevel;
+
+		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
 			continue;
 
-		levelnum = emblemlocations[i].level;
+		checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (!mapheaderinfo[checkLevel])
+			continue;
+
+		levelnum = checkLevel;
 		embtype = emblemlocations[i].var;
 		flags = MV_BEATEN;
 
@@ -472,7 +486,12 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	while (--i >= 0)
 	{
-		if (emblemlocations[i].level == map)
+		INT32 checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (!mapheaderinfo[checkLevel])
+			continue;
+
+		if (checkLevel == map)
 			return &emblemlocations[i];
 	}
 	return NULL;

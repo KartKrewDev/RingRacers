@@ -2219,6 +2219,7 @@ static void Dummystaff_OnChange(void)
 
 	dummystaffname[0] = '\0';
 
+	// TODO: Use map header to determine lump name
 	if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(cv_nextmap.value)))) == LUMPERROR)
 	{
 		CV_StealthSetValue(&cv_dummystaff, 0);
@@ -5498,7 +5499,7 @@ static void M_HandleReplayHutList(INT32 choice)
 #define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
 static void DrawReplayHutReplayInfo(void)
 {
-	lumpnum_t lumpnum;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *patch;
 	UINT8 *colormap;
 	INT32 x, y, w, h;
@@ -5525,7 +5526,12 @@ static void DrawReplayHutReplayInfo(void)
 
 		//  A 160x100 image of the level as entry MAPxxP
 		//CONS_Printf("%d %s\n", demolist[dir_on[menudepthleft]].map, G_BuildMapName(demolist[dir_on[menudepthleft]].map));
-		lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(demolist[dir_on[menudepthleft]].map)));
+
+		if (mapheaderinfo[demolist[dir_on[menudepthleft]].map])
+		{
+			lumpnum = W_CheckNumForLongName(mapheaderinfo[demolist[dir_on[menudepthleft]].map]->thumbnailLump);
+		}
+
 		if (lumpnum != LUMPERROR)
 			patch = W_CachePatchNum(lumpnum, PU_CACHE);
 		else
@@ -6548,8 +6554,15 @@ static void M_DrawEmblemHints(void)
 
 	for (i = 0; i < numemblems; i++)
 	{
+		INT32 checkLevel;
+
 		emblem = &emblemlocations[i];
-		if (emblem->level != gamemap || emblem->type != ET_GLOBAL)
+		if (emblem->type != ET_GLOBAL)
+			continue;
+
+		checkLevel = G_MapNumber(emblem->level);
+
+		if (!mapheaderinfo[checkLevel] || gamemap != checkLevel)
 			continue;
 
 		if (emblem->collected)
@@ -7709,6 +7722,7 @@ static void M_GrandPrixTemp(INT32 choice)
 static void M_StartGrandPrix(INT32 choice)
 {
 	cupheader_t *gpcup = kartcupheaders;
+	INT32 levelNum;
 
 	(void)choice;
 
@@ -7760,9 +7774,11 @@ static void M_StartGrandPrix(INT32 choice)
 
 	grandprixinfo.initalize = true;
 
+	levelNum = G_MapNumber(grandprixinfo.cup->levellist[0]);
+
 	G_DeferedInitNew(
 		false,
-		grandprixinfo.cup->levellist[0] + 1,
+		levelNum + 1,
 		(UINT8)(cv_chooseskin.value - 1),
 		(UINT8)(cv_splitplayers.value - 1),
 		false
@@ -8866,14 +8882,18 @@ static void M_StartServer(INT32 choice)
 
 static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 {
-	lumpnum_t lumpnum;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *PictureOfLevel;
 	INT32 x, y, w, i, oldval, trans, dupadjust = ((vid.width/vid.dupx) - BASEVIDWIDTH)>>1;
 
 	//  A 160x100 image of the level as entry MAPxxP
 	if (cv_nextmap.value)
 	{
-		lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(cv_nextmap.value)));
+		if (mapheaderinfo[cv_nextmap.value])
+		{
+			lumpnum = W_CheckNumForLongName(mapheaderinfo[cv_nextmap.value]->thumbnailLump);
+		}
+
 		if (lumpnum != LUMPERROR)
 			PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 		else
@@ -8939,7 +8959,11 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(i+1)));
+			if (mapheaderinfo[i+1])
+			{
+				lumpnum = W_CheckNumForLongName(mapheaderinfo[i+1]->thumbnailLump);
+			}
+
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else
@@ -8977,7 +9001,11 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 		//  A 160x100 image of the level as entry MAPxxP
 		if (i+1)
 		{
-			lumpnum = W_CheckNumForLongName(va("%sP", G_BuildMapName(i+1)));
+			if (mapheaderinfo[i+1])
+			{
+				lumpnum = W_CheckNumForLongName(mapheaderinfo[i+1]->thumbnailLump);
+			}
+
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else

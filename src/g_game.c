@@ -149,11 +149,11 @@ tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 INT16 spstage_start, spmarathon_start;
 INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
 
-INT16 titlemap = 0;
+char * titlemap = NULL;
 boolean hidetitlepics = false;
-INT16 bootmap; //bootmap for loading a map on startup
+char * bootmap = NULL; //bootmap for loading a map on startup
 
-INT16 tutorialmap = 0; // map to load for tutorial
+char * tutorialmap = NULL; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
 INT32 tutorialgcs = gcs_custom; // which control scheme is loaded?
 
@@ -3340,6 +3340,7 @@ tryagain:
 		if (pprevmap == -2) // title demo hack
 		{
 			lumpnum_t l;
+			// TODO: Use map header to determine lump name
 			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
 				continue;
 		}
@@ -3529,7 +3530,12 @@ static void G_DoCompleted(void)
 	}
 	else if (marathonmode && mapheaderinfo[gamemap-1]->marathonnext)
 	{
-		nextmap = (INT16)(mapheaderinfo[gamemap-1]->marathonnext-1);
+		const INT32 mNextNum = G_MapNumber(mapheaderinfo[gamemap-1]->marathonnext);
+
+		if (mapheaderinfo[mNextNum])
+		{
+			nextmap = (INT16)(mNextNum-1);
+		}
 	}
 	else if (grandprixinfo.gp == true)
 	{
@@ -3546,16 +3552,27 @@ static void G_DoCompleted(void)
 			else
 			{
 				// Proceed to next map
-				nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
+				const INT32 cupLevelNum = G_MapNumber(grandprixinfo.cup->levellist[grandprixinfo.roundnum]);
+
+				if (mapheaderinfo[cupLevelNum])
+				{
+					nextmap = cupLevelNum;
+				}
+
 				grandprixinfo.roundnum++;
 			}
 		}
 	}
 	else
 	{
-		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
-		if (marathonmode && nextmap == spmarathon_start-1)
-			nextmap = 1100-1; // No infinite loop for you
+		const INT32 nextNum = G_MapNumber(mapheaderinfo[gamemap-1]->nextlevel);
+
+		if (mapheaderinfo[nextNum])
+		{
+			nextmap = (INT16)(nextNum-1);
+			if (marathonmode && nextmap == spmarathon_start-1)
+				nextmap = 1100-1; // No infinite loop for you
+		}
 	}
 
 	// Remember last map for when you come out of the special stage.
@@ -3582,9 +3599,23 @@ static void G_DoCompleted(void)
 				if (!mapheaderinfo[cm])
 					cm = -1; // guarantee error execution
 				else if (marathonmode && mapheaderinfo[cm]->marathonnext)
-					cm = (INT16)(mapheaderinfo[cm]->marathonnext-1);
+				{
+					const INT32 mNextNum = G_MapNumber(mapheaderinfo[gamemap-1]->marathonnext);
+
+					if (!mapheaderinfo[mNextNum])
+						cm = -1; // guarantee error execution
+					else
+						cm = (INT16)(mNextNum-1);
+				}
 				else
-					cm = (INT16)(mapheaderinfo[cm]->nextlevel-1);
+				{
+					const INT32 nextNum = G_MapNumber(mapheaderinfo[gamemap-1]->nextlevel);
+
+					if (!mapheaderinfo[nextNum])
+						cm = -1; // guarantee error execution
+					else
+						cm = (INT16)(nextNum-1);
+				}
 
 				if (cm >= NUMMAPS || cm < 0) // out of range (either 1100ish or error)
 				{

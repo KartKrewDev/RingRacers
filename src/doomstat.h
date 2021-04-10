@@ -177,11 +177,11 @@ extern boolean splitscreen_partied[MAXPLAYERS];
 extern INT16 spstage_start, spmarathon_start;
 extern INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
 
-extern INT16 titlemap;
+extern char * titlemap;
 extern boolean hidetitlepics;
-extern INT16 bootmap; //bootmap for loading a map on startup
+extern char * bootmap; //bootmap for loading a map on startup
 
-extern INT16 tutorialmap; // map to load for tutorial
+extern char * tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
 extern INT32 tutorialgcs; // which control scheme is loaded?
 
@@ -326,81 +326,100 @@ typedef struct
   */
 typedef struct
 {
-	char * lumpname;       ///< Lump name can be really long
-	char lvlttl[22];       ///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
-	char subttl[33];       ///< Subtitle for level
-	char zonttl[22];       ///< "ZONE" replacement name
-	UINT8 actnum;          ///< Act number or 0 for none.
-	UINT32 typeoflevel;    ///< Combination of typeoflevel flags.
-	INT16 nextlevel;       ///< Map number of next level, or 1100-1102 to end.
-	INT16 marathonnext;    ///< See nextlevel, but for Marathon mode. Necessary to support hub worlds ala SUGOI.
-	char keywords[33];     ///< Keywords separated by space to search for. 32 characters.
-	char musname[7];       ///< Music track to play. "" for no music.
-	UINT16 mustrack;       ///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
-	UINT32 muspos;    ///< Music position to jump to.
-	char forcecharacter[17];  ///< (SKINNAMESIZE+1) Skin to switch to or "" to disable.
-	UINT8 weather;         ///< 0 = sunny day, 1 = storm, 2 = snow, 3 = rain, 4 = blank, 5 = thunder w/o rain, 6 = rain w/o lightning, 7 = heat wave.
-	char skytexture[9];    ///< Sky texture to use.
-	INT16 skybox_scalex;   ///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
-	INT16 skybox_scaley;   ///< Skybox Y axis scale.
-	INT16 skybox_scalez;   ///< Skybox Z axis scale.
+	char * lumpname;					///< Lump name can be really long
+
+	char * thumbnailLump;				///< Lump name for the level select thumbnail.
+	char * minimapLump;					///< Lump name for the minimap graphic.
+	char * encoreLump;					///< Lump name for the Encore Mode remap.
+	char * tweakLump;					///< Lump name for the palette tweak remap.
+
+	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
+	char subttl[33];					///< Subtitle for level
+	char zonttl[22];					///< "ZONE" replacement name
+	UINT8 actnum;						///< Act number or 0 for none.
+
+	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
+
+	char * nextlevel;					///< Map name of next level.
+	char * marathonnext;				///< See nextlevel, but for Marathon mode.
+
+	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
+
+	char musname[7];					///< Music track to play. "" for no music.
+	UINT16 mustrack;					///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
+	UINT32 muspos;						///< Music position to jump to.
+
+	char forcecharacter[17];			///< (SKINNAMESIZE+1) Skin to switch to or "" to disable.
+
+	UINT8 weather;						///< 0 = sunny day, 1 = storm, 2 = snow, 3 = rain, 4 = blank, 5 = thunder w/o rain, 6 = rain w/o lightning, 7 = heat wave.
+	char skytexture[9];					///< Sky texture to use.
+	INT16 skybox_scalex;				///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
+	INT16 skybox_scaley;				///< Skybox Y axis scale.
+	INT16 skybox_scalez;				///< Skybox Z axis scale.
 
 	// Extra information.
-	char interscreen[8];  ///< 320x200 patch to display at intermission.
-	char runsoc[33];      ///< SOC to execute at start of level (32 character limit instead of 63)
-	char scriptname[33];  ///< Script to use when the map is switched to. (32 character limit instead of 191)
-	UINT8 precutscenenum; ///< Cutscene number to play BEFORE a level starts.
-	UINT8 cutscenenum;    ///< Cutscene number to use, 0 for none.
-	INT16 countdown;      ///< Countdown until level end?
-	UINT16 palette;       ///< PAL lump to use on this map
-	UINT16 encorepal;     ///< PAL for encore mode
-	UINT8 numlaps;        ///< Number of laps in circuit mode, unless overridden.
-	SINT8 unlockrequired; ///< Is an unlockable required to play this level? -1 if no.
-	UINT8 levelselect;    ///< Is this map available in the level select? If so, which map list is it available in?
-	SINT8 bonustype;      ///< What type of bonus does this level have? (-1 for null.)
-	SINT8 maxbonuslives;  ///< How many bonus lives to award at Intermission? (-1 for unlimited.)
+	char interscreen[8];				///< 320x200 patch to display at intermission.
 
-	UINT16 levelflags;     ///< LF_flags:  merged booleans into one UINT16 for space, see below
-	UINT8 menuflags;      ///< LF2_flags: options that affect record attack / nights mode menus
+	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)
+	char scriptname[33];				///< Script to use when the map is switched to. (32 character limit instead of 191)
 
-	char selectheading[22]; ///< Level select heading. Allows for controllable grouping.
-	UINT16 startrings;      ///< Number of rings players start with.
-	INT32 sstimer;          ///< Timer for special stages.
-	UINT32 ssspheres;       ///< Sphere requirement in special stages.
-	fixed_t gravity;        ///< Map-wide gravity.
+	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
+	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
+
+	INT16 countdown;					///< Countdown until level end?
+
+	UINT16 palette;						///< PAL lump to use on this map
+	UINT16 encorepal;					///< PAL for encore mode
+
+	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
+
+	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
+	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
+
+	SINT8 bonustype;					///< What type of bonus does this level have? (-1 for null.)
+	SINT8 maxbonuslives;				///< How many bonus lives to award at Intermission? (-1 for unlimited.)
+
+	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
+	UINT16 menuflags;					///< LF2_flags: options that affect record attack / nights mode menus
+
+	char selectheading[22];				///< Level select heading. Allows for controllable grouping.
+	UINT16 startrings;					///< Number of rings players start with.
+	INT32 sstimer;						///< Timer for special stages.
+	UINT32 ssspheres;					///< Sphere requirement in special stages.
+	fixed_t gravity;					///< Map-wide gravity.
 
 	// Title card.
-	char ltzzpatch[8];      ///< Zig zag patch.
-	char ltzztext[8];       ///< Zig zag text.
-	char ltactdiamond[8];   ///< Act diamond.
+	char ltzzpatch[8];					///< Zig zag patch.
+	char ltzztext[8];					///< Zig zag text.
+	char ltactdiamond[8];				///< Act diamond.
 
 	// Freed animals stuff.
-	UINT8 numFlickies;     ///< Internal. For freed flicky support.
-	mobjtype_t *flickies;  ///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
+	UINT8 numFlickies;					///< Internal. For freed flicky support.
+	mobjtype_t *flickies;				///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
 
 	// NiGHTS stuff.
-	UINT8 numGradedMares;   ///< Internal. For grade support.
-	nightsgrades_t *grades; ///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
-
-	// SRB2kart
-	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
-	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
+	UINT8 numGradedMares;				///< Internal. For grade support.
+	nightsgrades_t *grades;				///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
 
 	// Music stuff.
-	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
-	char musintername[7];    ///< Intermission screen music.
+	UINT32 musinterfadeout;				///< Fade out level music on intermission screen in milliseconds
+	char musintername[7];				///< Intermission screen music.
 
-	char muspostbossname[7];    ///< Post-bossdeath music.
-	UINT16 muspostbosstrack;    ///< Post-bossdeath track.
-	UINT32 muspostbosspos;      ///< Post-bossdeath position
-	UINT32 muspostbossfadein;   ///< Post-bossdeath fade-in milliseconds.
+	char muspostbossname[7];			///< Post-bossdeath music.
+	UINT16 muspostbosstrack;			///< Post-bossdeath track.
+	UINT32 muspostbosspos;				///< Post-bossdeath position
+	UINT32 muspostbossfadein;			///< Post-bossdeath fade-in milliseconds.
 
-	SINT8 musforcereset; ///< Force resetmusic (-1 for default; 0 for force off; 1 for force on)
+	SINT8 musforcereset;				///< Force resetmusic (-1 for default; 0 for force off; 1 for force on)
+
+	// SRB2kart
+	fixed_t mobj_scale;					///< Replacement for TOL_ERZ3
+	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
 	// Lua stuff.
 	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
-	UINT8 numCustomOptions;     ///< Internal. For Lua custom value support.
-	customoption_t *customopts; ///< Custom options. Allocated dynamically for space reasons. Be careful.
+	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
+	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.
 } mapheader_t;
 
 // level flags
@@ -426,10 +445,10 @@ typedef struct cupheader_s
 	UINT16 id;                     ///< Cup ID
 	char name[15];                 ///< Cup title (14 chars)
 	char icon[9];                  ///< Name of the icon patch
-	INT16 levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	char * levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
 	UINT8 numlevels;               ///< Number of levels defined in levellist
-	INT16 bonusgame;               ///< Map number to use for bonus game
-	INT16 specialstage;            ///< Map number to use for special stage
+	char * bonusgame;               ///< Map number to use for bonus game
+	char * specialstage;            ///< Map number to use for special stage
 	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
 	struct cupheader_s *next;      ///< Next cup in linked list
