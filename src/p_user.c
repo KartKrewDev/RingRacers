@@ -1869,6 +1869,9 @@ static void P_3dMovement(player_t *player)
 		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
 	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
 		movepushangle = (angle_t)player->kartstuff[k_boostangle];
+	else if (player->stairjank && leveltime & 1)
+		movepushangle = R_PointToAngle2(0, 0,
+				player->mo->momx, player->mo->momy);
 	else
 		movepushangle = player->mo->angle;
 
@@ -4747,6 +4750,11 @@ void P_PlayerThink(player_t *player)
 	{
 		player->typing_timer = 0;
 		player->typing_duration = 0;
+	}
+
+	if (player->stairjank > 0)
+	{
+		player->stairjank--;
 	}
 
 	player->pflags &= ~PF_SLIDING;

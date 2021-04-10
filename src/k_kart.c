@@ -1761,11 +1761,6 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	sparks->renderflags |= RF_DONTDRAW;
 }
 
-static fixed_t K_RandomFlip(fixed_t f)
-{
-	return ( ( leveltime & 1 ) ? f : -f );
-}
-
 void K_SpawnDriftBoostClip(player_t *player)
 {
 	mobj_t *clip;
@@ -1790,7 +1785,7 @@ void K_SpawnDriftBoostClip(player_t *player)
 		clip->momz += player->mo->momz;
 
 	P_InstaThrust(clip, player->mo->angle +
-			K_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
+			P_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
 }
 

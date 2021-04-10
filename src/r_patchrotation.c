@@ -15,6 +15,7 @@
 #include "w_wad.h"
 #include "r_main.h" // R_PointToAngle
 #include "k_kart.h" // K_Sliptiding
+#include "p_tick.h"
 
 #ifdef ROTSPRITE
 fixed_t rollcosang[ROTANGLES];
@@ -32,16 +33,14 @@ angle_t R_GetPitchRollAngle(mobj_t *mobj)
 	return rollOrPitch;
 }
 
-angle_t R_SpriteRotationAngle(mobj_t *mobj)
+static angle_t R_PlayerSpriteRotation(player_t *player)
 {
-	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
-	angle_t angleDelta = (viewingAngle - mobj->angle);
+	angle_t viewingAngle = R_PointToAngle(player->mo->x, player->mo->y);
+	angle_t angleDelta = (viewingAngle - player->mo->angle);
 
-	angle_t sliptideLift = mobj->player
-		? mobj->player->aizDriftTilt : 0;
+	angle_t sliptideLift = player->aizDriftTilt;
 
-	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
-	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
+	angle_t rollAngle = 0;
 
 	if (sliptideLift)
 	{
@@ -50,6 +49,25 @@ angle_t R_SpriteRotationAngle(mobj_t *mobj)
 		rollAngle +=
 			FixedMul(sliptideLift, FINESINE(AbsAngle(angleDelta) >> ANGLETOFINESHIFT)) +
 			FixedMul(sliptideLift, FINECOSINE(angleDelta >> ANGLETOFINESHIFT));
+	}
+
+	if (player->stairjank)
+	{
+		rollAngle += P_AltFlip(ANGLE_11hh / 2 /
+				(17 / player->stairjank), 2);
+	}
+
+	return rollAngle;
+}
+
+angle_t R_SpriteRotationAngle(mobj_t *mobj)
+{
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
+	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
+
+	if (mobj->player)
+	{
+		rollAngle += R_PlayerSpriteRotation(mobj->player);
 	}
 
 	return rollAngle;
