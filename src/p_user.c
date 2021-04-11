@@ -1865,13 +1865,13 @@ static void P_3dMovement(player_t *player)
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
-	if (player->kartstuff[k_drift] != 0)
-		movepushangle = player->mo->angle-(ANGLE_45/(player->stairjank ? 4 : 5))*player->kartstuff[k_drift];
-	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
-		movepushangle = (angle_t)player->kartstuff[k_boostangle];
-	else if (player->stairjank && leveltime & 3)
+	if (player->stairjank > 8 && leveltime & 3)
 		movepushangle = R_PointToAngle2(0, 0,
 				player->mo->momx, player->mo->momy);
+	else if (player->kartstuff[k_drift] != 0)
+		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
+	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
+		movepushangle = (angle_t)player->kartstuff[k_boostangle];
 	else
 		movepushangle = player->mo->angle;
 
