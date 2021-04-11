@@ -1845,6 +1845,41 @@ static void P_DoBubbleBreath(player_t *player)
 	}
 }
 
+static void squish(player_t *player)
+{
+	const fixed_t maxstretch = 2*FRACUNIT;
+	const fixed_t factor = 3 * player->mo->height / 2;
+	const fixed_t threshold = factor / 6;
+
+	const fixed_t old3dspeed = abs(player->lastmomz);
+	const fixed_t new3dspeed = abs(player->mo->momz);
+
+	const fixed_t delta = abs(old3dspeed - new3dspeed);
+
+	if (delta > threshold)
+	{
+		player->mo->spritexscale =
+			FRACUNIT + FixedDiv(delta, factor);
+
+		if (player->mo->spritexscale > maxstretch)
+			player->mo->spritexscale = maxstretch;
+
+		if (abs(new3dspeed) > abs(old3dspeed))
+		{
+			player->mo->spritexscale =
+				FixedDiv(FRACUNIT, player->mo->spritexscale);
+		}
+	}
+	else
+	{
+		player->mo->spritexscale -=
+			(player->mo->spritexscale - FRACUNIT) / 8;
+	}
+
+	player->mo->spriteyscale =
+		FixedDiv(FRACUNIT, player->mo->spritexscale);
+}
+
 //#define OLD_MOVEMENT_CODE 1
 static void P_3dMovement(player_t *player)
 {
@@ -2031,6 +2066,8 @@ static void P_3dMovement(player_t *player)
 			}
 		}
 	}
+
+	squish(player);
 }
 
 //

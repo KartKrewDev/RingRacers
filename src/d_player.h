@@ -597,6 +597,7 @@ typedef struct player_s
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
 	fixed_t lastspeed;
+	fixed_t lastmomz;
 	UINT8 secondjump; // Jump counter
 
 	UINT8 fly1; // Tails flying

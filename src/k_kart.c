@@ -2288,6 +2288,7 @@ void K_KartMoveAnimation(player_t *player)
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
+	player->lastmomz = player->mo->momz;
 }
 
 static void K_TauntVoiceTimers(player_t *player)
