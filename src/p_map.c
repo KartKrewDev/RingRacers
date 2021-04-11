@@ -2637,6 +2637,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 	if (stairjank > stairstep && thing->player)
 	{
+		/* use a shorter sound if not two tics have passed
+ 		 * since the last step */
+		S_StartSound(thing, thing->player->stairjank
+				>= 16 ?  sfx_s23b : sfx_s268);
 		thing->player->stairjank = 17;
 	}
 
