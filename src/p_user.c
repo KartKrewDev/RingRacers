@@ -1873,7 +1873,8 @@ static void squish(player_t *player)
 	else
 	{
 		player->mo->spritexscale -=
-			(player->mo->spritexscale - FRACUNIT) / 8;
+			(player->mo->spritexscale - FRACUNIT)
+			/ (player->mo->spritexscale < FRACUNIT ? 8 : 2);
 	}
 
 	player->mo->spriteyscale =
@@ -2067,7 +2068,10 @@ static void P_3dMovement(player_t *player)
 		}
 	}
 
-	squish(player);
+	if (!player->powers[pw_justlaunched])
+	{
+		squish(player);
+	}
 }
 
 //
