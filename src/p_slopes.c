@@ -850,7 +850,10 @@ void P_SlopeLaunch(mobj_t *mo)
 	mo->standingslope = NULL;
 
 	if (mo->player)
+	{
 		mo->player->powers[pw_justlaunched] = 1;
+		mo->player->stairjank = 0; // fuck you
+	}
 }
 
 //

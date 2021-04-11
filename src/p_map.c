@@ -2492,7 +2492,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (maxstep > 0)
 			{
-				const fixed_t minstep = maxstep / 8;
+				const fixed_t minstep = maxstep / 4;
 
 				thingtop = thing->z + thing->height;
 
@@ -2501,7 +2501,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmfloorstep <= maxstep)
 					{
-						stairjank = thing->floordrop;
+						stairjank = tmfloorstep;
 						stairstep = minstep;
 
 						thing->z = thing->floorz = tmfloorz;
@@ -2517,7 +2517,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmceilingstep <= maxstep)
 					{
-						stairjank = thing->ceilingdrop;
+						stairjank = tmceilingstep;
 						stairstep = minstep;
 
 						thing->z = ( thing->ceilingz = tmceilingz ) - thing->height;
@@ -2536,7 +2536,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
 					{
-						stairjank = thing->ceilingdrop;
+						stairjank = (tmceilingz - thingtop);
 						stairstep = minstep;
 
 						thing->z = (thing->ceilingz = tmceilingz) - thing->height;
@@ -2546,7 +2546,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					}
 					else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
 					{
-						stairjank = thing->floordrop;
+						stairjank = (thing->z - tmfloorz);
 						stairstep = minstep;
 
 						thing->z = thing->floorz = tmfloorz;
