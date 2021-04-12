@@ -2638,8 +2638,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 	/* FIXME: slope step down (even up) has some false
 		positives, so just ignore them entirely. */
-	if (stairjank && !oldslope &&
-			!thing->standingslope && thing->player)
+	if (stairjank && !oldslope && !thing->standingslope &&
+			thing->player && !thing->player->spectator)
 	{
 		/* use a shorter sound if not two tics have passed
 		 * since the last step */
