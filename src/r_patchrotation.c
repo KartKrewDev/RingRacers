@@ -53,8 +53,8 @@ static angle_t R_PlayerSpriteRotation(player_t *player)
 
 	if (player->stairjank)
 	{
-		rollAngle += P_AltFlip(ANGLE_11hh / 2 /
-				(17 / player->stairjank), 2);
+		rollAngle += K_StairJankFlip(ANGLE_11hh / 2 /
+				(17 / player->stairjank));
 	}
 
 	return rollAngle;

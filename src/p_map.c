@@ -2638,9 +2638,19 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (stairjank > stairstep && thing->player)
 	{
 		/* use a shorter sound if not two tics have passed
- 		 * since the last step */
+		 * since the last step */
 		S_StartSound(thing, thing->player->stairjank
 				>= 16 ?  sfx_s23b : sfx_s268);
+
+		if (!thing->player->stairjank)
+		{
+			mobj_t * spark = P_SpawnMobjFromMobj(thing,
+					0, 0, 0, MT_JANKSPARK);
+			spark->fuse = 9;
+			spark->cusval = K_StairJankFlip(ANGLE_90);
+			P_SetTarget(&spark->target, thing);
+		}
+
 		thing->player->stairjank = 17;
 	}
 

@@ -541,6 +541,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DRIF", // Drift Sparks
 	"BDRF", // Brake drift sparks
 	"DRWS", // Drift dust sparks
+	"JANK", // Stair janking sparks
 
 	// Kart Items
 	"RSHE", // Rocket sneaker
@@ -5227,6 +5228,12 @@ state_t states[NUMSTATES] =
 	{SPR_DEBT, 7|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_DEBTSPIKED}, // S_DEBTSPIKEC
 	{SPR_DEBT, 6|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_DEBTSPIKEE}, // S_DEBTSPIKED
 	{SPR_DEBT, 7|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_DEBTSPIKE1}, // S_DEBTSPIKEE
+
+	// Sparks when driving on stairs
+	{SPR_JANK, 0, 1, {NULL}, 0, 0, S_JANKSPARK2}, // S_JANKSPARK1
+	{SPR_JANK, FF_PAPERSPRITE|FF_FULLBRIGHT|FF_ANIMATE, 4, {NULL}, 3, 1, S_JANKSPARK3}, // S_JANKSPARK2
+	{SPR_JANK, 0, 0, {A_SetCustomValue}, -1, 5, S_JANKSPARK4}, // S_JANKSPARK3
+	{SPR_JANK, 0, 0, {A_ChangeAngleRelative}, 180, 180, S_JANKSPARK2}, // S_JANKSPARK4
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -23470,6 +23477,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_FLOAT|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_JANKSPARK
+		-1,             // doomednum
+		S_JANKSPARK1,   // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		8*FRACUNIT,     // radius
+		8*FRACUNIT,     // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_FLOAT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

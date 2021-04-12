@@ -7679,6 +7679,11 @@ SINT8 K_Sliptiding(player_t *player)
 	return p[k_drift] ? 0 : p[k_aizdriftstrat];
 }
 
+INT32 K_StairJankFlip(INT32 value)
+{
+	return P_AltFlip(value, 2);
+}
+
 static void K_KartSpindashDust(mobj_t *parent)
 {
 	fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
