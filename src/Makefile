@@ -177,29 +177,80 @@ endif
 
 include Makefile.d/detect.mk
 
+ifdef NOHW
+	OPTS+=-DNOHW
+else
+ifndef DC
+	#Hurdler: not really supported and not tested recently
+	#OPTS+=-DUSE_PALETTED_TEXTURE
+endif
+	OPTS+=-DHWRENDER
+	OBJS+=$(OBJDIR)/hw_bsp.o $(OBJDIR)/hw_draw.o $(OBJDIR)/hw_light.o \
+		 $(OBJDIR)/hw_main.o $(OBJDIR)/hw_clip.o $(OBJDIR)/hw_md2.o $(OBJDIR)/hw_cache.o $(OBJDIR)/hw_trick.o \
+		 $(OBJDIR)/hw_md2load.o $(OBJDIR)/hw_md3load.o $(OBJDIR)/hw_model.o $(OBJDIR)/u_list.o
+endif
 # make would try to remove the implicitly made directories
 .PRECIOUS : %/ comptime.c
 
+OPTS += -DCOMPVERSION
 sources:=
 makedir:=../make
 
+ifndef NONX86
+ifndef GCC29
+	ARCHOPTS?=-march=pentium
+else
+	ARCHOPTS?=-mpentium
+endif
+else
+ifdef X86_64
+	ARCHOPTS?=-march=nocona
+endif
+endif
 # -DCOMPVERSION: flag to use comptime.h
 opts:=-DCOMPVERSION -g
 libs:=
 
+ifndef NOASM
+ifndef NONX86
+	OBJS+=$(OBJDIR)/tmap.o $(OBJDIR)/tmap_mmx.o
+	OPTS+=-DUSEASM
+endif
+endif
 nasm_format:=
 
+ifndef NOPNG
+OPTS+=-DHAVE_PNG
 # This is a list of variables names, of which if defined,
 # also defines the name as a macro to the compiler.
 passthru_opts:=
 
+ifdef PNG_PKGCONFIG
+PNG_CFLAGS?=$(shell $(PKG_CONFIG) $(PNG_PKGCONFIG) --cflags)
+PNG_LDFLAGS?=$(shell $(PKG_CONFIG) $(PNG_PKGCONFIG) --libs)
+else
+ifdef PREFIX
+PNG_CONFIG?=$(PREFIX)-libpng-config
+else
+PNG_CONFIG?=libpng-config
+endif
 # separate suffix with an underscore
 exesuffix:=$(call _,$(EXESUFFIX))
 
+ifdef PNG_STATIC
+PNG_CFLAGS?=$(shell $(PNG_CONFIG) --static --cflags)
+PNG_LDFLAGS?=$(shell $(PNG_CONFIG) --static --ldflags)
+else
+PNG_CFLAGS?=$(shell $(PNG_CONFIG) --cflags)
+PNG_LDFLAGS?=$(shell $(PNG_CONFIG) --ldflags)
+endif
+endif
 include Makefile.d/platform.mk
 include Makefile.d/features.mk
 include Makefile.d/versions.mk
 
+ifdef LINUX
+PNG_CFLAGS+=-D_LARGEFILE64_SOURCE
 ifdef DEBUGMODE
 makedir:=$(makedir)/debug
 endif
