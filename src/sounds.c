@@ -87,7 +87,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"fire",   false,   8, 32, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flamethrower"},
   {"grind",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Metallic grinding"},
   {"laser",   true,  16,  2, -1, NULL, 0,        -1,  -1, LUMPERROR, "Laser hum"},
-  {"mswing", false,  16,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging mace"},
+  {"mswing", false,  16, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging mace"},
   {"pstart", false, 100,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "/"},
   {"pstop",  false, 100,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Crusher stomp"},
   {"steam1", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Steam jet"}, // Tails 06-19-2001
@@ -630,8 +630,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3kc7l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Aiming"}, // ditto
   {"s3kc8s", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sliding"},
   {"s3kc8l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sliding"}, // ditto
-  {"s3kc9s", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"},
-  {"s3kc9l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"}, // ditto
+  {"s3kc9s", false,  64, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"},
+  {"s3kc9l", false,  64, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"}, // ditto
   {"s3kcas", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"},
   {"s3kcal", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"}, // ditto
   {"s3kcbs", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ominous rumbling"},
