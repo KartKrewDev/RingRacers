@@ -2353,11 +2353,11 @@ static void HU_DrawRankings(void)
 			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
 				continue;
 
-			if (players[i].kartstuff[k_position] >= lowestposition)
+			if (players[i].ktemp_position >= lowestposition)
 				continue;
 
 			tab[scorelines].num = i;
-			lowestposition = players[i].kartstuff[k_position];
+			lowestposition = players[i].ktemp_position;
 		}
 
 		i = tab[scorelines].num;
@@ -2374,7 +2374,7 @@ static void HU_DrawRankings(void)
 				tab[scorelines].count = players[i].realtime;
 		}
 		else
-			tab[scorelines].count = players[i].marescore;
+			tab[scorelines].count = players[i].roundscore;
 
 		scorelines++;
 

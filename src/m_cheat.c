@@ -317,20 +317,6 @@ void Command_CheatGod_f(void)
 	G_SetGameModified(multiplayer, true);
 }
 
-void Command_CheatNoTarget_f(void)
-{
-	player_t *plyr;
-
-	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-
-	plyr = &players[consoleplayer];
-	plyr->pflags ^= PF_INVIS;
-	CONS_Printf(M_GetText("SEP Field %s\n"), plyr->pflags & PF_INVIS ? M_GetText("On") : M_GetText("Off"));
-
-	G_SetGameModified(multiplayer, true);
-}
-
 void Command_Scale_f(void)
 {
 	const double scaled = atof(COM_Argv(1));
@@ -1147,7 +1133,7 @@ void OP_ObjectplaceMovement(player_t *player)
 
 		mt = OP_CreateNewMapThing(player, (UINT16)spawnthing, ceiling);
 		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
-			P_SpawnItemPattern(mt, false);
+			P_SpawnItemPattern(mt);
 		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
 			P_SpawnHoop(mt);
 		else
@@ -1291,6 +1277,6 @@ void Command_ObjectPlace_f(void)
 		players[0].mo->color = op_oldcolor;
 
 		// This is necessary for recovery of dying players.
-		players[0].powers[pw_flashing] = K_GetKartFlashing(&players[0]);
+		players[0].ktemp_flashing = K_GetKartFlashing(&players[0]);
 	}
 }

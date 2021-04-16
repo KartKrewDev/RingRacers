@@ -42,16 +42,12 @@ enum actionnum
 	A_BOSSDEATH,
 	A_CUSTOMPOWER,
 	A_RINGBOX,
-	A_INVINCIBILITY,
-	A_SUPERSNEAKERS,
 	A_BUNNYHOP,
 	A_BUBBLESPAWN,
 	A_FANBUBBLESPAWN,
 	A_BUBBLERISE,
 	A_BUBBLECHECK,
 	A_AWARDSCORE,
-	A_GIVESHIELD,
-	A_GRAVITYBOX,
 	A_SCORERISE,
 	A_ATTRACTCHASE,
 	A_DROPMINE,
@@ -313,16 +309,12 @@ void A_Scream();
 void A_BossDeath();
 void A_CustomPower(); // Use this for a custom power
 void A_RingBox(); // Obtained Ring Box Tails
-void A_Invincibility(); // Obtained Invincibility Box
-void A_SuperSneakers(); // Obtained Super Sneakers Box
 void A_BunnyHop(); // have bunny hop tails
 void A_BubbleSpawn(); // Randomly spawn bubbles
 void A_FanBubbleSpawn();
 void A_BubbleRise(); // Bubbles float to surface
 void A_BubbleCheck(); // Don't draw if not underwater
 void A_AwardScore();
-void A_GiveShield(); // Obtained Shield
-void A_GravityBox();
 void A_ScoreRise(); // Rise the score logo
 void A_AttractChase(); // Ring Chase
 void A_DropMine(); // Drop Mine from Skim or Jetty-Syn Bomber

@@ -909,7 +909,7 @@ static void ST_overlayDrawer(void)
 		{
 			const char *itemtxt = M_GetText("Item - Join Game");
 
-			if (stplyr->powers[pw_flashing])
+			if (stplyr->ktemp_flashing)
 				itemtxt = M_GetText("Item - . . .");
 			else if (stplyr->pflags & PF_WANTSTOJOIN)
 				itemtxt = M_GetText("Item - Cancel Join");

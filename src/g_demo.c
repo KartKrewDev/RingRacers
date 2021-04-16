@@ -748,15 +748,15 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].kartitem != ghost->player->kartstuff[k_itemtype] ||
-			ghostext[playernum].kartamount != ghost->player->kartstuff[k_itemamount] ||
-			ghostext[playernum].kartbumpers != ghost->player->kartstuff[k_bumper]
+			ghostext[playernum].kartitem != ghost->player->ktemp_itemtype ||
+			ghostext[playernum].kartamount != ghost->player->ktemp_itemamount ||
+			ghostext[playernum].kartbumpers != ghost->player->bumpers
 		))
 	{
 		ghostext[playernum].flags |= EZT_KART;
-		ghostext[playernum].kartitem = ghost->player->kartstuff[k_itemtype];
-		ghostext[playernum].kartamount = ghost->player->kartstuff[k_itemamount];
-		ghostext[playernum].kartbumpers = ghost->player->kartstuff[k_bumper];
+		ghostext[playernum].kartitem = ghost->player->ktemp_itemtype;
+		ghostext[playernum].kartamount = ghost->player->ktemp_itemamount;
+		ghostext[playernum].kartbumpers = ghost->player->bumpers;
 	}
 
 	if (ghostext[playernum].flags)
@@ -1035,17 +1035,17 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem
-			|| players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount
-			|| players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers)
+		if (players[playernum].ktemp_itemtype != ghostext[playernum].kartitem
+			|| players[playernum].ktemp_itemamount != ghostext[playernum].kartamount
+			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
 			demosynced = false;
 
-			players[playernum].kartstuff[k_itemtype] = ghostext[playernum].kartitem;
-			players[playernum].kartstuff[k_itemamount] = ghostext[playernum].kartamount;
-			players[playernum].kartstuff[k_bumper] = ghostext[playernum].kartbumpers;
+			players[playernum].ktemp_itemtype = ghostext[playernum].kartitem;
+			players[playernum].ktemp_itemamount = ghostext[playernum].kartamount;
+			players[playernum].bumpers = ghostext[playernum].kartbumpers;
 		}
 	}
 
@@ -1402,7 +1402,7 @@ void G_StoreRewindInfo(void)
 void G_PreviewRewind(tic_t previewtime)
 {
 	SINT8 i;
-	size_t j;
+	//size_t j;
 	fixed_t tweenvalue = 0;
 	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
 
@@ -1461,8 +1461,9 @@ void G_PreviewRewind(tic_t previewtime)
 		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
 
 		players[i].realtime = info->playerinfo[i].player.realtime;
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];
+		// Genuinely CANNOT be fucked. I can redo lua and I can redo netsaves but I draw the line at this abysmal hack.
+		/*for (j = 0; j < NUMKARTSTUFF; j++)
+			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];*/
 	}
 
 	for (i = splitscreen; i >= 0; i--)

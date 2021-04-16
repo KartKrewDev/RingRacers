@@ -64,7 +64,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
-			|| target->powers[pw_flashing])
+			|| target->ktemp_flashing)
 		{
 			continue;
 		}
@@ -117,7 +117,7 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
-			|| target->powers[pw_flashing])
+			|| target->ktemp_flashing)
 		{
 			continue;
 		}
@@ -190,7 +190,7 @@ static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boo
 
 		if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 			|| player == target || target->spectator
-			|| target->powers[pw_flashing]
+			|| target->ktemp_flashing
 			|| !P_CheckSight(player->mo, target->mo))
 		{
 			continue;
@@ -354,7 +354,7 @@ static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean 
 --------------------------------------------------*/
 static void K_BotItemGenericTrapShield(player_t *player, ticcmd_t *cmd, INT16 turnamt, boolean mine)
 {
-	if (player->kartstuff[k_itemheld])
+	if (player->pflags & PF_ITEMOUT)
 	{
 		return;
 	}
@@ -379,7 +379,7 @@ static void K_BotItemGenericTrapShield(player_t *player, ticcmd_t *cmd, INT16 tu
 --------------------------------------------------*/
 static void K_BotItemGenericOrbitShield(player_t *player, ticcmd_t *cmd)
 {
-	if (player->kartstuff[k_itemheld])
+	if (player->pflags & PF_ITEMOUT)
 	{
 		return;
 	}
@@ -401,13 +401,13 @@ static void K_BotItemGenericOrbitShield(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 {
-	if ((player->kartstuff[k_offroad] && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
+	if ((player->ktemp_offroad && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 		|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
 		|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
-		|| player->kartstuff[k_speedboost] > (FRACUNIT/8) // Have another type of boost (tethering)
+		|| player->ktemp_speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
-		if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
+		if (!player->ktemp_sneakertimer && !(player->pflags & PF_ATTACKDOWN))
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 2*TICRATE;
@@ -435,7 +435,7 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 {
 	if (player->botvars.itemconfirm > TICRATE)
 	{
-		if (!player->kartstuff[k_sneakertimer] && !(player->pflags & PF_ATTACKDOWN))
+		if (!player->ktemp_sneakertimer && !(player->pflags & PF_ATTACKDOWN))
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 0;
@@ -487,7 +487,7 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 		throwdir = -1;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
+	if (player->botvars.itemconfirm > 2*TICRATE || player->ktemp_bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -540,7 +540,7 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 
 	
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
+	if (player->botvars.itemconfirm > 2*TICRATE || player->ktemp_bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -577,13 +577,13 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 		throwdir = -1;
 	}
 
-	if (stealth > 1 || player->kartstuff[k_itemroulette] > 0)
+	if (stealth > 1 || player->ktemp_itemroulette > 0)
 	{
 		player->botvars.itemconfirm += player->botvars.difficulty * 4;
 		throwdir = -1;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->kartstuff[k_bananadrag] >= TICRATE)
+	if (player->botvars.itemconfirm > 2*TICRATE || player->ktemp_bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -639,7 +639,7 @@ static boolean K_BotRevealsEggbox(player_t *player)
 --------------------------------------------------*/
 static void K_BotItemEggmanShield(player_t *player, ticcmd_t *cmd)
 {
-	if (player->kartstuff[k_eggmanheld])
+	if (player->pflags & PF_EGGMANOUT)
 	{
 		return;
 	}
@@ -664,7 +664,7 @@ static void K_BotItemEggmanShield(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 {
-	if (player->kartstuff[k_position] == 1)
+	if (player->ktemp_position == 1)
 	{
 		cmd->forwardmove /= 2;
 		cmd->buttons |= BT_BRAKE;
@@ -746,7 +746,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 		throwdir = -1;
 	}
 
-	if (player->kartstuff[k_lastjawztarget] != -1)
+	if (player->ktemp_lastjawztarget != -1)
 	{
 		player->botvars.itemconfirm += player->botvars.difficulty * 2;
 		throwdir = 1;
@@ -801,13 +801,13 @@ static void K_BotItemBubble(player_t *player, ticcmd_t *cmd)
 {
 	boolean hold = false;
 
-	if (player->kartstuff[k_bubbleblowup] <= 0)
+	if (player->ktemp_bubbleblowup <= 0)
 	{
 		UINT8 i;
 
 		player->botvars.itemconfirm++;
 
-		if (player->kartstuff[k_bubblecool] <= 0)
+		if (player->ktemp_bubblecool <= 0)
 		{
 			const fixed_t radius = 192 * player->mo->scale;
 
@@ -825,7 +825,7 @@ static void K_BotItemBubble(player_t *player, ticcmd_t *cmd)
 
 				if (target->mo == NULL || P_MobjWasRemoved(target->mo)
 					|| player == target || target->spectator
-					|| target->powers[pw_flashing])
+					|| target->ktemp_flashing)
 				{
 					continue;
 				}
@@ -844,19 +844,19 @@ static void K_BotItemBubble(player_t *player, ticcmd_t *cmd)
 			}
 		}
 	}
-	else if (player->kartstuff[k_bubbleblowup] >= bubbletime)
+	else if (player->ktemp_bubbleblowup >= bubbletime)
 	{
 		if (player->botvars.itemconfirm >= 10*TICRATE)
 		{
 			hold = true;
 		}
 	}
-	else if (player->kartstuff[k_bubbleblowup] < bubbletime)
+	else if (player->ktemp_bubbleblowup < bubbletime)
 	{
 		hold = true;
 	}
 
-	if (hold && player->kartstuff[k_holdready])
+	if (hold && (player->pflags & PF_HOLDREADY))
 	{
 		cmd->buttons |= BT_ATTACK;
 	}
@@ -880,11 +880,11 @@ static void K_BotItemFlame(player_t *player, ticcmd_t *cmd)
 	{
 		player->botvars.itemconfirm--;
 	}
-	else if (player->kartstuff[k_holdready])
+	else if (player->pflags & PF_HOLDREADY)
 	{
-		INT32 flamemax = player->kartstuff[k_flamelength] * flameseg;
+		INT32 flamemax = player->ktemp_flamelength * flameseg;
 
-		if (player->kartstuff[k_flamemeter] < flamemax || flamemax == 0)
+		if (player->ktemp_flamemeter < flamemax || flamemax == 0)
 		{
 			cmd->buttons |= BT_ATTACK;
 		}
@@ -912,7 +912,7 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
 	if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
-		|| player->kartstuff[k_speedboost] > (FRACUNIT/5)) // Have another type of boost (tethering)
+		|| player->ktemp_speedboost > (FRACUNIT/5)) // Have another type of boost (tethering)
 	{
 		saferingsval -= 5;
 	}
@@ -967,7 +967,7 @@ static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
-	if (player->kartstuff[k_userings] == 1)
+	if (player->pflags & PF_USERINGS)
 	{
 		// Use rings!
 
@@ -985,33 +985,33 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 			return;
 		}
 
-		if (player->kartstuff[k_itemroulette])
+		if (player->ktemp_itemroulette)
 		{
 			// Mashing behaviors
 			K_BotItemRouletteMash(player, cmd);
 			return;
 		}
 
-		if (player->kartstuff[k_stealingtimer] == 0 && player->kartstuff[k_stolentimer] == 0)
+		if (player->ktemp_stealingtimer == 0)
 		{
-			if (player->kartstuff[k_eggmanexplode])
+			if (player->ktemp_eggmanexplode)
 			{
 				K_BotItemEggmanExplosion(player, cmd);
 			}
-			else if (player->kartstuff[k_eggmanheld])
+			else if (player->pflags & PF_EGGMANOUT)
 			{
 				K_BotItemEggman(player, cmd);
 			}
-			else if (player->kartstuff[k_rocketsneakertimer] > 0)
+			else if (player->ktemp_rocketsneakertimer > 0)
 			{
 				K_BotItemRocketSneaker(player, cmd);
 			}
 			else
 			{
-				switch (player->kartstuff[k_itemtype])
+				switch (player->ktemp_itemtype)
 				{
 					default:
-						if (player->kartstuff[k_itemtype] != KITEM_NONE)
+						if (player->ktemp_itemtype != KITEM_NONE)
 						{
 							K_BotItemGenericTap(player, cmd);
 						}
@@ -1027,7 +1027,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						K_BotItemGenericTap(player, cmd);
 						break;
 					case KITEM_ROCKETSNEAKER:
-						if (player->kartstuff[k_rocketsneakertimer] <= 0)
+						if (player->ktemp_rocketsneakertimer <= 0)
 						{
 							K_BotItemGenericTap(player, cmd);
 						}
@@ -1037,7 +1037,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						break;
 					case KITEM_BANANA:
 					case KITEM_LANDMINE:
-						if (!player->kartstuff[k_itemheld])
+						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
 						}
@@ -1050,11 +1050,11 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						K_BotItemEggmanShield(player, cmd);
 						break;
 					case KITEM_ORBINAUT:
-						if (!player->kartstuff[k_itemheld])
+						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericOrbitShield(player, cmd);
 						}
-						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+						else if (player->ktemp_position != 1) // Hold onto orbiting items when in 1st :)
 						/* FALL-THRU */
 					case KITEM_BALLHOG:
 						{
@@ -1062,17 +1062,17 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						}
 						break;
 					case KITEM_JAWZ:
-						if (!player->kartstuff[k_itemheld])
+						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericOrbitShield(player, cmd);
 						}
-						else if (player->kartstuff[k_position] != 1) // Hold onto orbiting items when in 1st :)
+						else if (player->ktemp_position != 1) // Hold onto orbiting items when in 1st :)
 						{
 							K_BotItemJawz(player, cmd);
 						}
 						break;
 					case KITEM_MINE:
-						if (!player->kartstuff[k_itemheld])
+						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericTrapShield(player, cmd, turnamt, true);
 						}

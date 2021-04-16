@@ -3556,10 +3556,6 @@ void readmaincfg(MYFILE *f)
 			{
 				maxXtraLife = (UINT8)get_number(word2);
 			}
-			else if (fastcmp(word, "USECONTINUES"))
-			{
-				useContinues = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
-			}
 
 			else if (fastcmp(word, "GAMEDATA"))
 			{
@@ -4337,20 +4333,6 @@ menutype_t get_menutype(const char *word)
 			return i;
 	deh_warning("Couldn't find gametype named 'GT_%s'",word);
 	return GT_COOP;
-}
-
-static powertype_t get_power(const char *word)
-{ // Returns the value of pw_ enumerations
-	powertype_t i;
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (fastncmp("PW_",word,3))
-		word += 3; // take off the pw_
-	for (i = 0; i < NUMPOWERS; i++)
-		if (fastcmp(word, POWERS_LIST[i]))
-			return i;
-	deh_warning("Couldn't find power named 'pw_%s'",word);
-	return pw_invulnerability;
 }*/
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.

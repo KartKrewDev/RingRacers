@@ -2909,7 +2909,7 @@ void F_TextPromptDrawer(void)
 }
 
 #define nocontrolallowed(j) {\
-		players[j].powers[pw_nocontrol] = 1;\
+		players[j].ktemp_nocontrol = 1;\
 		if (players[j].mo)\
 		{\
 			if (players[j].mo->state == states+S_KART_STILL && players[j].mo->tics != -1)\
@@ -2980,7 +2980,7 @@ void F_TextPromptTicker(void)
 				{
 					UINT8 j;
 
-					players[i].powers[pw_nocontrol] = 1;
+					players[i].ktemp_nocontrol = 1;
 
 					// Both players' controls are locked,
 					// But only the triggering player can advance the prompt.

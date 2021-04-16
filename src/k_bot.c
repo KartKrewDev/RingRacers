@@ -274,10 +274,10 @@ boolean K_PlayerUsesBotMovement(player_t *player)
 boolean K_BotCanTakeCut(player_t *player)
 {
 	if (!K_ApplyOffroad(player)
-		|| player->kartstuff[k_itemtype] == KITEM_SNEAKER
-		|| player->kartstuff[k_itemtype] == KITEM_ROCKETSNEAKER
-		|| player->kartstuff[k_itemtype] == KITEM_INVINCIBILITY
-		|| player->kartstuff[k_itemtype] == KITEM_HYUDORO)
+		|| player->ktemp_itemtype == KITEM_SNEAKER
+		|| player->ktemp_itemtype == KITEM_ROCKETSNEAKER
+		|| player->ktemp_itemtype == KITEM_INVINCIBILITY
+		|| player->ktemp_itemtype == KITEM_HYUDORO)
 		return true;
 
 	return false;
@@ -716,7 +716,7 @@ static UINT8 K_TrySpindash(player_t *player)
 {
 	const tic_t difficultyModifier = (TICRATE/6);
 
-	if (player->kartstuff[k_spindashboost] || player->kartstuff[k_tiregrease])
+	if (player->ktemp_spindashboost || player->ktemp_tiregrease)
 	{
 		// You just released a spindash, you don't need to try again yet, jeez.
 		return 0;
@@ -749,7 +749,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	}
 
 	// Logic for normal racing.
-	if (player->powers[pw_flashing] > 0)
+	if (player->ktemp_flashing > 0)
 	{
 		// Don't bother trying to spindash.
 		// Trying to spindash while flashing is fine during POSITION, but not during the actual race.
@@ -757,7 +757,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	}
 
 	if (player->speed < 10*mapobjectscale // Below the speed threshold
-	&& player->kartstuff[k_speedboost] < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
+	&& player->ktemp_speedboost < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
 	{
 		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
 
@@ -765,7 +765,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		// Sounds counter-productive, but that's actually the best strategy after the race has started.
 		chargingPoint -= player->botvars.difficulty * difficultyModifier;
 
-		if (player->kartstuff[k_spindash] > chargingPoint)
+		if (player->ktemp_spindash > chargingPoint)
 		{
 			// Time to release.
 			return 0;

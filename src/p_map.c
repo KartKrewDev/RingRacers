@@ -350,7 +350,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			// Less friction when hitting horizontal springs
 			if (!vertispeed)
 			{
-				if (!object->player->kartstuff[k_tiregrease])
+				if (!object->player->ktemp_tiregrease)
 				{
 					UINT8 i;
 					for (i = 0; i < 2; i++)
@@ -363,7 +363,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 					}
 				}
 
-				object->player->kartstuff[k_tiregrease] = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+				object->player->ktemp_tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 			}
 		}
 
@@ -387,8 +387,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		P_ResetPlayer(object->player);
 
-		object->player->kartstuff[k_springstars] = max(vertispeed, horizspeed) / FRACUNIT / 2;
-		object->player->kartstuff[k_springcolor] = starcolor;
+		object->player->ktemp_springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
+		object->player->ktemp_springcolor = starcolor;
 	}
 
 	return true;
@@ -427,8 +427,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				break;
 			if (flipval*object->momz >= FixedMul(speed, spring->scale)) // if object's already moving faster than your best, don't bother
 				break;
-			if (p && (p->climbing || p->pflags & PF_GLIDING)) // doesn't affect Knux when he's using his abilities!
-				break;
 
 			object->momz += flipval*FixedMul(speed/4, spring->scale);
 
@@ -450,7 +448,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				if (object->player)
 				{
 					object->player->trickpanel = 1;
-					object->player->trickdelay = 1;
+					object->player->pflags |= PF_TRICKDELAY;
 				}
 
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
@@ -699,8 +697,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return true;
 
 	// Bubble Shield reflect
-	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->kartstuff[k_bubbleblowup])
-		|| (thing->player && thing->player->kartstuff[k_bubbleblowup]))
+	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->ktemp_bubbleblowup)
+		|| (thing->player && thing->player->ktemp_bubbleblowup))
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
@@ -724,8 +722,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (P_PlayerInPain(tmthing->player)
-				|| tmthing->player->powers[pw_flashing] || tmthing->player->kartstuff[k_hyudorotimer]
-				|| tmthing->player->kartstuff[k_justbumped] || tmthing->scale > thing->scale + (mapobjectscale/8))
+				|| tmthing->player->ktemp_flashing || tmthing->player->ktemp_hyudorotimer
+				|| tmthing->player->ktemp_justbumped || tmthing->scale > thing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
@@ -757,8 +755,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		// no interaction
 		return true;
 	}
-	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->kartstuff[k_bubbleblowup])
-		|| (tmthing->player && tmthing->player->kartstuff[k_bubbleblowup]))
+	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->ktemp_bubbleblowup)
+		|| (tmthing->player && tmthing->player->ktemp_bubbleblowup))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
@@ -782,8 +780,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (P_PlayerInPain(thing->player)
-				|| thing->player->powers[pw_flashing] || thing->player->kartstuff[k_hyudorotimer]
-				|| thing->player->kartstuff[k_justbumped] || thing->scale > tmthing->scale + (mapobjectscale/8))
+				|| thing->player->ktemp_flashing || thing->player->ktemp_hyudorotimer
+				|| thing->player->ktemp_justbumped || thing->scale > tmthing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
@@ -1237,7 +1235,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (thing->player->kartstuff[k_hyudorotimer] || tmthing->player->kartstuff[k_hyudorotimer])
+			if (thing->player->ktemp_hyudorotimer || tmthing->player->ktemp_hyudorotimer)
 			{
 				return true;
 			}
@@ -1291,8 +1289,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (!thing->health)
 				return true; // dead
 
-			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
-				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
+			if (tmthing->player->ktemp_invincibilitytimer > 0
+				|| tmthing->player->ktemp_growshrinktimer > 0)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
 					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
@@ -1317,8 +1315,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (!thing->health)
 				return true; // dead
 
-			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
-				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
+			if (tmthing->player->ktemp_invincibilitytimer > 0
+				|| tmthing->player->ktemp_growshrinktimer > 0)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true; // kill
@@ -1348,15 +1346,15 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true; // underneath
 
 			// kill
-			if (tmthing->player->kartstuff[k_invincibilitytimer] > 0
-				|| tmthing->player->kartstuff[k_growshrinktimer] > 0)
+			if (tmthing->player->ktemp_invincibilitytimer > 0
+				|| tmthing->player->ktemp_growshrinktimer > 0)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true;
 			}
 
 			// no interaction
-			if (tmthing->player->powers[pw_flashing] > 0 || tmthing->player->kartstuff[k_hyudorotimer] > 0 || tmthing->player->kartstuff[k_spinouttimer] > 0)
+			if (tmthing->player->ktemp_flashing > 0 || tmthing->player->ktemp_hyudorotimer > 0 || tmthing->player->ktemp_spinouttimer > 0)
 				return true;
 
 			// collide
@@ -2252,7 +2250,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 #ifndef NOCLIPCAM
 		if ((players[displayplayers[i]].pflags & PF_NOCLIP) || (leveltime < introtime)) // Noclipping player camera noclips too!!
 #else
-		if (!(players[displayplayers[i]].pflags & PF_GAMETYPEOVER)) // Time Over should not clip through walls
+		if (!(players[displayplayers[i]].pflags & PF_NOCONTEST)) // Time Over should not clip through walls
 #endif
 		{
 			floatok = true;
@@ -2466,7 +2464,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
 			fixed_t maxstep = maxstepmove;
 
-			if (thing->player && thing->player->kartstuff[k_waterskip])
+			if (thing->player && thing->player->ktemp_waterskip)
 				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
 
 			// If using type Section1:13, double the maxstep.
@@ -3158,7 +3156,7 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 			P_ProcessSpecialSector(slidemo->player, slidemo->subsector->sector, li->polyobj->lines[0]->backsector);
 	}
 
-	if (in->frac < bestslidefrac && (!slidemo->player || !slidemo->player->climbing))
+	if (in->frac < bestslidefrac)
 	{
 		secondslidefrac = bestslidefrac;
 		secondslideline = bestslideline;

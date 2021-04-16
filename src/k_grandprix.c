@@ -472,7 +472,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	// Increment bot difficulty based on what position you were meant to come in!
 	expectedstanding = K_BotExpectedStanding(bot);
-	standingdiff = expectedstanding - bot->kartstuff[k_position];
+	standingdiff = expectedstanding - bot->ktemp_position;
 
 	if (standingdiff >= -2)
 	{
@@ -533,7 +533,7 @@ void K_FakeBotResults(player_t *bot)
 	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
 	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
 	{
-		bot->pflags |= PF_GAMETYPEOVER;
+		bot->pflags |= PF_NOCONTEST;
 		return;
 	}
 
@@ -556,13 +556,13 @@ void K_PlayerLoseLife(player_t *player)
 		return;
 	}
 
-	if (player->spectator || player->exiting || player->bot || player->lostlife)
+	if (player->spectator || player->exiting || player->bot || (player->pflags & PF_LOSTLIFE))
 	{
 		return;
 	}
 
 	player->lives--;
-	player->lostlife = true;
+	player->pflags |= PF_LOSTLIFE;
 
 #if 0
 	if (player->lives <= 0)

@@ -1051,15 +1051,6 @@ static void SV_SendPlayerInfo(INT32 node)
 
 		// Extra data
 		netbuffer->u.playerinfo[i].data = 0; //players[i].skincolor;
-
-		if (players[i].pflags & PF_TAGIT)
-			netbuffer->u.playerinfo[i].data |= 0x20;
-
-		if (players[i].gotflag)
-			netbuffer->u.playerinfo[i].data |= 0x40;
-
-		if (players[i].powers[pw_super])
-			netbuffer->u.playerinfo[i].data |= 0x80;
 	}
 
 	HSendPacket(node, false, 0, sizeof(plrinfo) * MSCOMPAT_MAXPLAYERS);
@@ -4790,7 +4781,7 @@ static INT16 Consistancy(void)
 		{
 			ret += players[i].mo->x;
 			ret -= players[i].mo->y;
-			ret += players[i].kartstuff[k_itemtype]; // powers[pw_shield]
+			ret += players[i].ktemp_itemtype;
 			ret *= i+1;
 		}
 	}
