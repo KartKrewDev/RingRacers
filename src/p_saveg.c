@@ -324,6 +324,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
+		WRITEUINT32(save_p, players[i].botvars.spindashconfirm);
 	}
 }
 
@@ -557,6 +558,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
+		players[i].botvars.spindashconfirm = READUINT32(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

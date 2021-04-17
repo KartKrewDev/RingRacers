@@ -475,6 +475,8 @@ typedef struct botvars_s
 	tic_t itemconfirm; // When high enough, they will use their item
 
 	SINT8 turnconfirm; // Confirm turn direction
+
+	tic_t spindashconfirm; // When high enough, they will try spindashing
 } botvars_t;
 
 // ========================================================================
