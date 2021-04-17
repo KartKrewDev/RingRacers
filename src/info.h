@@ -40,7 +40,6 @@ enum actionnum
 	A_FACETRACER,
 	A_SCREAM,
 	A_BOSSDEATH,
-	A_CUSTOMPOWER,
 	A_RINGBOX,
 	A_BUNNYHOP,
 	A_BUBBLESPAWN,
@@ -307,7 +306,6 @@ void A_FaceTarget();
 void A_FaceTracer();
 void A_Scream();
 void A_BossDeath();
-void A_CustomPower(); // Use this for a custom power
 void A_RingBox(); // Obtained Ring Box Tails
 void A_BunnyHop(); // have bunny hop tails
 void A_BubbleSpawn(); // Randomly spawn bubbles
