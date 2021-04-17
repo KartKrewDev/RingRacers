@@ -5035,6 +5035,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_HIDDEN_SLING:
 		P_MaceSceneryThink(mobj);
 		break;
+	case MT_SMALLMACE:
+	case MT_BIGMACE:
+		P_SpawnGhostMobj(mobj)->tics = 8;
+		break;
 	case MT_HOOP:
 		if (mobj->fuse > 1)
 			P_MoveHoop(mobj);
@@ -8749,15 +8753,15 @@ void P_MobjThinker(mobj_t *mobj)
 	{
 		if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
 		{
-			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
+			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
 				// fade out when nearing the end of fuse...
-				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << FF_TRANSSHIFT);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << RF_TRANSSHIFT);
 		}
 		else
 		{
-			if ((signed)((mobj->frame & FF_TRANSMASK) >> FF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
+			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
 				// fade out when nearing the end of fuse...
-				mobj->frame = (mobj->frame & ~FF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << FF_TRANSSHIFT);
+				mobj->renderflags = (mobj->frame & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << RF_TRANSSHIFT);
 		}
 	}
 
