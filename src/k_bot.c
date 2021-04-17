@@ -716,9 +716,14 @@ static UINT8 K_TrySpindash(player_t *player)
 {
 	const tic_t difficultyModifier = (TICRATE/6);
 
+	const fixed_t oldSpeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
+	const fixed_t baseAccel = K_GetNewSpeed(player) - oldSpeed;
+	const fixed_t speedDiff = player->speed - player->lastspeed;
+
 	if (player->spindashboost || player->tiregrease)
 	{
 		// You just released a spindash, you don't need to try again yet, jeez.
+		player->botvars.spindashconfirm = 0;
 		return 0;
 	}
 
@@ -756,8 +761,22 @@ static UINT8 K_TrySpindash(player_t *player)
 		return 0;
 	}
 
-	if (player->speed < 10*mapobjectscale // Below the speed threshold
-	&& player->speedboost < (FRACUNIT/8)) // If you have other boosts, you can probably trust it.
+	if (speedDiff < (3 * baseAccel / 4))
+	{
+		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
+		{
+			player->botvars.spindashconfirm++;
+		}
+	}
+	else
+	{
+		if (player->botvars.spindashconfirm > 0)
+		{
+			player->botvars.spindashconfirm--;
+		}
+	}
+
+	if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
 	{
 		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
 

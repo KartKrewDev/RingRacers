@@ -2698,22 +2698,20 @@ SINT8 K_GetForwardMove(player_t *player)
 	return forwardmove;
 }
 
-fixed_t K_3dKartMovement(player_t *player)
+fixed_t K_GetNewSpeed(player_t *player)
 {
 	const fixed_t accelmax = 4000;
 	const fixed_t p_speed = K_GetKartSpeed(player, true);
 	const fixed_t p_accel = K_GetKartAccel(player);
+
 	fixed_t newspeed, oldspeed, finalspeed;
-	fixed_t movemul = FRACUNIT;
 	fixed_t orig = ORIG_FRICTION;
-	SINT8 forwardmove = K_GetForwardMove(player);
 
 	if (K_PlayerUsesBotMovement(player))
 	{
 		orig = K_BotFrictionRubberband(player, ORIG_FRICTION);
 	}
 
-	// ACCELCODE!!!1!11!
 	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
@@ -2721,6 +2719,17 @@ fixed_t K_3dKartMovement(player_t *player)
 	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), orig);
 
 	finalspeed = newspeed - oldspeed;
+
+	return finalspeed;
+}
+
+fixed_t K_3dKartMovement(player_t *player)
+{
+	fixed_t finalspeed = K_GetNewSpeed(player);
+
+	fixed_t movemul = FRACUNIT;
+	SINT8 forwardmove = K_GetForwardMove(player);
+
 	movemul = abs(forwardmove * FRACUNIT) / 50;
 
 	// forwardmove is:
