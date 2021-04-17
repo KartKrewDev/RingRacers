@@ -3545,7 +3545,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 {
-	INT32 ds = K_GetKartDriftSparkValue(player);
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
+
 	UINT16 color = SKINCOLOR_NONE;
 
 	if (charge < 0)
@@ -3553,10 +3557,10 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		// Stage 0: Yellow
 		color = SKINCOLOR_GOLD;
 	}
-	else if (charge >= ds*4)
+	else if (charge >= dsfour)
 	{
-		// Stage 3: Rainbow
-		if (charge <= (ds*4)+(32*3))
+		// Stage 4: Rainbow
+		if (charge <= dsfour+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_SILVER;
@@ -3566,10 +3570,23 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 			color = K_RainbowColor(leveltime);
 		}
 	}
-	else if (charge >= ds*2)
+	else if (charge >= dsthree)
+	{
+		// Stage 3: Purple
+		if (charge <= dsthree+(32*3))
+		{
+			// transition
+			color = SKINCOLOR_ULTRAMARINE;
+		}
+		else
+		{
+			color = SKINCOLOR_THISTLE;
+		}
+	}
+	else if (charge >= dstwo)
 	{
 		// Stage 2: Blue
-		if (charge <= (ds*2)+(32*3))
+		if (charge <= dstwo+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_PURPLE;
@@ -3579,10 +3596,10 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 			color = SKINCOLOR_SAPPHIRE;
 		}
 	}
-	else if (charge >= ds)
+	else if (charge >= dsone)
 	{
 		// Stage 1: Red
-		if (charge <= (ds)+(32*3))
+		if (charge <= dsone+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_TANGERINE;
@@ -3598,7 +3615,11 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 
 static void K_SpawnDriftSparks(player_t *player)
 {
-	INT32 ds = K_GetKartDriftSparkValue(player);
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
+
 	fixed_t newx;
 	fixed_t newy;
 	mobj_t *spark;
@@ -3613,7 +3634,7 @@ static void K_SpawnDriftSparks(player_t *player)
 		return;
 
 	if (!player->kartstuff[k_drift]
-		|| (player->kartstuff[k_driftcharge] < ds && !(player->kartstuff[k_driftcharge] < 0)))
+		|| (player->kartstuff[k_driftcharge] < dsone && !(player->kartstuff[k_driftcharge] < 0)))
 		return;
 
 	travelangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
@@ -3643,13 +3664,13 @@ static void K_SpawnDriftSparks(player_t *player)
 			// Stage 0: Yellow
 			size = 0;
 		}
-		else if (player->kartstuff[k_driftcharge] >= ds*4)
+		else if (player->kartstuff[k_driftcharge] >= dsfour)
 		{
-			// Stage 3: Rainbow
+			// Stage 4: Rainbow
 			size = 2;
 			trail = 2;
 
-			if (player->kartstuff[k_driftcharge] <= (ds*4)+(32*3))
+			if (player->kartstuff[k_driftcharge] <= dsfour+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
@@ -3660,13 +3681,25 @@ static void K_SpawnDriftSparks(player_t *player)
 				spark->colorized = true;
 			}
 		}
-		else if (player->kartstuff[k_driftcharge] >= ds*2)
+		else if (player->kartstuff[k_driftcharge] >= dsthree)
+		{
+			// Stage 3: Purple
+			size = 2;
+			trail = 1;
+
+			if (player->kartstuff[k_driftcharge] <= dsthree+(32*3))
+			{
+				// transition
+				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+			}
+		}
+		else if (player->kartstuff[k_driftcharge] >= dstwo)
 		{
 			// Stage 2: Blue
 			size = 2;
 			trail = 1;
 
-			if (player->kartstuff[k_driftcharge] <= (ds*2)+(32*3))
+			if (player->kartstuff[k_driftcharge] <= dstwo+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
@@ -3677,7 +3710,7 @@ static void K_SpawnDriftSparks(player_t *player)
 			// Stage 1: Red
 			size = 1;
 
-			if (player->kartstuff[k_driftcharge] <= (ds)+(32*3))
+			if (player->kartstuff[k_driftcharge] <= dsone+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*2));
@@ -7214,10 +7247,31 @@ INT32 K_GetKartDriftSparkValue(player_t *player)
 	return (26*4 + player->kartspeed*2 + (9 - player->kartweight))*8;
 }
 
+INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
+{
+	fixed_t mul = FRACUNIT;
+
+	switch (stage)
+	{
+		case 2:
+			mul = 2*FRACUNIT; // x2
+			break;
+		case 3:
+			mul = (13*FRACUNIT)/4; // x3.25
+			break;
+		case 4:
+			mul = (19*FRACUNIT)/4; // x4.75
+			break;
+	}
+
+	return (FixedMul(K_GetKartDriftSparkValue(player) * FRACUNIT, mul) / FRACUNIT);
+}
+
 /*
 Stage 1: red sparks
 Stage 2: blue sparks
-Stage 3: big large rainbow sparks
+Stage 3: purple sparks
+Stage 4: big large rainbow sparks
 Stage 0: air failsafe
 */
 void K_SpawnDriftBoostExplosion(player_t *player, int stage)
@@ -7243,6 +7297,13 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			break;
 
 		case 3:
+			overlay->color = SKINCOLOR_THISTLE;
+			overlay->fuse = 48;
+
+			S_StartSound(player->mo, sfx_kc5b);
+			break;
+
+		case 4:
 			overlay->color = SKINCOLOR_SILVER;
 			overlay->fuse = 120;
 
@@ -7263,9 +7324,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 {
 	const fixed_t minspeed = (10 * player->mo->scale);
 
-	const INT32 dsone = K_GetKartDriftSparkValue(player);
-	const INT32 dstwo = dsone*2;
-	const INT32 dsthree = dstwo*2;
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
@@ -7314,16 +7376,27 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				K_SpawnDriftBoostExplosion(player, 2);
 			}
-			else if (player->kartstuff[k_driftcharge] >= dsthree)
+			else if (player->kartstuff[k_driftcharge] < dsfour)
 			{
-				// Stage 3: Rainbow sparks
+				// Stage 3: Purple sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
+
+				if (player->kartstuff[k_driftboost] < 90)
+					player->kartstuff[k_driftboost] = 90;
+
+				K_SpawnDriftBoostExplosion(player, 3);
+			}
+			else if (player->kartstuff[k_driftcharge] >= dsfour)
+			{
+				// Stage 4: Rainbow sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 2);
 
-				if (player->kartstuff[k_driftboost] < 125)
-					player->kartstuff[k_driftboost] = 125;
+				if (player->kartstuff[k_driftboost] < 160)
+					player->kartstuff[k_driftboost] = 160;
 
-				K_SpawnDriftBoostExplosion(player, 3);
+				K_SpawnDriftBoostExplosion(player, 4);
 			}
 		}
 
