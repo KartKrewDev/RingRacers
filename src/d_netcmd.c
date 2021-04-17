@@ -1417,7 +1417,7 @@ static void SendNameAndColor(UINT8 n)
 
 		player->skincolor = cv_playercolor[n].value;
 
-		if (player->mo && !player->ktemp_dye)
+		if (player->mo && !player->dye)
 			player->mo->color = player->skincolor;
 
 		// Update follower for local games:
@@ -1878,7 +1878,7 @@ static INT32 FindPlayerByPlace(INT32 place)
 	for (playernum = 0; playernum < MAXPLAYERS; ++playernum)
 		if (playeringame[playernum])
 	{
-		if (players[playernum].ktemp_position == place)
+		if (players[playernum].position == place)
 		{
 			return playernum;
 		}
@@ -1902,7 +1902,7 @@ static void GetViewablePlayerPlaceRange(INT32 *first, INT32 *last)
 	for (i = 0; i < MAXPLAYERS; ++i)
 		if (G_CouldView(i))
 	{
-		place = players[i].ktemp_position;
+		place = players[i].position;
 		if (place < (*first))
 			(*first) = place;
 		if (place > (*last))
@@ -2973,7 +2973,7 @@ static void Command_Respawn(void)
 	}
 
 	// todo: this probably isnt necessary anymore with v2
-	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].ktemp_position)) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
+	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].position)) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
 	{
 		CONS_Printf(M_GetText("Nice try.\n"));
 		return;
@@ -2988,7 +2988,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 	INT32 respawnplayer = READINT32(*cp);
 
 	// You can't respawn someone else. Nice try, there.
-	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].ktemp_position) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
+	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].position) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -4876,8 +4876,8 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	players[playernum].ktemp_itemtype   = item;
-	players[playernum].ktemp_itemamount = amt;
+	players[playernum].itemtype   = item;
+	players[playernum].itemamount = amt;
 }
 
 /** Prints the number of displayplayers[0].

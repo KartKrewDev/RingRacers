@@ -4005,13 +4005,13 @@ void A_AttractChase(mobj_t *actor)
 				angle_t offset = FixedAngle(18<<FRACBITS);
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
-				actor->target->player->ktemp_ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
 				S_StartSound(actor->target, sfx_s1b5);
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
-				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->ktemp_sparkleanim);
-				actor->target->player->ktemp_sparkleanim = (actor->target->player->ktemp_sparkleanim+1) % 20;
+				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim);
+				actor->target->player->sparkleanim = (actor->target->player->sparkleanim+1) % 20;
 
 				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
 				return;
@@ -4033,14 +4033,14 @@ void A_AttractChase(mobj_t *actor)
 			if (actor->extravalue1 >= 16)
 			{
 				if (!P_GivePlayerRings(actor->target->player, 1)) // returns 0 if addition failed
-					actor->target->player->ktemp_ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
+					actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
 
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
 				else
 					S_StartSound(actor->target, sfx_s227);
 
-				actor->target->player->ktemp_pickuprings--;
+				actor->target->player->pickuprings--;
 				P_RemoveMobj(actor);
 				return;
 			}
@@ -4089,7 +4089,7 @@ void A_AttractChase(mobj_t *actor)
 
 		if (actor->tracer && actor->tracer->player && actor->tracer->health
 			//&& P_CheckSight(actor, actor->tracer)
-			&& actor->tracer->player->ktemp_itemtype == KITEM_THUNDERSHIELD
+			&& actor->tracer->player->itemtype == KITEM_THUNDERSHIELD
 			&& RINGTOTAL(actor->tracer->player) < 20
 			&& !(actor->tracer->player->pflags & PF_RINGLOCK))
 		{
@@ -5709,8 +5709,8 @@ void A_MixUp(mobj_t *actor)
 		players[two].speed = transspeed;
 
 		//set flags variables now but DON'T set them.
-		carry1 = players[one].ktemp_carry;
-		carry2 = players[two].ktemp_carry;
+		carry1 = players[one].carry;
+		carry2 = players[two].carry;
 
 		x = players[one].mo->x;
 		y = players[one].mo->y;
@@ -5736,8 +5736,8 @@ void A_MixUp(mobj_t *actor)
 
 		//carry set after mixup.  Stupid P_ResetPlayer() takes away some of the stuff we look for...
 		//but not all of it!  So we need to make sure they aren't set wrong or anything.
-		players[one].ktemp_carry = carry2;
-		players[two].ktemp_carry = carry1;
+		players[one].carry = carry2;
+		players[two].carry = carry1;
 
 		teleported[one] = true;
 		teleported[two] = true;
@@ -5784,7 +5784,7 @@ void A_MixUp(mobj_t *actor)
 					players[i].rmomx = players[i].rmomy = 1;
 				players[i].cmomx = players[i].cmomy = 0;
 
-				transcarry[counter] = players[i].ktemp_carry;
+				transcarry[counter] = players[i].carry;
 				transspeed[counter] = players[i].speed;
 				transtracer[counter] = players[i].mo->tracer;
 
@@ -5835,7 +5835,7 @@ void A_MixUp(mobj_t *actor)
 					FRACUNIT, anglepos[teleportfrom][1], flags2[teleportfrom]);
 
 				//...carry after.  same reasoning.
-				players[i].ktemp_carry = transcarry[teleportfrom];
+				players[i].carry = transcarry[teleportfrom];
 
 				teleported[i] = true;
 				counter++;
@@ -6387,7 +6387,7 @@ void A_Boss2PogoTarget(mobj_t *actor)
 	if (LUA_CallAction(A_BOSS2POGOTARGET, actor))
 		return;
 
-	if (!actor->target || !(actor->target->flags & MF_SHOOTABLE) || (actor->target->player && actor->target->player->ktemp_flashing)
+	if (!actor->target || !(actor->target->flags & MF_SHOOTABLE) || (actor->target->player && actor->target->player->flashing)
 	|| P_AproxDistance(actor->x-actor->target->x, actor->y-actor->target->y) >= FixedMul(512*FRACUNIT, actor->scale))
 	{
 		// look for a new target
@@ -6400,7 +6400,7 @@ void A_Boss2PogoTarget(mobj_t *actor)
 	}
 
 	// Target hit, retreat!
-	if ((actor->target->player && actor->target->player->ktemp_flashing > TICRATE) || actor->flags2 & MF2_FRET)
+	if ((actor->target->player && actor->target->player->flashing > TICRATE) || actor->flags2 & MF2_FRET)
 	{
 		UINT8 prandom = P_RandomByte();
 		actor->z++; // unstick from the floor
@@ -7734,7 +7734,7 @@ void A_Dye(mobj_t *actor)
 
 	// What if it's a player?
 	if (target->player)
-		target->player->ktemp_dye = color;
+		target->player->dye = color;
 
 	if (!color)
 	{
@@ -11621,7 +11621,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 					continue;
 				if (players[i].mo->health <= 0)
 					continue;
-				if (players[i].ktemp_flashing)
+				if (players[i].flashing)
 					continue;
 				if (actor->tracer == players[i].mo) // this was your tracer last time
 					continue;
@@ -11680,7 +11680,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 					continue;
 				if (players[i].mo->health <= 0)
 					continue;
-				if (players[i].ktemp_flashing)
+				if (players[i].flashing)
 					continue;
 				if (actor->tracer == players[i].mo) // this was your tracer last time
 					continue;
@@ -13305,7 +13305,7 @@ void A_ItemPop(mobj_t *actor)
 		S_StartSound(remains, actor->info->deathsound);
 
 	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->bumpers <= 0))
-		actor->target->player->ktemp_itemroulette = 1;
+		actor->target->player->itemroulette = 1;
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
@@ -13628,9 +13628,9 @@ void A_SPBChase(mobj_t *actor)
 		if (players[i].respawn.state != RESPAWNST_NONE)
 			continue;*/ // respawning
 
-		if (players[i].ktemp_position < bestrank)
+		if (players[i].position < bestrank)
 		{
-			bestrank = players[i].ktemp_position;
+			bestrank = players[i].position;
 			player = &players[i];
 		}
 	}
@@ -13681,12 +13681,12 @@ void A_SPBChase(mobj_t *actor)
 				cy = actor->tracer->player->cmomy;
 
 				// Switch targets if you're no longer 1st for long enough
-				if (actor->tracer->player->ktemp_position <= bestrank)
+				if (actor->tracer->player->position <= bestrank)
 					actor->extravalue2 = 7*TICRATE;
 				else if (actor->extravalue2-- <= 0)
 					actor->extravalue1 = 0; // back to SEEKING
 
-				spbplace = actor->tracer->player->ktemp_position;
+				spbplace = actor->tracer->player->position;
 			}
 
 			dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
@@ -13698,7 +13698,7 @@ void A_SPBChase(mobj_t *actor)
 				wspeed = (3*defspeed)/2;
 			if (wspeed < 20*actor->tracer->scale)
 				wspeed = 20*actor->tracer->scale;
-			if (actor->tracer->player->ktemp_carry == CR_SLIDING)
+			if (actor->tracer->player->carry == CR_SLIDING)
 				wspeed = actor->tracer->player->speed/2;
 			//  ^^^^ current section: These are annoying, and grand metropolis in particular needs this.
 
@@ -13776,7 +13776,7 @@ void A_SPBChase(mobj_t *actor)
 			&& !players[actor->lastlook].spectator
 			&& !players[actor->lastlook].exiting)
 		{
-			spbplace = players[actor->lastlook].ktemp_position;
+			spbplace = players[actor->lastlook].position;
 			players[actor->lastlook].pflags |= PF_RINGLOCK;
 			if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
 			{
@@ -14006,7 +14006,7 @@ static inline boolean PIT_SSMineSearch(mobj_t *thing)
 	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner.
 		return true;
 
-	if (thing->player && (thing->player->ktemp_hyudorotimer
+	if (thing->player && (thing->player->hyudorotimer
 		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->bumpers <= 0 && thing->player->karmadelay)))
 		return true;
 
@@ -14248,10 +14248,10 @@ void A_RandomShadowFrame(mobj_t *actor)
 	// I have NO CLUE how to hardcode all of that fancy Linedef Executor shit so the fire spinout will be done by these entities directly.
 	if (P_LookForPlayers(actor, false, false, 380<<FRACBITS))	// got target
 	{
-		if (actor->target && !actor->target->player->ktemp_flashing
-		&& !actor->target->player->ktemp_invincibilitytimer
-		&& !actor->target->player->ktemp_growshrinktimer
-		&& !actor->target->player->ktemp_spinouttimer
+		if (actor->target && !actor->target->player->flashing
+		&& !actor->target->player->invincibilitytimer
+		&& !actor->target->player->growshrinktimer
+		&& !actor->target->player->spinouttimer
 		&& P_IsObjectOnGround(actor->target)
 		&& actor->z == actor->target->z)
 		{
@@ -14293,10 +14293,10 @@ void A_RoamingShadowThinker(mobj_t *actor)
 
 		if (P_LookForPlayers(actor, false, false, 256<<FRACBITS))	// got target
 		{
-			if (actor->target && !actor->target->player->ktemp_flashing
-			&& !actor->target->player->ktemp_invincibilitytimer
-			&& !actor->target->player->ktemp_growshrinktimer
-			&& !actor->target->player->ktemp_spinouttimer)
+			if (actor->target && !actor->target->player->flashing
+			&& !actor->target->player->invincibilitytimer
+			&& !actor->target->player->growshrinktimer
+			&& !actor->target->player->spinouttimer)
 			{
 				// send them flying and spawn the WIND!
 				P_InstaThrust(actor->target, 0, 0);
@@ -14534,10 +14534,10 @@ void A_ReaperThinker(mobj_t *actor)
 		{
 			if (P_LookForPlayers(actor, false, false, 1024<<FRACBITS))	// got target
 			{
-				if (!(actor->target == targetplayermo && actor->target && !actor->target->player->ktemp_flashing
-				&& !actor->target->player->ktemp_invincibilitytimer
-				&& !actor->target->player->ktemp_growshrinktimer
-				&& !actor->target->player->ktemp_spinouttimer))
+				if (!(actor->target == targetplayermo && actor->target && !actor->target->player->flashing
+				&& !actor->target->player->invincibilitytimer
+				&& !actor->target->player->growshrinktimer
+				&& !actor->target->player->spinouttimer))
 					P_SetTarget(&actor->target, actor->hnext);
 					// if the above isn't correct, then we should go back to targetting waypoints or something.
 			}

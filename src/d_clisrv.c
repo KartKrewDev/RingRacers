@@ -4781,7 +4781,7 @@ static INT16 Consistancy(void)
 		{
 			ret += players[i].mo->x;
 			ret -= players[i].mo->y;
-			ret += players[i].ktemp_itemtype;
+			ret += players[i].itemtype;
 			ret *= i+1;
 		}
 	}

@@ -350,7 +350,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			// Less friction when hitting horizontal springs
 			if (!vertispeed)
 			{
-				if (!object->player->ktemp_tiregrease)
+				if (!object->player->tiregrease)
 				{
 					UINT8 i;
 					for (i = 0; i < 2; i++)
@@ -363,7 +363,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 					}
 				}
 
-				object->player->ktemp_tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+				object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 			}
 		}
 
@@ -387,8 +387,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		P_ResetPlayer(object->player);
 
-		object->player->ktemp_springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
-		object->player->ktemp_springcolor = starcolor;
+		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
+		object->player->springcolor = starcolor;
 	}
 
 	return true;
@@ -697,8 +697,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return true;
 
 	// Bubble Shield reflect
-	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->ktemp_bubbleblowup)
-		|| (thing->player && thing->player->ktemp_bubbleblowup))
+	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
+		|| (thing->player && thing->player->bubbleblowup))
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
@@ -722,8 +722,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (P_PlayerInPain(tmthing->player)
-				|| tmthing->player->ktemp_flashing || tmthing->player->ktemp_hyudorotimer
-				|| tmthing->player->ktemp_justbumped || tmthing->scale > thing->scale + (mapobjectscale/8))
+				|| tmthing->player->flashing || tmthing->player->hyudorotimer
+				|| tmthing->player->justbumped || tmthing->scale > thing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
@@ -755,8 +755,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		// no interaction
 		return true;
 	}
-	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->ktemp_bubbleblowup)
-		|| (tmthing->player && tmthing->player->ktemp_bubbleblowup))
+	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->bubbleblowup)
+		|| (tmthing->player && tmthing->player->bubbleblowup))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
@@ -780,8 +780,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			P_SetTarget(&tmthing, oldtmthing);*/
 
 			if (P_PlayerInPain(thing->player)
-				|| thing->player->ktemp_flashing || thing->player->ktemp_hyudorotimer
-				|| thing->player->ktemp_justbumped || thing->scale > tmthing->scale + (mapobjectscale/8))
+				|| thing->player->flashing || thing->player->hyudorotimer
+				|| thing->player->justbumped || thing->scale > tmthing->scale + (mapobjectscale/8))
 				return true;
 
 			// Player Damage
@@ -1235,7 +1235,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (thing->player->ktemp_hyudorotimer || tmthing->player->ktemp_hyudorotimer)
+			if (thing->player->hyudorotimer || tmthing->player->hyudorotimer)
 			{
 				return true;
 			}
@@ -1289,8 +1289,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (!thing->health)
 				return true; // dead
 
-			if (tmthing->player->ktemp_invincibilitytimer > 0
-				|| tmthing->player->ktemp_growshrinktimer > 0)
+			if (tmthing->player->invincibilitytimer > 0
+				|| tmthing->player->growshrinktimer > 0)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
 					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
@@ -1315,8 +1315,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (!thing->health)
 				return true; // dead
 
-			if (tmthing->player->ktemp_invincibilitytimer > 0
-				|| tmthing->player->ktemp_growshrinktimer > 0)
+			if (tmthing->player->invincibilitytimer > 0
+				|| tmthing->player->growshrinktimer > 0)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true; // kill
@@ -1346,15 +1346,15 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true; // underneath
 
 			// kill
-			if (tmthing->player->ktemp_invincibilitytimer > 0
-				|| tmthing->player->ktemp_growshrinktimer > 0)
+			if (tmthing->player->invincibilitytimer > 0
+				|| tmthing->player->growshrinktimer > 0)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return true;
 			}
 
 			// no interaction
-			if (tmthing->player->ktemp_flashing > 0 || tmthing->player->ktemp_hyudorotimer > 0 || tmthing->player->ktemp_spinouttimer > 0)
+			if (tmthing->player->flashing > 0 || tmthing->player->hyudorotimer > 0 || tmthing->player->spinouttimer > 0)
 				return true;
 
 			// collide
@@ -2464,7 +2464,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
 			fixed_t maxstep = maxstepmove;
 
-			if (thing->player && thing->player->ktemp_waterskip)
+			if (thing->player && thing->player->waterskip)
 				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
 
 			// If using type Section1:13, double the maxstep.

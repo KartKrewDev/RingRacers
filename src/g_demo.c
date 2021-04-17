@@ -748,14 +748,14 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].kartitem != ghost->player->ktemp_itemtype ||
-			ghostext[playernum].kartamount != ghost->player->ktemp_itemamount ||
+			ghostext[playernum].kartitem != ghost->player->itemtype ||
+			ghostext[playernum].kartamount != ghost->player->itemamount ||
 			ghostext[playernum].kartbumpers != ghost->player->bumpers
 		))
 	{
 		ghostext[playernum].flags |= EZT_KART;
-		ghostext[playernum].kartitem = ghost->player->ktemp_itemtype;
-		ghostext[playernum].kartamount = ghost->player->ktemp_itemamount;
+		ghostext[playernum].kartitem = ghost->player->itemtype;
+		ghostext[playernum].kartamount = ghost->player->itemamount;
 		ghostext[playernum].kartbumpers = ghost->player->bumpers;
 	}
 
@@ -1035,16 +1035,16 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (players[playernum].ktemp_itemtype != ghostext[playernum].kartitem
-			|| players[playernum].ktemp_itemamount != ghostext[playernum].kartamount
+		if (players[playernum].itemtype != ghostext[playernum].kartitem
+			|| players[playernum].itemamount != ghostext[playernum].kartamount
 			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
 			demosynced = false;
 
-			players[playernum].ktemp_itemtype = ghostext[playernum].kartitem;
-			players[playernum].ktemp_itemamount = ghostext[playernum].kartamount;
+			players[playernum].itemtype = ghostext[playernum].kartitem;
+			players[playernum].itemamount = ghostext[playernum].kartamount;
 			players[playernum].bumpers = ghostext[playernum].kartbumpers;
 		}
 	}

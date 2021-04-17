@@ -2353,11 +2353,11 @@ static void HU_DrawRankings(void)
 			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
 				continue;
 
-			if (players[i].ktemp_position >= lowestposition)
+			if (players[i].position >= lowestposition)
 				continue;
 
 			tab[scorelines].num = i;
-			lowestposition = players[i].ktemp_position;
+			lowestposition = players[i].position;
 		}
 
 		i = tab[scorelines].num;

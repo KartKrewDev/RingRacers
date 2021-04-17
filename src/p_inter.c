@@ -122,29 +122,29 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 		if (weapon == 2)
 		{
 			// Invulnerable
-			if (player->ktemp_flashing > 0)
+			if (player->flashing > 0)
 				return false;
 
 			// Already have fake
-			if (player->ktemp_roulettetype == 2
-				|| player->ktemp_eggmanexplode)
+			if (player->roulettetype == 2
+				|| player->eggmanexplode)
 				return false;
 		}
 		else
 		{
 			// Item-specific timer going off
-			if (player->ktemp_stealingtimer
-				|| player->ktemp_rocketsneakertimer
-				|| player->ktemp_eggmanexplode)
+			if (player->stealingtimer
+				|| player->rocketsneakertimer
+				|| player->eggmanexplode)
 				return false;
 
 			// Item slot already taken up
-			if (player->ktemp_itemroulette
-				|| (weapon != 3 && player->ktemp_itemamount)
+			if (player->itemroulette
+				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
 
-			if (weapon == 3 && K_GetShieldFromItem(player->ktemp_itemtype) != KSHIELD_NONE)
+			if (weapon == 3 && K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
 				return false; // No stacking shields!
 		}
 	}
@@ -243,17 +243,17 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			if (!P_CanPickupItem(player, 3) || (player->ktemp_itemamount && player->ktemp_itemtype != special->threshold))
+			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
 				return;
 
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
-			player->ktemp_itemtype = special->threshold;
-			if ((UINT16)(player->ktemp_itemamount) + special->movecount > 255)
-				player->ktemp_itemamount = 255;
+			player->itemtype = special->threshold;
+			if ((UINT16)(player->itemamount) + special->movecount > 255)
+				player->itemamount = 255;
 			else
-				player->ktemp_itemamount += special->movecount;
+				player->itemamount += special->movecount;
 
 			S_StartSound(special, special->info->deathsound);
 
@@ -332,7 +332,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			{
 				mobj_t *spbexplode;
 
-				if (player->ktemp_bubbleblowup > 0)
+				if (player->bubbleblowup > 0)
 				{
 					K_DropHnextList(player, false);
 					special->extravalue1 = 2; // WAIT...
@@ -364,7 +364,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (toucher->hitlag > 0)
 				return;
 
-			player->ktemp_emeralds |= special->extravalue1;
+			player->emeralds |= special->extravalue1;
 			K_CheckEmeralds(player);
 			break;
 		/*
@@ -384,16 +384,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// kill
-			if (player->ktemp_invincibilitytimer > 0
-				|| player->ktemp_growshrinktimer > 0
-				|| player->ktemp_flamedash > 0)
+			if (player->invincibilitytimer > 0
+				|| player->growshrinktimer > 0
+				|| player->flamedash > 0)
 			{
 				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 				return;
 			}
 
 			// no interaction
-			if (player->ktemp_flashing > 0 || player->ktemp_hyudorotimer > 0 || P_PlayerInPain(player))
+			if (player->flashing > 0 || player->hyudorotimer > 0 || P_PlayerInPain(player))
 				return;
 
 			// attach to player!
@@ -404,8 +404,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 				return;
 
-			player->ktemp_itemroulette = 1;
-			player->ktemp_roulettetype = 1;
+			player->itemroulette = 1;
+			player->roulettetype = 1;
 
 			// Karma fireworks
 			for (i = 0; i < 5; i++)
@@ -476,7 +476,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->extravalue1 = 1; // Ring collect animation timer
 			special->angle = R_PointToAngle2(toucher->x, toucher->y, special->x, special->y); // animation angle
 			P_SetTarget(&special->target, toucher); // toucher for thinker
-			player->ktemp_pickuprings++;
+			player->pickuprings++;
 
 			return;
 
@@ -953,31 +953,31 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if (target->target->player->pflags & PF_ITEMOUT)
 		{
-			if ((target->type == MT_BANANA_SHIELD && target->target->player->ktemp_itemtype == KITEM_BANANA) // trail items
-				|| (target->type == MT_SSMINE_SHIELD && target->target->player->ktemp_itemtype == KITEM_MINE)
-				|| (target->type == MT_SINK_SHIELD && target->target->player->ktemp_itemtype == KITEM_KITCHENSINK))
+			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
+				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
+				|| (target->type == MT_SINK_SHIELD && target->target->player->itemtype == KITEM_KITCHENSINK))
 			{
-				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->ktemp_itemamount)
+				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
 				{
 					if (target->target->hnext)
 						K_KillBananaChain(target->target->hnext, inflictor, source);
-					target->target->player->ktemp_itemamount = 0;
+					target->target->player->itemamount = 0;
 				}
-				else if (target->target->player->ktemp_itemamount)
-					target->target->player->ktemp_itemamount--;
+				else if (target->target->player->itemamount)
+					target->target->player->itemamount--;
 			}
-			else if ((target->type == MT_ORBINAUT_SHIELD && target->target->player->ktemp_itemtype == KITEM_ORBINAUT) // orbit items
-				|| (target->type == MT_JAWZ_SHIELD && target->target->player->ktemp_itemtype == KITEM_JAWZ))
+			else if ((target->type == MT_ORBINAUT_SHIELD && target->target->player->itemtype == KITEM_ORBINAUT) // orbit items
+				|| (target->type == MT_JAWZ_SHIELD && target->target->player->itemtype == KITEM_JAWZ))
 			{
-				if (target->target->player->ktemp_itemamount)
-					target->target->player->ktemp_itemamount--;
+				if (target->target->player->itemamount)
+					target->target->player->itemamount--;
 				if (target->lastlook != 0)
 				{
 					K_RepairOrbitChain(target);
 				}
 			}
 
-			if (!target->target->player->ktemp_itemamount)
+			if (!target->target->player->itemamount)
 				target->target->player->pflags &= ~PF_ITEMOUT;
 
 			if (target->target->hnext == target)
@@ -1607,10 +1607,10 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			break;
 	}
 
-	K_DropEmeraldsFromPlayer(player, player->ktemp_emeralds);
+	K_DropEmeraldsFromPlayer(player, player->emeralds);
 	K_SetHitLagForObjects(player->mo, inflictor, 15);
 
-	player->ktemp_carry = CR_NONE;
+	player->carry = CR_NONE;
 
 	player->mo->color = player->skincolor;
 	player->mo->colorized = false;
@@ -1782,7 +1782,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->ktemp_invincibilitytimer > 0 || player->ktemp_growshrinktimer > 0 || player->ktemp_hyudorotimer > 0)
+				if (player->invincibilitytimer > 0 || player->growshrinktimer > 0 || player->hyudorotimer > 0)
 				{
 					// Full invulnerability
 					K_DoInstashield(player);
@@ -1791,7 +1791,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->ktemp_flashing > 0)
+					if (player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -1826,11 +1826,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (source && source != player->mo && source->player)
 				{
 					// Extend the invincibility if the hit was a direct hit.
-					if (inflictor == source && source->player->ktemp_invincibilitytimer)
+					if (inflictor == source && source->player->invincibilitytimer)
 					{
-						kinvextend = (source->player->ktemp_invincibilitytimer)+5*TICRATE;
-						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->ktemp_invincibilitytimer/TICRATE, kinvextend/TICRATE);
-						source->player->ktemp_invincibilitytimer = kinvextend;
+						kinvextend = (source->player->invincibilitytimer)+5*TICRATE;
+						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->invincibilitytimer/TICRATE, kinvextend/TICRATE);
+						source->player->invincibilitytimer = kinvextend;
 					}
 
 					K_PlayHitEmSound(source);
@@ -1847,8 +1847,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (damagetype & DMG_STEAL)
 					{
 						// Give them ALL of your emeralds instantly :)
-						source->player->ktemp_emeralds |= player->ktemp_emeralds;
-						player->ktemp_emeralds = 0;
+						source->player->emeralds |= player->emeralds;
+						player->emeralds = 0;
 						K_CheckEmeralds(source->player);
 					}
 				}
@@ -1860,13 +1860,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (!(damagetype & DMG_STEAL))
 				{
 					// Drop all of your emeralds
-					K_DropEmeraldsFromPlayer(player, player->ktemp_emeralds);
+					K_DropEmeraldsFromPlayer(player, player->emeralds);
 				}
 			}
 
-			player->ktemp_sneakertimer = player->ktemp_numsneakers = 0;
-			player->ktemp_driftboost = 0;
-			player->ktemp_ringboost = 0;
+			player->sneakertimer = player->numsneakers = 0;
+			player->driftboost = 0;
+			player->ringboost = 0;
 
 			switch (type)
 			{
@@ -1897,7 +1897,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			if (type != DMG_STING)
 			{
-				player->ktemp_flashing = K_GetKartFlashing(player);
+				player->flashing = K_GetKartFlashing(player);
 			}
 
 			P_PlayRinglossSound(player->mo);
@@ -1918,7 +1918,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_DropHnextList(player, false);
 			}
 
-			player->ktemp_instashield = 15;
+			player->instashield = 15;
 			K_SetHitLagForObjects(target, inflictor, laglength);
 			return true;
 		}
@@ -2036,7 +2036,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 		return;
 
 	// Have a shield? You get hit, but don't lose your rings!
-	if (K_GetShieldFromItem(player->ktemp_itemtype) != KSHIELD_NONE)
+	if (K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE)
 		return;
 
 	// 20 is the maximum number of rings that can be taken from you at once - half the span of your counter

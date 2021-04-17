@@ -322,7 +322,7 @@ static boolean K_FindBlockingWalls(line_t *line)
 	// set openrange, opentop, openbottom
 	P_LineOpening(line, globalsmuggle.botmo);
 
-	if (globalsmuggle.botmo->player->ktemp_waterskip)
+	if (globalsmuggle.botmo->player->waterskip)
 		maxstep += maxstepmove;
 
 	if (P_MobjTouchingSectorSpecial(globalsmuggle.botmo, 1, 13, false))
@@ -651,15 +651,15 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			if ((RINGTOTAL(globalsmuggle.botmo->player) < 20 && !(globalsmuggle.botmo->player->pflags & PF_RINGLOCK)
 				&& P_CanPickupItem(globalsmuggle.botmo->player, 0))
 				&& !thing->extravalue1
-				&& (globalsmuggle.botmo->player->ktemp_itemtype != KITEM_THUNDERSHIELD))
+				&& (globalsmuggle.botmo->player->itemtype != KITEM_THUNDERSHIELD))
 			{
 				K_AddAttackObject(thing, side, (RINGTOTAL(globalsmuggle.botmo->player) < 3) ? 5 : 1);
 			}
 			break;
 		case MT_PLAYER:
 			if (thing->player
-				&& !thing->player->ktemp_hyudorotimer
-				&& !globalsmuggle.botmo->player->ktemp_hyudorotimer)
+				&& !thing->player->hyudorotimer
+				&& !globalsmuggle.botmo->player->hyudorotimer)
 			{
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
@@ -672,32 +672,32 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				}
 				// Invincibility
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->ktemp_invincibilitytimer,
-					thing->player->ktemp_invincibilitytimer
+					globalsmuggle.botmo->player->invincibilitytimer,
+					thing->player->invincibilitytimer
 				))
 				{
 					break;
 				}
 				// Thunder Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->ktemp_itemtype == KITEM_THUNDERSHIELD,
-					thing->player->ktemp_itemtype == KITEM_THUNDERSHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_THUNDERSHIELD,
+					thing->player->itemtype == KITEM_THUNDERSHIELD
 				))
 				{
 					break;
 				}
 				// Bubble Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->ktemp_itemtype == KITEM_BUBBLESHIELD,
-					thing->player->ktemp_itemtype == KITEM_BUBBLESHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_BUBBLESHIELD,
+					thing->player->itemtype == KITEM_BUBBLESHIELD
 				))
 				{
 					break;
 				}
 				// Flame Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->ktemp_itemtype == KITEM_FLAMESHIELD,
-					thing->player->ktemp_itemtype == KITEM_FLAMESHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_FLAMESHIELD,
+					thing->player->itemtype == KITEM_FLAMESHIELD
 				))
 				{
 					break;

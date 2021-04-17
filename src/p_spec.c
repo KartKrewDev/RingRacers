@@ -1552,7 +1552,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 		case 336: // object dye - once
 			{
 				INT32 triggercolor = (INT32)sides[triggerline->sidenum[0]].toptexture;
-				UINT16 color = (actor->player ? actor->player->ktemp_dye : actor->color);
+				UINT16 color = (actor->player ? actor->player->dye : actor->color);
 				boolean invert = (triggerline->flags & ML_NOCLIMB ? true : false);
 
 				if (invert ^ (triggercolor != color))
@@ -1872,7 +1872,7 @@ static void K_HandleLapIncrement(player_t *player)
 						player->karthud[khud_laphand] = 3;
 					else
 					{
-						if (nump > 2 && player->ktemp_position == 1) // 1st place in 1v1 uses thumbs up
+						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
 							player->karthud[khud_laphand] = 1;
 						else
 							player->karthud[khud_laphand] = 2;
@@ -1895,7 +1895,7 @@ static void K_HandleLapIncrement(player_t *player)
 			if (rainbowstartavailable == true)
 			{
 				S_StartSound(player->mo, sfx_s23c);
-				player->ktemp_startboost = 125;
+				player->startboost = 125;
 				K_SpawnDriftBoostExplosion(player, 3);
 				rainbowstartavailable = false;
 			}
@@ -1920,7 +1920,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->ktemp_position == 1))
+				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->position == 1))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -2844,7 +2844,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					fractime = 1; //instantly wears off upon leaving
 				if (line->flags & ML_NOCLIMB)
 					fractime |= 1<<15; //more crazy &ing, as if music stuff wasn't enough
-				mo->player->ktemp_nocontrol = fractime;
+				mo->player->nocontrol = fractime;
 			}
 			break;
 
@@ -3875,7 +3875,7 @@ void P_SetupSignExit(player_t *player)
 	thinker_t *think;
 	INT32 numfound = 0;
 
-	if (player->ktemp_position != 1)
+	if (player->position != 1)
 		return;
 
 	for (; node; node = node->m_thinglist_next)
@@ -4539,9 +4539,9 @@ DoneSection2:
 			break;
 
 		case 5: // Speed pad
-			if (player->ktemp_floorboost != 0)
+			if (player->floorboost != 0)
 			{
-				player->ktemp_floorboost = 2;
+				player->floorboost = 2;
 				break;
 			}
 
@@ -4573,9 +4573,9 @@ DoneSection2:
 
 				P_InstaThrust(player->mo, lineangle, max(linespeed, 2*playerspeed));
 
-				player->ktemp_dashpadcooldown = TICRATE/3;
+				player->dashpadcooldown = TICRATE/3;
 				player->trickpanel = 0;
-				player->ktemp_floorboost = 2;
+				player->floorboost = 2;
 				S_StartSound(player->mo, sfx_cdfm62);
 			}
 			break;
@@ -4648,10 +4648,10 @@ DoneSection2:
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				if (!player->ktemp_floorboost)
-					player->ktemp_floorboost = 3;
+				if (!player->floorboost)
+					player->floorboost = 3;
 				else
-					player->ktemp_floorboost = 2;
+					player->floorboost = 2;
 				K_DoSneaker(player, 0);
 			}
 			break;
@@ -4667,7 +4667,7 @@ DoneSection2:
 				mobj_t *waypoint = NULL;
 				angle_t an;
 
-				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->ktemp_carry == CR_ZOOMTUBE)
+				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->carry == CR_ZOOMTUBE)
 					break;
 
 				// Find line #3 tagged to this sector
@@ -4707,7 +4707,7 @@ DoneSection2:
 					break; // behind back
 
 				P_SetTarget(&player->mo->tracer, waypoint);
-				player->ktemp_carry = CR_ZOOMTUBE;
+				player->carry = CR_ZOOMTUBE;
 				player->speed = speed;
 			}
 			break;
@@ -4720,7 +4720,7 @@ DoneSection2:
 				mobj_t *waypoint = NULL;
 				angle_t an;
 
-				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->ktemp_carry == CR_ZOOMTUBE)
+				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->carry == CR_ZOOMTUBE)
 					break;
 
 				// Find line #11 tagged to this sector
@@ -4760,7 +4760,7 @@ DoneSection2:
 					break; // behind back
 
 				P_SetTarget(&player->mo->tracer, waypoint);
-				player->ktemp_carry = CR_ZOOMTUBE;
+				player->carry = CR_ZOOMTUBE;
 				player->speed = speed;
 			}
 			break;
@@ -8501,8 +8501,8 @@ void T_Pusher(pusher_t *p)
 			continue;
 
 		if (thing->player && (thing->state == &states[thing->info->painstate])
-			&& (thing->player->ktemp_flashing > (K_GetKartFlashing(thing->player)/4)*3
-			&& thing->player->ktemp_flashing <= K_GetKartFlashing(thing->player)))
+			&& (thing->player->flashing > (K_GetKartFlashing(thing->player)/4)*3
+			&& thing->player->flashing <= K_GetKartFlashing(thing->player)))
 			continue;
 
 		inFOF = touching = moved = false;
@@ -8630,11 +8630,11 @@ void T_Pusher(pusher_t *p)
 
 		if (moved)
 		{
-			if (p->slider && thing->player && !thing->player->ktemp_carry)
+			if (p->slider && thing->player && !thing->player->carry)
 			{
 				P_ResetPlayer (thing->player);
 
-				thing->player->ktemp_carry = CR_SLIDING;
+				thing->player->carry = CR_SLIDING;
 				thing->angle = R_PointToAngle2 (0, 0, xspeed<<(FRACBITS-PUSH_FACTOR), yspeed<<(FRACBITS-PUSH_FACTOR));
 
 				if (!demo.playback)

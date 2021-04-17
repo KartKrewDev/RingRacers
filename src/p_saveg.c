@@ -135,7 +135,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].pflags);
 		WRITEUINT8(save_p, players[i].panim);
 		WRITEUINT8(save_p, players[i].spectator);
-		WRITEUINT32(save_p, players[i].ktemp_spectatewait);
+		WRITEUINT32(save_p, players[i].spectatewait);
 
 		WRITEUINT16(save_p, players[i].flashpal);
 		WRITEUINT16(save_p, players[i].flashcount);
@@ -209,99 +209,99 @@ static void P_NetArchivePlayers(void)
 		if (flags & FOLLOWER)
 			WRITEUINT32(save_p, players[i].follower->mobjnum);
 
-		WRITEUINT16(save_p, players[i].ktemp_nocontrol);
-		WRITEUINT8(save_p, players[i].ktemp_carry);
-		WRITEUINT16(save_p, players[i].ktemp_dye);
+		WRITEUINT16(save_p, players[i].nocontrol);
+		WRITEUINT8(save_p, players[i].carry);
+		WRITEUINT16(save_p, players[i].dye);
 
-		WRITEUINT8(save_p, players[i].ktemp_position);
-		WRITEUINT8(save_p, players[i].ktemp_oldposition);
-		WRITEUINT8(save_p, players[i].ktemp_positiondelay);
+		WRITEUINT8(save_p, players[i].position);
+		WRITEUINT8(save_p, players[i].oldposition);
+		WRITEUINT8(save_p, players[i].positiondelay);
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
-		WRITEUINT8(save_p, players[i].ktemp_startboost);
+		WRITEUINT8(save_p, players[i].startboost);
 
-		WRITEUINT16(save_p, players[i].ktemp_flashing);
-		WRITEUINT16(save_p, players[i].ktemp_spinouttimer);
-		WRITEUINT8(save_p, players[i].ktemp_spinouttype);
-		WRITEUINT8(save_p, players[i].ktemp_instashield);
-		WRITEUINT8(save_p, players[i].ktemp_wipeoutslow);
-		WRITEUINT8(save_p, players[i].ktemp_justbumped);
+		WRITEUINT16(save_p, players[i].flashing);
+		WRITEUINT16(save_p, players[i].spinouttimer);
+		WRITEUINT8(save_p, players[i].spinouttype);
+		WRITEUINT8(save_p, players[i].instashield);
+		WRITEUINT8(save_p, players[i].wipeoutslow);
+		WRITEUINT8(save_p, players[i].justbumped);
 		WRITEUINT8(save_p, players[i].tumbleBounces);
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 
-		WRITESINT8(save_p, players[i].ktemp_drift);
-		WRITEFIXED(save_p, players[i].ktemp_driftcharge);
-		WRITEUINT8(save_p, players[i].ktemp_driftboost);
+		WRITESINT8(save_p, players[i].drift);
+		WRITEFIXED(save_p, players[i].driftcharge);
+		WRITEUINT8(save_p, players[i].driftboost);
 
-		WRITESINT8(save_p, players[i].ktemp_aizdriftstrat);
+		WRITESINT8(save_p, players[i].aizdriftstrat);
 		WRITEINT32(save_p, players[i].aizdrifttilt);
 		WRITEINT32(save_p, players[i].aizdriftturn);
 
-		WRITEFIXED(save_p, players[i].ktemp_offroad);
-		WRITEUINT8(save_p, players[i].ktemp_waterskip);
+		WRITEFIXED(save_p, players[i].offroad);
+		WRITEUINT8(save_p, players[i].waterskip);
 
-		WRITEUINT16(save_p, players[i].ktemp_tiregrease);
-		WRITEUINT16(save_p, players[i].ktemp_springstars);
-		WRITEUINT16(save_p, players[i].ktemp_springcolor);
-		WRITEUINT8(save_p, players[i].ktemp_dashpadcooldown);
+		WRITEUINT16(save_p, players[i].tiregrease);
+		WRITEUINT16(save_p, players[i].springstars);
+		WRITEUINT16(save_p, players[i].springcolor);
+		WRITEUINT8(save_p, players[i].dashpadcooldown);
 
-		WRITEUINT16(save_p, players[i].ktemp_spindash);
-		WRITEFIXED(save_p, players[i].ktemp_spindashspeed);
-		WRITEUINT8(save_p, players[i].ktemp_spindashboost);
+		WRITEUINT16(save_p, players[i].spindash);
+		WRITEFIXED(save_p, players[i].spindashspeed);
+		WRITEUINT8(save_p, players[i].spindashboost);
 
-		WRITEUINT8(save_p, players[i].ktemp_numboosts);
-		WRITEFIXED(save_p, players[i].ktemp_boostpower);
-		WRITEFIXED(save_p, players[i].ktemp_speedboost);
-		WRITEFIXED(save_p, players[i].ktemp_accelboost);
-		WRITEFIXED(save_p, players[i].ktemp_handleboost);
-		WRITEANGLE(save_p, players[i].ktemp_boostangle);
+		WRITEUINT8(save_p, players[i].numboosts);
+		WRITEFIXED(save_p, players[i].boostpower);
+		WRITEFIXED(save_p, players[i].speedboost);
+		WRITEFIXED(save_p, players[i].accelboost);
+		WRITEFIXED(save_p, players[i].handleboost);
+		WRITEANGLE(save_p, players[i].boostangle);
 
-		WRITEFIXED(save_p, players[i].ktemp_draftpower);
-		WRITEUINT16(save_p, players[i].ktemp_draftleeway);
-		WRITESINT8(save_p, players[i].ktemp_lastdraft);
+		WRITEFIXED(save_p, players[i].draftpower);
+		WRITEUINT16(save_p, players[i].draftleeway);
+		WRITESINT8(save_p, players[i].lastdraft);
 
-		WRITEUINT16(save_p, players[i].ktemp_itemroulette);
-		WRITEUINT8(save_p, players[i].ktemp_roulettetype);
+		WRITEUINT16(save_p, players[i].itemroulette);
+		WRITEUINT8(save_p, players[i].roulettetype);
 
-		WRITESINT8(save_p, players[i].ktemp_itemtype);
-		WRITEUINT8(save_p, players[i].ktemp_itemamount);
-		WRITESINT8(save_p, players[i].ktemp_throwdir);
+		WRITESINT8(save_p, players[i].itemtype);
+		WRITEUINT8(save_p, players[i].itemamount);
+		WRITESINT8(save_p, players[i].throwdir);
 
-		WRITEUINT8(save_p, players[i].ktemp_sadtimer);
+		WRITEUINT8(save_p, players[i].sadtimer);
 
 		WRITEINT16(save_p, players[i].rings);
-		WRITEUINT8(save_p, players[i].ktemp_pickuprings);
-		WRITEUINT8(save_p, players[i].ktemp_ringdelay);
-		WRITEUINT16(save_p, players[i].ktemp_ringboost);
-		WRITEUINT8(save_p, players[i].ktemp_sparkleanim);
-		WRITEUINT8(save_p, players[i].ktemp_superring);
+		WRITEUINT8(save_p, players[i].pickuprings);
+		WRITEUINT8(save_p, players[i].ringdelay);
+		WRITEUINT16(save_p, players[i].ringboost);
+		WRITEUINT8(save_p, players[i].sparkleanim);
+		WRITEUINT8(save_p, players[i].superring);
 
-		WRITEUINT8(save_p, players[i].ktemp_curshield);
-		WRITEUINT8(save_p, players[i].ktemp_bubblecool);
-		WRITEUINT8(save_p, players[i].ktemp_bubbleblowup);
-		WRITEUINT16(save_p, players[i].ktemp_flamedash);
-		WRITEUINT16(save_p, players[i].ktemp_flamemeter);
-		WRITEUINT8(save_p, players[i].ktemp_flamelength);
+		WRITEUINT8(save_p, players[i].curshield);
+		WRITEUINT8(save_p, players[i].bubblecool);
+		WRITEUINT8(save_p, players[i].bubbleblowup);
+		WRITEUINT16(save_p, players[i].flamedash);
+		WRITEUINT16(save_p, players[i].flamemeter);
+		WRITEUINT8(save_p, players[i].flamelength);
 
-		WRITEUINT16(save_p, players[i].ktemp_hyudorotimer);
-		WRITESINT8(save_p, players[i].ktemp_stealingtimer);
+		WRITEUINT16(save_p, players[i].hyudorotimer);
+		WRITESINT8(save_p, players[i].stealingtimer);
 
-		WRITEUINT16(save_p, players[i].ktemp_sneakertimer);
-		WRITEUINT8(save_p, players[i].ktemp_numsneakers);
-		WRITEUINT8(save_p, players[i].ktemp_floorboost);
+		WRITEUINT16(save_p, players[i].sneakertimer);
+		WRITEUINT8(save_p, players[i].numsneakers);
+		WRITEUINT8(save_p, players[i].floorboost);
 
-		WRITEINT16(save_p, players[i].ktemp_growshrinktimer);
-		WRITEUINT16(save_p, players[i].ktemp_rocketsneakertimer);
-		WRITEUINT16(save_p, players[i].ktemp_invincibilitytimer);
+		WRITEINT16(save_p, players[i].growshrinktimer);
+		WRITEUINT16(save_p, players[i].rocketsneakertimer);
+		WRITEUINT16(save_p, players[i].invincibilitytimer);
 
-		WRITEUINT8(save_p, players[i].ktemp_eggmanexplode);
-		WRITESINT8(save_p, players[i].ktemp_eggmanblame);
+		WRITEUINT8(save_p, players[i].eggmanexplode);
+		WRITESINT8(save_p, players[i].eggmanblame);
 
-		WRITEUINT8(save_p, players[i].ktemp_bananadrag);
+		WRITEUINT8(save_p, players[i].bananadrag);
 
-		WRITESINT8(save_p, players[i].ktemp_lastjawztarget);
-		WRITEUINT8(save_p, players[i].ktemp_jawztargetdelay);
+		WRITESINT8(save_p, players[i].lastjawztarget);
+		WRITEUINT8(save_p, players[i].jawztargetdelay);
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT32(save_p, players[i].trickmomx);
@@ -309,7 +309,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].trickmomz);
 
 		WRITEUINT32(save_p, players[i].roundscore);
-		WRITEUINT8(save_p, players[i].ktemp_emeralds);
+		WRITEUINT8(save_p, players[i].emeralds);
 		WRITEUINT8(save_p, players[i].bumpers);
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEINT16(save_p, players[i].spheres);
@@ -393,7 +393,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].pflags = READUINT32(save_p);
 		players[i].panim = READUINT8(save_p);
 		players[i].spectator = READUINT8(save_p);
-		players[i].ktemp_spectatewait = READUINT32(save_p);
+		players[i].spectatewait = READUINT32(save_p);
 
 		players[i].flashpal = READUINT16(save_p);
 		players[i].flashcount = READUINT16(save_p);
@@ -459,99 +459,99 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & FOLLOWER)
 			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
 
-		players[i].ktemp_nocontrol = READUINT16(save_p);
-		players[i].ktemp_carry = READUINT8(save_p);
-		players[i].ktemp_dye = READUINT16(save_p);
+		players[i].nocontrol = READUINT16(save_p);
+		players[i].carry = READUINT8(save_p);
+		players[i].dye = READUINT16(save_p);
 
-		players[i].ktemp_position = READUINT8(save_p);
-		players[i].ktemp_oldposition = READUINT8(save_p);
-		players[i].ktemp_positiondelay = READUINT8(save_p);
+		players[i].position = READUINT8(save_p);
+		players[i].oldposition = READUINT8(save_p);
+		players[i].positiondelay = READUINT8(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
-		players[i].ktemp_startboost = READUINT8(save_p);
+		players[i].startboost = READUINT8(save_p);
 
-		players[i].ktemp_flashing = READUINT16(save_p);
-		players[i].ktemp_spinouttimer = READUINT16(save_p);
-		players[i].ktemp_spinouttype = READUINT8(save_p);
-		players[i].ktemp_instashield = READUINT8(save_p);
-		players[i].ktemp_wipeoutslow = READUINT8(save_p);
-		players[i].ktemp_justbumped = READUINT8(save_p);
+		players[i].flashing = READUINT16(save_p);
+		players[i].spinouttimer = READUINT16(save_p);
+		players[i].spinouttype = READUINT8(save_p);
+		players[i].instashield = READUINT8(save_p);
+		players[i].wipeoutslow = READUINT8(save_p);
+		players[i].justbumped = READUINT8(save_p);
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 
-		players[i].ktemp_drift = READSINT8(save_p);
-		players[i].ktemp_driftcharge = READFIXED(save_p);
-		players[i].ktemp_driftboost = READUINT8(save_p);
+		players[i].drift = READSINT8(save_p);
+		players[i].driftcharge = READFIXED(save_p);
+		players[i].driftboost = READUINT8(save_p);
 
-		players[i].ktemp_aizdriftstrat = READSINT8(save_p);
+		players[i].aizdriftstrat = READSINT8(save_p);
 		players[i].aizdrifttilt = READINT32(save_p);
 		players[i].aizdriftturn = READINT32(save_p);
 
-		players[i].ktemp_offroad = READFIXED(save_p);
-		players[i].ktemp_waterskip = READUINT8(save_p);
+		players[i].offroad = READFIXED(save_p);
+		players[i].waterskip = READUINT8(save_p);
 
-		players[i].ktemp_tiregrease = READUINT16(save_p);
-		players[i].ktemp_springstars = READUINT16(save_p);
-		players[i].ktemp_springcolor = READUINT16(save_p);
-		players[i].ktemp_dashpadcooldown = READUINT8(save_p);
+		players[i].tiregrease = READUINT16(save_p);
+		players[i].springstars = READUINT16(save_p);
+		players[i].springcolor = READUINT16(save_p);
+		players[i].dashpadcooldown = READUINT8(save_p);
 
-		players[i].ktemp_spindash = READUINT16(save_p);
-		players[i].ktemp_spindashspeed = READFIXED(save_p);
-		players[i].ktemp_spindashboost = READUINT8(save_p);
+		players[i].spindash = READUINT16(save_p);
+		players[i].spindashspeed = READFIXED(save_p);
+		players[i].spindashboost = READUINT8(save_p);
 
-		players[i].ktemp_numboosts = READUINT8(save_p);
-		players[i].ktemp_boostpower = READFIXED(save_p);
-		players[i].ktemp_speedboost = READFIXED(save_p);
-		players[i].ktemp_accelboost = READFIXED(save_p);
-		players[i].ktemp_handleboost = READFIXED(save_p);
-		players[i].ktemp_boostangle = READANGLE(save_p);
+		players[i].numboosts = READUINT8(save_p);
+		players[i].boostpower = READFIXED(save_p);
+		players[i].speedboost = READFIXED(save_p);
+		players[i].accelboost = READFIXED(save_p);
+		players[i].handleboost = READFIXED(save_p);
+		players[i].boostangle = READANGLE(save_p);
 
-		players[i].ktemp_draftpower = READFIXED(save_p);
-		players[i].ktemp_draftleeway = READUINT16(save_p);
-		players[i].ktemp_lastdraft = READSINT8(save_p);
+		players[i].draftpower = READFIXED(save_p);
+		players[i].draftleeway = READUINT16(save_p);
+		players[i].lastdraft = READSINT8(save_p);
 
-		players[i].ktemp_itemroulette = READUINT16(save_p);
-		players[i].ktemp_roulettetype = READUINT8(save_p);
+		players[i].itemroulette = READUINT16(save_p);
+		players[i].roulettetype = READUINT8(save_p);
 
-		players[i].ktemp_itemtype = READSINT8(save_p);
-		players[i].ktemp_itemamount = READUINT8(save_p);
-		players[i].ktemp_throwdir = READSINT8(save_p);
+		players[i].itemtype = READSINT8(save_p);
+		players[i].itemamount = READUINT8(save_p);
+		players[i].throwdir = READSINT8(save_p);
 
-		players[i].ktemp_sadtimer = READUINT8(save_p);
+		players[i].sadtimer = READUINT8(save_p);
 
 		players[i].rings = READSINT8(save_p);
-		players[i].ktemp_pickuprings = READUINT8(save_p);
-		players[i].ktemp_ringdelay = READUINT8(save_p);
-		players[i].ktemp_ringboost = READUINT16(save_p);
-		players[i].ktemp_sparkleanim = READUINT8(save_p);
-		players[i].ktemp_superring = READUINT8(save_p);
+		players[i].pickuprings = READUINT8(save_p);
+		players[i].ringdelay = READUINT8(save_p);
+		players[i].ringboost = READUINT16(save_p);
+		players[i].sparkleanim = READUINT8(save_p);
+		players[i].superring = READUINT8(save_p);
 
-		players[i].ktemp_curshield = READUINT8(save_p);
-		players[i].ktemp_bubblecool = READUINT8(save_p);
-		players[i].ktemp_bubbleblowup = READUINT8(save_p);
-		players[i].ktemp_flamedash = READUINT16(save_p);
-		players[i].ktemp_flamemeter = READUINT16(save_p);
-		players[i].ktemp_flamelength = READUINT8(save_p);
+		players[i].curshield = READUINT8(save_p);
+		players[i].bubblecool = READUINT8(save_p);
+		players[i].bubbleblowup = READUINT8(save_p);
+		players[i].flamedash = READUINT16(save_p);
+		players[i].flamemeter = READUINT16(save_p);
+		players[i].flamelength = READUINT8(save_p);
 
-		players[i].ktemp_hyudorotimer = READUINT16(save_p);
-		players[i].ktemp_stealingtimer = READSINT8(save_p);
+		players[i].hyudorotimer = READUINT16(save_p);
+		players[i].stealingtimer = READSINT8(save_p);
 
-		players[i].ktemp_sneakertimer = READUINT16(save_p);
-		players[i].ktemp_numsneakers = READUINT8(save_p);
-		players[i].ktemp_floorboost = READUINT8(save_p);
+		players[i].sneakertimer = READUINT16(save_p);
+		players[i].numsneakers = READUINT8(save_p);
+		players[i].floorboost = READUINT8(save_p);
 
-		players[i].ktemp_growshrinktimer = READINT16(save_p);
-		players[i].ktemp_rocketsneakertimer = READUINT16(save_p);
-		players[i].ktemp_invincibilitytimer = READUINT16(save_p);
+		players[i].growshrinktimer = READINT16(save_p);
+		players[i].rocketsneakertimer = READUINT16(save_p);
+		players[i].invincibilitytimer = READUINT16(save_p);
 
-		players[i].ktemp_eggmanexplode = READUINT8(save_p);
-		players[i].ktemp_eggmanblame = READSINT8(save_p);
+		players[i].eggmanexplode = READUINT8(save_p);
+		players[i].eggmanblame = READSINT8(save_p);
 
-		players[i].ktemp_bananadrag = READUINT8(save_p);
+		players[i].bananadrag = READUINT8(save_p);
 
-		players[i].ktemp_lastjawztarget = READSINT8(save_p);
-		players[i].ktemp_jawztargetdelay = READUINT8(save_p);
+		players[i].lastjawztarget = READSINT8(save_p);
+		players[i].jawztargetdelay = READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].trickmomx = READUINT32(save_p);
@@ -559,7 +559,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].trickmomz = READUINT32(save_p);
 
 		players[i].roundscore = READUINT32(save_p);
-		players[i].ktemp_emeralds = READUINT8(save_p);
+		players[i].emeralds = READUINT8(save_p);
 		players[i].bumpers = READUINT8(save_p);
 		players[i].karmadelay = READINT16(save_p);
 		players[i].spheres = READINT16(save_p);

@@ -2179,8 +2179,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		itemroulette = (players[player].ktemp_itemroulette > 0 ? 1 : 0);
-		roulettetype = players[player].ktemp_roulettetype;
+		itemroulette = (players[player].itemroulette > 0 ? 1 : 0);
+		roulettetype = players[player].roulettetype;
 
 		if (players[player].pflags & PF_ITEMOUT)
 		{
@@ -2189,13 +2189,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		}
 		else
 		{
-			itemtype = players[player].ktemp_itemtype;
-			itemamount = players[player].ktemp_itemamount;
+			itemtype = players[player].itemtype;
+			itemamount = players[player].itemamount;
 		}
 
 		// Keep Shrink status, remove Grow status
-		if (players[player].ktemp_growshrinktimer < 0)
-			growshrinktimer = players[player].ktemp_growshrinktimer;
+		if (players[player].growshrinktimer < 0)
+			growshrinktimer = players[player].growshrinktimer;
 		else
 			growshrinktimer = 0;
 
@@ -2205,7 +2205,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		kickstartaccel = players[player].kickstartaccel;
 
 		khudfault = players[player].karthud[khud_fault];
-		nocontrol = players[player].ktemp_nocontrol;
+		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
 		totalring = players[player].totalring;
@@ -2270,17 +2270,17 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	// SRB2kart
-	p->ktemp_itemroulette = itemroulette;
-	p->ktemp_roulettetype = roulettetype;
-	p->ktemp_itemtype = itemtype;
-	p->ktemp_itemamount = itemamount;
-	p->ktemp_growshrinktimer = growshrinktimer;
+	p->itemroulette = itemroulette;
+	p->roulettetype = roulettetype;
+	p->itemtype = itemtype;
+	p->itemamount = itemamount;
+	p->growshrinktimer = growshrinktimer;
 	p->bumpers = bumper;
 	p->karmadelay = comebacktime;
-	p->ktemp_eggmanblame = -1;
-	p->ktemp_lastdraft = -1;
+	p->eggmanblame = -1;
+	p->lastdraft = -1;
 	p->karthud[khud_fault] = khudfault;
-	p->ktemp_nocontrol = nocontrol;
+	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));

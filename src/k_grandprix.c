@@ -472,7 +472,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 
 	// Increment bot difficulty based on what position you were meant to come in!
 	expectedstanding = K_BotExpectedStanding(bot);
-	standingdiff = expectedstanding - bot->ktemp_position;
+	standingdiff = expectedstanding - bot->position;
 
 	if (standingdiff >= -2)
 	{

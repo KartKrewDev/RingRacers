@@ -1277,6 +1277,6 @@ void Command_ObjectPlace_f(void)
 		players[0].mo->color = op_oldcolor;
 
 		// This is necessary for recovery of dying players.
-		players[0].ktemp_flashing = K_GetKartFlashing(&players[0]);
+		players[0].flashing = K_GetKartFlashing(&players[0]);
 	}
 }

@@ -119,7 +119,7 @@ typedef enum
 	// Specific level gimmicks.
 	CR_SLIDING,
 	CR_ZOOMTUBE,
-} carrytype_t; // ktemp_carry
+} carrytype_t; // carry
 
 /*
 To use: #define FOREACH( name, number )
@@ -236,7 +236,7 @@ typedef enum
 } karthudtype_t;
 
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
-#define RINGTOTAL(p) (p->rings + p->ktemp_pickuprings)
+#define RINGTOTAL(p) (p->rings + p->pickuprings)
 
 // CONSTANTS FOR TRICK PANELS
 #define TRICKMOMZRAMP (30)
@@ -345,106 +345,106 @@ typedef struct player_s
 
 	UINT32 score; // player score
 
-	UINT16 ktemp_nocontrol; //for linedef exec 427
-	UINT8 ktemp_carry;
-	UINT16 ktemp_dye;
+	UINT16 nocontrol; //for linedef exec 427
+	UINT8 carry;
+	UINT16 dye;
 
 	// SRB2kart stuff
 	INT32 karthud[NUMKARTHUD];
 
 	// Basic gameplay things
-	UINT8 ktemp_position;		// Used for Kart positions, mostly for deterministic stuff
-	UINT8 ktemp_oldposition;	// Used for taunting when you pass someone
-	UINT8 ktemp_positiondelay;	// Used for position number, so it can grow when passing/being passed
+	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
+	UINT8 oldposition;		// Used for taunting when you pass someone
+	UINT8 positiondelay;	// Used for position number, so it can grow when passing/being passed
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
-	tic_t airtime; 		// Keep track of how long you've been in the air
-	UINT8 ktemp_startboost;		// (0 to 125) - Boost you get from start of race or respawn drop dash
+	tic_t airtime; 			// Keep track of how long you've been in the air
+	UINT8 startboost;		// (0 to 125) - Boost you get from start of race or respawn drop dash
 
-	UINT16 ktemp_flashing;
-	UINT16 ktemp_spinouttimer;		// Spin-out from a banana peel or oil slick (was "pw_bananacam")
-	UINT8 ktemp_spinouttype;	// Determines the mode of spinout/wipeout, see kartspinoutflags_t
-	UINT8 ktemp_instashield;	// Instashield no-damage animation timer
-	UINT8 ktemp_wipeoutslow;		// Timer before you slowdown when getting wiped out
-	UINT8 ktemp_justbumped;			// Prevent players from endlessly bumping into each other
+	UINT16 flashing;
+	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
+	UINT8 spinouttype;		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
+	UINT8 instashield;		// Instashield no-damage animation timer
+	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
+	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;
 
-	SINT8 ktemp_drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
-	fixed_t ktemp_driftcharge;		// Charge your drift so you can release a burst of speed
-	UINT8 ktemp_driftboost;		// (0 to 125) - Boost you get from drifting
+	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
+	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
+	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 
-	SINT8 ktemp_aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
+	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
 
-	fixed_t ktemp_offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	UINT8 ktemp_waterskip;	// Water skipping counter
+	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
+	UINT8 waterskip;		// Water skipping counter
 
-	UINT16 ktemp_tiregrease;	// Reduced friction timer after hitting a horizontal spring
-	UINT16 ktemp_springstars;	// Spawn stars around a player when they hit a spring
-	UINT16 ktemp_springcolor;	// Color of spring stars
-	UINT8 ktemp_dashpadcooldown;	// Separate the vanilla SA-style dash pads from using ktemp_flashing
+	UINT16 tiregrease;		// Reduced friction timer after hitting a horizontal spring
+	UINT16 springstars;		// Spawn stars around a player when they hit a spring
+	UINT16 springcolor;		// Color of spring stars
+	UINT8 dashpadcooldown;	// Separate the vanilla SA-style dash pads from using flashing
 
-	UINT16 ktemp_spindash;			// Spindash charge timer
-	fixed_t ktemp_spindashspeed;	// Spindash release speed
-	UINT8 ktemp_spindashboost;		// Spindash release boost timer
+	UINT16 spindash;		// Spindash charge timer
+	fixed_t spindashspeed;	// Spindash release speed
+	UINT8 spindashboost;	// Spindash release boost timer
 
-	UINT8 ktemp_numboosts;		// Count of how many boosts are being stacked, for after image spawning
-	fixed_t ktemp_boostpower;	// Base boost value, for offroad
-	fixed_t ktemp_speedboost;	// Boost value smoothing for max speed
-	fixed_t ktemp_accelboost;	// Boost value smoothing for acceleration
-	fixed_t ktemp_handleboost;	// Boost value smoothing for handling
-	angle_t ktemp_boostangle;	// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
+	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
+	fixed_t boostpower;		// Base boost value, for offroad
+	fixed_t speedboost;		// Boost value smoothing for max speed
+	fixed_t accelboost;		// Boost value smoothing for acceleration
+	fixed_t handleboost;	// Boost value smoothing for handling
+	angle_t boostangle;		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
 
-	fixed_t ktemp_draftpower;	// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
-	UINT16 ktemp_draftleeway;	// Leniency timer before removing draft power
-	SINT8 ktemp_lastdraft;		// (-1 to 15) - Last player being drafted
+	fixed_t draftpower;		// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
+	UINT16 draftleeway;		// Leniency timer before removing draft power
+	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
-	UINT16 ktemp_itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	UINT8 ktemp_roulettetype;	// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
+	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
 
 	// Item held stuff
-	SINT8 ktemp_itemtype;		// KITEM_ constant for item number
-	UINT8 ktemp_itemamount;		// Amount of said item
-	SINT8 ktemp_throwdir; 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
+	SINT8 itemtype;		// KITEM_ constant for item number
+	UINT8 itemamount;	// Amount of said item
+	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
 
-	UINT8 ktemp_sadtimer;		// How long you've been sad
+	UINT8 sadtimer;		// How long you've been sad
 
 	// player's ring count
 	SINT8 rings;
-	UINT8 ktemp_pickuprings;	// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
-	UINT8 ktemp_ringdelay;		// (0 to 3) - 3 tic delay between every ring usage
-	UINT16 ktemp_ringboost;		// Ring boost timer
-	UINT8 ktemp_sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
-	UINT8 ktemp_superring;		// Spawn rings on top of you every tic!
+	UINT8 pickuprings;	// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
+	UINT8 ringdelay;	// (0 to 3) - 3 tic delay between every ring usage
+	UINT16 ringboost;	// Ring boost timer
+	UINT8 sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
+	UINT8 superring;	// Spawn rings on top of you every tic!
 
-	UINT8 ktemp_curshield;		// see kartshields_t
-	UINT8 ktemp_bubblecool;		// Bubble Shield use cooldown
-	UINT8 ktemp_bubbleblowup;	// Bubble Shield usage blowup
-	UINT16 ktemp_flamedash;		// Flame Shield dash power
-	UINT16 ktemp_flamemeter;	// Flame Shield dash meter left
-	UINT8 ktemp_flamelength;	// Flame Shield dash meter, number of segments
+	UINT8 curshield;	// see kartshields_t
+	UINT8 bubblecool;	// Bubble Shield use cooldown
+	UINT8 bubbleblowup;	// Bubble Shield usage blowup
+	UINT16 flamedash;	// Flame Shield dash power
+	UINT16 flamemeter;	// Flame Shield dash meter left
+	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
-	UINT16 ktemp_hyudorotimer;	// Duration of the Hyudoro offroad effect itself
-	SINT8 ktemp_stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
+	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
+	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
 
-	UINT16 ktemp_sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
-	UINT8 ktemp_numsneakers;	// Number of stacked sneaker effects
-	UINT8 ktemp_floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
+	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
+	UINT8 numsneakers;		// Number of stacked sneaker effects
+	UINT8 floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
 
-	INT16 ktemp_growshrinktimer;		// > 0 = Big, < 0 = small
-	UINT16 ktemp_rocketsneakertimer;	// Rocket Sneaker duration timer
-	UINT16 ktemp_invincibilitytimer;	// Invincibility timer
+	INT16 growshrinktimer;		// > 0 = Big, < 0 = small
+	UINT16 rocketsneakertimer;	// Rocket Sneaker duration timer
+	UINT16 invincibilitytimer;	// Invincibility timer
 
-	UINT8 ktemp_eggmanexplode;	// Fake item recieved, explode in a few seconds
-	SINT8 ktemp_eggmanblame;	// (-1 to 15) - Fake item recieved, who set this fake
+	UINT8 eggmanexplode;	// Fake item recieved, explode in a few seconds
+	SINT8 eggmanblame;		// (-1 to 15) - Fake item recieved, who set this fake
 
-	UINT8 ktemp_bananadrag;			// After a second of holding a banana behind you, you start to slow down
+	UINT8 bananadrag;		// After a second of holding a banana behind you, you start to slow down
 
-	SINT8 ktemp_lastjawztarget;		// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
-	UINT8 ktemp_jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
+	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
+	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
 	UINT8 trickpanel; 	// Trick panel state
 	fixed_t trickmomx;
@@ -452,7 +452,7 @@ typedef struct player_s
 	fixed_t trickmomz;
 
 	UINT32 roundscore; // battle score this round
-	UINT8 ktemp_emeralds;
+	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
 	INT16 spheres;
@@ -499,7 +499,7 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
-	tic_t ktemp_spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
+	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
 
 	boolean bot;
 	botvars_t botvars;

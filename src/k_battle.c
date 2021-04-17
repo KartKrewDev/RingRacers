@@ -41,7 +41,7 @@ INT32 K_StartingBumperCount(void)
 
 boolean K_IsPlayerWanted(player_t *player)
 {
-	return (player->ktemp_position == 1);
+	return (player->position == 1);
 }
 
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
@@ -146,7 +146,7 @@ void K_CheckEmeralds(player_t *player)
 {
 	UINT8 i;
 
-	if (!ALLCHAOSEMERALDS(player->ktemp_emeralds))
+	if (!ALLCHAOSEMERALDS(player->emeralds))
 	{
 		return;
 	}
@@ -238,12 +238,12 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 	{
 		UINT32 emeraldFlag = (1 << i);
 
-		if ((player->ktemp_emeralds & emeraldFlag) && (emeraldFlag & emeraldType))
+		if ((player->emeralds & emeraldFlag) && (emeraldFlag & emeraldType))
 		{
 			mobj_t *emerald = K_SpawnChaosEmerald(player->mo->x, player->mo->y, player->mo->z, player->mo->angle - ANGLE_90, flip, emeraldFlag);
 			P_SetTarget(&emerald->target, player->mo);
 
-			player->ktemp_emeralds &= ~emeraldFlag;
+			player->emeralds &= ~emeraldFlag;
 		}
 	}
 }
@@ -257,7 +257,7 @@ UINT8 K_NumEmeralds(player_t *player)
 	{
 		UINT32 emeraldFlag = (1 << i);
 
-		if (player->ktemp_emeralds & emeraldFlag)
+		if (player->emeralds & emeraldFlag)
 		{
 			num++;
 		}
@@ -310,7 +310,7 @@ void K_RunPaperItemSpawners(void)
 			continue;
 		}
 
-		emeraldsSpawned |= players[i].ktemp_emeralds;
+		emeraldsSpawned |= players[i].emeralds;
 
 		if ((players[i].exiting > 0 || (players[i].pflags & PF_ELIMINATED))
 			|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
