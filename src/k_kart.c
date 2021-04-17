@@ -3623,21 +3623,38 @@ static void K_SpawnDriftElectricity(player_t *player)
 	mobj_t *mo = player->mo;
 	fixed_t verticalradius = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
 	fixed_t horizontalradius = FixedDiv(5*mo->radius/3, mo->scale);
-	angle_t verticalangle = K_MomentumAngle(mo) + ANGLE_180;
+	angle_t verticalangle = K_MomentumAngle(mo) + ANGLE_180; // points away from the momentum angle
 
 	for (i = 0; i < 2; i++)
 	{
+		// i == 0 is right, i == 1 is left
 		mobj_t *spark;
 		angle_t horizonatalangle = verticalangle + (2*i - 1) * ANGLE_90;
-		fixed_t x = P_ReturnThrustX(mo, verticalangle, verticalradius)
-			+ P_ReturnThrustX(mo, horizonatalangle, horizontalradius);
-		fixed_t y = P_ReturnThrustY(mo, verticalangle, verticalradius)
-			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
+		angle_t sparkangle = verticalangle + ANGLE_180;
+		fixed_t verticalradius = verticalradius; // local version of the above so we can modify it
+		fixed_t scalefactor = 0; // positive values enlarge sparks, negative values shrink them
+		fixed_t x, y;
 
+		if (player->kartstuff[k_drift] == 0)
+			; // idk what you're doing spawning drift sparks when you're not drifting but you do you
+		else
+		{
+			scalefactor = -(2*i - 1) * min(max(player->cmd.turning, -1), 1) * FRACUNIT;
+			if (player->kartstuff[k_drift] > 0 == !(i)) // inwards spark should be closer to the player
+				verticalradius = 0;
+		}
+
+		x = P_ReturnThrustX(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustX(mo, horizonatalangle, horizontalradius);
+		y = P_ReturnThrustY(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
 		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
-		spark->angle = verticalangle + ANGLE_180;// + (2*i - 1) * ANGLE_22h;
+		spark->angle = sparkangle;
 		spark->color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
+
+		spark->spritexscale += scalefactor/3;
+		spark->spriteyscale += scalefactor/8;
 	}
 }
 
