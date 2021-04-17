@@ -3527,6 +3527,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DRIFTWARNSPARK3",
 	"S_DRIFTWARNSPARK4",
 
+	// Drift electricity
+	"S_DRIFTELECTRICITY",
+
 	// Fast lines
 	"S_FASTLINE1",
 	"S_FASTLINE2",
@@ -5451,6 +5454,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_DRIFTSPARK",
 	"MT_BRAKEDRIFT",
 	"MT_DRIFTDUST",
+	"MT_DRIFTELECTRICITY",
 
 	"MT_ROCKETSNEAKER", // Rocket sneakers
 

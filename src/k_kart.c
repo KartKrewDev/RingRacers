@@ -3573,14 +3573,18 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 	else if (charge >= dsthree)
 	{
 		// Stage 3: Purple
-		if (charge <= dsthree+(32*3))
+		if (charge <= dsthree+(16*3))
+		{
+			color = SKINCOLOR_TAFFY;
+		}
+		else if (charge <= dsthree+(32*3))
 		{
 			// transition
-			color = SKINCOLOR_ULTRAMARINE;
+			color = SKINCOLOR_MOONSET;
 		}
 		else
 		{
-			color = SKINCOLOR_THISTLE;
+			color = SKINCOLOR_PURPLE;
 		}
 	}
 	else if (charge >= dstwo)
@@ -3611,6 +3615,30 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 	}
 
 	return color;
+}
+
+static void K_SpawnDriftElectricity(player_t *player)
+{
+	UINT8 i;
+	mobj_t *mo = player->mo;
+	fixed_t verticalradius = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
+	fixed_t horizontalradius = FixedDiv(5*mo->radius/3, mo->scale);
+	angle_t verticalangle = K_MomentumAngle(mo) + ANGLE_180;
+
+	for (i = 0; i < 2; i++)
+	{
+		mobj_t *spark;
+		angle_t horizonatalangle = verticalangle + (2*i - 1) * ANGLE_90;
+		fixed_t x = P_ReturnThrustX(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustX(mo, horizonatalangle, horizontalradius);
+		fixed_t y = P_ReturnThrustY(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
+
+		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
+		spark->angle = verticalangle + ANGLE_180;// + (2*i - 1) * ANGLE_22h;
+		spark->color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
+		K_GenericExtraFlagsNoZAdjust(spark, mo);
+	}
 }
 
 static void K_SpawnDriftSparks(player_t *player)
@@ -3757,6 +3785,11 @@ static void K_SpawnDriftSparks(player_t *player)
 			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
+	}
+
+	if (player->kartstuff[k_driftcharge] >= dsthree)
+	{
+		K_SpawnDriftElectricity(player);
 	}
 }
 
