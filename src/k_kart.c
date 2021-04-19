@@ -3827,7 +3827,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	INT32 i;
 	UINT8 invanimnum; // Current sparkle animation number
 	INT32 invtime;// Invincibility time left, in seconds
-	UINT8 index = 1;
+	UINT8 index = 0;
 	fixed_t newx, newy, newz;
 
 	I_Assert(mo != NULL);
@@ -3841,7 +3841,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	}
 
 	if (leveltime & 2)
-		index = 2;
+		index = 1;
 
 	invtime = mo->player->invincibilitytimer/TICRATE+1;
 
