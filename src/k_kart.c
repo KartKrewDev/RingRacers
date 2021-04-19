@@ -8026,9 +8026,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					{
 						K_DoSneaker(player, 2);
 						K_PlayBoostTaunt(player->mo);
-						player->rocketsneakertimer -= 3*TICRATE;
-						if (player->rocketsneakertimer < 1)
+						if (player->rocketsneakertimer <= 3*TICRATE)
 							player->rocketsneakertimer = 1;
+						else
+							player->rocketsneakertimer -= 3*TICRATE;
 					}
 				}
 				else if (player->itemamount == 0)
