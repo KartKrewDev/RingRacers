@@ -270,7 +270,7 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].sadtimer);
 
-		WRITEINT16(save_p, players[i].rings);
+		WRITESINT8(save_p, players[i].rings);
 		WRITEUINT8(save_p, players[i].pickuprings);
 		WRITEUINT8(save_p, players[i].ringdelay);
 		WRITEUINT16(save_p, players[i].ringboost);
