@@ -5876,6 +5876,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_SPINDASHWIND:
+	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_VWREF:

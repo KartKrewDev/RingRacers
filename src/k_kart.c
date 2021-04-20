@@ -3620,6 +3620,7 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 static void K_SpawnDriftElectricity(player_t *player)
 {
 	UINT8 i;
+	UINT16 color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
 	mobj_t *mo = player->mo;
 	fixed_t verticalradius = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
 	fixed_t horizontalradius = FixedDiv(5*mo->radius/3, mo->scale);
@@ -3650,12 +3651,55 @@ static void K_SpawnDriftElectricity(player_t *player)
 			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
 		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
 		spark->angle = sparkangle;
-		spark->color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
+		spark->color = color;
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
 
 		spark->spritexscale += scalefactor/3;
 		spark->spriteyscale += scalefactor/8;
 	}
+}
+
+static void K_SpawnDriftElectricSparks(player_t *player)
+{
+	SINT8 hdir, vdir, i;
+
+	mobj_t *mo = player->mo;
+	angle_t momangle = K_MomentumAngle(mo) + ANGLE_180;
+	fixed_t radius = 2 * FixedDiv(mo->radius, mo->scale); // P_SpawnMobjFromMobj will rescale
+	fixed_t x = P_ReturnThrustX(mo, momangle, radius);
+	fixed_t y = P_ReturnThrustY(mo, momangle, radius);
+	fixed_t z = FixedDiv(mo->height, 2 * mo->scale); // P_SpawnMobjFromMobj will rescale
+
+	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
+	fixed_t sparkradius = 2 * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
+	UINT16 color = K_DriftSparkColor(player, player->kartstuff[k_driftcharge]);
+
+	for (hdir = -1; hdir <= 1; hdir += 2)
+	{
+		for (vdir = -1; vdir <= 1; vdir += 2)
+		{
+			fixed_t hspeed = FixedMul(hdir * sparkspeed, mo->scale); // P_InstaThrust treats speed as absolute
+			fixed_t vspeed = vdir * sparkspeed; // P_SetObjectMomZ scales speed with object scale
+			angle_t sparkangle = mo->angle + ANGLE_45;
+
+			for (i = 0; i < 4; i++)
+			{
+				fixed_t xoff = P_ReturnThrustX(mo, sparkangle, sparkradius);
+				fixed_t yoff = P_ReturnThrustY(mo, sparkangle, sparkradius);
+				mobj_t *spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_DRIFTELECTRICSPARK);
+
+				spark->angle = sparkangle;
+				spark->color = color;
+				P_InstaThrust(spark, mo->angle + ANGLE_90, hspeed);
+				P_SetObjectMomZ(spark, vspeed, false);
+				spark->momx += mo->momx; // copy player speed
+				spark->momy += mo->momy;
+
+				sparkangle += ANGLE_90;
+			}
+		}
+	}
+	S_StartSound(mo, sfx_s3k45);
 }
 
 static void K_SpawnDriftSparks(player_t *player)
@@ -7436,6 +7480,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 90;
 
 				K_SpawnDriftBoostExplosion(player, 3);
+				K_SpawnDriftElectricSparks(player);
 			}
 			else if (player->kartstuff[k_driftcharge] >= dsfour)
 			{
@@ -7447,6 +7492,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->kartstuff[k_driftboost] = 160;
 
 				K_SpawnDriftBoostExplosion(player, 4);
+				K_SpawnDriftElectricSparks(player);
 			}
 		}
 

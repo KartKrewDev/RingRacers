@@ -542,6 +542,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BDRF", // Brake drift sparks
 	"DRWS", // Drift dust sparks
 	"DREL", // Drift electricity
+	"DRES", // Drift electric sparks
 
 	// Kart Items
 	"RSHE", // Rocket sneaker
@@ -4098,6 +4099,7 @@ state_t states[NUMSTATES] =
 	{SPR_DRWS, FF_FULLBRIGHT|FF_TRANS20|3,  3, {NULL}, 0, 0, S_NULL}, // S_DRIFTWARNSPARK4
 
 	{SPR_DREL, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE|FF_GLOBALANIM, 2, {NULL}, 5, 2, S_NULL}, // S_DRIFTELECTRICITY
+	{SPR_DRES, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 20, {NULL}, 1, 10, S_NULL}, // S_DRIFTELECTRICSPARK
 
 	{SPR_FAST, FF_PAPERSPRITE|FF_FULLBRIGHT,   1, {NULL}, 0, 0, S_FASTLINE2}, // S_FASTLINE1
 	{SPR_FAST, FF_PAPERSPRITE|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_FASTLINE3}, // S_FASTLINE2
@@ -23495,6 +23497,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIP|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DRIFTELECTRICSPARK
+		-1,             // doomednum
+		S_DRIFTELECTRICSPARK, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		4*FRACUNIT,     // speed
+		9*FRACUNIT,     // radius
+		37*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
