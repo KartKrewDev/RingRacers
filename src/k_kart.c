@@ -7327,7 +7327,7 @@ INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
 			mul = 2*FRACUNIT; // x2
 			break;
 		case 3:
-			mul = (31*FRACUNIT)/10; // x3.1
+			mul = 3*FRACUNIT; // x3
 			break;
 		case 4:
 			mul = (19*FRACUNIT)/4; // x4.75
