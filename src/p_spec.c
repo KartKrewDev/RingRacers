@@ -1896,8 +1896,10 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				S_StartSound(player->mo, sfx_s23c);
 				player->startboost = 125;
+
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player);
+
 				rainbowstartavailable = false;
 			}
 
