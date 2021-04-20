@@ -7452,8 +7452,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (!onground)
 					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
 
-				if (player->driftcharge < 90)
-					player->driftcharge = 90;
+				if (player->driftboost < 90)
+					player->driftboost = 90;
 
 				K_SpawnDriftBoostExplosion(player, 3);
 				K_SpawnDriftElectricSparks(player);
