@@ -7321,6 +7321,7 @@ INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
 {
 	fixed_t mul = FRACUNIT;
 
+	// This code is function is pretty much useless now that the timing changes are linear but bleh.
 	switch (stage)
 	{
 		case 2:
@@ -7330,7 +7331,7 @@ INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
 			mul = 3*FRACUNIT; // x3
 			break;
 		case 4:
-			mul = (19*FRACUNIT)/4; // x4.75
+			mul = 4*FRACUNIT; // x4
 			break;
 	}
 
@@ -7452,8 +7453,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (!onground)
 					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
 
-				if (player->driftboost < 90)
-					player->driftboost = 90;
+				if (player->driftboost < 85)
+					player->driftboost = 85;
 
 				K_SpawnDriftBoostExplosion(player, 3);
 				K_SpawnDriftElectricSparks(player);
@@ -7464,8 +7465,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 2);
 
-				if (player->driftboost < 160)
-					player->driftboost = 160;
+				if (player->driftboost < 125)
+					player->driftboost = 125;
 
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player);
