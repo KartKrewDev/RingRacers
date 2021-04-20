@@ -85,18 +85,13 @@ actionpointer_t actionpointers[] =
 	{{A_FaceTracer},             "A_FACETRACER"},
 	{{A_Scream},                 "A_SCREAM"},
 	{{A_BossDeath},              "A_BOSSDEATH"},
-	{{A_CustomPower},            "A_CUSTOMPOWER"},
 	{{A_RingBox},                "A_RINGBOX"},
-	{{A_Invincibility},          "A_INVINCIBILITY"},
-	{{A_SuperSneakers},          "A_SUPERSNEAKERS"},
 	{{A_BunnyHop},               "A_BUNNYHOP"},
 	{{A_BubbleSpawn},            "A_BUBBLESPAWN"},
 	{{A_FanBubbleSpawn},         "A_FANBUBBLESPAWN"},
 	{{A_BubbleRise},             "A_BUBBLERISE"},
 	{{A_BubbleCheck},            "A_BUBBLECHECK"},
 	{{A_AwardScore},             "A_AWARDSCORE"},
-	{{A_GiveShield},             "A_GIVESHIELD"},
-	{{A_GravityBox},             "A_GRAVITYBOX"},
 	{{A_ScoreRise},              "A_SCORERISE"},
 	{{A_AttractChase},           "A_ATTRACTCHASE"},
 	{{A_DropMine},               "A_DROPMINE"},
@@ -5834,56 +5829,46 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	"FAULT",
-	"ANALOGMODE", // Analog mode?
-	"DIRECTIONCHAR", // Directional character sprites?
-	"AUTOBRAKE", // Autobrake?
-
-	// Cheats
-	"GODMODE",
-	"NOCLIP",
-	"INVIS",
-
 	// True if button down last tic.
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"WPNDOWN",
+	"WPNDOWN", // reserved - gonna turn this into lookback when i'm done with all the major reengineering
 
-	// Unmoving states
+	// Accessibility and cheats
+	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
+	"GODMODE",
+	"NOCLIP",
+
+	"WANTSTOJOIN", // Spectator that wants to join
+
 	"STASIS", // Player is not allowed to move
-	"JUMPSTASIS", // and that includes jumping.
+	"FAULT", // F A U L T
+	"ELIMINATED", // Battle-style elimination, no extra penalty
+	"NOCONTEST", // Did not finish (last place explosion)
+	"LOSTLIFE", // Do not lose life more than once
 
-	// SRB2Kart: spectator that wants to join
-	"WANTSTOJOIN",
+	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	// Character action status
-	"STARTJUMP",
-	"JUMPED",
-	"NOJUMPDAMAGE",
-	"SPINNING",
-	"STARTDASH",
-	"THOKKED",
-	"SHIELDABILITY",
-	"GLIDING",
-	"BOUNCING",
+	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
+	"USERINGS", // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	"ITEMOUT", // Are you holding an item out?
+	"EGGMANOUT", // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
+	"HOLDREADY", // Hold button-style item is ready to activate
 
-	// Sliding (usually in water) like Labyrinth/Oil Ocean
-	"SLIDING",
+	"DRIFTINPUT", // Drifting!
+	"GETSPARKS", // Can get sparks
+	"DRIFTEND", // Drift has ended, used to adjust character angle after drift
+	"BRAKEDRIFT", // Helper for brake-drift spark spawning
 
-	// NiGHTS stuff
-	"TRANSFERTOCLOSEST",
-	"DRILLING",
+	"AIRFAILSAFE", // Whenever or not try the air boost
+	"TRICKDELAY", // Prevent tricks until control stick is neutral
 
-	// Gametype-specific stuff
-	"GAMETYPEOVER", // Race time over
-	"TAGIT",
+	"TUMBLELASTBOUNCE", // One more time for the funny
+	"TUMBLESOUND", // Don't play more than once
 
-	/*** misc ***/
-	"FORCESTRAFE", // Accessibility feature - is accelerate in kickstart mode?
-	"CANCARRY",
 	"HITFINISHLINE", // Already hit the finish line this tic
-
+	"WRONGWAY", // Moving the wrong way with respect to waypoints?
 	NULL // stop loop here.
 };
 
@@ -6109,145 +6094,6 @@ const char *COLOR_ENUMS[] = {
 	"CHAOSEMERALD5",
 	"CHAOSEMERALD6",
 	"CHAOSEMERALD7"
-};
-
-const char *const POWERS_LIST[] = {
-	"INVULNERABILITY",
-	"SNEAKERS",
-	"FLASHING",
-	"SHIELD",
-	"CARRY",
-	"TAILSFLY", // tails flying
-	"UNDERWATER", // underwater timer
-	"SPACETIME", // In space, no one can hear you spin!
-	"EXTRALIFE", // Extra Life timer
-	"PUSHING",
-	"JUSTSPRUNG",
-	"NOAUTOBRAKE",
-
-	"SUPER", // Are you super?
-	"GRAVITYBOOTS", // gravity boots
-
-	// Weapon ammunition
-	"INFINITYRING",
-	"AUTOMATICRING",
-	"BOUNCERING",
-	"SCATTERRING",
-	"GRENADERING",
-	"EXPLOSIONRING",
-	"RAILRING",
-
-	// Power Stones
-	"EMERALDS", // stored like global 'emeralds' variable
-
-	// NiGHTS powerups
-	"NIGHTS_SUPERLOOP",
-	"NIGHTS_HELPER",
-	"NIGHTS_LINKFREEZE",
-
-	//for linedef exec 427
-	"NOCONTROL",
-
-	//for dyes
-	"DYE",
-
-	"JUSTLAUNCHED",
-
-	"IGNORELATCH"
-};
-
-const char *const KARTSTUFF_LIST[] = {
-	"POSITION",
-	"OLDPOSITION",
-	"POSITIONDELAY",
-
-	"THROWDIR",
-	"INSTASHIELD",
-
-	"FLOORBOOST",
-	"SPINOUTTYPE",
-
-	"DRIFT",
-	"DRIFTEND",
-	"DRIFTCHARGE",
-	"DRIFTBOOST",
-	"BOOSTCHARGE",
-	"STARTBOOST",
-	"RINGS",
-	"PICKUPRINGS",
-	"USERINGS",
-	"RINGDELAY",
-	"RINGBOOST",
-	"RINGLOCK",
-	"SPARKLEANIM",
-	"JMP",
-	"OFFROAD",
-	"BRAKESTOP",
-	"SPINDASH",
-	"SPINDASHSPEED",
-	"SPINDASHBOOST",
-	"WATERSKIP",
-	"DASHPADCOOLDOWN",
-	"NUMBOOSTS",
-	"BOOSTPOWER",
-	"SPEEDBOOST",
-	"ACCELBOOST",
-	"HANDLEBOOST",
-	"DRAFTPOWER",
-	"DRAFTLEEWAY",
-	"LASTDRAFT",
-	"BOOSTANGLE",
-	"AIZDRIFTSTRAT",
-	"BRAKEDRIFT",
-
-	"ITEMROULETTE",
-	"ROULETTETYPE",
-
-	"ITEMTYPE",
-	"ITEMAMOUNT",
-	"ITEMHELD",
-	"HOLDREADY",
-
-	"CURSHIELD",
-	"HYUDOROTIMER",
-	"STEALINGTIMER",
-	"STOLENTIMER",
-	"SUPERRING",
-	"SNEAKERTIMER",
-	"NUMSNEAKERS",
-	"GROWSHRINKTIMER",
-	"SQUISHEDTIMER",
-	"ROCKETSNEAKERTIMER",
-	"INVINCIBILITYTIMER",
-	"BUBBLECOOL",
-	"BUBBLEBLOWUP",
-	"FLAMEDASH",
-	"FLAMEMETER",
-	"FLAMELENGTH",
-	"EGGMANHELD",
-	"EGGMANEXPLODE",
-	"EGGMANBLAME",
-	"LASTJAWZTARGET",
-	"BANANADRAG",
-	"SPINOUTTIMER",
-	"WIPEOUTSLOW",
-	"JUSTBUMPED",
-	"COMEBACKTIMER",
-	"SADTIMER",
-
-	"BUMPER",
-	"COMEBACKPOINTS",
-	"COMEBACKMODE",
-	"WANTED",
-
-	"GETSPARKS",
-	"JAWZTARGETDELAY",
-	"SPECTATEWAIT",
-	"TIREGREASE",
-	"SPRINGSTARS",
-	"SPRINGCOLOR",
-	"KILLFIELD",
-	"WRONGWAY"
 };
 
 const char *const KARTHUD_LIST[] = {
@@ -6611,33 +6457,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 
-	// Shields
-	{"SH_NONE",SH_NONE},
-	// Shield flags
-	{"SH_PROTECTFIRE",SH_PROTECTFIRE},
-	{"SH_PROTECTWATER",SH_PROTECTWATER},
-	{"SH_PROTECTELECTRIC",SH_PROTECTELECTRIC},
-	{"SH_PROTECTSPIKE",SH_PROTECTSPIKE},
-	// Indivisible shields
-	{"SH_PITY",SH_PITY},
-	{"SH_WHIRLWIND",SH_WHIRLWIND},
-	{"SH_ARMAGEDDON",SH_ARMAGEDDON},
-	{"SH_PINK",SH_PINK},
-	// normal shields that use flags
-	{"SH_ATTRACT",SH_ATTRACT},
-	{"SH_ELEMENTAL",SH_ELEMENTAL},
-	// Sonic 3 shields
-	{"SH_FLAMEAURA",SH_FLAMEAURA},
-	{"SH_BUBBLEWRAP",SH_BUBBLEWRAP},
-	{"SH_THUNDERCOIN",SH_THUNDERCOIN},
-	// The force shield uses the lower 8 bits to count how many extra hits are left.
-	{"SH_FORCE",SH_FORCE},
-	{"SH_FORCEHP",SH_FORCEHP}, // to be used as a bitmask only
-	// Mostly for use with Mario mode.
-	{"SH_FIREFLOWER",SH_FIREFLOWER},
-	{"SH_STACK",SH_STACK},
-	{"SH_NOSTACK",SH_NOSTACK},
-
 	// Carrying
 	{"CR_NONE",CR_NONE},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
@@ -6645,10 +6464,6 @@ struct int_const_s const INT_CONST[] = {
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
 	{"SF_MACHINE",SF_MACHINE},
-
-	// Dashmode constants
-	{"DASHMODE_THRESHOLD",DASHMODE_THRESHOLD},
-	{"DASHMODE_MAX",DASHMODE_MAX},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -7085,7 +6900,6 @@ void DEH_TableCheck(void)
 #if defined(_DEBUG) || defined(PARANOIA)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
-	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
@@ -7093,9 +6907,6 @@ void DEH_TableCheck(void)
 
 	if (dehmobjs != MT_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked mobjtype list, you dolt!\n(%d mobj types defined, versus %s in the Dehacked list)\n", MT_FIRSTFREESLOT, sizeu1(dehmobjs));
-
-	if (dehpowers != NUMPOWERS)
-		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
 
 	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));

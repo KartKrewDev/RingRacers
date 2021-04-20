@@ -38,7 +38,7 @@ angle_t R_SpriteRotationAngle(mobj_t *mobj)
 	angle_t angleDelta = (viewingAngle - mobj->angle);
 
 	angle_t sliptideLift = mobj->player
-		? mobj->player->aizDriftTilt : 0;
+		? mobj->player->aizdrifttilt : 0;
 
 	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
 	angle_t rollAngle = (rollOrPitch + mobj->rollangle);

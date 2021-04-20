@@ -169,8 +169,6 @@ boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
 boolean P_EndingMusic(player_t *player);
-void P_SpawnShieldOrb(player_t *player);
-void P_SwitchShield(player_t *player, UINT16 shieldtype);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
@@ -178,11 +176,6 @@ void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
 void P_GiveFinishFlags(player_t *player);
-#if 0
-void P_ResetScore(player_t *player);
-#else
-#define P_ResetScore(player) player->scoreadd = 0
-#endif
 boolean P_AutoPause(void);
 
 void P_ElementalFire(player_t *player, boolean cropcircle);
@@ -287,7 +280,6 @@ boolean P_MobjWasRemoved(mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
-void P_RunShields(void);
 void P_RunOverlays(void);
 void P_HandleMinecartSegments(mobj_t *mobj);
 void P_MobjThinker(mobj_t *mobj);

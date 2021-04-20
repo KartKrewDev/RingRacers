@@ -165,7 +165,7 @@ static void Y_UnloadVoteData(void);
 //
 static void Y_CompareTime(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER || players[i].realtime == UINT32_MAX)
+	UINT32 val = ((players[i].pflags & PF_NOCONTEST || players[i].realtime == UINT32_MAX)
 		? (UINT32_MAX-1) : players[i].realtime);
 
 	if (!(val < data.val[data.numplayers]))
@@ -177,11 +177,11 @@ static void Y_CompareTime(INT32 i)
 
 static void Y_CompareScore(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER)
-			? (UINT32_MAX-1) : players[i].marescore);
+	UINT32 val = ((players[i].pflags & PF_NOCONTEST)
+			? (UINT32_MAX-1) : players[i].roundscore);
 
 	if (!(data.val[data.numplayers] == UINT32_MAX
-	|| (!(players[i].pflags & PF_GAMETYPEOVER) && val > data.val[data.numplayers])))
+	|| (!(players[i].pflags & PF_NOCONTEST) && val > data.val[data.numplayers])))
 		return;
 
 	data.val[data.numplayers] = val;
@@ -310,7 +310,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		if ((powertype == PWRLV_DISABLED)
 			&& (!rankingsmode)
-			&& !(players[i].pflags & PF_GAMETYPEOVER)
+			&& !(players[i].pflags & PF_NOCONTEST)
 			&& (data.pos[data.numplayers] < (numplayersingame + numgriefers)))
 		{
 			// Online rank is handled further below in this file.

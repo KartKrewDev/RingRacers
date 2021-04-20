@@ -58,54 +58,48 @@ typedef enum
 //
 typedef enum
 {
-	PF_FAULT = 1,
-
-	// Cheats
-	PF_GODMODE = 1<<4,
-	PF_NOCLIP  = 1<<5,
-	PF_INVIS   = 1<<6,
-
 	// True if button down last tic.
-	PF_ATTACKDOWN = 1<<7,
-	PF_ACCELDOWN  = 1<<8,
-	PF_BRAKEDOWN  = 1<<9,
-	PF_WPNDOWN    = 1<<10, // unused
+	PF_ATTACKDOWN = 1,
+	PF_ACCELDOWN  = 1<<1,
+	PF_BRAKEDOWN  = 1<<2,
+	PF_WPNDOWN    = 1<<3, // reserved - gonna turn this into lookback when i'm done with all the major reengineering
 
-	// Unmoving states
-	PF_STASIS     = 1<<11, // Player is not allowed to move
-	PF_JUMPSTASIS = 1<<12, // unused
+	// Accessibility and cheats
+	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
+	PF_GODMODE			= 1<<5,
+	PF_NOCLIP 			= 1<<6,
 
-	// SRB2Kart: Spectator that wants to join
-	PF_WANTSTOJOIN = 1<<13,
+	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
 
-	// Character action status
-	PF_STARTJUMP     = 1<<14, // unused
-	PF_JUMPED        = 1<<15, // unused
-	PF_NOJUMPDAMAGE  = 1<<16, // unused
-	PF_SPINNING      = 1<<17, // unused
-	PF_STARTDASH     = 1<<18, // unused
-	PF_THOKKED       = 1<<19, // unused
-	PF_SHIELDABILITY = 1<<20, // unused
-	PF_GLIDING       = 1<<21, // unused
-	PF_BOUNCING      = 1<<22, // unused
+	PF_STASIS			= 1<<8, // Player is not allowed to move
+	PF_FAULT			= 1<<9, // F A U L T
+	PF_ELIMINATED		= 1<<10, // Battle-style elimination, no extra penalty
+	PF_NOCONTEST 		= 1<<11, // Did not finish (last place explosion)
+	PF_LOSTLIFE			= 1<<12, // Do not lose life more than once
 
-	// Sliding (usually in water) like Labyrinth/Oil Ocean
-	PF_SLIDING       = 1<<23,
+	PF_RINGLOCK			= 1<<13, // Prevent picking up rings while SPB is locked on
 
-	// NiGHTS stuff
-	PF_TRANSFERTOCLOSEST = 1<<24, // unused
-	PF_DRILLING          = 1<<25, // unused
+	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
+	PF_USERINGS			= 1<<14, // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	PF_ITEMOUT			= 1<<15, // Are you holding an item out?
+	PF_EGGMANOUT		= 1<<16, // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
+	PF_HOLDREADY		= 1<<17, // Hold button-style item is ready to activate
 
-	// Gametype-specific stuff
-	PF_GAMETYPEOVER = 1<<26, // Race time over
-	PF_TAGIT        = 1<<27, // unused
+	PF_DRIFTINPUT		= 1<<18, // Drifting!
+	PF_GETSPARKS		= 1<<19, // Can get sparks
+	PF_DRIFTEND			= 1<<20, // Drift has ended, used to adjust character angle after drift
+	PF_BRAKEDRIFT		= 1<<21, // Helper for brake-drift spark spawning
 
-	/*** misc ***/
-	PF_KICKSTARTACCEL    = 1<<28, // Accessibility feature - is accelerate in kickstart mode?
-	PF_CANCARRY          = 1<<29, // unused
-	PF_HITFINISHLINE     = 1<<30, // Already hit the finish line this tic
+	PF_AIRFAILSAFE		= 1<<22, // Whenever or not try the air boost
+	PF_TRICKDELAY		= 1<<23, // Prevent tricks until control stick is neutral
 
-	// up to 1<<31 is free, but try to hit unused stuff first
+	PF_TUMBLELASTBOUNCE	= 1<<24, // One more time for the funny
+	PF_TUMBLESOUND		= 1<<25, // Don't play more than once
+
+	PF_HITFINISHLINE	= 1<<26, // Already hit the finish line this tic
+	PF_WRONGWAY			= 1<<27, // Moving the wrong way with respect to waypoints?
+
+	// up to 1<<31 is free
 } pflags_t;
 
 typedef enum
@@ -119,104 +113,13 @@ typedef enum
 	PA_HURT
 } panim_t;
 
-//
-// All of the base srb2 shields are either a single constant,
-// or use damagetype-protecting flags applied to a constant,
-// or are the force shield (which does everything weirdly).
-//
-// Base flags by themselves aren't used so modders can make
-// abstract, ability-less shields should they so choose.
-//
-typedef enum
-{
-	SH_NONE = 0,
-
-	// Shield flags
-	SH_PROTECTFIRE = 0x400,
-	SH_PROTECTWATER = 0x800,
-	SH_PROTECTELECTRIC = 0x1000,
-	SH_PROTECTSPIKE = 0x2000, // cactus shield one day? thanks, subarashii
-	//SH_PROTECTNUKE = 0x4000, // intentionally no hardcoded defense against nukes
-
-	// Indivisible shields
-	SH_PITY = 1, // the world's most basic shield ever, given to players who suck at Match
-	SH_WHIRLWIND,
-	SH_ARMAGEDDON,
-	SH_PINK, // PITY IN PINK!
-
-	// Normal shields that use flags
-	SH_ATTRACT = SH_PITY|SH_PROTECTELECTRIC,
-	SH_ELEMENTAL = SH_PITY|SH_PROTECTFIRE|SH_PROTECTWATER,
-
-	// Sonic 3 shields
-	SH_FLAMEAURA = SH_PITY|SH_PROTECTFIRE,
-	SH_BUBBLEWRAP = SH_PITY|SH_PROTECTWATER,
-	SH_THUNDERCOIN = SH_WHIRLWIND|SH_PROTECTELECTRIC,
-
-	// The force shield uses the lower 8 bits to count how many extra hits are left.
-	SH_FORCE = 0x100,
-	SH_FORCEHP = 0xFF, // to be used as a bitmask only
-
-	// Mostly for use with Mario mode.
-	SH_FIREFLOWER = 0x200,
-
-	SH_STACK = SH_FIREFLOWER, // second-layer shields
-	SH_NOSTACK = ~SH_STACK
-} shieldtype_t; // pw_shield
-
 typedef enum
 {
 	CR_NONE = 0,
 	// Specific level gimmicks.
+	CR_SLIDING,
 	CR_ZOOMTUBE,
-} carrytype_t; // pw_carry
-
-// Player powers. (don't edit this comment)
-typedef enum
-{
-	pw_invulnerability,
-	pw_sneakers,
-	pw_flashing,
-	pw_shield,
-	pw_carry,
-	pw_tailsfly, // tails flying
-	pw_underwater, // underwater timer
-	pw_spacetime, // In space, no one can hear you spin!
-	pw_extralife, // Extra Life timer
-	pw_pushing,
-	pw_justsprung,
-	pw_noautobrake,
-
-	pw_super, // Are you super?
-	pw_gravityboots, // gravity boots
-
-	// Weapon ammunition
-	pw_infinityring,
-	pw_automaticring,
-	pw_bouncering,
-	pw_scatterring,
-	pw_grenadering,
-	pw_explosionring,
-	pw_railring,
-
-	// Power Stones
-	pw_emeralds, // stored like global 'emeralds' variable
-
-	// NiGHTS powerups
-	pw_nights_superloop,
-	pw_nights_helper,
-	pw_nights_linkfreeze,
-
-	pw_nocontrol, //for linedef exec 427
-
-	pw_dye, // for dyes
-
-	pw_justlaunched, // Launched off a slope this tic (0=none, 1=standard launch, 2=half-pipe launch)
-
-	pw_ignorelatch, // Don't grab onto CR_GENERIC, add 32768 (powers[pw_ignorelatch] & 1<<15) to avoid ALL not-NiGHTS CR_ types
-
-	NUMPOWERS
-} powertype_t;
+} carrytype_t; // carry
 
 /*
 To use: #define FOREACH( name, number )
@@ -295,110 +198,6 @@ typedef enum
 #undef KSPIN_TYPE
 } kartspinoutflags_t;
 
-//{ SRB2kart - kartstuff
-typedef enum
-{
-	// TODO: Kill this giant array. Add them as actual player_t variables, or condense related timers into their own, smaller arrays.
-	// Basic gameplay things
-	k_position,			// Used for Kart positions, mostly for deterministic stuff
-	k_oldposition,		// Used for taunting when you pass someone
-	k_positiondelay,	// Used for position number, so it can grow when passing/being passed
-
-	k_throwdir, 		// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
-	k_instashield,		// Instashield no-damage animation timer
-
-	k_floorboost,		// Prevents Sneaker sounds for a breif duration when triggered by a floor panel
-	k_spinouttype,		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
-
-	k_drift,			// Drifting Left or Right, plus a bigger counter = sharper turn
-	k_driftend,			// Drift has ended, used to adjust character angle after drift
-	k_driftcharge,		// Charge your drift so you can release a burst of speed
-	k_driftboost,		// Boost you get from drifting
-	k_boostcharge,		// Charge-up for boosting at the start of the race
-	k_startboost,		// Boost you get from start of race or respawn drop dash
-	k_rings,			// Number of held rings
-	k_pickuprings,		// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
-	k_userings,			// Have to be not holding the item button to change from using rings to using items (or vice versa), to prevent some weirdness with the button
-	k_ringdelay,		// 3 tic delay between every ring usage
-	k_ringboost,		// Ring boost timer
-	k_ringlock,			// Prevent picking up rings while SPB is locked on
-	k_sparkleanim,		// Angle offset for ring sparkle animation
-	k_jmp,				// In Mario Kart, letting go of the jump button stops the drift
-	k_offroad,			// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	k_brakestop,		// Wait until you've made a complete stop for a few tics before letting brake go in reverse.
-	k_spindash,			// Spindash charge timer
-	k_spindashspeed,	// Spindash release speed
-	k_spindashboost,	// Spindash release boost timer
-	k_waterskip,		// Water skipping counter
-	k_dashpadcooldown,	// Separate the vanilla SA-style dash pads from using pw_flashing
-	k_numboosts,		// Count of how many boosts are being stacked, for after image spawning
-	k_boostpower,		// Base boost value, for offroad
-	k_speedboost,		// Boost value smoothing for max speed
-	k_accelboost,		// Boost value smoothing for acceleration
-	k_handleboost,		// Boost value smoothing for handling
-	k_draftpower,		// Drafting power (from 0 to FRACUNIT), doubles your top speed & acceleration at max
-	k_draftleeway,		// Leniency timer before removing draft power
-	k_lastdraft,		// Last player being drafted
-	k_boostangle,		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
-	k_aizdriftstrat,	// Let go of your drift while boosting? Helper for the SICK STRATZ you have just unlocked
-	k_brakedrift,		// Helper for brake-drift spark spawning
-
-	k_itemroulette,		// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	k_roulettetype,		// Used for the roulette, for deciding type (currently only used for Battle, to give you better items from Karma items)
-
-	// Item held stuff
-	k_itemtype,		// KITEM_ constant for item number
-	k_itemamount,	// Amount of said item
-	k_itemheld,		// Are you holding an item?
-	k_holdready,	// Hold button-style item is ready to activate
-
-	// Some items use timers for their duration or effects
-	k_curshield,			// 0 = no shield, 1 = thunder shield
-	k_hyudorotimer,			// Duration of the Hyudoro offroad effect itself
-	k_stealingtimer,		// You are stealing an item, this is your timer
-	k_stolentimer,			// You are being stolen from, this is your timer
-	k_superring,			// Spawn rings on top of you every tic!
-	k_sneakertimer,			// Duration of a Sneaker Boost (from Sneakers or level boosters)
-	k_numsneakers,			// Number of stacked sneaker effects
-	k_growshrinktimer,		// > 0 = Big, < 0 = small
-	k_squishedtimer,		// Squished frame timer
-	k_rocketsneakertimer,	// Rocket Sneaker duration timer
-	k_invincibilitytimer,	// Invincibility timer
-	k_bubblecool,			// Bubble Shield use cooldown
-	k_bubbleblowup,			// Bubble Shield usage blowup
-	k_flamedash,			// Flame Shield dash power
-	k_flamemeter,			// Flame Shield dash meter left
-	k_flamelength,			// Flame Shield dash meter, number of segments
-	k_eggmanheld,			// Eggman monitor held, separate from k_itemheld so it doesn't stop you from getting items
-	k_eggmanexplode,		// Fake item recieved, explode in a few seconds
-	k_eggmanblame,			// Fake item recieved, who set this fake
-	k_lastjawztarget,		// Last person you target with jawz, for playing the target switch sfx
-	k_bananadrag,			// After a second of holding a banana behind you, you start to slow down
-	k_spinouttimer,			// Spin-out from a banana peel or oil slick (was "pw_bananacam")
-	k_wipeoutslow,			// Timer before you slowdown when getting wiped out
-	k_justbumped,			// Prevent players from endlessly bumping into each other
-	k_comebacktimer,		// Battle mode, how long before you become a bomb after death
-	k_sadtimer,				// How long you've been sad
-
-	// Battle Mode vars
-	k_bumper,			// Number of bumpers left
-	k_comebackpoints,	// Number of times you've bombed or gave an item to someone; once it's 3 it gets set back to 0 and you're given a bumper
-	k_comebackmode, 	// 0 = bomb, 1 = item
-	k_wanted, 			// Timer for determining WANTED status, lowers when hitting people, prevents the game turning into Camp Lazlo
-
-	// v1.0.2+ vars
-	k_getsparks,		// Disable drift sparks at low speed, JUST enough to give acceleration the actual headstart above speed
-	k_jawztargetdelay,	// Delay for Jawz target switching, to make it less twitchy
-	k_spectatewait,		// How long have you been waiting as a spectator
-	k_tiregrease,		// Reduced friction timer after hitting a horizontal spring
-	k_springstars,		// Spawn stars around a player when they hit a spring
-	k_springcolor,		// Color of spring stars
-	k_killfield, 		// How long have you been in the kill field, stay in too long and lose a bumper
-	k_wrongway, 		// Display WRONG WAY on screen
-
-	NUMKARTSTUFF
-} kartstufftype_t;
-
 typedef enum
 {
 	// Unsynced, HUD or clientsided effects
@@ -437,7 +236,7 @@ typedef enum
 } karthudtype_t;
 
 // QUICKLY GET RING TOTAL, INCLUDING RINGS CURRENTLY IN THE PICKUP ANIMATION
-#define RINGTOTAL(p) (p->rings + p->kartstuff[k_pickuprings])
+#define RINGTOTAL(p) (p->rings + p->pickuprings)
 
 // CONSTANTS FOR TRICK PANELS
 #define TRICKMOMZRAMP (30)
@@ -453,7 +252,7 @@ typedef enum
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {
-	UINT8 state; // 0: not respawning, 1: heading towards respawn point, 2: about to drop
+	UINT8 state; // see RESPAWNST_ constants in k_respawn.h
 	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
 	fixed_t pointx; // Respawn position coords to go towards
 	fixed_t pointy;
@@ -515,37 +314,6 @@ typedef struct player_s
 	// fun thing for player sprite
 	angle_t drawangle;
 
-	// player's ring count
-	INT16 rings;
-	INT16 spheres;
-
-	// Power ups. invinc and invis are tic counters.
-	UINT16 powers[NUMPOWERS];
-
-	// SRB2kart stuff
-	INT32 kartstuff[NUMKARTSTUFF];
-	INT32 karthud[NUMKARTHUD];
-
-	UINT32 distancetofinish;
-	waypoint_t *nextwaypoint;
-	respawnvars_t respawn; // Respawn info
-	tic_t airtime; 		// Keep track of how long you've been in the air
-	boolean driftInput; // Whenever or not try drifting.
-	boolean airFailsafe; // Whenever or not try the air boost
-	INT32 aizDriftTilt;
-	INT32 aizDriftTurn;
-
-	UINT8 trickpanel; 	// Trick panel state
-	boolean trickdelay;	// Prevent tricks until control stick is neutral
-	fixed_t trickmomx;
-	fixed_t trickmomy;
-	fixed_t trickmomz;	// Instead of stupid auxiliary variables let's... just make some ourselves.
-
-	UINT8 bumpers;
-	INT16 karmadelay;
-	boolean eliminated;
-
-
 	// Bit flags.
 	// See pflags_t, above.
 	pflags_t pflags;
@@ -563,10 +331,6 @@ typedef struct player_s
 	INT32 skin;
 	UINT32 availabilities;
 
-	UINT32 score; // player score
-	fixed_t dashspeed; // dashing speed
-
-	// SRB2kart
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
 
@@ -575,43 +339,139 @@ typedef struct player_s
 	UINT16 followercolor;	// Kart: Used to store the follower colour the player wishes to use
 	mobj_t *follower;		// Kart: This is the follower object we have. (If any)
 
-	UINT8 tumbleBounces;
-	UINT16 tumbleHeight;
-	boolean tumbleLastBounce;
-	boolean tumbleSound;
-
-	SINT8 glanceDir; // Direction the player is trying to look backwards in
-
-	//
-
 	UINT32 charflags; // Extra abilities/settings for skins (combinable stuff)
 	                 // See SF_ flags
 
 	mobjtype_t followitem; // Object # to spawn for Smiles
 	mobj_t *followmobj; // Smiles all around
 
+	UINT32 score; // player score
+
+	UINT16 nocontrol; //for linedef exec 427
+	UINT8 carry;
+	UINT16 dye;
+
+	// SRB2kart stuff
+	INT32 karthud[NUMKARTHUD];
+
+	// Basic gameplay things
+	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
+	UINT8 oldposition;		// Used for taunting when you pass someone
+	UINT8 positiondelay;	// Used for position number, so it can grow when passing/being passed
+	UINT32 distancetofinish;
+	waypoint_t *nextwaypoint;
+	respawnvars_t respawn; // Respawn info
+	tic_t airtime; 			// Keep track of how long you've been in the air
+	UINT8 startboost;		// (0 to 125) - Boost you get from start of race or respawn drop dash
+
+	UINT16 flashing;
+	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
+	UINT8 spinouttype;		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
+	UINT8 instashield;		// Instashield no-damage animation timer
+	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
+	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
+	UINT8 tumbleBounces;
+	UINT16 tumbleHeight;
+
+	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
+	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
+	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
+
+	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
+	INT32 aizdrifttilt;
+	INT32 aizdriftturn;
+
+	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
+	UINT8 waterskip;		// Water skipping counter
+
+	UINT16 tiregrease;		// Reduced friction timer after hitting a horizontal spring
+	UINT16 springstars;		// Spawn stars around a player when they hit a spring
+	UINT16 springcolor;		// Color of spring stars
+	UINT8 dashpadcooldown;	// Separate the vanilla SA-style dash pads from using flashing
+
+	UINT16 spindash;		// Spindash charge timer
+	fixed_t spindashspeed;	// Spindash release speed
+	UINT8 spindashboost;	// Spindash release boost timer
+
+	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
+	fixed_t boostpower;		// Base boost value, for offroad
+	fixed_t speedboost;		// Boost value smoothing for max speed
+	fixed_t accelboost;		// Boost value smoothing for acceleration
+	fixed_t handleboost;	// Boost value smoothing for handling
+	angle_t boostangle;		// angle set when not spun out OR boosted to determine what direction you should keep going at if you're spun out and boosted.
+
+	fixed_t draftpower;		// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
+	UINT16 draftleeway;		// Leniency timer before removing draft power
+	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
+
+	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
+	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+
+	// Item held stuff
+	SINT8 itemtype;		// KITEM_ constant for item number
+	UINT8 itemamount;	// Amount of said item
+	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
+
+	UINT8 sadtimer;		// How long you've been sad
+
+	// player's ring count
+	SINT8 rings;
+	UINT8 pickuprings;	// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
+	UINT8 ringdelay;	// (0 to 3) - 3 tic delay between every ring usage
+	UINT16 ringboost;	// Ring boost timer
+	UINT8 sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
+	UINT8 superring;	// Spawn rings on top of you every tic!
+
+	UINT8 curshield;	// see kartshields_t
+	UINT8 bubblecool;	// Bubble Shield use cooldown
+	UINT8 bubbleblowup;	// Bubble Shield usage blowup
+	UINT16 flamedash;	// Flame Shield dash power
+	UINT16 flamemeter;	// Flame Shield dash meter left
+	UINT8 flamelength;	// Flame Shield dash meter, number of segments
+
+	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
+	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
+
+	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
+	UINT8 numsneakers;		// Number of stacked sneaker effects
+	UINT8 floorboost;		// (0 to 3) - Prevents Sneaker sounds for a brief duration when triggered by a floor panel
+
+	INT16 growshrinktimer;		// > 0 = Big, < 0 = small
+	UINT16 rocketsneakertimer;	// Rocket Sneaker duration timer
+	UINT16 invincibilitytimer;	// Invincibility timer
+
+	UINT8 eggmanexplode;	// Fake item recieved, explode in a few seconds
+	SINT8 eggmanblame;		// (-1 to 15) - Fake item recieved, who set this fake
+
+	UINT8 bananadrag;		// After a second of holding a banana behind you, you start to slow down
+
+	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
+	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
+
+	UINT8 trickpanel; 	// Trick panel state
+	fixed_t trickmomx;
+	fixed_t trickmomy;
+	fixed_t trickmomz;
+
+	UINT32 roundscore; // battle score this round
+	UINT8 emeralds;
+	UINT8 bumpers;
+	INT16 karmadelay;
+	INT16 spheres;
+
+	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
+	//
+
 	SINT8 lives;
-	boolean lostlife;
-	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
-	UINT8 gotcontinue; // Got continue from this stage?
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
 	fixed_t lastspeed;
-	UINT8 secondjump; // Jump counter
 
-	UINT8 fly1; // Tails flying
-	UINT8 scoreadd; // Used for multiple enemy attack bonus
-	tic_t glidetime; // Glide counter for thrust
-	UINT8 climbing; // Climbing on the wall
 	INT32 deadtimer; // End game if game over lasts too long
 	tic_t exiting; // Exitlevel timer
-
-	UINT8 homing; // Are you homing?
-	tic_t dashmode; // counter for dashmode ability
-
-	tic_t skidtime; // Skid timer
 
 	////////////////////////////
 	// Conveyor Belt Movement //
@@ -621,73 +481,18 @@ typedef struct player_s
 	fixed_t rmomx; // "Real" momx (momx - cmomx)
 	fixed_t rmomy; // "Real" momy (momy - cmomy)
 
-	/////////////////////
-	// Race Mode Stuff //
-	/////////////////////
-	INT16 numboxes; // Number of item boxes obtained for Race Mode
-	INT16 totalring; // Total number of rings obtained for Race Mode
+	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
 	INT32 starpostnum; // The number of the last starpost you hit
 
-	////////////////////
-	// CTF Mode Stuff //
-	////////////////////
-	INT32 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
-	UINT16 gotflag; // 1 == Red, 2 == Blue Do you have the flag?
+	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
 
-	INT32 weapondelay; // Delay (if any) to fire the weapon again
-	INT32 tossdelay;   // Delay (if any) to toss a flag/emeralds again
-
-	/////////////////
-	// NiGHTS Stuff//
-	/////////////////
-	angle_t angle_pos;
-	angle_t old_angle_pos;
-
-	mobj_t *axis1;
-	mobj_t *axis2;
-	tic_t bumpertime; // Currently being bounced by MT_NIGHTSBUMPER
-	INT32 flyangle;
-	tic_t drilltimer;
-	INT32 linkcount;
-	tic_t linktimer;
-	INT32 anotherflyangle;
-	tic_t nightstime; // How long you can fly as NiGHTS.
-	INT32 drillmeter;
-	UINT8 drilldelay;
-	boolean bonustime; // Capsule destroyed, now it's bonus time!
-	mobj_t *capsule; // Go inside the capsule
-	mobj_t *drone; // Move center to the drone
-	fixed_t oldscale; // Pre-Nightserize scale
-	UINT8 mare; // Current mare
-	UINT8 marelap; // Current mare lap
-	UINT8 marebonuslap; // Current mare lap starting from bonus time
-
-	// Statistical purposes.
-	tic_t marebegunat; // Leveltime when mare begun
-	tic_t startedtime; // Time which you started this mare with.
-	tic_t finishedtime; // Time it took you to finish the mare (used for display)
-	tic_t lapbegunat; // Leveltime when lap begun
-	tic_t lapstartedtime; // Time which you started this lap with.
-	INT16 finishedspheres; // The spheres you had left upon finishing the mare
-	INT16 finishedrings; // The rings/stars you had left upon finishing the mare
-	UINT32 marescore; // score for this nights stage
-	UINT32 lastmarescore; // score for the last mare
-	UINT32 totalmarescore; // score for all mares
-	UINT8 lastmare; // previous mare
-	UINT8 lastmarelap; // previous mare lap
-	UINT8 lastmarebonuslap; // previous mare bonus lap
-	UINT8 totalmarelap; // total mare lap
-	UINT8 totalmarebonuslap; // total mare bonus lap
-	INT32 maxlink; // maximum link obtained
-	UINT8 texttimer; // nights_texttime should not be local
-	UINT8 textvar; // which line of NiGHTS text to show -- let's not use cheap hacks
+	UINT8 checkskip; // Skipping checkpoints? Oh no no no
 
 	INT16 lastsidehit, lastlinehit;
 
-	tic_t losstime;
-	UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you doofus!
+	//UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam
 
 	INT32 onconveyor; // You are on a conveyor belt if nonzero
 
@@ -696,6 +501,7 @@ typedef struct player_s
 	angle_t awayviewaiming; // Used for cut-away view
 
 	boolean spectator;
+	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
 
 	boolean bot;
 	botvars_t botvars;
@@ -714,10 +520,6 @@ typedef struct player_s
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 } player_t;
-
-// Values for dashmode
-#define DASHMODE_THRESHOLD (3*TICRATE)
-#define DASHMODE_MAX (DASHMODE_THRESHOLD + 3)
 
 // Value for infinite lives
 #define INFLIVES 0x7F

@@ -41,140 +41,7 @@ INT32 K_StartingBumperCount(void)
 
 boolean K_IsPlayerWanted(player_t *player)
 {
-#if 1
-	return (player->kartstuff[k_position] == 1);
-#else
-	UINT8 i;
-
-	if (!(gametyperules & GTR_WANTED))
-		return false;
-
-	for (i = 0; i < 4; i++)
-	{
-		if (battlewanted[i] == -1)
-			break;
-		if (player == &players[battlewanted[i]])
-			return true;
-	}
-	return false;
-#endif
-}
-
-void K_CalculateBattleWanted(void)
-{
-	UINT8 numingame = 0, numwanted = 0;
-	SINT8 camppos[MAXPLAYERS]; // who is the biggest camper
-	UINT8 ties = 0, nextcamppos = 0;
-	UINT8 i, j;
-
-#if 0
-	if (!(gametyperules & GTR_WANTED))
-#endif
-	{
-		memset(battlewanted, -1, sizeof (battlewanted));
-		return;
-	}
-
-	wantedcalcdelay = wantedfrequency;
-	memset(camppos, -1, sizeof (camppos)); // initialize
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		UINT8 position = 1;
-
-		if (!playeringame[i] || players[i].spectator) // Not playing
-			continue;
-
-		if (players[i].exiting) // We're done, don't calculate.
-			return;
-
-		if (players[i].bumpers <= 0) // Not alive, so don't do anything else
-			continue;
-
-		numingame++;
-
-		for (j = 0; j < MAXPLAYERS; j++)
-		{
-			if (!playeringame[j] || players[j].spectator)
-				continue;
-
-			if (players[j].bumpers <= 0)
-				continue;
-
-			if (j == i)
-				continue;
-
-			if (K_NumEmeralds(&players[j]) > K_NumEmeralds(&players[i]))
-			{
-				position++;
-			}
-			else if (players[j].bumpers > players[i].bumpers)
-			{
-				position++;
-			}
-			else if (players[j].marescore > players[i].marescore)
-			{
-				position++;
-			}
-			else if (players[j].kartstuff[k_wanted] > players[i].kartstuff[k_wanted])
-			{
-				position++;
-			}
-		}
-
-		position--; // Make zero based
-
-		while (camppos[position] != -1) // Port priority!
-			position++;
-
-		camppos[position] = i;
-	}
-
-	if (numingame <= 2) // In 1v1s then there's no need for WANTED.
-		numwanted = 0;
-	else
-		numwanted = min(4, 1 + ((numingame-2) / 4));
-
-	for (i = 0; i < 4; i++)
-	{
-		if (i+1 > numwanted) // Not enough players for this slot to be wanted!
-		{
-			battlewanted[i] = -1;
-		}
-		else
-		{
-			// Do not add *any* more people if there's too many times that are tied with others.
-			// This could theoretically happen very easily if people don't hit each other for a while after the start of a match.
-			// (I will be sincerely impressed if more than 2 people tie after people start hitting each other though)
-
-			if (camppos[nextcamppos] == -1 // Out of entries
-				|| ties >= (numwanted-i)) // Already counted ties
-			{
-				battlewanted[i] = -1;
-				continue;
-			}
-
-			if (ties < (numwanted-i))
-			{
-				ties = 0; // Reset
-				for (j = 0; j < 2; j++)
-				{
-					if (camppos[nextcamppos+(j+1)] == -1) // Nothing beyond, cancel
-						break;
-					if (players[camppos[nextcamppos]].kartstuff[k_wanted] == players[camppos[nextcamppos+(j+1)]].kartstuff[k_wanted])
-						ties++;
-				}
-			}
-
-			if (ties < (numwanted-i)) // Is it still low enough after counting?
-			{
-				battlewanted[i] = camppos[nextcamppos];
-				nextcamppos++;
-			}
-			else
-				battlewanted[i] = -1;
-		}
-	}
+	return (player->position == 1);
 }
 
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
@@ -226,7 +93,7 @@ void K_CheckBumpers(void)
 			return;
 
 		numingame++;
-		winnerscoreadd += players[i].marescore;
+		winnerscoreadd += players[i].roundscore;
 
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
@@ -237,7 +104,7 @@ void K_CheckBumpers(void)
 			return;
 
 		winnernum = i;
-		winnerscoreadd -= players[i].marescore;
+		winnerscoreadd -= players[i].roundscore;
 	}
 
 	if (numingame <= 1)
@@ -253,7 +120,7 @@ void K_CheckBumpers(void)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
-					players[i].pflags |= PF_GAMETYPEOVER;
+					players[i].pflags |= PF_NOCONTEST;
 					P_DoPlayerExit(&players[i]);
 				}
 			}
@@ -264,7 +131,7 @@ void K_CheckBumpers(void)
 
 	if (winnernum > -1 && playeringame[winnernum])
 	{
-		players[winnernum].marescore += winnerscoreadd;
+		players[winnernum].roundscore += winnerscoreadd;
 		CONS_Printf(M_GetText("%s recieved %d point%s for winning!\n"), player_names[winnernum], winnerscoreadd, (winnerscoreadd == 1 ? "" : "s"));
 	}
 
@@ -279,12 +146,12 @@ void K_CheckEmeralds(player_t *player)
 {
 	UINT8 i;
 
-	if (!ALLCHAOSEMERALDS(player->powers[pw_emeralds]))
+	if (!ALLCHAOSEMERALDS(player->emeralds))
 	{
 		return;
 	}
 
-	player->marescore++; // lol
+	player->roundscore++; // lol
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -371,12 +238,12 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 	{
 		UINT32 emeraldFlag = (1 << i);
 
-		if ((player->powers[pw_emeralds] & emeraldFlag) && (emeraldFlag & emeraldType))
+		if ((player->emeralds & emeraldFlag) && (emeraldFlag & emeraldType))
 		{
 			mobj_t *emerald = K_SpawnChaosEmerald(player->mo->x, player->mo->y, player->mo->z, player->mo->angle - ANGLE_90, flip, emeraldFlag);
 			P_SetTarget(&emerald->target, player->mo);
 
-			player->powers[pw_emeralds] &= ~emeraldFlag;
+			player->emeralds &= ~emeraldFlag;
 		}
 	}
 }
@@ -390,7 +257,7 @@ UINT8 K_NumEmeralds(player_t *player)
 	{
 		UINT32 emeraldFlag = (1 << i);
 
-		if (player->powers[pw_emeralds] & emeraldFlag)
+		if (player->emeralds & emeraldFlag)
 		{
 			num++;
 		}
@@ -443,9 +310,9 @@ void K_RunPaperItemSpawners(void)
 			continue;
 		}
 
-		emeraldsSpawned |= players[i].powers[pw_emeralds];
+		emeraldsSpawned |= players[i].emeralds;
 
-		if ((players[i].exiting > 0 || players[i].eliminated)
+		if ((players[i].exiting > 0 || (players[i].pflags & PF_ELIMINATED))
 			|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
 		{
 			continue;
