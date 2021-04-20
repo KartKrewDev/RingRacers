@@ -45,7 +45,6 @@ void OP_ObjectplaceMovement(player_t *player);
 //
 void Command_CheatNoClip_f(void);
 void Command_CheatGod_f(void);
-void Command_CheatNoTarget_f(void);
 void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setlives_f(void);

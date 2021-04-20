@@ -1006,7 +1006,6 @@ void D_RegisterClientCommands(void)
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
-	COM_AddCommand("notarget", Command_CheatNoTarget_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
 	COM_AddCommand("setlives", Command_Setlives_f);
 	COM_AddCommand("devmode", Command_Devmode_f);
@@ -1418,7 +1417,7 @@ static void SendNameAndColor(UINT8 n)
 
 		player->skincolor = cv_playercolor[n].value;
 
-		if (player->mo && !player->powers[pw_dye])
+		if (player->mo && !player->dye)
 			player->mo->color = player->skincolor;
 
 		// Update follower for local games:
@@ -1879,7 +1878,7 @@ static INT32 FindPlayerByPlace(INT32 place)
 	for (playernum = 0; playernum < MAXPLAYERS; ++playernum)
 		if (playeringame[playernum])
 	{
-		if (players[playernum].kartstuff[k_position] == place)
+		if (players[playernum].position == place)
 		{
 			return playernum;
 		}
@@ -1903,7 +1902,7 @@ static void GetViewablePlayerPlaceRange(INT32 *first, INT32 *last)
 	for (i = 0; i < MAXPLAYERS; ++i)
 		if (G_CouldView(i))
 	{
-		place = players[i].kartstuff[k_position];
+		place = players[i].position;
 		if (place < (*first))
 			(*first) = place;
 		if (place > (*last))
@@ -2974,7 +2973,7 @@ static void Command_Respawn(void)
 	}
 
 	// todo: this probably isnt necessary anymore with v2
-	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].kartstuff[k_position])) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
+	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].position)) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
 	{
 		CONS_Printf(M_GetText("Nice try.\n"));
 		return;
@@ -2989,7 +2988,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 	INT32 respawnplayer = READINT32(*cp);
 
 	// You can't respawn someone else. Nice try, there.
-	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].kartstuff[k_position]) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
+	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].position) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -3144,7 +3143,7 @@ static void HandleTeamChangeCommand(UINT8 localplayer)
 	if (players[g_localplayers[localplayer]].spectator)
 		error = !(NetPacket.packet.newteam || (players[g_localplayers[localplayer]].pflags & PF_WANTSTOJOIN)); // :lancer:
 	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == (unsigned)players[g_localplayers[localplayer]].ctfteam);
+		error = (NetPacket.packet.newteam == players[g_localplayers[localplayer]].ctfteam);
 	else if (G_GametypeHasSpectators() && !players[g_localplayers[localplayer]].spectator)
 		error = (NetPacket.packet.newteam == 3);
 #ifdef PARANOIA
@@ -3260,7 +3259,7 @@ static void Command_ServerTeamChange_f(void)
 
 	if (G_GametypeHasTeams())
 	{
-		if (NetPacket.packet.newteam == (unsigned)players[NetPacket.packet.playernum].ctfteam ||
+		if (NetPacket.packet.newteam == players[NetPacket.packet.playernum].ctfteam ||
 			(players[NetPacket.packet.playernum].spectator && !NetPacket.packet.newteam))
 			error = true;
 	}
@@ -3437,7 +3436,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		displayplayers[0] = consoleplayer;
 	}
 
-	if (G_GametypeHasTeams())
+	/*if (G_GametypeHasTeams())
 	{
 		if (NetPacket.packet.newteam)
 		{
@@ -3445,10 +3444,10 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 			for (i = 0; i <= splitscreen; i++)
 			{
 				if (playernum == g_localplayers[i]) //CTF and Team Match colors.
-					CV_SetValue(&cv_playercolor[i], NetPacket.packet.newteam + 5);
+					CV_SetValue(&cv_playercolor[i], NetPacket.packet.newteam + 5); - -this calculation is totally wrong
 			}
 		}
-	}
+	}*/
 
 	if (gamestate != GS_LEVEL)
 		return;
@@ -3460,7 +3459,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		if (gametyperules & GTR_BUMPERS) // SRB2kart
 		{
-			players[playernum].marescore = 0;
+			players[playernum].roundscore = 0;
 			K_CalculateBattleWanted();
 		}
 
@@ -4861,8 +4860,6 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	int item;
 	int  amt;
 
-	INT32 *kartstuff;
-
 	item = READSINT8 (*cp);
 	amt  = READUINT8 (*cp);
 
@@ -4879,10 +4876,8 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	kartstuff = players[playernum].kartstuff;
-
-	kartstuff[k_itemtype]   = item;
-	kartstuff[k_itemamount] = amt;
+	players[playernum].itemtype   = item;
+	players[playernum].itemamount = amt;
 }
 
 /** Prints the number of displayplayers[0].

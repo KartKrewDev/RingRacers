@@ -1555,7 +1555,7 @@ void T_RaiseSector(raise_t *raise)
 				continue;
 
 			// Option to require spindashing.
-			if (raise->flags & RF_SPINDASH && !(thing->player->pflags & PF_STARTDASH))
+			if ((raise->flags & RF_SPINDASH) && !thing->player->spindash)
 				continue;
 
 			if (!(thing->z == P_GetSpecialTopZ(thing, raise->sector, sector)))

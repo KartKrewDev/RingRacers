@@ -445,42 +445,6 @@ static inline int lib_getenum(lua_State *L)
 		return 1;
 	}
 #endif
-	else if (!mathlib && fastncmp("pw_",word,3)) {
-		p = word+3;
-		for (i = 0; i < NUMPOWERS; i++)
-			if (fasticmp(p, POWERS_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		return 0;
-	}
-	else if (mathlib && fastncmp("PW_",word,3)) { // SOCs are ALL CAPS!
-		p = word+3;
-		for (i = 0; i < NUMPOWERS; i++)
-			if (fastcmp(p, POWERS_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		return luaL_error(L, "power '%s' could not be found.\n", word);
-	}
-	else if (!mathlib && fastncmp("k_",word,2)) {
-		p = word+2;
-		for (i = 0; i < NUMKARTSTUFF; i++)
-			if (fasticmp(p, KARTSTUFF_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		return 0;
-	}
-	else if (mathlib && fastncmp("K_",word,2)) { // SOCs are ALL CAPS!
-		p = word+2;
-		for (i = 0; i < NUMKARTSTUFF; i++)
-			if (fastcmp(p, KARTSTUFF_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		return luaL_error(L, "kartstuff '%s' could not be found.\n", word);
-	}
 	else if (!mathlib && fastncmp("khud_",word,5)) {
 		p = word+5;
 		for (i = 0; i < NUMKARTHUD; i++)
