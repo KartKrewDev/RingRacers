@@ -1971,6 +1971,7 @@ void K_KartMoveAnimation(player_t *player)
 	SINT8 destGlanceDir = 0;
 	SINT8 drift = player->drift;
 
+	// Uses turning over steering -- it's important to show player feedback immediately.
 	if (player->cmd.turning < -minturn)
 	{
 		turndir = -1;
@@ -3631,7 +3632,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 			; // idk what you're doing spawning drift sparks when you're not drifting but you do you
 		else
 		{
-			scalefactor = -(2*i - 1) * min(max(player->cmd.turning, -1), 1) * FRACUNIT;
+			scalefactor = -(2*i - 1) * min(max(player->steering, -1), 1) * FRACUNIT;
 			if ((player->drift > 0) == !(i)) // inwards spark should be closer to the player
 				verticalradius = 0;
 		}
@@ -3801,8 +3802,8 @@ static void K_SpawnDriftSparks(player_t *player)
 			}
 		}
 
-		if ((player->drift > 0 && player->cmd.turning > 0) // Inward drifts
-			|| (player->drift < 0 && player->cmd.turning < 0))
+		if ((player->drift > 0 && player->steering > 0) // Inward drifts
+			|| (player->drift < 0 && player->steering < 0))
 		{
 			if ((player->drift < 0 && (i & 1))
 				|| (player->drift > 0 && !(i & 1)))
@@ -3815,8 +3816,8 @@ static void K_SpawnDriftSparks(player_t *player)
 				size--;
 			}
 		}
-		else if ((player->drift > 0 && player->cmd.turning < 0) // Outward drifts
-			|| (player->drift < 0 && player->cmd.turning > 0))
+		else if ((player->drift > 0 && player->steering < 0) // Outward drifts
+			|| (player->drift < 0 && player->steering > 0))
 		{
 			if ((player->drift < 0 && (i & 1))
 				|| (player->drift > 0 && !(i & 1)))
@@ -7368,7 +7369,7 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			break;
 
 		case 3:
-			overlay->color = SKINCOLOR_THISTLE;
+			overlay->color = SKINCOLOR_PURPLE;
 			overlay->fuse = 48;
 
 			S_StartSound(player->mo, sfx_kc5b);
@@ -7497,6 +7498,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else if (player->speed > minspeed
 		&& (player->drift == 0 || (player->pflags & PF_DRIFTEND)))
 	{
+		// Uses turning over steering, since this is very binary.
+		// Using steering would cause a lot more "wrong drifts".
 		if (player->cmd.turning > 0)
 		{
 			// Starting left drift
@@ -7533,10 +7536,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->drift > 5)
 					player->drift = 5;
 
-				if (player->cmd.turning > 0) // Inward
-					driftadditive += abs(player->cmd.turning)/100;
-				if (player->cmd.turning < 0) // Outward
-					driftadditive -= abs(player->cmd.turning)/75;
+				if (player->steering > 0) // Inward
+					driftadditive += abs(player->steering)/100;
+				if (player->steering < 0) // Outward
+					driftadditive -= abs(player->steering)/75;
 			}
 			else if (player->drift <= -1) // Drifting to the right
 			{
@@ -7544,10 +7547,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->drift < -5)
 					player->drift = -5;
 
-				if (player->cmd.turning < 0) // Inward
-					driftadditive += abs(player->cmd.turning)/100;
-				if (player->cmd.turning > 0) // Outward
-					driftadditive -= abs(player->cmd.turning)/75;
+				if (player->steering < 0) // Inward
+					driftadditive += abs(player->steering)/100;
+				if (player->steering > 0) // Outward
+					driftadditive -= abs(player->steering)/75;
 			}
 
 			// Disable drift-sparks until you're going fast enough
@@ -7611,9 +7614,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	if ((player->handleboost == 0)
-	|| (!player->cmd.turning)
+	|| (!player->steering)
 	|| (!player->aizdriftstrat)
-	|| (player->cmd.turning > 0) != (player->aizdriftstrat > 0))
+	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
 		if (!player->drift)
 			player->aizdriftstrat = 0;
@@ -7946,7 +7949,7 @@ static void K_KartSpindash(player_t *player)
 		return;
 	}
 
-	if (player->speed == 0 && cmd->turning != 0 && leveltime % 8 == 0)
+	if (player->speed == 0 && player->steering != 0 && leveltime % 8 == 0)
 	{
 		// Rubber burn turn sfx
 		S_StartSound(player->mo, sfx_ruburn);
@@ -8783,7 +8786,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
-
+				// Uses cmd->turning over steering intentionally.
 				if (cmd->turning > 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));

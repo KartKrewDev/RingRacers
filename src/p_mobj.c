@@ -6475,7 +6475,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else if (mobj->fuse <= 32)
 			mobj->color = SKINCOLOR_SAPPHIRE;
 		else if (mobj->fuse <= 48)
-			mobj->color = SKINCOLOR_THISTLE;
+			mobj->color = SKINCOLOR_PURPLE;
 		else if (mobj->fuse > 48)
 			mobj->color = K_RainbowColor(
 				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
@@ -7684,6 +7684,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			}
 
+			// Uses cmd.turning over steering intentionally.
 			if (abs(player->cmd.turning) > 100)
 			{
 				INT32 lastsign = 0;
@@ -7840,6 +7841,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			}
 
+			// Uses cmd.turning over steering intentionally.
 			if (abs(player->cmd.turning) > 100)
 			{
 				INT32 lastsign = 0;
