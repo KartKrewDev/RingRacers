@@ -3650,7 +3650,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 	}
 }
 
-static void K_SpawnDriftElectricSparks(player_t *player)
+void K_SpawnDriftElectricSparks(player_t *player)
 {
 	SINT8 hdir, vdir, i;
 
@@ -3664,6 +3664,10 @@ static void K_SpawnDriftElectricSparks(player_t *player)
 	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
 	fixed_t sparkradius = 2 * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
 	UINT16 color = K_DriftSparkColor(player, player->driftcharge);
+
+	// if the sparks are spawned from first blood rather than drift boost, color will be SKINCOLOR_NONE. ew!
+	if (color == SKINCOLOR_NONE)
+		color = SKINCOLOR_SILVER;
 
 	for (hdir = -1; hdir <= 1; hdir += 2)
 	{
