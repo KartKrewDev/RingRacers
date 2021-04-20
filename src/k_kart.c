@@ -3613,7 +3613,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 	UINT8 i;
 	UINT16 color = K_DriftSparkColor(player, player->driftcharge);
 	mobj_t *mo = player->mo;
-	fixed_t verticalradius = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
+	fixed_t vr = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
 	fixed_t horizontalradius = FixedDiv(5*mo->radius/3, mo->scale);
 	angle_t verticalangle = K_MomentumAngle(mo) + ANGLE_180; // points away from the momentum angle
 
@@ -3621,9 +3621,9 @@ static void K_SpawnDriftElectricity(player_t *player)
 	{
 		// i == 0 is right, i == 1 is left
 		mobj_t *spark;
-		angle_t horizonatalangle = verticalangle + (2*i - 1) * ANGLE_90;
+		angle_t horizonatalangle = verticalangle + (i ? ANGLE_90 : ANGLE_270);
 		angle_t sparkangle = verticalangle + ANGLE_180;
-		fixed_t verticalradius = verticalradius; // local version of the above so we can modify it
+		fixed_t verticalradius = vr; // local version of the above so we can modify it
 		fixed_t scalefactor = 0; // positive values enlarge sparks, negative values shrink them
 		fixed_t x, y;
 
@@ -3632,7 +3632,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 		else
 		{
 			scalefactor = -(2*i - 1) * min(max(player->cmd.turning, -1), 1) * FRACUNIT;
-			if (player->drift > 0 == !(i)) // inwards spark should be closer to the player
+			if ((player->drift > 0) == !(i)) // inwards spark should be closer to the player
 				verticalradius = 0;
 		}
 
