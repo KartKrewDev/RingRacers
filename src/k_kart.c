@@ -2536,7 +2536,14 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->driftboost) // Drift Boost
 	{
-		ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
+		if (player->strongdriftboost) // Purple/Rainbow drift boost
+		{
+			ADDBOOST(3*FRACUNIT/10, 4*FRACUNIT, 0); // + 30% top speed, + 400% acceleration, +0% handling
+		}
+		else
+		{
+			ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
+		}
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -6529,6 +6536,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->driftboost)
 		player->driftboost--;
 
+	if (player->strongdriftboost)
+		player->strongdriftboost--;
+
 	if (player->startboost)
 		player->startboost--;
 
@@ -7456,6 +7466,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->driftboost < 85)
 					player->driftboost = 85;
+				if (player->strongdriftboost < 85)
+					player->strongdriftboost = 85;
 
 				K_SpawnDriftBoostExplosion(player, 3);
 				K_SpawnDriftElectricSparks(player);
@@ -7468,6 +7480,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				if (player->driftboost < 125)
 					player->driftboost = 125;
+				if (player->strongdriftboost < 125)
+					player->strongdriftboost = 125;
 
 				K_SpawnDriftBoostExplosion(player, 4);
 				K_SpawnDriftElectricSparks(player);

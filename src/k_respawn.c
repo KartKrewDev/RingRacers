@@ -150,7 +150,7 @@ void K_DoIngameRespawn(player_t *player)
 		K_DoFault(player);
 
 	player->ringboost = 0;
-	player->driftboost = 0;
+	player->driftboost = player->strongdriftboost = 0;
 	
 	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
 	if (player->tumbleBounces > 0)

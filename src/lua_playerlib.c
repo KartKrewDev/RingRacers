@@ -244,6 +244,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->driftcharge);
 	else if (fastcmp(field,"driftboost"))
 		lua_pushinteger(L, plr->driftboost);
+	else if (fastcmp(field,"strongdriftboost"))
+		lua_pushinteger(L, plr->strongdriftboost);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdrifttilt"))

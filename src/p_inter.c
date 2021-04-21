@@ -1865,7 +1865,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			player->sneakertimer = player->numsneakers = 0;
-			player->driftboost = 0;
+			player->driftboost = player->strongdriftboost = 0;
 			player->ringboost = 0;
 
 			switch (type)
