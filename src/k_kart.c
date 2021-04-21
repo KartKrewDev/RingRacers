@@ -3574,11 +3574,12 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		// Stage 3: Purple
 		if (charge <= dsthree+(16*3))
 		{
+			// transition 1
 			color = SKINCOLOR_TAFFY;
 		}
 		else if (charge <= dsthree+(32*3))
 		{
-			// transition
+			// transition 2
 			color = SKINCOLOR_MOONSET;
 		}
 		else
@@ -3592,7 +3593,7 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		if (charge <= dstwo+(32*3))
 		{
 			// transition
-			color = SKINCOLOR_PURPLE;
+			color = SKINCOLOR_NOVA;
 		}
 		else
 		{
