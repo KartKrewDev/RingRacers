@@ -5602,6 +5602,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_SPINDASHWIND:
+	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_VWREF:
@@ -6473,7 +6474,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->fuse <= 32)
 			mobj->color = SKINCOLOR_SAPPHIRE;
-		else if (mobj->fuse > 32)
+		else if (mobj->fuse <= 48)
+			mobj->color = SKINCOLOR_PURPLE;
+		else if (mobj->fuse > 48)
 			mobj->color = K_RainbowColor(
 				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
@@ -6481,13 +6484,19 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		switch (mobj->extravalue1)
 		{
-			case 3:/* rainbow boost */
+			case 4:/* rainbow boost */
 				/* every 20 tics, bang! */
 				if (( 120 - mobj->fuse ) % 10 == 0)
 				{
 					K_SpawnDriftBoostClip(mobj->target->player);
 					S_StartSound(mobj->target, sfx_s3k77);
 				}
+				break;
+
+			case 3:/* purple boost */
+				if ((mobj->fuse == 32)/* to blue*/
+				|| (mobj->fuse == 16))/* to red*/
+					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 
 			case 2:/* blue boost */
@@ -7675,6 +7684,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			}
 
+			// Uses cmd.turning over steering intentionally.
 			if (abs(player->cmd.turning) > 100)
 			{
 				INT32 lastsign = 0;
@@ -7831,6 +7841,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			}
 
+			// Uses cmd.turning over steering intentionally.
 			if (abs(player->cmd.turning) > 100)
 			{
 				INT32 lastsign = 0;

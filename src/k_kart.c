@@ -1971,6 +1971,7 @@ void K_KartMoveAnimation(player_t *player)
 	SINT8 destGlanceDir = 0;
 	SINT8 drift = player->drift;
 
+	// Uses turning over steering -- it's important to show player feedback immediately.
 	if (player->cmd.turning < -minturn)
 	{
 		turndir = -1;
@@ -2535,7 +2536,14 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->driftboost) // Drift Boost
 	{
-		ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
+		if (player->strongdriftboost) // Purple/Rainbow drift boost
+		{
+			ADDBOOST(FRACUNIT/3, 4*FRACUNIT, 0); // + 33% top speed, + 400% acceleration, +0% handling
+		}
+		else
+		{
+			ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
+		}
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -3536,7 +3544,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 {
-	INT32 ds = K_GetKartDriftSparkValue(player);
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
+
 	UINT16 color = SKINCOLOR_NONE;
 
 	if (charge < 0)
@@ -3544,10 +3556,10 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		// Stage 0: Yellow
 		color = SKINCOLOR_GOLD;
 	}
-	else if (charge >= ds*4)
+	else if (charge >= dsfour)
 	{
-		// Stage 3: Rainbow
-		if (charge <= (ds*4)+(32*3))
+		// Stage 4: Rainbow
+		if (charge <= dsfour+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_SILVER;
@@ -3557,23 +3569,41 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 			color = K_RainbowColor(leveltime);
 		}
 	}
-	else if (charge >= ds*2)
+	else if (charge >= dsthree)
+	{
+		// Stage 3: Purple
+		if (charge <= dsthree+(16*3))
+		{
+			// transition 1
+			color = SKINCOLOR_TAFFY;
+		}
+		else if (charge <= dsthree+(32*3))
+		{
+			// transition 2
+			color = SKINCOLOR_MOONSET;
+		}
+		else
+		{
+			color = SKINCOLOR_PURPLE;
+		}
+	}
+	else if (charge >= dstwo)
 	{
 		// Stage 2: Blue
-		if (charge <= (ds*2)+(32*3))
+		if (charge <= dstwo+(32*3))
 		{
 			// transition
-			color = SKINCOLOR_PURPLE;
+			color = SKINCOLOR_NOVA;
 		}
 		else
 		{
 			color = SKINCOLOR_SAPPHIRE;
 		}
 	}
-	else if (charge >= ds)
+	else if (charge >= dsone)
 	{
 		// Stage 1: Red
-		if (charge <= (ds)+(32*3))
+		if (charge <= dsone+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_TANGERINE;
@@ -3587,9 +3617,102 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 	return color;
 }
 
+static void K_SpawnDriftElectricity(player_t *player)
+{
+	UINT8 i;
+	UINT16 color = K_DriftSparkColor(player, player->driftcharge);
+	mobj_t *mo = player->mo;
+	fixed_t vr = FixedDiv(mo->radius/3, mo->scale); // P_SpawnMobjFromMobj will rescale
+	fixed_t horizontalradius = FixedDiv(5*mo->radius/3, mo->scale);
+	angle_t verticalangle = K_MomentumAngle(mo) + ANGLE_180; // points away from the momentum angle
+
+	for (i = 0; i < 2; i++)
+	{
+		// i == 0 is right, i == 1 is left
+		mobj_t *spark;
+		angle_t horizonatalangle = verticalangle + (i ? ANGLE_90 : ANGLE_270);
+		angle_t sparkangle = verticalangle + ANGLE_180;
+		fixed_t verticalradius = vr; // local version of the above so we can modify it
+		fixed_t scalefactor = 0; // positive values enlarge sparks, negative values shrink them
+		fixed_t x, y;
+
+		if (player->drift == 0)
+			; // idk what you're doing spawning drift sparks when you're not drifting but you do you
+		else
+		{
+			scalefactor = -(2*i - 1) * min(max(player->steering, -1), 1) * FRACUNIT;
+			if ((player->drift > 0) == !(i)) // inwards spark should be closer to the player
+				verticalradius = 0;
+		}
+
+		x = P_ReturnThrustX(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustX(mo, horizonatalangle, horizontalradius);
+		y = P_ReturnThrustY(mo, verticalangle, verticalradius)
+			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
+		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
+		spark->angle = sparkangle;
+		spark->color = color;
+		K_GenericExtraFlagsNoZAdjust(spark, mo);
+
+		spark->spritexscale += scalefactor/3;
+		spark->spriteyscale += scalefactor/8;
+	}
+}
+
+void K_SpawnDriftElectricSparks(player_t *player)
+{
+	SINT8 hdir, vdir, i;
+
+	mobj_t *mo = player->mo;
+	angle_t momangle = K_MomentumAngle(mo) + ANGLE_180;
+	fixed_t radius = 2 * FixedDiv(mo->radius, mo->scale); // P_SpawnMobjFromMobj will rescale
+	fixed_t x = P_ReturnThrustX(mo, momangle, radius);
+	fixed_t y = P_ReturnThrustY(mo, momangle, radius);
+	fixed_t z = FixedDiv(mo->height, 2 * mo->scale); // P_SpawnMobjFromMobj will rescale
+
+	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
+	fixed_t sparkradius = 2 * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
+	UINT16 color = K_DriftSparkColor(player, player->driftcharge);
+
+	// if the sparks are spawned from first blood rather than drift boost, color will be SKINCOLOR_NONE. ew!
+	if (color == SKINCOLOR_NONE)
+		color = SKINCOLOR_SILVER;
+
+	for (hdir = -1; hdir <= 1; hdir += 2)
+	{
+		for (vdir = -1; vdir <= 1; vdir += 2)
+		{
+			fixed_t hspeed = FixedMul(hdir * sparkspeed, mo->scale); // P_InstaThrust treats speed as absolute
+			fixed_t vspeed = vdir * sparkspeed; // P_SetObjectMomZ scales speed with object scale
+			angle_t sparkangle = mo->angle + ANGLE_45;
+
+			for (i = 0; i < 4; i++)
+			{
+				fixed_t xoff = P_ReturnThrustX(mo, sparkangle, sparkradius);
+				fixed_t yoff = P_ReturnThrustY(mo, sparkangle, sparkradius);
+				mobj_t *spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_DRIFTELECTRICSPARK);
+
+				spark->angle = sparkangle;
+				spark->color = color;
+				P_InstaThrust(spark, mo->angle + ANGLE_90, hspeed);
+				P_SetObjectMomZ(spark, vspeed, false);
+				spark->momx += mo->momx; // copy player speed
+				spark->momy += mo->momy;
+
+				sparkangle += ANGLE_90;
+			}
+		}
+	}
+	S_StartSound(mo, sfx_s3k45);
+}
+
 static void K_SpawnDriftSparks(player_t *player)
 {
-	INT32 ds = K_GetKartDriftSparkValue(player);
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
+
 	fixed_t newx;
 	fixed_t newy;
 	mobj_t *spark;
@@ -3604,7 +3727,7 @@ static void K_SpawnDriftSparks(player_t *player)
 		return;
 
 	if (!player->drift
-		|| (player->driftcharge < ds && !(player->driftcharge < 0)))
+		|| (player->driftcharge < dsone && !(player->driftcharge < 0)))
 		return;
 
 	travelangle = player->mo->angle-(ANGLE_45/5)*player->drift;
@@ -3634,13 +3757,13 @@ static void K_SpawnDriftSparks(player_t *player)
 			// Stage 0: Yellow
 			size = 0;
 		}
-		else if (player->driftcharge >= ds*4)
+		else if (player->driftcharge >= dsfour)
 		{
-			// Stage 3: Rainbow
+			// Stage 4: Rainbow
 			size = 2;
 			trail = 2;
 
-			if (player->driftcharge <= (ds*4)+(32*3))
+			if (player->driftcharge <= (dsfour)+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
@@ -3651,13 +3774,25 @@ static void K_SpawnDriftSparks(player_t *player)
 				spark->colorized = true;
 			}
 		}
-		else if (player->driftcharge >= ds*2)
+		else if (player->driftcharge >= dsthree)
+		{
+			// Stage 3: Purple
+			size = 2;
+			trail = 1;
+
+			if (player->driftcharge <= dsthree+(32*3))
+			{
+				// transition
+				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
+			}
+		}
+		else if (player->driftcharge >= dstwo)
 		{
 			// Stage 2: Blue
 			size = 2;
 			trail = 1;
 
-			if (player->driftcharge <= (ds*2)+(32*3))
+			if (player->driftcharge <= dstwo+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*3/2));
@@ -3668,15 +3803,15 @@ static void K_SpawnDriftSparks(player_t *player)
 			// Stage 1: Red
 			size = 1;
 
-			if (player->driftcharge <= (ds)+(32*3))
+			if (player->driftcharge <= dsone+(32*3))
 			{
 				// transition
 				P_SetScale(spark, (spark->destscale = spark->scale*2));
 			}
 		}
 
-		if ((player->drift > 0 && player->cmd.turning > 0) // Inward drifts
-			|| (player->drift < 0 && player->cmd.turning < 0))
+		if ((player->drift > 0 && player->steering > 0) // Inward drifts
+			|| (player->drift < 0 && player->steering < 0))
 		{
 			if ((player->drift < 0 && (i & 1))
 				|| (player->drift > 0 && !(i & 1)))
@@ -3689,8 +3824,8 @@ static void K_SpawnDriftSparks(player_t *player)
 				size--;
 			}
 		}
-		else if ((player->drift > 0 && player->cmd.turning < 0) // Outward drifts
-			|| (player->drift < 0 && player->cmd.turning > 0))
+		else if ((player->drift > 0 && player->steering < 0) // Outward drifts
+			|| (player->drift < 0 && player->steering > 0))
 		{
 			if ((player->drift < 0 && (i & 1))
 				|| (player->drift > 0 && !(i & 1)))
@@ -3715,6 +3850,11 @@ static void K_SpawnDriftSparks(player_t *player)
 			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
+	}
+
+	if (player->driftcharge >= dsthree)
+	{
+		K_SpawnDriftElectricity(player);
 	}
 }
 
@@ -6397,6 +6537,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->driftboost)
 		player->driftboost--;
 
+	if (player->strongdriftboost)
+		player->strongdriftboost--;
+
 	if (player->startboost)
 		player->startboost--;
 
@@ -7186,10 +7329,32 @@ INT32 K_GetKartDriftSparkValue(player_t *player)
 	return (26*4 + player->kartspeed*2 + (9 - player->kartweight))*8;
 }
 
+INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
+{
+	fixed_t mul = FRACUNIT;
+
+	// This code is function is pretty much useless now that the timing changes are linear but bleh.
+	switch (stage)
+	{
+		case 2:
+			mul = 2*FRACUNIT; // x2
+			break;
+		case 3:
+			mul = 3*FRACUNIT; // x3
+			break;
+		case 4:
+			mul = 4*FRACUNIT; // x4
+			break;
+	}
+
+	return (FixedMul(K_GetKartDriftSparkValue(player) * FRACUNIT, mul) / FRACUNIT);
+}
+
 /*
 Stage 1: red sparks
 Stage 2: blue sparks
-Stage 3: big large rainbow sparks
+Stage 3: purple sparks
+Stage 4: big large rainbow sparks
 Stage 0: air failsafe
 */
 void K_SpawnDriftBoostExplosion(player_t *player, int stage)
@@ -7215,6 +7380,13 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			break;
 
 		case 3:
+			overlay->color = SKINCOLOR_PURPLE;
+			overlay->fuse = 48;
+
+			S_StartSound(player->mo, sfx_kc5b);
+			break;
+
+		case 4:
 			overlay->color = SKINCOLOR_SILVER;
 			overlay->fuse = 120;
 
@@ -7235,9 +7407,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 {
 	const fixed_t minspeed = (10 * player->mo->scale);
 
-	const INT32 dsone = K_GetKartDriftSparkValue(player);
-	const INT32 dstwo = dsone*2;
-	const INT32 dsthree = dstwo*2;
+	const INT32 dsone = K_GetKartDriftSparkValueForStage(player, 1);
+	const INT32 dstwo = K_GetKartDriftSparkValueForStage(player, 2);
+	const INT32 dsthree = K_GetKartDriftSparkValueForStage(player, 3);
+	const INT32 dsfour = K_GetKartDriftSparkValueForStage(player, 4);
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
@@ -7286,16 +7459,33 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 				K_SpawnDriftBoostExplosion(player, 2);
 			}
-			else if (player->driftcharge >= dsthree)
+			else if (player->driftcharge < dsfour)
 			{
-				// Stage 3: Rainbow sparks
+				// Stage 3: Purple sparks
+				if (!onground)
+					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
+
+				if (player->driftboost < 85)
+					player->driftboost = 85;
+				if (player->strongdriftboost < 85)
+					player->strongdriftboost = 85;
+
+				K_SpawnDriftBoostExplosion(player, 3);
+				K_SpawnDriftElectricSparks(player);
+			}
+			else if (player->driftcharge >= dsfour)
+			{
+				// Stage 4: Rainbow sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 2);
 
 				if (player->driftboost < 125)
 					player->driftboost = 125;
+				if (player->strongdriftboost < 125)
+					player->strongdriftboost = 125;
 
-				K_SpawnDriftBoostExplosion(player, 3);
+				K_SpawnDriftBoostExplosion(player, 4);
+				K_SpawnDriftElectricSparks(player);
 			}
 		}
 
@@ -7323,6 +7513,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else if (player->speed > minspeed
 		&& (player->drift == 0 || (player->pflags & PF_DRIFTEND)))
 	{
+		// Uses turning over steering, since this is very binary.
+		// Using steering would cause a lot more "wrong drifts".
 		if (player->cmd.turning > 0)
 		{
 			// Starting left drift
@@ -7359,10 +7551,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->drift > 5)
 					player->drift = 5;
 
-				if (player->cmd.turning > 0) // Inward
-					driftadditive += abs(player->cmd.turning)/100;
-				if (player->cmd.turning < 0) // Outward
-					driftadditive -= abs(player->cmd.turning)/75;
+				if (player->steering > 0) // Inward
+					driftadditive += abs(player->steering)/100;
+				if (player->steering < 0) // Outward
+					driftadditive -= abs(player->steering)/75;
 			}
 			else if (player->drift <= -1) // Drifting to the right
 			{
@@ -7370,10 +7562,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 				if (player->drift < -5)
 					player->drift = -5;
 
-				if (player->cmd.turning < 0) // Inward
-					driftadditive += abs(player->cmd.turning)/100;
-				if (player->cmd.turning > 0) // Outward
-					driftadditive -= abs(player->cmd.turning)/75;
+				if (player->steering < 0) // Inward
+					driftadditive += abs(player->steering)/100;
+				if (player->steering > 0) // Outward
+					driftadditive -= abs(player->steering)/75;
 			}
 
 			// Disable drift-sparks until you're going fast enough
@@ -7437,9 +7629,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	}
 
 	if ((player->handleboost == 0)
-	|| (!player->cmd.turning)
+	|| (!player->steering)
 	|| (!player->aizdriftstrat)
-	|| (player->cmd.turning > 0) != (player->aizdriftstrat > 0))
+	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
 		if (!player->drift)
 			player->aizdriftstrat = 0;
@@ -7772,7 +7964,7 @@ static void K_KartSpindash(player_t *player)
 		return;
 	}
 
-	if (player->speed == 0 && cmd->turning != 0 && leveltime % 8 == 0)
+	if (player->speed == 0 && player->steering != 0 && leveltime % 8 == 0)
 	{
 		// Rubber burn turn sfx
 		S_StartSound(player->mo, sfx_ruburn);
@@ -8609,7 +8801,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
-
+				// Uses cmd->turning over steering intentionally.
 				if (cmd->turning > 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
