@@ -2538,7 +2538,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		if (player->strongdriftboost) // Purple/Rainbow drift boost
 		{
-			ADDBOOST(3*FRACUNIT/10, 4*FRACUNIT, 0); // + 30% top speed, + 400% acceleration, +0% handling
+			ADDBOOST(FRACUNIT/3, 4*FRACUNIT, 0); // + 33% top speed, + 400% acceleration, +0% handling
 		}
 		else
 		{
