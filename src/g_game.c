@@ -1111,7 +1111,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->latency = (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 	cmd->flags = 0;
 
 	if (chat_on || CON_Ready())
@@ -1137,6 +1136,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (addedtogame && gamestate == GS_LEVEL)
 	{
 		LUAh_PlayerCmd(player, cmd);
+
+		// Send leveltime when this tic was generated to the server for control lag calculations.
+		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
+		cmd->latency = (leveltime & 0xFF); 
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)

@@ -505,7 +505,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (ziptic & ZT_LATENCY)
 		oldcmd[playernum].latency = READUINT8(demo_p);
 	if (ziptic & ZT_FLAGS)
-		oldcmd[playernum].latency = READUINT8(demo_p);
+		oldcmd[playernum].flags = READUINT8(demo_p);
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
