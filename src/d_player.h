@@ -451,13 +451,13 @@ typedef struct player_s
 	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
 	UINT8 trickpanel; 	// Trick panel state
-	tic_t tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
+	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickmomx;
 	fixed_t trickmomy;
 	fixed_t trickmomz;
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
-	tic_t trickboostdecay;		// used to know how long you've waited
-	tic_t trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
+	UINT8 trickboostdecay;		// used to know how long you've waited
+	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
 
 	UINT32 roundscore; // battle score this round

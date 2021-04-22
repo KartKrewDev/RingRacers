@@ -8797,8 +8797,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
-
-			player->tricktime++;
+			
+			// We'll never need to go above that.
+			if (player->tricktime <= TRICKDELAY)
+				player->tricktime++;
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
