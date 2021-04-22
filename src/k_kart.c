@@ -8798,8 +8798,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
-			if (!cmd->turning && !player->throwdir)	// increment this counter while your inputs are neutral
-				player->tricktime++;
+			player->tricktime++;
 
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
