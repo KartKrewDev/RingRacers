@@ -338,7 +338,7 @@ void P_GiveEmerald(boolean spawnObj)
 			P_SetMobjState(emmo, mobjinfo[MT_GOTEMERALD].meleestate + em);
 
 			// Make sure we're not being carried before our tracer is changed
-			players[i].powers[pw_carry] = CR_NONE;
+			players[i].carry = CR_NONE;
 
 			P_SetTarget(&players[i].mo->tracer, emmo);
 
@@ -385,19 +385,6 @@ void P_GiveFinishFlags(player_t *player)
 		P_SetTarget(&flag->target, player->mo);
 	}
 }
-
-#if 0
-//
-// P_ResetScore
-//
-// This is called when your chain is reset.
-void P_ResetScore(player_t *player)
-{
-	// Formally a host for Chaos mode behavior
-
-	player->scoreadd = 0;
-}
-#endif
 
 //
 // P_FindLowestLap
@@ -457,11 +444,11 @@ UINT8 P_FindHighestLap(void)
 // P_PlayerInPain
 //
 // Is player in pain??
-// Checks for painstate and pw_flashing, if both found return true
+// Checks for painstate and flashing, if both found return true
 //
 boolean P_PlayerInPain(player_t *player)
 {
-	if (player->kartstuff[k_spinouttimer] || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
+	if (player->spinouttimer || (player->tumbleBounces > 0) || (player->pflags & PF_FAULT))
 		return true;
 
 	return false;
@@ -475,10 +462,10 @@ void P_ResetPlayer(player_t *player)
 {
 	//player->pflags &= ~(PF_);
 
-	player->powers[pw_carry] = CR_NONE;
+	player->carry = CR_NONE;
 	player->onconveyor = 0;
 
-	//player->kartstuff[k_drift] = player->kartstuff[k_driftcharge] = 0;
+	//player->drift = player->driftcharge = 0;
 	player->trickpanel = 0;
 }
 
@@ -531,21 +518,17 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
-	//UINT32 oldscore;
-
 	if (!((gametyperules & GTR_BUMPERS)))
 		return;
 
 	if (player->exiting) // srb2kart
 		return;
 
-	//oldscore = player->score;
-
 	// Don't go above MAXSCORE.
-	if (player->marescore + amount < MAXSCORE)
-		player->marescore += amount;
+	if (player->roundscore + amount < MAXSCORE)
+		player->roundscore += amount;
 	else
-		player->marescore = MAXSCORE;
+		player->roundscore = MAXSCORE;
 }
 
 //
@@ -561,8 +544,6 @@ void P_PlayLivesJingle(player_t *player)
 	else
 	{
 		P_PlayJingle(player, JT_1UP);
-		if (player)
-			player->powers[pw_extralife] = extralifetics + 1;
 		strlcpy(S_sfx[sfx_None].caption, "One-up", 7);
 		S_StartCaption(sfx_None, -1, extralifetics+1);
 	}
@@ -613,38 +594,38 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 		switch(status)
 		{
 			case JT_1UP: // Extra life
-				result = (players[i].powers[pw_extralife] > 1);
+				result = false; //(players[i].powers[pw_extralife] > 1);
 				break;
 
 			case JT_SHOES:  // Speed shoes
-				if (players[i].powers[pw_sneakers] > 1 && !players[i].powers[pw_super])
+				/*if (players[i].powers[pw_sneakers] > 1 && !players[i].powers[pw_super])
 				{
 					//strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
 					//S_StartCaption(sfx_None, -1, players[i].powers[pw_sneakers]);
 					result = true;
 				}
-				else
+				else*/
 					result = false;
 				break;
 
 			case JT_INV: // Invincibility
 			case JT_MINV: // Mario Invincibility
-				if (players[i].powers[pw_invulnerability] > 1)
+				/*if (players[i].powers[pw_invulnerability] > 1)
 				{
 					//strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
 					//S_StartCaption(sfx_None, -1, players[i].powers[pw_invulnerability]);
 					result = true;
 				}
-				else
+				else*/
 					result = false;
 				break;
 
 			case JT_DROWN:  // Drowning
-				result = (players[i].powers[pw_underwater] && players[i].powers[pw_underwater] <= 11*TICRATE + 1);
+				result = false; //(players[i].powers[pw_underwater] && players[i].powers[pw_underwater] <= 11*TICRATE + 1);
 				break;
 
 			case JT_SUPER:  // Super Sonic
-				result = (players[i].powers[pw_super]);
+				result = false; //(players[i].powers[pw_super]);
 				break;
 
 			case JT_GOVER: // Game Over
@@ -653,7 +634,7 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 
 			case JT_NIGHTSTIMEOUT: // NiGHTS Time Out (10 seconds)
 			case JT_SSTIMEOUT:
-				result = (players[i].nightstime && players[i].nightstime <= 10*TICRATE);
+				result = false; //(players[i].nightstime && players[i].nightstime <= 10*TICRATE);
 				break;
 
 			case JT_OTHER:  // Other state
@@ -675,7 +656,7 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 
 void P_PlayRinglossSound(mobj_t *source)
 {
-	if (source->player && K_GetShieldFromItem(source->player->kartstuff[k_itemtype]) != KSHIELD_NONE)
+	if (source->player && K_GetShieldFromItem(source->player->itemtype) != KSHIELD_NONE)
 		S_StartSound(source, sfx_s1a3); // Shield hit (no ring loss)
 	else if (source->player && source->player->rings <= 0)
 		S_StartSound(source, sfx_s1a6); // Ring debt (lessened ring loss)
@@ -716,19 +697,19 @@ boolean P_EndingMusic(player_t *player)
 	// Check for if this is valid or not
 	if (r_splitscreen)
 	{
-		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_GAMETYPEOVER))
-			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_GAMETYPEOVER))
-			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_GAMETYPEOVER)))
-			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_GAMETYPEOVER)))))
+		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_NOCONTEST))
+			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_NOCONTEST))
+			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_NOCONTEST)))
+			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_NOCONTEST)))))
 			return false;
 
 		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = ((players[displayplayers[0]].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[displayplayers[0]].kartstuff[k_position]);
+		bestlocalpos = ((players[displayplayers[0]].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[displayplayers[0]].position);
 #define setbests(p) \
-	if (((players[p].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]) < bestlocalpos) \
+	if (((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position) < bestlocalpos) \
 	{ \
 		bestlocalplayer = &players[p]; \
-		bestlocalpos = ((players[p].pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : players[p].kartstuff[k_position]); \
+		bestlocalpos = ((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position); \
 	}
 		setbests(displayplayers[1]);
 		if (r_splitscreen > 1)
@@ -739,11 +720,11 @@ boolean P_EndingMusic(player_t *player)
 	}
 	else
 	{
-		if (!(player->exiting || (player->pflags & PF_GAMETYPEOVER)))
+		if (!(player->exiting || (player->pflags & PF_NOCONTEST)))
 			return false;
 
 		bestlocalplayer = player;
-		bestlocalpos = ((player->pflags & PF_GAMETYPEOVER) ? MAXPLAYERS+1 : player->kartstuff[k_position]);
+		bestlocalpos = ((player->pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : player->position);
 	}
 
 	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
@@ -814,10 +795,10 @@ void P_RestoreMusic(player_t *player)
 #define setbests(p) \
 	if (players[p].playerstate == PST_LIVE) \
 	{ \
-		if (players[p].kartstuff[k_invincibilitytimer] > bestlocaltimer) \
-		{ wantedmus = 1; bestlocaltimer = players[p].kartstuff[k_invincibilitytimer]; } \
-		else if (players[p].kartstuff[k_growshrinktimer] > bestlocaltimer) \
-		{ wantedmus = 2; bestlocaltimer = players[p].kartstuff[k_growshrinktimer]; } \
+		if (players[p].invincibilitytimer > bestlocaltimer) \
+		{ wantedmus = 1; bestlocaltimer = players[p].invincibilitytimer; } \
+		else if (players[p].growshrinktimer > bestlocaltimer) \
+		{ wantedmus = 2; bestlocaltimer = players[p].growshrinktimer; } \
 	}
 			setbests(displayplayers[0]);
 			setbests(displayplayers[1]);
@@ -831,9 +812,9 @@ void P_RestoreMusic(player_t *player)
 		{
 			if (player->playerstate == PST_LIVE)
 			{
-				if (player->kartstuff[k_invincibilitytimer] > 1)
+				if (player->invincibilitytimer > 1)
 					wantedmus = 1;
-				else if (player->kartstuff[k_growshrinktimer] > 1)
+				else if (player->growshrinktimer > 1)
 					wantedmus = 2;
 			}
 		}
@@ -897,7 +878,7 @@ boolean P_IsObjectInGoop(mobj_t *mo)
 //
 boolean P_IsObjectOnGround(mobj_t *mo)
 {
-	if (P_IsObjectInGoop(mo) && !(mo->player && mo->player->pflags & PF_BOUNCING))
+	if (P_IsObjectInGoop(mo))
 	{
 /*
 		// It's a crazy hack that checking if you're on the ground
@@ -1105,170 +1086,6 @@ boolean P_IsDisplayPlayer(player_t *player)
 }
 
 //
-// P_SpawnShieldOrb
-//
-// Spawns the shield orb on the player
-// depending on which shield they are
-// supposed to have.
-//
-void P_SpawnShieldOrb(player_t *player)
-{
-	mobjtype_t orbtype;
-	thinker_t *th;
-	mobj_t *shieldobj, *ov;
-
-#ifdef PARANOIA
-	if (!player->mo)
-		I_Error("P_SpawnShieldOrb: player->mo is NULL!\n");
-#endif
-
-	// SRB2Kart
-	// TODO: Make our shields use this system
-
-	if (LUAh_ShieldSpawn(player))
-		return;
-
-	if (player->powers[pw_shield] & SH_FORCE)
-		orbtype = MT_FORCE_ORB;
-	else switch (player->powers[pw_shield] & SH_NOSTACK)
-	{
-	case SH_WHIRLWIND:
-		orbtype = MT_WHIRLWIND_ORB;
-		break;
-	case SH_ATTRACT:
-		orbtype = MT_ATTRACT_ORB;
-		break;
-	case SH_ELEMENTAL:
-		orbtype = MT_ELEMENTAL_ORB;
-		break;
-	case SH_ARMAGEDDON:
-		orbtype = MT_ARMAGEDDON_ORB;
-		break;
-	case SH_PITY:
-	case SH_PINK: // PITY IN PINK
-		orbtype = MT_PITY_ORB;
-		break;
-	case SH_FLAMEAURA:
-		orbtype = MT_FLAMEAURA_ORB;
-		break;
-	case SH_BUBBLEWRAP:
-		orbtype = MT_BUBBLEWRAP_ORB;
-		break;
-	case SH_THUNDERCOIN:
-		orbtype = MT_THUNDERCOIN_ORB;
-		break;
-	default:
-		return;
-	}
-
-	// blaze through the thinkers to see if an orb already exists!
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		shieldobj = (mobj_t *)th;
-
-		if (shieldobj->type == orbtype && shieldobj->target == player->mo)
-			P_RemoveMobj(shieldobj); //kill the old one(s)
-	}
-
-	shieldobj = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, orbtype);
-	shieldobj->flags2 |= MF2_SHIELD;
-	P_SetTarget(&shieldobj->target, player->mo);
-	if ((player->powers[pw_shield] & SH_NOSTACK) == SH_PINK)
-	{
-		shieldobj->color = SKINCOLOR_PINK;
-		shieldobj->colorized = true;
-	}
-	else
-		shieldobj->color = (UINT16)shieldobj->info->painchance;
-	shieldobj->threshold = (player->powers[pw_shield] & SH_FORCE) ? SH_FORCE : (player->powers[pw_shield] & SH_NOSTACK);
-
-	if (shieldobj->info->seestate)
-	{
-		ov = P_SpawnMobj(shieldobj->x, shieldobj->y, shieldobj->z, MT_OVERLAY);
-		P_SetTarget(&ov->target, shieldobj);
-		P_SetMobjState(ov, shieldobj->info->seestate);
-		P_SetTarget(&shieldobj->tracer, ov);
-	}
-	if (shieldobj->info->meleestate)
-	{
-		ov = P_SpawnMobj(shieldobj->x, shieldobj->y, shieldobj->z, MT_OVERLAY);
-		P_SetTarget(&ov->target, shieldobj);
-		P_SetMobjState(ov, shieldobj->info->meleestate);
-	}
-	if (shieldobj->info->missilestate)
-	{
-		ov = P_SpawnMobj(shieldobj->x, shieldobj->y, shieldobj->z, MT_OVERLAY);
-		P_SetTarget(&ov->target, shieldobj);
-		P_SetMobjState(ov, shieldobj->info->missilestate);
-	}
-	if (player->powers[pw_shield] & SH_FORCE)
-	{
-		//Copy and pasted from P_ShieldLook in p_mobj.c
-		shieldobj->movecount = (player->powers[pw_shield] & SH_FORCEHP);
-		if (shieldobj->movecount < 1)
-		{
-			if (shieldobj->info->painstate)
-				P_SetMobjState(shieldobj,shieldobj->info->painstate);
-			else
-				shieldobj->renderflags |= RF_GHOSTLY;
-		}
-	}
-}
-
-//
-// P_SwitchShield
-//
-// Handles the possibility of switching between
-// the non-stack layer of shields thoroughly,
-// then adds the desired one.
-//
-void P_SwitchShield(player_t *player, UINT16 shieldtype)
-{
-	boolean donthavealready;
-
-	donthavealready = (shieldtype & SH_FORCE)
-		? (!(player->powers[pw_shield] & SH_FORCE) || (player->powers[pw_shield] & SH_FORCEHP) < (shieldtype & ~SH_FORCE))
-		: ((player->powers[pw_shield] & SH_NOSTACK) != shieldtype);
-
-	if (donthavealready)
-	{
-		boolean stopshieldability = (shieldtype & SH_FORCE)
-		? (!(player->powers[pw_shield] & SH_FORCE))
-		: true;
-
-		// Just in case.
-		if (stopshieldability && player->pflags & PF_SHIELDABILITY)
-		{
-			player->pflags &= ~(PF_SPINNING|PF_SHIELDABILITY); // They'll still have PF_THOKKED...
-			player->homing = 0;
-		}
-
-		player->powers[pw_shield] = shieldtype|(player->powers[pw_shield] & SH_STACK);
-		P_SpawnShieldOrb(player);
-
-		if (shieldtype & SH_PROTECTWATER)
-		{
-			if (player->powers[pw_underwater] && player->powers[pw_underwater] <= 12*TICRATE + 1)
-			{
-				player->powers[pw_underwater] = 0;
-				P_RestoreMusic(player);
-			}
-			else
-				player->powers[pw_underwater] = 0;
-
-			if (player->powers[pw_spacetime] > 1)
-			{
-				player->powers[pw_spacetime] = 0;
-				P_RestoreMusic(player);
-			}
-		}
-	}
-}
-
-//
 // P_SpawnGhostMobj
 //
 // Spawns a ghost object on the player
@@ -1414,8 +1231,6 @@ void P_DoPlayerExit(player_t *player)
 		}
 	}
 
-	player->powers[pw_underwater] = 0;
-	player->powers[pw_spacetime] = 0;
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])
@@ -1779,19 +1594,16 @@ static void P_CheckQuicksand(player_t *player)
 //
 static void P_CheckInvincibilityTimer(player_t *player)
 {
-	if (!player->powers[pw_invulnerability] && !player->kartstuff[k_invincibilitytimer])
+	if (!player->invincibilitytimer)
 		return;
 
 	player->mo->color = (UINT16)(SKINCOLOR_PINK + (leveltime % (numskincolors - SKINCOLOR_PINK)));
 
 	// Resume normal music stuff.
-	if (player->powers[pw_invulnerability] == 1 || player->kartstuff[k_invincibilitytimer] == 1)
+	if (player->invincibilitytimer == 1)
 	{
-		if (!player->powers[pw_super])
-		{
-			player->mo->color = player->skincolor;
-			G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
-		}
+		player->mo->color = player->skincolor;
+		G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
 
 		P_RestoreMusic(player);
 	}
@@ -1809,12 +1621,12 @@ static void P_DoBubbleBreath(player_t *player)
 	fixed_t z = player->mo->z;
 	mobj_t *bubble = NULL;
 
-	if (!(player->mo->eflags & MFE_UNDERWATER) || (player->powers[pw_shield] & SH_PROTECTWATER) || player->spectator)
+	if (!(player->mo->eflags & MFE_UNDERWATER) || player->spectator)
 		return;
 
 	if (player->charflags & SF_MACHINE)
 	{
-		if (player->powers[pw_underwater] && P_RandomChance((128-(player->powers[pw_underwater]/4))*FRACUNIT/256))
+		if (P_RandomChance(FRACUNIT/5))
 		{
 			fixed_t r = player->mo->radius>>FRACBITS;
 			x += (P_RandomRange(r, -r)<<FRACBITS);
@@ -1866,14 +1678,21 @@ static void P_3dMovement(player_t *player)
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
 	if (player->stairjank > 8 && leveltime & 3)
-		movepushangle = R_PointToAngle2(0, 0,
-				player->mo->momx, player->mo->momy);
-	else if (player->kartstuff[k_drift] != 0)
-		movepushangle = player->mo->angle-(ANGLE_45/5)*player->kartstuff[k_drift];
-	else if (player->kartstuff[k_spinouttimer] || player->kartstuff[k_wipeoutslow])	// if spun out, use the boost angle
-		movepushangle = (angle_t)player->kartstuff[k_boostangle];
+	{
+		movepushangle = K_MomentumAngle(player->mo);
+	}
+	else if (player->drift != 0)
+	{
+		movepushangle = player->mo->angle - (ANGLE_45/5) * player->drift;
+	}
+	else if (player->spinouttimer || player->wipeoutslow) // if spun out, use the boost angle
+	{
+		movepushangle = (angle_t)player->boostangle;
+	}
 	else
+	{
 		movepushangle = player->mo->angle;
+	}
 
 	// cmomx/cmomy stands for the conveyor belt speed.
 	if (player->onconveyor == 2) // Wind/Current
@@ -1910,7 +1729,7 @@ static void P_3dMovement(player_t *player)
 
 	//{ SRB2kart 220217 - Toaster Code for misplaced thrust
 #if 0
-	if (!player->kartstuff[k_drift]) // Not Drifting
+	if (!player->drift) // Not Drifting
 	{
 		angle_t difference = dangle/2;
 		boolean reverse = (dangle >= ANGLE_90);
@@ -2128,7 +1947,7 @@ void P_MovePlayer(player_t *player)
 	runspd = FixedMul(runspd, player->mo->movefactor);
 
 	// Control relinquishing stuff!
-	if (player->powers[pw_nocontrol])
+	if (player->nocontrol)
 		player->pflags |= PF_STASIS;
 
 	// note: don't unset stasis here
@@ -2162,7 +1981,7 @@ void P_MovePlayer(player_t *player)
 
 		UINT8 rollSpeed = max(1, min(8, player->tumbleHeight / 10));
 
-		if (player->tumbleLastBounce == true)
+		if (player->pflags & PF_TUMBLELASTBOUNCE)
 			spinSpeed = 2;
 
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
@@ -2170,7 +1989,7 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle -= (ANGLE_11hh * rollSpeed);
 
-		if (player->tumbleLastBounce == true)
+		if (player->pflags & PF_TUMBLELASTBOUNCE)
 		{
 			if (abs((signed)(player->mo->angle - player->drawangle)) < ANGLE_22h)
 				player->drawangle = player->mo->angle;
@@ -2179,15 +1998,15 @@ void P_MovePlayer(player_t *player)
 				player->mo->rollangle = 0;
 		}
 	}
-	else if (player->pflags & PF_SLIDING)
+	else if (player->carry == CR_SLIDING)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 	}
-	else if ((player->pflags & PF_FAULT) || (player->kartstuff[k_spinouttimer] > 0))
+	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
-		UINT16 speed = ((player->pflags & PF_FAULT) ? player->powers[pw_nocontrol] : player->kartstuff[k_spinouttimer])/8;
+		UINT16 speed = ((player->pflags & PF_FAULT) ? player->nocontrol : player->spinouttimer)/8;
 		if (speed > 8)
 			speed = 8;
 		else if (speed < 1)
@@ -2206,7 +2025,7 @@ void P_MovePlayer(player_t *player)
 	{
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
-		if (((player->powers[pw_nocontrol] + 5) % 20) < 10)
+		if (((player->nocontrol + 5) % 20) < 10)
 			player->drawangle += ANGLE_11hh;
 		else
 			player->drawangle -= ANGLE_11hh;
@@ -2229,13 +2048,13 @@ void P_MovePlayer(player_t *player)
 		{
 			player->drawangle = player->mo->angle;
 
-			if (player->aizDriftTurn)
+			if (player->aizdriftturn)
 			{
-				player->drawangle += player->aizDriftTurn;
+				player->drawangle += player->aizdriftturn;
 			}
-			else if (player->kartstuff[k_drift] != 0)
+			else if (player->drift != 0)
 			{
-				INT32 a = (ANGLE_45 / 5) * player->kartstuff[k_drift];
+				INT32 a = (ANGLE_45 / 5) * player->drift;
 				player->drawangle += a;
 			}
 		}
@@ -2249,13 +2068,13 @@ void P_MovePlayer(player_t *player)
 
 	// Drifting sound
 	// Start looping the sound now.
-	if (leveltime % 50 == 0 && onground && player->kartstuff[k_drift] != 0)
+	if (leveltime % 50 == 0 && onground && player->drift != 0)
 		S_StartSound(player->mo, sfx_drift);
 	// Leveltime being 50 might take a while at times. We'll start it up once, isntantly.
-	else if (!S_SoundPlaying(player->mo, sfx_drift) && onground && player->kartstuff[k_drift] != 0)
+	else if (!S_SoundPlaying(player->mo, sfx_drift) && onground && player->drift != 0)
 		S_StartSound(player->mo, sfx_drift);
 	// Ok, we'll stop now.
-	else if (player->kartstuff[k_drift] == 0)
+	else if (player->drift == 0)
 		S_StopSoundByID(player->mo, sfx_drift);
 
 	K_MoveKartPlayer(player, onground);
@@ -2265,38 +2084,10 @@ void P_MovePlayer(player_t *player)
 //GAMEPLAY STUFF//
 //////////////////
 
-	// If you're running fast enough, you can create splashes as you run in shallow water.
-#if 0
-	if (!player->climbing
-	&& ((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
+	if (((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
 		|| (player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height >= player->mo->waterbottom && player->mo->z <= player->mo->waterbottom))
-	&& (player->speed > runspd || (player->pflags & PF_STARTDASH))
-	&& leveltime % (TICRATE/7) == 0 && player->mo->momz == 0 && !(player->pflags & PF_SLIDING) && !player->spectator)
-	{
-		mobjtype_t splishtype = (player->mo->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
-		mobj_t *water = P_SpawnMobj(player->mo->x - P_ReturnThrustX(NULL, player->mo->angle, player->mo->radius), player->mo->y - P_ReturnThrustY(NULL, player->mo->angle, player->mo->radius),
-			((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[splishtype].height, player->mo->scale) : player->mo->watertop), splishtype);
-		if (player->mo->eflags & MFE_GOOWATER)
-			S_StartSound(water, sfx_ghit);
-		else if (player->mo->eflags & MFE_TOUCHLAVA)
-			S_StartSound(water, sfx_splash);
-		else
-			S_StartSound(water, sfx_wslap);
-		if (player->mo->eflags & MFE_VERTICALFLIP)
-		{
-			water->flags2 |= MF2_OBJECTFLIP;
-			water->eflags |= MFE_VERTICALFLIP;
-		}
-		water->destscale = player->mo->scale;
-		P_SetScale(water, player->mo->scale);
-	}
-#endif
-
-	if (!player->climbing
-	&& ((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
-		|| (player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height >= player->mo->waterbottom && player->mo->z <= player->mo->waterbottom))
-	&& (player->speed > runspd || (player->pflags & PF_STARTDASH))
-	&& player->mo->momz == 0 && !(player->pflags & PF_SLIDING) && !player->spectator)
+	&& (player->speed > runspd)
+	&& player->mo->momz == 0 && player->carry != CR_SLIDING && !player->spectator)
 	{
 		fixed_t trailScale = FixedMul(FixedDiv(player->speed - runspd, K_GetKartSpeed(player, false) - runspd), mapobjectscale);
 		fixed_t playerTopSpeed = K_GetKartSpeed(player, false);
@@ -2380,14 +2171,14 @@ void P_MovePlayer(player_t *player)
 	////////////////////////////
 
 	// SRB2kart - Drifting smoke and fire
-	if ((player->kartstuff[k_sneakertimer] || player->kartstuff[k_flamedash])
+	if ((player->sneakertimer || player->flamedash)
 		&& onground && (leveltime & 1))
 		K_SpawnBoostTrail(player);
 
-	if (player->kartstuff[k_invincibilitytimer] > 0)
+	if (player->invincibilitytimer > 0)
 		K_SpawnSparkleTrail(player->mo);
 
-	if (player->kartstuff[k_wipeoutslow] > 1 && (leveltime & 1))
+	if (player->wipeoutslow > 1 && (leveltime & 1))
 		K_SpawnWipeoutTrail(player->mo, false);
 
 	K_DriftDustHandling(player->mo);
@@ -2440,7 +2231,7 @@ static void P_DoZoomTube(player_t *player)
 	else
 		reverse = true;
 
-	player->powers[pw_flashing] = 1;
+	player->flashing = 1;
 
 	speed = abs(player->speed);
 
@@ -2498,7 +2289,7 @@ static void P_DoZoomTube(player_t *player)
 		else
 		{
 			P_SetTarget(&player->mo->tracer, NULL); // Else, we just let them fly.
-			player->powers[pw_carry] = CR_NONE;
+			player->carry = CR_NONE;
 
 			CONS_Debug(DBG_GAMELOGIC, "Next waypoint not found, releasing from track...\n");
 		}
@@ -2648,7 +2439,7 @@ static void P_DeathThink(player_t *player)
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
 
-	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT))
+	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT))
 	{
 		player->karthud[khud_timeovercam]++;
 
@@ -2663,13 +2454,13 @@ static void P_DeathThink(player_t *player)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (player->lives > 0 && !(player->pflags & PF_GAMETYPEOVER) && player->deadtimer > TICRATE)
+	if (player->lives > 0 && !(player->pflags & PF_NOCONTEST) && player->deadtimer > TICRATE)
 	{
 		player->playerstate = PST_REBORN;
 	}
 
 	// Keep time rolling
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER) && !stoppedclock)
+	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
 	{
 		if (leveltime >= starttime)
 		{
@@ -3097,7 +2888,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		|| (leveltime < introtime)); // Kart intro cam
 #endif
 
-	if ((player->pflags & PF_GAMETYPEOVER) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
@@ -3291,11 +3082,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		pan = xpan = ypan = 0;
 	else
 	{
-		if (player->kartstuff[k_drift] != 0)
+		if (player->drift != 0)
 		{
 			fixed_t panmax = (dist/5);
 			INT32 driftval = K_GetKartDriftSparkValue(player);
-			INT32 dc = player->kartstuff[k_driftcharge];
+			INT32 dc = player->driftcharge;
 
 			if (dc > driftval || dc < 0)
 				dc = driftval;
@@ -3304,7 +3095,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 			if (pan > panmax)
 				pan = panmax;
-			if (player->kartstuff[k_drift] < 0)
+			if (player->drift < 0)
 				pan *= -1;
 		}
 		else
@@ -3639,7 +3430,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	{
 		if (P_IsLocalPlayer(player))
 			CONS_Printf(M_GetText("Server does not allow team change.\n"));
-		//player->powers[pw_flashing] = TICRATE + 1; //to prevent message spam.
+		//player->flashing = TICRATE + 1; //to prevent message spam.
 	}
 	// Team changing in Team Match and CTF
 	// Pressing fire assigns you to a team that needs players if allowed.
@@ -3681,7 +3472,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		}
 		player->spectator = false;
 		player->pflags &= ~PF_WANTSTOJOIN;
-		player->kartstuff[k_spectatewait] = 0;
+		player->spectatewait = 0;
 		player->ctfteam = changeto;
 		player->playerstate = PST_REBORN;
 
@@ -3711,7 +3502,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		}
 		player->spectator = false;
 		player->pflags &= ~PF_WANTSTOJOIN;
-		player->kartstuff[k_spectatewait] = 0;
+		player->spectatewait = 0;
 		player->playerstate = PST_REBORN;
 
 		//Reset away view
@@ -3842,7 +3633,7 @@ static void P_CalcPostImg(player_t *player)
 
 void P_DoTimeOver(player_t *player)
 {
-	if (player->pflags & PF_GAMETYPEOVER)
+	if (player->pflags & PF_NOCONTEST)
 	{
 		// NO! Don't do this!
 		return;
@@ -3858,7 +3649,7 @@ void P_DoTimeOver(player_t *player)
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
 
-	player->pflags |= PF_GAMETYPEOVER;
+	player->pflags |= PF_NOCONTEST;
 
 	if (G_GametypeUsesLives())
 	{
@@ -4146,7 +3937,7 @@ static void P_HandleFollower(player_t *player)
 		player->follower->renderflags = player->mo->renderflags;
 
 		// Make the follower invisible if we no contest'd rather than removing it. No one will notice the diff seriously.
-		if (player->pflags & PF_GAMETYPEOVER)
+		if (player->pflags & PF_NOCONTEST)
 			player->follower->renderflags |= RF_DONTDRAW;
 
 		if (player->speed && (player->follower->momx || player->follower->momy))
@@ -4185,7 +3976,7 @@ static void P_HandleFollower(player_t *player)
 
 		// handle follower animations. Could probably be better...
 		// hurt or dead
-		if (player->kartstuff[k_spinouttimer] || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
+		if (player->spinouttimer || player->mo->state == &states[S_KART_SPINOUT] || player->mo->health <= 0)
 		{
 			player->follower->movecount = 0;	// cancel hit confirm.
 			player->follower->angle = player->drawangle;	// spin out
@@ -4397,15 +4188,15 @@ void P_PlayerThink(player_t *player)
 	//  to allow items to be thrown forward or backward.
 	if (cmd->buttons & BT_FORWARD)
 	{
-		player->kartstuff[k_throwdir] = 1;
+		player->throwdir = 1;
 	}
 	else if (cmd->buttons & BT_BACKWARD)
 	{
-		player->kartstuff[k_throwdir] = -1;
+		player->throwdir = -1;
 	}
 	else
 	{
-		player->kartstuff[k_throwdir] = 0;
+		player->throwdir = 0;
 	}
 
 	// Accessibility - kickstart your acceleration
@@ -4437,7 +4228,7 @@ void P_PlayerThink(player_t *player)
 			{
 				if (playeringame[i] && !players[i].spectator)
 				{
-					if (!players[i].exiting && !(players[i].pflags & PF_GAMETYPEOVER) && players[i].lives > 0)
+					if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST) && players[i].lives > 0)
 						break;
 				}
 			}
@@ -4458,7 +4249,7 @@ void P_PlayerThink(player_t *player)
 
 			// If you've hit the countdown and you haven't made
 			//  it to the exit, you're a goner!
-			if (racecountdown == 1 && !player->spectator && !player->exiting && !(player->pflags & PF_GAMETYPEOVER) && player->lives > 0)
+			if (racecountdown == 1 && !player->spectator && !player->exiting && !(player->pflags & PF_NOCONTEST) && player->lives > 0)
 			{
 				P_DoTimeOver(player);
 
@@ -4528,11 +4319,11 @@ void P_PlayerThink(player_t *player)
 	// SRB2kart 010217
 	if (leveltime < introtime)
 	{
-		player->powers[pw_nocontrol] = 2;
+		player->nocontrol = 2;
 	}
 
 	// Synchronizes the "real" amount of time spent in the level.
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_GAMETYPEOVER) && !stoppedclock)
+	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
 	{
 		if (leveltime >= starttime)
 		{
@@ -4553,18 +4344,12 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
-	if ((netgame || multiplayer) && player->spectator && cmd->buttons & BT_ATTACK && !player->powers[pw_flashing])
+	if ((netgame || multiplayer) && player->spectator && cmd->buttons & BT_ATTACK && !player->flashing)
 	{
 		player->pflags ^= PF_WANTSTOJOIN;
-		player->powers[pw_flashing] = TICRATE/2 + 1;
+		player->flashing = TICRATE/2 + 1;
 		/*if (P_SpectatorJoinGame(player))
 			return; // player->mo was removed.*/
-	}
-
-	if (player->linktimer && !player->powers[pw_nights_linkfreeze])
-	{
-		if (--player->linktimer <= 0) // Link timer
-			player->linkcount = 0;
 	}
 
 	if (player->respawn.state != RESPAWNST_NONE)
@@ -4588,7 +4373,6 @@ void P_PlayerThink(player_t *player)
 	{
 		P_DoZoomTube(player);
 		player->rmomx = player->rmomy = 0;
-		P_ResetScore(player);
 	}
 	else
 	{
@@ -4611,42 +4395,6 @@ void P_PlayerThink(player_t *player)
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
 
-#if 1
-	// "Blur" a bit when you have speed shoes and are going fast enough
-	if ((player->powers[pw_super] || player->powers[pw_sneakers])
-		&& (player->speed + abs(player->mo->momz)) > FixedMul(20*FRACUNIT,player->mo->scale))
-	{
-		UINT8 i;
-		mobj_t *gmobj = P_SpawnGhostMobj(player->mo);
-
-		gmobj->fuse = 2;
-		if (gmobj->tracer)
-			gmobj->tracer->fuse = 2;
-		if (leveltime & 1)
-		{
-			gmobj->frame &= ~FF_TRANSMASK;
-			gmobj->frame |= tr_trans70<<FF_TRANSSHIFT;
-			if (gmobj->tracer)
-			{
-				gmobj->tracer->frame &= ~FF_TRANSMASK;
-				gmobj->tracer->frame |= tr_trans70<<FF_TRANSSHIFT;
-			}
-		}
-
-		// Hide the mobj from our sights if we're the displayplayer and chasecam is off.
-		// Why not just not spawn the mobj?  Well, I'd rather only flirt with
-		// consistency so much...
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (player == &players[displayplayers[i]] && !camera[i].chase)
-			{
-				gmobj->renderflags |= RF_DONTDRAW;
-				break;
-			}
-		}
-	}
-#endif
-
 	// check for buttons
 	if (cmd->buttons & BT_ACCELERATE)
 		player->pflags |= PF_ACCELDOWN;
@@ -4662,32 +4410,28 @@ void P_PlayerThink(player_t *player)
 	// Time Bonus & Ring Bonus count settings
 
 	// Strength counts up to diminish fade.
-	if (player->powers[pw_flashing] && player->powers[pw_flashing] < UINT16_MAX &&
+	if (player->flashing && player->flashing < UINT16_MAX &&
 		(player->spectator || !P_PlayerInPain(player)))
 	{
-		player->powers[pw_flashing]--;
+		player->flashing--;
 	}
 
-	if (player->powers[pw_nocontrol] && player->powers[pw_nocontrol] < UINT16_MAX)
+	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
-		if (!(--player->powers[pw_nocontrol]))
+		if (!(--player->nocontrol))
 			player->pflags &= ~PF_FAULT;
 	}
 	else
-		player->powers[pw_nocontrol] = 0;
-
-	//pw_super acts as a timer now
-	if (player->powers[pw_super])
-		player->powers[pw_super]++;
+		player->nocontrol = 0;
 
 	// Flash player after being hit.
-	if (!(player->kartstuff[k_hyudorotimer] // SRB2kart - fixes Hyudoro not flashing when it should.
-		|| player->kartstuff[k_growshrinktimer] > 0 // Grow doesn't flash either.
+	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
+		|| player->growshrinktimer > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
-		|| (player->pflags & PF_GAMETYPEOVER) // NO CONTEST explosion
+		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
 		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
-		if (player->powers[pw_flashing] > 0 && player->powers[pw_flashing] < K_GetKartFlashing(player)
+		if (player->flashing > 0 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
@@ -4757,11 +4501,12 @@ void P_PlayerThink(player_t *player)
 		player->stairjank--;
 	}
 
-	player->pflags &= ~PF_SLIDING;
-
 	K_KartPlayerThink(player, cmd); // SRB2kart
 
 	DoABarrelRoll(player);
+
+	if (player->carry == CR_SLIDING)
+		player->carry = CR_NONE;
 
 	LUAh_PlayerThink(player);
 }
@@ -4812,9 +4557,6 @@ void P_PlayerAfterThink(player_t *player)
 		return;
 	}
 
-	if (player->pflags & PF_SLIDING)
-		P_SetPlayerMobjState(player->mo, player->mo->info->painstate);
-
 	if (thiscam)
 	{
 		if (!thiscam->chase) // bob view only if looking through the player's eyes
@@ -4846,12 +4588,6 @@ void P_PlayerAfterThink(player_t *player)
 		player->mo->pmomz = 0;
 
 	K_KartPlayerAfterThink(player);
-
-	if (player->powers[pw_dye])
-	{
-		player->mo->colorized = true;
-		player->mo->color = player->powers[pw_dye];
-	}
 
 	if (player->followmobj && (player->spectator || player->mo->health <= 0 || player->followmobj->type != player->followitem))
 	{
@@ -4931,5 +4667,5 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 
 boolean P_PlayerFullbright(player_t *player)
 {
-	return (player->kartstuff[k_invincibilitytimer] > 0);
+	return (player->invincibilitytimer > 0);
 }

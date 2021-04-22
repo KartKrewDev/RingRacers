@@ -270,7 +270,6 @@ INT32 flameseg = TICRATE/4;
 
 UINT8 use1upSound = 0;
 UINT8 maxXtraLife = 2; // Max extra lives from rings
-UINT8 useContinues = 0; // Set to 1 to enable continues outside of no-save scenarioes
 
 UINT8 introtoplay;
 UINT8 creditscutscene;
@@ -545,7 +544,7 @@ static void G_UpdateRecordReplays(void)
 	if (!mainrecords[gamemap-1])
 		G_AllocMainRecordData(gamemap-1);
 
-	if (players[consoleplayer].pflags & PF_GAMETYPEOVER)
+	if (players[consoleplayer].pflags & PF_NOCONTEST)
 	{
 		players[consoleplayer].realtime = UINT32_MAX;
 	}
@@ -1112,7 +1111,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->latency = (leveltime & 0xFF); // Send leveltime when this tic was generated to the server for control lag calculations
 	cmd->flags = 0;
 
 	if (chat_on || CON_Ready())
@@ -1138,6 +1136,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (addedtogame && gamestate == GS_LEVEL)
 	{
 		LUAh_PlayerCmd(player, cmd);
+
+		// Send leveltime when this tic was generated to the server for control lag calculations.
+		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
+		cmd->latency = (leveltime & 0xFF); 
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1617,7 +1619,7 @@ boolean G_CouldView(INT32 playernum)
 	// SRB2Kart: Only go through players who are actually playing
 	if (player->exiting)
 		return false;
-	if (( player->pflags & PF_GAMETYPEOVER ))
+	if (( player->pflags & PF_NOCONTEST ))
 		return false;
 
 	// I don't know if we want this actually, but I'll humor the suggestion anyway
@@ -2033,9 +2035,6 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p = &players[player];
 
-	memset(p->powers, 0, sizeof (p->powers));
-	memset(p->kartstuff, 0, sizeof (p->kartstuff)); // SRB2kart
-
 	p->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 
@@ -2064,10 +2063,8 @@ static inline void G_PlayerFinishLevel(INT32 player)
 void G_PlayerReborn(INT32 player, boolean betweenmaps)
 {
 	player_t *p;
-	INT32 score, marescore;
+	INT32 score, roundscore;
 	INT32 lives;
-	boolean lostlife;
-	INT32 continues;
 
 	UINT8 kartspeed;
 	UINT8 kartweight;
@@ -2082,15 +2079,12 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 pflags;
 
-	INT32 ctfteam;
+	UINT8 ctfteam;
 
 	INT32 starpostnum;
 	INT32 exiting;
-	tic_t dashmode;
-	INT16 numboxes;
 	INT16 totalring;
 	UINT8 laps;
-	UINT8 mare;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
@@ -2121,20 +2115,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 roulettetype;
 	INT32 growshrinktimer;
 	INT32 bumper;
-	INT32 wanted;
 	boolean songcredit = false;
-	boolean eliminated;
 	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
 
 	score = players[player].score;
-	marescore = players[player].marescore;
 	lives = players[player].lives;
-	lostlife = players[player].lostlife;
-	continues = players[player].continues;
 	ctfteam = players[player].ctfteam;
-	exiting = players[player].exiting;
 
 	jointime = players[player].jointime;
 	quittime = players[player].quittime;
@@ -2142,20 +2130,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_GAMETYPEOVER|PF_FAULT|PF_KICKSTARTACCEL));
-
 	steering = players[player].steering;
 	playerangleturn = players[player].angleturn;
-
-	// As long as we're not in multiplayer, carry over cheatcodes from map to map
-	if (!(netgame || multiplayer))
-		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP|PF_INVIS));
-
-	dashmode = players[player].dashmode;
-
-	numboxes = players[player].numboxes;
-	laps = players[player].laps;
-	totalring = players[player].totalring;
 
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
@@ -2164,7 +2140,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	kartspeed = players[player].kartspeed;
 	kartweight = players[player].kartweight;
 
-	follower = players[player].follower;
 	followerready = players[player].followerready;
 	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
@@ -2173,20 +2148,18 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	charflags = players[player].charflags;
 
-	starpostnum = players[player].starpostnum;
 	followitem = players[player].followitem;
 
-	mare = players[player].mare;
 	bot = players[player].bot;
 	botdifficulty = players[player].botvars.difficulty;
 
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
-	xtralife = players[player].xtralife;
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL));
 
 	// SRB2kart
-	if (betweenmaps || leveltime < starttime)
+	if (betweenmaps || leveltime < introtime)
 	{
 		itemroulette = 0;
 		roulettetype = 0;
@@ -2196,47 +2169,64 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
 		spheres = 0;
-		eliminated = false;
-		wanted = 0;
 		kickstartaccel = 0;
+		khudfault = nocontrol = 0;
+		laps = 0;
+		totalring = 0;
+		roundscore = 0;
+		exiting = 0;
+		starpostnum = 0;
+		xtralife = 0;
+
+		follower = NULL;
 	}
 	else
 	{
-		itemroulette = (players[player].kartstuff[k_itemroulette] > 0 ? 1 : 0);
-		roulettetype = players[player].kartstuff[k_roulettetype];
+		itemroulette = (players[player].itemroulette > 0 ? 1 : 0);
+		roulettetype = players[player].roulettetype;
 
-		if (players[player].kartstuff[k_itemheld])
+		if (players[player].pflags & PF_ITEMOUT)
 		{
 			itemtype = 0;
 			itemamount = 0;
 		}
 		else
 		{
-			itemtype = players[player].kartstuff[k_itemtype];
-			itemamount = players[player].kartstuff[k_itemamount];
+			itemtype = players[player].itemtype;
+			itemamount = players[player].itemamount;
 		}
 
 		// Keep Shrink status, remove Grow status
-		if (players[player].kartstuff[k_growshrinktimer] < 0)
-			growshrinktimer = players[player].kartstuff[k_growshrinktimer];
+		if (players[player].growshrinktimer < 0)
+			growshrinktimer = players[player].growshrinktimer;
 		else
 			growshrinktimer = 0;
 
 		bumper = players[player].bumpers;
 		rings = players[player].rings;
 		spheres = players[player].spheres;
-		eliminated = players[player].eliminated;
-		wanted = players[player].kartstuff[k_wanted];
 		kickstartaccel = players[player].kickstartaccel;
+
+		khudfault = players[player].karthud[khud_fault];
+		nocontrol = players[player].nocontrol;
+
+		laps = players[player].laps;
+		totalring = players[player].totalring;
+		roundscore = players[player].roundscore;
+		exiting = players[player].exiting;
+		starpostnum = players[player].starpostnum;
+
+		xtralife = players[player].xtralife;
+
+		follower = players[player].follower;
+
+		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
 	}
 
-	if (!betweenmaps)
-	{
-		khudfault = players[player].karthud[khud_fault];
-		nocontrol = players[player].powers[pw_nocontrol];
-	}
-	else
-		khudfault = nocontrol = 0;
+	// As long as we're not in multiplayer, carry over cheatcodes from map to map
+	if (!(netgame || multiplayer))
+		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
+
 
 	// Obliterate follower from existence
 	P_SetTarget(&players[player].follower, NULL);
@@ -2247,10 +2237,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	memset(p, 0, sizeof (*p));
 
 	p->score = score;
-	p->marescore = marescore;
+	p->roundscore = roundscore;
 	p->lives = lives;
-	p->lostlife = lostlife;
-	p->continues = continues;
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
@@ -2273,13 +2261,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
 
-	p->dashmode = dashmode;
-
-	p->numboxes = numboxes;
 	p->laps = laps;
 	p->totalring = totalring;
 
-	p->mare = mare;
 	p->bot = bot;
 	p->botvars.difficulty = botdifficulty;
 	p->rings = rings;
@@ -2289,19 +2273,17 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	// SRB2kart
-	p->kartstuff[k_itemroulette] = itemroulette;
-	p->kartstuff[k_roulettetype] = roulettetype;
-	p->kartstuff[k_itemtype] = itemtype;
-	p->kartstuff[k_itemamount] = itemamount;
-	p->kartstuff[k_growshrinktimer] = growshrinktimer;
+	p->itemroulette = itemroulette;
+	p->roulettetype = roulettetype;
+	p->itemtype = itemtype;
+	p->itemamount = itemamount;
+	p->growshrinktimer = growshrinktimer;
 	p->bumpers = bumper;
 	p->karmadelay = comebacktime;
-	p->eliminated = eliminated;
-	p->kartstuff[k_wanted] = wanted;
-	p->kartstuff[k_eggmanblame] = -1;
-	p->kartstuff[k_lastdraft] = -1;
+	p->eggmanblame = -1;
+	p->lastdraft = -1;
 	p->karthud[khud_fault] = khudfault;
-	p->powers[pw_nocontrol] = nocontrol;
+	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
@@ -2866,7 +2848,7 @@ UINT32 gametypedefaultrules[NUMGAMETYPES] =
 	// Race
 	GTR_CIRCUIT|GTR_BOTS,
 	// Battle
-	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_WANTED|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
+	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
 };
 
 //
@@ -3476,7 +3458,7 @@ static void G_DoCompleted(void)
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
-			if (!players[i].exiting && !(players[i].pflags & PF_GAMETYPEOVER))
+			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
 				if (players[i].bot)
 				{
@@ -3484,7 +3466,7 @@ static void G_DoCompleted(void)
 				}
 				else
 				{
-					players[i].pflags |= PF_GAMETYPEOVER;
+					players[i].pflags |= PF_NOCONTEST;
 
 					if (P_IsLocalPlayer(&players[i]))
 					{
@@ -3798,8 +3780,8 @@ static void G_DoContinued(void)
 	I_Assert(!netgame && !multiplayer);
 	I_Assert(pl->continues > 0);
 
-	if (pl->continues)
-		pl->continues--;
+	/*if (pl->continues)
+		pl->continues--;*/
 
 	// Reset score
 	pl->score = 0;
@@ -4467,16 +4449,12 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		players[i].playerstate = PST_REBORN;
-		players[i].starpostnum = 0;
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
-		// The latter two should clear by themselves, but just in case
-		players[i].pflags &= ~(PF_GAMETYPEOVER|PF_STASIS|PF_FAULT);
-
 		// Clear cheatcodes too, just in case.
-		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
+		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP);
 
-		players[i].marescore = 0;
+		players[i].roundscore = 0;
 
 		if (resetplayer && !(multiplayer && demo.playback)) // SRB2Kart
 		{

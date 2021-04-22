@@ -851,7 +851,6 @@ void P_SlopeLaunch(mobj_t *mo)
 
 	if (mo->player)
 	{
-		mo->player->powers[pw_justlaunched] = 1;
 		mo->player->stairjank = 0; // fuck you
 	}
 }
@@ -898,9 +897,7 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		{
 			thing->standingslope = slope;
 			P_SetPitchRollFromSlope(thing, slope);
-
-			if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
-				thing->momz = -P_MobjFlip(thing);
+			thing->momz = -P_MobjFlip(thing);
 		}
 		return;
 	}
@@ -916,8 +913,7 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 		thing->momy = mom.y;
 		thing->standingslope = slope;
 		P_SetPitchRollFromSlope(thing, slope);
-		if (!thing->player || !(thing->player->pflags & PF_BOUNCING))
-			thing->momz = -P_MobjFlip(thing);
+		thing->momz = -P_MobjFlip(thing);
 	}
 }
 

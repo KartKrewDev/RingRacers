@@ -38,7 +38,7 @@ static angle_t R_PlayerSpriteRotation(player_t *player)
 	angle_t viewingAngle = R_PointToAngle(player->mo->x, player->mo->y);
 	angle_t angleDelta = (viewingAngle - player->mo->angle);
 
-	angle_t sliptideLift = player->aizDriftTilt;
+	angle_t sliptideLift = player->aizdrifttilt;
 
 	angle_t rollAngle = 0;
 

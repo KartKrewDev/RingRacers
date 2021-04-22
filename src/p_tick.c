@@ -360,7 +360,7 @@ static void P_DoAutobalanceTeams(void)
 	INT32 i=0;
 	INT32 red=0, blue=0;
 	INT32 redarray[MAXPLAYERS], bluearray[MAXPLAYERS];
-	INT32 redflagcarrier = 0, blueflagcarrier = 0;
+	//INT32 redflagcarrier = 0, blueflagcarrier = 0;
 	INT32 totalred = 0, totalblue = 0;
 
 	NetPacket.value.l = NetPacket.value.b = 0;
@@ -380,29 +380,29 @@ static void P_DoAutobalanceTeams(void)
 		{
 			if (players[i].ctfteam == 1)
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					redarray[red] = i; //store the player's node.
 					red++;
 				}
-				else
-					redflagcarrier++;
+				/*else
+					redflagcarrier++;*/
 			}
 			else
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					bluearray[blue] = i; //store the player's node.
 					blue++;
 				}
-				else
-					blueflagcarrier++;
+				/*else
+					blueflagcarrier++;*/
 			}
 		}
 	}
 
-	totalred = red + redflagcarrier;
-	totalblue = blue + blueflagcarrier;
+	totalred = red;// + redflagcarrier;
+	totalblue = blue;// + blueflagcarrier;
 
 	if ((abs(totalred - totalblue) > max(1, (totalred + totalblue) / 8)))
 	{
@@ -614,7 +614,6 @@ void P_Ticker(boolean run)
 	}
 
 	// Run shield positioning
-	P_RunShields();
 	P_RunOverlays();
 
 	P_UpdateSpecials();
@@ -777,7 +776,6 @@ void P_PreTicker(INT32 frames)
 		LUAh_ThinkFrame();
 
 		// Run shield positioning
-		P_RunShields();
 		P_RunOverlays();
 
 		P_UpdateSpecials();

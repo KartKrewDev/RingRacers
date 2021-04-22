@@ -40,18 +40,13 @@ enum actionnum
 	A_FACETRACER,
 	A_SCREAM,
 	A_BOSSDEATH,
-	A_CUSTOMPOWER,
 	A_RINGBOX,
-	A_INVINCIBILITY,
-	A_SUPERSNEAKERS,
 	A_BUNNYHOP,
 	A_BUBBLESPAWN,
 	A_FANBUBBLESPAWN,
 	A_BUBBLERISE,
 	A_BUBBLECHECK,
 	A_AWARDSCORE,
-	A_GIVESHIELD,
-	A_GRAVITYBOX,
 	A_SCORERISE,
 	A_ATTRACTCHASE,
 	A_DROPMINE,
@@ -311,18 +306,13 @@ void A_FaceTarget();
 void A_FaceTracer();
 void A_Scream();
 void A_BossDeath();
-void A_CustomPower(); // Use this for a custom power
 void A_RingBox(); // Obtained Ring Box Tails
-void A_Invincibility(); // Obtained Invincibility Box
-void A_SuperSneakers(); // Obtained Super Sneakers Box
 void A_BunnyHop(); // have bunny hop tails
 void A_BubbleSpawn(); // Randomly spawn bubbles
 void A_FanBubbleSpawn();
 void A_BubbleRise(); // Bubbles float to surface
 void A_BubbleCheck(); // Don't draw if not underwater
 void A_AwardScore();
-void A_GiveShield(); // Obtained Shield
-void A_GravityBox();
 void A_ScoreRise(); // Rise the score logo
 void A_AttractChase(); // Ring Chase
 void A_DropMine(); // Drop Mine from Skim or Jetty-Syn Bomber
@@ -1093,6 +1083,8 @@ typedef enum sprite
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DRWS, // Drift dust sparks
+	SPR_DREL, // Drift electricity
+	SPR_DRES, // Drift electric sparks
 	SPR_JANK, // Stair janking sparks
 
 	// Kart Items
@@ -4501,6 +4493,10 @@ typedef enum state
 	S_DRIFTWARNSPARK3,
 	S_DRIFTWARNSPARK4,
 
+	// Drift electricity
+	S_DRIFTELECTRICITY,
+	S_DRIFTELECTRICSPARK,
+
 	// Fast lines
 	S_FASTLINE1,
 	S_FASTLINE2,
@@ -6468,6 +6464,8 @@ typedef enum mobj_type
 	MT_DRIFTSPARK,
 	MT_BRAKEDRIFT,
 	MT_DRIFTDUST,
+	MT_DRIFTELECTRICITY,
+	MT_DRIFTELECTRICSPARK,
 	MT_JANKSPARK,
 
 	MT_ROCKETSNEAKER,
