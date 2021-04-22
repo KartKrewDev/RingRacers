@@ -2546,6 +2546,11 @@ static void K_GetKartBoostPower(player_t *player)
 		}
 	}
 
+	if (player->trickboost)	// Trick pannel up-boost
+	{
+		ADDBOOST(player->trickboostpower, 5*FRACUNIT, 0);	// <trickboostpower>% speed, 500% accel, 0% handling
+	}
+
 	if (player->ringboost) // Ring Boost
 	{
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
@@ -4868,7 +4873,10 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
 
-		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = 0;	// Reset post-hitlag momentums.
+		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
+		// Setup the boost for potential upwards trick, at worse, make it your regular max speed.
+		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0);
+		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
 	mo->momz = FixedMul(thrust, vscale);
@@ -6284,7 +6292,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// Speed lines
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
-				|| player->eggmanexplode)
+				|| player->eggmanexplode || player->trickboost)
 			{
 				if (player->invincibilitytimer)
 					K_SpawnInvincibilitySpeedLines(player->mo);
@@ -6524,6 +6532,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->numsneakers = 0;
 		}
 	}
+
+	if (player->trickboost)
+		player->trickboost--;
 
 	if (player->flamedash)
 		player->flamedash--;
@@ -8787,6 +8798,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
+			if (!cmd->turning && !player->throwdir)	// increment this counter while your inputs are neutral
+				player->tricktime++;
+
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
 			if (momz < -10*FRACUNIT)	// :youfuckedup:
@@ -8858,6 +8872,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						relative = false;
 					}
 
+					// Calculate speed boost decay:
+					// Base speed boost duration is 35 tics.
+					// At most, lose 3/4th of your boost.
+					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
+					//CONS_Printf("decay: %d\n", player->trickboostdecay);
+
 					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
 
 					player->trickmomx = player->mo->momx;
@@ -8866,7 +8886,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
 					player->mo->momz = 0;
 
-					player->trickpanel = 3;
+					player->trickpanel = 4;
 					player->mo->hitlag = TRICKLAG;
 				}
 			}
@@ -8882,8 +8902,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		}
 
+		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
+		{
+			//CONS_Printf("apply boost\n");
+			S_StartSound(player->mo, sfx_s23c);
+			K_SpawnDashDustRelease(player);
+			player->trickboost = TICRATE - player->trickboostdecay;
+
+			player->trickpanel = player->trickboostdecay = 0;
+		}
+
 		// Wait until we let go off the control stick to remove the delay
-		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning)
+		// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
+		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning && (player->tricktime >= TRICKDELAY))
 		{
 			player->pflags &= ~PF_TRICKDELAY;
 		}
