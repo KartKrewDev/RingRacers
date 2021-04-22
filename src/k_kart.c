@@ -4874,8 +4874,8 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		}
 
 		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
-		// Setup the boost for potential upwards trick, at worse, make it your regular max speed.
-		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0);
+		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
+		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
@@ -7279,9 +7279,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel != 0)
+	if (player->trickpanel != 0 && player->trickpanel < 4)
 	{
-		// No turning during trick panel
+		// No turning during trick panel unless you did the upwards trick (4)
 		return 0;
 	}
 
