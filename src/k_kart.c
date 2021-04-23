@@ -520,13 +520,13 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spb
 {
 	if (mapobjectscale != FRACUNIT)
 	{
-		// Bring back to normal scale, so that 
+		// Bring back to normal scale.
 		distance = FixedDiv(distance * FRACUNIT, mapobjectscale) / FRACUNIT;
 	}
 
 	if (franticitems == true)
 	{
-		// Frantic items arbritrarily make distances shorter, for crazier items.
+		// Frantic items pretends everyone's farther apart, for crazier items.
 		distance = (15 * distance) / 14;
 	}
 
