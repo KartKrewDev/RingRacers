@@ -4284,8 +4284,8 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 				angle_t prevfa = (prevrot + mobj->friction) & FINEMASK;
 				fa = (rot + mobj->friction) & FINEMASK;
 
-				if (!(prevfa > (FINEMASK/2)) && (fa > (FINEMASK/2))) // completed a full swing
-					dosound = true;
+				// completed a half-spin
+				dosound = ((prevfa > (FINEMASK/2)) != (fa > (FINEMASK/2)));
 
 				unit_lengthways[0] = FixedMul(FINECOSINE(fa), radius);
 				unit_lengthways[2] = FixedMul(FINESINE(fa), radius);
