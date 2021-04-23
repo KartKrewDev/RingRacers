@@ -3729,10 +3729,10 @@ static void P_InitCamera(void)
 	{
 		UINT8 i;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			P_SetupCamera(i, &camera[i]);
-			displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			//displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			P_SetupCamera(displayplayers[i], &camera[i]);
 		}
 	}
 }

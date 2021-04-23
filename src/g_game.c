@@ -1263,7 +1263,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (camera[i].chase)
-			P_ResetCamera(&players[g_localplayers[i]], &camera[i]);
+			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 	}
 
 	// clear cmd building stuff
