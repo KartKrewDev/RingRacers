@@ -8168,11 +8168,27 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 
 		// All coordinates set, spawn our fire, now.
 		flame = P_SpawnMobj(tx, ty, tz, MT_THOK);	// @TODO: Make this into its own object. Duh.
-		flame->frame = 0;
+
+		// PLACEHOLDER VISUALS
+		// @TODO: SPRITES
+		flame->sprite = SPR_FLAM;
+		flame->frame = ((leveltime%16) /2)|FF_FULLBRIGHT;
 		flame->tics = 2;
+		flame->rollangle = vang + ANG1*90;
 
 		// make sure this is only drawn for our local player
-		// @TODO
+		flame->renderflags &= ~K_GetPlayerDontDrawFlag(player);
+
+		// second flame for visuals...
+		flame = P_SpawnMobj(tx, ty, tz, MT_THOK);	// @TODO: Make this into its own object. Duh.
+
+		flame->sprite = SPR_FLAM;
+		flame->frame = ((leveltime%16) /2)|FF_FULLBRIGHT|FF_TRANS60;
+		flame->tics = 10;
+		flame->rollangle = vang + ANG1*90;
+
+		// make sure this is only drawn for our local player
+		flame->renderflags &= ~K_GetPlayerDontDrawFlag(player);
 
 		vang += FixedAngle(180<<FRACBITS);	// Avoid overflow warnings...
 
@@ -8852,7 +8868,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				// these are all admittedly arbitrary numbers...
 				INT32 n;
-				INT32 maxlines = max(1, (momz/FRACUNIT)/8);
+				INT32 maxlines = max(1, (momz/FRACUNIT)/16);
 				INT32 frequency = max(1, 5-(momz/FRACUNIT)/4);
 				fixed_t sx, sy, sz;
 				mobj_t *spdl;
@@ -8870,6 +8886,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						spdl->angle = R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y);
 						spdl->rollangle = -ANG1*90*P_MobjFlip(player->mo);		// angle them downwards relative to the player's gravity...
 						spdl->spriteyscale = player->trickboostpower+FRACUNIT;
+						spdl->momx = player->mo->momx;
+						spdl->momy = player->mo->momy;
 					}
 
 				}
