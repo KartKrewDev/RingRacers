@@ -8136,6 +8136,53 @@ void K_AdjustPlayerFriction(player_t *player)
 }
 
 //
+// K_trickPanelTimingVisual
+// Spawns the timing visual for trick panels depending on the given player's momz.
+//
+
+#define RADIUSSCALING 6
+#define MINRADIUS 24
+
+static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
+{
+
+	fixed_t pos, tx, ty, tz;
+	mobj_t *flame;
+
+	angle_t hang = R_PointToAngle(player->mo->x, player->mo->y) + ANG1*90;	// horizontal angle
+	angle_t vang = -leveltime*ANG1*12;								// vertical angle... arbitrary rotation speed for now.
+	fixed_t dist = FixedMul(max(MINRADIUS<<FRACBITS, momz*RADIUSSCALING), player->mo->scale);				// distance.
+
+	UINT8 i;
+
+	//CONS_Printf("a\n");
+
+	// Do you like trig? cool, me neither.
+	for (i=0; i < 2; i++)
+	{
+		//CONS_Printf("%d\n", i);
+		pos = FixedMul(dist, FINESINE(vang>>ANGLETOFINESHIFT));
+		tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
+		ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
+		tz = player->mo->z + FixedMul(dist, FINECOSINE(vang>>ANGLETOFINESHIFT));
+
+		// All coordinates set, spawn our fire, now.
+		flame = P_SpawnMobj(tx, ty, tz, MT_THOK);	// @TODO: Make this into its own object. Duh.
+		flame->frame = 0;
+		flame->tics = 2;
+
+		// make sure this is only drawn for our local player
+		// @TODO
+
+		vang += FixedAngle(180<<FRACBITS);	// Avoid overflow warnings...
+
+	}
+}
+
+#undef RADIUSSCALING
+#undef MINRADIUS
+
+//
 // K_MoveKartPlayer
 //
 void K_MoveKartPlayer(player_t *player, boolean onground)
@@ -8797,7 +8844,38 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
-			
+
+			K_trickPanelTimingVisual(player, abs(momz));
+
+			// streaks:
+			if (momz*P_MobjFlip(player->mo) > 0)	// only spawn those while you're going upwards relative to your current gravity
+			{
+				// these are all admittedly arbitrary numbers...
+				INT32 n;
+				INT32 maxlines = max(1, (momz/FRACUNIT)/8);
+				INT32 frequency = max(1, 5-(momz/FRACUNIT)/4);
+				fixed_t sx, sy, sz;
+				mobj_t *spdl;
+
+				if (!(leveltime % frequency))
+				{
+					for (n=0; n < maxlines; n++)
+					{
+						sx = player->mo->x + P_RandomRange(-24, 24)*player->mo->scale;
+						sy = player->mo->y + P_RandomRange(-24, 24)*player->mo->scale;
+						sz = player->mo->z + P_RandomRange(0, 48)*player->mo->scale;
+
+						spdl = P_SpawnMobj(sx, sy, sz, MT_FASTLINE);
+						P_SetTarget(&spdl->target, player->mo);
+						spdl->angle = R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y);
+						spdl->rollangle = -ANG1*90*P_MobjFlip(player->mo);		// angle them downwards relative to the player's gravity...
+						spdl->spriteyscale = player->trickboostpower+FRACUNIT;
+					}
+
+				}
+
+			}
+
 			// We'll never need to go above that.
 			if (player->tricktime <= TRICKDELAY)
 				player->tricktime++;
