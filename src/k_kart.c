@@ -8145,6 +8145,8 @@ void K_AdjustPlayerFriction(player_t *player)
 // if you tumble, they'll fall off instead.
 //
 
+// @TODO: R_PointToAngle is unreliable in splitscreen..............
+
 #define RADIUSSCALING 6
 #define MINRADIUS 12
 

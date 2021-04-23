@@ -3971,13 +3971,31 @@ static void K_drawTrickCool(void)
 {
 
 	tic_t timer = TICRATE - stplyr->karthud[khud_trickcool];
+	INT32 x = (BASEVIDWIDTH/2);
+	INT32 y = ((BASEVIDHEIGHT)/2)-10;
+
+	// @TODO: fix this shit
+	/*if (r_splitscreen > 2)	// 4p split
+	{
+		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])
+		{
+			x /= 2;
+			y /= 2;
+		}
+		else
+		{
+			x /= 2 + BASEVIDWIDTH/2;
+			y /= 2 + BASEVIDHEIGHT/2;
+		}
+	}*/
+
 	if (timer <= 6)
 	{
-		V_DrawStretchyFixedPatch(160<<FRACBITS, 90<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+		V_DrawStretchyFixedPatch(x<<FRACBITS, y<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
 	}
 	else if (leveltime & 1)
 	{
-		V_DrawFixedPatch(160<<FRACBITS, (90<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+		V_DrawFixedPatch(x<<FRACBITS, (y<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
 	}
 }
 
