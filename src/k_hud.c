@@ -162,6 +162,8 @@ static patch_t *kp_cpu;
 
 static patch_t *kp_nametagstem;
 
+static patch_t *kp_trickcool[2];
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -601,6 +603,9 @@ void K_LoadKartHUDGraphics(void)
 	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
 
 	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
+
+	kp_trickcool[0] = W_CachePatchName("K_COOL1", PU_HUDGFX);
+	kp_trickcool[1] = W_CachePatchName("K_COOL2", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -3951,6 +3956,31 @@ static void K_drawLapStartAnim(void)
 	}
 }
 
+// stretch for "COOOOOL" popup.
+// I can't be fucked to find out any math behind this so have a table lmao
+static fixed_t stretch[6][2] = {
+	{FRACUNIT/4, FRACUNIT*4},
+	{FRACUNIT/2, FRACUNIT*2},
+	{FRACUNIT, FRACUNIT},
+	{FRACUNIT*2, FRACUNIT/2},
+	{FRACUNIT*4, FRACUNIT/4},
+	{FRACUNIT*2, FRACUNIT/2},
+};
+
+static void K_drawTrickCool(void)
+{
+
+	tic_t timer = TICRATE - stplyr->karthud[khud_trickcool];
+	if (timer <= 6)
+	{
+		V_DrawStretchyFixedPatch(160<<FRACBITS, 90<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+	}
+	else if (leveltime & 1)
+	{
+		V_DrawFixedPatch(160<<FRACBITS, (90<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+	}
+}
+
 void K_drawKartFreePlay(void)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
@@ -4314,6 +4344,10 @@ void K_drawKartHUD(void)
 		else if (stplyr->karthud[khud_lapanimation] && !r_splitscreen)
 			K_drawLapStartAnim();
 	}
+
+	// trick panel cool trick
+	if (stplyr->karthud[khud_trickcool])
+		K_drawTrickCool();
 
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;

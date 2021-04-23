@@ -1289,6 +1289,8 @@ typedef enum sprite
 	SPR_SDDS, // Spindash dust
 	SPR_SDWN, // Spindash wind
 
+	SPR_TRCK,
+
 	SPR_FLBM, // Finish line beam
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later

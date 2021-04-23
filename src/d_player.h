@@ -232,6 +232,9 @@ typedef enum
 	khud_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
 	khud_yougotem, 		// "You Got Em" gfx when hitting someone as a karma player via a method that gets you back in the game instantly
 
+	// Tricks
+	khud_trickcool,
+
 	NUMKARTHUD
 } karthudtype_t;
 
