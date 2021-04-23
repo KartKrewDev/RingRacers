@@ -1338,7 +1338,7 @@ static void CL_ReloadReceivedSavegame(void)
 		neededtic = gametic;
 	maketic = neededtic;
 
-	for (i = 0; i <= splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		P_ForceLocalAngle(&players[displayplayers[i]], players[displayplayers[i]].angleturn);
 	}
@@ -2375,7 +2375,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	LUAh_PlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
 	// don't look through someone's view who isn't there
-	if (playernum == displayplayers[0])
+	if (playernum == displayplayers[0] && !demo.playback)
 	{
 		// Call ViewpointSwitch hooks here.
 		// The viewpoint was forcibly changed.
@@ -2403,9 +2403,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	{
 		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 	}
-
-	if (playernum == displayplayers[0] && !demo.playback)
-		displayplayers[0] = consoleplayer; // don't look through someone's view who isn't there
 
 	LUA_InvalidatePlayer(&players[playernum]);
 
