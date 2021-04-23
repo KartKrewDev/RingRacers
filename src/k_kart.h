@@ -85,6 +85,7 @@ boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);
+INT32 K_StairJankFlip(INT32 value);
 INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_SpawnDriftElectricSparks(player_t *player);

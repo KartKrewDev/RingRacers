@@ -2417,6 +2417,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
 	fixed_t startingonground = P_IsObjectOnGround(thing);
+	fixed_t stairjank = 0;
+	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
@@ -2488,6 +2490,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (maxstep > 0)
 			{
+				const boolean flipped =
+					(thing->eflags & MFE_VERTICALFLIP) != 0;
+
 				thingtop = thing->z + thing->height;
 
 				// Step up
@@ -2495,6 +2500,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmfloorstep <= maxstep)
 					{
+						if (!flipped)
+							stairjank = tmfloorstep;
+
 						thing->z = thing->floorz = tmfloorz;
 						thing->floorrover = tmfloorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2508,6 +2516,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmceilingstep <= maxstep)
 					{
+						if (flipped)
+							stairjank = tmceilingstep;
+
 						thing->z = ( thing->ceilingz = tmceilingz ) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2524,6 +2535,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
 					{
+						if (flipped)
+							stairjank = (tmceilingz - thingtop);
+
 						thing->z = (thing->ceilingz = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2531,6 +2545,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					}
 					else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
 					{
+						if (!flipped)
+							stairjank = (thing->z - tmfloorz);
+
 						thing->z = thing->floorz = tmfloorz;
 						thing->floorrover = tmfloorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2616,6 +2633,28 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	}
 	else // don't set standingslope if you're not going to clip against it
 		thing->standingslope = NULL;
+
+	/* FIXME: slope step down (even up) has some false
+		positives, so just ignore them entirely. */
+	if (stairjank && !oldslope && !thing->standingslope &&
+			thing->player && !thing->player->spectator)
+	{
+		/* use a shorter sound if not two tics have passed
+		 * since the last step */
+		S_StartSound(thing, thing->player->stairjank
+				>= 16 ?  sfx_s23b : sfx_s268);
+
+		if (!thing->player->stairjank)
+		{
+			mobj_t * spark = P_SpawnMobjFromMobj(thing,
+					0, 0, 0, MT_JANKSPARK);
+			spark->fuse = 9;
+			spark->cusval = K_StairJankFlip(ANGLE_90);
+			P_SetTarget(&spark->target, thing);
+		}
+
+		thing->player->stairjank = 17;
+	}
 
 	thing->x = x;
 	thing->y = y;

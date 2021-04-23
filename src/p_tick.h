@@ -30,4 +30,8 @@ void P_DoTeamscrambling(void);
 void P_RemoveThinkerDelayed(thinker_t *thinker); //killed
 mobj_t *P_SetTarget(mobj_t **mo, mobj_t *target);   // killough 11/98
 
+// Negate the value for tics
+INT32 P_AltFlip(INT32 value, tic_t tics);
+#define P_RandomFlip(value) P_AltFlip(value, 1)
+
 #endif

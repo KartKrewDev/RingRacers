@@ -1677,12 +1677,22 @@ static void P_3dMovement(player_t *player)
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
-	if (player->drift != 0)
-		movepushangle = player->mo->angle-(ANGLE_45/5)*player->drift;
-	else if (player->spinouttimer || player->wipeoutslow)	// if spun out, use the boost angle
+	if (player->stairjank > 8 && leveltime & 3)
+	{
+		movepushangle = K_MomentumAngle(player->mo);
+	}
+	else if (player->drift != 0)
+	{
+		movepushangle = player->mo->angle - (ANGLE_45/5) * player->drift;
+	}
+	else if (player->spinouttimer || player->wipeoutslow) // if spun out, use the boost angle
+	{
 		movepushangle = (angle_t)player->boostangle;
+	}
 	else
+	{
 		movepushangle = player->mo->angle;
+	}
 
 	// cmomx/cmomy stands for the conveyor belt speed.
 	if (player->onconveyor == 2) // Wind/Current
@@ -4486,14 +4496,19 @@ void P_PlayerThink(player_t *player)
 		player->typing_duration = 0;
 	}
 
+	if (player->stairjank > 0)
+	{
+		player->stairjank--;
+	}
+
 	K_KartPlayerThink(player, cmd); // SRB2kart
 
 	DoABarrelRoll(player);
 
-	LUAh_PlayerThink(player);
-
 	if (player->carry == CR_SLIDING)
 		player->carry = CR_NONE;
+
+	LUAh_PlayerThink(player);
 }
 
 //
