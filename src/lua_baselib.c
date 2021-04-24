@@ -2098,6 +2098,16 @@ static int lib_rPointToAngle(lua_State *L)
 	return 1;
 }
 
+static int lib_rPointToAnglePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t x = luaL_checkfixed(L, 2);
+	fixed_t y = luaL_checkfixed(L, 3);
+	//HUDSAFE
+	lua_pushangle(L, R_PointToAnglePlayer(player, x, y));
+	return 1;
+}
+
 static int lib_rPointToAngle2(lua_State *L)
 {
 	fixed_t px2 = luaL_checkfixed(L, 1);
@@ -3876,6 +3886,7 @@ static luaL_Reg lib[] = {
 
 	// r_defs
 	{"R_PointToAngle",lib_rPointToAngle},
+	{"R_PointToAnglePlayer", lib_rPointToAnglePlayer},
 	{"R_PointToAngle2",lib_rPointToAngle2},
 	{"R_PointToDist",lib_rPointToDist},
 	{"R_PointToDist2",lib_rPointToDist2},
