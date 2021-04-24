@@ -348,7 +348,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			 /*Land Mine*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
+   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
 		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
@@ -400,6 +400,9 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
+#define SPBSTARTDIST (5*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define SPBFORCEDIST (15*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define ENDDIST (12*DISTVAR) // Distance when the game stops giving you bananas
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
 static INT32 K_SparkleTrailStartStates[KART_NUMINVSPARKLESANIM][2] = {
@@ -491,7 +494,7 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	}
 }
 
-static fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
+fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
 {
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
 	UINT8 playerCount = (spbrush ? 2 : numPlayers);
@@ -516,7 +519,7 @@ static fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
 	return playerScaling;
 }
 
-static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush)
+UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush)
 {
 	if (mapobjectscale != FRACUNIT)
 	{
@@ -549,7 +552,11 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spb
 	\return	void
 */
 
-INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot, boolean rival)
+INT32 K_KartGetItemOdds(
+	UINT8 pos, SINT8 item,
+	UINT32 ourDist,
+	fixed_t mashed,
+	boolean spbrush, boolean bot, boolean rival)
 {
 	INT32 newodds;
 	INT32 i;
@@ -557,12 +564,13 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 	UINT8 pingame = 0, pexiting = 0;
 
 	SINT8 first = -1, second = -1;
-	UINT32 firstdist = UINT32_MAX;
-	UINT32 secondist = UINT32_MAX;
+	UINT32 firstDist = UINT32_MAX;
+	UINT32 secondToFirst = UINT32_MAX;
 
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
 	boolean indirectItem = false;
+	boolean notNearEnd = false;
 
 	INT32 shieldtype = KSHIELD_NONE;
 
@@ -571,6 +579,24 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 
 	if (!KartItemCVars[item-1]->value && !modeattacking)
 		return 0;
+
+	/*
+	if (bot)
+	{
+		// TODO: Item use on bots should all be passed-in functions.
+		// Instead of manually inserting these, it should return 0
+		// for any items without an item use function supplied
+
+		switch (item)
+		{
+			case KITEM_SNEAKER:
+				break;
+			default:
+				return 0;
+		}
+	}
+	*/
+	(void)bot;
 
 	if (gametype == GT_BATTLE)
 	{
@@ -616,74 +642,40 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 
 	if (first != -1 && second != -1) // calculate 2nd's distance from 1st, for SPB
 	{
-		firstdist = players[first].distancetofinish;
+		firstDist = players[first].distancetofinish;
 
 		if (mapobjectscale != FRACUNIT)
 		{
-			firstdist = FixedDiv(firstdist * FRACUNIT, mapobjectscale) / FRACUNIT;
+			firstDist = FixedDiv(firstDist * FRACUNIT, mapobjectscale) / FRACUNIT;
 		}
 
-		secondist = K_ScaleItemDistance(
+		secondToFirst = K_ScaleItemDistance(
 			players[second].distancetofinish - players[first].distancetofinish,
 			pingame, spbrush
 		);
 	}
 
-	/*
-	if (bot)
-	{
-		// TODO: Item use on bots should all be passed-in functions.
-		// Instead of manually inserting these, it should return 0
-		// for any items without an item use function supplied
-
-		switch (item)
-		{
-			case KITEM_SNEAKER:
-			case KITEM_ROCKETSNEAKER:
-			case KITEM_INVINCIBILITY:
-			case KITEM_BANANA:
-			case KITEM_EGGMAN:
-			case KITEM_ORBINAUT:
-			case KITEM_JAWZ:
-			case KITEM_MINE:
-			case KITEM_LANDMINE:
-			case KITEM_BALLHOG:
-			case KITEM_SPB:
-			case KITEM_GROW:
-			case KITEM_SHRINK:
-			case KITEM_HYUDORO:
-			case KITEM_SUPERRING:
-			case KITEM_THUNDERSHIELD:
-			case KITEM_BUBBLESHIELD:
-			case KITEM_FLAMESHIELD:
-			case KRITEM_DUALSNEAKER:
-			case KRITEM_TRIPLESNEAKER:
-			case KRITEM_TRIPLEBANANA:
-			case KRITEM_TENFOLDBANANA:
-			case KRITEM_TRIPLEORBINAUT:
-			case KRITEM_QUADORBINAUT:
-			case KRITEM_DUALJAWZ:
-				break;
-			default:
-				return 0;
-		}
-	}
-	*/
-	(void)bot;
-
 	switch (item)
 	{
+		case KITEM_BANANA:
+		case KITEM_EGGMAN:
+		case KITEM_SUPERRING:
+			notNearEnd = true;
+			break;
 		case KITEM_ROCKETSNEAKER:
 		case KITEM_JAWZ:
 		case KITEM_LANDMINE:
 		case KITEM_BALLHOG:
 		case KRITEM_TRIPLESNEAKER:
-		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
 		case KRITEM_DUALJAWZ:
 			powerItem = true;
+			break;
+		case KRITEM_TRIPLEBANANA:
+		case KRITEM_TENFOLDBANANA:
+			powerItem = true;
+			notNearEnd = true;
 			break;
 		case KITEM_INVINCIBILITY:
 		case KITEM_MINE:
@@ -696,19 +688,24 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 		case KITEM_SPB:
 			cooldownOnStart = true;
 			indirectItem = true;
+			notNearEnd = true;
 
-			if (firstdist < 8*DISTVAR) // No SPB near the end of the race
+			if (firstDist < ENDDIST) // No SPB near the end of the race
 			{
 				newodds = 0;
 			}
 			else
 			{
-				INT32 multiplier = (secondist - (5*DISTVAR)) / DISTVAR;
+				const INT32 distFromStart = max(0, secondToFirst - SPBSTARTDIST);
+				const INT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+				const INT32 mulMax = 3;
+
+				INT32 multiplier = (distFromStart * mulMax) / distRange;
 
 				if (multiplier < 0)
 					multiplier = 0;
-				if (multiplier > 3)
-					multiplier = 3;
+				if (multiplier > mulMax)
+					multiplier = mulMax;
 
 				newodds *= multiplier;
 			}
@@ -717,6 +714,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 			cooldownOnStart = true;
 			powerItem = true;
 			indirectItem = true;
+			notNearEnd = true;
 
 			if (pingame-1 <= pexiting)
 				newodds = 0;
@@ -730,6 +728,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 			break;
 		case KITEM_HYUDORO:
 			cooldownOnStart = true;
+			notNearEnd = true;
 
 			if (hyubgone > 0)
 				newodds = 0;
@@ -751,7 +750,12 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 	}
 	else if ((cooldownOnStart == true) && (leveltime < (30*TICRATE)+starttime))
 	{
-		// This item should not appear at the beginning of a race.
+		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
+		newodds = 0;
+	}
+	else if ((notNearEnd == true) && (ourDist < ENDDIST))
+	{
+		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
 		newodds = 0;
 	}
 	else if (powerItem == true)
@@ -811,7 +815,12 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			if (K_KartGetItemOdds(i, j, mashed, spbrush, player->bot, (player->bot && player->botvars.rival)) > 0)
+			if (K_KartGetItemOdds(
+					i, j,
+					player->distancetofinish,
+					mashed,
+					spbrush, player->bot, (player->bot && player->botvars.rival)
+				) > 0)
 			{
 				available = true;
 				break;
@@ -1077,7 +1086,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 5:
 	// Force SPB onto 2nd if they get too far behind
-	if ((gametyperules & GTR_CIRCUIT) && player->position == 2 && pdis > (DISTVAR*8)
+	if ((gametyperules & GTR_CIRCUIT) && player->position == 2 && pdis > SPBFORCEDIST
 		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
 		&& cv_selfpropelledbomb.value)
 	{
@@ -1100,7 +1109,14 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
-		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush, player->bot, (player->bot && player->botvars.rival)));
+	{
+		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(
+			useodds, i,
+			player->distancetofinish,
+			mashed,
+			spbrush, player->bot, (player->bot && player->botvars.rival))
+		);
+	}
 
 	// Award the player whatever power is rolled
 	if (totalspawnchance > 0)
@@ -5374,7 +5390,15 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 		useodds = amount;
 
 		for (i = 1; i < NUMKARTRESULTS; i++)
-			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, 0, false, false, false));
+		{
+			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(
+				useodds, i,
+				UINT32_MAX,
+				0,
+				false, false, false
+				)
+			);
+		}
 
 		if (totalspawnchance > 0)
 		{
