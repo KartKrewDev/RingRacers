@@ -507,7 +507,7 @@ fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
 	{
 		// Less than basePlayer: increase odds significantly.
 		// 2P: x2.5
-		playerScaling = ((basePlayer - playerCount) * (basePlayer - playerCount)) * (FRACUNIT / 14);
+		playerScaling = (basePlayer - playerCount) * (FRACUNIT / 4);
 	}
 	else if (playerCount > basePlayer)
 	{
