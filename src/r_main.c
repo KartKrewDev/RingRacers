@@ -332,6 +332,41 @@ angle_t R_PointToAngle(fixed_t x, fixed_t y)
 		0;
 }
 
+// Similar to R_PointToAngle, but requires an additional player_t argument.
+// If this player is a local displayplayer, this will base off the calculations off of their camera instead, otherwise use viewx/viewy as usual.
+// Yes this is kinda ghetto.
+angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
+{
+	fixed_t refx = viewx, refy = viewy;
+	camera_t *cam = &camera[0];
+	
+	// Check for splitscreen players and get their cam if possible.
+	if (player == &players[displayplayers[1]])
+		cam = &camera[1];
+	else if (player == &players[displayplayers[2]])
+		cam = &camera[2];
+	else if (player == &players[displayplayers[3]])
+		cam = &camera[3];
+	
+	// use whatever cam we found's coordinates.
+	refx = cam->x;
+	refy = cam->y;
+		
+	// Now do whatever tehe fuck is this hellish maths from R_PointToAngle while swapping viewx/viewy for our refx/refy
+	return (y -= refy, (x -= refx) || y) ?
+	x >= 0 ?
+	y >= 0 ?
+		(x > y) ? tantoangle[SlopeDiv(y,x)] :                          // octant 0
+		ANGLE_90-tantoangle[SlopeDiv(x,y)] :                           // octant 1
+		x > (y = -y) ? 0-tantoangle[SlopeDiv(y,x)] :                   // octant 8
+		ANGLE_270+tantoangle[SlopeDiv(x,y)] :                          // octant 7
+		y >= 0 ? (x = -x) > y ? ANGLE_180-tantoangle[SlopeDiv(y,x)] :  // octant 3
+		ANGLE_90 + tantoangle[SlopeDiv(x,y)] :                         // octant 2
+		(x = -x) > (y = -y) ? ANGLE_180+tantoangle[SlopeDiv(y,x)] :    // octant 4
+		ANGLE_270-tantoangle[SlopeDiv(x,y)] :                          // octant 5
+		0;
+}
+
 // This version uses 64-bit variables to avoid overflows with large values.
 // Currently used only by OpenGL rendering.
 angle_t R_PointToAngle64(INT64 x, INT64 y)

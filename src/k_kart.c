@@ -8145,8 +8145,6 @@ void K_AdjustPlayerFriction(player_t *player)
 // if you tumble, they'll fall off instead.
 //
 
-// @TODO: R_PointToAngle is unreliable in splitscreen..............
-
 #define RADIUSSCALING 6
 #define MINRADIUS 12
 
@@ -8156,18 +8154,15 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 	fixed_t pos, tx, ty, tz;
 	mobj_t *flame;
 
-	angle_t hang = R_PointToAngle(player->mo->x, player->mo->y) + ANG1*90;	// horizontal angle
-	angle_t vang = -FixedAngle(momz)*12 + (ANG1*45);								// vertical angle... arbitrary rotation speed for now.
-	fixed_t dist = FixedMul(max(MINRADIUS<<FRACBITS, abs(momz)*RADIUSSCALING), player->mo->scale);				// distance.
+	angle_t hang = R_PointToAnglePlayer(player, player->mo->x, player->mo->y) + ANG1*90;			// horizontal angle
+	angle_t vang = -FixedAngle(momz)*12 + (ANG1*45);												// vertical angle dependant on momz, we want it to line up at 45 degrees at the perfect frame to trick at
+	fixed_t dist = FixedMul(max(MINRADIUS<<FRACBITS, abs(momz)*RADIUSSCALING), player->mo->scale);	// distance.
 
 	UINT8 i;
-
-	//CONS_Printf("a\n");
 
 	// Do you like trig? cool, me neither.
 	for (i=0; i < 2; i++)
 	{
-		//CONS_Printf("%d\n", i);
 		pos = FixedMul(dist, FINESINE(vang>>ANGLETOFINESHIFT));
 		tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
 		ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
@@ -8190,7 +8185,8 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 
 			if (player->trickpanel > 1)	// we tricked
 			{
-					// Send the thing outwards via ghetto maths
+				// Send the thing outwards via ghetto maths which involves redoing the whole 3d sphere again, witht the "vertical" angle shifted by 90 degrees.
+				// There's probably a simplier way to do this the way I want to but this works.
 				pos = FixedMul(48*player->mo->scale, FINESINE((vang +ANG1*90)>>ANGLETOFINESHIFT));
 				tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
 				ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
@@ -8200,7 +8196,7 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 				flame->momy = ty -player->mo->y;
 				flame->momz = tz -(player->mo->z+player->mo->height/2);
 			}
-			else	// we failed the trick.
+			else	// we failed the trick, drop the half circles, it'll be funny I promise.
 			{
 				flame->flags &= ~MF_NOGRAVITY;
 				P_SetObjectMomZ(flame, 4<<FRACBITS, false);

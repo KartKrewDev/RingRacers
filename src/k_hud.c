@@ -684,6 +684,9 @@ INT32 ITEM2_X, ITEM2_Y;
 INT32 LAPS2_X, LAPS2_Y;
 INT32 POSI2_X, POSI2_Y;
 
+// trick "cool"
+INT32 TCOOL_X, TCOOL_Y;
+
 
 void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
 {
@@ -987,6 +990,10 @@ static void K_initKartHUD(void)
 	WANT_X = BASEVIDWIDTH - 55;		// 270
 	WANT_Y = BASEVIDHEIGHT- 71;		// 176
 
+	// trick COOL
+	TCOOL_X = (BASEVIDWIDTH)/2;
+	TCOOL_Y = (BASEVIDHEIGHT)/2 -10;
+
 	if (r_splitscreen)	// Splitscreen
 	{
 		ITEM_X = 5;
@@ -1028,6 +1035,8 @@ static void K_initKartHUD(void)
 
 			MINI_X = (3*BASEVIDWIDTH/4);
 			MINI_Y = (3*BASEVIDHEIGHT/4);
+
+			TCOOL_X = (BASEVIDWIDTH)/4;
 
 			if (r_splitscreen > 2) // 4P-only
 			{
@@ -3962,40 +3971,23 @@ static fixed_t stretch[6][2] = {
 	{FRACUNIT/4, FRACUNIT*4},
 	{FRACUNIT/2, FRACUNIT*2},
 	{FRACUNIT, FRACUNIT},
-	{FRACUNIT*2, FRACUNIT/2},
-	{FRACUNIT*4, FRACUNIT/4},
-	{FRACUNIT*2, FRACUNIT/2},
+	{FRACUNIT*4, FRACUNIT/2},
+	{FRACUNIT*8, FRACUNIT/4},
+	{FRACUNIT*4, FRACUNIT/2},
 };
 
 static void K_drawTrickCool(void)
 {
 
 	tic_t timer = TICRATE - stplyr->karthud[khud_trickcool];
-	INT32 x = (BASEVIDWIDTH/2);
-	INT32 y = ((BASEVIDHEIGHT)/2)-10;
-
-	// @TODO: fix this shit
-	/*if (r_splitscreen > 2)	// 4p split
-	{
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])
-		{
-			x /= 2;
-			y /= 2;
-		}
-		else
-		{
-			x /= 2 + BASEVIDWIDTH/2;
-			y /= 2 + BASEVIDHEIGHT/2;
-		}
-	}*/
 
 	if (timer <= 6)
 	{
-		V_DrawStretchyFixedPatch(x<<FRACBITS, y<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+		V_DrawStretchyFixedPatch(TCOOL_X<<FRACBITS, TCOOL_Y<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS|V_SPLITSCREEN, kp_trickcool[splitscreen ? 1 : 0], NULL);
 	}
 	else if (leveltime & 1)
 	{
-		V_DrawFixedPatch(x<<FRACBITS, (y<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS, kp_trickcool[splitscreen ? 1 : 0], NULL);
+		V_DrawFixedPatch(TCOOL_X<<FRACBITS, (TCOOL_Y<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_trickcool[splitscreen ? 1 : 0], NULL);
 	}
 }
 
