@@ -1083,11 +1083,11 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	{
 		K_KartGetItemResult(player, KITEM_SPB);
 		player->karthud[khud_itemblink] = TICRATE;
-		player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
+		player->karthud[khud_itemblinkmode] = 2;
 		player->itemroulette = 0;
 		player->roulettetype = 0;
 		if (P_IsDisplayPlayer(player))
-			S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+			S_StartSound(NULL, sfx_itrolk);
 		return;
 	}
 
