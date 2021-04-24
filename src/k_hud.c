@@ -4024,6 +4024,7 @@ static void K_drawDistributionDebugger(void)
 		kp_kitchensink[1],
 
 		kp_sneaker[1],
+		kp_sneaker[1],
 		kp_banana[1],
 		kp_banana[1],
 		kp_orbinaut[4],
@@ -4103,6 +4104,9 @@ static void K_drawDistributionDebugger(void)
 					amount = 4;
 					break;
 				case KRITEM_DUALJAWZ:
+					amount = 2;
+					break;
+				case KRITEM_DUALSNEAKER:
 					amount = 2;
 					break;
 				default:
