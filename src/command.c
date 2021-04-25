@@ -1385,6 +1385,7 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 						if (var->revert.allocated)
 						{
 							Z_Free(var->revert.v.string);
+							var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 						}
 
 						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
@@ -1456,6 +1457,7 @@ found:
 				if (var->revert.allocated)
 				{
 					Z_Free(var->revert.v.string);
+					var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 				}
 
 				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
@@ -1474,6 +1476,7 @@ found:
 		if (var->revert.allocated)
 		{
 			Z_Free(var->revert.v.string);
+			// Z_StrDup creates a new zone memory block, so we can keep the allocated flag on
 		}
 
 		var->revert.v.string = Z_StrDup(valstr);
@@ -1728,6 +1731,7 @@ void CV_RevertNetVars(void)
 			if (cvar->revert.allocated)
 			{
 				Z_Free(cvar->revert.v.string);
+				cvar->revert.allocated = false; // no value being held now
 			}
 
 			cvar->revert.v.string = NULL;
