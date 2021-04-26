@@ -659,9 +659,7 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
-#ifndef ZDEBUG
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
-#endif
 
 	return ( numlevelflats++ );
 }
