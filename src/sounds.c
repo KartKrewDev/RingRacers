@@ -884,7 +884,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"mbs70",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs71",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbs72",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"mbv80",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv81",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv82",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv83",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
