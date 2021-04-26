@@ -635,7 +635,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	for (i = r_splitscreen; i >= 0; i--)
 	{
 		// Copy the sound for the splitscreen players!
-		if (!listenmobj[i])
+		if (listenmobj[i] == NULL && i != 0)
 		{
 			continue;
 		}
