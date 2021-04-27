@@ -8507,17 +8507,14 @@ void P_MobjThinker(mobj_t *mobj)
 				}
 			}
 		}
-		else if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
-		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
-				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << RF_TRANSSHIFT);
-		}
 		else
 		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
+			INT32 dur = (mobj->flags2 & MF2_BOSSNOTRAP)
+				? (2*mobj->fuse)/3
+				: mobj->fuse/2;
+			if (((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < ((NUMTRANSMAPS-1) - dur))
 				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->frame & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << RF_TRANSSHIFT);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - dur) << RF_TRANSSHIFT);
 		}
 	}
 

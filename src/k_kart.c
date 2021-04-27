@@ -6425,7 +6425,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				ghost->extravalue1 = player->numboosts+1;
 				ghost->extravalue2 = (leveltime % ghost->extravalue1);
 				ghost->fuse = ghost->extravalue1;
-				ghost->frame |= FF_FULLBRIGHT;
+				ghost->renderflags |= RF_FULLBRIGHT;
 				ghost->colorized = true;
 				//ghost->color = player->skincolor;
 				//ghost->momx = (3*player->mo->momx)/4;
