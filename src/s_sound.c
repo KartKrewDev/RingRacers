@@ -183,8 +183,6 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 	// channel number to use
 	INT32 cnum;
 
-	channel_t *c;
-
 	// Find an open channel
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
@@ -238,12 +236,6 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 			S_StopChannel(cnum);
 		}
 	}
-
-	c = &channels[cnum];
-
-	// channel is decided to be cnum.
-	c->sfxinfo = sfxinfo;
-	c->origin = origin;
 
 	return cnum;
 }
@@ -624,14 +616,6 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
 
-	// try to find a channel
-	cnum = S_getChannel(origin, sfx);
-
-	if (cnum < 0)
-	{
-		return; // If there's no free channels, it's not gonna be free for anyone.
-	}
-
 	for (i = r_splitscreen; i >= 0; i--)
 	{
 		// Copy the sound for the splitscreen players!
@@ -697,11 +681,19 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		// Handle closed caption input.
 		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
 
-		// Assigns the handle to one of the channels in the
-		// mix/output buffer.
+		// At this point it is determined that a sound can and should be played, so find a free channel to play it on
+		cnum = S_getChannel(origin, sfx);
+
+		if (cnum < 0)
+		{
+			return; // If there's no free channels, there won't be any for anymore players either
+		}
+
+		// Now that we know we are going to play a sound, fill out this info
+		channels[cnum].sfxinfo = sfx;
+		channels[cnum].origin = origin;
 		channels[cnum].volume = initial_volume;
 		channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
-		return; // We're done here!
 	}
 }
 
@@ -905,7 +897,7 @@ void S_UpdateSounds(void)
 								c->sfxinfo
 							);
 						}
-						
+
 						if (audible)
 							I_UpdateSoundParams(c->handle, volume, sep, pitch);
 						else
