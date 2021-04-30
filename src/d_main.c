@@ -615,16 +615,6 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			// Funny.
-			if (WipeStageTitle && st_overlay)
-			{
-				lt_ticker--;
-				lt_lasttic = lt_ticker;
-				ST_preLevelTitleCardDrawer();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-				F_WipeStartScreen();
-			}
-
 			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 

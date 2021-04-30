@@ -143,7 +143,7 @@ extern INT32 lastwipetic;
 
 // Don't know where else to place this constant
 // But this file seems appropriate
-#define PRELEVELTIME 24 // frames in tics
+#define PRELEVELTIME TICRATE // frames in tics
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);

@@ -1139,7 +1139,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
-		cmd->latency = (leveltime & 0xFF); 
+		cmd->latency = (leveltime & 0xFF);
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1301,7 +1301,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// start the title card
-	WipeStageTitle = false; //(!titlemapinaction); -- temporary until titlecards are reworked
+	WipeStageTitle = (!titlemapinaction);
 }
 
 //
@@ -1322,7 +1322,7 @@ void G_PreLevelTitleCard(void)
 		lasttime = nowtime;
 
 		ST_runTitleCard();
-		ST_preLevelTitleCardDrawer();
+		ST_drawTitleCard();
 		I_FinishUpdate(); // page flip or blit buffer
 
 		if (moviemode)

@@ -262,6 +262,16 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 #define V_DrawThinStringAtFixed( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,TINY_FONT,string)
 
+// Draws a titlecard font string.
+// timer: when the letters start appearing (leave to 0 to disable)
+// threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
+// NOTE: This function ignores most conventional string flags (V_RETURN8, V_ALLOWLOWERCASE ...)
+// NOTE: This font only works with uppercase letters.
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean alignright, INT32 timer, INT32 threshold);
+
+// returns thr width of a string drawn using the above function.
+INT32 V_TitleCardStringWidth(const char *str);
+
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
