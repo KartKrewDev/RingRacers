@@ -770,7 +770,7 @@ void ST_preDrawTitleCard(void)
 void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
-	tic_t auxticker;
+	INT32 auxticker;
 	boolean gp = (grandprixinfo.gp && grandprixinfo.roundnum);	// check whether we're in grandprix
 
 	if (!G_IsTitleCardAvailable())
@@ -790,35 +790,20 @@ void ST_runTitleCard(void)
 			// TITLECARD START
 			if (lt_ticker < TTANIMSTART)
 			{
-				chev1x = (BASE_CHEV1X + 350) - lt_ticker*50;
-				if (chev1x < BASE_CHEV1X)
-					chev1x = BASE_CHEV1X;	// min/max macros don't work well with signed, it seems
-
-				chev2x = (BASE_CHEV2X - 350) + lt_ticker*50;
-				if (chev2x > BASE_CHEV2X)
-					chev2x = BASE_CHEV2X;	// ditto
+				chev1x = max(BASE_CHEV1X, (BASE_CHEV1X +350) - (INT32)(lt_ticker)*50);
+				chev2x = min(BASE_CHEV2X, (BASE_CHEV2X -350) + (INT32)(lt_ticker)*50);
 			}
 
 			// OPEN ZIG-ZAGS 1 SECOND IN
 			if (lt_ticker > TTANIMTHRESHOLD)
 			{
-				auxticker = lt_ticker - TTANIMTHRESHOLD;
+				auxticker = (INT32)(lt_ticker) - TTANIMTHRESHOLD;
 
-				chev1x = BASE_CHEV1X + auxticker*16;
-				if (chev1x > 320)
-					chev1x = 320;
+				chev1x = min(320, BASE_CHEV1X + auxticker*16);
+				chev1y = max(0, BASE_CHEV1Y - auxticker*16);
 
-				chev1y = BASE_CHEV1Y - auxticker*16;
-				if (chev1y < 0)
-					chev1y = 0;
-
-				chev2x = BASE_CHEV2X - auxticker*16;
-				if (chev2x < 0)
-					chev2x = 0;
-
-				chev2y = BASE_CHEV2Y + auxticker*16;
-				if (chev2y > 200)
-					chev2y = 200;
+				chev2x = max(0, BASE_CHEV2X - auxticker*16);
+				chev2y = min(200, BASE_CHEV2Y + auxticker*16);
 
 				// translucent fade after opening up.
 				chevtflag = min(5, ((auxticker)/5)) << V_ALPHASHIFT;
@@ -827,7 +812,7 @@ void ST_runTitleCard(void)
 				// OPEN ZIG-ZAG: END OF ANIMATION (they leave the screen borders)
 				if (lt_ticker > TTANIMENDTHRESHOLD)
 				{
-					auxticker = lt_ticker - TTANIMENDTHRESHOLD;
+					auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
 
 					chev1x += auxticker*16;
 					chev1y -= auxticker*16;
@@ -861,7 +846,7 @@ void ST_runTitleCard(void)
 			// SLIDE BAR OUT, SLIDE "ROUND" DOWNWARDS FASTER
 			else if (lt_ticker >= TTANIMENDTHRESHOLD)
 			{
-				auxticker = lt_ticker - TTANIMENDTHRESHOLD;
+				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
 
 				roundx = FINAL_ROUNDX - auxticker*24;
 				roundy = FINAL_ROUNDY + auxticker*48;
@@ -881,7 +866,7 @@ void ST_runTitleCard(void)
 			// split both halves of the egg, but only do that in grand prix!
 			if (gp && lt_ticker > TTANIMTHRESHOLD + TICRATE/2)
 			{
-				auxticker = lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
+				auxticker = (INT32)lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
 
 				eggx1 -= auxticker*12;
 				eggy1 -= auxticker*12;
@@ -918,7 +903,7 @@ void ST_runTitleCard(void)
 			// SLIDE BANNER DOWNWARDS OUT OF THE SCREEN AT THE END
 			else if (lt_ticker >= TTANIMENDTHRESHOLD)
 			{
-				auxticker = lt_ticker - TTANIMENDTHRESHOLD;
+				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
 				bannery = FINAL_BANNERY + auxticker*16;
 			}
 
@@ -1046,6 +1031,22 @@ luahook:
 	LUAh_TitleCardHUD(stplyr);
 
 }
+
+// Clear defined coordinates, we don't need them anymore
+#undef FINAL_ROUNDX
+#undef FINAL_EGGY
+#undef FINAL_ROUNDY
+#undef FINAL_BANNERY
+
+#undef BASE_CHEV1X
+#undef BASE_CHEV1Y
+#undef BASE_CHEV2X
+#undef BASE_CHEV2Y
+
+#undef TTANIMTHRESHOLD
+#undef TTANIMSTART
+#undef TTANIMENDTHRESHOLD
+#undef TTANIMEND
 
 //
 // Drawer for G_PreLevelTitleCard.
