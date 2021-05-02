@@ -950,7 +950,7 @@ void ST_drawTitleCard(void)
 
 	// Avoid HOMs while drawing the start of the titlecard
 	if (lt_ticker < TTANIMSTART)
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
 	// Background zig-zags
 	V_DrawFixedPatch((chev1x)*FRACUNIT, (chev1y)*FRACUNIT, FRACUNIT, chevtflag, tcchev1, NULL);
@@ -1055,18 +1055,9 @@ void ST_preLevelTitleCardDrawer(void)
 {
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
-	ST_drawWipeTitleCard();
+	ST_drawTitleCard();
 	I_OsPolling();
 	I_UpdateNoBlit();
-}
-
-//
-// Draw the title card while on a wipe.
-// Also used in G_PreLevelTitleCard.
-//
-void ST_drawWipeTitleCard(void)
-{
-	ST_drawTitleCard();
 }
 
 //
