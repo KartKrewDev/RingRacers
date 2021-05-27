@@ -31,6 +31,7 @@
 #include "m_misc.h" // moviemode
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
+#include "k_grandprix.h"	// we need to know grandprix status for titlecards
 
 //random index
 #include "m_random.h"
@@ -622,13 +623,54 @@ static void ST_drawDebugInfo(void)
 		V_DrawRightAlignedString(320, height,     V_MONOSPACE, va("Heap used: %7sKB", sizeu1(Z_TagsUsage(0, INT32_MAX)>>10)));
 }
 
-static patch_t *lt_patches[3];
-static INT32 lt_scroll = 0;
-static INT32 lt_mom = 0;
-static INT32 lt_zigzag = 0;
-
 tic_t lt_ticker = 0, lt_lasttic = 0;
 tic_t lt_exitticker = 0, lt_endtime = 0;
+
+// SRB2KART: HUD shit for new titlecards:
+static patch_t *tcchev1;
+static patch_t *tcchev2;
+
+static patch_t *tcol1;
+static patch_t *tcol2;
+
+static patch_t *tcroundbar;
+static patch_t *tcround;
+
+static patch_t *tccircletop;
+static patch_t *tccirclebottom;
+static patch_t *tccirclebg;
+
+static patch_t *tcbanner;
+static patch_t *tcbanner2;
+
+static patch_t *tcroundnum[10];
+static patch_t *tcactnum[10];
+static patch_t *tcact;
+
+// some coordinates define to make my life easier....
+#define FINAL_ROUNDX (24)
+#define FINAL_EGGY (160)
+#define FINAL_ROUNDY (16)
+#define FINAL_BANNERY (160)
+
+INT32 chev1x, chev1y, chev2x, chev2y, chevtflag;
+INT32 roundx, roundy;
+INT32 bannerx, bannery;
+
+INT32 roundnumx, roundnumy;
+INT32 eggx1, eggx2, eggy1, eggy2;
+
+// These are all arbitrary values found by trial and error trying to align the hud lmao.
+// But they'll work.
+#define BASE_CHEV1X (252)
+#define BASE_CHEV1Y (60)
+#define BASE_CHEV2X (65)
+#define BASE_CHEV2Y (135)
+
+#define TTANIMTHRESHOLD (TICRATE)
+#define TTANIMSTART (TTANIMTHRESHOLD-16)
+#define TTANIMENDTHRESHOLD (TICRATE*3)
+#define TTANIMEND (TICRATE*4)
 
 //
 // Load the graphics for the title card.
@@ -636,9 +678,42 @@ tic_t lt_exitticker = 0, lt_endtime = 0;
 //
 static void ST_cacheLevelTitle(void)
 {
-	lt_patches[0] = (patch_t *)W_CachePatchName("LTACTBLU", PU_HUDGFX);
-	lt_patches[1] = (patch_t *)W_CachePatchName("LTZIGZAG", PU_HUDGFX);
-	lt_patches[2] = (patch_t *)W_CachePatchName("LTZZTEXT", PU_HUDGFX);
+	UINT8 i;
+	char buf[9];
+
+	// SRB2KART
+	tcchev1 = 		(patch_t *)W_CachePatchName("TCCHEV1W", PU_HUDGFX);
+	tcchev2 = 		(patch_t *)W_CachePatchName("TCCHEV2W", PU_HUDGFX);
+
+	tcol1 = 		(patch_t *)W_CachePatchName("TCCHOL1", PU_HUDGFX);
+	tcol2 = 		(patch_t *)W_CachePatchName("TCCHOL2", PU_HUDGFX);
+
+	tcroundbar = 	(patch_t *)W_CachePatchName("TCBB0", PU_HUDGFX);
+	tcround = 		(patch_t *)W_CachePatchName("TCROUND", PU_HUDGFX);
+
+	tccircletop = 	(patch_t *)W_CachePatchName("TCSN1", PU_HUDGFX);
+	tccirclebottom =(patch_t *)W_CachePatchName("TCSN2", PU_HUDGFX);
+	tccirclebg = 	(patch_t *)W_CachePatchName("TCEG3", PU_HUDGFX);
+
+	tcbanner = 		(patch_t *)W_CachePatchName("TCBSKA0", PU_HUDGFX);
+	tcbanner2 = 	(patch_t *)W_CachePatchName("TCBC0", PU_HUDGFX);
+
+	tcact =			(patch_t *)W_CachePatchName("TT_ACT", PU_HUDGFX);
+
+	// Cache round #
+	for (i=1; i < 11; i++)
+	{
+		sprintf(buf, "TT_RND%d", i);
+		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
+	}
+
+	// Cache act #
+	for (i=0; i < 10; i++)
+	{
+		sprintf(buf, "TT_ACT%d", i);
+		tcactnum[i] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
+	}
+
 }
 
 //
@@ -649,12 +724,28 @@ void ST_startTitleCard(void)
 	// cache every HUD patch used
 	ST_cacheLevelTitle();
 
+	// Set most elements to start off-screen, ST_runTitleCard will have them slide in afterwards
+	chev1x = BASE_CHEV1X +350;	// start off-screen
+	chev1y = BASE_CHEV1Y;
+	chev2x = BASE_CHEV2X -350;	// start off-screen
+	chev2y = BASE_CHEV2Y;
+	chevtflag = 0;
+
+	roundx = -999;
+	roundy = -999;
+
+	roundnumx = -999;
+	roundnumy = -999;
+	eggx1 = -999;
+	eggx2 = -999;
+	eggy1 = -999;
+	eggy2 = -999;
+
+	bannery = 300;
+
 	// initialize HUD variables
 	lt_ticker = lt_exitticker = lt_lasttic = 0;
-	lt_endtime = 2*TICRATE + (10*NEWTICRATERATIO);
-	lt_scroll = BASEVIDWIDTH * FRACUNIT;
-	lt_zigzag = -((lt_patches[1])->width * FRACUNIT);
-	lt_mom = 0;
+	lt_endtime = 4*TICRATE;	// + (10*NEWTICRATERATIO);
 }
 
 //
@@ -679,6 +770,8 @@ void ST_preDrawTitleCard(void)
 void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
+	INT32 auxticker;
+	boolean gp = (grandprixinfo.gp && grandprixinfo.roundnum);	// check whether we're in grandprix
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -690,35 +783,137 @@ void ST_runTitleCard(void)
 	{
 		// tick
 		lt_ticker++;
+
+		// SRB2KART
+		// side Zig-Zag positions...
+
+			// TITLECARD START
+			if (lt_ticker < TTANIMSTART)
+			{
+				chev1x = max(BASE_CHEV1X, (BASE_CHEV1X +350) - (INT32)(lt_ticker)*50);
+				chev2x = min(BASE_CHEV2X, (BASE_CHEV2X -350) + (INT32)(lt_ticker)*50);
+			}
+
+			// OPEN ZIG-ZAGS 1 SECOND IN
+			if (lt_ticker > TTANIMTHRESHOLD)
+			{
+				auxticker = (INT32)(lt_ticker) - TTANIMTHRESHOLD;
+
+				chev1x = min(320, BASE_CHEV1X + auxticker*16);
+				chev1y = max(0, BASE_CHEV1Y - auxticker*16);
+
+				chev2x = max(0, BASE_CHEV2X - auxticker*16);
+				chev2y = min(200, BASE_CHEV2Y + auxticker*16);
+
+				// translucent fade after opening up.
+				chevtflag = min(5, ((auxticker)/5)) << V_ALPHASHIFT;
+
+
+				// OPEN ZIG-ZAG: END OF ANIMATION (they leave the screen borders)
+				if (lt_ticker > TTANIMENDTHRESHOLD)
+				{
+					auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+
+					chev1x += auxticker*16;
+					chev1y -= auxticker*16;
+
+					chev2x -= auxticker*16;
+					chev2y += auxticker*16;
+				}
+			}
+
+		// 	ROUND BAR + EGG
+
+			eggy1 = FINAL_EGGY;	// Make sure to reset that each call so that Y position doesn't go bonkers
+
+			// SLIDE BAR IN, SLIDE "ROUND" DOWNWARDS
+			if (lt_ticker <= TTANIMTHRESHOLD)
+			{
+				INT32 interptimer = (INT32)lt_ticker - TTANIMSTART;
+				// INT32 because tic_t is unsigned and we want this to be potentially negative
+
+				if (interptimer >= 0)
+				{
+					INT32 interpdiff = ((TTANIMTHRESHOLD-TTANIMSTART) - interptimer);
+					interpdiff *= interpdiff;	// interpdiff^2
+
+					roundx = FINAL_ROUNDX - interpdiff;
+					roundy = FINAL_ROUNDY - interpdiff;
+					eggy1 = FINAL_EGGY + interpdiff;
+
+				}
+			}
+			// SLIDE BAR OUT, SLIDE "ROUND" DOWNWARDS FASTER
+			else if (lt_ticker >= TTANIMENDTHRESHOLD)
+			{
+				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+
+				roundx = FINAL_ROUNDX - auxticker*24;
+				roundy = FINAL_ROUNDY + auxticker*48;
+				eggy1 = FINAL_EGGY + auxticker*48;
+			}
+
+			// follow the round bar.
+			eggx1 = roundx + tcroundbar->width/2;
+
+			// initially, both halves are on the same coordinates.
+			eggx2 = eggx1;
+			eggy2 = eggy1;
+			// same for the background (duh)
+			roundnumx = eggx1;
+			roundnumy = eggy1;
+
+			// split both halves of the egg, but only do that in grand prix!
+			if (gp && lt_ticker > TTANIMTHRESHOLD + TICRATE/2)
+			{
+				auxticker = (INT32)lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
+
+				eggx1 -= auxticker*12;
+				eggy1 -= auxticker*12;
+
+				eggx2 += auxticker*12;
+				eggy2 += auxticker*12;
+
+			}
+
+
+		// SCROLLING BOTTOM BANNER
+
+			// SLIDE BANNER UPWARDS WITH A FUNNY BOUNCE (this requires trig :death:)
+			if (lt_ticker < TTANIMTHRESHOLD)
+			{
+				INT32 costimer = (INT32)lt_ticker - TTANIMSTART;
+				// INT32 because tic_t is unsigned and we want this to be potentially negative
+
+				if (costimer > 0)
+				{
+					// For this animation, we're going to do a tiny bit of stupid trigonometry.
+					// Admittedly all of this is going to look like magic numbers, and honestly? They are.
+
+					// start at angle 355 (where y = ~230 with our params)
+					// and go to angle 131 (where y = ~160 with our params)
+
+					UINT8 basey = 190;
+					UINT8 amplitude = 45;
+					fixed_t ang = (355 - costimer*14)*FRACUNIT;
+
+					bannery = basey + (amplitude * FINECOSINE(FixedAngle(ang)>>ANGLETOFINESHIFT)) / FRACUNIT;
+				}
+			}
+			// SLIDE BANNER DOWNWARDS OUT OF THE SCREEN AT THE END
+			else if (lt_ticker >= TTANIMENDTHRESHOLD)
+			{
+				auxticker = (INT32)lt_ticker - TTANIMENDTHRESHOLD;
+				bannery = FINAL_BANNERY + auxticker*16;
+			}
+
+			// No matter the circumstances, scroll the banner...
+			bannerx = -(lt_ticker%(tcbanner->width));
+
+
+		// used for hud slidein
 		if (lt_ticker >= lt_endtime)
 			lt_exitticker++;
-
-		// scroll to screen (level title)
-		if (!lt_exitticker)
-		{
-			if (abs(lt_scroll) > FRACUNIT)
-				lt_scroll -= (lt_scroll>>2);
-			else
-				lt_scroll = 0;
-		}
-		// scroll away from screen (level title)
-		else
-		{
-			lt_mom -= FRACUNIT*6;
-			lt_scroll += lt_mom;
-		}
-
-		// scroll to screen (zigzag)
-		if (!lt_exitticker)
-		{
-			if (abs(lt_zigzag) > FRACUNIT)
-				lt_zigzag -= (lt_zigzag>>2);
-			else
-				lt_zigzag = 0;
-		}
-		// scroll away from screen (zigzag)
-		else
-			lt_zigzag += lt_mom;
 	}
 }
 
@@ -729,25 +924,17 @@ void ST_runTitleCard(void)
 void ST_drawTitleCard(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
-	char *subttl = mapheaderinfo[gamemap-1]->subttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-	INT32 lvlttlxpos, ttlnumxpos, zonexpos;
-	INT32 subttlxpos = BASEVIDWIDTH/2;
-	INT32 ttlscroll = FixedInt(lt_scroll);
-#ifdef TITLEPATCHES
-	INT32 zzticker;
-	patch_t *actpat, *zigzag, *zztext;
-	UINT8 colornum;
-	const UINT8 *colormap;
+	boolean gp = (grandprixinfo.gp && grandprixinfo.roundnum);
 
-	if (players[g_localplayers[0]].skincolor)
-		colornum = players[g_localplayers[0]].skincolor;
-	else
-		colornum = cv_playercolor[0].value;
+	INT32 acttimer;
+	fixed_t actscale;
+	angle_t fakeangle;
 
-	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
-#endif
+	INT32 bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
+
+	UINT8 i;
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -761,67 +948,105 @@ void ST_drawTitleCard(void)
 	if ((lt_ticker-lt_lasttic) > 1)
 		lt_ticker = lt_lasttic+1;
 
-	ST_cacheLevelTitle();
+	// Avoid HOMs while drawing the start of the titlecard
+	if (lt_ticker < TTANIMSTART)
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
-#ifdef TITLEPATCHES
-	actpat = lt_patches[0];
-	zigzag = lt_patches[1];
-	zztext = lt_patches[2];
-#endif
+	// Background zig-zags
+	V_DrawFixedPatch((chev1x)*FRACUNIT, (chev1y)*FRACUNIT, FRACUNIT, chevtflag, tcchev1, NULL);
+	V_DrawFixedPatch((chev2x)*FRACUNIT, (chev2y)*FRACUNIT, FRACUNIT, chevtflag, tcchev2, NULL);
 
-	lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
 
-	if (actnum > 0)
-		lvlttlxpos -= V_LevelNameWidth(va("%d", actnum));
+	// Draw ROUND bar, scroll it downwards.
+	V_DrawFixedPatch(roundx*FRACUNIT, ((-32) + (lt_ticker%32))*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcroundbar, NULL);
+	// Draw ROUND text
+	if (gp)
+		V_DrawFixedPatch((roundx+10)*FRACUNIT, roundy*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcround, NULL);
 
-	zonexpos = ttlnumxpos = lvlttlxpos + V_LevelNameWidth(lvlttl);
-	if (zonttl[0])
-		zonexpos -= V_LevelNameWidth(zonttl); // SRB2kart
-	else
-		zonexpos -= V_LevelNameWidth(M_GetText("Zone"));
+	// round num background
+	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
 
-	ttlnumxpos++;
-
-	if (lvlttlxpos < 0)
-		lvlttlxpos = 0;
-
-#ifdef TITLEPATCHES
-	if (!splitscreen || (splitscreen && stplyr == &players[displayplayers[0]]))
+	// Scrolling banner, we'll draw 3 of those back to back.
+	for (i=0; i < 3; i++)
 	{
-		zzticker = lt_ticker;
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (zigzag->height-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zigzag->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
+		V_DrawFixedPatch((bannerx + bx)*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
+		bx += tcbanner->width;
 	}
-#endif
 
-	if (actnum)
+	// If possible, draw round number
+	if (gp && grandprixinfo.roundnum > 0 && grandprixinfo.roundnum < 11)	// Check boundaries JUST IN CASE.
+		V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcroundnum[grandprixinfo.roundnum-1], NULL);
+
+	// Draw both halves of the egg
+	V_DrawFixedPatch(eggx1*FRACUNIT, eggy1*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccircletop, NULL);
+	V_DrawFixedPatch(eggx2*FRACUNIT, eggy2*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebottom, NULL);
+
+	// Now the level name.
+	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, true, lt_ticker, TTANIMENDTHRESHOLD);
+
+	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, true, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
+
+	// the act has a similar graphic animation, but we'll handle it here since it's only like 2 graphics lmfao.
+	if (actnum && actnum < 10)
 	{
-#ifdef TITLEPATCHES
-		if (!splitscreen)
+
+		// compute delay before the act should appear.
+		acttimer = lt_ticker - strlen(lvlttl);
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+			acttimer -= strlen((strlen(zonttl)) ? (zonttl) : ("ZONE"));
+
+		actscale = 0;
+		fakeangle = 0;
+
+		if (acttimer >= 0)
 		{
-			if (actnum > 9) // slightly offset the act diamond for two-digit act numbers
-				V_DrawMappedPatch(ttlnumxpos + (V_LevelNameWidth(va("%d", actnum))/4) + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
-			else
-				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
-		}
-#endif
-		V_DrawLevelTitle(ttlnumxpos + ttlscroll, 104, 0, va("%d", actnum));
-	}
 
-	V_DrawLevelTitle(lvlttlxpos - ttlscroll, 80, 0, lvlttl);
-	if (zonttl[0])
-		V_DrawLevelTitle(zonexpos + ttlscroll, 104, 0, zonttl);
-	else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawLevelTitle(zonexpos + ttlscroll, 104, 0, M_GetText("Zone"));
-	V_DrawCenteredString(subttlxpos - ttlscroll, 135, 0|V_ALLOWLOWERCASE, subttl);
+			if (acttimer < TTANIMENDTHRESHOLD)	// spin in
+			{
+				fakeangle = min(360 + 90, acttimer*41) * ANG1;
+				actscale = FINESINE(fakeangle>>ANGLETOFINESHIFT);
+			}
+			else								// spin out
+			{
+				// Make letters disappear...
+				acttimer -= TTANIMENDTHRESHOLD;
+
+				fakeangle = max(0, (360+90) - acttimer*41)*ANG1;
+				actscale = FINESINE(fakeangle>>ANGLETOFINESHIFT);
+			}
+
+			if (actscale)
+			{
+				// draw the top:
+				V_DrawStretchyFixedPatch(286*FRACUNIT, 76*FRACUNIT, abs(actscale), FRACUNIT, V_SNAPTORIGHT|(actscale < 0 ? V_FLIP : 0), tcact, NULL);
+				V_DrawStretchyFixedPatch(286*FRACUNIT, 123*FRACUNIT, abs(actscale), FRACUNIT, V_SNAPTORIGHT|(actscale < 0 ? V_FLIP : 0), tcactnum[actnum], NULL);
+			}
+		}
+	}
 
 	lt_lasttic = lt_ticker;
 
 luahook:
 	LUAh_TitleCardHUD(stplyr);
+
 }
+
+// Clear defined coordinates, we don't need them anymore
+#undef FINAL_ROUNDX
+#undef FINAL_EGGY
+#undef FINAL_ROUNDY
+#undef FINAL_BANNERY
+
+#undef BASE_CHEV1X
+#undef BASE_CHEV1Y
+#undef BASE_CHEV2X
+#undef BASE_CHEV2Y
+
+#undef TTANIMTHRESHOLD
+#undef TTANIMSTART
+#undef TTANIMENDTHRESHOLD
+#undef TTANIMEND
 
 //
 // Drawer for G_PreLevelTitleCard.
@@ -829,25 +1054,10 @@ luahook:
 void ST_preLevelTitleCardDrawer(void)
 {
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-	ST_drawWipeTitleCard();
+
+	ST_drawTitleCard();
 	I_OsPolling();
 	I_UpdateNoBlit();
-}
-
-//
-// Draw the title card while on a wipe.
-// Also used in G_PreLevelTitleCard.
-//
-void ST_drawWipeTitleCard(void)
-{
-	UINT8 i;
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		stplyr = &players[displayplayers[i]];
-		ST_preDrawTitleCard();
-		ST_drawTitleCard();
-	}
 }
 
 //
