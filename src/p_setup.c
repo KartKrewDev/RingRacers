@@ -1559,17 +1559,17 @@ static void ParseTextmapSectorParameter(UINT32 i, char *param, char *val)
 	else if (fastcmp(param, "floorplane_b"))
 	{
 		textmap_planefloor.defined |= PD_B;
-		textmap_planefloor.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planefloor.b = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "floorplane_c"))
 	{
 		textmap_planefloor.defined |= PD_C;
-		textmap_planefloor.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planefloor.c = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "floorplane_d"))
 	{
 		textmap_planefloor.defined |= PD_D;
-		textmap_planefloor.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planefloor.d = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "ceilingplane_a"))
 	{
@@ -1579,17 +1579,17 @@ static void ParseTextmapSectorParameter(UINT32 i, char *param, char *val)
 	else if (fastcmp(param, "ceilingplane_b"))
 	{
 		textmap_planeceiling.defined |= PD_B;
-		textmap_planeceiling.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planeceiling.b = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "ceilingplane_c"))
 	{
 		textmap_planeceiling.defined |= PD_C;
-		textmap_planeceiling.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planeceiling.c = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "ceilingplane_d"))
 	{
 		textmap_planeceiling.defined |= PD_D;
-		textmap_planeceiling.a = FLOAT_TO_FIXED(atof(val));
+		textmap_planeceiling.d = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (fastcmp(param, "lightcolor"))
 	{
