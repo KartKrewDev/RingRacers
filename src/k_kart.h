@@ -37,7 +37,8 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot, boolean rival);
 INT32 K_GetShieldFromItem(INT32 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
-boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2, boolean bounce, boolean solid);
+boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
+boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj);
 void K_KartPainEnergyFling(player_t *player);
 void K_FlipFromObject(mobj_t *mo, mobj_t *master);
 void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master);
@@ -85,6 +86,7 @@ boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetKartDriftSparkValue(player_t *player);
+INT32 K_StairJankFlip(INT32 value);
 INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_SpawnDriftElectricSparks(player_t *player);

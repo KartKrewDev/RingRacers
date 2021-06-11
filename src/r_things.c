@@ -484,9 +484,7 @@ void R_AddSpriteDefs(UINT16 wadnum)
 #endif
 			// if a new sprite was added (not just replaced)
 			addsprites++;
-#ifndef ZDEBUG
 			CONS_Debug(DBG_SETUP, "sprite %s set in pwad %d\n", sprnames[i], wadnum);
-#endif
 		}
 	}
 

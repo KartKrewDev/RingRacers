@@ -1611,9 +1611,7 @@ INT32 R_CheckTextureNumForName(const char *name)
 			Z_Realloc(tidcache, tidcachelen * sizeof(*tidcache), PU_STATIC, &tidcache);
 			strncpy(tidcache[tidcachelen-1].name, name, 8);
 			tidcache[tidcachelen-1].name[8] = '\0';
-#ifndef ZDEBUG
 			CONS_Debug(DBG_SETUP, "texture #%s: %s\n", sizeu1(tidcachelen), tidcache[tidcachelen-1].name);
-#endif
 			tidcache[tidcachelen-1].id = i;
 			return i;
 		}

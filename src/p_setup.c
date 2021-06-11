@@ -659,9 +659,7 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
-#ifndef ZDEBUG
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
-#endif
 
 	return ( numlevelflats++ );
 }
@@ -3729,10 +3727,10 @@ static void P_InitCamera(void)
 	{
 		UINT8 i;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			P_SetupCamera(i, &camera[i]);
-			displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			//displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			P_SetupCamera(displayplayers[i], &camera[i]);
 		}
 	}
 }
@@ -3981,8 +3979,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
-	if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;
+	/*if (!titlemapinaction)
+		wipegamestate = GS_LEVEL;*/
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);

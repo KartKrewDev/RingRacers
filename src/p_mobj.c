@@ -4284,8 +4284,8 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 				angle_t prevfa = (prevrot + mobj->friction) & FINEMASK;
 				fa = (rot + mobj->friction) & FINEMASK;
 
-				if (!(prevfa > (FINEMASK/2)) && (fa > (FINEMASK/2))) // completed a full swing
-					dosound = true;
+				// completed a half-spin
+				dosound = ((prevfa > (FINEMASK/2)) != (fa > (FINEMASK/2)));
 
 				unit_lengthways[0] = FixedMul(FINECOSINE(fa), radius);
 				unit_lengthways[2] = FixedMul(FINESINE(fa), radius);
@@ -6626,6 +6626,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags |= RF_DONTDRAW;
 		}
 		break;
+	case MT_JANKSPARK:
+		if (!mobj->target)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+		if (mobj->fuse == 1 && mobj->target->player &&
+				mobj->target->player->stairjank >= 8)
+		{
+			mobj->fuse = 9;
+		}
+		P_TeleportMove(mobj, mobj->target->x,
+				mobj->target->y, mobj->target->z);
+		mobj->angle = mobj->target->angle + mobj->cusval;
+		break;
 	case MT_PLAYERRETICULE:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -8477,17 +8492,29 @@ void P_MobjThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
 	{
-		if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
+		if (mobj->extravalue1 > 0) // Sonic Advance 2 mode
 		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
-				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << RF_TRANSSHIFT);
+			if (mobj->extravalue2 >= 2)
+			{
+				if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
+					mobj->renderflags ^= RF_DONTDRAW;
+				else
+				{
+					if (mobj->fuse == mobj->extravalue2)
+						mobj->renderflags &= ~RF_DONTDRAW;
+					else
+						mobj->renderflags |= RF_DONTDRAW;
+				}
+			}
 		}
 		else
 		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
+			INT32 dur = (mobj->flags2 & MF2_BOSSNOTRAP)
+				? (2*mobj->fuse)/3
+				: mobj->fuse/2;
+			if (((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < ((NUMTRANSMAPS-1) - dur))
 				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->frame & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << RF_TRANSSHIFT);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - dur) << RF_TRANSSHIFT);
 		}
 	}
 
@@ -8812,21 +8839,6 @@ void P_SceneryThinker(mobj_t *mobj)
 				mobj->momz = -FixedMul(mobj->info->speed, mobj->scale);
 			else
 				mobj->momz = 0;
-		}
-	}
-
-	// Sonic Advance 2 flashing afterimages
-	if (mobj->type == MT_GHOST && mobj->fuse > 0
-		&& mobj->extravalue1 > 0 && mobj->extravalue2 >= 2)
-	{
-		if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
-			mobj->renderflags ^= RF_DONTDRAW;
-		else
-		{
-			if (mobj->fuse == mobj->extravalue2)
-				mobj->renderflags &= ~RF_DONTDRAW;
-			else
-				mobj->renderflags |= RF_DONTDRAW;
 		}
 	}
 

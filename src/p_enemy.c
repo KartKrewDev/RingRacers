@@ -11044,7 +11044,7 @@ void A_FadeOverlay(mobj_t *actor)
 		return;
 
 	fade = P_SpawnGhostMobj(actor);
-	fade->frame = actor->frame;
+	fade->renderflags = actor->renderflags;
 
 	if (!(locvar1 & 1))
 	{

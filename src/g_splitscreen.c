@@ -50,10 +50,10 @@ G_ResetSplitscreen (INT32 playernum)
 			displayplayers[i] = g_localplayers[i];
 			P_ResetCamera(&players[displayplayers[i]], &camera[i]);
 		}
+
 		while (i < MAXSPLITSCREENPLAYERS)
 		{
 			displayplayers[i] = consoleplayer;
-
 			i++;
 		}
 

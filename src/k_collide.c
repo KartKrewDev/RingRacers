@@ -46,7 +46,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Player Damage
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT);
-			K_KartBouncing(t2, t1, false, false);
+			K_KartBouncing(t2, t1);
 			S_StartSound(t2, sfx_s3k7b);
 		}
 
@@ -430,7 +430,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->player || t2->type == MT_FALLINGROCK)
-		K_KartBouncing(t2, t1, false, false);
+		K_KartBouncing(t2, t1);
 	return true;
 }
 
@@ -457,8 +457,8 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 	*/
 
-	K_KartBouncing(t2, t1, false, true);
-	return false;
+	K_KartSolidBounce(t1, t2);
+	return true;
 }
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
@@ -537,25 +537,24 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true)
 	{
+		P_PlayerRingBurst(t2->player, 1);
+
 		if (t2->player->rings <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
 			stung = true;
 		}
-
-		P_PlayerRingBurst(t2->player, 1);
-		stung = true;
 	}
 
 	if (t2Condition == true)
 	{
+		P_PlayerRingBurst(t1->player, 1);
+
 		if (t1->player->rings <= 0)
 		{
 			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
 			stung = true;
 		}
-
-		P_PlayerRingBurst(t2->player, 1);
 	}
 
 	return stung;

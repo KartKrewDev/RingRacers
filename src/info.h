@@ -1085,6 +1085,7 @@ typedef enum sprite
 	SPR_DRWS, // Drift dust sparks
 	SPR_DREL, // Drift electricity
 	SPR_DRES, // Drift electric sparks
+	SPR_JANK, // Stair janking sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -5640,6 +5641,11 @@ typedef enum state
 	S_DEBTSPIKED,
 	S_DEBTSPIKEE,
 
+	S_JANKSPARK1,
+	S_JANKSPARK2,
+	S_JANKSPARK3,
+	S_JANKSPARK4,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -6462,6 +6468,7 @@ typedef enum mobj_type
 	MT_DRIFTDUST,
 	MT_DRIFTELECTRICITY,
 	MT_DRIFTELECTRICSPARK,
+	MT_JANKSPARK,
 
 	MT_ROCKETSNEAKER,
 

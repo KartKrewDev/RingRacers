@@ -36,6 +36,11 @@
 
 tic_t leveltime;
 
+INT32 P_AltFlip(INT32 n, tic_t tics)
+{
+	return leveltime % (2 * tics) < tics ? n : -(n);
+}
+
 //
 // THINKERS
 // All thinkers should be allocated by Z_Calloc

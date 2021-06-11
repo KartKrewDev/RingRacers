@@ -64,7 +64,6 @@ void ST_runTitleCard(void);
 void ST_drawTitleCard(void);
 void ST_preDrawTitleCard(void);
 void ST_preLevelTitleCardDrawer(void);
-void ST_drawWipeTitleCard(void);
 
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;

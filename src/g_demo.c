@@ -347,6 +347,7 @@ void G_ReadDemoExtraData(void)
 			players[p].pflags &= ~(PF_KICKSTARTACCEL);
 			if (extradata & 1)
 				players[p].pflags |= PF_KICKSTARTACCEL;
+			//CONS_Printf("weaponpref is %d for player %d\n", extradata, p);
 		}
 
 		p = READUINT8(demo_p);
@@ -2656,7 +2657,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT32 randseed;
 	char msg[1024];
 
-	boolean spectator;
+	boolean spectator, kickstart;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
@@ -2925,16 +2926,8 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
-		players[p].pflags &= ~PF_KICKSTARTACCEL;
-		if (p & DEMO_KICKSTART)
+		if ((spectator = (p & DEMO_SPECTATOR)))
 		{
-			players[p].pflags |= PF_KICKSTARTACCEL;
-			p &= ~DEMO_KICKSTART;
-		}
-		spectator = false;
-		if (p & DEMO_SPECTATOR)
-		{
-			spectator = true;
 			p &= ~DEMO_SPECTATOR;
 
 			if (modeattacking)
@@ -2949,6 +2942,10 @@ void G_DoPlayDemo(char *defdemoname)
 				return;
 			}
 		}
+
+		if ((kickstart = (p & DEMO_KICKSTART)))
+			p &= ~DEMO_KICKSTART;
+
 		slots[numslots] = p; numslots++;
 
 		if (modeattacking && numslots > 1)
@@ -2968,6 +2965,10 @@ void G_DoPlayDemo(char *defdemoname)
 
 		playeringame[p] = true;
 		players[p].spectator = spectator;
+		if (kickstart)
+			players[p].pflags |= PF_KICKSTARTACCEL;
+		else
+			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);

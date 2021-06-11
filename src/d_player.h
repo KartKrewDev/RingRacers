@@ -526,6 +526,8 @@ typedef struct player_s
 
 	UINT8 kickstartaccel;
 
+	UINT8 stairjank;
+
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif

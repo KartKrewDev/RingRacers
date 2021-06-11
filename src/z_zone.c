@@ -47,10 +47,6 @@ static boolean Z_calloc = false;
 
 #define ZONEID 0xa441d13d
 
-#ifdef ZDEBUG
-//#define ZDEBUG2
-#endif
-
 struct memblock_s;
 
 typedef struct
@@ -76,10 +72,8 @@ typedef struct memblock_s
 	size_t size; // including the header and blocks
 	size_t realsize; // size of real data only
 
-#ifdef ZDEBUG
 	const char *ownerfile;
 	INT32 ownerline;
-#endif
 
 	struct memblock_s *next, *prev;
 } ATTRPACK memblock_t;
@@ -91,9 +85,7 @@ static memblock_t head;
 // Function prototypes
 //
 static void Command_Memfree_f(void);
-#ifdef ZDEBUG
 static void Command_Memdump_f(void);
-#endif
 
 // --------------------------
 // Zone memory initialisation
@@ -117,10 +109,7 @@ void Z_Init(void)
 
 	// Note: This allocates memory. Watch out.
 	COM_AddCommand("memfree", Command_Memfree_f);
-
-#ifdef ZDEBUG
 	COM_AddCommand("memdump", Command_Memdump_f);
-#endif
 }
 
 
@@ -137,12 +126,8 @@ void Z_Init(void)
   * \return A pointer to the memblock_t for the given memory.
   * \sa Z_Free, Z_ReallocAlign
   */
-#ifdef ZDEBUG
 #define Ptr2Memblock(s, f) Ptr2Memblock2(s, f, __FILE__, __LINE__)
 static memblock_t *Ptr2Memblock2(void *ptr, const char* func, const char *file, INT32 line)
-#else
-static memblock_t *Ptr2Memblock(void *ptr, const char* func)
-#endif
 {
 	memhdr_t *hdr;
 	memblock_t *block;
@@ -150,8 +135,8 @@ static memblock_t *Ptr2Memblock(void *ptr, const char* func)
 	if (ptr == NULL)
 		return NULL;
 
-#ifdef ZDEBUG2
-	CONS_Printf("%s %s:%d\n", func, file, line);
+#ifdef ZDEBUG
+	CONS_Debug(DBG_MEMORY, "%s %s:%d\n", func, file, line);
 #endif
 
 	hdr = (memhdr_t *)((UINT8 *)ptr - sizeof *hdr);
@@ -163,20 +148,12 @@ static memblock_t *Ptr2Memblock(void *ptr, const char* func)
 #ifdef VALGRIND_MEMPOOL_EXISTS
 	if (!VALGRIND_MEMPOOL_EXISTS(hdr->block))
 	{
-#ifdef ZDEBUG
 		I_Error("%s: bad memblock from %s:%d", func, file, line);
-#else
-		I_Error("%s: bad memblock", func);
-#endif
 	}
 #endif
 	if (hdr->id != ZONEID)
 	{
-#ifdef ZDEBUG
 		I_Error("%s: wrong id from %s:%d", func, file, line);
-#else
-		I_Error("%s: wrong id", func);
-#endif
 	}
 	block = hdr->block;
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
@@ -192,31 +169,24 @@ static memblock_t *Ptr2Memblock(void *ptr, const char* func)
   *             assumed to have been allocated with Z_Malloc/Z_Calloc.
   * \sa Z_FreeTags
   */
-#ifdef ZDEBUG
 void Z_Free2(void *ptr, const char *file, INT32 line)
-#else
-void Z_Free(void *ptr)
-#endif
 {
 	memblock_t *block;
 
 	if (ptr == NULL)
 		return;
 
-#ifdef ZDEBUG2
+/*
+// Sal: There's a print exactly like this just below?
+#ifdef ZDEBUG
 	CONS_Debug(DBG_MEMORY, "Z_Free %s:%d\n", file, line);
 #endif
+*/
 
-#ifdef ZDEBUG
 	block = Ptr2Memblock2(ptr, "Z_Free", file, line);
-#else
-	block = Ptr2Memblock(ptr, "Z_Free");
-#endif
 
-#ifdef ZDEBUG
 	// Write every Z_Free call to a debug file.
 	CONS_Debug(DBG_MEMORY, "Z_Free at %s:%d\n", file, line);
-#endif
 
 	// anything that isn't by lua gets passed to lua just in case.
 	if (block->tag != PU_LUA)
@@ -280,12 +250,8 @@ static void *xm(size_t size)
   * \note You can pass Z_Malloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_CallocAlign, Z_ReallocAlign
   */
-#ifdef ZDEBUG
 void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
 	const char *file, INT32 line)
-#else
-void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
-#endif
 {
 	size_t extrabytes = (1<<alignbits) - 1;
 	size_t padsize = 0;
@@ -295,7 +261,7 @@ void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
 	void *given;
 	size_t blocksize = extrabytes + sizeof *hdr + size;
 
-#ifdef ZDEBUG2
+#ifdef ZDEBUG
 	CONS_Debug(DBG_MEMORY, "Z_Malloc %s:%d\n", file, line);
 #endif
 
@@ -329,10 +295,8 @@ void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
 	block->hdr = hdr;
 	block->tag = tag;
 	block->user = NULL;
-#ifdef ZDEBUG
 	block->ownerline = line;
 	block->ownerfile = file;
-#endif
 	block->size = blocksize;
 	block->realsize = size;
 
@@ -375,20 +339,12 @@ void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
   * \note You can pass Z_Calloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_MallocAlign, Z_ReallocAlign
   */
-#ifdef ZDEBUG
 void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line)
-#else
-void *Z_CallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
-#endif
 {
 #ifdef VALGRIND_MEMPOOL_ALLOC
 	Z_calloc = true;
 #endif
-#ifdef ZDEBUG
 	return memset(Z_Malloc2    (size, tag, user, alignbits, file, line), 0, size);
-#else
-	return memset(Z_MallocAlign(size, tag, user, alignbits            ), 0, size);
-#endif
 }
 
 /** The Z_ReallocAlign function.
@@ -407,17 +363,13 @@ void *Z_CallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits)
   * \note You can pass Z_Realloc() a NULL user if the tag is less than PU_PURGELEVEL.
   * \sa Z_MallocAlign, Z_CallocAlign
   */
-#ifdef ZDEBUG
 void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line)
-#else
-void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits)
-#endif
 {
 	void *rez;
 	memblock_t *block;
 	size_t copysize;
 
-#ifdef ZDEBUG2
+#ifdef ZDEBUG
 	CONS_Debug(DBG_MEMORY, "Z_Realloc %s:%d\n", file, line);
 #endif
 
@@ -429,29 +381,17 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 
 	if (!ptr)
 	{
-#ifdef ZDEBUG
 		return Z_Calloc2(size, tag, user, alignbits, file , line);
-#else
-		return Z_CallocAlign(size, tag, user, alignbits);
-#endif
 	}
 
-#ifdef ZDEBUG
 	block = Ptr2Memblock2(ptr, "Z_Realloc", file, line);
-#else
-	block = Ptr2Memblock(ptr, "Z_Realloc");
-#endif
 
 	if (block == NULL)
 		return NULL;
 
-#ifdef ZDEBUG
 	// Write every Z_Realloc call to a debug file.
 	DEBFILE(va("Z_Realloc at %s:%d\n", file, line));
 	rez = Z_Malloc2(size, tag, user, alignbits, file, line);
-#else
-	rez = Z_MallocAlign(size, tag, user, alignbits);
-#endif
 
 	if (size < block->realsize)
 		copysize = size;
@@ -460,11 +400,7 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 
 	M_Memcpy(rez, ptr, copysize);
 
-#ifdef ZDEBUG
 	Z_Free2(ptr, file, line);
-#else
-	Z_Free(ptr);
-#endif
 
 	// Need to set the user in case the old block had the same one, in
 	// which case the Z_Free will just have NULLed it out.
@@ -569,7 +505,7 @@ void Z_CheckHeap(INT32 i)
 		blocknumon++;
 		hdr = block->hdr;
 		given = (UINT8 *)hdr + sizeof *hdr;
-#ifdef ZDEBUG2
+#ifdef ZDEBUG
 		CONS_Debug(DBG_MEMORY, "block %u owned by %s:%d\n",
 			blocknumon, block->ownerfile, block->ownerline);
 #endif
@@ -577,51 +513,35 @@ void Z_CheckHeap(INT32 i)
 		if (!VALGRIND_MEMPOOL_EXISTS(block))
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
-				" should not exist", i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-			        );
+				" should not exist", i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 #endif
 		if (block->user != NULL && *(block->user) != given)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
-				" doesn't have a proper user", i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-			       );
+				" doesn't have a proper user", i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 		if (block->next->prev != block)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
-				" lacks proper backlink", i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-			       );
+				" lacks proper backlink", i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 		if (block->prev->next != block)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
-				" lacks proper forward link", i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-			       );
+				" lacks proper forward link", i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 #ifdef VALGRIND_MAKE_MEM_DEFINED
 		VALGRIND_MAKE_MEM_DEFINED(hdr, sizeof *hdr);
@@ -629,27 +549,19 @@ void Z_CheckHeap(INT32 i)
 		if (hdr->block != block)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
 				" doesn't have linkback from allocated memory",
-				i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-					);
+				i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 		if (hdr->id != ZONEID)
 		{
 			I_Error("Z_CheckHeap %d: block %u"
-#ifdef ZDEBUG
 				"(owned by %s:%d)"
-#endif
-				" have the wrong ID", i, blocknumon
-#ifdef ZDEBUG
-				, block->ownerfile, block->ownerline
-#endif
-					);
+				" have the wrong ID", i, blocknumon,
+				block->ownerfile, block->ownerline
+			);
 		}
 #ifdef VALGRIND_MAKE_MEM_NOACCESS
 	VALGRIND_MAKE_MEM_NOACCESS(hdr, sizeof *hdr);
@@ -828,11 +740,9 @@ static void Command_Memfree_f(void)
 	CONS_Printf(M_GetText("Available physical memory: %7u KB\n"), freebytes>>10);
 }
 
-#ifdef ZDEBUG
 /** The function called by the "memdump" console command.
   * Prints zone memory debugging information (i.e. tag, size, location in code allocated).
   * Can be all memory allocated in game, or between a set of tags (if -min/-max args used).
-  * This command is available only if ZDEBUG is enabled.
   */
 static void Command_Memdump_f(void)
 {
@@ -853,7 +763,6 @@ static void Command_Memdump_f(void)
 			CONS_Printf("[%3d] %s (%s) bytes @ %s:%d\n", block->tag, sizeu1(block->size), sizeu2(block->realsize), filename ? filename + 1 : block->ownerfile, block->ownerline);
 		}
 }
-#endif
 
 /** Creates a copy of a string.
   *

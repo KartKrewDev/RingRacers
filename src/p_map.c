@@ -1247,33 +1247,19 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 			}
 
+			// The bump has to happen last
+			if (P_IsObjectOnGround(thing) && tmthing->momz < 0 && tmthing->player->trickpanel)
 			{
-				// The bump has to happen last
-				mobj_t *mo1 = tmthing;
-				mobj_t *mo2 = thing;
-				boolean zbounce = false;
+				P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
+			}
+			else if (P_IsObjectOnGround(tmthing) && thing->momz < 0 && thing->player->trickpanel)
+			{
+				P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
+			}
 
-				if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
-				{
-					zbounce = true;
-					mo1 = thing;
-					mo2 = tmthing;
-
-					if (tmthing->player->trickpanel)
-						P_DamageMobj(thing, tmthing, tmthing, 1, DMG_WIPEOUT|DMG_STEAL);
-				}
-				else if (P_IsObjectOnGround(tmthing) && thing->momz < 0)
-				{
-					zbounce = true;
-
-					if (thing->player->trickpanel)
-						P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT|DMG_STEAL);
-				}
-
-				if (K_KartBouncing(mo1, mo2, zbounce, false))
-				{
-					K_PvPTouchDamage(mo1, mo2);
-				}
+			if (K_KartBouncing(tmthing, thing) == true)
+			{
+				K_PvPTouchDamage(tmthing, thing);
 			}
 
 			return true;
@@ -1300,8 +1286,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			}
 			else
 			{
-				K_KartBouncing(tmthing, thing, false, true);
-				return false;
+				K_KartSolidBounce(tmthing, thing);
+				return true;
 			}
 		}
 		else if (thing->type == MT_SMK_PIPE)
@@ -1322,8 +1308,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true; // kill
 			}
 
-			K_KartBouncing(tmthing, thing, false, true);
-			return false;
+			K_KartSolidBounce(tmthing, thing);
+			return true;
 		}
 		else if (thing->type == MT_SMK_THWOMP)
 		{
@@ -1362,12 +1348,13 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				P_DamageMobj(tmthing, thing, thing, 1, DMG_TUMBLE);
 			else
 			{
-				if (thing->flags2 & MF2_AMBUSH)
+				if ((K_KartSolidBounce(tmthing, thing) == true) && (thing->flags2 & MF2_AMBUSH))
+				{
 					P_DamageMobj(tmthing, thing, thing, 1, DMG_WIPEOUT);
-				K_KartBouncing(tmthing, thing, false, true);
+				}
 			}
 
-			return false;
+			return true;
 		}
 		else if (thing->type == MT_KART_LEFTOVER)
 		{
@@ -1377,12 +1364,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
-				K_KartBouncing(tmthing, thing, true, false);
-			else
-				K_KartBouncing(tmthing, thing, false, false);
-
-			return false;
+			K_KartBouncing(tmthing, thing);
+			return true;
 		}
 		else if (thing->flags & MF_SOLID)
 		{
@@ -1392,12 +1375,8 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			if (tmthing->z + tmthing->height < thing->z)
 				return true; // underneath
 
-			if (P_IsObjectOnGround(thing) && tmthing->momz < 0)
-				K_KartBouncing(tmthing, thing, true, true);
-			else
-				K_KartBouncing(tmthing, thing, false, true);
-
-			return false;
+			K_KartSolidBounce(tmthing, thing);
+			return true;
 		}
 	}
 
@@ -2417,6 +2396,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
 	fixed_t startingonground = P_IsObjectOnGround(thing);
+	fixed_t stairjank = 0;
+	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
@@ -2488,6 +2469,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (maxstep > 0)
 			{
+				const boolean flipped =
+					(thing->eflags & MFE_VERTICALFLIP) != 0;
+
 				thingtop = thing->z + thing->height;
 
 				// Step up
@@ -2495,6 +2479,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmfloorstep <= maxstep)
 					{
+						if (!flipped)
+							stairjank = tmfloorstep;
+
 						thing->z = thing->floorz = tmfloorz;
 						thing->floorrover = tmfloorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2508,6 +2495,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				{
 					if (tmceilingstep <= maxstep)
 					{
+						if (flipped)
+							stairjank = tmceilingstep;
+
 						thing->z = ( thing->ceilingz = tmceilingz ) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2524,6 +2514,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 					if (thingtop == thing->ceilingz && tmceilingz > thingtop && tmceilingz - thingtop <= maxstep)
 					{
+						if (flipped)
+							stairjank = (tmceilingz - thingtop);
+
 						thing->z = (thing->ceilingz = tmceilingz) - thing->height;
 						thing->ceilingrover = tmceilingrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2531,6 +2524,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 					}
 					else if (thing->z == thing->floorz && tmfloorz < thing->z && thing->z - tmfloorz <= maxstep)
 					{
+						if (!flipped)
+							stairjank = (thing->z - tmfloorz);
+
 						thing->z = thing->floorz = tmfloorz;
 						thing->floorrover = tmfloorrover;
 						thing->eflags |= MFE_JUSTSTEPPEDDOWN;
@@ -2616,6 +2612,28 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	}
 	else // don't set standingslope if you're not going to clip against it
 		thing->standingslope = NULL;
+
+	/* FIXME: slope step down (even up) has some false
+		positives, so just ignore them entirely. */
+	if (stairjank && !oldslope && !thing->standingslope &&
+			thing->player && !thing->player->spectator)
+	{
+		/* use a shorter sound if not two tics have passed
+		 * since the last step */
+		S_StartSound(thing, thing->player->stairjank
+				>= 16 ?  sfx_s23b : sfx_s268);
+
+		if (!thing->player->stairjank)
+		{
+			mobj_t * spark = P_SpawnMobjFromMobj(thing,
+					0, 0, 0, MT_JANKSPARK);
+			spark->fuse = 9;
+			spark->cusval = K_StairJankFlip(ANGLE_90);
+			P_SetTarget(&spark->target, thing);
+		}
+
+		thing->player->stairjank = 17;
+	}
 
 	thing->x = x;
 	thing->y = y;
