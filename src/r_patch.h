@@ -15,6 +15,7 @@
 #include "r_defs.h"
 #include "r_picformats.h"
 #include "doomdef.h"
+#include "d_player.h"
 
 // Patch functions
 patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest);
@@ -38,9 +39,10 @@ patch_t *Patch_GetRotatedSprite(
 	size_t frame, size_t spriteangle,
 	boolean flip, boolean adjustfeet,
 	void *info, INT32 rotationangle);
+
 INT32 R_GetRollAngle(angle_t rollangle);
-angle_t R_GetPitchRollAngle(mobj_t *mobj);
-angle_t R_SpriteRotationAngle(mobj_t *mobj);
+angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer);
+angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer);
 #endif
 
 #endif // __R_PATCH__

@@ -4103,7 +4103,7 @@ DoABarrelRoll (player_t *player)
 		return;
 	}
 
-	slope = InvAngle(R_GetPitchRollAngle(player->mo));
+	slope = InvAngle(R_GetPitchRollAngle(player->mo, player));
 
 	if (AbsAngle(slope) < ANGLE_11hh)
 	{
