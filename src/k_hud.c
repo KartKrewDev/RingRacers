@@ -4064,6 +4064,7 @@ static void K_drawDistributionDebugger(void)
 		kp_kitchensink[1],
 
 		kp_sneaker[1],
+		kp_sneaker[1],
 		kp_banana[1],
 		kp_banana[1],
 		kp_orbinaut[4],
@@ -4102,14 +4103,14 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
-		pdis = (15 * pdis) / 14;
-
-	if (spbplace != -1 && stplyr->position == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
+	if (spbplace != -1 && stplyr->position == spbplace+1)
 	{
+		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
 		pdis = (3 * pdis) / 2;
 		spbrush = true;
 	}
+
+	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
 
 	if (stplyr->bot && stplyr->botvars.rival)
 	{
@@ -4117,13 +4118,17 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
-
 	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival));
+		INT32 itemodds = K_KartGetItemOdds(
+			useodds, i,
+			stplyr->distancetofinish,
+			0,
+			spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
+		);
+
 		if (itemodds <= 0)
 			continue;
 
@@ -4143,6 +4148,9 @@ static void K_drawDistributionDebugger(void)
 					amount = 4;
 					break;
 				case KRITEM_DUALJAWZ:
+					amount = 2;
+					break;
+				case KRITEM_DUALSNEAKER:
 					amount = 2;
 					break;
 				default:
