@@ -21,9 +21,9 @@
 fixed_t rollcosang[ROTANGLES];
 fixed_t rollsinang[ROTANGLES];
 
-angle_t R_GetPitchRollAngle(mobj_t *mobj)
+angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer)
 {
-	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
+	angle_t viewingAngle = R_PointToAnglePlayer(viewPlayer, mobj->x, mobj->y);
 
 	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
 	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
@@ -33,9 +33,9 @@ angle_t R_GetPitchRollAngle(mobj_t *mobj)
 	return rollOrPitch;
 }
 
-static angle_t R_PlayerSpriteRotation(player_t *player)
+static angle_t R_PlayerSpriteRotation(player_t *player, player_t *viewPlayer)
 {
-	angle_t viewingAngle = R_PointToAngle(player->mo->x, player->mo->y);
+	angle_t viewingAngle = R_PointToAnglePlayer(viewPlayer, player->mo->x, player->mo->y);
 	angle_t angleDelta = (viewingAngle - player->mo->angle);
 
 	angle_t sliptideLift = player->aizdrifttilt;
@@ -60,14 +60,14 @@ static angle_t R_PlayerSpriteRotation(player_t *player)
 	return rollAngle;
 }
 
-angle_t R_SpriteRotationAngle(mobj_t *mobj)
+angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
 {
-	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj, viewPlayer);
 	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
 
 	if (mobj->player)
 	{
-		rollAngle += R_PlayerSpriteRotation(mobj->player);
+		rollAngle += R_PlayerSpriteRotation(mobj->player, viewPlayer);
 	}
 
 	return rollAngle;
