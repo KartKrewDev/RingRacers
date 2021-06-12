@@ -748,6 +748,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SDDS", // Spindash dust
 	"SDWN", // Spindash wind
 
+	"TRCK",
+
 	"FLBM",
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later

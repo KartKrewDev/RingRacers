@@ -1109,7 +1109,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			gravityadd = (4*gravityadd)/3;
 		}
 
-		if (mo->player->trickpanel == 2 || mo->player->trickpanel == 3)
+		if (mo->player->trickpanel >= 2)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}
@@ -8492,17 +8492,29 @@ void P_MobjThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
 	{
-		if (mobj->flags2 & MF2_BOSSNOTRAP) // "fast" flag
+		if (mobj->extravalue1 > 0) // Sonic Advance 2 mode
 		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - (2*mobj->fuse)/3)
-				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - (2*mobj->fuse)/3) << RF_TRANSSHIFT);
+			if (mobj->extravalue2 >= 2)
+			{
+				if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
+					mobj->renderflags ^= RF_DONTDRAW;
+				else
+				{
+					if (mobj->fuse == mobj->extravalue2)
+						mobj->renderflags &= ~RF_DONTDRAW;
+					else
+						mobj->renderflags |= RF_DONTDRAW;
+				}
+			}
 		}
 		else
 		{
-			if ((signed)((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < (NUMTRANSMAPS-1) - mobj->fuse / 2)
+			INT32 dur = (mobj->flags2 & MF2_BOSSNOTRAP)
+				? (2*mobj->fuse)/3
+				: mobj->fuse/2;
+			if (((mobj->renderflags & RF_TRANSMASK) >> RF_TRANSSHIFT) < ((NUMTRANSMAPS-1) - dur))
 				// fade out when nearing the end of fuse...
-				mobj->renderflags = (mobj->frame & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - mobj->fuse / 2) << RF_TRANSSHIFT);
+				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK) | (((NUMTRANSMAPS-1) - dur) << RF_TRANSSHIFT);
 		}
 	}
 
@@ -8827,21 +8839,6 @@ void P_SceneryThinker(mobj_t *mobj)
 				mobj->momz = -FixedMul(mobj->info->speed, mobj->scale);
 			else
 				mobj->momz = 0;
-		}
-	}
-
-	// Sonic Advance 2 flashing afterimages
-	if (mobj->type == MT_GHOST && mobj->fuse > 0
-		&& mobj->extravalue1 > 0 && mobj->extravalue2 >= 2)
-	{
-		if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
-			mobj->renderflags ^= RF_DONTDRAW;
-		else
-		{
-			if (mobj->fuse == mobj->extravalue2)
-				mobj->renderflags &= ~RF_DONTDRAW;
-			else
-				mobj->renderflags |= RF_DONTDRAW;
 		}
 	}
 

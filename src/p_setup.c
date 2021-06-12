@@ -659,9 +659,7 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
-#ifndef ZDEBUG
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
-#endif
 
 	return ( numlevelflats++ );
 }
@@ -3981,8 +3979,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
-	if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;
+	/*if (!titlemapinaction)
+		wipegamestate = GS_LEVEL;*/
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);

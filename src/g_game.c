@@ -1139,7 +1139,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
-		cmd->latency = (leveltime & 0xFF); 
+		cmd->latency = (leveltime & 0xFF);
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1301,7 +1301,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// start the title card
-	WipeStageTitle = false; //(!titlemapinaction); -- temporary until titlecards are reworked
+	WipeStageTitle = (!titlemapinaction);
 }
 
 //
@@ -1310,26 +1310,27 @@ void G_StartTitleCard(void)
 void G_PreLevelTitleCard(void)
 {
 #ifndef NOWIPE
-	tic_t strtime = I_GetTime();
-	tic_t endtime = strtime + (PRELEVELTIME*NEWTICRATERATIO);
-	tic_t nowtime = strtime;
-	tic_t lasttime = strtime;
-	while (nowtime < endtime)
-	{
-		// draw loop
-		while (!((nowtime = I_GetTime()) - lasttime))
-			I_Sleep();
-		lasttime = nowtime;
+    tic_t strtime = I_GetTime();
+    tic_t endtime = strtime + (PRELEVELTIME*NEWTICRATERATIO);
+    tic_t nowtime = strtime;
+    tic_t lasttime = strtime;
+    while (nowtime < endtime)
+    {
+        // draw loop
+        ST_runTitleCard();
+        ST_preLevelTitleCardDrawer();
+        I_FinishUpdate(); 	// page flip or blit buffer
+		NetKeepAlive();		// Prevent timeouts
 
-		ST_runTitleCard();
-		ST_preLevelTitleCardDrawer();
-		I_FinishUpdate(); // page flip or blit buffer
+        if (moviemode)
+            M_SaveFrame();
+        if (takescreenshot) // Only take screenshots after drawing.
+            M_DoScreenShot();
 
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
-			M_DoScreenShot();
-	}
+        while (!((nowtime = I_GetTime()) - lasttime))
+            I_Sleep();
+        lasttime = nowtime;
+    }
 #endif
 }
 

@@ -946,6 +946,24 @@ static int libd_drawString(lua_State *L)
 	return 0;
 }
 
+static int libd_drawTitleCardString(lua_State *L)
+{
+
+	fixed_t x = luaL_checkinteger(L, 1);
+	fixed_t y = luaL_checkinteger(L, 2);
+	const char *str = luaL_checkstring(L, 3);
+	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+	boolean rightalign = lua_optboolean(L, 5);
+	INT32 timer = luaL_optinteger(L, 6, 0);
+	INT32 threshold = luaL_optinteger(L, 7, 0);
+
+	flags &= ~V_PARAMMASK; // Don't let crashes happen.
+
+	HUDONLY
+	V_DrawTitleCardString(x, y, str, flags, rightalign, timer, threshold);
+	return 0;
+}
+
 static int libd_drawKartString(lua_State *L)
 {
 	fixed_t x = luaL_checkinteger(L, 1);
@@ -958,6 +976,15 @@ static int libd_drawKartString(lua_State *L)
 	HUDONLY
 	V_DrawKartString(x, y, flags, str);
 	return 0;
+}
+
+static int libd_titleCardStringWidth(lua_State *L)
+{
+	const char *str = luaL_checkstring(L, 1);
+	HUDONLY
+
+	lua_pushinteger(L, V_TitleCardStringWidth(str));
+	return 1;
 }
 
 static int libd_stringWidth(lua_State *L)
@@ -1163,9 +1190,11 @@ static luaL_Reg lib_draw[] = {
 	{"drawFill", libd_drawFill},
 	{"fadeScreen", libd_fadeScreen},
 	{"drawString", libd_drawString},
+	{"drawTitleCardString", libd_drawTitleCardString},
 	{"drawKartString", libd_drawKartString},
 	// misc
 	{"stringWidth", libd_stringWidth},
+	{"titleCardStringWidth", libd_titleCardStringWidth},
 	// m_random
 	{"RandomFixed",libd_RandomFixed},
 	{"RandomByte",libd_RandomByte},

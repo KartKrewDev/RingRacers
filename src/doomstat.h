@@ -420,7 +420,7 @@ typedef struct
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
 // This could support more, but is that a good idea?
-// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
 #define MAXLEVELLIST 5
 
 typedef struct cupheader_s

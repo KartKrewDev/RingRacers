@@ -2040,7 +2040,7 @@ void P_MovePlayer(player_t *player)
 		{
 			player->drawangle += ANGLE_22h;
 		}
-		else if (player->trickpanel == 3)
+		else if (player->trickpanel >= 3)
 		{
 			player->drawangle -= ANGLE_22h;
 		}

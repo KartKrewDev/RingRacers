@@ -79,12 +79,8 @@ void Z_Init(void);
 //
 // Zone memory allocation
 //
-// enable ZDEBUG to get the file + line the functions were called from
-// for ZZ_Alloc, see doomdef.h
-//
 
 // Z_Free and alloc with alignment
-#ifdef ZDEBUG
 #define Z_Free(p)                 Z_Free2(p, __FILE__, __LINE__)
 #define Z_MallocAlign(s,t,u,a)    Z_Malloc2(s, t, u, a, __FILE__, __LINE__)
 #define Z_CallocAlign(s,t,u,a)    Z_Calloc2(s, t, u, a, __FILE__, __LINE__)
@@ -93,12 +89,6 @@ void Z_Free2(void *ptr, const char *file, INT32 line);
 void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
 void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
 void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(2);
-#else
-void Z_Free(void *ptr);
-void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(1);
-void *Z_CallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(1);
-void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(2);
-#endif
 
 // Alloc with no alignment
 #define Z_Malloc(s,t,u)    Z_MallocAlign(s, t, u, 0)
@@ -106,7 +96,7 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 #define Z_Realloc(p,s,t,u) Z_ReallocAlign(p, s, t, u, 0)
 
 // Free all memory by tag
-// these don't give line numbers for ZDEBUG currently though
+// these don't give line numbers currently though
 // (perhaps this should be changed in future?)
 #define Z_FreeTag(tagnum) Z_FreeTags(tagnum, tagnum)
 void Z_FreeTags(INT32 lowtag, INT32 hightag);

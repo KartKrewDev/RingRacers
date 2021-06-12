@@ -1676,6 +1676,149 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/2, flags, fontv[HU_FONT].font[c], colormap);
 }
 
+// V_TitleCardStringWidth
+// Get the string's width using the titlecard font.
+INT32 V_TitleCardStringWidth(const char *str)
+{
+	INT32 xoffs = 0;
+	const char *ch = str;
+	char c;
+	patch_t *pp;
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			xoffs = 0;
+			continue;
+		}
+
+		c = *ch;
+		c = toupper(c);
+		c -= LT_FONTSTART;
+
+		// check if character exists, if not, it's a space.
+		if (c < 0 || c >= LT_FONTSIZE || !tc_font[0][(INT32)c])
+		{
+			xoffs += 10;
+			continue;
+		}
+
+		pp = tc_font[1][(INT32)c];
+
+		xoffs += pp->width-5;
+	}
+
+	return xoffs;
+}
+
+// V_DrawTitleCardScreen.
+// see v_video.h's prototype for more information.
+//
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean alignright, INT32 timer, INT32 threshold)
+{
+
+	INT32 xoffs = 0;
+	INT32 yoffs = 0;
+	INT32 i = 0;
+
+	// per-letter variables
+	fixed_t scalex;
+	fixed_t offs;
+	INT32 let_time;
+	INT32 flipflag;
+	angle_t fakeang;
+
+	const char *ch = str;
+	char c;
+	patch_t *pp;
+	patch_t *ol;
+
+	x -= 2;	// Account for patch width...
+
+	if (alignright)
+		x -= V_TitleCardStringWidth(str);
+
+
+	for (;;ch++, i++)
+	{
+
+		scalex = FRACUNIT;
+		offs = 0;
+		let_time = timer - i;
+		flipflag = 0;
+
+		if (!*ch)
+			break;
+
+		if (*ch == '\n')
+		{
+			xoffs = x;
+			yoffs += 32;
+
+			continue;
+		}
+
+		c = *ch;
+
+		c = toupper(c);
+		c -= LT_FONTSTART;
+
+		// check if character exists, if not, it's a space.
+		if (c < 0 || c >= LT_FONTSIZE || !tc_font[1][(INT32)c])
+		{
+			xoffs += 10;
+			continue;
+		}
+
+		ol = tc_font[0][(INT32)c];
+		pp = tc_font[1][(INT32)c];
+
+		if (timer)
+		{
+
+			// make letters appear
+			if (!threshold || let_time < threshold)
+			{
+				if (let_time <= 0)
+					return;	// No reason to continue drawing, none of the next letters will be drawn either.
+
+				// otherwise; scalex must start at 0
+				// let's have each letter do 4 spins (360*4 + 90 = 1530 "degrees")
+				fakeang = min(360 + 90, let_time*41) * ANG1;
+				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
+			}
+			else if (let_time > threshold)
+			{
+				// Make letters disappear...
+				let_time -= threshold;
+
+				fakeang = max(0, (360+90) - let_time*41)*ANG1;
+				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
+			}
+
+			// Because of how our patches are offset, we need to counter the displacement caused by changing the scale with an offset of our own.
+			offs = ((FRACUNIT-scalex)*pp->width)/2;
+		}
+
+		// And now, we just need to draw the stuff.
+		flipflag = (scalex < 0) ? V_FLIP : 0;
+
+		if (scalex && ol && pp)
+		{
+			//CONS_Printf("%d\n", (INT32)c);
+			V_DrawStretchyFixedPatch((x + xoffs)*FRACUNIT + offs, (y+yoffs)*FRACUNIT, abs(scalex), FRACUNIT, flags|flipflag, ol, NULL);
+			V_DrawStretchyFixedPatch((x + xoffs)*FRACUNIT + offs, (y+yoffs)*FRACUNIT, abs(scalex), FRACUNIT, flags|flipflag, pp, NULL);
+		}
+
+		xoffs += pp->width -5;
+	}
+}
+
+
 // Precompile a wordwrapped string to any given width.
 // This is a muuuch better method than V_WORDWRAP.
 char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
