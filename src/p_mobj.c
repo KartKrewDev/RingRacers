@@ -5457,11 +5457,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						case KITEM_ORBINAUT:
 							mobj->tracer->sprite = SPR_ITMO;
-							mobj->tracer->frame = FF_FULLBRIGHT|(min(mobj->target->player->itemamount-1, 3));
+							mobj->tracer->frame = FF_FULLBRIGHT|K_GetOrbinautItemFrame(mobj->target->player->itemamount);
 							break;
 						case KITEM_INVINCIBILITY:
 							mobj->tracer->sprite = SPR_ITMI;
-							mobj->tracer->frame = FF_FULLBRIGHT|((leveltime % (7*3)) / 3);
+							mobj->tracer->frame = FF_FULLBRIGHT|K_GetInvincibilityItemFrame();
 							break;
 						case KITEM_SAD:
 							mobj->tracer->sprite = SPR_ITEM;
@@ -6063,11 +6063,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			case KITEM_ORBINAUT:
 				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(min(mobj->movecount-1, 3));
+				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
 				break;
 			case KITEM_INVINCIBILITY:
 				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|((leveltime % (7*3)) / 3);
+				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
 				break;
 			case KITEM_SAD:
 				mobj->sprite = SPR_ITEM;

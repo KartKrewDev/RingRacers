@@ -9139,4 +9139,14 @@ void K_CheckSpectateStatus(void)
 	}
 }
 
+UINT8 K_GetInvincibilityItemFrame(void)
+{
+	return ((leveltime % (7*3)) / 3);
+}
+
+UINT8 K_GetOrbinautItemFrame(UINT8 count)
+{
+	return min(count - 1, 3);
+}
+
 //}

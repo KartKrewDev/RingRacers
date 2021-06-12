@@ -116,6 +116,8 @@ SINT8 K_Sliptiding(player_t *player);
 void K_AdjustPlayerFriction(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CheckSpectateStatus(void);
+UINT8 K_GetInvincibilityItemFrame(void);
+UINT8 K_GetOrbinautItemFrame(UINT8 count);
 
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);
