@@ -2672,6 +2672,11 @@ static void K_GetKartBoostPower(player_t *player)
 		}
 	}
 
+	if (player->trickboost)	// Trick pannel up-boost
+	{
+		ADDBOOST(player->trickboostpower, 5*FRACUNIT, 0);	// <trickboostpower>% speed, 500% accel, 0% handling
+	}
+
 	if (player->ringboost) // Ring Boost
 	{
 		ADDBOOST(FRACUNIT/5, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
@@ -4994,7 +4999,10 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
 
-		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = 0;	// Reset post-hitlag momentums.
+		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
+		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
+		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
+		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
 	mo->momz = FixedMul(thrust, vscale);
@@ -6217,6 +6225,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
+	if (player->karthud[khud_trickcool])
+		player->karthud[khud_trickcool]--;
+
 	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
@@ -6410,7 +6421,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// Speed lines
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
-				|| player->eggmanexplode)
+				|| player->eggmanexplode || player->trickboost)
 			{
 				if (player->invincibilitytimer)
 					K_SpawnInvincibilitySpeedLines(player->mo);
@@ -6650,6 +6661,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->numsneakers = 0;
 		}
 	}
+
+	if (player->trickboost)
+		player->trickboost--;
 
 	if (player->flamedash)
 		player->flamedash--;
@@ -7394,9 +7408,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel != 0)
+	if (player->trickpanel != 0 && player->trickpanel < 4)
 	{
-		// No turning during trick panel
+		// No turning during trick panel unless you did the upwards trick (4)
 		return 0;
 	}
 
@@ -8256,6 +8270,86 @@ void K_AdjustPlayerFriction(player_t *player)
 }
 
 //
+// K_trickPanelTimingVisual
+// Spawns the timing visual for trick panels depending on the given player's momz.
+// If the player has tricked and is not in hitlag, this will send the half circles flying out.
+// if you tumble, they'll fall off instead.
+//
+
+#define RADIUSSCALING 6
+#define MINRADIUS 12
+
+static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
+{
+
+	fixed_t pos, tx, ty, tz;
+	mobj_t *flame;
+
+	angle_t hang = R_PointToAnglePlayer(player, player->mo->x, player->mo->y) + ANG1*90;			// horizontal angle
+	angle_t vang = -FixedAngle(momz)*12 + (ANG1*45);												// vertical angle dependant on momz, we want it to line up at 45 degrees at the perfect frame to trick at
+	fixed_t dist = FixedMul(max(MINRADIUS<<FRACBITS, abs(momz)*RADIUSSCALING), player->mo->scale);	// distance.
+
+	UINT8 i;
+
+	// Do you like trig? cool, me neither.
+	for (i=0; i < 2; i++)
+	{
+		pos = FixedMul(dist, FINESINE(vang>>ANGLETOFINESHIFT));
+		tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
+		ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
+		tz = player->mo->z + player->mo->height/2 + FixedMul(dist, FINECOSINE(vang>>ANGLETOFINESHIFT));
+
+		// All coordinates set, spawn our fire, now.
+		flame = P_SpawnMobj(tx, ty, tz, MT_THOK);
+
+		P_SetScale(flame, player->mo->scale);
+
+		// Visuals
+		flame->sprite = SPR_TRCK;
+		flame->frame = i|FF_FULLBRIGHT;
+
+		if (player->trickpanel <= 1 && !player->tumbleBounces)
+			flame->tics = 2;
+		else
+		{
+			flame->tics = TICRATE;
+
+			if (player->trickpanel > 1)	// we tricked
+			{
+				// Send the thing outwards via ghetto maths which involves redoing the whole 3d sphere again, witht the "vertical" angle shifted by 90 degrees.
+				// There's probably a simplier way to do this the way I want to but this works.
+				pos = FixedMul(48*player->mo->scale, FINESINE((vang +ANG1*90)>>ANGLETOFINESHIFT));
+				tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
+				ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
+				tz = player->mo->z + player->mo->height/2 + FixedMul(48*player->mo->scale, FINECOSINE((vang +ANG1*90)>>ANGLETOFINESHIFT));
+
+				flame->momx = tx -player->mo->x;
+				flame->momy = ty -player->mo->y;
+				flame->momz = tz -(player->mo->z+player->mo->height/2);
+			}
+			else	// we failed the trick, drop the half circles, it'll be funny I promise.
+			{
+				flame->flags &= ~MF_NOGRAVITY;
+				P_SetObjectMomZ(flame, 4<<FRACBITS, false);
+				P_InstaThrust(flame, R_PointToAngle2(player->mo->x, player->mo->y, flame->x, flame->y), 8*mapobjectscale);
+				flame->momx += player->mo->momx;
+				flame->momy += player->mo->momy;
+				flame->momz += player->mo->momz;
+			}
+		}
+
+		// make sure this is only drawn for our local player
+		flame->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
+		vang += FixedAngle(180<<FRACBITS);	// Avoid overflow warnings...
+
+	}
+}
+
+#undef RADIUSSCALING
+#undef MINRADIUS
+
+//
 // K_MoveKartPlayer
 //
 void K_MoveKartPlayer(player_t *player, boolean onground)
@@ -8918,6 +9012,43 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
+			K_trickPanelTimingVisual(player, momz);
+
+			// streaks:
+			if (momz*P_MobjFlip(player->mo) > 0)	// only spawn those while you're going upwards relative to your current gravity
+			{
+				// these are all admittedly arbitrary numbers...
+				INT32 n;
+				INT32 maxlines = max(1, (momz/FRACUNIT)/16);
+				INT32 frequency = max(1, 5-(momz/FRACUNIT)/4);
+				fixed_t sx, sy, sz;
+				mobj_t *spdl;
+
+				if (!(leveltime % frequency))
+				{
+					for (n=0; n < maxlines; n++)
+					{
+						sx = player->mo->x + P_RandomRange(-24, 24)*player->mo->scale;
+						sy = player->mo->y + P_RandomRange(-24, 24)*player->mo->scale;
+						sz = player->mo->z + P_RandomRange(0, 48)*player->mo->scale;
+
+						spdl = P_SpawnMobj(sx, sy, sz, MT_FASTLINE);
+						P_SetTarget(&spdl->target, player->mo);
+						spdl->angle = R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y);
+						spdl->rollangle = -ANG1*90*P_MobjFlip(player->mo);		// angle them downwards relative to the player's gravity...
+						spdl->spriteyscale = player->trickboostpower+FRACUNIT;
+						spdl->momx = player->mo->momx;
+						spdl->momy = player->mo->momy;
+					}
+
+				}
+
+			}
+
+			// We'll never need to go above that.
+			if (player->tricktime <= TRICKDELAY)
+				player->tricktime++;
+
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
 			if (momz < -10*FRACUNIT)	// :youfuckedup:
@@ -8927,11 +9058,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->pflags &= ~PF_TUMBLESOUND;
 				player->tumbleHeight = 30;	// Base tumble bounce height
 				player->trickpanel = 0;
+				K_trickPanelTimingVisual(player, momz);	// fail trick visual
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 			}
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
+
+				// "COOL" timing n shit.
+				if (cmd->turning || player->throwdir)
+				{
+					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
+					{
+						player->karthud[khud_trickcool] = TICRATE;
+					}
+				}
+
 				// Uses cmd->turning over steering intentionally.
 				if (cmd->turning > 0)
 				{
@@ -8945,6 +9087,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 2;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (cmd->turning < 0)
 				{
@@ -8958,6 +9101,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 3;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == 1)
 				{
@@ -8976,6 +9120,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 2;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == -1)
 				{
@@ -8989,6 +9134,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						relative = false;
 					}
 
+					// Calculate speed boost decay:
+					// Base speed boost duration is 35 tics.
+					// At most, lose 3/4th of your boost.
+					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
+					//CONS_Printf("decay: %d\n", player->trickboostdecay);
+
 					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
 
 					player->trickmomx = player->mo->momx;
@@ -8997,8 +9148,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
 					player->mo->momz = 0;
 
-					player->trickpanel = 3;
+					player->trickpanel = 4;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
@@ -9013,8 +9165,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		}
 
+		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
+		{
+			//CONS_Printf("apply boost\n");
+			S_StartSound(player->mo, sfx_s23c);
+			K_SpawnDashDustRelease(player);
+			player->trickboost = TICRATE - player->trickboostdecay;
+
+			player->trickpanel = player->trickboostdecay = 0;
+		}
+
 		// Wait until we let go off the control stick to remove the delay
-		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning)
+		// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
+		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning && (player->tricktime >= TRICKDELAY))
 		{
 			player->pflags &= ~PF_TRICKDELAY;
 		}
