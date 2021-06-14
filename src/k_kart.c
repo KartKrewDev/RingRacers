@@ -348,7 +348,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			 /*Land Mine*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 1, 2, 3, 4, 2, 2, 0 }, // Self-Propelled Bomb
+   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
 		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
@@ -400,6 +400,9 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
+#define SPBSTARTDIST (5*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define SPBFORCEDIST (15*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define ENDDIST (12*DISTVAR) // Distance when the game stops giving you bananas
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
 static INT32 K_SparkleTrailStartStates[KART_NUMINVSPARKLESANIM][2] = {
@@ -491,6 +494,57 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	}
 }
 
+fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
+{
+	const UINT8 basePlayer = 8; // The player count we design most of the game around.
+	UINT8 playerCount = (spbrush ? 2 : numPlayers);
+	fixed_t playerScaling = 0;
+
+	// Then, it multiplies it further if the player count isn't equal to basePlayer.
+	// This is done to make low player count races more interesting and high player count rates more fair.
+	// (If you're in SPB mode and in 2nd place, it acts like it's a 1v1, so the catch-up game is not weakened.)
+	if (playerCount < basePlayer)
+	{
+		// Less than basePlayer: increase odds significantly.
+		// 2P: x2.5
+		playerScaling = (basePlayer - playerCount) * (FRACUNIT / 4);
+	}
+	else if (playerCount > basePlayer)
+	{
+		// More than basePlayer: reduce odds slightly.
+		// 16P: x0.75
+		playerScaling = (basePlayer - playerCount) * (FRACUNIT / 32);
+	}
+
+	return playerScaling;
+}
+
+UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush)
+{
+	if (mapobjectscale != FRACUNIT)
+	{
+		// Bring back to normal scale.
+		distance = FixedDiv(distance * FRACUNIT, mapobjectscale) / FRACUNIT;
+	}
+
+	if (franticitems == true)
+	{
+		// Frantic items pretends everyone's farther apart, for crazier items.
+		distance = (15 * distance) / 14;
+	}
+
+	if (numPlayers > 0)
+	{
+		// Items get crazier with the fewer players that you have.
+		distance = FixedMul(
+			distance * FRACUNIT,
+			FRACUNIT + (K_ItemOddsScale(numPlayers, spbrush) / 2)
+		) / FRACUNIT;
+	}
+
+	return distance;
+}
+
 /**	\brief	Item Roulette for Kart
 
 	\param	player	player object passed from P_KartPlayerThink
@@ -498,13 +552,26 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	\return	void
 */
 
-INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, boolean bot, boolean rival)
+INT32 K_KartGetItemOdds(
+	UINT8 pos, SINT8 item,
+	UINT32 ourDist,
+	fixed_t mashed,
+	boolean spbrush, boolean bot, boolean rival)
 {
 	INT32 newodds;
 	INT32 i;
+
 	UINT8 pingame = 0, pexiting = 0;
+
 	SINT8 first = -1, second = -1;
-	INT32 secondist = 0;
+	UINT32 firstDist = UINT32_MAX;
+	UINT32 secondToFirst = UINT32_MAX;
+
+	boolean powerItem = false;
+	boolean cooldownOnStart = false;
+	boolean indirectItem = false;
+	boolean notNearEnd = false;
+
 	INT32 shieldtype = KSHIELD_NONE;
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
@@ -512,6 +579,24 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 
 	if (!KartItemCVars[item-1]->value && !modeattacking)
 		return 0;
+
+	/*
+	if (bot)
+	{
+		// TODO: Item use on bots should all be passed-in functions.
+		// Instead of manually inserting these, it should return 0
+		// for any items without an item use function supplied
+
+		switch (item)
+		{
+			case KITEM_SNEAKER:
+				break;
+			default:
+				return 0;
+		}
+	}
+	*/
+	(void)bot;
 
 	if (gametype == GT_BATTLE)
 	{
@@ -557,140 +642,149 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, fixed_t mashed, boolean spbrush, 
 
 	if (first != -1 && second != -1) // calculate 2nd's distance from 1st, for SPB
 	{
-		secondist = players[second].distancetofinish - players[first].distancetofinish;
-		if (franticitems)
-			secondist = (15 * secondist) / 14;
-		secondist = ((28 + (8-pingame)) * secondist) / 28;
-	}
+		firstDist = players[first].distancetofinish;
 
-	// POWERITEMODDS handles all of the "frantic item" related functionality, for all of our powerful items.
-	// First, it multiplies it by 2 if franticitems is true; easy-peasy.
-	// Next, it multiplies it again if it's in SPB mode and 2nd needs to apply pressure to 1st.
-	// Then, it multiplies it further if the player count isn't equal to 8.
-	// This is done to make low player count races more interesting and high player count rates more fair.
-	// (2P normal would be about halfway between 8P normal and 8P frantic.)
-	// (This scaling is not done for SPB Rush, so that catchup strength is not weakened.)
-	// Lastly, it *divides* it by your mashed value, which was determined in K_KartItemRoulette, for lesser items needed in a pinch.
-
-#define PLAYERSCALING (8 - (spbrush ? 2 : pingame))
-
-#define POWERITEMODDS(odds) {\
-	if (franticitems) \
-		odds *= 2; \
-	if (rival) \
-		odds *= 2; \
-	odds = FixedMul(odds * FRACUNIT, FRACUNIT + ((PLAYERSCALING * FRACUNIT) / 25)) / FRACUNIT; \
-	if (mashed > 0) \
-		odds = FixedDiv(odds * FRACUNIT, FRACUNIT + mashed) / FRACUNIT; \
-}
-
-#define COOLDOWNONSTART (leveltime < (30*TICRATE)+starttime)
-
-	/*
-	if (bot)
-	{
-		// TODO: Item use on bots should all be passed-in functions.
-		// Instead of manually inserting these, it should return 0
-		// for any items without an item use function supplied
-
-		switch (item)
+		if (mapobjectscale != FRACUNIT)
 		{
-			case KITEM_SNEAKER:
-			case KITEM_ROCKETSNEAKER:
-			case KITEM_INVINCIBILITY:
-			case KITEM_BANANA:
-			case KITEM_EGGMAN:
-			case KITEM_ORBINAUT:
-			case KITEM_JAWZ:
-			case KITEM_MINE:
-			case KITEM_LANDMINE:
-			case KITEM_BALLHOG:
-			case KITEM_SPB:
-			case KITEM_GROW:
-			case KITEM_SHRINK:
-			case KITEM_HYUDORO:
-			case KITEM_SUPERRING:
-			case KITEM_THUNDERSHIELD:
-			case KITEM_BUBBLESHIELD:
-			case KITEM_FLAMESHIELD:
-			case KRITEM_DUALSNEAKER:
-			case KRITEM_TRIPLESNEAKER:
-			case KRITEM_TRIPLEBANANA:
-			case KRITEM_TENFOLDBANANA:
-			case KRITEM_TRIPLEORBINAUT:
-			case KRITEM_QUADORBINAUT:
-			case KRITEM_DUALJAWZ:
-				break;
-			default:
-				return 0;
+			firstDist = FixedDiv(firstDist * FRACUNIT, mapobjectscale) / FRACUNIT;
 		}
+
+		secondToFirst = K_ScaleItemDistance(
+			players[second].distancetofinish - players[first].distancetofinish,
+			pingame, spbrush
+		);
 	}
-	*/
-	(void)bot;
 
 	switch (item)
 	{
+		case KITEM_BANANA:
+		case KITEM_EGGMAN:
+		case KITEM_SUPERRING:
+			notNearEnd = true;
+			break;
 		case KITEM_ROCKETSNEAKER:
 		case KITEM_JAWZ:
 		case KITEM_LANDMINE:
 		case KITEM_BALLHOG:
 		case KRITEM_TRIPLESNEAKER:
-		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
 		case KRITEM_DUALJAWZ:
-			POWERITEMODDS(newodds);
+			powerItem = true;
+			break;
+		case KRITEM_TRIPLEBANANA:
+		case KRITEM_TENFOLDBANANA:
+			powerItem = true;
+			notNearEnd = true;
 			break;
 		case KITEM_INVINCIBILITY:
 		case KITEM_MINE:
 		case KITEM_GROW:
 		case KITEM_BUBBLESHIELD:
 		case KITEM_FLAMESHIELD:
-			if (COOLDOWNONSTART)
-				newodds = 0;
-			else
-				POWERITEMODDS(newodds);
+			cooldownOnStart = true;
+			powerItem = true;
 			break;
 		case KITEM_SPB:
-			if ((indirectitemcooldown > 0) || COOLDOWNONSTART
-				|| (first != -1 && players[first].distancetofinish < 8*DISTVAR)) // No SPB near the end of the race
+			cooldownOnStart = true;
+			indirectItem = true;
+			notNearEnd = true;
+
+			if (firstDist < ENDDIST) // No SPB near the end of the race
 			{
 				newodds = 0;
 			}
 			else
 			{
-				INT32 multiplier = (secondist - (5*DISTVAR)) / DISTVAR;
+				const INT32 distFromStart = max(0, secondToFirst - SPBSTARTDIST);
+				const INT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+				const INT32 mulMax = 3;
+
+				INT32 multiplier = (distFromStart * mulMax) / distRange;
 
 				if (multiplier < 0)
 					multiplier = 0;
-				if (multiplier > 3)
-					multiplier = 3;
+				if (multiplier > mulMax)
+					multiplier = mulMax;
 
 				newodds *= multiplier;
 			}
 			break;
 		case KITEM_SHRINK:
-			if ((indirectitemcooldown > 0) || COOLDOWNONSTART || (pingame-1 <= pexiting))
+			cooldownOnStart = true;
+			powerItem = true;
+			indirectItem = true;
+			notNearEnd = true;
+
+			if (pingame-1 <= pexiting)
 				newodds = 0;
-			else
-				POWERITEMODDS(newodds);
 			break;
 		case KITEM_THUNDERSHIELD:
-			if (spbplace != -1 || COOLDOWNONSTART)
+			cooldownOnStart = true;
+			powerItem = true;
+
+			if (spbplace != -1)
 				newodds = 0;
-			else
-				POWERITEMODDS(newodds);
 			break;
 		case KITEM_HYUDORO:
-			if ((hyubgone > 0) || COOLDOWNONSTART)
+			cooldownOnStart = true;
+			notNearEnd = true;
+
+			if (hyubgone > 0)
 				newodds = 0;
 			break;
 		default:
 			break;
 	}
 
-#undef POWERITEMODDS
+	if (newodds == 0)
+	{
+		// Nothing else we want to do with odds matters at this point :p
+		return newodds;
+	}
+
+	if ((indirectItem == true) && (indirectitemcooldown > 0))
+	{
+		// Too many items that act indirectly in a match can feel kind of bad.
+		newodds = 0;
+	}
+	else if ((cooldownOnStart == true) && (leveltime < (30*TICRATE)+starttime))
+	{
+		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
+		newodds = 0;
+	}
+	else if ((notNearEnd == true) && (ourDist < ENDDIST))
+	{
+		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
+		newodds = 0;
+	}
+	else if (powerItem == true)
+	{
+		// This item is a "power item". This activates "frantic item" toggle related functionality.
+		fixed_t fracOdds = newodds * FRACUNIT;
+
+		if (franticitems == true)
+		{
+			// First, power items multiply their odds by 2 if frantic items are on; easy-peasy.
+			fracOdds *= 2;
+		}
+
+		if (rival == true)
+		{
+			// The Rival bot gets frantic-like items, also :p
+			fracOdds *= 2;
+		}
+
+		fracOdds = FixedMul(fracOdds, FRACUNIT + K_ItemOddsScale(pingame, spbrush));
+
+		if (mashed > 0)
+		{
+			// Lastly, it *divides* it based on your mashed value, so that power items are less likely when you mash.
+			fracOdds = FixedDiv(fracOdds, FRACUNIT + mashed);
+		}
+
+		newodds = fracOdds / FRACUNIT;
+	}
 
 	return newodds;
 }
@@ -721,7 +815,12 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			if (K_KartGetItemOdds(i, j, mashed, spbrush, player->bot, (player->bot && player->botvars.rival)) > 0)
+			if (K_KartGetItemOdds(
+					i, j,
+					player->distancetofinish,
+					mashed,
+					spbrush, player->bot, (player->bot && player->botvars.rival)
+				) > 0)
 			{
 				available = true;
 				break;
@@ -872,27 +971,20 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (mapobjectscale != FRACUNIT)
-		pdis = FixedDiv(pdis * FRACUNIT, mapobjectscale) / FRACUNIT;
-
-	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
+	if (spbplace != -1 && player->position == spbplace+1)
 	{
-		pdis = (15 * pdis) / 14;
-	}
-
-	if (spbplace != -1 && player->position == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
-	{
+		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
 		pdis = (3 * pdis) / 2;
 		spbrush = true;
 	}
+
+	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
 
 	if (player->bot && player->botvars.rival)
 	{
 		// Rival has better odds :)
 		pdis = (15 * pdis) / 14;
 	}
-
-	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
 
 	// SPECIAL CASE No. 1:
 	// Fake Eggman items
@@ -994,17 +1086,17 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 5:
 	// Force SPB onto 2nd if they get too far behind
-	if ((gametyperules & GTR_CIRCUIT) && player->position == 2 && pdis > (DISTVAR*8)
+	if ((gametyperules & GTR_CIRCUIT) && player->position == 2 && pdis > SPBFORCEDIST
 		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
 		&& cv_selfpropelledbomb.value)
 	{
 		K_KartGetItemResult(player, KITEM_SPB);
 		player->karthud[khud_itemblink] = TICRATE;
-		player->karthud[khud_itemblinkmode] = (mashed ? 1 : 0);
+		player->karthud[khud_itemblinkmode] = 2;
 		player->itemroulette = 0;
 		player->roulettetype = 0;
 		if (P_IsDisplayPlayer(player))
-			S_StartSound(NULL, (mashed ? sfx_itrolm : sfx_itrolf));
+			S_StartSound(NULL, sfx_itrolk);
 		return;
 	}
 
@@ -1017,7 +1109,14 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
-		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, mashed, spbrush, player->bot, (player->bot && player->botvars.rival)));
+	{
+		spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(
+			useodds, i,
+			player->distancetofinish,
+			mashed,
+			spbrush, player->bot, (player->bot && player->botvars.rival))
+		);
+	}
 
 	// Award the player whatever power is rolled
 	if (totalspawnchance > 0)
@@ -2670,6 +2769,11 @@ static void K_GetKartBoostPower(player_t *player)
 		{
 			ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
 		}
+	}
+
+	if (player->trickboost)	// Trick pannel up-boost
+	{
+		ADDBOOST(player->trickboostpower, 5*FRACUNIT, 0);	// <trickboostpower>% speed, 500% accel, 0% handling
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -4994,7 +5098,10 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
 
-		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = 0;	// Reset post-hitlag momentums.
+		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
+		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
+		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
+		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
 	mo->momz = FixedMul(thrust, vscale);
@@ -5291,7 +5398,15 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 		useodds = amount;
 
 		for (i = 1; i < NUMKARTRESULTS; i++)
-			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(useodds, i, 0, false, false, false));
+		{
+			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(
+				useodds, i,
+				UINT32_MAX,
+				0,
+				false, false, false
+				)
+			);
+		}
 
 		if (totalspawnchance > 0)
 		{
@@ -6217,6 +6332,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
+	if (player->karthud[khud_trickcool])
+		player->karthud[khud_trickcool]--;
+
 	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
@@ -6410,7 +6528,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// Speed lines
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
-				|| player->eggmanexplode)
+				|| player->eggmanexplode || player->trickboost)
 			{
 				if (player->invincibilitytimer)
 					K_SpawnInvincibilitySpeedLines(player->mo);
@@ -6650,6 +6768,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->numsneakers = 0;
 		}
 	}
+
+	if (player->trickboost)
+		player->trickboost--;
 
 	if (player->flamedash)
 		player->flamedash--;
@@ -7394,9 +7515,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->trickpanel != 0)
+	if (player->trickpanel != 0 && player->trickpanel < 4)
 	{
-		// No turning during trick panel
+		// No turning during trick panel unless you did the upwards trick (4)
 		return 0;
 	}
 
@@ -8256,6 +8377,86 @@ void K_AdjustPlayerFriction(player_t *player)
 }
 
 //
+// K_trickPanelTimingVisual
+// Spawns the timing visual for trick panels depending on the given player's momz.
+// If the player has tricked and is not in hitlag, this will send the half circles flying out.
+// if you tumble, they'll fall off instead.
+//
+
+#define RADIUSSCALING 6
+#define MINRADIUS 12
+
+static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
+{
+
+	fixed_t pos, tx, ty, tz;
+	mobj_t *flame;
+
+	angle_t hang = R_PointToAnglePlayer(player, player->mo->x, player->mo->y) + ANG1*90;			// horizontal angle
+	angle_t vang = -FixedAngle(momz)*12 + (ANG1*45);												// vertical angle dependant on momz, we want it to line up at 45 degrees at the perfect frame to trick at
+	fixed_t dist = FixedMul(max(MINRADIUS<<FRACBITS, abs(momz)*RADIUSSCALING), player->mo->scale);	// distance.
+
+	UINT8 i;
+
+	// Do you like trig? cool, me neither.
+	for (i=0; i < 2; i++)
+	{
+		pos = FixedMul(dist, FINESINE(vang>>ANGLETOFINESHIFT));
+		tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
+		ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
+		tz = player->mo->z + player->mo->height/2 + FixedMul(dist, FINECOSINE(vang>>ANGLETOFINESHIFT));
+
+		// All coordinates set, spawn our fire, now.
+		flame = P_SpawnMobj(tx, ty, tz, MT_THOK);
+
+		P_SetScale(flame, player->mo->scale);
+
+		// Visuals
+		flame->sprite = SPR_TRCK;
+		flame->frame = i|FF_FULLBRIGHT;
+
+		if (player->trickpanel <= 1 && !player->tumbleBounces)
+			flame->tics = 2;
+		else
+		{
+			flame->tics = TICRATE;
+
+			if (player->trickpanel > 1)	// we tricked
+			{
+				// Send the thing outwards via ghetto maths which involves redoing the whole 3d sphere again, witht the "vertical" angle shifted by 90 degrees.
+				// There's probably a simplier way to do this the way I want to but this works.
+				pos = FixedMul(48*player->mo->scale, FINESINE((vang +ANG1*90)>>ANGLETOFINESHIFT));
+				tx = player->mo->x + FixedMul(pos, FINECOSINE(hang>>ANGLETOFINESHIFT));
+				ty = player->mo->y + FixedMul(pos, FINESINE(hang>>ANGLETOFINESHIFT));
+				tz = player->mo->z + player->mo->height/2 + FixedMul(48*player->mo->scale, FINECOSINE((vang +ANG1*90)>>ANGLETOFINESHIFT));
+
+				flame->momx = tx -player->mo->x;
+				flame->momy = ty -player->mo->y;
+				flame->momz = tz -(player->mo->z+player->mo->height/2);
+			}
+			else	// we failed the trick, drop the half circles, it'll be funny I promise.
+			{
+				flame->flags &= ~MF_NOGRAVITY;
+				P_SetObjectMomZ(flame, 4<<FRACBITS, false);
+				P_InstaThrust(flame, R_PointToAngle2(player->mo->x, player->mo->y, flame->x, flame->y), 8*mapobjectscale);
+				flame->momx += player->mo->momx;
+				flame->momy += player->mo->momy;
+				flame->momz += player->mo->momz;
+			}
+		}
+
+		// make sure this is only drawn for our local player
+		flame->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+
+		vang += FixedAngle(180<<FRACBITS);	// Avoid overflow warnings...
+
+	}
+}
+
+#undef RADIUSSCALING
+#undef MINRADIUS
+
+//
 // K_MoveKartPlayer
 //
 void K_MoveKartPlayer(player_t *player, boolean onground)
@@ -8918,6 +9119,43 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
+			K_trickPanelTimingVisual(player, momz);
+
+			// streaks:
+			if (momz*P_MobjFlip(player->mo) > 0)	// only spawn those while you're going upwards relative to your current gravity
+			{
+				// these are all admittedly arbitrary numbers...
+				INT32 n;
+				INT32 maxlines = max(1, (momz/FRACUNIT)/16);
+				INT32 frequency = max(1, 5-(momz/FRACUNIT)/4);
+				fixed_t sx, sy, sz;
+				mobj_t *spdl;
+
+				if (!(leveltime % frequency))
+				{
+					for (n=0; n < maxlines; n++)
+					{
+						sx = player->mo->x + P_RandomRange(-24, 24)*player->mo->scale;
+						sy = player->mo->y + P_RandomRange(-24, 24)*player->mo->scale;
+						sz = player->mo->z + P_RandomRange(0, 48)*player->mo->scale;
+
+						spdl = P_SpawnMobj(sx, sy, sz, MT_FASTLINE);
+						P_SetTarget(&spdl->target, player->mo);
+						spdl->angle = R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y);
+						spdl->rollangle = -ANG1*90*P_MobjFlip(player->mo);		// angle them downwards relative to the player's gravity...
+						spdl->spriteyscale = player->trickboostpower+FRACUNIT;
+						spdl->momx = player->mo->momx;
+						spdl->momy = player->mo->momy;
+					}
+
+				}
+
+			}
+
+			// We'll never need to go above that.
+			if (player->tricktime <= TRICKDELAY)
+				player->tricktime++;
+
 			// debug shit
 			//CONS_Printf("%d\n", player->mo->momz / mapobjectscale);
 			if (momz < -10*FRACUNIT)	// :youfuckedup:
@@ -8927,11 +9165,22 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->pflags &= ~PF_TUMBLESOUND;
 				player->tumbleHeight = 30;	// Base tumble bounce height
 				player->trickpanel = 0;
+				K_trickPanelTimingVisual(player, momz);	// fail trick visual
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 			}
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
+
+				// "COOL" timing n shit.
+				if (cmd->turning || player->throwdir)
+				{
+					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
+					{
+						player->karthud[khud_trickcool] = TICRATE;
+					}
+				}
+
 				// Uses cmd->turning over steering intentionally.
 				if (cmd->turning > 0)
 				{
@@ -8945,6 +9194,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 2;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (cmd->turning < 0)
 				{
@@ -8958,6 +9208,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 3;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == 1)
 				{
@@ -8976,6 +9227,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					player->trickpanel = 2;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == -1)
 				{
@@ -8989,6 +9241,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						relative = false;
 					}
 
+					// Calculate speed boost decay:
+					// Base speed boost duration is 35 tics.
+					// At most, lose 3/4th of your boost.
+					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
+					//CONS_Printf("decay: %d\n", player->trickboostdecay);
+
 					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
 
 					player->trickmomx = player->mo->momx;
@@ -8997,8 +9255,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
 					player->mo->momz = 0;
 
-					player->trickpanel = 3;
+					player->trickpanel = 4;
 					player->mo->hitlag = TRICKLAG;
+					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
@@ -9013,8 +9272,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		}
 
+		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
+		{
+			//CONS_Printf("apply boost\n");
+			S_StartSound(player->mo, sfx_s23c);
+			K_SpawnDashDustRelease(player);
+			player->trickboost = TICRATE - player->trickboostdecay;
+
+			player->trickpanel = player->trickboostdecay = 0;
+		}
+
 		// Wait until we let go off the control stick to remove the delay
-		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning)
+		// buttons must be neutral after the initial trick delay. This prevents weirdness where slight nudges after blast off would send you flying.
+		if ((player->pflags & PF_TRICKDELAY) && !player->throwdir && !cmd->turning && (player->tricktime >= TRICKDELAY))
 		{
 			player->pflags &= ~PF_TRICKDELAY;
 		}

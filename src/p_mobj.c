@@ -1109,7 +1109,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			gravityadd = (4*gravityadd)/3;
 		}
 
-		if (mo->player->trickpanel == 2 || mo->player->trickpanel == 3)
+		if (mo->player->trickpanel >= 2)
 		{
 			gravityadd = (5*gravityadd)/2;
 		}

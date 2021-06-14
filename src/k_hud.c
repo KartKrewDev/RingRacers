@@ -162,6 +162,8 @@ static patch_t *kp_cpu;
 
 static patch_t *kp_nametagstem;
 
+static patch_t *kp_trickcool[2];
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j;
@@ -601,6 +603,9 @@ void K_LoadKartHUDGraphics(void)
 	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
 
 	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
+
+	kp_trickcool[0] = W_CachePatchName("K_COOL1", PU_HUDGFX);
+	kp_trickcool[1] = W_CachePatchName("K_COOL2", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -678,6 +683,9 @@ INT32 WANT_X, WANT_Y;	// Battle WANTED poster
 INT32 ITEM2_X, ITEM2_Y;
 INT32 LAPS2_X, LAPS2_Y;
 INT32 POSI2_X, POSI2_Y;
+
+// trick "cool"
+INT32 TCOOL_X, TCOOL_Y;
 
 
 void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
@@ -982,6 +990,10 @@ static void K_initKartHUD(void)
 	WANT_X = BASEVIDWIDTH - 55;		// 270
 	WANT_Y = BASEVIDHEIGHT- 71;		// 176
 
+	// trick COOL
+	TCOOL_X = (BASEVIDWIDTH)/2;
+	TCOOL_Y = (BASEVIDHEIGHT)/2 -10;
+
 	if (r_splitscreen)	// Splitscreen
 	{
 		ITEM_X = 5;
@@ -1023,6 +1035,8 @@ static void K_initKartHUD(void)
 
 			MINI_X = (3*BASEVIDWIDTH/4);
 			MINI_Y = (3*BASEVIDHEIGHT/4);
+
+			TCOOL_X = (BASEVIDWIDTH)/4;
 
 			if (r_splitscreen > 2) // 4P-only
 			{
@@ -3951,6 +3965,32 @@ static void K_drawLapStartAnim(void)
 	}
 }
 
+// stretch for "COOOOOL" popup.
+// I can't be fucked to find out any math behind this so have a table lmao
+static fixed_t stretch[6][2] = {
+	{FRACUNIT/4, FRACUNIT*4},
+	{FRACUNIT/2, FRACUNIT*2},
+	{FRACUNIT, FRACUNIT},
+	{FRACUNIT*4, FRACUNIT/2},
+	{FRACUNIT*8, FRACUNIT/4},
+	{FRACUNIT*4, FRACUNIT/2},
+};
+
+static void K_drawTrickCool(void)
+{
+
+	tic_t timer = TICRATE - stplyr->karthud[khud_trickcool];
+
+	if (timer <= 6)
+	{
+		V_DrawStretchyFixedPatch(TCOOL_X<<FRACBITS, TCOOL_Y<<FRACBITS, stretch[timer-1][0], stretch[timer-1][1], V_HUDTRANS|V_SPLITSCREEN, kp_trickcool[splitscreen ? 1 : 0], NULL);
+	}
+	else if (leveltime & 1)
+	{
+		V_DrawFixedPatch(TCOOL_X<<FRACBITS, (TCOOL_Y<<FRACBITS) - (timer-10)*FRACUNIT/2, FRACUNIT, V_HUDTRANS|V_SPLITSCREEN, kp_trickcool[splitscreen ? 1 : 0], NULL);
+	}
+}
+
 void K_drawKartFreePlay(void)
 {
 	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
@@ -4024,6 +4064,7 @@ static void K_drawDistributionDebugger(void)
 		kp_kitchensink[1],
 
 		kp_sneaker[1],
+		kp_sneaker[1],
 		kp_banana[1],
 		kp_banana[1],
 		kp_orbinaut[4],
@@ -4062,14 +4103,14 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	if (franticitems) // Frantic items make the distances between everyone artifically higher, for crazier items
-		pdis = (15 * pdis) / 14;
-
-	if (spbplace != -1 && stplyr->position == spbplace+1) // SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
+	if (spbplace != -1 && stplyr->position == spbplace+1)
 	{
+		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
 		pdis = (3 * pdis) / 2;
 		spbrush = true;
 	}
+
+	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
 
 	if (stplyr->bot && stplyr->botvars.rival)
 	{
@@ -4077,13 +4118,17 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	pdis = ((28 + (8-pingame)) * pdis) / 28; // scale with player count
-
 	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		const INT32 itemodds = K_KartGetItemOdds(useodds, i, 0, spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival));
+		INT32 itemodds = K_KartGetItemOdds(
+			useodds, i,
+			stplyr->distancetofinish,
+			0,
+			spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
+		);
+
 		if (itemodds <= 0)
 			continue;
 
@@ -4103,6 +4148,9 @@ static void K_drawDistributionDebugger(void)
 					amount = 4;
 					break;
 				case KRITEM_DUALJAWZ:
+					amount = 2;
+					break;
+				case KRITEM_DUALSNEAKER:
 					amount = 2;
 					break;
 				default:
@@ -4314,6 +4362,10 @@ void K_drawKartHUD(void)
 		else if (stplyr->karthud[khud_lapanimation] && !r_splitscreen)
 			K_drawLapStartAnim();
 	}
+
+	// trick panel cool trick
+	if (stplyr->karthud[khud_trickcool])
+		K_drawTrickCool();
 
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
