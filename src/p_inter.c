@@ -277,6 +277,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
+		case MT_ITEMCAPSULE:
+			if (special->threshold != KITEM_SUPERRING && !P_CanPickupItem(player, 1))
+				return;
+
+			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
+				return;
+
+			S_StartSound(toucher, special->info->deathsound);
+			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			return;
 		case MT_KARMAHITBOX:
 			if (!special->target->player)
 				return;
@@ -1281,6 +1291,78 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				S_StartSound(target, sfx_s3k80);
 			}
 			break;
+
+		case MT_ITEMCAPSULE:
+		{
+			UINT8 i;
+			mobj_t *part = target->hnext;
+			angle_t angle = FixedAngle(360*P_RandomFixed());
+
+			// burst effects
+			for (i = 0; i < 2; i++)
+			{
+				mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
+				blast->angle = angle + i*ANGLE_90;
+				P_SetScale(blast, 2*blast->scale/3);
+				blast->destscale = 2*blast->scale;
+			}
+
+			// remove inside item
+			if (target->tracer && !P_MobjWasRemoved(target->tracer))
+				P_RemoveMobj(target->tracer);
+
+			// bust capsule caps
+			while (part && !P_MobjWasRemoved(part))
+			{
+				mobj_t *attacker = inflictor ? inflictor : source;
+				P_InstaThrust(part, part->angle + ANGLE_90, 6 * part->target->scale);
+				P_SetObjectMomZ(part, 4 * part->scale, false);
+				part->fuse = TICRATE/2;
+				part->flags &= ~MF_NOGRAVITY;
+
+				if (attacker)
+				{
+					part->momx += attacker->momx;
+					part->momy += attacker->momy;
+					part->momz += attacker->momz;
+				}
+				part = part->hnext;
+			}
+
+			// give the player an item!
+			if (source && source->player)
+			{
+				player_t *player = source->player;
+
+				// special behavior for ring capsules
+				if (target->threshold == KITEM_SUPERRING)
+				{
+					player->superring = min(player->superring + 5*target->movecount*3, UINT16_MAX);
+					break;
+				}
+
+				if (target->threshold < 1 || target->threshold >= NUMKARTITEMS) // bruh moment prevention
+				{
+					player->itemtype = KITEM_SAD;
+					player->itemamount = 1;
+				}
+				else
+				{
+					player->itemtype = target->threshold;
+					if (K_GetShieldFromItem(player->itemtype) != KSHIELD_NONE) // never give more than 1 shield
+						player->itemamount = 1;
+					else
+						player->itemamount = max(1, target->movecount);
+				}
+				player->karthud[khud_itemblink] = TICRATE;
+				player->karthud[khud_itemblinkmode] = 0;
+				player->itemroulette = 0;
+				player->roulettetype = 0;
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(NULL, sfx_itrolf);
+			}
+			break;
+		}
 
 		case MT_BATTLECAPSULE:
 			{

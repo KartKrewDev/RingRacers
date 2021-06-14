@@ -3748,6 +3748,65 @@ static void P_RingThinker(mobj_t *mobj)
 	P_CycleMobjState(mobj);
 }
 
+static void P_ItemCapsulePartThinker(mobj_t *mobj)
+{
+	if (mobj->fuse > 0) // dead
+	{
+		mobj->fuse--;
+		if (mobj->fuse == 0)
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+		mobj->renderflags ^= RF_DONTDRAW;
+	}
+	else // alive
+	{
+		mobj_t *target = mobj->target;
+		fixed_t targetScale, z;
+
+		if (P_MobjWasRemoved(mobj->target)) // if the capsule was removed, remove the parts too
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		// ring capsules have a different color
+		if (!(mobj->flags2 & MF2_INFLOAT)
+			&&mobj->color != target->color)
+		{
+			mobj->color = target->color;
+			mobj->colorized = (mobj->color != SKINCOLOR_NONE);
+		}
+
+		// match the capsule's scale
+		if (mobj->extravalue1)
+			targetScale = FixedMul(mobj->extravalue1, target->scale);
+		else
+			targetScale = target->scale;
+
+		if (mobj->scale != targetScale)
+			P_SetScale(mobj, mobj->destscale = targetScale);
+
+		// find z position
+		K_GenericExtraFlagsNoZAdjust(mobj, target);
+		if (mobj->flags & MFE_VERTICALFLIP)
+			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
+		else
+			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
+
+		// rotate & move to capsule
+		mobj->angle += mobj->movedir;
+		if (mobj->flags2 & MF2_CLASSICPUSH) // centered
+			P_TeleportMove(mobj, target->x, target->y, z);
+		else
+			P_TeleportMove(mobj,
+				target->x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				target->y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				z);
+	}
+}
+
 //
 // P_BossTargetPlayer
 // If closest is true, find the closest player.
@@ -5589,6 +5648,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 		}
 		break;
+	case MT_ITEMCAPSULE_PART:
+		P_ItemCapsulePartThinker(mobj);
+		break;
 	case MT_BATTLECAPSULE_PIECE:
 		if (mobj->extravalue2)
 			mobj->frame |= FF_VERTICALFLIP;
@@ -6084,6 +6146,89 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_ITEMCAPSULE:
+		if (!P_MobjWasRemoved(mobj->tracer))
+		{
+			UINT8 numNumbers = 0;
+			INT32 count = 0;
+			INT32 itemType = mobj->threshold;
+			mobj_t *part = mobj->tracer;
+
+			if (itemType < 1 || itemType >= NUMKARTITEMS)
+				itemType = KITEM_SAD;
+
+			// update color
+			mobj->color = (itemType == KITEM_SUPERRING ? SKINCOLOR_GOLD : SKINCOLOR_NONE);
+
+			// update inside item frame
+			switch (itemType)
+			{
+				case KITEM_ORBINAUT:
+					part->sprite = SPR_ITMO;
+					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
+					break;
+				case KITEM_INVINCIBILITY:
+					part->sprite = SPR_ITMI;
+					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
+					break;
+				case KITEM_SAD:
+					part->sprite = SPR_ITEM;
+					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
+					break;
+				default:
+					part->sprite = SPR_ITEM;
+					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+					break;
+			}
+
+			// update number frame
+			if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
+				;
+			else
+			{
+				switch (itemType)
+				{
+					case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
+						if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
+							count = mobj->movecount;
+						break;
+					case KITEM_SUPERRING: // always display the number, and multiply it by 5
+						count = mobj->movecount * 5;
+						break;
+					case KITEM_SAD: // never display the number
+						break;
+					default:
+						if (mobj->movecount > 1)
+							count = mobj->movecount;
+						break;
+				}
+			}
+
+			while (count > 0)
+			{
+				if (P_MobjWasRemoved(part->tracer))
+				{
+					P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
+					P_SetTarget(&part->tracer->target, part);
+					P_SetMobjState(part->tracer, S_INVISIBLE);
+					part->tracer->spriteyoffset = 10*FRACUNIT;
+					part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
+				}
+				part = part->tracer;
+				part->sprite = SPR_ITMN;
+				part->frame = FF_FULLBRIGHT|(count % 10);
+				count /= 10;
+				numNumbers++;
+			}
+
+			// delete any extra overlays (I guess in case the number changes?)
+			if (part->tracer)
+			{
+				P_RemoveMobj(part->tracer);
+				P_SetTarget(&part->tracer, NULL);
+			}
+		}
+		break;
 	case MT_ORBINAUT:
 	{
 		boolean grounded = P_IsObjectOnGround(mobj);
@@ -8975,6 +9120,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
 		case MT_EMERALD:
+		case MT_ITEMCAPSULE:
 			thing->shadowscale = FRACUNIT/2;
 			break;
 		case MT_DRIFTCLIP:
@@ -9333,6 +9479,81 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->fuse = 100;
 			break;
 		// SRB2Kart
+		case MT_ITEMCAPSULE:
+		{
+#define CAPSULESIDES 5
+#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
+#define ROTATIONSPEED (2*ANG2)
+			UINT8 i;
+			mobj_t *part;
+			fixed_t buttScale = 0;
+			statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
+			angle_t spin = -ROTATIONSPEED;
+
+#if 0 // set to 1 to test capsules with random items, e.g. with objectplace
+			if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_SUPERRING;
+			else if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_ORBINAUT;
+			else
+				mobj->threshold = P_RandomRange(1, NUMKARTITEMS - 1);
+			mobj->movecount = P_RandomChance(FRACUNIT/3) ? 1 : P_RandomKey(32) + 1;
+#else
+			mobj->threshold = KITEM_SUPERRING; // default item is super ring
+			mobj->movecount = 1;
+#endif
+
+			P_CheckPosition(mobj, mobj->x, mobj->y); // look for FOFs
+			if (P_IsObjectOnGround(mobj))
+			{
+				mobj->flags &= ~MF_NOGRAVITY;
+				buttScale = 13*FRACUNIT/10;
+				buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
+				spin = 0;
+			}
+
+			// inside item
+			part = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART);
+			P_SetTarget(&part->target, mobj);
+			P_SetMobjState(part, S_ITEMICON);
+			part->movedir = ROTATIONSPEED; // rotation speed
+			part->extravalue1 = 175*FRACUNIT/100; // relative scale
+			part->flags2 |= MF2_CLASSICPUSH|MF2_INFLOAT; // classicpush = centered horizontally, infloat = don't recolor
+			P_SetTarget(&mobj->tracer, part); // pointer to this item, so we can modify its sprite/frame
+			P_ItemCapsulePartThinker(part);
+
+			// capsule caps
+			part = mobj;
+			for (i = 0; i < CAPSULESIDES; i++)
+			{
+				// a bottom side
+				P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+				P_SetTarget(&part->hnext->hprev, part);
+				part = part->hnext;
+				P_SetTarget(&part->target, mobj);
+				P_SetMobjState(part, buttState);
+				part->angle = i * ANG_CAPSULE;
+				part->movedir = spin; // rotation speed
+				part->movefactor = 0; // z offset
+				part->extravalue1 = buttScale; // relative scale
+				P_ItemCapsulePartThinker(part);
+
+				// a top side
+				P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+				P_SetTarget(&part->hnext->hprev, part);
+				part = part->hnext;
+				P_SetTarget(&part->target, mobj);
+				P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
+				part->angle = i * ANG_CAPSULE;
+				part->movedir = spin; // rotation speed
+				part->movefactor = mobj->info->height - part->info->height; // z offset
+				P_ItemCapsulePartThinker(part);
+			}
+			break;
+#undef CAPSULESIDES
+#undef ANG_CAPSULE
+#undef ROTATIONSPEED
+		}
 		case MT_KARMAHITBOX:
 			{
 				const fixed_t rad = FixedMul(mobjinfo[MT_PLAYER].radius, mobj->scale);
@@ -11565,6 +11786,18 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->extravalue2 = mthing->args[1];
 		}
+		break;
+	}
+	case MT_ITEMCAPSULE:
+	{
+		// Angle = item type
+		// Parameter = extra items (x5 for rings)
+		// Special = +16 items (+80 for rings)
+		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
+			mobj->threshold = mthing->angle;
+		if (mthing->options & MTF_OBJECTSPECIAL)
+			mobj->movecount += 16;
+		mobj->movecount += mthing->extrainfo;
 		break;
 	}
 	case MT_AAZTREE_HELPER:

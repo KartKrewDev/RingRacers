@@ -8801,7 +8801,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_SUPERRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && player->superring < (UINT8_MAX - (10*3)))
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && player->superring < (UINT16_MAX - (10*3)))
 							{
 								player->superring += (10*3);
 								player->itemamount--;
