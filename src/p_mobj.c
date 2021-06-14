@@ -6144,6 +6144,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			INT32 itemType = mobj->threshold;
 			mobj_t *part = mobj->tracer;
 
+			if (mobj->threshold != part->threshold
+			 || mobj->movecount != part->movecount) // allow scripters to easily change the capsule properties!
+				P_RefreshItemCapsuleParts(mobj);
+
 			if (itemType < 1 || itemType >= NUMKARTITEMS)
 				itemType = KITEM_SAD;
 

@@ -14661,6 +14661,9 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	mobj_t *part = mobj->tracer;
 	skincolornum_t color;
 
+	part->threshold = mobj->threshold;
+	part->movecount = mobj->movecount;
+
 	if (itemType < 1 || itemType >= NUMKARTITEMS)
 		itemType = KITEM_SAD;
 
