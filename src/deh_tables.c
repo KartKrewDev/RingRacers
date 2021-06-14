@@ -334,6 +334,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemCapsuleParts},  "A_SPAWNITEMCAPSULEPARTS"},
 
 	{{NULL},                     "NONE"},
 

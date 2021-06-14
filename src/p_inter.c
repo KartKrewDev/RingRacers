@@ -284,6 +284,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
+			if (special->scale != special->destscale) // don't break it while it's respawning
+				return;
+
 			S_StartSound(toucher, special->info->deathsound);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			return;

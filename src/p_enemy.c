@@ -321,6 +321,7 @@ void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
+void A_SpawnItemCapsuleParts(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -14651,3 +14652,138 @@ void A_InvincSparkleRotate(mobj_t *actor)
 
 	actor->angle += ANG1*10*(actor->extravalue2);	// Arbitrary value, change this if you want, I suppose.
 }
+
+void P_RefreshItemCapsuleParts(mobj_t *mobj)
+{
+	UINT8 numNumbers = 0;
+	INT32 count = 0;
+	INT32 itemType = mobj->threshold;
+	mobj_t *part = mobj->tracer;
+	skincolornum_t color;
+
+	if (itemType < 1 || itemType >= NUMKARTITEMS)
+		itemType = KITEM_SAD;
+
+	// update number frame
+	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
+		;
+	else
+	{
+		switch (itemType)
+		{
+			case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
+				if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
+					count = mobj->movecount;
+				break;
+			case KITEM_SUPERRING: // always display the number, and multiply it by 5
+				count = mobj->movecount * 5;
+				break;
+			case KITEM_SAD: // never display the number
+				break;
+			default:
+				if (mobj->movecount > 1)
+					count = mobj->movecount;
+				break;
+		}
+	}
+
+	while (count > 0)
+	{
+		if (P_MobjWasRemoved(part->tracer))
+		{
+			P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
+			P_SetTarget(&part->tracer->target, part);
+			P_SetMobjState(part->tracer, S_INVISIBLE);
+			part->tracer->spriteyoffset = 10*FRACUNIT;
+			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
+		}
+		part = part->tracer;
+		part->sprite = SPR_ITMN;
+		part->frame = FF_FULLBRIGHT|(count % 10);
+		count /= 10;
+		numNumbers++;
+	}
+
+	// delete any extra overlays (I guess in case the number changes?)
+	if (part->tracer)
+	{
+		P_RemoveMobj(part->tracer);
+		P_SetTarget(&part->tracer, NULL);
+	}
+
+	// update color
+	color = (itemType == KITEM_SUPERRING ? SKINCOLOR_GOLD : SKINCOLOR_NONE);
+	part = mobj;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		part->color = color;
+		part->colorized = (color != SKINCOLOR_NONE);
+		if (part->colorized)
+			part->renderflags |= RF_SEMIBRIGHT;
+		else
+			part->renderflags &= ~RF_SEMIBRIGHT;
+	}
+}
+
+#define CAPSULESIDES 5
+#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
+#define ROTATIONSPEED (2*ANG2)
+void A_SpawnItemCapsuleParts(mobj_t *actor)
+{
+	UINT8 i;
+	mobj_t *part;
+	fixed_t buttScale = 0;
+	statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
+	angle_t spin = -ROTATIONSPEED;
+
+	if (LUA_CallAction(A_SPAWNITEMCAPSULEPARTS, actor))
+		return;
+
+	if (P_IsObjectOnGround(actor))
+	{
+		buttScale = 13*FRACUNIT/10;
+		buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
+		spin = 0;
+	}
+
+	// inside item
+	part = P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART);
+	P_SetTarget(&part->target, actor);
+	P_SetMobjState(part, S_ITEMICON);
+	part->movedir = ROTATIONSPEED; // rotation speed
+	part->extravalue1 = 175*FRACUNIT/100; // relative scale
+	part->flags2 |= MF2_CLASSICPUSH|MF2_INFLOAT; // classicpush = centered horizontally, infloat = don't recolor
+	P_SetTarget(&actor->tracer, part); // pointer to this item, so we can modify its sprite/frame
+
+	// capsule caps
+	part = actor;
+	for (i = 0; i < CAPSULESIDES; i++)
+	{
+		// a bottom side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, actor);
+		P_SetMobjState(part, buttState);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = 0; // z offset
+		part->extravalue1 = buttScale; // relative scale
+
+		// a top side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, actor);
+		P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = actor->info->height - part->info->height; // z offset
+	}
+
+	P_RefreshItemCapsuleParts(actor);
+}
+#undef CAPSULESIDES
+#undef ANG_CAPSULE
+#undef ROTATIONSPEED

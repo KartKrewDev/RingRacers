@@ -3765,18 +3765,10 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 		mobj_t *target = mobj->target;
 		fixed_t targetScale, z;
 
-		if (P_MobjWasRemoved(mobj->target)) // if the capsule was removed, remove the parts too
+		if (P_MobjWasRemoved(target))
 		{
 			P_RemoveMobj(mobj);
 			return;
-		}
-
-		// ring capsules have a different color
-		if (!(mobj->flags2 & MF2_INFLOAT)
-			&&mobj->color != target->color)
-		{
-			mobj->color = target->color;
-			mobj->colorized = (mobj->color != SKINCOLOR_NONE);
 		}
 
 		// match the capsule's scale
@@ -6149,16 +6141,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ITEMCAPSULE:
 		if (!P_MobjWasRemoved(mobj->tracer))
 		{
-			UINT8 numNumbers = 0;
-			INT32 count = 0;
 			INT32 itemType = mobj->threshold;
 			mobj_t *part = mobj->tracer;
 
 			if (itemType < 1 || itemType >= NUMKARTITEMS)
 				itemType = KITEM_SAD;
-
-			// update color
-			mobj->color = (itemType == KITEM_SUPERRING ? SKINCOLOR_GOLD : SKINCOLOR_NONE);
 
 			// update inside item frame
 			switch (itemType)
@@ -6179,53 +6166,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					part->sprite = SPR_ITEM;
 					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
 					break;
-			}
-
-			// update number frame
-			if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
-				;
-			else
-			{
-				switch (itemType)
-				{
-					case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
-						if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
-							count = mobj->movecount;
-						break;
-					case KITEM_SUPERRING: // always display the number, and multiply it by 5
-						count = mobj->movecount * 5;
-						break;
-					case KITEM_SAD: // never display the number
-						break;
-					default:
-						if (mobj->movecount > 1)
-							count = mobj->movecount;
-						break;
-				}
-			}
-
-			while (count > 0)
-			{
-				if (P_MobjWasRemoved(part->tracer))
-				{
-					P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
-					P_SetTarget(&part->tracer->target, part);
-					P_SetMobjState(part->tracer, S_INVISIBLE);
-					part->tracer->spriteyoffset = 10*FRACUNIT;
-					part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
-				}
-				part = part->tracer;
-				part->sprite = SPR_ITMN;
-				part->frame = FF_FULLBRIGHT|(count % 10);
-				count /= 10;
-				numNumbers++;
-			}
-
-			// delete any extra overlays (I guess in case the number changes?)
-			if (part->tracer)
-			{
-				P_RemoveMobj(part->tracer);
-				P_SetTarget(&part->tracer, NULL);
 			}
 		}
 		break;
@@ -9481,15 +9421,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		// SRB2Kart
 		case MT_ITEMCAPSULE:
 		{
-#define CAPSULESIDES 5
-#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
-#define ROTATIONSPEED (2*ANG2)
-			UINT8 i;
-			mobj_t *part;
-			fixed_t buttScale = 0;
-			statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
-			angle_t spin = -ROTATIONSPEED;
+			fixed_t oldHeight = mobj->height;
 
+			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
 			if (P_RandomChance(FRACUNIT/3))
 				mobj->threshold = KITEM_SUPERRING;
@@ -9503,54 +9437,18 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->movecount = 1;
 #endif
 
+			// set starting scale
+			mobj->scalespeed >>= 1;
+			P_SetScale(mobj, mapobjectscale >> 4);
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				mobj->z += (oldHeight - mobj->height);
+
+			// grounded/aerial properties
 			P_CheckPosition(mobj, mobj->x, mobj->y); // look for FOFs
-			if (P_IsObjectOnGround(mobj))
-			{
-				buttScale = 13*FRACUNIT/10;
-				buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
-				spin = 0;
-			}
-			else
+			if (!P_IsObjectOnGround(mobj))
 				mobj->flags |= MF_NOGRAVITY;
 
-			// inside item
-			part = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART);
-			P_SetTarget(&part->target, mobj);
-			P_SetMobjState(part, S_ITEMICON);
-			part->movedir = ROTATIONSPEED; // rotation speed
-			part->extravalue1 = 175*FRACUNIT/100; // relative scale
-			part->flags2 |= MF2_CLASSICPUSH|MF2_INFLOAT; // classicpush = centered horizontally, infloat = don't recolor
-			P_SetTarget(&mobj->tracer, part); // pointer to this item, so we can modify its sprite/frame
-
-			// capsule caps
-			part = mobj;
-			for (i = 0; i < CAPSULESIDES; i++)
-			{
-				// a bottom side
-				P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
-				P_SetTarget(&part->hnext->hprev, part);
-				part = part->hnext;
-				P_SetTarget(&part->target, mobj);
-				P_SetMobjState(part, buttState);
-				part->angle = i * ANG_CAPSULE;
-				part->movedir = spin; // rotation speed
-				part->movefactor = 0; // z offset
-				part->extravalue1 = buttScale; // relative scale
-
-				// a top side
-				P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
-				P_SetTarget(&part->hnext->hprev, part);
-				part = part->hnext;
-				P_SetTarget(&part->target, mobj);
-				P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
-				part->angle = i * ANG_CAPSULE;
-				part->movedir = spin; // rotation speed
-				part->movefactor = mobj->info->height - part->info->height; // z offset
-			}
 			break;
-#undef CAPSULESIDES
-#undef ANG_CAPSULE
-#undef ROTATIONSPEED
 		}
 		case MT_KARMAHITBOX:
 			{
@@ -9876,7 +9774,8 @@ void P_RemoveMobj(mobj_t *mobj)
 	// Rings only, please!
 	if (mobj->spawnpoint &&
 		(mobj->type == MT_RING
-		|| mobj->type == MT_BLUESPHERE)
+		|| mobj->type == MT_BLUESPHERE
+		|| mobj->type == MT_ITEMCAPSULE)
 		&& !(mobj->flags2 & MF2_DONTRESPAWN))
 	{
 		itemrespawnque[iquehead] = mobj->spawnpoint;
@@ -10284,6 +10183,17 @@ void P_RespawnSpecials(void)
 	//if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
 		//P_RespawnBattleBoxes();
 
+	// nothing left to respawn?
+	if (iquehead == iquetail)
+		return;
+
+	mthing = itemrespawnque[iquetail];
+
+#ifdef PARANOIA
+	if (!mthing)
+		I_Error("itemrespawnque[iquetail] is NULL!");
+#endif
+
 	// wait time depends on player count
 	for (p = 0; p < MAXPLAYERS; p++)
 	{
@@ -10291,6 +10201,11 @@ void P_RespawnSpecials(void)
 			pcount++;
 	}
 
+#if 0 // set to 1 to enable quick respawns for testing
+	if (true)
+		time = 5*TICRATE;
+	else
+#endif
 	if (gametyperules & GTR_SPHERES)
 	{
 		if (pcount > 2)
@@ -10313,6 +10228,10 @@ void P_RespawnSpecials(void)
 			&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 				time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
 
+			// this should probably be a flag if multiple items end up using this
+			if (mthing && mthing->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
+				time /= 2;
+
 			if (time < 10*TICRATE)
 			{
 				// Ensure it doesn't go into absurdly low values
@@ -10321,20 +10240,9 @@ void P_RespawnSpecials(void)
 		}
 	}
 
-	// nothing left to respawn?
-	if (iquehead == iquetail)
-		return;
-
 	// the first item in the queue is the first to respawn
 	if (leveltime - itemrespawntime[iquetail] < (tic_t)time)
 		return;
-
-	mthing = itemrespawnque[iquetail];
-
-#ifdef PARANOIA
-	if (!mthing)
-		I_Error("itemrespawnque[iquetail] is NULL!");
-#endif
 
 	if (mthing)
 		P_SpawnMapThing(mthing);
@@ -11801,7 +11709,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
-			P_SetScale(mobj, mobj->destscale = min(mobj->scale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius))); // don't make them larger than the blockmap can handle
+			mobj->destscale = min(mobj->scale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+
+		P_RefreshItemCapsuleParts(mobj);
 		break;
 	}
 	case MT_AAZTREE_HELPER:

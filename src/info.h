@@ -287,6 +287,7 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
+	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -557,6 +558,7 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
+void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
