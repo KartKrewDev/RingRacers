@@ -9506,11 +9506,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			P_CheckPosition(mobj, mobj->x, mobj->y); // look for FOFs
 			if (P_IsObjectOnGround(mobj))
 			{
-				mobj->flags &= ~MF_NOGRAVITY;
 				buttScale = 13*FRACUNIT/10;
 				buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
 				spin = 0;
 			}
+			else
+				mobj->flags |= MF_NOGRAVITY;
 
 			// inside item
 			part = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART);
@@ -9520,7 +9521,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			part->extravalue1 = 175*FRACUNIT/100; // relative scale
 			part->flags2 |= MF2_CLASSICPUSH|MF2_INFLOAT; // classicpush = centered horizontally, infloat = don't recolor
 			P_SetTarget(&mobj->tracer, part); // pointer to this item, so we can modify its sprite/frame
-			P_ItemCapsulePartThinker(part);
 
 			// capsule caps
 			part = mobj;
@@ -9536,7 +9536,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				part->movedir = spin; // rotation speed
 				part->movefactor = 0; // z offset
 				part->extravalue1 = buttScale; // relative scale
-				P_ItemCapsulePartThinker(part);
 
 				// a top side
 				P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
@@ -9547,7 +9546,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				part->angle = i * ANG_CAPSULE;
 				part->movedir = spin; // rotation speed
 				part->movefactor = mobj->info->height - part->info->height; // z offset
-				P_ItemCapsulePartThinker(part);
 			}
 			break;
 #undef CAPSULESIDES
@@ -11791,13 +11789,19 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_ITEMCAPSULE:
 	{
 		// Angle = item type
-		// Parameter = extra items (x5 for rings)
-		// Special = +16 items (+80 for rings)
 		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
 			mobj->threshold = mthing->angle;
+
+		// Parameter = extra items (x5 for rings)
+		mobj->movecount += mthing->extrainfo;
+
+		// Special = +16 items (+80 for rings)
 		if (mthing->options & MTF_OBJECTSPECIAL)
 			mobj->movecount += 16;
-		mobj->movecount += mthing->extrainfo;
+
+		// Ambush = double size (grounded) / half size (aerial)
+		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
+			P_SetScale(mobj, mobj->destscale = min(mobj->scale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius))); // don't make them larger than the blockmap can handle
 		break;
 	}
 	case MT_AAZTREE_HELPER:
