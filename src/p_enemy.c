@@ -14660,12 +14660,48 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	INT32 itemType = mobj->threshold;
 	mobj_t *part = mobj->tracer;
 	skincolornum_t color;
+	UINT32 newRenderFlags = 0;
+	boolean colorized;
 
 	part->threshold = mobj->threshold;
 	part->movecount = mobj->movecount;
 
 	if (itemType < 1 || itemType >= NUMKARTITEMS)
 		itemType = KITEM_SAD;
+
+	// update invincibility properties
+	if (itemType == KITEM_INVINCIBILITY)
+	{
+		mobj->renderflags |= RF_FULLBRIGHT;
+		mobj->colorized = true;
+	}
+	else
+	{
+		mobj->renderflags &= ~RF_FULLBRIGHT;
+		mobj->color = SKINCOLOR_NONE;
+		mobj->colorized = false;
+	}
+
+	// update inside item frame
+	switch (itemType)
+	{
+		case KITEM_ORBINAUT:
+			part->sprite = SPR_ITMO;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
+			break;
+		case KITEM_INVINCIBILITY:
+			part->sprite = SPR_ITMI;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
+			break;
+		case KITEM_SAD:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
+			break;
+		default:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			break;
+	}
 
 	// update number frame
 	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
@@ -14714,18 +14750,25 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		P_SetTarget(&part->tracer, NULL);
 	}
 
-	// update color
-	color = (itemType == KITEM_SUPERRING ? SKINCOLOR_GOLD : SKINCOLOR_NONE);
+	// update cap colors
+	if (itemType == KITEM_SUPERRING)
+	{
+		color = SKINCOLOR_GOLD;
+		newRenderFlags |= RF_SEMIBRIGHT;
+	}
+	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
+		color = SKINCOLOR_SAPPHIRE;
+	else
+		color = SKINCOLOR_NONE;
+
+	colorized = (color != SKINCOLOR_NONE);
 	part = mobj;
 	while (!P_MobjWasRemoved(part->hnext))
 	{
 		part = part->hnext;
 		part->color = color;
-		part->colorized = (color != SKINCOLOR_NONE);
-		if (part->colorized)
-			part->renderflags |= RF_SEMIBRIGHT;
-		else
-			part->renderflags &= ~RF_SEMIBRIGHT;
+		part->colorized = colorized;
+		part->renderflags = (part->renderflags & ~RF_SEMIBRIGHT) | newRenderFlags;
 	}
 }
 

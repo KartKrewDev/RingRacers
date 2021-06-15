@@ -6141,35 +6141,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ITEMCAPSULE:
 		if (!P_MobjWasRemoved(mobj->tracer))
 		{
-			INT32 itemType = mobj->threshold;
 			mobj_t *part = mobj->tracer;
 
 			if (mobj->threshold != part->threshold
 			 || mobj->movecount != part->movecount) // allow scripters to easily change the capsule properties!
 				P_RefreshItemCapsuleParts(mobj);
 
-			if (itemType < 1 || itemType >= NUMKARTITEMS)
-				itemType = KITEM_SAD;
-
-			// update inside item frame
-			switch (itemType)
+			// animate invincibility capsules
+			if (mobj->threshold == KITEM_INVINCIBILITY)
 			{
-				case KITEM_ORBINAUT:
-					part->sprite = SPR_ITMO;
-					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-					break;
-				case KITEM_INVINCIBILITY:
-					part->sprite = SPR_ITMI;
-					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-					break;
-				case KITEM_SAD:
-					part->sprite = SPR_ITEM;
-					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-					break;
-				default:
-					part->sprite = SPR_ITEM;
-					part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
-					break;
+				mobj->color = K_RainbowColor(leveltime);
+				part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
 			}
 		}
 		break;
@@ -11723,7 +11705,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
-			mobj->destscale = min(mobj->scale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->destscale = min(mobj->destscale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
 
 		P_RefreshItemCapsuleParts(mobj);
 		break;
