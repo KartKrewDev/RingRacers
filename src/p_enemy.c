@@ -14672,12 +14672,12 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	// update invincibility properties
 	if (itemType == KITEM_INVINCIBILITY)
 	{
-		mobj->renderflags |= RF_FULLBRIGHT;
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_FULLBRIGHT;
 		mobj->colorized = true;
 	}
 	else
 	{
-		mobj->renderflags &= ~RF_FULLBRIGHT;
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_SEMIBRIGHT;
 		mobj->color = SKINCOLOR_NONE;
 		mobj->colorized = false;
 	}
@@ -14768,7 +14768,7 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		part = part->hnext;
 		part->color = color;
 		part->colorized = colorized;
-		part->renderflags = (part->renderflags & ~RF_SEMIBRIGHT) | newRenderFlags;
+		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
 	}
 }
 
