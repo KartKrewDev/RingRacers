@@ -6144,7 +6144,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj_t *part = mobj->tracer;
 
 			if (mobj->threshold != part->threshold
-			 || mobj->movecount != part->movecount) // allow scripters to easily change the capsule properties!
+			 || mobj->movecount != part->movecount) // change the capsule properties if the item type or amount is updated
 				P_RefreshItemCapsuleParts(mobj);
 
 			// animate invincibility capsules
@@ -11706,8 +11706,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
 			mobj->destscale = min(mobj->destscale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
-
-		P_RefreshItemCapsuleParts(mobj);
 		break;
 	}
 	case MT_AAZTREE_HELPER:
