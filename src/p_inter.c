@@ -1298,8 +1298,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_ITEMCAPSULE:
 		{
 			UINT8 i;
+			mobj_t *attacker = inflictor ? inflictor : source;
 			mobj_t *part = target->hnext;
 			angle_t angle = FixedAngle(360*P_RandomFixed());
+			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// burst effects
 			for (i = 0; i < 2; i++)
@@ -1310,6 +1312,29 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				blast->destscale = 2*blast->scale;
 			}
 
+			// dust effects
+			for (i = 0; i < 10; i++)
+			{
+				mobj_t *puff = P_SpawnMobjFromMobj(
+					target,
+					P_RandomRange(-spacing, spacing) * FRACUNIT,
+					P_RandomRange(-spacing, spacing) * FRACUNIT,
+					P_RandomRange(0, 4*spacing) * FRACUNIT,
+					MT_SPINDASHDUST
+				);
+
+				P_SetScale(puff, (puff->destscale *= 2));
+				puff->momz = puff->scale * P_MobjFlip(puff);
+
+				P_Thrust(puff, R_PointToAngle2(target->x, target->y, puff->x, puff->y), 3*puff->scale);
+				if (attacker)
+				{
+					puff->momx += attacker->momx;
+					puff->momy += attacker->momy;
+					puff->momz += attacker->momz;
+				}
+			}
+
 			// remove inside item
 			if (target->tracer && !P_MobjWasRemoved(target->tracer))
 				P_RemoveMobj(target->tracer);
@@ -1317,9 +1342,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			// bust capsule caps
 			while (part && !P_MobjWasRemoved(part))
 			{
-				mobj_t *attacker = inflictor ? inflictor : source;
 				P_InstaThrust(part, part->angle + ANGLE_90, 6 * part->target->scale);
-				P_SetObjectMomZ(part, 4 * part->scale, false);
+				P_SetObjectMomZ(part, 6 * FRACUNIT, false);
 				part->fuse = TICRATE/2;
 				part->flags &= ~MF_NOGRAVITY;
 
