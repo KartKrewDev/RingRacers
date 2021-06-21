@@ -10169,17 +10169,6 @@ void P_RespawnSpecials(void)
 	//if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
 		//P_RespawnBattleBoxes();
 
-	// nothing left to respawn?
-	if (iquehead == iquetail)
-		return;
-
-	mthing = itemrespawnque[iquetail];
-
-#ifdef PARANOIA
-	if (!mthing)
-		I_Error("itemrespawnque[iquetail] is NULL!");
-#endif
-
 	// wait time depends on player count
 	for (p = 0; p < MAXPLAYERS; p++)
 	{
@@ -10214,10 +10203,6 @@ void P_RespawnSpecials(void)
 			&& !(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 				time = (time * 3) / max(1, mapheaderinfo[gamemap-1]->numlaps);
 
-			// this should probably be a flag if multiple items end up using this
-			if (mthing && mthing->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
-				time /= 2;
-
 			if (time < 10*TICRATE)
 			{
 				// Ensure it doesn't go into absurdly low values
@@ -10226,9 +10211,20 @@ void P_RespawnSpecials(void)
 		}
 	}
 
+	// nothing left to respawn?
+	if (iquehead == iquetail)
+		return;
+
 	// the first item in the queue is the first to respawn
 	if (leveltime - itemrespawntime[iquetail] < (tic_t)time)
 		return;
+
+	mthing = itemrespawnque[iquetail];
+
+#ifdef PARANOIA
+	if (!mthing)
+		I_Error("itemrespawnque[iquetail] is NULL!");
+#endif
 
 	if (mthing)
 		P_SpawnMapThing(mthing);
