@@ -9787,8 +9787,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	// Rings only, please!
 	if (mobj->spawnpoint &&
 		(mobj->type == MT_RING
-		|| mobj->type == MT_BLUESPHERE
-		|| mobj->type == MT_ITEMCAPSULE)
+		|| mobj->type == MT_BLUESPHERE)
 		&& !(mobj->flags2 & MF2_DONTRESPAWN))
 	{
 		itemrespawnque[iquehead] = mobj->spawnpoint;
