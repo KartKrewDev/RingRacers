@@ -4470,7 +4470,7 @@ static mobj_t *K_FindLastTrailMobj(player_t *player)
 	return trail;
 }
 
-static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow)
+mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow)
 {
 	mobj_t *mo;
 	INT32 dir;
@@ -9417,6 +9417,38 @@ UINT8 K_GetInvincibilityItemFrame(void)
 UINT8 K_GetOrbinautItemFrame(UINT8 count)
 {
 	return min(count - 1, 3);
+}
+
+boolean K_IsSPBInGame(void)
+{
+	UINT8 i;
+	thinker_t *think;
+
+	// is there an SPB chasing anyone?
+	if (spbplace != -1)
+		return true;
+
+	// do any players have an SPB in their item slot?
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		if (players[i].itemtype == KITEM_SPB)
+			return true;
+	}
+
+	// spbplace is still -1 until a fired SPB finds a target, so look for an in-map SPB just in case
+	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
+	{
+		if (think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
+
+		if (((mobj_t *)think)->type == MT_SPB)
+			return true;
+	}
+
+	return false;
 }
 
 //}

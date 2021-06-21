@@ -9440,6 +9440,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			if (P_RandomChance(FRACUNIT/3))
 				mobj->threshold = KITEM_SUPERRING;
 			else if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_SPB;
+			else if (P_RandomChance(FRACUNIT/3))
 				mobj->threshold = KITEM_ORBINAUT;
 			else
 				mobj->threshold = P_RandomRange(1, NUMKARTITEMS - 1);

@@ -14687,6 +14687,8 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	}
 	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
 		color = SKINCOLOR_SAPPHIRE;
+	else if (itemType == KITEM_SPB)
+		color = SKINCOLOR_JET;
 	else
 		color = SKINCOLOR_NONE;
 
@@ -14743,6 +14745,7 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 				count = mobj->movecount * 5;
 				break;
 			case KITEM_SAD: // never display the number
+			case KITEM_SPB:
 				break;
 			default:
 				if (mobj->movecount > 1)

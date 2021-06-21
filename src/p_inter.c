@@ -278,13 +278,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
 		case MT_ITEMCAPSULE:
-			if (special->threshold != KITEM_SUPERRING && !P_CanPickupItem(player, 1))
-				return;
+			if (special->threshold != KITEM_SUPERRING
+				&& special->threshold != KITEM_SPB
+				&& !P_CanPickupItem(player, 1))
+					return;
 
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
+				return;
+
+			if (special->threshold == KITEM_SPB && K_IsSPBInGame()) // don't spawn a second SPB
 				return;
 
 			S_StartSound(toucher, special->info->deathsound);
@@ -1373,6 +1378,13 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (target->threshold == KITEM_SUPERRING)
 				{
 					player->superring = min(player->superring + 5*target->movecount*3, UINT16_MAX);
+					break;
+				}
+
+				// special behavior for SPB capsules
+				if (target->threshold == KITEM_SPB)
+				{
+					K_ThrowKartItem(player, true, MT_SPB, 1, 0);
 					break;
 				}
 
