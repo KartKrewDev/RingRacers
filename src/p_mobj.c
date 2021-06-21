@@ -6139,6 +6139,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_ITEMCAPSULE:
+		// scale the capsule
+		if (mobj->scale < mobj->extravalue1)
+		{
+			fixed_t oldHeight = mobj->height;
+
+			if ((mobj->extravalue1 - mobj->scale) < mobj->scalespeed)
+				P_SetScale(mobj, mobj->destscale = mobj->extravalue1);
+			else
+				P_SetScale(mobj, mobj->destscale = mobj->scale + mobj->scalespeed);
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				mobj->z -= (mobj->height - oldHeight);
+		}
+
+		// update & animate capsule
 		if (!P_MobjWasRemoved(mobj->tracer))
 		{
 			mobj_t *part = mobj->tracer;
@@ -9434,16 +9449,17 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->movecount = 1;
 #endif
 
-			// set starting scale
-			mobj->scalespeed >>= 1;
-			P_SetScale(mobj, mapobjectscale >> 4);
-			if (mobj->eflags & MFE_VERTICALFLIP)
-				mobj->z += (oldHeight - mobj->height);
-
 			// grounded/aerial properties
-			P_CheckPosition(mobj, mobj->x, mobj->y); // look for FOFs
+			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
 			if (!P_IsObjectOnGround(mobj))
 				mobj->flags |= MF_NOGRAVITY;
+
+			// set starting scale
+			mobj->extravalue1 = mobj->scale; // this acts as the capsule's destscale; we're avoiding P_MobjScaleThink because we want aerial capsules not to scale from their center
+			mobj->scalespeed >>= 1;
+			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				mobj->z += (oldHeight - mobj->height);
 
 			break;
 		}
@@ -11718,7 +11734,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
 		{
-			mobj->destscale = min(mobj->destscale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
 			mobj->scalespeed <<= 1;
 		}
 		break;
