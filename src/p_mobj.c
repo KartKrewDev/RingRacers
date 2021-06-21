@@ -10729,12 +10729,17 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 		break;
 	case MT_ITEMCAPSULE:
-		// in record attack, only spawn ring capsules
-		// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-		if (modeattacking)
 		{
 			boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
-			if (!(mthing->options & MTF_EXTRA) == !isRingCapsule)
+
+			// don't spawn ring capsules in GTR_SPHERES gametypes
+			if (isRingCapsule && (gametyperules & GTR_SPHERES))
+				return false;
+
+			// in record attack, only spawn ring capsules
+			// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
+			if (modeattacking
+			&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
 				return false;
 		}
 		break;
