@@ -1303,6 +1303,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			angle_t angle = FixedAngle(360*P_RandomFixed());
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
+			// set respawn fuse
+			if (modeattacking) // no respawns
+				;
+			else if (target->threshold == KITEM_SUPERRING)
+				target->fuse = 20*TICRATE;
+			else
+				target->fuse = 40*TICRATE;
+
 			// burst effects
 			for (i = 0; i < 2; i++)
 			{

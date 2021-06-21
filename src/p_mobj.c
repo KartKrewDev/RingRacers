@@ -8476,6 +8476,17 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
+	case MT_ITEMCAPSULE:
+		if (mobj->spawnpoint)
+			P_SpawnMapThing(mobj->spawnpoint);
+		else
+		{
+			mobj_t *newMobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
+			newMobj->threshold = mobj->threshold;
+			newMobj->movecount = mobj->movecount;
+		}
+		P_RemoveMobj(mobj);
+		return false;
 	case MT_SMK_ICEBLOCK:
 		{
 			mobj_t *cur = mobj->hnext, *next;
@@ -11706,7 +11717,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
+		{
 			mobj->destscale = min(mobj->destscale << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->scalespeed <<= 1;
+		}
 		break;
 	}
 	case MT_AAZTREE_HELPER:
