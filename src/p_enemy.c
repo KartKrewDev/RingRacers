@@ -14658,13 +14658,10 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	UINT8 numNumbers = 0;
 	INT32 count = 0;
 	INT32 itemType = mobj->threshold;
-	mobj_t *part = mobj->tracer;
+	mobj_t *part;
 	skincolornum_t color;
 	UINT32 newRenderFlags = 0;
 	boolean colorized;
-
-	part->threshold = mobj->threshold;
-	part->movecount = mobj->movecount;
 
 	if (itemType < 1 || itemType >= NUMKARTITEMS)
 		itemType = KITEM_SAD;
@@ -14682,7 +14679,35 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		mobj->colorized = false;
 	}
 
+	// update cap colors
+	if (itemType == KITEM_SUPERRING)
+	{
+		color = SKINCOLOR_GOLD;
+		newRenderFlags |= RF_SEMIBRIGHT;
+	}
+	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
+		color = SKINCOLOR_SAPPHIRE;
+	else
+		color = SKINCOLOR_NONE;
+
+	colorized = (color != SKINCOLOR_NONE);
+	part = mobj;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		part->color = color;
+		part->colorized = colorized;
+		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
+	}
+
 	// update inside item frame
+	part = mobj->tracer;
+	if (P_MobjWasRemoved(part))
+		return;
+
+	part->threshold = mobj->threshold;
+	part->movecount = mobj->movecount;
+
 	switch (itemType)
 	{
 		case KITEM_ORBINAUT:
@@ -14749,27 +14774,6 @@ void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		P_RemoveMobj(part->tracer);
 		P_SetTarget(&part->tracer, NULL);
 	}
-
-	// update cap colors
-	if (itemType == KITEM_SUPERRING)
-	{
-		color = SKINCOLOR_GOLD;
-		newRenderFlags |= RF_SEMIBRIGHT;
-	}
-	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
-		color = SKINCOLOR_SAPPHIRE;
-	else
-		color = SKINCOLOR_NONE;
-
-	colorized = (color != SKINCOLOR_NONE);
-	part = mobj;
-	while (!P_MobjWasRemoved(part->hnext))
-	{
-		part = part->hnext;
-		part->color = color;
-		part->colorized = colorized;
-		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
-	}
 }
 
 #define CAPSULESIDES 5
@@ -14781,7 +14785,7 @@ void A_SpawnItemCapsuleParts(mobj_t *actor)
 	mobj_t *part;
 	fixed_t buttScale = 0;
 	statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
-	angle_t spin = -ROTATIONSPEED;
+	angle_t spin = ANGLE_MAX - ROTATIONSPEED;
 
 	if (LUA_CallAction(A_SPAWNITEMCAPSULEPARTS, actor))
 		return;
@@ -14799,7 +14803,7 @@ void A_SpawnItemCapsuleParts(mobj_t *actor)
 	P_SetMobjState(part, S_ITEMICON);
 	part->movedir = ROTATIONSPEED; // rotation speed
 	part->extravalue1 = 175*FRACUNIT/100; // relative scale
-	part->flags2 |= MF2_CLASSICPUSH|MF2_INFLOAT; // classicpush = centered horizontally, infloat = don't recolor
+	part->flags2 |= MF2_CLASSICPUSH; // classicpush = centered horizontally
 	P_SetTarget(&actor->tracer, part); // pointer to this item, so we can modify its sprite/frame
 
 	// capsule caps
