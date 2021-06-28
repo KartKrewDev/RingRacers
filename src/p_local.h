@@ -365,6 +365,8 @@ void P_InternalFlickyBubble(mobj_t *actor);
 void P_InternalFlickyFly(mobj_t *actor, fixed_t flyspeed, fixed_t targetdist, fixed_t chasez);
 void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angle);
 
+void P_RefreshItemCapsuleParts(mobj_t *mobj);
+
 //
 // P_MAP
 //

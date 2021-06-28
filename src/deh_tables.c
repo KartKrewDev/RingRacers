@@ -334,6 +334,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemCapsuleParts},  "A_SPAWNITEMCAPSULEPARTS"},
 
 	{{NULL},                     "NONE"},
 
@@ -3484,6 +3485,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_ITEMICON",
 
+	// Item capsules
+	"S_ITEMCAPSULE",
+	"S_ITEMCAPSULE_TOP_SIDE",
+	"S_ITEMCAPSULE_BOTTOM_SIDE_AIR",
+	"S_ITEMCAPSULE_BOTTOM_SIDE_GROUND",
+	"S_ITEMCAPSULE_TOP",
+	"S_ITEMCAPSULE_BOTTOM",
+	"S_ITEMCAPSULE_INSIDE",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -5438,6 +5448,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_RANDOMITEM",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
+	"MT_ITEMCAPSULE",
+	"MT_ITEMCAPSULE_PART",
 
 	"MT_SIGNSPARKLE",
 

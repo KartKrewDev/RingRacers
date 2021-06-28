@@ -276,7 +276,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].ringdelay);
 		WRITEUINT16(save_p, players[i].ringboost);
 		WRITEUINT8(save_p, players[i].sparkleanim);
-		WRITEUINT8(save_p, players[i].superring);
+		WRITEUINT16(save_p, players[i].superring);
 
 		WRITEUINT8(save_p, players[i].curshield);
 		WRITEUINT8(save_p, players[i].bubblecool);
@@ -532,7 +532,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].ringdelay = READUINT8(save_p);
 		players[i].ringboost = READUINT16(save_p);
 		players[i].sparkleanim = READUINT8(save_p);
-		players[i].superring = READUINT8(save_p);
+		players[i].superring = READUINT16(save_p);
 
 		players[i].curshield = READUINT8(save_p);
 		players[i].bubblecool = READUINT8(save_p);

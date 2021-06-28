@@ -1916,7 +1916,7 @@ void K_MatchGenericExtraFlags(mobj_t *mo, mobj_t *master)
 	K_FlipFromObject(mo, master);
 
 	// visibility (usually for hyudoro)
-	mo->renderflags = (master->renderflags & RF_DONTDRAW);
+	mo->renderflags = (mo->renderflags & ~RF_DONTDRAW) | (master->renderflags & RF_DONTDRAW);
 }
 
 // same as above, but does not adjust Z height when flipping
@@ -1927,7 +1927,7 @@ void K_GenericExtraFlagsNoZAdjust(mobj_t *mo, mobj_t *master)
 	mo->flags2 = (mo->flags2 & ~MF2_OBJECTFLIP)|(master->flags2 & MF2_OBJECTFLIP);
 
 	// visibility (usually for hyudoro)
-	mo->renderflags = (master->renderflags & RF_DONTDRAW);
+	mo->renderflags = (mo->renderflags & ~RF_DONTDRAW) | (master->renderflags & RF_DONTDRAW);
 }
 
 
@@ -4470,7 +4470,7 @@ static mobj_t *K_FindLastTrailMobj(player_t *player)
 	return trail;
 }
 
-static mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow)
+mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow)
 {
 	mobj_t *mo;
 	INT32 dir;
@@ -9002,7 +9002,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_SUPERRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && player->superring < (UINT8_MAX - (10*3)))
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && player->superring < (UINT16_MAX - (10*3)))
 							{
 								player->superring += (10*3);
 								player->itemamount--;
@@ -9407,6 +9407,48 @@ void K_CheckSpectateStatus(void)
 		S_ChangeMusicInternal("chalng", false); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
 	}
+}
+
+UINT8 K_GetInvincibilityItemFrame(void)
+{
+	return ((leveltime % (7*3)) / 3);
+}
+
+UINT8 K_GetOrbinautItemFrame(UINT8 count)
+{
+	return min(count - 1, 3);
+}
+
+boolean K_IsSPBInGame(void)
+{
+	UINT8 i;
+	thinker_t *think;
+
+	// is there an SPB chasing anyone?
+	if (spbplace != -1)
+		return true;
+
+	// do any players have an SPB in their item slot?
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		if (players[i].itemtype == KITEM_SPB)
+			return true;
+	}
+
+	// spbplace is still -1 until a fired SPB finds a target, so look for an in-map SPB just in case
+	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
+	{
+		if (think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
+
+		if (((mobj_t *)think)->type == MT_SPB)
+			return true;
+	}
+
+	return false;
 }
 
 //}

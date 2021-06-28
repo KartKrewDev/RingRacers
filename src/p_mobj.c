@@ -3748,6 +3748,57 @@ static void P_RingThinker(mobj_t *mobj)
 	P_CycleMobjState(mobj);
 }
 
+static void P_ItemCapsulePartThinker(mobj_t *mobj)
+{
+	if (mobj->fuse > 0) // dead
+	{
+		mobj->fuse--;
+		if (mobj->fuse == 0)
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+		mobj->renderflags ^= RF_DONTDRAW;
+	}
+	else // alive
+	{
+		mobj_t *target = mobj->target;
+		fixed_t targetScale, z;
+
+		if (P_MobjWasRemoved(target))
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
+
+		// match the capsule's scale
+		if (mobj->extravalue1)
+			targetScale = FixedMul(mobj->extravalue1, target->scale);
+		else
+			targetScale = target->scale;
+
+		if (mobj->scale != targetScale)
+			P_SetScale(mobj, mobj->destscale = targetScale);
+
+		// find z position
+		K_GenericExtraFlagsNoZAdjust(mobj, target);
+		if (mobj->flags & MFE_VERTICALFLIP)
+			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
+		else
+			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
+
+		// rotate & move to capsule
+		mobj->angle += mobj->movedir;
+		if (mobj->flags2 & MF2_CLASSICPUSH) // centered
+			P_TeleportMove(mobj, target->x, target->y, z);
+		else
+			P_TeleportMove(mobj,
+				target->x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				target->y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				z);
+	}
+}
+
 //
 // P_BossTargetPlayer
 // If closest is true, find the closest player.
@@ -5457,11 +5508,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						case KITEM_ORBINAUT:
 							mobj->tracer->sprite = SPR_ITMO;
-							mobj->tracer->frame = FF_FULLBRIGHT|(min(mobj->target->player->itemamount-1, 3));
+							mobj->tracer->frame = FF_FULLBRIGHT|K_GetOrbinautItemFrame(mobj->target->player->itemamount);
 							break;
 						case KITEM_INVINCIBILITY:
 							mobj->tracer->sprite = SPR_ITMI;
-							mobj->tracer->frame = FF_FULLBRIGHT|((leveltime % (7*3)) / 3);
+							mobj->tracer->frame = FF_FULLBRIGHT|K_GetInvincibilityItemFrame();
 							break;
 						case KITEM_SAD:
 							mobj->tracer->sprite = SPR_ITEM;
@@ -5588,6 +5639,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			if (mobj->spawnpoint && mobj->spawnpoint->options & MTF_OBJECTSPECIAL)
 				P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 		}
+		break;
+	case MT_ITEMCAPSULE_PART:
+		P_ItemCapsulePartThinker(mobj);
 		break;
 	case MT_BATTLECAPSULE_PIECE:
 		if (mobj->extravalue2)
@@ -6063,11 +6117,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			case KITEM_ORBINAUT:
 				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(min(mobj->movecount-1, 3));
+				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
 				break;
 			case KITEM_INVINCIBILITY:
 				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|((leveltime % (7*3)) / 3);
+				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
 				break;
 			case KITEM_SAD:
 				mobj->sprite = SPR_ITEM;
@@ -6084,6 +6138,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	}
+	case MT_ITEMCAPSULE:
+		// scale the capsule
+		if (mobj->scale < mobj->extravalue1)
+		{
+			fixed_t oldHeight = mobj->height;
+
+			if ((mobj->extravalue1 - mobj->scale) < mobj->scalespeed)
+				P_SetScale(mobj, mobj->destscale = mobj->extravalue1);
+			else
+				P_SetScale(mobj, mobj->destscale = mobj->scale + mobj->scalespeed);
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				mobj->z -= (mobj->height - oldHeight);
+		}
+
+		// update & animate capsule
+		if (!P_MobjWasRemoved(mobj->tracer))
+		{
+			mobj_t *part = mobj->tracer;
+
+			if (mobj->threshold != part->threshold
+			 || mobj->movecount != part->movecount) // change the capsule properties if the item type or amount is updated
+				P_RefreshItemCapsuleParts(mobj);
+
+			// animate invincibility capsules
+			if (mobj->threshold == KITEM_INVINCIBILITY)
+			{
+				mobj->color = K_RainbowColor(leveltime);
+				part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
+			}
+		}
+		break;
 	case MT_ORBINAUT:
 	{
 		boolean grounded = P_IsObjectOnGround(mobj);
@@ -8405,6 +8491,17 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
+	case MT_ITEMCAPSULE:
+		if (mobj->spawnpoint)
+			P_SpawnMapThing(mobj->spawnpoint);
+		else
+		{
+			mobj_t *newMobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
+			newMobj->threshold = mobj->threshold;
+			newMobj->movecount = mobj->movecount;
+		}
+		P_RemoveMobj(mobj);
+		return false;
 	case MT_SMK_ICEBLOCK:
 		{
 			mobj_t *cur = mobj->hnext, *next;
@@ -8975,6 +9072,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_FLOATINGITEM:
 		case MT_BLUESPHERE:
 		case MT_EMERALD:
+		case MT_ITEMCAPSULE:
 			thing->shadowscale = FRACUNIT/2;
 			break;
 		case MT_DRIFTCLIP:
@@ -9333,6 +9431,40 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->fuse = 100;
 			break;
 		// SRB2Kart
+		case MT_ITEMCAPSULE:
+		{
+			fixed_t oldHeight = mobj->height;
+
+			// set default item & count
+#if 0 // set to 1 to test capsules with random items, e.g. with objectplace
+			if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_SUPERRING;
+			else if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_SPB;
+			else if (P_RandomChance(FRACUNIT/3))
+				mobj->threshold = KITEM_ORBINAUT;
+			else
+				mobj->threshold = P_RandomRange(1, NUMKARTITEMS - 1);
+			mobj->movecount = P_RandomChance(FRACUNIT/3) ? 1 : P_RandomKey(32) + 1;
+#else
+			mobj->threshold = KITEM_SUPERRING; // default item is super ring
+			mobj->movecount = 1;
+#endif
+
+			// grounded/aerial properties
+			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
+			if (!P_IsObjectOnGround(mobj))
+				mobj->flags |= MF_NOGRAVITY;
+
+			// set starting scale
+			mobj->extravalue1 = mobj->scale; // this acts as the capsule's destscale; we're avoiding P_MobjScaleThink because we want aerial capsules not to scale from their center
+			mobj->scalespeed >>= 1;
+			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
+			if (mobj->eflags & MFE_VERTICALFLIP)
+				mobj->z += (oldHeight - mobj->height);
+
+			break;
+		}
 		case MT_KARMAHITBOX:
 			{
 				const fixed_t rad = FixedMul(mobjinfo[MT_PLAYER].radius, mobj->scale);
@@ -10072,6 +10204,11 @@ void P_RespawnSpecials(void)
 			pcount++;
 	}
 
+#if 0 // set to 1 to enable quick respawns for testing
+	if (true)
+		time = 5*TICRATE;
+	else
+#endif
 	if (gametyperules & GTR_SPHERES)
 	{
 		if (pcount > 2)
@@ -10618,6 +10755,21 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 		if (modifiedgame && !savemoddata)
 			return false; // No cheating!!
 
+		break;
+	case MT_ITEMCAPSULE:
+		{
+			boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
+
+			// don't spawn ring capsules in GTR_SPHERES gametypes
+			if (isRingCapsule && (gametyperules & GTR_SPHERES))
+				return false;
+
+			// in record attack, only spawn ring capsules
+			// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
+			if (modeattacking
+			&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
+				return false;
+		}
 		break;
 	default:
 		break;
@@ -11564,6 +11716,27 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		else
 		{
 			mobj->extravalue2 = mthing->args[1];
+		}
+		break;
+	}
+	case MT_ITEMCAPSULE:
+	{
+		// Angle = item type
+		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
+			mobj->threshold = mthing->angle;
+
+		// Parameter = extra items (x5 for rings)
+		mobj->movecount += mthing->extrainfo;
+
+		// Special = +16 items (+80 for rings)
+		if (mthing->options & MTF_OBJECTSPECIAL)
+			mobj->movecount += 16;
+
+		// Ambush = double size (grounded) / half size (aerial)
+		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
+		{
+			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->scalespeed <<= 1;
 		}
 		break;
 	}

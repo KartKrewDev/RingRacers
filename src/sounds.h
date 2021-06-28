@@ -1030,6 +1030,7 @@ typedef enum
 	sfx_itfree,
 	sfx_dbgsal,
 	sfx_cock,
+	sfx_itcaps,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
