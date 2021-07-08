@@ -1679,6 +1679,8 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 static void CV_LoadVars(UINT8 **p,
 		consvar_t *(*got)(UINT8 **p, char **ret_value, boolean *ret_stealth))
 {
+	const boolean store = (client || demo.playback);
+
 	consvar_t *cvar;
 	UINT16 count;
 
@@ -1692,7 +1694,7 @@ static void CV_LoadVars(UINT8 **p,
 	{
 		if (cvar->flags & CV_NETVAR)
 		{
-			if (client && cvar->revert.v.string == NULL)
+			if (store && cvar->revert.v.string == NULL)
 			{
 				cvar->revert.v.const_munge = cvar->string;
 				cvar->revert.allocated = ( cvar->zstring != NULL );
