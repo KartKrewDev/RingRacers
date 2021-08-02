@@ -287,7 +287,6 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
-	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -558,7 +557,6 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
-void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -4465,9 +4463,9 @@ typedef enum state
 	S_ITEMCAPSULE_TOP_SIDE,
 	S_ITEMCAPSULE_BOTTOM_SIDE_AIR,
 	S_ITEMCAPSULE_BOTTOM_SIDE_GROUND,
-	S_ITEMCAPSULE_TOP,
-	S_ITEMCAPSULE_BOTTOM,
-	S_ITEMCAPSULE_INSIDE,
+	//S_ITEMCAPSULE_TOP,
+	//S_ITEMCAPSULE_BOTTOM,
+	//S_ITEMCAPSULE_INSIDE,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
