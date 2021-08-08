@@ -6930,7 +6930,8 @@ void P_SpawnSpecialsThatRequireObjects(void)
 		}
 	}
 
-	P_RunLevelLoadExecutors();
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Fuck ML_NONET
