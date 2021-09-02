@@ -1398,7 +1398,9 @@ static void SendNameAndColor(UINT8 n)
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
-		&& !strcmp(cv_skin[n].string, skins[player->skin].name))
+		&& !strcmp(cv_skin[n].string, skins[player->skin].name)
+		&& cv_follower[n].value == player->followerskin
+		&& cv_followercolor[n].value == player->followercolor)
 		return;
 
 	player->availabilities = R_GetSkinAvailabilities();
