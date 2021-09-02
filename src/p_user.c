@@ -3918,9 +3918,10 @@ static void P_HandleFollower(player_t *player)
 			P_SetFollowerState(player->follower, player->follower->state->nextstate);
 
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
-		player->follower->momx = (sx - player->follower->x)/fl.horzlag;
-		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
-		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
+		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
+		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
+		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
+		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
 		if (player->mo->colorized)
