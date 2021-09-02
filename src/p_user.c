@@ -3804,7 +3804,7 @@ static void P_HandleFollower(player_t *player)
 	angle_t an;
 	fixed_t zoffs;
 	fixed_t sx, sy, sz;
-	UINT16 color;
+	INT16 color;
 
 	fixed_t bubble;	// bubble scale (0 if no bubble)
 	mobj_t *bmobj;	// temp bubble mobj
@@ -3851,19 +3851,18 @@ static void P_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-
 	switch (player->followercolor)
 	{
-		case MAXSKINCOLORS: // "Match"
+		case 255: // "Match" (-1)
 			color = player->skincolor;
 			break;
-		case MAXSKINCOLORS+1: // "Opposite"
+		case 254: // "Opposite" (-2)
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
 
 			color = player->followercolor;
-			if (!color || color > MAXSKINCOLORS+2) // Make sure this isn't garbage
+			if (color < -2 || !color || color > MAXSKINCOLORS+2) // Make sure this isn't garbage
 				color = player->skincolor; // "Match" as fallback.
 
 			break;
