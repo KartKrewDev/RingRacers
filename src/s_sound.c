@@ -678,9 +678,6 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			sep = (~sep) & 255;
 		}
 
-		// Handle closed caption input.
-		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
-
 		// At this point it is determined that a sound can and should be played, so find a free channel to play it on
 		cnum = S_getChannel(origin, sfx);
 
@@ -688,6 +685,9 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		{
 			return; // If there's no free channels, there won't be any for anymore players either
 		}
+
+		// Handle closed caption input.
+		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
 
 		// Now that we know we are going to play a sound, fill out this info
 		channels[cnum].sfxinfo = sfx;
