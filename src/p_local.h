@@ -132,6 +132,10 @@ extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];
 
+extern consvar_t cv_tilting;
+extern consvar_t cv_actionmovie;
+extern consvar_t cv_windowquake;
+
 extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
 void P_AddPlayerScore(player_t *player, UINT32 amount);
@@ -158,26 +162,20 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
+#define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
 boolean P_EndingMusic(player_t *player);
-void P_SpawnShieldOrb(player_t *player);
-void P_SwitchShield(player_t *player, UINT16 shieldtype);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
-void P_GivePlayerRings(player_t *player, INT32 num_rings);
+INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
 void P_GiveFinishFlags(player_t *player);
-#if 0
-void P_ResetScore(player_t *player);
-#else
-#define P_ResetScore(player) player->scoreadd = 0
-#endif
 boolean P_AutoPause(void);
 
 void P_ElementalFire(player_t *player, boolean cropcircle);
@@ -282,7 +280,6 @@ boolean P_MobjWasRemoved(mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
-void P_RunShields(void);
 void P_RunOverlays(void);
 void P_HandleMinecartSegments(mobj_t *mobj);
 void P_MobjThinker(mobj_t *mobj);
@@ -320,9 +317,7 @@ mobj_t *P_SpawnPointMissile(mobj_t *source, fixed_t xa, fixed_t ya, fixed_t za, 
 mobj_t *P_SpawnAlteredDirectionMissile(mobj_t *source, mobjtype_t type, fixed_t x, fixed_t y, fixed_t z, INT32 shiftingAngle);
 mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 aimtype, UINT32 flags2);
 #define P_SpawnPlayerMissile(s,t,f) P_SPMAngle(s,t,s->angle,true,f)
-#ifdef SEENAMES
 #define P_SpawnNameFinder(s,t) P_SPMAngle(s,t,s->angle,true,0)
-#endif
 void P_ColorTeamMissile(mobj_t *missile, player_t *source);
 SINT8 P_MobjFlip(mobj_t *mobj);
 fixed_t P_GetMobjGravity(mobj_t *mo);
@@ -369,6 +364,8 @@ void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo);
 void P_InternalFlickyBubble(mobj_t *actor);
 void P_InternalFlickyFly(mobj_t *actor, fixed_t flyspeed, fixed_t targetdist, fixed_t chasez);
 void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angle);
+
+void P_RefreshItemCapsuleParts(mobj_t *mobj);
 
 //
 // P_MAP
@@ -485,7 +482,6 @@ typedef struct BasicFF_s
 void P_ForceFeed(const player_t *player, INT32 attack, INT32 fade, tic_t duration, INT32 period);
 void P_ForceConstant(const BasicFF_t *FFInfo);
 void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End);
-void P_RemoveShield(player_t *player);
 void P_SpecialStageDamage(player_t *player, mobj_t *inflictor, mobj_t *source);
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
@@ -521,5 +517,10 @@ void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
+void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw);
+fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
+fixed_t P_GetMobjHead(const mobj_t *);
+fixed_t P_GetMobjFeet(const mobj_t *);
+fixed_t P_GetMobjGround(const mobj_t *);
 
 #endif // __P_LOCAL__

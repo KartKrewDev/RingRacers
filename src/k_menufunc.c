@@ -110,6 +110,15 @@ static void Dummystaff_OnChange(void);
 
 consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
 
+#if 0
+static CV_PossibleValue_t map_cons_t[] = {
+	{0,"MIN"},
+	{NUMMAPS, "MAX"},
+	{0, NULL}
+};
+consvar_t cv_nextmap = CVAR_INIT ("nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange);
+#endif
+
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
 
@@ -882,8 +891,8 @@ boolean M_Responder(event_t *ev)
 				M_QuitSRB2(0);
 				return true;
 
-			case KEY_F11: // Empty (used to be Gamma)
-				//CV_AddValue(&cv_globalgamma, 1);
+			case KEY_F11: // Fullscreen
+				CV_AddValue(&cv_fullscreen, 1);
 				return true;
 
 			// Spymode on F12 handled in game logic
@@ -1533,13 +1542,16 @@ void M_Ticker(void)
 //
 void M_Init(void)
 {
-	//COM_AddCommand("manual", Command_Manual_f);
-
+#if 0
+	CV_RegisterVar(&cv_nextmap);
+#endif
 	CV_RegisterVar(&cv_chooseskin);
 	CV_RegisterVar(&cv_autorecord);
 
 	if (dedicated)
 		return;
+
+	//COM_AddCommand("manual", Command_Manual_f);
 
 	// Menu hacks
 	CV_RegisterVar(&cv_dummymenuplayer);
@@ -2716,7 +2728,7 @@ void M_PlaybackToggleFreecam(INT32 choice)
 		demo.freecam = false;
 		// reset democam vars:
 		democam.cam = NULL;
-		democam.turnheld = false;
+		//democam.turnheld = false;
 		democam.keyboardlook = false;	// reset only these. localangle / aiming gets set before the cam does anything anyway
 	}
 }

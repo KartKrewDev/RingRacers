@@ -73,7 +73,6 @@ static inline void P_ArchivePlayer(void)
 	WRITEUINT8(save_p, numgameovers);
 	WRITESINT8(save_p, pllives);
 	WRITEUINT32(save_p, player->score);
-	WRITEINT32(save_p, player->continues);
 }
 
 static inline void P_UnArchivePlayer(void)
@@ -84,7 +83,6 @@ static inline void P_UnArchivePlayer(void)
 	savedata.numgameovers = READUINT8(save_p);
 	savedata.lives = READSINT8(save_p);
 	savedata.score = READUINT32(save_p);
-	savedata.continues = READINT32(save_p);
 }
 
 static void P_NetArchivePlayers(void)
@@ -97,51 +95,61 @@ static void P_NetArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		WRITESINT8(save_p, (SINT8)adminplayers[i]);
+
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			WRITEINT16(save_p, clientpowerlevels[i][j]);
+		}
+
 		if (!playeringame[i])
 			continue;
 
 		flags = 0;
 
-		// no longer send ticcmds, player name, skin, or color
+		// no longer send ticcmds
 
+		WRITESTRINGN(save_p, player_names[i], MAXPLAYERNAME);
+
+		WRITEUINT8(save_p, playerconsole[i]);
+		WRITEINT32(save_p, splitscreen_invitations[i]);
+		WRITEINT32(save_p, splitscreen_party_size[i]);
+		WRITEINT32(save_p, splitscreen_original_party_size[i]);
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			WRITEINT32(save_p, splitscreen_party[i][j]);
+			WRITEINT32(save_p, splitscreen_original_party[i][j]);
+		}
+
+		WRITEINT16(save_p, players[i].steering);
 		WRITEANGLE(save_p, players[i].angleturn);
 		WRITEANGLE(save_p, players[i].aiming);
 		WRITEANGLE(save_p, players[i].drawangle);
 		WRITEANGLE(save_p, players[i].viewrollangle);
+		WRITEANGLE(save_p, players[i].tilt);
 		WRITEANGLE(save_p, players[i].awayviewaiming);
 		WRITEINT32(save_p, players[i].awayviewtics);
-		WRITEINT16(save_p, players[i].rings);
-		WRITEINT16(save_p, players[i].spheres);
-
-		for (j = 0; j < NUMPOWERS; j++)
-			WRITEUINT16(save_p, players[i].powers[j]);
 
 		WRITEUINT8(save_p, players[i].playerstate);
 		WRITEUINT32(save_p, players[i].pflags);
 		WRITEUINT8(save_p, players[i].panim);
 		WRITEUINT8(save_p, players[i].spectator);
+		WRITEUINT32(save_p, players[i].spectatewait);
 
 		WRITEUINT16(save_p, players[i].flashpal);
 		WRITEUINT16(save_p, players[i].flashcount);
 
+		WRITEUINT8(save_p, players[i].skincolor);
+		WRITEINT32(save_p, players[i].skin);
+		WRITEUINT32(save_p, players[i].availabilities);
 		WRITEUINT32(save_p, players[i].score);
-		WRITEFIXED(save_p, players[i].dashspeed);
 		WRITESINT8(save_p, players[i].lives);
-		WRITEUINT8(save_p, players[i].lostlife);
-		WRITESINT8(save_p, players[i].continues);
 		WRITESINT8(save_p, players[i].xtralife);
-		WRITEUINT8(save_p, players[i].gotcontinue);
 		WRITEFIXED(save_p, players[i].speed);
-		WRITEUINT8(save_p, players[i].secondjump);
-		WRITEUINT8(save_p, players[i].fly1);
-		WRITEUINT8(save_p, players[i].scoreadd);
-		WRITEUINT32(save_p, players[i].glidetime);
-		WRITEUINT8(save_p, players[i].climbing);
+		WRITEFIXED(save_p, players[i].lastspeed);
 		WRITEINT32(save_p, players[i].deadtimer);
 		WRITEUINT32(save_p, players[i].exiting);
-		WRITEUINT8(save_p, players[i].homing);
-		WRITEUINT32(save_p, players[i].dashmode);
-		WRITEUINT32(save_p, players[i].skidtime);
 
 		////////////////////////////
 		// Conveyor Belt Movement //
@@ -151,59 +159,14 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].rmomx); // "Real" momx (momx - cmomx)
 		WRITEFIXED(save_p, players[i].rmomy); // "Real" momy (momy - cmomy)
 
-		/////////////////////
-		// Race Mode Stuff //
-		/////////////////////
-		WRITEINT16(save_p, players[i].numboxes);
 		WRITEINT16(save_p, players[i].totalring);
 		WRITEUINT32(save_p, players[i].realtime);
 		WRITEUINT8(save_p, players[i].laps);
 		WRITEINT32(save_p, players[i].starpostnum);
 
-		////////////////////
-		// CTF Mode Stuff //
-		////////////////////
-		WRITEINT32(save_p, players[i].ctfteam);
-		WRITEUINT16(save_p, players[i].gotflag);
+		WRITEUINT8(save_p, players[i].ctfteam);
 
-		WRITEINT32(save_p, players[i].weapondelay);
-		WRITEINT32(save_p, players[i].tossdelay);
-
-		WRITEANGLE(save_p, players[i].angle_pos);
-		WRITEANGLE(save_p, players[i].old_angle_pos);
-
-		WRITEINT32(save_p, players[i].flyangle);
-		WRITEUINT32(save_p, players[i].drilltimer);
-		WRITEINT32(save_p, players[i].linkcount);
-		WRITEUINT32(save_p, players[i].linktimer);
-		WRITEINT32(save_p, players[i].anotherflyangle);
-		WRITEUINT32(save_p, players[i].nightstime);
-		WRITEUINT32(save_p, players[i].bumpertime);
-		WRITEINT32(save_p, players[i].drillmeter);
-		WRITEUINT8(save_p, players[i].drilldelay);
-		WRITEUINT8(save_p, players[i].bonustime);
-		WRITEFIXED(save_p, players[i].oldscale);
-		WRITEUINT8(save_p, players[i].mare);
-		WRITEUINT8(save_p, players[i].marelap);
-		WRITEUINT8(save_p, players[i].marebonuslap);
-		WRITEUINT32(save_p, players[i].marebegunat);
-		WRITEUINT32(save_p, players[i].startedtime);
-		WRITEUINT32(save_p, players[i].finishedtime);
-		WRITEUINT32(save_p, players[i].lapbegunat);
-		WRITEUINT32(save_p, players[i].lapstartedtime);
-		WRITEINT16(save_p, players[i].finishedspheres);
-		WRITEINT16(save_p, players[i].finishedrings);
-		WRITEUINT32(save_p, players[i].marescore);
-		WRITEUINT32(save_p, players[i].lastmarescore);
-		WRITEUINT32(save_p, players[i].totalmarescore);
-		WRITEUINT8(save_p, players[i].lastmare);
-		WRITEUINT8(save_p, players[i].lastmarelap);
-		WRITEUINT8(save_p, players[i].lastmarebonuslap);
-		WRITEUINT8(save_p, players[i].totalmarelap);
-		WRITEUINT8(save_p, players[i].totalmarebonuslap);
-		WRITEINT32(save_p, players[i].maxlink);
-		WRITEUINT8(save_p, players[i].texttimer);
-		WRITEUINT8(save_p, players[i].textvar);
+		WRITEUINT8(save_p, players[i].checkskip);
 
 		if (players[i].awayviewmobj)
 			flags |= AWAYVIEW;
@@ -216,10 +179,6 @@ static void P_NetArchivePlayers(void)
 
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
-
-		WRITEUINT32(save_p, players[i].losstime);
-
-		WRITEUINT8(save_p, players[i].timeshit);
 
 		WRITEINT32(save_p, players[i].onconveyor);
 
@@ -250,26 +209,122 @@ static void P_NetArchivePlayers(void)
 		if (flags & FOLLOWER)
 			WRITEUINT32(save_p, players[i].follower->mobjnum);
 
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			WRITEINT32(save_p, players[i].kartstuff[j]);
+		WRITEUINT16(save_p, players[i].nocontrol);
+		WRITEUINT8(save_p, players[i].carry);
+		WRITEUINT16(save_p, players[i].dye);
 
+		WRITEUINT8(save_p, players[i].position);
+		WRITEUINT8(save_p, players[i].oldposition);
+		WRITEUINT8(save_p, players[i].positiondelay);
 		WRITEUINT32(save_p, players[i].distancetofinish);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
+		WRITEUINT8(save_p, players[i].startboost);
+
+		WRITEUINT16(save_p, players[i].flashing);
+		WRITEUINT16(save_p, players[i].spinouttimer);
+		WRITEUINT8(save_p, players[i].spinouttype);
+		WRITEUINT8(save_p, players[i].instashield);
+		WRITEUINT8(save_p, players[i].wipeoutslow);
+		WRITEUINT8(save_p, players[i].justbumped);
+		WRITEUINT8(save_p, players[i].tumbleBounces);
+		WRITEUINT16(save_p, players[i].tumbleHeight);
+
+		WRITESINT8(save_p, players[i].drift);
+		WRITEFIXED(save_p, players[i].driftcharge);
+		WRITEUINT8(save_p, players[i].driftboost);
+		WRITEUINT8(save_p, players[i].strongdriftboost);
+
+		WRITESINT8(save_p, players[i].aizdriftstrat);
+		WRITEINT32(save_p, players[i].aizdrifttilt);
+		WRITEINT32(save_p, players[i].aizdriftturn);
+
+		WRITEFIXED(save_p, players[i].offroad);
+		WRITEUINT8(save_p, players[i].waterskip);
+
+		WRITEUINT16(save_p, players[i].tiregrease);
+		WRITEUINT16(save_p, players[i].springstars);
+		WRITEUINT16(save_p, players[i].springcolor);
+		WRITEUINT8(save_p, players[i].dashpadcooldown);
+
+		WRITEUINT16(save_p, players[i].spindash);
+		WRITEFIXED(save_p, players[i].spindashspeed);
+		WRITEUINT8(save_p, players[i].spindashboost);
+
+		WRITEUINT8(save_p, players[i].numboosts);
+		WRITEFIXED(save_p, players[i].boostpower);
+		WRITEFIXED(save_p, players[i].speedboost);
+		WRITEFIXED(save_p, players[i].accelboost);
+		WRITEFIXED(save_p, players[i].handleboost);
+		WRITEANGLE(save_p, players[i].boostangle);
+
+		WRITEFIXED(save_p, players[i].draftpower);
+		WRITEUINT16(save_p, players[i].draftleeway);
+		WRITESINT8(save_p, players[i].lastdraft);
+
+		WRITEUINT16(save_p, players[i].itemroulette);
+		WRITEUINT8(save_p, players[i].roulettetype);
+
+		WRITESINT8(save_p, players[i].itemtype);
+		WRITEUINT8(save_p, players[i].itemamount);
+		WRITESINT8(save_p, players[i].throwdir);
+
+		WRITEUINT8(save_p, players[i].sadtimer);
+
+		WRITESINT8(save_p, players[i].rings);
+		WRITEUINT8(save_p, players[i].pickuprings);
+		WRITEUINT8(save_p, players[i].ringdelay);
+		WRITEUINT16(save_p, players[i].ringboost);
+		WRITEUINT8(save_p, players[i].sparkleanim);
+		WRITEUINT16(save_p, players[i].superring);
+
+		WRITEUINT8(save_p, players[i].curshield);
+		WRITEUINT8(save_p, players[i].bubblecool);
+		WRITEUINT8(save_p, players[i].bubbleblowup);
+		WRITEUINT16(save_p, players[i].flamedash);
+		WRITEUINT16(save_p, players[i].flamemeter);
+		WRITEUINT8(save_p, players[i].flamelength);
+
+		WRITEUINT16(save_p, players[i].hyudorotimer);
+		WRITESINT8(save_p, players[i].stealingtimer);
+
+		WRITEUINT16(save_p, players[i].sneakertimer);
+		WRITEUINT8(save_p, players[i].numsneakers);
+		WRITEUINT8(save_p, players[i].floorboost);
+
+		WRITEINT16(save_p, players[i].growshrinktimer);
+		WRITEUINT16(save_p, players[i].rocketsneakertimer);
+		WRITEUINT16(save_p, players[i].invincibilitytimer);
+
+		WRITEUINT8(save_p, players[i].eggmanexplode);
+		WRITESINT8(save_p, players[i].eggmanblame);
+
+		WRITEUINT8(save_p, players[i].bananadrag);
+
+		WRITESINT8(save_p, players[i].lastjawztarget);
+		WRITEUINT8(save_p, players[i].jawztargetdelay);
+
 		WRITEUINT8(save_p, players[i].trickpanel);
-		WRITEUINT8(save_p, players[i].trickdelay);
+		WRITEUINT8(save_p, players[i].tricktime);
 		WRITEUINT32(save_p, players[i].trickmomx);
 		WRITEUINT32(save_p, players[i].trickmomy);
 		WRITEUINT32(save_p, players[i].trickmomz);
+		WRITEUINT32(save_p, players[i].trickboostpower);
+		WRITEUINT8(save_p, players[i].trickboostdecay);
+		WRITEUINT8(save_p, players[i].trickboost);
 
+		WRITEUINT32(save_p, players[i].roundscore);
+		WRITEUINT8(save_p, players[i].emeralds);
 		WRITEUINT8(save_p, players[i].bumpers);
 		WRITEINT16(save_p, players[i].karmadelay);
-		WRITEUINT8(save_p, players[i].eliminated);
+		WRITEINT16(save_p, players[i].spheres);
 
-		WRITEUINT8(save_p, players[i].tumbleBounces);
-		WRITEUINT16(save_p, players[i].tumbleHeight);
-		WRITEUINT8(save_p, players[i].tumbleLastBounce);
-		WRITEUINT8(save_p, players[i].tumbleSound);
+		WRITESINT8(save_p, players[i].glanceDir);
+
+		WRITEUINT8(save_p, players[i].typing_timer);
+		WRITEUINT8(save_p, players[i].typing_duration);
+
+		WRITEUINT8(save_p, players[i].kickstartaccel);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -289,6 +344,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
+		WRITEUINT32(save_p, players[i].botvars.spindashconfirm);
 	}
 }
 
@@ -302,6 +358,13 @@ static void P_NetUnArchivePlayers(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		adminplayers[i] = (INT32)READSINT8(save_p);
+
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			clientpowerlevels[i][j] = READINT16(save_p);
+		}
+
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
 		//memset(&players[i], 0, sizeof (player_t));
@@ -309,47 +372,48 @@ static void P_NetUnArchivePlayers(void)
 			continue;
 
 		// NOTE: sending tics should (hopefully) no longer be necessary
-		// sending player names, skin and color should not be necessary at all!
-		// (that data is handled in the server config now)
 
+		READSTRINGN(save_p, player_names[i], MAXPLAYERNAME);
+
+		playerconsole[i] = READUINT8(save_p);
+		splitscreen_invitations[i] = READINT32(save_p);
+		splitscreen_party_size[i] = READINT32(save_p);
+		splitscreen_original_party_size[i] = READINT32(save_p);
+
+		for (j = 0; j < MAXSPLITSCREENPLAYERS; ++j)
+		{
+			splitscreen_party[i][j] = READINT32(save_p);
+			splitscreen_original_party[i][j] = READINT32(save_p);
+		}
+
+		players[i].steering = READINT16(save_p);
 		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
 		players[i].drawangle = READANGLE(save_p);
 		players[i].viewrollangle = READANGLE(save_p);
+		players[i].tilt = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
 		players[i].awayviewtics = READINT32(save_p);
-		players[i].rings = READINT16(save_p);
-		players[i].spheres = READINT16(save_p);
-
-		for (j = 0; j < NUMPOWERS; j++)
-			players[i].powers[j] = READUINT16(save_p);
 
 		players[i].playerstate = READUINT8(save_p);
 		players[i].pflags = READUINT32(save_p);
 		players[i].panim = READUINT8(save_p);
 		players[i].spectator = READUINT8(save_p);
+		players[i].spectatewait = READUINT32(save_p);
 
 		players[i].flashpal = READUINT16(save_p);
 		players[i].flashcount = READUINT16(save_p);
 
+		players[i].skincolor = READUINT8(save_p);
+		players[i].skin = READINT32(save_p);
+		players[i].availabilities = READUINT32(save_p);
 		players[i].score = READUINT32(save_p);
-		players[i].dashspeed = READFIXED(save_p); // dashing speed
 		players[i].lives = READSINT8(save_p);
-		players[i].lostlife = (boolean)READUINT8(save_p);
-		players[i].continues = READSINT8(save_p); // continues that player has acquired
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
-		players[i].gotcontinue = READUINT8(save_p); // got continue from stage
 		players[i].speed = READFIXED(save_p); // Player's speed (distance formula of MOMX and MOMY values)
-		players[i].secondjump = READUINT8(save_p);
-		players[i].fly1 = READUINT8(save_p); // Tails flying
-		players[i].scoreadd = READUINT8(save_p); // Used for multiple enemy attack bonus
-		players[i].glidetime = READUINT32(save_p); // Glide counter for thrust
-		players[i].climbing = READUINT8(save_p); // Climbing on the wall
+		players[i].lastspeed = READFIXED(save_p);
 		players[i].deadtimer = READINT32(save_p); // End game if game over lasts too long
 		players[i].exiting = READUINT32(save_p); // Exitlevel timer
-		players[i].homing = READUINT8(save_p); // Are you homing?
-		players[i].dashmode = READUINT32(save_p); // counter for dashmode ability
-		players[i].skidtime = READUINT32(save_p); // Skid timer
 
 		////////////////////////////
 		// Conveyor Belt Movement //
@@ -359,66 +423,17 @@ static void P_NetUnArchivePlayers(void)
 		players[i].rmomx = READFIXED(save_p); // "Real" momx (momx - cmomx)
 		players[i].rmomy = READFIXED(save_p); // "Real" momy (momy - cmomy)
 
-		/////////////////////
-		// Race Mode Stuff //
-		/////////////////////
-		players[i].numboxes = READINT16(save_p); // Number of item boxes obtained for Race Mode
-		players[i].totalring = READINT16(save_p); // Total number of rings obtained for Race Mode
+		players[i].totalring = READINT16(save_p); // Total number of rings obtained for GP
 		players[i].realtime = READUINT32(save_p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save_p); // Number of laps (optional)
 		players[i].starpostnum = READINT32(save_p);
 
-		////////////////////
-		// CTF Mode Stuff //
-		////////////////////
-		players[i].ctfteam = READINT32(save_p); // 1 == Red, 2 == Blue
-		players[i].gotflag = READUINT16(save_p); // 1 == Red, 2 == Blue Do you have the flag?
+		players[i].ctfteam = READUINT8(save_p); // 1 == Red, 2 == Blue
 
-		players[i].weapondelay = READINT32(save_p);
-		players[i].tossdelay = READINT32(save_p);
-
-		players[i].angle_pos = READANGLE(save_p);
-		players[i].old_angle_pos = READANGLE(save_p);
-
-		players[i].flyangle = READINT32(save_p);
-		players[i].drilltimer = READUINT32(save_p);
-		players[i].linkcount = READINT32(save_p);
-		players[i].linktimer = READUINT32(save_p);
-		players[i].anotherflyangle = READINT32(save_p);
-		players[i].nightstime = READUINT32(save_p);
-		players[i].bumpertime = READUINT32(save_p);
-		players[i].drillmeter = READINT32(save_p);
-		players[i].drilldelay = READUINT8(save_p);
-		players[i].bonustime = (boolean)READUINT8(save_p);
-		players[i].oldscale = READFIXED(save_p);
-		players[i].mare = READUINT8(save_p);
-		players[i].marelap = READUINT8(save_p);
-		players[i].marebonuslap = READUINT8(save_p);
-		players[i].marebegunat = READUINT32(save_p);
-		players[i].startedtime = READUINT32(save_p);
-		players[i].finishedtime = READUINT32(save_p);
-		players[i].lapbegunat = READUINT32(save_p);
-		players[i].lapstartedtime = READUINT32(save_p);
-		players[i].finishedspheres = READINT16(save_p);
-		players[i].finishedrings = READINT16(save_p);
-		players[i].marescore = READUINT32(save_p);
-		players[i].lastmarescore = READUINT32(save_p);
-		players[i].totalmarescore = READUINT32(save_p);
-		players[i].lastmare = READUINT8(save_p);
-		players[i].lastmarelap = READUINT8(save_p);
-		players[i].lastmarebonuslap = READUINT8(save_p);
-		players[i].totalmarelap = READUINT8(save_p);
-		players[i].totalmarebonuslap = READUINT8(save_p);
-		players[i].maxlink = READINT32(save_p);
-		players[i].texttimer = READUINT8(save_p);
-		players[i].textvar = READUINT8(save_p);
+		players[i].checkskip = READUINT8(save_p);
 
 		players[i].lastsidehit = READINT16(save_p);
 		players[i].lastlinehit = READINT16(save_p);
-
-		players[i].losstime = READUINT32(save_p);
-
-		players[i].timeshit = READUINT8(save_p);
 
 		players[i].onconveyor = READINT32(save_p);
 
@@ -450,26 +465,122 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & FOLLOWER)
 			players[i].follower = (mobj_t *)(size_t)READUINT32(save_p);
 
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = READINT32(save_p);
+		players[i].nocontrol = READUINT16(save_p);
+		players[i].carry = READUINT8(save_p);
+		players[i].dye = READUINT16(save_p);
 
+		players[i].position = READUINT8(save_p);
+		players[i].oldposition = READUINT8(save_p);
+		players[i].positiondelay = READUINT8(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
+		players[i].startboost = READUINT8(save_p);
+
+		players[i].flashing = READUINT16(save_p);
+		players[i].spinouttimer = READUINT16(save_p);
+		players[i].spinouttype = READUINT8(save_p);
+		players[i].instashield = READUINT8(save_p);
+		players[i].wipeoutslow = READUINT8(save_p);
+		players[i].justbumped = READUINT8(save_p);
+		players[i].tumbleBounces = READUINT8(save_p);
+		players[i].tumbleHeight = READUINT16(save_p);
+
+		players[i].drift = READSINT8(save_p);
+		players[i].driftcharge = READFIXED(save_p);
+		players[i].driftboost = READUINT8(save_p);
+		players[i].strongdriftboost = READUINT8(save_p);
+
+		players[i].aizdriftstrat = READSINT8(save_p);
+		players[i].aizdrifttilt = READINT32(save_p);
+		players[i].aizdriftturn = READINT32(save_p);
+
+		players[i].offroad = READFIXED(save_p);
+		players[i].waterskip = READUINT8(save_p);
+
+		players[i].tiregrease = READUINT16(save_p);
+		players[i].springstars = READUINT16(save_p);
+		players[i].springcolor = READUINT16(save_p);
+		players[i].dashpadcooldown = READUINT8(save_p);
+
+		players[i].spindash = READUINT16(save_p);
+		players[i].spindashspeed = READFIXED(save_p);
+		players[i].spindashboost = READUINT8(save_p);
+
+		players[i].numboosts = READUINT8(save_p);
+		players[i].boostpower = READFIXED(save_p);
+		players[i].speedboost = READFIXED(save_p);
+		players[i].accelboost = READFIXED(save_p);
+		players[i].handleboost = READFIXED(save_p);
+		players[i].boostangle = READANGLE(save_p);
+
+		players[i].draftpower = READFIXED(save_p);
+		players[i].draftleeway = READUINT16(save_p);
+		players[i].lastdraft = READSINT8(save_p);
+
+		players[i].itemroulette = READUINT16(save_p);
+		players[i].roulettetype = READUINT8(save_p);
+
+		players[i].itemtype = READSINT8(save_p);
+		players[i].itemamount = READUINT8(save_p);
+		players[i].throwdir = READSINT8(save_p);
+
+		players[i].sadtimer = READUINT8(save_p);
+
+		players[i].rings = READSINT8(save_p);
+		players[i].pickuprings = READUINT8(save_p);
+		players[i].ringdelay = READUINT8(save_p);
+		players[i].ringboost = READUINT16(save_p);
+		players[i].sparkleanim = READUINT8(save_p);
+		players[i].superring = READUINT16(save_p);
+
+		players[i].curshield = READUINT8(save_p);
+		players[i].bubblecool = READUINT8(save_p);
+		players[i].bubbleblowup = READUINT8(save_p);
+		players[i].flamedash = READUINT16(save_p);
+		players[i].flamemeter = READUINT16(save_p);
+		players[i].flamelength = READUINT8(save_p);
+
+		players[i].hyudorotimer = READUINT16(save_p);
+		players[i].stealingtimer = READSINT8(save_p);
+
+		players[i].sneakertimer = READUINT16(save_p);
+		players[i].numsneakers = READUINT8(save_p);
+		players[i].floorboost = READUINT8(save_p);
+
+		players[i].growshrinktimer = READINT16(save_p);
+		players[i].rocketsneakertimer = READUINT16(save_p);
+		players[i].invincibilitytimer = READUINT16(save_p);
+
+		players[i].eggmanexplode = READUINT8(save_p);
+		players[i].eggmanblame = READSINT8(save_p);
+
+		players[i].bananadrag = READUINT8(save_p);
+
+		players[i].lastjawztarget = READSINT8(save_p);
+		players[i].jawztargetdelay = READUINT8(save_p);
+
 		players[i].trickpanel = READUINT8(save_p);
-		players[i].trickdelay = READUINT8(save_p);
+		players[i].tricktime = READUINT8(save_p);
 		players[i].trickmomx = READUINT32(save_p);
 		players[i].trickmomy = READUINT32(save_p);
 		players[i].trickmomz = READUINT32(save_p);
+		players[i].trickboostpower = READUINT32(save_p);
+		players[i].trickboostdecay = READUINT8(save_p);
+		players[i].trickboost = READUINT8(save_p);
 
+		players[i].roundscore = READUINT32(save_p);
+		players[i].emeralds = READUINT8(save_p);
 		players[i].bumpers = READUINT8(save_p);
 		players[i].karmadelay = READINT16(save_p);
-		players[i].eliminated = (boolean)READUINT8(save_p);
+		players[i].spheres = READINT16(save_p);
 
-		players[i].tumbleBounces = READUINT8(save_p);
-		players[i].tumbleHeight = READUINT16(save_p);
-		players[i].tumbleLastBounce = (boolean)READUINT8(save_p);
-		players[i].tumbleSound = (boolean)READUINT8(save_p);
+		players[i].glanceDir = READSINT8(save_p);
+
+		players[i].typing_timer = READUINT8(save_p);
+		players[i].typing_duration = READUINT8(save_p);
+
+		players[i].kickstartaccel = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -489,6 +600,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
+		players[i].botvars.spindashconfirm = READUINT32(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -917,7 +1029,7 @@ static void UnArchiveFFloors(const sector_t *ss)
 
 static void ArchiveSectors(void)
 {
-	size_t i;
+	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
 	UINT8 diff, diff2, diff3;
@@ -955,10 +1067,8 @@ static void ArchiveSectors(void)
 		if (ss->ceilingpic_angle != spawnss->ceilingpic_angle)
 			diff2 |= SD_CEILANG;
 
-		if (ss->tag != spawnss->tag)
+		if (!Tag_Compare(&ss->tags, &spawnss->tags))
 			diff2 |= SD_TAG;
-		if (ss->nexttag != spawnss->nexttag || ss->firsttag != spawnss->firsttag)
-			diff3 |= SD_TAGLIST;
 
 		if (ss->extra_colormap != spawnss->extra_colormap)
 			diff3 |= SD_COLORMAP;
@@ -1006,12 +1116,11 @@ static void ArchiveSectors(void)
 				WRITEANGLE(save_p, ss->floorpic_angle);
 			if (diff2 & SD_CEILANG)
 				WRITEANGLE(save_p, ss->ceilingpic_angle);
-			if (diff2 & SD_TAG) // save only the tag
-				WRITEINT16(save_p, ss->tag);
-			if (diff3 & SD_TAGLIST) // save both firsttag and nexttag
-			{ // either of these could be changed even if tag isn't
-				WRITEINT32(save_p, ss->firsttag);
-				WRITEINT32(save_p, ss->nexttag);
+			if (diff2 & SD_TAG)
+			{
+				WRITEUINT32(save_p, ss->tags.count);
+				for (j = 0; j < ss->tags.count; j++)
+					WRITEINT16(save_p, ss->tags.tags[j]);
 			}
 
 			if (diff3 & SD_COLORMAP)
@@ -1029,7 +1138,7 @@ static void ArchiveSectors(void)
 
 static void UnArchiveSectors(void)
 {
-	UINT16 i;
+	UINT16 i, j;
 	UINT8 diff, diff2, diff3;
 	for (;;)
 	{
@@ -1083,12 +1192,28 @@ static void UnArchiveSectors(void)
 		if (diff2 & SD_CEILANG)
 			sectors[i].ceilingpic_angle = READANGLE(save_p);
 		if (diff2 & SD_TAG)
-			sectors[i].tag = READINT16(save_p); // DON'T use P_ChangeSectorTag
-		if (diff3 & SD_TAGLIST)
 		{
-			sectors[i].firsttag = READINT32(save_p);
-			sectors[i].nexttag = READINT32(save_p);
+			size_t ncount = READUINT32(save_p);
+
+			// Remove entries from global lists.
+			for (j = 0; j < sectors[i].tags.count; j++)
+				Taggroup_Remove(tags_sectors, sectors[i].tags.tags[j], i);
+
+			// Reallocate if size differs.
+			if (ncount != sectors[i].tags.count)
+			{
+				sectors[i].tags.count = ncount;
+				sectors[i].tags.tags = Z_Realloc(sectors[i].tags.tags, ncount*sizeof(mtag_t), PU_LEVEL, NULL);
+			}
+
+			for (j = 0; j < ncount; j++)
+				sectors[i].tags.tags[j] = READINT16(save_p);
+
+			// Add new entries.
+			for (j = 0; j < sectors[i].tags.count; j++)
+				Taggroup_Remove(tags_sectors, sectors[i].tags.tags[j], i);
 		}
+
 
 		if (diff3 & SD_COLORMAP)
 			sectors[i].extra_colormap = GetNetColormapFromList(READUINT32(save_p));
@@ -1398,11 +1523,18 @@ typedef enum
 	MD2_MIRRORED     = 1<<13,
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
-	MD2_DRAWFLAGS    = 1<<16,
-	MD2_HITLAG       = 1<<17,
-	MD2_WAYPOINTCAP  = 1<<18,
-	MD2_KITEMCAP     = 1<<19,
-	MD2_ITNEXT       = 1<<20,
+	MD2_RENDERFLAGS  = 1<<16,
+	// 1<<17 was taken out, maybe reuse later
+	MD2_SPRITEXSCALE = 1<<18,
+	MD2_SPRITEYSCALE = 1<<19,
+	MD2_SPRITEXOFFSET = 1<<20,
+	MD2_SPRITEYOFFSET = 1<<21,
+	MD2_FLOORSPRITESLOPE = 1<<22,
+	// 1<<23 was taken out, maybe reuse later
+	MD2_HITLAG       = 1<<24,
+	MD2_WAYPOINTCAP  = 1<<25,
+	MD2_KITEMCAP     = 1<<26,
+	MD2_ITNEXT       = 1<<27
 } mobj_diff2_t;
 
 typedef enum
@@ -1485,7 +1617,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 {
 	const mobj_t *mobj = (const mobj_t *)th;
 	UINT32 diff;
-	UINT16 diff2;
+	UINT32 diff2;
 
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (mobj->type == MT_HOOP)
@@ -1615,8 +1747,26 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ROLLANGLE;
 	if (mobj->shadowscale)
 		diff2 |= MD2_SHADOWSCALE;
-	if (mobj->drawflags)
-		diff2 |= MD2_DRAWFLAGS;
+	if (mobj->renderflags)
+		diff2 |= MD2_RENDERFLAGS;
+	if (mobj->spritexscale != FRACUNIT)
+		diff2 |= MD2_SPRITEXSCALE;
+	if (mobj->spriteyscale != FRACUNIT)
+		diff2 |= MD2_SPRITEYSCALE;
+	if (mobj->spritexoffset)
+		diff2 |= MD2_SPRITEXOFFSET;
+	if (mobj->spriteyoffset)
+		diff2 |= MD2_SPRITEYOFFSET;
+	if (mobj->floorspriteslope)
+	{
+		pslope_t *slope = mobj->floorspriteslope;
+		if (slope->zangle || slope->zdelta || slope->xydirection
+		|| slope->o.x || slope->o.y || slope->o.z
+		|| slope->d.x || slope->d.y
+		|| slope->normal.x || slope->normal.y
+		|| (slope->normal.z != FRACUNIT))
+			diff2 |= MD2_FLOORSPRITESLOPE;
+	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
 	if (mobj == waypointcap)
@@ -1625,6 +1775,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_KITEMCAP;
 	if (mobj->itnext)
 		diff2 |= MD2_ITNEXT;
+
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1635,7 +1786,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	WRITEUINT8(save_p, type);
 	WRITEUINT32(save_p, diff);
 	if (diff & MD_MORE)
-		WRITEUINT16(save_p, diff2);
+		WRITEUINT32(save_p, diff2);
 
 	// save pointer, at load time we will search this pointer to reinitilize pointers
 	WRITEUINT32(save_p, (size_t)mobj);
@@ -1772,16 +1923,46 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->shadowscale);
 		WRITEUINT8(save_p, mobj->whiteshadow);
 	}
-	if (diff2 & MD2_DRAWFLAGS)
+	if (diff2 & MD2_RENDERFLAGS)
 	{
-		UINT16 df = mobj->drawflags;
+		UINT32 rf = mobj->renderflags;
+		UINT32 q = rf & RF_DONTDRAW;
 
-		if ((mobj->drawflags & MFD_DONTDRAW) != MFD_DONTDRAW)
-		{
-			df = (mobj->drawflags & ~MFD_DONTDRAW);
-		}
+		if (q != RF_DONTDRAW // visible for more than one local player
+		&& q != (RF_DONTDRAWP1|RF_DONTDRAWP2|RF_DONTDRAWP3)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP1|RF_DONTDRAWP2)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP1|RF_DONTDRAWP3)
+		&& q != (RF_DONTDRAWP4|RF_DONTDRAWP2|RF_DONTDRAWP3))
+			rf &= ~q;
 
-		WRITEUINT16(save_p, df);
+		WRITEUINT32(save_p, rf);
+	}
+	if (diff2 & MD2_SPRITEXSCALE)
+		WRITEFIXED(save_p, mobj->spritexscale);
+	if (diff2 & MD2_SPRITEYSCALE)
+		WRITEFIXED(save_p, mobj->spriteyscale);
+	if (diff2 & MD2_SPRITEXOFFSET)
+		WRITEFIXED(save_p, mobj->spritexoffset);
+	if (diff2 & MD2_SPRITEYOFFSET)
+		WRITEFIXED(save_p, mobj->spriteyoffset);
+	if (diff2 & MD2_FLOORSPRITESLOPE)
+	{
+		pslope_t *slope = mobj->floorspriteslope;
+
+		WRITEFIXED(save_p, slope->zdelta);
+		WRITEANGLE(save_p, slope->zangle);
+		WRITEANGLE(save_p, slope->xydirection);
+
+		WRITEFIXED(save_p, slope->o.x);
+		WRITEFIXED(save_p, slope->o.y);
+		WRITEFIXED(save_p, slope->o.z);
+
+		WRITEFIXED(save_p, slope->d.x);
+		WRITEFIXED(save_p, slope->d.y);
+
+		WRITEFIXED(save_p, slope->normal.x);
+		WRITEFIXED(save_p, slope->normal.y);
+		WRITEFIXED(save_p, slope->normal.z);
 	}
 	if (diff2 & MD2_HITLAG)
 		WRITEINT32(save_p, mobj->hitlag);
@@ -2613,14 +2794,14 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	thinker_t *next;
 	mobj_t *mobj;
 	UINT32 diff;
-	UINT16 diff2;
+	UINT32 diff2;
 	INT32 i;
 	fixed_t z, floorz, ceilingz;
 	ffloor_t *floorrover = NULL, *ceilingrover = NULL;
 
 	diff = READUINT32(save_p);
 	if (diff & MD_MORE)
-		diff2 = READUINT16(save_p);
+		diff2 = READUINT32(save_p);
 	else
 		diff2 = 0;
 
@@ -2842,8 +3023,39 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->shadowscale = READFIXED(save_p);
 		mobj->whiteshadow = READUINT8(save_p);
 	}
-	if (diff2 & MD2_DRAWFLAGS)
-		mobj->drawflags = READUINT16(save_p);
+	if (diff2 & MD2_RENDERFLAGS)
+		mobj->renderflags = READUINT32(save_p);
+	if (diff2 & MD2_SPRITEXSCALE)
+		mobj->spritexscale = READFIXED(save_p);
+	else
+		mobj->spritexscale = FRACUNIT;
+	if (diff2 & MD2_SPRITEYSCALE)
+		mobj->spriteyscale = READFIXED(save_p);
+	else
+		mobj->spriteyscale = FRACUNIT;
+	if (diff2 & MD2_SPRITEXOFFSET)
+		mobj->spritexoffset = READFIXED(save_p);
+	if (diff2 & MD2_SPRITEYOFFSET)
+		mobj->spriteyoffset = READFIXED(save_p);
+	if (diff2 & MD2_FLOORSPRITESLOPE)
+	{
+		pslope_t *slope = (pslope_t *)P_CreateFloorSpriteSlope(mobj);
+
+		slope->zdelta = READFIXED(save_p);
+		slope->zangle = READANGLE(save_p);
+		slope->xydirection = READANGLE(save_p);
+
+		slope->o.x = READFIXED(save_p);
+		slope->o.y = READFIXED(save_p);
+		slope->o.z = READFIXED(save_p);
+
+		slope->d.x = READFIXED(save_p);
+		slope->d.y = READFIXED(save_p);
+
+		slope->normal.x = READFIXED(save_p);
+		slope->normal.y = READFIXED(save_p);
+		slope->normal.z = READFIXED(save_p);
+	}
 	if (diff2 & MD2_HITLAG)
 		mobj->hitlag = READINT32(save_p);
 
@@ -4053,17 +4265,21 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	playeringame[consoleplayer] = true;
 }
 
-static void P_NetArchiveMisc(void)
+static void P_NetArchiveMisc(boolean resending)
 {
 	INT32 i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
+	if (resending)
+		WRITEUINT32(save_p, gametic);
 	WRITEINT16(save_p, gamemap);
+
 	if (gamestate != GS_LEVEL)
 		WRITEINT16(save_p, GS_WAITINGPLAYERS); // nice hack to put people back into waitingplayers
 	else
 		WRITEINT16(save_p, gamestate);
+	WRITEINT16(save_p, gametype);
 
 	{
 		UINT32 pig = 0;
@@ -4108,6 +4324,12 @@ static void P_NetArchiveMisc(void)
 	WRITEINT32(save_p, sstimer);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
+
+	WRITEUINT16(save_p, skincolor_redteam);
+	WRITEUINT16(save_p, skincolor_blueteam);
+	WRITEUINT16(save_p, skincolor_redring);
+	WRITEUINT16(save_p, skincolor_bluering);
+
 	WRITEINT32(save_p, modulothing);
 
 	WRITEINT16(save_p, autobalance);
@@ -4162,11 +4384,13 @@ static void P_NetArchiveMisc(void)
 		WRITEINT16(save_p, nospectategrief[i]);
 
 	WRITEUINT8(save_p, thwompsactive);
+	WRITEUINT8(save_p, lastLowestLap);
 	WRITESINT8(save_p, spbplace);
 	WRITEUINT8(save_p, rainbowstartavailable);
 
 	WRITEUINT32(save_p, introtime);
 	WRITEUINT32(save_p, starttime);
+	WRITEUINT8(save_p, numbulbs);
 
 	// Is it paused?
 	if (paused)
@@ -4175,12 +4399,15 @@ static void P_NetArchiveMisc(void)
 		WRITEUINT8(save_p, 0x2e);
 }
 
-static inline boolean P_NetUnArchiveMisc(void)
+static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	INT32 i;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
+
+	if (reloading)
+		gametic = READUINT32(save_p);
 
 	gamemap = READINT16(save_p);
 
@@ -4194,6 +4421,8 @@ static inline boolean P_NetUnArchiveMisc(void)
 	mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save_p));
+
+	gametype = READINT16(save_p);
 
 	{
 		UINT32 pig = READUINT32(save_p);
@@ -4210,7 +4439,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	encoremode = (boolean)READUINT8(save_p);
 
-	if (!P_LoadLevel(true))
+	if (!P_LoadLevel(true, reloading))
 		return false;
 
 	// get the time
@@ -4241,6 +4470,12 @@ static inline boolean P_NetUnArchiveMisc(void)
 	sstimer = READINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
+
+	skincolor_redteam = READUINT16(save_p);
+	skincolor_blueteam = READUINT16(save_p);
+	skincolor_redring = READUINT16(save_p);
+	skincolor_bluering = READUINT16(save_p);
+
 	modulothing = READINT32(save_p);
 
 	autobalance = READINT16(save_p);
@@ -4295,11 +4530,13 @@ static inline boolean P_NetUnArchiveMisc(void)
 		nospectategrief[i] = READINT16(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
+	lastLowestLap = READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 	rainbowstartavailable = (boolean)READUINT8(save_p);
 
 	introtime = READUINT32(save_p);
 	starttime = READUINT32(save_p);
+	numbulbs = READUINT8(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
@@ -4356,14 +4593,14 @@ void P_SaveGame(INT16 mapnum)
 	P_ArchiveLuabanksAndConsistency();
 }
 
-void P_SaveNetGame(void)
+void P_SaveNetGame(boolean resending)
 {
 	thinker_t *th;
 	mobj_t *mobj;
 	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
 	CV_SaveNetVars(&save_p);
-	P_NetArchiveMisc();
+	P_NetArchiveMisc(resending);
 
 	// Assign the mobjnumber for pointer tracking
 	if (gamestate == GS_LEVEL)
@@ -4417,10 +4654,10 @@ boolean P_LoadGame(INT16 mapoverride)
 	return true;
 }
 
-boolean P_LoadNetGame(void)
+boolean P_LoadNetGame(boolean reloading)
 {
 	CV_LoadNetVars(&save_p);
-	if (!P_NetUnArchiveMisc())
+	if (!P_NetUnArchiveMisc(reloading))
 		return false;
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)

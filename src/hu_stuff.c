@@ -73,11 +73,14 @@
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
+patch_t *tc_font[2][LT_FONTSIZE];	// Special font stuff for titlecard
+
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
 static player_t *plr;
 boolean chat_on; // entering a chat message?
+boolean hu_keystrokes; // :)
 static char w_chat[HU_MAXMSGLEN];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
 static boolean headsupactive = false;
@@ -177,7 +180,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	INT32 i;
+	char buffer[9];
+	INT32 i, j;
 
 	if (dedicated)
 		return;
@@ -189,6 +193,27 @@ void HU_LoadGraphics(void)
 
 	emblemicon         = HU_CachePatch("EMBLICON");
 	songcreditbg       = HU_CachePatch("K_SONGCR");
+
+	// Cache titlecard font
+	j = LT_FONTSTART;
+	for (i = 0; i < LT_FONTSIZE; i++, j++)
+	{
+		// cache the titlecard font
+
+		// Bottom layer
+		sprintf(buffer, "GTOL%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			tc_font[0][i] = NULL;
+		else
+			tc_font[0][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+
+		// Top layer
+		sprintf(buffer, "GTFN%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			tc_font[1][i] = NULL;
+		else
+			tc_font[1][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
@@ -719,7 +744,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) 
+			if (players[playernum].ctfteam == 1)
 			{
 				// red text
 				cstart = textcolor = "\x85";
@@ -895,6 +920,8 @@ void HU_Ticker(void)
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
+
+	hu_keystrokes = false;
 }
 
 #ifndef NONET
@@ -1765,8 +1792,8 @@ static void HU_DrawChat_Old(void)
 	size_t i = 0;
 	const char *ntalk = "Say: ", *ttalk = "Say-Team: ";
 	const char *talk = ntalk;
-	INT32 charwidth = 8 * con_scalefactor; //SHORT(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
-	INT32 charheight = 8 * con_scalefactor; //SHORT(hu_font['A'-HU_FONTSTART]->height) * con_scalefactor;
+	INT32 charwidth = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
+	INT32 charheight = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->height) * con_scalefactor;
 	if (teamtalk)
 	{
 		talk = ttalk;
@@ -1787,7 +1814,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = SHORT(hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, talk[i++] | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 		c += charwidth;
@@ -1815,7 +1842,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = SHORT(hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, w_chat[i++] | cv_constextsize.value | V_NOSCALESTART | t, true);
 		}
 
@@ -1848,7 +1875,7 @@ static void HU_DrawCEcho(void)
 		if (cechotext[i] == '\\')
 			pnumlines++;
 
-	y -= (pnumlines-1)*((realflags & V_RETURN8) ? 4 : 6);
+	y -= (pnumlines-1)*6;
 
 	// Prevent crashing because I'm sick of this
 	if (y < 0)
@@ -1871,7 +1898,7 @@ static void HU_DrawCEcho(void)
 		*line = '\0';
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, y, realflags, echoptr);
-		y += ((realflags & V_RETURN8) ? 8 : 12);
+		y += 12;
 
 		echoptr = line;
 		echoptr++;
@@ -1970,9 +1997,6 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
-	if (needpatchrecache)
-		R_ReloadHUDGraphics();
-
 	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
 		V_DrawVhsEffect(demo.rewinding);
 
@@ -2052,7 +2076,7 @@ void HU_Drawer(void)
 		HU_DrawSongCredits();
 
 	// draw desynch text
-	if (hu_resynching)
+	if (hu_redownloadinggamestate)
 	{
 		static UINT32 resynch_ticker = 0;
 		char resynch_text[14];
@@ -2226,6 +2250,7 @@ static inline void HU_DrawSpectatorTicker(void)
 	length += dupadjust;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i] && players[i].spectator)
 		{
 			char *pos;
@@ -2270,6 +2295,7 @@ static inline void HU_DrawSpectatorTicker(void)
 			if ((length += len) >= dupadjust+8)
 				break;
 		}
+	}
 }
 
 //
@@ -2365,11 +2391,11 @@ static void HU_DrawRankings(void)
 			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
 				continue;
 
-			if (players[i].kartstuff[k_position] >= lowestposition)
+			if (players[i].position >= lowestposition)
 				continue;
 
 			tab[scorelines].num = i;
-			lowestposition = players[i].kartstuff[k_position];
+			lowestposition = players[i].position;
 		}
 
 		i = tab[scorelines].num;
@@ -2386,7 +2412,7 @@ static void HU_DrawRankings(void)
 				tab[scorelines].count = players[i].realtime;
 		}
 		else
-			tab[scorelines].count = players[i].marescore;
+			tab[scorelines].count = players[i].roundscore;
 
 		scorelines++;
 

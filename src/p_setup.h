@@ -80,6 +80,7 @@ typedef struct
 	UINT8 *picture;
 #ifdef HWRENDER
 	void *mipmap;
+	void *mippic;
 #endif
 } levelflat_t;
 
@@ -97,15 +98,15 @@ void P_SetupLevelSky(const char *skytexname, boolean global);
 void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
 #endif
 void P_RespawnThings(void);
-boolean P_LoadLevel(boolean fromnetsave);
+boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
 #ifdef HWRENDER
-void HWR_SetupLevel(void);
+void HWR_LoadLevel(void);
 #endif
 boolean P_AddWadFile(const char *wadfilename);
 boolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
-void P_WriteThings(lumpnum_t lump);
+void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);
@@ -115,7 +116,6 @@ void P_DeleteFlickies(INT16 i);
 
 // Needed for NiGHTS
 void P_ReloadRings(void);
-void P_SwitchSpheresBonusMode(boolean bonustime);
 void P_DeleteGrades(INT16 i);
 void P_AddGradesForMare(INT16 i, UINT8 mare, char *gtext);
 UINT8 P_GetGrade(UINT32 pscore, INT16 map, UINT8 mare);

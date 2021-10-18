@@ -957,25 +957,28 @@ void M_DrawCharacterSelect(void)
 static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 {
 	UINT8 i;
-	INT16 x = -(cupgrid.previewanim % 82);
+	const INT16 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
+	INT16 x = -(cupgrid.previewanim % 82) - pad;
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
 	if (cup && (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked))
 	{
-		for (i = 0; i < cup->numlevels; i++)
+		i = (cupgrid.previewanim / 82) % cup->numlevels;
+		while (x < BASEVIDWIDTH + pad)
 		{
 			lumpnum_t lumpnum;
 			patch_t *PictureOfLevel;
-			UINT8 lvloff = (i + (cupgrid.previewanim / 82)) % cup->numlevels;
 
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[lvloff]+1)));
+			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[i]+1)));
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else
 				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
 
-			V_DrawSmallScaledPatch(x + 1 + (i*82), y+2, 0, PictureOfLevel);
+			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
+			i = (i+1) % cup->numlevels;
+			x += 82;
 		}
 	}
 	else

@@ -41,7 +41,7 @@ extern size_t validcount, linecount, loopcount, framecount;
 
 // Lighting constants.
 // Now with 32 levels.
-#define LIGHTLEVELS 32
+// LIGHTLEVELS is now defined in r_state.h
 #define LIGHTSEGSHIFT 3
 
 #define MAXLIGHTSCALE 48
@@ -63,6 +63,7 @@ extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node);
 INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line);
 angle_t R_PointToAngle(fixed_t x, fixed_t y);
+angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y);
 angle_t R_PointToAngle64(INT64 x, INT64 y);
 angle_t R_PointToAngle2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
 angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1);
@@ -77,17 +78,17 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 
 // Render stats
 
-extern int ps_prevframetime;// time when previous frame was rendered
-extern int ps_rendercalltime;
-extern int ps_uitime;
-extern int ps_swaptime;
+extern precise_t ps_prevframetime;// time when previous frame was rendered
+extern precise_t ps_rendercalltime;
+extern precise_t ps_uitime;
+extern precise_t ps_swaptime;
 
-extern int ps_bsptime;
+extern precise_t ps_bsptime;
 
-extern int ps_sw_spritecliptime;
-extern int ps_sw_portaltime;
-extern int ps_sw_planetime;
-extern int ps_sw_maskedtime;
+extern precise_t ps_sw_spritecliptime;
+extern precise_t ps_sw_portaltime;
+extern precise_t ps_sw_planetime;
+extern precise_t ps_sw_maskedtime;
 
 extern int ps_numbspcalls;
 extern int ps_numsprites;
@@ -112,13 +113,10 @@ extern consvar_t cv_tailspickup;
 
 // Called by startup code.
 void R_Init(void);
-#ifdef HWRENDER
-void R_InitHardwareMode(void);
-#endif
-void R_ReloadHUDGraphics(void);
 
 void R_CheckViewMorph(int split);
 void R_ApplyViewMorph(int split);
+angle_t R_ViewRollAngle(const player_t *player);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;

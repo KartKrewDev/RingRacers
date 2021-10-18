@@ -89,7 +89,6 @@ static INT32 timer;
 
 static INT32 timer;
 static INT32 powertype = PWRLV_DISABLED;
-static boolean safetorender = true;
 
 static INT32 intertic;
 static INT32 endtic = -1;
@@ -100,7 +99,6 @@ intertype_t intermissiontypes[NUMGAMETYPES];
 
 static void Y_FollowIntermission(void);
 static void Y_UnloadData(void);
-static void Y_CleanupData(void);
 
 // SRB2Kart: voting stuff
 // Level images
@@ -151,7 +149,7 @@ static void Y_UnloadVoteData(void);
 //
 static void Y_CompareTime(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER || players[i].realtime == UINT32_MAX)
+	UINT32 val = ((players[i].pflags & PF_NOCONTEST || players[i].realtime == UINT32_MAX)
 		? (UINT32_MAX-1) : players[i].realtime);
 
 	if (!(val < data.val[data.numplayers]))
@@ -163,11 +161,11 @@ static void Y_CompareTime(INT32 i)
 
 static void Y_CompareScore(INT32 i)
 {
-	UINT32 val = ((players[i].pflags & PF_GAMETYPEOVER)
-			? (UINT32_MAX-1) : players[i].marescore);
+	UINT32 val = ((players[i].pflags & PF_NOCONTEST)
+			? (UINT32_MAX-1) : players[i].roundscore);
 
 	if (!(data.val[data.numplayers] == UINT32_MAX
-	|| (!(players[i].pflags & PF_GAMETYPEOVER) && val > data.val[data.numplayers])))
+	|| (!(players[i].pflags & PF_NOCONTEST) && val > data.val[data.numplayers])))
 		return;
 
 	data.val[data.numplayers] = val;
@@ -296,7 +294,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		if ((powertype == PWRLV_DISABLED)
 			&& (!rankingsmode)
-			&& !(players[i].pflags & PF_GAMETYPEOVER)
+			&& !(players[i].pflags & PF_NOCONTEST)
 			&& (data.pos[data.numplayers] < (numplayersingame + numgriefers)))
 		{
 			// Online rank is handled further below in this file.
@@ -332,18 +330,7 @@ void Y_IntermissionDrawer(void)
 	if (intertype == int_none || rendermode == render_none)
 		return;
 
-	// Lactozilla: Renderer switching
-	if (needpatchrecache)
-	{
-		Y_CleanupData();
-		safetorender = false;
-	}
-
-	if (!safetorender)
-	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-	}
-	else
+	// the merge was kind of a mess, how does this work -- toast 171021
 	{
 		M_DrawMenuBackground();
 	}
@@ -1041,7 +1028,7 @@ static void Y_FollowIntermission(void)
 	G_AfterIntermission();
 }
 
-#define UNLOAD(x) Z_ChangeTag(x, PU_CACHE); x = NULL
+#define UNLOAD(x) if (x) {Patch_Free(x);} x = NULL;
 #define CLEANUP(x) x = NULL;
 
 //
@@ -1059,15 +1046,6 @@ static void Y_UnloadData(void)
 	UNLOAD(widebgpatch);
 	UNLOAD(bgtile);
 	UNLOAD(interpic);
-}
-
-static void Y_CleanupData(void)
-{
-	// unload the background patches
-	CLEANUP(bgpatch);
-	CLEANUP(widebgpatch);
-	CLEANUP(bgtile);
-	CLEANUP(interpic);
 }
 
 // SRB2Kart: Voting!

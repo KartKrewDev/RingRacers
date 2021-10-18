@@ -37,6 +37,7 @@ enum sector_e {
 	sector_lightlevel,
 	sector_special,
 	sector_tag,
+	sector_taglist,
 	sector_thinglist,
 	sector_heightsec,
 	sector_camsec,
@@ -55,6 +56,7 @@ static const char *const sector_opt[] = {
 	"lightlevel",
 	"special",
 	"tag",
+	"taglist",
 	"thinglist",
 	"heightsec",
 	"camsec",
@@ -89,6 +91,7 @@ enum line_e {
 	line_flags,
 	line_special,
 	line_tag,
+	line_taglist,
 	line_args,
 	line_stringargs,
 	line_sidenum,
@@ -99,8 +102,6 @@ enum line_e {
 	line_slopetype,
 	line_frontsector,
 	line_backsector,
-	line_firsttag,
-	line_nexttag,
 	line_polyobj,
 	line_text,
 	line_callcount
@@ -115,6 +116,7 @@ static const char *const line_opt[] = {
 	"flags",
 	"special",
 	"tag",
+	"taglist",
 	"args",
 	"stringargs",
 	"sidenum",
@@ -125,8 +127,6 @@ static const char *const line_opt[] = {
 	"slopetype",
 	"frontsector",
 	"backsector",
-	"firsttag",
-	"nexttag",
 	"polyobj",
 	"text",
 	"callcount",
@@ -196,6 +196,7 @@ enum ffloor_e {
 	ffloor_next,
 	ffloor_prev,
 	ffloor_alpha,
+	ffloor_blend,
 };
 
 static const char *const ffloor_opt[] = {
@@ -214,6 +215,7 @@ static const char *const ffloor_opt[] = {
 	"next",
 	"prev",
 	"alpha",
+	"blend",
 	NULL};
 
 #ifdef HAVE_LUA_SEGS
@@ -583,7 +585,10 @@ static int sector_get(lua_State *L)
 		lua_pushinteger(L, sector->special);
 		return 1;
 	case sector_tag:
-		lua_pushinteger(L, sector->tag);
+		lua_pushinteger(L, (UINT16)Tag_FGet(&sector->tags));
+		return 1;
+	case sector_taglist:
+		LUA_PushUserdata(L, &sector->tags, META_SECTORTAGLIST);
 		return 1;
 	case sector_thinglist: // thinglist
 		lua_pushcfunction(L, lib_iterateSectorThinglist);
@@ -684,8 +689,10 @@ static int sector_set(lua_State *L)
 		sector->special = (INT16)luaL_checkinteger(L, 3);
 		break;
 	case sector_tag:
-		P_ChangeSectorTag((UINT32)(sector - sectors), (INT16)luaL_checkinteger(L, 3));
+		Tag_SectorFSet((UINT32)(sector - sectors), (INT16)luaL_checkinteger(L, 3));
 		break;
+	case sector_taglist:
+		return LUA_ErrSetDirectly(L, "sector_t", "taglist");
 	}
 	return 0;
 }
@@ -823,7 +830,21 @@ static int line_get(lua_State *L)
 		lua_pushinteger(L, line->special);
 		return 1;
 	case line_tag:
-		lua_pushinteger(L, line->tag);
+		// HELLO
+		// THIS IS LJ SONIC
+		// HOW IS YOUR DAY?
+		// BY THE WAY WHEN 2.3 OR 3.0 OR 4.0 OR SRB3 OR SRB4 OR WHATEVER IS OUT
+		// YOU SHOULD REMEMBER TO CHANGE THIS SO IT ALWAYS RETURNS A UNSIGNED VALUE
+		// HAVE A NICE DAY
+		//
+		//
+		//
+		//
+		// you are ugly
+		lua_pushinteger(L, Tag_FGet(&line->tags));
+		return 1;
+	case line_taglist:
+		LUA_PushUserdata(L, &line->tags, META_TAGLIST);
 		return 1;
 	case line_args:
 		LUA_PushUserdata(L, line->args, META_LINEARGS);
@@ -870,12 +891,6 @@ static int line_get(lua_State *L)
 		return 1;
 	case line_backsector:
 		LUA_PushUserdata(L, line->backsector, META_SECTOR);
-		return 1;
-	case line_firsttag:
-		lua_pushinteger(L, line->firsttag);
-		return 1;
-	case line_nexttag:
-		lua_pushinteger(L, line->nexttag);
 		return 1;
 	case line_polyobj:
 		LUA_PushUserdata(L, line->polyobj, META_POLYOBJ);
@@ -1395,23 +1410,13 @@ static int lib_iterateSectors(lua_State *L)
 
 static int lib_getSector(lua_State *L)
 {
-	int field;
 	INLEVEL
-	lua_settop(L, 2);
-	lua_remove(L, 1); // dummy userdata table is unused.
-	if (lua_isnumber(L, 1))
+	if (lua_isnumber(L, 2))
 	{
-		size_t i = lua_tointeger(L, 1);
+		size_t i = lua_tointeger(L, 2);
 		if (i >= numsectors)
 			return 0;
 		LUA_PushUserdata(L, &sectors[i], META_SECTOR);
-		return 1;
-	}
-	field = luaL_checkoption(L, 1, NULL, array_opt);
-	switch(field)
-	{
-	case 0: // iterate
-		lua_pushcfunction(L, lib_iterateSectors);
 		return 1;
 	}
 	return 0;
@@ -1499,23 +1504,13 @@ static int lib_iterateLines(lua_State *L)
 
 static int lib_getLine(lua_State *L)
 {
-	int field;
 	INLEVEL
-	lua_settop(L, 2);
-	lua_remove(L, 1); // dummy userdata table is unused.
-	if (lua_isnumber(L, 1))
+	if (lua_isnumber(L, 2))
 	{
-		size_t i = lua_tointeger(L, 1);
+		size_t i = lua_tointeger(L, 2);
 		if (i >= numlines)
 			return 0;
 		LUA_PushUserdata(L, &lines[i], META_LINE);
-		return 1;
-	}
-	field = luaL_checkoption(L, 1, NULL, array_opt);
-	switch(field)
-	{
-	case 0: // iterate
-		lua_pushcfunction(L, lib_iterateLines);
 		return 1;
 	}
 	return 0;
@@ -1814,6 +1809,9 @@ static int ffloor_get(lua_State *L)
 	case ffloor_alpha:
 		lua_pushinteger(L, ffloor->alpha);
 		return 1;
+	case ffloor_blend:
+		lua_pushinteger(L, ffloor->blend);
+		return 1;
 	}
 	return 0;
 }
@@ -1891,6 +1889,9 @@ static int ffloor_set(lua_State *L)
 	}
 	case ffloor_alpha:
 		ffloor->alpha = (INT32)luaL_checkinteger(L, 3);
+		break;
+	case ffloor_blend:
+		ffloor->blend = (INT32)luaL_checkinteger(L, 3);
 		break;
 	}
 	return 0;
@@ -2372,15 +2373,13 @@ int LUA_MapLib(lua_State *L)
 		//lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
 
-	lua_newuserdata(L, 0);
-		lua_createtable(L, 0, 2);
-			lua_pushcfunction(L, lib_getSector);
-			lua_setfield(L, -2, "__index");
-
-			lua_pushcfunction(L, lib_numsectors);
-			lua_setfield(L, -2, "__len");
-		lua_setmetatable(L, -2);
-	lua_setglobal(L, "sectors");
+	LUA_PushTaggableObjectArray(L, "sectors",
+			lib_iterateSectors,
+			lib_getSector,
+			lib_numsectors,
+			tags_sectors,
+			&numsectors, &sectors,
+			sizeof (sector_t), META_SECTOR);
 
 	lua_newuserdata(L, 0);
 		lua_createtable(L, 0, 2);
@@ -2392,15 +2391,13 @@ int LUA_MapLib(lua_State *L)
 		lua_setmetatable(L, -2);
 	lua_setglobal(L, "subsectors");
 
-	lua_newuserdata(L, 0);
-		lua_createtable(L, 0, 2);
-			lua_pushcfunction(L, lib_getLine);
-			lua_setfield(L, -2, "__index");
-
-			lua_pushcfunction(L, lib_numlines);
-			lua_setfield(L, -2, "__len");
-		lua_setmetatable(L, -2);
-	lua_setglobal(L, "lines");
+	LUA_PushTaggableObjectArray(L, "lines",
+			lib_iterateLines,
+			lib_getLine,
+			lib_numlines,
+			tags_lines,
+			&numlines, &lines,
+			sizeof (line_t), META_LINE);
 
 	lua_newuserdata(L, 0);
 		lua_createtable(L, 0, 2);

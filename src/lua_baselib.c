@@ -38,6 +38,7 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
+#include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
 
 #define NOHUD if (hud_running)\
@@ -160,14 +161,17 @@ static const struct {
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
 
+	{META_TAGLIST,      "taglist"},
+
 	{META_MOBJ,         "mobj_t"},
 	{META_MAPTHING,     "mapthing_t"},
 
 	{META_PLAYER,       "player_t"},
 	{META_TICCMD,       "ticcmd_t"},
 	{META_SKIN,         "skin_t"},
-	{META_POWERS,       "player_t.powers"},
 	{META_SOUNDSID,     "skin_t.soundsid"},
+	{META_SKINSPRITES,  "skin_t.sprites"},
+	{META_SKINSPRITESLIST,  "skin_t.sprites[]"},
 
 	{META_VERTEX,       "vertex_t"},
 	{META_LINE,         "line_t"},
@@ -189,6 +193,9 @@ static const struct {
 	{META_CVAR,         "consvar_t"},
 
 	{META_SECTORLINES,  "sector_t.lines"},
+#ifdef MUTABLE_TAGS
+	{META_SECTORTAGLIST, "sector_t.taglist"},
+#endif
 	{META_SIDENUM,      "line_t.sidenum"},
 	{META_LINEARGS,     "line_t.args"},
 	{META_LINESTRINGARGS, "line_t.stringargs"},
@@ -250,6 +257,56 @@ static int lib_userdataType(lua_State *L)
 	}
 	else
 		return luaL_typerror(L, 1, "userdata");
+}
+
+// Takes a metatable as first and only argument
+// Only callable during script loading
+static int lib_registerMetatable(lua_State *L)
+{
+	static UINT16 nextid = 1;
+
+	if (!lua_lumploading)
+		return luaL_error(L, "This function cannot be called from within a hook or coroutine!");
+	luaL_checktype(L, 1, LUA_TTABLE);
+
+	if (nextid == 0)
+		return luaL_error(L, "Too many metatables registered?! Please consider rewriting your script once you are sober again.\n");
+
+	lua_getfield(L, LUA_REGISTRYINDEX, LREG_METATABLES); // 2
+		// registry.metatables[metatable] = nextid
+		lua_pushvalue(L, 1); // 3
+			lua_pushnumber(L, nextid); // 4
+		lua_settable(L, 2);
+
+		// registry.metatables[nextid] = metatable
+		lua_pushnumber(L, nextid); // 3
+			lua_pushvalue(L, 1); // 4
+		lua_settable(L, 2);
+	lua_pop(L, 1);
+
+	nextid++;
+
+	return 0;
+}
+
+// Takes a string as only argument and returns the metatable
+// associated to the userdata type this string refers to
+// Returns nil if the string does not refer to a valid userdata type
+static int lib_userdataMetatable(lua_State *L)
+{
+	UINT32 i;
+	const char *udname = luaL_checkstring(L, 1);
+
+	// Find internal metatable name
+	for (i = 0; meta2utype[i].meta; i++)
+		if (!strcmp(udname, meta2utype[i].utype))
+		{
+			luaL_getmetatable(L, meta2utype[i].meta);
+			return 1;
+		}
+
+	lua_pushnil(L);
+	return 1;
 }
 
 static int lib_isPlayerAdmin(lua_State *L)
@@ -628,7 +685,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
 		P_SetTarget(&visual->target, lockon);
-		visual->drawflags |= MFD_DONTDRAW;
+		visual->renderflags |= RF_DONTDRAW;
 		P_SetMobjStateNF(visual, state);
 	}
 	return 0;
@@ -904,6 +961,28 @@ static int lib_pMaceRotate(lua_State *L)
 	return 0;
 }
 
+static int lib_pCreateFloorSpriteSlope(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, (pslope_t *)P_CreateFloorSpriteSlope(mobj), META_SLOPE);
+	return 1;
+}
+
+static int lib_pRemoveFloorSpriteSlope(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_RemoveFloorSpriteSlope(mobj);
+	return 1;
+}
+
 static int lib_pRailThinker(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1164,17 +1243,6 @@ static int lib_pRestoreMusic(lua_State *L)
 	return 1;
 }
 
-static int lib_pSpawnShieldOrb(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SpawnShieldOrb(player);
-	return 0;
-}
-
 static int lib_pSpawnGhostMobj(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1194,8 +1262,8 @@ static int lib_pGivePlayerRings(lua_State *L)
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	P_GivePlayerRings(player, num_rings);
-	return 0;
+	lua_pushinteger(L, P_GivePlayerRings(player, num_rings));
+	return 1;
 }
 
 static int lib_pGivePlayerLives(lua_State *L)
@@ -1207,17 +1275,6 @@ static int lib_pGivePlayerLives(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_GivePlayerLives(player, numlives);
-	return 0;
-}
-
-static int lib_pResetScore(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_ResetScore(player);
 	return 0;
 }
 
@@ -1292,18 +1349,6 @@ static int lib_pNukeEnemies(lua_State *L)
 	if (!inflictor || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_NukeEnemies(inflictor, source, radius);
-	return 0;
-}
-
-static int lib_pSwitchShield(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT16 shield = luaL_checkinteger(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SwitchShield(player, shield);
 	return 0;
 }
 
@@ -1489,17 +1534,6 @@ static int lib_pDoSpring(lua_State *L)
 
 // P_INTER
 ////////////
-
-static int lib_pRemoveShield(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_RemoveShield(player);
-	return 0;
-}
 
 static int lib_pDamageMobj(lua_State *L)
 {
@@ -2060,6 +2094,16 @@ static int lib_rPointToAngle(lua_State *L)
 	fixed_t y = luaL_checkfixed(L, 2);
 	//HUDSAFE
 	lua_pushangle(L, R_PointToAngle(x, y));
+	return 1;
+}
+
+static int lib_rPointToAnglePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t x = luaL_checkfixed(L, 2);
+	fixed_t y = luaL_checkfixed(L, 3);
+	//HUDSAFE
+	lua_pushangle(L, R_PointToAnglePlayer(player, x, y));
 	return 1;
 }
 
@@ -3346,14 +3390,12 @@ static int lib_kKartBouncing(lua_State *L)
 {
 	mobj_t *mobj1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobj_t *mobj2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	boolean bounce = lua_optboolean(L, 3);
-	boolean solid = lua_optboolean(L, 4);
 	NOHUD
 	if (!mobj1)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!mobj2)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_KartBouncing(mobj1, mobj2, bounce, solid);
+	K_KartBouncing(mobj1, mobj2);
 	return 0;
 }
 
@@ -3439,8 +3481,8 @@ static int lib_kExplodePlayer(lua_State *L)
 		inflictor = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 		source = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-	K_ExplodePlayer(player, inflictor, source);
-	return 0;
+	lua_pushinteger(L, K_ExplodePlayer(player, inflictor, source));
+	return 1;
 }
 
 static int lib_kTakeBumpersFromPlayer(lua_State *L)
@@ -3510,11 +3552,11 @@ static int lib_kSpawnSparkleTrail(lua_State *L)
 static int lib_kSpawnWipeoutTrail(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	boolean translucent = lua_optboolean(L, 2);
+	boolean offroad = lua_optboolean(L, 2);
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_SpawnWipeoutTrail(mo, translucent);
+	K_SpawnWipeoutTrail(mo, offroad);
 	return 0;
 }
 
@@ -3695,6 +3737,8 @@ static luaL_Reg lib[] = {
 	{"chatprint", lib_chatprint},
 	{"chatprintf", lib_chatprintf},
 	{"userdataType", lib_userdataType},
+	{"registerMetatable", lib_registerMetatable},
+	{"userdataMetatable", lib_userdataMetatable},
 	{"IsPlayerAdmin", lib_isPlayerAdmin},
 	{"reserveLuabanks", lib_reserveLuabanks},
 
@@ -3752,6 +3796,8 @@ static luaL_Reg lib[] = {
 	{"P_CheckDeathPitCollide",lib_pCheckDeathPitCollide},
 	{"P_CheckSolidLava",lib_pCheckSolidLava},
 	{"P_MaceRotate",lib_pMaceRotate},
+	{"P_CreateFloorSpriteSlope",lib_pCreateFloorSpriteSlope},
+	{"P_RemoveFloorSpriteSlope",lib_pRemoveFloorSpriteSlope},
 	{"P_RailThinker",lib_pRailThinker},
 	{"P_XYMovement",lib_pXYMovement},
 	{"P_RingXYMovement",lib_pRingXYMovement},
@@ -3773,18 +3819,15 @@ static luaL_Reg lib[] = {
 	{"P_PlayJingle",lib_pPlayJingle},
 	{"P_PlayJingleMusic",lib_pPlayJingleMusic},
 	{"P_RestoreMusic",lib_pRestoreMusic},
-	{"P_SpawnShieldOrb",lib_pSpawnShieldOrb},
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
-	{"P_ResetScore",lib_pResetScore},
 	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
-	{"P_SwitchShield",lib_pSwitchShield},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
@@ -3802,7 +3845,6 @@ static luaL_Reg lib[] = {
 	{"P_DoSpring",lib_pDoSpring},
 
 	// p_inter
-	{"P_RemoveShield",lib_pRemoveShield},
 	{"P_DamageMobj",lib_pDamageMobj},
 	{"P_KillMobj",lib_pKillMobj},
 	{"P_PlayerRingBurst",lib_pPlayerRingBurst},
@@ -3841,6 +3883,7 @@ static luaL_Reg lib[] = {
 
 	// r_defs
 	{"R_PointToAngle",lib_rPointToAngle},
+	{"R_PointToAnglePlayer", lib_rPointToAnglePlayer},
 	{"R_PointToAngle2",lib_rPointToAngle2},
 	{"R_PointToDist",lib_rPointToDist},
 	{"R_PointToDist2",lib_rPointToDist2},

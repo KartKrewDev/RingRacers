@@ -119,6 +119,7 @@ demoghost *ghosts = NULL;
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
 #define DEMO_SPECTATOR 0x40
+#define DEMO_KICKSTART 0x20
 
 // For demos
 #define ZT_FWD     0x01
@@ -340,7 +341,14 @@ void G_ReadDemoExtraData(void)
 			K_CheckBumpers();
 			P_CheckRacers();
 		}
-
+		if (extradata & DXD_WEAPONPREF)
+		{
+			extradata = READUINT8(demo_p);
+			players[p].pflags &= ~(PF_KICKSTARTACCEL);
+			if (extradata & 1)
+				players[p].pflags |= PF_KICKSTARTACCEL;
+			//CONS_Printf("weaponpref is %d for player %d\n", extradata, p);
+		}
 
 		p = READUINT8(demo_p);
 	}
@@ -446,6 +454,13 @@ void G_WriteDemoExtraData(void)
 				else
 					WRITEUINT8(demo_p, DXD_PST_PLAYING);
 			}
+			if (demo_extradata[i] & DXD_WEAPONPREF)
+			{
+				UINT8 prefs = 0;
+				if (players[i].pflags & PF_KICKSTARTACCEL)
+					prefs |= 1;
+				WRITEUINT8(demo_p, prefs);
+			}
 		}
 
 		demo_extradata[i] = 0;
@@ -491,7 +506,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (ziptic & ZT_LATENCY)
 		oldcmd[playernum].latency = READUINT8(demo_p);
 	if (ziptic & ZT_FLAGS)
-		oldcmd[playernum].latency = READUINT8(demo_p);
+		oldcmd[playernum].flags = READUINT8(demo_p);
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
@@ -734,15 +749,15 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].kartitem != ghost->player->kartstuff[k_itemtype] ||
-			ghostext[playernum].kartamount != ghost->player->kartstuff[k_itemamount] ||
-			ghostext[playernum].kartbumpers != ghost->player->kartstuff[k_bumper]
+			ghostext[playernum].kartitem != ghost->player->itemtype ||
+			ghostext[playernum].kartamount != ghost->player->itemamount ||
+			ghostext[playernum].kartbumpers != ghost->player->bumpers
 		))
 	{
 		ghostext[playernum].flags |= EZT_KART;
-		ghostext[playernum].kartitem = ghost->player->kartstuff[k_itemtype];
-		ghostext[playernum].kartamount = ghost->player->kartstuff[k_itemamount];
-		ghostext[playernum].kartbumpers = ghost->player->kartstuff[k_bumper];
+		ghostext[playernum].kartitem = ghost->player->itemtype;
+		ghostext[playernum].kartamount = ghost->player->itemamount;
+		ghostext[playernum].kartbumpers = ghost->player->bumpers;
 	}
 
 	if (ghostext[playernum].flags)
@@ -795,7 +810,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		ghostext[playernum].flags = 0;
 	}
 
-	if (ghost->player && ghost->player->followmobj&& !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW)) // bloats tails runs but what can ya do
+	if (ghost->player && ghost->player->followmobj&& !(ghost->player->followmobj->sprite == SPR_NULL || (ghost->player->followmobj->renderflags & RF_DONTDRAW) == RF_DONTDRAW)) // bloats tails runs but what can ya do
 	{
 		fixed_t temp;
 		UINT8 *followtic_p = demo_p++;
@@ -1021,17 +1036,17 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem
-			|| players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount
-			|| players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers)
+		if (players[playernum].itemtype != ghostext[playernum].kartitem
+			|| players[playernum].itemamount != ghostext[playernum].kartamount
+			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
 			demosynced = false;
 
-			players[playernum].kartstuff[k_itemtype] = ghostext[playernum].kartitem;
-			players[playernum].kartstuff[k_itemamount] = ghostext[playernum].kartamount;
-			players[playernum].kartstuff[k_bumper] = ghostext[playernum].kartbumpers;
+			players[playernum].itemtype = ghostext[playernum].kartitem;
+			players[playernum].itemamount = ghostext[playernum].kartamount;
+			players[playernum].bumpers = ghostext[playernum].kartbumpers;
 		}
 	}
 
@@ -1067,6 +1082,8 @@ void G_GhostTicker(void)
 					g->p += 32; // ok (32 because there's both the skin and the colour)
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
 					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
+				if (ziptic & DXD_WEAPONPREF)
+					g->p++; // ditto
 			}
 			else if (ziptic == DW_RNG)
 				g->p += 4; // RNG seed
@@ -1137,7 +1154,7 @@ void G_GhostTicker(void)
 		if (g->fadein)
 		{
 			g->mo->frame += (((--g->fadein)/6)<<FF_TRANSSHIFT); // this calc never exceeds 9 unless g->fadein is bad, and it's only set once, so...
-			g->mo->drawflags &= ~MFD_DONTDRAW;
+			g->mo->renderflags &= ~RF_DONTDRAW;
 		}
 		g->mo->sprite2 = g->oldmo.sprite2;
 
@@ -1386,7 +1403,7 @@ void G_StoreRewindInfo(void)
 void G_PreviewRewind(tic_t previewtime)
 {
 	SINT8 i;
-	size_t j;
+	//size_t j;
 	fixed_t tweenvalue = 0;
 	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
 
@@ -1417,7 +1434,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!info->playerinfo[i].ingame || !info->playerinfo[i].player.mo)
 		{
 			if (players[i].mo)
-				players[i].mo->drawflags |= MFD_DONTDRAW;
+				players[i].mo->renderflags |= RF_DONTDRAW;
 
 			continue;
 		}
@@ -1425,7 +1442,7 @@ void G_PreviewRewind(tic_t previewtime)
 		if (!players[i].mo)
 			continue; //@TODO spawn temp object to act as a player display
 
-		players[i].mo->drawflags &= ~MFD_DONTDRAW;
+		players[i].mo->renderflags &= ~RF_DONTDRAW;
 
 		P_UnsetThingPosition(players[i].mo);
 #define TWEEN(pr) info->playerinfo[i].mobj.pr + FixedMul((INT32) (next_info->playerinfo[i].mobj.pr - info->playerinfo[i].mobj.pr), tweenvalue)
@@ -1445,8 +1462,9 @@ void G_PreviewRewind(tic_t previewtime)
 		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
 
 		players[i].realtime = info->playerinfo[i].player.realtime;
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];
+		// Genuinely CANNOT be fucked. I can redo lua and I can redo netsaves but I draw the line at this abysmal hack.
+		/*for (j = 0; j < NUMKARTSTUFF; j++)
+			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];*/
 	}
 
 	for (i = splitscreen; i >= 0; i--)
@@ -1793,7 +1811,7 @@ void G_WriteMetalTic(mobj_t *metal)
 		ghostext[0].flags = 0;
 	}
 
-	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->drawflags & MFD_DONTDRAW) == MFD_DONTDRAW))
+	if (metal->player && metal->player->followmobj && !(metal->player->followmobj->sprite == SPR_NULL || (metal->player->followmobj->renderflags & RF_DONTDRAW) == RF_DONTDRAW))
 	{
 		fixed_t temp;
 		UINT8 *followtic_p = demo_p++;
@@ -1983,7 +2001,12 @@ void G_BeginRecording(void)
 		if (playeringame[p]) {
 			player = &players[p];
 
-			WRITEUINT8(demo_p, p | (player->spectator ? DEMO_SPECTATOR : 0));
+			i = p;
+			if (player->pflags & PF_KICKSTARTACCEL)
+				i |= DEMO_KICKSTART;
+			if (player->spectator)
+				i |= DEMO_SPECTATOR;
+			WRITEUINT8(demo_p, i);
 
 			// Name
 			memset(name, 0, 16);
@@ -2634,7 +2657,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT32 randseed;
 	char msg[1024];
 
-	boolean spectator;
+	boolean spectator, kickstart;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
@@ -2903,10 +2926,8 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
-		spectator = false;
-		if (p & DEMO_SPECTATOR)
+		if ((spectator = (p & DEMO_SPECTATOR)))
 		{
-			spectator = true;
 			p &= ~DEMO_SPECTATOR;
 
 			if (modeattacking)
@@ -2921,6 +2942,10 @@ void G_DoPlayDemo(char *defdemoname)
 				return;
 			}
 		}
+
+		if ((kickstart = (p & DEMO_KICKSTART)))
+			p &= ~DEMO_KICKSTART;
+
 		slots[numslots] = p; numslots++;
 
 		if (modeattacking && numslots > 1)
@@ -2940,6 +2965,10 @@ void G_DoPlayDemo(char *defdemoname)
 
 		playeringame[p] = true;
 		players[p].spectator = spectator;
+		if (kickstart)
+			players[p].pflags |= PF_KICKSTARTACCEL;
+		else
+			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);
@@ -3194,7 +3223,7 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	if (READUINT8(p) != 0)
+	if ((READUINT8(p) & ~DEMO_KICKSTART) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
 		Z_Free(pdemoname);
@@ -3290,7 +3319,7 @@ void G_AddGhost(char *defdemoname)
 	gh->mo->sprite = gh->mo->state->sprite;
 	gh->mo->sprite2 = (gh->mo->state->frame & FF_FRAMEMASK);
 	//gh->mo->frame = tr_trans30<<FF_TRANSSHIFT;
-	gh->mo->drawflags |= MFD_DONTDRAW;
+	gh->mo->renderflags |= RF_DONTDRAW;
 	gh->fadein = (9-3)*6; // fade from invisible to trans30 over as close to 35 tics as possible
 	gh->mo->tics = -1;
 
@@ -3631,7 +3660,6 @@ void G_StopDemo(void)
 	democam.soundmobj = NULL;
 	democam.localangle = 0;
 	democam.localaiming = 0;
-	democam.turnheld = false;
 	democam.keyboardlook = false;
 
 	if (gamestate == GS_INTERMISSION)

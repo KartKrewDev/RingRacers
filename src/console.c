@@ -56,7 +56,7 @@ I_mutex con_mutex;
 #endif/*HAVE_THREADS*/
 
 static boolean con_started = false; // console has been initialised
-       boolean con_startup = false; // true at game startup, screen need refreshing
+       boolean con_startup = false; // true at game startup
 
        con_loadprogress_t con_startup_loadprogress = 0; // Progress for startup load bar
 
@@ -289,7 +289,7 @@ void CON_SetupBackColormapEx(INT32 color, boolean prompt)
 		case 12:	palindex = 139;				break; // Cyan
 		case 13:	palindex = 175; shift = 7;	break; // Steel
 		case 14:	palindex = 159;				break; // Blue
-		case 15:	palindex = 169;				break; // Purple
+		case 15:	palindex = 168;	shift = 7;	break; // Purple
 		case 16:	palindex = 187;				break; // Magenta
 		case 17:	palindex = 199; shift = 7;	break; // Lavender
 		case 18:	palindex = 207; shift = 7;	break; // Rose
@@ -433,7 +433,7 @@ void CON_Init(void)
 		Lock_state();
 
 		con_started = true;
-		con_startup = true; // need explicit screen refresh until we are in Doom loop
+		con_startup = true;
 		consoletoggle = false;
 
 		Unlock_state();
@@ -451,7 +451,7 @@ void CON_Init(void)
 		Lock_state();
 
 		con_started = true;
-		con_startup = false; // need explicit screen refresh until we are in Doom loop
+		con_startup = false;
 		consoletoggle = true;
 
 		Unlock_state();
@@ -814,6 +814,12 @@ static void CON_InputDelSelection(void)
 	size_t start, end, len;
 
 	Lock_state();
+
+	if (!input_cur)
+	{
+		Unlock_state();
+		return;
+	}
 
 	if (input_cur > input_sel)
 	{
@@ -1303,10 +1309,6 @@ boolean CON_Responder(event_t *ev)
 	if (key < 32 || key > 127)
 		return true;
 
-	// add key to cmd line here
-	if (key >= 'A' && key <= 'Z' && !(shiftdown ^ capslock)) //this is only really necessary for dedicated servers
-		key = key + 'a' - 'A';
-
 	if (input_sel != input_cur)
 		CON_InputDelSelection();
 	CON_InputAddChar(key);
@@ -1465,7 +1467,6 @@ void CONS_Printf(const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
-	boolean startup;
 
 	if (txt == NULL)
 		txt = malloc(8192);
@@ -1485,32 +1486,10 @@ void CONS_Printf(const char *fmt, ...)
 
 	Lock_state();
 
-	Lock_state();
-
 	// make sure new text is visible
 	con_scrollup = 0;
-	startup = con_startup;
 
 	Unlock_state();
-
-	// if not in display loop, force screen update
-	if (startup && (!setrenderneeded))
-	{
-#ifdef _WINDOWS
-		patch_t *con_backpic = W_CachePatchName("STARTUP", PU_CACHE);
-
-		// Jimita: CON_DrawBackpic just called V_DrawScaledPatch
-		V_DrawScaledPatch(0, 0, 0, con_backpic);
-
-		W_UnlockCachedPatch(con_backpic);
-		I_LoadingScreen(txt); // Win32/OS2 only
-#else
-		// here we display the console text
-		//CON_Drawer();
-		CON_DrawLoadBar();
-		I_FinishUpdate(); // page flip or blit buffer
-#endif
-	}
 }
 
 void CONS_Alert(alerttype_t level, const char *fmt, ...)
@@ -1571,7 +1550,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 //
 void CONS_Error(const char *msg)
 {
-#ifdef RPC_NO_WINDOWS_H
+#if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
 	if (!graphics_started)
 	{
 		MessageBoxA(vid.WndParent, msg, "SRB2Kart Warning", MB_OK);
@@ -1720,7 +1699,7 @@ static void CON_DrawHudlines(void)
 				;//charwidth = 4 * con_scalefactor;
 			else
 			{
-				//charwidth = SHORT(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
+				//charwidth = (hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
 				V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 			}
 		}
@@ -1739,7 +1718,6 @@ static void CON_DrawBackpic(void)
 	patch_t *con_backpic;
 	lumpnum_t piclump;
 	int x, w, h;
-	int scale;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
 	if (con_startup)
@@ -1750,8 +1728,8 @@ static void CON_DrawBackpic(void)
 	if (piclump == LUMPERROR)
 		piclump = W_GetNumForName("MISSING");
 
-	// Cache the Software patch.
-	con_backpic = W_CacheSoftwarePatchNum(piclump, PU_PATCH);
+	// Cache the patch.
+	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
 
 	// Center the backpic, and draw a vertically cropped patch.
 	w = (BASEVIDWIDTH * vid.dupx);
@@ -1762,7 +1740,7 @@ static void CON_DrawBackpic(void)
 	// then fill the sides with a solid color.
 	if (x > 0)
 	{
-		column_t *column = (column_t *)((UINT8 *)(con_backpic) + LONG(con_backpic->columnofs[0]));
+		column_t *column = (column_t *)((UINT8 *)(con_backpic->columns) + (con_backpic->columnofs[0]));
 		if (!column->topdelta)
 		{
 			UINT8 *source = (UINT8 *)(column) + 3;
@@ -1774,15 +1752,9 @@ static void CON_DrawBackpic(void)
 		}
 	}
 
-	scale = con_backpic->width / BASEVIDWIDTH;
-
-	// Cache the patch normally.
-	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
-	V_DrawCroppedPatch
-		(
-				x << FRACBITS, 0, FRACUNIT / scale, V_NOSCALESTART, con_backpic,
-				0, scale * ( BASEVIDHEIGHT - h ), scale * BASEVIDWIDTH, scale * h
-		);
+	// Draw the patch.
+	V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, V_NOSCALESTART, con_backpic,
+			0, ( BASEVIDHEIGHT - h ), BASEVIDWIDTH, h);
 
 	// Unlock the cached patch.
 	W_UnlockCachedPatch(con_backpic);
@@ -1865,9 +1837,6 @@ void CON_Drawer(void)
 		return;
 	}
 
-	if (needpatchrecache)
-		HU_LoadGraphics();
-
 	if (con_recalc)
 	{
 		CON_RecalcSize();
@@ -1884,6 +1853,25 @@ void CON_Drawer(void)
 	Unlock_state();
 }
 
+static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
+{
+	"Init zone memory...", //LOADED_ZINIT
+	"Init game timing...", //LOADED_ISTARTUPTIMER
+	"Loading main assets...", //LOADED_IWAD
+	"Loading add-ons...", //LOADED_PWAD
+	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
+	"Cache fonts...", //LOADED_HUINIT
+	"Load settings...", //LOADED_CONFIG
+	"Cache textures...", //LOADED_INITTEXTUREDATA
+	"Cache sprites...", //LOADED_INITSPIRTES
+	"Load characters...", //LOADED_INITSKINS
+	"Init rendering daemon...", //LOADED_RINIT
+	"Init audio subsystem...", //LOADED_SINITSFXCHANNELS
+	"Cache HUD...", //LOADED_STINIT
+	"Check game status...", //LOADED_DCHECKNETGAME
+	"Now starting..."
+}; // see also con_loadprogress_t in console.h
+
 //
 // Error handling for the loading bar, to ensure it doesn't skip any steps.
 //
@@ -1898,6 +1886,14 @@ void CON_SetLoadingProgress(con_loadprogress_t newStep)
 	}
 
 	con_startup_loadprogress = newStep;
+
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		CONS_Printf("LOADING UPDATE - %s\n", CON_LoadingStrings[con_startup_loadprogress]);
+
+	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
+		return;
+	CON_DrawLoadBar(); // here we display the console text
+	I_FinishUpdate(); // page flip or blit buffer
 }
 
 //
@@ -1920,6 +1916,10 @@ void CON_DrawLoadBar(void)
 
 	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / LOADED_ALLDONE;
 	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
+#ifdef DEVELOP
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		V_DrawString(4, BASEVIDHEIGHT - (barheight + 8 + 4), 0, CON_LoadingStrings[con_startup_loadprogress]);
+#endif
 
 	Unlock_state();
 }

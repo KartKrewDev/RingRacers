@@ -87,7 +87,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"fire",   false,   8, 32, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flamethrower"},
   {"grind",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Metallic grinding"},
   {"laser",   true,  16,  2, -1, NULL, 0,        -1,  -1, LUMPERROR, "Laser hum"},
-  {"mswing", false,  16,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging mace"},
+  {"mswing", false,  16, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging mace"},
   {"pstart", false, 100,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "/"},
   {"pstop",  false, 100,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Crusher stomp"},
   {"steam1", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Steam jet"}, // Tails 06-19-2001
@@ -630,8 +630,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3kc7l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Aiming"}, // ditto
   {"s3kc8s", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sliding"},
   {"s3kc8l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sliding"}, // ditto
-  {"s3kc9s", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"},
-  {"s3kc9l", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"}, // ditto
+  {"s3kc9s", false,  64, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"},
+  {"s3kc9l", false,  64, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, "Swinging"}, // ditto
   {"s3kcas", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"},
   {"s3kcal", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Energy"}, // ditto
   {"s3kcbs", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Ominous rumbling"},
@@ -837,6 +837,77 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kc6d",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc6e",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Mean Bean Machine sounds
+  {"mbs41",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs42",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs43",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs44",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs45",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs46",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs47",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs48",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs49",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs4f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs50",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs51",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs52",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs53",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs54",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs55",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs56",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs57",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs58",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs59",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs5f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs60",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs61",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs62",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs63",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs64",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs67",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs68",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs69",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs6a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs6b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs6d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs6e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs70",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs71",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbs72",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv81",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv82",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv83",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv84",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv85",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv86",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv87",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv88",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv89",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv8f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv90",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv91",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv92",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv93",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv94",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv95",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv96",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv97",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2kart
   {"slip",   false,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Spinout
   {"screec", false,  48,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Tight turning screech
@@ -895,6 +966,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"itfree", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // :shitsfree:
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Debug notification
   {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hammer cocks, bang bang
+  {"itcaps", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, "Item capsule"},
 
   // SRB2Kart - Engine sounds
   // Engine class A

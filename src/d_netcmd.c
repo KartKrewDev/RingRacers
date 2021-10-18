@@ -57,6 +57,7 @@
 #include "k_respawn.h"
 #include "k_grandprix.h"
 #include "doomstat.h"
+#include "deh_tables.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -167,6 +168,7 @@ static void Command_LeaveParty_f(void);
 
 static void Command_Addfile(void);
 static void Command_ListWADS_f(void);
+static void Command_ListDoomednums_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
 static void Command_Respawn(void);
@@ -258,11 +260,7 @@ consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT
 static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_respawntime = CVAR_INIT ("respawndelay", "1", CV_NETVAR|CV_CHEAT, respawntime_cons_t, NULL);
 
-#ifdef SEENAMES
-static CV_PossibleValue_t seenames_cons_t[] = {{0, "Off"}, {1, "Colorless"}, {2, "Team"}, {3, "Ally/Foe"}, {0, NULL}};
-consvar_t cv_seenames = CVAR_INIT ("seenames", "Off", CV_SAVE, seenames_cons_t, NULL);
-consvar_t cv_allowseenames = CVAR_INIT ("allowseenames", "No", CV_NETVAR, CV_YesNo, NULL);
-#endif
+consvar_t cv_seenames = CVAR_INIT ("seenames", "On", CV_SAVE, CV_OnOff, NULL);
 
 // names
 consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
@@ -432,6 +430,7 @@ consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", 
 consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
 consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL);
+consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 
 consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
@@ -639,6 +638,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("addfile", Command_Addfile);
 	COM_AddCommand("listwad", Command_ListWADS_f);
+	COM_AddCommand("listmapthings", Command_ListDoomednums_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
@@ -736,10 +736,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
 	CV_RegisterVar(&cv_showviewpointtext);
-
-#ifdef SEENAMES
-	CV_RegisterVar(&cv_allowseenames);
-#endif
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -841,15 +837,12 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_zlib_strategya);
 	CV_RegisterVar(&cv_zlib_window_bitsa);
 	CV_RegisterVar(&cv_apng_delay);
+	CV_RegisterVar(&cv_apng_downscale);
 	// GIF variables
 	CV_RegisterVar(&cv_gif_optimize);
 	CV_RegisterVar(&cv_gif_downscale);
 	CV_RegisterVar(&cv_gif_dynamicdelay);
 	CV_RegisterVar(&cv_gif_localcolortable);
-
-#ifdef WALLSPLATS
-	CV_RegisterVar(&cv_splats);
-#endif
 
 	// register these so it is saved to config
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -864,9 +857,7 @@ void D_RegisterClientCommands(void)
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
 
-#ifdef SEENAMES
 	CV_RegisterVar(&cv_seenames);
-#endif
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
@@ -933,6 +924,7 @@ void D_RegisterClientCommands(void)
 	// g_input.c
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
+		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_turnaxis[i]);
 		CV_RegisterVar(&cv_moveaxis[i]);
 		CV_RegisterVar(&cv_brakeaxis[i]);
@@ -1008,7 +1000,6 @@ void D_RegisterClientCommands(void)
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
-	COM_AddCommand("notarget", Command_CheatNoTarget_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
 	COM_AddCommand("setlives", Command_Setlives_f);
 	COM_AddCommand("devmode", Command_Devmode_f);
@@ -1420,7 +1411,7 @@ static void SendNameAndColor(UINT8 n)
 
 		player->skincolor = cv_playercolor[n].value;
 
-		if (player->mo && !player->powers[pw_dye])
+		if (player->mo && !player->dye)
 			player->mo->color = player->skincolor;
 
 		// Update follower for local games:
@@ -1621,6 +1612,8 @@ void SendWeaponPref(UINT8 n)
 
 	buf[0] = 0;
 	// Player option cvars that need to be synched go HERE
+	if (cv_kickstartaccel[n].value)
+		buf[0] |= 1;
 
 	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
 }
@@ -1629,11 +1622,13 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	(void)prefs;
-	(void)playernum;
-
-	//players[playernum].pflags &= ~(PF_FLIPCAM);
 	// Player option cvars that need to be synched go HERE
+	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
+	if (prefs & 1)
+		players[playernum].pflags |= PF_KICKSTARTACCEL;
+
+	// SEE ALSO g_demo.c
+	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
@@ -1877,7 +1872,7 @@ static INT32 FindPlayerByPlace(INT32 place)
 	for (playernum = 0; playernum < MAXPLAYERS; ++playernum)
 		if (playeringame[playernum])
 	{
-		if (players[playernum].kartstuff[k_position] == place)
+		if (players[playernum].position == place)
 		{
 			return playernum;
 		}
@@ -1901,7 +1896,7 @@ static void GetViewablePlayerPlaceRange(INT32 *first, INT32 *last)
 	for (i = 0; i < MAXPLAYERS; ++i)
 		if (G_CouldView(i))
 	{
-		place = players[i].kartstuff[k_position];
+		place = players[i].position;
 		if (place < (*first))
 			(*first) = place;
 		if (place > (*last))
@@ -2796,7 +2791,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
-	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2853,9 +2847,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		emeralds = 0;
 		memset(&luabanks, 0, sizeof(luabanks));
 	}
-
-	mapnumber = M_MapNumber(mapname[3], mapname[4]);
-	LUAh_MapChange(mapnumber);
 
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
@@ -2978,7 +2969,7 @@ static void Command_Respawn(void)
 	}
 
 	// todo: this probably isnt necessary anymore with v2
-	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].kartstuff[k_position])) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
+	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].position)) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
 	{
 		CONS_Printf(M_GetText("Nice try.\n"));
 		return;
@@ -2993,7 +2984,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 	INT32 respawnplayer = READINT32(*cp);
 
 	// You can't respawn someone else. Nice try, there.
-	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].kartstuff[k_position]) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
+	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].position) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -3148,7 +3139,7 @@ static void HandleTeamChangeCommand(UINT8 localplayer)
 	if (players[g_localplayers[localplayer]].spectator)
 		error = !(NetPacket.packet.newteam || (players[g_localplayers[localplayer]].pflags & PF_WANTSTOJOIN)); // :lancer:
 	else if (G_GametypeHasTeams())
-		error = (NetPacket.packet.newteam == (unsigned)players[g_localplayers[localplayer]].ctfteam);
+		error = (NetPacket.packet.newteam == players[g_localplayers[localplayer]].ctfteam);
 	else if (G_GametypeHasSpectators() && !players[g_localplayers[localplayer]].spectator)
 		error = (NetPacket.packet.newteam == 3);
 #ifdef PARANOIA
@@ -3264,7 +3255,7 @@ static void Command_ServerTeamChange_f(void)
 
 	if (G_GametypeHasTeams())
 	{
-		if (NetPacket.packet.newteam == (unsigned)players[NetPacket.packet.playernum].ctfteam ||
+		if (NetPacket.packet.newteam == players[NetPacket.packet.playernum].ctfteam ||
 			(players[NetPacket.packet.playernum].spectator && !NetPacket.packet.newteam))
 			error = true;
 	}
@@ -3370,9 +3361,11 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		if (players[playernum].mo)
 		{
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_INSTAKILL);
+			P_DamageMobj(players[playernum].mo, NULL, NULL, 1,
+				(NetPacket.packet.newteam ? DMG_INSTAKILL : DMG_SPECTATOR));
 		}
-		else
+		//else
+		if (!NetPacket.packet.newteam)
 		{
 			players[playernum].playerstate = PST_REBORN;
 		}
@@ -3439,7 +3432,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		displayplayers[0] = consoleplayer;
 	}
 
-	if (G_GametypeHasTeams())
+	/*if (G_GametypeHasTeams())
 	{
 		if (NetPacket.packet.newteam)
 		{
@@ -3447,10 +3440,10 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 			for (i = 0; i <= splitscreen; i++)
 			{
 				if (playernum == g_localplayers[i]) //CTF and Team Match colors.
-					CV_SetValue(&cv_playercolor[i], NetPacket.packet.newteam + 5);
+					CV_SetValue(&cv_playercolor[i], NetPacket.packet.newteam + 5); - -this calculation is totally wrong
 			}
 		}
-	}
+	}*/
 
 	if (gamestate != GS_LEVEL)
 		return;
@@ -3462,7 +3455,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		if (gametyperules & GTR_BUMPERS) // SRB2kart
 		{
-			players[playernum].marescore = 0;
+			players[playernum].roundscore = 0;
 			K_CalculateBattleWanted();
 		}
 
@@ -3551,12 +3544,16 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
+#ifdef DEVELOP
+	return playernum != serverplayer;
+#else
 	INT32 i;
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playernum == adminplayers[i])
 			return true;
 
 	return false;
+#endif
 }
 
 void SetAdminPlayer(INT32 playernum)
@@ -3899,7 +3896,13 @@ static void Command_Addfile(void)
 			if (!isprint(fn[i]) || fn[i] == ';')
 				return;
 
-		musiconly = W_VerifyNMUSlumps(fn);
+		musiconly = W_VerifyNMUSlumps(fn, false);
+
+		if (musiconly == -1)
+		{
+			addedfiles[numfilesadded++] = fn;
+			continue;
+		}
 
 		if (!musiconly)
 		{
@@ -4102,6 +4105,128 @@ static void Command_ListWADS_f(void)
 	}
 }
 
+#define MAXDOOMEDNUM 4095
+
+static void Command_ListDoomednums_f(void)
+{
+	INT16 i, j, focusstart = 0, focusend = 0;
+	INT32 argc = COM_Argc(), argstart = 0;
+	INT16 table[MAXDOOMEDNUM];
+	boolean nodoubles = false;
+	UINT8 doubles[(MAXDOOMEDNUM+8/8)];
+
+	if (argc > 1)
+	{
+		nodoubles = (strcmp(COM_Argv(1), "-nodoubles") == 0);
+		if (nodoubles)
+		{
+			argc--;
+			argstart++;
+		}
+	}
+
+	switch (argc)
+	{
+		case 1:
+			focusend = MAXDOOMEDNUM;
+			break;
+		case 3:
+			focusend = atoi(COM_Argv(argstart+2));
+			if (focusend < 1 || focusend > MAXDOOMEDNUM)
+			{
+				CONS_Printf("arg 2: doomednum \x82""%d \x85out of range (1-4095)\n", focusend);
+				return;
+			}
+			//FALLTHRU
+		case 2:
+			focusstart = atoi(COM_Argv(argstart+1));
+			if (focusstart < 1 || focusstart > MAXDOOMEDNUM)
+			{
+				CONS_Printf("arg 1: doomednum \x82""%d \x85out of range (1-4095)\n", focusstart);
+				return;
+			}
+			if (!focusend)
+				focusend = focusstart;
+			else if (focusend < focusstart) // silently and helpfully swap.
+			{
+				j = focusstart;
+				focusstart = focusend;
+				focusend = j;
+			}
+			break;
+		default:
+			CONS_Printf("listmapthings: \x86too many arguments!\n");
+			return;
+	}
+
+	// see P_SpawnNonMobjMapThing
+	memset(table, 0, sizeof(table));
+	memset(doubles, 0, sizeof(doubles));
+	for (i = 1; i <= MAXPLAYERS; i++)
+		table[i-1] = MT_PLAYER; // playerstarts
+	table[33-1] = table[34-1] = table[35-1] = MT_PLAYER; // battle/team starts
+	table[750-1] = table[777-1] = table[778-1] = MT_UNKNOWN; // slopes
+	for (i = 600; i <= 609; i++)
+		table[i-1] = MT_RING; // placement patterns
+	table[1705-1] = table[1713-1] = MT_HOOP; // types of hoop
+
+	CONS_Printf("\x82""Checking for double defines...\n");
+	for (i = 1; i < MT_FIRSTFREESLOT+NUMMOBJFREESLOTS; i++)
+	{
+		j = mobjinfo[i].doomednum;
+		if (j < (focusstart ? focusstart : 1) || j > focusend)
+			continue;
+		if (table[--j])
+		{
+			doubles[j/8] |= 1<<(j&7);
+			CONS_Printf("	doomednum \x82""%d""\x80 is \x85""double-defined\x80 by ", j+1);
+			if (i < MT_FIRSTFREESLOT)
+			{
+				CONS_Printf("\x87""hardcode %s <-- MAJOR ERROR\n", MOBJTYPE_LIST[i]);
+				continue;
+			}
+			CONS_Printf("\x81""freeslot MT_""%s\n", FREE_MOBJS[i-MT_FIRSTFREESLOT]);
+			continue;
+		}
+		table[j] = i;
+	}
+	CONS_Printf("\x82Printing doomednum usage...\n");
+	if (!focusstart)
+	{
+		i = 35; // skip MT_PLAYER spam
+		if (!nodoubles)
+			CONS_Printf("	doomednums \x82""1-35""\x80 are used by ""\x87""hardcode MT_PLAYER\n");
+	}
+	else
+		i = focusstart-1;
+
+	for (; i < focusend; i++)
+	{
+		if (nodoubles && !(doubles[i/8] & 1<<(i&7)))
+			continue;
+		if (!table[i])
+		{
+			if (focusstart)
+			{
+				CONS_Printf("	doomednum \x82""%d""\x80 is \x83""free!", i+1);
+				if (i < 99) // above the humble crawla? how dare you
+					CONS_Printf(" (Don't freeslot this low...)");
+				CONS_Printf("\n");
+			}
+			continue;
+		}
+		CONS_Printf("	doomednum \x82""%d""\x80 is used by ", i+1);
+		if (table[i] < MT_FIRSTFREESLOT)
+		{
+			CONS_Printf("\x87""hardcode %s\n", MOBJTYPE_LIST[table[i]]);
+			continue;
+		}
+		CONS_Printf("\x81""freeslot MT_""%s\n", FREE_MOBJS[table[i]-MT_FIRSTFREESLOT]);
+	}
+}
+
+#undef MAXDOOMEDNUM
+
 // =========================================================================
 //                            MISC. COMMANDS
 // =========================================================================
@@ -4209,8 +4334,7 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(true);
 	I_Quit();
 }
 
@@ -4733,8 +4857,6 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	int item;
 	int  amt;
 
-	INT32 *kartstuff;
-
 	item = READSINT8 (*cp);
 	amt  = READUINT8 (*cp);
 
@@ -4751,10 +4873,8 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	kartstuff = players[playernum].kartstuff;
-
-	kartstuff[k_itemtype]   = item;
-	kartstuff[k_itemamount] = amt;
+	players[playernum].itemtype   = item;
+	players[playernum].itemamount = amt;
 }
 
 /** Prints the number of displayplayers[0].
@@ -4795,8 +4915,7 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
-	if (Playing())
-		LUAh_GameQuit();
+	LUAh_GameQuit(false);
 
 	D_QuitNetGame();
 	CL_Reset();

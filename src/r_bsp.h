@@ -44,6 +44,8 @@ void R_RenderBSPNode(INT32 bspnum);
 // no longer a static since this is used for encore in hw_main.c as well now:
 boolean R_NoEncore(sector_t *sector, boolean ceiling);
 
+boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling);
+
 void R_SortPolyObjects(subsector_t *sub);
 
 extern size_t numpolys;        // number of polyobjects in current subsector

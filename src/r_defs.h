@@ -28,6 +28,8 @@
 #include "m_aatree.h"
 #endif
 
+#include "taglist.h"
+
 //
 // ClipWallSegment
 // Clips the given range of columns
@@ -152,9 +154,6 @@ typedef enum
 	FF_GOOWATER          = FF_SHATTERBOTTOM, ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
 } ffloortype_e;
 
-#define FFLOOR_ALPHA_SPECIAL_ADDITIVE		(901)
-#define FFLOOR_ALPHA_SPECIAL_SUBTRACTIVE	(902)
-
 typedef struct ffloor_s
 {
 	fixed_t *topheight;
@@ -185,6 +184,7 @@ typedef struct ffloor_s
 
 	INT32 lastlight;
 	INT32 alpha;
+	UINT8 blend;
 	tic_t norender; // for culling
 
 	// these are saved for netgames, so do not let Lua touch these!
@@ -264,6 +264,9 @@ typedef enum
 	SF_TRIGGERSPECIAL_HEADBUMP =  1<<3,
 	// invertprecip - inverts presence of precipitation
 	SF_INVERTPRECIP            =  1<<4,
+	// water ripple
+	SF_RIPPLE_FLOOR            =  1<<5,
+	SF_RIPPLE_CEILING          =  1<<6,
 } sectorflags_t;
 
 
@@ -288,8 +291,7 @@ typedef struct sector_s
 	INT32 ceilingpic;
 	INT16 lightlevel;
 	INT16 special;
-	UINT16 tag;
-	INT32 nexttag, firsttag; // for fast tag searches
+	taglist_t tags;
 
 	// origin for any sounds played by the sector
 	// also considered the center for e.g. Mario blocks
@@ -396,7 +398,7 @@ typedef struct line_s
 	// Animation related.
 	INT16 flags;
 	INT16 special;
-	INT16 tag;
+	taglist_t tags;
 	INT32 args[NUMLINEARGS];
 	char *stringargs[NUMLINESTRINGARGS];
 
@@ -416,10 +418,6 @@ typedef struct line_s
 	sector_t *backsector;
 
 	size_t validcount; // if == validcount, already checked
-#if 1//#ifdef WALLSPLATS
-	void *splats; // wallsplat_t list
-#endif
-	INT32 firsttag, nexttag; // improves searches for tags.
 	polyobj_t *polyobj; // Belongs to a polyobject?
 
 	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
@@ -464,9 +462,6 @@ typedef struct subsector_s
 	INT16 numlines;
 	UINT16 firstline;
 	struct polyobj_s *polyList; // haleyjd 02/19/06: list of polyobjects
-#if 1//#ifdef FLOORSPLATS
-	void *splats; // floorsplat_t list
-#endif
 	size_t validcount;
 } subsector_t;
 
@@ -665,8 +660,12 @@ typedef enum
 	RGBA32          = 4,  // 32 bit rgba
 } pic_mode_t;
 
-#if defined(_MSC_VER)
-#pragma pack(1)
+#ifdef ROTSPRITE
+typedef struct
+{
+	INT32 angles;
+	void **patches;
+} rotsprite_t;
 #endif
 
 // Patches.
@@ -674,7 +673,26 @@ typedef enum
 // Patches are used for sprites and all masked pictures, and we compose
 // textures from the TEXTURES list of patches.
 //
-// WARNING: this structure is cloned in GLPatch_t
+typedef struct
+{
+	INT16 width, height;
+	INT16 leftoffset, topoffset;
+
+	INT32 *columnofs; // Column offsets. This is relative to patch->columns
+	UINT8 *columns; // Software column data
+
+	void *hardware; // OpenGL patch, allocated whenever necessary
+	void *flats[4]; // The patch as flats
+
+#ifdef ROTSPRITE
+	rotsprite_t *rotated; // Rotated patches
+#endif
+} patch_t;
+
+#if defined(_MSC_VER)
+#pragma pack(1)
+#endif
+
 typedef struct
 {
 	INT16 width;          // bounding box size
@@ -683,7 +701,7 @@ typedef struct
 	INT16 topoffset;      // pixels below the origin
 	INT32 columnofs[8];     // only [width] used
 	// the [0] is &columnofs[width]
-} ATTRPACK patch_t;
+} ATTRPACK softwarepatch_t;
 
 #ifdef _MSC_VER
 #pragma warning(disable :  4200)
@@ -709,14 +727,66 @@ typedef struct
 #pragma pack()
 #endif
 
-// rotsprite
-#ifdef ROTSPRITE
-typedef struct
+// Possible alpha types for a patch.
+typedef enum {AST_COPY, AST_TRANSLUCENT, AST_ADD, AST_SUBTRACT, AST_REVERSESUBTRACT, AST_MODULATE, AST_OVERLAY} patchalphastyle_t;
+
+typedef enum
 {
-	patch_t *patch[16][ROTANGLES];
-	UINT16 cached;
-} rotsprite_t;
-#endif/*ROTSPRITE*/
+	RF_HORIZONTALFLIP   = 0x00000001,   // Flip sprite horizontally
+	RF_VERTICALFLIP     = 0x00000002,   // Flip sprite vertically
+	RF_ABSOLUTEOFFSETS  = 0x00000004,   // Sprite uses the object's offsets absolutely, instead of relatively
+	RF_FLIPOFFSETS      = 0x00000008,   // Relative object offsets are flipped with the sprite
+
+	RF_SPLATMASK        = 0x000000F0,   // --Floor sprite flags
+	RF_SLOPESPLAT       = 0x00000010,   // Rotate floor sprites by a slope
+	RF_OBJECTSLOPESPLAT = 0x00000020,   // Rotate floor sprites by the object's standing slope
+	RF_NOSPLATBILLBOARD = 0x00000040,   // Don't billboard floor sprites (faces forward from the view angle)
+	RF_NOSPLATROLLANGLE = 0x00000080,   // Don't rotate floor sprites by the object's rollangle (uses rotated patches instead)
+
+	RF_BRIGHTMASK       = 0x00000300,   // --Bright modes
+	RF_FULLBRIGHT       = 0x00000100,   // Sprite is drawn at full brightness
+	RF_FULLDARK         = 0x00000200,   // Sprite is drawn completely dark
+	RF_SEMIBRIGHT       = (RF_FULLBRIGHT | RF_FULLDARK), // between sector bright and full bright
+
+	RF_NOCOLORMAPS      = 0x00000400,   // Sprite is not drawn with colormaps
+
+	RF_SPRITETYPEMASK   = 0x00003000,   // --Different sprite types
+	RF_PAPERSPRITE      = 0x00001000,   // Paper sprite
+	RF_FLOORSPRITE      = 0x00002000,   // Floor sprite
+
+	RF_SHADOWDRAW       = 0x00004000,  // Stretches and skews the sprite like a shadow.
+	RF_SHADOWEFFECTS    = 0x00008000,  // Scales and becomes transparent like a shadow.
+	RF_DROPSHADOW       = (RF_SHADOWDRAW | RF_SHADOWEFFECTS | RF_FULLDARK),
+
+	RF_DONTDRAW         = 0x00F00000,   // --Don't generate a vissprite
+	RF_DONTDRAWP1       = 0x00100000,   // No P1
+	RF_DONTDRAWP2       = 0x00200000,   // No P2
+	RF_DONTDRAWP3       = 0x00400000,   // No P3
+	RF_DONTDRAWP4       = 0x00800000,   // No P4
+
+	RF_BLENDMASK       	= 0x07000000,   // --Blending override - see patchalphastyle_t
+	RF_BLENDSHIFT		= (6*4),
+	// minus 1 as effects don't distinguish between AST_COPY and AST_TRANSLUCENT
+	RF_ADD				= ((AST_ADD-1)<<RF_BLENDSHIFT),
+	RF_SUBTRACT			= ((AST_SUBTRACT-1)<<RF_BLENDSHIFT),
+	RF_REVERSESUBTRACT	= ((AST_REVERSESUBTRACT-1)<<RF_BLENDSHIFT),
+	RF_MODULATE			= ((AST_MODULATE-1)<<RF_BLENDSHIFT),
+	RF_OVERLAY			= ((AST_OVERLAY-1)<<RF_BLENDSHIFT),
+
+	RF_TRANSMASK       	= 0xF0000000,   // --Transparency override
+	RF_TRANSSHIFT		= (7*4),
+	RF_TRANS10       	= (1<<RF_TRANSSHIFT),   // 10%
+	RF_TRANS20       	= (2<<RF_TRANSSHIFT),   // 20%
+	RF_TRANS30       	= (3<<RF_TRANSSHIFT),   // 30%
+	RF_TRANS40       	= (4<<RF_TRANSSHIFT),   // 40%
+	RF_TRANS50       	= (5<<RF_TRANSSHIFT),   // 50%
+	RF_TRANS60       	= (6<<RF_TRANSSHIFT),   // 60%
+	RF_TRANS70       	= (7<<RF_TRANSSHIFT),   // 70%
+	RF_TRANS80       	= (8<<RF_TRANSSHIFT),   // 80%
+	RF_TRANS90       	= (9<<RF_TRANSSHIFT),   // 90%
+	RF_GHOSTLY			= (RF_TRANS80 | RF_FULLBRIGHT),
+	RF_GHOSTLYMASK		= (RF_TRANSMASK | RF_FULLBRIGHT),
+} renderflags_t;
 
 typedef enum
 {
@@ -729,24 +799,6 @@ typedef enum
 	SRF_2D          = SRF_LEFT|SRF_RIGHT, // 12
 	SRF_NONE        = 0xff // Initial value
 } spriterotateflags_t;     // SRF's up!
-
-// Same as a patch_t, except just the header
-// and the wadnum/lumpnum combination that points
-// to wherever the patch is in memory.
-struct patchinfo_s
-{
-	INT16 width;          // bounding box size
-	INT16 height;
-	INT16 leftoffset;     // pixels to the left of origin
-	INT16 topoffset;      // pixels below the origin
-
-	UINT16 wadnum;        // the software patch lump num for when the patch
-	UINT16 lumpnum;       // was flushed, and we need to re-create it
-
-	// next patchinfo_t in memory
-	struct patchinfo_s *next;
-};
-typedef struct patchinfo_s patchinfo_t;
 
 //
 // Sprites are patches with a special naming convention so they can be
@@ -777,7 +829,7 @@ typedef struct
 	UINT16 flip;
 
 #ifdef ROTSPRITE
-	rotsprite_t rotsprite;
+	rotsprite_t *rotated[2][16]; // Rotated patches
 #endif
 } spriteframe_t;
 

@@ -939,14 +939,14 @@ void F_GameEvaluationDrawer(void)
 
 		if (goodending)
 		{
-			rockpat = W_CachePatchName(va("ROID00%.2d", 34 - (finalecount % 35)), PU_PATCH);
-			glow = W_CachePatchName(va("ENDGLOW%.1d", 2+(finalecount & 1)), PU_PATCH);
+			rockpat = W_CachePatchName(va("ROID00%.2d", 34 - (finalecount % 35)), PU_PATCH_LOWPRIORITY);
+			glow = W_CachePatchName(va("ENDGLOW%.1d", 2+(finalecount & 1)), PU_PATCH_LOWPRIORITY);
 			x -= FRACUNIT;
 		}
 		else
 		{
-			rockpat = W_CachePatchName("ROID0000", PU_LEVEL);
-			glow = W_CachePatchName(va("ENDGLOW%.1d", (finalecount & 1)), PU_PATCH);
+			rockpat = W_CachePatchName("ROID0000", PU_PATCH_LOWPRIORITY);
+			glow = W_CachePatchName(va("ENDGLOW%.1d", (finalecount & 1)), PU_PATCH_LOWPRIORITY);
 		}
 
 		if (finalecount >= 5)
@@ -987,13 +987,13 @@ void F_GameEvaluationDrawer(void)
 		}
 		else
 		{
-			patch_t *eggrock = W_CachePatchName("ENDEGRK5", PU_PATCH);
+			patch_t *eggrock = W_CachePatchName("ENDEGRK5", PU_PATCH_LOWPRIORITY);
 			V_DrawFixedPatch(x, y, scale, 0, eggrock, colormap[0]);
 			if (trans < 10)
 				V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, eggrock, colormap[1]);
 			else if (sparklloop)
 				V_DrawFixedPatch(x, y, scale, (10-sparklloop)<<V_ALPHASHIFT,
-					W_CachePatchName("ENDEGRK0", PU_PATCH), colormap[1]);
+					W_CachePatchName("ENDEGRK0", PU_PATCH_LOWPRIORITY), colormap[1]);
 		}
 	}
 
@@ -1007,7 +1007,7 @@ void F_GameEvaluationDrawer(void)
 		eemeralds_cur += (360<<FRACBITS)/7;
 
 		patchname[4] = 'A'+(char)i;
-		V_DrawFixedPatch(x, y, FRACUNIT, ((emeralds & (1<<i)) ? 0 : V_80TRANS), W_CachePatchName(patchname, PU_PATCH), NULL);
+		V_DrawFixedPatch(x, y, FRACUNIT, ((emeralds & (1<<i)) ? 0 : V_80TRANS), W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY), NULL);
 	}
 
 	V_DrawCreditString((BASEVIDWIDTH - V_CreditStringWidth(endingtext))<<(FRACBITS-1), (BASEVIDHEIGHT-100)<<(FRACBITS-1), 0, endingtext);
@@ -1091,7 +1091,7 @@ void F_GameEvaluationTicker(void)
 	{
 		if (netgame || multiplayer) // modify this when we finally allow unlocking stuff in 2P
 		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
+			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
 			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Multiplayer games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
@@ -1107,7 +1107,7 @@ void F_GameEvaluationTicker(void)
 		}
 		else
 		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
+			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
 			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Modified games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
@@ -1127,32 +1127,32 @@ void F_GameEvaluationTicker(void)
 
 static void F_CacheEnding(void)
 {
-	endbrdr[1] = W_CachePatchName("ENDBRDR1", PU_PATCH);
+	endbrdr[1] = W_CachePatchName("ENDBRDR1", PU_PATCH_LOWPRIORITY);
 
-	endegrk[0] = W_CachePatchName("ENDEGRK0", PU_PATCH);
-	endegrk[1] = W_CachePatchName("ENDEGRK1", PU_PATCH);
+	endegrk[0] = W_CachePatchName("ENDEGRK0", PU_PATCH_LOWPRIORITY);
+	endegrk[1] = W_CachePatchName("ENDEGRK1", PU_PATCH_LOWPRIORITY);
 
-	endglow[0] = W_CachePatchName("ENDGLOW0", PU_PATCH);
-	endglow[1] = W_CachePatchName("ENDGLOW1", PU_PATCH);
+	endglow[0] = W_CachePatchName("ENDGLOW0", PU_PATCH_LOWPRIORITY);
+	endglow[1] = W_CachePatchName("ENDGLOW1", PU_PATCH_LOWPRIORITY);
 
-	endbgsp[0] = W_CachePatchName("ENDBGSP0", PU_PATCH);
-	endbgsp[1] = W_CachePatchName("ENDBGSP1", PU_PATCH);
-	endbgsp[2] = W_CachePatchName("ENDBGSP2", PU_PATCH);
+	endbgsp[0] = W_CachePatchName("ENDBGSP0", PU_PATCH_LOWPRIORITY);
+	endbgsp[1] = W_CachePatchName("ENDBGSP1", PU_PATCH_LOWPRIORITY);
+	endbgsp[2] = W_CachePatchName("ENDBGSP2", PU_PATCH_LOWPRIORITY);
 
-	endspkl[0] = W_CachePatchName("ENDSPKL0", PU_PATCH);
-	endspkl[1] = W_CachePatchName("ENDSPKL1", PU_PATCH);
-	endspkl[2] = W_CachePatchName("ENDSPKL2", PU_PATCH);
+	endspkl[0] = W_CachePatchName("ENDSPKL0", PU_PATCH_LOWPRIORITY);
+	endspkl[1] = W_CachePatchName("ENDSPKL1", PU_PATCH_LOWPRIORITY);
+	endspkl[2] = W_CachePatchName("ENDSPKL2", PU_PATCH_LOWPRIORITY);
 
-	endxpld[0] = W_CachePatchName("ENDXPLD0", PU_PATCH);
-	endxpld[1] = W_CachePatchName("ENDXPLD1", PU_PATCH);
-	endxpld[2] = W_CachePatchName("ENDXPLD2", PU_PATCH);
-	endxpld[3] = W_CachePatchName("ENDXPLD3", PU_PATCH);
+	endxpld[0] = W_CachePatchName("ENDXPLD0", PU_PATCH_LOWPRIORITY);
+	endxpld[1] = W_CachePatchName("ENDXPLD1", PU_PATCH_LOWPRIORITY);
+	endxpld[2] = W_CachePatchName("ENDXPLD2", PU_PATCH_LOWPRIORITY);
+	endxpld[3] = W_CachePatchName("ENDXPLD3", PU_PATCH_LOWPRIORITY);
 
-	endescp[0] = W_CachePatchName("ENDESCP0", PU_PATCH);
-	endescp[1] = W_CachePatchName("ENDESCP1", PU_PATCH);
-	endescp[2] = W_CachePatchName("ENDESCP2", PU_PATCH);
-	endescp[3] = W_CachePatchName("ENDESCP3", PU_PATCH);
-	endescp[4] = W_CachePatchName("ENDESCP4", PU_PATCH);
+	endescp[0] = W_CachePatchName("ENDESCP0", PU_PATCH_LOWPRIORITY);
+	endescp[1] = W_CachePatchName("ENDESCP1", PU_PATCH_LOWPRIORITY);
+	endescp[2] = W_CachePatchName("ENDESCP2", PU_PATCH_LOWPRIORITY);
+	endescp[3] = W_CachePatchName("ENDESCP3", PU_PATCH_LOWPRIORITY);
+	endescp[4] = W_CachePatchName("ENDESCP4", PU_PATCH_LOWPRIORITY);
 
 	// so we only need to check once
 	if ((goodending = ALLCHAOSEMERALDS(emeralds)))
@@ -1161,28 +1161,28 @@ static void F_CacheEnding(void)
 		endfwrk[1] = W_CachePatchName("ENDFWRK4", PU_PATCH);
 		endfwrk[2] = W_CachePatchName("ENDFWRK5", PU_PATCH);
 
-		endbrdr[0] = W_CachePatchName("ENDBRDR2", PU_PATCH);
+		endbrdr[0] = W_CachePatchName("ENDBRDR2", PU_PATCH_LOWPRIORITY);
 	}
 	else
 	{
 		// eggman, skin nonspecific
-		endfwrk[0] = W_CachePatchName("ENDFWRK0", PU_PATCH);
-		endfwrk[1] = W_CachePatchName("ENDFWRK1", PU_PATCH);
-		endfwrk[2] = W_CachePatchName("ENDFWRK2", PU_PATCH);
+		endfwrk[0] = W_CachePatchName("ENDFWRK0", PU_PATCH_LOWPRIORITY);
+		endfwrk[1] = W_CachePatchName("ENDFWRK1", PU_PATCH_LOWPRIORITY);
+		endfwrk[2] = W_CachePatchName("ENDFWRK2", PU_PATCH_LOWPRIORITY);
 
-		endbrdr[0] = W_CachePatchName("ENDBRDR0", PU_LEVEL);
+		endbrdr[0] = W_CachePatchName("ENDBRDR0", PU_PATCH_LOWPRIORITY);
 	}
 }
 
 static void F_CacheGoodEnding(void)
 {
-	endegrk[0] = W_CachePatchName("ENDEGRK2", PU_PATCH);
-	endegrk[1] = W_CachePatchName("ENDEGRK3", PU_PATCH);
+	endegrk[0] = W_CachePatchName("ENDEGRK2", PU_PATCH_LOWPRIORITY);
+	endegrk[1] = W_CachePatchName("ENDEGRK3", PU_PATCH_LOWPRIORITY);
 
-	endglow[0] = W_CachePatchName("ENDGLOW2", PU_PATCH);
-	endglow[1] = W_CachePatchName("ENDGLOW3", PU_PATCH);
+	endglow[0] = W_CachePatchName("ENDGLOW2", PU_PATCH_LOWPRIORITY);
+	endglow[1] = W_CachePatchName("ENDGLOW3", PU_PATCH_LOWPRIORITY);
 
-	endxpld[0] = W_CachePatchName("ENDEGRK4", PU_PATCH);
+	endxpld[0] = W_CachePatchName("ENDEGRK4", PU_PATCH_LOWPRIORITY);
 }
 
 void F_StartEnding(void)
@@ -1239,17 +1239,10 @@ void F_EndingDrawer(void)
 	INT32 x, y, i, j, parallaxticker;
 	patch_t *rockpat;
 
-	if (needpatchrecache)
-	{
-		F_CacheEnding();
-		if (goodending && finalecount >= INFLECTIONPOINT) // time to swap some assets
-			F_CacheGoodEnding();
-	}
-
 	if (!goodending || finalecount < INFLECTIONPOINT)
-		rockpat = W_CachePatchName("ROID0000", PU_PATCH);
+		rockpat = W_CachePatchName("ROID0000", PU_PATCH_LOWPRIORITY);
 	else
-		rockpat = W_CachePatchName(va("ROID00%.2d", 34 - ((finalecount - INFLECTIONPOINT) % 35)), PU_PATCH);
+		rockpat = W_CachePatchName(va("ROID00%.2d", 34 - ((finalecount - INFLECTIONPOINT) % 35)), PU_PATCH_LOWPRIORITY);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
@@ -1586,7 +1579,7 @@ void F_EndingDrawer(void)
 				eemeralds_cur[0] += (360<<FRACBITS)/7;
 
 				patchname[4] = 'A'+(char)i;
-				V_DrawFixedPatch(x, y, FRACUNIT, 0, W_CachePatchName(patchname, PU_LEVEL), NULL);
+				V_DrawFixedPatch(x, y, FRACUNIT, 0, W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY), NULL);
 			}
 		} // if (goodending...
 	} // (finalecount > 20)
@@ -1704,14 +1697,14 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 
 	if (!scrollxspeed && !scrollyspeed)
 	{
-		V_DrawPatchFill(W_CachePatchName(patchname, PU_PATCH));
+		V_DrawPatchFill(W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY));
 		return;
 	}
 
-	pat = W_CachePatchName(patchname, PU_PATCH);
+	pat = W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY);
 
-	patwidth = SHORT(pat->width);
-	patheight = SHORT(pat->height);
+	patwidth = pat->width;
+	patheight = pat->height;
 	pw = patwidth * dupz;
 	ph = patheight * dupz;
 
@@ -1747,7 +1740,7 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 lumpnum = W_CheckNumForName(name); \
 if (lumpnum != LUMPERROR) \
 { \
-	arr[0] = W_CachePatchName(name, PU_LEVEL); \
+	arr[0] = W_CachePatchName(name, PU_PATCH_LOWPRIORITY); \
 	arr[min(1, maxf-1)] = 0; \
 } \
 else if (strlen(name) <= 6) \
@@ -1760,7 +1753,7 @@ else if (strlen(name) <= 6) \
 		lumpname[8] = 0; \
 		lumpnum = W_CheckNumForName(lumpname); \
 		if (lumpnum != LUMPERROR) \
-			arr[i] = W_CachePatchName(lumpname, PU_LEVEL); \
+			arr[i] = W_CachePatchName(lumpname, PU_PATCH_LOWPRIORITY); \
 		else \
 			break; \
 	} \
@@ -1875,9 +1868,6 @@ void F_TitleScreenDrawer(void)
 
 	if (modeattacking)
 		return; // We likely came here from retrying. Don't do a damn thing.
-
-	if (needpatchrecache)
-		F_CacheTitleScreen();
 
 	// Draw that sky!
 	if (curbgcolor >= 0)
@@ -2341,10 +2331,10 @@ void F_CutsceneDrawer(void)
 	{
 		if (cutscenes[cutnum]->scene[scenenum].pichires[picnum])
 			V_DrawSmallScaledPatch(picxpos, picypos, 0,
-				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH));
+				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
-				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH));
+				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
 	}
 
 	if (dofadenow && rendermode != render_none)
@@ -2817,10 +2807,10 @@ void F_TextPromptDrawer(void)
 	{
 		if (textprompts[cutnum]->page[scenenum].pichires[picnum])
 			V_DrawSmallScaledPatch(picxpos, picypos, 0,
-				W_CachePatchName(textprompts[cutnum]->page[scenenum].picname[picnum], PU_PATCH));
+				W_CachePatchName(textprompts[cutnum]->page[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
-				W_CachePatchName(textprompts[cutnum]->page[scenenum].picname[picnum], PU_PATCH));
+				W_CachePatchName(textprompts[cutnum]->page[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
 	}
 
 	// Draw background
@@ -2830,7 +2820,7 @@ void F_TextPromptDrawer(void)
 	if (iconlump != LUMPERROR)
 	{
 		INT32 iconx, icony, scale, scaledsize;
-		patch = W_CachePatchName(textprompts[cutnum]->page[scenenum].iconname, PU_PATCH);
+		patch = W_CachePatchName(textprompts[cutnum]->page[scenenum].iconname, PU_PATCH_LOWPRIORITY);
 
 		// scale and center
 		if (patch->width > patch->height)
@@ -2876,7 +2866,7 @@ void F_TextPromptDrawer(void)
 }
 
 #define nocontrolallowed(j) {\
-		players[j].powers[pw_nocontrol] = 1;\
+		players[j].nocontrol = 1;\
 		if (players[j].mo)\
 		{\
 			if (players[j].mo->state == states+S_KART_STILL && players[j].mo->tics != -1)\
@@ -2947,7 +2937,7 @@ void F_TextPromptTicker(void)
 				{
 					UINT8 j;
 
-					players[i].powers[pw_nocontrol] = 1;
+					players[i].nocontrol = 1;
 
 					// Both players' controls are locked,
 					// But only the triggering player can advance the prompt.

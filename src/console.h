@@ -25,8 +25,10 @@ extern I_mutex con_mutex;
 // set true when screen size has changed, to adapt console
 extern boolean con_recalc;
 
+// console being displayed at game startup
 extern boolean con_startup;
 
+// when modifying the below, you must also adjust d_main and console.c
 typedef enum
 {
 	LOADED_ZINIT = 1,
@@ -34,9 +36,11 @@ typedef enum
 	LOADED_IWAD,
 	LOADED_PWAD,
 	LOADED_ISTARTUPGRAPHICS,
-	LOADED_HULOADGRAPHICS,
-	LOADED_RENDERER,
-	LOADED_MINIT,
+	LOADED_HUINIT,
+	LOADED_CONFIG,
+	LOADED_INITTEXTUREDATA,
+	LOADED_INITSPRITES,
+	LOADED_INITSKINS,
 	LOADED_RINIT,
 	LOADED_SINITSFXCHANNELS,
 	LOADED_STINIT,

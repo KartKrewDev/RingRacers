@@ -64,7 +64,6 @@ void ST_runTitleCard(void);
 void ST_drawTitleCard(void);
 void ST_preDrawTitleCard(void);
 void ST_preLevelTitleCardDrawer(void);
-void ST_drawWipeTitleCard(void);
 
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;
@@ -78,7 +77,7 @@ boolean ST_SameTeam(player_t *a, player_t *b);
 
 extern boolean st_overlay; // sb overlay on or off when fullscreen
 extern INT32 st_palette; // 0 is default, any others are special palettes.
-extern INT32 st_translucency;
+extern UINT32 st_translucency;
 
 extern lumpnum_t st_borderpatchnum;
 // patches, also used in intermission

@@ -23,17 +23,23 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "m_perfstats.h"
-#include "i_system.h" // I_GetTimeMicros
+#include "i_system.h" // I_GetPreciseTime
 
 // Object place
 #include "m_cheat.h"
 
 // SRB2Kart
 #include "k_kart.h"
+#include "k_race.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
 
 tic_t leveltime;
+
+INT32 P_AltFlip(INT32 n, tic_t tics)
+{
+	return leveltime % (2 * tics) < tics ? n : -(n);
+}
 
 //
 // THINKERS
@@ -321,7 +327,7 @@ static inline void P_RunThinkers(void)
 	size_t i;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
-		ps_thlist_times[i] = I_GetTimeMicros();
+		ps_thlist_times[i] = I_GetPreciseTime();
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = currentthinker->next)
 		{
 #ifdef PARANOIA
@@ -329,8 +335,11 @@ static inline void P_RunThinkers(void)
 #endif
 			currentthinker->function.acp1(currentthinker);
 		}
-		ps_thlist_times[i] = I_GetTimeMicros() - ps_thlist_times[i];
+		ps_thlist_times[i] = I_GetPreciseTime() - ps_thlist_times[i];
 	}
+
+	if (gametyperules & GTR_CIRCUIT)
+		K_RunFinishLineBeam();
 
 	if (gametyperules & GTR_PAPERITEMS)
 		K_RunPaperItemSpawners();
@@ -351,7 +360,7 @@ static void P_DoAutobalanceTeams(void)
 	INT32 i=0;
 	INT32 red=0, blue=0;
 	INT32 redarray[MAXPLAYERS], bluearray[MAXPLAYERS];
-	INT32 redflagcarrier = 0, blueflagcarrier = 0;
+	//INT32 redflagcarrier = 0, blueflagcarrier = 0;
 	INT32 totalred = 0, totalblue = 0;
 
 	NetPacket.value.l = NetPacket.value.b = 0;
@@ -371,29 +380,29 @@ static void P_DoAutobalanceTeams(void)
 		{
 			if (players[i].ctfteam == 1)
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					redarray[red] = i; //store the player's node.
 					red++;
 				}
-				else
-					redflagcarrier++;
+				/*else
+					redflagcarrier++;*/
 			}
 			else
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					bluearray[blue] = i; //store the player's node.
 					blue++;
 				}
-				else
-					blueflagcarrier++;
+				/*else
+					blueflagcarrier++;*/
 			}
 		}
 	}
 
-	totalred = red + redflagcarrier;
-	totalblue = blue + blueflagcarrier;
+	totalred = red;// + redflagcarrier;
+	totalblue = blue;// + blueflagcarrier;
 
 	if ((abs(totalred - totalblue) > max(1, (totalred + totalblue) / 8)))
 	{
@@ -561,7 +570,7 @@ void P_Ticker(boolean run)
 
 		LUAh_PreThinkFrame();
 
-		ps_playerthink_time = I_GetTimeMicros();
+		ps_playerthink_time = I_GetPreciseTime();
 
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -578,7 +587,7 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
 
-		ps_playerthink_time = I_GetTimeMicros() - ps_playerthink_time;
+		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
 
 	// Keep track of how long they've been playing!
@@ -590,22 +599,21 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
-		ps_thinkertime = I_GetTimeMicros();
+		ps_thinkertime = I_GetPreciseTime();
 		P_RunThinkers();
-		ps_thinkertime = I_GetTimeMicros() - ps_thinkertime;
+		ps_thinkertime = I_GetPreciseTime() - ps_thinkertime;
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		ps_lua_thinkframe_time = I_GetTimeMicros();
+		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();
-		ps_lua_thinkframe_time = I_GetTimeMicros() - ps_lua_thinkframe_time;
+		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
 	// Run shield positioning
-	P_RunShields();
 	P_RunOverlays();
 
 	P_UpdateSpecials();
@@ -651,6 +659,8 @@ void P_Ticker(boolean run)
 			quake.x = M_RandomRange(-ir,ir);
 			quake.y = M_RandomRange(-ir,ir);
 			quake.z = M_RandomRange(-ir,ir);
+			if (cv_windowquake.value)
+				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
 			--quake.time;
 		}
 		else
@@ -701,13 +711,20 @@ void P_Ticker(boolean run)
 	if (demo.playback)
 		G_StoreRewindInfo();
 
+	if (leveltime == 2)
+	{
+		// The values needed to set this properly are not correct at map load,
+		// so we have to do it at the second tick instead...
+		K_TimerInit();
+	}
+
 //	Z_CheckMemCleanup();
 }
 
 // Abbreviated ticker for pre-loading, calls thinkers and assorted things
 void P_PreTicker(INT32 frames)
 {
-	INT32 i,framecnt;
+	INT32 i;
 	ticcmd_t temptic;
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -716,7 +733,9 @@ void P_PreTicker(INT32 frames)
 	if (marathonmode & MA_INGAME)
 		marathonmode |= MA_INIT;
 
-	for (framecnt = 0; framecnt < frames; ++framecnt)
+	hook_defrosting = frames;
+
+	while (hook_defrosting)
 	{
 		P_MapStart();
 
@@ -757,7 +776,6 @@ void P_PreTicker(INT32 frames)
 		LUAh_ThinkFrame();
 
 		// Run shield positioning
-		P_RunShields();
 		P_RunOverlays();
 
 		P_UpdateSpecials();
@@ -766,6 +784,8 @@ void P_PreTicker(INT32 frames)
 		LUAh_PostThinkFrame();
 
 		P_MapEnd();
+
+		hook_defrosting--;
 	}
 
 	if (marathonmode & MA_INGAME)

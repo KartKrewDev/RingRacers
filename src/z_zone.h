@@ -42,8 +42,13 @@ enum
 
 	PU_SOUND                 = 11, // static while playing
 	PU_MUSIC                 = 12, // static while playing
-	PU_HUDGFX                = 13, // static until WAD added
-	PU_PATCH                 = 14, // static until renderer change
+
+	PU_PATCH                 = 14, // static entire execution time
+	PU_PATCH_LOWPRIORITY     = 15, // lower priority patch, static until level exited
+	PU_PATCH_ROTATED         = 16, // rotated patch, static until level exited or WAD added
+	PU_PATCH_DATA            = 17, // patch data, lifetime depends on the patch that owns it
+	PU_SPRITE                = 18, // sprite patch, static until WAD added
+	PU_HUDGFX                = 19, // HUD patch, static until WAD added
 
 	PU_HWRPATCHINFO          = 21, // Hardware GLPatch_t struct for OpenGL texture cache
 	PU_HWRPATCHCOLMIPMAP     = 22, // Hardware GLMipmap_t struct colormap variation of patch
@@ -63,8 +68,7 @@ enum
 	PU_HWRCACHE_UNLOCKED     = 102, // 'unlocked' PU_HWRCACHE memory:
 									// 'second-level' cache for graphics
 									// stored in hardware format and downloaded as needed
-	PU_HWRPATCHINFO_UNLOCKED = 103, // 'unlocked' PU_HWRPATCHINFO memory
-	PU_HWRMODELTEXTURE_UNLOCKED = 104, // 'unlocked' PU_HWRMODELTEXTURE memory
+	PU_HWRMODELTEXTURE_UNLOCKED = 103, // 'unlocked' PU_HWRMODELTEXTURE memory
 };
 
 //
@@ -75,12 +79,8 @@ void Z_Init(void);
 //
 // Zone memory allocation
 //
-// enable ZDEBUG to get the file + line the functions were called from
-// for ZZ_Alloc, see doomdef.h
-//
 
 // Z_Free and alloc with alignment
-#ifdef ZDEBUG
 #define Z_Free(p)                 Z_Free2(p, __FILE__, __LINE__)
 #define Z_MallocAlign(s,t,u,a)    Z_Malloc2(s, t, u, a, __FILE__, __LINE__)
 #define Z_CallocAlign(s,t,u,a)    Z_Calloc2(s, t, u, a, __FILE__, __LINE__)
@@ -89,12 +89,6 @@ void Z_Free2(void *ptr, const char *file, INT32 line);
 void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
 void *Z_Calloc2(size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(1);
 void *Z_Realloc2(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits, const char *file, INT32 line) FUNCALLOC(2);
-#else
-void Z_Free(void *ptr);
-void *Z_MallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(1);
-void *Z_CallocAlign(size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(1);
-void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignbits) FUNCALLOC(2);
-#endif
 
 // Alloc with no alignment
 #define Z_Malloc(s,t,u)    Z_MallocAlign(s, t, u, 0)
@@ -102,10 +96,14 @@ void *Z_ReallocAlign(void *ptr, size_t size, INT32 tag, void *user, INT32 alignb
 #define Z_Realloc(p,s,t,u) Z_ReallocAlign(p, s, t, u, 0)
 
 // Free all memory by tag
-// these don't give line numbers for ZDEBUG currently though
+// these don't give line numbers currently though
 // (perhaps this should be changed in future?)
 #define Z_FreeTag(tagnum) Z_FreeTags(tagnum, tagnum)
 void Z_FreeTags(INT32 lowtag, INT32 hightag);
+
+// Iterate memory by tag
+#define Z_IterateTag(tagnum, func) Z_IterateTags(tagnum, tagnum, func)
+void Z_IterateTags(INT32 lowtag, INT32 hightag, boolean (*iterfunc)(void *));
 
 //
 // Utility functions
@@ -143,11 +141,5 @@ size_t Z_TagsUsage(INT32 lowtag, INT32 hightag);
 //
 char *Z_StrDup(const char *in);
 #define Z_Unlock(p) (void)p // TODO: remove this now that NDS code has been removed
-
-// For renderer switching
-extern boolean needpatchflush;
-extern boolean needpatchrecache;
-void Z_FlushCachedPatches(void);
-void Z_PreparePatchFlush(void);
 
 #endif
