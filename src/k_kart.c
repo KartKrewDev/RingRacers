@@ -3215,14 +3215,14 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 static boolean K_LastTumbleBounceCondition(player_t *player)
 {
-	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 40);
+	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
 }
 
 static void K_HandleTumbleBounce(player_t *player)
 {
 	fixed_t gravityadjust;
 	player->tumbleBounces++;
-	player->tumbleHeight = (player->tumbleHeight * 4) / 5;
+	player->tumbleHeight = (player->tumbleHeight * ((player->tumbleHeight > 100) ? 3 : 4)) / 5;
 	player->pflags &= ~PF_TUMBLESOUND;
 
 	if (player->tumbleHeight < 10)

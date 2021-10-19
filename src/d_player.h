@@ -375,7 +375,7 @@ typedef struct player_s
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
-	UINT16 tumbleHeight;
+	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
