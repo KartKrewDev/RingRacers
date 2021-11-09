@@ -696,7 +696,7 @@ INT32 K_KartGetItemOdds(
 			}
 			else
 			{
-				const INT32 distFromStart = max(0, secondToFirst - SPBSTARTDIST);
+				const INT32 distFromStart = max(0, (INT32)secondToFirst - SPBSTARTDIST);
 				const INT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
 				const INT32 mulMax = 3;
 
