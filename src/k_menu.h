@@ -360,7 +360,7 @@ void M_LevelSelectTick(void);
 // We'll add more stuff here as we need em...
 
 extern struct mpmenu_s {
-	UINT8 modechoice;	
+	UINT8 modechoice;
 
 	UINT8 room;
 

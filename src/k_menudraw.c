@@ -1305,14 +1305,64 @@ void M_DrawTimeAttack(void)
 	}
 }
 
+// This draws the options of a given menu in a fashion specific to the multiplayer option select screen (host game / server browser etc)
+// TODO: Add 2nd argument that lets us "expand" a given option via an array
+
+static void M_MPOptDrawer(menu_t *m)
+{
+	// This is a copypaste of the generic gamemode menu code with a few changes.
+	// TODO: Allow specific options to "expand" into smaller ones.
+
+	patch_t *buttback = W_CachePatchName("M_PLAT2", PU_CACHE);
+
+	UINT8 n = m->numitems-1;
+	INT32 i, x = 142, y = 32;	// Dirty magic numbers for now but they work out.
+
+	if (menutransition.tics)
+	{
+		x += 24 * menutransition.tics;
+	}
+
+	for (i = 0; i < m->numitems; i++)
+	{
+
+		switch (m->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_STRING:
+				{
+					UINT8 *colormap = NULL;
+
+					if (i == itemOn)
+					{
+						colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+					}
+					else
+					{
+						colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+					}
+
+					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, buttback, colormap);
+					V_DrawCenteredGamemodeString(x, y - 3, V_ALLOWLOWERCASE, colormap, m->menuitems[i].text);
+				}
+				break;
+		}
+
+		x += GM_XOFFSET;
+		y += GM_YOFFSET;
+	}
+}
+
 // Multiplayer mode option select
 void M_DrawMPOptSelect(void)
 {
-	
+
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
-	
+
 	V_DrawFill(0, 0, 999, 999, 25);
-	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, background, NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
+
+	M_DrawMenuTooltips();
+	M_MPOptDrawer(currentMenu);
 }
 
 // Multiplayer room select

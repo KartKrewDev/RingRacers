@@ -174,7 +174,15 @@ menu_t PLAY_BattleGamemodesDef = KARTGAMEMODEMENU(PLAY_BattleGamemodesMenu, &PLA
 // MULTIPLAYER OPTION SELECT
 menuitem_t PLAY_MP_OptSelect[] =
 {
-	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
+	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
+	{IT_STRING | IT_CALL, "Host Game", "Start your own online game!",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
+		NULL, M_MPRoomSelectInit, 0, 0},
 };
 
 menu_t PLAY_MP_OptSelectDef = {

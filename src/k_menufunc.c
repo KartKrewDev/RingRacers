@@ -2611,20 +2611,20 @@ struct mpmenu_s mpmenu;
 // MULTIPLAYER OPTION SELECT
 void M_MPOptSelect(INT32 choice)
 {
-	
+
 }
 
 void M_MPOptSelectInit(INT32 chocie)
 {
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;
-	
+
 	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
 }
 
 void M_MPOptSelectTick(void)
 {
-	
+
 }
 
 // MULTIPLAYER ROOM SELECT MENU
