@@ -1043,8 +1043,12 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
+
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
+
+	// SPECIFIC HACK TO NEW-MENUS SO THAT MY DUMBASS STOPS FORGETTING TO ADD THE FILE (rip :youfuckedup:)
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));
 #endif
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1288,8 +1292,11 @@ void D_SRB2Main(void)
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
+
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
+	// TODO: DON'T FORGET TO REMOVE THIS ONCE WE DON'T NEED IT ANYMORE.
+	mainwads++;	// newmenus.pk3
 #endif
 
 #endif //ifndef DEVELOP
