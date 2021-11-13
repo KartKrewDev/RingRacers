@@ -2604,6 +2604,72 @@ void M_LevelSelectTick(void)
 	}
 }
 
+
+
+struct mpmenu_s mpmenu;
+
+// MULTIPLAYER OPTION SELECT
+void M_MPOptSelect(INT32 choice)
+{
+	
+}
+
+void M_MPOptSelectInit(INT32 chocie)
+{
+	mpmenu.modechoice = 0;
+	mpmenu.ticker = 0;
+	
+	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+}
+
+void M_MPOptSelectTick(void)
+{
+	
+}
+
+// MULTIPLAYER ROOM SELECT MENU
+
+void M_MPRoomSelect(INT32 choice)
+{
+
+	switch (choice)
+	{
+
+		case KEY_LEFTARROW:
+		case KEY_RIGHTARROW:
+		{
+
+			mpmenu.room = (!mpmenu.room) ? 1 : 0;
+			S_StartSound(NULL, sfx_s3k5b);
+
+			break;
+		}
+
+		case KEY_ESCAPE:
+		{
+			if (currentMenu->prevMenu)
+				M_SetupNextMenu(currentMenu->prevMenu, false);
+			else
+				M_ClearMenus(true);
+			break;
+		}
+
+	}
+}
+
+void M_MPRoomSelectTick(void)
+{
+	mpmenu.ticker++;
+}
+
+void M_MPRoomSelectInit(INT32 choice)
+{
+	mpmenu.room = 0;
+	mpmenu.ticker = 0;
+
+	M_SetupNextMenu(&PLAY_MP_RoomSelectDef, false);
+}
+
 // =====================
 // PAUSE / IN-GAME MENUS
 // =====================

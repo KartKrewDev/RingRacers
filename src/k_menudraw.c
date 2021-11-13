@@ -1305,6 +1305,64 @@ void M_DrawTimeAttack(void)
 	}
 }
 
+// Multiplayer mode option select
+void M_DrawMPOptSelect(void)
+{
+	
+	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
+	
+	V_DrawFill(0, 0, 999, 999, 25);
+	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, background, NULL);
+}
+
+// Multiplayer room select
+void M_DrawMPRoomSelect(void)
+{
+	// Greyscale colormaps for the option that's not selected's background
+	UINT8 *colormap_l = NULL;
+	UINT8 *colormap_r = NULL;
+
+	patch_t *bg_l = W_CachePatchName("BG_MPS21", PU_CACHE);
+	patch_t *bg_r = W_CachePatchName("BG_MPS22", PU_CACHE);
+
+	patch_t *split = W_CachePatchName("MPSPLIT1", PU_CACHE);
+
+	patch_t *butt1[] = {W_CachePatchName("MP_B1", PU_CACHE), W_CachePatchName("MP_B12", PU_CACHE)};
+	patch_t *butt2[] = {W_CachePatchName("MP_B2", PU_CACHE), W_CachePatchName("MP_B22", PU_CACHE)};
+
+	patch_t *scrollp[] = {W_CachePatchName("MP_SCR1", PU_CACHE), W_CachePatchName("MP_SCR2", PU_CACHE)};
+	patch_t *drawp = scrollp[mpmenu.room];
+
+	fixed_t scrollposx[] = {(BASEVIDWIDTH/4)<<FRACBITS, (BASEVIDWIDTH/2 + BASEVIDWIDTH/4)<<FRACBITS};
+	UINT8 i;
+	INT32 soffy = 0;
+
+	if (mpmenu.room)
+		colormap_l = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_CACHE);
+	else
+		colormap_r = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_CACHE);
+
+	// Draw the 2 sides of the background
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg_l, colormap_l);
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg_r, colormap_r);
+
+
+	// Draw the black split:
+	V_DrawFixedPatch(160<<FRACBITS, 0, FRACUNIT, 0, split, NULL);
+
+	// Vertical scrolling stuff
+	for (i = 0; i < 3; i++)
+	{
+		V_DrawFixedPatch(scrollposx[mpmenu.room], ((-((mpmenu.ticker*2) % drawp->height)) + soffy)*FRACUNIT , FRACUNIT, V_ADD, drawp, NULL);
+		soffy += scrollp[mpmenu.room]->height;
+	}
+
+
+	// Draw buttons:
+	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+}
+
 //
 // INGAME / PAUSE MENUS
 //

@@ -63,8 +63,8 @@ menuitem_t PLAY_MainMenu[] =
 	{IT_STRING | IT_SUBMENU, "Local Play", "Play only on this computer.",
 		NULL, &PLAY_GamemodesDef, 0, 0},
 
-	{IT_STRING, "Online", "Connect to other computers.",
-		NULL, NULL, 0, 0},
+	{IT_STRING | IT_CALL, "Online", "Connect to other computers.",
+		NULL, M_MPOptSelectInit, /*M_MPRoomSelectInit,*/ 0, 0},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
 };
@@ -170,6 +170,44 @@ menuitem_t PLAY_BattleGamemodesMenu[] =
 };
 
 menu_t PLAY_BattleGamemodesDef = KARTGAMEMODEMENU(PLAY_BattleGamemodesMenu, &PLAY_GamemodesDef);
+
+// MULTIPLAYER OPTION SELECT
+menuitem_t PLAY_MP_OptSelect[] =
+{
+	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
+};
+
+menu_t PLAY_MP_OptSelectDef = {
+	sizeof (PLAY_MP_OptSelect) / sizeof (menuitem_t),
+	&PLAY_MainDef,
+	0,
+	PLAY_MP_OptSelect,
+	0, 0,
+	0, 0,
+	M_DrawMPOptSelect,
+	M_MPOptSelectTick,
+	NULL
+};
+
+
+// MULTIPLAYER ROOM SELECT (CORE / MODDED)
+menuitem_t PLAY_MP_RoomSelect[] =
+{
+	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPRoomSelect, 0, 0},
+};
+
+menu_t PLAY_MP_RoomSelectDef = {
+	sizeof (PLAY_MP_RoomSelect) / sizeof (menuitem_t),
+	&PLAY_MP_OptSelectDef,
+	0,
+	PLAY_MP_RoomSelect,
+	0, 0,
+	0, 0,
+	M_DrawMPRoomSelect,
+	M_MPRoomSelectTick,
+	NULL
+};
+
 
 // -------------------
 // In-game/pause menus

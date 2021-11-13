@@ -180,6 +180,12 @@ extern menu_t PLAY_LevelSelectDef;
 extern menuitem_t PLAY_TimeAttack[];
 extern menu_t PLAY_TimeAttackDef;
 
+extern menuitem_t PLAY_MP_OptSelect[];
+extern menu_t PLAY_MP_OptSelectDef;
+
+extern menuitem_t PLAY_MP_RoomSelect[];
+extern menu_t PLAY_MP_RoomSelectDef;
+
 extern menuitem_t PLAY_BattleGamemodesMenu[];
 extern menu_t PLAY_BattleGamemodesDef;
 
@@ -348,6 +354,31 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+// Multiplayer menu stuff
+
+// Keep track of multiplayer menu related data
+// We'll add more stuff here as we need em...
+
+extern struct mpmenu_s {
+	UINT8 modechoice;	
+
+	UINT8 room;
+
+	tic_t ticker;
+} mpmenu;
+
+// MP selection
+void M_MPOptSelect(INT32 choice);
+void M_MPOptSelectInit(INT32 choice);
+void M_MPOptSelectTick(void);
+
+// Server browser room selection
+void M_MPRoomSelect(INT32 choice);
+void M_MPRoomSelectTick(void);
+void M_MPRoomSelectInit(INT32 choice);
+
+// Replay Playback
+
 extern tic_t playback_last_menu_interaction_leveltime;
 
 void M_EndModeAttackRun(void);
@@ -381,6 +412,11 @@ void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
 void M_DrawTimeAttack(void);
 
+// Multiplayer menu stuff
+void M_DrawMPOptSelect(void);
+void M_DrawMPRoomSelect(void);
+
+// Replay Playback
 void M_DrawPlaybackMenu(void);
 
 // These defines make it a little easier to make menus
