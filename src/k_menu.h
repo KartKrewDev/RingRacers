@@ -254,7 +254,7 @@ void M_GoBack(INT32 choice);
 void M_Ticker(void);
 void M_Init(void);
 
-menu_t MessageDef;
+extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
 
@@ -321,7 +321,7 @@ typedef enum
 	SPLITCV_NAME,
 	SPLITCV_MAX
 } splitscreencvars_t;
-consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
+extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(INT32 choice);
 void M_CharacterSelectHandler(INT32 choice);
@@ -383,8 +383,8 @@ void M_MPOptSelect(INT32 choice);
 void M_MPOptSelectInit(INT32 choice);
 void M_MPOptSelectTick(void);
 boolean M_MPResetOpts(void);
-consvar_t cv_dummygametype;		// lazy hack to allow us to select the GT on the server host submenu
-consvar_t cv_dummyip;			// I HAVE
+extern consvar_t cv_dummygametype;		// lazy hack to allow us to select the GT on the server host submenu
+extern consvar_t cv_dummyip;			// I HAVE
 								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
 
 // MP Host
