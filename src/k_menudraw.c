@@ -1306,22 +1306,18 @@ void M_DrawTimeAttack(void)
 }
 
 // This draws the options of a given menu in a fashion specific to the multiplayer option select screen (host game / server browser etc)
-// TODO: Add 2nd argument that lets us "expand" a given option via an array
+// First argument is the menu to draw the options from, the 2nd one is a table that contains which option is to be "extendded"
+// Format for each option: {extended? (only used by the ticker), max extension (likewise),  # of lines to extend}
 
-static void M_MPOptDrawer(menu_t *m)
+// NOTE: This is pretty rigid and only intended for use with the multiplayer options menu which has *3* choices.
+
+static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 {
 	// This is a copypaste of the generic gamemode menu code with a few changes.
 	// TODO: Allow specific options to "expand" into smaller ones.
 
 	patch_t *buttback = W_CachePatchName("M_PLAT2", PU_CACHE);
-
-	UINT8 n = m->numitems-1;
 	INT32 i, x = 142, y = 32;	// Dirty magic numbers for now but they work out.
-
-	if (menutransition.tics)
-	{
-		x += 24 * menutransition.tics;
-	}
 
 	for (i = 0; i < m->numitems; i++)
 	{
@@ -1331,8 +1327,9 @@ static void M_MPOptDrawer(menu_t *m)
 			case IT_STRING:
 				{
 					UINT8 *colormap = NULL;
+					INT16 j = 0;
 
-					if (i == itemOn)
+					if ((currentMenu == m && i == itemOn) || extend[i][0])	// Selected / unfolded
 					{
 						colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 					}
@@ -1341,28 +1338,184 @@ static void M_MPOptDrawer(menu_t *m)
 						colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
 					}
 
-					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, buttback, colormap);
+					if (extend[i][2])
+					{
+						for (j=0; j < extend[i][2]/2; j++)
+						{
+							// Draw rectangles that look like the current selected item starting from the top of the actual selection graphic and going up to where it's supposed to go.
+							// With colour 169 (that's the index of the shade of black the plague colourization gives us. ...No I don't like using a magic number either.
+							V_DrawFill(x + (extend[i][2]/2) - j - (buttback->width/2), (y + extend[i][2]) - (2*j), 225, 2, 169);
+						}
+					}
+					V_DrawFixedPatch((x + (extend[i][2]/2)) *FRACUNIT, (y + extend[i][2])*FRACUNIT, FRACUNIT, 0, buttback, colormap);
 					V_DrawCenteredGamemodeString(x, y - 3, V_ALLOWLOWERCASE, colormap, m->menuitems[i].text);
 				}
 				break;
 		}
 
 		x += GM_XOFFSET;
-		y += GM_YOFFSET;
+		y += GM_YOFFSET + extend[i][2];
 	}
+}
+
+// Draws the EGGA CHANNEL background.
+static void M_DrawEggaChannel(void)
+{
+	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
+
+	V_DrawFill(0, 0, 999, 999, 25);
+	V_DrawFixedPatch(160<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
+	V_DrawVhsEffect(false);	// VHS the background! (...sorry OGL my love)
 }
 
 // Multiplayer mode option select
 void M_DrawMPOptSelect(void)
 {
-
-	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
-
-	V_DrawFill(0, 0, 999, 999, 25);
-	V_DrawFixedPatch(160<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
-
+	M_DrawEggaChannel();
 	M_DrawMenuTooltips();
-	M_MPOptDrawer(currentMenu);
+	M_MPOptDrawer(&PLAY_MP_OptSelectDef, mpmenu.modewinextend);
+}
+
+// Multiplayer mode option select: HOST GAME!
+// A rehash of the generic menu drawer adapted to fit into that cramped space. ...A small sacrifice for utility
+void M_DrawMPHost(void)
+{
+
+	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
+	INT32 xp = 50, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
+	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
+
+	// Now draw our host options...
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+
+		if (i == currentMenu->numitems-1)
+		{
+
+			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+			if (i == itemOn)
+				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+			// Ideally we'd calculate this but it's not worth it for a 1-off menu probably.....
+			V_DrawFixedPatch(212<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
+			V_DrawCenteredGamemodeString(212 + (gobutt->width/2), 100 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+		}
+		else
+		{
+			switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+			{
+				case IT_STRING:
+				{
+					V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+
+					// Cvar specific handling
+					switch (currentMenu->menuitems[i].status & IT_TYPE)
+					{
+						case IT_CVAR:
+						{
+							consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+							{
+								case IT_CV_STRING:
+									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE, cv->string);
+									if (skullAnimCounter < 4 && i == itemOn)
+										V_DrawCharacter(xp + 93 + V_ThinStringWidth(cv->string, 0), yp +1, '_' | 0x80, false);
+
+									break;
+
+								default:
+									w = V_StringWidth(cv->string, 0);
+									V_DrawString(xp + 138 - w, yp, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+									if (i == itemOn)
+									{
+										V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow
+										V_DrawCharacter(xp + 138 + 2 + (skullAnimCounter/5), yp, '\x1D' | highlightflags, false); // right arrow
+									}
+									break;
+							}
+							break;
+						}
+					}
+
+					xp += 5;
+					yp += 11;
+
+					break;
+				}
+			break;
+			}
+
+		}
+
+	}
+}
+
+// Multiplayer mode option select: JOIN BY IP
+// Once again we'll copypaste 1 bit of the generic menu handler we used for hosting but we only need it for IT_CV_STRING since that's all we got :)
+// (I don't like duplicating code but I rather this than some horrible all-in-one function with too many options...)
+void M_DrawMPJoinIP(void)
+{
+
+	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
+	INT32 xp = 70, yp = 100, i = 0;	// Starting position for the text drawing.
+	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
+
+	// Now draw our host options...
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+
+		if (i == currentMenu->numitems-1)
+		{
+
+			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+			if (i == itemOn)
+				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+			// Ideally we'd calculate this but it's not worth it for a 1-off menu probably.....
+			V_DrawFixedPatch(219<<FRACBITS, 114<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
+			V_DrawCenteredGamemodeString(219 + (gobutt->width/2), 114 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+		}
+		else
+		{
+			switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+			{
+				case IT_STRING:
+				{
+					V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+
+					// Cvar specific handling
+					switch (currentMenu->menuitems[i].status & IT_TYPE)
+					{
+						case IT_CVAR:
+						{
+							consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+							{
+								case IT_CV_STRING:
+									V_DrawThinString(xp + 65, yp-1, V_ALLOWLOWERCASE, cv->string);
+									if (skullAnimCounter < 4 && i == itemOn)
+										V_DrawCharacter(xp + 65 + V_ThinStringWidth(cv->string, 0), yp, '_' | 0x80, false);
+
+									break;
+
+								default:
+									break;
+							}
+							break;
+						}
+					}
+
+					xp += 5;
+					yp += 11;
+
+					break;
+				}
+			break;
+			}
+
+		}
+
+	}
 }
 
 // Multiplayer room select

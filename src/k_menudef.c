@@ -176,10 +176,10 @@ menuitem_t PLAY_MP_OptSelect[] =
 {
 	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
 	{IT_STRING | IT_CALL, "Host Game", "Start your own online game!",
-		NULL, NULL, 0, 0},
+		NULL, M_MPHostInit, 0, 0},
 
 	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
-		NULL, NULL, 0, 0},
+		NULL, M_MPJoinIPInit, 0, 0},
 
 	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
 		NULL, M_MPRoomSelectInit, 0, 0},
@@ -191,12 +191,69 @@ menu_t PLAY_MP_OptSelectDef = {
 	0,
 	PLAY_MP_OptSelect,
 	0, 0,
-	0, 0,
+	-1, 1,
 	M_DrawMPOptSelect,
 	M_MPOptSelectTick,
 	NULL
 };
 
+// MULTIPLAYER HOST SCREEN
+menuitem_t PLAY_MP_Host[] =
+{
+	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Display name for your game online. Other players will see this.",
+		NULL, &cv_servername, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Public Server", "Display or not your game in the Server Browser for other players.",
+		NULL, &cv_advertise, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Max. Players", "Set how many players can play at once. Others will spectate.",
+		NULL, &cv_ingamecap, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Gamemode", "Are we racing? Or perhaps battling?",
+		NULL, &cv_dummygametype, 0, 0},
+
+	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
+		NULL, M_MPSetupNetgameMapSelect, 0, 0},
+
+};
+
+menu_t PLAY_MP_HostDef = {
+	sizeof (PLAY_MP_Host) / sizeof (menuitem_t),
+	&PLAY_MP_OptSelectDef,
+	0,
+	PLAY_MP_Host,
+	0, 0,
+	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
+	M_DrawMPHost,
+	M_MPOptSelectTick,	// This handles the unfolding options
+	M_MPResetOpts
+};
+
+// MULTIPLAYER JOIN BY IP
+menuitem_t PLAY_MP_JoinIP[] =
+{
+	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Address: ", "Type the IPv4 address of the server you wish to connect to.",
+		NULL, &cv_dummyip, 0, 0},
+
+	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
+		NULL, M_JoinIP, 0, 0},
+};
+
+menu_t PLAY_MP_JoinIPDef = {
+	sizeof (PLAY_MP_JoinIP) / sizeof (menuitem_t),
+	&PLAY_MP_OptSelectDef,
+	0,
+	PLAY_MP_JoinIP,
+	0, 0,
+	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
+	M_DrawMPJoinIP,
+	M_MPOptSelectTick,	// This handles the unfolding options
+	M_MPResetOpts
+};
 
 // MULTIPLAYER ROOM SELECT (CORE / MODDED)
 menuitem_t PLAY_MP_RoomSelect[] =

@@ -183,6 +183,12 @@ extern menu_t PLAY_TimeAttackDef;
 extern menuitem_t PLAY_MP_OptSelect[];
 extern menu_t PLAY_MP_OptSelectDef;
 
+extern menuitem_t PLAY_MP_Host[];
+extern menu_t PLAY_MP_HostDef;
+
+extern menuitem_t PLAY_MP_JoinIP[];
+extern menu_t PLAY_MP_JoinIPDef;
+
 extern menuitem_t PLAY_MP_RoomSelect[];
 extern menu_t PLAY_MP_RoomSelectDef;
 
@@ -331,7 +337,8 @@ extern struct cupgrid_s {
 	SINT8 pageno;
 	UINT8 numpages;
 	tic_t previewanim;
-	boolean grandprix; // Setup grand prix server after picking
+	boolean grandprix; 	// Setup grand prix server after picking
+	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
 extern struct levellist_s {
@@ -342,6 +349,7 @@ extern struct levellist_s {
 	INT16 choosemap;
 	UINT8 newgametype;
 	boolean timeattack; // Setup time attack menu after picking
+	boolean netgame;	// Start the game in an actual server
 } levellist;
 
 boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt);
@@ -361,6 +369,9 @@ void M_LevelSelectTick(void);
 
 extern struct mpmenu_s {
 	UINT8 modechoice;
+	INT16 modewinextend[3][3];	// Used to "extend" the options in the mode select screen.
+								// format for each option: {extended?, max extension, # lines extended}
+								// See M_OptSelectTick, it'll make more sense there. Sorry if this is a bit of a mess!
 
 	UINT8 room;
 
@@ -371,6 +382,18 @@ extern struct mpmenu_s {
 void M_MPOptSelect(INT32 choice);
 void M_MPOptSelectInit(INT32 choice);
 void M_MPOptSelectTick(void);
+boolean M_MPResetOpts(void);
+consvar_t cv_dummygametype;		// lazy hack to allow us to select the GT on the server host submenu
+consvar_t cv_dummyip;			// I HAVE
+								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
+
+// MP Host
+void M_MPHostInit(INT32 choice);
+void M_MPSetupNetgameMapSelect(INT32 choice);
+
+// MP join by IP
+void M_MPJoinIPInit(INT32 choice);
+void M_JoinIP(void);
 
 // Server browser room selection
 void M_MPRoomSelect(INT32 choice);
@@ -414,6 +437,8 @@ void M_DrawTimeAttack(void);
 
 // Multiplayer menu stuff
 void M_DrawMPOptSelect(void);
+void M_DrawMPHost(void);
+void M_DrawMPJoinIP(void);
 void M_DrawMPRoomSelect(void);
 
 // Replay Playback

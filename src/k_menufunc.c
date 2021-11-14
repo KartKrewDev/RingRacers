@@ -164,12 +164,15 @@ static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2
 static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
 static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
 static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 static consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
 static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
+consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dummygametype_cons_t, NULL);
+consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -1559,6 +1562,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspectate);
 	CV_RegisterVar(&cv_dummyscramble);
 	CV_RegisterVar(&cv_dummystaff);
+	CV_RegisterVar(&cv_dummygametype);
+	CV_RegisterVar(&cv_dummyip);
 
 	M_UpdateMenuBGImage(true);
 
@@ -2286,30 +2291,10 @@ static void M_LevelSelectScrollDest(void)
 		levellist.dest = (6*m)-3;
 }
 
-void M_LevelSelectInit(INT32 choice)
+//  Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
+static void M_LevelListFromGametype(INT16 gt)
 {
-	(void)choice;
-
-	switch (currentMenu->menuitems[itemOn].mvar1)
-	{
-		case 0:
-			cupgrid.grandprix = false;
-			levellist.timeattack = false;
-			break;
-		case 1:
-			cupgrid.grandprix = false;
-			levellist.timeattack = true;
-			break;
-		case 2:
-			cupgrid.grandprix = true;
-			levellist.timeattack = false;
-			break;
-		default:
-			CONS_Alert(CONS_WARNING, "Bad level select init\n");
-			return;
-	}
-
-	levellist.newgametype = currentMenu->menuitems[itemOn].mvar2;
+	levellist.newgametype = gt;
 	PLAY_CupSelectDef.prevMenu = currentMenu;
 
 	// Obviously go to Cup Select in gametypes that have cups.
@@ -2351,6 +2336,41 @@ void M_LevelSelectInit(INT32 choice)
 
 	PLAY_LevelSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+
+}
+
+// Init level select for use in local play using the last choice we made.
+// For the online MP version, see M_MPSetupNetgameMapSelect()
+
+void M_LevelSelectInit(INT32 choice)
+{
+	(void)choice;
+
+	levellist.netgame = false;	// Make sure this is reset as we'll only be using this function for offline games!
+	cupgrid.netgame = false;	// Ditto
+
+	switch (currentMenu->menuitems[itemOn].mvar1)
+	{
+		case 0:
+			cupgrid.grandprix = false;
+			levellist.timeattack = false;
+			break;
+		case 1:
+			cupgrid.grandprix = false;
+			levellist.timeattack = true;
+			break;
+		case 2:
+			cupgrid.grandprix = true;
+			levellist.timeattack = false;
+			break;
+		default:
+			CONS_Alert(CONS_WARNING, "Bad level select init\n");
+			return;
+	}
+
+	levellist.newgametype = currentMenu->menuitems[itemOn].mvar2;
+
+	M_LevelListFromGametype(levellist.newgametype);
 }
 
 void M_CupSelectHandler(INT32 choice)
@@ -2433,6 +2453,7 @@ void M_CupSelectHandler(INT32 choice)
 				paused = false;
 				SV_StartSinglePlayerServer();
 				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				netgame = levellist.netgame;	// ^ ditto.
 				D_MapChange(
 					grandprixinfo.cup->levellist[0] + 1,
 					GT_RACE,
@@ -2567,6 +2588,8 @@ void M_LevelSelectHandler(INT32 choice)
 					paused = false;
 					SV_StartSinglePlayerServer();
 					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+					netgame = levellist.netgame;	// ^ ditto.
+
 					D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
 					M_ClearMenus(true);
@@ -2609,22 +2632,121 @@ void M_LevelSelectTick(void)
 struct mpmenu_s mpmenu;
 
 // MULTIPLAYER OPTION SELECT
-void M_MPOptSelect(INT32 choice)
-{
 
+// Use this as a quit routine within the HOST GAME and JOIN BY IP "sub" menus
+boolean M_MPResetOpts(void)
+{
+	UINT8 i = 0;
+
+	for (; i < 3; i++)
+		mpmenu.modewinextend[i][0] = 0;	// Undo this
+
+	return true;
 }
 
-void M_MPOptSelectInit(INT32 chocie)
+void M_MPOptSelectInit(INT32 choice)
 {
+	INT16 arrcpy[3][3] = {{0,68,0}, {0,48,0}, {0,12,0}};
+	UINT8 i = 0, j = 0;	// To copy the array into the struct
+
+	(void)choice;
+
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;
+
+	for (; i < 3; i++)
+		for (j = 0; j < 3; j++)
+			mpmenu.modewinextend[i][j] = arrcpy[i][j];	// I miss Lua already
 
 	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
 }
 
 void M_MPOptSelectTick(void)
 {
+	UINT8 i = 0;
 
+	// 3 Because we have 3 options in the menu
+	for (; i < 3; i++)
+	{
+		if (mpmenu.modewinextend[i][0])
+			mpmenu.modewinextend[i][2] += 8;
+		else
+			mpmenu.modewinextend[i][2] -= 8;
+
+		mpmenu.modewinextend[i][2] = min(mpmenu.modewinextend[i][1], max(0, mpmenu.modewinextend[i][2]));
+		//CONS_Printf("%d - %d,%d,%d\n", i, mpmenu.modewinextend[i][0], mpmenu.modewinextend[i][1], mpmenu.modewinextend[i][2]);
+	}
+}
+
+
+// MULTIPLAYER HOST
+void M_MPHostInit(INT32 choice)
+{
+
+	(void)choice;
+	mpmenu.modewinextend[0][0] = 1;
+	M_SetupNextMenu(&PLAY_MP_HostDef, true);
+}
+
+void M_MPSetupNetgameMapSelect(INT32 choice)
+{
+
+	INT16 gt = GT_RACE;
+	(void)choice;
+
+	levellist.netgame = true;		// Yep, we'll be starting a netgame.
+	cupgrid.netgame = true;			// Ditto
+	levellist.timeattack = false;	// Make sure we reset those
+	cupgrid.grandprix = false;	// Ditto
+
+	// In case we ever want to add new gamemodes there somehow, have at it!
+	switch (cv_dummygametype.value)
+	{
+		case 1:	// Battle
+		{
+			gt = GT_BATTLE;
+			break;
+		}
+
+		default:
+		{
+			gt = GT_RACE;
+			break;
+		}
+	}
+
+	M_LevelListFromGametype(gt); // Setup the level select.
+	// (This will also automatically send us to the apropriate menu)
+}
+
+// MULTIPLAYER JOIN BY IP
+void M_MPJoinIPInit(INT32 choice)
+{
+
+	(void)choice;
+	mpmenu.modewinextend[1][0] = 1;
+	M_SetupNextMenu(&PLAY_MP_JoinIPDef, true);
+}
+
+// Attempts to join a given IP from the menu.
+void M_JoinIP(void)
+{
+	if (*(cv_dummyip.string) == '\0')	// Jack shit
+	{
+		M_StartMessage("Please specify an address.\n", NULL, MM_NOTHING);
+		return;
+	}
+
+	COM_BufAddText(va("connect \"%s\"\n", cv_dummyip.string));
+	M_ClearMenus(true);
+
+	// A little "please wait" message.
+	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
+	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Connecting to server...");
+	I_OsPolling();
+	I_UpdateNoBlit();
+	if (rendermode == render_soft)
+		I_FinishUpdate(); // page flip or blit buffer
 }
 
 // MULTIPLAYER ROOM SELECT MENU
@@ -2664,6 +2786,7 @@ void M_MPRoomSelectTick(void)
 
 void M_MPRoomSelectInit(INT32 choice)
 {
+	(void)choice;
 	mpmenu.room = 0;
 	mpmenu.ticker = 0;
 
