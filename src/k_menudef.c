@@ -55,7 +55,8 @@ menu_t PLAY_CharSelectDef = {
 	0, 0,
 	M_DrawCharacterSelect,
 	M_CharacterSelectTick,
-	M_CharacterSelectQuit
+	M_CharacterSelectQuit,
+	NULL
 };
 
 menuitem_t PLAY_MainMenu[] =
@@ -116,6 +117,7 @@ menu_t PLAY_CupSelectDef = {
 	2, 10,
 	M_DrawCupSelect,
 	M_CupSelectTick,
+	NULL,
 	NULL
 };
 
@@ -133,6 +135,7 @@ menu_t PLAY_LevelSelectDef = {
 	2, 10,
 	M_DrawLevelSelect,
 	M_LevelSelectTick,
+	NULL,
 	NULL
 };
 
@@ -152,6 +155,7 @@ menu_t PLAY_TimeAttackDef = {
 	0, 0,
 	2, 10,
 	M_DrawTimeAttack,
+	NULL,
 	NULL,
 	NULL
 };
@@ -178,11 +182,11 @@ menuitem_t PLAY_MP_OptSelect[] =
 	{IT_STRING | IT_CALL, "Host Game", "Start your own online game!",
 		NULL, M_MPHostInit, 0, 0},
 
-	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
-		NULL, M_MPJoinIPInit, 0, 0},
-
 	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
 		NULL, M_MPRoomSelectInit, 0, 0},
+
+	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
+		NULL, M_MPJoinIPInit, 0, 0},
 };
 
 menu_t PLAY_MP_OptSelectDef = {
@@ -194,6 +198,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	-1, 1,
 	M_DrawMPOptSelect,
 	M_MPOptSelectTick,
+	NULL,
 	NULL
 };
 
@@ -228,7 +233,8 @@ menu_t PLAY_MP_HostDef = {
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPHost,
 	M_MPOptSelectTick,	// This handles the unfolding options
-	M_MPResetOpts
+	M_MPResetOpts,
+	NULL
 };
 
 // MULTIPLAYER JOIN BY IP
@@ -236,11 +242,21 @@ menuitem_t PLAY_MP_JoinIP[] =
 {
 	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Address: ", "Type the IPv4 address of the server you wish to connect to.",
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "IP: ", "Type the IPv4 address of the server then press enter to attempt connection.",
 		NULL, &cv_dummyip, 0, 0},
 
-	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
-		NULL, M_JoinIP, 0, 0},
+	{IT_STRING | IT_SPACE, "LAST IPs JOINED:", "Kanade best waifu :)",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING, "servip1", "The last 3 IPs you've succesfully joined are displayed here.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING, "servip2", "The last 3 IPs you've succesfully joined are displayed here.",
+		NULL, NULL, 0, 0},	
+
+	{IT_STRING, "servip3", "The last 3 IPs you've succesfully joined are displayed here.",
+		NULL, NULL, 0, 0},			
+
 };
 
 menu_t PLAY_MP_JoinIPDef = {
@@ -252,7 +268,8 @@ menu_t PLAY_MP_JoinIPDef = {
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPJoinIP,
 	M_MPOptSelectTick,	// This handles the unfolding options
-	M_MPResetOpts
+	M_MPResetOpts,
+	M_JoinIPInputs
 };
 
 // MULTIPLAYER ROOM SELECT (CORE / MODDED)
@@ -270,6 +287,7 @@ menu_t PLAY_MP_RoomSelectDef = {
 	0, 0,
 	M_DrawMPRoomSelect,
 	M_MPRoomSelectTick,
+	NULL,
 	NULL
 };
 
@@ -307,6 +325,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
 	M_DrawPlaybackMenu,
+	NULL,
 	NULL,
 	NULL
 };

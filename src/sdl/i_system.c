@@ -1801,6 +1801,7 @@ void I_Quit(void)
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
+	M_SaveJoinedIPs();
 #endif
 
 	// Make sure you lose points for ALT-F4

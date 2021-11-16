@@ -42,6 +42,25 @@ void M_StopMovie(void);
 // the file where game vars and settings are saved
 #define CONFIGFILENAME "kartconfig.cfg"
 
+// The file where we'll save the last IPs we joined
+#define IPLOGFILE "kartsavedips.txt"
+#define IPLOGFILESEP ";"
+#define NUMLOGIP 3
+
+// Array where we'll store addresses to display for last servers joined
+// {address, servame}
+// 255 is long enough to store the text
+extern char joinedIPlist[NUMLOGIP][2][255];
+
+// Keep the address we're joining in mind until we've finished joining.
+// Since we don't wanna add an IP address we aren't even sure worked out.
+extern char joinedIP[255];
+
+void M_InitJoinedIPArray(void);
+void M_AddToJoinedIPs(char *address, char *servname);
+void M_SaveJoinedIPs(void);
+void M_LoadJoinedIPs(void);
+
 INT32 M_MapNumber(char first, char second);
 
 boolean FIL_WriteFile(char const *name, const void *source, size_t length);

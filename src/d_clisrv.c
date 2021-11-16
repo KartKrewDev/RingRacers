@@ -2072,6 +2072,16 @@ static void CL_ConnectToServer(void)
 	DEBFILE(va("Synchronisation Finished\n"));
 
 	displayplayers[0] = consoleplayer;
+
+	// At this point we've succesfully joined the server, if we joined by IP (ie: a valid joinedIP string), save it!
+	// @TODO: Save the proper server name, right now it doesn't seem like we can consistently retrieve it from the serverlist....?
+	// It works... sometimes but not always which is weird.
+
+	if (*joinedIP)	// false if we have "" which is \0
+		M_AddToJoinedIPs(joinedIP, netbuffer->u.serverinfo.servername);
+
+	strcpy(joinedIP, "");	// And empty this for good measure regardless of whether or not we actually used it.
+
 }
 
 #ifndef NONET
@@ -2240,6 +2250,10 @@ static void Command_ReloadBan(void)  //recheck ban.txt
 
 static void Command_connect(void)
 {
+
+	// By default, clear the saved address that we'd save after succesfully joining just to be sure:
+	strcpy(joinedIP, "");
+
 	if (COM_Argc() < 2 || *COM_Argv(1) == 0)
 	{
 		CONS_Printf(M_GetText(
@@ -2295,6 +2309,10 @@ static void Command_connect(void)
 					servernode = I_NetMakeNodewPort(COM_Argv(1), COM_Argv(2));
 				else // address only, or address:port
 					servernode = I_NetMakeNode(COM_Argv(1));
+
+				// Last IPs joined:
+				// Keep the address we typed in memory so that we can save it if we *succesfully* join the server
+				strcpy(joinedIP, COM_Argv(1));
 			}
 			else
 			{

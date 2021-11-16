@@ -1317,7 +1317,7 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 	// TODO: Allow specific options to "expand" into smaller ones.
 
 	patch_t *buttback = W_CachePatchName("M_PLAT2", PU_CACHE);
-	INT32 i, x = 142, y = 32;	// Dirty magic numbers for now but they work out.
+	INT32 i, x = 132, y = 32;	// Dirty magic numbers for now but they work out.
 
 	for (i = 0; i < m->numitems; i++)
 	{
@@ -1382,7 +1382,7 @@ void M_DrawMPHost(void)
 {
 
 	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
-	INT32 xp = 50, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
+	INT32 xp = 40, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
 
 	// Now draw our host options...
@@ -1457,62 +1457,68 @@ void M_DrawMPJoinIP(void)
 {
 
 	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
-	INT32 xp = 70, yp = 100, i = 0;	// Starting position for the text drawing.
+	INT32 xp = 73, yp = 133, i = 0;	// Starting position for the text drawing.
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
+
 
 	// Now draw our host options...
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 
-		if (i == currentMenu->numitems-1)
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
-
-			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
-			if (i == itemOn)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
-
-			// Ideally we'd calculate this but it's not worth it for a 1-off menu probably.....
-			V_DrawFixedPatch(219<<FRACBITS, 114<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
-			V_DrawCenteredGamemodeString(219 + (gobutt->width/2), 114 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
-		}
-		else
-		{
-			switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+			case IT_STRING:
 			{
-				case IT_STRING:
+				
+				char str[MAXSTRINGLENGTH];
+				strcpy(str, currentMenu->menuitems[i].text);
+				
+				// The last 3 options of this menu are to be the joined IP addresses...
+				if (currentMenu->numitems - i <= NUMLOGIP)
 				{
-					V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
-
-					// Cvar specific handling
-					switch (currentMenu->menuitems[i].status & IT_TYPE)
-					{
-						case IT_CVAR:
-						{
-							consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
-							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
-							{
-								case IT_CV_STRING:
-									V_DrawThinString(xp + 65, yp-1, V_ALLOWLOWERCASE, cv->string);
-									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawCharacter(xp + 65 + V_ThinStringWidth(cv->string, 0), yp, '_' | 0x80, false);
-
-									break;
-
-								default:
-									break;
-							}
-							break;
-						}
-					}
-
-					xp += 5;
-					yp += 11;
-
-					break;
+					UINT8 index = NUMLOGIP - (currentMenu->numitems - i);
+					if (joinedIPlist[index][1] && strlen(joinedIPlist[index][1]))	// Try drawing server name
+						strcpy(str, joinedIPlist[index][1]);
+					else if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))	// If that fails, get the address
+						strcpy(str, joinedIPlist[index][0]);
+					else
+						strcpy(str, "---");		// If that fails too then there's nothing!
 				}
-			break;
-			}
+				
+				V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), str);
 
+				// Cvar specific handling
+				switch (currentMenu->menuitems[i].status & IT_TYPE)
+				{
+					case IT_CVAR:
+					{
+						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+						{
+							case IT_CV_STRING:
+								V_DrawThinString(xp + 24, yp-1, V_ALLOWLOWERCASE, cv->string);
+								if (skullAnimCounter < 4 && i == itemOn)
+									V_DrawCharacter(xp + 24 + V_ThinStringWidth(cv->string, 0), yp, '_' | 0x80, false);
+								
+								// On this specific menu the only time we'll ever see this is for the connect by IP typefield. 
+								// ...In other words it's safe to just draw a "CONNECT" string there!
+								V_DrawRightAlignedString(xp + 210, yp, (i == itemOn ? highlightflags : 0), "GO!");
+								
+								break;
+
+							default:
+								break;
+						}
+						break;
+					}
+				}
+
+				xp += 5;
+				yp += 11;
+
+				break;
+			}
+		break;
 		}
 
 	}

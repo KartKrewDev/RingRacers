@@ -928,6 +928,19 @@ boolean M_Responder(event_t *ev)
 		routine(ch);
 		return true;
 	}
+	
+	// Handle menu-specific input handling. If this returns true we skip regular input handling.
+	if (currentMenu->inputroutine)
+	{
+		INT32 res = 0;
+		if (shiftdown && ch >= 32 && ch <= 127)
+			ch = shiftxform[ch];
+		
+		res = currentMenu->inputroutine(ch);
+		
+		if (res)
+			return true;
+	}
 
 	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
 	{
@@ -1602,7 +1615,8 @@ menu_t MessageDef =
 	0, 0,               // transition tics
 	M_DrawMessageMenu,  // drawing routine ->
 	NULL,               // ticker routine
-	NULL                // quit routine
+	NULL,               // quit routine
+	NULL				// input routine
 };
 
 //
@@ -2646,7 +2660,7 @@ boolean M_MPResetOpts(void)
 
 void M_MPOptSelectInit(INT32 choice)
 {
-	INT16 arrcpy[3][3] = {{0,68,0}, {0,48,0}, {0,12,0}};
+	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,64,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
 
 	(void)choice;
@@ -2724,20 +2738,20 @@ void M_MPJoinIPInit(INT32 choice)
 {
 
 	(void)choice;
-	mpmenu.modewinextend[1][0] = 1;
+	mpmenu.modewinextend[2][0] = 1;
 	M_SetupNextMenu(&PLAY_MP_JoinIPDef, true);
 }
 
 // Attempts to join a given IP from the menu.
-void M_JoinIP(void)
+void M_JoinIP(const char *ipa)
 {
-	if (*(cv_dummyip.string) == '\0')	// Jack shit
+	if (*(ipa) == '\0')	// Jack shit
 	{
 		M_StartMessage("Please specify an address.\n", NULL, MM_NOTHING);
 		return;
 	}
 
-	COM_BufAddText(va("connect \"%s\"\n", cv_dummyip.string));
+	COM_BufAddText(va("connect \"%s\"\n", ipa));
 	M_ClearMenus(true);
 
 	// A little "please wait" message.
@@ -2747,6 +2761,44 @@ void M_JoinIP(void)
 	I_UpdateNoBlit();
 	if (rendermode == render_soft)
 		I_FinishUpdate(); // page flip or blit buffer
+}
+
+boolean M_JoinIPInputs(INT32 ch)
+{
+	if (itemOn == 0)	// connect field
+	{
+		// enter: connect
+		if (ch == KEY_ENTER)
+		{
+			M_JoinIP(cv_dummyip.string);
+			return true;
+		}
+		// ctrl+v -> copy paste!
+		else if (ctrldown && (ch == 'v' || ch == 'V'))
+		{
+			const char *paste = I_ClipboardPaste();
+			UINT16 i;
+			for (i=0; i < strlen(paste); i++)
+				M_ChangeStringCvar(paste[i]);	// We can afford to do this since we're currently on that cvar.
+			
+			return true;	// Don't input the V obviously lol.
+		}
+		
+	}
+	else if (currentMenu->numitems - itemOn <= NUMLOGIP && ch == KEY_ENTER)	// On one of the last 3 options for IP rejoining
+	{
+		UINT8 index = NUMLOGIP - (currentMenu->numitems - itemOn);
+		
+		// Is there an address at this part of the table?
+		if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))
+			M_JoinIP(joinedIPlist[index][0]);
+		else
+			S_StartSound(NULL, sfx_lose);
+		
+		return true;	// eat input.
+	}
+	
+	return false;
 }
 
 // MULTIPLAYER ROOM SELECT MENU

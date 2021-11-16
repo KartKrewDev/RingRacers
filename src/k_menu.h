@@ -133,6 +133,7 @@ typedef struct menu_s
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
+	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling. 
 } menu_t;
 
 typedef enum
@@ -393,7 +394,8 @@ void M_MPSetupNetgameMapSelect(INT32 choice);
 
 // MP join by IP
 void M_MPJoinIPInit(INT32 choice);
-void M_JoinIP(void);
+boolean M_JoinIPInputs(INT32 ch);
+void M_JoinIP(const char *ipa);
 
 // Server browser room selection
 void M_MPRoomSelect(INT32 choice);
@@ -455,6 +457,7 @@ void M_DrawPlaybackMenu(void);
 	0, 0,\
 	M_DrawGenericMenu,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -468,6 +471,7 @@ void M_DrawPlaybackMenu(void);
 	0, 0,\
 	1, 10,\
 	M_DrawKartGamemodeMenu,\
+	NULL,\
 	NULL,\
 	NULL\
 }
