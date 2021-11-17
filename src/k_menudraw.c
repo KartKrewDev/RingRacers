@@ -1397,8 +1397,8 @@ void M_DrawMPHost(void)
 				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 			// Ideally we'd calculate this but it's not worth it for a 1-off menu probably.....
-			V_DrawFixedPatch(212<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
-			V_DrawCenteredGamemodeString(212 + (gobutt->width/2), 100 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+			V_DrawFixedPatch(202<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
+			V_DrawCenteredGamemodeString(202 + (gobutt->width/2), 100 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
 		}
 		else
 		{
