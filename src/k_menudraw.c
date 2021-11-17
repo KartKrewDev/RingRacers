@@ -1456,7 +1456,14 @@ void M_DrawMPHost(void)
 void M_DrawMPJoinIP(void)
 {
 
-	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
+	patch_t *minibutt = W_CachePatchName("M_SBUTT", PU_CACHE);
+	// There is no such things as mini butts, only thick thighs to rest your head on.
+	patch_t *minigo = W_CachePatchName("M_SGO", PU_CACHE);
+	patch_t *typebar = W_CachePatchName("M_TYPEB", PU_CACHE);
+
+	UINT8 *colormap = NULL;
+	UINT8 *colormapc = NULL;
+
 	INT32 xp = 73, yp = 133, i = 0;	// Starting position for the text drawing.
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
 
@@ -1469,10 +1476,10 @@ void M_DrawMPJoinIP(void)
 		{
 			case IT_STRING:
 			{
-				
+
 				char str[MAXSTRINGLENGTH];
 				strcpy(str, currentMenu->menuitems[i].text);
-				
+
 				// The last 3 options of this menu are to be the joined IP addresses...
 				if (currentMenu->numitems - i <= NUMLOGIP)
 				{
@@ -1484,7 +1491,7 @@ void M_DrawMPJoinIP(void)
 					else
 						strcpy(str, "---");		// If that fails too then there's nothing!
 				}
-				
+
 				V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), str);
 
 				// Cvar specific handling
@@ -1496,14 +1503,20 @@ void M_DrawMPJoinIP(void)
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_STRING:
-								V_DrawThinString(xp + 24, yp-1, V_ALLOWLOWERCASE, cv->string);
+
+								colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+								colormapc = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+								V_DrawFixedPatch((xp + 20)<<FRACBITS, (yp-3)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
+								V_DrawThinString(xp + 26, yp-1, V_ALLOWLOWERCASE, cv->string);
 								if (skullAnimCounter < 4 && i == itemOn)
 									V_DrawCharacter(xp + 24 + V_ThinStringWidth(cv->string, 0), yp, '_' | 0x80, false);
-								
-								// On this specific menu the only time we'll ever see this is for the connect by IP typefield. 
-								// ...In other words it's safe to just draw a "CONNECT" string there!
-								V_DrawRightAlignedString(xp + 210, yp, (i == itemOn ? highlightflags : 0), "GO!");
-								
+
+								// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
+								// Draw the small GO button here (and the text which is a separate graphic)
+								V_DrawFixedPatch((xp + 20 + typebar->width -4)<<FRACBITS, (yp-3)<<FRACBITS, FRACUNIT, 0, minibutt, i == itemOn ? colormapc : colormap);
+								V_DrawFixedPatch((xp + 20 + typebar->width -4 + (minibutt->width/2))<<FRACBITS, (yp-3-5)<<FRACBITS, FRACUNIT, 0, minigo, i == itemOn ? colormapc : NULL);
+
 								break;
 
 							default:
