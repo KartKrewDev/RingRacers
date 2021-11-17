@@ -2077,7 +2077,7 @@ static void CL_ConnectToServer(void)
 	// @TODO: Save the proper server name, right now it doesn't seem like we can consistently retrieve it from the serverlist....?
 	// It works... sometimes but not always which is weird.
 
-	if (*joinedIP)	// false if we have "" which is \0
+	if (*joinedIP && strlen(joinedIP))	// false if we have "" which is \0
 		M_AddToJoinedIPs(joinedIP, netbuffer->u.serverinfo.servername);
 
 	strcpy(joinedIP, "");	// And empty this for good measure regardless of whether or not we actually used it.
@@ -3757,6 +3757,7 @@ void SV_StartSinglePlayerServer(void)
 	server = true;
 	netgame = false;
 	multiplayer = false;
+	strcpy(joinedIP, "");	// Make sure to empty this so that we don't save garbage when we start our own game. (because yes we use this for netgames too....)
 
 	if (modeattacking == ATTACKING_CAPSULES)
 	{

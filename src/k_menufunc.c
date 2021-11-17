@@ -928,16 +928,16 @@ boolean M_Responder(event_t *ev)
 		routine(ch);
 		return true;
 	}
-	
+
 	// Handle menu-specific input handling. If this returns true we skip regular input handling.
 	if (currentMenu->inputroutine)
 	{
 		INT32 res = 0;
 		if (shiftdown && ch >= 32 && ch <= 127)
 			ch = shiftxform[ch];
-		
+
 		res = currentMenu->inputroutine(ch);
-		
+
 		if (res)
 			return true;
 	}
@@ -2780,24 +2780,24 @@ boolean M_JoinIPInputs(INT32 ch)
 			UINT16 i;
 			for (i=0; i < strlen(paste); i++)
 				M_ChangeStringCvar(paste[i]);	// We can afford to do this since we're currently on that cvar.
-			
+
 			return true;	// Don't input the V obviously lol.
 		}
-		
+
 	}
 	else if (currentMenu->numitems - itemOn <= NUMLOGIP && ch == KEY_ENTER)	// On one of the last 3 options for IP rejoining
 	{
 		UINT8 index = NUMLOGIP - (currentMenu->numitems - itemOn);
-		
+
 		// Is there an address at this part of the table?
 		if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))
 			M_JoinIP(joinedIPlist[index][0]);
 		else
 			S_StartSound(NULL, sfx_lose);
-		
+
 		return true;	// eat input.
 	}
-	
+
 	return false;
 }
 
