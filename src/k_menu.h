@@ -133,7 +133,7 @@ typedef struct menu_s
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
-	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling. 
+	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 } menu_t;
 
 typedef enum
@@ -195,6 +195,12 @@ extern menu_t PLAY_MP_RoomSelectDef;
 
 extern menuitem_t PLAY_BattleGamemodesMenu[];
 extern menu_t PLAY_BattleGamemodesDef;
+
+extern menuitem_t PAUSE_Main[];
+extern menu_t PAUSE_MainDef;
+
+extern menuitem_t PAUSE_GamemodesMenu[];
+extern menu_t PAUSE_GamemodesDef;
 
 extern menuitem_t PAUSE_PlaybackMenu[];
 extern menu_t PAUSE_PlaybackMenuDef;
@@ -402,6 +408,24 @@ void M_MPRoomSelect(INT32 choice);
 void M_MPRoomSelectTick(void);
 void M_MPRoomSelectInit(INT32 choice);
 
+// Pause menu:
+
+// Keep track of some pause menu data for visual goodness.
+extern struct pausemenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	INT16 openoffset;	// Used when you open / close the menu to slide everything in.
+	boolean closing;	// When this is set, the open offset goes backwards to close the menu smoothly.
+} pausemenu;
+
+void M_OpenPauseMenu(void);
+void M_QuitPauseMenu(void);
+
+boolean M_PauseInputs(INT32 ch);
+void M_PauseTick(void);
+
 // Replay Playback
 
 extern tic_t playback_last_menu_interaction_leveltime;
@@ -442,6 +466,9 @@ void M_DrawMPOptSelect(void);
 void M_DrawMPHost(void);
 void M_DrawMPJoinIP(void);
 void M_DrawMPRoomSelect(void);
+
+// Pause menu:
+void M_DrawPause(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);

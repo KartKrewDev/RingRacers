@@ -252,10 +252,10 @@ menuitem_t PLAY_MP_JoinIP[] =
 		NULL, NULL, 0, 0},
 
 	{IT_STRING, "servip2", "The last 3 IPs you've succesfully joined are displayed here.",
-		NULL, NULL, 0, 0},	
+		NULL, NULL, 0, 0},
 
 	{IT_STRING, "servip3", "The last 3 IPs you've succesfully joined are displayed here.",
-		NULL, NULL, 0, 0},			
+		NULL, NULL, 0, 0},
 
 };
 
@@ -296,6 +296,93 @@ menu_t PLAY_MP_RoomSelectDef = {
 // In-game/pause menus
 // -------------------
 
+// ESC pause menu
+// Since there's no descriptions to each item, we'll use the descriptions as the names of the patches we want to draw for each option :)
+
+menuitem_t PAUSE_Main[] =
+{
+
+	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
+		NULL, &PAUSE_GamemodesDef, 0, 0},
+
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
+		NULL, NULL, 0, 0},
+#endif
+
+	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
+		NULL, M_QuitPauseMenu, 0, 0},
+
+	{IT_STRING | IT_CALL, "SPECTATE", "M_ICOSPC",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "ENTER GAME", "M_ICOENT",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "CANCEL JOIN", "M_ICOSPC",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "EXIT GAME", "M_ICOEXT",
+		NULL, NULL, 0, 0},
+};
+
+// We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
+typedef enum
+{
+	mpause_addons = 0,
+	mpause_switchmap,
+#ifdef HAVE_DISCORDRPC
+	mpause_discordrequests,
+#endif
+
+	mpause_continue,
+	mpause_spectate,
+	mpause_entergame,
+	mpause_canceljoin,
+	mpause_psetup,
+	mpause_options,
+
+	mpause_title,
+} mpause_e;
+
+
+menu_t PAUSE_MainDef = {
+	sizeof (PAUSE_Main) / sizeof (menuitem_t),
+	NULL,
+	0,
+	PAUSE_Main,
+	0, 0,
+	1, 10,	// For transition with some menus!
+	M_DrawPause,
+	M_PauseTick,
+	NULL,
+	M_PauseInputs
+};
+
+// PAUSE : Map switching gametype selection (In case you want to pick from battle / race...)
+menuitem_t PAUSE_GamemodesMenu[] =
+{
+	{IT_STRING | IT_CALL, "Race", "Select which gamemode to choose a new map from.",
+		NULL, M_LevelSelectInit, 0, GT_RACE},
+
+	{IT_STRING | IT_CALL, "Battle", "Select which gamemode to choose a new map from.",
+		NULL, M_LevelSelectInit, 0, GT_BATTLE},
+
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
+};
+
+menu_t PAUSE_GamemodesDef = KARTGAMEMODEMENU(PAUSE_GamemodesMenu, &PAUSE_MainDef);
+
+// Replay popup menu
 menuitem_t PAUSE_PlaybackMenu[] =
 {
 	{IT_CALL   | IT_STRING, "Hide Menu (Esc)",			NULL, "M_PHIDE",	M_SelectableClearMenus,		  0, 0},

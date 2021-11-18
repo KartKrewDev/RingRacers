@@ -1589,6 +1589,148 @@ void M_DrawMPRoomSelect(void)
 // INGAME / PAUSE MENUS
 //
 
+// PAUSE
+
+// PAUSE MAIN MENU
+void M_DrawPause(void)
+{
+
+	SINT8 i;
+	SINT8 itemsdrawn = 0;
+	SINT8 countdown = 0;
+	INT16 ypos = -50;	// Draw 3 items from selected item (y=100 - 3 items spaced by 50 px each... you get the idea.)
+	INT16 dypos;
+
+	INT16 offset = menutransition.tics ? floor(pow(2, (double)menutransition.tics)) : pausemenu.openoffset;
+	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
+
+	INT16 j = 0;
+	char word1[MAXSTRINGLENGTH];
+	INT16 word1len = 0;
+	char word2[MAXSTRINGLENGTH];
+	INT16 word2len = 0;
+	boolean sok = false;
+
+	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
+	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
+	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
+
+	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
+	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
+
+	//V_DrawFadeScreen(0xFF00, 16);
+
+	// "PAUSED"
+	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, V_ADD, pausebg, NULL);
+	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, 0, pausetext, NULL);
+
+	// Vertical Strip:
+	V_DrawFixedPatch((230 + offset)<<FRACBITS, 0, FRACUNIT, V_ADD, vertbg, NULL);
+
+	// Okay that's cool but which icon do we draw first? let's roll back from itemOn!
+	// At most we'll draw 7 items, 1 in the center, 3 above, 3 below.
+	// Which means... let's count down from itemOn
+	for (i = itemOn; countdown < 3; countdown++)
+	{
+		//CONS_Printf("pass %d: %d\n", countdown, i);
+		i--;
+		if (i < 0)
+			i = currentMenu->numitems-1;
+	}
+
+	// Aaaaand now we can start drawing!
+	// Reminder that we set the patches of the options to the description since we're not using that. I'm smart, I know...
+
+	// Draw the background arrow
+	V_DrawFixedPatch(arrxpos<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, arrstart, NULL);
+
+	while ((arrxpos - arrfill->width) < BASEVIDWIDTH)
+	{
+		V_DrawFixedPatch(arrxpos<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, arrfill, NULL);
+		arrxpos += arrfill->width;
+	}
+
+	while (itemsdrawn < 7)
+	{
+
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_STRING:
+			{
+
+				char iconame[9];	// 8 chars + \0
+				patch_t *pp;
+
+				if (i == itemOn)
+				{
+					strcpy(iconame, currentMenu->menuitems[i].tooltip);
+					iconame[7] = '2';	// Yes this is a stupid hack. Replace the last character with a 2 when we're selecting this graphic.
+
+					pp = W_CachePatchName(iconame, PU_CACHE);
+				}
+				else
+					pp = W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE);
+
+				// 294 - 261 = 33
+				// We need to move 33 px in 50 tics which means we move 33/50 = 0.66 px every tic = 2/3 of the offset.
+				// trust me i graduated highschool!!!!
+
+				// Multiply by -1 or 1 depending on whether we're below or above 100 px.
+				// This double ternary is awful, yes.
+
+				dypos = ypos + pausemenu.offset;
+				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, NULL);
+
+				ypos += 50;
+				itemsdrawn++;	// We drew that!
+				break;
+			}
+		}
+
+
+		i++;	// Regardless of whether we drew or not, go to the next item in the menu.
+		if (i > currentMenu->numitems)
+			i = 0;
+	}
+
+	// Draw the string!
+	// ...but first get what we need to get.
+	while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
+	{
+		char c = currentMenu->menuitems[itemOn].text[j];
+
+		if (c == ' ')
+		{
+			sok = true;
+			j++;
+			continue;	// We don't care about this :moyai:
+		}
+
+		if (sok)
+		{
+			word2[word2len] = c;
+			word2len++;
+		}
+		else
+		{
+			word1[word1len] = c;
+			word1len++;
+		}
+
+		j++;
+	}
+
+	word1[word1len] = '\0';
+	word2[word2len] = '\0';
+
+	// If there's no 2nd word, take this opportunity to center this line of text.
+	if (word1len)
+		V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+
+	if (word2len)
+		V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+}
+
 tic_t playback_last_menu_interaction_leveltime = 0;
 
 void M_DrawPlaybackMenu(void)

@@ -1219,6 +1219,12 @@ void M_StartControlPanel(void)
 		currentMenu = &MainDef;
 		itemOn = 0;
 	}
+	else
+	{
+		// For now let's just always open the same pause menu.
+		M_OpenPauseMenu();
+	}
+
 #if 0
 	else if (modeattacking)
 	{
@@ -2354,7 +2360,8 @@ static void M_LevelListFromGametype(INT16 gt)
 }
 
 // Init level select for use in local play using the last choice we made.
-// For the online MP version, see M_MPSetupNetgameMapSelect()
+// For the online MP version used to START HOSTING A GAME, see M_MPSetupNetgameMapSelect()
+// (We still use this one midgame)
 
 void M_LevelSelectInit(INT32 choice)
 {
@@ -2465,9 +2472,15 @@ void M_CupSelectHandler(INT32 choice)
 				grandprixinfo.initalize = true;
 
 				paused = false;
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				netgame = levellist.netgame;	// ^ ditto.
+
+				// Don't restart the server if we're already in a game lol
+				if (gamestate == GS_MENU)
+				{
+					SV_StartSinglePlayerServer();
+					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+					netgame = levellist.netgame;	// ^ ditto.
+				}
+
 				D_MapChange(
 					grandprixinfo.cup->levellist[0] + 1,
 					GT_RACE,
@@ -2593,16 +2606,20 @@ void M_LevelSelectHandler(INT32 choice)
 
 					S_StartSound(NULL, sfx_s3k63);
 
-					// Early fadeout to let the sound finish playing
-					F_WipeStartScreen();
-					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-					F_WipeEndScreen();
-					F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
 					paused = false;
-					SV_StartSinglePlayerServer();
-					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-					netgame = levellist.netgame;	// ^ ditto.
+
+					if (gamestate == GS_MENU)	// Don't restart the server if we're already in a game lol. Don't fade out either.
+					{
+						// Early fadeout to let the sound finish playing
+						F_WipeStartScreen();
+						V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+						F_WipeEndScreen();
+						F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+						SV_StartSinglePlayerServer();
+						multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+						netgame = levellist.netgame;	// ^ ditto.
+					}
 
 					D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
@@ -2854,6 +2871,78 @@ void M_EndModeAttackRun(void)
 	M_ModeAttackEndGame(0);
 #endif
 }
+
+struct pausemenu_s pausemenu;
+
+// Pause menu!
+void M_OpenPauseMenu(void)
+{
+	currentMenu = &PAUSE_MainDef;
+
+	// Ready the variables
+	pausemenu.ticker = 0;
+
+	pausemenu.offset = 0;
+	pausemenu.openoffset = 256;
+	pausemenu.closing = false;
+}
+
+void M_QuitPauseMenu(void)
+{
+	// M_PauseTick actually handles the quitting when it's been long enough.
+	pausemenu.closing = true;
+	pausemenu.openoffset = 4;
+}
+
+void M_PauseTick(void)
+{
+	pausemenu.offset /= 2;
+
+	if (pausemenu.closing)
+	{
+		pausemenu.openoffset *= 2;
+		if (pausemenu.openoffset > 255)
+			M_ClearMenus(true);
+
+	}
+	else
+		pausemenu.openoffset /= 2;
+}
+
+boolean M_PauseInputs(INT32 ch)
+{
+
+	if (pausemenu.closing)
+		return true;	// Don't allow inputs.
+
+	switch (ch)
+	{
+
+		case KEY_UPARROW:
+		{
+			pausemenu.offset -= 50; // Each item is spaced by 50 px
+			M_PrevOpt();
+			return true;
+		}
+
+		case KEY_DOWNARROW:
+		{
+			pausemenu.offset += 50;	// Each item is spaced by 50 px
+			M_NextOpt();
+			return true;
+		}
+
+		case KEY_ESCAPE:
+		{
+			M_QuitPauseMenu();
+			return true;
+		}
+
+	}
+
+	return false;
+}
+
 
 // Replay Playback Menu
 void M_SetPlaybackMenuPointer(void)
