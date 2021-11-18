@@ -1632,10 +1632,17 @@ void M_DrawPause(void)
 	// Which means... let's count down from itemOn
 	for (i = itemOn; countdown < 3; countdown++)
 	{
-		//CONS_Printf("pass %d: %d\n", countdown, i);
 		i--;
 		if (i < 0)
 			i = currentMenu->numitems-1;
+
+		while (currentMenu->menuitems[i].status == IT_DISABLED)
+		{
+			i--;
+
+			if (i < 0)
+				i = currentMenu->numitems-1;
+		}
 	}
 
 	// Aaaaand now we can start drawing!
@@ -1690,7 +1697,12 @@ void M_DrawPause(void)
 
 		i++;	// Regardless of whether we drew or not, go to the next item in the menu.
 		if (i > currentMenu->numitems)
+		{
 			i = 0;
+			while (!(currentMenu->menuitems[i].status & IT_DISPLAY))
+				i++;
+
+		}
 	}
 
 	// Draw the string!

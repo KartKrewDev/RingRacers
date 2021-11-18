@@ -317,13 +317,13 @@ menuitem_t PAUSE_Main[] =
 		NULL, M_QuitPauseMenu, 0, 0},
 
 	{IT_STRING | IT_CALL, "SPECTATE", "M_ICOSPC",
-		NULL, NULL, 0, 0},
+		NULL, M_ConfirmSpectate, 0, 0},
 
 	{IT_STRING | IT_CALL, "ENTER GAME", "M_ICOENT",
-		NULL, NULL, 0, 0},
+		NULL, M_ConfirmEnterGame, 0, 0},
 
 	{IT_STRING | IT_CALL, "CANCEL JOIN", "M_ICOSPC",
-		NULL, NULL, 0, 0},
+		NULL, M_ConfirmSpectate, 0, 0},
 
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
 		NULL, NULL, 0, 0},
@@ -332,28 +332,8 @@ menuitem_t PAUSE_Main[] =
 		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_CALL, "EXIT GAME", "M_ICOEXT",
-		NULL, NULL, 0, 0},
+		NULL, M_EndGame, 0, 0},
 };
-
-// We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
-typedef enum
-{
-	mpause_addons = 0,
-	mpause_switchmap,
-#ifdef HAVE_DISCORDRPC
-	mpause_discordrequests,
-#endif
-
-	mpause_continue,
-	mpause_spectate,
-	mpause_entergame,
-	mpause_canceljoin,
-	mpause_psetup,
-	mpause_options,
-
-	mpause_title,
-} mpause_e;
-
 
 menu_t PAUSE_MainDef = {
 	sizeof (PAUSE_Main) / sizeof (menuitem_t),

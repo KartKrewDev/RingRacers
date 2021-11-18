@@ -199,6 +199,25 @@ extern menu_t PLAY_BattleGamemodesDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+// We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
+typedef enum
+{
+	mpause_addons = 0,
+	mpause_switchmap,
+#ifdef HAVE_DISCORDRPC
+	mpause_discordrequests,
+#endif
+
+	mpause_continue,
+	mpause_spectate,
+	mpause_entergame,
+	mpause_canceljoin,
+	mpause_psetup,
+	mpause_options,
+
+	mpause_title,
+} mpause_e;
+
 extern menuitem_t PAUSE_GamemodesMenu[];
 extern menu_t PAUSE_GamemodesDef;
 
@@ -422,9 +441,14 @@ extern struct pausemenu_s {
 
 void M_OpenPauseMenu(void);
 void M_QuitPauseMenu(void);
-
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
+
+// Bunch of funny functions for the pause menu...~
+void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
+void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
+void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
+void M_EndGame(INT32 choice);					// Quitting to title
 
 // Replay Playback
 

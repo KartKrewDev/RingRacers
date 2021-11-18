@@ -2577,39 +2577,39 @@ void M_LevelSelectHandler(INT32 choice)
 				}
 				else
 				{
-					UINT8 ssplayers = cv_splitplayers.value-1;
-
-					netgame = false;
-					multiplayer = true;
-
-					strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-					// Still need to reset devmode
-					cv_debug = 0;
-
-					if (demo.playback)
-						G_StopDemo();
-					if (metalrecording)
-						G_StopMetalDemo();
-
-					/*if (levellist.choosemap == 0)
-						levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
-
-					if (cv_maxplayers.value < ssplayers+1)
-						CV_SetValue(&cv_maxplayers, ssplayers+1);
-
-					if (splitscreen != ssplayers)
+					if (gamestate == GS_MENU)
 					{
-						splitscreen = ssplayers;
-						SplitScreen_OnChange();
-					}
+						UINT8 ssplayers = cv_splitplayers.value-1;
 
-					S_StartSound(NULL, sfx_s3k63);
+						netgame = false;
+						multiplayer = true;
 
-					paused = false;
+						strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
-					if (gamestate == GS_MENU)	// Don't restart the server if we're already in a game lol. Don't fade out either.
-					{
+						// Still need to reset devmode
+						cv_debug = 0;
+
+						if (demo.playback)
+							G_StopDemo();
+						if (metalrecording)
+							G_StopMetalDemo();
+
+						/*if (levellist.choosemap == 0)
+							levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
+
+						if (cv_maxplayers.value < ssplayers+1)
+							CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+						if (splitscreen != ssplayers)
+						{
+							splitscreen = ssplayers;
+							SplitScreen_OnChange();
+						}
+
+						S_StartSound(NULL, sfx_s3k63);
+
+						paused = false;
+
 						// Early fadeout to let the sound finish playing
 						F_WipeStartScreen();
 						V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -2877,6 +2877,7 @@ struct pausemenu_s pausemenu;
 // Pause menu!
 void M_OpenPauseMenu(void)
 {
+	boolean singleplayermode = (modeattacking || grandprixinfo.gp);
 	currentMenu = &PAUSE_MainDef;
 
 	// Ready the variables
@@ -2885,6 +2886,45 @@ void M_OpenPauseMenu(void)
 	pausemenu.offset = 0;
 	pausemenu.openoffset = 256;
 	pausemenu.closing = false;
+
+	itemOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
+
+
+	// Now the hilarious balancing act of deciding what options should be enabled and which ones shouldn't be!
+	// By default, disable anything sensitive:
+
+	PAUSE_Main[mpause_addons].status = IT_DISABLED;
+	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
+#ifdef HAVE_DISCORDRPC
+	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
+#endif
+
+	PAUSE_Main[mpause_spectate].status = IT_DISABLED;
+	PAUSE_Main[mpause_entergame].status = IT_DISABLED;
+	PAUSE_Main[mpause_canceljoin].status = IT_DISABLED;
+	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
+
+	if (!singleplayermode && (server || IsPlayerAdmin(consoleplayer)))
+	{
+		PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
+		PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
+	}
+
+	if (!singleplayermode)
+		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
+
+	if (G_GametypeHasSpectators())
+	{
+		if (!players[consoleplayer].spectator)
+			PAUSE_Main[mpause_spectate].status = IT_STRING | IT_CALL;
+		else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
+			PAUSE_Main[mpause_canceljoin].status = IT_STRING | IT_CALL;
+		else
+			PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
+	}
+
+
+
 }
 
 void M_QuitPauseMenu(void)
@@ -2941,6 +2981,49 @@ boolean M_PauseInputs(INT32 ch)
 	}
 
 	return false;
+}
+
+// Pause spectate / join functions
+void M_ConfirmSpectate(INT32 choice)
+{
+	(void)choice;
+	// We allow switching to spectator even if team changing is not allowed
+	M_QuitPauseMenu();
+	COM_ImmedExecute("changeteam spectator");
+}
+
+void M_ConfirmEnterGame(INT32 choice)
+{
+	(void)choice;
+	if (!cv_allowteamchange.value)
+	{
+		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\nPress a key.\n"), NULL, MM_NOTHING);
+		return;
+	}
+	M_QuitPauseMenu();
+	COM_ImmedExecute("changeteam playing");
+}
+
+static void M_ExitGameResponse(INT32 ch)
+{
+	if (ch != 'y' && ch != KEY_ENTER)
+		return;
+
+	//Command_ExitGame_f();
+	G_SetExitGameFlag();
+	M_ClearMenus(true);
+}
+
+void M_EndGame(INT32 choice)
+{
+	(void)choice;
+	if (demo.playback)
+		return;
+
+	if (!Playing())
+		return;
+
+	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press 'Y' to confirm)\n"), M_ExitGameResponse, MM_YESNO);
 }
 
 
