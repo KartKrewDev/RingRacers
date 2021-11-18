@@ -325,6 +325,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "CANCEL JOIN", "M_ICOSPC",
 		NULL, M_ConfirmSpectate, 0, 0},
 
+	{IT_STRING | IT_SUBMENU, "JOIN OR SPECTATE", "M_ICOENT",
+		NULL, NULL, 0, 0},
+
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
 		NULL, NULL, 0, 0},
 

@@ -1711,7 +1711,7 @@ void M_DrawPause(void)
 	{
 		char c = currentMenu->menuitems[itemOn].text[j];
 
-		if (c == ' ')
+		if (c == ' ' && !sok)
 		{
 			sok = true;
 			j++;

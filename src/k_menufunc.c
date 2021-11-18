@@ -166,13 +166,15 @@ static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
-static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
+//static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
-static consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+//static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
 static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
 consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dummygametype_cons_t, NULL);
 consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
+consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
+consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -2902,7 +2904,10 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_spectate].status = IT_DISABLED;
 	PAUSE_Main[mpause_entergame].status = IT_DISABLED;
 	PAUSE_Main[mpause_canceljoin].status = IT_DISABLED;
+	PAUSE_Main[mpause_spectatemenu].status = IT_DISABLED;
 	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
+
+	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
 	if (!singleplayermode && (server || IsPlayerAdmin(consoleplayer)))
 	{
@@ -2915,12 +2920,18 @@ void M_OpenPauseMenu(void)
 
 	if (G_GametypeHasSpectators())
 	{
-		if (!players[consoleplayer].spectator)
-			PAUSE_Main[mpause_spectate].status = IT_STRING | IT_CALL;
-		else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
-			PAUSE_Main[mpause_canceljoin].status = IT_STRING | IT_CALL;
+
+		if (splitscreen)
+			PAUSE_Main[mpause_spectatemenu].status = IT_STRING|IT_SUBMENU;
 		else
-			PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
+		{
+			if (!players[consoleplayer].spectator)
+				PAUSE_Main[mpause_spectate].status = IT_STRING | IT_CALL;
+			else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
+				PAUSE_Main[mpause_canceljoin].status = IT_STRING | IT_CALL;
+			else
+				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
+		}
 	}
 
 

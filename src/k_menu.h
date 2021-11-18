@@ -212,6 +212,7 @@ typedef enum
 	mpause_spectate,
 	mpause_entergame,
 	mpause_canceljoin,
+	mpause_spectatemenu,
 	mpause_psetup,
 	mpause_options,
 
@@ -443,6 +444,9 @@ void M_OpenPauseMenu(void);
 void M_QuitPauseMenu(void);
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
+
+extern consvar_t cv_dummymenuplayer;
+extern consvar_t cv_dummyspectator;
 
 // Bunch of funny functions for the pause menu...~
 void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
