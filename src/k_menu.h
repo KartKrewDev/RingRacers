@@ -199,6 +199,9 @@ extern menu_t PLAY_BattleGamemodesDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+extern menuitem_t MISC_Addons[];
+extern menu_t MISC_AddonsDef;
+
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
@@ -471,7 +474,19 @@ void M_PlaybackQuit(INT32 choice);
 
 void M_ReplayHut(INT32 choice);
 
+// Misc menus:
+#define numaddonsshown 4
+void M_Addons(INT32 choice);
+boolean M_AddonsRefresh(void);
+void M_HandleAddons(INT32 choice);
+char *M_AddonsHeaderPath(void);
+
 // M_MENUDRAW.C
+
+// flags for text highlights
+#define highlightflags V_ORANGEMAP
+#define recommendedflags V_GREENMAP
+#define warningflags V_GRAYMAP
 
 void M_UpdateMenuBGImage(boolean forceReset);
 void M_DrawMenuBackground(void);
@@ -500,6 +515,11 @@ void M_DrawPause(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);
+
+// Misc menus:
+#define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
+#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
+void M_DrawAddons(void);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

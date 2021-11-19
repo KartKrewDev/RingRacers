@@ -303,7 +303,7 @@ menuitem_t PAUSE_Main[] =
 {
 
 	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
-		NULL, NULL, 0, 0},
+		NULL, M_Addons, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
 		NULL, &PAUSE_GamemodesDef, 0, 0},
@@ -395,6 +395,29 @@ menu_t PAUSE_PlaybackMenuDef = {
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
 	M_DrawPlaybackMenu,
+	NULL,
+	NULL,
+	NULL
+};
+
+
+// Other misc menus:
+
+// Addons menu! (Just a straight port for now)
+menuitem_t MISC_AddonsMenu[] =
+{
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL,
+		NULL, M_HandleAddons, 0, 0},     // dummy menuitem for the control func
+};
+
+menu_t MISC_AddonsDef = {
+	sizeof (MISC_AddonsMenu)/sizeof (menuitem_t),
+	NULL,
+	0,
+	MISC_AddonsMenu,
+	50, 28,
+	0, 0,
+	M_DrawAddons,
 	NULL,
 	NULL,
 	NULL
