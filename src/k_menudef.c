@@ -329,7 +329,7 @@ menuitem_t PAUSE_Main[] =
 		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
-		NULL, NULL, 0, 0},
+		NULL, M_CharacterSelectInit, 0, 0},
 
 	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
 		NULL, NULL, 0, 0},

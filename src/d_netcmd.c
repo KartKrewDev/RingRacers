@@ -5415,7 +5415,7 @@ static void Followercolor4_OnChange(void)
 	}
 }
 
-/** Sends a skin change for the console player, unless that player is moving.
+/** Sends a skin change for the console player, unless that player is moving. Also forces them to spectate if the change is done during gameplay
   * \sa cv_skin, Skin2_OnChange, Color_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5432,7 +5432,23 @@ static void Skin_OnChange(void)
 	}
 
 	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
+	{
+		UINT8 i;
+
 		SendNameAndColor(0);
+		// check to see if there's anyone else at all
+		// even if we're playing splitscreen, if it ain't free play it spectates us if it can.
+		if (G_GametypeHasSpectators() && !players[consoleplayer].spectator)	// Make sure we CAN spectate.
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (i == consoleplayer)
+					continue;
+				if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
+					COM_ImmedExecute("changeteam spectator");
+			}
+		}
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5441,7 +5457,7 @@ static void Skin_OnChange(void)
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
-  * player is moving.
+  * player is moving. Forces spectate the player if the change is done during gameplay.
   * \sa cv_skin2, Skin_OnChange, Color2_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5451,7 +5467,12 @@ static void Skin2_OnChange(void)
 		return; // do whatever you want
 
 	if (CanChangeSkin(g_localplayers[1]) && !P_PlayerMoving(g_localplayers[1]))
+	{
 		SendNameAndColor(1);
+		// With how we handle splitscreen, only check for gamestate here.
+		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[1]].spectator)
+			COM_ImmedExecute("changeteam2 spectator");
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5465,7 +5486,11 @@ static void Skin3_OnChange(void)
 		return; // do whatever you want
 
 	if (CanChangeSkin(g_localplayers[2]) && !P_PlayerMoving(g_localplayers[2]))
+	{
 		SendNameAndColor(2);
+		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[2]].spectator)
+			COM_ImmedExecute("changeteam3 spectator");
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5479,7 +5504,11 @@ static void Skin4_OnChange(void)
 		return; // do whatever you want
 
 	if (CanChangeSkin(g_localplayers[3]) && !P_PlayerMoving(g_localplayers[3]))
+	{
 		SendNameAndColor(3);
+		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[3]].spectator)
+			COM_ImmedExecute("changeteam4 spectator");
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));

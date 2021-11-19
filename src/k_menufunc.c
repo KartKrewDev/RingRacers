@@ -1870,6 +1870,8 @@ void M_QuitSRB2(INT32 choice)
 // =========
 
 // Character Select!
+// @TODO: Splitscreen handling when profiles are added into the game. ...I probably won't be the one to handle this however. -Lat'
+
 struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 struct setup_explosions_s setup_explosions[48];
@@ -1921,6 +1923,7 @@ void M_CharacterSelectInit(INT32 choice)
 		}
 	}
 
+	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
 
@@ -2172,6 +2175,48 @@ void M_CharacterSelectHandler(INT32 choice)
 	}
 }
 
+// Apply character skin and colour changes while ingame (we just call the skin / color commands.)
+// ...Will this cause command buffer issues? -Lat'
+static void M_MPConfirmCharacterSelection(void)
+{
+	UINT8 i;
+	INT16 col;
+
+	char colstr[8];
+	char commandnames[][2][MAXSTRINGLENGTH] = { {"skin ", "color "}, {"skin2 ", "color2 "}, {"skin3 ", "color3 "}, {"skin4 ", "color4 "}};
+	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		char cmd[MAXSTRINGLENGTH];
+
+		// skin
+		strcpy(cmd, commandnames[i][0]);
+		strcat(cmd, skins[setup_player[i].skin].name);
+
+		COM_ImmedExecute(cmd);
+
+		// colour
+		// (convert the number that's saved to a string we can use)
+		col = setup_player[i].color;
+		itoa(col, colstr, 10);
+		strcpy(cmd, commandnames[i][1]);
+		strcat(cmd, colstr);
+
+		COM_ImmedExecute(cmd);
+	}
+
+	M_ClearMenus(true);
+}
+
+static void M_MPConfirmCharacterResponse(INT32 ch)
+{
+	if (ch == 'y' || ch == KEY_ENTER)
+		M_MPConfirmCharacterSelection();
+
+	M_ClearMenus(true);
+}
+
 void M_CharacterSelectTick(void)
 {
 	UINT8 i;
@@ -2207,14 +2252,48 @@ void M_CharacterSelectTick(void)
 
 	if (setupnext)
 	{
-		for (i = 0; i < setup_numplayers; i++)
-		{
-			CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
-			CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
-		}
 
-		CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
-		M_SetupNextMenu(&PLAY_MainDef, false);
+		// Selecting from the menu
+		if (gamestate == GS_MENU)
+		{
+			for (i = 0; i < setup_numplayers; i++)
+			{
+				CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
+				CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
+			}
+
+			CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
+			M_SetupNextMenu(&PLAY_MainDef, false);
+		}
+		else	// In a game
+		{
+			// In the midst of a game,
+			// 1: warn players that confirming will force-spectate them until next round
+			//	^ This doesn't apply in FREEPLAY
+
+			// 2: Call the "skin" and "color" commands for all local players.
+			// This command will force change team to spectate under the proper circumstances. (see d_clisrv.c)
+			UINT8 j;
+
+			// check to see if there's anyone else at all
+			if (G_GametypeHasSpectators())	// Make sure we CAN spectate.
+			{
+				for (j = 0; j < MAXPLAYERS; j++)
+				{
+					if (j == displayplayers[0])
+						continue;
+					if (playeringame[j] && !players[consoleplayer].spectator)
+					{
+						// Warn the player!
+						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press 'Y' to confirm)\n"), M_MPConfirmCharacterResponse, MM_YESNO);
+						return;
+					}
+				}
+			}
+
+			// If we made it here then we're in freeplay or something and we can switch for free!
+			M_MPConfirmCharacterSelection();
+		}
 	}
 }
 
