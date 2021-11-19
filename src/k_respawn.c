@@ -155,9 +155,12 @@ void K_DoIngameRespawn(player_t *player)
 	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
 	if (player->tumbleBounces > 0)
 	{
-		player->tumbleBounces = TUMBLEBOUNCES-1; // Max # of bounces-1 (so you still tumble once)
-		player->pflags &= ~PF_TUMBLELASTBOUNCE; // Still force them to bounce at least once for the funny
-		players->tumbleHeight = 20; // force tumble height
+		player->tumbleBounces = 0; // MAXBOUNCES-1;
+		player->pflags &= ~PF_TUMBLELASTBOUNCE;
+		//players->tumbleHeight = 20;
+		players->mo->rollangle = 0;
+		player->spinouttype = KSPIN_WIPEOUT;
+		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
 	}
 
 	P_ResetPlayer(player);
