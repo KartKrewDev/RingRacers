@@ -467,6 +467,7 @@ void P_ResetPlayer(player_t *player)
 
 	//player->drift = player->driftcharge = 0;
 	player->trickpanel = 0;
+	player->glanceDir = 0;
 }
 
 //
@@ -2003,6 +2004,8 @@ void P_MovePlayer(player_t *player)
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
+		player->glanceDir = 0;
+		player->pflags &= ~PF_LOOKDOWN;
 	}
 	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
@@ -2021,17 +2024,6 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle = 0;
 	}
-	/*else if (player->pflags & PF_FAULT) -- v1 fault
-	{
-		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-		if (((player->nocontrol + 5) % 20) < 10)
-			player->drawangle += ANGLE_11hh;
-		else
-			player->drawangle -= ANGLE_11hh;
-
-		player->mo->rollangle = 0;
-	}*/
 	else
 	{
 		K_KartMoveAnimation(player);
@@ -4405,6 +4397,8 @@ void P_PlayerThink(player_t *player)
 		player->pflags |= PF_BRAKEDOWN;
 	else
 		player->pflags &= ~PF_BRAKEDOWN;
+
+	// PF_LOOKDOWN handled in K_KartMoveAnimation
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings

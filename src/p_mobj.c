@@ -6783,7 +6783,51 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
-				mobj->z + mobj->target->height * P_MobjFlip(mobj));
+				mobj->z + (mobj->target->height * P_MobjFlip(mobj)));
+		break;
+	case MT_GAINAX:
+		if (!mobj->target || P_MobjWasRemoved(mobj->target) // sanity
+			|| !mobj->target->player // ditto
+			|| !mobj->target->player->glanceDir // still glancing?
+			|| mobj->target->player->aizdriftturn // only other circumstance where can glance
+			|| ((K_GetKartButtons(mobj->target->player) & BT_LOOKBACK) != BT_LOOKBACK)) // it's a lookback indicator...
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->angle = mobj->target->player->drawangle;
+		mobj->z = mobj->target->z;
+
+		K_MatchGenericExtraFlags(mobj, mobj->target);
+		mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW)|K_GetPlayerDontDrawFlag(mobj->target->player);
+
+		P_TeleportMove(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
+				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
+				mobj->z + (32 * mapobjectscale * P_MobjFlip(mobj)));
+
+		{
+			statenum_t gainaxstate = mobj->state-states;
+			if (gainaxstate == S_GAINAX_TINY)
+			{
+				if (abs(mobj->target->player->glanceDir) > 1)
+				{
+					if (mobj->target->player->itemamount && mobj->target->player->itemtype)
+						gainaxstate = S_GAINAX_HUGE;
+					else
+						gainaxstate = S_GAINAX_MID1;
+					P_SetMobjState(mobj, gainaxstate);
+				}
+			}
+			else if (abs(mobj->target->player->glanceDir) <= 1)
+			{
+				if (mobj->flags2 & MF2_AMBUSH)
+					mobj->flags2 &= ~MF2_AMBUSH;
+				else
+					P_SetMobjState(mobj, S_GAINAX_TINY);
+			}
+		}
+
 		break;
 	case MT_FLAMESHIELDPAPER:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target))

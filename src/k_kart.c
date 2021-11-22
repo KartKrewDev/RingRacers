@@ -2206,7 +2206,11 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
-	if (lookback == true && drift == 0)
+	if (!lookback)
+	{
+		player->pflags &= ~PF_LOOKDOWN;
+	}
+	else if (drift == 0)
 	{
 		// Prioritize looking back frames over turning
 		turndir = 0;
@@ -2218,6 +2222,7 @@ void K_KartMoveAnimation(player_t *player)
 		destGlanceDir = -(2*intsign(player->aizdriftturn));
 		player->glanceDir = destGlanceDir;
 		drift = turndir = 0;
+		player->pflags &= ~PF_LOOKDOWN;
 	}
 	else if (player->aizdriftturn)
 	{
@@ -2232,6 +2237,7 @@ void K_KartMoveAnimation(player_t *player)
 
 		if (lookback == true)
 		{
+			statenum_t gainaxstate = S_GAINAX_TINY;
 			if (destGlanceDir == 0)
 			{
 				if (player->glanceDir != 0)
@@ -2256,6 +2262,20 @@ void K_KartMoveAnimation(player_t *player)
 			{
 				// Looking back AND glancing? Amplify the look!
 				destGlanceDir *= 2;
+				if (player->itemamount && player->itemtype)
+					gainaxstate = S_GAINAX_HUGE;
+				else
+					gainaxstate = S_GAINAX_MID1;
+			}
+
+			if (destGlanceDir && !(player->pflags & PF_LOOKDOWN))
+			{
+				mobj_t *gainax = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_GAINAX);
+				gainax->movedir = (destGlanceDir < 0) ? (ANGLE_270-ANG10) : (ANGLE_90+ANG10);
+				P_SetTarget(&gainax->target, player->mo);
+				P_SetMobjState(gainax, gainaxstate);
+				gainax->flags2 |= MF2_AMBUSH;
+				player->pflags |= PF_LOOKDOWN;
 			}
 		}
 		else if (K_GetForwardMove(player) < 0 && destGlanceDir == 0)
@@ -2510,6 +2530,9 @@ void K_KartMoveAnimation(player_t *player)
 	{
 		player->glanceDir++;
 	}
+
+	if (!player->glanceDir)
+		player->pflags &= ~PF_LOOKDOWN;
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
