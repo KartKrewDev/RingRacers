@@ -2966,6 +2966,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		else
 			lookbackdelay[num]--;
 	}
+	else if (player->respawn.state != RESPAWNST_NONE)
+	{
+		camspeed = 3*FRACUNIT/4;
+	}
 	lookbackdown = (lookbackdelay[num] == MAXLOOKBACKDELAY) != lookbackactive[num];
 	lookbackactive[num] = (lookbackdelay[num] == MAXLOOKBACKDELAY);
 #undef MAXLOOKBACKDELAY
@@ -4089,6 +4093,12 @@ DoABarrelRoll (player_t *player)
 	angle_t delta;
 
 	fixed_t smoothing;
+
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		player->tilt = 0;
+		return;
+	}
 
 	if (player->exiting)
 	{

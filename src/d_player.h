@@ -263,6 +263,7 @@ typedef struct respawnvars_s
 	fixed_t pointz;
 	boolean flip; // Flip upside down or not
 	tic_t timer; // Time left on respawn animation once you're there
+	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
 } respawnvars_t;
