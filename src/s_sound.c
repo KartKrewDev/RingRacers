@@ -1013,10 +1013,10 @@ fixed_t S_CalculateSoundDistance(fixed_t sx1, fixed_t sy1, fixed_t sz1, fixed_t 
 
 INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
 {
-	if (sfx->volume < 0)
-		return volume;
-	else
-		return volume * sfx->volume / 100;
+	if (sfx->volume > 0)
+		return (volume * sfx->volume) / 100;
+
+	return volume;
 }
 
 //
