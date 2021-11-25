@@ -6479,6 +6479,7 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_glshearing);
 	CV_RegisterVar(&cv_glshaders);
 	CV_RegisterVar(&cv_glallowshaders);
+	CV_RegisterVar(&cv_glanisotropicmode);
 
 	CV_RegisterVar(&cv_glfiltermode);
 	CV_RegisterVar(&cv_glsolvetjoin);
@@ -6494,7 +6495,7 @@ void HWR_AddSessionCommands(void)
 {
 	if (gl_sessioncommandsadded)
 		return;
-	CV_RegisterVar(&cv_glanisotropicmode);
+	// Kept in case we ever need this again.
 	gl_sessioncommandsadded = true;
 }
 

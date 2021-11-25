@@ -196,6 +196,22 @@ extern menu_t PLAY_MP_RoomSelectDef;
 extern menuitem_t PLAY_BattleGamemodesMenu[];
 extern menu_t PLAY_BattleGamemodesDef;
 
+// OPTIONS
+extern menuitem_t OPTIONS_Main[];
+extern menu_t OPTIONS_MainDef;
+
+extern menuitem_t OPTIONS_Video[];
+extern menu_t OPTIONS_VideoDef;
+
+extern menuitem_t OPTIONS_VideoModes[];
+extern menu_t OPTIONS_VideoModesDef;
+
+#ifdef HWRENDER
+extern menuitem_t OPTIONS_VideoOGL[];
+extern menu_t OPTIONS_VideoOGLDef;
+#endif
+
+// PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
@@ -431,6 +447,55 @@ void M_MPRoomSelect(INT32 choice);
 void M_MPRoomSelectTick(void);
 void M_MPRoomSelectInit(INT32 choice);
 
+// Options menu:
+
+// mode descriptions for video mode menu
+typedef struct
+{
+	INT32 modenum; // video mode number in the vidmodes list
+	const char *desc;  // XXXxYYY
+	UINT8 goodratio; // aspect correct if 1
+} modedesc_t;
+
+
+#define MAXCOLUMNMODES   12     //max modes displayed in one column
+#define MAXMODEDESCS     (MAXCOLUMNMODES*3)
+// Keep track of some options properties
+extern struct optionsmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	tic_t buttflash;	// Button flashing before transitionning to the new submenu.
+
+	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
+	// this is only used during menu transitions.
+	INT16 optx;
+	INT16 opty;
+	INT16 toptx;
+	INT16 topty;
+
+	// for video mode testing:
+	INT32 vidm_testingmode;
+	INT32 vidm_previousmode;
+	INT32 vidm_selected;
+	INT32 vidm_nummodes;
+	INT32 vidm_column_size;
+
+	modedesc_t modedescs[MAXMODEDESCS];
+} optionsmenu;
+
+void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
+void M_OptionsTick(void);
+boolean M_OptionsInputs(INT32 ch);
+
+boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
+
+// video modes menu (resolution)
+
+void M_VideoModeMenu(INT32 choice);
+void M_HandleVideoModes(INT32 ch);
+
 // Pause menu:
 
 // Keep track of some pause menu data for visual goodness.
@@ -515,6 +580,12 @@ void M_DrawPause(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);
+
+// Options menus:
+void M_DrawOptionsMovingButton(void);	// for sick transitions...
+void M_DrawOptions(void);
+void M_DrawGenericOptions(void);
+void M_DrawVideoModes(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"

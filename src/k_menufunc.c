@@ -2943,6 +2943,257 @@ void M_MPRoomSelectInit(INT32 choice)
 	M_SetupNextMenu(&PLAY_MP_RoomSelectDef, false);
 }
 
+// Options menu:
+struct optionsmenu_s optionsmenu;
+
+void M_InitOptions(INT32 choice)
+{
+	(void)choice;
+
+	// @TODO: Change options when you do them from a netgame.
+
+	optionsmenu.ticker = 0;
+	optionsmenu.offset = 0;
+
+	optionsmenu.optx = 0;
+	optionsmenu.opty = 0;
+	optionsmenu.toptx = 0;
+	optionsmenu.topty = 0;
+
+	OPTIONS_MainDef.prevMenu = currentMenu;
+
+	M_SetupNextMenu(&OPTIONS_MainDef, false);
+}
+
+boolean M_OptionsQuit(void)
+{
+	optionsmenu.toptx = 140-1;
+	optionsmenu.topty = 70+1;
+
+	return true;	// Always allow quitting, duh.
+}
+
+void M_OptionsTick(void)
+{
+	optionsmenu.offset /= 2;
+	optionsmenu.ticker++;
+
+	optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
+	optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
+
+	if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+	{
+		optionsmenu.optx = optionsmenu.toptx;
+		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+	}
+
+	// Garbage:
+	if (currentMenu == &OPTIONS_MainDef)
+	{
+		M_OptionsQuit();	// ...So now this is used here.
+	}
+	else
+	{
+		optionsmenu.toptx = 160;
+		optionsmenu.topty = 50;
+	}
+
+}
+
+boolean M_OptionsInputs(INT32 ch)
+{
+
+	switch (ch)
+	{
+		case KEY_DOWNARROW:
+		{
+			optionsmenu.offset += 48;
+			M_NextOpt();
+
+			if (itemOn == 0)
+				optionsmenu.offset -= currentMenu->numitems*48;
+
+			return true;
+		}
+		case KEY_UPARROW:
+		{
+			optionsmenu.offset -= 48;
+			M_PrevOpt();
+
+			if (itemOn == currentMenu->numitems-1)
+				optionsmenu.offset += currentMenu->numitems*48;
+
+			return true;
+		}
+		case KEY_ENTER:
+		{
+			optionsmenu.optx = 140;
+			optionsmenu.opty = 70;	// Default position for the currently selected option.
+
+			return false;	// Don't eat.
+		}
+
+	}
+
+	return false;
+}
+
+// setup video mode menu
+void M_VideoModeMenu(INT32 choice)
+{
+	INT32 i, j, vdup, nummodes, width, height;
+	const char *desc;
+
+	(void)choice;
+
+	memset(optionsmenu.modedescs, 0, sizeof(optionsmenu.modedescs));
+
+#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+	VID_PrepareModeList(); // FIXME: hack
+#endif
+	optionsmenu.vidm_nummodes = 0;
+	optionsmenu.vidm_selected = 0;
+	nummodes = VID_NumModes();
+
+#ifdef _WINDOWS
+	// clean that later: skip windowed mode 0, video modes menu only shows FULL SCREEN modes
+	if (nummodes <= NUMSPECIALMODES)
+		i = 0; // unless we have nothing
+	else
+		i = NUMSPECIALMODES;
+#else
+	// DOS does not skip mode 0, because mode 0 is ALWAYS present
+	i = 0;
+#endif
+	for (; i < nummodes && optionsmenu.vidm_nummodes < MAXMODEDESCS; i++)
+	{
+		desc = VID_GetModeName(i);
+		if (desc)
+		{
+			vdup = 0;
+
+			// when a resolution exists both under VGA and VESA, keep the
+			// VESA mode, which is always a higher modenum
+			for (j = 0; j < optionsmenu.vidm_nummodes; j++)
+			{
+				if (!strcmp(optionsmenu.modedescs[j].desc, desc))
+				{
+					// mode(0): 320x200 is always standard VGA, not vesa
+					if (optionsmenu.modedescs[j].modenum)
+					{
+						optionsmenu.modedescs[j].modenum = i;
+						vdup = 1;
+
+						if (i == vid.modenum)
+							optionsmenu.vidm_selected = j;
+					}
+					else
+						vdup = 1;
+
+					break;
+				}
+			}
+
+			if (!vdup)
+			{
+				optionsmenu.modedescs[optionsmenu.vidm_nummodes].modenum = i;
+				optionsmenu.modedescs[optionsmenu.vidm_nummodes].desc = desc;
+
+				if (i == vid.modenum)
+					optionsmenu.vidm_selected = optionsmenu.vidm_nummodes;
+
+				// Pull out the width and height
+				sscanf(desc, "%u%*c%u", &width, &height);
+
+				// Show multiples of 320x200 as green.
+				if (SCR_IsAspectCorrect(width, height))
+					optionsmenu.modedescs[optionsmenu.vidm_nummodes].goodratio = 1;
+
+				optionsmenu.vidm_nummodes++;
+			}
+		}
+	}
+
+	optionsmenu.vidm_column_size = (optionsmenu.vidm_nummodes+2) / 3;
+
+	M_SetupNextMenu(&OPTIONS_VideoModesDef, false);
+}
+
+
+// special menuitem key handler for video mode list
+void M_HandleVideoModes(INT32 ch)
+{
+	if (optionsmenu.vidm_testingmode > 0) switch (ch)
+	{
+		// change back to the previous mode quickly
+		case KEY_ESCAPE:
+			setmodeneeded = optionsmenu.vidm_previousmode + 1;
+			optionsmenu.vidm_testingmode = 0;
+			break;
+
+		case KEY_ENTER:
+			S_StartSound(NULL, sfx_menu1);
+			optionsmenu.vidm_testingmode = 0; // stop testing
+	}
+
+	else switch (ch)
+	{
+		case KEY_DOWNARROW:
+			S_StartSound(NULL, sfx_menu1);
+			if (++optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
+				optionsmenu.vidm_selected = 0;
+			break;
+
+		case KEY_UPARROW:
+			S_StartSound(NULL, sfx_menu1);
+			if (--optionsmenu.vidm_selected < 0)
+				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
+			break;
+
+		case KEY_LEFTARROW:
+			S_StartSound(NULL, sfx_menu1);
+			optionsmenu.vidm_selected -= optionsmenu.vidm_column_size;
+			if (optionsmenu.vidm_selected < 0)
+				optionsmenu.vidm_selected = (optionsmenu.vidm_column_size*3) + optionsmenu.vidm_selected;
+			if (optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
+				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
+			break;
+
+		case KEY_RIGHTARROW:
+			S_StartSound(NULL, sfx_menu1);
+			optionsmenu.vidm_selected += optionsmenu.vidm_column_size;
+			if (optionsmenu.vidm_selected >= (optionsmenu.vidm_column_size*3))
+				optionsmenu.vidm_selected %= optionsmenu.vidm_column_size;
+			if (optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
+				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
+			break;
+
+		case KEY_ENTER:
+			S_StartSound(NULL, sfx_menu1);
+			if (vid.modenum == optionsmenu.modedescs[optionsmenu.vidm_selected].modenum)
+				SCR_SetDefaultMode();
+			else
+			{
+				optionsmenu.vidm_testingmode = 15*TICRATE;
+				optionsmenu.vidm_previousmode = vid.modenum;
+				if (!setmodeneeded) // in case the previous setmode was not finished
+					setmodeneeded = optionsmenu.modedescs[optionsmenu.vidm_selected].modenum + 1;
+			}
+			break;
+
+		case KEY_ESCAPE: // this one same as M_Responder
+			if (currentMenu->prevMenu)
+				M_SetupNextMenu(currentMenu->prevMenu, false);
+			else
+				M_ClearMenus(true);
+			break;
+
+		default:
+			break;
+	}
+}
+
+
 // =====================
 // PAUSE / IN-GAME MENUS
 // =====================

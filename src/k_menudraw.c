@@ -80,6 +80,74 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 #define SERVERS_PER_PAGE 11
 
+
+// horizontally centered text
+static void M_CentreText(INT32 xoffs, INT32 y, const char *string)
+{
+	INT32 x;
+	//added : 02-02-98 : centre on 320, because V_DrawString centers on vid.width...
+	x = ((BASEVIDWIDTH - V_StringWidth(string, V_OLDSPACING))>>1) + xoffs;
+	V_DrawString(x,y,V_OLDSPACING,string);
+}
+
+
+//  A smaller 'Thermo', with range given as percents (0-100)
+static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
+{
+	INT32 i;
+	INT32 range;
+	patch_t *p;
+
+	for (i = 0; cv->PossibleValue[i+1].strvalue; i++);
+
+	x = BASEVIDWIDTH - x - SLIDER_WIDTH;
+
+	if (ontop)
+	{
+		V_DrawCharacter(x - 16 - (skullAnimCounter/5), y,
+			'\x1C' | highlightflags, false); // left arrow
+		V_DrawCharacter(x+(SLIDER_RANGE*8) + 8 + (skullAnimCounter/5), y,
+			'\x1D' | highlightflags, false); // right arrow
+	}
+
+	if ((range = atoi(cv->defaultvalue)) != cv->value)
+	{
+		range = ((range - cv->PossibleValue[0].value) * 100 /
+		(cv->PossibleValue[1].value - cv->PossibleValue[0].value));
+
+		if (range < 0)
+			range = 0;
+		if (range > 100)
+			range = 100;
+
+		// draw the default
+		p = W_CachePatchName("M_SLIDEC", PU_CACHE);
+		V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
+	}
+
+	V_DrawScaledPatch(x - 8, y, 0, W_CachePatchName("M_SLIDEL", PU_CACHE));
+
+	p =  W_CachePatchName("M_SLIDEM", PU_CACHE);
+	for (i = 0; i < SLIDER_RANGE; i++)
+		V_DrawScaledPatch (x+i*8, y, 0,p);
+
+	p = W_CachePatchName("M_SLIDER", PU_CACHE);
+	V_DrawScaledPatch(x+SLIDER_RANGE*8, y, 0, p);
+
+	range = ((cv->value - cv->PossibleValue[0].value) * 100 /
+	 (cv->PossibleValue[1].value - cv->PossibleValue[0].value));
+
+	if (range < 0)
+		range = 0;
+	if (range > 100)
+		range = 100;
+
+	// draw the slider cursor
+	p = W_CachePatchName("M_SLIDEC", PU_CACHE);
+	V_DrawScaledPatch(x - 4 + (((SLIDER_RANGE)*8 + 4)*range)/100, y, 0, p);
+}
+
+
 static patch_t *addonsp[NUM_EXT+5];
 
 static UINT32 bgTextScroll = 0;
@@ -1581,6 +1649,275 @@ void M_DrawMPRoomSelect(void)
 	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
 	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
 }
+
+// OPTIONS MENU
+
+static void M_DrawOptionsCogs(void)
+{
+	patch_t *back[3] = {W_CachePatchName("OPT_BAK1", PU_CACHE), W_CachePatchName("OPT_BAK2", PU_CACHE), W_CachePatchName("OPT_BAK3", PU_CACHE)};
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, back[(optionsmenu.ticker/10) %3], NULL);
+}
+
+void M_DrawOptionsMovingButton(void)
+{
+	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
+	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+	V_DrawFixedPatch((optionsmenu.optx)*FRACUNIT, (optionsmenu.opty)*FRACUNIT, FRACUNIT, 0, butt, c);
+	V_DrawCenteredGamemodeString((optionsmenu.optx)-3, (optionsmenu.opty) - 16, V_ALLOWLOWERCASE, c, OPTIONS_MainDef.menuitems[OPTIONS_MainDef.lastOn].text);
+}
+
+void M_DrawOptions(void)
+{
+	UINT8 i;
+	INT32 x = 140 - (48*itemOn) + optionsmenu.offset;
+	INT32 y = 70 + optionsmenu.offset;
+	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
+
+	UINT8 *c = NULL;
+
+	M_DrawOptionsCogs();
+
+	for (i=0; i < currentMenu->numitems; i++)
+	{
+		INT32 py = y - (itemOn*48);
+		INT32 px = x - menutransition.tics*64;
+
+		if (i == itemOn)
+			c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+		else
+			c = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
+
+		if (!(menutransition.tics && i == itemOn))
+		{
+			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
+			V_DrawCenteredGamemodeString(px-3, py - 16, V_ALLOWLOWERCASE, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
+		}
+
+		y += 48;
+		x += 48;
+	}
+
+	M_DrawMenuTooltips();
+
+	if (menutransition.tics)
+		M_DrawOptionsMovingButton();
+
+}
+
+void M_DrawGenericOptions(void)
+{
+	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y, w, i, cursory = 0;
+
+	M_DrawOptionsCogs();
+	M_DrawMenuTooltips();
+	M_DrawOptionsMovingButton();
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		if (i == itemOn)
+			cursory = y;
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_PATCH:
+				if (currentMenu->menuitems[i].patch && currentMenu->menuitems[i].patch[0])
+				{
+					if (currentMenu->menuitems[i].status & IT_CENTER)
+					{
+						patch_t *p;
+						p = W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE);
+						V_DrawScaledPatch((BASEVIDWIDTH - SHORT(p->width))/2, y, 0, p);
+					}
+					else
+					{
+						V_DrawScaledPatch(x, y, 0,
+							W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					}
+				}
+				/* FALLTHRU */
+			case IT_NOTHING:
+			case IT_DYBIGSPACE:
+				y += SMALLLINEHEIGHT;
+				break;
+#if 0
+			case IT_BIGSLIDER:
+				M_DrawThermo(x, y, (consvar_t *)currentMenu->menuitems[i].itemaction);
+				y += LINEHEIGHT;
+				break;
+#endif
+			case IT_STRING:
+			case IT_WHITESTRING:
+				if (i == itemOn)
+					cursory = y;
+
+				if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+				else
+					V_DrawString(x, y, highlightflags, currentMenu->menuitems[i].text);
+
+				// Cvar specific handling
+				switch (currentMenu->menuitems[i].status & IT_TYPE)
+					case IT_CVAR:
+					{
+						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+						{
+							case IT_CV_SLIDER:
+								M_DrawSlider(x, y, cv, (i == itemOn));
+							case IT_CV_NOPRINT: // color use this
+							case IT_CV_INVISSLIDER: // monitor toggles use this
+								break;
+							case IT_CV_STRING:
+								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+								if (skullAnimCounter < 4 && i == itemOn)
+									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
+										'_' | 0x80, false);
+								y += 16;
+								break;
+							default:
+								w = V_StringWidth(cv->string, 0);
+								V_DrawString(BASEVIDWIDTH - x - w, y,
+									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+								if (i == itemOn)
+								{
+									V_DrawCharacter(BASEVIDWIDTH - x - 10 - w - (skullAnimCounter/5), y,
+											'\x1C' | highlightflags, false); // left arrow
+									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
+											'\x1D' | highlightflags, false); // right arrow
+								}
+								break;
+						}
+						break;
+					}
+					y += STRINGHEIGHT;
+					break;
+			case IT_STRING2:
+				V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+				/* FALLTHRU */
+			case IT_DYLITLSPACE:
+			case IT_SPACE:
+				y += SMALLLINEHEIGHT;
+				break;
+			case IT_GRAYPATCH:
+				if (currentMenu->menuitems[i].patch && currentMenu->menuitems[i].patch[0])
+					V_DrawMappedPatch(x, y, 0,
+						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
+				y += LINEHEIGHT;
+				break;
+			case IT_TRANSTEXT:
+				if (currentMenu->menuitems[i].mvar1)
+					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
+				/* FALLTHRU */
+			case IT_TRANSTEXT2:
+				V_DrawString(x, y, V_TRANSLUCENT, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT;
+				break;
+			case IT_QUESTIONMARKS:
+				if (currentMenu->menuitems[i].mvar1)
+					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
+
+				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+				y += SMALLLINEHEIGHT;
+				break;
+			case IT_HEADERTEXT: // draws 16 pixels to the left, in yellow text
+				if (currentMenu->menuitems[i].mvar1)
+					y = currentMenu->y+currentMenu->menuitems[i].mvar1;
+
+				V_DrawString(x-16, y, highlightflags, currentMenu->menuitems[i].text);
+				y += SMALLLINEHEIGHT;
+				break;
+		}
+	}
+
+	// DRAW THE SKULL CURSOR
+	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)
+		|| ((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_NOTHING))
+	{
+		V_DrawScaledPatch(x + SKULLXOFF, cursory - 5, 0,
+			W_CachePatchName("M_CURSOR", PU_CACHE));
+	}
+	else
+	{
+		V_DrawScaledPatch(x - 24, cursory, 0,
+			W_CachePatchName("M_CURSOR", PU_CACHE));
+		V_DrawString(x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
+	}
+}
+
+// Draw the video modes list, a-la-Quake
+void M_DrawVideoModes(void)
+{
+	INT32 i, j, row, col;
+
+	M_DrawOptionsCogs();
+	M_DrawMenuTooltips();
+	M_DrawOptionsMovingButton();
+
+	V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y,
+		highlightflags, "Choose mode, reselect to change default");
+
+	row = 41 + menutransition.tics*64;
+	col = currentMenu->y + 14;
+	for (i = 0; i < optionsmenu.vidm_nummodes; i++)
+	{
+		if (i == optionsmenu.vidm_selected)
+			V_DrawString(row, col, highlightflags, optionsmenu.modedescs[i].desc);
+		// Show multiples of 320x200 as green.
+		else
+			V_DrawString(row, col, (optionsmenu.modedescs[i].goodratio) ? recommendedflags : 0, optionsmenu.modedescs[i].desc);
+
+		col += 8;
+		if ((i % optionsmenu.vidm_column_size) == (optionsmenu.vidm_column_size-1))
+		{
+			row += 7*13;
+			col = currentMenu->y + 14;
+		}
+	}
+
+	if (optionsmenu.vidm_testingmode > 0)
+	{
+		INT32 testtime = (optionsmenu.vidm_testingmode/TICRATE) + 1;
+
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+			va("Previewing mode %c%dx%d",
+				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
+				vid.width, vid.height));
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+			"Press ENTER again to keep this mode");
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75+16,
+			va("Wait %d second%s", testtime, (testtime > 1) ? "s" : ""));
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75+24,
+			"or press ESC to return");
+
+	}
+	else
+	{
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75,
+			va("Current mode is %c%dx%d",
+				(SCR_IsAspectCorrect(vid.width, vid.height)) ? 0x83 : 0x80,
+				vid.width, vid.height));
+		M_CentreText(menutransition.tics*64, currentMenu->y + 75+8,
+			va("Default mode is %c%dx%d",
+				(SCR_IsAspectCorrect(cv_scr_width.value, cv_scr_height.value)) ? 0x83 : 0x80,
+				cv_scr_width.value, cv_scr_height.value));
+
+		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+16,
+			recommendedflags, "Marked modes are recommended.");
+		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+24,
+			highlightflags, "Other modes may have visual errors.");
+		V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*64, currentMenu->y + 75+32,
+			highlightflags, "Larger modes may have performance issues.");
+	}
+
+	// Draw the cursor for the VidMode menu
+	i = 41 - 10 + ((optionsmenu.vidm_selected / optionsmenu.vidm_column_size)*7*13) + menutransition.tics*64;
+	j = currentMenu->y + 14 + ((optionsmenu.vidm_selected % optionsmenu.vidm_column_size)*8);
+
+	V_DrawScaledPatch(i - 8, j, 0,
+		W_CachePatchName("M_CURSOR", PU_CACHE));
+}
+
 
 //
 // INGAME / PAUSE MENUS

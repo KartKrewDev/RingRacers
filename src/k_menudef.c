@@ -3,6 +3,9 @@
 
 #include "k_menu.h"
 #include "screen.h" // BASEVIDWIDTH
+#include "r_main.h"	// cv_skybox
+#include "v_video.h" // cv_globalgamma
+#include "hardware/hw_main.h"	// gl consvars
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -26,9 +29,9 @@ menuitem_t MainMenu[] =
 		"Check out some bonus features.", "MENUI001",
 		NULL, 0, 0},
 
-	{IT_STRING, "Option",
+	{IT_STRING, "Options",
 		"Configure your controls, settings, and preferences.", NULL,
-		NULL, 0, 0},
+		M_InitOptions, 0, 0},
 
 	{IT_STRING | IT_CALL, "Quit",
 		"Exit \"Dr. Robotnik's Ring Racers\".", NULL,
@@ -291,6 +294,185 @@ menu_t PLAY_MP_RoomSelectDef = {
 	NULL
 };
 
+// options menu
+menuitem_t OPTIONS_Main[] =
+{
+
+	{IT_STRING | IT_SUBMENU, "Control Setup", "Remap keys & buttons to your likings.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
+		NULL, &OPTIONS_VideoDef, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Sound Options", "Adjust various sound settings such as the volume.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Gameplay Options", "Change various game related options",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Server Options", "Change various specific options for your game server.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Tricks & Secrets", "Those who bother reading a game manual always get the edge over those who don't!",
+		NULL, NULL, 0, 0},
+};
+
+menu_t OPTIONS_MainDef = {
+	sizeof (OPTIONS_Main) / sizeof (menuitem_t),
+	&MainDef,
+	0,
+	OPTIONS_Main,
+	0, 0,
+	2, 10,
+	M_DrawOptions,
+	M_OptionsTick,
+	NULL,
+	M_OptionsInputs
+};
+
+// video options menu...
+// options menu
+menuitem_t OPTIONS_Video[] =
+{
+
+	{IT_STRING | IT_CALL, "Set Resolution...", "Change the screen resolution for the game.",
+		NULL, M_VideoModeMenu, 0, 0},
+
+// A check to see if you're not running on a fucking antique potato powered stone i guess???????
+
+#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+	{IT_STRING | IT_CVAR, "Fullscreen", "Set whether you want to use fullscreen or windowed mode.",
+		NULL, &cv_fullscreen, 0, 0},
+#endif
+
+	{IT_NOTHING|IT_SPACE, NULL, "Kanade best waifu! I promise!",
+		NULL, NULL, 0, 0},
+
+	// Everytime I see a screenshot at max gamma I die inside
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Gamma", "Adjusts the overall brightness of the game.",
+		NULL, &cv_globalgamma, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Vertical Sync", "Locks the framerate to your monitor's refresh rate.",
+		NULL, &cv_vidwait, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Enable Skyboxes", "Turning this off will improve performance at the detriment of visuals for many maps.",
+		NULL, &cv_skybox, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Draw Distance", "How far objects can be drawn. Lower values may improve performance at the cost of visibility.",
+		NULL, &cv_drawdist, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Weather Draw Distance", "Affects how far weather visuals can be drawn. Lower values improve performance.",
+		NULL, &cv_drawdist_precip, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Show FPS", "Displays the game framerate at the lower right corner of the screen.",
+		NULL, &cv_ticrate, 0, 0},
+
+	{IT_NOTHING|IT_SPACE, NULL, "Kanade best waifu! I promise!",
+		NULL, NULL, 0, 0},
+
+#ifdef HWRENDER
+	{IT_STRING | IT_SUBMENU, "Hardware Options...", "For usage and configuration of the OpenGL renderer.",
+		NULL, &OPTIONS_VideoOGLDef, 0, 0},
+#endif
+
+};
+
+menu_t OPTIONS_VideoDef = {
+	sizeof (OPTIONS_Video) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Video,
+	32, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_VideoModes[] = {
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a resolution.",
+		NULL, M_HandleVideoModes, 0, 0},     // dummy menuitem for the control func
+
+};
+
+menu_t OPTIONS_VideoModesDef = {
+	sizeof (OPTIONS_VideoModes) / sizeof (menuitem_t),
+	&OPTIONS_VideoDef,
+	0,
+	OPTIONS_VideoModes,
+	48, 80,
+	2, 10,
+	M_DrawVideoModes,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+#ifdef HWRENDER
+menuitem_t OPTIONS_VideoOGL[] =
+{
+
+	{IT_STRING | IT_CVAR, "Renderer", "Change renderers between Software and OpenGL",
+		NULL, &cv_renderer, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_SPACE | IT_NOTHING | IT_STRING, "OPTIONS BELOW ARE OPENGL ONLY!", "Watch people get confused anyway!!",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "3D Models", "Use 3D models instead of sprites when applicable.",
+		NULL, &cv_glmodels, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Shaders", "Use GLSL Shaders. Turning them off increases performance at the expanse of visual quality.",
+		NULL, &cv_glshaders, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Texture Quality", "Texture depth. Higher values are recommended.",
+		NULL, &cv_scr_depth, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Texture Filter", "Texture Filter. Nearest is recommended.",
+		NULL, &cv_glfiltermode, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Anisotropic", "Lower values will improve performance at a minor quality loss.",
+		NULL, &cv_glanisotropicmode, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Wall Contrast Style", "Allows faking or not Software wall colour contrast.",
+		NULL, &cv_glfakecontrast, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Sprite Billboarding", "Adjusts sprites when viewed from above or below to not make them appear flat.",
+		NULL, &cv_glspritebillboarding, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Software Perspective", "Emulates Software shearing when looking up or down. Not recommended.",
+		NULL, &cv_glshearing, 0, 0},
+};
+
+menu_t OPTIONS_VideoOGLDef = {
+	sizeof (OPTIONS_VideoOGL) / sizeof (menuitem_t),
+	&OPTIONS_VideoDef,
+	0,
+	OPTIONS_VideoOGL,
+	32, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+#endif
 
 // -------------------
 // In-game/pause menus
@@ -332,7 +514,7 @@ menuitem_t PAUSE_Main[] =
 		NULL, M_CharacterSelectInit, 0, 0},
 
 	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
-		NULL, NULL, 0, 0},
+		NULL, M_InitOptions, 0, 0},
 
 	{IT_STRING | IT_CALL, "EXIT GAME", "M_ICOEXT",
 		NULL, M_EndGame, 0, 0},
