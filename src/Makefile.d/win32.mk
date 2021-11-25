@@ -30,11 +30,24 @@ libs+=-lws2_32
 endif
 endif
 
+ifndef MINGW64
+opts+=-I../libs/drmingw/include
+libs+=-L../libs/drmingw/lib/win32 -lmgwhelp -lexchndl
+endif
+
+ifndef MINGW64
+libs+=-Wl,--large-address-aware
+endif
+
 ifndef NONET
 ifndef MINGW64 # miniupnc is broken with MINGW64
 opts+=-I../libs -DSTATIC_MINIUPNPC
 libs+=-L../libs/miniupnpc/mingw$(32) -lws2_32 -liphlpapi
 endif
+endif
+
+ifndef NO_DISCORDRPC
+HAVE_DISCORDRPC=1
 endif
 
 ifndef MINGW64
@@ -97,3 +110,8 @@ lib:=../libs/curl
 CURL_opts:=-I$(lib)/include
 CURL_libs:=-L$(lib)/lib$(32) -lcurl
 $(eval $(call _set,CURL))
+
+lib:=../libs/discord-rpc/win$(32)-dynamic
+DISCORDRPC_opts:=-I$(lib)/include
+DISCORDRPC_libs:=-L$(lib)/lib
+$(eval $(call _set,DISCORDRPC))

@@ -6,6 +6,7 @@ passthru_opts+=\
 	NONET NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
 	MOBJCONSISTANCY PACKETDROP ZDEBUG\
 	HAVE_MINIUPNPC\
+	HAVE_DISCORDRPC TESTERS DEVELOP
 
 # build with debugging information
 ifdef DEBUGMODE
@@ -57,6 +58,13 @@ endif
 
 ifdef HAVE_MINIUPNPC
 libs+=-lminiupnpc
+endif
+
+ifdef HAVE_DISCORDRPC
+$(eval $(call Propogate_flags,DISCORDRPC))
+libs+=-ldiscord-rpc
+opts+=-DUSE_STUN
+sources+=discord.c stun.c
 endif
 
 # (Valgrind is a memory debugger.)
