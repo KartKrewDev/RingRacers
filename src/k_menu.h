@@ -226,6 +226,13 @@ extern menu_t OPTIONS_GameplayDef;
 extern menuitem_t OPTIONS_GameplayItems[];
 extern menu_t OPTIONS_GameplayItemsDef;
 
+extern menuitem_t OPTIONS_Server[];
+extern menu_t OPTIONS_ServerDef;
+
+#ifndef NONET
+extern menuitem_t OPTIONS_ServerAdvanced[];
+extern menu_t OPTIONS_ServerAdvancedDef;
+#endif
 
 // PAUSE
 extern menuitem_t PAUSE_Main[];

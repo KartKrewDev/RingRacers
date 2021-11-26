@@ -317,7 +317,7 @@ menuitem_t OPTIONS_Main[] =
 		NULL, &OPTIONS_GameplayDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Server Options", "Change various specific options for your game server.",
-		NULL, NULL, 0, 0},
+		NULL, &OPTIONS_ServerDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
 		NULL, NULL, 0, 0},
@@ -735,6 +735,127 @@ menu_t OPTIONS_GameplayItemsDef = {
 	NULL,
 	NULL,
 };
+
+menuitem_t OPTIONS_Server[] =
+{
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Name", "Change the name of your server.",
+		NULL, &cv_servername, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Intermission", "Set how long to stay on the result screen.",
+		NULL, &cv_inttime, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Map Progression", "Set how the next map is chosen.",
+		NULL, &cv_advancemap, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Vote Timer", "Set how long players have to vote.",
+		NULL, &cv_votetime, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Vote Mode Change", "Set how often voting proposes a different gamemode.",
+		NULL, &cv_kartvoterulechanges, 0, 0},
+
+#ifndef NONET
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Ingame Max. Players", "How many players can play at once. 0 Allows everyone who joins.",
+		NULL, &cv_ingamecap, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Server Max. Players", "How many players can connect to the server.",
+		NULL, &cv_maxplayers, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Allow Joining", "Sets whether players can connect to your server.",
+		NULL, &cv_allownewplayer, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Allow Downloads", "Allows joiners to download missing files from you.",
+		NULL, &cv_downloading, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Pause Permissions", "Sets who can pause the game.",
+		NULL, &cv_pause, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Mute Chat", "Prevents non-admins from sending chat messages.",
+		NULL, &cv_mute, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Advanced...", "Advanced options. Be careful when messing with these!",
+		NULL, &OPTIONS_ServerAdvancedDef, 0, 0},
+
+#endif
+};
+
+menu_t OPTIONS_ServerDef = {
+	sizeof (OPTIONS_Server) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Server,
+	48, 70,	// This menu here is slightly higher because there's a lot of options...
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+#ifndef NONET
+menuitem_t OPTIONS_ServerAdvanced[] =
+{
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Browser Address", "Default is \'https://ms.kartkew.org/ms/api\'",
+		NULL, &cv_masterserver, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
+		NULL, &cv_resynchattempts, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Ping Limit (ms)", "Players above the ping limit will get kicked from the server.",
+		NULL, &cv_maxping, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Ping Timeout (s)", "Players must be above the ping limit for this long before being kicked.",
+		NULL, &cv_pingtimeout, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Connection Timeout (tics)", "Players not giving any netowrk activity for this long are kicked.",
+		NULL, &cv_nettimeout, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Join Timeout (tics)", "Players taking too long to join are kicked.",
+		NULL, &cv_jointimeout, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Max File Transfer", "Maximum size of the files that can be downloaded from joining clients. (KB)",
+		NULL, &cv_maxsend, 0, 0},
+
+	{IT_STRING | IT_CVAR, "File Transfer Speed", "File transfer packet rate. Larger values send more data.",
+		NULL, &cv_downloadspeed, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Log Joiner IPs", "Shows the IP of connecting players.",
+		NULL, &cv_showjoinaddress, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Log Resynch", "Shows which players need resynchronization.",
+		NULL, &cv_blamecfail, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Log Transfers", "Shows when clients are downloading files from you.",
+		NULL, &cv_noticedownload, 0, 0},
+};
+
+menu_t OPTIONS_ServerAdvancedDef = {
+	sizeof (OPTIONS_ServerAdvanced) / sizeof (menuitem_t),
+	&OPTIONS_ServerDef,
+	0,
+	OPTIONS_ServerAdvanced,
+	48, 70,	// This menu here is slightly higher because there's a lot of options...
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+#endif
 
 // -------------------
 // In-game/pause menus
