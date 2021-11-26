@@ -1918,6 +1918,167 @@ void M_DrawVideoModes(void)
 		W_CachePatchName("M_CURSOR", PU_CACHE));
 }
 
+// Gameplay Item Tggles:
+static tic_t shitsfree = 0;
+
+void M_DrawItemToggles(void)
+{
+	const INT32 edges = 9;
+	const INT32 height = 3;
+	const INT32 spacing = 35;
+	const INT32 column = itemOn/height;
+	//const INT32 row = itemOn%height;
+	INT32 leftdraw, rightdraw, totaldraw;
+	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y+(spacing/4);
+	INT32 onx = 0, ony = 0;
+	consvar_t *cv;
+	INT32 i, translucent, drawnum;
+
+	M_DrawOptionsCogs();
+	M_DrawMenuTooltips();
+	M_DrawOptionsMovingButton();
+
+	// Find the available space around column
+	leftdraw = rightdraw = column;
+	totaldraw = 0;
+	for (i = 0; (totaldraw < edges*2 && i < edges*4); i++)
+	{
+		if (rightdraw+1 < (currentMenu->numitems/height)+1)
+		{
+			rightdraw++;
+			totaldraw++;
+		}
+		if (leftdraw-1 >= 0)
+		{
+			leftdraw--;
+			totaldraw++;
+		}
+	}
+
+	for (i = leftdraw; i <= rightdraw; i++)
+	{
+		INT32 j;
+
+		for (j = 0; j < height; j++)
+		{
+			const INT32 thisitem = (i*height)+j;
+
+			if (thisitem >= currentMenu->numitems)
+				continue;
+
+			if (thisitem == itemOn)
+			{
+				onx = x;
+				ony = y;
+				y += spacing;
+				continue;
+			}
+
+			if (currentMenu->menuitems[thisitem].mvar1 == 0)
+			{
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISTOGL", PU_CACHE));
+				continue;
+			}
+
+			cv = KartItemCVars[currentMenu->menuitems[thisitem].mvar1-1];
+			translucent = (cv->value ? 0 : V_TRANSLUCENT);
+
+			switch (currentMenu->menuitems[thisitem].mvar1)
+			{
+				case KRITEM_DUALSNEAKER:
+				case KRITEM_DUALJAWZ:
+					drawnum = 2;
+					break;
+				case KRITEM_TRIPLESNEAKER:
+				case KRITEM_TRIPLEBANANA:
+				case KRITEM_TRIPLEORBINAUT:
+					drawnum = 3;
+					break;
+				case KRITEM_QUADORBINAUT:
+					drawnum = 4;
+					break;
+				case KRITEM_TENFOLDBANANA:
+					drawnum = 10;
+					break;
+				default:
+					drawnum = 0;
+					break;
+			}
+
+			if (cv->value)
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
+			else
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+
+			if (drawnum != 0)
+			{
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
+				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
+				V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|translucent, va("x%d", drawnum));
+			}
+			else
+				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
+
+			y += spacing;
+		}
+
+		x += spacing;
+		y = currentMenu->y+(spacing/4);
+	}
+
+	{
+		if (currentMenu->menuitems[itemOn].mvar1 == 0)
+		{
+			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
+			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITTOGL", PU_CACHE));
+		}
+		else
+		{
+			cv = KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1];
+			translucent = (cv->value ? 0 : V_TRANSLUCENT);
+
+			switch (currentMenu->menuitems[itemOn].mvar1)
+			{
+				case KRITEM_DUALSNEAKER:
+				case KRITEM_DUALJAWZ:
+					drawnum = 2;
+					break;
+				case KRITEM_TRIPLESNEAKER:
+				case KRITEM_TRIPLEBANANA:
+					drawnum = 3;
+					break;
+				case KRITEM_TENFOLDBANANA:
+					drawnum = 10;
+					break;
+				default:
+					drawnum = 0;
+					break;
+			}
+
+			if (cv->value)
+				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
+			else
+				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
+
+			if (drawnum != 0)
+			{
+				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
+				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
+				V_DrawScaledPatch(onx+27, ony+39, translucent, W_CachePatchName("K_ITX", PU_CACHE));
+				V_DrawKartString(onx+37, ony+34, translucent, va("%d", drawnum));
+			}
+			else
+				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
+		}
+	}
+
+	if (shitsfree)
+		shitsfree--;
+
+	V_DrawCenteredString(BASEVIDWIDTH/2, currentMenu->y, highlightflags, va("* %s *", currentMenu->menuitems[itemOn].text));
+}
+
 
 //
 // INGAME / PAUSE MENUS

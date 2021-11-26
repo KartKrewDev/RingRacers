@@ -3193,6 +3193,104 @@ void M_HandleVideoModes(INT32 ch)
 	}
 }
 
+void M_HandleItemToggles(INT32 choice)
+{
+	const INT32 width = 9, height = 3;
+	INT32 column = itemOn/height, row = itemOn%height;
+	INT16 next;
+	UINT8 i;
+	boolean exitmenu = false;
+
+	switch (choice)
+	{
+		case KEY_RIGHTARROW:
+			S_StartSound(NULL, sfx_menu1);
+			column++;
+			if (((column*height)+row) >= currentMenu->numitems)
+				column = 0;
+			next = min(((column*height)+row), currentMenu->numitems-1);
+			itemOn = next;
+			break;
+
+		case KEY_LEFTARROW:
+			S_StartSound(NULL, sfx_menu1);
+			column--;
+			if (column < 0)
+				column = width-1;
+			if (((column*height)+row) >= currentMenu->numitems)
+				column--;
+			next = max(((column*height)+row), 0);
+			if (next >= currentMenu->numitems)
+				next = currentMenu->numitems-1;
+			itemOn = next;
+			break;
+
+		case KEY_DOWNARROW:
+			S_StartSound(NULL, sfx_menu1);
+			row = (row+1) % height;
+			if (((column*height)+row) >= currentMenu->numitems)
+				row = 0;
+			next = min(((column*height)+row), currentMenu->numitems-1);
+			itemOn = next;
+			break;
+
+		case KEY_UPARROW:
+			S_StartSound(NULL, sfx_menu1);
+			row = (row-1) % height;
+			if (row < 0)
+				row = height-1;
+			if (((column*height)+row) >= currentMenu->numitems)
+				row--;
+			next = max(((column*height)+row), 0);
+			if (next >= currentMenu->numitems)
+				next = currentMenu->numitems-1;
+			itemOn = next;
+			break;
+
+		case KEY_ENTER:
+#ifdef ITEMTOGGLEBOTTOMRIGHT
+			if (currentMenu->menuitems[itemOn].mvar1 == 255)
+			{
+				//S_StartSound(NULL, sfx_s26d);
+				if (!shitsfree)
+				{
+					shitsfree = TICRATE;
+					S_StartSound(NULL, sfx_itfree);
+				}
+			}
+			else
+#endif
+			if (currentMenu->menuitems[itemOn].mvar1 == 0)
+			{
+				INT32 v = cv_sneaker.value;
+				S_StartSound(NULL, sfx_s1b4);
+				for (i = 0; i < NUMKARTRESULTS-1; i++)
+				{
+					if (KartItemCVars[i]->value == v)
+						CV_AddValue(KartItemCVars[i], 1);
+				}
+			}
+			else
+			{
+				S_StartSound(NULL, sfx_s1ba);
+				CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1], 1);
+			}
+			break;
+
+		case KEY_ESCAPE:
+			exitmenu = true;
+			break;
+	}
+
+	if (exitmenu)
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
+	}
+}
+
 
 // =====================
 // PAUSE / IN-GAME MENUS

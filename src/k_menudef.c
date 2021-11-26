@@ -314,7 +314,7 @@ menuitem_t OPTIONS_Main[] =
 		NULL, &OPTIONS_HUDDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Gameplay Options", "Change various game related options",
-		NULL, NULL, 0, 0},
+		NULL, &OPTIONS_GameplayDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Server Options", "Change various specific options for your game server.",
 		NULL, NULL, 0, 0},
@@ -553,7 +553,7 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Minimap Opacity", "Changes the opacity of the minimap.",
 		NULL, &cv_kartminimap, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Speedometer Display", "Choose to what speed unit to display or toggle off the speedometer.",
+	{IT_STRING | IT_CVAR, "Speedometer", "Choose to what speed unit to display or toggle off the speedometer.",
 		NULL, &cv_kartspeedometer, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Display \"CHECK\"", "Displays an icon when a player is tailing you.",
@@ -635,6 +635,102 @@ menu_t OPTIONS_HUDOnlineDef = {
 	48, 80,
 	2, 10,
 	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+
+menuitem_t OPTIONS_Gameplay[] =
+{
+
+	{IT_STRING | IT_CVAR, "Game Speed", "Change Game Speed for the next map.",
+		NULL, &cv_kartspeed, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Base Lap Count", "Change how many laps must be completed per race.",
+		NULL, &cv_kartspeed, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
+		NULL, &cv_kartfrantic, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Encore Mode", "Forces Encore Mode on for the next map.",
+		NULL, &cv_kartencore, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Exit Countdown", "How long players have to finish after 1st place finishes.",
+		NULL, &cv_countdowntime, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Time Limit", "Change the time limit for Battle rounds.",
+		NULL, &cv_timelimit, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
+		NULL, &cv_kartbumpers, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Karma Comeback", "Enable Karma Comeback in Battle mode.",
+		NULL, &cv_kartcomeback, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Random Item Toggles...", "Change which items to enable for your games.",
+		NULL, &OPTIONS_GameplayItemsDef, 0, 0},
+
+};
+
+menu_t OPTIONS_GameplayDef = {
+	sizeof (OPTIONS_Gameplay) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Gameplay,
+	48, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_GameplayItems[] =
+{
+	// Mostly handled by the drawing function.
+	{IT_KEYHANDLER | IT_NOTHING, "Sneakers",				NULL, NULL, M_HandleItemToggles, KITEM_SNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Sneakers x3",				NULL, NULL, M_HandleItemToggles, KRITEM_TRIPLESNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Toggle All",				NULL, NULL, M_HandleItemToggles, 0, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Rocket Sneakers",			NULL, NULL, M_HandleItemToggles, KITEM_ROCKETSNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Bananas",					NULL, NULL, M_HandleItemToggles, KITEM_BANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Bananas x3",				NULL, NULL, M_HandleItemToggles, KRITEM_TRIPLEBANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Bananas x10",				NULL, NULL, M_HandleItemToggles, KRITEM_TENFOLDBANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Eggman Monitors",			NULL, NULL, M_HandleItemToggles, KITEM_EGGMAN, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts",				NULL, NULL, M_HandleItemToggles, KITEM_ORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts x3",			NULL, NULL, M_HandleItemToggles, KRITEM_TRIPLEORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts x4",			NULL, NULL, M_HandleItemToggles, KRITEM_QUADORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Mines",					NULL, NULL, M_HandleItemToggles, KITEM_MINE, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Jawz",					NULL, NULL, M_HandleItemToggles, KITEM_JAWZ, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Jawz x2",					NULL, NULL, M_HandleItemToggles, KRITEM_DUALJAWZ, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Ballhogs",				NULL, NULL, M_HandleItemToggles, KITEM_BALLHOG, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Self-Propelled Bombs",	NULL, NULL, M_HandleItemToggles, KITEM_SPB, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Invinciblity",			NULL, NULL, M_HandleItemToggles, KITEM_INVINCIBILITY, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Grow",					NULL, NULL, M_HandleItemToggles, KITEM_GROW, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Shrink",					NULL, NULL, M_HandleItemToggles, KITEM_SHRINK, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Thunder Shields",			NULL, NULL, M_HandleItemToggles, KITEM_THUNDERSHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Bubble Shields",			NULL, NULL, M_HandleItemToggles, KITEM_BUBBLESHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Flame Shields",			NULL, NULL, M_HandleItemToggles, KITEM_FLAMESHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Hyudoros",				NULL, NULL, M_HandleItemToggles, KITEM_HYUDORO, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Pogo Springs",		 	NULL, NULL, M_HandleItemToggles, KITEM_POGOSPRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Super Rings",				NULL, NULL, M_HandleItemToggles, KITEM_SUPERRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, "Kitchen Sinks",			NULL, NULL, M_HandleItemToggles, KITEM_KITCHENSINK, 0},
+};
+
+menu_t OPTIONS_GameplayItemsDef = {
+	sizeof (OPTIONS_GameplayItems) / sizeof (menuitem_t),
+	&OPTIONS_GameplayDef,
+	0,
+	OPTIONS_GameplayItems,
+	0, 75,
+	2, 10,
+	M_DrawItemToggles,
 	M_OptionsTick,
 	NULL,
 	NULL,

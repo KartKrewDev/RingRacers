@@ -220,6 +220,13 @@ extern menu_t OPTIONS_HUDDef;
 extern menuitem_t OPTIONS_HUDOnline[];
 extern menu_t OPTIONS_HUDOnlineDef;
 
+extern menuitem_t OPTIONS_Gameplay[];
+extern menu_t OPTIONS_GameplayDef;
+
+extern menuitem_t OPTIONS_GameplayItems[];
+extern menu_t OPTIONS_GameplayItemsDef;
+
+
 // PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
@@ -500,6 +507,8 @@ boolean M_OptionsInputs(INT32 ch);
 
 boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
 
+void M_HandleItemToggles(INT32 choice);	// For item toggling
+
 // video modes menu (resolution)
 
 void M_VideoModeMenu(INT32 choice);
@@ -595,6 +604,7 @@ void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
 void M_DrawVideoModes(void);
+void M_DrawItemToggles(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
