@@ -2161,58 +2161,10 @@ static void CV_EnforceExecVersion(void)
 		CV_StealthSetValue(&cv_execversion, EXECVERSION);
 }
 
-static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
-{
-#if 1
-	// We don't have changed axis defaults yet
-	(void)v;
-	(void)valstr;
-#else
-	UINT8 i;
-
-	// If ALL axis settings are previous defaults, set them to the new defaults
-	// EXECVERSION < 26 (2.1.21)
-
-	for (i = 0; i < 4; i++)
-	{
-		if (joyaxis_default[i])
-		{
-			if (!stricmp(v->name, "joyaxis_fire"))
-			{
-				if (joyaxis_count[i] > 7) return false;
-				else if (joyaxis_count[i] == 7) return true;
-
-				if (!stricmp(valstr, "None")) joyaxis_count[i]++;
-				else joyaxis_default[i] = false;
-			}
-			// reset all axis settings to defaults
-			if (joyaxis_count[i] == 7)
-			{
-				switch (i)
-				{
-					default:
-						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis[0].name, cv_turnaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis[0].name, cv_moveaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis[0].name, cv_brakeaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis[0].name, cv_aimaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis[0].name, cv_lookaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis[0].name, cv_fireaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis[0].name, cv_driftaxis[0].defaultvalue));
-						break;
-				}
-				joyaxis_count[i]++;
-				return false;
-			}
-		}
-	}
-#endif
-
-	// we haven't reached our counts yet, or we're not default
-	return true;
-}
-
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 {
+	(void)valstr;
+
 	// True means allow the CV change, False means block it
 
 	// We only care about CV_SAVE because this filters the user's config files
@@ -2230,11 +2182,6 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 			|| !stricmp(v->name, "mousemove2"))
 			return false;
 #endif
-
-		// axis defaults were changed to be friendly to 360 controllers
-		// if ALL axis settings are defaults, then change them to new values
-		if (!CV_FilterJoyAxisVars(v, valstr))
-			return false;
 	}
 
 	return true;

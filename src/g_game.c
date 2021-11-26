@@ -155,7 +155,6 @@ INT16 bootmap; //bootmap for loading a map on startup
 
 INT16 tutorialmap = 0; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
-INT32 tutorialgcs = gcs_custom; // which control scheme is loaded?
 
 boolean looptitle = true;
 
@@ -347,22 +346,6 @@ static void kickstartaccel3_OnChange(void);
 static void kickstartaccel4_OnChange(void);
 void SendWeaponPref(UINT8 n);
 
-static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
-{1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
-#if JOYAXISSET > 1
-{3, "Z-Axis"}, {4, "X-Rudder"}, {-3, "Z-Axis-"}, {-4, "X-Rudder-"},
-#endif
-#if JOYAXISSET > 2
-{5, "Y-Rudder"}, {6, "Z-Rudder"}, {-5, "Y-Rudder-"}, {-6, "Z-Rudder-"},
-#endif
-#if JOYAXISSET > 3
-{7, "U-Axis"}, {8, "V-Axis"}, {-7, "U-Axis-"}, {-8, "V-Axis-"},
-#endif
- {0, NULL}};
-#if JOYAXISSET > 4
-"More Axis Sets"
-#endif
-
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // chat timer thingy
@@ -412,68 +395,12 @@ consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
 };
 
-consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move2", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move3", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move4", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_aimaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire2", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire3", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire4", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
 static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("joy_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("joy2_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("joy3_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("joy4_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
-};
-
-consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joy_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy2_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
 // now automatically allocated in D_RegisterClientCommands
@@ -725,74 +652,94 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
+static INT32 KeyValue(UINT8 p, INT32 key)
 {
-	INT32 retaxis;
-	INT32 axisval;
-	boolean flp = false;
-
-	//find what axis to get
-	switch (axissel)
+	if (key <= 0 || key >= NUMINPUTS)
 	{
-		case AXISTURN:
-			axisval = cv_turnaxis[player-1].value;
-			break;
-		case AXISMOVE:
-			axisval = cv_moveaxis[player-1].value;
-			break;
-		case AXISBRAKE:
-			axisval = cv_brakeaxis[player-1].value;
-			break;
-		case AXISAIM:
-			axisval = cv_aimaxis[player-1].value;
-			break;
-		case AXISLOOK:
-			axisval = cv_lookaxis[player-1].value;
-			break;
-		case AXISFIRE:
-			axisval = cv_fireaxis[player-1].value;
-			break;
-		case AXISDRIFT:
-			axisval = cv_driftaxis[player-1].value;
-			break;
-		default:
-			return 0;
-	}
-
-	if (axisval < 0) //odd -axises
-	{
-		axisval = -axisval;
-		flp = true;
-	}
-	if (axisval > JOYAXISSET*2 || axisval == 0) //not there in array or None
 		return 0;
-
-	if (axisval%2)
-	{
-		axisval /= 2;
-		retaxis = joyxmove[player-1][axisval];
-	}
-	else
-	{
-		axisval--;
-		axisval /= 2;
-		retaxis = joyymove[player-1][axisval];
 	}
 
-	if (retaxis < (-JOYAXISRANGE))
-		retaxis = -JOYAXISRANGE;
-	if (retaxis > (+JOYAXISRANGE))
-		retaxis = +JOYAXISRANGE;
+	return gamekeydown[p][key];
+}
 
-	if (!Joystick[player-1].bGamepadStyle && axissel >= AXISDIGITAL)
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
+{
+	INT32 i;
+	INT32 deadzone = 0;
+	boolean bound = false;
+
+	if (p >= MAXSPLITSCREENPLAYERS)
 	{
-		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_digitaldeadzone[player-1].value) >> FRACBITS;
-		if (-jdeadzone < retaxis && retaxis < jdeadzone)
-			return 0;
+#ifdef PARANOIA
+		CONS_Debug(DBG_GAMELOGIC, "G_PlayerInputAnalog: Invalid player ID %d\n", p);
+#endif
+		return 0;
 	}
 
-	if (flp) retaxis = -retaxis; //flip it around
-	return retaxis;
+	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
+
+	for (i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		INT32 key = gamecontrol[p][gc][i];
+		INT32 value = 0;
+
+		if (key <= 0 || key >= NUMINPUTS)
+		{
+			continue;
+		}
+
+		value = KeyValue(p, key);
+		bound = true;
+
+		if (gc == gc_a || gc == gc_b || gc == gc_c)
+		{
+			// Handle spindash key
+			value = max(value, KeyValue(p, gamecontrol[p][gc_abc][i]));
+		}
+
+		if (value >= deadzone)
+		{
+			return value;
+		}
+	}
+
+	if (menu == true && bound == false)
+	{
+		// We don't want menus to become unnavigable if people unbind
+		// all of their controls, so use the default control scheme in
+		// this scenario.
+
+		for (i = 0; i < MAXINPUTMAPPING; i++)
+		{
+			INT32 key = gamecontroldefault[gc][i];
+			INT32 value = 0;
+
+			if (key <= 0 || key >= NUMINPUTS)
+			{
+				continue;
+			}
+
+			value = KeyValue(p, key);
+
+			if (gc == gc_a || gc == gc_b || gc == gc_c)
+			{
+				// Handle spindash key
+				value = max(value, KeyValue(p, gamecontroldefault[gc_abc][i]));
+			}
+
+			if (value >= deadzone)
+			{
+				return value;
+			}
+		}
+	}
+
+	return 0;
+}
+
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, boolean menu)
+{
+	return (G_PlayerInputAnalog(p, gc, menu) != 0);
 }
 
 // Take a magnitude of two axes, and adjust it to take out the deadzone
@@ -867,27 +814,15 @@ angle_t localangle[MAXSPLITSCREENPLAYERS];
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
-
-	const INT32 lookaxis = cv_lookaxis[forplayer].value;
-	const boolean invertmouse = cv_invertmouse.value;
-	const boolean analogjoystickmove = cv_usejoystick[forplayer].value && !Joystick[forplayer].bGamepadStyle;
-	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
-	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
-
-	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
-	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
-
-	INT32 forward, axis;
+	INT32 forward;
 
 	joystickvector2_t joystickvector;
 
-	boolean turnleft, turnright;
-
 	player_t *player = &players[g_localplayers[forplayer]];
-	camera_t *thiscam = &camera[forplayer];
-	boolean *kbl = &keyboard_look[forplayer];
-	boolean *rd = &resetdown[forplayer];
-	const boolean mouseaiming = player->spectator;
+	//camera_t *thiscam = &camera[forplayer];
+	//boolean *kbl = &keyboard_look[forplayer];
+	//boolean *rd = &resetdown[forplayer];
+	//const boolean mouseaiming = player->spectator;
 
 	(void)realtics;
 
@@ -924,10 +859,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
-	turnright = PlayerInputDown(ssplayer, gc_turnright);
-	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
-
-	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
+	joystickvector.xaxis = G_PlayerInputAnalog(forplayer, gc_right, false) - G_PlayerInputAnalog(forplayer, gc_left, false);
 	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
@@ -935,153 +867,98 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// use it for aiming to throw items forward/backward and the vote screen
 	// This mean that the turn axis will still be gradient but up/down will be 0
 	// until the stick is pushed far enough
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	joystickvector.yaxis = G_PlayerInputAnalog(forplayer, gc_down, false) - G_PlayerInputAnalog(forplayer, gc_up, false);
 
 	if (encoremode)
 	{
-		turnright ^= turnleft; // swap these using three XORs
-		turnleft ^= turnright;
-		turnright ^= turnleft;
 		joystickvector.xaxis = -joystickvector.xaxis;
 	}
 
-	if (gamepadjoystickmove && joystickvector.xaxis != 0)
-	{
-		turnright = turnright || (joystickvector.xaxis > 0);
-		turnleft = turnleft || (joystickvector.xaxis < 0);
-	}
 	forward = 0;
-
 	cmd->turning = 0;
 
-	// let movement keys cancel each other out
-	if (turnright && !(turnleft))
-	{
-		cmd->turning -= KART_FULLTURN;
-	}
-	else if (turnleft && !(turnright))
-	{
-		cmd->turning += KART_FULLTURN;
-	}
-
-	if (analogjoystickmove && joystickvector.xaxis != 0)
+	if (joystickvector.xaxis != 0)
 	{
 		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
 	}
 
-	// Specator mouse turning
-	if (player->spectator)
-	{
-		cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
-	}
-
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (usejoystick && axis > 0))
+		if (G_PlayerInputDown(forplayer, gc_a, false))
+		{
 			cmd->buttons |= BT_ACCELERATE;
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (usejoystick && axis > 0))
+		}
+
+		if (G_PlayerInputDown(forplayer, gc_b, false))
+		{
 			cmd->buttons |= BT_BRAKE;
-		axis = PlayerJoyAxis(ssplayer, AXISAIM);
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (usejoystick && axis < 0))
+		}
+
+		if (joystickvector.yaxis < 0)
+		{
 			forward += MAXPLMOVE;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (usejoystick && axis > 0))
+		}
+
+		if (joystickvector.yaxis > 0)
+		{
 			forward -= MAXPLMOVE;
+		}
 	}
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
+		fixed_t value = G_PlayerInputAnalog(forplayer, gc_a, false);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = MAXPLMOVE; // 50
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_ACCELERATE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * MAXPLMOVE) >> 10);
+			forward += ((value * MAXPLMOVE) >> 10);
 		}
 
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (gamepadjoystickmove && axis > 0))
+		value = G_PlayerInputAnalog(forplayer, gc_b, false);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= MAXPLMOVE;
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_BRAKE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * MAXPLMOVE) >> 10);
+			forward -= ((value * MAXPLMOVE) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (joystickvector.yaxis < 0))
+		if (joystickvector.yaxis < 0)
+		{
 			cmd->buttons |= BT_FORWARD;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (joystickvector.yaxis > 0))
+		}
+
+		if (joystickvector.yaxis > 0)
+		{
 			cmd->buttons |= BT_BACKWARD;
+		}
 	}
 
 	// fire with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISFIRE);
-	if (PlayerInputDown(ssplayer, gc_fire) || (usejoystick && axis > 0))
+	if (G_PlayerInputDown(forplayer, gc_c, false))
+	{
 		cmd->buttons |= BT_ATTACK;
+	}
 
 	// drift with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISDRIFT);
-	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
+	if (G_PlayerInputDown(forplayer, gc_x, false))
+	{
 		cmd->buttons |= BT_DRIFT;
-
-	// Spindash with any button/key
-	// Simply holds all of the inputs for you.
-	axis = PlayerJoyAxis(ssplayer, AXISSPINDASH);
-	if (PlayerInputDown(ssplayer, gc_spindash) || (usejoystick && axis > 0))
-		cmd->buttons |= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT);
+	}
 
 	// rear view with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
-	if (PlayerInputDown(ssplayer, gc_lookback) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_LOOKBACK;
-
-	// Lua scriptable buttons
-	if (PlayerInputDown(ssplayer, gc_custom1))
-		cmd->buttons |= BT_CUSTOM1;
-	if (PlayerInputDown(ssplayer, gc_custom2))
-		cmd->buttons |= BT_CUSTOM2;
-	if (PlayerInputDown(ssplayer, gc_custom3))
-		cmd->buttons |= BT_CUSTOM3;
-
-	// Reset camera
-	if (PlayerInputDown(ssplayer, gc_camreset))
+	if (G_PlayerInputDown(forplayer, gc_y, false))
 	{
-		if (thiscam->chase && *rd == false)
-			P_ResetCamera(player, thiscam);
-		*rd = true;
+		cmd->buttons |= BT_LOOKBACK;
 	}
-	else
-		*rd = false;
 
 	// spectator aiming shit, ahhhh...
+	/*
 	{
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
 			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
-
-		// mouse look stuff (mouse look is not the same as mouse aim)
-		if (mouseaiming && player->spectator)
-		{
-			*kbl = false;
-
-			// looking up/down
-			cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
-		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
@@ -1108,11 +985,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
 			cmd->aiming = 0;
 	}
-
-	mousex = mousey = mlooky = 0;
+	*/
 
 	cmd->forwardmove += (SINT8)forward;
-
 	cmd->flags = 0;
 
 	if (chat_on || CON_Ready())
@@ -1210,7 +1085,7 @@ static void kickstartaccel4_OnChange(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i, j;
+	INT32 i;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1270,12 +1145,6 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
-	{
-		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
-			joyxmove[j][i] = joyymove[j][i] = 0;
-	}
-	mousex = mousey = 0;
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
@@ -1361,7 +1230,7 @@ static INT32 camtoggledelay[MAXSPLITSCREENPLAYERS];
 //
 boolean G_Responder(event_t *ev)
 {
-	UINT8 i;
+	//INT32 i;
 
 	// any other key pops up menu if in demos
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
@@ -1456,7 +1325,7 @@ boolean G_Responder(event_t *ev)
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]))
+		&& (ev->data1 == KEY_F12 /*|| ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]*/))
 	{
 		if (!demo.playback && (r_splitscreen || !netgame))
 			g_localplayers[0] = consoleplayer;
@@ -1474,6 +1343,7 @@ boolean G_Responder(event_t *ev)
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
+		/*
 		if (ev->data1 == gamecontrol[1][gc_viewpoint][0] || ev->data1 == gamecontrol[1][gc_viewpoint][1])
 		{
 			G_AdjustView(2, 1, true);
@@ -1489,12 +1359,13 @@ boolean G_Responder(event_t *ev)
 			G_AdjustView(4, 1, true);
 			return true;
 		}
+		*/
 
 		// Allow pausing
 		if (
-			ev->data1 == gamecontrol[0][gc_pause][0]
-			|| ev->data1 == gamecontrol[0][gc_pause][1]
-			|| ev->data1 == KEY_PAUSE
+			//ev->data1 == gamecontrol[0][gc_pause][0]
+			//|| ev->data1 == gamecontrol[0][gc_pause][1]
+			ev->data1 == KEY_PAUSE
 		)
 		{
 			paused = !paused;
@@ -1528,9 +1399,9 @@ boolean G_Responder(event_t *ev)
 	switch (ev->type)
 	{
 		case ev_keydown:
-			if (ev->data1 == gamecontrol[0][gc_pause][0]
-				|| ev->data1 == gamecontrol[0][gc_pause][1]
-				|| ev->data1 == KEY_PAUSE)
+			if (//ev->data1 == gamecontrol[0][gc_pause][0]
+				//|| ev->data1 == gamecontrol[0][gc_pause][1]
+				ev->data1 == KEY_PAUSE)
 			{
 				if (modeattacking && !demo.playback && (gamestate == GS_LEVEL))
 				{
@@ -1560,6 +1431,7 @@ boolean G_Responder(event_t *ev)
 				}
 			}
 
+			/*
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 			{
 				if (ev->data1 == gamecontrol[i][gc_camtoggle][0]
@@ -1572,6 +1444,7 @@ boolean G_Responder(event_t *ev)
 					}
 				}
 			}
+			*/
 
 			return true;
 
@@ -1582,15 +1455,6 @@ boolean G_Responder(event_t *ev)
 			return true; // eat events
 
 		case ev_joystick:
-			return true; // eat events
-
-		case ev_joystick2:
-			return true; // eat events
-
-		case ev_joystick3:
-			return true; // eat events
-
-		case ev_joystick4:
 			return true; // eat events
 
 		default:

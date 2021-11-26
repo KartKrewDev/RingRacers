@@ -526,13 +526,14 @@ static inline void SDLJoyRemap(event_t *event)
 	(void)event;
 }
 
-static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
+static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which, UINT8 pid)
 {
 	// -32768 to 32767
 	INT32 raxis = axis/32;
+
 	if (which == ev_joystick)
 	{
-		if (Joystick[0].bGamepadStyle)
+		if (Joystick[pid].bGamepadStyle)
 		{
 			// gamepad control type, on or off, live or die
 			if (raxis < -(JOYAXISRANGE/2))
@@ -544,7 +545,7 @@ static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
 		}
 		else
 		{
-			raxis = JoyInfo[0].scale!=1?((raxis/JoyInfo[0].scale)*JoyInfo[0].scale):raxis;
+			raxis = JoyInfo[pid].scale!=1?((raxis/JoyInfo[pid].scale)*JoyInfo[pid].scale):raxis;
 
 #ifdef SDL_JDEADZONE
 			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
@@ -552,69 +553,7 @@ static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
 #endif
 		}
 	}
-	else if (which == ev_joystick2)
-	{
-		if (Joystick[1].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[1].scale!=1?((raxis/JoyInfo[1].scale)*JoyInfo[1].scale):raxis;
 
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
-	else if (which == ev_joystick3)
-	{
-		if (Joystick[2].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[2].scale!=1?((raxis/JoyInfo[2].scale)*JoyInfo[2].scale):raxis;
-
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
-	else if (which == ev_joystick4)
-	{
-		if (Joystick[3].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[3].scale!=1?((raxis/JoyInfo[3].scale)*JoyInfo[3].scale):raxis;
-
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
 	return raxis;
 }
 
@@ -679,7 +618,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		{
 			SDLforceUngrabMouse();
 		}
-		memset(gamekeydown, 0, NUMKEYS); // TODO this is a scary memset
+		memset(gamekeydown, 0, sizeof(gamekeydown)); // TODO this is a scary memset
 
 		if (MOUSE_MENU)
 		{
@@ -692,6 +631,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 static void Impl_HandleKeyboardEvent(SDL_KeyboardEvent evt, Uint32 type)
 {
 	event_t event;
+
+	event.device = 0; // TODO: properly set a device
+
 	if (type == SDL_KEYUP)
 	{
 		event.type = ev_keyup;
@@ -773,6 +715,8 @@ static void Impl_HandleMouseButtonEvent(SDL_MouseButtonEvent evt, Uint32 type)
 	/// \todo inputEvent.button.which
 	if (USE_MOUSEINPUT)
 	{
+		event.device = 0; // TODO: properly set a device
+
 		if (type == SDL_MOUSEBUTTONUP)
 		{
 			event.type = ev_keyup;
@@ -805,6 +749,8 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 
 	SDL_memset(&event, 0, sizeof(event_t));
 
+	event.device = 0; // TODO: properly set a device
+
 	if (evt.y > 0)
 	{
 		event.data1 = KEY_MOUSEWHEELUP;
@@ -832,45 +778,46 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
 	UINT8 i;
 
-	// Determine the Joystick IDs for each current open joystick
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
-
-	evt.axis++;
+	event.device = INT32_MAX;
 	event.data1 = event.data2 = event.data3 = INT32_MAX;
 
-	if (evt.which == joyid[0])
+	// Determine the Joystick IDs for each current open joystick
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		event.type = ev_joystick;
+		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
+
+		if (evt.which == joyid[i])
+		{
+			event.device = i;
+		}
 	}
-	else if (evt.which == joyid[1])
+
+	evt.axis++;
+
+	if (event.device == INT32_MAX)
 	{
-		event.type = ev_joystick2;
+		return;
 	}
-	else if (evt.which == joyid[2])
-	{
-		event.type = ev_joystick3;
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.type = ev_joystick4;
-	}
-	else return;
+
 	//axis
 	if (evt.axis > JOYAXISSET*2)
+	{
 		return;
-	//vaule
+	}
+
+	//vaule[sic]
 	if (evt.axis%2)
 	{
 		event.data1 = evt.axis / 2;
-		event.data2 = SDLJoyAxis(evt.value, event.type);
+		event.data2 = SDLJoyAxis(evt.value, event.type, event.device);
 	}
 	else
 	{
 		evt.axis--;
 		event.data1 = evt.axis / 2;
-		event.data3 = SDLJoyAxis(evt.value, event.type);
+		event.data3 = SDLJoyAxis(evt.value, event.type, event.device);
 	}
+
 	D_PostEvent(&event);
 }
 
@@ -881,30 +828,30 @@ static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
 	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
 	UINT8 i;
 
+	event.device = INT32_MAX;
+
 	// Determine the Joystick IDs for each current open joystick
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
 		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
 
-	if (evt.hat >= JOYHATS)
-		return; // ignore hats with too high an index
+		if (evt.which == joyid[i])
+		{
+			event.device = i;
+		}
+	}
 
-	if (evt.which == joyid[0])
+	if (event.device == INT32_MAX)
 	{
-		event.data1 = KEY_HAT1 + (evt.hat*4);
+		return;
 	}
-	else if (evt.which == joyid[1])
+
+	if (evt.hat >= JOYHATS)
 	{
-		event.data1 = KEY_2HAT1 + (evt.hat*4);
+		return; // ignore hats with too high an index
 	}
-	else if (evt.which == joyid[2])
-	{
-		event.data1 = KEY_3HAT1 + (evt.hat*4);
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.data1 = KEY_4HAT1 + (evt.hat*4);
-	}
-	else return;
+
+	event.data1 = KEY_HAT1 + (evt.hat*4);
 
 	// NOTE: UNFINISHED
 }
@@ -916,27 +863,26 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
 	UINT8 i;
 
+	event.device = INT32_MAX;
+
 	// Determine the Joystick IDs for each current open joystick
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
 		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
 
-	if (evt.which == joyid[0])
-	{
-		event.data1 = KEY_JOY1;
+		if (evt.which == joyid[i])
+		{
+			event.device = i;
+		}
 	}
-	else if (evt.which == joyid[1])
+
+	if (event.device == INT32_MAX)
 	{
-		event.data1 = KEY_2JOY1;
+		return;
 	}
-	else if (evt.which == joyid[2])
-	{
-		event.data1 = KEY_3JOY1;
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.data1 = KEY_4JOY1;
-	}
-	else return;
+
+	event.data1 = KEY_JOY1;
+
 	if (type == SDL_JOYBUTTONUP)
 	{
 		event.type = ev_keyup;
@@ -945,15 +891,26 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	{
 		event.type = ev_keydown;
 	}
-	else return;
+	else
+	{
+		return;
+	}
+
 	if (evt.button < JOYBUTTONS)
 	{
 		event.data1 += evt.button;
 	}
-	else return;
+	else
+	{
+		return;
+	}
 
 	SDLJoyRemap(&event);
-	if (event.type != ev_console) D_PostEvent(&event);
+
+	if (event.type != ev_console)
+	{
+		D_PostEvent(&event);
+	}
 }
 
 
@@ -1175,7 +1132,10 @@ void I_GetEvent(void)
 
 	// In order to make wheels act like buttons, we have to set their state to Up.
 	// This is because wheel messages don't have an up/down state.
-	gamekeydown[KEY_MOUSEWHEELDOWN] = gamekeydown[KEY_MOUSEWHEELUP] = 0;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		gamekeydown[i][KEY_MOUSEWHEELDOWN] = gamekeydown[i][KEY_MOUSEWHEELUP] = 0;
+	}
 }
 
 void I_StartupMouse(void)

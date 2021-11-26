@@ -1079,7 +1079,7 @@ void I_ShutdownJoystick(UINT8 index)
 
 void I_GetJoystickEvents(UINT8 index)
 {
-	static event_t event = {0,0,0,0};
+	static event_t event = {0,0,0,0,0};
 	INT32 i = 0;
 	UINT64 joyhats = 0;
 #if 0

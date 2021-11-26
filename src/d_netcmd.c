@@ -925,15 +925,7 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
-		CV_RegisterVar(&cv_turnaxis[i]);
-		CV_RegisterVar(&cv_moveaxis[i]);
-		CV_RegisterVar(&cv_brakeaxis[i]);
-		CV_RegisterVar(&cv_aimaxis[i]);
-		CV_RegisterVar(&cv_lookaxis[i]);
-		CV_RegisterVar(&cv_fireaxis[i]);
-		CV_RegisterVar(&cv_driftaxis[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
-		CV_RegisterVar(&cv_digitaldeadzone[i]);
 	}
 
 	// filesrch.c
@@ -2766,10 +2758,6 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-	}
 	tutorialmode = false; // warping takes us out of tutorial mode
 
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);

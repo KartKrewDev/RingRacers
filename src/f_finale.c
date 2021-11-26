@@ -2684,12 +2684,13 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 
 static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 {
-	INT32 gcs = gcs_custom;
+	INT32 gcs = 0;
 	boolean suffixed = true;
 
 	if (!tag || !tag[0] || !tutorialmode)
 		return false;
 
+	/*
 	if (!strncmp(tag, "TAA", 3)) // Accelerate
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_accelerate, num_gcl_accelerate);
 	else if (!strncmp(tag, "TAB", 3)) // Brake
@@ -2704,14 +2705,10 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_item, num_gcl_item);
 	else
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_full, num_gcl_full);
+	*/
 
 	switch (gcs)
 	{
-		case gcs_kart:
-			// strncat(tag, "KART", length);
-			suffixed = false;
-			break;
-
 		default:
 			strncat(tag, "CUSTOM", length);
 			break;

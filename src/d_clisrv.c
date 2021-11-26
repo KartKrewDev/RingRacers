@@ -1494,7 +1494,7 @@ static void M_ConfirmConnect(event_t *ev)
 #ifndef NONET
 	if (ev->type == ev_keydown)
 	{
-		if (ev->data1 == ' ' || ev->data1 == 'y' || ev->data1 == KEY_ENTER || ev->data1 == gamecontrol[0][gc_accelerate][0] || ev->data1 == gamecontrol[0][gc_accelerate][1])
+		if (ev->data1 == ' ' || ev->data1 == 'y' || ev->data1 == KEY_ENTER || ev->data1 == gamecontrol[0][gc_a][0] || ev->data1 == gamecontrol[0][gc_a][1])
 		{
 			if (totalfilesrequestednum > 0)
 			{
@@ -1517,7 +1517,7 @@ static void M_ConfirmConnect(event_t *ev)
 
 			M_ClearMenus(true);
 		}
-		else if (ev->data1 == 'n' || ev->data1 == KEY_ESCAPE|| ev->data1 == gamecontrol[0][gc_brake][0] || ev->data1 == gamecontrol[0][gc_brake][1])
+		else if (ev->data1 == 'n' || ev->data1 == KEY_ESCAPE|| ev->data1 == gamecontrol[0][gc_b][0] || ev->data1 == gamecontrol[0][gc_b][1])
 		{
 			cl_mode = CL_ABORTED;
 			M_ClearMenus(true);
@@ -1923,7 +1923,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
 
-		if ((gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1]) || cl_mode == CL_ABORTED)
+		if ((gamekeydown[0][KEY_ESCAPE] || gamekeydown[0][KEY_JOY1+1]) || cl_mode == CL_ABORTED)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
 //				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
@@ -1931,7 +1931,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();
-			memset(gamekeydown, 0, NUMKEYS);
+			memset(gamekeydown, 0, sizeof (gamekeydown));
 			return false;
 		}
 

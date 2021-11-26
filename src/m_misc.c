@@ -624,7 +624,7 @@ void Command_LoadConfig_f(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// temporarily reset execversion to default
@@ -678,7 +678,7 @@ void M_FirstLoadConfig(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// register execversion here before we load any configs
@@ -780,15 +780,7 @@ void M_SaveConfig(const char *filename)
 
 	if (!dedicated)
 	{
-		if (tutorialmode && tutorialgcs)
-		{
-			// using gcs_custom as temp storage
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
-		else
-		{
-			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
+		G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
 	}
 
 	fclose(f);
@@ -1771,9 +1763,9 @@ boolean M_ScreenshotResponder(event_t *ev)
 	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]) // remappable F8
+	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]) // remappable F9
+	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;

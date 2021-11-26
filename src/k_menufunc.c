@@ -835,9 +835,9 @@ boolean M_Responder(event_t *ev)
 
 	if (ch == -1)
 		return false;
-	else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
-		ch = KEY_ESCAPE;
-	else if ((ch == gamecontrol[0][gc_accelerate][0] || ch == gamecontrol[0][gc_accelerate][1])  && ch >= KEY_MOUSE1)
+	/*else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
+		ch = KEY_ESCAPE;*/
+	else if ((ch == gamecontrol[0][gc_a][0] || ch == gamecontrol[0][gc_a][1])  && ch >= KEY_MOUSE1)
 		ch = KEY_ENTER;
 
 	// F-Keys
@@ -917,7 +917,7 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
-	if ((ch == gamecontrol[0][gc_brake][0] || ch == gamecontrol[0][gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
+	if ((ch == gamecontrol[0][gc_b][0] || ch == gamecontrol[0][gc_b][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
 		ch = KEY_ESCAPE;
 
 	routine = currentMenu->menuitems[itemOn].itemaction;
@@ -961,12 +961,11 @@ boolean M_Responder(event_t *ev)
 		else
 		{
 			// dirty hack: for customising controls, I want only buttons/keys, not moves
-			if (ev->type == ev_mouse
-				|| ev->type == ev_joystick
-				|| ev->type == ev_joystick2
-				|| ev->type == ev_joystick3
-				|| ev->type == ev_joystick4)
+			if (ev->type == ev_mouse || ev->type == ev_joystick)
+			{
 				return true;
+			}
+
 			if (routine)
 			{
 				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
