@@ -1797,13 +1797,13 @@ void M_DrawGenericOptions(void)
 				/* FALLTHRU */
 			case IT_DYLITLSPACE:
 			case IT_SPACE:
-				y += SMALLLINEHEIGHT;
+				y += (currentMenu->menuitems[i].mvar1 ? : SMALLLINEHEIGHT);
 				break;
 			case IT_GRAYPATCH:
 				if (currentMenu->menuitems[i].patch && currentMenu->menuitems[i].patch[0])
 					V_DrawMappedPatch(x, y, 0,
 						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
-				y += LINEHEIGHT;
+				y += (currentMenu->menuitems[i].mvar1 ? : SMALLLINEHEIGHT);
 				break;
 			case IT_TRANSTEXT:
 				if (currentMenu->menuitems[i].mvar1)

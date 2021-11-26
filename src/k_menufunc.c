@@ -323,10 +323,10 @@ static void Dummystaff_OnChange(void)
 
 void Screenshot_option_Onchange(void)
 {
-#if 0
-	OP_ScreenshotOptionsMenu[op_screenshot_folder].status =
+	// Screenshot opt is at #3, 0 based array obv.
+	OPTIONS_DataScreenshot[2].status =
 		(cv_screenshot_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
+
 }
 
 void Moviemode_mode_Onchange(void)
@@ -356,18 +356,17 @@ void Moviemode_mode_Onchange(void)
 
 void Moviemode_option_Onchange(void)
 {
-#if 0
-	OP_ScreenshotOptionsMenu[op_movie_folder].status =
+	// opt 7 in a 0 based array, you get the idea...
+	OPTIONS_DataScreenshot[6].status =
 		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
 }
 
 void Addons_option_Onchange(void)
 {
-#if 0
-	OP_AddonsOptionsMenu[op_addons_folder].status =
+	// Option 2 will always be the textbar.
+	// (keep in mind this is a 0 indexed array and the first element is a header...)
+	OPTIONS_DataAddon[2].status =
 		(cv_addons_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
 }
 
 void M_SortServerList(void)
@@ -398,6 +397,50 @@ void M_SortServerList(void)
 #endif
 #endif
 }
+
+static void M_EraseDataResponse(INT32 ch)
+{
+	UINT8 i;
+
+	if (ch != 'y' && ch != KEY_ENTER)
+		return;
+
+	S_StartSound(NULL, sfx_itrole); // bweh heh heh
+
+	// Delete the data
+	if (optionsmenu.erasecontext == 2)
+	{
+		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
+		totalplaytime = 0;
+		matchesplayed = 0;
+		for (i = 0; i < PWRLV_NUMTYPES; i++)
+			vspowerlevel[i] = PWRLVRECORD_START;
+	}
+	if (optionsmenu.erasecontext != 1)
+		G_ClearRecords();
+	if (optionsmenu.erasecontext != 0)
+		M_ClearSecrets();
+
+	F_StartIntro();
+	M_ClearMenus(true);
+}
+
+void M_EraseData(INT32 choice)
+{
+	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press 'Y' to confirm)\n");
+
+	optionsmenu.erasecontext = (UINT8)choice;
+
+	if (choice == 0)
+		eschoice = M_GetText("Time Attack data");
+	else if (choice == 1)
+		eschoice = M_GetText("Secrets data");
+	else
+		eschoice = M_GetText("ALL game data");
+
+	M_StartMessage(va(esstr, eschoice),M_EraseDataResponse,MM_YESNO);
+}
+
 
 // =========================================================================
 // BASIC MENU HANDLING
@@ -2960,7 +3003,14 @@ void M_InitOptions(INT32 choice)
 	optionsmenu.toptx = 0;
 	optionsmenu.topty = 0;
 
+	// So that pause doesn't go to the main menu...
 	OPTIONS_MainDef.prevMenu = currentMenu;
+
+	// This will disable or enable the textboxes of the affected menus before we get to them.
+	Screenshot_option_Onchange();
+	Moviemode_mode_Onchange();
+	Moviemode_option_Onchange();
+	Addons_option_Onchange();
 
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
 }
@@ -3936,4 +3986,13 @@ void M_HandleAddons(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
+}
+
+// Opening manual
+void M_Manual(INT32 choice)
+{
+	(void)choice;
+
+	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
+	M_SetupNextMenu(&MISC_ManualDef, true);
 }
