@@ -62,7 +62,7 @@ typedef enum
 	PF_ATTACKDOWN = 1,
 	PF_ACCELDOWN  = 1<<1,
 	PF_BRAKEDOWN  = 1<<2,
-	PF_WPNDOWN    = 1<<3, // reserved - gonna turn this into lookback when i'm done with all the major reengineering
+	PF_LOOKDOWN   = 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -263,6 +263,7 @@ typedef struct respawnvars_s
 	fixed_t pointz;
 	boolean flip; // Flip upside down or not
 	tic_t timer; // Time left on respawn animation once you're there
+	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
 } respawnvars_t;
