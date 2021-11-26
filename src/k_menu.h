@@ -211,6 +211,15 @@ extern menuitem_t OPTIONS_VideoOGL[];
 extern menu_t OPTIONS_VideoOGLDef;
 #endif
 
+extern menuitem_t OPTIONS_Sound[];
+extern menu_t OPTIONS_SoundDef;
+
+extern menuitem_t OPTIONS_HUD[];
+extern menu_t OPTIONS_HUDDef;
+
+extern menuitem_t OPTIONS_HUDOnline[];
+extern menu_t OPTIONS_HUDOnlineDef;
+
 // PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;

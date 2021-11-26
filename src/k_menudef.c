@@ -6,6 +6,9 @@
 #include "r_main.h"	// cv_skybox
 #include "v_video.h" // cv_globalgamma
 #include "hardware/hw_main.h"	// gl consvars
+#include "s_sound.h"	// sounds consvars
+#include "g_game.h" // cv_chatnotifications
+#include "console.h" // console cvars
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -305,10 +308,10 @@ menuitem_t OPTIONS_Main[] =
 		NULL, &OPTIONS_VideoDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Sound Options", "Adjust various sound settings such as the volume.",
-		NULL, NULL, 0, 0},
+		NULL, &OPTIONS_SoundDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "HUD Options", "Options related to the Heads-Up Display.",
-		NULL, NULL, 0, 0},
+		NULL, &OPTIONS_HUDDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Gameplay Options", "Change various game related options",
 		NULL, NULL, 0, 0},
@@ -473,6 +476,169 @@ menu_t OPTIONS_VideoOGLDef = {
 	NULL,
 };
 #endif
+
+menuitem_t OPTIONS_Sound[] =
+{
+
+	{IT_STRING | IT_CVAR, "SFX", "Enable or disable sound effect playback.",
+		NULL, &cv_gamesounds, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "SFX Volume", "Adjust the volume of sound effects.",
+		NULL, &cv_soundvolume, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Music", "Enable or disable music playback.",
+		NULL, &cv_gamedigimusic, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Music Volume", "Adjust the volume of music playback.",
+		NULL, &cv_digmusicvolume, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Reverse L/R Channels", "Reverse left & right channels for Stereo playback.",
+		NULL, &stereoreverse, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Surround", "Enables or disable Surround sound playback.",
+		NULL, &surround, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Chat Notifications", "Set when to play notification sounds when chat messages are received.",
+		NULL, &cv_chatnotifications, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Character Voices", "Set how often to play character voices in game.",
+		NULL, &cv_kartvoices, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Powerup Warning", "Set how to warn you from other player's powerups such as Invincibility.",
+		NULL, &cv_kartinvinsfx, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Play Music While Unfocused", "Keeps playing music even if the game is not the active window.",
+		NULL, &cv_playmusicifunfocused, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Play SFX While Unfocused", "Keeps playing sound effects even if the game is not the active window.",
+		NULL, &cv_playsoundifunfocused, 0, 0},
+
+	// @TODO: Sound test (there's currently no space on this menu, might be better to throw it in extras?)
+};
+
+menu_t OPTIONS_SoundDef = {
+	sizeof (OPTIONS_Sound) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Sound,
+	48, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_HUD[] =
+{
+
+	{IT_STRING | IT_CVAR, "Show HUD (F3)", "Toggles HUD display. Great for taking screenshots!",
+		NULL, &cv_showhud, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "HUD Opacity", "Non opaque values may have performance impacts in software mode.",
+		NULL, &cv_translucenthud, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Minimap Opacity", "Changes the opacity of the minimap.",
+		NULL, &cv_kartminimap, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Speedometer Display", "Choose to what speed unit to display or toggle off the speedometer.",
+		NULL, &cv_kartspeedometer, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Display \"CHECK\"", "Displays an icon when a player is tailing you.",
+		NULL, &cv_kartcheck, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Console Text Size", "Size of the text within the console.",
+		NULL, &cv_constextsize, 0, 0},
+
+	// we spell words properly here.
+	{IT_STRING | IT_CVAR, "Console Tint", "Change the background colour of the console.",
+		NULL, &cons_backcolor, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Show \"FOCUS LOST\"", "Displays \"FOCUS LOST\" when the game window isn't the active window.",
+		NULL, &cv_showfocuslost, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Online HUD Options...", "HUD options related to the online chat box and other features.",
+		NULL, &OPTIONS_HUDOnlineDef, 0, 0},
+};
+
+menu_t OPTIONS_HUDDef = {
+	sizeof (OPTIONS_HUD) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_HUD,
+	48, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_HUDOnline[] =
+{
+
+	{IT_STRING | IT_CVAR, "Chat Mode", "Choose whether to display chat in its own window or the console.",
+		NULL, &cv_consolechat, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Chat Box Tint", "Changes the background colour of the chat box.",
+		NULL, &cv_chatbacktint, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Chat Box Width", "Change the width of the Chat Box",
+		NULL, &cv_chatwidth, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Chat Box Height", "Change the height of the Chat Box",
+		NULL, &cv_chatheight, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Message Fadeout Time", "How long chat messages stay displayed with the chat closed.",
+		NULL, &cv_chattime, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Spam Protection", "Prevents too many message from a single player from being displayed.",
+		NULL, &cv_chatspamprotection, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Local Ping Display", "In netgames, displays your ping at the lower right corner of the screen.",
+		NULL, &cv_showping, 0, 0},
+
+};
+
+menu_t OPTIONS_HUDOnlineDef = {
+	sizeof (OPTIONS_HUDOnline) / sizeof (menuitem_t),
+	&OPTIONS_HUDDef,
+	0,
+	OPTIONS_HUDOnline,
+	48, 80,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
 
 // -------------------
 // In-game/pause menus
