@@ -6890,7 +6890,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0)
+	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
 	{
 		if (player->overtimekarma)
 			player->overtimekarma--;
