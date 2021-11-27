@@ -306,9 +306,6 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
-		WRITEUINT32(save_p, players[i].trickmomx);
-		WRITEUINT32(save_p, players[i].trickmomy);
-		WRITEUINT32(save_p, players[i].trickmomz);
 		WRITEUINT32(save_p, players[i].trickboostpower);
 		WRITEUINT8(save_p, players[i].trickboostdecay);
 		WRITEUINT8(save_p, players[i].trickboost);
@@ -562,9 +559,6 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
-		players[i].trickmomx = READUINT32(save_p);
-		players[i].trickmomy = READUINT32(save_p);
-		players[i].trickmomz = READUINT32(save_p);
 		players[i].trickboostpower = READUINT32(save_p);
 		players[i].trickboostdecay = READUINT8(save_p);
 		players[i].trickboost = READUINT8(save_p);
@@ -1965,7 +1959,9 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, slope->normal.z);
 	}
 	if (diff2 & MD2_HITLAG)
+	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -3057,7 +3053,9 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		slope->normal.z = READFIXED(save_p);
 	}
 	if (diff2 & MD2_HITLAG)
+	{
 		mobj->hitlag = READINT32(save_p);
+	}
 
 	if (diff & MD_REDFLAG)
 	{

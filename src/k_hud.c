@@ -3742,7 +3742,7 @@ static void K_drawKartFirstPerson(void)
 		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
 
 		// hitlag vibrating
-		if (stplyr->mo->hitlag > 0)
+		if (stplyr->mo->hitlag > 0 && (stplyr->mo->eflags & MFE_DAMAGEHITLAG))
 		{
 			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
 			if (r_splitscreen && mul > FRACUNIT)
