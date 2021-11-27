@@ -8342,7 +8342,7 @@ void K_AdjustPlayerFriction(player_t *player)
 		return;
 	}
 
-	// Reduce friction after hitting a horizontal spring
+	// Reduce friction after hitting a spring
 	if (player->tiregrease)
 	{
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;

@@ -347,20 +347,17 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		if (object->player)
 		{
-			// Less friction when hitting horizontal springs
-			if (!vertispeed)
+			// Less friction when hitting springs
+			if (!object->player->tiregrease)
 			{
-				if (!object->player->tiregrease)
+				UINT8 i;
+				for (i = 0; i < 2; i++)
 				{
-					UINT8 i;
-					for (i = 0; i < 2; i++)
-					{
-						mobj_t *grease;
-						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
-						P_SetTarget(&grease->target, object);
-						grease->angle = K_MomentumAngle(object);
-						grease->extravalue1 = i;
-					}
+					mobj_t *grease;
+					grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
+					P_SetTarget(&grease->target, object);
+					grease->angle = K_MomentumAngle(object);
+					grease->extravalue1 = i;
 				}
 
 				object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
