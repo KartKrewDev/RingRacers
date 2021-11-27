@@ -126,6 +126,7 @@ typedef struct menu_s
 	menuitem_t    *menuitems;          // menu items
 
 	INT16          x, y;               // x, y of menu
+	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
 
 	INT16          transitionID;       // only transition if IDs match
 	INT16          transitionTics;     // tics for transitions out
@@ -199,6 +200,19 @@ extern menu_t PLAY_BattleGamemodesDef;
 // OPTIONS
 extern menuitem_t OPTIONS_Main[];
 extern menu_t OPTIONS_MainDef;
+
+// We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
+typedef enum
+{
+	mopt_controls = 0,
+	mopt_video,
+	mopt_sound,
+	mopt_hud,
+	mopt_gameplay,
+	mopt_server,
+	mopt_data,
+	mopt_manual,
+} mopt_e;
 
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
@@ -530,12 +544,19 @@ extern struct optionsmenu_s {
 	modedesc_t modedescs[MAXMODEDESCS];
 
 	UINT8 erasecontext;
+
+	// background:
+	INT16 currcolour;
+	INT16 lastcolour;
+	tic_t fade;
 } optionsmenu;
 
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
 boolean M_OptionsInputs(INT32 ch);
 boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
+void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
+
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 
@@ -667,6 +688,7 @@ void M_DrawAddons(void);
 	0,\
 	source,\
 	0, 0,\
+	0, 0, \
 	1, 10,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
@@ -681,6 +703,7 @@ void M_DrawAddons(void);
 	0,\
 	source,\
 	0, 0,\
+	0, 0, \
 	1, 10,\
 	M_DrawImageDef,\
 	NULL,\

@@ -1663,6 +1663,7 @@ menu_t MessageDef =
 	0,                  // lastOn, flags       (TO HACK)
 	MessageMenu,        // menuitem_t ->
 	0, 0,               // x, y                (TO HACK)
+	0, 0,				// extra1, extra2
 	0, 0,               // transition tics
 	M_DrawMessageMenu,  // drawing routine ->
 	NULL,               // ticker routine
@@ -2993,7 +2994,15 @@ void M_InitOptions(INT32 choice)
 {
 	(void)choice;
 
-	// @TODO: Change options when you do them from a netgame.
+	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
+	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+
+	// disable gameplay & server options if you aren't an admin in netgames. (GS_MENU check maybe unecessary but let's not take any chances)
+	if (netgame && gamestate != GS_MENU && !IsPlayerAdmin(consoleplayer))
+	{
+		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
+		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
+	}
 
 	optionsmenu.ticker = 0;
 	optionsmenu.offset = 0;
@@ -3002,6 +3011,11 @@ void M_InitOptions(INT32 choice)
 	optionsmenu.opty = 0;
 	optionsmenu.toptx = 0;
 	optionsmenu.topty = 0;
+
+	// BG setup:
+	optionsmenu.currcolour = OPTIONS_MainDef.extra1;
+	optionsmenu.lastcolour = 0;
+	optionsmenu.fade = 0;
 
 	// So that pause doesn't go to the main menu...
 	OPTIONS_MainDef.prevMenu = currentMenu;
@@ -3013,6 +3027,14 @@ void M_InitOptions(INT32 choice)
 	Addons_option_Onchange();
 
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
+}
+
+// Prepares changing the colour of the background
+void M_OptionsChangeBGColour(INT16 newcolour)
+{
+	optionsmenu.fade = 10;
+	optionsmenu.lastcolour = optionsmenu.currcolour;
+	optionsmenu.currcolour = newcolour;
 }
 
 boolean M_OptionsQuit(void)
@@ -3037,7 +3059,7 @@ void M_OptionsTick(void)
 		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
 	}
 
-	// Garbage:
+	// Move the button for cool animations
 	if (currentMenu == &OPTIONS_MainDef)
 	{
 		M_OptionsQuit();	// ...So now this is used here.
@@ -3047,6 +3069,14 @@ void M_OptionsTick(void)
 		optionsmenu.toptx = 160;
 		optionsmenu.topty = 50;
 	}
+
+	// Handle the background stuff:
+	if (optionsmenu.fade)
+		optionsmenu.fade--;
+
+	// change the colour if we aren't matching the current menu colour
+	if (optionsmenu.currcolour != currentMenu->extra1)
+		M_OptionsChangeBGColour(currentMenu->extra1);
 
 }
 
@@ -3059,6 +3089,7 @@ boolean M_OptionsInputs(INT32 ch)
 		{
 			optionsmenu.offset += 48;
 			M_NextOpt();
+			S_StartSound(NULL, sfx_menu1);
 
 			if (itemOn == 0)
 				optionsmenu.offset -= currentMenu->numitems*48;
@@ -3069,6 +3100,7 @@ boolean M_OptionsInputs(INT32 ch)
 		{
 			optionsmenu.offset -= 48;
 			M_PrevOpt();
+			S_StartSound(NULL, sfx_menu1);
 
 			if (itemOn == currentMenu->numitems-1)
 				optionsmenu.offset += currentMenu->numitems*48;
@@ -3077,6 +3109,10 @@ boolean M_OptionsInputs(INT32 ch)
 		}
 		case KEY_ENTER:
 		{
+
+			if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+				return true;	// No.
+
 			optionsmenu.optx = 140;
 			optionsmenu.opty = 70;	// Default position for the currently selected option.
 
@@ -3450,6 +3486,7 @@ boolean M_PauseInputs(INT32 ch)
 		case KEY_UPARROW:
 		{
 			pausemenu.offset -= 50; // Each item is spaced by 50 px
+			S_StartSound(NULL, sfx_menu1);
 			M_PrevOpt();
 			return true;
 		}
@@ -3457,6 +3494,7 @@ boolean M_PauseInputs(INT32 ch)
 		case KEY_DOWNARROW:
 		{
 			pausemenu.offset += 50;	// Each item is spaced by 50 px
+			S_StartSound(NULL, sfx_menu1);
 			M_NextOpt();
 			return true;
 		}

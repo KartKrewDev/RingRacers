@@ -1652,10 +1652,34 @@ void M_DrawMPRoomSelect(void)
 
 // OPTIONS MENU
 
+// Draws the cogs and also the options background!
 static void M_DrawOptionsCogs(void)
 {
-	patch_t *back[3] = {W_CachePatchName("OPT_BAK1", PU_CACHE), W_CachePatchName("OPT_BAK2", PU_CACHE), W_CachePatchName("OPT_BAK3", PU_CACHE)};
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, back[(optionsmenu.ticker/10) %3], NULL);
+	// the background isn't drawn outside of being in the main menu state.
+	if (gamestate == GS_MENU)
+	{
+		patch_t *back[3] = {W_CachePatchName("OPT_BG1", PU_CACHE), W_CachePatchName("OPT_BG2", PU_CACHE), W_CachePatchName("OPT_BG3", PU_CACHE)};
+		INT32 tflag = 0;
+		UINT8 *c;
+		UINT8 *c2;	// colormap for the one we're changing
+
+		if (optionsmenu.fade)
+		{
+			c2 = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.lastcolour, GTC_CACHE);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, back[(optionsmenu.ticker/10) %3], c2);
+
+			// prepare fade flag:
+			tflag = min(V_90TRANS, (optionsmenu.fade)<<V_ALPHASHIFT);
+
+		}
+		c = R_GetTranslationColormap(TC_DEFAULT, optionsmenu.currcolour, GTC_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, tflag, back[(optionsmenu.ticker/10) %3], c);
+	}
+	else
+	{
+		patch_t *back_pause[3] = {W_CachePatchName("OPT_BAK1", PU_CACHE), W_CachePatchName("OPT_BAK2", PU_CACHE), W_CachePatchName("OPT_BAK3", PU_CACHE)};
+		V_DrawFixedPatch(0, 0, FRACUNIT, V_MODULATE, back_pause[(optionsmenu.ticker/10) %3], NULL);
+	}
 }
 
 void M_DrawOptionsMovingButton(void)
@@ -1682,16 +1706,20 @@ void M_DrawOptions(void)
 	{
 		INT32 py = y - (itemOn*48);
 		INT32 px = x - menutransition.tics*64;
+		INT32 tflag = 0;
 
 		if (i == itemOn)
 			c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 		else
 			c = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
 
+		if (currentMenu->menuitems[i].status & IT_TRANSTEXT)
+			tflag = V_TRANSLUCENT;
+
 		if (!(menutransition.tics && i == itemOn))
 		{
 			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
-			V_DrawCenteredGamemodeString(px-3, py - 16, V_ALLOWLOWERCASE, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
+			V_DrawCenteredGamemodeString(px-3, py - 16, V_ALLOWLOWERCASE|tflag, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
 		}
 
 		y += 48;
@@ -2076,7 +2104,7 @@ void M_DrawItemToggles(void)
 	if (shitsfree)
 		shitsfree--;
 
-	V_DrawCenteredString(BASEVIDWIDTH/2, currentMenu->y, highlightflags, va("* %s *", currentMenu->menuitems[itemOn].text));
+	V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*48, currentMenu->y, highlightflags, va("* %s *", currentMenu->menuitems[itemOn].text));
 }
 
 
