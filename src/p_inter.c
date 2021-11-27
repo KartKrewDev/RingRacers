@@ -1972,6 +1972,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						// Destroy any remainder bumpers from the player for karma comeback damage
 						K_DestroyBumpers(player, player->bumpers);
 					}
+					else
+					{
+						source->player->overtimekarma += 5*TICRATE;
+					}
 
 					if (damagetype & DMG_STEAL)
 					{
