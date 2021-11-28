@@ -52,7 +52,7 @@ void K_TimerReset(void)
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;
+	UINT8 numPlayers = 0;//, numspec = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -63,6 +63,7 @@ void K_TimerInit(void)
 
 		if (players[i].spectator == true)
 		{
+			//numspec++;
 			continue;
 		}
 
@@ -98,6 +99,7 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -9387,6 +9389,7 @@ void K_CheckSpectateStatus(void)
 	{
 		if (cv_ingamecap.value && numingame+i >= cv_ingamecap.value) // Hit the in-game player cap while adding people?
 			break;
+		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
 	}
 

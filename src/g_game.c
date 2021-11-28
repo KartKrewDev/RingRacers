@@ -2551,7 +2551,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 					if (j == i)
 						continue;
 
-					if (netgame && cv_kartusepwrlv.value)
+					if ((netgame || (demo.playback && demo.netgame)) && cv_kartusepwrlv.value)
 					{
 						if (clientpowerlevels[j][PWRLV_RACE] == clientpowerlevels[i][PWRLV_RACE])
 							num++;
@@ -2572,7 +2572,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 					pos++;
 				else
 				{
-					if (netgame && cv_kartusepwrlv.value)
+					if ((netgame || (demo.playback && demo.netgame)) && cv_kartusepwrlv.value)
 					{
 						if (clientpowerlevels[i][PWRLV_RACE] > clientpowerlevels[playernum][PWRLV_RACE])
 							pos++;
@@ -3112,7 +3112,7 @@ boolean G_GametypeHasTeams(void)
 //
 boolean G_GametypeHasSpectators(void)
 {
-	return (netgame || (multiplayer && demo.playback));
+	return (netgame || (multiplayer && demo.netgame));
 }
 
 //
