@@ -6889,6 +6889,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				z);
 			mobj->angle = ang;
 
+			if (!P_IsObjectOnGround(mobj->target))
+				mobj->renderflags |= RF_DONTDRAW;
+
 			if (leveltime & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 
