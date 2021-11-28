@@ -547,6 +547,39 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 }
 
 /*--------------------------------------------------
+	static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+
+		Item usage for landmine tossing.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+		turnamt - How hard they currently are turning.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+{
+	player->botvars.itemconfirm++;
+
+	if (abs(turnamt) >= KART_FULLTURN/2)
+	{
+		player->botvars.itemconfirm += player->botvars.difficulty / 2;
+	}
+
+	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	{
+		player->botvars.itemconfirm += player->botvars.difficulty;
+	}
+
+	if (player->botvars.itemconfirm > 2*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, -1);
+	}
+}
+
+/*--------------------------------------------------
 	static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 
 		Item usage for Eggman item throwing.
@@ -1064,7 +1097,6 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						K_BotItemSneaker(player, cmd);
 						break;
 					case KITEM_BANANA:
-					case KITEM_LANDMINE:
 						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
@@ -1108,6 +1140,9 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						{
 							K_BotItemMine(player, cmd, turnamt);
 						}
+						break;
+					case KITEM_LANDMINE:
+						K_BotItemLandmine(player, cmd, turnamt);
 						break;
 					case KITEM_THUNDERSHIELD:
 						K_BotItemThunder(player, cmd);
