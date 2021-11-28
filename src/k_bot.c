@@ -482,7 +482,7 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 	fixed_t origFrict, newFrict;
 
-	if (rubberband <= 0)
+	if (rubberband <= 0 || player->tiregrease > 0)
 	{
 		// Never get weaker than normal friction
 		return frict;
