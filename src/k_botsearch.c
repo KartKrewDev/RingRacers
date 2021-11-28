@@ -122,7 +122,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 		}
 	}
 
-	return (globalsmuggle.randomitems * globalsmuggle.eggboxes);
+	return (globalsmuggle.randomitems * (globalsmuggle.eggboxes + 1));
 }
 
 /*--------------------------------------------------
