@@ -6890,6 +6890,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
+	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
+	{
+		if (player->overtimekarma)
+			player->overtimekarma--;
+		else
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
+	}
+
 	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED))
 	{
 		fixed_t distanceToBarrier = 0;

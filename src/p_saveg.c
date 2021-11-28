@@ -317,6 +317,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].emeralds);
 		WRITEUINT8(save_p, players[i].bumpers);
 		WRITEINT16(save_p, players[i].karmadelay);
+		WRITEUINT32(save_p, players[i].overtimekarma);
 		WRITEINT16(save_p, players[i].spheres);
 
 		WRITESINT8(save_p, players[i].glanceDir);
@@ -574,6 +575,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].emeralds = READUINT8(save_p);
 		players[i].bumpers = READUINT8(save_p);
 		players[i].karmadelay = READINT16(save_p);
+		players[i].overtimekarma = READUINT32(save_p);
 		players[i].spheres = READINT16(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);

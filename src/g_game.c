@@ -2281,6 +2281,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->growshrinktimer = growshrinktimer;
 	p->bumpers = bumper;
 	p->karmadelay = comebacktime;
+	p->overtimekarma = 0;
 	p->eggmanblame = -1;
 	p->lastdraft = -1;
 	p->karthud[khud_fault] = khudfault;

@@ -468,6 +468,7 @@ typedef struct player_s
 	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
+	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
