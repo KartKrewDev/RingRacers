@@ -690,17 +690,19 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 	const fixed_t topspeed = K_GetKartSpeed(player, false);
 	fixed_t radius = (player->mo->radius * 32);
 	SINT8 throwdir = -1;
+	UINT8 snipeMul = 2;
 
 	if (player->speed > topspeed)
 	{
 		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
 	}
 
 	player->botvars.itemconfirm++;
 
 	if (K_PlayerInCone(player, radius, 10, false))
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty * 2;
+		player->botvars.itemconfirm += player->botvars.difficulty * snipeMul;
 		throwdir = 1;
 	}
 	else if (K_PlayerInCone(player, radius, 10, true))
@@ -732,10 +734,13 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 	const fixed_t topspeed = K_GetKartSpeed(player, false);
 	fixed_t radius = (player->mo->radius * 32);
 	SINT8 throwdir = 1;
+	UINT8 snipeMul = 2;
+	INT32 lastTarg = player->lastjawztarget;
 
 	if (player->speed > topspeed)
 	{
 		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
 	}
 
 	player->botvars.itemconfirm++;
@@ -746,10 +751,33 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 		throwdir = -1;
 	}
 
-	if (player->lastjawztarget != -1)
+	if (lastTarg != -1
+		&& playeringame[lastTarg] == true
+		&& players[lastTarg].spectator == false
+		&& players[lastTarg].mo != NULL
+		&& P_MobjWasRemoved(players[lastTarg].mo) == false)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty * 2;
-		throwdir = 1;
+		mobj_t *targ = players[lastTarg].mo;
+		mobj_t *mobj = NULL, *next = NULL;
+		boolean targettedAlready = false;
+
+		// Make sure no other Jawz are targetting this player.
+		for (mobj = kitemcap; mobj; mobj = next)
+		{
+			next = mobj->itnext;
+
+			if (mobj->type == MT_JAWZ && mobj->target == targ)
+			{
+				targettedAlready = true;
+				break;
+			}
+		}
+
+		if (targettedAlready == false)
+		{
+			player->botvars.itemconfirm += player->botvars.difficulty * snipeMul;
+			throwdir = 1;
+		}
 	}
 
 	if (player->botvars.itemconfirm > 5*TICRATE)
