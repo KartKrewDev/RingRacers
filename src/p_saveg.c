@@ -318,6 +318,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].spheres);
 
 		WRITESINT8(save_p, players[i].glanceDir);
+		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
@@ -573,6 +574,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spheres = READINT16(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
+		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);

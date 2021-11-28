@@ -2673,6 +2673,19 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
+boolean K_TripwirePass(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->growshrinktimer > 0 ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
@@ -3298,6 +3311,17 @@ static void K_HandleTumbleSound(player_t *player)
 		S_StartSound(player->mo, sfx_s3k51);
 		player->pflags |= PF_TUMBLESOUND;
 	}
+}
+
+void K_ApplyTripWire(player_t *player, tripwirestate_t state)
+{
+	if (state == TRIP_PASSED)
+		S_StartSound(player->mo, sfx_ssa015);
+	else if (state == TRIP_BLOCKED)
+		S_StartSound(player->mo, sfx_kc40);
+
+	player->tripWireState = state;
+	K_AddHitLag(player->mo, 10, false);
 }
 
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
@@ -6983,6 +7007,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
+
+	if (player->tripWireState != TRIP_NONE)
+	{
+		if (player->tripWireState == TRIP_PASSED)
+			S_StartSound(player->mo, sfx_cdfm63);
+		else if (player->tripWireState == TRIP_BLOCKED)
+			S_StartSound(player->mo, sfx_kc4c);
+
+		player->tripWireState = TRIP_NONE;
+	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)

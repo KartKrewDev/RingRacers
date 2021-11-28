@@ -200,6 +200,13 @@ typedef enum
 
 typedef enum
 {
+	TRIP_NONE,
+	TRIP_PASSED,
+	TRIP_BLOCKED,
+} tripwirestate_t;
+
+typedef enum
+{
 	// Unsynced, HUD or clientsided effects
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
@@ -469,6 +476,8 @@ typedef struct player_s
 	INT16 spheres;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
+	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 

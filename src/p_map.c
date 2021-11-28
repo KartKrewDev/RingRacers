@@ -1552,6 +1552,12 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 	}
 }
 
+boolean P_IsLineTripWire(const line_t *ld)
+{
+	return (sides[ld->sidenum[0]].midtexture ==
+			R_TextureNumForName("TRIPWIRE"));
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1666,7 +1672,8 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmdropoffz = lowfloor;
 
 	// we've crossed the line
-	if (P_SpecialIsLinedefCrossType(ld->special))
+	if (P_SpecialIsLinedefCrossType(ld->special) ||
+			P_IsLineTripWire(ld))
 	{
 		add_spechit(ld);
 	}
@@ -3022,6 +3029,7 @@ static void P_PlayerHitBounceLine(line_t *ld)
 	INT32 side;
 	angle_t lineangle;
 	fixed_t movelen;
+	fixed_t x, y;
 
 	side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
 	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy)-ANGLE_90;
@@ -3036,8 +3044,19 @@ static void P_PlayerHitBounceLine(line_t *ld)
 	if (slidemo->player && movelen < (15*mapobjectscale))
 		movelen = (15*mapobjectscale);
 
-	tmxmove += FixedMul(movelen, FINECOSINE(lineangle));
-	tmymove += FixedMul(movelen, FINESINE(lineangle));
+	x = FixedMul(movelen, FINECOSINE(lineangle));
+	y = FixedMul(movelen, FINESINE(lineangle));
+
+	if (P_IsLineTripWire(ld))
+	{
+		tmxmove = x * 4;
+		tmymove = y * 4;
+	}
+	else
+	{
+		tmxmove += x;
+		tmymove += y;
+	}
 }
 
 //
@@ -3675,6 +3694,11 @@ void P_BouncePlayerMove(mobj_t *mo)
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 	}
 
+	if (P_IsLineTripWire(bestslideline))
+	{
+		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
+	}
+	else
 	{
 		mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
 		if (mo->eflags & MFE_VERTICALFLIP)
@@ -3694,8 +3718,11 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mo->player->cmomx = tmxmove;
 	mo->player->cmomy = tmymove;
 
-	if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true)) {
-		P_TryMove(mo, mo->x - oldmomx, mo->y - oldmomy, true);
+	if (!P_IsLineTripWire(bestslideline))
+	{
+		if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true)) {
+			P_TryMove(mo, mo->x - oldmomx, mo->y - oldmomy, true);
+		}
 	}
 }
 
