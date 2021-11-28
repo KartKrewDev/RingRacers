@@ -278,19 +278,27 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
 		case MT_ITEMCAPSULE:
-			if (special->threshold != KITEM_SUPERRING
-				&& special->threshold != KITEM_SPB
-				&& !P_CanPickupItem(player, 1))
-					return;
-
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
 				return;
 
-			if (special->threshold == KITEM_SPB && K_IsSPBInGame()) // don't spawn a second SPB
-				return;
+			switch (special->threshold)
+			{
+				case KITEM_SPB:
+					if (K_IsSPBInGame()) // don't spawn a second SPB
+						return;
+					break;
+				case KITEM_SUPERRING:
+					if (player->pflags & PF_RINGLOCK) // no cheaty rings
+						return;
+					break;
+				default:
+					if (!P_CanPickupItem(player, 1))
+						return;
+					break;
+			}
 
 			S_StartSound(toucher, special->info->deathsound);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
