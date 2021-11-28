@@ -6983,13 +6983,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
-
-	// Plays the music after the starting countdown.
-	if (P_IsLocalPlayer(player) && leveltime == (starttime + (TICRATE/2)))
-	{
-		S_ChangeMusic(mapmusname, mapmusflags, true);
-		S_ShowMusicCredit();
-	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)
