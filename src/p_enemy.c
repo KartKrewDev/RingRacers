@@ -12205,9 +12205,9 @@ void A_Boss5BombExplode(mobj_t *actor)
 
 	P_DustRing(locvar1, 4, actor->x, actor->y, actor->z+actor->height, 2*actor->radius, 0, FRACUNIT, actor->scale);
 	P_DustRing(locvar1, 6, actor->x, actor->y, actor->z+actor->height/2, 3*actor->radius, FRACUNIT, FRACUNIT, actor->scale);
-	//P_StartQuake(9*actor->scale, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
+	//P_StartQuake(9*FRACUNIT, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
 	// the above does not exist, so we set the quake values directly instead
-	quake.intensity = 9*actor->scale;
+	quake.intensity = 9*FRACUNIT;
 	quake.time = TICRATE/6;
 	// the following quake values have no effect atm? ah well, may as well set them anyway
 	{

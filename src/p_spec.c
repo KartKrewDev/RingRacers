@@ -8746,6 +8746,6 @@ static void P_SpawnPushers(void)
 // epicenter and radius are not yet used.
 void P_StartQuake(fixed_t intensity, tic_t time)
 {
-	quake.intensity = intensity;
+	quake.intensity = FixedMul(intensity, mapobjectscale);
 	quake.time = time;
 }
