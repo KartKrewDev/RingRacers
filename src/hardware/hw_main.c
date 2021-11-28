@@ -39,6 +39,7 @@
 #include "../f_finale.h"
 #include "../r_things.h" // R_GetShadowZ
 #include "../p_slopes.h"
+#include "../k_kart.h" // HITLAGJITTERS
 #include "hw_md2.h"
 
 #ifdef NEWCLIP
@@ -3645,7 +3646,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	// hitlag vibrating
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -5064,7 +5065,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	// hitlag vibrating
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
