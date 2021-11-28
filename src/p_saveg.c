@@ -334,6 +334,7 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].respawn.pointz);
 		WRITEUINT8(save_p, players[i].respawn.flip);
 		WRITEUINT32(save_p, players[i].respawn.timer);
+		WRITEUINT32(save_p, players[i].respawn.airtimer);
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
 
@@ -590,6 +591,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.pointz = READFIXED(save_p);
 		players[i].respawn.flip = (boolean)READUINT8(save_p);
 		players[i].respawn.timer = READUINT32(save_p);
+		players[i].respawn.airtimer = READUINT32(save_p);
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
 
