@@ -390,7 +390,7 @@ typedef struct player_s
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	UINT8 waterskip;		// Water skipping counter
 
-	UINT16 tiregrease;		// Reduced friction timer after hitting a horizontal spring
+	UINT16 tiregrease;		// Reduced friction timer after hitting a spring
 	UINT16 springstars;		// Spawn stars around a player when they hit a spring
 	UINT16 springcolor;		// Color of spring stars
 	UINT8 dashpadcooldown;	// Separate the vanilla SA-style dash pads from using flashing
@@ -465,6 +465,7 @@ typedef struct player_s
 	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
+	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in

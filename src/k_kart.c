@@ -6882,6 +6882,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_KartPlayerHUDUpdate(player);
 
+	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
+	{
+		if (player->overtimekarma)
+			player->overtimekarma--;
+		else
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
+	}
+
 	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED))
 	{
 		fixed_t distanceToBarrier = 0;
@@ -6975,13 +6983,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
-
-	// Plays the music after the starting countdown.
-	if (P_IsLocalPlayer(player) && leveltime == (starttime + (TICRATE/2)))
-	{
-		S_ChangeMusic(mapmusname, mapmusflags, true);
-		S_ShowMusicCredit();
-	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)
@@ -8334,7 +8335,7 @@ void K_AdjustPlayerFriction(player_t *player)
 		return;
 	}
 
-	// Reduce friction after hitting a horizontal spring
+	// Reduce friction after hitting a spring
 	if (player->tiregrease)
 	{
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;
