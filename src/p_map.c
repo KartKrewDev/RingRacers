@@ -479,6 +479,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	|| (thing->player && thing->player->spectator))
 		return true;
 
+	// Ignore the collision if BOTH things are in hitlag.
+	if (thing->hitlag > 0 && tmthing->hitlag > 0)
+		return true;
+
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
 		return true;
 
@@ -2402,11 +2406,13 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
 
+#if 0
 	if (thing->hitlag > 0)
 	{
 		// Do not move during hitlag
 		return false;
 	}
+#endif
 
 	do {
 		if (thing->flags & MF_NOCLIP) {

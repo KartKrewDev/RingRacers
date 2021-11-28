@@ -247,6 +247,8 @@ typedef enum
 	MFE_TRACERANGLE       = 1<<11,
 	// SRB2Kart: The mobj just hit & bounced off a wall, this is cleared on next frame
 	MFE_JUSTBOUNCEDWALL   = 1<<12,
+	// SRB2Kart: In damage hitlag (displays different visual efx)
+	MFE_DAMAGEHITLAG      = 1<<13,
 	// free: to and including 1<<15
 } mobjeflag_t;
 

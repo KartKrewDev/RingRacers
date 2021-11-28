@@ -968,7 +968,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
-	//K_SetHitLagForObjects(target, inflictor, 15);
+	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
 
 	// SRB2kart
 	// I wish I knew a better way to do this
@@ -1255,6 +1255,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					kart->angle = target->angle;
 					kart->color = target->color;
 					kart->hitlag = target->hitlag;
+					kart->eflags |= MFE_DAMAGEHITLAG;
 					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
 					kart->extravalue1 = target->player->kartweight;
 				}
@@ -1745,7 +1746,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
-	K_SetHitLagForObjects(player->mo, inflictor, 15);
+	K_SetHitLagForObjects(player->mo, inflictor, MAXHITLAGTICS, true);
 
 	player->carry = CR_NONE;
 
@@ -1805,7 +1806,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	boolean force = false;
 
-	INT32 laglength = 10;
+	INT32 laglength = 6;
 	INT32 kinvextend = 0;
 
 	if (objectplacing)
@@ -1824,7 +1825,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
 	|| ((inflictor && !P_MobjWasRemoved(inflictor)) && inflictor->type == MT_BANANA && inflictor->health <= 1))
 	{
-		laglength = 5;
+		laglength = 2;
 	}
 
 	// Everything above here can't be forced.
@@ -2062,7 +2063,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			player->instashield = 15;
-			K_SetHitLagForObjects(target, inflictor, laglength);
+			K_SetHitLagForObjects(target, inflictor, laglength, true);
 			return true;
 		}
 	}
@@ -2084,7 +2085,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	K_SetHitLagForObjects(target, inflictor, laglength);
+	K_SetHitLagForObjects(target, inflictor, laglength, true);
 
 	if (target->health <= 0)
 	{
@@ -2092,7 +2093,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return true;
 	}
 
-	//K_SetHitLagForObjects(target, inflictor, laglength);
+	//K_SetHitLagForObjects(target, inflictor, laglength, true);
 
 	if (player)
 		P_ResetPlayer(target->player);

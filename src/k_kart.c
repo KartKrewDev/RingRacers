@@ -3021,74 +3021,66 @@ angle_t K_MomentumAngle(mobj_t *mo)
 	}
 }
 
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 {
-	boolean mo1valid = (mo1 && !P_MobjWasRemoved(mo1));
-	boolean mo2valid = (mo2 && !P_MobjWasRemoved(mo2));
+	if (mo == NULL || P_MobjWasRemoved(mo))
+	{
+		return;
+	}
 
-	INT32 tics1 = tics;
-	INT32 tics2 = tics;
+	mo->hitlag += tics;
+	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
+
+	if (fromDamage == true)
+	{
+		// Dunno if this should flat-out &~ the flag out too.
+		// Decided it probably just just keep it since it's "adding" hitlag.
+		mo->eflags |= MFE_DAMAGEHITLAG;
+	}
+}
+
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
+{
+	INT32 finalTics = tics;
 
 	if (tics <= 0)
 	{
 		return;
 	}
 
-	if (mo1valid == true && mo2valid == true)
+	if ((mo1 && !P_MobjWasRemoved(mo1)) == true && (mo2 && !P_MobjWasRemoved(mo2)) == true)
 	{
-		const INT32 mintics = tics;
-		const fixed_t ticaddfactor = mapobjectscale * 8;
+		const fixed_t speedTicFactor = (mapobjectscale * 8);
+		const INT32 angleTicFactor = ANGLE_22h;
 
 		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
 		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
-		const fixed_t speeddiff = mo2speed - mo1speed;
+		const fixed_t speedDiff = abs(mo2speed - mo1speed);
 
-		const fixed_t scalediff = mo2->scale - mo1->scale;
+		const fixed_t scaleDiff = abs(mo2->scale - mo1->scale);
 
-		const angle_t mo1angle = K_MomentumAngle(mo1);
-		const angle_t mo2angle = K_MomentumAngle(mo2);
+		angle_t mo1angle = K_MomentumAngle(mo1);
+		angle_t mo2angle = K_MomentumAngle(mo2);
+		INT32 angleDiff = 0;
 
-		angle_t anglediff = mo1angle - mo2angle;
-		fixed_t anglemul = FRACUNIT;
-
-		if (anglediff > ANGLE_180)
+		if (mo1speed > 0 && mo2speed > 0)
 		{
-			anglediff = InvAngle(anglediff);
+			// If either object is completely not moving, their speed doesn't matter.
+			angleDiff = AngleDelta(mo1angle, mo2angle);
 		}
 
-		anglemul = FRACUNIT + (AngleFixed(anglediff) / 180); // x1.0 at 0, x1.5 at 90, x2.0 at 180
+		// Add extra "damage" based on what was happening to the objects on impact.
+		finalTics += (FixedMul(speedDiff, FRACUNIT + scaleDiff) / speedTicFactor) + (angleDiff / angleTicFactor);
 
-		/*
-		CONS_Printf("anglemul: %f\n", FIXED_TO_FLOAT(anglemul));
-		CONS_Printf("speeddiff: %f\n", FIXED_TO_FLOAT(speeddiff));
-		CONS_Printf("scalediff: %f\n", FIXED_TO_FLOAT(scalediff));
-		*/
-
-		tics1 += FixedMul(speeddiff, FixedMul(anglemul, FRACUNIT + scalediff)) / ticaddfactor;
-		tics2 += FixedMul(-speeddiff, FixedMul(anglemul, FRACUNIT - scalediff)) / ticaddfactor;
-
-		if (tics1 < mintics)
+		// This shouldn't happen anymore, but just in case something funky happens.
+		if (finalTics < tics)
 		{
-			tics1 = mintics;
-		}
-
-		if (tics2 < mintics)
-		{
-			tics2 = mintics;
+			finalTics = tics;
 		}
 	}
 
-	//CONS_Printf("tics1: %d, tics2: %d\n", tics1, tics2);
-
-	if (mo1valid == true)
-	{
-		mo1->hitlag = max(tics1, mo1->hitlag);
-	}
-
-	if (mo2valid == true)
-	{
-		mo2->hitlag = max(tics2, mo2->hitlag);
-	}
+	K_AddHitLag(mo1, finalTics, fromDamage);
+	K_AddHitLag(mo2, finalTics, fromDamage);
 }
 
 void K_DoInstashield(player_t *player)
@@ -5121,7 +5113,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
 
-		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
+		mo->player->tricktime = 0; // Reset post-hitlag timer
 		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
@@ -9209,29 +9201,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if (cmd->turning > 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 2;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (cmd->turning < 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 3;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == 1)
@@ -9242,15 +9226,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 
 					P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 2;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == -1)
@@ -9272,30 +9252,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
 					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 4;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
-		// After hitlag, we will get here and will be able to apply the desired momentums!
-		else if (player->trickmomx || player->trickmomy || player->trickmomz)
-		{
-			player->mo->momx = player->trickmomx;
-			player->mo->momy = player->trickmomy;
-			player->mo->momz = player->trickmomz;
-
-			player->trickmomx = player->trickmomy = player->trickmomz = 0;
-
-		}
-
 		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
 		{
 			//CONS_Printf("apply boost\n");
