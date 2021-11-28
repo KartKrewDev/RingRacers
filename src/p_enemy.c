@@ -11195,10 +11195,13 @@ void A_MineExplode(mobj_t *actor)
 	A_Scream(actor);
 	actor->flags = MF_NOGRAVITY|MF_NOCLIP;
 
+	/*
 	quake.epicenter = NULL;
 	quake.radius = 512*FRACUNIT;
 	quake.intensity = 8*FRACUNIT;
 	quake.time = TICRATE/3;
+	*/
+	P_StartQuake(8<<FRACBITS, TICRATE/3);
 
 	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, 0, true);
 	P_MobjCheckWater(actor);

@@ -2976,9 +2976,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 			// reasonable defaults.
 			if (!quake.intensity)
-				quake.intensity = 8<<FRACBITS;
+				quake.intensity = 8*mapobjectscale;
 			if (!quake.radius)
-				quake.radius = 512<<FRACBITS;
+				quake.radius = 512*mapobjectscale;
 			break;
 		}
 
