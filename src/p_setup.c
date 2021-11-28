@@ -1044,6 +1044,8 @@ static void P_InitializeLinedef(line_t *ld)
 	ld->validcount = 0;
 	ld->polyobj = NULL;
 
+	ld->tripwire = false;
+
 	ld->text = NULL;
 	ld->callcount = 0;
 
@@ -1940,6 +1942,12 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 	{
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
+
+		if (sides[ld->sidenum[0]].midtexture ==
+				R_TextureNumForName("TRIPWIRE"))
+		{
+			ld->tripwire = true;
+		}
 
 		switch (ld->special)
 		{

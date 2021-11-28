@@ -1554,8 +1554,7 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 
 boolean P_IsLineTripWire(const line_t *ld)
 {
-	return (sides[ld->sidenum[0]].midtexture ==
-			R_TextureNumForName("TRIPWIRE"));
+	return ld->tripwire;
 }
 
 //
