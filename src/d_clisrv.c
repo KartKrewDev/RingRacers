@@ -5264,12 +5264,14 @@ void TryRunTics(tic_t realtics)
 
 	if (neededtic > gametic)
 	{
-		hu_stopped = false;
+		if (realtics)
+			hu_stopped = false;
 	}
 
 	if (player_joining)
 	{
-		hu_stopped = true;
+		if (realtics)
+			hu_stopped = true;
 		return;
 	}
 
@@ -5307,7 +5309,8 @@ void TryRunTics(tic_t realtics)
 	}
 	else
 	{
-		hu_stopped = true;
+		if (realtics)
+			hu_stopped = true;
 	}
 }
 
