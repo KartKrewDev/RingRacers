@@ -483,22 +483,27 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_z    ][0] = 'd';
 	gamecontroldefault[gc_l    ][0] = 'q';
 	gamecontroldefault[gc_r    ][0] = 'e';
-	gamecontroldefault[gc_start][0] = 'e';
+	gamecontroldefault[gc_start][0] = KEY_ENTER;
 
 	// Gamepad controls
 	gamecontroldefault[gc_up   ][1] = KEY_HAT1+0; // D-Pad Up
 	gamecontroldefault[gc_down ][1] = KEY_HAT1+1; // D-Pad Down
 	gamecontroldefault[gc_left ][1] = KEY_HAT1+2; // D-Pad Left
 	gamecontroldefault[gc_right][1] = KEY_HAT1+3; // D-Pad Right
-	gamecontroldefault[gc_a    ][1] = KEY_JOY1+0; // ??
-	gamecontroldefault[gc_b    ][1] = KEY_JOY1+1;
-	gamecontroldefault[gc_c    ][1] = KEY_JOY1+2;
+	gamecontroldefault[gc_a    ][1] = KEY_JOY1+0; // A
+	gamecontroldefault[gc_b    ][1] = KEY_JOY1+1; // B
+	gamecontroldefault[gc_c    ][1] = KEY_JOY1+2; // ?
 	gamecontroldefault[gc_x    ][1] = KEY_JOY1+3;
 	gamecontroldefault[gc_y    ][1] = KEY_JOY1+6;
 	gamecontroldefault[gc_z    ][1] = KEY_JOY1+8;
 	gamecontroldefault[gc_l    ][1] = KEY_JOY1+4; // LB
 	gamecontroldefault[gc_r    ][1] = KEY_JOY1+5; // RB
 	gamecontroldefault[gc_start][1] = KEY_JOY1+7; // Start
+
+	gamecontroldefault[gc_up   ][2] = KEY_AXIS1+2; // Axis Y-
+	gamecontroldefault[gc_down ][2] = KEY_AXIS1+3; // Axis Y+
+	gamecontroldefault[gc_left ][2] = KEY_AXIS1+0; // Axis X-
+	gamecontroldefault[gc_right][2] = KEY_AXIS1+1; // Axis X+
 }
 
 void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen)

@@ -49,7 +49,7 @@ menu_t MainDef = KARTGAMEMODEMENU(MainMenu, NULL);
 
 menuitem_t PLAY_CharSelect[] =
 {
-	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_CharacterSelectHandler, 0, 0},
+	{IT_NOTHING, NULL, NULL, NULL, NULL, 0, 0},
 };
 
 menu_t PLAY_CharSelectDef = {
@@ -62,7 +62,7 @@ menu_t PLAY_CharSelectDef = {
 	M_DrawCharacterSelect,
 	M_CharacterSelectTick,
 	M_CharacterSelectQuit,
-	NULL
+	M_CharacterSelectHandler
 };
 
 menuitem_t PLAY_MainMenu[] =

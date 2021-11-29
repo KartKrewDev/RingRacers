@@ -68,6 +68,11 @@ typedef enum
 	// special keys
 	gc_abc,
 	gc_console,
+	gc_talk,
+	gc_teamtalk,
+	gc_screenshot,
+	gc_recordgif,
+	
 
 	num_gamecontrols
 } gamecontrols_e;
@@ -81,7 +86,7 @@ extern consvar_t cv_controlperkey;
 // Or anything inbetween for analog values
 extern INT32 gamekeydown[MAXSPLITSCREENPLAYERS][NUMINPUTS];
 
-// two key codes (or virtual key) per game control
+// several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 

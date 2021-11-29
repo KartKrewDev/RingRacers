@@ -3818,7 +3818,7 @@ boolean G_DemoTitleResponder(event_t *ev)
 		return true;
 	}
 
-	if (ch == KEY_ENTER || ch >= KEY_MOUSE1)
+	if (ch == KEY_ENTER || ch >= KEY_JOY1)
 	{
 		demo.savemode = DSM_WILLSAVE;
 		return true;

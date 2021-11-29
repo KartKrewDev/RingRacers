@@ -93,6 +93,8 @@ INT16 itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
 INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
+INT32 menuKey = -1; // keyboard key pressed for menu
+
 // finish wipes between screens
 boolean menuwipe = false;
 
@@ -660,6 +662,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 			}
 			break;
 	}
+
 	return false;
 }
 
@@ -702,20 +705,21 @@ static void M_PrevOpt(void)
 //
 // M_Responder
 //
+static boolean M_BasicMenuInput(INT32 gc)
+{
+	return G_PlayerInputDown(0, gc, true);
+}
+
 boolean M_Responder(event_t *ev)
 {
-	INT32 ch = -1;
-//	INT32 i;
-	static tic_t joywait = 0, mousewait = 0;
-	static INT32 pjoyx = 0, pjoyy = 0;
-	static INT32 pmousex = 0, pmousey = 0;
-	static INT32 lastx = 0, lasty = 0;
-	void (*routine)(INT32 choice); // for some casting problem
+	menuKey = -1;
 
 	if (dedicated || (demo.playback && demo.title)
-	|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
-	|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+		|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
+		|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+	{
 		return false;
+	}
 
 	if (noFurtherInput)
 	{
@@ -723,131 +727,25 @@ boolean M_Responder(event_t *ev)
 		// (but still allow shift keyup so caps doesn't get stuck)
 		return false;
 	}
-	else if (ev->type == ev_keydown)
+
+	if (ev->type == ev_keydown && ev->data1 < KEY_JOY1)
 	{
-		ch = ev->data1;
-
-		// added 5-2-98 remap virtual keys (mouse & joystick buttons)
-		switch (ch)
-		{
-			case KEY_MOUSE1:
-				//case KEY_JOY1:
-				//case KEY_JOY1 + 2:
-				ch = KEY_ENTER;
-				break;
-				/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
-					ch = 'n';
-					break;*/
-			case KEY_MOUSE1 + 1:
-				//case KEY_JOY1 + 1:
-				ch = KEY_BACKSPACE;
-				break;
-			case KEY_HAT1:
-				ch = KEY_UPARROW;
-				break;
-			case KEY_HAT1 + 1:
-				ch = KEY_DOWNARROW;
-				break;
-			case KEY_HAT1 + 2:
-				ch = KEY_LEFTARROW;
-				break;
-			case KEY_HAT1 + 3:
-				ch = KEY_RIGHTARROW;
-				break;
-		}
-	}
-	else if (menuactive)
-	{
-		if (ev->type == ev_joystick  && ev->data1 == 0 && joywait < I_GetTime())
-		{
-			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone[0].value) >> FRACBITS;
-			if (ev->data3 != INT32_MAX)
-			{
-				if (Joystick[0].bGamepadStyle || abs(ev->data3) > jdeadzone)
-				{
-					if (ev->data3 < 0 && pjoyy >= 0)
-					{
-						ch = KEY_UPARROW;
-						joywait = I_GetTime() + NEWTICRATE/7;
-					}
-					else if (ev->data3 > 0 && pjoyy <= 0)
-					{
-						ch = KEY_DOWNARROW;
-						joywait = I_GetTime() + NEWTICRATE/7;
-					}
-					pjoyy = ev->data3;
-				}
-				else
-					pjoyy = 0;
-			}
-
-			if (ev->data2 != INT32_MAX)
-			{
-				if (Joystick[0].bGamepadStyle || abs(ev->data2) > jdeadzone)
-				{
-					if (ev->data2 < 0 && pjoyx >= 0)
-					{
-						ch = KEY_LEFTARROW;
-						joywait = I_GetTime() + NEWTICRATE/17;
-					}
-					else if (ev->data2 > 0 && pjoyx <= 0)
-					{
-						ch = KEY_RIGHTARROW;
-						joywait = I_GetTime() + NEWTICRATE/17;
-					}
-					pjoyx = ev->data2;
-				}
-				else
-					pjoyx = 0;
-			}
-		}
-		else if (ev->type == ev_mouse && mousewait < I_GetTime())
-		{
-			pmousey += ev->data3;
-			if (pmousey < lasty-30)
-			{
-				ch = KEY_DOWNARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousey = lasty -= 30;
-			}
-			else if (pmousey > lasty + 30)
-			{
-				ch = KEY_UPARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousey = lasty += 30;
-			}
-
-			pmousex += ev->data2;
-			if (pmousex < lastx - 30)
-			{
-				ch = KEY_LEFTARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousex = lastx -= 30;
-			}
-			else if (pmousex > lastx+30)
-			{
-				ch = KEY_RIGHTARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousex = lastx += 30;
-			}
-		}
+		// Record keyboard presses
+		menuKey = ev->data1;
 	}
 
-	if (ch == -1)
-		return false;
-	/*else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
-		ch = KEY_ESCAPE;*/
-	else if ((ch == gamecontrol[0][gc_a][0] || ch == gamecontrol[0][gc_a][1])  && ch >= KEY_MOUSE1)
-		ch = KEY_ENTER;
+	// update keys current state
+	G_MapEventsToControls(ev);
 
-	// F-Keys
-	if (!menuactive)
+	// Handle menu handling in-game.
+	if (menuactive == false)
 	{
 		noFurtherInput = true;
 
-		switch (ch)
-		{
 #if 0
+		// The Fx keys.
+		switch (menuKey)
+		{
 			case KEY_F1: // Help key
 				Command_Manual_f();
 				return true;
@@ -868,7 +766,6 @@ boolean M_Responder(event_t *ev)
 				itemOn = 0;
 				return true;
 
-#ifndef DC
 			case KEY_F5: // Video Mode
 				if (modeattacking)
 					return true;
@@ -876,7 +773,6 @@ boolean M_Responder(event_t *ev)
 				M_Options(0);
 				M_VideoModeMenu(0);
 				return true;
-#endif
 
 			case KEY_F6: // Empty
 				return true;
@@ -901,288 +797,30 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			// Spymode on F12 handled in game logic
+		}
 #endif
 
-			case KEY_ESCAPE: // Pop up menu
-				if (chat_on)
-				{
-					HU_clearChatChars();
-					chat_on = false;
-				}
-				else
-					M_StartControlPanel();
-				return true;
+		if (M_BasicMenuInput(gc_start) == true)
+		{
+			if (chat_on)
+			{
+				HU_clearChatChars();
+				chat_on = false;
+			}
+			else
+			{
+				M_StartControlPanel();
+			}
+
+			return true;
 		}
+
 		noFurtherInput = false; // turns out we didn't care
 		return false;
 	}
 
-	if ((ch == gamecontrol[0][gc_b][0] || ch == gamecontrol[0][gc_b][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
-		ch = KEY_ESCAPE;
-
-	routine = currentMenu->menuitems[itemOn].itemaction;
-
-	// Handle menuitems which need a specific key handling
-	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
-	{
-		if (shiftdown && ch >= 32 && ch <= 127)
-			ch = shiftxform[ch];
-		routine(ch);
-		return true;
-	}
-
-	// Handle menu-specific input handling. If this returns true we skip regular input handling.
-	if (currentMenu->inputroutine)
-	{
-		INT32 res = 0;
-		if (shiftdown && ch >= 32 && ch <= 127)
-			ch = shiftxform[ch];
-
-		res = currentMenu->inputroutine(ch);
-
-		if (res)
-			return true;
-	}
-
-	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
-	{
-		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
-		{
-			if (ch == ' ' || ch == 'n' || ch == 'y' || ch == KEY_ESCAPE || ch == KEY_ENTER)
-			{
-				if (routine)
-					routine(ch);
-				M_StopMessage(0);
-				noFurtherInput = true;
-				return true;
-			}
-			return true;
-		}
-		else
-		{
-			// dirty hack: for customising controls, I want only buttons/keys, not moves
-			if (ev->type == ev_mouse || ev->type == ev_joystick)
-			{
-				return true;
-			}
-
-			if (routine)
-			{
-				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
-				otherroutine(ev); //Alam: what a hack
-			}
-			return true;
-		}
-	}
-
-	// BP: one of the more big hack i have never made
-	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
-	{
-		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING)
-		{
-
-			if (shiftdown && ch >= 32 && ch <= 127)
-				ch = shiftxform[ch];
-			if (M_ChangeStringCvar(ch))
-				return true;
-			else
-				routine = NULL;
-		}
-		else
-			routine = M_ChangeCvar;
-	}
-
-	if (currentMenu == &PAUSE_PlaybackMenuDef && !con_destlines)
-	{
-		playback_last_menu_interaction_leveltime = leveltime;
-		// Flip left/right with up/down for the playback menu, since it's a horizontal icon row.
-		switch (ch)
-		{
-			case KEY_LEFTARROW: ch = KEY_UPARROW; break;
-			case KEY_UPARROW: ch = KEY_RIGHTARROW; break;
-			case KEY_RIGHTARROW: ch = KEY_DOWNARROW; break;
-			case KEY_DOWNARROW: ch = KEY_LEFTARROW; break;
-
-			// arbitrary keyboard shortcuts because fuck you
-
-			case '\'':	// toggle freecam
-				M_PlaybackToggleFreecam(0);
-				break;
-
-			case ']':	// ffw / advance frame (depends on if paused or not)
-				if (paused)
-					M_PlaybackAdvance(0);
-				else
-					M_PlaybackFastForward(0);
-				break;
-
-			case '[':	// rewind /backupframe, uses the same function
-				M_PlaybackRewind(0);
-				break;
-
-			case '\\':	// pause
-				M_PlaybackPause(0);
-				break;
-
-			// viewpoints, an annoyance (tm)
-			case '-':	// viewpoint minus
-				M_PlaybackSetViews(-1);	// yeah lol.
-				break;
-
-			case '=':	// viewpoint plus
-				M_PlaybackSetViews(1);	// yeah lol.
-				break;
-
-			// switch viewpoints:
-			case '1':	// viewpoint for p1 (also f12)
-				// maximum laziness:
-				if (!demo.freecam)
-					G_AdjustView(1, 1, true);
-				break;
-			case '2':	// viewpoint for p2
-				if (!demo.freecam)
-					G_AdjustView(2, 1, true);
-				break;
-			case '3':	// viewpoint for p3
-				if (!demo.freecam)
-					G_AdjustView(3, 1, true);
-				break;
-			case '4':	// viewpoint for p4
-				if (!demo.freecam)
-					G_AdjustView(4, 1, true);
-				break;
-
-			default: break;
-		}
-	}
-
-	// Keys usable within menu
-	switch (ch)
-	{
-		case KEY_DOWNARROW:
-			M_NextOpt();
-			S_StartSound(NULL, sfx_s3k5b);
-			return true;
-
-		case KEY_UPARROW:
-			M_PrevOpt();
-			S_StartSound(NULL, sfx_s3k5b);
-			return true;
-
-		case KEY_LEFTARROW:
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(0);
-			}
-			return true;
-
-		case KEY_RIGHTARROW:
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(1);
-			}
-			return true;
-
-		case KEY_ENTER:
-			noFurtherInput = true;
-			currentMenu->lastOn = itemOn;
-
-#if 0
-			if (currentMenu == &PAUSE_PlaybackMenuDef)
-			{
-				boolean held = (boolean)playback_enterheld;
-				if (held)
-					return true;
-				playback_enterheld = 3;
-			}
-#endif
-
-			if (routine)
-			{
-				S_StartSound(NULL, sfx_s3k5b);
-
-				if (((currentMenu->menuitems[itemOn].status & IT_TYPE)==IT_CALL
-				 || (currentMenu->menuitems[itemOn].status & IT_TYPE)==IT_SUBMENU)
-				 && (currentMenu->menuitems[itemOn].status & IT_CALLTYPE))
-				{
-					if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
-					{
-						M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
-						return true;
-					}
-				}
-
-				switch (currentMenu->menuitems[itemOn].status & IT_TYPE)
-				{
-					case IT_CVAR:
-					case IT_ARROWS:
-						routine(1); // right arrow
-						break;
-					case IT_CALL:
-						routine(itemOn);
-						break;
-					case IT_SUBMENU:
-						currentMenu->lastOn = itemOn;
-						M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction, false);
-						break;
-				}
-			}
-			return true;
-
-		case KEY_ESCAPE:
-		//case KEY_JOY1 + 2:
-			M_GoBack(0);
-			return true;
-
-		case KEY_BACKSPACE:
-#if 0
-			if ((currentMenu->menuitems[itemOn].status) == IT_CONTROL)
-			{
-				// detach any keys associated with the game control
-				G_ClearControlKeys(setupcontrols, currentMenu->menuitems[itemOn].mvar1);
-				S_StartSound(NULL, sfx_shldls);
-				return true;
-			}
-#endif
-
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-				consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
-
-				if (cv == &cv_chooseskin
-					|| cv == &cv_dummystaff
-					/*
-					|| cv == &cv_nextmap
-					|| cv == &cv_newgametype
-					*/
-					)
-					return true;
-
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(-1);
-				return true;
-			}
-
-			return false;
-
-		default:
-			break;
-	}
-
+	// We're in the menu itself now.
+	// M_Ticker will take care of the rest.
 	return true;
 }
 
@@ -1479,6 +1117,190 @@ void M_GoBack(INT32 choice)
 //
 // M_Ticker
 //
+static boolean M_HandleMenuInput(void)
+{
+	void (*routine)(INT32 choice); // for some casting problem
+
+	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
+	if (currentMenu->inputroutine)
+	{
+		if (currentMenu->inputroutine(menuKey))
+		{
+			return true;
+		}
+	}
+
+	routine = currentMenu->menuitems[itemOn].itemaction;
+
+	// Handle menuitems which need a specific key handling
+
+	/*
+	// NOPE, we need a generic "typing" menu
+	// (sort of like the generic message menu)
+	// so that it can be gamepad friendly.
+	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
+	{
+		routine(-1);
+		return true;
+	}
+	*/
+
+	// TODO: Move this to message menu code
+	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
+	{
+		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
+		{
+			if (M_BasicMenuInput(gc_a) || M_BasicMenuInput(gc_b) || M_BasicMenuInput(gc_start))
+			{
+				if (routine)
+				{
+					routine(menuKey);
+				}
+
+				M_StopMessage(0);
+				noFurtherInput = true;
+				return true;
+			}
+
+			return true;
+		}
+		else
+		{
+#if 0 // this shit is crazy
+			if (routine)
+			{
+				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
+				otherroutine(ev); //Alam: what a hack
+			}
+#endif
+
+			return true;
+		}
+	}
+
+	// BP: one of the more big hack i have never made
+	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
+	{
+		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING)
+		{
+			// As mentioned earlier, we need a typing submenu.
+			routine = NULL;
+		}
+		else
+		{
+			routine = M_ChangeCvar;
+		}
+	}
+
+	// Keys usable within menu
+	if (M_BasicMenuInput(gc_down) == true)
+	{
+		M_NextOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_up) == true)
+	{
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_left) == true)
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			routine(0);
+		}
+
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_right) == true)
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			routine(1);
+		}
+
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_a) == true)
+	{
+		noFurtherInput = true;
+		currentMenu->lastOn = itemOn;
+
+		if (routine)
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+
+			if (((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CALL
+				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SUBMENU)
+				&& (currentMenu->menuitems[itemOn].status & IT_CALLTYPE))
+			{
+				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
+				{
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+					return true;
+				}
+			}
+
+			switch (currentMenu->menuitems[itemOn].status & IT_TYPE)
+			{
+				case IT_CVAR:
+				case IT_ARROWS:
+					routine(1); // right arrow
+					break;
+				case IT_CALL:
+					routine(itemOn);
+					break;
+				case IT_SUBMENU:
+					currentMenu->lastOn = itemOn;
+					M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction, false);
+					break;
+			}
+		}
+
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_b) == true)
+	{
+		M_GoBack(0);
+		return true;
+	}
+	else if (M_BasicMenuInput(gc_c) == true)
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+
+			// Make these CVar options?
+			if (cv == &cv_chooseskin
+				|| cv == &cv_dummystaff
+				/*
+				|| cv == &cv_nextmap
+				|| cv == &cv_newgametype
+				*/
+				)
+			{
+				return true;
+			}
+
+			S_StartSound(NULL, sfx_s3k5b);
+
+			routine(-1);
+			return true;
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
 void M_Ticker(void)
 {
 	if (menutransition.tics != 0 || menutransition.dest != 0)
@@ -1532,11 +1354,20 @@ void M_Ticker(void)
 		}
 	}
 
+	if (noFurtherInput == false)
+	{
+		M_HandleMenuInput();
+	}
+
 	if (currentMenu->tickroutine)
+	{
 		currentMenu->tickroutine();
+	}
 
 	if (dedicated)
+	{
 		return;
+	}
 
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
@@ -2103,7 +1934,7 @@ static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
 	}
 }
 
-void M_CharacterSelectHandler(INT32 choice)
+boolean M_CharacterSelectHandler(INT32 choice)
 {
 	UINT8 i;
 
@@ -2172,6 +2003,8 @@ void M_CharacterSelectHandler(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
+
+	return true;
 }
 
 // Apply character skin and colour changes while ingame (we just call the skin / color commands.)

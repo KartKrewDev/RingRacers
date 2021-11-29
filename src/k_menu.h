@@ -295,6 +295,8 @@ extern char dummystaffname[22];
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
 extern INT16 skullAnimCounter; // skull animation counter
 
+extern INT32 menuKey; // keyboard key pressed for menu
+
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
@@ -393,7 +395,7 @@ typedef enum
 extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(INT32 choice);
-void M_CharacterSelectHandler(INT32 choice);
+boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
