@@ -179,7 +179,7 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed() * 180) + angle,
-		32 * mapobjectscale);
+		24 * mapobjectscale);
 
 	emerald->momz = flip * 24 * mapobjectscale;
 	if (emerald->eflags & MFE_UNDERWATER)
@@ -288,12 +288,6 @@ void K_RunPaperItemSpawners(void)
 
 	if (overtime == true)
 	{
-		if (battleovertime.radius < 512*mapobjectscale)
-		{
-			// Barrier has closed in too much
-			return;
-		}
-
 		// Double frequency of items
 		interval /= 2;
 	}
@@ -557,10 +551,12 @@ void K_RunBattleOvertime(void)
 	}
 	else if (battleovertime.radius > 0)
 	{
-		if (battleovertime.radius > 2*mapobjectscale)
+		const fixed_t minradius = 768 * mapobjectscale;
+
+		if (battleovertime.radius > minradius)
 			battleovertime.radius -= 2*mapobjectscale;
 		else
-			battleovertime.radius = 0;
+			battleovertime.radius = minradius;
 	}
 
 	if (battleovertime.radius > 0)

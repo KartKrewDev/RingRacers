@@ -1478,7 +1478,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
 					if (transtable == NUMTRANSMAPS)
 						transtable = 0;
-					if (gl_linedef->special == 910)
+					if (gl_linedef->special == 910 ||
+							P_IsLineTripWire(gl_linedef))
 						blend = AST_ADD;
 					else if (gl_linedef->special == 911)
 						blend = AST_SUBTRACT;
@@ -3643,7 +3644,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	pslope_t *groundslope;
 
 	// hitlag vibrating
-	if (thing->hitlag > 0)
+	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
 
@@ -5062,7 +5063,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		return;
 
 	// hitlag vibrating
-	if (thing->hitlag > 0)
+	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
 
@@ -5401,7 +5402,11 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->mobj = thing;
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
-	if ((vis->mobj->flags & (MF_ENEMY|MF_BOSS)) && (vis->mobj->flags2 & MF2_FRET) && !(vis->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
+	if (vis->mobj->hitlag > 0 && (vis->mobj->eflags & MFE_DAMAGEHITLAG))
+	{
+		vis->colormap = R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
+	}
+	else if ((vis->mobj->flags & (MF_ENEMY|MF_BOSS)) && (vis->mobj->flags2 & MF2_FRET) && !(vis->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
 	{
 		if (vis->mobj->type == MT_CYBRAKDEMON || vis->mobj->colorized)
 			vis->colormap = R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);

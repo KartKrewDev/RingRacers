@@ -6749,6 +6749,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
+	{"TC_HITLAG",TC_HITLAG},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},

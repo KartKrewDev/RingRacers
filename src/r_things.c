@@ -737,7 +737,11 @@ boolean R_SpriteIsFlashing(vissprite_t *vis)
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 {
-	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+	if (vis->mobj->hitlag > 0 && (vis->mobj->eflags & MFE_DAMAGEHITLAG))
+	{
+		return R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
+	}
+	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
 	{
 		if (vis->mobj->type == MT_CYBRAKDEMON || vis->mobj->colorized)
 			return R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
@@ -1432,7 +1436,7 @@ static void R_ProjectSprite(mobj_t *thing)
 #endif
 
 	// hitlag vibrating
-	if (thing->hitlag > 0)
+	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
 

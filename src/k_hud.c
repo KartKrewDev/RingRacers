@@ -2460,7 +2460,8 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
+			// TODO BETTER HUD
+			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
 		}
 	}
 }
@@ -3742,7 +3743,7 @@ static void K_drawKartFirstPerson(void)
 		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
 
 		// hitlag vibrating
-		if (stplyr->mo->hitlag > 0)
+		if (stplyr->mo->hitlag > 0 && (stplyr->mo->eflags & MFE_DAMAGEHITLAG))
 		{
 			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
 			if (r_splitscreen && mul > FRACUNIT)

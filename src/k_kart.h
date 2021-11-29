@@ -19,6 +19,7 @@ Make sure this matches the actual number of states
 */
 #define KART_NUMINVSPARKLESANIM 12
 
+#define MAXHITLAGTICS 18 //12
 
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
@@ -55,7 +56,8 @@ void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngle(mobj_t *mo);
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics);
+void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
 void K_DoInstashield(player_t *player);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
@@ -103,6 +105,8 @@ void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
 boolean K_SlopeResistance(player_t *player);
+boolean K_TripwirePass(player_t *player);
+void K_ApplyTripWire(player_t *player, tripwirestate_t state);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);

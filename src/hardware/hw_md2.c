@@ -819,7 +819,12 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 	while (size--)
 	{
-		if (skinnum == TC_BOSS)
+		if (skinnum == TC_HITLAG)
+		{
+			cur->s.red = cur->s.green = cur->s.blue = K_HitlagColorValue(*image);
+			cur->s.alpha = image->s.alpha;
+		}
+		else if (skinnum == TC_BOSS)
 		{
 			// Turn everything below a certain threshold white
 			if ((image->s.red == image->s.green) && (image->s.green == image->s.blue) && image->s.blue < 127)
@@ -1367,7 +1372,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		float finalscale;
 
 		// hitlag vibrating
-		if (spr->mobj->hitlag > 0)
+		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
 			fixed_t mul = spr->mobj->hitlag * (FRACUNIT / 10);
 
@@ -1486,7 +1491,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		{
 			INT32 skinnum = TC_DEFAULT;
 
-			if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
+			if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
+			{
+				skinnum = TC_HITLAG;
+			}
+			else if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
 			{
 				if (spr->mobj->type == MT_CYBRAKDEMON || spr->mobj->colorized)
 					skinnum = TC_ALLWHITE;

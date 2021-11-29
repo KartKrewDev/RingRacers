@@ -6889,6 +6889,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				z);
 			mobj->angle = ang;
 
+			if (!P_IsObjectOnGround(mobj->target))
+				mobj->renderflags |= RF_DONTDRAW;
+
 			if (leveltime & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 
@@ -8613,7 +8616,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG);
 
 	tmfloorthing = tmhitthing = NULL;
 

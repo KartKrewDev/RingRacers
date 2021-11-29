@@ -119,6 +119,7 @@ enum
 	TC_RAINBOW,    // For single colour
 	TC_BLINK,      // For item blinking, according to kart
 	TC_DASHMODE,   // For Metal Sonic's dashmode
+	TC_HITLAG,     // Damage hitlag effect
 
 	TC_DEFAULT
 };

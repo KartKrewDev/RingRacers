@@ -200,6 +200,13 @@ typedef enum
 
 typedef enum
 {
+	TRIP_NONE,
+	TRIP_PASSED,
+	TRIP_BLOCKED,
+} tripwirestate_t;
+
+typedef enum
+{
 	// Unsynced, HUD or clientsided effects
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
@@ -390,7 +397,7 @@ typedef struct player_s
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	UINT8 waterskip;		// Water skipping counter
 
-	UINT16 tiregrease;		// Reduced friction timer after hitting a horizontal spring
+	UINT16 tiregrease;		// Reduced friction timer after hitting a spring
 	UINT16 springstars;		// Spawn stars around a player when they hit a spring
 	UINT16 springcolor;		// Color of spring stars
 	UINT8 dashpadcooldown;	// Separate the vanilla SA-style dash pads from using flashing
@@ -456,9 +463,6 @@ typedef struct player_s
 
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
-	fixed_t trickmomx;
-	fixed_t trickmomy;
-	fixed_t trickmomz;
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
@@ -468,9 +472,12 @@ typedef struct player_s
 	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
+	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
+	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 

@@ -41,6 +41,7 @@ enum sfxinfo_read {
 	sfxinfor_singular,
 	sfxinfor_priority,
 	sfxinfor_flags, // "pitch"
+	sfxinfor_volume,
 	sfxinfor_caption,
 	sfxinfor_skinsound
 };
@@ -49,6 +50,7 @@ const char *const sfxinfo_ropt[] = {
 	"singular",
 	"priority",
 	"flags",
+	"volume",
 	"caption",
 	"skinsound",
 	NULL};
@@ -57,12 +59,14 @@ enum sfxinfo_write {
 	sfxinfow_singular = 0,
 	sfxinfow_priority,
 	sfxinfow_flags, // "pitch"
+	sfxinfow_volume,
 	sfxinfow_caption
 };
 const char *const sfxinfo_wopt[] = {
 	"singular",
 	"priority",
 	"flags",
+	"volume",
 	"caption",
 	NULL};
 
@@ -1328,6 +1332,9 @@ static int lib_setSfxInfo(lua_State *L)
 		case sfxinfow_flags:
 			info->pitch = (INT32)luaL_checkinteger(L, 3);
 			break;
+		case sfxinfow_volume:
+			info->volume = (INT32)luaL_checkinteger(L, 3);
+			break;
 		case sfxinfow_caption:
 			strlcpy(info->caption, luaL_checkstring(L, 3), sizeof(info->caption));
 			break;
@@ -1368,6 +1375,9 @@ static int sfxinfo_get(lua_State *L)
 	case sfxinfor_flags:
 		lua_pushinteger(L, sfx->pitch);
 		return 1;
+	case sfxinfor_volume:
+		lua_pushinteger(L, sfx->volume);
+		return 1;
 	case sfxinfor_caption:
 		lua_pushstring(L, sfx->caption);
 		return 1;
@@ -1407,6 +1417,9 @@ static int sfxinfo_set(lua_State *L)
 		break;
 	case sfxinfow_flags:
 		sfx->pitch = luaL_checkinteger(L, 1);
+		break;
+	case sfxinfow_volume:
+		sfx->volume = luaL_checkinteger(L, 1);
 		break;
 	case sfxinfow_caption:
 		strlcpy(sfx->caption, luaL_checkstring(L, 1), sizeof(sfx->caption));
