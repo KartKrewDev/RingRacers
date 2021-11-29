@@ -20,7 +20,6 @@
 #include "r_plane.h"
 #include "p_spec.h"
 #include "r_state.h"
-#include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // for cv_glshearing
 #endif
