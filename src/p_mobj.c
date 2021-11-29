@@ -8616,7 +8616,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	tmfloorthing = tmhitthing = NULL;
 
@@ -8867,6 +8867,11 @@ void P_MobjThinker(mobj_t *mobj)
 		default:
 			break;
 	}
+
+	if (!(mobj->eflags & MFE_SLOPELAUNCHED))
+		K_Squish(mobj);
+
+	mobj->lastmomz = mobj->momz;
 }
 
 // Quick, optimized function for the Rail Rings

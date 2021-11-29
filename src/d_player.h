@@ -487,7 +487,6 @@ typedef struct player_s
 
 	fixed_t speed; // Player's speed (distance formula of MOMX and MOMY values)
 	fixed_t lastspeed;
-	fixed_t lastmomz;
 
 	INT32 deadtimer; // End game if game over lasts too long
 	tic_t exiting; // Exitlevel timer

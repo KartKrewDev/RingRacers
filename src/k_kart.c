@@ -2536,7 +2536,6 @@ void K_KartMoveAnimation(player_t *player)
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
-	player->lastmomz = player->mo->momz;
 }
 
 static void K_TauntVoiceTimers(player_t *player)
@@ -4507,6 +4506,42 @@ void K_DriftDustHandling(mobj_t *spawner)
 			}
 		}
 	}
+}
+
+void K_Squish(mobj_t *mo)
+{
+	const fixed_t maxstretch = 2*FRACUNIT;
+	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t threshold = factor / 6;
+
+	const fixed_t old3dspeed = abs(mo->lastmomz);
+	const fixed_t new3dspeed = abs(mo->momz);
+
+	const fixed_t delta = abs(old3dspeed - new3dspeed);
+
+	if (delta > threshold)
+	{
+		mo->spritexscale =
+			FRACUNIT + FixedDiv(delta, factor);
+
+		if (mo->spritexscale > maxstretch)
+			mo->spritexscale = maxstretch;
+
+		if (abs(new3dspeed) > abs(old3dspeed))
+		{
+			mo->spritexscale =
+				FixedDiv(FRACUNIT, mo->spritexscale);
+		}
+	}
+	else
+	{
+		mo->spritexscale -=
+			(mo->spritexscale - FRACUNIT)
+			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+	}
+
+	mo->spriteyscale =
+		FixedDiv(FRACUNIT, mo->spritexscale);
 }
 
 static mobj_t *K_FindLastTrailMobj(player_t *player)

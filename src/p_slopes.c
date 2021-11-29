@@ -844,6 +844,8 @@ void P_SlopeLaunch(mobj_t *mo)
 		mo->momy = slopemom.y;
 		mo->momz = slopemom.z;
 #endif
+
+		mo->eflags |= MFE_SLOPELAUNCHED;
 	}
 
 	//CONS_Printf("Launched off of slope.\n");
