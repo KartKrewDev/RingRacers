@@ -347,6 +347,7 @@ void G_ReadDemoExtraData(void)
 			players[p].pflags &= ~(PF_KICKSTARTACCEL);
 			if (extradata & 1)
 				players[p].pflags |= PF_KICKSTARTACCEL;
+			//CONS_Printf("weaponpref is %d for player %d\n", extradata, p);
 		}
 
 		p = READUINT8(demo_p);
@@ -505,7 +506,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (ziptic & ZT_LATENCY)
 		oldcmd[playernum].latency = READUINT8(demo_p);
 	if (ziptic & ZT_FLAGS)
-		oldcmd[playernum].latency = READUINT8(demo_p);
+		oldcmd[playernum].flags = READUINT8(demo_p);
 
 	G_CopyTiccmd(cmd, &oldcmd[playernum], 1);
 
@@ -620,7 +621,7 @@ void G_GhostAddHit(INT32 playernum, mobj_t *victim)
 	ghostext[playernum].flags |= EZT_HIT;
 	ghostext[playernum].hits++;
 	ghostext[playernum].hitlist = Z_Realloc(ghostext[playernum].hitlist, ghostext[playernum].hits * sizeof(mobj_t *), PU_LEVEL, NULL);
-	ghostext[playernum].hitlist[ghostext[playernum].hits-1] = victim;
+	P_SetTarget(ghostext[playernum].hitlist + (ghostext[playernum].hits-1), victim);
 }
 
 void G_WriteAllGhostTics(void)
@@ -748,15 +749,15 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].kartitem != ghost->player->kartstuff[k_itemtype] ||
-			ghostext[playernum].kartamount != ghost->player->kartstuff[k_itemamount] ||
-			ghostext[playernum].kartbumpers != ghost->player->kartstuff[k_bumper]
+			ghostext[playernum].kartitem != ghost->player->itemtype ||
+			ghostext[playernum].kartamount != ghost->player->itemamount ||
+			ghostext[playernum].kartbumpers != ghost->player->bumpers
 		))
 	{
 		ghostext[playernum].flags |= EZT_KART;
-		ghostext[playernum].kartitem = ghost->player->kartstuff[k_itemtype];
-		ghostext[playernum].kartamount = ghost->player->kartstuff[k_itemamount];
-		ghostext[playernum].kartbumpers = ghost->player->kartstuff[k_bumper];
+		ghostext[playernum].kartitem = ghost->player->itemtype;
+		ghostext[playernum].kartamount = ghost->player->itemamount;
+		ghostext[playernum].kartbumpers = ghost->player->bumpers;
 	}
 
 	if (ghostext[playernum].flags)
@@ -792,6 +793,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 				WRITEFIXED(demo_p,mo->y);
 				WRITEFIXED(demo_p,mo->z);
 				WRITEANGLE(demo_p,mo->angle);
+				P_SetTarget(ghostext[playernum].hitlist+i, NULL);
 			}
 			Z_Free(ghostext[playernum].hitlist);
 			ghostext[playernum].hits = 0;
@@ -1035,17 +1037,17 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (players[playernum].kartstuff[k_itemtype] != ghostext[playernum].kartitem
-			|| players[playernum].kartstuff[k_itemamount] != ghostext[playernum].kartamount
-			|| players[playernum].kartstuff[k_bumper] != ghostext[playernum].kartbumpers)
+		if (players[playernum].itemtype != ghostext[playernum].kartitem
+			|| players[playernum].itemamount != ghostext[playernum].kartamount
+			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
 			demosynced = false;
 
-			players[playernum].kartstuff[k_itemtype] = ghostext[playernum].kartitem;
-			players[playernum].kartstuff[k_itemamount] = ghostext[playernum].kartamount;
-			players[playernum].kartstuff[k_bumper] = ghostext[playernum].kartbumpers;
+			players[playernum].itemtype = ghostext[playernum].kartitem;
+			players[playernum].itemamount = ghostext[playernum].kartamount;
+			players[playernum].bumpers = ghostext[playernum].kartbumpers;
 		}
 	}
 
@@ -1402,7 +1404,7 @@ void G_StoreRewindInfo(void)
 void G_PreviewRewind(tic_t previewtime)
 {
 	SINT8 i;
-	size_t j;
+	//size_t j;
 	fixed_t tweenvalue = 0;
 	rewindinfo_t *info = rewindhead, *next_info = rewindhead;
 
@@ -1461,8 +1463,9 @@ void G_PreviewRewind(tic_t previewtime)
 		players[i].mo->hitlag = info->playerinfo[i].mobj.hitlag;
 
 		players[i].realtime = info->playerinfo[i].player.realtime;
-		for (j = 0; j < NUMKARTSTUFF; j++)
-			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];
+		// Genuinely CANNOT be fucked. I can redo lua and I can redo netsaves but I draw the line at this abysmal hack.
+		/*for (j = 0; j < NUMKARTSTUFF; j++)
+			players[i].kartstuff[j] = info->playerinfo[i].player.kartstuff[j];*/
 	}
 
 	for (i = splitscreen; i >= 0; i--)
@@ -2655,7 +2658,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT32 randseed;
 	char msg[1024];
 
-	boolean spectator;
+	boolean spectator, kickstart;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
@@ -2924,16 +2927,8 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
-		players[p].pflags &= ~PF_KICKSTARTACCEL;
-		if (p & DEMO_KICKSTART)
+		if ((spectator = (p & DEMO_SPECTATOR)))
 		{
-			players[p].pflags |= PF_KICKSTARTACCEL;
-			p &= ~DEMO_KICKSTART;
-		}
-		spectator = false;
-		if (p & DEMO_SPECTATOR)
-		{
-			spectator = true;
 			p &= ~DEMO_SPECTATOR;
 
 			if (modeattacking)
@@ -2948,6 +2943,10 @@ void G_DoPlayDemo(char *defdemoname)
 				return;
 			}
 		}
+
+		if ((kickstart = (p & DEMO_KICKSTART)))
+			p &= ~DEMO_KICKSTART;
+
 		slots[numslots] = p; numslots++;
 
 		if (modeattacking && numslots > 1)
@@ -2967,6 +2966,10 @@ void G_DoPlayDemo(char *defdemoname)
 
 		playeringame[p] = true;
 		players[p].spectator = spectator;
+		if (kickstart)
+			players[p].pflags |= PF_KICKSTARTACCEL;
+		else
+			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);

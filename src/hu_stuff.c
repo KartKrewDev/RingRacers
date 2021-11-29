@@ -73,6 +73,8 @@
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
+patch_t *tc_font[2][LT_FONTSIZE];	// Special font stuff for titlecard
+
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
@@ -178,7 +180,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	INT32 i;
+	char buffer[9];
+	INT32 i, j;
 
 	if (dedicated)
 		return;
@@ -190,6 +193,27 @@ void HU_LoadGraphics(void)
 
 	emblemicon         = HU_CachePatch("EMBLICON");
 	songcreditbg       = HU_CachePatch("K_SONGCR");
+
+	// Cache titlecard font
+	j = LT_FONTSTART;
+	for (i = 0; i < LT_FONTSIZE; i++, j++)
+	{
+		// cache the titlecard font
+
+		// Bottom layer
+		sprintf(buffer, "GTOL%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			tc_font[0][i] = NULL;
+		else
+			tc_font[0][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+
+		// Top layer
+		sprintf(buffer, "GTFN%.3d", j);
+		if (W_CheckNumForName(buffer) == LUMPERROR)
+			tc_font[1][i] = NULL;
+		else
+			tc_font[1][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	}
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
@@ -704,7 +728,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		}
 		else if (target == -1) // say team
 		{
-			if (players[playernum].ctfteam == 1) 
+			if (players[playernum].ctfteam == 1)
 			{
 				// red text
 				cstart = textcolor = "\x85";
@@ -2353,11 +2377,11 @@ static void HU_DrawRankings(void)
 			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
 				continue;
 
-			if (players[i].kartstuff[k_position] >= lowestposition)
+			if (players[i].position >= lowestposition)
 				continue;
 
 			tab[scorelines].num = i;
-			lowestposition = players[i].kartstuff[k_position];
+			lowestposition = players[i].position;
 		}
 
 		i = tab[scorelines].num;
@@ -2374,7 +2398,7 @@ static void HU_DrawRankings(void)
 				tab[scorelines].count = players[i].realtime;
 		}
 		else
-			tab[scorelines].count = players[i].marescore;
+			tab[scorelines].count = players[i].roundscore;
 
 		scorelines++;
 

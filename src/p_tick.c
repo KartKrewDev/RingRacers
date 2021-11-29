@@ -36,6 +36,11 @@
 
 tic_t leveltime;
 
+INT32 P_AltFlip(INT32 n, tic_t tics)
+{
+	return leveltime % (2 * tics) < tics ? n : -(n);
+}
+
 //
 // THINKERS
 // All thinkers should be allocated by Z_Calloc
@@ -355,7 +360,7 @@ static void P_DoAutobalanceTeams(void)
 	INT32 i=0;
 	INT32 red=0, blue=0;
 	INT32 redarray[MAXPLAYERS], bluearray[MAXPLAYERS];
-	INT32 redflagcarrier = 0, blueflagcarrier = 0;
+	//INT32 redflagcarrier = 0, blueflagcarrier = 0;
 	INT32 totalred = 0, totalblue = 0;
 
 	NetPacket.value.l = NetPacket.value.b = 0;
@@ -375,29 +380,29 @@ static void P_DoAutobalanceTeams(void)
 		{
 			if (players[i].ctfteam == 1)
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					redarray[red] = i; //store the player's node.
 					red++;
 				}
-				else
-					redflagcarrier++;
+				/*else
+					redflagcarrier++;*/
 			}
 			else
 			{
-				if (!players[i].gotflag)
+				//if (!players[i].gotflag)
 				{
 					bluearray[blue] = i; //store the player's node.
 					blue++;
 				}
-				else
-					blueflagcarrier++;
+				/*else
+					blueflagcarrier++;*/
 			}
 		}
 	}
 
-	totalred = red + redflagcarrier;
-	totalblue = blue + blueflagcarrier;
+	totalred = red;// + redflagcarrier;
+	totalblue = blue;// + blueflagcarrier;
 
 	if ((abs(totalred - totalblue) > max(1, (totalred + totalblue) / 8)))
 	{
@@ -603,13 +608,19 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
+		// Plays the music after the starting countdown.
+		if (leveltime == (starttime + (TICRATE/2)))
+		{
+			S_ChangeMusic(mapmusname, mapmusflags, true);
+			S_ShowMusicCredit();
+		}
+
 		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
 	// Run shield positioning
-	P_RunShields();
 	P_RunOverlays();
 
 	P_UpdateSpecials();
@@ -772,7 +783,6 @@ void P_PreTicker(INT32 frames)
 		LUAh_ThinkFrame();
 
 		// Run shield positioning
-		P_RunShields();
 		P_RunOverlays();
 
 		P_UpdateSpecials();

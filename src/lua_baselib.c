@@ -170,7 +170,6 @@ static const struct {
 	{META_PLAYER,       "player_t"},
 	{META_TICCMD,       "ticcmd_t"},
 	{META_SKIN,         "skin_t"},
-	{META_POWERS,       "player_t.powers"},
 	{META_SOUNDSID,     "skin_t.soundsid"},
 	{META_SKINSPRITES,  "skin_t.sprites"},
 	{META_SKINSPRITESLIST,  "skin_t.sprites[]"},
@@ -1245,17 +1244,6 @@ static int lib_pRestoreMusic(lua_State *L)
 	return 1;
 }
 
-static int lib_pSpawnShieldOrb(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SpawnShieldOrb(player);
-	return 0;
-}
-
 static int lib_pSpawnGhostMobj(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1288,17 +1276,6 @@ static int lib_pGivePlayerLives(lua_State *L)
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_GivePlayerLives(player, numlives);
-	return 0;
-}
-
-static int lib_pResetScore(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_ResetScore(player);
 	return 0;
 }
 
@@ -1373,18 +1350,6 @@ static int lib_pNukeEnemies(lua_State *L)
 	if (!inflictor || !source)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_NukeEnemies(inflictor, source, radius);
-	return 0;
-}
-
-static int lib_pSwitchShield(lua_State *L)
-{
-	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	UINT16 shield = luaL_checkinteger(L, 2);
-	NOHUD
-	INLEVEL
-	if (!player)
-		return LUA_ErrInvalid(L, "player_t");
-	P_SwitchShield(player, shield);
 	return 0;
 }
 
@@ -2130,6 +2095,16 @@ static int lib_rPointToAngle(lua_State *L)
 	fixed_t y = luaL_checkfixed(L, 2);
 	//HUDSAFE
 	lua_pushangle(L, R_PointToAngle(x, y));
+	return 1;
+}
+
+static int lib_rPointToAnglePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	fixed_t x = luaL_checkfixed(L, 2);
+	fixed_t y = luaL_checkfixed(L, 3);
+	//HUDSAFE
+	lua_pushangle(L, R_PointToAnglePlayer(player, x, y));
 	return 1;
 }
 
@@ -3416,14 +3391,12 @@ static int lib_kKartBouncing(lua_State *L)
 {
 	mobj_t *mobj1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	mobj_t *mobj2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	boolean bounce = lua_optboolean(L, 3);
-	boolean solid = lua_optboolean(L, 4);
 	NOHUD
 	if (!mobj1)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!mobj2)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_KartBouncing(mobj1, mobj2, bounce, solid);
+	K_KartBouncing(mobj1, mobj2);
 	return 0;
 }
 
@@ -3847,18 +3820,15 @@ static luaL_Reg lib[] = {
 	{"P_PlayJingle",lib_pPlayJingle},
 	{"P_PlayJingleMusic",lib_pPlayJingleMusic},
 	{"P_RestoreMusic",lib_pRestoreMusic},
-	{"P_SpawnShieldOrb",lib_pSpawnShieldOrb},
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
-	{"P_ResetScore",lib_pResetScore},
 	{"P_MovePlayer",lib_pMovePlayer},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
-	{"P_SwitchShield",lib_pSwitchShield},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
@@ -3914,6 +3884,7 @@ static luaL_Reg lib[] = {
 
 	// r_defs
 	{"R_PointToAngle",lib_rPointToAngle},
+	{"R_PointToAnglePlayer", lib_rPointToAnglePlayer},
 	{"R_PointToAngle2",lib_rPointToAngle2},
 	{"R_PointToDist",lib_rPointToDist},
 	{"R_PointToDist2",lib_rPointToDist2},

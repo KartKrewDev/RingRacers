@@ -659,9 +659,7 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
-#ifndef ZDEBUG
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
-#endif
 
 	return ( numlevelflats++ );
 }
@@ -758,7 +756,7 @@ void P_ReloadRings(void)
 		else if (mt->type >= 600 && mt->type <= 609) // Item patterns
 		{
 			mt->mobj = NULL;
-			P_SpawnItemPattern(mt, true);
+			P_SpawnItemPattern(mt);
 		}
 	}
 	for (i = 0; i < numHoops; i++)
@@ -867,7 +865,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 		mt->mobj = NULL;
 
 		if (mt->type >= 600 && mt->type <= 609) // item patterns
-			P_SpawnItemPattern(mt, false);
+			P_SpawnItemPattern(mt);
 		else if (mt->type == 1705 || mt->type == 1713) // hoops
 			P_SpawnHoop(mt);
 		else // Everything else
@@ -1045,6 +1043,8 @@ static void P_InitializeLinedef(line_t *ld)
 
 	ld->validcount = 0;
 	ld->polyobj = NULL;
+
+	ld->tripwire = false;
 
 	ld->text = NULL;
 	ld->callcount = 0;
@@ -1277,7 +1277,6 @@ static void P_LoadSidedefs(UINT8 *data)
 			case 335: // Trigger linedef executor: Object dye - Each time
 			case 336: // Trigger linedef executor: Object dye - Once
 			case 425: // Calls P_SetMobjState on calling mobj
-			case 434: // Custom Power
 			case 442: // Calls P_SetMobjState on mobjs of a given type in the tagged sectors
 			case 461: // Spawns an object on the map based on texture offsets
 			case 463: // Colorizes an object
@@ -1939,10 +1938,22 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
+
+	const INT32 TEX_TRIPWIRE = R_TextureNumForName("TRIPWIRE");
+	const INT32 TEX_4RIPWIRE = R_TextureNumForName("4RIPWIRE");
+
 	for (; i--; ld++)
 	{
+		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
+
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
+
+		if (midtexture == TEX_TRIPWIRE ||
+				midtexture == TEX_4RIPWIRE)
+		{
+			ld->tripwire = true;
+		}
 
 		switch (ld->special)
 		{
@@ -3449,42 +3460,13 @@ static void P_InitLevelSettings(void)
 			p++;
 
 		if (grandprixinfo.gp == false)
-		{
 			players[i].lives = 3;
-			players[i].xtralife = 0;
-			players[i].totalring = 0;
-		}
 
-		players[i].realtime = racecountdown = exitcountdown = 0;
-		curlap = bestlap = 0; // SRB2Kart
-
-		players[i].lostlife = false;
-		players[i].gotcontinue = false;
-
-		players[i].deadtimer = players[i].numboxes = players[i].laps = 0;
-		players[i].aiming = 0;
-		players[i].pflags &= ~PF_GAMETYPEOVER;
+		G_PlayerReborn(i, true);
 	}
 
 	racecountdown = exitcountdown = exitfadestarted = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		G_PlayerReborn(i, true);
-
-		// obliteration station...
-		players[i].numboxes = players[i].totalring =\
-		 players[i].laps = players[i].marescore = players[i].lastmarescore =\
-		 players[i].mare = players[i].exiting = 0;
-
-		players[i].drillmeter = 40*20;
-
-		// hit these too
-		players[i].pflags &= ~(PF_GAMETYPEOVER);
-
-		// Wipe follower from existence to avoid crashes
-		players[i].follower = NULL;
-	}
+	curlap = bestlap = 0; // SRB2Kart
 
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
@@ -3759,10 +3741,10 @@ static void P_InitCamera(void)
 	{
 		UINT8 i;
 
-		for (i = 0; i <= splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			P_SetupCamera(i, &camera[i]);
-			displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			//displayplayers[i] = g_localplayers[i]; // Start with your OWN view, please!
+			P_SetupCamera(displayplayers[i], &camera[i]);
 		}
 	}
 }
@@ -4011,8 +3993,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
-	if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;
+	/*if (!titlemapinaction)
+		wipegamestate = GS_LEVEL;*/
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);
@@ -4044,7 +4026,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (!fromnetsave && savedata.lives > 0)
 	{
 		numgameovers = savedata.numgameovers;
-		players[consoleplayer].continues = savedata.continues;
 		players[consoleplayer].lives = savedata.lives;
 		players[consoleplayer].score = savedata.score;
 		emeralds = savedata.emeralds;

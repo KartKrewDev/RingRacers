@@ -420,7 +420,7 @@ typedef struct
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 
 // This could support more, but is that a good idea?
-// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
 #define MAXLEVELLIST 5
 
 typedef struct cupheader_s
@@ -465,7 +465,7 @@ enum GameTypeRules
 	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
 	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
 	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
-	GTR_WANTED				= 1<<6,  // Enables the wanted anti-camping system
+	GTR_WANTED				= 1<<6,  // unused
 	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
 	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
 	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
@@ -655,8 +655,6 @@ extern UINT8 useBlackRock;
 
 extern UINT8 use1upSound;
 extern UINT8 maxXtraLife; // Max extra lives from rings
-extern UINT8 useContinues;
-#define continuesInSession (!multiplayer && (ultimatemode || (useContinues && !marathonmode) || (!modeattacking && !(cursaveslot > 0))))
 
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 

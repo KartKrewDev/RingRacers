@@ -178,7 +178,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushboolean(L, modeattacking);
 		return 1;
 	} else if (fastcmp(word,"splitscreen")) {
-		lua_pushboolean(L, splitscreen);
+		lua_pushinteger(L, splitscreen);
 		return 1;
 	} else if (fastcmp(word,"gamecomplete")) {
 		lua_pushboolean(L, (gamecomplete != 0));
@@ -945,8 +945,7 @@ void LUA_InvalidatePlayer(player_t *player)
 	if (!gL)
 		return;
 	LUA_InvalidateUserdata(player);
-	LUA_InvalidateUserdata(player->powers);
-	LUA_InvalidateUserdata(player->kartstuff);
+	LUA_InvalidateUserdata(player->karthud);
 	LUA_InvalidateUserdata(&player->cmd);
 }
 

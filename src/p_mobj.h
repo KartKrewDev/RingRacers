@@ -247,6 +247,8 @@ typedef enum
 	MFE_TRACERANGLE       = 1<<11,
 	// SRB2Kart: The mobj just hit & bounced off a wall, this is cleared on next frame
 	MFE_JUSTBOUNCEDWALL   = 1<<12,
+	// SRB2Kart: In damage hitlag (displays different visual efx)
+	MFE_DAMAGEHITLAG      = 1<<13,
 	// free: to and including 1<<15
 } mobjeflag_t;
 
@@ -487,7 +489,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 
 mobj_t *P_SpawnMapThing(mapthing_t *mthing);
 void P_SpawnHoop(mapthing_t *mthing);
-void P_SpawnItemPattern(mapthing_t *mthing, boolean bonustime);
+void P_SpawnItemPattern(mapthing_t *mthing);
 void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle);
 void P_SpawnPrecipitation(void);
 void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, statenum_t nstate, angle_t rotangle, boolean spawncenter);

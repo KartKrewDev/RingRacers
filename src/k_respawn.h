@@ -17,9 +17,9 @@
 
 #define RESPAWN_DIST 1024
 #define RESPAWN_TIME 48
-#define RESPAWNST_NONE 0
-#define RESPAWNST_MOVE 1
-#define RESPAWNST_DROP 2
+#define RESPAWNST_NONE 0x00
+#define RESPAWNST_MOVE 0x01
+#define RESPAWNST_DROP 0x02
 
 /*--------------------------------------------------
 	fixed_t K_RespawnOffset(player_t *player, boolean flip);

@@ -113,7 +113,7 @@ static void K_RespawnAtWaypoint(player_t *player, waypoint_t *waypoint)
 
 void K_DoFault(player_t *player)
 {
-	player->powers[pw_nocontrol] = (starttime - leveltime) + 50;
+	player->nocontrol = (starttime - leveltime) + 50;
 	if (!(player->pflags & PF_FAULT))
 	{
 		S_StartSound(player->mo, sfx_s3k83);
@@ -149,15 +149,18 @@ void K_DoIngameRespawn(player_t *player)
 	if (leveltime < starttime)
 		K_DoFault(player);
 
-	player->kartstuff[k_ringboost] = 0;
-	player->kartstuff[k_driftboost] = 0;
+	player->ringboost = 0;
+	player->driftboost = player->strongdriftboost = 0;
 	
 	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
 	if (player->tumbleBounces > 0)
 	{
-		player->tumbleBounces = TUMBLEBOUNCES-1; // Max # of bounces-1 (so you still tumble once)
-		player->tumbleLastBounce = false; // Still force them to bounce at least once for the funny
-		players->tumbleHeight = 20; // force tumble height
+		player->tumbleBounces = 0; // MAXBOUNCES-1;
+		player->pflags &= ~PF_TUMBLELASTBOUNCE;
+		//players->tumbleHeight = 20;
+		players->mo->rollangle = 0;
+		player->spinouttype = KSPIN_WIPEOUT;
+		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
 	}
 
 	P_ResetPlayer(player);
@@ -273,6 +276,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->respawn.timer = RESPAWN_TIME;
 	player->respawn.state = RESPAWNST_MOVE;
+
+	player->respawn.airtimer = player->airtime;
 }
 
 /*--------------------------------------------------
@@ -315,8 +320,9 @@ size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 --------------------------------------------------*/
 static void K_MovePlayerToRespawnPoint(player_t *player)
 {
-	const fixed_t realstepamt = (64 * mapobjectscale);
-	fixed_t stepamt = realstepamt;
+	const int airCompensation = 128;
+	fixed_t realstepamt = (64 * mapobjectscale);
+	fixed_t stepamt;
 
 	vector3_t dest, step, laser;
 	angle_t stepha, stepva;
@@ -327,10 +333,17 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	waypoint_t *laserwp;
 	boolean laserflip;
 
+	/* speed up if in the air for a long time */
+	realstepamt += FixedMul(realstepamt,
+			(player->respawn.airtimer * FRACUNIT)
+			/ airCompensation);
+
+	stepamt = realstepamt;
+
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
-	player->powers[pw_flashing] = 2;
-	player->powers[pw_nocontrol] = max(2, player->powers[pw_nocontrol]);
+	player->flashing = 2;
+	player->nocontrol = max(2, player->nocontrol);
 
 	if (leveltime % 8 == 0 && !mapreset)
 	{
@@ -589,7 +602,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 --------------------------------------------------*/
 static void K_DropDashWait(player_t *player)
 {
-	if (player->powers[pw_nocontrol] == 0)
+	if (player->nocontrol == 0)
 		player->respawn.timer--;
 
 	if (leveltime % 8 == 0)
@@ -656,7 +669,7 @@ static void K_HandleDropDash(player_t *player)
 {
 	const UINT16 buttons = K_GetKartButtons(player);
 
-	if (player->kartstuff[k_growshrinktimer] < 0)
+	if (player->growshrinktimer < 0)
 	{
 		player->mo->scalespeed = mapobjectscale/TICRATE;
 		player->mo->destscale = (6*mapobjectscale)/8;
@@ -674,12 +687,12 @@ static void K_HandleDropDash(player_t *player)
 			return;
 		}
 
-		player->powers[pw_flashing] = K_GetKartFlashing(player);
+		player->flashing = K_GetKartFlashing(player);
 
 		// The old behavior was stupid and prone to accidental usage.
 		// Let's rip off Mania instead, and turn this into a Drop Dash!
 
-		if ((buttons & BT_ACCELERATE) && !player->kartstuff[k_spinouttimer]) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
+		if ((buttons & BT_ACCELERATE) && !player->spinouttimer) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
 		{
 			player->respawn.dropdash++;
 		}
@@ -707,7 +720,7 @@ static void K_HandleDropDash(player_t *player)
 		if ((buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
 		{
 			S_StartSound(player->mo, sfx_s23c);
-			player->kartstuff[k_startboost] = 50;
+			player->startboost = 50;
 			K_SpawnDashDustRelease(player);
 		}
 

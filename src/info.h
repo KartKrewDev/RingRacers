@@ -40,18 +40,13 @@ enum actionnum
 	A_FACETRACER,
 	A_SCREAM,
 	A_BOSSDEATH,
-	A_CUSTOMPOWER,
 	A_RINGBOX,
-	A_INVINCIBILITY,
-	A_SUPERSNEAKERS,
 	A_BUNNYHOP,
 	A_BUBBLESPAWN,
 	A_FANBUBBLESPAWN,
 	A_BUBBLERISE,
 	A_BUBBLECHECK,
 	A_AWARDSCORE,
-	A_GIVESHIELD,
-	A_GRAVITYBOX,
 	A_SCORERISE,
 	A_ATTRACTCHASE,
 	A_DROPMINE,
@@ -292,6 +287,7 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
+	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -311,18 +307,13 @@ void A_FaceTarget();
 void A_FaceTracer();
 void A_Scream();
 void A_BossDeath();
-void A_CustomPower(); // Use this for a custom power
 void A_RingBox(); // Obtained Ring Box Tails
-void A_Invincibility(); // Obtained Invincibility Box
-void A_SuperSneakers(); // Obtained Super Sneakers Box
 void A_BunnyHop(); // have bunny hop tails
 void A_BubbleSpawn(); // Randomly spawn bubbles
 void A_FanBubbleSpawn();
 void A_BubbleRise(); // Bubbles float to surface
 void A_BubbleCheck(); // Don't draw if not underwater
 void A_AwardScore();
-void A_GiveShield(); // Obtained Shield
-void A_GravityBox();
 void A_ScoreRise(); // Rise the score logo
 void A_AttractChase(); // Ring Chase
 void A_DropMine(); // Drop Mine from Skim or Jetty-Syn Bomber
@@ -567,6 +558,7 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
+void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1088,11 +1080,15 @@ typedef enum sprite
 	SPR_KINB, // Darker invincibility sparkle trail
 	SPR_KINF, // Invincibility flash
 	SPR_INVI, // Invincibility speedlines
+	SPR_ICAP, // Item capsules
 
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
 	SPR_DRWS, // Drift dust sparks
+	SPR_DREL, // Drift electricity
+	SPR_DRES, // Drift electric sparks
+	SPR_JANK, // Stair janking sparks
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -1274,6 +1270,7 @@ typedef enum sprite
 	SPR_FWRK,
 	SPR_MXCL,
 	SPR_RGSP,
+	SPR_LENS,
 	SPR_DRAF,
 	SPR_GRES,
 
@@ -1296,6 +1293,8 @@ typedef enum sprite
 
 	SPR_SDDS, // Spindash dust
 	SPR_SDWN, // Spindash wind
+
+	SPR_TRCK,
 
 	SPR_FLBM, // Finish line beam
 
@@ -4462,6 +4461,15 @@ typedef enum state
 
 	S_ITEMICON,
 
+	// Item capsules
+	S_ITEMCAPSULE,
+	S_ITEMCAPSULE_TOP_SIDE,
+	S_ITEMCAPSULE_BOTTOM_SIDE_AIR,
+	S_ITEMCAPSULE_BOTTOM_SIDE_GROUND,
+	S_ITEMCAPSULE_TOP,
+	S_ITEMCAPSULE_BOTTOM,
+	S_ITEMCAPSULE_INSIDE,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -4499,6 +4507,10 @@ typedef enum state
 	S_DRIFTWARNSPARK2,
 	S_DRIFTWARNSPARK3,
 	S_DRIFTWARNSPARK4,
+
+	// Drift electricity
+	S_DRIFTELECTRICITY,
+	S_DRIFTELECTRICSPARK,
 
 	// Fast lines
 	S_FASTLINE1,
@@ -5577,6 +5589,11 @@ typedef enum state
 	S_RINGSPARKS14,
 	S_RINGSPARKS15,
 
+	S_GAINAX_TINY,
+	S_GAINAX_HUGE,
+	S_GAINAX_MID1,
+	S_GAINAX_MID2,
+
 	S_DRAFTDUST1,
 	S_DRAFTDUST2,
 	S_DRAFTDUST3,
@@ -5641,6 +5658,11 @@ typedef enum state
 	S_DEBTSPIKEC,
 	S_DEBTSPIKED,
 	S_DEBTSPIKEE,
+
+	S_JANKSPARK1,
+	S_JANKSPARK2,
+	S_JANKSPARK3,
+	S_JANKSPARK4,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
@@ -6444,6 +6466,8 @@ typedef enum mobj_type
 	MT_RANDOMITEM,
 	MT_RANDOMITEMPOP,
 	MT_FLOATINGITEM,
+	MT_ITEMCAPSULE,
+	MT_ITEMCAPSULE_PART,
 
 	MT_SIGNSPARKLE,
 
@@ -6462,6 +6486,9 @@ typedef enum mobj_type
 	MT_DRIFTSPARK,
 	MT_BRAKEDRIFT,
 	MT_DRIFTDUST,
+	MT_DRIFTELECTRICITY,
+	MT_DRIFTELECTRICSPARK,
+	MT_JANKSPARK,
 
 	MT_ROCKETSNEAKER,
 
@@ -6721,6 +6748,7 @@ typedef enum mobj_type
 
 	MT_KARMAFIREWORK,
 	MT_RINGSPARKS,
+	MT_GAINAX,
 	MT_DRAFTDUST,
 	MT_SPBDUST,
 	MT_TIREGREASE,

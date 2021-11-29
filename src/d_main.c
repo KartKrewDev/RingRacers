@@ -615,16 +615,6 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			// Funny.
-			if (WipeStageTitle && st_overlay)
-			{
-				lt_ticker--;
-				lt_lasttic = lt_ticker;
-				ST_preLevelTitleCardDrawer();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-				F_WipeStartScreen();
-			}
-
 			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
@@ -1057,15 +1047,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
 
-#if 0
-	// TODO: pk3 doesn't support music replacement IIRC
-	// music barely benefits from the compression anyway
-	// would be nice for the folders, though
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"sounds.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"music.pk3"));
-
-#else
-
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
 #define MUSICTEST(str) \
@@ -1078,12 +1059,11 @@ static void IdentifyVersion(void)
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
 
-	MUSICTEST("sounds.wad")
+	MUSICTEST("sounds.pk3")
 	MUSICTEST("music.pk3")
 
 #undef MUSICTEST
 
-#endif
 #endif
 }
 
