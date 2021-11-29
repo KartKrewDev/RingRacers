@@ -308,9 +308,9 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
-			extradata = READUINT8(demo_p);
+			i = READUINT8(demo_p);
 
-			switch (extradata) {
+			switch (i) {
 			case DXD_PST_PLAYING:
 				players[p].pflags |= PF_WANTSTOJOIN; // fuck you
 				//CONS_Printf("player %s is despectating on tic %d\n", player_names[p], leveltime);
@@ -350,11 +350,11 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_WEAPONPREF)
 		{
-			extradata = READUINT8(demo_p);
+			i = READUINT8(demo_p);
 			players[p].pflags &= ~(PF_KICKSTARTACCEL);
-			if (extradata & 1)
+			if (i & 1)
 				players[p].pflags |= PF_KICKSTARTACCEL;
-			//CONS_Printf("weaponpref is %d for player %d\n", extradata, p);
+			//CONS_Printf("weaponpref is %d for player %d\n", i, p);
 		}
 
 		p = READUINT8(demo_p);
@@ -500,6 +500,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (!demo_p || !demo.deferstart)
 		return;
+
 	ziptic = READUINT8(demo_p);
 
 	if (ziptic & ZT_FWD)
@@ -537,7 +538,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (cmd->forwardmove != oldcmd[playernum].forwardmove)
 	{
-		WRITEUINT8(demo_p,cmd->forwardmove);
+		WRITESINT8(demo_p,cmd->forwardmove);
 		oldcmd[playernum].forwardmove = cmd->forwardmove;
 		ziptic |= ZT_FWD;
 	}
