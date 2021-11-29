@@ -3210,10 +3210,18 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	player->mo->momx = 2 * player->mo->momx / 3;
-	player->mo->momy = 2 * player->mo->momy / 3;
+	if (player->tripWireState == TRIP_PASSED)
+	{
+		player->tumbleHeight = 50;
+	}
+	else
+	{
+		player->mo->momx = 2 * player->mo->momx / 3;
+		player->mo->momy = 2 * player->mo->momy / 3;
 
-	player->tumbleHeight = 30;
+		player->tumbleHeight = 30;
+	}
+
 	player->pflags &= ~PF_TUMBLESOUND;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
@@ -3322,6 +3330,12 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 
 	player->tripWireState = state;
 	K_AddHitLag(player->mo, 10, false);
+
+	if (state == TRIP_PASSED && player->spinouttimer &&
+			player->speed > 2* K_GetKartSpeed(player, false))
+	{
+		K_TumblePlayer(player, NULL, NULL);
+	}
 }
 
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
