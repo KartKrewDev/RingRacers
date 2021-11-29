@@ -3624,10 +3624,6 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
-	fixed_t thingxpos = thing->x + thing->sprxoff;
-	fixed_t thingypos = thing->y + thing->spryoff;
-	fixed_t thingzpos = thing->z + thing->sprzoff;
-
 	patch_t *gpatch;
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
@@ -3644,7 +3640,19 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t slopez;
 	pslope_t *groundslope;
 
-	// hitlag vibrating
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1 && !paused)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+	}
+
+	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
 		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
@@ -3654,14 +3662,19 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 			mul = -mul;
 		}
 
-		thingxpos += FixedMul(thing->momx, mul);
-		thingypos += FixedMul(thing->momy, mul);
-		thingzpos += FixedMul(thing->momz, mul);
+		interpx += FixedMul(thing->momx, mul);
+		interpy += FixedMul(thing->momy, mul);
+		interpz += FixedMul(thing->momz, mul);
 	}
+
+	// sprite offset
+	interpx += thing->sprxoff;
+	interpy += thing->spryoff;
+	interpz += thing->sprzoff;
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
-	floordiff = abs((flip < 0 ? thing->height : 0) + thingzpos - groundz);
+	floordiff = abs((flip < 0 ? thing->height : 0) + interpz - groundz);
 
 	alpha = floordiff / (4*FRACUNIT) + 75;
 	if (alpha >= 255) return;
@@ -3675,8 +3688,8 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
 
 	fscale = FIXED_TO_FLOAT(scalemul);
-	fx = FIXED_TO_FLOAT(thingxpos);
-	fy = FIXED_TO_FLOAT(thingypos);
+	fx = FIXED_TO_FLOAT(interpx);
+	fy = FIXED_TO_FLOAT(interpy);
 
 	//  3--2
 	//  | /|
@@ -5067,9 +5080,9 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	dispoffset = thing->info->dispoffset;
 
-	interpx = thing->x + thing->sprxoff;
-	interpy = thing->y + thing->spryoff;
-	interpz = thing->z + thing->sprzoff;
+	interpx = thing->x;
+	interpy = thing->y;
+	interpz = thing->z;
 	interpangle = mobjangle;
 
 	if (cv_frameinterpolation.value == 1 && !paused)
@@ -5094,6 +5107,11 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		interpy += FixedMul(thing->momy, mul);
 		interpz += FixedMul(thing->momz, mul);
 	}
+
+	// sprite offset
+	interpx += thing->sprxoff;
+	interpy += thing->spryoff;
+	interpz += thing->sprzoff;
 
 	this_scale = FIXED_TO_FLOAT(thing->scale);
 	spritexscale = FIXED_TO_FLOAT(thing->spritexscale);

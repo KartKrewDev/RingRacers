@@ -1363,10 +1363,6 @@ static void R_ProjectSprite(mobj_t *thing)
 {
 	mobj_t *oldthing = thing;
 
-	//const fixed_t oldthingxpos = oldthing->x + oldthing->sprxoff;
-	//const fixed_t oldthingypos = oldthing->y + oldthing->spryoff;
-	//const fixed_t oldthingzpos = oldthing->z + oldthing->sprzoff;
-
 	fixed_t tr_x, tr_y;
 	fixed_t tx, tz;
 	fixed_t xscale, yscale; //added : 02-02-98 : aaargll..if I were a math-guy!!!
@@ -1432,9 +1428,9 @@ static void R_ProjectSprite(mobj_t *thing)
 #endif
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x + thing->sprxoff;
-	fixed_t interpy = thing->y + thing->spryoff;
-	fixed_t interpz = thing->z + thing->sprzoff;
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
 	angle_t interpangle = thing->angle;
 
 	// use player drawangle if player
@@ -1470,6 +1466,11 @@ static void R_ProjectSprite(mobj_t *thing)
 		interpy += FixedMul(thing->momy, mul);
 		interpz += FixedMul(thing->momz, mul);
 	}
+
+	// sprite offset
+	interpx += thing->sprxoff;
+	interpy += thing->spryoff;
+	interpz += thing->sprzoff;
 
 	// transform the origin point
 	tr_x = interpx - viewx;
@@ -1781,6 +1782,26 @@ static void R_ProjectSprite(mobj_t *thing)
 			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
 			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
 		}
+
+		// hitlag vibrating (todo: interp somehow?)
+		if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
+		{
+			fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			interpx += FixedMul(thing->momx, mul);
+			interpy += FixedMul(thing->momy, mul);
+			interpz += FixedMul(thing->momz, mul);
+		}
+
+		// sprite offset
+		interpx += thing->sprxoff;
+		interpy += thing->spryoff;
+		interpz += thing->sprzoff;
 
 		if (! R_ThingVisible(thing))
 			return;
