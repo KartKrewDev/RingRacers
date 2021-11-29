@@ -1938,13 +1938,19 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
+
+	const INT32 TEX_TRIPWIRE = R_TextureNumForName("TRIPWIRE");
+	const INT32 TEX_4RIPWIRE = R_TextureNumForName("4RIPWIRE");
+
 	for (; i--; ld++)
 	{
+		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
+
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
 
-		if (sides[ld->sidenum[0]].midtexture ==
-				R_TextureNumForName("TRIPWIRE"))
+		if (midtexture == TEX_TRIPWIRE ||
+				midtexture == TEX_4RIPWIRE)
 		{
 			ld->tripwire = true;
 		}
