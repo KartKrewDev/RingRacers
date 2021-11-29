@@ -206,11 +206,14 @@ static void add_spechit(line_t *ld)
 	numspechit++;
 }
 
-static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
+static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	switch (ldspecial)
+	if (P_IsLineTripWire(ld))
+		return true;
+
+	switch (ld->special)
 	{
 		case 2001: // Finish line
 		case 2003: // Respawn line
@@ -1671,8 +1674,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmdropoffz = lowfloor;
 
 	// we've crossed the line
-	if (P_SpecialIsLinedefCrossType(ld->special) ||
-			P_IsLineTripWire(ld))
+	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
 	}
@@ -2666,10 +2668,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			oldside = P_PointOnLineSide(oldx, oldy, ld);
 			if (side != oldside)
 			{
-				if (ld->special)
-				{
-					P_CrossSpecialLine(ld, oldside, thing);
-				}
+				P_CrossSpecialLine(ld, oldside, thing);
 			}
 		}
 	}
@@ -2751,7 +2750,7 @@ static boolean PTR_GetSpecialLines(intercept_t *in)
 		return true;
 	}
 
-	if (P_SpecialIsLinedefCrossType(ld->special))
+	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
 	}
@@ -2821,10 +2820,7 @@ void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_
 		oldside = P_PointOnLineSide(x, y, ld);
 		if (side != oldside)
 		{
-			if (ld->special)
-			{
-				P_CrossSpecialLine(ld, oldside, thing);
-			}
+			P_CrossSpecialLine(ld, oldside, thing);
 		}
 	}
 }
