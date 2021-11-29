@@ -2775,6 +2775,15 @@ void P_PlayerZMovement(mobj_t *mo)
 				P_CheckMarioBlocks(mo);
 
 			mo->momz = 0;
+			P_CheckGravity(mo, true);
+
+			if (abs(mo->momz) < 15 * mapobjectscale)
+			{
+				mo->momz = 15 * mapobjectscale
+					* -(P_MobjFlip(mo));
+			}
+
+			K_SpawnBumpEffect(mo);
 		}
 	}
 }

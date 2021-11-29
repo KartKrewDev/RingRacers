@@ -2077,6 +2077,18 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
 
+void K_SpawnBumpEffect(mobj_t *mo)
+{
+	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+	if (mo->eflags & MFE_VERTICALFLIP)
+		fx->eflags |= MFE_VERTICALFLIP;
+	else
+		fx->eflags &= ~MFE_VERTICALFLIP;
+	fx->scale = mo->scale;
+
+	S_StartSound(mo, sfx_s3k49);
+}
+
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));

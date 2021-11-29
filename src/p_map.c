@@ -3695,14 +3695,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	}
 	else
 	{
-		mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
-		if (mo->eflags & MFE_VERTICALFLIP)
-			fx->eflags |= MFE_VERTICALFLIP;
-		else
-			fx->eflags &= ~MFE_VERTICALFLIP;
-		fx->scale = mo->scale;
-
-		S_StartSound(mo, sfx_s3k49);
+		K_SpawnBumpEffect(mo);
 	}
 
 	P_PlayerHitBounceLine(bestslideline);

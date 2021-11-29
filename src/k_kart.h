@@ -51,6 +51,7 @@ void K_SpawnDriftBoostClip(player_t *player);
 void K_SpawnDriftBoostClipSpark(mobj_t *clip);
 void K_SpawnNormalSpeedLines(player_t *player);
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
+void K_SpawnBumpEffect(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
