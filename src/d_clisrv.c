@@ -2390,6 +2390,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 
 	// remove avatar of player
 	playeringame[playernum] = false;
+	demo_extradata[playernum] |= DXD_PLAYSTATE;
 	playernode[playernum] = UINT8_MAX;
 	while (!playeringame[doomcom->numslots-1] && doomcom->numslots > 1)
 		doomcom->numslots--;
