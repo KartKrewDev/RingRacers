@@ -1478,7 +1478,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
 					if (transtable == NUMTRANSMAPS)
 						transtable = 0;
-					if (gl_linedef->special == 910)
+					if (gl_linedef->special == 910 ||
+							P_IsLineTripWire(gl_linedef))
 						blend = AST_ADD;
 					else if (gl_linedef->special == 911)
 						blend = AST_SUBTRACT;

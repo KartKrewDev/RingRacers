@@ -2673,6 +2673,19 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
+boolean K_TripwirePass(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->growshrinktimer > 0 ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
@@ -3197,10 +3210,18 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	player->mo->momx = 2 * player->mo->momx / 3;
-	player->mo->momy = 2 * player->mo->momy / 3;
+	if (player->tripWireState == TRIP_PASSED)
+	{
+		player->tumbleHeight = 50;
+	}
+	else
+	{
+		player->mo->momx = 2 * player->mo->momx / 3;
+		player->mo->momy = 2 * player->mo->momy / 3;
 
-	player->tumbleHeight = 30;
+		player->tumbleHeight = 30;
+	}
+
 	player->pflags &= ~PF_TUMBLESOUND;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
@@ -3297,6 +3318,23 @@ static void K_HandleTumbleSound(player_t *player)
 	{
 		S_StartSound(player->mo, sfx_s3k51);
 		player->pflags |= PF_TUMBLESOUND;
+	}
+}
+
+void K_ApplyTripWire(player_t *player, tripwirestate_t state)
+{
+	if (state == TRIP_PASSED)
+		S_StartSound(player->mo, sfx_ssa015);
+	else if (state == TRIP_BLOCKED)
+		S_StartSound(player->mo, sfx_kc40);
+
+	player->tripWireState = state;
+	K_AddHitLag(player->mo, 10, false);
+
+	if (state == TRIP_PASSED && player->spinouttimer &&
+			player->speed > 2* K_GetKartSpeed(player, false))
+	{
+		K_TumblePlayer(player, NULL, NULL);
 	}
 }
 
@@ -6983,6 +7021,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
+
+	if (player->tripWireState != TRIP_NONE)
+	{
+		if (player->tripWireState == TRIP_PASSED)
+			S_StartSound(player->mo, sfx_cdfm63);
+		else if (player->tripWireState == TRIP_BLOCKED)
+			S_StartSound(player->mo, sfx_kc4c);
+
+		player->tripWireState = TRIP_NONE;
+	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)
