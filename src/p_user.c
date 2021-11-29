@@ -2115,6 +2115,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2123,6 +2126,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 
@@ -2132,6 +2138,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2140,6 +2149,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 
