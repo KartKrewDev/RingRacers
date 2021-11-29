@@ -81,6 +81,7 @@ mobj_t *r_viewmobj;
 int r_splitscreen;
 
 fixed_t rendertimefrac;
+fixed_t renderdeltatics;
 
 //
 // precalculated math tables
