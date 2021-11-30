@@ -1138,6 +1138,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 		ghost2->flags2 |= (mobj->player->followmobj->flags2 & MF2_LINKDRAW);
 	}
 
+	// Copy interpolation data :)
+	ghost->old_x = mobj->old_x;
+	ghost->old_y = mobj->old_y;
+	ghost->old_z = mobj->old_z;
+
 	return ghost;
 }
 
@@ -2115,6 +2120,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2123,6 +2131,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 
@@ -2132,6 +2143,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2140,6 +2154,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 

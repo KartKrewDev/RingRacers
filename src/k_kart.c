@@ -3754,7 +3754,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	{
 		// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 		// This should set it for FOFs
-		P_TeleportMove(th, th->x, th->y, th->z);
+		P_SetOrigin(th, th->x, th->y, th->z);
 		// spawn on the ground if the player is on the ground
 		if (P_MobjFlip(source) < 0)
 		{
@@ -4717,7 +4717,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			{
 				// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 				// This should set it for FOFs
-				P_TeleportMove(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
+				P_SetOrigin(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
 				if (P_MobjWasRemoved(mo))
 					return NULL;
 
@@ -5347,7 +5347,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		{
 			// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 			// This should set it for FOFs
-			//P_TeleportMove(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
+			//P_SetOrigin(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
 
 			if (flip == 1)
 			{
@@ -5873,7 +5873,7 @@ static void K_MoveHeldObjects(player_t *player)
 						z = player->mo->z + player->mo->height - cur->height;
 
 					cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
-					P_TeleportMove(cur, player->mo->x, player->mo->y, z);
+					P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
 					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -5986,7 +5986,7 @@ static void K_MoveHeldObjects(player_t *player)
 					P_SetObjectMomZ(cur, FixedMul(targz - cur->z, 7*FRACUNIT/8) - gravity, false);
 
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
-						P_TeleportMove(cur, targx, targy, cur->z);
+						P_MoveOrigin(cur, targx, targy, cur->z);
 
 					if (P_IsObjectOnGround(cur))
 					{
@@ -6076,12 +6076,12 @@ static void K_MoveHeldObjects(player_t *player)
 						diffy = targy - cur->y;
 						diffz = targz - cur->z;
 
-						P_TeleportMove(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
+						P_MoveOrigin(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
 							cur->tracer->y + diffy + P_ReturnThrustY(cur, cur->angle + angoffset, 6*cur->scale), cur->tracer->z + diffz);
 						P_SetScale(cur->tracer, (cur->tracer->destscale = 3*cur->scale/4));
 					}
 
-					P_TeleportMove(cur, targx, targy, targz);
+					P_MoveOrigin(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
 
 					cur->roll = player->mo->roll;
@@ -8480,7 +8480,12 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		flame->frame = i|FF_FULLBRIGHT;
 
 		if (player->trickpanel <= 1 && !player->tumbleBounces)
+		{
 			flame->tics = 2;
+			flame->momx = player->mo->momx;
+			flame->momy = player->mo->momy;
+			flame->momz = player->mo->momz;
+		}
 		else
 		{
 			flame->tics = TICRATE;
