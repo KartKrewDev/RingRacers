@@ -4593,6 +4593,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RINGSPARKS14",
 	"S_RINGSPARKS15",
 
+	"S_GAINAX_TINY",
+	"S_GAINAX_HUGE",
+	"S_GAINAX_MID1",
+	"S_GAINAX_MID2",
+
 	"S_DRAFTDUST1",
 	"S_DRAFTDUST2",
 	"S_DRAFTDUST3",
@@ -5730,6 +5735,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
+	"MT_GAINAX",
 	"MT_DRAFTDUST",
 	"MT_SPBDUST",
 	"MT_TIREGREASE",
@@ -5852,7 +5858,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"WPNDOWN", // reserved - gonna turn this into lookback when i'm done with all the major reengineering
+	"LOOKDOWN",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
@@ -6839,6 +6845,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
+	{"TC_HITLAG",TC_HITLAG},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},

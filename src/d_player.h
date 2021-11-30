@@ -62,7 +62,7 @@ typedef enum
 	PF_ATTACKDOWN = 1,
 	PF_ACCELDOWN  = 1<<1,
 	PF_BRAKEDOWN  = 1<<2,
-	PF_WPNDOWN    = 1<<3, // reserved - gonna turn this into lookback when i'm done with all the major reengineering
+	PF_LOOKDOWN   = 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -200,6 +200,13 @@ typedef enum
 
 typedef enum
 {
+	TRIP_NONE,
+	TRIP_PASSED,
+	TRIP_BLOCKED,
+} tripwirestate_t;
+
+typedef enum
+{
 	// Unsynced, HUD or clientsided effects
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
@@ -263,6 +270,7 @@ typedef struct respawnvars_s
 	fixed_t pointz;
 	boolean flip; // Flip upside down or not
 	tic_t timer; // Time left on respawn animation once you're there
+	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
 } respawnvars_t;
@@ -375,7 +383,7 @@ typedef struct player_s
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
-	UINT16 tumbleHeight;
+	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
@@ -389,7 +397,7 @@ typedef struct player_s
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	UINT8 waterskip;		// Water skipping counter
 
-	UINT16 tiregrease;		// Reduced friction timer after hitting a horizontal spring
+	UINT16 tiregrease;		// Reduced friction timer after hitting a spring
 	UINT16 springstars;		// Spawn stars around a player when they hit a spring
 	UINT16 springcolor;		// Color of spring stars
 	UINT8 dashpadcooldown;	// Separate the vanilla SA-style dash pads from using flashing
@@ -455,9 +463,6 @@ typedef struct player_s
 
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
-	fixed_t trickmomx;
-	fixed_t trickmomy;
-	fixed_t trickmomz;
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
@@ -467,9 +472,12 @@ typedef struct player_s
 	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
+	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
+
+	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 

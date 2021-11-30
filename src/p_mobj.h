@@ -247,6 +247,10 @@ typedef enum
 	MFE_TRACERANGLE       = 1<<11,
 	// SRB2Kart: The mobj just hit & bounced off a wall, this is cleared on next frame
 	MFE_JUSTBOUNCEDWALL   = 1<<12,
+	// SRB2Kart: In damage hitlag (displays different visual efx)
+	MFE_DAMAGEHITLAG      = 1<<13,
+	// Slope physics sent you airborne
+	MFE_SLOPELAUNCHED     = 1<<14,
 	// free: to and including 1<<15
 } mobjeflag_t;
 
@@ -273,6 +277,7 @@ typedef struct mobj_s
 
 	// Info for drawing: position.
 	fixed_t x, y, z;
+	fixed_t old_x, old_y, old_z; // position interpolation
 
 	// More list: links in sector (if needed)
 	struct mobj_s *snext;
@@ -358,6 +363,7 @@ typedef struct mobj_s
 
 	fixed_t friction;
 	fixed_t movefactor;
+	fixed_t lastmomz;
 
 	INT32 fuse; // Does something in P_MobjThinker on reaching 0.
 	fixed_t watertop; // top of the water FOF the mobj is in
@@ -410,6 +416,7 @@ typedef struct precipmobj_s
 
 	// Info for drawing: position.
 	fixed_t x, y, z;
+	fixed_t old_x, old_y, old_z; // position interpolation
 
 	// More list: links in sector (if needed)
 	struct precipmobj_s *snext;
