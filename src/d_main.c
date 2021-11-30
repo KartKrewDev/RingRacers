@@ -813,7 +813,7 @@ void D_SRB2Loop(void)
 		}
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
-#if 0
+#if 1
 			// Lagless camera! Yay!
 			if (gamestate == GS_LEVEL && netgame)
 			{
