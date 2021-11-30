@@ -8480,7 +8480,12 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		flame->frame = i|FF_FULLBRIGHT;
 
 		if (player->trickpanel <= 1 && !player->tumbleBounces)
+		{
 			flame->tics = 2;
+			flame->momx = player->mo->momx;
+			flame->momy = player->mo->momy;
+			flame->momz = player->mo->momz;
+		}
 		else
 		{
 			flame->tics = TICRATE;
