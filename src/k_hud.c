@@ -761,8 +761,13 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 		if (lt_exitticker < length)
 		{
-			INT32 offset = screenwidth - ((lt_exitticker * screenwidth) / length);
 			boolean slidefromright = false;
+
+			const INT32 offsetAmount = (screenwidth * FRACUNIT) / length;
+			fixed_t offset = (screenwidth * FRACUNIT) - (lt_exitticker * offsetAmount);
+
+			offset += FixedMul(offsetAmount, renderdeltatics);
+			offset /= FRACUNIT;
 
 			if (r_splitscreen > 1)
 			{
