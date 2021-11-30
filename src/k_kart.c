@@ -4510,7 +4510,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 void K_Squish(mobj_t *mo)
 {
-	const fixed_t maxstretch = 2*FRACUNIT;
+	const fixed_t maxstretch = 4*FRACUNIT;
 	const fixed_t factor = 3 * mo->height / 2;
 	const fixed_t threshold = factor / 6;
 
