@@ -3511,6 +3511,16 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 	}
 }
 
+static void P_SquishThink(mobj_t *mobj)
+{
+	if (!(mobj->eflags & MFE_SLOPELAUNCHED))
+	{
+		K_Squish(mobj);
+	}
+
+	mobj->lastmomz = mobj->momz;
+}
+
 static void P_PlayerMobjThinker(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
@@ -3575,6 +3585,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	{
 		mobj->eflags &= ~MFE_JUSTHITFLOOR;
 	}
+
+	P_SquishThink(mobj);
 
 animonly:
 	P_CyclePlayerMobjState(mobj);
@@ -8626,7 +8638,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	tmfloorthing = tmhitthing = NULL;
 
@@ -8814,6 +8826,8 @@ void P_MobjThinker(mobj_t *mobj)
 		//if (mobj->standingslope) CONS_Printf("slope physics on mobj\n");
 		P_ButteredSlope(mobj);
 	}
+
+	P_SquishThink(mobj);
 
 	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
 		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
