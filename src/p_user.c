@@ -1058,6 +1058,9 @@ boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
+	if (demo.playback)
+		return P_IsDisplayPlayer(player);
+
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[g_localplayers[i]])
@@ -4369,6 +4372,7 @@ void P_PlayerThink(player_t *player)
 		player->flashing = TICRATE/2 + 1;
 		/*if (P_SpectatorJoinGame(player))
 			return; // player->mo was removed.*/
+		//CONS_Printf("player %s wants to join on tic %d\n", player_names[player-players], leveltime);
 	}
 
 	if (player->respawn.state != RESPAWNST_NONE)
