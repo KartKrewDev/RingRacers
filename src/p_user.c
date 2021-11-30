@@ -1138,6 +1138,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 		ghost2->flags2 |= (mobj->player->followmobj->flags2 & MF2_LINKDRAW);
 	}
 
+	// Copy interpolation data :)
+	ghost->old_x = mobj->old_x;
+	ghost->old_y = mobj->old_y;
+	ghost->old_z = mobj->old_z;
+
 	return ghost;
 }
 
