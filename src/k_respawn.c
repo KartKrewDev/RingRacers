@@ -155,9 +155,12 @@ void K_DoIngameRespawn(player_t *player)
 	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
 	if (player->tumbleBounces > 0)
 	{
-		player->tumbleBounces = TUMBLEBOUNCES-1; // Max # of bounces-1 (so you still tumble once)
-		player->pflags &= ~PF_TUMBLELASTBOUNCE; // Still force them to bounce at least once for the funny
-		players->tumbleHeight = 20; // force tumble height
+		player->tumbleBounces = 0; // MAXBOUNCES-1;
+		player->pflags &= ~PF_TUMBLELASTBOUNCE;
+		//players->tumbleHeight = 20;
+		players->mo->rollangle = 0;
+		player->spinouttype = KSPIN_WIPEOUT;
+		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
 	}
 
 	P_ResetPlayer(player);
@@ -273,6 +276,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->respawn.timer = RESPAWN_TIME;
 	player->respawn.state = RESPAWNST_MOVE;
+
+	player->respawn.airtimer = player->airtime;
 }
 
 /*--------------------------------------------------
@@ -315,8 +320,9 @@ size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint)
 --------------------------------------------------*/
 static void K_MovePlayerToRespawnPoint(player_t *player)
 {
-	const fixed_t realstepamt = (64 * mapobjectscale);
-	fixed_t stepamt = realstepamt;
+	const int airCompensation = 128;
+	fixed_t realstepamt = (64 * mapobjectscale);
+	fixed_t stepamt;
 
 	vector3_t dest, step, laser;
 	angle_t stepha, stepva;
@@ -326,6 +332,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	UINT32 laserdist;
 	waypoint_t *laserwp;
 	boolean laserflip;
+
+	/* speed up if in the air for a long time */
+	realstepamt += FixedMul(realstepamt,
+			(player->respawn.airtimer * FRACUNIT)
+			/ airCompensation);
+
+	stepamt = realstepamt;
 
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 

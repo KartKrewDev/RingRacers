@@ -467,6 +467,7 @@ void P_ResetPlayer(player_t *player)
 
 	//player->drift = player->driftcharge = 0;
 	player->trickpanel = 0;
+	player->glanceDir = 0;
 }
 
 //
@@ -1057,6 +1058,9 @@ boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
+	if (demo.playback)
+		return P_IsDisplayPlayer(player);
+
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[g_localplayers[i]])
@@ -1136,6 +1140,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 		P_SetTarget(&ghost->tracer, ghost2);
 		ghost2->flags2 |= (mobj->player->followmobj->flags2 & MF2_LINKDRAW);
 	}
+
+	// Copy interpolation data :)
+	ghost->old_x = mobj->old_x;
+	ghost->old_y = mobj->old_y;
+	ghost->old_z = mobj->old_z;
 
 	return ghost;
 }
@@ -2003,6 +2012,8 @@ void P_MovePlayer(player_t *player)
 		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
+		player->glanceDir = 0;
+		player->pflags &= ~PF_LOOKDOWN;
 	}
 	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
@@ -2021,17 +2032,6 @@ void P_MovePlayer(player_t *player)
 
 		player->mo->rollangle = 0;
 	}
-	/*else if (player->pflags & PF_FAULT) -- v1 fault
-	{
-		P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-		if (((player->nocontrol + 5) % 20) < 10)
-			player->drawangle += ANGLE_11hh;
-		else
-			player->drawangle -= ANGLE_11hh;
-
-		player->mo->rollangle = 0;
-	}*/
 	else
 	{
 		K_KartMoveAnimation(player);
@@ -2123,6 +2123,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2131,6 +2134,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 
@@ -2140,6 +2146,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
 
@@ -2148,6 +2157,9 @@ void P_MovePlayer(player_t *player)
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
 			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
+			water->momx = player->mo->momx;
+			water->momy = player->mo->momy;
+			water->momz = player->mo->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
 
@@ -2973,6 +2985,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 		else
 			lookbackdelay[num]--;
+	}
+	else if (player->respawn.state != RESPAWNST_NONE)
+	{
+		camspeed = 3*FRACUNIT/4;
 	}
 	lookbackdown = (lookbackdelay[num] == MAXLOOKBACKDELAY) != lookbackactive[num];
 	lookbackactive[num] = (lookbackdelay[num] == MAXLOOKBACKDELAY);
@@ -4098,6 +4114,12 @@ DoABarrelRoll (player_t *player)
 
 	fixed_t smoothing;
 
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		player->tilt = 0;
+		return;
+	}
+
 	if (player->exiting)
 	{
 		return;
@@ -4350,6 +4372,7 @@ void P_PlayerThink(player_t *player)
 		player->flashing = TICRATE/2 + 1;
 		/*if (P_SpectatorJoinGame(player))
 			return; // player->mo was removed.*/
+		//CONS_Printf("player %s wants to join on tic %d\n", player_names[player-players], leveltime);
 	}
 
 	if (player->respawn.state != RESPAWNST_NONE)
@@ -4405,6 +4428,8 @@ void P_PlayerThink(player_t *player)
 		player->pflags |= PF_BRAKEDOWN;
 	else
 		player->pflags &= ~PF_BRAKEDOWN;
+
+	// PF_LOOKDOWN handled in K_KartMoveAnimation
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings

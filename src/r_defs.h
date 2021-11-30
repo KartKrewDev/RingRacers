@@ -420,6 +420,8 @@ typedef struct line_s
 	size_t validcount; // if == validcount, already checked
 	polyobj_t *polyobj; // Belongs to a polyobject?
 
+	boolean tripwire;
+
 	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
 } line_t;

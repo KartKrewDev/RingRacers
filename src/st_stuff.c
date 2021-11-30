@@ -1260,6 +1260,7 @@ void ST_Drawer(void)
 		if (rendermode != render_none) ST_doPaletteStuff();
 
 	{
+#if 0
 		const tic_t length = TICRATE/2;
 
 		if (lt_exitticker)
@@ -1270,6 +1271,9 @@ void ST_Drawer(void)
 		}
 		else
 			st_translucency = 0;
+#else
+		st_translucency = cv_translucenthud.value;
+#endif
 	}
 
 	// Check for a valid level title
