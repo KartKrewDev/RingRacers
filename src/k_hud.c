@@ -3959,33 +3959,63 @@ static void K_drawChallengerScreen(void)
 static void K_drawLapStartAnim(void)
 {
 	// This is an EVEN MORE insanely complicated animation.
-	const UINT8 progress = 80-stplyr->karthud[khud_lapanimation];
+	const UINT8 t = stplyr->karthud[khud_lapanimation];
+	const UINT8 progress = 80 - t;
+
+	const UINT8 tOld = t - 1;
+	const UINT8 progressOld = 80 - tOld;
+
+	const tic_t leveltimeOld = leveltime - 1;
+
 	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
 
-	V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
-		(48 - (32*max(0, progress-76)))*FRACUNIT,
+	fixed_t interpx, interpy, newval, oldval;
+
+	newval = (BASEVIDWIDTH/2 + (32 * max(0, t - 76))) * FRACUNIT;
+	oldval = (BASEVIDWIDTH/2 + (32 * max(0, tOld - 76))) * FRACUNIT;
+	interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+	newval = (48 - (32 * max(0, progress - 76))) * FRACUNIT;
+	oldval = (48 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+	interpy = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+	V_DrawFixedPatch(
+		interpx, interpy,
 		FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 		(modeattacking ? kp_lapanim_emblem[1] : kp_lapanim_emblem[0]), colormap);
 
 	if (stplyr->karthud[khud_laphand] >= 1 && stplyr->karthud[khud_laphand] <= 3)
 	{
-		V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
-			(48 - (32*max(0, progress-76))
-				+ 4 - abs((signed)((leveltime % 8) - 4)))*FRACUNIT,
+		newval = (4 - abs((signed)((leveltime % 8) - 4))) * FRACUNIT;
+		oldval = (4 - abs((signed)((leveltimeOld % 8) - 4))) * FRACUNIT;
+		interpy += oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, interpy,
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
 	if (stplyr->laps == (UINT8)(cv_numlaps.value))
 	{
-		V_DrawFixedPatch((62 - (32*max(0, progress-76)))*FRACUNIT, // 27
+		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
+		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, // 27
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_final[min(progress/2, 10)], NULL);
 
 		if (progress/2-12 >= 0)
 		{
-			V_DrawFixedPatch((188 + (32*max(0, progress-76)))*FRACUNIT, // 194
+			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+			V_DrawFixedPatch(
+				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 				kp_lapanim_lap[min(progress/2-12, 6)], NULL);
@@ -3993,21 +4023,36 @@ static void K_drawLapStartAnim(void)
 	}
 	else
 	{
-		V_DrawFixedPatch((82 - (32*max(0, progress-76)))*FRACUNIT, // 61
+		newval = (82 - (32 * max(0, progress - 76))) * FRACUNIT;
+		oldval = (82 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, // 61
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_lap[min(progress/2, 6)], NULL);
 
 		if (progress/2-8 >= 0)
 		{
-			V_DrawFixedPatch((188 + (32*max(0, progress-76)))*FRACUNIT, // 194
+			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+			V_DrawFixedPatch(
+				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 				kp_lapanim_number[(((UINT32)stplyr->laps) / 10)][min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
 			{
-				V_DrawFixedPatch((208 + (32*max(0, progress-76)))*FRACUNIT, // 221
+				newval = (208 + (32 * max(0, progress - 76))) * FRACUNIT;
+				oldval = (208 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+				interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+				V_DrawFixedPatch(
+					interpx, // 221
 					30*FRACUNIT, // 24
 					FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 					kp_lapanim_number[(((UINT32)stplyr->laps) % 10)][min(progress/2-10, 2)], NULL);
