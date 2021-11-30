@@ -3046,6 +3046,7 @@ static void K_drawKartMinimap(void)
 	SINT8 numlocalplayers = 0;
 	INT32 hyu = hyudorotime;
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
+	fixed_t interpx, interpy;
 
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
@@ -3140,7 +3141,17 @@ static void K_drawKartMinimap(void)
 			}
 			else
 				colormap = NULL;
-			K_drawKartMinimapIcon(g->mo->x, g->mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+
+			interpx = g->mo->x;
+			interpy = g->mo->y;
+
+			if (cv_frameinterpolation.value == 1 && !paused)
+			{
+				interpx = g->mo->old_x + FixedMul(rendertimefrac, g->mo->x - g->mo->old_x);
+				interpy = g->mo->old_y + FixedMul(rendertimefrac, g->mo->y - g->mo->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			g = g->next;
 		}
 
@@ -3196,11 +3207,22 @@ static void K_drawKartMinimap(void)
 			else
 				colormap = NULL;
 
-			K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+			interpx = players[i].mo->x;
+			interpy = players[i].mo->y;
+
+			if (cv_frameinterpolation.value == 1 && !paused)
+			{
+				interpx = players[i].mo->old_x + FixedMul(rendertimefrac, players[i].mo->x - players[i].mo->old_x);
+				interpy = players[i].mo->old_y + FixedMul(rendertimefrac, players[i].mo->y - players[i].mo->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			// Target reticule
 			if ((gametype == GT_RACE && players[i].position == spbplace)
-			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
-				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
+			{
+				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+			}
 		}
 	}
 
@@ -3220,7 +3242,16 @@ static void K_drawKartMinimap(void)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
 			}
 
-			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
+			interpx = mobj->x;
+			interpy = mobj->y;
+
+			if (cv_frameinterpolation.value == 1 && !paused)
+			{
+				interpx = mobj->old_x + FixedMul(rendertimefrac, mobj->x - mobj->old_x);
+				interpy = mobj->old_y + FixedMul(rendertimefrac, mobj->y - mobj->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
 		}
 	}
 
@@ -3248,12 +3279,23 @@ static void K_drawKartMinimap(void)
 		else
 			colormap = NULL;
 
-		K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+		interpx = players[localplayers[i]].mo->x;
+		interpy = players[localplayers[i]].mo->y;
+
+		if (cv_frameinterpolation.value == 1 && !paused)
+		{
+			interpx = players[localplayers[i]].mo->old_x + FixedMul(rendertimefrac, players[localplayers[i]].mo->x - players[localplayers[i]].mo->old_x);
+			interpy = players[localplayers[i]].mo->old_y + FixedMul(rendertimefrac, players[localplayers[i]].mo->y - players[localplayers[i]].mo->old_y);
+		}
+
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
 		// Target reticule
 		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
-		|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
-			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
+		{
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+		}
 	}
 }
 
