@@ -4973,7 +4973,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT))
+			&& !(players[i].pflags & PF_ITEMOUT)))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
