@@ -774,7 +774,7 @@ void D_SRB2Loop(void)
 		// process tics (but maybe not if realtic == 0)
 		TryRunTics(realtics);
 
-		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
+		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause() || hu_stopped))
 		{
 			fixed_t entertimefrac = I_GetTimeFrac();
 			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
