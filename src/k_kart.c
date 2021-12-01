@@ -52,7 +52,7 @@ void K_TimerReset(void)
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;
+	UINT8 numPlayers = 0;//, numspec = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -63,6 +63,7 @@ void K_TimerInit(void)
 
 		if (players[i].spectator == true)
 		{
+			//numspec++;
 			continue;
 		}
 
@@ -98,6 +99,7 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -2075,6 +2077,18 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	P_SetMobjState(fast, S_KARTINVLINES1);
 	if (mo->player->invincibilitytimer < 10*TICRATE)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
+}
+
+void K_SpawnBumpEffect(mobj_t *mo)
+{
+	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+	if (mo->eflags & MFE_VERTICALFLIP)
+		fx->eflags |= MFE_VERTICALFLIP;
+	else
+		fx->eflags &= ~MFE_VERTICALFLIP;
+	fx->scale = mo->scale;
+
+	S_StartSound(mo, sfx_s3k49);
 }
 
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
@@ -4508,6 +4522,42 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 }
 
+void K_Squish(mobj_t *mo)
+{
+	const fixed_t maxstretch = 4*FRACUNIT;
+	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t threshold = factor / 6;
+
+	const fixed_t old3dspeed = abs(mo->lastmomz);
+	const fixed_t new3dspeed = abs(mo->momz);
+
+	const fixed_t delta = abs(old3dspeed - new3dspeed);
+
+	if (delta > threshold)
+	{
+		mo->spritexscale =
+			FRACUNIT + FixedDiv(delta, factor);
+
+		if (mo->spritexscale > maxstretch)
+			mo->spritexscale = maxstretch;
+
+		if (abs(new3dspeed) > abs(old3dspeed))
+		{
+			mo->spritexscale =
+				FixedDiv(FRACUNIT, mo->spritexscale);
+		}
+	}
+	else
+	{
+		mo->spritexscale -=
+			(mo->spritexscale - FRACUNIT)
+			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+	}
+
+	mo->spriteyscale =
+		FixedDiv(FRACUNIT, mo->spritexscale);
+}
+
 static mobj_t *K_FindLastTrailMobj(player_t *player)
 {
 	mobj_t *trail;
@@ -4923,8 +4973,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT)
-			&& !players[i].karthud[khud_itemblink]))
+			&& !(players[i].pflags & PF_ITEMOUT))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -6393,6 +6442,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
 
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
+	{
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
+	}
+
 	if (gametype == GT_RACE)
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
@@ -6909,13 +6964,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
 			K_HandleTumbleBounce(player);
-	}
-
-	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
-	{
-		player->karthud[khud_itemblinkmode] = 0;
-		player->karthud[khud_itemblink] = 0;
 	}
 
 	K_KartPlayerHUDUpdate(player);
@@ -9440,6 +9488,7 @@ void K_CheckSpectateStatus(void)
 	{
 		if (cv_ingamecap.value && numingame+i >= cv_ingamecap.value) // Hit the in-game player cap while adding people?
 			break;
+		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
 	}
 

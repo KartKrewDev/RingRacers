@@ -1058,6 +1058,9 @@ boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
+	if (demo.playback)
+		return P_IsDisplayPlayer(player);
+
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[g_localplayers[i]])
@@ -3864,13 +3867,12 @@ static void P_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-
 	switch (player->followercolor)
 	{
-		case MAXSKINCOLORS: // "Match"
+		case 255: // "Match" (-1)
 			color = player->skincolor;
 			break;
-		case MAXSKINCOLORS+1: // "Opposite"
+		case 254: // "Opposite" (-2)
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
@@ -3931,9 +3933,10 @@ static void P_HandleFollower(player_t *player)
 			P_SetFollowerState(player->follower, player->follower->state->nextstate);
 
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
-		player->follower->momx = (sx - player->follower->x)/fl.horzlag;
-		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
-		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
+		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
+		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
+		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
+		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
 		if (player->mo->colorized)
@@ -4369,6 +4372,7 @@ void P_PlayerThink(player_t *player)
 		player->flashing = TICRATE/2 + 1;
 		/*if (P_SpectatorJoinGame(player))
 			return; // player->mo was removed.*/
+		//CONS_Printf("player %s wants to join on tic %d\n", player_names[player-players], leveltime);
 	}
 
 	if (player->respawn.state != RESPAWNST_NONE)

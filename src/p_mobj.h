@@ -249,6 +249,8 @@ typedef enum
 	MFE_JUSTBOUNCEDWALL   = 1<<12,
 	// SRB2Kart: In damage hitlag (displays different visual efx)
 	MFE_DAMAGEHITLAG      = 1<<13,
+	// Slope physics sent you airborne
+	MFE_SLOPELAUNCHED     = 1<<14,
 	// free: to and including 1<<15
 } mobjeflag_t;
 
@@ -361,6 +363,7 @@ typedef struct mobj_s
 
 	fixed_t friction;
 	fixed_t movefactor;
+	fixed_t lastmomz;
 
 	INT32 fuse; // Does something in P_MobjThinker on reaching 0.
 	fixed_t watertop; // top of the water FOF the mobj is in
