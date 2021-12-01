@@ -135,7 +135,7 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 			newview = &pview_new[i];
 			break;
 		case VIEWCONTEXT_SKY1:
-		case VIEWCONTEXT_SKY2:;
+		case VIEWCONTEXT_SKY2:
 		case VIEWCONTEXT_SKY3:
 		case VIEWCONTEXT_SKY4:
 			i = viewcontext - VIEWCONTEXT_SKY1;
