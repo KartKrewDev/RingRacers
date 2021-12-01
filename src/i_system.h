@@ -56,7 +56,7 @@ precise_t I_GetPreciseTime(void);
 
 /**	\brief	Returns the difference between precise times as microseconds.
   */
-int I_PreciseToMicros(precise_t);
+int I_PreciseToMicros(precise_t d);
 
 /**	\brief	The I_Sleep function
 
