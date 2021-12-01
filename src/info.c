@@ -4068,13 +4068,13 @@ state_t states[NUMSTATES] =
 
 	{SPR_NULL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMICON
 
-	{SPR_ICAP,                         FF_ADD|0, -1, {A_SpawnItemCapsuleParts}, 0, 0, S_NULL}, // S_ITEMCAPSULE
+	{SPR_ICAP,                         FF_ADD|0, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE
 	{SPR_ICAP,                 FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP_SIDE
 	{SPR_ICAP, FF_VERTICALFLIP|FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM_SIDE_AIR
 	{SPR_ICAP,                 FF_PAPERSPRITE|2, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM_SIDE_GROUND
-	{SPR_ICAP,                 FF_FLOORSPRITE|3, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP
-	{SPR_ICAP,                 FF_FLOORSPRITE|4, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM
-	{SPR_ICAP,                 FF_FLOORSPRITE|5, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_INSIDE
+	//{SPR_ICAP,                 FF_FLOORSPRITE|3, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP
+	//{SPR_ICAP,                 FF_FLOORSPRITE|4, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM
+	//{SPR_ICAP,                 FF_FLOORSPRITE|5, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_INSIDE
 
 	{SPR_SGNS, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_SIGNSPARK2}, // S_SIGNSPARK1
 	{SPR_SGNS, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_SIGNSPARK3}, // S_SIGNSPARK2
@@ -23094,7 +23094,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_RUNSPAWNFUNC|MF_DONTENCOREMAP, // flags
+		MF_SLIDEME|MF_SPECIAL|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
