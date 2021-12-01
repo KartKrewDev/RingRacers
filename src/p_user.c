@@ -1145,6 +1145,9 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_x = mobj->old_x;
 	ghost->old_y = mobj->old_y;
 	ghost->old_z = mobj->old_z;
+	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle : mobj->old_angle);
+	ghost->old_pitch = mobj->old_pitch;
+	ghost->old_roll = mobj->old_roll;
 
 	return ghost;
 }
@@ -2848,6 +2851,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	subsector_t *newsubsec;
 #endif
 
+	thiscam->old_x = thiscam->x;
+	thiscam->old_y = thiscam->y;
+	thiscam->old_z = thiscam->z;
+	thiscam->old_angle = thiscam->angle;
+	thiscam->old_aiming = thiscam->aiming;
+
 	democam.soundmobj = NULL;	// reset this each frame, we don't want the game crashing for stupid reasons now do we
 
 	// We probably shouldn't move the camera if there is no player or player mobj somehow
@@ -4160,6 +4169,9 @@ void P_PlayerThink(player_t *player)
 	ticcmd_t *cmd;
 	const size_t playeri = (size_t)(player - players);
 
+	player->old_drawangle = player->drawangle;
+	player->old_viewrollangle = player->viewrollangle;
+
 #ifdef PARANOIA
 	if (!player->mo)
 		I_Error("p_playerthink: players[%s].mo == NULL", sizeu1(playeri));
@@ -4170,11 +4182,6 @@ void P_PlayerThink(player_t *player)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
-	}
-
-	if (player->mo->hitlag > 0)
-	{
-		return;
 	}
 
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
@@ -4191,6 +4198,11 @@ void P_PlayerThink(player_t *player)
 
 	if (player->awayviewtics && player->awayviewtics != -1)
 		player->awayviewtics--;
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo))
