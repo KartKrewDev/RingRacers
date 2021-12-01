@@ -4973,8 +4973,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT)
-			&& !players[i].karthud[khud_itemblink]))
+			&& !(players[i].pflags & PF_ITEMOUT))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -6443,6 +6442,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
 
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
+	{
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
+	}
+
 	if (gametype == GT_RACE)
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
@@ -6959,13 +6964,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
 			K_HandleTumbleBounce(player);
-	}
-
-	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
-	{
-		player->karthud[khud_itemblinkmode] = 0;
-		player->karthud[khud_itemblink] = 0;
 	}
 
 	K_KartPlayerHUDUpdate(player);

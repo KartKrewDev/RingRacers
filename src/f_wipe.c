@@ -299,16 +299,23 @@ static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean r
 					e = e_base + relativepos;
 					draw_rowstogo = draw_rowend - draw_rowstart;
 
-					while (draw_rowstogo--)
+					if (fadecolormap)
 					{
-						if (fadecolormap != NULL)
+						if (reverse)
+							s = e;
+						while (draw_rowstogo--)
+							*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
+					}
+					else while (draw_rowstogo--)
+					{
+						/*if (fadecolormap != NULL)
 						{
 							if (reverse)
 								*w++ = fadecolormap[ ( m << 8 ) + *e++ ];
 							else
 								*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
 						}
-						else
+						else*/
 							*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
 					}
 

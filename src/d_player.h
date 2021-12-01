@@ -209,7 +209,7 @@ typedef enum
 {
 	// Unsynced, HUD or clientsided effects
 	// Item box
-	khud_itemblink,		// Item flashing after roulette, prevents Hyudoro stealing AND serves as a mashing indicator
+	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
 	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
 
 	// Rings
