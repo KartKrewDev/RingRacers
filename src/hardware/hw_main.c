@@ -5803,8 +5803,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
-		HWR_RollTransform(&dometransform,
-				R_ViewRollAngle(player));
+		HWR_RollTransform(&dometransform, viewroll);
 		dometransform.splitscreen = r_splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
@@ -6096,7 +6095,7 @@ void HWR_RenderSkyboxView(player_t *player)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -6308,7 +6307,7 @@ void HWR_RenderPlayerView(void)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));

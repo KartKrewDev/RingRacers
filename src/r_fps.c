@@ -83,10 +83,7 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 
 void R_InterpolateView(fixed_t frac)
 {
-	boolean skybox = false;
-	INT32 i;
-
-	if (FIXED_TO_FLOAT(frac) < 0)
+	if (frac < 0)
 		frac = 0;
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
@@ -97,31 +94,20 @@ void R_InterpolateView(fixed_t frac)
 
 	viewangle = oldview->angle + R_LerpAngle(oldview->angle, newview->angle, frac);
 	aimingangle = oldview->aim + R_LerpAngle(oldview->aim, newview->aim, frac);
+	viewroll = oldview->roll + R_LerpAngle(oldview->roll, newview->roll, frac);
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	// this is gonna create some interesting visual errors for long distance teleports...
-	// might want to recalculate the view sector every frame instead...
 	viewplayer = newview->player;
 	viewsector = R_PointInSubsector(viewx, viewy)->sector;
 
-	// well, this ain't pretty
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (newview == &skyview_new[i])
-		{
-			skybox = true;
-			break;
-		}
-	}
-
-	R_SetupFreelook(newview->player, skybox);
+	R_SetupFreelook(newview->player, newview->sky);
 }
 
 void R_UpdateViewInterpolation(void)
 {
-	INT32 i;
+	UINT8 i;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -132,7 +118,7 @@ void R_UpdateViewInterpolation(void)
 
 void R_SetViewContext(enum viewcontext_e _viewcontext)
 {
-	INT32 i;
+	UINT8 i = 0;
 
 	I_Assert(_viewcontext >= VIEWCONTEXT_PLAYER1
 			&& _viewcontext <= VIEWCONTEXT_SKY4);
@@ -149,7 +135,7 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 			newview = &pview_new[i];
 			break;
 		case VIEWCONTEXT_SKY1:
-		case VIEWCONTEXT_SKY2:
+		case VIEWCONTEXT_SKY2:;
 		case VIEWCONTEXT_SKY3:
 		case VIEWCONTEXT_SKY4:
 			i = viewcontext - VIEWCONTEXT_SKY1;
