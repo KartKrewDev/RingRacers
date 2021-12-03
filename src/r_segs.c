@@ -162,7 +162,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		return;
 
 	transtable = R_GetLinedefTransTable(ldef);
-	if (ldef->special == 910)
+	if (ldef->special == 910 || P_IsLineTripWire(ldef))
 	{
 		if (transtable == NUMTRANSMAPS)
 			transtable = 0;

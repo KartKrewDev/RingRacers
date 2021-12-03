@@ -52,7 +52,7 @@ void K_TimerReset(void)
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;
+	UINT8 numPlayers = 0;//, numspec = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -63,6 +63,7 @@ void K_TimerInit(void)
 
 		if (players[i].spectator == true)
 		{
+			//numspec++;
 			continue;
 		}
 
@@ -98,6 +99,7 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -2077,6 +2079,18 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
 
+void K_SpawnBumpEffect(mobj_t *mo)
+{
+	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+	if (mo->eflags & MFE_VERTICALFLIP)
+		fx->eflags |= MFE_VERTICALFLIP;
+	else
+		fx->eflags &= ~MFE_VERTICALFLIP;
+	fx->scale = mo->scale;
+
+	S_StartSound(mo, sfx_s3k49);
+}
+
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
@@ -2673,6 +2687,19 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
+boolean K_TripwirePass(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->growshrinktimer > 0 ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
@@ -3197,10 +3224,18 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	player->mo->momx = 2 * player->mo->momx / 3;
-	player->mo->momy = 2 * player->mo->momy / 3;
+	if (player->tripWireState == TRIP_PASSED)
+	{
+		player->tumbleHeight = 50;
+	}
+	else
+	{
+		player->mo->momx = 2 * player->mo->momx / 3;
+		player->mo->momy = 2 * player->mo->momy / 3;
 
-	player->tumbleHeight = 30;
+		player->tumbleHeight = 30;
+	}
+
 	player->pflags &= ~PF_TUMBLESOUND;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
@@ -3297,6 +3332,23 @@ static void K_HandleTumbleSound(player_t *player)
 	{
 		S_StartSound(player->mo, sfx_s3k51);
 		player->pflags |= PF_TUMBLESOUND;
+	}
+}
+
+void K_ApplyTripWire(player_t *player, tripwirestate_t state)
+{
+	if (state == TRIP_PASSED)
+		S_StartSound(player->mo, sfx_ssa015);
+	else if (state == TRIP_BLOCKED)
+		S_StartSound(player->mo, sfx_kc40);
+
+	player->tripWireState = state;
+	K_AddHitLag(player->mo, 10, false);
+
+	if (state == TRIP_PASSED && player->spinouttimer &&
+			player->speed > 2* K_GetKartSpeed(player, false))
+	{
+		K_TumblePlayer(player, NULL, NULL);
 	}
 }
 
@@ -3716,7 +3768,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	{
 		// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 		// This should set it for FOFs
-		P_TeleportMove(th, th->x, th->y, th->z);
+		P_SetOrigin(th, th->x, th->y, th->z);
 		// spawn on the ground if the player is on the ground
 		if (P_MobjFlip(source) < 0)
 		{
@@ -4470,6 +4522,42 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 }
 
+void K_Squish(mobj_t *mo)
+{
+	const fixed_t maxstretch = 4*FRACUNIT;
+	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t threshold = factor / 6;
+
+	const fixed_t old3dspeed = abs(mo->lastmomz);
+	const fixed_t new3dspeed = abs(mo->momz);
+
+	const fixed_t delta = abs(old3dspeed - new3dspeed);
+
+	if (delta > threshold)
+	{
+		mo->spritexscale =
+			FRACUNIT + FixedDiv(delta, factor);
+
+		if (mo->spritexscale > maxstretch)
+			mo->spritexscale = maxstretch;
+
+		if (abs(new3dspeed) > abs(old3dspeed))
+		{
+			mo->spritexscale =
+				FixedDiv(FRACUNIT, mo->spritexscale);
+		}
+	}
+	else
+	{
+		mo->spritexscale -=
+			(mo->spritexscale - FRACUNIT)
+			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+	}
+
+	mo->spriteyscale =
+		FixedDiv(FRACUNIT, mo->spritexscale);
+}
+
 static mobj_t *K_FindLastTrailMobj(player_t *player)
 {
 	mobj_t *trail;
@@ -4679,7 +4767,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			{
 				// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 				// This should set it for FOFs
-				P_TeleportMove(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
+				P_SetOrigin(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
 				if (P_MobjWasRemoved(mo))
 					return NULL;
 
@@ -4885,8 +4973,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT)
-			&& !players[i].karthud[khud_itemblink]))
+			&& !(players[i].pflags & PF_ITEMOUT)))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -5309,7 +5396,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		{
 			// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 			// This should set it for FOFs
-			//P_TeleportMove(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
+			//P_SetOrigin(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
 
 			if (flip == 1)
 			{
@@ -5835,7 +5922,7 @@ static void K_MoveHeldObjects(player_t *player)
 						z = player->mo->z + player->mo->height - cur->height;
 
 					cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
-					P_TeleportMove(cur, player->mo->x, player->mo->y, z);
+					P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
 					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -5948,7 +6035,7 @@ static void K_MoveHeldObjects(player_t *player)
 					P_SetObjectMomZ(cur, FixedMul(targz - cur->z, 7*FRACUNIT/8) - gravity, false);
 
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
-						P_TeleportMove(cur, targx, targy, cur->z);
+						P_MoveOrigin(cur, targx, targy, cur->z);
 
 					if (P_IsObjectOnGround(cur))
 					{
@@ -6038,12 +6125,12 @@ static void K_MoveHeldObjects(player_t *player)
 						diffy = targy - cur->y;
 						diffz = targz - cur->z;
 
-						P_TeleportMove(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
+						P_MoveOrigin(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
 							cur->tracer->y + diffy + P_ReturnThrustY(cur, cur->angle + angoffset, 6*cur->scale), cur->tracer->z + diffz);
 						P_SetScale(cur->tracer, (cur->tracer->destscale = 3*cur->scale/4));
 					}
 
-					P_TeleportMove(cur, targx, targy, targz);
+					P_MoveOrigin(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
 
 					cur->roll = player->mo->roll;
@@ -6354,6 +6441,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
+
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
+	{
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
+	}
 
 	if (gametype == GT_RACE)
 	{
@@ -6873,13 +6966,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_HandleTumbleBounce(player);
 	}
 
-	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
-	{
-		player->karthud[khud_itemblinkmode] = 0;
-		player->karthud[khud_itemblink] = 0;
-	}
-
 	K_KartPlayerHUDUpdate(player);
 
 	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
@@ -6983,6 +7069,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
+
+	if (player->tripWireState != TRIP_NONE)
+	{
+		if (player->tripWireState == TRIP_PASSED)
+			S_StartSound(player->mo, sfx_cdfm63);
+		else if (player->tripWireState == TRIP_BLOCKED)
+			S_StartSound(player->mo, sfx_kc4c);
+
+		player->tripWireState = TRIP_NONE;
+	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)
@@ -8432,7 +8528,12 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		flame->frame = i|FF_FULLBRIGHT;
 
 		if (player->trickpanel <= 1 && !player->tumbleBounces)
+		{
 			flame->tics = 2;
+			flame->momx = player->mo->momx;
+			flame->momy = player->mo->momy;
+			flame->momz = player->mo->momz;
+		}
 		else
 		{
 			flame->tics = TICRATE;
@@ -9387,6 +9488,7 @@ void K_CheckSpectateStatus(void)
 	{
 		if (cv_ingamecap.value && numingame+i >= cv_ingamecap.value) // Hit the in-game player cap while adding people?
 			break;
+		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
 	}
 

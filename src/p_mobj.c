@@ -2775,6 +2775,15 @@ void P_PlayerZMovement(mobj_t *mo)
 				P_CheckMarioBlocks(mo);
 
 			mo->momz = 0;
+			P_CheckGravity(mo, true);
+
+			if (abs(mo->momz) < 15 * mapobjectscale)
+			{
+				mo->momz = 15 * mapobjectscale
+					* -(P_MobjFlip(mo));
+			}
+
+			K_SpawnBumpEffect(mo);
 		}
 	}
 }
@@ -3511,6 +3520,16 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 	}
 }
 
+static void P_SquishThink(mobj_t *mobj)
+{
+	if (!(mobj->eflags & MFE_SLOPELAUNCHED))
+	{
+		K_Squish(mobj);
+	}
+
+	mobj->lastmomz = mobj->momz;
+}
+
 static void P_PlayerMobjThinker(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
@@ -3576,6 +3595,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		mobj->eflags &= ~MFE_JUSTHITFLOOR;
 	}
 
+	P_SquishThink(mobj);
+
 animonly:
 	P_CyclePlayerMobjState(mobj);
 }
@@ -3636,6 +3657,11 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 
 void P_PrecipThinker(precipmobj_t *mobj)
 {
+	// reset old state (for interpolation)
+	mobj->old_x = mobj->x;
+	mobj->old_y = mobj->y;
+	mobj->old_z = mobj->z;
+
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	if (mobj->state == &states[S_RAINRETURN])
@@ -3781,8 +3807,12 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 			P_SetScale(mobj, mobj->destscale = targetScale);
 
 		// find z position
-		K_GenericExtraFlagsNoZAdjust(mobj, target);
-		if (mobj->flags & MFE_VERTICALFLIP)
+		if (mobj->flags2 & MF2_CLASSICPUSH) // centered items should not be flipped
+			mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW) | (target->renderflags & RF_DONTDRAW);
+		else
+			K_GenericExtraFlagsNoZAdjust(mobj, target);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
 			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
 		else
 			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
@@ -3790,14 +3820,201 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 		// rotate & move to capsule
 		mobj->angle += mobj->movedir;
 		if (mobj->flags2 & MF2_CLASSICPUSH) // centered
-			P_TeleportMove(mobj, target->x, target->y, z);
+			P_MoveOrigin(mobj, target->x, target->y, z);
 		else
-			P_TeleportMove(mobj,
+			P_MoveOrigin(mobj,
 				target->x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
 				target->y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
 				z);
 	}
 }
+
+static void P_RefreshItemCapsuleParts(mobj_t *mobj)
+{
+	UINT8 numNumbers = 0;
+	INT32 count = 0;
+	INT32 itemType = mobj->threshold;
+	mobj_t *part;
+	skincolornum_t color;
+	UINT32 newRenderFlags = 0;
+	boolean colorized;
+
+	if (itemType < 1 || itemType >= NUMKARTITEMS)
+		itemType = KITEM_SAD;
+
+	// update invincibility properties
+	if (itemType == KITEM_INVINCIBILITY)
+	{
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_FULLBRIGHT;
+		mobj->colorized = true;
+	}
+	else
+	{
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_SEMIBRIGHT;
+		mobj->color = SKINCOLOR_NONE;
+		mobj->colorized = false;
+	}
+
+	// update cap colors
+	if (itemType == KITEM_SUPERRING)
+	{
+		color = SKINCOLOR_GOLD;
+		newRenderFlags |= RF_SEMIBRIGHT;
+	}
+	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
+		color = SKINCOLOR_SAPPHIRE;
+	else if (itemType == KITEM_SPB)
+		color = SKINCOLOR_JET;
+	else
+		color = SKINCOLOR_NONE;
+
+	colorized = (color != SKINCOLOR_NONE);
+	part = mobj;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		part->color = color;
+		part->colorized = colorized;
+		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
+	}
+
+	// update inside item frame
+	part = mobj->tracer;
+	if (P_MobjWasRemoved(part))
+		return;
+
+	part->threshold = mobj->threshold;
+	part->movecount = mobj->movecount;
+
+	switch (itemType)
+	{
+		case KITEM_ORBINAUT:
+			part->sprite = SPR_ITMO;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
+			break;
+		case KITEM_INVINCIBILITY:
+			part->sprite = SPR_ITMI;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
+			break;
+		case KITEM_SAD:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
+			break;
+		default:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			break;
+	}
+
+	// update number frame
+	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
+		;
+	else
+	{
+		switch (itemType)
+		{
+			case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
+				if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
+					count = mobj->movecount;
+				break;
+			case KITEM_SUPERRING: // always display the number, and multiply it by 5
+				count = mobj->movecount * 5;
+				break;
+			case KITEM_SAD: // never display the number
+			case KITEM_SPB:
+				break;
+			default:
+				if (mobj->movecount > 1)
+					count = mobj->movecount;
+				break;
+		}
+	}
+
+	while (count > 0)
+	{
+		if (P_MobjWasRemoved(part->tracer))
+		{
+			P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
+			P_SetTarget(&part->tracer->target, part);
+			P_SetMobjState(part->tracer, S_INVISIBLE);
+			part->tracer->spriteyoffset = 10*FRACUNIT;
+			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
+		}
+		part = part->tracer;
+		part->sprite = SPR_ITMN;
+		part->frame = FF_FULLBRIGHT|(count % 10);
+		count /= 10;
+		numNumbers++;
+	}
+
+	// delete any extra overlays (I guess in case the number changes?)
+	if (part->tracer)
+	{
+		P_RemoveMobj(part->tracer);
+		P_SetTarget(&part->tracer, NULL);
+	}
+}
+
+#define CAPSULESIDES 5
+#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
+#define ROTATIONSPEED (2*ANG2)
+static void P_SpawnItemCapsuleParts(mobj_t *mobj)
+{
+	UINT8 i;
+	mobj_t *part;
+	fixed_t buttScale = 0;
+	statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
+	angle_t spin = ANGLE_MAX - ROTATIONSPEED;
+
+	if (P_IsObjectOnGround(mobj))
+	{
+		buttScale = 13*FRACUNIT/10;
+		buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
+		spin = 0;
+	}
+
+	// inside item
+	part = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART);
+	P_SetTarget(&part->target, mobj);
+	P_SetMobjState(part, S_ITEMICON);
+	part->movedir = ROTATIONSPEED; // rotation speed
+	part->extravalue1 = 175*FRACUNIT/100; // relative scale
+	part->flags2 |= MF2_CLASSICPUSH; // classicpush = centered horizontally
+	part->flags2 &= ~MF2_OBJECTFLIP; // centered item should not be flipped
+	part->eflags &= ~MFE_VERTICALFLIP;
+	P_SetTarget(&mobj->tracer, part); // pointer to this item, so we can modify its sprite/frame
+
+	// capsule caps
+	part = mobj;
+	for (i = 0; i < CAPSULESIDES; i++)
+	{
+		// a bottom side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, mobj);
+		P_SetMobjState(part, buttState);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = 0; // z offset
+		part->extravalue1 = buttScale; // relative scale
+
+		// a top side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, mobj);
+		P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = mobj->info->height - part->info->height; // z offset
+	}
+
+	P_RefreshItemCapsuleParts(mobj);
+}
+#undef CAPSULESIDES
+#undef ANG_CAPSULE
+#undef ROTATIONSPEED
 
 //
 // P_BossTargetPlayer
@@ -4211,7 +4428,7 @@ void P_Attract(mobj_t *source, mobj_t *dest, boolean nightsgrab) // Home in on y
 		if (dist < source->movefactor)
 		{
 			source->momx = source->momy = source->momz = 0;
-			P_TeleportMove(source, tx, ty, tz);
+			P_MoveOrigin(source, tx, ty, tz);
 		}
 		else
 		{
@@ -6153,6 +6370,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->z -= (mobj->height - oldHeight);
 		}
 
+		// spawn parts if not done yet
+		// (this SHOULD be done when the capsule is spawned, but gravflip isn't set up at that point)
+		if (!(mobj->flags2 & MF2_JUSTATTACKED))
+		{
+			mobj->flags2 |= MF2_JUSTATTACKED;
+			P_SpawnItemCapsuleParts(mobj);
+		}
+
 		// update & animate capsule
 		if (!P_MobjWasRemoved(mobj->tracer))
 		{
@@ -6542,7 +6767,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->angle += ANGLE_90;
 			}
 
-			P_TeleportMove(mobj,
+			P_MoveOrigin(mobj,
 					mobj->target->x + P_ReturnThrustX(mobj, angle + ANGLE_180, nudge),
 					mobj->target->y + P_ReturnThrustY(mobj, angle + ANGLE_180, nudge),
 					mobj->target->z);
@@ -6621,7 +6846,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 
 		mobj->angle = mobj->target->angle;
-		P_TeleportMove(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
+		P_MoveOrigin(mobj, mobj->target->x + P_ReturnThrustX(mobj, mobj->angle+ANGLE_180, mobj->target->radius),
 			mobj->target->y + P_ReturnThrustY(mobj, mobj->angle+ANGLE_180, mobj->target->radius), mobj->target->z);
 		P_SetScale(mobj, mobj->target->scale);
 
@@ -6673,7 +6898,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
-		P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	case MT_BRAKEDRIFT:
 		if ((!mobj->target || !mobj->target->health || !mobj->target->player || !P_IsObjectOnGround(mobj->target))
@@ -6694,7 +6919,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			newx = mobj->target->x + P_ReturnThrustX(mobj->target, travelangle+ANGLE_180, 24*mobj->target->scale);
 			newy = mobj->target->y + P_ReturnThrustY(mobj->target, travelangle+ANGLE_180, 24*mobj->target->scale);
-			P_TeleportMove(mobj, newx, newy, mobj->target->z);
+			P_MoveOrigin(mobj, newx, newy, mobj->target->z);
 
 			mobj->angle = travelangle - ((ANGLE_90/5)*mobj->target->player->drift);
 			P_SetScale(mobj, (mobj->destscale = mobj->target->scale));
@@ -6723,7 +6948,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			mobj->fuse = 9;
 		}
-		P_TeleportMove(mobj, mobj->target->x,
+		P_MoveOrigin(mobj, mobj->target->x,
 				mobj->target->y, mobj->target->z);
 		mobj->angle = mobj->target->angle + mobj->cusval;
 		break;
@@ -6733,7 +6958,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
-		P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	case MT_INSTASHIELDB:
 		mobj->renderflags ^= RF_DONTDRAW;
@@ -6745,7 +6970,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
-		P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	case MT_BATTLEPOINT:
@@ -6768,7 +6993,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->movefactor = mobj->target->height;
 		}
 		K_MatchGenericExtraFlags(mobj, mobj->target);
-		P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height/2) + mobj->movefactor);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height/2) + mobj->movefactor);
 		break;
 	case MT_RINGSPARKS:
 		if (!mobj->target || P_MobjWasRemoved(mobj->target))
@@ -6781,7 +7006,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 
-		P_TeleportMove(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
+		P_MoveOrigin(mobj, mobj->target->x + FINECOSINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->target->y + FINESINE(mobj->angle >> ANGLETOFINESHIFT),
 				mobj->z + (mobj->target->height * P_MobjFlip(mobj)));
 		break;
@@ -6802,7 +7027,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 		mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW)|K_GetPlayerDontDrawFlag(mobj->target->player);
 
-		P_TeleportMove(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
+		P_MoveOrigin(mobj, mobj->target->x + FixedMul(34 * mapobjectscale, FINECOSINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->target->y + FixedMul(34 * mapobjectscale, FINESINE((mobj->angle + mobj->movedir) >> ANGLETOFINESHIFT)),
 				mobj->z + (32 * mapobjectscale * P_MobjFlip(mobj)));
 
@@ -6845,7 +7070,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			fixed_t newx = mobj->target->x + P_ReturnThrustX(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
 			fixed_t newy = mobj->target->y + P_ReturnThrustY(NULL, mobj->target->angle + perpendicular, 8*mobj->target->scale);
 
-			P_TeleportMove(mobj, newx, newy, mobj->target->z);
+			P_MoveOrigin(mobj, newx, newy, mobj->target->z);
 
 			if (mobj->extravalue1 & 1)
 				mobj->angle = mobj->target->angle - ANGLE_45;
@@ -6883,7 +7108,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			else
 				ang = (signed)(ang + off);
 
-			P_TeleportMove(mobj,
+			P_MoveOrigin(mobj,
 				mobj->target->x - FixedMul(mobj->target->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
 				mobj->target->y - FixedMul(mobj->target->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
 				z);
@@ -6938,7 +7163,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
-		P_TeleportMove(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
 		break;
 	}
 	case MT_BUBBLESHIELD:
@@ -7066,7 +7291,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
-		P_TeleportMove(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
 		break;
 	}
 	case MT_FLAMESHIELD:
@@ -7174,7 +7399,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
-		P_TeleportMove(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)
@@ -7218,7 +7443,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				return false;
 			}
 
-			P_TeleportMove(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+			P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 			mobj->angle = mobj->target->angle;
 			mobj->scalespeed = mobj->target->scalespeed;
 			mobj->destscale = mobj->target->destscale;
@@ -7268,7 +7493,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					if (cur->lastlook == 2 || cur->lastlook == 3)
 						offy *= -1;
 
-					P_TeleportMove(cur, mobj->x + offx, mobj->y + offy, mobj->z);
+					P_MoveOrigin(cur, mobj->x + offx, mobj->y + offy, mobj->z);
 					cur->scalespeed = mobj->target->scalespeed;
 					cur->destscale = mobj->target->destscale;
 					P_SetScale(cur, mobj->target->scale);
@@ -7407,7 +7632,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					amt += 1;
 				}
 
-				P_TeleportMove(
+				P_MoveOrigin(
 					cur,
 					mobj->x + FixedMul(amt, FINECOSINE(dir >> ANGLETOFINESHIFT)),
 					mobj->y + FixedMul(amt, FINESINE(dir >> ANGLETOFINESHIFT)),
@@ -7497,7 +7722,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			while (cur && !P_MobjWasRemoved(cur))
 			{
 				cur->angle += FixedAngle(mobj->info->speed);
-				P_TeleportMove(cur, mobj->x + FINECOSINE((cur->angle*8)>>ANGLETOFINESHIFT),
+				P_MoveOrigin(cur, mobj->x + FINECOSINE((cur->angle*8)>>ANGLETOFINESHIFT),
 					mobj->y + FINESINE((cur->angle*8)>>ANGLETOFINESHIFT), mobj->z);
 				//P_SpawnGhostMobj(cur)->tics = 2;
 
@@ -7630,7 +7855,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						fixed_t wz = mobj->tracer->z + (joint * ((mobj->z + (mobj->height/2)) - mobj->tracer->z) / (numjoints+1));
 
 						if (cur && !P_MobjWasRemoved(cur))
-							P_TeleportMove(cur, wx, wy, wz);
+							P_MoveOrigin(cur, wx, wy, wz);
 						else
 							cur = P_SpawnMobj(wx, wy, wz, MT_FROGTONGUE_JOINT);
 
@@ -7741,7 +7966,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						continue;
 					}
 					else // Move into place
-						P_TeleportMove(cur, mobj->x, mobj->y, segz);
+						P_MoveOrigin(cur, mobj->x, mobj->y, segz);
 				}
 				else
 				{
@@ -7815,7 +8040,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->extravalue1 = 1;
 			player->offroad += 2<<FRACBITS;
 
-			P_TeleportMove(mobj,
+			P_MoveOrigin(mobj,
 				player->mo->x + P_ReturnThrustX(NULL, player->mo->angle, player->mo->radius)
 					+ P_ReturnThrustX(NULL, player->mo->angle+ANGLE_90, (mobj->threshold)<<FRACBITS),
 				player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, player->mo->radius)
@@ -7976,7 +8201,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->tracer->momx = mobj->tracer->momy = 0;
 			}
 
-			P_TeleportMove(mobj,
+			P_MoveOrigin(mobj,
 				mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 				mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 				mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
@@ -8319,7 +8544,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					cur->angle = angle + ANGLE_90;
 				}
 
-				P_TeleportMove(cur, newx, newy, newz);
+				P_MoveOrigin(cur, newx, newy, newz);
 
 				cur = cur->hnext;
 			}
@@ -8345,7 +8570,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->extravalue1++;
 				dist = mobj->extravalue1 * mapobjectscale;
 
-				P_TeleportMove(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
+				P_MoveOrigin(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
 					battleovertime.y + P_ReturnThrustY(NULL, ang, dist), z);
 
 				ghost = P_SpawnGhostMobj(mobj);
@@ -8593,6 +8818,11 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
+	// Set old position (for interpolation)
+	mobj->old_x = mobj->x;
+	mobj->old_y = mobj->y;
+	mobj->old_z = mobj->z;
+
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 		P_SetTarget(&mobj->target, NULL);
@@ -8616,7 +8846,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	tmfloorthing = tmhitthing = NULL;
 
@@ -8804,6 +9034,8 @@ void P_MobjThinker(mobj_t *mobj)
 		//if (mobj->standingslope) CONS_Printf("slope physics on mobj\n");
 		P_ButteredSlope(mobj);
 	}
+
+	P_SquishThink(mobj);
 
 	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
 		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
@@ -9480,8 +9712,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		// SRB2Kart
 		case MT_ITEMCAPSULE:
 		{
-			fixed_t oldHeight = mobj->height;
-
 			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
 			if (P_RandomChance(FRACUNIT/3))
@@ -9498,17 +9728,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->movecount = 1;
 #endif
 
-			// grounded/aerial properties
-			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
-			if (!P_IsObjectOnGround(mobj))
-				mobj->flags |= MF_NOGRAVITY;
-
 			// set starting scale
 			mobj->extravalue1 = mobj->scale; // this acts as the capsule's destscale; we're avoiding P_MobjScaleThink because we want aerial capsules not to scale from their center
 			mobj->scalespeed >>= 1;
 			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
-			if (mobj->eflags & MFE_VERTICALFLIP)
-				mobj->z += (oldHeight - mobj->height);
 
 			break;
 		}
@@ -9670,7 +9893,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					cur = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SMK_ICEBLOCK_SIDE);
 					P_SetTarget(&cur->target, mobj);
 					cur->threshold = i;
-					P_TeleportMove(cur, cur->x + ((cur->radius>>FRACBITS) * FINECOSINE((FixedAngle((90*cur->threshold)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK)),
+					P_MoveOrigin(cur, cur->x + ((cur->radius>>FRACBITS) * FINECOSINE((FixedAngle((90*cur->threshold)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK)),
 						cur->y + ((cur->radius>>FRACBITS) * FINESINE((FixedAngle((90*cur->threshold)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK)), cur->z);
 					cur->angle = ANGLE_90*(cur->threshold+1);
 
@@ -9743,6 +9966,11 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	if (CheckForReverseGravity && !(mobj->flags & MF_NOBLOCKMAP))
 		P_CheckGravity(mobj, false);
 
+	// set initial old positions (for interpolation)
+	mobj->old_x = mobj->x;
+	mobj->old_y = mobj->y;
+	mobj->old_z = mobj->z;
+
 	return mobj;
 }
 
@@ -9793,6 +10021,11 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	 || GETSECSPECIAL(mobj->subsector->sector->special, 1) == 6
 	 || mobj->subsector->sector->floorpic == skyflatnum)
 		mobj->precipflags |= PCF_PIT;
+
+	// set initial old positions (for interpolation)
+	mobj->old_x = mobj->x;
+	mobj->old_y = mobj->y;
+	mobj->old_z = mobj->z;
 
 	return mobj;
 }
@@ -11768,6 +12001,22 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_ITEMCAPSULE:
 	{
+		// we have to adjust for reverse gravity early so that the below grounded checks work
+		if (mthing->options & MTF_OBJECTFLIP)
+		{
+			mobj->eflags |= MFE_VERTICALFLIP;
+			mobj->flags2 |= MF2_OBJECTFLIP;
+			mobj->z += FixedMul(mobj->extravalue1, mobj->info->height) - mobj->height;
+		}
+
+		// determine whether this capsule is grounded or aerial
+		if (mobj->subsector->sector->ffloors)
+			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
+		if (mobj->subsector->polyList)
+			P_AdjustMobjFloorZ_PolyObjs(mobj, mobj->subsector);
+		if (!P_IsObjectOnGround(mobj))
+			mobj->flags |= MF_NOGRAVITY;
+
 		// Angle = item type
 		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
 			mobj->threshold = mthing->angle;

@@ -162,7 +162,7 @@ ifdef DEBUGMODE
 ifdef GCC48
 opts+=-Og
 else
-opts+=O0
+opts+=-O0
 endif
 endif
 

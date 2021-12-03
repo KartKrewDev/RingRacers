@@ -112,6 +112,10 @@ demoghost *ghosts = NULL;
 #define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
 #define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
 
+// 0x08 free
+
+#define DF_NONETMP		0x10 // multiplayer but not netgame
+
 #define DF_LUAVARS		0x20 // this demo contains extra lua vars
 
 #define DF_ATTACKSHIFT  1
@@ -304,11 +308,12 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
-			extradata = READUINT8(demo_p);
+			i = READUINT8(demo_p);
 
-			switch (extradata) {
+			switch (i) {
 			case DXD_PST_PLAYING:
 				players[p].pflags |= PF_WANTSTOJOIN; // fuck you
+				//CONS_Printf("player %s is despectating on tic %d\n", player_names[p], leveltime);
 				break;
 
 			case DXD_PST_SPECTATING:
@@ -319,9 +324,11 @@ void G_ReadDemoExtraData(void)
 					playeringame[p] = true;
 					G_AddPlayer(p);
 					players[p].spectator = true;
+					//CONS_Printf("player %s is joining server on tic %d\n", player_names[p], leveltime);
 				}
 				else
 				{
+					//CONS_Printf("player %s is spectating on tic %d\n", player_names[p], leveltime);
 					players[p].spectator = true;
 					if (players[p].mo)
 						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_INSTAKILL);
@@ -343,11 +350,11 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_WEAPONPREF)
 		{
-			extradata = READUINT8(demo_p);
+			i = READUINT8(demo_p);
 			players[p].pflags &= ~(PF_KICKSTARTACCEL);
-			if (extradata & 1)
+			if (i & 1)
 				players[p].pflags |= PF_KICKSTARTACCEL;
-			//CONS_Printf("weaponpref is %d for player %d\n", extradata, p);
+			//CONS_Printf("weaponpref is %d for player %d\n", i, p);
 		}
 
 		p = READUINT8(demo_p);
@@ -366,7 +373,7 @@ void G_ReadDemoExtraData(void)
 				P_SetRandSeed(rng);
 
 				if (demosynced)
-					CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
+					CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
 				demosynced = false;
 			}
 		}
@@ -493,6 +500,7 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (!demo_p || !demo.deferstart)
 		return;
+
 	ziptic = READUINT8(demo_p);
 
 	if (ziptic & ZT_FWD)
@@ -530,7 +538,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	if (cmd->forwardmove != oldcmd[playernum].forwardmove)
 	{
-		WRITEUINT8(demo_p,cmd->forwardmove);
+		WRITESINT8(demo_p,cmd->forwardmove);
 		oldcmd[playernum].forwardmove = cmd->forwardmove;
 		ziptic |= ZT_FWD;
 	}
@@ -863,7 +871,12 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 
 void G_ConsAllGhostTics(void)
 {
-	UINT8 p = READUINT8(demo_p);
+	UINT8 p;
+
+	if (!demo_p || !demo.deferstart)
+		return;
+
+	p = READUINT8(demo_p);
 
 	while (p != 0xFF)
 	{
@@ -888,8 +901,6 @@ void G_ConsGhostTic(INT32 playernum)
 	mobj_t *testmo;
 	UINT32 syncleeway;
 
-	if (!demo_p || !demo.deferstart)
-		return;
 	if (!(demoflags & DF_GHOST))
 		return; // No ghost data to use.
 
@@ -966,7 +977,7 @@ void G_ConsGhostTic(INT32 playernum)
 				if (th != &thlist[THINK_MOBJ] && mobj->health != health) // Wasn't damaged?! This is desync! Fix it!
 				{
 					if (demosynced)
-						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
+						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (health)!\n"));
 					demosynced = false;
 					P_DamageMobj(mobj, players[0].mo, players[0].mo, 1, DMG_NORMAL);
 				}
@@ -1019,7 +1030,7 @@ void G_ConsGhostTic(INT32 playernum)
 			if (ghostext[playernum].desyncframes >= 2)
 			{
 				if (demosynced)
-					CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
+					CONS_Alert(CONS_WARNING, "Demo playback has desynced (player %s)!\n", player_names[playernum]);
 				demosynced = false;
 
 				P_UnsetThingPosition(testmo);
@@ -1042,7 +1053,7 @@ void G_ConsGhostTic(INT32 playernum)
 			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
 		{
 			if (demosynced)
-				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced!\n"));
+				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
 			demosynced = false;
 
 			players[playernum].itemtype = ghostext[playernum].kartitem;
@@ -1580,7 +1591,7 @@ void G_ReadMetalTic(mobj_t *metal)
 		oldmetal.x = READFIXED(metal_p);
 		oldmetal.y = READFIXED(metal_p);
 		oldmetal.z = READFIXED(metal_p);
-		P_TeleportMove(metal, oldmetal.x, oldmetal.y, oldmetal.z);
+		P_MoveOrigin(metal, oldmetal.x, oldmetal.y, oldmetal.z);
 		oldmetal.x = metal->x;
 		oldmetal.y = metal->y;
 		oldmetal.z = metal->z;
@@ -1920,6 +1931,9 @@ void G_BeginRecording(void)
 
 	demo_p = demobuffer;
 	demoflags = DF_GHOST|(multiplayer ? DF_MULTIPLAYER : (modeattacking<<DF_ATTACKSHIFT));
+
+	if (multiplayer && !netgame)
+		demoflags |= DF_NONETMP;
 
 	if (encoremode)
 		demoflags |= DF_ENCORE;
@@ -2838,6 +2852,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
+	demo.netgame = (multiplayer && !(demoflags & DF_NONETMP));
 	CON_ToggleOff();
 
 	hu_demotime = UINT32_MAX;
@@ -2927,7 +2942,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
-		if ((spectator = (p & DEMO_SPECTATOR)))
+		if ((spectator = !!(p & DEMO_SPECTATOR)))
 		{
 			p &= ~DEMO_SPECTATOR;
 
@@ -2974,6 +2989,11 @@ void G_DoPlayDemo(char *defdemoname)
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);
 		demo_p += 16;
+
+		/*if (players[p].spectator)
+		{
+			CONS_Printf("player %s is spectator at start\n", player_names[p]);
+		}*/
 
 		// Skin
 		M_Memcpy(skin,demo_p,16);

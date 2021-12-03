@@ -318,6 +318,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].spheres);
 
 		WRITESINT8(save_p, players[i].glanceDir);
+		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
@@ -573,6 +574,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spheres = READINT16(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
+		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);
@@ -1532,7 +1534,8 @@ typedef enum
 	MD2_HITLAG       = 1<<24,
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
-	MD2_ITNEXT       = 1<<27
+	MD2_ITNEXT       = 1<<27,
+	MD2_LASTMOMZ     = 1<<28,
 } mobj_diff2_t;
 
 typedef enum
@@ -1773,6 +1776,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_KITEMCAP;
 	if (mobj->itnext)
 		diff2 |= MD2_ITNEXT;
+	if (mobj->lastmomz)
+		diff2 |= MD2_LASTMOMZ;
 
 	if (diff2 != 0)
 		diff |= MD_MORE;
@@ -1965,6 +1970,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_HITLAG)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
+	if (diff2 & MD2_LASTMOMZ)
+	{
+		WRITEINT32(save_p, mobj->lastmomz);
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
@@ -3059,6 +3068,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_HITLAG)
 	{
 		mobj->hitlag = READINT32(save_p);
+	}
+	if (diff2 & MD2_LASTMOMZ)
+	{
+		mobj->lastmomz = READINT32(save_p);
 	}
 
 	if (diff & MD_REDFLAG)
