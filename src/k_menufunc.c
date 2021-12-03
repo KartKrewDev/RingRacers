@@ -2243,7 +2243,7 @@ static void M_MPConfirmCharacterSelection(void)
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
-		itoa(col, colstr, 10);
+		sprintf(colstr, "%d", col);
 		strcpy(cmd, commandnames[i][1]);
 		strcat(cmd, colstr);
 

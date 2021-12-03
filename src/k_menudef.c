@@ -1009,8 +1009,10 @@ menu_t OPTIONS_DataScreenshotDef = {
 menuitem_t OPTIONS_DataReplay[] =
 {
 
+#ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CVAR, "Rich Presence", "Allow Discord to display game info on your status.",
 		NULL, &cv_discordrp, 0, 0},
+#endif
 
 	{IT_STRING | IT_CVAR, "Synch. Check Interval", "How often to check for synchronization while playing back a replay.",
 		NULL, &cv_netdemosyncquality, 0, 0},
