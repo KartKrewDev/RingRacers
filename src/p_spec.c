@@ -2018,6 +2018,12 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 		return;
 	{
 		player_t *player = thing->player;
+
+		if (P_IsLineTripWire(line))
+		{
+			K_ApplyTripWire(player, TRIP_PASSED);
+		}
+
 		switch (line->special)
 		{
 			case 2001: // Finish Line

@@ -334,7 +334,6 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
-	{{A_SpawnItemCapsuleParts},  "A_SPAWNITEMCAPSULEPARTS"},
 
 	{{NULL},                     "NONE"},
 
@@ -3490,9 +3489,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_ITEMCAPSULE_TOP_SIDE",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_AIR",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_GROUND",
-	"S_ITEMCAPSULE_TOP",
-	"S_ITEMCAPSULE_BOTTOM",
-	"S_ITEMCAPSULE_INSIDE",
+	//"S_ITEMCAPSULE_TOP",
+	//"S_ITEMCAPSULE_BOTTOM",
+	//"S_ITEMCAPSULE_INSIDE",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",
@@ -4592,6 +4591,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RINGSPARKS13",
 	"S_RINGSPARKS14",
 	"S_RINGSPARKS15",
+
+	"S_GAINAX_TINY",
+	"S_GAINAX_HUGE",
+	"S_GAINAX_MID1",
+	"S_GAINAX_MID2",
 
 	"S_DRAFTDUST1",
 	"S_DRAFTDUST2",
@@ -5730,6 +5734,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
+	"MT_GAINAX",
 	"MT_DRAFTDUST",
 	"MT_SPBDUST",
 	"MT_TIREGREASE",
@@ -5852,7 +5857,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"WPNDOWN", // reserved - gonna turn this into lookback when i'm done with all the major reengineering
+	"LOOKDOWN",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
@@ -6743,6 +6748,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
+	{"TC_HITLAG",TC_HITLAG},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},

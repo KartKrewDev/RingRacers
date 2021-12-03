@@ -52,7 +52,7 @@ void K_TimerReset(void)
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;
+	UINT8 numPlayers = 0;//, numspec = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -63,6 +63,7 @@ void K_TimerInit(void)
 
 		if (players[i].spectator == true)
 		{
+			//numspec++;
 			continue;
 		}
 
@@ -98,6 +99,7 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_SpawnBattleCapsules();
+	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -2077,6 +2079,18 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
 
+void K_SpawnBumpEffect(mobj_t *mo)
+{
+	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
+	if (mo->eflags & MFE_VERTICALFLIP)
+		fx->eflags |= MFE_VERTICALFLIP;
+	else
+		fx->eflags &= ~MFE_VERTICALFLIP;
+	fx->scale = mo->scale;
+
+	S_StartSound(mo, sfx_s3k49);
+}
+
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
@@ -2206,7 +2220,11 @@ void K_KartMoveAnimation(player_t *player)
 		turndir = 1;
 	}
 
-	if (lookback == true && drift == 0)
+	if (!lookback)
+	{
+		player->pflags &= ~PF_LOOKDOWN;
+	}
+	else if (drift == 0)
 	{
 		// Prioritize looking back frames over turning
 		turndir = 0;
@@ -2218,6 +2236,7 @@ void K_KartMoveAnimation(player_t *player)
 		destGlanceDir = -(2*intsign(player->aizdriftturn));
 		player->glanceDir = destGlanceDir;
 		drift = turndir = 0;
+		player->pflags &= ~PF_LOOKDOWN;
 	}
 	else if (player->aizdriftturn)
 	{
@@ -2232,6 +2251,7 @@ void K_KartMoveAnimation(player_t *player)
 
 		if (lookback == true)
 		{
+			statenum_t gainaxstate = S_GAINAX_TINY;
 			if (destGlanceDir == 0)
 			{
 				if (player->glanceDir != 0)
@@ -2256,6 +2276,20 @@ void K_KartMoveAnimation(player_t *player)
 			{
 				// Looking back AND glancing? Amplify the look!
 				destGlanceDir *= 2;
+				if (player->itemamount && player->itemtype)
+					gainaxstate = S_GAINAX_HUGE;
+				else
+					gainaxstate = S_GAINAX_MID1;
+			}
+
+			if (destGlanceDir && !(player->pflags & PF_LOOKDOWN))
+			{
+				mobj_t *gainax = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_GAINAX);
+				gainax->movedir = (destGlanceDir < 0) ? (ANGLE_270-ANG10) : (ANGLE_90+ANG10);
+				P_SetTarget(&gainax->target, player->mo);
+				P_SetMobjState(gainax, gainaxstate);
+				gainax->flags2 |= MF2_AMBUSH;
+				player->pflags |= PF_LOOKDOWN;
 			}
 		}
 		else if (K_GetForwardMove(player) < 0 && destGlanceDir == 0)
@@ -2511,6 +2545,9 @@ void K_KartMoveAnimation(player_t *player)
 		player->glanceDir++;
 	}
 
+	if (!player->glanceDir)
+		player->pflags &= ~PF_LOOKDOWN;
+
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
 }
@@ -2646,6 +2683,19 @@ boolean K_ApplyOffroad(player_t *player)
 boolean K_SlopeResistance(player_t *player)
 {
 	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease)
+		return true;
+	return false;
+}
+
+boolean K_TripwirePass(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->growshrinktimer > 0 ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
 		return true;
 	return false;
 }
@@ -2998,74 +3048,66 @@ angle_t K_MomentumAngle(mobj_t *mo)
 	}
 }
 
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 {
-	boolean mo1valid = (mo1 && !P_MobjWasRemoved(mo1));
-	boolean mo2valid = (mo2 && !P_MobjWasRemoved(mo2));
+	if (mo == NULL || P_MobjWasRemoved(mo))
+	{
+		return;
+	}
 
-	INT32 tics1 = tics;
-	INT32 tics2 = tics;
+	mo->hitlag += tics;
+	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
+
+	if (fromDamage == true)
+	{
+		// Dunno if this should flat-out &~ the flag out too.
+		// Decided it probably just just keep it since it's "adding" hitlag.
+		mo->eflags |= MFE_DAMAGEHITLAG;
+	}
+}
+
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
+{
+	INT32 finalTics = tics;
 
 	if (tics <= 0)
 	{
 		return;
 	}
 
-	if (mo1valid == true && mo2valid == true)
+	if ((mo1 && !P_MobjWasRemoved(mo1)) == true && (mo2 && !P_MobjWasRemoved(mo2)) == true)
 	{
-		const INT32 mintics = tics;
-		const fixed_t ticaddfactor = mapobjectscale * 8;
+		const fixed_t speedTicFactor = (mapobjectscale * 8);
+		const INT32 angleTicFactor = ANGLE_22h;
 
 		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
 		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
-		const fixed_t speeddiff = mo2speed - mo1speed;
+		const fixed_t speedDiff = abs(mo2speed - mo1speed);
 
-		const fixed_t scalediff = mo2->scale - mo1->scale;
+		const fixed_t scaleDiff = abs(mo2->scale - mo1->scale);
 
-		const angle_t mo1angle = K_MomentumAngle(mo1);
-		const angle_t mo2angle = K_MomentumAngle(mo2);
+		angle_t mo1angle = K_MomentumAngle(mo1);
+		angle_t mo2angle = K_MomentumAngle(mo2);
+		INT32 angleDiff = 0;
 
-		angle_t anglediff = mo1angle - mo2angle;
-		fixed_t anglemul = FRACUNIT;
-
-		if (anglediff > ANGLE_180)
+		if (mo1speed > 0 && mo2speed > 0)
 		{
-			anglediff = InvAngle(anglediff);
+			// If either object is completely not moving, their speed doesn't matter.
+			angleDiff = AngleDelta(mo1angle, mo2angle);
 		}
 
-		anglemul = FRACUNIT + (AngleFixed(anglediff) / 180); // x1.0 at 0, x1.5 at 90, x2.0 at 180
+		// Add extra "damage" based on what was happening to the objects on impact.
+		finalTics += (FixedMul(speedDiff, FRACUNIT + scaleDiff) / speedTicFactor) + (angleDiff / angleTicFactor);
 
-		/*
-		CONS_Printf("anglemul: %f\n", FIXED_TO_FLOAT(anglemul));
-		CONS_Printf("speeddiff: %f\n", FIXED_TO_FLOAT(speeddiff));
-		CONS_Printf("scalediff: %f\n", FIXED_TO_FLOAT(scalediff));
-		*/
-
-		tics1 += FixedMul(speeddiff, FixedMul(anglemul, FRACUNIT + scalediff)) / ticaddfactor;
-		tics2 += FixedMul(-speeddiff, FixedMul(anglemul, FRACUNIT - scalediff)) / ticaddfactor;
-
-		if (tics1 < mintics)
+		// This shouldn't happen anymore, but just in case something funky happens.
+		if (finalTics < tics)
 		{
-			tics1 = mintics;
-		}
-
-		if (tics2 < mintics)
-		{
-			tics2 = mintics;
+			finalTics = tics;
 		}
 	}
 
-	//CONS_Printf("tics1: %d, tics2: %d\n", tics1, tics2);
-
-	if (mo1valid == true)
-	{
-		mo1->hitlag = max(tics1, mo1->hitlag);
-	}
-
-	if (mo2valid == true)
-	{
-		mo2->hitlag = max(tics2, mo2->hitlag);
-	}
+	K_AddHitLag(mo1, finalTics, fromDamage);
+	K_AddHitLag(mo2, finalTics, fromDamage);
 }
 
 void K_DoInstashield(player_t *player)
@@ -3182,10 +3224,18 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	player->mo->momx = 2 * player->mo->momx / 3;
-	player->mo->momy = 2 * player->mo->momy / 3;
+	if (player->tripWireState == TRIP_PASSED)
+	{
+		player->tumbleHeight = 50;
+	}
+	else
+	{
+		player->mo->momx = 2 * player->mo->momx / 3;
+		player->mo->momy = 2 * player->mo->momy / 3;
 
-	player->tumbleHeight = 30;
+		player->tumbleHeight = 30;
+	}
+
 	player->pflags &= ~PF_TUMBLESOUND;
 
 	if (inflictor && !P_MobjWasRemoved(inflictor))
@@ -3282,6 +3332,23 @@ static void K_HandleTumbleSound(player_t *player)
 	{
 		S_StartSound(player->mo, sfx_s3k51);
 		player->pflags |= PF_TUMBLESOUND;
+	}
+}
+
+void K_ApplyTripWire(player_t *player, tripwirestate_t state)
+{
+	if (state == TRIP_PASSED)
+		S_StartSound(player->mo, sfx_ssa015);
+	else if (state == TRIP_BLOCKED)
+		S_StartSound(player->mo, sfx_kc40);
+
+	player->tripWireState = state;
+	K_AddHitLag(player->mo, 10, false);
+
+	if (state == TRIP_PASSED && player->spinouttimer &&
+			player->speed > 2* K_GetKartSpeed(player, false))
+	{
+		K_TumblePlayer(player, NULL, NULL);
 	}
 }
 
@@ -3701,7 +3768,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	{
 		// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 		// This should set it for FOFs
-		P_TeleportMove(th, th->x, th->y, th->z);
+		P_SetOrigin(th, th->x, th->y, th->z);
 		// spawn on the ground if the player is on the ground
 		if (P_MobjFlip(source) < 0)
 		{
@@ -4455,6 +4522,42 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 }
 
+void K_Squish(mobj_t *mo)
+{
+	const fixed_t maxstretch = 4*FRACUNIT;
+	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t threshold = factor / 6;
+
+	const fixed_t old3dspeed = abs(mo->lastmomz);
+	const fixed_t new3dspeed = abs(mo->momz);
+
+	const fixed_t delta = abs(old3dspeed - new3dspeed);
+
+	if (delta > threshold)
+	{
+		mo->spritexscale =
+			FRACUNIT + FixedDiv(delta, factor);
+
+		if (mo->spritexscale > maxstretch)
+			mo->spritexscale = maxstretch;
+
+		if (abs(new3dspeed) > abs(old3dspeed))
+		{
+			mo->spritexscale =
+				FixedDiv(FRACUNIT, mo->spritexscale);
+		}
+	}
+	else
+	{
+		mo->spritexscale -=
+			(mo->spritexscale - FRACUNIT)
+			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+	}
+
+	mo->spriteyscale =
+		FixedDiv(FRACUNIT, mo->spritexscale);
+}
+
 static mobj_t *K_FindLastTrailMobj(player_t *player)
 {
 	mobj_t *trail;
@@ -4664,7 +4767,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			{
 				// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 				// This should set it for FOFs
-				P_TeleportMove(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
+				P_SetOrigin(mo, mo->x, mo->y, mo->z); // however, THIS can fuck up your day. just absolutely ruin you.
 				if (P_MobjWasRemoved(mo))
 					return NULL;
 
@@ -4870,8 +4973,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT)
-			&& !players[i].karthud[khud_itemblink]))
+			&& !(players[i].pflags & PF_ITEMOUT)))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -5098,7 +5200,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 			thrust = FixedMul(thrust, 9*FRACUNIT/8);
 		}
 
-		mo->player->trickmomx = mo->player->trickmomy = mo->player->trickmomz = mo->player->tricktime = 0;	// Reset post-hitlag momentums and timer
+		mo->player->tricktime = 0; // Reset post-hitlag timer
 		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
@@ -5294,7 +5396,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		{
 			// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
 			// This should set it for FOFs
-			//P_TeleportMove(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
+			//P_SetOrigin(dropwork, dropwork->x, dropwork->y, dropwork->z); -- handled better by above floorz/ceilingz passing
 
 			if (flip == 1)
 			{
@@ -5820,7 +5922,7 @@ static void K_MoveHeldObjects(player_t *player)
 						z = player->mo->z + player->mo->height - cur->height;
 
 					cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
-					P_TeleportMove(cur, player->mo->x, player->mo->y, z);
+					P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
 					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -5933,7 +6035,7 @@ static void K_MoveHeldObjects(player_t *player)
 					P_SetObjectMomZ(cur, FixedMul(targz - cur->z, 7*FRACUNIT/8) - gravity, false);
 
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
-						P_TeleportMove(cur, targx, targy, cur->z);
+						P_MoveOrigin(cur, targx, targy, cur->z);
 
 					if (P_IsObjectOnGround(cur))
 					{
@@ -6023,12 +6125,12 @@ static void K_MoveHeldObjects(player_t *player)
 						diffy = targy - cur->y;
 						diffz = targz - cur->z;
 
-						P_TeleportMove(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
+						P_MoveOrigin(cur->tracer, cur->tracer->x + diffx + P_ReturnThrustX(cur, cur->angle + angoffset, 6*cur->scale),
 							cur->tracer->y + diffy + P_ReturnThrustY(cur, cur->angle + angoffset, 6*cur->scale), cur->tracer->z + diffz);
 						P_SetScale(cur->tracer, (cur->tracer->destscale = 3*cur->scale/4));
 					}
 
-					P_TeleportMove(cur, targx, targy, targz);
+					P_MoveOrigin(cur, targx, targy, targz);
 					K_FlipFromObject(cur, player->mo);	// Update graviflip in real time thanks.
 
 					cur->roll = player->mo->roll;
@@ -6339,6 +6441,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
+
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
+	{
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
+	}
 
 	if (gametype == GT_RACE)
 	{
@@ -6858,14 +6966,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_HandleTumbleBounce(player);
 	}
 
-	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
-	{
-		player->karthud[khud_itemblinkmode] = 0;
-		player->karthud[khud_itemblink] = 0;
-	}
-
 	K_KartPlayerHUDUpdate(player);
+
+	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
+	{
+		if (player->overtimekarma)
+			player->overtimekarma--;
+		else
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
+	}
 
 	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED))
 	{
@@ -6961,11 +7070,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
 
-	// Plays the music after the starting countdown.
-	if (P_IsLocalPlayer(player) && leveltime == (starttime + (TICRATE/2)))
+	if (player->tripWireState != TRIP_NONE)
 	{
-		S_ChangeMusic(mapmusname, mapmusflags, true);
-		S_ShowMusicCredit();
+		if (player->tripWireState == TRIP_PASSED)
+			S_StartSound(player->mo, sfx_cdfm63);
+		else if (player->tripWireState == TRIP_BLOCKED)
+			S_StartSound(player->mo, sfx_kc4c);
+
+		player->tripWireState = TRIP_NONE;
 	}
 }
 
@@ -8319,7 +8431,7 @@ void K_AdjustPlayerFriction(player_t *player)
 		return;
 	}
 
-	// Reduce friction after hitting a horizontal spring
+	// Reduce friction after hitting a spring
 	if (player->tiregrease)
 	{
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;
@@ -8416,7 +8528,12 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 		flame->frame = i|FF_FULLBRIGHT;
 
 		if (player->trickpanel <= 1 && !player->tumbleBounces)
+		{
 			flame->tics = 2;
+			flame->momx = player->mo->momx;
+			flame->momy = player->mo->momy;
+			flame->momz = player->mo->momz;
+		}
 		else
 		{
 			flame->tics = TICRATE;
@@ -9185,29 +9302,21 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				if (cmd->turning > 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 2;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (cmd->turning < 0)
 				{
 					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 3;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == 1)
@@ -9218,15 +9327,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 
 					P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 2;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 				else if (player->throwdir == -1)
@@ -9248,30 +9353,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
 					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
-
-					player->trickmomx = player->mo->momx;
-					player->trickmomy = player->mo->momy;
-					player->trickmomz = player->mo->momz;
-					P_InstaThrust(player->mo, 0, 0);	// Sike, you have no speed :)
-					player->mo->momz = 0;
-
 					player->trickpanel = 4;
+
 					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
 					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
-		// After hitlag, we will get here and will be able to apply the desired momentums!
-		else if (player->trickmomx || player->trickmomy || player->trickmomz)
-		{
-			player->mo->momx = player->trickmomx;
-			player->mo->momy = player->trickmomy;
-			player->mo->momz = player->trickmomz;
-
-			player->trickmomx = player->trickmomy = player->trickmomz = 0;
-
-		}
-
 		else if (player->trickpanel == 4 && P_IsObjectOnGround(player->mo))	// Upwards trick landed!
 		{
 			//CONS_Printf("apply boost\n");
@@ -9398,6 +9488,7 @@ void K_CheckSpectateStatus(void)
 	{
 		if (cv_ingamecap.value && numingame+i >= cv_ingamecap.value) // Hit the in-game player cap while adding people?
 			break;
+		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
 	}
 

@@ -287,7 +287,6 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
-	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -558,7 +557,6 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
-void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1270,6 +1268,7 @@ typedef enum sprite
 	SPR_FWRK,
 	SPR_MXCL,
 	SPR_RGSP,
+	SPR_LENS,
 	SPR_DRAF,
 	SPR_GRES,
 
@@ -4465,9 +4464,9 @@ typedef enum state
 	S_ITEMCAPSULE_TOP_SIDE,
 	S_ITEMCAPSULE_BOTTOM_SIDE_AIR,
 	S_ITEMCAPSULE_BOTTOM_SIDE_GROUND,
-	S_ITEMCAPSULE_TOP,
-	S_ITEMCAPSULE_BOTTOM,
-	S_ITEMCAPSULE_INSIDE,
+	//S_ITEMCAPSULE_TOP,
+	//S_ITEMCAPSULE_BOTTOM,
+	//S_ITEMCAPSULE_INSIDE,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
@@ -5587,6 +5586,11 @@ typedef enum state
 	S_RINGSPARKS13,
 	S_RINGSPARKS14,
 	S_RINGSPARKS15,
+
+	S_GAINAX_TINY,
+	S_GAINAX_HUGE,
+	S_GAINAX_MID1,
+	S_GAINAX_MID2,
 
 	S_DRAFTDUST1,
 	S_DRAFTDUST2,
@@ -6742,6 +6746,7 @@ typedef enum mobj_type
 
 	MT_KARMAFIREWORK,
 	MT_RINGSPARKS,
+	MT_GAINAX,
 	MT_DRAFTDUST,
 	MT_SPBDUST,
 	MT_TIREGREASE,

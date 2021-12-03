@@ -67,6 +67,35 @@ UINT16 K_RainbowColor(tic_t time);
 void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor);
 
 /*--------------------------------------------------
+	UINT8 K_HitlagColorValue(RGBA_t color);
+
+		Gets the new replacement brightness value for the hitlag effect.
+
+	Input Arguments:-
+		color - Input color we intend to replace.
+
+	Return:-
+		0 to 255 brightness value.
+--------------------------------------------------*/
+
+UINT8 K_HitlagColorValue(RGBA_t color);
+
+/*--------------------------------------------------
+	void K_HitlagColormap(UINT8 *dest_colormap);
+
+		Generates a inverted hi-contrast greyscale colormap,
+		for the hitlag effect.
+
+	Input Arguments:-
+		dest_colormap - Colormap to populate.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_HitlagColormap(UINT8 *dest_colormap);
+
+/*--------------------------------------------------
 	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
 
 		Generates a translation colormap for Kart, to replace R_GenerateTranslationColormap in r_draw.c

@@ -2288,6 +2288,10 @@ void readsound(MYFILE *f, INT32 num)
 			{
 				S_sfx[num].pitch = value;
 			}
+			else if (fastcmp(word, "VOLUME"))
+			{
+				S_sfx[num].volume = value;
+			}
 			else if (fastcmp(word, "CAPTION") || fastcmp(word, "DESCRIPTION"))
 			{
 				deh_strlcpy(S_sfx[num].caption, word2,
