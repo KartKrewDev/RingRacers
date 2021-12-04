@@ -335,7 +335,7 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
-#define MENUDELAYTIME 3
+#define MENUDELAYTIME 5
 extern INT16 menuInputDelay;
 
 extern struct menutransition_s {

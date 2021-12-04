@@ -892,6 +892,7 @@ void M_StartControlPanel(void)
 	}
 
 	menuactive = true;
+	menuInputDelay = MENUDELAYTIME;
 
 	if (demo.playback)
 	{
@@ -1078,6 +1079,8 @@ void M_SelectableClearMenus(INT32 choice)
 void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 {
 	INT16 i;
+
+	menuInputDelay = MENUDELAYTIME;
 
 	if (!notransition)
 	{
