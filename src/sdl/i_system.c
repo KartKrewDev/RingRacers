@@ -181,8 +181,9 @@ static char returnWadPath[256];
 
 #include "../m_argv.h"
 
-#include "../k_menu.h"
 #include "../r_main.h" // Frame interpolation/uncapped
+
+#include "../k_menu.h"
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"

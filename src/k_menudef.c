@@ -9,6 +9,9 @@
 #include "s_sound.h"	// sounds consvars
 #include "g_game.h" // cv_chatnotifications
 #include "console.h" // console cvars
+#include "filesrch.h" // addons cvars
+#include "m_misc.h" // screenshot cvars
+#include "discord.h" // discord rpc cvars
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -57,6 +60,7 @@ menu_t PLAY_CharSelectDef = {
 	&MainDef,
 	0,
 	PLAY_CharSelect,
+	0, 0,
 	0, 0,
 	0, 0,
 	M_DrawCharacterSelect,
@@ -120,6 +124,7 @@ menu_t PLAY_CupSelectDef = {
 	0,
 	PLAY_CupSelect,
 	0, 0,
+	0, 0,
 	2, 10,
 	M_DrawCupSelect,
 	M_CupSelectTick,
@@ -137,6 +142,7 @@ menu_t PLAY_LevelSelectDef = {
 	&PLAY_CupSelectDef,
 	0,
 	PLAY_LevelSelect,
+	0, 0,
 	0, 0,
 	2, 10,
 	M_DrawLevelSelect,
@@ -158,6 +164,7 @@ menu_t PLAY_TimeAttackDef = {
 	&PLAY_LevelSelectDef,
 	0,
 	PLAY_TimeAttack,
+	0, 0,
 	0, 0,
 	2, 10,
 	M_DrawTimeAttack,
@@ -201,6 +208,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	0,
 	PLAY_MP_OptSelect,
 	0, 0,
+	0, 0,
 	-1, 1,
 	M_DrawMPOptSelect,
 	M_MPOptSelectTick,
@@ -235,6 +243,7 @@ menu_t PLAY_MP_HostDef = {
 	&PLAY_MP_OptSelectDef,
 	0,
 	PLAY_MP_Host,
+	0, 0,
 	0, 0,
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPHost,
@@ -271,6 +280,7 @@ menu_t PLAY_MP_JoinIPDef = {
 	0,
 	PLAY_MP_JoinIP,
 	0, 0,
+	0, 0,
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPJoinIP,
 	M_MPOptSelectTick,	// This handles the unfolding options
@@ -291,6 +301,7 @@ menu_t PLAY_MP_RoomSelectDef = {
 	PLAY_MP_RoomSelect,
 	0, 0,
 	0, 0,
+	0, 0,
 	M_DrawMPRoomSelect,
 	M_MPRoomSelectTick,
 	NULL,
@@ -301,7 +312,7 @@ menu_t PLAY_MP_RoomSelectDef = {
 menuitem_t OPTIONS_Main[] =
 {
 
-	{IT_STRING | IT_SUBMENU, "Control Setup", "Remap keys & buttons to your likings.",
+	{IT_STRING | IT_TRANSTEXT, "Profile Setup", "Remap keys & buttons to your likings.",
 		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
@@ -320,18 +331,20 @@ menuitem_t OPTIONS_Main[] =
 		NULL, &OPTIONS_ServerDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Data Options", "Miscellaneous data options such as the screenshot format.",
-		NULL, NULL, 0, 0},
+		NULL, &OPTIONS_DataDef, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Tricks & Secrets", "Those who bother reading a game manual always get the edge over those who don't!",
-		NULL, NULL, 0, 0},
+	{IT_STRING | IT_CALL, "Tricks & Secrets", "Those who bother reading a game manual always get the edge over those who don't!",
+		NULL, M_Manual, 0, 0},
 };
 
+// For options menu, the 'extra1' field will determine the background colour to use for... the background! (What a concept!)
 menu_t OPTIONS_MainDef = {
 	sizeof (OPTIONS_Main) / sizeof (menuitem_t),
 	&MainDef,
 	0,
 	OPTIONS_Main,
 	0, 0,
+	SKINCOLOR_SLATE, 0,
 	2, 10,
 	M_DrawOptions,
 	M_OptionsTick,
@@ -392,6 +405,7 @@ menu_t OPTIONS_VideoDef = {
 	0,
 	OPTIONS_Video,
 	32, 80,
+	SKINCOLOR_PLAGUE, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -412,6 +426,7 @@ menu_t OPTIONS_VideoModesDef = {
 	0,
 	OPTIONS_VideoModes,
 	48, 80,
+	SKINCOLOR_PLAGUE, 0,
 	2, 10,
 	M_DrawVideoModes,
 	M_OptionsTick,
@@ -429,7 +444,7 @@ menuitem_t OPTIONS_VideoOGL[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, NULL, 0, 0},
 
-	{IT_SPACE | IT_NOTHING | IT_STRING, "OPTIONS BELOW ARE OPENGL ONLY!", "Watch people get confused anyway!!",
+	{IT_HEADER, "OPTIONS BELOW ARE OPENGL ONLY!", "Watch people get confused anyway!!",
 		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_CVAR, "3D Models", "Use 3D models instead of sprites when applicable.",
@@ -469,6 +484,7 @@ menu_t OPTIONS_VideoOGLDef = {
 	0,
 	OPTIONS_VideoOGL,
 	32, 80,
+	SKINCOLOR_PLAGUE, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -531,6 +547,7 @@ menu_t OPTIONS_SoundDef = {
 	0,
 	OPTIONS_Sound,
 	48, 80,
+	SKINCOLOR_THUNDER, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -585,6 +602,7 @@ menu_t OPTIONS_HUDDef = {
 	0,
 	OPTIONS_HUD,
 	48, 80,
+	SKINCOLOR_SUNSLAM, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -633,6 +651,7 @@ menu_t OPTIONS_HUDOnlineDef = {
 	0,
 	OPTIONS_HUDOnline,
 	48, 80,
+	SKINCOLOR_SUNSLAM, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -685,6 +704,7 @@ menu_t OPTIONS_GameplayDef = {
 	0,
 	OPTIONS_Gameplay,
 	48, 80,
+	SKINCOLOR_SCARLET, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -729,6 +749,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	0,
 	OPTIONS_GameplayItems,
 	0, 75,
+	SKINCOLOR_SCARLET, 0,
 	2, 10,
 	M_DrawItemToggles,
 	M_OptionsTick,
@@ -792,6 +813,7 @@ menu_t OPTIONS_ServerDef = {
 	0,
 	OPTIONS_Server,
 	48, 70,	// This menu here is slightly higher because there's a lot of options...
+	SKINCOLOR_VIOLET, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -803,7 +825,7 @@ menu_t OPTIONS_ServerDef = {
 menuitem_t OPTIONS_ServerAdvanced[] =
 {
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Browser Address", "Default is \'https://ms.kartkew.org/ms/api\'",
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Server Browser Address", "Default is \'https://ms.kartkrew.org/ms/api\'",
 		NULL, &cv_masterserver, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Resynch. Attempts", "How many times to attempt sending data to desynchronized players.",
@@ -849,6 +871,7 @@ menu_t OPTIONS_ServerAdvancedDef = {
 	0,
 	OPTIONS_ServerAdvanced,
 	48, 70,	// This menu here is slightly higher because there's a lot of options...
+	SKINCOLOR_VIOLET, 0,
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
@@ -856,6 +879,229 @@ menu_t OPTIONS_ServerAdvancedDef = {
 	NULL,
 };
 #endif
+
+menuitem_t OPTIONS_Data[] =
+{
+
+	{IT_STRING | IT_SUBMENU, "Screenshot Options...", "Set options relative to screenshot and GIF capture.",
+		NULL, &OPTIONS_DataScreenshotDef, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Addon Options...", "Set options relative to the addons menu.",
+		NULL, &OPTIONS_DataAddonDef, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Replay Options...", "Set options relative to replays.",
+		NULL, &OPTIONS_DataReplayDef, 0, 0},
+
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_SUBMENU, "Discord Options...", "Set options relative to Discord Rich Presence.",
+		NULL, &OPTIONS_DataDiscordDef, 0, 0},
+#endif
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	// escape sequences don't like any letter from A to E following them... So let's also put E as an escape sequence lol. E is 69 (nice) which is 45 in hex.
+	{IT_STRING | IT_SUBMENU, "\x85\x45rase Data...", "Erase specific data. Be careful, what's deleted is gone forever!",
+		NULL, &OPTIONS_DataEraseDef, 0, 0},
+
+};
+
+menu_t OPTIONS_DataDef = {
+	sizeof (OPTIONS_Data) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Data,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_DataAddon[] =
+{
+
+	{IT_HEADER, "MENU", NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Location", "Where to start searching addons from in the menu.",
+		NULL, &cv_addons_option, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Custom Folder", "Specify which folder to start searching from if the location is set to custom.",
+		NULL, &cv_addons_folder, 24, 0},
+
+	{IT_STRING | IT_CVAR, "Identify Addons via", "Set whether to consider the extension or contents of a file.",
+		NULL, &cv_addons_md5, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Show Unsupported Files", "Sets whether non-addon files should be shown.",
+		NULL, &cv_addons_showall, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_HEADER, "SEARCH", NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Matching", "Set where to check for the text pattern when looking up addons via name.",
+		NULL, &cv_addons_search_type, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Case Sensitivity", "Set whether to consider the case when searching for addons..",
+		NULL, &cv_addons_search_case, 0, 0},
+
+};
+
+menu_t OPTIONS_DataAddonDef = {
+	sizeof (OPTIONS_DataAddon) / sizeof (menuitem_t),
+	&OPTIONS_DataDef,
+	0,
+	OPTIONS_DataAddon,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_DataScreenshot[] =
+{
+
+	{IT_HEADER, "SCREENSHOTS (F8)", NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Storage Location", "Sets where to store screenshots.",
+		NULL, &cv_screenshot_option, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Custom Folder", "Specify which folder to save screenshots in.",
+		NULL, &cv_screenshot_folder, 24, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_HEADER, "GIF RECORDING (F9)", NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Storage Location", "Sets where to store GIFs",
+		NULL, &cv_movie_option, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Custom Folder", "Specify which folder to save GIFs in.",
+		NULL, &cv_movie_folder, 24, 0},
+
+};
+
+menu_t OPTIONS_DataScreenshotDef = {
+	sizeof (OPTIONS_DataScreenshot) / sizeof (menuitem_t),
+	&OPTIONS_DataDef,
+	0,
+	OPTIONS_DataScreenshot,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+menuitem_t OPTIONS_DataReplay[] =
+{
+
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_CVAR, "Rich Presence", "Allow Discord to display game info on your status.",
+		NULL, &cv_discordrp, 0, 0},
+#endif
+
+	{IT_STRING | IT_CVAR, "Synch. Check Interval", "How often to check for synchronization while playing back a replay.",
+		NULL, &cv_netdemosyncquality, 0, 0},
+};
+
+menu_t OPTIONS_DataReplayDef = {
+	sizeof (OPTIONS_DataReplay) / sizeof (menuitem_t),
+	&OPTIONS_DataDef,
+	0,
+	OPTIONS_DataReplay,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+
+#ifdef HAVE_DISCORDRPC
+menuitem_t OPTIONS_DataDiscord[] =
+{
+
+	{IT_STRING | IT_CVAR, "Record Replays", "Select when to save replays.",
+		NULL, &cv_recordmultiplayerdemos, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_HEADER, "RICH PRESENCE SETTINGS", NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Streamer Mode", "Prevents the logging of some account information such as your tag in the console.",
+		NULL, &cv_discordstreamer, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Allow Ask to Join", "Allow other people to request joining your game from Discord.",
+		NULL, &cv_discordasks, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Allow Invites", "Set who is allowed to generate Discord invites to your game.",
+		NULL, &cv_discordinvites, 0, 0},
+
+};
+
+menu_t OPTIONS_DataDiscordDef = {
+	sizeof (OPTIONS_DataDiscord) / sizeof (menuitem_t),
+	&OPTIONS_DataDef,
+	0,
+	OPTIONS_DataDiscord,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
+#endif
+
+
+menuitem_t OPTIONS_DataErase[] =
+{
+
+	{IT_STRING | IT_CALL, "Erase Time Attack Data", "Be careful! What's deleted is gone forever!",
+		NULL, M_EraseData, 0, 0},
+
+	{IT_STRING | IT_CALL, "Erase Unlockable Data", "Be careful! What's deleted is gone forever!",
+		NULL, M_EraseData, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "\x85\x45rase all Data", "Be careful! What's deleted is gone forever!",
+		NULL, M_EraseData, 0, 0},
+
+};
+
+menu_t OPTIONS_DataEraseDef = {
+	sizeof (OPTIONS_DataErase) / sizeof (menuitem_t),
+	&OPTIONS_DataDef,
+	0,
+	OPTIONS_DataErase,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawGenericOptions,
+	M_OptionsTick,
+	NULL,
+	NULL,
+};
 
 // -------------------
 // In-game/pause menus
@@ -909,6 +1155,7 @@ menu_t PAUSE_MainDef = {
 	0,
 	PAUSE_Main,
 	0, 0,
+	0, 0,
 	1, 10,	// For transition with some menus!
 	M_DrawPause,
 	M_PauseTick,
@@ -959,6 +1206,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	PAUSE_PlaybackMenu,
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
+	0, 0,
 	M_DrawPlaybackMenu,
 	NULL,
 	NULL,
@@ -967,6 +1215,26 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 
 // Other misc menus:
+
+// Manual
+menuitem_t MISC_Manual[] = {
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL00", NULL, NULL, M_HandleImageDef, 0, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL01", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL02", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL03", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL04", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL05", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL06", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL07", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL08", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL09", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL10", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL11", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL12", NULL, NULL, M_HandleImageDef, 1, 0},
+		{IT_NOTHING | IT_KEYHANDLER, "MANUAL99", NULL, NULL, M_HandleImageDef, 0, 0},
+};
+
+menu_t MISC_ManualDef = IMAGEDEF(MISC_Manual);
 
 // Addons menu! (Just a straight port for now)
 menuitem_t MISC_AddonsMenu[] =
@@ -981,6 +1249,7 @@ menu_t MISC_AddonsDef = {
 	0,
 	MISC_AddonsMenu,
 	50, 28,
+	0, 0,
 	0, 0,
 	M_DrawAddons,
 	NULL,

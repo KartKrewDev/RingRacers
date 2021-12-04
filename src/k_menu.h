@@ -126,6 +126,7 @@ typedef struct menu_s
 	menuitem_t    *menuitems;          // menu items
 
 	INT16          x, y;               // x, y of menu
+	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
 
 	INT16          transitionID;       // only transition if IDs match
 	INT16          transitionTics;     // tics for transitions out
@@ -200,6 +201,19 @@ extern menu_t PLAY_BattleGamemodesDef;
 extern menuitem_t OPTIONS_Main[];
 extern menu_t OPTIONS_MainDef;
 
+// We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
+typedef enum
+{
+	mopt_controls = 0,
+	mopt_video,
+	mopt_sound,
+	mopt_hud,
+	mopt_gameplay,
+	mopt_server,
+	mopt_data,
+	mopt_manual,
+} mopt_e;
+
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
 
@@ -234,12 +248,36 @@ extern menuitem_t OPTIONS_ServerAdvanced[];
 extern menu_t OPTIONS_ServerAdvancedDef;
 #endif
 
+extern menuitem_t OPTIONS_Data[];
+extern menu_t OPTIONS_DataDef;
+
+extern menuitem_t OPTIONS_DataScreenshot[];
+extern menu_t OPTIONS_DataScreenshotDef;
+
+extern menuitem_t OPTIONS_DataAddon[];
+extern menu_t OPTIONS_DataAddonDef;
+
+extern menuitem_t OPTIONS_DataReplay[];
+extern menu_t OPTIONS_DataReplayDef;
+
+#ifdef HAVE_DISCORDRPC
+extern menuitem_t OPTIONS_DataDiscord[];
+extern menu_t OPTIONS_DataDiscordDef;
+#endif
+
+extern menuitem_t OPTIONS_DataErase[];
+extern menu_t OPTIONS_DataEraseDef;
+
 // PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
 extern menuitem_t MISC_Addons[];
 extern menu_t MISC_AddonsDef;
+
+// MANUAL
+extern menuitem_t MISC_Manual[];
+extern menu_t MISC_ManualDef;
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
@@ -328,8 +366,6 @@ void M_Init(void);
 extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
-
-void M_HandleImageDef(INT32 choice);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
@@ -508,15 +544,23 @@ extern struct optionsmenu_s {
 	INT32 vidm_column_size;
 
 	modedesc_t modedescs[MAXMODEDESCS];
+
+	UINT8 erasecontext;
+
+	// background:
+	INT16 currcolour;
+	INT16 lastcolour;
+	tic_t fade;
 } optionsmenu;
 
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
 boolean M_OptionsInputs(INT32 ch);
-
 boolean M_OptionsQuit(void);	// resets buttons when you quit the options.
+void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour for options
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
+void M_EraseData(INT32 choice);	// For data erasing
 
 // video modes menu (resolution)
 
@@ -572,6 +616,9 @@ void M_Addons(INT32 choice);
 boolean M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
+
+void M_Manual(INT32 choice);
+void M_HandleImageDef(INT32 choice);
 
 // M_MENUDRAW.C
 
@@ -643,11 +690,28 @@ void M_DrawAddons(void);
 	0,\
 	source,\
 	0, 0,\
+	0, 0, \
 	1, 10,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
 	NULL,\
 	NULL\
 }
+
+#define IMAGEDEF(source)\
+{\
+	sizeof(source) / sizeof(menuitem_t),\
+	NULL,\
+	0,\
+	source,\
+	0, 0,\
+	0, 0, \
+	1, 10,\
+	M_DrawImageDef,\
+	NULL,\
+	NULL,\
+	NULL\
+}
+
 
 #endif //__K_MENU__

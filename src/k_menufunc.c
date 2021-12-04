@@ -325,10 +325,10 @@ static void Dummystaff_OnChange(void)
 
 void Screenshot_option_Onchange(void)
 {
-#if 0
-	OP_ScreenshotOptionsMenu[op_screenshot_folder].status =
+	// Screenshot opt is at #3, 0 based array obv.
+	OPTIONS_DataScreenshot[2].status =
 		(cv_screenshot_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
+
 }
 
 void Moviemode_mode_Onchange(void)
@@ -358,18 +358,17 @@ void Moviemode_mode_Onchange(void)
 
 void Moviemode_option_Onchange(void)
 {
-#if 0
-	OP_ScreenshotOptionsMenu[op_movie_folder].status =
+	// opt 7 in a 0 based array, you get the idea...
+	OPTIONS_DataScreenshot[6].status =
 		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
 }
 
 void Addons_option_Onchange(void)
 {
-#if 0
-	OP_AddonsOptionsMenu[op_addons_folder].status =
+	// Option 2 will always be the textbar.
+	// (keep in mind this is a 0 indexed array and the first element is a header...)
+	OPTIONS_DataAddon[2].status =
 		(cv_addons_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-#endif
 }
 
 void M_SortServerList(void)
@@ -400,6 +399,50 @@ void M_SortServerList(void)
 #endif
 #endif
 }
+
+static void M_EraseDataResponse(INT32 ch)
+{
+	UINT8 i;
+
+	if (ch != 'y' && ch != KEY_ENTER)
+		return;
+
+	S_StartSound(NULL, sfx_itrole); // bweh heh heh
+
+	// Delete the data
+	if (optionsmenu.erasecontext == 2)
+	{
+		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
+		totalplaytime = 0;
+		matchesplayed = 0;
+		for (i = 0; i < PWRLV_NUMTYPES; i++)
+			vspowerlevel[i] = PWRLVRECORD_START;
+	}
+	if (optionsmenu.erasecontext != 1)
+		G_ClearRecords();
+	if (optionsmenu.erasecontext != 0)
+		M_ClearSecrets();
+
+	F_StartIntro();
+	M_ClearMenus(true);
+}
+
+void M_EraseData(INT32 choice)
+{
+	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press 'Y' to confirm)\n");
+
+	optionsmenu.erasecontext = (UINT8)choice;
+
+	if (choice == 0)
+		eschoice = M_GetText("Time Attack data");
+	else if (choice == 1)
+		eschoice = M_GetText("Secrets data");
+	else
+		eschoice = M_GetText("ALL game data");
+
+	M_StartMessage(va(esstr, eschoice),M_EraseDataResponse,MM_YESNO);
+}
+
 
 // =========================================================================
 // BASIC MENU HANDLING
@@ -1450,6 +1493,7 @@ menu_t MessageDef =
 	0,                  // lastOn, flags       (TO HACK)
 	MessageMenu,        // menuitem_t ->
 	0, 0,               // x, y                (TO HACK)
+	0, 0,				// extra1, extra2
 	0, 0,               // transition tics
 	M_DrawMessageMenu,  // drawing routine ->
 	NULL,               // ticker routine
@@ -2031,7 +2075,7 @@ static void M_MPConfirmCharacterSelection(void)
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
-		itoa(col, colstr, 10);
+		sprintf(colstr, "%d", col);
 		strcpy(cmd, commandnames[i][1]);
 		strcat(cmd, colstr);
 
@@ -2782,7 +2826,15 @@ void M_InitOptions(INT32 choice)
 {
 	(void)choice;
 
-	// @TODO: Change options when you do them from a netgame.
+	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
+	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+
+	// disable gameplay & server options if you aren't an admin in netgames. (GS_MENU check maybe unecessary but let's not take any chances)
+	if (netgame && gamestate != GS_MENU && !IsPlayerAdmin(consoleplayer))
+	{
+		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
+		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
+	}
 
 	optionsmenu.ticker = 0;
 	optionsmenu.offset = 0;
@@ -2792,9 +2844,29 @@ void M_InitOptions(INT32 choice)
 	optionsmenu.toptx = 0;
 	optionsmenu.topty = 0;
 
+	// BG setup:
+	optionsmenu.currcolour = OPTIONS_MainDef.extra1;
+	optionsmenu.lastcolour = 0;
+	optionsmenu.fade = 0;
+
+	// So that pause doesn't go to the main menu...
 	OPTIONS_MainDef.prevMenu = currentMenu;
 
+	// This will disable or enable the textboxes of the affected menus before we get to them.
+	Screenshot_option_Onchange();
+	Moviemode_mode_Onchange();
+	Moviemode_option_Onchange();
+	Addons_option_Onchange();
+
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
+}
+
+// Prepares changing the colour of the background
+void M_OptionsChangeBGColour(INT16 newcolour)
+{
+	optionsmenu.fade = 10;
+	optionsmenu.lastcolour = optionsmenu.currcolour;
+	optionsmenu.currcolour = newcolour;
 }
 
 boolean M_OptionsQuit(void)
@@ -2819,7 +2891,7 @@ void M_OptionsTick(void)
 		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
 	}
 
-	// Garbage:
+	// Move the button for cool animations
 	if (currentMenu == &OPTIONS_MainDef)
 	{
 		M_OptionsQuit();	// ...So now this is used here.
@@ -2829,6 +2901,14 @@ void M_OptionsTick(void)
 		optionsmenu.toptx = 160;
 		optionsmenu.topty = 50;
 	}
+
+	// Handle the background stuff:
+	if (optionsmenu.fade)
+		optionsmenu.fade--;
+
+	// change the colour if we aren't matching the current menu colour
+	if (optionsmenu.currcolour != currentMenu->extra1)
+		M_OptionsChangeBGColour(currentMenu->extra1);
 
 }
 
@@ -2841,6 +2921,7 @@ boolean M_OptionsInputs(INT32 ch)
 		{
 			optionsmenu.offset += 48;
 			M_NextOpt();
+			S_StartSound(NULL, sfx_menu1);
 
 			if (itemOn == 0)
 				optionsmenu.offset -= currentMenu->numitems*48;
@@ -2851,6 +2932,7 @@ boolean M_OptionsInputs(INT32 ch)
 		{
 			optionsmenu.offset -= 48;
 			M_PrevOpt();
+			S_StartSound(NULL, sfx_menu1);
 
 			if (itemOn == currentMenu->numitems-1)
 				optionsmenu.offset += currentMenu->numitems*48;
@@ -2859,6 +2941,10 @@ boolean M_OptionsInputs(INT32 ch)
 		}
 		case KEY_ENTER:
 		{
+
+			if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+				return true;	// No.
+
 			optionsmenu.optx = 140;
 			optionsmenu.opty = 70;	// Default position for the currently selected option.
 
@@ -3232,6 +3318,7 @@ boolean M_PauseInputs(INT32 ch)
 		case KEY_UPARROW:
 		{
 			pausemenu.offset -= 50; // Each item is spaced by 50 px
+			S_StartSound(NULL, sfx_menu1);
 			M_PrevOpt();
 			return true;
 		}
@@ -3239,6 +3326,7 @@ boolean M_PauseInputs(INT32 ch)
 		case KEY_DOWNARROW:
 		{
 			pausemenu.offset += 50;	// Each item is spaced by 50 px
+			S_StartSound(NULL, sfx_menu1);
 			M_NextOpt();
 			return true;
 		}
@@ -3768,4 +3856,13 @@ void M_HandleAddons(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
+}
+
+// Opening manual
+void M_Manual(INT32 choice)
+{
+	(void)choice;
+
+	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
+	M_SetupNextMenu(&MISC_ManualDef, true);
 }
