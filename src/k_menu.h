@@ -335,6 +335,9 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
+#define MENUDELAYTIME 3
+extern INT16 menuInputDelay;
+
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
@@ -620,7 +623,7 @@ char *M_AddonsHeaderPath(void);
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);
 
-// M_MENUDRAW.C
+// K_MENUDRAW.C
 
 // flags for text highlights
 #define highlightflags V_ORANGEMAP

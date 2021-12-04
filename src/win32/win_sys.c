@@ -55,7 +55,7 @@
 
 #include "../screen.h"
 
-#include "../m_menu.h"
+#include "../k_menu.h"
 
 // Wheel support for Win95/WinNT3.51
 #include <zmouse.h>

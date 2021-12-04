@@ -94,6 +94,7 @@ INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
 INT32 menuKey = -1; // keyboard key pressed for menu
+INT16 menuInputDelay = 0; // Delay before registering multiple inputs.
 
 // finish wipes between screens
 boolean menuwipe = false;
@@ -1164,12 +1165,17 @@ static boolean M_HandleMenuInput(void)
 {
 	void (*routine)(INT32 choice); // for some casting problem
 
+	if (menuInputDelay > 0)
+	{
+		return false;
+	}
+
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
 	if (currentMenu->inputroutine)
 	{
 		if (currentMenu->inputroutine(menuKey))
 		{
-			return true;
+			return false;
 		}
 	}
 
@@ -1205,7 +1211,7 @@ static boolean M_HandleMenuInput(void)
 				return true;
 			}
 
-			return true;
+			return false;
 		}
 		else
 		{
@@ -1217,7 +1223,7 @@ static boolean M_HandleMenuInput(void)
 			}
 #endif
 
-			return true;
+			return false;
 		}
 	}
 
@@ -1255,9 +1261,10 @@ static boolean M_HandleMenuInput(void)
 		{
 			S_StartSound(NULL, sfx_s3k5b);
 			routine(0);
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 	else if (M_BasicMenuInput(gc_right) == true)
 	{
@@ -1266,9 +1273,10 @@ static boolean M_HandleMenuInput(void)
 		{
 			S_StartSound(NULL, sfx_s3k5b);
 			routine(1);
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 	else if (M_BasicMenuInput(gc_a) == true)
 	{
@@ -1341,7 +1349,7 @@ static boolean M_HandleMenuInput(void)
 		return false;
 	}
 
-	return true;
+	return false;
 }
 
 void M_Ticker(void)
@@ -1397,9 +1405,17 @@ void M_Ticker(void)
 		}
 	}
 
+	if (menuInputDelay > 0)
+	{
+		menuInputDelay--;
+	}
+
 	if (noFurtherInput == false)
 	{
-		M_HandleMenuInput();
+		if (M_HandleMenuInput() == true)
+		{
+			menuInputDelay = MENUDELAYTIME;
+		}
 	}
 
 	if (currentMenu->tickroutine)
@@ -1848,60 +1864,71 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 	}
 }
 
-static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p, UINT8 num)
+static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
-	switch (choice)
+	if (G_PlayerInputDown(num, gc_down, true) == true)
 	{
-		case KEY_DOWNARROW:
-			p->gridy++;
-			if (p->gridy > 8)
-				p->gridy = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_UPARROW:
-			p->gridy--;
-			if (p->gridy < 0)
-				p->gridy = 8;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_RIGHTARROW:
-			p->gridx++;
-			if (p->gridx > 8)
-				p->gridx = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_LEFTARROW:
-			p->gridx--;
-			if (p->gridx < 0)
-				p->gridx = 8;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
-				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+		p->gridy++;
+		if (p->gridy > 8)
+			p->gridy = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		menuInputDelay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_up, true) == true)
+	{
+		p->gridy--;
+		if (p->gridy < 0)
+			p->gridy = 8;
+		S_StartSound(NULL, sfx_s3k5b);
+		menuInputDelay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_right, true) == true)
+	{
+		p->gridx++;
+		if (p->gridx > 8)
+			p->gridx = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		menuInputDelay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	{
+		p->gridx--;
+		if (p->gridx < 0)
+			p->gridx = 8;
+		S_StartSound(NULL, sfx_s3k5b);
+		menuInputDelay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+	{
+		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
+		{
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+		}
+		else
+		{
+			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+				p->mdepth = CSSTEP_COLORS; // Skip clones menu
 			else
-			{
-				if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-					p->mdepth = CSSTEP_COLORS; // Skip clones menu
-				else
-					p->mdepth = CSSTEP_ALTS;
+				p->mdepth = CSSTEP_ALTS;
 
-				S_StartSound(NULL, sfx_s3k63);
-			}
-			break;
-		case KEY_ESCAPE:
-			if (num == setup_numplayers-1)
-			{
-				p->mdepth = CSSTEP_NONE;
-				S_StartSound(NULL, sfx_s3k5b);
-			}
-			else
-			{
-				S_StartSound(NULL, sfx_s3kb2);
-			}
-			break;
-		default:
-			break;
+			S_StartSound(NULL, sfx_s3k63);
+		}
+
+		menuInputDelay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	{
+		if (num == setup_numplayers-1)
+		{
+			p->mdepth = CSSTEP_NONE;
+			S_StartSound(NULL, sfx_s3k5b);
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+		}
+
+		menuInputDelay = MENUDELAYTIME;
 	}
 }
 
@@ -1994,14 +2021,16 @@ boolean M_CharacterSelectHandler(INT32 choice)
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					if (choice == KEY_ENTER && i == setup_numplayers)
+					if (i == setup_numplayers)
 					{
+						//I_DetectNewControllers(); // Look through all joysticks to see if any have pressed start.
+
 						p->mdepth = CSSTEP_CHARS;
 						S_StartSound(NULL, sfx_s3k65);
 					}
 					break;
 				case CSSTEP_CHARS: // Character Select grid
-					M_HandleCharacterGrid(choice, p, i);
+					M_HandleCharacterGrid(p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
 					M_HandleCharRotate(choice, p);
