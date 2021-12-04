@@ -1875,7 +1875,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridy > 8)
 			p->gridy = 0;
 		S_StartSound(NULL, sfx_s3k5b);
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 	else if (G_PlayerInputDown(num, gc_up, true) == true)
 	{
@@ -1883,7 +1883,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridy < 0)
 			p->gridy = 8;
 		S_StartSound(NULL, sfx_s3k5b);
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 	else if (G_PlayerInputDown(num, gc_right, true) == true)
 	{
@@ -1891,7 +1891,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridx > 8)
 			p->gridx = 0;
 		S_StartSound(NULL, sfx_s3k5b);
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 	else if (G_PlayerInputDown(num, gc_left, true) == true)
 	{
@@ -1899,7 +1899,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridx < 0)
 			p->gridx = 8;
 		S_StartSound(NULL, sfx_s3k5b);
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
 	{
@@ -1917,7 +1917,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3k63);
 		}
 
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 	else if (G_PlayerInputDown(num, gc_b, true) == true)
 	{
@@ -1931,86 +1931,89 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3kb2);
 		}
 
-		menuInputDelay = MENUDELAYTIME;
+		p->delay = MENUDELAYTIME;
 	}
 }
 
-static void M_HandleCharRotate(INT32 choice, setup_player_t *p)
+static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
 
-	switch (choice)
+	if (G_PlayerInputDown(num, gc_right, true) == true)
 	{
-		case KEY_RIGHTARROW:
-			p->clonenum++;
-			if (p->clonenum >= numclones)
-				p->clonenum = 0;
-			p->rotate = CSROTATETICS;
-			p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
-			break;
-		case KEY_LEFTARROW:
-			p->clonenum--;
-			if (p->clonenum < 0)
-				p->clonenum = numclones-1;
-			p->rotate = -CSROTATETICS;
-			p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
-			break;
-		case KEY_ENTER:
-			p->mdepth = CSSTEP_COLORS;
-			S_StartSound(NULL, sfx_s3k63);
-			break;
-		case KEY_ESCAPE:
-			p->mdepth = CSSTEP_CHARS;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		default:
-			break;
+		p->clonenum++;
+		if (p->clonenum >= numclones)
+			p->clonenum = 0;
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	{
+		p->clonenum--;
+		if (p->clonenum < 0)
+			p->clonenum = numclones-1;
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k63);
+		p->delay = MENUDELAYTIME;
+	}
+	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	{
+		p->mdepth = CSSTEP_CHARS;
+		S_StartSound(NULL, sfx_s3k5b);
+		p->delay = MENUDELAYTIME;
 	}
 }
 
-static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
+static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
-	switch (choice)
+	if (G_PlayerInputDown(num, gc_right, true) == true)
 	{
-		case KEY_RIGHTARROW:
-			p->color++;
-			if (p->color >= numskincolors)
-				p->color = 1;
-			p->rotate = CSROTATETICS;
-			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
-			break;
-		case KEY_LEFTARROW:
-			p->color--;
-			if (p->color < 1)
-				p->color = numskincolors-1;
-			p->rotate = -CSROTATETICS;
-			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
-			break;
-		case KEY_ENTER:
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
-			S_StartSound(NULL, sfx_s3k4e);
-			break;
-		case KEY_ESCAPE:
-			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-				p->mdepth = CSSTEP_CHARS; // Skip clones menu
-			else
-				p->mdepth = CSSTEP_ALTS;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		default:
-			break;
+		p->color++;
+		if (p->color >= numskincolors)
+			p->color = 1;
+		p->rotate = CSROTATETICS;
+		p->delay = MENUDELAYTIME; //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	{
+		p->color--;
+		if (p->color < 1)
+			p->color = numskincolors-1;
+		p->rotate = -CSROTATETICS;
+		p->delay = MENUDELAYTIME; //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+	{
+		p->mdepth = CSSTEP_READY;
+		p->delay = TICRATE;
+		M_SetupReadyExplosions(p);
+		S_StartSound(NULL, sfx_s3k4e);
+	}
+	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	{
+		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+			p->mdepth = CSSTEP_CHARS; // Skip clones menu
+		else
+			p->mdepth = CSSTEP_ALTS;
+		S_StartSound(NULL, sfx_s3k5b);
+		p->delay = MENUDELAYTIME;
 	}
 }
 
 boolean M_CharacterSelectHandler(INT32 choice)
 {
 	UINT8 i;
+
+	(void)choice;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -2036,17 +2039,18 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					M_HandleCharacterGrid(p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
-					M_HandleCharRotate(choice, p);
+					M_HandleCharRotate(p, i);
 					break;
 				case CSSTEP_COLORS: // Select color
-					M_HandleColorRotate(choice, p);
+					M_HandleColorRotate(p, i);
 					break;
 				case CSSTEP_READY:
 				default: // Unready
-					if (choice == KEY_ESCAPE)
+					if (G_PlayerInputDown(i, gc_b, true) == true)
 					{
 						p->mdepth = CSSTEP_COLORS;
 						S_StartSound(NULL, sfx_s3k5b);
+						p->delay = MENUDELAYTIME;
 					}
 					break;
 			}
