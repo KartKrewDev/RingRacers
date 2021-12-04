@@ -39,6 +39,15 @@ applications may follow different packet versions.
 // Networking and tick handling related.
 #define TICQUEUE 512 // more than enough for most timeouts....
 #define MAXTEXTCMD 256
+
+// No. of tics your controls can be delayed by.
+
+// TODO: Instead of storing a ton of extra cmds for gentlemens' delay,
+// keep them in a linked-list, with timestamps to discard everything that's older than already sent.
+// That will support any amount of lag, and be less wasteful for clients who don't use it.
+// This just works as a quick implementation.
+#define MAXGENTLEMENDELAY TICRATE
+
 //
 // Packet structure
 //

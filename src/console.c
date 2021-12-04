@@ -1893,6 +1893,8 @@ void CON_SetLoadingProgress(con_loadprogress_t newStep)
 	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
 		return;
 	CON_DrawLoadBar(); // here we display the console text
+	I_OsPolling();
+	I_UpdateNoBlit();
 	I_FinishUpdate(); // page flip or blit buffer
 }
 

@@ -45,8 +45,8 @@
 #include "y_inter.h"
 #include "v_video.h"
 #include "lua_hook.h"
-#include "k_bot.h"
 #include "m_cond.h" // condition sets
+#include "r_fps.h" // frame interpolation/uncapped
 #include "lua_hud.h"
 
 // SRB2kart
@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_bot.h"
 #include "doomstat.h"
 
 #ifdef HAVE_DISCORDRPC
@@ -1786,6 +1787,8 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
+			R_UpdateViewInterpolation();
+
 			break;
 
 		case GS_INTERMISSION:
@@ -1841,7 +1844,12 @@ void G_Ticker(boolean run)
 			break;
 
 		case GS_TITLESCREEN:
-			if (titlemapinaction) P_Ticker(run);
+			if (titlemapinaction)
+			{
+				P_Ticker(run);
+				R_UpdateViewInterpolation();
+			}
+
 			F_TitleScreenTicker(run);
 			break;
 
@@ -2417,7 +2425,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 					if (j == i)
 						continue;
 
-					if (netgame && cv_kartusepwrlv.value)
+					if ((netgame || (demo.playback && demo.netgame)) && cv_kartusepwrlv.value)
 					{
 						if (clientpowerlevels[j][PWRLV_RACE] == clientpowerlevels[i][PWRLV_RACE])
 							num++;
@@ -2438,7 +2446,7 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 					pos++;
 				else
 				{
-					if (netgame && cv_kartusepwrlv.value)
+					if ((netgame || (demo.playback && demo.netgame)) && cv_kartusepwrlv.value)
 					{
 						if (clientpowerlevels[i][PWRLV_RACE] > clientpowerlevels[playernum][PWRLV_RACE])
 							pos++;
@@ -2978,7 +2986,7 @@ boolean G_GametypeHasTeams(void)
 //
 boolean G_GametypeHasSpectators(void)
 {
-	return (netgame || (multiplayer && demo.playback));
+	return (netgame || (multiplayer && demo.netgame));
 }
 
 //

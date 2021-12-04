@@ -30,7 +30,7 @@ SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
 
-	if (!cv_kartusepwrlv.value || !netgame || grandprixinfo.gp == true)
+	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true)
 	{
 		return PWRLV_DISABLED;
 	}
@@ -346,7 +346,7 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 
 	clientpowerlevels[playernum][powertype] += inc;
 
-	if (playernum == consoleplayer)
+	if (!demo.playback && playernum == consoleplayer)
 	{
 		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype];
 		if (M_UpdateUnlockablesAndExtraEmblems())
