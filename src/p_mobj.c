@@ -2947,7 +2947,6 @@ boolean P_SceneryZMovement(mobj_t *mo)
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 {
 	boolean flip = player->mo->eflags & MFE_VERTICALFLIP;
-	fixed_t topspeed = K_GetKartSpeed(player, false);
 	fixed_t surfaceheight = flip ? player->mo->waterbottom : player->mo->watertop;
 	fixed_t playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
 	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
@@ -2957,8 +2956,8 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 		clip > -(player->mo->height / 2) &&
 		span > player->mo->height &&
 		player->speed / 3 > abs(player->mo->momz) &&
-		(player->speed > 2 * topspeed || (player->speed >
-					topspeed && K_SlopeResistance(player))) &&
+		player->speed > K_GetKartSpeed(player, false) &&
+		K_TripWirePass(player) &&
 		(rover->flags & FF_SWIMMABLE);
 }
 
