@@ -7676,7 +7676,8 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	{
 		turnfixed /= 2;
 	}
-	else if (player->mo->eflags & MFE_TOUCHWATER)
+	else if ((player->mo->eflags & MFE_TOUCHWATER) &&
+			!player->offroad)
 	{
 		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
 	}
@@ -8466,7 +8467,8 @@ void K_AdjustPlayerFriction(player_t *player)
 	*/
 
 	// Water gets ice physics too
-	if (player->mo->eflags & MFE_TOUCHWATER)
+	if ((player->mo->eflags & MFE_TOUCHWATER) &&
+			!player->offroad)
 	{
 		player->mo->friction += 614;
 	}
