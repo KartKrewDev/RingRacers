@@ -94,7 +94,7 @@ INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
 INT32 menuKey = -1; // keyboard key pressed for menu
-INT16 menuInputDelay = 0; // Delay before registering multiple inputs.
+menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // finish wipes between screens
 boolean menuwipe = false;
@@ -749,11 +749,6 @@ static void M_PrevOpt(void)
 //
 // M_Responder
 //
-static boolean M_BasicMenuInput(INT32 gc)
-{
-	return G_PlayerInputDown(0, gc, true);
-}
-
 boolean M_Responder(event_t *ev)
 {
 	menuKey = -1;
@@ -844,7 +839,7 @@ boolean M_Responder(event_t *ev)
 		}
 #endif
 
-		if (M_BasicMenuInput(gc_start) == true)
+		if (G_PlayerInputDown(0, gc_start, true) == true)
 		{
 			if (chat_on)
 			{
@@ -873,6 +868,8 @@ boolean M_Responder(event_t *ev)
 //
 void M_StartControlPanel(void)
 {
+	INT32 i;
+
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -892,7 +889,11 @@ void M_StartControlPanel(void)
 	}
 
 	menuactive = true;
-	menuInputDelay = MENUDELAYTIME;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		menucmd[i].delay = MENUDELAYTIME;
+	}
 
 	if (demo.playback)
 	{
@@ -1080,7 +1081,10 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 {
 	INT16 i;
 
-	menuInputDelay = MENUDELAYTIME;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		menucmd[i].delay = MENUDELAYTIME;
+	}
 
 	if (!notransition)
 	{
@@ -1164,13 +1168,74 @@ void M_GoBack(INT32 choice)
 //
 // M_Ticker
 //
-static boolean M_HandleMenuInput(void)
+static void M_SetMenuDelay(UINT8 i)
 {
-	void (*routine)(INT32 choice); // for some casting problem
+	menucmd[i].delayCount++;
+	if (menucmd[i].delayCount < 1)
+	{
+		// Shouldn't happen, but for safety.
+		menucmd[i].delayCount = 1;
+	}
 
-	if (menuInputDelay > 0)
+	menucmd[i].delay = (MENUDELAYTIME / menucmd[i].delayCount);
+	if (menucmd[i].delay < 1)
+	{
+		menucmd[i].delay = 1;
+	}
+}
+
+static void M_UpdateMenuCMD(UINT8 i)
+{
+	menucmd[i].dpad_ud = 0;
+	menucmd[i].dpad_lr = 0;
+
+	menucmd[i].buttonsHeld = menucmd[i].buttons;
+	menucmd[i].buttons = 0;
+
+	if (G_PlayerInputDown(i, gc_up, true)) { menucmd[i].dpad_ud--; }
+	if (G_PlayerInputDown(i, gc_down, true)) { menucmd[i].dpad_ud++; }
+
+	if (G_PlayerInputDown(i, gc_left, true)) { menucmd[i].dpad_lr--; }
+	if (G_PlayerInputDown(i, gc_right, true)) { menucmd[i].dpad_lr++; }
+
+	if (G_PlayerInputDown(i, gc_a, true)) { menucmd[i].buttons |= MBT_A; }
+	if (G_PlayerInputDown(i, gc_b, true)) { menucmd[i].buttons |= MBT_B; }
+	if (G_PlayerInputDown(i, gc_c, true)) { menucmd[i].buttons |= MBT_C; }
+	if (G_PlayerInputDown(i, gc_x, true)) { menucmd[i].buttons |= MBT_X; }
+	if (G_PlayerInputDown(i, gc_y, true)) { menucmd[i].buttons |= MBT_Y; }
+	if (G_PlayerInputDown(i, gc_z, true)) { menucmd[i].buttons |= MBT_Z; }
+	if (G_PlayerInputDown(i, gc_l, true)) { menucmd[i].buttons |= MBT_L; }
+	if (G_PlayerInputDown(i, gc_r, true)) { menucmd[i].buttons |= MBT_R; }
+	if (G_PlayerInputDown(i, gc_start, true)) { menucmd[i].buttons |= MBT_START; }
+
+	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
+	{
+		// Reset delay count with no buttons.
+		menucmd[i].delayCount = 0;
+	}
+}
+
+boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
+{
+	if (menucmd[pid].buttonsHeld & bt)
 	{
 		return false;
+	}
+
+	return (menucmd[pid].buttons & bt);
+}
+
+static void M_HandleMenuInput(void)
+{
+	void (*routine)(INT32 choice); // for some casting problem
+	INT32 i;
+	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	SINT8 lr = 0, ud = 0;
+
+	// Update menu CMD
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i);
 	}
 
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
@@ -1178,8 +1243,13 @@ static boolean M_HandleMenuInput(void)
 	{
 		if (currentMenu->inputroutine(menuKey))
 		{
-			return false;
+			return;
 		}
+	}
+
+	if (menucmd[pid].delay > 0)
+	{
+		return;
 	}
 
 	routine = currentMenu->menuitems[itemOn].itemaction;
@@ -1193,7 +1263,7 @@ static boolean M_HandleMenuInput(void)
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
 	{
 		routine(-1);
-		return true;
+		return;
 	}
 	*/
 
@@ -1202,7 +1272,7 @@ static boolean M_HandleMenuInput(void)
 	{
 		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
 		{
-			if (M_BasicMenuInput(gc_a) || M_BasicMenuInput(gc_b) || M_BasicMenuInput(gc_start))
+			if (menucmd[pid].buttons != 0 && menucmd[pid].buttonsHeld == 0)
 			{
 				if (routine)
 				{
@@ -1211,10 +1281,11 @@ static boolean M_HandleMenuInput(void)
 
 				M_StopMessage(0);
 				noFurtherInput = true;
-				return true;
+				M_SetMenuDelay(pid);
+				return;
 			}
 
-			return false;
+			return;
 		}
 		else
 		{
@@ -1226,7 +1297,7 @@ static boolean M_HandleMenuInput(void)
 			}
 #endif
 
-			return false;
+			return;
 		}
 	}
 
@@ -1244,44 +1315,53 @@ static boolean M_HandleMenuInput(void)
 		}
 	}
 
+	lr = menucmd[pid].dpad_lr;
+	ud = menucmd[pid].dpad_ud;
+
+	// LR does nothing in the default menu, just remap as dpad.
+	if (menucmd[pid].buttons & MBT_L) { lr--; }
+	if (menucmd[pid].buttons & MBT_R) { lr++; }
+
 	// Keys usable within menu
-	if (M_BasicMenuInput(gc_down) == true)
+	if (ud > 0)
 	{
 		M_NextOpt();
 		S_StartSound(NULL, sfx_s3k5b);
-		return true;
+		M_SetMenuDelay(pid);
+		return;
 	}
-	else if (M_BasicMenuInput(gc_up) == true)
+	else if (ud < 0)
 	{
 		M_PrevOpt();
 		S_StartSound(NULL, sfx_s3k5b);
-		return true;
+		M_SetMenuDelay(pid);
+		return;
 	}
-	else if (M_BasicMenuInput(gc_left) == true)
+	else if (lr < 0)
 	{
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
 			S_StartSound(NULL, sfx_s3k5b);
 			routine(0);
-			return true;
+			M_SetMenuDelay(pid);
 		}
 
-		return false;
+		return;
 	}
-	else if (M_BasicMenuInput(gc_right) == true)
+	else if (lr > 0)
 	{
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
 			S_StartSound(NULL, sfx_s3k5b);
 			routine(1);
-			return true;
+			M_SetMenuDelay(pid);
 		}
 
-		return false;
+		return;
 	}
-	else if (M_BasicMenuInput(gc_a) == true)
+	else if ((menucmd[pid].buttons & MBT_A) || (menucmd[pid].buttons & MBT_X) /*|| (menucmd[pid].buttons & MBT_START)*/)
 	{
 		noFurtherInput = true;
 		currentMenu->lastOn = itemOn;
@@ -1297,7 +1377,7 @@ static boolean M_HandleMenuInput(void)
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
 					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
-					return true;
+					return;
 				}
 			}
 
@@ -1317,14 +1397,16 @@ static boolean M_HandleMenuInput(void)
 			}
 		}
 
-		return true;
+		M_SetMenuDelay(pid);
+		return;
 	}
-	else if (M_BasicMenuInput(gc_b) == true)
+	else if ((menucmd[pid].buttons & MBT_B) || (menucmd[pid].buttons & MBT_Y))
 	{
 		M_GoBack(0);
-		return true;
+		M_SetMenuDelay(pid);
+		return;
 	}
-	else if (M_BasicMenuInput(gc_c) == true)
+	else if ((menucmd[pid].buttons & MBT_C) || (menucmd[pid].buttons & MBT_Z))
 	{
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
@@ -1340,23 +1422,26 @@ static boolean M_HandleMenuInput(void)
 				*/
 				)
 			{
-				return true;
+				return;
 			}
 
 			S_StartSound(NULL, sfx_s3k5b);
 
 			routine(-1);
-			return true;
+			M_SetMenuDelay(pid);
+			return;
 		}
 
-		return false;
+		return;
 	}
 
-	return false;
+	return;
 }
 
 void M_Ticker(void)
 {
+	INT32 i;
+
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
 		noFurtherInput = true;
@@ -1408,17 +1493,17 @@ void M_Ticker(void)
 		}
 	}
 
-	if (menuInputDelay > 0)
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		menuInputDelay--;
+		if (menucmd[i].delay > 0)
+		{
+			menucmd[i].delay--;
+		}
 	}
 
 	if (noFurtherInput == false)
 	{
-		if (M_HandleMenuInput() == true)
-		{
-			menuInputDelay = MENUDELAYTIME;
-		}
+		M_HandleMenuInput();
 	}
 
 	if (currentMenu->tickroutine)
@@ -1869,39 +1954,41 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 
 static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
-	if (G_PlayerInputDown(num, gc_down, true) == true)
+	if (menucmd[num].dpad_ud > 0)
 	{
 		p->gridy++;
 		if (p->gridy > 8)
 			p->gridy = 0;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_up, true) == true)
+	else if (menucmd[num].dpad_ud < 0)
 	{
 		p->gridy--;
 		if (p->gridy < 0)
 			p->gridy = 8;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_right, true) == true)
+
+	if (menucmd[num].dpad_lr > 0)
 	{
 		p->gridx++;
 		if (p->gridx > 8)
 			p->gridx = 0;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	else if (menucmd[num].dpad_lr < 0)
 	{
 		p->gridx--;
 		if (p->gridx < 0)
 			p->gridx = 8;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+
+	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
 		{
@@ -1917,9 +2004,9 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3k63);
 		}
 
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
 	{
 		if (num == setup_numplayers-1)
 		{
@@ -1931,7 +2018,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3kb2);
 		}
 
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
 }
 
@@ -1957,17 +2044,18 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		p->delay = CSROTATETICS;
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
-	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+
+	if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
 	{
 		p->mdepth = CSSTEP_COLORS;
 		S_StartSound(NULL, sfx_s3k63);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
 	else if (G_PlayerInputDown(num, gc_b, true) == true)
 	{
 		p->mdepth = CSSTEP_CHARS;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
 }
 
@@ -1979,7 +2067,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		if (p->color >= numskincolors)
 			p->color = 1;
 		p->rotate = CSROTATETICS;
-		p->delay = MENUDELAYTIME; //CSROTATETICS
+		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 	else if (G_PlayerInputDown(num, gc_left, true) == true)
@@ -1988,15 +2076,17 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		if (p->color < 1)
 			p->color = numskincolors-1;
 		p->rotate = -CSROTATETICS;
-		p->delay = MENUDELAYTIME; //CSROTATETICS
+		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
-	else if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+
+	if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
 		M_SetupReadyExplosions(p);
 		S_StartSound(NULL, sfx_s3k4e);
+		M_SetMenuDelay(num);
 	}
 	else if (G_PlayerInputDown(num, gc_b, true) == true)
 	{
@@ -2005,7 +2095,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		else
 			p->mdepth = CSSTEP_ALTS;
 		S_StartSound(NULL, sfx_s3k5b);
-		p->delay = MENUDELAYTIME;
+		M_SetMenuDelay(num);
 	}
 }
 
@@ -2022,7 +2112,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		if (i > 0)
 			break; // temp
 
-		if (p->delay == 0)
+		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
 			switch (p->mdepth)
 			{
@@ -2050,14 +2140,11 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					{
 						p->mdepth = CSSTEP_COLORS;
 						S_StartSound(NULL, sfx_s3k5b);
-						p->delay = MENUDELAYTIME;
+						M_SetMenuDelay(i);
 					}
 					break;
 			}
 		}
-
-		if (p->mdepth < CSSTEP_ALTS)
-			p->clonenum = 0;
 
 		// Just makes it easier to access later
 		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];

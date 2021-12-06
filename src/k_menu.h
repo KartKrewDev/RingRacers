@@ -335,8 +335,32 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
-#define MENUDELAYTIME 3 // TODO: recreate how old input holding worked
-extern INT16 menuInputDelay;
+#define MENUDELAYTIME 7
+
+typedef enum
+{
+	MBT_A = 1,
+	MBT_B = 1<<1,
+	MBT_C = 1<<2,
+	MBT_X = 1<<3,
+	MBT_Y = 1<<4,
+	MBT_Z = 1<<5,
+	MBT_L = 1<<6,
+	MBT_R = 1<<7,
+	MBT_START = 1<<8
+} menuButtonCode_t;
+
+typedef struct menucmd_s
+{
+	SINT8 dpad_ud; // up / down dpad
+	SINT8 dpad_lr; // left / right
+	UINT32 buttons; // buttons
+	UINT32 buttonsHeld; // prev frame's buttons
+	UINT16 delay; // menu wait
+	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
+} menucmd_t;
+
+extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 extern struct menutransition_s {
 	INT16 tics;
@@ -358,6 +382,7 @@ void Addons_option_Onchange(void);
 void M_SortServerList(void);
 
 boolean M_Responder(event_t *ev);
+boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 void M_StartControlPanel(void);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
@@ -382,20 +407,22 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
-// I figure this will be enough clone characters to fit onto the character select.
-// (If someone runs into it after release I'll probably boost it, though.)
-#define MAXCLONES MAXSKINS/16
+// I figure this will be enough clone characters to fit onto one grid space.
+#define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
 	SINT8 skinlist[MAXCLONES];
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
-#define CSSTEP_NONE 0
-#define CSSTEP_CHARS 1
-#define CSSTEP_ALTS 2
-#define CSSTEP_COLORS 3
-#define CSSTEP_READY 4
+typedef enum
+{
+	CSSTEP_NONE = 0,
+	CSSTEP_CHARS,
+	CSSTEP_ALTS,
+	CSSTEP_COLORS,
+	CSSTEP_READY
+} setup_mdepth_t;
 
 typedef struct setup_player_s
 {
