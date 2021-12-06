@@ -1848,7 +1848,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && P_CheckSolidLava(rover))
+			if (thing->player && P_CheckSolidFFloorSurface(thing->player, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
