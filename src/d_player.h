@@ -394,6 +394,8 @@ typedef struct player_s
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
 
+	INT32 underwatertilt;
+
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	UINT8 waterskip;		// Water skipping counter
 

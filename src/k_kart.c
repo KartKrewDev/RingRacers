@@ -7565,7 +7565,7 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->tiregrease;
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if (player->mo->eflags & (MFE_TOUCHWATER))
 	{
 		countersteer = FixedMul(countersteer, 3*FRACUNIT/2);
 	}
@@ -7672,7 +7672,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		turnfixed /= 2;
+	}
+	else if (player->mo->eflags & MFE_TOUCHWATER)
 	{
 		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
 	}
@@ -7681,6 +7685,19 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	turnfixed = FixedMul(turnfixed, weightadjust);
 
 	return (turnfixed / FRACUNIT);
+}
+
+INT32 K_GetUnderwaterTurnAdjust(player_t *player)
+{
+	if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		INT32 steer = (K_GetKartTurnValue(player,
+					player->steering) << TICCMD_REDUCE);
+		return FixedMul(steer, 8 * FixedDiv(player->speed,
+					2 * K_GetKartSpeed(player, false) / 3));
+	}
+	else
+		return 0;
 }
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
@@ -8449,7 +8466,7 @@ void K_AdjustPlayerFriction(player_t *player)
 	*/
 
 	// Water gets ice physics too
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if (player->mo->eflags & MFE_TOUCHWATER)
 	{
 		player->mo->friction += 614;
 	}
