@@ -2956,6 +2956,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 	player_t *p = mobj->player; // Will just be null if not a player.
 	fixed_t height = mobj->height;
 	boolean wasgroundpounding = false;
+	fixed_t top2 = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
+	fixed_t bot2 = P_GetSectorFloorZAt(sector, mobj->x, mobj->y);
 
 	// Default if no water exists.
 	mobj->watertop = mobj->waterbottom = mobj->z - 1000*FRACUNIT;
@@ -2966,13 +2968,20 @@ void P_MobjCheckWater(mobj_t *mobj)
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
 		fixed_t topheight, bottomheight;
-		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
-		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
-		 || ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
-			continue;
 
 		topheight    = P_GetFFloorTopZAt   (rover, mobj->x, mobj->y);
 		bottomheight = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
+
+		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
+		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
+		 || ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
+		{
+			if (topheight < top2 && topheight > thingtop)
+				top2 = topheight;
+			if (bottomheight > bot2 && bottomheight < mobj->z)
+				bot2 = bottomheight;
+			continue;
+		}
 
 		if (mobj->eflags & MFE_VERTICALFLIP)
 		{
@@ -3010,6 +3019,12 @@ void P_MobjCheckWater(mobj_t *mobj)
 				mobj->eflags |= MFE_GOOWATER;
 		}
 	}
+
+	if (mobj->watertop > top2)
+		mobj->watertop = top2;
+
+	if (mobj->waterbottom < bot2)
+		mobj->waterbottom = bot2;
 
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
