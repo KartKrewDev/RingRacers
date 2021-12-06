@@ -231,7 +231,7 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 	{4, "/dev/js3"}, {0, NULL}};
 #else
 // accept whatever value - it is in fact the joystick device number
-#define usejoystick_cons_t NULL
+static CV_PossibleValue_t usejoystick_cons_t[] = {{-1, "MIN"}, {MAXGAMEPADS, "MAX"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
@@ -308,10 +308,10 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
-	CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
-	CVAR_INIT ("use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
-	CVAR_INIT ("use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
+	CVAR_INIT ("use_device", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
+	CVAR_INIT ("use_device2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
+	CVAR_INIT ("use_device3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
+	CVAR_INIT ("use_device4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
 };
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))

@@ -86,6 +86,9 @@ extern consvar_t cv_controlperkey;
 // Or anything inbetween for analog values
 extern INT32 gamekeydown[MAXSPLITSCREENPLAYERS][NUMINPUTS];
 
+#define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
+extern boolean deviceResponding[MAXDEVICES];
+
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage

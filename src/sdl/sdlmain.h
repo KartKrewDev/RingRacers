@@ -61,6 +61,9 @@ typedef struct SDLJoyInfo_s
 /**	\brief SDL info about joysticks
 */
 extern SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
+extern SDL_Joystick *ExJoystick[MAXGAMEPADS];
+
+void I_StoreExJoystick(SDL_Joystick *dev);
 
 /**	\brief joystick axis deadzone
 */

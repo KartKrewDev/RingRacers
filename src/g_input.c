@@ -34,6 +34,7 @@ consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", CV_SAVE, onecont
 // current state of the keys
 // FRACUNIT for fully pressed, 0 for not pressed
 INT32 gamekeydown[MAXSPLITSCREENPLAYERS][NUMINPUTS];
+boolean deviceResponding[MAXDEVICES]; 
 
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
@@ -76,13 +77,44 @@ const INT32 gcl_full[num_gcl_full] = {
 void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
+	INT32 devicePlayer = INT32_MAX;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (ev->device == cv_usejoystick[i].value)
+		{
+			devicePlayer = i;
+			break;
+		}
+	}
+
+	if (ev->device >= 0 && ev->device <= MAXGAMEPADS)
+	{
+		switch (ev->type)
+		{
+			case ev_keydown:
+			//case ev_keyup:
+			//case ev_mouse:
+			//case ev_joystick:
+				deviceResponding[ev->device] = true;
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	if (devicePlayer == INT32_MAX)
+	{
+		return;
+	}
 
 	switch (ev->type)
 	{
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
-				gamekeydown[ev->device][ev->data1] = FRACUNIT;
+				gamekeydown[devicePlayer][ev->data1] = FRACUNIT;
 			}
 #ifdef PARANOIA
 			else
@@ -95,7 +127,7 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keyup:
 			if (ev->data1 < NUMINPUTS)
 			{
-				gamekeydown[ev->device][ev->data1] = 0;
+				gamekeydown[devicePlayer][ev->data1] = 0;
 			}
 #ifdef PARANOIA
 			else
@@ -115,28 +147,28 @@ void G_MapEventsToControls(event_t *ev)
 			if (ev->data2 < 0)
 			{
 				// Left
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 2] = abs(ev->data2);
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 3] = 0;
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 2] = abs(ev->data2);
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 3] = 0;
 			}
 			else
 			{
 				// Right
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 2] = 0;
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 3] = abs(ev->data2);
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 2] = 0;
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 3] = abs(ev->data2);
 			}
 
 			// Y axis
 			if (ev->data3 < 0)
 			{
 				// Up
-				gamekeydown[ev->device][KEY_MOUSEMOVE] = abs(ev->data3);
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 1] = 0;
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE] = abs(ev->data3);
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 1] = 0;
 			}
 			else
 			{
 				// Down
-				gamekeydown[ev->device][KEY_MOUSEMOVE] = 0;
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 1] = abs(ev->data3);
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE] = 0;
+				gamekeydown[devicePlayer][KEY_MOUSEMOVE + 1] = abs(ev->data3);
 			}
 			break;
 
@@ -168,14 +200,14 @@ void G_MapEventsToControls(event_t *ev)
 				if (ev->data2 < 0)
 				{
 					// Left
-					gamekeydown[ev->device][KEY_AXIS1 + i] = abs(ev->data2);
-					gamekeydown[ev->device][KEY_AXIS1 + i + 1] = 0;
+					gamekeydown[devicePlayer][KEY_AXIS1 + i] = abs(ev->data2);
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 1] = 0;
 				}
 				else
 				{
 					// Right
-					gamekeydown[ev->device][KEY_AXIS1 + i] = 0;
-					gamekeydown[ev->device][KEY_AXIS1 + i + 1] = abs(ev->data2);
+					gamekeydown[devicePlayer][KEY_AXIS1 + i] = 0;
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 1] = abs(ev->data2);
 				}
 			}
 
@@ -185,14 +217,14 @@ void G_MapEventsToControls(event_t *ev)
 				if (ev->data3 < 0)
 				{
 					// Up
-					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = abs(ev->data3);
-					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = 0;
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 2] = abs(ev->data3);
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 3] = 0;
 				}
 				else
 				{
 					// Down
-					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = 0;
-					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = abs(ev->data3);
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 2] = 0;
+					gamekeydown[devicePlayer][KEY_AXIS1 + i + 3] = abs(ev->data3);
 				}
 			}
 

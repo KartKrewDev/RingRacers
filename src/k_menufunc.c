@@ -1871,8 +1871,8 @@ void M_CharacterSelectInit(INT32 choice)
 	}
 
 	memset(setup_player, 0, sizeof(setup_player));
-	setup_player[0].mdepth = CSSTEP_CHARS;
-	setup_numplayers = 1;
+	//setup_player[0].mdepth = CSSTEP_CHARS;
+	setup_numplayers = 0;
 
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
@@ -1948,6 +1948,91 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 				if (e == CSEXPLOSIONS)
 					return;
 			}
+		}
+	}
+}
+
+static boolean M_DeviceAvailable(UINT8 deviceID, UINT8 numPlayers)
+{
+	INT32 i;
+
+	if (numPlayers == 0)
+	{
+		// All of them are available!
+		return true;
+	}
+
+	for (i = 0; i < numPlayers; i++)
+	{
+		if (cv_usejoystick[i].value == deviceID)
+		{
+			// This one's already being used.
+			return false;
+		}
+	}
+
+	// This device is good to go.
+	return true;
+}
+
+static void M_HandlePressStart(setup_player_t *p, UINT8 num)
+{
+	INT32 i, j;
+
+	// Detect B press first ... this means P1 can actually exit out of the menu.
+	if (menucmd[num].buttons & MBT_B)
+	{
+		M_SetMenuDelay(num);
+
+		if (num == 0)
+		{
+			// We're done here.
+			M_GoBack(0);
+			return;
+		}
+
+		// Don't allow this press to ever count as "start".
+		return;
+	}
+
+	if (num != setup_numplayers)
+	{
+		// Only detect devices for the last player...
+		// just too complicated otherwise.
+		return;
+	}
+
+	// Now detect new devices trying to join.
+	for (i = 0; i < MAXDEVICES; i++)
+	{
+		if (deviceResponding[i] == false)
+		{
+			// No buttons are being pushed.
+			continue;
+		}
+
+		if (M_DeviceAvailable(i, setup_numplayers) == true)
+		{
+			// Available!! Let's use this one!!
+			cv_usejoystick[setup_numplayers].value = i;
+
+			for (j = setup_numplayers+1; j < MAXSPLITSCREENPLAYERS; j++)
+			{
+				if (cv_usejoystick[j].value == i)
+				{
+					// Un-set devices for other players.
+					cv_usejoystick[j].value = -1;
+				}
+			}
+
+			setup_numplayers++;
+			p->mdepth = CSSTEP_CHARS;
+			S_StartSound(NULL, sfx_s3k65);
+
+			// Prevent excess presses
+			memset(deviceResponding, false, sizeof (deviceResponding));
+
+			M_SetMenuDelay(num);
 		}
 	}
 }
@@ -2117,13 +2202,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					if (i == setup_numplayers)
-					{
-						//I_DetectNewControllers(); // Look through all joysticks to see if any have pressed start.
-
-						p->mdepth = CSSTEP_CHARS;
-						S_StartSound(NULL, sfx_s3k65);
-					}
+					M_HandlePressStart(p, i);
 					break;
 				case CSSTEP_CHARS: // Character Select grid
 					M_HandleCharacterGrid(p, i);
@@ -2160,15 +2239,6 @@ boolean M_CharacterSelectHandler(INT32 choice)
 			break;
 		else
 			setup_numplayers = i+1;
-	}
-
-	// If the first player unjoins, then we get outta here
-	if (setup_player[0].mdepth == CSSTEP_NONE)
-	{
-		if (currentMenu->prevMenu)
-			M_SetupNextMenu(currentMenu->prevMenu, false);
-		else
-			M_ClearMenus(true);
 	}
 
 	return true;
@@ -2249,7 +2319,7 @@ void M_CharacterSelectTick(void)
 			setup_explosions[i].tics--;
 	}
 
-	if (setupnext)
+	if (setupnext && setup_numplayers > 0)
 	{
 
 		// Selecting from the menu

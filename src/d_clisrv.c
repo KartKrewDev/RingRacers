@@ -1922,6 +1922,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	if (*oldtic != I_GetTime())
 	{
 		I_OsPolling();
+
+		memset(deviceResponding, false, sizeof (deviceResponding));
 		for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			G_MapEventsToControls(&events[eventtail]);
 
@@ -1937,6 +1939,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			CL_Reset();
 			D_StartTitle();
 			memset(gamekeydown, 0, sizeof (gamekeydown));
+			memset(deviceResponding, false, sizeof (deviceResponding));
 			return false;
 		}
 

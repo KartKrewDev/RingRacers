@@ -1146,6 +1146,7 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
+	memset(deviceResponding, false, sizeof (deviceResponding));
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();

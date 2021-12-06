@@ -934,9 +934,14 @@ static void M_DrawCharSelectCursor(UINT8 num)
 void M_DrawCharacterSelect(void)
 {
 	UINT8 i, j, k;
-	UINT8 priority = setup_animcounter % setup_numplayers;
+	UINT8 priority = 0;
 	INT16 quadx, quady;
 	SINT8 skin;
+
+	if (setup_numplayers > 0)
+	{
+		priority = setup_animcounter % setup_numplayers;
+	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
 	for (i = 0; i < 9; i++)

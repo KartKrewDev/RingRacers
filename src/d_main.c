@@ -183,6 +183,7 @@ void D_ProcessEvents(void)
 
 	boolean eaten;
 
+	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];

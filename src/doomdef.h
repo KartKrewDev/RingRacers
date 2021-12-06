@@ -204,6 +204,7 @@ extern char logfilename[1024];
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
+#define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
 #define MAXSKINS 128
 
