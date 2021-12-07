@@ -723,6 +723,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"colorIntensity = abs(colorIntensity - (fogBrightness));\n" \
 	"}\n" \
 	"colorIntensity *= darkness;\n" \
+	"colorIntensity *= fade_color.a * 10.0;\n" \
 	"if (abs(final_color.r - fade_color.r) <= colorIntensity) {\n" \
 		"final_color.r = fade_color.r;\n" \
 	"} else if (final_color.r < fade_color.r) {\n" \
