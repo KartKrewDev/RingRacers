@@ -715,12 +715,12 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"float colorBrightness = sqrt((final_color.r * final_color.r) + (final_color.g * final_color.g) + (final_color.b * final_color.b));\n" \
 	"float fogBrightness = sqrt((fade_color.r * fade_color.r) + (fade_color.g * fade_color.g) + (fade_color.b * fade_color.b));\n" \
 	"float colorIntensity = 0.0;\n" \
-	"if (fogBrightness > colorBrightness) {\n" \
+	"if (colorBrightness < fogBrightness) {\n" \
 		"colorIntensity = 1.0 - min(final_color.r, min(final_color.g, final_color.b));\n" \
-		"colorIntensity = abs(colorIntensity - (1.0 - fogBrightness));\n" \
+		"colorIntensity = abs(colorIntensity - (1.0 - max(fade_color.r, max(fade_color.g, fade_color.b))));\n" \
 	"} else {\n" \
 		"colorIntensity = max(final_color.r, max(final_color.g, final_color.b));\n" \
-		"colorIntensity = abs(colorIntensity - (fogBrightness));\n" \
+		"colorIntensity = abs(colorIntensity - min(fade_color.r, min(fade_color.g, fade_color.b)));\n" \
 	"}\n" \
 	"colorIntensity *= darkness;\n" \
 	"colorIntensity *= fade_color.a * 10.0;\n" \

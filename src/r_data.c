@@ -699,12 +699,12 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			if (cbrightness < cdestbright)
 			{
 				cbest = 255.0l - min(r, min(g, b));
-				cdist = 255.0l - cdestbright;
+				cdist = 255.0l - max(cdestr, max(cdestg, cdestb));
 			}
 			else
 			{
 				cbest = max(r, max(g, b));
-				cdist = cdestbright;
+				cdist = min(cdestr, min(cdestg, cdestb));
 			}
 
 			// Add/subtract this value during fading.
