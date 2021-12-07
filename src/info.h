@@ -276,6 +276,7 @@ enum actionnum
 	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
+	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
@@ -546,6 +547,8 @@ void A_JawzExplode();
 void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_LandMineExplode();
+void A_LandMineExplode();
 void A_BallhogExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();

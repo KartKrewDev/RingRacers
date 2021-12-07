@@ -4358,7 +4358,7 @@ state_t states[NUMSTATES] =
 	{SPR_KRBM, FF_FULLBRIGHT|9, 5, {NULL}, 0, 0, S_NULL},				// S_SLOWBOOM10
 
 	{SPR_LNDM, 0, -1, {NULL}, 0, 0, S_LANDMINE},	// S_LANDMINE
-	{SPR_NULL, 0,  1, {NULL}, 0, 0, S_NULL},		// S_LANDMINE_EXPLODE
+	{SPR_NULL, 0,  1, {A_LandMineExplode}, 0, 0, S_NULL},		// S_LANDMINE_EXPLODE
 
 	{SPR_BHOG,               0, 3, {A_PlaySound}, sfx_s1bd, 1, S_BALLHOG2},	// S_BALLHOG1
 	{SPR_BHOG, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_BALLHOG3},					// S_BALLHOG2

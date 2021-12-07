@@ -3623,14 +3623,9 @@ void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32
 
 #define MINEQUAKEDIST 4096
 
-// Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+// Does the proximity screen flash and quake for explosions
+void K_MineFlashScreen(mobj_t *source)
 {
-	INT32 i, radius, height;
-	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
-	mobj_t *dust;
-	mobj_t *truc;
-	INT32 speed, speed2;
 	INT32 pnum;
 	player_t *p;
 
@@ -3653,6 +3648,18 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			break;	// we can break right now because quakes are global to all split players somehow.
 		}
 	}
+}
+
+// Spawns the purely visual explosion
+void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+{
+	INT32 i, radius, height;
+	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
+	mobj_t *dust;
+	mobj_t *truc;
+	INT32 speed, speed2;
+
+	K_MineFlashScreen(source);
 
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
