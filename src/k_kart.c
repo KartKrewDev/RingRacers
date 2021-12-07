@@ -2700,6 +2700,19 @@ boolean K_TripwirePass(player_t *player)
 	return false;
 }
 
+boolean K_WaterRun(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->tiregrease ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
