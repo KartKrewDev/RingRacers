@@ -112,6 +112,10 @@ typedef struct camera_s
 	fixed_t pan;
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
+
+	// Interpolation data
+	fixed_t old_x, old_y, old_z;
+	angle_t old_angle, old_aiming;
 } camera_t;
 
 // demo freecam or something before i commit die

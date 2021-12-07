@@ -312,6 +312,7 @@ typedef struct player_s
 	fixed_t bob;
 
 	angle_t viewrollangle;
+	angle_t old_viewrollangle;
 	// camera tilt
 	// TODO: expose to lua
 	angle_t tilt;
@@ -325,6 +326,7 @@ typedef struct player_s
 
 	// fun thing for player sprite
 	angle_t drawangle;
+	angle_t old_drawangle; // interp
 
 	// Bit flags.
 	// See pflags_t, above.
