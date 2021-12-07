@@ -7694,6 +7694,10 @@ INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 	{
 		INT32 steer = (K_GetKartTurnValue(player,
 					player->steering) << TICCMD_REDUCE);
+
+		if (!player->drift)
+			steer = 3 * steer / 2;
+
 		return FixedMul(steer, 8 * FixedDiv(player->speed,
 					2 * K_GetKartSpeed(player, false) / 3));
 	}
@@ -8471,6 +8475,10 @@ void K_AdjustPlayerFriction(player_t *player)
 			!player->offroad)
 	{
 		player->mo->friction += 614;
+	}
+	else if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown
