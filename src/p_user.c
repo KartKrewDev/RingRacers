@@ -1775,7 +1775,20 @@ static void P_3dMovement(player_t *player)
 
 			if (a)
 			{
-				 adj = a / 4;
+				const fixed_t maxadj = ANG10/4;
+
+				adj = a / 4;
+
+				if (adj > 0)
+				{
+					if (adj > maxadj)
+						adj = maxadj;
+				}
+				else if (adj < 0)
+				{
+					if (adj < -(maxadj))
+						adj = -(maxadj);
+				}
 
 				if (abs(player->underwatertilt + adj) > abs(a))
 					adj = (a - player->underwatertilt);
