@@ -7565,10 +7565,12 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->tiregrease;
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+#if 0
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
 		countersteer = FixedMul(countersteer, 3*FRACUNIT/2);
 	}
+#endif
 
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
@@ -7670,11 +7672,6 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (player->handleboost > 0)
 	{
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
-	}
-
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
-	{
-		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
 	}
 
 	// Weight has a small effect on turning
