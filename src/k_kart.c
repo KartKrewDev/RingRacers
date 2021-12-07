@@ -7672,7 +7672,8 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if (player->mo->eflags & MFE_UNDERWATER)
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
 	{
 		turnfixed /= 2;
 	}
@@ -7690,13 +7691,14 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 {
-	if (player->mo->eflags & MFE_UNDERWATER)
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
 	{
 		INT32 steer = (K_GetKartTurnValue(player,
 					player->steering) << TICCMD_REDUCE);
 
 		if (!player->drift)
-			steer = 3 * steer / 2;
+			steer = 9 * steer / 5;
 
 		return FixedMul(steer, 8 * FixedDiv(player->speed,
 					2 * K_GetKartSpeed(player, false) / 3));
