@@ -35,7 +35,6 @@
 #include "p_slopes.h"
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
-#include "k_color.h" // SRB2kart
 #include "p_local.h" // stplyr
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
@@ -43,6 +42,10 @@
 #include "hardware/hw_light.h"
 #include "hardware/hw_drv.h"
 #endif
+
+// SRB2kart
+#include "k_color.h"
+#include "k_kart.h" // HITLAGJITTERS
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -1453,7 +1456,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{

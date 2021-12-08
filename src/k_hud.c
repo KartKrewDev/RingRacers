@@ -3861,7 +3861,7 @@ static void K_drawKartFirstPerson(void)
 		// hitlag vibrating
 		if (stplyr->mo->hitlag > 0 && (stplyr->mo->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			fixed_t mul = stplyr->mo->hitlag * HITLAGJITTERS;
 			if (r_splitscreen && mul > FRACUNIT)
 				mul = FRACUNIT;
 
