@@ -92,6 +92,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
+INT32 K_GetUnderwaterTurnAdjust(player_t *player);
 INT32 K_GetKartDriftSparkValue(player_t *player);
 INT32 K_StairJankFlip(INT32 value);
 INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);

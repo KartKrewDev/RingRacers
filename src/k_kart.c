@@ -7687,10 +7687,34 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
+	{
+		turnfixed /= 2;
+	}
+
 	// Weight has a small effect on turning
 	turnfixed = FixedMul(turnfixed, weightadjust);
 
 	return (turnfixed / FRACUNIT);
+}
+
+INT32 K_GetUnderwaterTurnAdjust(player_t *player)
+{
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
+	{
+		INT32 steer = (K_GetKartTurnValue(player,
+					player->steering) << TICCMD_REDUCE);
+
+		if (!player->drift)
+			steer = 9 * steer / 5;
+
+		return FixedMul(steer, 8 * FixedDiv(player->speed,
+					2 * K_GetKartSpeed(player, false) / 3));
+	}
+	else
+		return 0;
 }
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
@@ -8459,9 +8483,14 @@ void K_AdjustPlayerFriction(player_t *player)
 	*/
 
 	// Water gets ice physics too
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if ((player->mo->eflags & MFE_TOUCHWATER) &&
+			!player->offroad)
 	{
 		player->mo->friction += 614;
+	}
+	else if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown

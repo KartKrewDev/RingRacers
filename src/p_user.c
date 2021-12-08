@@ -1772,6 +1772,55 @@ static void P_3dMovement(player_t *player)
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
+		{
+			INT32 a = K_GetUnderwaterTurnAdjust(player);
+			INT32 adj = 0;
+
+			if (a)
+			{
+				const fixed_t maxadj = ANG10/4;
+
+				adj = a / 4;
+
+				if (adj > 0)
+				{
+					if (adj > maxadj)
+						adj = maxadj;
+				}
+				else if (adj < 0)
+				{
+					if (adj < -(maxadj))
+						adj = -(maxadj);
+				}
+
+				if (abs(player->underwatertilt + adj) > abs(a))
+					adj = (a - player->underwatertilt);
+
+				if (abs(a) < abs(player->underwatertilt))
+					adj = 0;
+
+				movepushangle += a;
+			}
+
+			if (adj)
+			{
+				player->underwatertilt += adj;
+
+				if (abs(player->underwatertilt) > ANG30)
+				{
+					player->underwatertilt =
+						player->underwatertilt > 0 ? ANG30
+						: -(ANG30);
+				}
+			}
+			else
+			{
+				player->underwatertilt =
+					FixedMul(player->underwatertilt,
+							7*FRACUNIT/8);
+			}
+		}
+
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
 	}
@@ -2058,6 +2107,10 @@ void P_MovePlayer(player_t *player)
 			else if (player->drift != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->drift;
+
+				if (player->mo->eflags & MFE_UNDERWATER)
+					a /= 2;
+
 				player->drawangle += a;
 			}
 		}
