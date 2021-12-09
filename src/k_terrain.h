@@ -14,12 +14,17 @@
 #ifndef __K_TERRAIN_H__
 #define __K_TERRAIN_H__
 
+#include "doomtype.h"
+#include "m_fixed.h"
+
+#define TERRAIN_NAME_LEN 32
+
 typedef struct t_splash_s
 {
 	// Splash definition.
 	// These are particles spawned when hitting the floor.
 
-	const char *name;		// Lookup name.
+	char name[TERRAIN_NAME_LEN];	// Lookup name.
 
 	UINT16 objType;			// Thing type. MT_NULL to not spawn anything.
 	UINT16 sound;			// Sound to play.
@@ -30,7 +35,7 @@ typedef struct t_footstep_s
 	// Footstep definition.
 	// These are particles spawned when moving fast enough on a floor.
 
-	const char *name;		// Lookup name.
+	char name[TERRAIN_NAME_LEN];	// Lookup name.
 
 	UINT16 objType;			// Thing type. MT_NULL to not spawn anything.
 	UINT16 sound;			// Sound to play.
@@ -41,7 +46,7 @@ typedef struct terrain_s
 	// Terrain definition.
 	// These are all of the properties that the floor gets.
 
-	const char *name;		// Lookup name.
+	char name[TERRAIN_NAME_LEN];	// Lookup name.
 
 	INT32 *textureIDs;		// Texture nums this terrain applies to. (Doesn't support flats, stop using them already.)
 	UINT32 numTextureIDs;	// Length of the above table.
@@ -66,5 +71,13 @@ extern UINT16 numTerrainDefs;
 
 // Default terrain definition ID.
 extern UINT16 defaultTerrain;
+
+terrain_t *K_GetTerrainByIndex(UINT16 checkIndex);
+terrain_t *K_GetTerrainByName(const char *checkName);
+terrain_t *K_GetDefaultTerrain(void);
+terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
+terrain_t *K_GetTerrainForTextureName(const char *checkName);
+
+void K_InitTerrain(UINT16 wadNum);
 
 #endif // __K_TERRAIN_H__

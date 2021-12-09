@@ -111,3 +111,4 @@ k_botitem.c
 k_botsearch.c
 k_grandprix.c
 k_hud.c
+k_terrain.c
