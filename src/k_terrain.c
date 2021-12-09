@@ -153,6 +153,58 @@ void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
 	mo->terrain = K_GetTerrainForTextureName(levelFlat->name);
 }
 
+void K_SetDefaultFriction(mobj_t *mo)
+{
+	mo->friction = ORIG_FRICTION;
+
+	if (mo->player != NULL)
+	{
+		mo->movefactor = FRACUNIT;
+	}
+
+	if (mo->terrain != NULL)
+	{
+		fixed_t strength = mo->terrain->friction;
+
+		fixed_t newFriction = INT32_MAX;
+		fixed_t newMovefactor = INT32_MAX;
+
+		if (strength > 0) // sludge
+		{
+			strength = strength*2; // otherwise, the maximum sludginess value is +967...
+		}
+
+		// The following might seem odd. At the time of movement,
+		// the move distance is multiplied by 'friction/0x10000', so a
+		// higher friction value actually means 'less friction'.
+		newFriction = ORIG_FRICTION - FixedMul(0x1EB8, strength) / 0x80; // ORIG_FRICTION is 0xE800
+
+		if (newFriction > FRACUNIT)
+		{
+			newFriction = FRACUNIT;
+		}
+
+		if (newFriction < 0)
+		{
+			newFriction = 0;
+		}
+
+		newMovefactor = FixedDiv(ORIG_FRICTION, newFriction);
+
+		if (newMovefactor < FRACUNIT)
+		{
+			newMovefactor = 19*newMovefactor - 18*FRACUNIT;
+		}
+		else
+		{
+			newMovefactor = FRACUNIT;
+		}
+
+		mo->friction = newFriction;
+		mo->movefactor = newMovefactor;
+	}
+}
+
 //
 // Parser code starts here.
 //
@@ -313,6 +365,43 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			else
 			{
 				CONS_Alert(CONS_ERROR, "No terrain type name.\n");
+				valid = false;
+			}
+		}
+		else if (stricmp(tkn, "defaultTerrain") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				terrain_t *t = NULL;
+
+				for (i = 0; i < numTerrainDefs; i++)
+				{
+					t = &terrainDefs[i];
+
+					if (stricmp(tkn, t->name) == 0)
+					{
+						break;
+					}
+				}
+
+				if (i == numTerrainDefs)
+				{
+					CONS_Alert(CONS_ERROR, "Invalid DefaultTerrain type.\n");
+					valid = false;
+				}
+				else
+				{
+					defaultTerrain = i;
+				}
+			}
+			// TODO: the other block types!
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No DefaultTerrain type.\n");
 				valid = false;
 			}
 		}
