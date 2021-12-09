@@ -4660,7 +4660,7 @@ DoneSection2:
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				if (!player->floorboost)
+				if (player->floorboost == 0)
 					player->floorboost = 3;
 				else
 					player->floorboost = 2;

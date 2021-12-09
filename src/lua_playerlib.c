@@ -281,7 +281,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"handleboost"))
 		lua_pushinteger(L, plr->handleboost);
 	else if (fastcmp(field,"boostangle"))
-		lua_pushinteger(L, plr->boostangle);
+		lua_pushangle(L, plr->boostangle);
 	else if (fastcmp(field,"draftpower"))
 		lua_pushinteger(L, plr->draftpower);
 	else if (fastcmp(field,"draftleeway"))
@@ -626,7 +626,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"handleboost"))
 		plr->handleboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"boostangle"))
-		plr->boostangle = luaL_checkinteger(L, 3);
+		plr->boostangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"draftpower"))
 		plr->draftpower = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"draftleeway"))
