@@ -5219,6 +5219,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		return;
 
 	mo->standingslope = NULL;
+	mo->terrain = NULL;
 
 	mo->eflags |= MFE_SPRUNG;
 

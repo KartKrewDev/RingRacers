@@ -14,9 +14,13 @@
 #include "k_terrain.h"
 
 #include "dehacked.h" // get_number
+#include "doomdata.h"
+#include "doomdef.h"
 #include "doomtype.h"
 #include "fastcmp.h"
 #include "m_fixed.h"
+#include "p_local.h"
+#include "p_mobj.h"
 #include "r_textures.h"
 #include "w_wad.h"
 #include "z_zone.h"
@@ -120,9 +124,50 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 	return K_GetTerrainForTextureNum( R_CheckTextureNumForName(checkName) );
 }
 
+void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
+{
+	levelflat_t *levelFlat = NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
+	if (flatID < 0 || flatID >= (signed)numlevelflats)
+	{
+		// Clearly invalid floor...
+		mo->terrain = NULL;
+		return;
+	}
+
+	if (mo->flags & MF_NOCLIPHEIGHT)
+	{
+		// You can't collide with floors anyway!
+		mo->terrain = NULL;
+		return;
+	}
+
+	// Update the object's terrain pointer.
+	levelFlat = &levelflats[flatID];
+	mo->terrain = K_GetTerrainForTextureName(levelFlat->name);
+}
+
 //
 // Parser code starts here.
 //
+
+static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
+{
+	if (stricmp(val, "true") == 0)
+	{
+		*inputFlags |= newFlag;
+	}
+	else if (stricmp(val, "false") == 0)
+	{
+		*inputFlags &= ~newFlag;
+	}
+}
 
 static void K_TerrainDefaults(terrain_t *terrain)
 {
@@ -132,6 +177,8 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->friction = FRACUNIT;
 	terrain->offroad = 0;
 	terrain->damageType = -1;
+	terrain->trickPanel = 0;
+	terrain->flags = 0;
 }
 
 static void K_NewTerrainDefs(void)
@@ -159,11 +206,23 @@ static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 	}
 	else if (stricmp(param, "offroad") == 0)
 	{
-		terrain->offroad = (UINT8)get_number(val);
+		terrain->offroad = (UINT8)get_number(val); // offroad strength enum?
 	}
 	else if (stricmp(param, "damageType") == 0)
 	{
 		terrain->damageType = (INT16)get_number(val);
+	}
+	else if (stricmp(param, "trickPanel") == 0)
+	{
+		terrain->trickPanel = (UINT8)get_number(val); // trick panel strength enum?
+	}
+	else if (stricmp(param, "liquid") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_LIQUID, val);
+	}
+	else if (stricmp(param, "sneakerPanel") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_SNEAKERPANEL, val);
 	}
 }
 
@@ -210,14 +269,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 
 	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
-		boolean result = true;
+		boolean valid = true;
 
 		// Avoid anything inside bracketed stuff, only look for external keywords.
 		if (fastcmp(tkn, "{") || fastcmp(tkn, "}"))
 		{
 			CONS_Alert(CONS_ERROR, "Rogue bracket detected in TERRAIN lump.\n");
-			Z_Free(tkn);
-			return false;
+			valid = false;
 		}
 		// Check for valid fields.
 		else if (stricmp(tkn, "terrain") == 0)
@@ -249,28 +307,28 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 					CONS_Printf("Created new Terrain type '%s'\n", t->name);
 				}
 
-				result = K_DoTERRAINLumpParse(i, K_ParseTerrainParameter);
+				valid = K_DoTERRAINLumpParse(i, K_ParseTerrainParameter);
 			}
 			// TODO: the other block types!
 			else
 			{
-				CONS_Alert(CONS_NOTICE, "No terrain type name.\n");
+				CONS_Alert(CONS_ERROR, "No terrain type name.\n");
+				valid = false;
 			}
 		}
 		else
 		{
-			CONS_Alert(CONS_NOTICE, "Unknown field '%s' found in TERRAIN lump.\n", tkn);
-			Z_Free(tkn);
-			return false;
-		}
-
-		if (result == false)
-		{
-			Z_Free(tkn);
-			return false;
+			CONS_Alert(CONS_ERROR, "Unknown field '%s' found in TERRAIN lump.\n", tkn);
+			valid = false;
 		}
 
 		Z_Free(tkn);
+
+		if (valid == false)
+		{
+			return false;
+		}
+
 		tkn = M_GetToken(NULL);
 	}
 

@@ -385,6 +385,7 @@ extern camera_t *mapcampointer;
 extern fixed_t tmx;
 extern fixed_t tmy;
 extern pslope_t *tmfloorslope, *tmceilingslope;
+extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);

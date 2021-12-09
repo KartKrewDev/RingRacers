@@ -342,6 +342,7 @@ fixed_t openceilingstep;
 fixed_t openceilingdrop;
 fixed_t openfloorstep;
 fixed_t openfloordrop;
+INT32 opentoppic, openbottompic;
 
 // P_CameraLineOpening
 // P_LineOpening, but for camera
@@ -537,6 +538,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		highceiling = INT32_MIN;
 		lowfloor = INT32_MAX;
 		opentopslope = openbottomslope = NULL;
+		opentoppic = openbottompic = -1;
 		openceilingstep = 0;
 		openceilingdrop = 0;
 		openfloorstep = 0;
@@ -556,6 +558,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		opentop      = height[lo];
 		highceiling  = height[hi];
 		opentopslope = sector[lo]->c_slope;
+		opentoppic = sector[lo]->ceilingpic;
 
 		if (mobj)
 		{
@@ -575,6 +578,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		openbottom      = height[hi];
 		lowfloor        = height[lo];
 		openbottomslope = sector[hi]->f_slope;
+		openbottompic = sector[hi]->floorpic;
 
 		if (mobj)
 		{
@@ -747,6 +751,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (bottomheight < open[FRONT].top) {
 							open[FRONT].top = bottomheight;
 							opentopslope = *rover->b_slope;
+							opentoppic = *rover->bottompic;
 							open[FRONT].ceilingrover = rover;
 						}
 						else if (bottomheight < highceiling)
@@ -758,6 +763,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (topheight > open[FRONT].bottom) {
 							open[FRONT].bottom = topheight;
 							openbottomslope = *rover->t_slope;
+							openbottompic = *rover->toppic;
 							open[FRONT].floorrover = rover;
 						}
 						else if (topheight > lowfloor)
@@ -789,6 +795,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (bottomheight < open[BACK].top) {
 							open[BACK].top = bottomheight;
 							opentopslope = *rover->b_slope;
+							opentoppic = *rover->bottompic;
 							open[BACK].ceilingrover = rover;
 						}
 						else if (bottomheight < highceiling)
@@ -800,6 +807,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (topheight > open[BACK].bottom) {
 							open[BACK].bottom = topheight;
 							openbottomslope = *rover->t_slope;
+							openbottompic = *rover->toppic;
 							open[BACK].floorrover = rover;
 						}
 						else if (topheight > lowfloor)
