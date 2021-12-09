@@ -91,6 +91,7 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
 terrain_t *K_GetTerrainForTextureName(const char *checkName);
 
 void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
+void K_SetDefaultFriction(mobj_t *mo);
 
 void K_InitTerrain(UINT16 wadNum);
 
