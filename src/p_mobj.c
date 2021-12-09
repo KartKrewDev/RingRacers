@@ -40,6 +40,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
+#include "k_terrain.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -1505,7 +1506,10 @@ void P_XYMovement(mobj_t *mo)
 	oldy = mo->y;
 
 	if (mo->flags & MF_NOCLIPHEIGHT)
+	{
 		mo->standingslope = NULL;
+		mo->terrain = NULL;
+	}
 
 	// adjust various things based on slope
 	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8) {
@@ -1671,6 +1675,7 @@ void P_XYMovement(mobj_t *mo)
 					{
 						mo->momz = transfermomz;
 						mo->standingslope = NULL;
+						mo->terrain = NULL;
 						P_SetPitchRoll(mo, ANGLE_90,
 								transferslope->xydirection
 								+ (transferslope->zangle
@@ -1782,6 +1787,7 @@ void P_XYMovement(mobj_t *mo)
 			mo->momz = P_MobjFlip(mo)*FRACUNIT/2;
 			mo->z = predictedz + P_MobjFlip(mo);
 			mo->standingslope = NULL;
+			mo->terrain = NULL;
 			//CONS_Printf("Launched off of flat surface running into downward slope\n");
 		}
 	}
@@ -2274,6 +2280,8 @@ boolean P_ZMovement(mobj_t *mo)
 		}
 
 		P_CheckPosition(mo, mo->x, mo->y); // Sets mo->standingslope correctly
+		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tmceilingpic : tmfloorpic));
+
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
@@ -2503,12 +2511,17 @@ boolean P_ZMovement(mobj_t *mo)
 		if (mo->type == MT_STEAM)
 			return true;
 	}
-	else if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+	else
 	{
-		/// \todo may not be needed (done in P_MobjThinker normally)
-		mo->eflags &= ~MFE_JUSTHITFLOOR;
+		mo->terrain = NULL;
 
-		P_CheckGravity(mo, true);
+		if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+		{
+			/// \todo may not be needed (done in P_MobjThinker normally)
+			mo->eflags &= ~MFE_JUSTHITFLOOR;
+
+			P_CheckGravity(mo, true);
+		}
 	}
 
 	if (((mo->z + mo->height > mo->ceilingz && !(mo->eflags & MFE_VERTICALFLIP))
@@ -2712,20 +2725,29 @@ void P_PlayerZMovement(mobj_t *mo)
 	if (onground && !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
+		{
 			mo->z = mo->ceilingz - mo->height;
+		}
 		else
+		{
 			mo->z = mo->floorz;
+		}
+
+		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingpic : tmfloorpic));
 
 		// Get up if you fell.
 		if (mo->player->panim == PA_HURT && mo->player->spinouttimer == 0 && mo->player->tumbleBounces == 0)
+		{
 			P_SetPlayerMobjState(mo, S_KART_STILL);
+		}
 
-		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {
+		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope))
+		{
 			// Handle landing on slope during Z movement
 			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope));
 		}
 
-		if (P_MobjFlip(mo)*mo->momz < 0) // falling
+		if (P_MobjFlip(mo) * mo->momz < 0) // falling
 		{
 			boolean clipmomz = !(P_CheckDeathPitCollide(mo));
 
@@ -2736,29 +2758,38 @@ void P_PlayerZMovement(mobj_t *mo)
 			P_PlayerPolyObjectZMovement(mo);
 
 			if (clipmomz)
+			{
 				mo->momz = (tmfloorthing ? tmfloorthing->momz : 0);
+			}
 		}
 		else if (tmfloorthing)
-			mo->momz = tmfloorthing->momz;
-	}
-	else if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
-	{
-		if (P_IsObjectInGoop(mo) && !(mo->flags & MF_NOCLIPHEIGHT))
 		{
-			if (mo->z < mo->floorz)
-			{
-				mo->z = mo->floorz;
-				mo->momz = 0;
-			}
-			else if (mo->z + mo->height > mo->ceilingz)
-			{
-				mo->z = mo->ceilingz - mo->height;
-				mo->momz = 0;
-			}
+			mo->momz = tmfloorthing->momz;
 		}
-		/// \todo may not be needed (done in P_MobjThinker normally)
-		mo->eflags &= ~MFE_JUSTHITFLOOR;
-		P_CheckGravity(mo, true);
+	}
+	else
+	{
+		mo->terrain = NULL;
+
+		if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+		{
+			if (P_IsObjectInGoop(mo) && !(mo->flags & MF_NOCLIPHEIGHT))
+			{
+				if (mo->z < mo->floorz)
+				{
+					mo->z = mo->floorz;
+					mo->momz = 0;
+				}
+				else if (mo->z + mo->height > mo->ceilingz)
+				{
+					mo->z = mo->ceilingz - mo->height;
+					mo->momz = 0;
+				}
+			}
+			/// \todo may not be needed (done in P_MobjThinker normally)
+			mo->eflags &= ~MFE_JUSTHITFLOOR;
+			P_CheckGravity(mo, true);
+		}
 	}
 
 	if (((mo->eflags & MFE_VERTICALFLIP && mo->z < mo->floorz) || (!(mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height > mo->ceilingz))

@@ -14,8 +14,11 @@
 #ifndef __K_TERRAIN_H__
 #define __K_TERRAIN_H__
 
+#include "doomdata.h"
+#include "doomdef.h"
 #include "doomtype.h"
 #include "m_fixed.h"
+#include "p_mobj.h"
 
 #define TERRAIN_NAME_LEN 32
 
@@ -41,6 +44,13 @@ typedef struct t_footstep_s
 	UINT16 sound;			// Sound to play.
 } t_footstep_t;
 
+typedef enum
+{
+	// Terrain flag values.
+	TRF_LIQUID = 1, // Texture water properties (wavy, slippery, etc)
+	TRF_SNEAKERPANEL = 1<<1 // Texture is a booster
+} terrain_flags_t;
+
 typedef struct terrain_s
 {
 	// Terrain definition.
@@ -57,6 +67,8 @@ typedef struct terrain_s
 	fixed_t friction;		// The default friction of this texture.
 	UINT8 offroad;			// The default offroad level of this texture.
 	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
+	UINT8 trickPanel;		// Trick panel strength
+	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;
 
 // Arrays for all terrain definitions.
@@ -77,6 +89,8 @@ terrain_t *K_GetTerrainByName(const char *checkName);
 terrain_t *K_GetDefaultTerrain(void);
 terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
 terrain_t *K_GetTerrainForTextureName(const char *checkName);
+
+void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
 
 void K_InitTerrain(UINT16 wadNum);
 

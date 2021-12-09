@@ -395,6 +395,7 @@ typedef struct mobj_s
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
+	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
 	// WARNING: New fields must be added separately to savegame and Lua.
