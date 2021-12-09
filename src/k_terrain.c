@@ -34,6 +34,9 @@ UINT16 numFootstepDefs = 0;
 terrain_t *terrainDefs = NULL;
 UINT16 numTerrainDefs = 0;
 
+t_floor_t *terrainFloorDefs = NULL;
+UINT16 numTerrainFloorDefs = 0;
+
 UINT16 defaultTerrain = UINT16_MAX;
 
 terrain_t *K_GetTerrainByIndex(UINT16 checkIndex)
@@ -76,16 +79,11 @@ terrain_t *K_GetDefaultTerrain(void)
 	return K_GetTerrainByIndex(defaultTerrain);
 }
 
-terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
+terrain_t *K_GetTerrainForTextureName(const char *checkName)
 {
 	INT32 i;
 
-	if (textureNum == -1)
-	{
-		return NULL;
-	}
-
-	if (numTerrainDefs == 0)
+	if (numTerrainFloorDefs == 0)
 	{
 		return NULL;
 	}
@@ -93,24 +91,13 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	// Search backwards through all terrain definitions.
 	// The latest one will have priority over the older one.
 
-	for (i = numTerrainDefs-1; i >= 0; i--)
+	for (i = 0; i < numTerrainFloorDefs; i++)
 	{
-		terrain_t *t = &terrainDefs[i];
-		size_t j;
+		t_floor_t *f = &terrainFloorDefs[i];
 
-		if (t->numTextureIDs == 0)
+		if (stricmp(checkName, f->textureName) == 0)
 		{
-			// No textures are applied to this terrain type.
-			continue;
-		}
-
-		for (j = 0; j < t->numTextureIDs; j++)
-		{
-			if (textureNum == t->textureIDs[j])
-			{
-				// Texture matches.
-				return t;
-			}
+			return K_GetTerrainByIndex(f->terrainID);
 		}
 	}
 
@@ -119,9 +106,17 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	return K_GetDefaultTerrain();
 }
 
-terrain_t *K_GetTerrainForTextureName(const char *checkName)
+terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 {
-	return K_GetTerrainForTextureNum( R_CheckTextureNumForName(checkName) );
+	texture_t *tex = NULL;
+
+	if (textureNum < 0 || textureNum >= numtextures)
+	{
+		return NULL;
+	}
+
+	tex = textures[textureNum];
+	return K_GetTerrainForTextureName(tex->name);
 }
 
 void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
@@ -278,6 +273,12 @@ static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 	}
 }
 
+static void K_NewTerrainFloorDefs(void)
+{
+	numTerrainFloorDefs++;
+	terrainFloorDefs = (t_floor_t *)Z_Realloc(terrainFloorDefs, sizeof(t_floor_t) * (numTerrainFloorDefs + 1), PU_STATIC, NULL);
+}
+
 static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
 {
 	char *param, *val;
@@ -361,10 +362,85 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 
 				valid = K_DoTERRAINLumpParse(i, K_ParseTerrainParameter);
 			}
-			// TODO: the other block types!
 			else
 			{
 				CONS_Alert(CONS_ERROR, "No terrain type name.\n");
+				valid = false;
+			}
+		}
+		else if (stricmp(tkn, "floor") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				if (stricmp(tkn, "optional") == 0)
+				{
+					// "optional" is ZDoom syntax
+					// We don't use it, but we can ignore it.
+					Z_Free(tkn);
+					tkn = M_GetToken(NULL);
+					pos = M_GetTokenPos();
+				}
+
+				if (tkn && pos < size)
+				{
+					t_floor_t *f = NULL;
+
+					for (i = 0; i < numTerrainFloorDefs; i++)
+					{
+						f = &terrainFloorDefs[i];
+
+						if (stricmp(tkn, f->textureName) == 0)
+						{
+							break;
+						}
+					}
+
+					if (i == numTerrainFloorDefs)
+					{
+						K_NewTerrainFloorDefs();
+						f = &terrainFloorDefs[i];
+
+						strncpy(f->textureName, tkn, 9);
+					}
+
+					Z_Free(tkn);
+					tkn = M_GetToken(NULL);
+					pos = M_GetTokenPos();
+
+					if (tkn && pos < size)
+					{
+						terrain_t *t = K_GetTerrainByName(tkn);
+
+						if (t == NULL)
+						{
+							CONS_Alert(CONS_ERROR, "Invalid Terrain type '%s'.\n", tkn);
+							valid = false;
+						}
+						else
+						{
+							f->terrainID = (t - terrainDefs);
+							CONS_Printf("Texture '%s' set to Terrain '%s'\n", f->textureName, tkn);
+						}
+					}
+					else
+					{
+						CONS_Alert(CONS_ERROR, "No terrain for floor definition.\n");
+						valid = false;
+					}
+				}
+				else
+				{
+					CONS_Alert(CONS_ERROR, "No texture for floor definition.\n");
+					valid = false;
+				}
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No texture for floor definition.\n");
 				valid = false;
 			}
 		}
@@ -398,13 +474,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 					defaultTerrain = i;
 				}
 			}
-			// TODO: the other block types!
 			else
 			{
 				CONS_Alert(CONS_ERROR, "No DefaultTerrain type.\n");
 				valid = false;
 			}
 		}
+		// TODO: splash & footstep blocks
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Unknown field '%s' found in TERRAIN lump.\n", tkn);
