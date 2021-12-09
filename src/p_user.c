@@ -2118,8 +2118,6 @@ void P_MovePlayer(player_t *player)
 		player->mo->rollangle = 0;
 	}
 
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
-
 	//{ SRB2kart
 
 	// Drifting sound
@@ -4467,8 +4465,6 @@ void P_PlayerThink(player_t *player)
 		// Move around.
 		P_MovePlayer(player);
 	}
-
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
 	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,

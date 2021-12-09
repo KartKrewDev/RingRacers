@@ -14,6 +14,7 @@
 #include "k_terrain.h"
 
 #include "dehacked.h" // get_number
+#include "deh_soc.h" // get_mobjtype
 #include "doomdata.h"
 #include "doomdef.h"
 #include "doomtype.h"
@@ -27,19 +28,155 @@
 
 #include "k_kart.h" // on the chopping block...
 
-t_splash_t *splashDefs = NULL;
-UINT16 numSplashDefs = 0;
+static t_splash_t *splashDefs = NULL;
+static size_t numSplashDefs = 0;
 
-t_footstep_t *footstepDefs = NULL;
-UINT16 numFootstepDefs = 0;
+static t_footstep_t *footstepDefs = NULL;
+static size_t numFootstepDefs = 0;
 
-terrain_t *terrainDefs = NULL;
-UINT16 numTerrainDefs = 0;
+static terrain_t *terrainDefs = NULL;
+static size_t numTerrainDefs = 0;
 
-t_floor_t *terrainFloorDefs = NULL;
-UINT16 numTerrainFloorDefs = 0;
+static t_floor_t *terrainFloorDefs = NULL;
+static size_t numTerrainFloorDefs = 0;
 
-UINT16 defaultTerrain = UINT16_MAX;
+static size_t defaultTerrain = SIZE_MAX;
+
+/*--------------------------------------------------
+	size_t K_GetSplashHeapIndex(t_splash_t *splash)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetSplashHeapIndex(t_splash_t *splash)
+{
+	if (splash == NULL)
+	{
+		return SIZE_MAX;
+	}
+
+	return (splash - splashDefs);
+}
+
+/*--------------------------------------------------
+	size_t K_GetNumSplashDefs(void)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetNumSplashDefs(void)
+{
+	return numSplashDefs;
+}
+
+/*--------------------------------------------------
+	t_splash_t *K_GetSplashByIndex(size_t checkIndex)
+
+		See header file for description.
+--------------------------------------------------*/
+t_splash_t *K_GetSplashByIndex(size_t checkIndex)
+{
+	if (checkIndex >= numSplashDefs)
+	{
+		return NULL;
+	}
+
+	return &splashDefs[checkIndex];
+}
+
+/*--------------------------------------------------
+	t_splash_t *K_GetSplashByName(const char *checkName)
+
+		See header file for description.
+--------------------------------------------------*/
+t_splash_t *K_GetSplashByName(const char *checkName)
+{
+	size_t i;
+
+	if (numSplashDefs == 0)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < numSplashDefs; i++)
+	{
+		t_splash_t *s = &splashDefs[i];
+
+		if (stricmp(checkName, s->name) == 0)
+		{
+			// Name matches.
+			return s;
+		}
+	}
+
+	return NULL;
+}
+
+/*--------------------------------------------------
+	size_t K_GetFootstepHeapIndex(t_footstep_t *footstep)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetFootstepHeapIndex(t_footstep_t *footstep)
+{
+	if (footstep == NULL)
+	{
+		return SIZE_MAX;
+	}
+
+	return (footstep - footstepDefs);
+}
+
+/*--------------------------------------------------
+	size_t K_GetNumFootstepDefs(void)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetNumFootstepDefs(void)
+{
+	return numFootstepDefs;
+}
+
+/*--------------------------------------------------
+	t_footstep_t *K_GetFootstepByIndex(size_t checkIndex)
+
+		See header file for description.
+--------------------------------------------------*/
+t_footstep_t *K_GetFootstepByIndex(size_t checkIndex)
+{
+	if (checkIndex >= numFootstepDefs)
+	{
+		return NULL;
+	}
+
+	return &footstepDefs[checkIndex];
+}
+
+/*--------------------------------------------------
+	t_footstep_t *K_GetFootstepByName(const char *checkName)
+
+		See header file for description.
+--------------------------------------------------*/
+t_footstep_t *K_GetFootstepByName(const char *checkName)
+{
+	size_t i;
+
+	if (numFootstepDefs == 0)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < numFootstepDefs; i++)
+	{
+		t_footstep_t *fs = &footstepDefs[i];
+
+		if (stricmp(checkName, fs->name) == 0)
+		{
+			// Name matches.
+			return fs;
+		}
+	}
+
+	return NULL;
+}
 
 /*--------------------------------------------------
 	size_t K_GetTerrainHeapIndex(terrain_t *terrain)
@@ -48,21 +185,30 @@ UINT16 defaultTerrain = UINT16_MAX;
 --------------------------------------------------*/
 size_t K_GetTerrainHeapIndex(terrain_t *terrain)
 {
-	size_t i = SIZE_MAX;
-
 	if (terrain == NULL)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "NULL terrain in K_GetTerrainHeapIndex.\n");
-	}
-	else
-	{
-		i = (terrain - terrainDefs);
+		return SIZE_MAX;
 	}
 
-	return i;
+	return (terrain - terrainDefs);
 }
 
-terrain_t *K_GetTerrainByIndex(UINT16 checkIndex)
+/*--------------------------------------------------
+	size_t K_GetNumTerrainDefs(void)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetNumTerrainDefs(void)
+{
+	return numTerrainDefs;
+}
+
+/*--------------------------------------------------
+	terrain_t *K_GetTerrainByIndex(size_t checkIndex)
+
+		See header file for description.
+--------------------------------------------------*/
+terrain_t *K_GetTerrainByIndex(size_t checkIndex)
 {
 	if (checkIndex >= numTerrainDefs)
 	{
@@ -72,18 +218,21 @@ terrain_t *K_GetTerrainByIndex(UINT16 checkIndex)
 	return &terrainDefs[checkIndex];
 }
 
+/*--------------------------------------------------
+	terrain_t *K_GetTerrainByName(const char *checkName)
+
+		See header file for description.
+--------------------------------------------------*/
 terrain_t *K_GetTerrainByName(const char *checkName)
 {
-	INT32 i;
+	size_t i;
 
 	if (numTerrainDefs == 0)
 	{
 		return NULL;
 	}
 
-	// Search backwards through all terrain definitions.
-	// The latest one will have priority over the older one.
-	for (i = numTerrainDefs-1; i >= 0; i--)
+	for (i = 0; i < numTerrainDefs; i++)
 	{
 		terrain_t *t = &terrainDefs[i];
 
@@ -97,22 +246,29 @@ terrain_t *K_GetTerrainByName(const char *checkName)
 	return NULL;
 }
 
+/*--------------------------------------------------
+	terrain_t *K_GetDefaultTerrain(void)
+
+		See header file for description.
+--------------------------------------------------*/
 terrain_t *K_GetDefaultTerrain(void)
 {
 	return K_GetTerrainByIndex(defaultTerrain);
 }
 
+/*--------------------------------------------------
+	terrain_t *K_GetTerrainForTextureName(const char *checkName)
+
+		See header file for description.
+--------------------------------------------------*/
 terrain_t *K_GetTerrainForTextureName(const char *checkName)
 {
-	INT32 i;
+	size_t i;
 
 	if (numTerrainFloorDefs == 0)
 	{
 		return NULL;
 	}
-
-	// Search backwards through all terrain definitions.
-	// The latest one will have priority over the older one.
 
 	for (i = 0; i < numTerrainFloorDefs; i++)
 	{
@@ -129,6 +285,11 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 	return K_GetDefaultTerrain();
 }
 
+/*--------------------------------------------------
+	terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
+
+		See header file for description.
+--------------------------------------------------*/
 terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 {
 	texture_t *tex = NULL;
@@ -142,6 +303,11 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	return K_GetTerrainForTextureName(tex->name);
 }
 
+/*--------------------------------------------------
+	terrain_t *K_GetTerrainForFlatNum(INT32 flatID)
+
+		See header file for description.
+--------------------------------------------------*/
 terrain_t *K_GetTerrainForFlatNum(INT32 flatID)
 {
 	levelflat_t *levelFlat = NULL;
@@ -156,6 +322,11 @@ terrain_t *K_GetTerrainForFlatNum(INT32 flatID)
 	return K_GetTerrainForTextureName(levelFlat->name);
 }
 
+/*--------------------------------------------------
+	void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
 {
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
@@ -175,6 +346,11 @@ void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
 	mo->terrain = K_GetTerrainForFlatNum(flatID);
 }
 
+/*--------------------------------------------------
+	void K_ProcessTerrainEffect(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_ProcessTerrainEffect(mobj_t *mo)
 {
 	player_t *player = NULL;
@@ -242,17 +418,26 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	// (Offroad is handled elsewhere!)
 }
 
+/*--------------------------------------------------
+	void K_SetDefaultFriction(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_SetDefaultFriction(mobj_t *mo)
 {
+	boolean isPlayer = false;
+
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
 		// Invalid object.
 		return;
 	}
 
+	isPlayer = (mo->player != NULL);
+
 	mo->friction = ORIG_FRICTION;
 
-	if (mo->player != NULL)
+	if (isPlayer == true)
 	{
 		mo->movefactor = FRACUNIT;
 	}
@@ -266,7 +451,7 @@ void K_SetDefaultFriction(mobj_t *mo)
 
 		if (strength > 0) // sludge
 		{
-			strength = strength*2; // otherwise, the maximum sludginess value is +967...
+			strength = strength * 2; // otherwise, the maximum sludginess value is +967...
 		}
 
 		// The following might seem odd. At the time of movement,
@@ -284,26 +469,40 @@ void K_SetDefaultFriction(mobj_t *mo)
 			newFriction = 0;
 		}
 
-		newMovefactor = FixedDiv(ORIG_FRICTION, newFriction);
-
-		if (newMovefactor < FRACUNIT)
-		{
-			newMovefactor = 19*newMovefactor - 18*FRACUNIT;
-		}
-		else
-		{
-			newMovefactor = FRACUNIT;
-		}
-
 		mo->friction = newFriction;
-		mo->movefactor = newMovefactor;
+
+		if (isPlayer == true)
+		{
+			newMovefactor = FixedDiv(ORIG_FRICTION, newFriction);
+
+			if (newMovefactor < FRACUNIT)
+			{
+				newMovefactor = 19*newMovefactor - 18*FRACUNIT;
+			}
+			else
+			{
+				newMovefactor = FRACUNIT;
+			}
+
+			mo->movefactor = newMovefactor;
+		}
 	}
 }
 
-//
-// Parser code starts here.
-//
+/*--------------------------------------------------
+	static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 
+		Sets a flag to true or false depending on
+		the string input.
+
+	Input Arguments:-
+		inputFlags - Pointer to flags value to modify.
+		newFlag - The flag(s) to set / unset.
+		val - The string input from the file.
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 {
 	if (stricmp(val, "true") == 0)
@@ -316,10 +515,147 @@ static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 	}
 }
 
+/*--------------------------------------------------
+	static void K_SplashDefaults(t_splash_t *splash)
+
+		Sets the defaults for a new Splash block.
+
+	Input Arguments:-
+		splash - Terrain Splash structure to default.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_SplashDefaults(t_splash_t *splash)
+{
+	splash->mobjType = MT_NULL;
+	splash->sfx = sfx_None;
+}
+
+/*--------------------------------------------------
+	static void K_NewSplashDefs(void)
+
+		Increases the size of splashDefs by 1, and
+		sets the new struct's values to their defaults.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_NewSplashDefs(void)
+{
+	numSplashDefs++;
+	splashDefs = (t_splash_t *)Z_Realloc(splashDefs, sizeof(t_splash_t) * (numSplashDefs + 1), PU_STATIC, NULL);
+	K_SplashDefaults( &splashDefs[numSplashDefs - 1] );
+}
+
+/*--------------------------------------------------
+	static void K_ParseSplashParameter(size_t i, char *param, char *val)
+
+		Parser function for Splash blocks.
+
+	Input Arguments:-
+		i - Struct ID
+		param - Parameter string
+		val - Value string
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_ParseSplashParameter(size_t i, char *param, char *val)
+{
+	t_splash_t *splash = &splashDefs[i];
+
+	if (stricmp(param, "mobjType") == 0)
+	{
+		splash->mobjType = get_mobjtype(val);
+	}
+	else if (stricmp(param, "sfx") == 0)
+	{
+		splash->sfx = get_sfx(val);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_FootstepDefaults(t_footstep_t *footstep)
+
+		Sets the defaults for a new Footstep block.
+
+	Input Arguments:-
+		footstep - Terrain Footstep structure to default.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_FootstepDefaults(t_footstep_t *footstep)
+{
+	footstep->mobjType = MT_NULL;
+	footstep->sfx = sfx_None;
+}
+
+/*--------------------------------------------------
+	static void K_NewFootstepDefs(void)
+
+		Increases the size of footstepDefs by 1, and
+		sets the new struct's values to their defaults.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_NewFootstepDefs(void)
+{
+	numFootstepDefs++;
+	footstepDefs = (t_footstep_t *)Z_Realloc(footstepDefs, sizeof(t_footstep_t) * (numFootstepDefs + 1), PU_STATIC, NULL);
+	K_FootstepDefaults( &footstepDefs[numFootstepDefs - 1] );
+}
+
+/*--------------------------------------------------
+	static void K_ParseFootstepParameter(size_t i, char *param, char *val)
+
+		Parser function for Footstep blocks.
+
+	Input Arguments:-
+		i - Struct ID
+		param - Parameter string
+		val - Value string
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_ParseFootstepParameter(size_t i, char *param, char *val)
+{
+	t_footstep_t *footstep = &footstepDefs[i];
+
+	if (stricmp(param, "mobjType") == 0)
+	{
+		footstep->mobjType = get_mobjtype(val);
+	}
+	else if (stricmp(param, "sfx") == 0)
+	{
+		footstep->sfx = get_sfx(val);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_TerrainDefaults(terrain_t *terrain)
+
+		Sets the defaults for a new Terrain block.
+
+	Input Arguments:-
+		terrain - Terrain structure to default.
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_TerrainDefaults(terrain_t *terrain)
 {
-	terrain->splashID = UINT16_MAX;
-	terrain->footstepID = UINT16_MAX;
+	terrain->splashID = SIZE_MAX;
+	terrain->footstepID = SIZE_MAX;
 
 	terrain->friction = FRACUNIT;
 	terrain->offroad = 0;
@@ -328,6 +664,18 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->flags = 0;
 }
 
+/*--------------------------------------------------
+	static void K_NewTerrainDefs(void)
+
+		Increases the size of terrainDefs by 1, and
+		sets the new struct's values to their defaults.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_NewTerrainDefs(void)
 {
 	numTerrainDefs++;
@@ -335,17 +683,32 @@ static void K_NewTerrainDefs(void)
 	K_TerrainDefaults( &terrainDefs[numTerrainDefs - 1] );
 }
 
+/*--------------------------------------------------
+	static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
+
+		Parser function for Terrain blocks.
+
+	Input Arguments:-
+		i - Struct ID
+		param - Parameter string
+		val - Value string
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 {
 	terrain_t *terrain = &terrainDefs[i];
 
 	if (stricmp(param, "splash") == 0)
 	{
-		//terrain->splashID = 0;
+		t_splash_t *splash = K_GetSplashByName(val);
+		terrain->splashID = K_GetSplashHeapIndex(splash);
 	}
 	else if (stricmp(param, "footstep") == 0)
 	{
-		//terrain->footstepID = 0;
+		t_footstep_t *footstep = K_GetFootstepByName(val);
+		terrain->footstepID = K_GetFootstepHeapIndex(footstep);
 	}
 	else if (stricmp(param, "friction") == 0)
 	{
@@ -373,12 +736,37 @@ static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 	}
 }
 
+/*--------------------------------------------------
+	static void K_NewTerrainFloorDefs(void)
+
+		Increases the size of numTerrainFloorDefs by 1.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
 static void K_NewTerrainFloorDefs(void)
 {
 	numTerrainFloorDefs++;
 	terrainFloorDefs = (t_floor_t *)Z_Realloc(terrainFloorDefs, sizeof(t_floor_t) * (numTerrainFloorDefs + 1), PU_STATIC, NULL);
 }
 
+/*--------------------------------------------------
+	static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
+
+		Runs another parser function for the TERRAIN
+		lump, handling the nitty-gritty parts of the
+		token handling.
+
+	Input Arguments:-
+		num - Struct ID to modify. Which one it will modify depends on the parser function.
+		parser - The parser function. Takes three inputs: Struct ID, Parameter String, and Value String.
+
+	Return:-
+		false if any errors occured, otherwise true.
+--------------------------------------------------*/
 static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
 {
 	char *param, *val;
@@ -414,6 +802,18 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, c
 	return true;
 }
 
+/*--------------------------------------------------
+	static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
+
+		Parses inputted lump data as a TERRAIN lump.
+
+	Input Arguments:-
+		data - Pointer to lump data.
+		size - The length of the lump data.
+
+	Return:-
+		false if any errors occured, otherwise true.
+--------------------------------------------------*/
 static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 {
 	char *tkn = M_GetToken((char *)data);
@@ -431,6 +831,80 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			valid = false;
 		}
 		// Check for valid fields.
+		else if (stricmp(tkn, "splash") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				t_splash_t *s = NULL;
+
+				for (i = 0; i < numSplashDefs; i++)
+				{
+					s = &splashDefs[i];
+
+					if (stricmp(tkn, s->name) == 0)
+					{
+						break;
+					}
+				}
+
+				if (i == numSplashDefs)
+				{
+					K_NewSplashDefs();
+					s = &splashDefs[i];
+
+					strncpy(s->name, tkn, TERRAIN_NAME_LEN);
+					CONS_Printf("Created new Splash type '%s'\n", s->name);
+				}
+
+				valid = K_DoTERRAINLumpParse(i, K_ParseSplashParameter);
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No Splash type name.\n");
+				valid = false;
+			}
+		}
+		else if (stricmp(tkn, "footstep") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				t_footstep_t *fs = NULL;
+
+				for (i = 0; i < numFootstepDefs; i++)
+				{
+					fs = &footstepDefs[i];
+
+					if (stricmp(tkn, fs->name) == 0)
+					{
+						break;
+					}
+				}
+
+				if (i == numFootstepDefs)
+				{
+					K_NewFootstepDefs();
+					fs = &footstepDefs[i];
+
+					strncpy(fs->name, tkn, TERRAIN_NAME_LEN);
+					CONS_Printf("Created new Footstep type '%s'\n", fs->name);
+				}
+
+				valid = K_DoTERRAINLumpParse(i, K_ParseFootstepParameter);
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No Footstep type name.\n");
+				valid = false;
+			}
+		}
 		else if (stricmp(tkn, "terrain") == 0)
 		{
 			Z_Free(tkn);
@@ -464,7 +938,7 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			}
 			else
 			{
-				CONS_Alert(CONS_ERROR, "No terrain type name.\n");
+				CONS_Alert(CONS_ERROR, "No Terrain type name.\n");
 				valid = false;
 			}
 		}
@@ -522,7 +996,7 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 						}
 						else
 						{
-							f->terrainID = (t - terrainDefs);
+							f->terrainID = K_GetTerrainHeapIndex(t);
 							CONS_Printf("Texture '%s' set to Terrain '%s'\n", f->textureName, tkn);
 						}
 					}
@@ -580,7 +1054,6 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 				valid = false;
 			}
 		}
-		// TODO: splash & footstep blocks
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Unknown field '%s' found in TERRAIN lump.\n", tkn);
@@ -601,6 +1074,11 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 	return true;
 }
 
+/*--------------------------------------------------
+	void K_InitTerrain(UINT16 wadNum)
+
+		See header file for description.
+--------------------------------------------------*/
 void K_InitTerrain(UINT16 wadNum)
 {
 	UINT16 lumpNum;
