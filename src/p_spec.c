@@ -2983,9 +2983,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 			// reasonable defaults.
 			if (!quake.intensity)
-				quake.intensity = 8<<FRACBITS;
+				quake.intensity = 8*mapobjectscale;
 			if (!quake.radius)
-				quake.radius = 512<<FRACBITS;
+				quake.radius = 512*mapobjectscale;
 			break;
 		}
 
@@ -8756,6 +8756,6 @@ static void P_SpawnPushers(void)
 // epicenter and radius are not yet used.
 void P_StartQuake(fixed_t intensity, tic_t time)
 {
-	quake.intensity = intensity;
+	quake.intensity = FixedMul(intensity, mapobjectscale);
 	quake.time = time;
 }

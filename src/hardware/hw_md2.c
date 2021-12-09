@@ -45,6 +45,7 @@
 
 // SRB2Kart
 #include "../k_color.h"
+#include "../k_kart.h" // HITLAGJITTERS
 
 #ifdef HAVE_PNG
 
@@ -1382,7 +1383,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = spr->mobj->hitlag * (FRACUNIT / 10);
+			fixed_t mul = spr->mobj->hitlag * HITLAGJITTERS;
 
 			if (leveltime & 1)
 			{

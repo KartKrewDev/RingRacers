@@ -333,6 +333,7 @@ void P_Attract(mobj_t *source, mobj_t *enemy, boolean nightsgrab);
 mobj_t *P_GetClosestAxis(mobj_t *source);
 
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover);
+boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover);
 
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot);
 
