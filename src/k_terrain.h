@@ -58,9 +58,6 @@ typedef struct terrain_s
 
 	char name[TERRAIN_NAME_LEN];	// Lookup name.
 
-	INT32 *textureIDs;		// Texture nums this terrain applies to. (Doesn't support flats, stop using them already.)
-	UINT32 numTextureIDs;	// Length of the above table.
-
 	UINT16 splashID;		// Splash defintion ID.
 	UINT16 footstepID;		// Footstep defintion ID.
 
@@ -70,6 +67,19 @@ typedef struct terrain_s
 	UINT8 trickPanel;		// Trick panel strength
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;
+
+typedef struct t_floor_s
+{
+	// Terrain floor definition.
+	// Ties texture names to a .
+
+	// (Could be optimized by using texture IDs instead of names,
+	// but was concerned because I recall sooomething about those not being netsafe?
+	// Someone confirm if I just hallucinated that. :V)
+
+	char textureName[9];	// Floor texture name.
+	UINT16 terrainID;		// Terrain definition ID.
+} t_floor_t;
 
 // Arrays for all terrain definitions.
 extern t_splash_t *splashDefs;
@@ -81,14 +91,17 @@ extern UINT16 numFootstepDefs;
 extern terrain_t *terrainDefs;
 extern UINT16 numTerrainDefs;
 
+extern t_floor_t *terrainFloorDefs;
+extern UINT16 numTerrainFloorDefs;
+
 // Default terrain definition ID.
 extern UINT16 defaultTerrain;
 
 terrain_t *K_GetTerrainByIndex(UINT16 checkIndex);
 terrain_t *K_GetTerrainByName(const char *checkName);
 terrain_t *K_GetDefaultTerrain(void);
-terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
 terrain_t *K_GetTerrainForTextureName(const char *checkName);
+terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
 
 void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
 void K_SetDefaultFriction(mobj_t *mo);
