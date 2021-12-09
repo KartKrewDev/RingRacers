@@ -25,6 +25,8 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "k_kart.h" // on the chopping block...
+
 t_splash_t *splashDefs = NULL;
 UINT16 numSplashDefs = 0;
 
@@ -119,20 +121,25 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 	return K_GetTerrainForTextureName(tex->name);
 }
 
-void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
+terrain_t *K_GetTerrainForFlatNum(INT32 flatID)
 {
 	levelflat_t *levelFlat = NULL;
-
-	if (mo == NULL || P_MobjWasRemoved(mo) == true)
-	{
-		// Invalid object.
-		return;
-	}
 
 	if (flatID < 0 || flatID >= (signed)numlevelflats)
 	{
 		// Clearly invalid floor...
-		mo->terrain = NULL;
+		return NULL;
+	}
+
+	levelFlat = &levelflats[flatID];
+	return K_GetTerrainForTextureName(levelFlat->name);
+}
+
+void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
+{
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
 		return;
 	}
 
@@ -144,12 +151,84 @@ void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
 	}
 
 	// Update the object's terrain pointer.
-	levelFlat = &levelflats[flatID];
-	mo->terrain = K_GetTerrainForTextureName(levelFlat->name);
+	mo->terrain = K_GetTerrainForFlatNum(flatID);
+}
+
+void K_ProcessTerrainEffect(mobj_t *mo)
+{
+	player_t *player = NULL;
+	terrain_t *terrain = NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
+	if (mo->terrain == NULL)
+	{
+		// No terrain type.
+		return;
+	}
+
+	terrain = mo->terrain;
+	player = mo->player;
+
+	if (player == NULL)
+	{
+		// maybe can support regualar mobjs later? :)
+		return;
+	}
+
+	// Damage effects
+	if (terrain->damageType > 0)
+	{
+		UINT8 dmg = (terrain->damageType & 0xFF);
+		P_DamageMobj(mo, NULL, NULL, 1, dmg);
+	}
+
+	// Sneaker panel
+	if (terrain->flags & TRF_SNEAKERPANEL)
+	{
+		if (!player->floorboost)
+			player->floorboost = 3;
+		else
+			player->floorboost = 2;
+
+		K_DoSneaker(player, 0);
+	}
+
+	// Trick panel
+	if (terrain->trickPanel > 0 && !(mo->eflags & MFE_SPRUNG))
+	{
+		const fixed_t hscale = mapobjectscale + (mapobjectscale - mo->scale);
+		const fixed_t minspeed = 24*hscale;
+		fixed_t speed = FixedHypot(mo->momx, mo->momy);
+		fixed_t upwards = 16 * FRACUNIT * terrain->trickPanel;
+
+		player->trickpanel = 1;
+		player->pflags |= PF_TRICKDELAY;
+		K_DoPogoSpring(mo, upwards, 1);
+
+		if (speed < minspeed)
+		{
+			speed = minspeed;
+		}
+
+		P_InstaThrust(mo, mo->angle, speed);
+	}
+
+	// (Offroad is handled elsewhere!)
 }
 
 void K_SetDefaultFriction(mobj_t *mo)
 {
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
 	mo->friction = ORIG_FRICTION;
 
 	if (mo->player != NULL)

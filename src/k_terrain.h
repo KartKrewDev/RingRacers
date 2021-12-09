@@ -102,8 +102,10 @@ terrain_t *K_GetTerrainByName(const char *checkName);
 terrain_t *K_GetDefaultTerrain(void);
 terrain_t *K_GetTerrainForTextureName(const char *checkName);
 terrain_t *K_GetTerrainForTextureNum(INT32 textureNum);
+terrain_t *K_GetTerrainForFlatNum(INT32 flatID);
 
 void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID);
+void K_ProcessTerrainEffect(mobj_t *mo);
 void K_SetDefaultFriction(mobj_t *mo);
 
 void K_InitTerrain(UINT16 wadNum);

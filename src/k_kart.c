@@ -33,6 +33,7 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_hud.h"
+#include "k_terrain.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -1605,6 +1606,7 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 
 		}
 	}
+
 	return 0;	// couldn't find any offroad
 }
 
@@ -1616,7 +1618,17 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 */
 static void K_UpdateOffroad(player_t *player)
 {
-	fixed_t offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
+	terrain_t *terrain = player->mo->terrain;
+	fixed_t offroadstrength = 0;
+
+	if (terrain != NULL && terrain->offroad > 0)
+	{
+		offroadstrength = (terrain->offroad << FRACBITS);
+	}
+	else
+	{
+		offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
+	}
 
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
