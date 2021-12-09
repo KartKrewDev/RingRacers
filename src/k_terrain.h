@@ -97,6 +97,7 @@ extern UINT16 numTerrainFloorDefs;
 // Default terrain definition ID.
 extern UINT16 defaultTerrain;
 
+size_t K_GetTerrainHeapIndex(terrain_t *terrain);
 terrain_t *K_GetTerrainByIndex(UINT16 checkIndex);
 terrain_t *K_GetTerrainByName(const char *checkName);
 terrain_t *K_GetDefaultTerrain(void);
