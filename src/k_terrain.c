@@ -13,6 +13,12 @@
 
 #include "k_terrain.h"
 
+#include "dehacked.h" // get_number
+#include "doomtype.h"
+#include "fastcmp.h"
+#include "m_fixed.h"
+#include "r_textures.h"
+#include "w_wad.h"
 #include "z_zone.h"
 
 t_splash_t *splashDefs = NULL;
@@ -33,7 +39,7 @@ terrain_t *K_GetTerrainByIndex(UINT16 checkIndex)
 		return NULL;
 	}
 
-	return terrainDefs[checkIndex];
+	return &terrainDefs[checkIndex];
 }
 
 terrain_t *K_GetTerrainByName(const char *checkName)
@@ -49,7 +55,7 @@ terrain_t *K_GetTerrainByName(const char *checkName)
 	// The latest one will have priority over the older one.
 	for (i = numTerrainDefs-1; i >= 0; i--)
 	{
-		terrain_t t = terrainDefs[i];
+		terrain_t *t = &terrainDefs[i];
 
 		if (stricmp(checkName, t->name) == 0)
 		{
@@ -68,7 +74,7 @@ terrain_t *K_GetDefaultTerrain(void)
 
 terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 {
-	INT32 i, j;
+	INT32 i;
 
 	if (textureNum == -1)
 	{
@@ -85,7 +91,8 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 
 	for (i = numTerrainDefs-1; i >= 0; i--)
 	{
-		terrain_t t = terrainDefs[i];
+		terrain_t *t = &terrainDefs[i];
+		size_t j;
 
 		if (t->numTextureIDs == 0)
 		{
@@ -93,7 +100,7 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 			continue;
 		}
 
-		for (j = 0; j < numTextureIDs; j++)
+		for (j = 0; j < t->numTextureIDs; j++)
 		{
 			if (textureNum == t->textureIDs[j])
 			{
@@ -113,254 +120,204 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 	return K_GetTerrainForTextureNum( R_CheckTextureNumForName(checkName) );
 }
 
-static void K_GrowSplashDefs(void)
+//
+// Parser code starts here.
+//
+
+static void K_TerrainDefaults(terrain_t *terrain)
 {
-	numSplashDefs++;
-	splashDefs = (t_splash_t *)Z_Realloc(splashDefs, sizeof(t_splash_t) * (numSplashDefs + 1), PU_STATIC, NULL);
+	terrain->splashID = UINT16_MAX;
+	terrain->footstepID = UINT16_MAX;
+
+	terrain->friction = FRACUNIT;
+	terrain->offroad = 0;
+	terrain->damageType = -1;
 }
 
-static void K_GrowFootstepDefs(void)
-{
-	numFootstepDefs++;
-	footstepDefs = (t_footstep_t *)Z_Realloc(footstepDefs, sizeof(t_footstep_t) * (numFootstepDefs + 1), PU_STATIC, NULL);
-}
-
-static void K_ParseNextLine(char *p, char *token)
-{
-	// parse next line
-	while (*p != '\0' && *p != '\n')
-	{
-		++p;
-	}
-
-	if (*p == '\n')
-	{
-		++p;
-	}
-
-	token = M_GetToken(p);
-}
-
-static void K_GrowTerrainDefs(void)
+static void K_NewTerrainDefs(void)
 {
 	numTerrainDefs++;
 	terrainDefs = (terrain_t *)Z_Realloc(terrainDefs, sizeof(terrain_t) * (numTerrainDefs + 1), PU_STATIC, NULL);
+	K_TerrainDefaults( &terrainDefs[numTerrainDefs - 1] );
 }
 
-static void K_ParseTerrainDefintion(void)
+static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 {
-	char *token;
-	size_t tokenLength;
-	char *endPos;
+	terrain_t *terrain = &terrainDefs[i];
+
+	if (stricmp(param, "splash") == 0)
+	{
+		//terrain->splashID = 0;
+	}
+	else if (stricmp(param, "footstep") == 0)
+	{
+		//terrain->footstepID = 0;
+	}
+	else if (stricmp(param, "friction") == 0)
+	{
+		terrain->friction = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "offroad") == 0)
+	{
+		terrain->offroad = (UINT8)get_number(val);
+	}
+	else if (stricmp(param, "damageType") == 0)
+	{
+		terrain->damageType = (INT16)get_number(val);
+	}
+}
+
+static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
+{
+	char *param, *val;
+
+	param = M_GetToken(NULL);
+
+	if (!fastcmp(param, "{"))
+	{
+		Z_Free(param);
+		CONS_Alert(CONS_WARNING, "Invalid TERRAIN data capsule!\n");
+		return false;
+	}
+
+	Z_Free(param);
+
+	while (true)
+	{
+		param = M_GetToken(NULL);
+
+		if (fastcmp(param, "}"))
+		{
+			Z_Free(param);
+			break;
+		}
+
+		val = M_GetToken(NULL);
+		parser(num, param, val);
+
+		Z_Free(param);
+		Z_Free(val);
+	}
+
+	return true;
+}
+
+static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
+{
+	char *tkn = M_GetToken((char *)data);
+	size_t pos = 0;
 	size_t i;
 
-	// Startname
-	token = M_GetToken(NULL);
-
-	if (token == NULL)
+	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
-		I_Error("Error parsing TERRAIN lump: Expected terrain definition, got end of file");
-	}
+		boolean result = true;
 
-	if (stricmp(token, "{") != 0)
-	{
-		I_Error("Error parsing TERRAIN lump: No starting bracket");
-	}
-
-	while (token != NULL)
-	{
-		
-	}
-	tokenLength = strlen(token);
-
-	if (stricmp(animdefsToken, "OPTIONAL") == 0)
-	{
-		// This is meaningful to ZDoom - it tells the program NOT to bomb out
-		// if the textures can't be found - but it's useless in SRB2, so we'll
-		// just smile, nod, and carry on
-		Z_Free(animdefsToken);
-		animdefsToken = M_GetToken(NULL);
-
-		if (animdefsToken == NULL)
+		// Avoid anything inside bracketed stuff, only look for external keywords.
+		if (fastcmp(tkn, "{") || fastcmp(tkn, "}"))
 		{
-			I_Error("Error parsing ANIMDEFS lump: Unexpected end of file where start texture/flat name should be");
+			CONS_Alert(CONS_ERROR, "Rogue bracket detected in TERRAIN lump.\n");
+			Z_Free(tkn);
+			return false;
 		}
-		else if (stricmp(animdefsToken, "RANGE") == 0)
+		// Check for valid fields.
+		else if (stricmp(tkn, "terrain") == 0)
 		{
-			// Oh. Um. Apparently "OPTIONAL" is a texture name. Naughty.
-			// I should probably handle this more gracefully, but right now
-			// I can't be bothered; especially since ZDoom doesn't handle this
-			// condition at all.
-			I_Error("Error parsing ANIMDEFS lump: \"OPTIONAL\" is a keyword; you cannot use it as the startname of an animation");
-		}
-	}
-	animdefsTokenLength = strlen(animdefsToken);
-	if (animdefsTokenLength>8)
-	{
-		I_Error("Error parsing ANIMDEFS lump: lump name \"%s\" exceeds 8 characters", animdefsToken);
-	}
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
-	// Search for existing animdef
-	for (i = 0; i < maxanims; i++)
-		if (animdefs[i].istexture == istexture // Check if it's the same type!
-		&& stricmp(animdefsToken, animdefs[i].startname) == 0)
-		{
-			//CONS_Alert(CONS_NOTICE, "Duplicate animation: %s\n", animdefsToken);
+			if (tkn && pos < size)
+			{
+				terrain_t *t = NULL;
 
-			// If we weren't parsing in reverse order, we would `break` here and parse the new data into the existing slot we found.
-			// Instead, we're just going to skip parsing the rest of this line entirely.
-			Z_Free(animdefsToken);
-			return;
-		}
+				for (i = 0; i < numTerrainDefs; i++)
+				{
+					t = &terrainDefs[i];
 
-	// Not found
-	if (i == maxanims)
-	{
-		// Increase the size to make room for the new animation definition
-		GrowAnimDefs();
-		strncpy(animdefs[i].startname, animdefsToken, 9);
-	}
+					if (stricmp(tkn, t->name) == 0)
+					{
+						break;
+					}
+				}
 
-	// animdefs[i].startname is now set to animdefsToken either way.
-	Z_Free(animdefsToken);
+				if (i == numTerrainDefs)
+				{
+					K_NewTerrainDefs();
+					t = &terrainDefs[i];
 
-	// set texture type
-	animdefs[i].istexture = istexture;
+					strncpy(t->name, tkn, TERRAIN_NAME_LEN);
+					CONS_Printf("Created new Terrain type '%s'\n", t->name);
+				}
 
-	// "RANGE"
-	animdefsToken = M_GetToken(NULL);
-	if (animdefsToken == NULL)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Unexpected end of file where \"RANGE\" after \"%s\"'s startname should be", animdefs[i].startname);
-	}
-	if (stricmp(animdefsToken, "ALLOWDECALS") == 0)
-	{
-		// Another ZDoom keyword, ho-hum. Skip it, move on to the next token.
-		Z_Free(animdefsToken);
-		animdefsToken = M_GetToken(NULL);
-	}
-	if (stricmp(animdefsToken, "PIC") == 0)
-	{
-		// This is technically legitimate ANIMDEFS syntax, but SRB2 doesn't support it.
-		I_Error("Error parsing ANIMDEFS lump: Animation definitions utilizing \"PIC\" (specific frames instead of a consecutive range) are not supported by SRB2");
-	}
-	if (stricmp(animdefsToken, "RANGE") != 0)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Expected \"RANGE\" after \"%s\"'s startname, got \"%s\"", animdefs[i].startname, animdefsToken);
-	}
-	Z_Free(animdefsToken);
-
-	// Endname
-	animdefsToken = M_GetToken(NULL);
-	if (animdefsToken == NULL)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Unexpected end of file where \"%s\"'s end texture/flat name should be", animdefs[i].startname);
-	}
-	animdefsTokenLength = strlen(animdefsToken);
-	if (animdefsTokenLength>8)
-	{
-		I_Error("Error parsing ANIMDEFS lump: lump name \"%s\" exceeds 8 characters", animdefsToken);
-	}
-	strncpy(animdefs[i].endname, animdefsToken, 9);
-	Z_Free(animdefsToken);
-
-	// "TICS"
-	animdefsToken = M_GetToken(NULL);
-	if (animdefsToken == NULL)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Unexpected end of file where \"%s\"'s \"TICS\" should be", animdefs[i].startname);
-	}
-	if (stricmp(animdefsToken, "RAND") == 0)
-	{
-		// This is technically legitimate ANIMDEFS syntax, but SRB2 doesn't support it.
-		I_Error("Error parsing ANIMDEFS lump: Animation definitions utilizing \"RAND\" (random duration per frame) are not supported by SRB2");
-	}
-	if (stricmp(animdefsToken, "TICS") != 0)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Expected \"TICS\" in animation definition for \"%s\", got \"%s\"", animdefs[i].startname, animdefsToken);
-	}
-	Z_Free(animdefsToken);
-
-	// Speed
-	animdefsToken = M_GetToken(NULL);
-	if (animdefsToken == NULL)
-	{
-		I_Error("Error parsing ANIMDEFS lump: Unexpected end of file where \"%s\"'s animation speed should be", animdefs[i].startname);
-	}
-	endPos = NULL;
-#ifndef AVOID_ERRNO
-	errno = 0;
-#endif
-
-	animSpeed = strtol(animdefsToken,&endPos,10);
-
-	if (endPos == animdefsToken // Empty string
-		|| *endPos != '\0' // Not end of string
-#ifndef AVOID_ERRNO
-		|| errno == ERANGE // Number out-of-range
-#endif
-		|| animSpeed < 0) // Number is not positive
-	{
-		I_Error("Error parsing ANIMDEFS lump: Expected a positive integer for \"%s\"'s animation speed, got \"%s\"", animdefs[i].startname, animdefsToken);
-	}
-
-	animdefs[i].speed = animSpeed;
-
-	Z_Free(animdefsToken);
-}
-
-void K_ParseTERRAINLump(INT32 wadNum, UINT16 lumpnum)
-{
-	char *lump;
-	size_t lumpLength;
-	char *fullText;
-	char *token;
-	char *p;
-
-	// Since lumps AREN'T \0-terminated like I'd assumed they should be, I'll
-	// need to make a space of memory where I can ensure that it will terminate
-	// correctly. Start by loading the relevant data from the WAD.
-	lump = (char *)W_CacheLumpNumPwad(wadNum, lumpnum, PU_STATIC);
-
-	// If that didn't exist, we have nothing to do here.
-	if (lump == NULL)
-	{
-		return;
-	}
-
-	// If we're still here, then it DOES exist; figure out how long it is, and allot memory accordingly.
-	lumpLength = W_LumpLengthPwad(wadNum, lumpnum);
-	fullText = (char *)Z_Malloc((lumpLength + 1) * sizeof(char), PU_STATIC, NULL);
-
-	// Now move the contents of the lump into this new location.
-	memmove(fullText, lump, lumpLength);
-
-	// Make damn well sure the last character in our new memory location is \0.
-	fullText[lumpLength] = '\0';
-
-	// Finally, free up the memory from the first data load, because we really
-	// don't need it.
-	Z_Free(lump);
-
-	// Now, let's start parsing this thing
-	p = fullText;
-	token = M_GetToken(p);
-
-	while (token != NULL)
-	{
-		if (stricmp(token, "TERRAIN") == 0)
-		{
-			Z_Free(token);
-			K_ParseTerrainDefintion(&p, &token);
+				result = K_DoTERRAINLumpParse(i, K_ParseTerrainParameter);
+			}
+			// TODO: the other block types!
+			else
+			{
+				CONS_Alert(CONS_NOTICE, "No terrain type name.\n");
+			}
 		}
 		else
 		{
-			I_Error("Error parsing TERRAIN lump: Expected \"SPLASH\", \"FOOTSTEP\", \"TERRAIN\", \"FLOOR\"; got \"%s\"", token);
+			CONS_Alert(CONS_NOTICE, "Unknown field '%s' found in TERRAIN lump.\n", tkn);
+			Z_Free(tkn);
+			return false;
 		}
 
-		K_ParseNextLine(&p, &token);
+		if (result == false)
+		{
+			Z_Free(tkn);
+			return false;
+		}
+
+		Z_Free(tkn);
+		tkn = M_GetToken(NULL);
 	}
 
-	Z_Free(token);
-	Z_Free((void *)fullText);
+	Z_Free(tkn);
+	return true;
+}
+
+void K_InitTerrain(UINT16 wadNum)
+{
+	UINT16 lumpNum;
+	lumpinfo_t *lump_p = wadfiles[wadNum]->lumpinfo;
+
+	// Iterate through all lumps and compare the name individually.
+	// In PK3 files, you can potentially have multiple TERRAIN differentiated by
+	// their file extension.
+	for (lumpNum = 0; lumpNum < wadfiles[wadNum]->numlumps; lumpNum++, lump_p++)
+	{
+		UINT8 *data;
+
+		if (memcmp(lump_p->name, "TERRAIN", 8) != 0)
+		{
+			continue;
+		}
+
+		data = (UINT8 *)W_CacheLumpNumPwad(wadNum, lumpNum, PU_STATIC);
+
+		// If that didn't exist, we have nothing to do here.
+		if (data == NULL)
+		{
+			continue;
+		}
+		else
+		{
+			size_t size = W_LumpLengthPwad(wadNum, lumpNum);
+
+			size_t nameLength = strlen(wadfiles[wadNum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
+			char *name = malloc(nameLength + 1);
+
+			sprintf(name, "%s|%s", wadfiles[wadNum]->filename, lump_p->fullname);
+			name[nameLength] = '\0';
+
+			size = W_LumpLengthPwad(wadNum, lumpNum);
+
+			CONS_Printf(M_GetText("Loading TERRAIN from %s\n"), name);
+			K_TERRAINLumpParser(data, size);
+
+			free(name);
+		}
+	}
 }
