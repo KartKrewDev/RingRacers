@@ -970,7 +970,7 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 				valid = false;
 			}
 		}
-		else if (stricmp(tkn, "floor") == 0)
+		else if (stricmp(tkn, "floor") == 0 || stricmp(tkn, "texture") == 0)
 		{
 			Z_Free(tkn);
 			tkn = M_GetToken(NULL);
