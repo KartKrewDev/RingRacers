@@ -3079,19 +3079,37 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 	}
 
-	if (mobj->watertop > top2)
-		mobj->watertop = top2;
+	if (mobj->terrain != NULL)
+	{
+		if (mobj->terrain->flags & TRF_LIQUID)
+		{
+			// This floor is water.
+			mobj->eflags |= MFE_TOUCHWATER;
 
-	if (mobj->waterbottom < bot2)
-		mobj->waterbottom = bot2;
+			if (mobj->eflags & MFE_VERTICALFLIP)
+			{
+				mobj->watertop = thingtop + height;
+				mobj->waterbottom = thingtop;
+			}
+			else
+			{
+				mobj->watertop = mobj->z;
+				mobj->waterbottom = mobj->z - height;
+			}
+		}
+	}
 
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
+	{
 		return;
+	}
 
 	// The rest of this code only executes on a water state change.
-	if (!!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	if (waterwasnotset || !!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	{
 		return;
+	}
 
 	if (p && !p->waterskip &&
 			p->curshield != KSHIELD_BUBBLE && wasinwater)
@@ -3104,6 +3122,132 @@ void P_MobjCheckWater(mobj_t *mobj)
 	 || ((mobj->info->flags & MF_PUSHABLE) && mobj->fuse) // Previously pushable, might be moving still
 	)
 	{
+		fixed_t waterZ = INT32_MAX;
+		fixed_t solidZ = INT32_MAX;
+		fixed_t diff = INT32_MAX;
+
+		fixed_t thingZ = INT32_MAX;
+		boolean splashValid = false;
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			waterZ = mobj->waterbottom;
+			solidZ = mobj->ceilingz;
+		}
+		else
+		{
+			waterZ = mobj->watertop;
+			solidZ = mobj->floorz;
+		}
+
+		diff = waterZ - solidZ;
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			diff = -diff;
+		}
+
+		// Check to make sure you didn't just cross into a sector to jump out of
+		// that has shallower water than the block you were originally in.
+		if (diff <= (height >> 1))
+		{
+			return;
+		}
+
+		if (mobj->eflags & MFE_GOOWATER || wasingoo)
+		{
+			// Decide what happens to your momentum when you enter/leave goopy water.
+			if (P_MobjFlip(mobj) * mobj->momz > 0)
+			{
+				mobj->momz -= (mobj->momz/8); // cut momentum a little bit to prevent multiple bobs
+				//CONS_Printf("leaving\n");
+			}
+			else
+			{
+				if (!wasgroundpounding)
+					mobj->momz >>= 1; // kill momentum significantly, to make the goo feel thick.
+				//CONS_Printf("entering\n");
+			}
+		}
+		else if (wasinwater && P_MobjFlip(mobj) * mobj->momz > 0)
+		{
+			// Give the mobj a little out-of-water boost.
+			mobj->momz = FixedMul(mobj->momz, FixedDiv(780*FRACUNIT, 457*FRACUNIT));
+		}
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			thingZ = thingtop - (height >> 1);
+			splashValid = (thingZ - mobj->momz <= waterZ);
+		}
+		else
+		{
+			thingZ = mobj->z + (height >> 1);
+			splashValid = (thingZ - mobj->momz >= waterZ);
+		}
+
+		if (P_MobjFlip(mobj) * mobj->momz <= 0)
+		{
+			if (splashValid == true)
+			{
+				// Spawn a splash
+				mobj_t *splish;
+				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
+
+				if (mobj->eflags & MFE_VERTICALFLIP)
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ - FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
+					splish->flags2 |= MF2_OBJECTFLIP;
+					splish->eflags |= MFE_VERTICALFLIP;
+				}
+				else
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ, splishtype);
+				}
+
+				splish->destscale = mobj->scale;
+				P_SetScale(splish, mobj->scale);
+			}
+
+			// skipping stone!
+			if (p && p->waterskip < 2
+				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
+				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
+				&& (splashValid == true))
+			{
+				const fixed_t hop = 5 * mobj->scale;
+
+				mobj->momx = (4*mobj->momx)/5;
+				mobj->momy = (4*mobj->momy)/5;
+				mobj->momz = hop * P_MobjFlip(mobj);
+
+				p->waterskip++;
+			}
+
+		}
+		else if (P_MobjFlip(mobj) * mobj->momz > 0)
+		{
+			if (splashValid == true && !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
+			{
+				// Spawn a splash
+				mobj_t *splish;
+				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
+
+				if (mobj->eflags & MFE_VERTICALFLIP)
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ - FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
+					splish->flags2 |= MF2_OBJECTFLIP;
+					splish->eflags |= MFE_VERTICALFLIP;
+				}
+				else
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ, splishtype);
+				}
+
+				splish->destscale = mobj->scale;
+				P_SetScale(splish, mobj->scale);
+			}
+		}
+
 		// Time to spawn the bubbles!
 		{
 			INT32 i;
@@ -3119,7 +3263,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 			else
 				S_StartSound(mobj, sfx_splish); // And make a sound!
 
-			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale)>>(FRACBITS-1);
+			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale) >> (FRACBITS-1);
 			// Max bubble count
 			if (bubblecount > 128)
 				bubblecount = 128;
@@ -3154,94 +3298,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 					bubble->destscale = mobj->scale;
 					P_SetScale(bubble, mobj->scale);
 				}
-			}
-		}
-
-		if (waterwasnotset)
-			return;
-
-		// Check to make sure you didn't just cross into a sector to jump out of
-		// that has shallower water than the block you were originally in.
-		if ((!(mobj->eflags & MFE_VERTICALFLIP) && mobj->watertop-mobj->floorz <= height>>1)
-			|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->ceilingz-mobj->waterbottom <= height>>1))
-			return;
-
-		if (mobj->eflags & MFE_GOOWATER || wasingoo) { // Decide what happens to your momentum when you enter/leave goopy water.
-			if (P_MobjFlip(mobj)*mobj->momz > 0)
-			{
-				mobj->momz -= (mobj->momz/8); // cut momentum a little bit to prevent multiple bobs
-				//CONS_Printf("leaving\n");
-			}
-			else
-			{
-				if (!wasgroundpounding)
-					mobj->momz >>= 1; // kill momentum significantly, to make the goo feel thick.
-				//CONS_Printf("entering\n");
-			}
-		}
-		else if (wasinwater && P_MobjFlip(mobj)*mobj->momz > 0)
-			mobj->momz = FixedMul(mobj->momz, FixedDiv(780*FRACUNIT, 457*FRACUNIT)); // Give the mobj a little out-of-water boost.
-
-		if (P_MobjFlip(mobj)*mobj->momz < 0)
-		{
-			if ((mobj->eflags & MFE_VERTICALFLIP && thingtop-(height>>1)-mobj->momz <= mobj->waterbottom)
-				|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z+(height>>1)-mobj->momz >= mobj->watertop))
-			{
-				// Spawn a splash
-				mobj_t *splish;
-				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
-				if (mobj->eflags & MFE_VERTICALFLIP)
-				{
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->waterbottom-FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
-					splish->flags2 |= MF2_OBJECTFLIP;
-					splish->eflags |= MFE_VERTICALFLIP;
-				}
-				else
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->watertop, splishtype);
-				splish->destscale = mobj->scale;
-				P_SetScale(splish, mobj->scale);
-			}
-
-			// skipping stone!
-			if (p && p->waterskip < 2
-				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& ((!(mobj->eflags & MFE_VERTICALFLIP) && thingtop - mobj->momz > mobj->watertop)
-				|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z - mobj->momz < mobj->waterbottom)))
-			{
-				const fixed_t hop = 5<<FRACBITS;
-
-				mobj->momx = (4*mobj->momx)/5;
-				mobj->momy = (4*mobj->momy)/5;
-
-				if (mobj->eflags & MFE_VERTICALFLIP)
-					mobj->momz = FixedMul(-hop, mobj->scale);
-				else
-					mobj->momz = FixedMul(hop, mobj->scale);
-
-				p->waterskip++;
-			}
-
-		}
-		else if (P_MobjFlip(mobj)*mobj->momz > 0)
-		{
-			if (((mobj->eflags & MFE_VERTICALFLIP && thingtop-(height>>1)-mobj->momz > mobj->waterbottom)
-				|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z+(height>>1)-mobj->momz < mobj->watertop))
-				&& !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
-			{
-				// Spawn a splash
-				mobj_t *splish;
-				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
-				if (mobj->eflags & MFE_VERTICALFLIP)
-				{
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->waterbottom-FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
-					splish->flags2 |= MF2_OBJECTFLIP;
-					splish->eflags |= MFE_VERTICALFLIP;
-				}
-				else
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->watertop, splishtype);
-				splish->destscale = mobj->scale;
-				P_SetScale(splish, mobj->scale);
 			}
 		}
 	}
