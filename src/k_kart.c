@@ -5086,7 +5086,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 {
 	const fixed_t intendedboost = FRACUNIT/2;
 
-	if (!player->floorboost || player->floorboost == 3)
+	if (player->floorboost == 0 || player->floorboost == 3)
 	{
 		const sfxenum_t normalsfx = sfx_cdfm01;
 		const sfxenum_t smallsfx = sfx_cdfm40;
@@ -5109,7 +5109,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 		player->numsneakers++;
 	}
 
-	if (!player->sneakertimer)
+	if (player->sneakertimer == 0)
 	{
 		if (type == 2)
 		{
@@ -5143,13 +5143,12 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		K_PlayBoostTaunt(player->mo);
-
 	}
 
 	player->sneakertimer = sneakertime;
 
 	// set angle for spun out players:
-	player->boostangle = (INT32)player->mo->angle;
+	player->boostangle = player->mo->angle;
 }
 
 static void K_DoShrink(player_t *user)
@@ -6675,7 +6674,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// update boost angle if not spun out
 	if (!player->spinouttimer && !player->wipeoutslow)
-		player->boostangle = (INT32)player->mo->angle;
+		player->boostangle = player->mo->angle;
 
 	K_GetKartBoostPower(player);
 
@@ -6948,7 +6947,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->sneakertimer && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
 
-	if (player->floorboost)
+	if (player->floorboost > 0)
 		player->floorboost--;
 
 	if (player->driftboost)

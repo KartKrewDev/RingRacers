@@ -274,7 +274,7 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 	{
 		t_floor_t *f = &terrainFloorDefs[i];
 
-		if (stricmp(checkName, f->textureName) == 0)
+		if (strncasecmp(checkName, f->textureName, 8) == 0)
 		{
 			return K_GetTerrainByIndex(f->terrainID);
 		}
@@ -387,7 +387,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	// Sneaker panel
 	if (terrain->flags & TRF_SNEAKERPANEL)
 	{
-		if (!player->floorboost)
+		if (player->floorboost == 0)
 			player->floorboost = 3;
 		else
 			player->floorboost = 2;
@@ -733,6 +733,14 @@ static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
 	else if (stricmp(param, "sneakerPanel") == 0)
 	{
 		K_FlagBoolean(&terrain->flags, TRF_SNEAKERPANEL, val);
+	}
+	else if (stricmp(param, "bumpy") == 0 || stricmp(param, "stairJank") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_STAIRJANK, val);
+	}
+	else if (stricmp(param, "tripwire") == 0)
+	{
+		K_FlagBoolean(&terrain->flags, TRF_TRIPWIRE, val);
 	}
 }
 
