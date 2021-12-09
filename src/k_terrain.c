@@ -41,6 +41,27 @@ UINT16 numTerrainFloorDefs = 0;
 
 UINT16 defaultTerrain = UINT16_MAX;
 
+/*--------------------------------------------------
+	size_t K_GetTerrainHeapIndex(terrain_t *terrain)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetTerrainHeapIndex(terrain_t *terrain)
+{
+	size_t i = SIZE_MAX;
+
+	if (terrain == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL terrain in K_GetTerrainHeapIndex.\n");
+	}
+	else
+	{
+		i = (terrain - terrainDefs);
+	}
+
+	return i;
+}
+
 terrain_t *K_GetTerrainByIndex(UINT16 checkIndex)
 {
 	if (checkIndex >= numTerrainDefs)
