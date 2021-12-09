@@ -106,8 +106,10 @@ rendermode_t chosenrendermode = render_none; // set by command line arguments
 
 boolean highcolor = false;
 
+static void Impl_SetVsync(void);
+
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync);
 static consvar_t cv_stretch = CVAR_INIT ("stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL);
 
@@ -2061,3 +2063,11 @@ void I_ShutdownGraphics(void)
 	framebuffer = SDL_FALSE;
 }
 #endif
+
+static void Impl_SetVsync(void)
+{
+#if SDL_VERSION_ATLEAST(2,0,18)
+	if (renderer)
+		SDL_RenderSetVSync(renderer, cv_vidwait.value);
+#endif
+}
