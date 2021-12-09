@@ -108,8 +108,12 @@ static patch_t *ttcheckers; // *vroom* KART
 static patch_t *ttkflash; // flash screen
 */
 
+#define NOWAY
+
+#ifdef NOWAY
 static patch_t *driver[2]; // Driving character on the waiting screen
 static UINT8 *waitcolormap; // colormap for the spinning character
+#endif
 
 // ttmode user
 static patch_t *ttuser[TTMAX_USER];
@@ -2188,14 +2192,17 @@ void F_TitleDemoTicker(void)
 
 void F_StartWaitingPlayers(void)
 {
+#ifdef NOWAY
 	INT32 i;
 	INT32 randskin;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
+#endif
 
 	wipegamestate = GS_TITLESCREEN; // technically wiping from title screen
 	finalecount = 0;
 
+#ifdef NOWAY
 	randskin = M_RandomKey(numskins);
 
 	if (waitcolormap)
@@ -2208,8 +2215,9 @@ void F_StartWaitingPlayers(void)
 	for (i = 0; i < 2; i++)
 	{
 		sprframe = &sprdef->spriteframes[i];
-		driver[i] = W_CachePatchNum(sprframe->lumppat[0], PU_LEVEL);
+		driver[i] = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
 	}
+#endif
 }
 
 void F_WaitingPlayersTicker(void)
@@ -2226,14 +2234,17 @@ void F_WaitingPlayersTicker(void)
 
 void F_WaitingPlayersDrawer(void)
 {
+#ifdef NOWAY
 	UINT32 frame = (finalecount % 8) / 4; // The game only tics every other frame while waitingplayers
-	INT32 flags = V_FLIP;
+#endif
 	const char *waittext1 = "You will join";
 	const char *waittext2 = "the next race...";
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 	V_DrawCreditString((160 - (V_CreditStringWidth(waittext1)>>1))<<FRACBITS, 48<<FRACBITS, 0, waittext1);
 	V_DrawCreditString((160 - (V_CreditStringWidth(waittext2)>>1))<<FRACBITS, 64<<FRACBITS, 0, waittext2);
-	V_DrawFixedPatch((160<<FRACBITS) - driver[frame]->width / 2, 150<<FRACBITS, 1<<FRACBITS, flags, driver[frame], waitcolormap);
+#ifdef NOWAY
+	V_DrawFixedPatch((160<<FRACBITS) - driver[frame]->width / 2, 150<<FRACBITS, 1<<FRACBITS, V_FLIP, driver[frame], waitcolormap);
+#endif
 }
 
 // ==================
