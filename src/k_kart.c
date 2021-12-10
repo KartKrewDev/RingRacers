@@ -4548,10 +4548,15 @@ void K_Squish(mobj_t *mo)
 	const fixed_t factor = 5 * mo->height / 4;
 	const fixed_t threshold = factor / 6;
 
-	const fixed_t old3dspeed = abs(mo->lastmomz);
-	const fixed_t new3dspeed = abs(mo->momz);
+	fixed_t old3dspeed = abs(mo->lastmomz);
+	fixed_t new3dspeed = abs(mo->momz);
 
-	const fixed_t delta = abs(old3dspeed - new3dspeed);
+	fixed_t delta = abs(old3dspeed - new3dspeed);
+	fixed_t grav = mo->height/3;
+	fixed_t add = abs(grav - new3dspeed);
+
+	if (delta < 2 * add && new3dspeed > grav)
+		delta += add;
 
 	if (delta > threshold)
 	{
@@ -4561,7 +4566,7 @@ void K_Squish(mobj_t *mo)
 		if (mo->spritexscale > maxstretch)
 			mo->spritexscale = maxstretch;
 
-		if (abs(new3dspeed) > abs(old3dspeed))
+		if (new3dspeed > old3dspeed || new3dspeed > grav)
 		{
 			mo->spritexscale =
 				FixedDiv(FRACUNIT, mo->spritexscale);
