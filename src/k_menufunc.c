@@ -3839,7 +3839,7 @@ void M_Addons(INT32 choice)
 		dir_on[menudepthleft] = 0;
 
 	MISC_AddonsDef.prevMenu = currentMenu;
-	M_SetupNextMenu(&MISC_AddonsDef, false);
+	M_SetupNextMenu(&MISC_AddonsDef, true);	// No transitions.
 }
 
 

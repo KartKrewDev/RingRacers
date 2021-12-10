@@ -1110,7 +1110,7 @@ menuitem_t EXTRAS_Main[] =
 {
 
 	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
-		NULL, NULL, 0, 0},
+		NULL, M_Addons, 0, 0},
 
 	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
 		NULL, NULL, 0, 0},

@@ -2543,6 +2543,14 @@ void M_DrawAddons(void)
 
 	M_CacheAddonPatches();
 
+	// hack: If we're calling this from GS_MENU, that means we're in the extras menu!
+	// so draw the apropriate background
+	if (gamestate == GS_MENU)
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
 	// hack - need to refresh at end of frame to handle addfile...
 	if (refreshdirmenu & M_AddonsRefresh())
 	{
