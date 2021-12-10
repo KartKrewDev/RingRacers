@@ -4545,7 +4545,7 @@ void K_DriftDustHandling(mobj_t *spawner)
 void K_Squish(mobj_t *mo)
 {
 	const fixed_t maxstretch = 4*FRACUNIT;
-	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t factor = 5 * mo->height / 4;
 	const fixed_t threshold = factor / 6;
 
 	const fixed_t old3dspeed = abs(mo->lastmomz);
@@ -4571,7 +4571,7 @@ void K_Squish(mobj_t *mo)
 	{
 		mo->spritexscale -=
 			(mo->spritexscale - FRACUNIT)
-			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+			/ (mo->spritexscale < FRACUNIT ? 8 : 3);
 	}
 
 	mo->spriteyscale =
