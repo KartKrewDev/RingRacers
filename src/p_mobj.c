@@ -3059,7 +3059,16 @@ void P_MobjCheckWater(mobj_t *mobj)
 		return;
 
 	// The rest of this code only executes on a water state change.
-	if (waterwasnotset || !!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	if (!!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+		return;
+
+	if (p && !p->waterskip &&
+			p->curshield != KSHIELD_BUBBLE && wasinwater)
+	{
+		S_StartSound(mobj, sfx_gasp);
+	}
+
+	if (waterwasnotset)
 		return;
 
 	if ((p) // Players
