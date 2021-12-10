@@ -1120,18 +1120,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					// Don't turn at all
 					turnamt = 0;
 				}
-				else
-				{
-					// Make minor adjustments
-					turnamt /= 4;
-				}
-			}
-
-			if (anglediff > 60)
-			{
-				// Actually, don't go too fast...
-				cmd->forwardmove /= 2;
-				cmd->buttons |= BT_BRAKE;
 			}
 		}
 	}
