@@ -342,7 +342,7 @@ static const char *M_CreateSecretMenuOption(const char *str)
 //
 void M_DrawGenericMenu(void)
 {
-	INT32 x = 0, y = 0, w, i, cursory = 0;
+	INT32 x = currentMenu->x, y = currentMenu->y, w, i, cursory = 0;
 
 	M_DrawMenuTooltips();
 
@@ -2455,6 +2455,385 @@ void M_DrawPlaybackMenu(void)
 	}
 }
 
+
+// replay hut...
+// ...dear lord this is messy, but Ima be real I ain't fixing this.
+
+#define SCALEDVIEWWIDTH (vid.width/vid.dupx)
+#define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
+void M_DrawReplayHutReplayInfo(void)
+{
+	lumpnum_t lumpnum;
+	patch_t *patch;
+	UINT8 *colormap;
+	INT32 x, y, w, h;
+
+	switch (extrasmenu.demolist[dir_on[menudepthleft]].type)
+	{
+	case MD_NOTLOADED:
+		V_DrawCenteredString(160, 40, V_SNAPTOTOP, "Loading replay information...");
+		break;
+
+	case MD_INVALID:
+		V_DrawCenteredString(160, 40, V_SNAPTOTOP|warningflags, "This replay cannot be played.");
+		break;
+
+	case MD_SUBDIR:
+		break; // Can't think of anything to draw here right now
+
+	case MD_OUTDATED:
+		V_DrawThinString(17, 64, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
+		/* FALLTHRU */
+	default:
+		// Draw level stuff
+		x = 15; y = 15;
+
+		//  A 160x100 image of the level as entry MAPxxP
+		//CONS_Printf("%d %s\n", extrasmenu.demolist[dir_on[menudepthleft]].map, G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map));
+		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map)));
+		if (lumpnum != LUMPERROR)
+			patch = W_CachePatchNum(lumpnum, PU_CACHE);
+		else
+			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
+
+		if (!(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & DF_ENCORE))
+			V_DrawSmallScaledPatch(x, y, V_SNAPTOTOP, patch);
+		else
+		{
+			w = SHORT(patch->width);
+			h = SHORT(patch->height);
+			V_DrawSmallScaledPatch(x+(w>>1), y, V_SNAPTOTOP|V_FLIP, patch);
+
+			{
+				static angle_t rubyfloattime = 0;
+				const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
+				V_DrawFixedPatch((x+(w>>2))<<FRACBITS, ((y+(h>>2))<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
+				rubyfloattime += (ANGLE_MAX/NEWTICRATE);
+			}
+		}
+
+		x += 85;
+
+		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map-1])
+			V_DrawString(x, y, V_SNAPTOTOP, G_BuildMapTitle(extrasmenu.demolist[dir_on[menudepthleft]].map));
+		else
+			V_DrawString(x, y, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
+
+		if (extrasmenu.demolist[dir_on[menudepthleft]].numlaps)
+			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", extrasmenu.demolist[dir_on[menudepthleft]].numlaps));
+
+		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE ?
+			va("Race (%s speed)", kartspeed_cons_t[(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & ~DF_ENCORE) + 1].strvalue) :
+			"Battle Mode");
+
+		if (!extrasmenu.demolist[dir_on[menudepthleft]].standings[0].ranking)
+		{
+			// No standings were loaded!
+			V_DrawString(x, y+39, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
+
+
+			break;
+		}
+
+		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
+		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].standings[0].name);
+
+		if (extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE)
+		{
+			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
+			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
+											G_TicsToMinutes(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore, true),
+											G_TicsToSeconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore),
+											G_TicsToCentiseconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore)
+			));
+		}
+		else
+		{
+			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
+			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore));
+		}
+
+		// Character face!
+
+		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
+		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
+
+		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF)
+		{
+			patch = faceprefix[extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin][FACE_WANTED];
+			colormap = R_GetTranslationColormap(
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin,
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].color,
+				GTC_MENUCACHE);
+		}
+		else
+		{
+			patch = W_CachePatchName("M_NOWANT", PU_CACHE);
+			colormap = R_GetTranslationColormap(
+				TC_RAINBOW,
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].color,
+				GTC_MENUCACHE);
+		}
+
+		V_DrawMappedPatch(BASEVIDWIDTH-15 - SHORT(patch->width), y+20, V_SNAPTOTOP, patch, colormap);
+
+		break;
+	}
+}
+
+void M_DrawReplayHut(void)
+{
+	INT32 x, y, cursory = 0;
+	INT16 i;
+	INT16 replaylistitem = currentMenu->numitems-2;
+	boolean processed_one_this_frame = false;
+
+	static UINT16 replayhutmenuy = 0;
+
+	M_DrawEggaChannel();
+
+	// Draw menu choices
+	x = currentMenu->x;
+	y = currentMenu->y;
+
+	if (itemOn > replaylistitem)
+	{
+		itemOn = replaylistitem;
+		dir_on[menudepthleft] = sizedirmenu-1;
+		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+	}
+	else if (itemOn < replaylistitem)
+	{
+		dir_on[menudepthleft] = 0;
+		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+	}
+
+	if (itemOn == replaylistitem)
+	{
+		INT32 maxy;
+		// Scroll menu items if needed
+		cursory = y + currentMenu->menuitems[replaylistitem].mvar1 + dir_on[menudepthleft]*10;
+		maxy = y + currentMenu->menuitems[replaylistitem].mvar1 + sizedirmenu*10;
+
+		if (cursory > maxy - 20)
+			cursory = maxy - 20;
+
+		if (cursory - replayhutmenuy > SCALEDVIEWHEIGHT-50)
+			replayhutmenuy += (cursory-SCALEDVIEWHEIGHT-replayhutmenuy + 51)/2;
+		else if (cursory - replayhutmenuy < 110)
+			replayhutmenuy += (max(0, cursory-110)-replayhutmenuy - 1)/2;
+	}
+	else
+		replayhutmenuy /= 2;
+
+	y -= replayhutmenuy;
+
+	// Draw static menu items
+	for (i = 0; i < replaylistitem; i++)
+	{
+		INT32 localy = y + currentMenu->menuitems[i].mvar1;
+
+		if (localy < 65)
+			continue;
+
+		if (i == itemOn)
+			cursory = localy;
+
+		if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+			V_DrawString(x, localy, V_SNAPTOTOP|V_SNAPTOLEFT, currentMenu->menuitems[i].text);
+		else
+			V_DrawString(x, localy, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[i].text);
+	}
+
+	y += currentMenu->menuitems[replaylistitem].mvar1;
+
+	for (i = 0; i < (INT16)sizedirmenu; i++)
+	{
+		INT32 localy = y+i*10;
+		INT32 localx = x;
+
+		if (localy < 65)
+			continue;
+		if (localy >= SCALEDVIEWHEIGHT)
+			break;
+
+		if (extrasmenu.demolist[i].type == MD_NOTLOADED && !processed_one_this_frame)
+		{
+			processed_one_this_frame = true;
+			G_LoadDemoInfo(&extrasmenu.demolist[i]);
+		}
+
+		if (extrasmenu.demolist[i].type == MD_SUBDIR)
+		{
+			localx += 8;
+			V_DrawScaledPatch(x - 4, localy, V_SNAPTOTOP|V_SNAPTOLEFT, W_CachePatchName(dirmenu[i][DIR_TYPE] == EXT_UP ? "M_RBACK" : "M_RFLDR", PU_CACHE));
+		}
+
+		if (itemOn == replaylistitem && i == (INT16)dir_on[menudepthleft])
+		{
+			cursory = localy;
+
+			if (extrasmenu.replayScrollDelay)
+				extrasmenu.replayScrollDelay--;
+			else if (extrasmenu.replayScrollDir > 0)
+			{
+				if (extrasmenu.replayScrollTitle < (V_StringWidth(extrasmenu.demolist[i].title, 0) - (SCALEDVIEWWIDTH - (x<<1)))<<1)
+					extrasmenu.replayScrollTitle++;
+				else
+				{
+					extrasmenu.replayScrollDelay = TICRATE;
+					extrasmenu.replayScrollDir = -1;
+				}
+			}
+			else
+			{
+				if (extrasmenu.replayScrollTitle > 0)
+					extrasmenu.replayScrollTitle--;
+				else
+				{
+					extrasmenu.replayScrollDelay = TICRATE;
+					extrasmenu.replayScrollDir = 1;
+				}
+			}
+
+			V_DrawString(localx - (extrasmenu.replayScrollTitle>>1), localy, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
+		}
+		else
+			V_DrawString(localx, localy, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
+	}
+
+	// Draw scrollbar
+	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].mvar1 + 30;
+	if (y > SCALEDVIEWHEIGHT-80)
+	{
+		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|159);
+		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|149);
+	}
+
+	// Draw the cursor
+	V_DrawScaledPatch(currentMenu->x - 24, cursory, V_SNAPTOTOP|V_SNAPTOLEFT,
+		W_CachePatchName("M_CURSOR", PU_CACHE));
+	V_DrawString(currentMenu->x, cursory, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[itemOn].text);
+
+	// Now draw some replay info!
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
+
+	if (itemOn == replaylistitem)
+	{
+		M_DrawReplayHutReplayInfo();
+	}
+}
+
+void M_DrawReplayStartMenu(void)
+{
+	const char *warning;
+	UINT8 i;
+
+	M_DrawEggaChannel();
+	M_DrawGenericMenu();
+
+#define STARTY 62-(extrasmenu.replayScrollTitle>>1)
+	// Draw rankings beyond first
+	for (i = 1; i < MAXPLAYERS && extrasmenu.demolist[dir_on[menudepthleft]].standings[i].ranking; i++)
+	{
+		patch_t *patch;
+		UINT8 *colormap;
+
+		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20, V_SNAPTOTOP|highlightflags, va("%2d", extrasmenu.demolist[dir_on[menudepthleft]].standings[i].ranking));
+		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].standings[i].name);
+
+		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore == UINT32_MAX-1)
+			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
+		else if (extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE)
+			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",
+											G_TicsToMinutes(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore, true),
+											G_TicsToSeconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore),
+											G_TicsToCentiseconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore)
+			));
+		else
+			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore));
+
+		// Character face!
+
+		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
+		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
+
+		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin != 0xFF)
+		{
+			patch = faceprefix[extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin][FACE_RANK];
+			colormap = R_GetTranslationColormap(
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin,
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].color,
+				GTC_MENUCACHE);
+		}
+		else
+		{
+			patch = W_CachePatchName("M_NORANK", PU_CACHE);
+			colormap = R_GetTranslationColormap(
+				TC_RAINBOW,
+				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].color,
+				GTC_MENUCACHE);
+		}
+
+		V_DrawMappedPatch(BASEVIDWIDTH-5 - SHORT(patch->width), STARTY + i*20, V_SNAPTOTOP, patch, colormap);
+	}
+#undef STARTY
+
+	// Handle scrolling rankings
+	if (extrasmenu.replayScrollDelay)
+		extrasmenu.replayScrollDelay--;
+	else if (extrasmenu.replayScrollDir > 0)
+	{
+		if (extrasmenu.replayScrollTitle < (i*20 - SCALEDVIEWHEIGHT + 100)<<1)
+			extrasmenu.replayScrollTitle++;
+		else
+		{
+			extrasmenu.replayScrollDelay = TICRATE;
+			extrasmenu.replayScrollDir = -1;
+		}
+	}
+	else
+	{
+		if (extrasmenu.replayScrollTitle > 0)
+			extrasmenu.replayScrollTitle--;
+		else
+		{
+			extrasmenu.replayScrollDelay = TICRATE;
+			extrasmenu.replayScrollDir = 1;
+		}
+	}
+
+	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
+	M_DrawReplayHutReplayInfo();
+
+	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].title);
+
+	// Draw a warning prompt if needed
+	switch (extrasmenu.demolist[dir_on[menudepthleft]].addonstatus)
+	{
+	case DFILE_ERROR_CANNOTLOAD:
+		warning = "Some addons in this replay cannot be loaded.\nYou can watch anyway, but desyncs may occur.";
+		break;
+
+	case DFILE_ERROR_NOTLOADED:
+	case DFILE_ERROR_INCOMPLETEOUTOFORDER:
+		warning = "Loading addons will mark your game as modified, and Record Attack may be unavailable.\nYou can watch without loading addons, but desyncs may occur.";
+		break;
+
+	case DFILE_ERROR_EXTRAFILES:
+		warning = "You have addons loaded that were not present in this replay.\nYou can watch anyway, but desyncs may occur.";
+		break;
+
+	case DFILE_ERROR_OUTOFORDER:
+		warning = "You have this replay's addons loaded, but they are out of order.\nYou can watch anyway, but desyncs may occur.";
+		break;
+
+	default:
+		return;
+	}
+
+	V_DrawSmallString(4, BASEVIDHEIGHT-14, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, warning);
+}
 
 // Draw misc menus:
 

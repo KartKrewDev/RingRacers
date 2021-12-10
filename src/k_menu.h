@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
+#include "g_demo.h"	//menudemo_t
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -271,6 +272,12 @@ extern menu_t OPTIONS_DataEraseDef;
 // EXTRAS
 extern menuitem_t EXTRAS_Main[];
 extern menu_t EXTRAS_MainDef;
+
+extern menuitem_t EXTRAS_ReplayHut[];
+extern menu_t EXTRAS_ReplayHutDef;
+
+extern menuitem_t EXTRAS_ReplayStart[];
+extern menu_t EXTRAS_ReplayStartDef;
 
 // PAUSE
 extern menuitem_t PAUSE_Main[];
@@ -571,6 +578,8 @@ void M_HandleVideoModes(INT32 ch);
 
 
 // Extras menu:
+#define DF_ENCORE       0x40
+
 extern struct extrasmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
@@ -583,12 +592,29 @@ extern struct extrasmenu_s {
 	INT16 textx;
 	INT16 texty;
 
+
+	// The replay vars...... oh no......
+	menudemo_t *demolist;
+
+	INT16 replayScrollTitle;
+	SINT8 replayScrollDelay;
+	SINT8 replayScrollDir;
+
+
+
 } extrasmenu;
 
 void M_InitExtras(INT32 choice); // init for the struct
 void M_ExtrasTick(void);
 boolean M_ExtrasInputs(INT32 ch);
 boolean M_ExtrasQuit(void);	// resets buttons when you quit
+
+// Extras: Replay Hut
+void M_HandleReplayHutList(INT32 choice);
+boolean M_QuitReplayHut(void);
+void M_HutStartReplay(INT32 choice);
+void M_PrepReplayList(void);
+
 
 // Pause menu:
 
@@ -688,6 +714,9 @@ void M_DrawItemToggles(void);
 // Extras menu:
 void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
+void M_DrawReplayHut(void);
+void M_DrawReplayStartMenu(void);
+void M_DrawReplayHutReplayInfo(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
