@@ -2108,6 +2108,60 @@ void M_DrawItemToggles(void)
 }
 
 
+// EXTRAS:
+// Copypasted from options but separate either way in case we want it to look more unique later down the line.
+void M_DrawExtrasMovingButton(void)
+{
+	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
+	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+	V_DrawFixedPatch((extrasmenu.extx)*FRACUNIT, (extrasmenu.exty)*FRACUNIT, FRACUNIT, 0, butt, c);
+	V_DrawCenteredGamemodeString((extrasmenu.extx)-3, (extrasmenu.exty) - 16, V_ALLOWLOWERCASE, c, EXTRAS_MainDef.menuitems[EXTRAS_MainDef.lastOn].text);
+}
+
+void M_DrawExtras(void)
+{
+	UINT8 i;
+	INT32 x = 140 - (48*itemOn) + extrasmenu.offset;
+	INT32 y = 70 + extrasmenu.offset;
+	patch_t *buttback = W_CachePatchName("OPT_BUTT", PU_CACHE);
+	patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+
+	UINT8 *c = NULL;
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+
+	for (i=0; i < currentMenu->numitems; i++)
+	{
+		INT32 py = y - (itemOn*48);
+		INT32 px = x - menutransition.tics*64;
+		INT32 tflag = 0;
+
+		if (i == itemOn)
+			c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+		else
+			c = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
+
+		if (currentMenu->menuitems[i].status & IT_TRANSTEXT)
+			tflag = V_TRANSLUCENT;
+
+		if (!(menutransition.tics && i == itemOn))
+		{
+			V_DrawFixedPatch(px*FRACUNIT, py*FRACUNIT, FRACUNIT, 0, buttback, c);
+			V_DrawCenteredGamemodeString(px-3, py - 16, V_ALLOWLOWERCASE|tflag, (i == itemOn ? c : NULL), currentMenu->menuitems[i].text);
+		}
+
+		y += 48;
+		x += 48;
+	}
+
+	M_DrawMenuTooltips();
+
+	if (menutransition.tics)
+		M_DrawExtrasMovingButton();
+
+}
+
 //
 // INGAME / PAUSE MENUS
 //

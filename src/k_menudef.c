@@ -31,9 +31,9 @@ menuitem_t MainMenu[] =
 		"Cut to the chase and start the race!", NULL,
 		M_CharacterSelectInit, 0, 0},
 
-	{IT_STRING, "Extra",
+	{IT_STRING | IT_CALL, "Extras",
 		"Check out some bonus features.", "MENUI001",
-		NULL, 0, 0},
+		M_InitExtras, 0, 0},
 
 	{IT_STRING, "Options",
 		"Configure your controls, settings, and preferences.", NULL,
@@ -1101,6 +1101,40 @@ menu_t OPTIONS_DataEraseDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+};
+
+
+
+// extras menu
+menuitem_t EXTRAS_Main[] =
+{
+
+	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_TRANSTEXT, "Extras Checklist", "View the requirement for some of the secret content you can unlock!",
+		NULL, NULL, 0, 0},
+};
+
+// the extras menu essentially reuses the options menu stuff
+menu_t EXTRAS_MainDef = {
+	sizeof (EXTRAS_Main) / sizeof (menuitem_t),
+	&MainDef,
+	0,
+	EXTRAS_Main,
+	0, 0,
+	0, 0,
+	2, 10,
+	M_DrawExtras,
+	M_ExtrasTick,
+	NULL,
+	M_ExtrasInputs
 };
 
 // -------------------

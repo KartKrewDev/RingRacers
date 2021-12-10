@@ -268,6 +268,10 @@ extern menu_t OPTIONS_DataDiscordDef;
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;
 
+// EXTRAS
+extern menuitem_t EXTRAS_Main[];
+extern menu_t EXTRAS_MainDef;
+
 // PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
@@ -565,6 +569,27 @@ void M_EraseData(INT32 choice);	// For data erasing
 void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
 
+
+// Extras menu:
+extern struct extrasmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
+	// this is only used during menu transitions. (and will probably remain unused until we get the statistics menu
+	INT16 extx;
+	INT16 exty;
+	INT16 textx;
+	INT16 texty;
+
+} extrasmenu;
+
+void M_InitExtras(INT32 choice); // init for the struct
+void M_ExtrasTick(void);
+boolean M_ExtrasInputs(INT32 ch);
+boolean M_ExtrasQuit(void);	// resets buttons when you quit
+
 // Pause menu:
 
 // Keep track of some pause menu data for visual goodness.
@@ -659,6 +684,10 @@ void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
+
+// Extras menu:
+void M_DrawExtrasMovingButton(void);
+void M_DrawExtras(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
