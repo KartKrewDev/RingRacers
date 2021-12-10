@@ -35,7 +35,6 @@
 #include "p_slopes.h"
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
-#include "k_color.h" // SRB2kart
 #include "p_local.h" // stplyr
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
@@ -43,6 +42,10 @@
 #include "hardware/hw_light.h"
 #include "hardware/hw_drv.h"
 #endif
+
+// SRB2kart
+#include "k_color.h"
+#include "k_kart.h" // HITLAGJITTERS
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -1431,31 +1434,29 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t interpx = thing->x;
 	fixed_t interpy = thing->y;
 	fixed_t interpz = thing->z;
-	angle_t interpangle = thing->angle;
-
-	// use player drawangle if player
-	if (thing->player) interpangle = thing->player->drawangle;
+	angle_t interpangle = (thing->player ? thing->player->drawangle : thing->angle);
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
 		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+
 		if (thing->player)
 		{
-			interpangle = thing->player->drawangle;
+			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
 		}
 		else
 		{
-			interpangle = thing->angle;
+			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
 		}
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -1777,7 +1778,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		fixed_t linkscale;
 
 		thing = thing->tracer;
-		if (cv_frameinterpolation.value == 1 && !paused)
+		if (cv_frameinterpolation.value == 1)
 		{
 			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
 			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
@@ -2126,7 +2127,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t interpz = thing->z;
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);

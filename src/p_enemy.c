@@ -310,6 +310,7 @@ void A_JawzExplode(mobj_t *actor);
 void A_SPBChase(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
+void A_LandMineExplode(mobj_t *actor);
 void A_BallhogExplode(mobj_t *actor);
 void A_LightningFollowPlayer(mobj_t *actor);
 void A_FZBoomFlash(mobj_t *actor);
@@ -11194,10 +11195,13 @@ void A_MineExplode(mobj_t *actor)
 	A_Scream(actor);
 	actor->flags = MF_NOGRAVITY|MF_NOCLIP;
 
+	/*
 	quake.epicenter = NULL;
 	quake.radius = 512*FRACUNIT;
 	quake.intensity = 8*FRACUNIT;
 	quake.time = TICRATE/3;
+	*/
+	P_StartQuake(8<<FRACBITS, TICRATE/3);
 
 	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, 0, true);
 	P_MobjCheckWater(actor);
@@ -12204,9 +12208,9 @@ void A_Boss5BombExplode(mobj_t *actor)
 
 	P_DustRing(locvar1, 4, actor->x, actor->y, actor->z+actor->height, 2*actor->radius, 0, FRACUNIT, actor->scale);
 	P_DustRing(locvar1, 6, actor->x, actor->y, actor->z+actor->height/2, 3*actor->radius, FRACUNIT, FRACUNIT, actor->scale);
-	//P_StartQuake(9*actor->scale, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
+	//P_StartQuake(9*FRACUNIT, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
 	// the above does not exist, so we set the quake values directly instead
-	quake.intensity = 9*actor->scale;
+	quake.intensity = 9*FRACUNIT;
 	quake.time = TICRATE/6;
 	// the following quake values have no effect atm? ah well, may as well set them anyway
 	{
@@ -14130,6 +14134,63 @@ void A_SSMineExplode(mobj_t *actor)
 	P_SpawnMobj(actor->x, actor->y, actor->z, MT_MINEEXPLOSIONSOUND);
 
 	actor->flags2 |= MF2_DEBRIS;	// Set this flag to ensure that the explosion won't be effective more than 1 frame.
+}
+
+void A_LandMineExplode(mobj_t *actor)
+{
+
+	mobj_t *expl;
+	INT32 colour = SKINCOLOR_KETCHUP;	// we spell words properly here
+	INT32 i;
+	mobj_t *smoldering;
+	mobj_t *dust;
+
+	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
+		return;
+
+	// we'll base the explosion "timer" off of some stupid variable like uh... cvmem!
+	// Yeah let's use cvmem since nobody uses that
+
+	if (actor->target && !P_MobjWasRemoved(actor->target))
+		colour = actor->target->color;
+
+	K_MineFlashScreen(actor);
+
+	// Spawn smoke remains:
+	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
+	P_SetScale(smoldering, actor->scale);
+	smoldering->tics = TICRATE*3;
+
+	// Spawn a ring:
+	for (i = 0; i < 32; i++)
+	{
+		dust = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOKE);
+		P_SetMobjState(dust, S_OPAQUESMOKE1);
+		dust->angle = (ANGLE_180/16) * i;
+		P_SetScale(dust, actor->scale);
+		dust->destscale = actor->scale*4;
+		dust->scalespeed = actor->scale/4;
+		P_InstaThrust(dust, dust->angle, FixedMul(20*FRACUNIT, actor->scale));
+	}
+
+	actor->fuse = actor->tics;	// disappear when this state ends.
+
+	// spawn a few physics explosions
+	for (i = 0; i < 15; i++)
+	{
+		expl = P_SpawnMobj(actor->x, actor->y, actor->z + actor->scale, MT_BOOMEXPLODE);
+		expl->color = colour;
+		expl->tics = (i+1);
+
+		//K_MatchGenericExtraFlags(expl, actor);
+		P_SetScale(expl, actor->scale*4);
+
+		expl->momx = P_RandomRange(-3, 3)*actor->scale/2;
+		expl->momy = P_RandomRange(-3, 3)*actor->scale/2;
+
+		// 100/45 = 2.22 fu/t
+		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
+	}
 }
 
 void A_BallhogExplode(mobj_t *actor)

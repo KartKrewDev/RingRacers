@@ -452,7 +452,9 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	UINT8 *pdata;
 	INT32 blockwidth, blockheight, blocksize;
 
+#ifdef GLENCORE
 	UINT8 *colormap = colormaps;
+#endif
 
 	INT32 i;
 	boolean skyspecial = false; //poor hack for Legacy large skies..
@@ -477,12 +479,14 @@ static void HWR_GenerateTexture(INT32 texnum, GLMapTexture_t *grtex)
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
+#ifdef GLENCORE
 	if (encoremap)
 		colormap += COLORMAP_REMAPOFFSET;
 
 	grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 	grtex->mipmap.colormap->source = colormap;
 	M_Memcpy(grtex->mipmap.colormap->data, colormap, 256 * sizeof(UINT8));
+#endif
 
 	blockwidth = texture->width;
 	blockheight = texture->height;
@@ -891,7 +895,9 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	GLMipmap_t *grmip;
 	patch_t *patch;
 
+#ifdef GLENCORE
 	UINT8 *colormap = colormaps;
+#endif
 
 	if (flatlumpnum == LUMPERROR)
 		return;
@@ -899,12 +905,16 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum, boolean noencoremap)
 	patch = HWR_GetCachedGLPatch(flatlumpnum);
 	grmip = ((GLPatch_t *)Patch_AllocateHardwarePatch(patch))->mipmap;
 
+#ifdef GLENCORE
 	if (!noencoremap && encoremap)
 		colormap += COLORMAP_REMAPOFFSET;
 
 	grmip->colormap = Z_Calloc(sizeof(*grmip->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
 	grmip->colormap->source = colormap;
 	M_Memcpy(grmip->colormap->data, colormap, 256 * sizeof(UINT8));
+#else
+	(void)noencoremap;
+#endif
 
 	if (!grmip->downloaded && !grmip->data)
 		HWR_CacheFlat(grmip, flatlumpnum);

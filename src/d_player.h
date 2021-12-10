@@ -312,6 +312,7 @@ typedef struct player_s
 	fixed_t bob;
 
 	angle_t viewrollangle;
+	angle_t old_viewrollangle;
 	// camera tilt
 	// TODO: expose to lua
 	angle_t tilt;
@@ -325,6 +326,7 @@ typedef struct player_s
 
 	// fun thing for player sprite
 	angle_t drawangle;
+	angle_t old_drawangle; // interp
 
 	// Bit flags.
 	// See pflags_t, above.
@@ -393,6 +395,8 @@ typedef struct player_s
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
+
+	INT32 underwatertilt;
 
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
 	UINT8 waterskip;		// Water skipping counter

@@ -310,6 +310,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	if ((spring->eflags ^ object->eflags) & MFE_VERTICALFLIP)
+		vertispeed *= 2;
+
 	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 	{
@@ -1848,7 +1851,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && P_CheckSolidLava(rover))
+			if (thing->player && P_CheckSolidFFloorSurface(thing->player, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
@@ -2414,6 +2417,20 @@ boolean PIT_PushableMoved(mobj_t *thing)
 	return true;
 }
 
+static boolean P_WaterRunning(mobj_t *thing)
+{
+	ffloor_t *rover = thing->floorrover;
+	return rover && (rover->flags & FF_SWIMMABLE) &&
+		P_IsObjectOnGround(thing);
+}
+
+static boolean P_WaterStepUp(mobj_t *thing)
+{
+	player_t *player = thing->player;
+	return (player && player->waterskip) ||
+		P_WaterRunning(thing);
+}
+
 //
 // P_TryMove
 // Attempt to move to a new position.
@@ -2478,7 +2495,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
 			fixed_t maxstep = maxstepmove;
 
-			if (thing->player && thing->player->waterskip)
+			if (thing->player && P_WaterStepUp(thing))
 				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
 
 			// If using type Section1:13, double the maxstep.

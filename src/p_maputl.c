@@ -730,7 +730,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					if (!(rover->flags & FF_EXISTS))
 						continue;
 
-					if (mobj->player && P_CheckSolidLava(rover))
+					if (mobj->player && P_CheckSolidFFloorSurface(mobj->player, rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
@@ -772,7 +772,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					if (!(rover->flags & FF_EXISTS))
 						continue;
 
-					if (mobj->player && P_CheckSolidLava(rover))
+					if (mobj->player && P_CheckSolidFFloorSurface(mobj->player, rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
