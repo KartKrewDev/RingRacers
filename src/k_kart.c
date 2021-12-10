@@ -2700,6 +2700,19 @@ boolean K_TripwirePass(player_t *player)
 	return false;
 }
 
+boolean K_WaterRun(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->tiregrease ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
@@ -3623,14 +3636,9 @@ void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32
 
 #define MINEQUAKEDIST 4096
 
-// Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+// Does the proximity screen flash and quake for explosions
+void K_MineFlashScreen(mobj_t *source)
 {
-	INT32 i, radius, height;
-	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
-	mobj_t *dust;
-	mobj_t *truc;
-	INT32 speed, speed2;
 	INT32 pnum;
 	player_t *p;
 
@@ -3653,6 +3661,18 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			break;	// we can break right now because quakes are global to all split players somehow.
 		}
 	}
+}
+
+// Spawns the purely visual explosion
+void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+{
+	INT32 i, radius, height;
+	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
+	mobj_t *dust;
+	mobj_t *truc;
+	INT32 speed, speed2;
+
+	K_MineFlashScreen(source);
 
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
@@ -4973,8 +4993,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			// Has an item
 			&& (players[i].itemtype
 			&& players[i].itemamount
-			&& !(players[i].pflags & PF_ITEMOUT)
-			&& !players[i].karthud[khud_itemblink]))
+			&& !(players[i].pflags & PF_ITEMOUT)))
 		{
 			playerswappable[numplayers] = i;
 			numplayers++;
@@ -6443,6 +6462,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
 		player->karthud[khud_fault]++;
 
+	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
+	{
+		player->karthud[khud_itemblinkmode] = 0;
+		player->karthud[khud_itemblink] = 0;
+	}
+
 	if (gametype == GT_RACE)
 	{
 		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
@@ -6959,13 +6984,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
 			K_HandleTumbleBounce(player);
-	}
-
-	// This doesn't go in HUD update because it has potential gameplay ramifications
-	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
-	{
-		player->karthud[khud_itemblinkmode] = 0;
-		player->karthud[khud_itemblink] = 0;
 	}
 
 	K_KartPlayerHUDUpdate(player);
@@ -7567,10 +7585,12 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->tiregrease;
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+#if 0
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
 		countersteer = FixedMul(countersteer, 3*FRACUNIT/2);
 	}
+#endif
 
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
@@ -7674,15 +7694,34 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
 	{
-		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
+		turnfixed /= 2;
 	}
 
 	// Weight has a small effect on turning
 	turnfixed = FixedMul(turnfixed, weightadjust);
 
 	return (turnfixed / FRACUNIT);
+}
+
+INT32 K_GetUnderwaterTurnAdjust(player_t *player)
+{
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
+	{
+		INT32 steer = (K_GetKartTurnValue(player,
+					player->steering) << TICCMD_REDUCE);
+
+		if (!player->drift)
+			steer = 9 * steer / 5;
+
+		return FixedMul(steer, 8 * FixedDiv(player->speed,
+					2 * K_GetKartSpeed(player, false) / 3));
+	}
+	else
+		return 0;
 }
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
@@ -8451,9 +8490,14 @@ void K_AdjustPlayerFriction(player_t *player)
 	*/
 
 	// Water gets ice physics too
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if ((player->mo->eflags & MFE_TOUCHWATER) &&
+			!player->offroad)
 	{
 		player->mo->friction += 614;
+	}
+	else if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown

@@ -1879,7 +1879,7 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 		topheight = P_GetFOFTopZ(mo, sector, rover, mo->x, mo->y, NULL);
 		bottomheight = P_GetFOFBottomZ(mo, sector, rover, mo->x, mo->y, NULL);
 
-		if (mo->player && P_CheckSolidLava(rover)) // only the player should stand on lava
+		if (mo->player && P_CheckSolidFFloorSurface(mo->player, rover)) // only the player should stand on lava or run on water
 			;
 		else if (motype != 0 && rover->flags & FF_SWIMMABLE) // "scenery" only
 			continue;
@@ -2295,7 +2295,7 @@ boolean P_ZMovement(mobj_t *mo)
 				S_StartSound(mo, sfx_tink);
 			}
 			else
-				mo->flags2 ^= RF_DONTDRAW;
+				mo->renderflags ^= RF_DONTDRAW;
 		}
 		else if (mo->type == MT_DEBTSPIKE)
 		{
@@ -2940,6 +2940,33 @@ boolean P_SceneryZMovement(mobj_t *mo)
 	return true;
 }
 
+// P_CanRunOnWater
+//
+// Returns true if player can waterrun on the 3D floor
+//
+boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
+{
+	boolean flip = player->mo->eflags & MFE_VERTICALFLIP;
+	fixed_t surfaceheight = flip ? player->mo->waterbottom : player->mo->watertop;
+	fixed_t playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
+	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
+	fixed_t span = player->mo->watertop - player->mo->waterbottom;
+
+	return
+		clip > -(player->mo->height / 2) &&
+		span > player->mo->height &&
+		player->speed / 5 > abs(player->mo->momz) &&
+		player->speed > K_GetKartSpeed(player, false) &&
+		K_WaterRun(player) &&
+		(rover->flags & FF_SWIMMABLE);
+}
+
+boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover)
+{
+	return P_CheckSolidLava(rover) ||
+		P_CanRunOnWater(player, rover);
+}
+
 //
 // P_MobjCheckWater
 //
@@ -2955,7 +2982,10 @@ void P_MobjCheckWater(mobj_t *mobj)
 	ffloor_t *rover;
 	player_t *p = mobj->player; // Will just be null if not a player.
 	fixed_t height = mobj->height;
+	fixed_t halfheight = height / 2;
 	boolean wasgroundpounding = false;
+	fixed_t top2 = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
+	fixed_t bot2 = P_GetSectorFloorZAt(sector, mobj->x, mobj->y);
 
 	// Default if no water exists.
 	mobj->watertop = mobj->waterbottom = mobj->z - 1000*FRACUNIT;
@@ -2966,24 +2996,31 @@ void P_MobjCheckWater(mobj_t *mobj)
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
 		fixed_t topheight, bottomheight;
-		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
-		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
-		 || ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
-			continue;
 
 		topheight    = P_GetFFloorTopZAt   (rover, mobj->x, mobj->y);
 		bottomheight = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
 
+		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
+		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
+		 || ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
+		{
+			if (topheight < top2 && topheight > thingtop)
+				top2 = topheight;
+			if (bottomheight > bot2 && bottomheight < mobj->z)
+				bot2 = bottomheight;
+			continue;
+		}
+
 		if (mobj->eflags & MFE_VERTICALFLIP)
 		{
-			if (topheight < (thingtop - (height>>1))
-			 || bottomheight > thingtop)
+			if (topheight < (thingtop - halfheight)
+			 || bottomheight > (thingtop + halfheight))
 				continue;
 		}
 		else
 		{
-			if (topheight < mobj->z
-			 || bottomheight > (mobj->z + (height>>1)))
+			if (topheight < (mobj->z - halfheight)
+			 || bottomheight > (mobj->z + halfheight))
 				continue;
 		}
 
@@ -3010,6 +3047,12 @@ void P_MobjCheckWater(mobj_t *mobj)
 				mobj->eflags |= MFE_GOOWATER;
 		}
 	}
+
+	if (mobj->watertop > top2)
+		mobj->watertop = top2;
+
+	if (mobj->waterbottom < bot2)
+		mobj->waterbottom = bot2;
 
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
@@ -3661,6 +3704,9 @@ void P_PrecipThinker(precipmobj_t *mobj)
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
+	mobj->old_pitch = mobj->pitch;
+	mobj->old_roll = mobj->roll;
 
 	P_CycleStateAnimation((mobj_t *)mobj);
 
@@ -3807,8 +3853,12 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 			P_SetScale(mobj, mobj->destscale = targetScale);
 
 		// find z position
-		K_GenericExtraFlagsNoZAdjust(mobj, target);
-		if (mobj->flags & MFE_VERTICALFLIP)
+		if (mobj->flags2 & MF2_CLASSICPUSH) // centered items should not be flipped
+			mobj->renderflags = (mobj->renderflags & ~RF_DONTDRAW) | (target->renderflags & RF_DONTDRAW);
+		else
+			K_GenericExtraFlagsNoZAdjust(mobj, target);
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
 			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
 		else
 			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
@@ -3824,6 +3874,193 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 				z);
 	}
 }
+
+static void P_RefreshItemCapsuleParts(mobj_t *mobj)
+{
+	UINT8 numNumbers = 0;
+	INT32 count = 0;
+	INT32 itemType = mobj->threshold;
+	mobj_t *part;
+	skincolornum_t color;
+	UINT32 newRenderFlags = 0;
+	boolean colorized;
+
+	if (itemType < 1 || itemType >= NUMKARTITEMS)
+		itemType = KITEM_SAD;
+
+	// update invincibility properties
+	if (itemType == KITEM_INVINCIBILITY)
+	{
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_FULLBRIGHT;
+		mobj->colorized = true;
+	}
+	else
+	{
+		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_SEMIBRIGHT;
+		mobj->color = SKINCOLOR_NONE;
+		mobj->colorized = false;
+	}
+
+	// update cap colors
+	if (itemType == KITEM_SUPERRING)
+	{
+		color = SKINCOLOR_GOLD;
+		newRenderFlags |= RF_SEMIBRIGHT;
+	}
+	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
+		color = SKINCOLOR_SAPPHIRE;
+	else if (itemType == KITEM_SPB)
+		color = SKINCOLOR_JET;
+	else
+		color = SKINCOLOR_NONE;
+
+	colorized = (color != SKINCOLOR_NONE);
+	part = mobj;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		part->color = color;
+		part->colorized = colorized;
+		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
+	}
+
+	// update inside item frame
+	part = mobj->tracer;
+	if (P_MobjWasRemoved(part))
+		return;
+
+	part->threshold = mobj->threshold;
+	part->movecount = mobj->movecount;
+
+	switch (itemType)
+	{
+		case KITEM_ORBINAUT:
+			part->sprite = SPR_ITMO;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
+			break;
+		case KITEM_INVINCIBILITY:
+			part->sprite = SPR_ITMI;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
+			break;
+		case KITEM_SAD:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
+			break;
+		default:
+			part->sprite = SPR_ITEM;
+			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			break;
+	}
+
+	// update number frame
+	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
+		;
+	else
+	{
+		switch (itemType)
+		{
+			case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
+				if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
+					count = mobj->movecount;
+				break;
+			case KITEM_SUPERRING: // always display the number, and multiply it by 5
+				count = mobj->movecount * 5;
+				break;
+			case KITEM_SAD: // never display the number
+			case KITEM_SPB:
+				break;
+			default:
+				if (mobj->movecount > 1)
+					count = mobj->movecount;
+				break;
+		}
+	}
+
+	while (count > 0)
+	{
+		if (P_MobjWasRemoved(part->tracer))
+		{
+			P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
+			P_SetTarget(&part->tracer->target, part);
+			P_SetMobjState(part->tracer, S_INVISIBLE);
+			part->tracer->spriteyoffset = 10*FRACUNIT;
+			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
+		}
+		part = part->tracer;
+		part->sprite = SPR_ITMN;
+		part->frame = FF_FULLBRIGHT|(count % 10);
+		count /= 10;
+		numNumbers++;
+	}
+
+	// delete any extra overlays (I guess in case the number changes?)
+	if (part->tracer)
+	{
+		P_RemoveMobj(part->tracer);
+		P_SetTarget(&part->tracer, NULL);
+	}
+}
+
+#define CAPSULESIDES 5
+#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
+#define ROTATIONSPEED (2*ANG2)
+static void P_SpawnItemCapsuleParts(mobj_t *mobj)
+{
+	UINT8 i;
+	mobj_t *part;
+	fixed_t buttScale = 0;
+	statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
+	angle_t spin = ANGLE_MAX - ROTATIONSPEED;
+
+	if (P_IsObjectOnGround(mobj))
+	{
+		buttScale = 13*FRACUNIT/10;
+		buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
+		spin = 0;
+	}
+
+	// inside item
+	part = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART);
+	P_SetTarget(&part->target, mobj);
+	P_SetMobjState(part, S_ITEMICON);
+	part->movedir = ROTATIONSPEED; // rotation speed
+	part->extravalue1 = 175*FRACUNIT/100; // relative scale
+	part->flags2 |= MF2_CLASSICPUSH; // classicpush = centered horizontally
+	part->flags2 &= ~MF2_OBJECTFLIP; // centered item should not be flipped
+	part->eflags &= ~MFE_VERTICALFLIP;
+	P_SetTarget(&mobj->tracer, part); // pointer to this item, so we can modify its sprite/frame
+
+	// capsule caps
+	part = mobj;
+	for (i = 0; i < CAPSULESIDES; i++)
+	{
+		// a bottom side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, mobj);
+		P_SetMobjState(part, buttState);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = 0; // z offset
+		part->extravalue1 = buttScale; // relative scale
+
+		// a top side
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_ITEMCAPSULE_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, mobj);
+		P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
+		part->angle = i * ANG_CAPSULE;
+		part->movedir = spin; // rotation speed
+		part->movefactor = mobj->info->height - part->info->height; // z offset
+	}
+
+	P_RefreshItemCapsuleParts(mobj);
+}
+#undef CAPSULESIDES
+#undef ANG_CAPSULE
+#undef ROTATIONSPEED
 
 //
 // P_BossTargetPlayer
@@ -6177,6 +6414,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->eflags & MFE_VERTICALFLIP)
 				mobj->z -= (mobj->height - oldHeight);
+		}
+
+		// spawn parts if not done yet
+		// (this SHOULD be done when the capsule is spawned, but gravflip isn't set up at that point)
+		if (!(mobj->flags2 & MF2_JUSTATTACKED))
+		{
+			mobj->flags2 |= MF2_JUSTATTACKED;
+			P_SpawnItemCapsuleParts(mobj);
 		}
 
 		// update & animate capsule
@@ -8623,6 +8868,9 @@ void P_MobjThinker(mobj_t *mobj)
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
+	mobj->old_pitch = mobj->pitch;
+	mobj->old_roll = mobj->roll;
 
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
@@ -9513,8 +9761,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		// SRB2Kart
 		case MT_ITEMCAPSULE:
 		{
-			fixed_t oldHeight = mobj->height;
-
 			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
 			if (P_RandomChance(FRACUNIT/3))
@@ -9531,17 +9777,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->movecount = 1;
 #endif
 
-			// grounded/aerial properties
-			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
-			if (!P_IsObjectOnGround(mobj))
-				mobj->flags |= MF_NOGRAVITY;
-
 			// set starting scale
 			mobj->extravalue1 = mobj->scale; // this acts as the capsule's destscale; we're avoiding P_MobjScaleThink because we want aerial capsules not to scale from their center
 			mobj->scalespeed >>= 1;
 			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
-			if (mobj->eflags & MFE_VERTICALFLIP)
-				mobj->z += (oldHeight - mobj->height);
 
 			break;
 		}
@@ -9740,7 +9979,13 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		}
 	}
 
+	// OK so we kind of need NOTHINK objects to still think
+	// because otherwise they can never update their
+	// interpolation values. They might need some other kind
+	// of system, so consider this temporary...
+#if 0
 	if (!(mobj->flags & MF_NOTHINK))
+#endif
 		P_AddThinker(THINK_MOBJ, &mobj->thinker);
 
 	if (mobj->skin) // correct inadequecies above.
@@ -9780,6 +10025,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
+	mobj->old_pitch = mobj->pitch;
+	mobj->old_roll = mobj->roll;
 
 	return mobj;
 }
@@ -9836,6 +10084,9 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
+	mobj->old_pitch = mobj->pitch;
+	mobj->old_roll = mobj->roll;
 
 	return mobj;
 }
@@ -11811,6 +12062,22 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_ITEMCAPSULE:
 	{
+		// we have to adjust for reverse gravity early so that the below grounded checks work
+		if (mthing->options & MTF_OBJECTFLIP)
+		{
+			mobj->eflags |= MFE_VERTICALFLIP;
+			mobj->flags2 |= MF2_OBJECTFLIP;
+			mobj->z += FixedMul(mobj->extravalue1, mobj->info->height) - mobj->height;
+		}
+
+		// determine whether this capsule is grounded or aerial
+		if (mobj->subsector->sector->ffloors)
+			P_AdjustMobjFloorZ_FFloors(mobj, mobj->subsector->sector, 0);
+		if (mobj->subsector->polyList)
+			P_AdjustMobjFloorZ_PolyObjs(mobj, mobj->subsector);
+		if (!P_IsObjectOnGround(mobj))
+			mobj->flags |= MF_NOGRAVITY;
+
 		// Angle = item type
 		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
 			mobj->threshold = mthing->angle;

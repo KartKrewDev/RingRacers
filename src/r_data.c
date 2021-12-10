@@ -615,6 +615,7 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 {
 	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb, cdestbright;
 	double maskamt = 0, othermask = 0;
+	double fmaskamt = 0, fothermask = 0;
 
 	UINT8 cr = R_GetRgbaR(extra_colormap->rgba),
 		cg = R_GetRgbaG(extra_colormap->rgba),
@@ -622,8 +623,8 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		ca = R_GetRgbaA(extra_colormap->rgba),
 		cfr = R_GetRgbaR(extra_colormap->fadergba),
 		cfg = R_GetRgbaG(extra_colormap->fadergba),
-		cfb = R_GetRgbaB(extra_colormap->fadergba);
-//		cfa = R_GetRgbaA(extra_colormap->fadergba); // unused in software
+		cfb = R_GetRgbaB(extra_colormap->fadergba),
+		cfa = R_GetRgbaA(extra_colormap->fadergba);
 
 	UINT8 fadestart = extra_colormap->fadestart,
 		fadedist = extra_colormap->fadeend - extra_colormap->fadestart;
@@ -654,14 +655,11 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 	cdestb = cfb;
 	cdestbright = sqrt((cfr*cfr) + (cfg*cfg) + (cfb*cfb));
 
-	// fade alpha unused in software
-	// maskamt = (double)(cfa/24.0l);
-	// othermask = 1 - maskamt;
-	// maskamt /= 0xff;
+	fmaskamt = (double)(cfa/24.0l);
+	fothermask = 1 - fmaskamt;
+	//fmaskamt /= 0xff;
 
-	// cdestr *= maskamt;
-	// cdestg *= maskamt;
-	// cdestb *= maskamt;
+	(void)fothermask; // unused, but don't feel like commenting it out
 
 	/////////////////////
 	// This code creates the colormap array used by software renderer
@@ -701,16 +699,16 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 			if (cbrightness < cdestbright)
 			{
 				cbest = 255.0l - min(r, min(g, b));
-				cdist = 255.0l - cdestbright;
+				cdist = 255.0l - max(cdestr, max(cdestg, cdestb));
 			}
 			else
 			{
 				cbest = max(r, max(g, b));
-				cdist = cdestbright;
+				cdist = min(cdestr, min(cdestg, cdestb));
 			}
 
 			// Add/subtract this value during fading.
-			brightChange[i] = fabs(cbest - cdist) / (double)fadedist;
+			brightChange[i] = (fabs(cbest - cdist) / (double)fadedist) * fmaskamt;
 		}
 
 		// Now allocate memory for the actual colormap array itself!

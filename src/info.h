@@ -276,6 +276,7 @@ enum actionnum
 	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
+	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
@@ -287,7 +288,6 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
-	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -547,6 +547,8 @@ void A_JawzExplode();
 void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_LandMineExplode();
+void A_LandMineExplode();
 void A_BallhogExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();
@@ -558,7 +560,6 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
-void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -4466,9 +4467,9 @@ typedef enum state
 	S_ITEMCAPSULE_TOP_SIDE,
 	S_ITEMCAPSULE_BOTTOM_SIDE_AIR,
 	S_ITEMCAPSULE_BOTTOM_SIDE_GROUND,
-	S_ITEMCAPSULE_TOP,
-	S_ITEMCAPSULE_BOTTOM,
-	S_ITEMCAPSULE_INSIDE,
+	//S_ITEMCAPSULE_TOP,
+	//S_ITEMCAPSULE_BOTTOM,
+	//S_ITEMCAPSULE_INSIDE,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,

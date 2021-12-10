@@ -40,6 +40,7 @@
 #include "../r_things.h" // R_GetShadowZ
 #include "../d_main.h"
 #include "../p_slopes.h"
+#include "../k_kart.h" // HITLAGJITTERS
 #include "hw_md2.h"
 
 #ifdef NEWCLIP
@@ -3645,7 +3646,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t interpz = thing->z;
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -3655,7 +3656,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -5055,7 +5056,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	INT32 heightsec, phs;
 	const boolean splat = R_ThingIsFloorSprite(thing);
 	const boolean papersprite = (R_ThingIsPaperSprite(thing) && !splat);
-	angle_t mobjangle = (thing->player ? thing->player->drawangle : thing->angle);
 	float z1, z2;
 
 	fixed_t spr_width, spr_height;
@@ -5083,20 +5083,28 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	interpx = thing->x;
 	interpy = thing->y;
 	interpz = thing->z;
-	interpangle = mobjangle;
+	interpangle = (thing->player ? thing->player->drawangle : thing->angle);
 
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
 		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-		interpangle = mobjangle;
+
+		if (thing->player)
+		{
+			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
+		}
+		else
+		{
+			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
+		}
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -5276,8 +5284,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (papersprite)
 	{
-		rightsin = FIXED_TO_FLOAT(FINESINE((mobjangle)>>ANGLETOFINESHIFT));
-		rightcos = FIXED_TO_FLOAT(FINECOSINE((mobjangle)>>ANGLETOFINESHIFT));
+		rightsin = FIXED_TO_FLOAT(FINESINE((interpangle)>>ANGLETOFINESHIFT));
+		rightcos = FIXED_TO_FLOAT(FINECOSINE((interpangle)>>ANGLETOFINESHIFT));
 	}
 	else
 	{
@@ -5470,8 +5478,10 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	{
 		vis->colormap = colormaps;
 
+#ifdef GLENCORE
 		if (encoremap && (thing->flags & (MF_SCENERY|MF_NOTHINK)) && !(thing->flags & MF_DONTENCOREMAP))
 			vis->colormap += COLORMAP_REMAPOFFSET;
+#endif
 	}
 
 	// set top/bottom coords
@@ -5515,7 +5525,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	interpz = thing->z;
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -5803,8 +5813,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
-		HWR_RollTransform(&dometransform,
-				R_ViewRollAngle(player));
+		HWR_RollTransform(&dometransform, viewroll);
 		dometransform.splitscreen = r_splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
@@ -6096,7 +6105,7 @@ void HWR_RenderSkyboxView(player_t *player)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -6308,7 +6317,7 @@ void HWR_RenderPlayerView(void)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));

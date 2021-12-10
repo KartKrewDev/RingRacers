@@ -42,7 +42,11 @@ static angle_t R_PlayerSpriteRotation(player_t *player, player_t *viewPlayer)
 
 	angle_t rollAngle = 0;
 
-	if (sliptideLift)
+	if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		rollAngle -= player->underwatertilt;
+	}
+	else if (sliptideLift)
 	{
 		/* (from side) tilt downward if turning
 		   toward camera, upward if away. */

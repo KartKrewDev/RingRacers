@@ -766,15 +766,21 @@ void D_RegisterClientCommands(void)
 
 	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
-		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = skincolors[i].name;
+		Color_cons_t[i].value = i;
+		Color_cons_t[i].strvalue = skincolors[i].name;
 	}
 
-	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
-	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+	for (i = 2; i < MAXSKINCOLORS; i++)
+	{
+		Followercolor_cons_t[i].value = i-2;
+		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
+	}
 
-	Followercolor_cons_t[MAXSKINCOLORS+1].value = MAXSKINCOLORS+1;
-	Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
+	Followercolor_cons_t[1].value = -1;
+	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[0].value = -2;
+	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
 	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
@@ -1409,7 +1415,9 @@ static void SendNameAndColor(UINT8 n)
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
-		&& !strcmp(cv_skin[n].string, skins[player->skin].name))
+		&& !strcmp(cv_skin[n].string, skins[player->skin].name)
+		&& cv_follower[n].value == player->followerskin
+		&& cv_followercolor[n].value == player->followercolor)
 		return;
 
 	player->availabilities = R_GetSkinAvailabilities();

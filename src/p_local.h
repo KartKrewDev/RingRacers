@@ -112,6 +112,10 @@ typedef struct camera_s
 	fixed_t pan;
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
+
+	// Interpolation data
+	fixed_t old_x, old_y, old_z;
+	angle_t old_angle, old_aiming;
 } camera_t;
 
 // demo freecam or something before i commit die
@@ -329,6 +333,7 @@ void P_Attract(mobj_t *source, mobj_t *enemy, boolean nightsgrab);
 mobj_t *P_GetClosestAxis(mobj_t *source);
 
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover);
+boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover);
 
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot);
 
@@ -364,8 +369,6 @@ void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo);
 void P_InternalFlickyBubble(mobj_t *actor);
 void P_InternalFlickyFly(mobj_t *actor, fixed_t flyspeed, fixed_t targetdist, fixed_t chasez);
 void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angle);
-
-void P_RefreshItemCapsuleParts(mobj_t *mobj);
 
 //
 // P_MAP

@@ -1145,6 +1145,9 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_x = mobj->old_x;
 	ghost->old_y = mobj->old_y;
 	ghost->old_z = mobj->old_z;
+	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle : mobj->old_angle);
+	ghost->old_pitch = mobj->old_pitch;
+	ghost->old_roll = mobj->old_roll;
 
 	return ghost;
 }
@@ -1769,6 +1772,55 @@ static void P_3dMovement(player_t *player)
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
+		{
+			INT32 a = K_GetUnderwaterTurnAdjust(player);
+			INT32 adj = 0;
+
+			if (a)
+			{
+				const fixed_t maxadj = ANG10/4;
+
+				adj = a / 4;
+
+				if (adj > 0)
+				{
+					if (adj > maxadj)
+						adj = maxadj;
+				}
+				else if (adj < 0)
+				{
+					if (adj < -(maxadj))
+						adj = -(maxadj);
+				}
+
+				if (abs(player->underwatertilt + adj) > abs(a))
+					adj = (a - player->underwatertilt);
+
+				if (abs(a) < abs(player->underwatertilt))
+					adj = 0;
+
+				movepushangle += a;
+			}
+
+			if (adj)
+			{
+				player->underwatertilt += adj;
+
+				if (abs(player->underwatertilt) > ANG30)
+				{
+					player->underwatertilt =
+						player->underwatertilt > 0 ? ANG30
+						: -(ANG30);
+				}
+			}
+			else
+			{
+				player->underwatertilt =
+					FixedMul(player->underwatertilt,
+							7*FRACUNIT/8);
+			}
+		}
+
 		totalthrust.x += P_ReturnThrustX(player->mo, movepushangle, movepushforward);
 		totalthrust.y += P_ReturnThrustY(player->mo, movepushangle, movepushforward);
 	}
@@ -2055,6 +2107,10 @@ void P_MovePlayer(player_t *player)
 			else if (player->drift != 0)
 			{
 				INT32 a = (ANGLE_45 / 5) * player->drift;
+
+				if (player->mo->eflags & MFE_UNDERWATER)
+					a /= 2;
+
 				player->drawangle += a;
 			}
 		}
@@ -2847,6 +2903,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	boolean cameranoclip;
 	subsector_t *newsubsec;
 #endif
+
+	thiscam->old_x = thiscam->x;
+	thiscam->old_y = thiscam->y;
+	thiscam->old_z = thiscam->z;
+	thiscam->old_angle = thiscam->angle;
+	thiscam->old_aiming = thiscam->aiming;
 
 	democam.soundmobj = NULL;	// reset this each frame, we don't want the game crashing for stupid reasons now do we
 
@@ -3867,13 +3929,12 @@ static void P_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-
 	switch (player->followercolor)
 	{
-		case MAXSKINCOLORS: // "Match"
+		case 255: // "Match" (-1)
 			color = player->skincolor;
 			break;
-		case MAXSKINCOLORS+1: // "Opposite"
+		case 254: // "Opposite" (-2)
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
@@ -3934,9 +3995,10 @@ static void P_HandleFollower(player_t *player)
 			P_SetFollowerState(player->follower, player->follower->state->nextstate);
 
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
-		player->follower->momx = (sx - player->follower->x)/fl.horzlag;
-		player->follower->momy = (sy - player->follower->y)/fl.horzlag;
-		player->follower->momz = (sz - player->follower->z)/fl.vertlag;
+		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
+		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
+		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
+		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
 		if (player->mo->colorized)
@@ -4160,6 +4222,9 @@ void P_PlayerThink(player_t *player)
 	ticcmd_t *cmd;
 	const size_t playeri = (size_t)(player - players);
 
+	player->old_drawangle = player->drawangle;
+	player->old_viewrollangle = player->viewrollangle;
+
 #ifdef PARANOIA
 	if (!player->mo)
 		I_Error("p_playerthink: players[%s].mo == NULL", sizeu1(playeri));
@@ -4170,11 +4235,6 @@ void P_PlayerThink(player_t *player)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
-	}
-
-	if (player->mo->hitlag > 0)
-	{
-		return;
 	}
 
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
@@ -4191,6 +4251,11 @@ void P_PlayerThink(player_t *player)
 
 	if (player->awayviewtics && player->awayviewtics != -1)
 		player->awayviewtics--;
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo))

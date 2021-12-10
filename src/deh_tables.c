@@ -323,6 +323,7 @@ actionpointer_t actionpointers[] =
 	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
 	{{A_FZBoomFlash},            "A_FZBOOMFLASH"},
@@ -334,7 +335,6 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
-	{{A_SpawnItemCapsuleParts},  "A_SPAWNITEMCAPSULEPARTS"},
 
 	{{NULL},                     "NONE"},
 
@@ -3490,9 +3490,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_ITEMCAPSULE_TOP_SIDE",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_AIR",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_GROUND",
-	"S_ITEMCAPSULE_TOP",
-	"S_ITEMCAPSULE_BOTTOM",
-	"S_ITEMCAPSULE_INSIDE",
+	//"S_ITEMCAPSULE_TOP",
+	//"S_ITEMCAPSULE_BOTTOM",
+	//"S_ITEMCAPSULE_INSIDE",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",
