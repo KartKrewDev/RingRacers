@@ -93,7 +93,7 @@ extern side_t *spawnsides;
 // POV data.
 //
 extern fixed_t viewx, viewy, viewz;
-extern angle_t viewangle, aimingangle;
+extern angle_t viewangle, aimingangle, viewroll;
 extern UINT8 viewssnum; // splitscreen view number
 extern boolean viewsky, skyVisible;
 extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player

@@ -45,6 +45,7 @@
 
 // SRB2Kart
 #include "../k_color.h"
+#include "../k_kart.h" // HITLAGJITTERS
 
 #ifdef HAVE_PNG
 
@@ -1372,7 +1373,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		fixed_t interpz = spr->mobj->z;
 
 		// do interpolation
-		if (cv_frameinterpolation.value == 1 && !paused)
+		if (cv_frameinterpolation.value == 1)
 		{
 			interpx = spr->mobj->old_x + FixedMul(rendertimefrac, spr->mobj->x - spr->mobj->old_x);
 			interpy = spr->mobj->old_y + FixedMul(rendertimefrac, spr->mobj->y - spr->mobj->old_y);
@@ -1382,7 +1383,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = spr->mobj->hitlag * (FRACUNIT / 10);
+			fixed_t mul = spr->mobj->hitlag * HITLAGJITTERS;
 
 			if (leveltime & 1)
 			{

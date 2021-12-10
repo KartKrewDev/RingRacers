@@ -883,12 +883,12 @@ void R_DrawSinglePlane(visplane_t *pl)
 		{
 			INT32 top, bottom;
 
+			planeripple.active = true;
 			if (spanfunctype == SPANDRAWFUNC_TRANS)
 			{
 				UINT8 i;
 
 				spanfunctype = SPANDRAWFUNC_WATER;
-				planeripple.active = true;
 
 				// Copy the current scene, ugh
 				top = pl->high-8;

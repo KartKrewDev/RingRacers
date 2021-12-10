@@ -1292,6 +1292,8 @@ void I_FinishUpdate(void)
 	if (I_SkipFrame())
 		return;
 
+	SCR_CalcAproxFps();
+
 	if (st_overlay)
 	{
 		if (cv_ticrate.value)

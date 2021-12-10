@@ -41,6 +41,7 @@ typedef struct {
 
 	angle_t angle;
 	angle_t aim;
+	angle_t roll;
 	fixed_t cos;
 	fixed_t sin;
 	mobj_t *mobj;

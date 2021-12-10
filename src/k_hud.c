@@ -801,7 +801,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	player_t *player;
 
 	fixed_t viewpointX, viewpointY, viewpointZ;
-	angle_t viewpointAngle, viewpointAiming;
+	angle_t viewpointAngle, viewpointAiming, viewpointRoll;
 
 	INT32 screenWidth, screenHeight;
 	fixed_t screenHalfW, screenHalfH;
@@ -829,12 +829,13 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	cam = &camera[cameraNum];
 	player = &players[displayplayers[cameraNum]];
 
-	if (cam == NULL || player == NULL)
+	if (cam == NULL || player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 	{
 		// Shouldn't be possible?
 		return;
 	}
 
+	// TODO: needs da interp
 	if (cam->chase == true && !player->spectator)
 	{
 		// Use the camera's properties.
@@ -843,25 +844,44 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 		viewpointZ = cam->z - point->z;
 		viewpointAngle = (INT32)cam->angle;
 		viewpointAiming = (INT32)cam->aiming;
+		viewpointRoll = (INT32)player->viewrollangle;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			viewpointX = cam->old_x + FixedMul(rendertimefrac, cam->x - cam->old_x);
+			viewpointY = cam->old_y + FixedMul(rendertimefrac, cam->y - cam->old_y);
+			viewpointZ = (cam->old_z + FixedMul(rendertimefrac, cam->z - cam->old_z)) - point->z;
+
+			viewpointAngle = (INT32)(cam->old_angle + FixedMul(rendertimefrac, cam->angle - cam->old_angle));
+			viewpointAiming = (INT32)(cam->old_aiming + FixedMul(rendertimefrac, cam->aiming - cam->old_aiming));
+			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
+		}
 	}
 	else
 	{
 		// Use player properties.
-
-		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-		{
-			// This shouldn't happen.
-			return;
-		}
-
 		viewpointX = player->mo->x;
 		viewpointY = player->mo->y;
 		viewpointZ = player->viewz - point->z;
 		viewpointAngle = (INT32)player->mo->angle;
 		viewpointAiming = (INT32)player->aiming;
+		viewpointRoll = (INT32)player->viewrollangle;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			viewpointX = player->mo->old_x + FixedMul(rendertimefrac, player->mo->x - player->mo->old_x);
+			viewpointY = player->mo->old_y + FixedMul(rendertimefrac, player->mo->y - player->mo->old_y);
+			viewpointZ = (player->mo->old_z + FixedMul(rendertimefrac, player->viewz - player->mo->old_z)) - point->z; //player->old_viewz
+
+			viewpointAngle = (INT32)(player->mo->old_angle + FixedMul(rendertimefrac, player->mo->angle - player->mo->old_angle));
+			//viewpointAiming = (INT32)(player->mo->old_aiming + FixedMul(rendertimefrac, player->mo->aiming - player->mo->old_aiming));
+			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
+		}
 	}
 
 	viewpointAngle += (INT32)angleOffset;
+
+	(void)viewpointRoll; // will be used later...
 
 	// Calculate screen size adjustments.
 	// TODO: Anyone want to make this support non-green resolutions somehow? :V
@@ -2590,6 +2610,7 @@ static void K_drawKartPlayerCheck(void)
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		vector3_t v;
+		vector3_t pPos;
 		trackingResult_t result;
 
 		if (!playeringame[i] || checkplayer->spectator)
@@ -2614,7 +2635,22 @@ static void K_drawKartPlayerCheck(void)
 		v.y = checkplayer->mo->y;
 		v.z = checkplayer->mo->z;
 
-		distance = R_PointToDist2(stplyr->mo->x, stplyr->mo->y, v.x, v.y);
+		pPos.x = stplyr->mo->x;
+		pPos.y = stplyr->mo->y;
+		pPos.z = stplyr->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			v.x = checkplayer->mo->old_x + FixedMul(rendertimefrac, checkplayer->mo->x - checkplayer->mo->old_x);
+			v.y = checkplayer->mo->old_y + FixedMul(rendertimefrac, checkplayer->mo->y - checkplayer->mo->old_y);
+			v.z = checkplayer->mo->old_z + FixedMul(rendertimefrac, checkplayer->mo->z - checkplayer->mo->old_z);
+
+			pPos.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
+			pPos.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
+			pPos.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
+		}
+
+		distance = R_PointToDist2(pPos.x, pPos.y, v.x, v.y);
 
 		if (distance > maxdistance)
 		{
@@ -2801,12 +2837,26 @@ static void K_drawKartNameTags(void)
 		c.x = thiscam->x;
 		c.y = thiscam->y;
 		c.z = thiscam->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			c.x = thiscam->old_x + FixedMul(rendertimefrac, thiscam->x - thiscam->old_x);
+			c.y = thiscam->old_y + FixedMul(rendertimefrac, thiscam->y - thiscam->old_y);
+			c.z = thiscam->old_z + FixedMul(rendertimefrac, thiscam->z - thiscam->old_z);
+		}
 	}
 	else
 	{
 		c.x = stplyr->mo->x;
 		c.y = stplyr->mo->y;
 		c.z = stplyr->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			c.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
+			c.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
+			c.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2848,6 +2898,13 @@ static void K_drawKartNameTags(void)
 		v.x = ntplayer->mo->x;
 		v.y = ntplayer->mo->y;
 		v.z = ntplayer->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
+			v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
+			v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
+		}
 
 		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
 		{
@@ -2904,7 +2961,16 @@ static void K_drawKartNameTags(void)
 
 			v.x = ntplayer->mo->x;
 			v.y = ntplayer->mo->y;
-			v.z = ntplayer->mo->z + (ntplayer->mo->height / 2);
+			v.z = ntplayer->mo->z;
+
+			if (cv_frameinterpolation.value == 1)
+			{
+				v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
+				v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
+				v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
+			}
+
+			v.z += (ntplayer->mo->height / 2);
 
 			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 			{
@@ -3145,7 +3211,7 @@ static void K_drawKartMinimap(void)
 			interpx = g->mo->x;
 			interpy = g->mo->y;
 
-			if (cv_frameinterpolation.value == 1 && !paused)
+			if (cv_frameinterpolation.value == 1)
 			{
 				interpx = g->mo->old_x + FixedMul(rendertimefrac, g->mo->x - g->mo->old_x);
 				interpy = g->mo->old_y + FixedMul(rendertimefrac, g->mo->y - g->mo->old_y);
@@ -3210,7 +3276,7 @@ static void K_drawKartMinimap(void)
 			interpx = players[i].mo->x;
 			interpy = players[i].mo->y;
 
-			if (cv_frameinterpolation.value == 1 && !paused)
+			if (cv_frameinterpolation.value == 1)
 			{
 				interpx = players[i].mo->old_x + FixedMul(rendertimefrac, players[i].mo->x - players[i].mo->old_x);
 				interpy = players[i].mo->old_y + FixedMul(rendertimefrac, players[i].mo->y - players[i].mo->old_y);
@@ -3245,7 +3311,7 @@ static void K_drawKartMinimap(void)
 			interpx = mobj->x;
 			interpy = mobj->y;
 
-			if (cv_frameinterpolation.value == 1 && !paused)
+			if (cv_frameinterpolation.value == 1)
 			{
 				interpx = mobj->old_x + FixedMul(rendertimefrac, mobj->x - mobj->old_x);
 				interpy = mobj->old_y + FixedMul(rendertimefrac, mobj->y - mobj->old_y);
@@ -3282,7 +3348,7 @@ static void K_drawKartMinimap(void)
 		interpx = players[localplayers[i]].mo->x;
 		interpy = players[localplayers[i]].mo->y;
 
-		if (cv_frameinterpolation.value == 1 && !paused)
+		if (cv_frameinterpolation.value == 1)
 		{
 			interpx = players[localplayers[i]].mo->old_x + FixedMul(rendertimefrac, players[localplayers[i]].mo->x - players[localplayers[i]].mo->old_x);
 			interpy = players[localplayers[i]].mo->old_y + FixedMul(rendertimefrac, players[localplayers[i]].mo->y - players[localplayers[i]].mo->old_y);
@@ -3795,7 +3861,7 @@ static void K_drawKartFirstPerson(void)
 		// hitlag vibrating
 		if (stplyr->mo->hitlag > 0 && (stplyr->mo->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			fixed_t mul = stplyr->mo->hitlag * HITLAGJITTERS;
 			if (r_splitscreen && mul > FRACUNIT)
 				mul = FRACUNIT;
 
