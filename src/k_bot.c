@@ -575,14 +575,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
-	const fixed_t distreduce = K_BotReducePrediction(player);
-	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
-
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = max(P_AproxDistance(player->rmomx, player->rmomy), K_GetKartSpeed(player, false));
+	const fixed_t speed = P_AproxDistance(player->rmomx, player->rmomy);
 
-	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
-	const INT32 distance = ((FixedMul(speed, distreduce) / FRACUNIT) * futuresight) + startDist;
+	const INT32 startDist = (1536 * mapobjectscale) / FRACUNIT;
+	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	waypoint_t *wp = player->nextwaypoint;
@@ -590,6 +587,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	INT32 distanceleft = distance;
 	fixed_t smallestradius = INT32_MAX;
 	angle_t angletonext = ANGLE_MAX;
+
+	// Halves radius when encountering a wall on your way to your destination.
+	fixed_t radreduce = FRACUNIT;
 
 	size_t nwp;
 	size_t i;
@@ -603,7 +603,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		predict->x = wp->mobj->x;
 		predict->y = wp->mobj->y;
-		predict->radius = FixedMul(wp->mobj->radius, radreduce);
+		predict->radius = wp->mobj->radius;
 		return predict;
 	}
 
@@ -653,6 +653,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 					continue;
 				}
 
+				if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[i]->mobj) == false)
+				{
+					continue;
+				}
+
 				// Unlike the other parts of this function, we're comparing the player's physical position, NOT the position of the waypoint!!
 				// This should roughly correspond with how players will think about path splits.
 				a = R_PointToAngle2(
@@ -671,6 +676,24 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 					nwp = i;
 					delta = a;
 				}
+			}
+
+			if (i == wp->numnextwaypoints)
+			{
+				// No usable waypoint, we don't want to check any further
+				radreduce /= 2;
+				distanceleft = 0;
+				break;
+			}
+		}
+		else
+		{
+			if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
+			{
+				// If we can't get a direct path to this waypoint, we don't want to check any further.
+				radreduce /= 2;
+				distanceleft = 0;
+				break;
 			}
 		}
  

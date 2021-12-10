@@ -185,19 +185,22 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
-	fixed_t K_BotReducePrediction(player_t *player);
+	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
-		Finds walls nearby the specified player, to create a multiplier
-		to pull bot predictions back by.
+		Tells us if a bot will play more careful around
+		this sector. Checks FOFs in the sector, as well.
 
 	Input Arguments:-
-		player - Player to compare.
+		player - Player to check against.
+		sec - Sector to check against.
+		x - Linedef cross X position, for slopes
+		y - Linedef cross Y position, for slopes
 
 	Return:-
-		Multiplier in fixed point scale.
+		true if avoiding this sector, false otherwise.
 --------------------------------------------------*/
 
-fixed_t K_BotReducePrediction(player_t *player);
+boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
