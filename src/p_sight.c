@@ -742,16 +742,21 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 		// Treat damage sectors like walls
 		if (tb->compareThing->player != NULL)
 		{
-			INT32 lineside = 0;
-			vertex_t pos;
+			boolean alreadyHates = K_BotHatesThisSector(tb->compareThing->player, tb->compareThing->subsector->sector, tb->compareThing->x, tb->compareThing->y);
 
-			P_ClosestPointOnLine(tb->compareThing->x, tb->compareThing->y, line, &pos);
-			lineside = P_PointOnLineSide(tb->compareThing->x, tb->compareThing->y, line);
-
-			if (K_BotHatesThisSector(tb->compareThing->player, lineside ? line->frontsector : line->backsector, pos.x, pos.y))
+			if (alreadyHates == false)
 			{
-				// This line does not block us, but we don't want to be in it.
-				return false;
+				INT32 lineside = 0;
+				vertex_t pos;
+
+				P_ClosestPointOnLine(tb->compareThing->x, tb->compareThing->y, line, &pos);
+				lineside = P_PointOnLineSide(tb->compareThing->x, tb->compareThing->y, line);
+
+				if (K_BotHatesThisSector(tb->compareThing->player, ((lineside == 1) ? line->frontsector : line->backsector), pos.x, pos.y))
+				{
+					// This line does not block us, but we don't want to be in it.
+					return false;
+				}
 			}
 		}
 	}

@@ -15,6 +15,7 @@
 
 #include "k_waypoint.h"
 #include "d_player.h"
+#include "r_defs.h"
 
 // Maximum value of botvars.difficulty
 #define MAXBOTDIFFICULTY 9

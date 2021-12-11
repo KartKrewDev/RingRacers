@@ -576,9 +576,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = P_AproxDistance(player->rmomx, player->rmomy);
+	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
 
-	const INT32 startDist = (1536 * mapobjectscale) / FRACUNIT;
+	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
 	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
@@ -653,11 +653,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 					continue;
 				}
 
-				if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[i]->mobj) == false)
-				{
-					continue;
-				}
-
 				// Unlike the other parts of this function, we're comparing the player's physical position, NOT the position of the waypoint!!
 				// This should roughly correspond with how players will think about path splits.
 				a = R_PointToAngle2(
@@ -677,24 +672,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 					delta = a;
 				}
 			}
-
-			if (i == wp->numnextwaypoints)
-			{
-				// No usable waypoint, we don't want to check any further
-				radreduce /= 2;
-				distanceleft = 0;
-				break;
-			}
-		}
-		else
-		{
-			if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
-			{
-				// If we can't get a direct path to this waypoint, we don't want to check any further.
-				radreduce /= 2;
-				distanceleft = 0;
-				break;
-			}
 		}
  
 		angletonext = R_PointToAngle2(
@@ -703,6 +680,13 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		);
 
 		disttonext = (INT32)wp->nextwaypointdistances[nwp];
+
+		if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
+		{
+			// If we can't get a direct path to this waypoint, we don't want to check much further...
+			disttonext *= 2;
+			radreduce = FRACUNIT/2;
+		}
 
 		if (disttonext > distanceleft)
 		{
