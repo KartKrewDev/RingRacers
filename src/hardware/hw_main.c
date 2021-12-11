@@ -3629,14 +3629,14 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
 	float fscale; float fx; float fy; float offset;
+	float ph;
 	extracolormap_t *colormap = NULL;
 	UINT8 i;
 	SINT8 flip = P_MobjFlip(thing);
+	UINT32 tFlag = PF_ReverseSubtract;
 
 	INT32 light;
 	fixed_t scalemul;
-	UINT16 alpha;
-	fixed_t floordiff;
 	fixed_t groundz;
 	fixed_t slopez;
 	pslope_t *groundslope;
@@ -3675,32 +3675,31 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
-	floordiff = abs((flip < 0 ? thing->height : 0) + interpz - groundz);
-
-	alpha = floordiff / (4*FRACUNIT) + 75;
-	if (alpha >= 255) return;
-	alpha = 255 - alpha;
-
 	gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 	HWR_GetPatch(gpatch);
 
-	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
-	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
+	scalemul = FixedMul(scale, (thing->radius * 2) / gpatch->height);
+
+	ph = (float)gpatch->height;
 
 	fscale = FIXED_TO_FLOAT(scalemul);
 	fx = FIXED_TO_FLOAT(interpx);
 	fy = FIXED_TO_FLOAT(interpy);
 
+	if (fscale > 0.0)
+	{
+		offset = (ph / 2) * fscale;
+	}
+	else
+	{
+		return;
+	}
+
 	//  3--2
 	//  | /|
 	//  |/ |
 	//  0--1
-
-	if (thing && fabsf(fscale - 1.0f) > 1.0E-36f)
-		offset = ((gpatch->height)/2) * fscale;
-	else
-		offset = (float)((gpatch->height)/2);
 
 	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
 	shadowVerts[1].x = shadowVerts[0].x = fx - offset;
@@ -3749,10 +3748,15 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 			colormap = thing->subsector->sector->extra_colormap;
 	}
 
-	HWR_Lighting(&sSurf, 0, colormap);
-	sSurf.PolyColor.s.alpha = alpha;
+	HWR_Lighting(&sSurf, 255, colormap);
+	sSurf.PolyColor.s.alpha = 255;
 
-	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, PF_Translucent|PF_Modulated, SHADER_SPRITE, false); // sprite shader
+	if (thing->whiteshadow == true)
+	{
+		tFlag = PF_Additive;
+	}
+
+	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, tFlag|PF_Modulated, SHADER_SPRITE, false); // sprite shader
 }
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
@@ -5245,6 +5249,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	spr_topoffset = spritecachedinfo[lumpoff].topoffset;
 
 #ifdef ROTSPRITE
+	spriterotangle = R_SpriteRotationAngle(thing, NULL);
+
 	if (spriterotangle != 0
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
