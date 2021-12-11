@@ -776,7 +776,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		return 0;
 	}
 
-	if (speedDiff < (3 * baseAccel / 4))
+	if (speedDiff < (baseAccel / 4))
 	{
 		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
 		{
