@@ -284,6 +284,70 @@ boolean K_BotCanTakeCut(player_t *player)
 }
 
 /*--------------------------------------------------
+	static INT16 K_FindBotController(mobj_t *mo)
+
+		Finds if any bot controller linedefs are tagged to the bot's sector.
+
+	Input Arguments:-
+		mo - The bot player's mobj.
+
+	Return:-
+		Line number of the bot controller. -1 if it doesn't exist.
+--------------------------------------------------*/
+static INT16 K_FindBotController(mobj_t *mo)
+{
+	msecnode_t *node;
+	ffloor_t *rover;
+	INT16 lineNum = -1;
+	mtag_t tag;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	{
+		if (!node->m_sector)
+		{
+			continue;
+		}
+
+		tag = Tag_FGet(&node->m_sector->tags);
+		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
+
+		if (lineNum != -1)
+		{
+			return lineNum;
+		}
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+		{
+			sector_t *rs = NULL;
+
+			if (!(rover->flags & FF_EXISTS))
+			{
+				continue;
+			}
+
+			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
+			{
+				continue;
+			}
+
+			rs = &sectors[rover->secnum];
+			tag = Tag_FGet(&rs->tags);
+			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
+
+			if (lineNum != -1)
+			{
+				return lineNum;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/*--------------------------------------------------
 	static UINT32 K_BotRubberbandDistance(player_t *player)
 
 		Calculates the distance away from 1st place that the
@@ -346,12 +410,26 @@ fixed_t K_BotRubberband(player_t *player)
 	fixed_t rubberband = FRACUNIT;
 	fixed_t max, min;
 	player_t *firstplace = NULL;
+	INT16 botController = -1;
 	UINT8 i;
 
 	if (player->exiting)
 	{
 		// You're done, we don't need to rubberband anymore.
 		return FRACUNIT;
+	}
+
+	botController = K_FindBotController(player->mo);
+
+	if (botController != -1)
+	{
+		line_t *controllerLine = &lines[botController];
+
+		// No Climb Flag: Disable rubberbanding
+		if (controllerLine->flags & ML_NOCLIMB)
+		{
+			return FRACUNIT;
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -810,70 +888,6 @@ static UINT8 K_TrySpindash(player_t *player)
 
 	// We're doing just fine, we don't need to spindash, thanks.
 	return 0;
-}
-
-/*--------------------------------------------------
-	static INT16 K_FindBotController(mobj_t *mo)
-
-		Finds if any bot controller linedefs are tagged to the bot's sector.
-
-	Input Arguments:-
-		mo - The bot player's mobj.
-
-	Return:-
-		Line number of the bot controller. -1 if it doesn't exist.
---------------------------------------------------*/
-static INT16 K_FindBotController(mobj_t *mo)
-{
-	msecnode_t *node;
-	ffloor_t *rover;
-	INT16 lineNum = -1;
-	mtag_t tag;
-
-	I_Assert(mo != NULL);
-	I_Assert(!P_MobjWasRemoved(mo));
-
-	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
-	{
-		if (!node->m_sector)
-		{
-			continue;
-		}
-
-		tag = Tag_FGet(&node->m_sector->tags);
-		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
-
-		if (lineNum != -1)
-		{
-			return lineNum;
-		}
-
-		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
-		{
-			sector_t *rs = NULL;
-
-			if (!(rover->flags & FF_EXISTS))
-			{
-				continue;
-			}
-
-			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
-			{
-				continue;
-			}
-
-			rs = &sectors[rover->secnum];
-			tag = Tag_FGet(&rs->tags);
-			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
-
-			if (lineNum != -1)
-			{
-				return lineNum;
-			}
-		}
-	}
-
-	return -1;
 }
 
 /*--------------------------------------------------
