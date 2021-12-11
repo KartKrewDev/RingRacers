@@ -4095,7 +4095,7 @@ boolean P_BossTargetPlayer(mobj_t *actor, boolean closest)
 
 		player = &players[actor->lastlook];
 
-		if (player->bot || player->spectator)
+		if (player->spectator)
 			continue; // ignore notarget
 
 		if (!player->mo || P_MobjWasRemoved(player->mo))

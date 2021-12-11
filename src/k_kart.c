@@ -8629,8 +8629,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean HOLDING_ITEM = (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
 
-	player->pflags &= ~PF_HITFINISHLINE;
-
 	if (!player->exiting)
 	{
 		if (player->oldposition < player->position) // But first, if you lost a place,
