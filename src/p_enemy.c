@@ -13308,7 +13308,9 @@ void A_ItemPop(mobj_t *actor)
 	if (actor->info->deathsound)
 		S_StartSound(remains, actor->info->deathsound);
 
-	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->bumpers <= 0))
+	if (gametyperules & GTR_BUMPERS)
+		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	else
 		actor->target->player->itemroulette = 1;
 
 	remains->flags2 &= ~MF2_AMBUSH;
