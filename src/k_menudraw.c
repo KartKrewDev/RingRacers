@@ -1020,6 +1020,135 @@ void M_DrawCharacterSelect(void)
 	M_DrawCharSelectCursor(priority);
 }
 
+// DIFFICULTY SELECT
+// This is a mix of K_DrawKartGamemodeMenu and the generic menu drawer depending on what we need.
+// This is only ever used here (I hope because this is starting to pile up on hacks to look like the old m_menu.c lol...)
+
+void M_DrawRaceDifficulty(void)
+{
+	UINT8 n = currentMenu->numitems-4;
+	patch_t *box = W_CachePatchName("M_DBOX", PU_CACHE);
+
+	INT32 i;
+	INT32 x = 120;
+	INT32 y = 48;
+
+	M_DrawMenuTooltips();
+
+	// Draw the box for difficulty...
+	V_DrawFixedPatch((111 + 24*menutransition.tics)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
+
+	if (menutransition.tics)
+	{
+		x += 24 * menutransition.tics;
+	}
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		if (i >= n)
+		{
+
+			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
+			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
+
+			if (i < currentMenu->numitems-1)
+			{
+				x -= GM_XOFFSET;
+				y -= GM_YOFFSET;
+			}
+
+
+			if (menutransition.tics)
+			{
+				x += 24 * menutransition.tics;
+			}
+		}
+
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			// This is HACKY......
+
+			case IT_STRING2:
+			{
+
+				INT32 f = (i == itemOn) ? highlightflags : 0;
+
+				V_DrawString(140 + 24*menutransition.tics, y, f, currentMenu->menuitems[i].text);
+
+				if (currentMenu->menuitems[i].status & IT_CVAR)
+				{
+					// implicitely we'll only take care of normal cvars
+					INT32 cx = 260 + 24*menutransition.tics;
+					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+
+					V_DrawCenteredString(cx, y, f, cv->string);
+
+					if (i == itemOn)
+					{
+
+						INT32 w = V_StringWidth(cv->string, 0)/2;
+
+						V_DrawCharacter(cx - 10 - w - (skullAnimCounter/5), y, '\x1C' | highlightflags, false); // left arrow
+						V_DrawCharacter(cx + w + 2 + (skullAnimCounter/5), y, '\x1D' | highlightflags, false); // right arrow
+					}
+				}
+
+				y += 12;
+
+				break;
+			}
+
+			case IT_STRING:
+			{
+
+				UINT8 *colormap = NULL;
+
+				if (i == itemOn)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+				}
+				else
+				{
+					colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
+				}
+
+
+				if (currentMenu->menuitems[i].status & IT_CVAR)
+				{
+
+					INT32 fx = (x - 24*menutransition.tics);
+					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*24);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
+
+					// implicitely we'll only take care of normal consvars
+					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+
+					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUSHRT", PU_CACHE), colormap);
+					V_DrawCenteredGamemodeString(centx, y - 3, V_ALLOWLOWERCASE, colormap, cv->string);
+
+					if (i == itemOn)
+					{
+						patch_t *arr_r = W_CachePatchName("GM_ARRL", PU_CACHE);
+						patch_t *arr_l = W_CachePatchName("GM_ARRR", PU_CACHE);
+
+						V_DrawFixedPatch((centx-54 - arr_r->width - (skullAnimCounter/5))*FRACUNIT, (y-3)*FRACUNIT, FRACUNIT, 0, arr_r, colormap);
+						V_DrawFixedPatch((centx+54 + (skullAnimCounter/5))*FRACUNIT, (y-3)*FRACUNIT, FRACUNIT, 0, arr_l, colormap);
+					}
+
+				}
+				else	// not a cvar
+				{
+					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
+					V_DrawGamemodeString(x + 16, y - 3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+				}
+				x += GM_XOFFSET;
+				y += GM_YOFFSET;
+
+				break;
+			}
+		}
+	}
+}
+
 // LEVEL SELECT
 
 static void M_DrawCupPreview(INT16 y, cupheader_t *cup)

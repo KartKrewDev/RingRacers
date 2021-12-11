@@ -100,10 +100,10 @@ menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five races!",
-		NULL, M_LevelSelectInit, 2, GT_RACE},
+		NULL, M_SetupDifficultySelect, 0, 0},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
-		"MENIMG01", M_LevelSelectInit, 0, GT_RACE},
+		"MENIMG01", M_SetupDifficultySelect, 1, 0},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
 		NULL, M_LevelSelectInit, 1, GT_RACE},
@@ -112,6 +112,52 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 };
 
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
+
+
+// difficulty selection:
+menuitem_t PLAY_RaceDifficulty[] =
+{
+	// local play
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game difficulty",
+		NULL, &cv_dummygpdifficulty, 0, 0},
+
+	// netgames
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed",
+		NULL, &cv_dummykartspeed, 0, 0},
+
+	// DISABLE THAT OPTION OUTSIDE OF MATCH RACE
+	{IT_STRING2 | IT_CVAR, "CPU Players", "Enable or disable CPU players.",	// 2	whitestring is used by the drawer to know to draw shitstring
+		NULL, &cv_dummymatchbots, 0, 0},
+
+	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",	// 3
+		NULL, &cv_dummygpencore, 0, 0},
+
+	// For GP:
+	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", NULL, M_LevelSelectInit, 2, GT_RACE},	// 4
+
+	// For Match Race:
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, M_LevelSelectInit, 0, GT_RACE},	// 5
+
+	// For Match Race in NETGAMES:
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, M_MPSetupNetgameMapSelect, 0, GT_RACE},	// 6
+
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
+};
+
+menu_t PLAY_RaceDifficultyDef = {
+	sizeof(PLAY_RaceDifficulty) / sizeof(menuitem_t),
+	&PLAY_RaceGamemodesDef,
+	0,
+	PLAY_RaceDifficulty,
+	0, 0,
+	0, 0,
+	1, 10,
+	M_DrawRaceDifficulty,
+	NULL,
+	NULL,
+	NULL
+};
+
 
 menuitem_t PLAY_CupSelect[] =
 {
@@ -234,7 +280,7 @@ menuitem_t PLAY_MP_Host[] =
 		NULL, &cv_dummygametype, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
-		NULL, M_MPSetupNetgameMapSelect, 0, 0},
+		NULL, M_SetupDifficultySelectMP, 0, 0},
 
 };
 

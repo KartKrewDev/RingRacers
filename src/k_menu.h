@@ -174,6 +174,9 @@ extern menu_t PLAY_GamemodesDef;
 extern menuitem_t PLAY_RaceGamemodesMenu[];
 extern menu_t PLAY_RaceGamemodesDef;
 
+extern menuitem_t PLAY_RaceDifficulty[];
+extern menu_t PLAY_RaceDifficultyDef;
+
 extern menuitem_t PLAY_CupSelect[];
 extern menu_t PLAY_CupSelectDef;
 
@@ -478,6 +481,16 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+// dummy consvars for GP & match race setup
+extern consvar_t cv_dummygpdifficulty;
+extern consvar_t cv_dummykartspeed;
+extern consvar_t cv_dummygpencore;
+extern consvar_t cv_dummymatchbots;
+
+void M_SetupDifficultySelect(INT32 choice);
+void M_SetupDifficultySelectMP(INT32 choice);
+void M_DifficultySelectInputs(INT32 choice);
+
 // Multiplayer menu stuff
 
 // Keep track of multiplayer menu related data
@@ -691,6 +704,8 @@ void M_DrawCharacterSelect(void);
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
 void M_DrawTimeAttack(void);
+
+void M_DrawRaceDifficulty(void);
 
 // Multiplayer menu stuff
 void M_DrawMPOptSelect(void);

@@ -166,6 +166,9 @@ static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
+static CV_PossibleValue_t dummygpdifficulty_cons_t[] = {{0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {3, "Master"}, {0, NULL}};
+static CV_PossibleValue_t dummykartspeed_cons_t[] = {{-1, "Auto"}, {0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {0, NULL}};
+
 //static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
@@ -175,6 +178,26 @@ consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dumm
 consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+
+consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, dummygpdifficulty_cons_t, NULL);
+consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
+consvar_t cv_dummygpencore = CVAR_INIT ("dummygpdifficulty", "No", CV_HIDDEN, CV_YesNo, NULL);
+
+static CV_PossibleValue_t dummymatchbots_cons_t[] = {
+	{0, "Off"},
+	{1, "Lv.1"},
+	{2, "Lv.2"},
+	{3, "Lv.3"},
+	{4, "Lv.4"},
+	{5, "Lv.5"},
+	{6, "Lv.6"},
+	{7, "Lv.7"},
+	{8, "Lv.8"},
+	{9, "Lv.9"},
+	{0, NULL}
+};
+
+consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN|CV_SAVE, dummymatchbots_cons_t, NULL);	// Save this one if you wanna test your stuff without bots for instance
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -1629,6 +1652,11 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummygametype);
 	CV_RegisterVar(&cv_dummyip);
 
+	CV_RegisterVar(&cv_dummygpdifficulty);
+	CV_RegisterVar(&cv_dummykartspeed);
+	CV_RegisterVar(&cv_dummygpencore);
+	CV_RegisterVar(&cv_dummymatchbots);
+
 	M_UpdateMenuBGImage(true);
 
 #if 0
@@ -2347,6 +2375,60 @@ boolean M_CharacterSelectQuit(void)
 	return true;
 }
 
+// DIFFICULTY SELECT
+
+void M_SetupDifficultySelect(INT32 choice)
+{
+	// check what we picked.
+	choice = currentMenu->menuitems[itemOn].mvar1;
+
+	// setup the difficulty menu and then remove choices depending on choice
+	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
+
+	PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR;
+	PLAY_RaceDifficulty[1].status = IT_DISABLED;
+	PLAY_RaceDifficulty[2].status = IT_DISABLED;
+	PLAY_RaceDifficulty[3].status = IT_DISABLED;
+	PLAY_RaceDifficulty[4].status = IT_DISABLED;
+	PLAY_RaceDifficulty[5].status = IT_DISABLED;
+	PLAY_RaceDifficulty[6].status = IT_DISABLED;
+
+	if (choice)		// Match Race
+	{
+		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
+		itemOn = 5;	// Select cup select by default.
+
+	}
+	else			// GP
+	{
+		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[4].status = IT_STRING|IT_CALL;	// Level Select (GP)
+		itemOn = 4;	// Select cup select by default.
+	}
+}
+
+// calls the above but changes the cvar we set
+void M_SetupDifficultySelectMP(INT32 choice)
+{
+	(void) choice;
+
+	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
+
+	PLAY_RaceDifficulty[0].status = IT_DISABLED;
+	PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR;
+	PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
+	PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+	PLAY_RaceDifficulty[4].status = IT_DISABLED;
+	PLAY_RaceDifficulty[5].status = IT_DISABLED;
+	PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;
+
+	itemOn = 6; // Select cup select by default.
+}
+
 // LEVEL SELECT
 
 //
@@ -2585,10 +2667,11 @@ void M_CupSelectHandler(INT32 choice)
 
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
-				// TODO: game settings screen
-				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
-				grandprixinfo.masterbots = false;
-				grandprixinfo.encore = false;
+				// read our dummy cvars
+
+				grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
+				grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
+				grandprixinfo.encore = (boolean)cv_dummygpencore.value;
 
 				grandprixinfo.cup = newcup;
 
@@ -2744,9 +2827,18 @@ void M_LevelSelectHandler(INT32 choice)
 						SV_StartSinglePlayerServer();
 						multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
 						netgame = levellist.netgame;	// ^ ditto.
-					}
 
-					D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+						// this is considered to be CV_CHEAT however...
+						CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
+
+						if (netgame)	// check for the dummy kartspeed value
+							CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
+
+
+						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+					}
+					else	// directly do the map change
+						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
 					M_ClearMenus(true);
 				}
