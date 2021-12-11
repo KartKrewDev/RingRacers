@@ -2427,6 +2427,9 @@ void M_SetupDifficultySelectMP(INT32 choice)
 	PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;
 
 	itemOn = 6; // Select cup select by default.
+
+	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
+	mpmenu.modewinextend[0][0] = 1;
 }
 
 // LEVEL SELECT
