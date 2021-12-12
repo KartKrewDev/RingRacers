@@ -276,11 +276,16 @@ boolean CL_CheckDownloadable(void)
 		}
 
 	// Downloading locally disabled
+#if 0
 	if (!dlstatus && M_CheckParm("-nodownload"))
 		dlstatus = 3;
 
 	if (!dlstatus)
 		return true;
+#else
+	if (!dlstatus)
+		dlstatus = 3;
+#endif
 
 	// not downloadable, put reason in console
 	CONS_Alert(CONS_NOTICE, M_GetText("You need additional files to connect to this server:\n"));
