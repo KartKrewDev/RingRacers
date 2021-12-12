@@ -2682,7 +2682,7 @@ boolean K_ApplyOffroad(player_t *player)
 
 boolean K_SlopeResistance(player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease)
+	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease || player->flamedash)
 		return true;
 	return false;
 }
