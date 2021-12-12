@@ -758,6 +758,12 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 					return false;
 				}
 			}
+
+			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
+			{
+				// Can't go through trip wire.
+				return false;
+			}
 		}
 	}
 

@@ -273,14 +273,22 @@ boolean K_PlayerUsesBotMovement(player_t *player)
 --------------------------------------------------*/
 boolean K_BotCanTakeCut(player_t *player)
 {
-	if (!K_ApplyOffroad(player)
+	if (
+#if 1
+		K_TripwirePass(player) == true
+#else
+		K_ApplyOffroad(player) == false
+#endif
 		|| player->itemtype == KITEM_SNEAKER
 		|| player->itemtype == KITEM_ROCKETSNEAKER
 		|| player->itemtype == KITEM_INVINCIBILITY
-		|| player->itemtype == KITEM_HYUDORO)
+		)
+	{
 		return true;
+	}
 
 	return false;
+#endif
 }
 
 /*--------------------------------------------------
@@ -721,12 +729,12 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 			for (i = 0; i < wp->numnextwaypoints; i++)
 			{
-				if (!K_GetWaypointIsEnabled(wp->nextwaypoints[i]))
+				if (K_GetWaypointIsEnabled(wp->nextwaypoints[i]) == false)
 				{
 					continue;
 				}
 
-				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) && !K_BotCanTakeCut(player))
+				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) == true && K_BotCanTakeCut(player) == false)
 				{
 					continue;
 				}
