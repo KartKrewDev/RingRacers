@@ -19,6 +19,7 @@
 #include "r_state.h"
 
 #include "k_bot.h" // K_BotHatesThisSector
+#include "k_kart.h" // K_TripwirePass
 
 //
 // P_CheckSight

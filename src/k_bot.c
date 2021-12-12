@@ -288,11 +288,10 @@ boolean K_BotCanTakeCut(player_t *player)
 	}
 
 	return false;
-#endif
 }
 
 /*--------------------------------------------------
-	static INT16 K_FindBotController(mobj_t *mo)
+	static line_t *K_FindBotController(mobj_t *mo)
 
 		Finds if any bot controller linedefs are tagged to the bot's sector.
 
@@ -300,9 +299,9 @@ boolean K_BotCanTakeCut(player_t *player)
 		mo - The bot player's mobj.
 
 	Return:-
-		Line number of the bot controller. -1 if it doesn't exist.
+		Linedef of the bot controller. NULL if it doesn't exist.
 --------------------------------------------------*/
-static INT16 K_FindBotController(mobj_t *mo)
+static line_t *K_FindBotController(mobj_t *mo)
 {
 	msecnode_t *node;
 	ffloor_t *rover;
@@ -324,7 +323,7 @@ static INT16 K_FindBotController(mobj_t *mo)
 
 		if (lineNum != -1)
 		{
-			return lineNum;
+			break;
 		}
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
@@ -347,12 +346,19 @@ static INT16 K_FindBotController(mobj_t *mo)
 
 			if (lineNum != -1)
 			{
-				return lineNum;
+				break;
 			}
 		}
 	}
 
-	return -1;
+	if (lineNum != -1)
+	{
+		return &lines[lineNum];
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 /*--------------------------------------------------
@@ -418,7 +424,7 @@ fixed_t K_BotRubberband(player_t *player)
 	fixed_t rubberband = FRACUNIT;
 	fixed_t max, min;
 	player_t *firstplace = NULL;
-	INT16 botController = -1;
+	line_t *botController = NULL;
 	UINT8 i;
 
 	if (player->exiting)
@@ -429,12 +435,10 @@ fixed_t K_BotRubberband(player_t *player)
 
 	botController = K_FindBotController(player->mo);
 
-	if (botController != -1)
+	if (botController != NULL)
 	{
-		line_t *controllerLine = &lines[botController];
-
 		// No Climb Flag: Disable rubberbanding
-		if (controllerLine->flags & ML_NOCLIMB)
+		if (botController->flags & ML_NOCLIMB)
 		{
 			return FRACUNIT;
 		}
@@ -963,6 +967,50 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 }
 
 /*--------------------------------------------------
+	static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+
+		Determines inputs for trick panels.
+
+	Input Arguments:-
+		player - Player to generate the ticcmd for.
+		cmd - The player's ticcmd to modify.
+		botController - Linedef for the bot controller. 
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+{
+	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
+	if (botController == NULL)
+	{
+		return;
+	}
+
+	if (player->trickpanel == 1)
+	{
+		INT32 type = (sides[botController->sidenum[0]].rowoffset / FRACUNIT);
+
+		// Y Offset: Trick type
+		switch (type)
+		{
+			case 1:
+				cmd->turning = KART_FULLTURN;
+				break;
+			case 2:
+				cmd->turning = -KART_FULLTURN;
+				break;
+			case 3:
+				cmd->buttons |= BT_FORWARD;
+				break;
+			case 4:
+				cmd->buttons |= BT_BACKWARD;
+				break;
+		}
+	}
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -973,7 +1021,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	boolean trySpindash = true;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
-	INT16 botController = -1;
+	line_t *botController = NULL;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -996,7 +1044,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Complete override of all ticcmd functionality
-	if (LUAh_BotTiccmd(player, cmd))
+	if (LUAh_BotTiccmd(player, cmd) == true)
 	{
 		return;
 	}
@@ -1005,30 +1053,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (player->trickpanel != 0)
 	{
-		// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
-
-		if (player->trickpanel == 1 && botController != -1)
-		{
-			line_t *controllerLine = &lines[botController];
-			INT32 type = (sides[controllerLine->sidenum[0]].rowoffset / FRACUNIT);
-
-			// Y Offset: Trick type
-			switch (type)
-			{
-				case 1:
-					cmd->turning = KART_FULLTURN;
-					break;
-				case 2:
-					cmd->turning = -KART_FULLTURN;
-					break;
-				case 3:
-					cmd->buttons |= BT_FORWARD;
-					break;
-				case 4:
-					cmd->buttons |= BT_BACKWARD;
-					break;
-			}
-		}
+		K_BotTrick(player, cmd, botController);
 
 		// Don't do anything else.
 		return;
@@ -1037,20 +1062,19 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if ((player->nextwaypoint != NULL
 		&& player->nextwaypoint->mobj != NULL
 		&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-		|| (botController != -1))
+		|| (botController != NULL))
 	{
 		// Handle steering towards waypoints!
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		if (botController != -1)
+		if (botController != NULL)
 		{
 			const fixed_t dist = (player->mo->radius * 4);
-			line_t *controllerLine = &lines[botController];
 
 			// X Offset: Movement direction
-			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
+			destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
 
 			// Overwritten prediction
 			predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);

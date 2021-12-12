@@ -223,8 +223,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 /*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 
-		Gives a multiplier for a bot's rubberbanding. Meant to be used for top speed,
-		acceleration, and handling.
+		Creates a bot's ticcmd, looking at its surroundings to
+		try and figure out what it should do.
 
 	Input Arguments:-
 		player - Player to generate the ticcmd for.
