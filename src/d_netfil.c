@@ -161,10 +161,16 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 	char wadfilename[MAX_WADPATH] = "";
 	UINT8 filestatus;
 
-	for (i = mainwads+1; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
+#ifdef DEVELOP
+	i = 0;
+#else
+	i = mainwads + 1;
+#endif
+
+	for (; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
 	{
 		// If it has only music/sound lumps, don't put it in the list
-		if (!wadfiles[i]->important)
+		if (i > mainwads && !wadfiles[i]->important)
 			continue;
 
 		if (firstfile)
@@ -494,7 +500,12 @@ INT32 CL_CheckFiles(void)
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
-		for (j = mainwads+1; wadfiles[j]; j++)
+#ifdef DEVELOP
+		j = 0;
+#else
+		j = mainwads + 1;
+#endif
+		for (; wadfiles[j]; j++)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
