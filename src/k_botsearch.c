@@ -122,7 +122,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 		}
 	}
 
-	return (globalsmuggle.randomitems * globalsmuggle.eggboxes);
+	return (globalsmuggle.randomitems * (globalsmuggle.eggboxes + 1));
 }
 
 /*--------------------------------------------------
@@ -162,21 +162,11 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 }
 
 /*--------------------------------------------------
-	static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
-		Tells us if a bot will play more careful around
-		this sector. Checks FOFs in the sector, as well.
-
-	Input Arguments:-
-		player - Player to check against.
-		sec - Sector to check against.
-		x - Linedef cross X position, for slopes
-		y - Linedef cross Y position, for slopes
-
-	Return:-
-		true if avoiding this sector, false otherwise.
+		See header file for description.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
 	INT32 specialflag = 0;
@@ -255,171 +245,6 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 	}
 
 	return K_BotHatesThisSectorsSpecial(player, bestsector);
-}
-
-/*--------------------------------------------------
-	static boolean K_FindBlockingWalls(line_t *line)
-
-		Blockmap search function.
-		Reels the bot prediction back in based on solid walls
-		or other obstacles surrounding the bot.
-
-	Input Arguments:-
-		line - Linedef passed in from iteration.
-
-	Return:-
-		true continues searching, false ends the search early.
---------------------------------------------------*/
-static boolean K_FindBlockingWalls(line_t *line)
-{
-	// Condensed version of PIT_CheckLine
-	const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
-	fixed_t maxstep = maxstepmove;
-	fixed_t linedist = INT32_MAX;
-	INT32 lineside = 0;
-	vertex_t pos;
-
-	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
-	{
-		return false;
-	}
-
-	if (line->polyobj && !(line->polyobj->flags & POF_SOLID))
-	{
-		return true;
-	}
-
-	if (tmbbox[BOXRIGHT] <= line->bbox[BOXLEFT] || tmbbox[BOXLEFT] >= line->bbox[BOXRIGHT]
-		|| tmbbox[BOXTOP] <= line->bbox[BOXBOTTOM] || tmbbox[BOXBOTTOM] >= line->bbox[BOXTOP])
-	{
-		return true;
-	}
-
-	if (P_BoxOnLineSide(tmbbox, line) != -1)
-	{
-		return true;
-	}
-
-	lineside = P_PointOnLineSide(globalsmuggle.botmo->x, globalsmuggle.botmo->y, line);
-
-	// one sided line
-	if (!line->backsector)
-	{
-		if (lineside)
-		{
-			// don't hit the back side
-			return true;
-		}
-
-		goto blocked;
-	}
-
-	if ((line->flags & ML_IMPASSABLE) || (line->flags & ML_BLOCKPLAYERS))
-	{
-		goto blocked;
-	}
-
-	// set openrange, opentop, openbottom
-	P_LineOpening(line, globalsmuggle.botmo);
-
-	if (globalsmuggle.botmo->player->waterskip)
-		maxstep += maxstepmove;
-
-	if (P_MobjTouchingSectorSpecial(globalsmuggle.botmo, 1, 13, false))
-		maxstep <<= 1;
-	else if (P_MobjTouchingSectorSpecial(globalsmuggle.botmo, 1, 12, false))
-		maxstep = 0;
-
-	if ((openrange < globalsmuggle.botmo->height) // doesn't fit
-		|| (opentop - globalsmuggle.botmo->z < globalsmuggle.botmo->height) // mobj is too high
-		|| (openbottom - globalsmuggle.botmo->z > maxstep)) // too big a step up
-	{
-		goto blocked;
-	}
-
-	// Treat damage sectors like walls
-	P_ClosestPointOnLine(globalsmuggle.botmo->x, globalsmuggle.botmo->y, line, &pos);
-
-	if (lineside)
-	{
-		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->frontsector, pos.x, pos.y))
-			goto blocked;
-	}
-	else
-	{
-		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->backsector, pos.x, pos.y))
-			goto blocked;
-	}
-
-	// We weren't blocked!
-	return true;
-
-blocked:
-	linedist = K_DistanceOfLineFromPoint(line->v1->x, line->v1->y, line->v2->x, line->v2->y, globalsmuggle.botmo->x, globalsmuggle.botmo->y);
-	linedist -= (globalsmuggle.botmo->radius * 8); // Maintain a reasonable distance away from it
-
-	if (linedist > globalsmuggle.distancetocheck)
-	{
-		return true;
-	}
-
-	if (linedist <= 0)
-	{
-		globalsmuggle.closestlinedist = 0;
-		return false;
-	}
-
-	if (linedist < globalsmuggle.closestlinedist)
-	{
-		globalsmuggle.closestlinedist = linedist;
-	}
-
-	return true;
-}
-
-/*--------------------------------------------------
-	fixed_t K_BotReducePrediction(player_t *player)
-
-		See header file for description.
---------------------------------------------------*/
-fixed_t K_BotReducePrediction(player_t *player)
-{
-	INT32 xl, xh, yl, yh, bx, by;
-
-	globalsmuggle.botmo = player->mo;
-	globalsmuggle.distancetocheck = (player->mo->radius * 32);
-	globalsmuggle.closestlinedist = INT32_MAX;
-
-	tmx = player->mo->x;
-	tmy = player->mo->y;
-
-	xl = (unsigned)(tmx - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tmx + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tmy - globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tmy + globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
-
-	BMBOUNDFIX(xl, xh, yl, yh);
-
-	tmbbox[BOXTOP] = tmy + globalsmuggle.distancetocheck;
-	tmbbox[BOXBOTTOM] = tmy - globalsmuggle.distancetocheck;
-	tmbbox[BOXRIGHT] = tmx + globalsmuggle.distancetocheck;
-	tmbbox[BOXLEFT] = tmx - globalsmuggle.distancetocheck;
-
-	// Check for lines that the bot might collide with
-	for (bx = xl; bx <= xh; bx++)
-	{
-		for (by = yl; by <= yh; by++)
-		{
-			P_BlockLinesIterator(bx, by, K_FindBlockingWalls);
-		}
-	}
-
-	if (globalsmuggle.closestlinedist == INT32_MAX)
-	{
-		return FRACUNIT;
-	}
-
-	return (FRACUNIT/2) + (FixedDiv(globalsmuggle.closestlinedist, globalsmuggle.distancetocheck) / 2);
 }
 
 /*--------------------------------------------------

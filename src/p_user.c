@@ -2502,6 +2502,8 @@ static void P_ConsiderAllGone(void)
 //
 static void P_DeathThink(player_t *player)
 {
+	boolean playerGone = false;
+
 	player->deltaviewheight = 0;
 
 	if (player->deadtimer < INT32_MAX)
@@ -2522,7 +2524,19 @@ static void P_DeathThink(player_t *player)
 
 	K_KartPlayerHUDUpdate(player);
 
-	if (player->lives > 0 && !(player->pflags & PF_NOCONTEST) && player->deadtimer > TICRATE)
+	if (player->pflags & PF_NOCONTEST)
+	{
+		playerGone = true;
+	}
+	else if (player->bot == false)
+	{
+		if (G_GametypeUsesLives() == true && player->lives == 0)
+		{
+			playerGone = true;
+		}
+	}
+
+	if (playerGone == false && player->deadtimer > TICRATE)
 	{
 		player->playerstate = PST_REBORN;
 	}
@@ -4222,9 +4236,6 @@ void P_PlayerThink(player_t *player)
 	ticcmd_t *cmd;
 	const size_t playeri = (size_t)(player - players);
 
-	player->old_drawangle = player->drawangle;
-	player->old_viewrollangle = player->viewrollangle;
-
 #ifdef PARANOIA
 	if (!player->mo)
 		I_Error("p_playerthink: players[%s].mo == NULL", sizeu1(playeri));
@@ -4236,6 +4247,11 @@ void P_PlayerThink(player_t *player)
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
 	}
+
+	player->old_drawangle = player->drawangle;
+	player->old_viewrollangle = player->viewrollangle;
+
+	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
