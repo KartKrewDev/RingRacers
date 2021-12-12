@@ -86,7 +86,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
+	static player_t *K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
 
 		Looks for players around a specified x/y coordinate.
 
@@ -97,9 +97,9 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 		radius - The radius to look for players in.
 
 	Return:-
-		true if a player was found around the coordinate, otherwise false.
+		The player we found, NULL if nothing was found.
 --------------------------------------------------*/
-static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
+static player_t *K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
 {
 	UINT8 i;
 
@@ -129,15 +129,15 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 
 		if (dist <= radius)
 		{
-			return true;
+			return target;
 		}
 	}
 
-	return false;
+	return NULL;
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
+	static player_t *K_PlayerPredictThrow(player_t *player, UINT8 extra)
 
 		Looks for players around the predicted coordinates of their thrown item.
 
@@ -146,9 +146,9 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 		extra - Extra throwing distance, for aim forward on mines.
 
 	Return:-
-		true if a player was found around the coordinate, otherwise false.
+		The player we're trying to throw at, NULL if none was found.
 --------------------------------------------------*/
-static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
+static player_t *K_PlayerPredictThrow(player_t *player, UINT8 extra)
 {
 	const fixed_t dist = (30 + (extra * 10)) * player->mo->scale;
 	const UINT32 airtime = FixedDiv(dist + player->mo->momz, gravity);
@@ -159,7 +159,7 @@ static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerInCone(player_t *player, UINT16 cone, boolean flip)
+	static player_t *K_PlayerInCone(player_t *player, UINT16 cone, boolean flip)
 
 		Looks for players in the .
 
@@ -172,7 +172,7 @@ static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
 	Return:-
 		true if a player was found in the cone, otherwise false.
 --------------------------------------------------*/
-static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boolean flip)
+static player_t *K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boolean flip)
 {
 	UINT8 i;
 
@@ -222,20 +222,94 @@ static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boo
 			{
 				if (ad >= 180-cone)
 				{
-					return true;
+					return target;
 				}
 			}
 			else
 			{
 				if (ad <= cone)
 				{
-					return true;
+					return target;
 				}
 			}
 		}
 	}
 
+	return NULL;
+}
+
+/*--------------------------------------------------
+	static boolean K_RivalBotAggression(player_t *bot, player_t *target)
+
+		Returns if a bot is a rival & wants to be aggressive to a player.
+
+	Input Arguments:-
+		bot - Bot to check.
+		target - Who the bot wants to attack.
+
+	Return:-
+		false if not the rival. false if the target is another bot. Otherwise, true.
+--------------------------------------------------*/
+static boolean K_RivalBotAggression(player_t *bot, player_t *target)
+{
+	if (bot == NULL || target == NULL)
+	{
+		// Invalid.
+		return false;
+	}
+
+	if (bot->bot == false)
+	{
+		// lol
+		return false;
+	}
+
+	if (bot->botvars.rival == false)
+	{
+		// Not the rival, we aren't self-aware.
+		return false;
+	}
+
+	if (target->bot == false)
+	{
+		// This bot knows that the real threat is the player.
+		return true;
+	}
+
+	// Calling them your friends is misleading, but you'll at least spare them.
 	return false;
+}
+
+/*--------------------------------------------------
+	static void K_ItemConfirmForTarget(player_t *bot, player_t *target, UINT16 amount)
+
+		Handles updating item confirm values for offense items.
+
+	Input Arguments:-
+		bot - Bot to check.
+		target - Who the bot wants to attack.
+		amount - Amount to increase item confirm time by.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_ItemConfirmForTarget(player_t *bot, player_t *target, UINT16 amount)
+{
+	if (bot == NULL || target == NULL)
+	{
+		return;
+	}
+
+	if (K_RivalBotAggression(bot, target) == true)
+	{
+		// Double the rate when you're aggressive.
+		bot->botvars.itemconfirm += amount << 1;
+	}
+	else
+	{
+		// Do as normal.
+		bot->botvars.itemconfirm += amount;
+	}
 }
 
 /*--------------------------------------------------
@@ -316,21 +390,21 @@ static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean 
 	}
 
 	// Check the predicted throws.
-	if (K_PlayerPredictThrow(player, 0))
+	if (K_PlayerPredictThrow(player, 0) != NULL)
 	{
 		return true;
 	}
 
 	if (mine)
 	{
-		if (K_PlayerPredictThrow(player, 1))
+		if (K_PlayerPredictThrow(player, 1) != NULL)
 		{
 			return true;
 		}
 	}
 
 	// Check your behind.
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true) != NULL)
 	{
 		return true;
 	}
@@ -447,7 +521,6 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 	}
 }
 
-
 /*--------------------------------------------------
 	static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 
@@ -464,8 +537,16 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
 	SINT8 throwdir = -1;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+		throwdir = -1;
+	}
 
 	if (abs(turnamt) >= KART_FULLTURN/2)
 	{
@@ -474,17 +555,13 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	}
 	else
 	{
-		if (K_PlayerPredictThrow(player, 0))
+		target = K_PlayerPredictThrow(player, 0);
+
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 1;
 		}
-	}
-
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
-	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
-		throwdir = -1;
 	}
 
 	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
@@ -509,12 +586,14 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
 	SINT8 throwdir = 0;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
 	}
 
@@ -525,20 +604,20 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	}
 	else
 	{
-		if (K_PlayerPredictThrow(player, 0))
+		target = K_PlayerPredictThrow(player, 0);
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 0;
 		}
 
-		if (K_PlayerPredictThrow(player, 1))
+		target = K_PlayerPredictThrow(player, 1);
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 1;
 		}
 	}
-
-	
 
 	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
 	{
@@ -561,6 +640,8 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	player_t *target = NULL;
+
 	player->botvars.itemconfirm++;
 
 	if (abs(turnamt) >= KART_FULLTURN/2)
@@ -568,9 +649,10 @@ static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 		player->botvars.itemconfirm += player->botvars.difficulty / 2;
 	}
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 	}
 
 	if (player->botvars.itemconfirm > 2*TICRATE)
@@ -595,18 +677,21 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 {
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	SINT8 throwdir = -1;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerPredictThrow(player, 0))
+	target = K_PlayerPredictThrow(player, 0);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty / 2;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty / 2);
 		throwdir = 1;
 	}
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
 	}
 
@@ -636,6 +721,7 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 static boolean K_BotRevealsEggbox(player_t *player)
 {
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
+	player_t *target = NULL;
 
 	// This is a stealthy spot for an eggbox, lets reveal it!
 	if (stealth > 1)
@@ -644,13 +730,15 @@ static boolean K_BotRevealsEggbox(player_t *player)
 	}
 
 	// Check the predicted throws.
-	if (K_PlayerPredictThrow(player, 0))
+	target = K_PlayerPredictThrow(player, 0);
+	if (target != NULL)
 	{
 		return true;
 	}
 
 	// Check your behind.
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	if (target != NULL)
 	{
 		return true;
 	}
@@ -677,7 +765,7 @@ static void K_BotItemEggmanShield(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (K_BotRevealsEggbox(player) || (player->botvars.itemconfirm++ > 20*TICRATE))
+	if (K_BotRevealsEggbox(player) == true || (player->botvars.itemconfirm++ > 20*TICRATE))
 	{
 		K_BotGenericPressItem(player, cmd, 0);
 	}
@@ -699,8 +787,9 @@ static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 {
 	if (player->position == 1)
 	{
+		// Hey, we aren't gonna find anyone up here...
+		// why don't we slow down a bit? :)
 		cmd->forwardmove /= 2;
-		cmd->buttons |= BT_BRAKE;
 	}
 
 	K_BotUseItemNearPlayer(player, cmd, 128*player->mo->scale);
@@ -724,6 +813,7 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 	fixed_t radius = (player->mo->radius * 32);
 	SINT8 throwdir = -1;
 	UINT8 snipeMul = 2;
+	player_t *target = NULL;
 
 	if (player->speed > topspeed)
 	{
@@ -733,15 +823,21 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, radius, 10, false))
+	target = K_PlayerInCone(player, radius, 10, false);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty * snipeMul;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
 		throwdir = 1;
 	}
 	else if (K_PlayerInCone(player, radius, 10, true))
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
-		throwdir = -1;
+		target = K_PlayerInCone(player, radius, 10, true);
+
+		if (target != NULL)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+			throwdir = -1;
+		}
 	}
 
 	if (player->botvars.itemconfirm > 5*TICRATE)
@@ -769,6 +865,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 	SINT8 throwdir = 1;
 	UINT8 snipeMul = 2;
 	INT32 lastTarg = player->lastjawztarget;
+	player_t *target = NULL;
 
 	if (player->speed > topspeed)
 	{
@@ -778,9 +875,10 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, radius, 10, true))
+	target = K_PlayerInCone(player, radius, 10, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
 	}
 
@@ -790,16 +888,18 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 		&& players[lastTarg].mo != NULL
 		&& P_MobjWasRemoved(players[lastTarg].mo) == false)
 	{
-		mobj_t *targ = players[lastTarg].mo;
+		mobj_t *targMo = players[lastTarg].mo;
 		mobj_t *mobj = NULL, *next = NULL;
 		boolean targettedAlready = false;
+
+		target = &players[lastTarg];
 
 		// Make sure no other Jawz are targetting this player.
 		for (mobj = kitemcap; mobj; mobj = next)
 		{
 			next = mobj->itnext;
 
-			if (mobj->type == MT_JAWZ && mobj->target == targ)
+			if (mobj->type == MT_JAWZ && mobj->target == targMo)
 			{
 				targettedAlready = true;
 				break;
@@ -808,7 +908,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 
 		if (targettedAlready == false)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * snipeMul;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
 			throwdir = 1;
 		}
 	}
@@ -833,7 +933,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemThunder(player_t *player, ticcmd_t *cmd)
 {
-	if (!K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale))
+	if (K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale) == false)
 	{
 		if (player->botvars.itemconfirm > 10*TICRATE)
 		{
