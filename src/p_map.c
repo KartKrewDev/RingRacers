@@ -313,6 +313,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	if ((spring->eflags ^ object->eflags) & MFE_VERTICALFLIP)
+		vertispeed *= 2;
+
 	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 	{
