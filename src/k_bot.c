@@ -1069,7 +1069,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		if (botController != NULL)
+		if (botController != NULL && (botController->flags & ML_EFFECT1))
 		{
 			const fixed_t dist = (player->mo->radius * 4);
 
