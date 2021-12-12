@@ -249,7 +249,7 @@ static consvar_t cv_fishcake = CVAR_INIT ("fishcake", "Off", CV_CALL|CV_NOSHOWHE
 #endif
 static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
 
-consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "No", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
+consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t ingamecap_cons_t[] = {{0, "MIN"}, {MAXPLAYERS-1, "MAX"}, {0, NULL}};
@@ -1289,7 +1289,7 @@ UINT8 CanChangeSkin(INT32 playernum)
 			return true;
 
 		// Not in game, so you can change
-		if (players[playernum].spectator || players[playernum].playerstate == PST_DEAD || players[playernum].playerstate == PST_REBORN)
+		if (players[playernum].spectator)
 			return true;
 
 		return false;
