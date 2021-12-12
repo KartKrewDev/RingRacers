@@ -225,5 +225,6 @@ void D_SetPassword(const char *pw);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);
+boolean CanChangeSkinWhilePlaying(INT32 playernum);
 
 #endif

@@ -1298,6 +1298,22 @@ UINT8 CanChangeSkin(INT32 playernum)
 	return true;
 }
 
+boolean CanChangeSkinWhilePlaying(INT32 playernum)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (D_IsPlayerHumanAndGaming(i) &&
+				!P_IsLocalPlayer(&players[i]))
+		{
+			return CanChangeSkin(playernum);
+		}
+	}
+
+	return true;
+}
+
 static void ForceAllSkins(INT32 forcedskin)
 {
 	INT32 i, j;
@@ -5442,7 +5458,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
+	if (CanChangeSkinWhilePlaying(consoleplayer))
 		SendNameAndColor(0);
 	else
 	{
@@ -5461,7 +5477,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[1]) && !P_PlayerMoving(g_localplayers[1]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[1]))
 		SendNameAndColor(1);
 	else
 	{
@@ -5475,7 +5491,7 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[2]) && !P_PlayerMoving(g_localplayers[2]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[2]))
 		SendNameAndColor(2);
 	else
 	{
@@ -5489,7 +5505,7 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[3]) && !P_PlayerMoving(g_localplayers[3]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[3]))
 		SendNameAndColor(3);
 	else
 	{

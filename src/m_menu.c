@@ -9866,7 +9866,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 			break;
 
 	// disable skin changes if we can't actually change skins
-	if (!CanChangeSkin(consoleplayer))
+	if (!CanChangeSkinWhilePlaying(consoleplayer))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER|IT_STRING);
@@ -9909,7 +9909,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 			break;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen && !CanChangeSkin(g_localplayers[1]))
+	if (splitscreen && !CanChangeSkinWhilePlaying(g_localplayers[1]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
@@ -9952,7 +9952,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 			break;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen > 1 && !CanChangeSkin(g_localplayers[2]))
+	if (splitscreen > 1 && !CanChangeSkinWhilePlaying(g_localplayers[2]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
@@ -9995,7 +9995,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 			break;
 
 	// disable skin changes if we can't actually change skins
-	if (splitscreen > 2 && !CanChangeSkin(g_localplayers[3]))
+	if (splitscreen > 2 && !CanChangeSkinWhilePlaying(g_localplayers[3]))
 		MP_PlayerSetupMenu[2].status = (IT_GRAYEDOUT);
 	else
 		MP_PlayerSetupMenu[2].status = (IT_KEYHANDLER | IT_STRING);
