@@ -3065,7 +3065,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 	if (p && !p->waterskip &&
 			p->curshield != KSHIELD_BUBBLE && wasinwater)
 	{
-		S_StartSound(mobj, sfx_gasp);
+		S_StartSound(mobj, sfx_s3k38);
 	}
 
 	if (waterwasnotset)
