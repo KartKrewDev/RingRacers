@@ -26,6 +26,7 @@
 #include "z_zone.h"
 #include "console.h" // Until buffering gets finished
 #include "k_color.h" // SRB2kart
+#include "i_threads.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -192,6 +193,29 @@ CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "
 
 #define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
+static void R_AllocateBlendTables(void)
+{
+	INT32 i;
+
+	for (i = 0; i < NUMBLENDMAPS; i++)
+	{
+		if (i == blendtab_modulate)
+			continue;
+		blendtables[i] = Z_MallocAlign((NUMTRANSTABLES + 1) * 0x10000, PU_STATIC, NULL, 16);
+	}
+
+	// Modulation blending only requires a single table
+	blendtables[blendtab_modulate] = Z_MallocAlign(0x10000, PU_STATIC, NULL, 16);
+}
+
+#ifdef HAVE_THREADS
+static void R_GenerateBlendTables_Thread(void *userdata)
+{
+	(void)userdata;
+	R_GenerateBlendTables();
+}
+#endif
+
 /** \brief Initializes the translucency tables used by the Software renderer.
 */
 void R_InitTranslucencyTables(void)
@@ -212,19 +236,19 @@ void R_InitTranslucencyTables(void)
 	W_ReadLump(W_GetNumForName("TRANS80"), transtables+0x70000);
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
 
+	R_AllocateBlendTables();
+
+#ifdef HAVE_THREADS
+	I_spawn_thread("blend-tables",
+			R_GenerateBlendTables_Thread, NULL);
+#else
 	R_GenerateBlendTables();
+#endif
 }
 
 void R_GenerateBlendTables(void)
 {
 	INT32 i;
-
-	for (i = 0; i < NUMBLENDMAPS; i++)
-	{
-		if (i == blendtab_modulate)
-			continue;
-		blendtables[i] = Z_MallocAlign((NUMTRANSTABLES + 1) * 0x10000, PU_STATIC, NULL, 16);
-	}
 
 	for (i = 0; i <= 9; i++)
 	{
@@ -236,8 +260,6 @@ void R_GenerateBlendTables(void)
 		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, AST_REVERSESUBTRACT, alpha);
 	}
 
-	// Modulation blending only requires a single table
-	blendtables[blendtab_modulate] = Z_MallocAlign(0x10000, PU_STATIC, NULL, 16);
 	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], AST_MODULATE, 0);
 }
 
