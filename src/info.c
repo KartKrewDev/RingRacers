@@ -526,6 +526,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	//SRB2kart Sprites (sort later)
 	"RNDM", // Random Item Box
+	"SBOX", // Sphere Box (for Battle)
 	"RPOP", // Random Item Box Pop
 	"SGNS", // Signpost sparkle
 	"FAST", // Speed boost trail
@@ -4060,6 +4061,20 @@ state_t states[NUMSTATES] =
 	{SPR_RNDM, 20|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_RANDOMITEM12},	// S_RANDOMITEM11
 	{SPR_RNDM, 22|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_RANDOMITEM1},	// S_RANDOMITEM12
 	{SPR_NULL, 0, 0, {A_ItemPop}, 0, 0, S_NULL},											// S_DEADRANDOMITEM
+
+	{SPR_SBOX,    FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX2},	// S_SPHEREBOX1
+	{SPR_SBOX,  2|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX3},	// S_SPHEREBOX2
+	{SPR_SBOX,  4|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX4},	// S_SPHEREBOX3
+	{SPR_SBOX,  6|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX5},	// S_SPHEREBOX4
+	{SPR_SBOX,  8|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX6},	// S_SPHEREBOX5
+	{SPR_SBOX, 10|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX7},	// S_SPHEREBOX6
+	{SPR_SBOX, 12|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX8},	// S_SPHEREBOX7
+	{SPR_SBOX, 14|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX9},	// S_SPHEREBOX8
+	{SPR_SBOX, 16|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX10},	// S_SPHEREBOX9
+	{SPR_SBOX, 18|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX11},	// S_SPHEREBOX10
+	{SPR_SBOX, 20|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX12},	// S_SPHEREBOX11
+	{SPR_SBOX, 22|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX1},	// S_SPHEREBOX12
+	{SPR_NULL, 0, 0, {A_ItemPop}, 1, 0, S_NULL},											// S_DEADSPHEREBOX
 
 	{SPR_RPOP, FF_FULLBRIGHT,   5, {NULL}, 0, 0, S_RANDOMITEMPOP2}, // S_RANDOMITEMPOP1
 	{SPR_RPOP, FF_FULLBRIGHT|1, 5, {NULL}, 0, 0, S_RANDOMITEMPOP3}, // S_RANDOMITEMPOP2
@@ -23004,6 +23019,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,           // meleestate
 		S_NULL,           // missilestate
 		S_DEADRANDOMITEM, // deathstate
+		S_NULL,           // xdeathstate
+		sfx_kc2e,         // deathsound
+		60*FRACUNIT,      // speed
+		48*FRACUNIT,      // radius
+		48*FRACUNIT,      // height
+		0,                // display offset
+		100,              // mass
+		MT_RANDOMITEMPOP, // damage
+		sfx_None,         // activesound
+		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL            // raisestate
+	},
+
+	{           // MT_SPHEREBOX
+		-1,               // doomednum
+		S_SPHEREBOX1,     // spawnstate
+		1000,             // spawnhealth
+		S_NULL,           // seestate
+		sfx_None,         // seesound
+		0,                // reactiontime
+		sfx_None,         // attacksound
+		S_NULL,           // painstate
+		0,                // painchance
+		sfx_None,         // painsound
+		S_NULL,           // meleestate
+		S_NULL,           // missilestate
+		S_DEADSPHEREBOX,  // deathstate
 		S_NULL,           // xdeathstate
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed

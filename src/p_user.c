@@ -500,6 +500,26 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	return num_rings;
 }
 
+INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
+{
+	num_spheres += player->spheres;
+
+	// Not alive
+	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
+		return 0;
+
+	if (num_spheres > 40) // Reached the cap, don't waste 'em!
+		num_spheres = 40;
+	else if (num_spheres < 0)
+		num_spheres = 0;
+
+	num_spheres -= player->spheres;
+
+	player->spheres += num_spheres;
+
+	return num_spheres;
+}
+
 //
 // P_GivePlayerLives
 //
