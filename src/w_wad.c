@@ -1480,10 +1480,10 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			int zErr; // Helper var.
 			z_stream strm;
 			unsigned long rawSize = l->disksize;
-			unsigned long decSize = l->size;
+			unsigned long decSize = size;
 
 			rawData = Z_Malloc(rawSize, PU_STATIC, NULL);
-			decData = Z_Malloc(decSize, PU_STATIC, NULL);
+			decData = dest;
 
 			if (fread(rawData, 1, rawSize, handle) < rawSize)
 				I_Error("wad %d, lump %d: cannot read compressed data", wad, lump);
@@ -1501,12 +1501,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			zErr = inflateInit2(&strm, -15);
 			if (zErr == Z_OK)
 			{
-				zErr = inflate(&strm, Z_FINISH);
-				if (zErr == Z_STREAM_END)
-				{
-					M_Memcpy(dest, decData, size);
-				}
-				else
+				zErr = inflate(&strm, Z_SYNC_FLUSH);
+				if (zErr != Z_OK && zErr != Z_STREAM_END)
 				{
 					size = 0;
 					zerr(zErr);
@@ -1520,7 +1516,6 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			}
 
 			Z_Free(rawData);
-			Z_Free(decData);
 
 #ifdef NO_PNG_LUMPS
 			if (Picture_IsLumpPNG((UINT8 *)dest, size))

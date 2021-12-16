@@ -175,7 +175,7 @@ void P_RestoreMusic(player_t *player);
 boolean P_EndingMusic(player_t *player);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
-void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
+INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
