@@ -14147,7 +14147,6 @@ void A_LandMineExplode(mobj_t *actor)
 	INT32 colour = SKINCOLOR_KETCHUP;	// we spell words properly here
 	INT32 i;
 	mobj_t *smoldering;
-	mobj_t *dust;
 
 	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
 		return;
@@ -14164,18 +14163,6 @@ void A_LandMineExplode(mobj_t *actor)
 	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
 	P_SetScale(smoldering, actor->scale);
 	smoldering->tics = TICRATE*3;
-
-	// Spawn a ring:
-	for (i = 0; i < 32; i++)
-	{
-		dust = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOKE);
-		P_SetMobjState(dust, S_OPAQUESMOKE1);
-		dust->angle = (ANGLE_180/16) * i;
-		P_SetScale(dust, actor->scale);
-		dust->destscale = actor->scale*4;
-		dust->scalespeed = actor->scale/4;
-		P_InstaThrust(dust, dust->angle, FixedMul(20*FRACUNIT, actor->scale));
-	}
 
 	actor->fuse = actor->tics;	// disappear when this state ends.
 
