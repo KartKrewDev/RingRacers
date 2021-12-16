@@ -177,7 +177,6 @@ void K_InitBrightmaps(void)
 
 	for (wadNum = 0; wadNum < numwadfiles; wadNum++)
 	{
-		lumpinfo_t *lump_p = wadfiles[wadNum]->lumpinfo;
 		UINT16 lumpNum;
 
 		// Find BRIGHT lump in the WAD
@@ -196,6 +195,7 @@ void K_InitBrightmaps(void)
 			}
 			else
 			{
+				lumpinfo_t *lump_p = &wadfiles[wadNum]->lumpinfo[lumpNum];
 				size_t size = W_LumpLengthPwad(wadNum, lumpNum);
 
 				size_t nameLength = strlen(wadfiles[wadNum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
