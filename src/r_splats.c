@@ -469,10 +469,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	else
 		ds_transmap = NULL;
 
-	if (ds_powersoftwo)
-		spanfunc = spanfuncs[spanfunctype];
-	else
-		spanfunc = spanfuncs_npo2[spanfunctype];
+	R_SetSpanFunc(spanfunctype, !ds_powersoftwo, false);
 
 	if (maxy >= vid.height)
 		maxy = vid.height-1;

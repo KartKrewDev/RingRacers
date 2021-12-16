@@ -610,6 +610,8 @@ void R_DrawMaskedColumn(column_t *column, column_t *brightmap)
 	INT32 topdelta, prevdelta = 0;
 
 	basetexturemid = dc_texturemid;
+
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
 	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
@@ -684,6 +686,7 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap)
 	INT32 topdelta, prevdelta = -1;
 	UINT8 *d,*s;
 
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
 	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
@@ -827,27 +830,27 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL) return; // ditto
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC]; // hack: this isn't resetting properly somewhere.
+	R_SetColumnFunc(BASEDRAWFUNC, false); // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
 	dc_fullbright = colormaps;
 	dc_translation = R_GetSpriteTranslation(vis);
 
 	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
-		colfunc = colfuncs[COLDRAWFUNC_TRANS]; // translate certain pixels to white
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
-		colfunc = colfuncs[COLDRAWFUNC_TRANSTRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
 		dc_transmap = vis->transmap;
 	}
 	else if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 	else if (vis->mobj->color) // translate green skin to another color
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 
 	if (vis->extra_colormap && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
@@ -984,7 +987,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		}
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 	dc_hires = 0;
 
 	vis->x1 = x1;
@@ -1014,7 +1017,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 
@@ -1056,7 +1059,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 		R_DrawMaskedColumn(column, NULL);
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 }
 
 //

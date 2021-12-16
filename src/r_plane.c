@@ -648,7 +648,7 @@ static void R_DrawSkyPlane(visplane_t *pl)
 
 	// Reset column drawer function (note: couldn't we just call walldrawerfunc directly?)
 	// (that is, unless we'll need to switch drawers in future for some reason)
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 
 	// use correct aspect ratio scale
 	dc_iscale = skyscale[viewssnum];
@@ -820,7 +820,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 	}
 
 	planeripple.active = false;
-	spanfunc = spanfuncs[BASEDRAWFUNC];
+	R_SetSpanFunc(BASEDRAWFUNC, false, false);
 
 	if (pl->polyobj)
 	{
@@ -1116,15 +1116,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 		planezlight = zlight[light];
 
 	// Use the correct span drawer depending on the powers-of-twoness
-	if (!ds_powersoftwo)
-	{
-		if (spanfuncs_npo2[spanfunctype])
-			spanfunc = spanfuncs_npo2[spanfunctype];
-		else
-			spanfunc = spanfuncs[spanfunctype];
-	}
-	else
-		spanfunc = spanfuncs[spanfunctype];
+	R_SetSpanFunc(spanfunctype, !ds_powersoftwo, ds_brightmap != NULL);
 
 	// set the maximum value for unsigned
 	pl->top[pl->maxx+1] = 0xffff;

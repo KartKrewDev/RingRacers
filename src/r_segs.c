@@ -118,9 +118,9 @@ static void R_Render2sidedMultiPatchColumn(column_t *column, column_t *brightmap
 			dc_brightmap = (UINT8 *)brightmap + 3;
 		}
 
-		if (colfunc == colfuncs[BASEDRAWFUNC])
+		if (R_CheckColumnFunc(BASEDRAWFUNC) == true)
 			(colfuncs[COLDRAWFUNC_TWOSMULTIPATCH])();
-		else if (colfunc == colfuncs[COLDRAWFUNC_FUZZY])
+		else if (R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == true)
 			(colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS])();
 		else
 			colfunc();
@@ -196,16 +196,18 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	if (transtable != NUMTRANSMAPS && (blendmode || transtable))
 	{
 		dc_transmap = R_GetBlendTable(blendmode, transtable);
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
 	}
 	else if (ldef->special == 909)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FOG];
+		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
 		windowtop = frontsector->ceilingheight;
 		windowbottom = frontsector->floorheight;
 	}
 	else
-		colfunc = colfuncs[BASEDRAWFUNC];
+	{
+		R_SetColumnFunc(BASEDRAWFUNC, bmnum != 0);
+	}
 
 	if (curline->polyseg && curline->polyseg->translucency > 0)
 	{
@@ -213,7 +215,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			return;
 
 		dc_transmap = R_GetTranslucencyTable(curline->polyseg->translucency);
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
 	}
 
 	range = max(ds->x2-ds->x1, 1);
@@ -275,7 +277,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			rlight->extra_colormap = *light->extra_colormap;
 			rlight->flags = light->flags;
 
-			if ((colfunc != colfuncs[COLDRAWFUNC_FUZZY])
+			if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
 				|| (rlight->flags & FF_FOG)
 				|| (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
 				lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
@@ -292,13 +294,13 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	}
 	else
 	{
-		if ((colfunc != colfuncs[COLDRAWFUNC_FUZZY])
+		if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
 			|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
 		else
 			lightnum = LIGHTLEVELS - 1;
 
-		if (colfunc == colfuncs[COLDRAWFUNC_FOG]
+		if ((R_CheckColumnFunc(COLDRAWFUNC_FOG) == true)
 			|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			;
 		else
@@ -564,7 +566,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			spryscale += rw_scalestep;
 		}
 	}
-	colfunc = colfuncs[BASEDRAWFUNC];
+
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 }
 
 // Loop through R_DrawMaskedColumn calls
@@ -642,7 +645,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	texnum = R_GetTextureNum(sides[pfloor->master->sidenum[0]].midtexture);
 	bmnum = R_GetTextureBrightmap(texnum);
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, bmnum != 0);
 
 	if (pfloor->master->flags & ML_TFERLINE)
 	{
@@ -667,10 +670,14 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		}
 
 		if (fuzzy)
-			colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		{
+			R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
+		}
 	}
 	else if (pfloor->flags & FF_FOG)
-		colfunc = colfuncs[COLDRAWFUNC_FOG];
+	{
+		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
+	}
 
 	range = max(ds->x2-ds->x1, 1);
 	//SoM: Moved these up here so they are available for my lightlist calculations
@@ -778,7 +785,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
 		else if (pfloor->flags & FF_FOG)
 			lightnum = (pfloor->master->frontsector->lightlevel >> LIGHTSEGSHIFT);
-		else if (colfunc == colfuncs[COLDRAWFUNC_FUZZY])
+		else if (R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == true)
 			lightnum = LIGHTLEVELS-1;
 		else
 			lightnum = R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
@@ -1105,7 +1112,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			spryscale += rw_scalestep;
 		}
 	}
-	colfunc = colfuncs[BASEDRAWFUNC];
+
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 
 #undef CLAMPMAX
 #undef CLAMPMIN
@@ -1395,7 +1403,7 @@ static void R_RenderSegLoop (void)
 				else
 					dc_lightlist[i].rcolormap = xwalllights[pindex];
 
-				colfunc = colfuncs[COLDRAWFUNC_SHADOWED];
+				R_SetColumnFunc(COLDRAWFUNC_SHADOWED, false);
 			}
 		}
 
@@ -1413,6 +1421,8 @@ static void R_RenderSegLoop (void)
 				dc_source = R_GetColumn(midtexture,texturecolumn);
 				dc_brightmap = (midbrightmap ? R_GetColumn(midbrightmap, texturecolumn) : NULL);
 				dc_texheight = textureheight[midtexture]>>FRACBITS;
+
+				R_SetColumnFunc(colfunctype, dc_brightmap != NULL);
 
 				//profile stuff ---------------------------------------------------------
 #ifdef TIMING
@@ -1475,6 +1485,7 @@ static void R_RenderSegLoop (void)
 						dc_source = R_GetColumn(toptexture,texturecolumn);
 						dc_brightmap = (topbrightmap ? R_GetColumn(topbrightmap, texturecolumn) : NULL);
 						dc_texheight = textureheight[toptexture]>>FRACBITS;
+						R_SetColumnFunc(colfunctype, dc_brightmap != NULL);
 						colfunc();
 						ceilingclip[rw_x] = (INT16)mid;
 					}
@@ -1512,6 +1523,7 @@ static void R_RenderSegLoop (void)
 						dc_source = R_GetColumn(bottomtexture,texturecolumn);
 						dc_brightmap = (bottombrightmap ? R_GetColumn(bottombrightmap, texturecolumn) : NULL);
 						dc_texheight = textureheight[bottomtexture]>>FRACBITS;
+						R_SetColumnFunc(colfunctype, dc_brightmap != NULL);
 						colfunc();
 						floorclip[rw_x] = (INT16)mid;
 					}
@@ -1605,7 +1617,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	memset(&segleft, 0x00, sizeof(segleft));
 	memset(&segright, 0x00, sizeof(segright));
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 
 	if (ds_p == drawsegs+maxdrawsegs)
 	{
@@ -2825,7 +2837,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	rw_bsilheight = &(ds_p->bsilheight);
 
 	R_RenderSegLoop();
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 
 	if (portalline) // if curline is a portal, set portalrender for drawseg
 		ds_p->portalpass = portalrender+1;
