@@ -55,6 +55,7 @@ INT32 *texturewidth;
 fixed_t *textureheight; // needed for texture pegging
 
 INT32 *texturetranslation;
+INT32 *texturebrightmaps;
 
 // Painfully simple texture id cacheing to make maps load faster. :3
 static struct {
@@ -501,6 +502,20 @@ INT32 R_GetTextureNum(INT32 texnum)
 }
 
 //
+// R_GetTextureBrightmap
+//
+// Returns the actual texture id that we should use.
+// This can either be the texture's brightmap,
+// or 0 if not valid.
+//
+INT32 R_GetTextureBrightmap(INT32 texnum)
+{
+	if (texnum < 0 || texnum >= numtextures)
+		return 0;
+	return texturebrightmaps[texnum];
+}
+
+//
 // R_CheckTextureCache
 //
 // Use this if you need to make sure the texture is cached before R_GetColumn calls
@@ -944,6 +959,7 @@ void R_LoadTextures(void)
 			Z_Free(textures[i]);
 			Z_Free(texturecache[i]);
 		}
+		Z_Free(texturebrightmaps);
 		Z_Free(texturetranslation);
 		Z_Free(textures);
 	}
@@ -1044,9 +1060,14 @@ void R_LoadTextures(void)
 	textureheight    = (void *)((UINT8 *)textures + ((numtextures * sizeof(void *)) * 4));
 	// Create translation table for global animation.
 	texturetranslation = Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, NULL);
+	// Create brightmap texture table.
+	texturebrightmaps = Z_Malloc((numtextures + 1) * sizeof(*texturebrightmaps), PU_STATIC, NULL);
 
 	for (i = 0; i < numtextures; i++)
+	{
 		texturetranslation[i] = i;
+		texturebrightmaps[i] = 0;
+	}
 
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{

@@ -47,8 +47,8 @@ extern fixed_t windowtop;
 extern fixed_t windowbottom;
 extern INT32 lengthcol;
 
-void R_DrawMaskedColumn(column_t *column);
-void R_DrawFlippedMaskedColumn(column_t *column);
+void R_DrawMaskedColumn(column_t *column, column_t *brightmap);
+void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap);
 
 // ----------------
 // SPRITE RENDERING

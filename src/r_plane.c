@@ -651,8 +651,12 @@ static void R_DrawSkyPlane(visplane_t *pl)
 	// Because of this hack, sky is not affected
 	//  by sector colormaps (INVUL inverse mapping is not implemented in SRB2 so is irrelevant).
 	dc_colormap = colormaps;
+	dc_fullbright = colormaps;
 	if (encoremap)
+	{
 		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 	dc_texturemid = skytexturemid;
 	dc_texheight = textureheight[skytexture]
 		>>FRACBITS;
@@ -669,6 +673,7 @@ static void R_DrawSkyPlane(visplane_t *pl)
 			dc_source =
 				R_GetColumn(texturetranslation[skytexture],
 					-angle); // get negative of angle for each column to display sky correct way round! --Monster Iestyn 27/01/18
+			dc_brightmap = NULL;
 			colfunc();
 		}
 	}

@@ -36,6 +36,7 @@ static boolean markceiling;
 
 static boolean maskedtexture;
 static INT32 toptexture, bottomtexture, midtexture;
+static INT32 topbrightmap, bottombrightmap, midbrightmap;
 static INT32 numthicksides, numbackffloors;
 
 angle_t rw_normalangle;
@@ -83,7 +84,7 @@ static fixed_t *maskedtextureheight = NULL;
 //  multi-patch textures. They are not normally needed as multi-patch
 //  textures don't have holes in it. At least not for now.
 
-static void R_Render2sidedMultiPatchColumn(column_t *column)
+static void R_Render2sidedMultiPatchColumn(column_t *column, column_t *brightmap)
 {
 	INT32 topscreen, bottomscreen;
 
@@ -92,6 +93,8 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 
 	dc_yl = (sprtopscreen+FRACUNIT-1)>>FRACBITS;
 	dc_yh = (bottomscreen-1)>>FRACBITS;
+
+	dc_brightmap = NULL;
 
 	if (windowtop != INT32_MAX && windowbottom != INT32_MAX)
 	{
@@ -110,6 +113,10 @@ static void R_Render2sidedMultiPatchColumn(column_t *column)
 	if (dc_yl <= dc_yh && dc_yh < vid.height && dc_yh > 0)
 	{
 		dc_source = (UINT8 *)column + 3;
+		if (brightmap != NULL)
+		{
+			dc_brightmap = (UINT8 *)brightmap + 3;
+		}
 
 		if (colfunc == colfuncs[BASEDRAWFUNC])
 			(colfuncs[COLDRAWFUNC_TWOSMULTIPATCH])();
@@ -132,12 +139,12 @@ transnum_t R_GetLinedefTransTable(line_t *ldef)
 void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 {
 	size_t pindex;
-	column_t *col;
-	INT32 lightnum, texnum, i;
+	column_t *col, *bmCol = NULL;
+	INT32 lightnum, texnum, bmnum, i;
 	fixed_t height, realbot;
 	lightlist_t *light;
 	r_lightlist_t *rlight;
-	void (*colfunc_2s)(column_t *);
+	void (*colfunc_2s)(column_t *, column_t *);
 	line_t *ldef;
 	sector_t *front, *back;
 	INT32 times, repeats;
@@ -155,6 +162,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	frontsector = curline->frontsector;
 	backsector = curline->backsector;
 	texnum = R_GetTextureNum(curline->sidedef->midtexture);
+	bmnum = R_GetTextureBrightmap(texnum);
 	windowbottom = windowtop = sprbotscreen = INT32_MAX;
 
 	ldef = curline->linedef;
@@ -215,6 +223,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	// Texture must be cached before setting colfunc_2s,
 	// otherwise texture[texnum]->holes may be false when it shouldn't be
 	R_CheckTextureCache(texnum);
+	if (bmnum) { R_CheckTextureCache(bmnum); }
+
 	// handle case where multipatch texture is drawn on a 2sided wall, multi-patch textures
 	// are not stored per-column with post info in SRB2
 	if (textures[texnum]->holes)
@@ -400,6 +410,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 					// draw the texture
 					col = (column_t *)((UINT8 *)R_GetColumn(texnum, maskedtexturecol[dc_x]) - 3);
+					if (bmnum) { bmCol = (column_t *)((UINT8 *)R_GetColumn(bmnum, maskedtexturecol[dc_x]) - 3); }
 
 					for (i = 0; i < dc_numlights; i++)
 					{
@@ -431,8 +442,12 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						if (height <= windowtop)
 						{
 							dc_colormap = rlight->rcolormap;
+							dc_fullbright = colormaps;
 							if (encoremap && !(ldef->flags & ML_TFERLINE))
+							{
 								dc_colormap += COLORMAP_REMAPOFFSET;
+								dc_fullbright += COLORMAP_REMAPOFFSET;
+							}
 							continue;
 						}
 
@@ -440,7 +455,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						if (windowbottom >= realbot)
 						{
 							windowbottom = realbot;
-							colfunc_2s(col);
+							colfunc_2s(col, bmCol);
 							for (i++; i < dc_numlights; i++)
 							{
 								rlight = &dc_lightlist[i];
@@ -449,15 +464,19 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 							continue;
 						}
-						colfunc_2s(col);
+						colfunc_2s(col, bmCol);
 						windowtop = windowbottom + 1;
 						dc_colormap = rlight->rcolormap;
+						dc_fullbright = colormaps;
 						if (encoremap && !(ldef->flags & ML_TFERLINE))
+						{
 							dc_colormap += COLORMAP_REMAPOFFSET;
+							dc_fullbright += COLORMAP_REMAPOFFSET;
+						}
 					}
 					windowbottom = realbot;
 					if (windowtop < windowbottom)
-						colfunc_2s(col);
+						colfunc_2s(col, bmCol);
 
 					spryscale += rw_scalestep;
 					continue;
@@ -470,8 +489,12 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 					pindex = MAXLIGHTSCALE - 1;
 
 				dc_colormap = walllights[pindex];
+				dc_fullbright = colormaps;
 				if (encoremap && !(ldef->flags & ML_TFERLINE))
+				{
 					dc_colormap += COLORMAP_REMAPOFFSET;
+					dc_fullbright += COLORMAP_REMAPOFFSET;
+				}
 
 				if (frontsector->extra_colormap)
 					dc_colormap = frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
@@ -481,6 +504,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 				// draw the texture
 				col = (column_t *)((UINT8 *)R_GetColumn(texnum, maskedtexturecol[dc_x]) - 3);
+				if (bmnum) { bmCol = (column_t *)((UINT8 *)R_GetColumn(bmnum, maskedtexturecol[dc_x]) - 3); }
 
 #if 0 // Disabling this allows inside edges to render below the planes, for until the clipping is fixed to work right when POs are near the camera. -Red
 				if (curline->dontrenderme && curline->polyseg && (curline->polyseg->flags & POF_RENDERPLANES))
@@ -535,7 +559,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 				}
 				else
 #endif
-					colfunc_2s(col);
+					colfunc_2s(col, bmCol);
 			}
 			spryscale += rw_scalestep;
 		}
@@ -544,10 +568,10 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 }
 
 // Loop through R_DrawMaskedColumn calls
-static void R_DrawRepeatMaskedColumn(column_t *col)
+static void R_DrawRepeatMaskedColumn(column_t *col, column_t *bm)
 {
 	while (sprtopscreen < sprbotscreen) {
-		R_DrawMaskedColumn(col);
+		R_DrawMaskedColumn(col, bm);
 		if ((INT64)sprtopscreen + dc_texheight*spryscale > (INT64)INT32_MAX) // prevent overflow
 			sprtopscreen = INT32_MAX;
 		else
@@ -555,10 +579,10 @@ static void R_DrawRepeatMaskedColumn(column_t *col)
 	}
 }
 
-static void R_DrawRepeatFlippedMaskedColumn(column_t *col)
+static void R_DrawRepeatFlippedMaskedColumn(column_t *col, column_t *bm)
 {
 	do {
-		R_DrawFlippedMaskedColumn(col);
+		R_DrawFlippedMaskedColumn(col, bm);
 		sprtopscreen += dc_texheight*spryscale;
 	} while (sprtopscreen < sprbotscreen);
 }
@@ -582,9 +606,9 @@ static boolean R_IsFFloorTranslucent(visffloor_t *pfloor)
 void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 {
 	size_t          pindex;
-	column_t *      col;
+	column_t *      col, *bmCol = NULL;
 	INT32             lightnum;
-	INT32            texnum;
+	INT32            texnum, bmnum;
 	sector_t        tempsec;
 	INT32             templight;
 	INT32             i, p;
@@ -605,7 +629,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	fixed_t       left_top, left_bottom; // needed here for slope skewing
 	pslope_t      *skewslope = NULL;
 
-	void (*colfunc_2s) (column_t *);
+	void (*colfunc_2s) (column_t *, column_t *);
 
 	// Calculate light table.
 	// Use different light tables
@@ -616,6 +640,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	backsector = pfloor->target;
 	frontsector = curline->frontsector == pfloor->target ? curline->backsector : curline->frontsector;
 	texnum = R_GetTextureNum(sides[pfloor->master->sidenum[0]].midtexture);
+	bmnum = R_GetTextureBrightmap(texnum);
 
 	colfunc = colfuncs[BASEDRAWFUNC];
 
@@ -624,6 +649,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		size_t linenum = curline->linedef-backsector->lines[0];
 		newline = pfloor->master->frontsector->lines[0] + linenum;
 		texnum = R_GetTextureNum(sides[newline->sidenum[0]].midtexture);
+		bmnum = R_GetTextureBrightmap(texnum);
 	}
 
 	if (pfloor->flags & FF_TRANSLUCENT)
@@ -833,6 +859,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	// Texture must be cached before setting colfunc_2s,
 	// otherwise texture[texnum]->holes may be false when it shouldn't be
 	R_CheckTextureCache(texnum);
+	if (bmnum) { R_CheckTextureCache(bmnum); }
+
 	//faB: handle case where multipatch texture is drawn on a 2sided wall, multi-patch textures
 	//     are not stored per-column with post info anymore in Doom Legacy
 	if (textures[texnum]->holes)
@@ -916,6 +944,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 			// Get data for the column
 			col = (column_t *)((UINT8 *)R_GetColumn(texnum,maskedtexturecol[dc_x]) - 3);
+			if (bmnum) { bmCol = (column_t *)((UINT8 *)R_GetColumn(bmnum, maskedtexturecol[dc_x]) - 3); }
 
 			// SoM: New code does not rely on R_DrawColumnShadowed_8 which
 			// will (hopefully) put less strain on the stack.
@@ -998,8 +1027,12 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						if (lighteffect)
 						{
 							dc_colormap = rlight->rcolormap;
+							dc_fullbright = colormaps;
 							if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+							{
 								dc_colormap += COLORMAP_REMAPOFFSET;
+								dc_fullbright += COLORMAP_REMAPOFFSET;
+							}
 						}
 						if (solid && windowtop < bheight)
 							windowtop = bheight;
@@ -1011,7 +1044,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					{
 						windowbottom = sprbotscreen;
 						// draw the texture
-						colfunc_2s (col);
+						colfunc_2s (col, bmCol);
 						for (i++; i < dc_numlights; i++)
 						{
 							rlight = &dc_lightlist[i];
@@ -1022,7 +1055,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						continue;
 					}
 					// draw the texture
-					colfunc_2s (col);
+					colfunc_2s (col, bmCol);
 					if (solid)
 						windowtop = bheight;
 					else
@@ -1030,14 +1063,18 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					if (lighteffect)
 					{
 						dc_colormap = rlight->rcolormap;
+						dc_fullbright = colormaps;
 						if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+						{
 							dc_colormap += COLORMAP_REMAPOFFSET;
+							dc_fullbright += COLORMAP_REMAPOFFSET;
+						}
 					}
 				}
 				windowbottom = sprbotscreen;
 				// draw the texture, if there is any space left
 				if (windowtop < windowbottom)
-					colfunc_2s (col);
+					colfunc_2s (col, bmCol);
 
 				spryscale += rw_scalestep;
 				continue;
@@ -1050,9 +1087,13 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				pindex = MAXLIGHTSCALE - 1;
 
 			dc_colormap = walllights[pindex];
+			dc_fullbright = colormaps;
 
 			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+			{
 				dc_colormap += COLORMAP_REMAPOFFSET;
+				dc_fullbright += COLORMAP_REMAPOFFSET;
+			}
 
 			if (pfloor->flags & FF_FOG && pfloor->master->frontsector->extra_colormap)
 				dc_colormap = pfloor->master->frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
@@ -1060,7 +1101,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				dc_colormap = frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
 
 			// draw the texture
-			colfunc_2s (col);
+			colfunc_2s (col, bmCol);
 			spryscale += rw_scalestep;
 		}
 	}
@@ -1311,8 +1352,12 @@ static void R_RenderSegLoop (void)
 				pindex = MAXLIGHTSCALE-1;
 
 			dc_colormap = walllights[pindex];
+			dc_fullbright = colormaps;
 			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
+			{
 				dc_colormap += COLORMAP_REMAPOFFSET;
+				dc_fullbright += COLORMAP_REMAPOFFSET;
+			}
 			dc_x = rw_x;
 			dc_iscale = 0xffffffffu / (unsigned)rw_scale;
 
@@ -1366,6 +1411,7 @@ static void R_RenderSegLoop (void)
 				dc_yh = yh;
 				dc_texturemid = rw_midtexturemid;
 				dc_source = R_GetColumn(midtexture,texturecolumn);
+				dc_brightmap = (midbrightmap ? R_GetColumn(midbrightmap, texturecolumn) : NULL);
 				dc_texheight = textureheight[midtexture]>>FRACBITS;
 
 				//profile stuff ---------------------------------------------------------
@@ -1427,6 +1473,7 @@ static void R_RenderSegLoop (void)
 						dc_yh = mid;
 						dc_texturemid = rw_toptexturemid;
 						dc_source = R_GetColumn(toptexture,texturecolumn);
+						dc_brightmap = (topbrightmap ? R_GetColumn(topbrightmap, texturecolumn) : NULL);
 						dc_texheight = textureheight[toptexture]>>FRACBITS;
 						colfunc();
 						ceilingclip[rw_x] = (INT16)mid;
@@ -1462,8 +1509,8 @@ static void R_RenderSegLoop (void)
 						dc_yl = mid;
 						dc_yh = yh;
 						dc_texturemid = rw_bottomtexturemid;
-						dc_source = R_GetColumn(bottomtexture,
-							texturecolumn);
+						dc_source = R_GetColumn(bottomtexture,texturecolumn);
+						dc_brightmap = (bottombrightmap ? R_GetColumn(bottombrightmap, texturecolumn) : NULL);
 						dc_texheight = textureheight[bottomtexture]>>FRACBITS;
 						colfunc();
 						floorclip[rw_x] = (INT16)mid;
@@ -1738,6 +1785,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	worldbottomslope -= viewz;
 
 	midtexture = toptexture = bottomtexture = maskedtexture = 0;
+	midbrightmap = topbrightmap = bottombrightmap = 0;
 	ds_p->maskedtexturecol = NULL;
 	ds_p->numthicksides = numthicksides = 0;
 	ds_p->thicksidecol = NULL;
@@ -1785,6 +1833,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		fixed_t texheight;
 		// single sided line
 		midtexture = R_GetTextureNum(sidedef->midtexture);
+		midbrightmap = R_GetTextureBrightmap(midtexture);
 		texheight = textureheight[midtexture];
 		// a single sided line is terminal, so it must mark ends
 		markfloor = markceiling = true;
@@ -2021,11 +2070,14 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 				if (!toptexture) //Second side has no texture, use the first side's instead.
 					toptexture = R_GetTextureNum(sidedef->toptexture);
+
+				topbrightmap = R_GetTextureBrightmap(toptexture);
 				texheight = textureheight[toptexture];
 			}
 			else
 			{
 				toptexture = R_GetTextureNum(sidedef->toptexture);
+				topbrightmap = R_GetTextureBrightmap(toptexture);
 				texheight = textureheight[toptexture];
 			}
 			if (!(linedef->flags & ML_EFFECT1)) { // Ignore slopes for lower/upper textures unless flag is checked
@@ -2052,6 +2104,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		{
 			// bottom texture
 			bottomtexture = R_GetTextureNum(sidedef->bottomtexture);
+			bottombrightmap = R_GetTextureBrightmap(bottomtexture);
 
 			if (!(linedef->flags & ML_EFFECT1)) { // Ignore slopes for lower/upper textures unless flag is checked
 				if (linedef->flags & ML_DONTPEGBOTTOM)

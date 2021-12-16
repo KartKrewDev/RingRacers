@@ -32,11 +32,13 @@ extern UINT8 *topleft;
 // -------------------------
 
 extern lighttable_t *dc_colormap;
+extern lighttable_t *dc_fullbright;
 extern INT32 dc_x, dc_yl, dc_yh;
 extern fixed_t dc_iscale, dc_texturemid;
 extern UINT8 dc_hires;
 
 extern UINT8 *dc_source; // first pixel in a column
+extern UINT8 *dc_brightmap; // brightmap texture column, can be NULL
 
 // translucency stuff here
 extern UINT8 *dc_transmap;
@@ -167,6 +169,7 @@ void R_DrawViewBorder(void);
 #endif
 
 #define TRANSPARENTPIXEL 255
+#define BRIGHTPIXEL 0
 
 // -----------------
 // 8bpp DRAWING CODE

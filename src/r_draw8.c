@@ -57,7 +57,9 @@ void R_DrawColumn_8(void)
 	// This is as fast as it gets.
 	{
 		register const UINT8 *source = dc_source;
+		register const UINT8 *brightmap = dc_brightmap;
 		register const lighttable_t *colormap = dc_colormap;
+		register const lighttable_t *fullbright = dc_fullbright;
 		register INT32 heightmask = dc_texheight-1;
 		if (dc_texheight & heightmask)   // not a power of 2 -- killough
 		{
@@ -75,7 +77,14 @@ void R_DrawColumn_8(void)
 				// Re-map color indices from wall texture column
 				//  using a lighting/special effects LUT.
 				// heightmask is the Tutti-Frutti fix
-				*dest = colormap[source[frac>>FRACBITS]];
+				if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+				{
+					*dest = fullbright[source[frac>>FRACBITS]];
+				}
+				else
+				{
+					*dest = colormap[source[frac>>FRACBITS]];
+				}
 				dest += vid.width;
 
 				// Avoid overflow.
@@ -92,15 +101,42 @@ void R_DrawColumn_8(void)
 		{
 			while ((count -= 2) >= 0) // texture height is a power of 2
 			{
-				*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+				if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+				{
+					*dest = fullbright[source[(frac>>FRACBITS) & heightmask]];
+				}
+				else
+				{
+					*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+				}
+
 				dest += vid.width;
 				frac += fracstep;
-				*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+
+				if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+				{
+					*dest = fullbright[source[(frac>>FRACBITS) & heightmask]];
+				}
+				else
+				{
+					*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+				}
+
 				dest += vid.width;
 				frac += fracstep;
 			}
+
 			if (count & 1)
-				*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+			{
+				if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+				{
+					*dest = fullbright[source[(frac>>FRACBITS) & heightmask]];
+				}
+				else
+				{
+					*dest = colormap[source[(frac>>FRACBITS) & heightmask]];
+				}
+			}
 		}
 	}
 }
@@ -140,7 +176,9 @@ void R_Draw2sMultiPatchColumn_8(void)
 	// This is as fast as it gets.
 	{
 		register const UINT8 *source = dc_source;
+		register const UINT8 *brightmap = dc_brightmap;
 		register const lighttable_t *colormap = dc_colormap;
+		register const lighttable_t *fullbright = dc_fullbright;
 		register INT32 heightmask = dc_texheight-1;
 		register UINT8 val;
 		if (dc_texheight & heightmask)   // not a power of 2 -- killough
@@ -160,9 +198,17 @@ void R_Draw2sMultiPatchColumn_8(void)
 				//  using a lighting/special effects LUT.
 				// heightmask is the Tutti-Frutti fix
 				val = source[frac>>FRACBITS];
-
 				if (val != TRANSPARENTPIXEL)
-					*dest = colormap[val];
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = fullbright[val];
+					}
+					else
+					{
+						*dest = colormap[val];
+					}
+				}
 
 				dest += vid.width;
 
@@ -182,20 +228,51 @@ void R_Draw2sMultiPatchColumn_8(void)
 			{
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = colormap[val];
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = fullbright[val];
+					}
+					else
+					{
+						*dest = colormap[val];
+					}
+				}
+
 				dest += vid.width;
 				frac += fracstep;
+
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = colormap[val];
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = fullbright[val];
+					}
+					else
+					{
+						*dest = colormap[val];
+					}
+				}
+
 				dest += vid.width;
 				frac += fracstep;
 			}
+
 			if (count & 1)
 			{
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = colormap[val];
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = fullbright[val];
+					}
+					else
+					{
+						*dest = colormap[val];
+					}
+				}
 			}
 		}
 	}
@@ -236,8 +313,10 @@ void R_Draw2sMultiPatchTranslucentColumn_8(void)
 	// This is as fast as it gets.
 	{
 		register const UINT8 *source = dc_source;
+		register const UINT8 *brightmap = dc_brightmap;
 		register const UINT8 *transmap = dc_transmap;
 		register const lighttable_t *colormap = dc_colormap;
+		register const lighttable_t *fullbright = dc_fullbright;
 		register INT32 heightmask = dc_texheight-1;
 		register UINT8 val;
 		if (dc_texheight & heightmask)   // not a power of 2 -- killough
@@ -257,9 +336,17 @@ void R_Draw2sMultiPatchTranslucentColumn_8(void)
 				//  using a lighting/special effects LUT.
 				// heightmask is the Tutti-Frutti fix
 				val = source[frac>>FRACBITS];
-
 				if (val != TRANSPARENTPIXEL)
-					*dest = *(transmap + (colormap[val]<<8) + (*dest));
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = *(transmap + (fullbright[val]<<8) + (*dest));
+					}
+					else
+					{
+						*dest = *(transmap + (colormap[val]<<8) + (*dest));
+					}
+				}
 
 				dest += vid.width;
 
@@ -279,12 +366,33 @@ void R_Draw2sMultiPatchTranslucentColumn_8(void)
 			{
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = *(transmap + (colormap[val]<<8) + (*dest));
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = *(transmap + (fullbright[val]<<8) + (*dest));
+					}
+					else
+					{
+						*dest = *(transmap + (colormap[val]<<8) + (*dest));
+					}
+				}
+
 				dest += vid.width;
 				frac += fracstep;
+
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = *(transmap + (colormap[val]<<8) + (*dest));
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = *(transmap + (fullbright[val]<<8) + (*dest));
+					}
+					else
+					{
+						*dest = *(transmap + (colormap[val]<<8) + (*dest));
+					}
+				}
+
 				dest += vid.width;
 				frac += fracstep;
 			}
@@ -292,7 +400,16 @@ void R_Draw2sMultiPatchTranslucentColumn_8(void)
 			{
 				val = source[(frac>>FRACBITS) & heightmask];
 				if (val != TRANSPARENTPIXEL)
-					*dest = *(transmap + (colormap[val]<<8) + (*dest));
+				{
+					if (brightmap != NULL && brightmap[frac>>FRACBITS] == BRIGHTPIXEL)
+					{
+						*dest = *(transmap + (fullbright[val]<<8) + (*dest));
+					}
+					else
+					{
+						*dest = *(transmap + (colormap[val]<<8) + (*dest));
+					}
+				}
 			}
 		}
 	}
@@ -2114,8 +2231,12 @@ void R_DrawColumnShadowed_8(void)
 		if (height <= dc_yl)
 		{
 			dc_colormap = dc_lightlist[i].rcolormap;
+			dc_fullbright = colormaps;
 			if (encoremap)
+			{
 				dc_colormap += COLORMAP_REMAPOFFSET;
+				dc_fullbright += COLORMAP_REMAPOFFSET;
+			}
 			if (solid && dc_yl < bheight)
 				dc_yl = bheight;
 			continue;
@@ -2132,8 +2253,12 @@ void R_DrawColumnShadowed_8(void)
 			dc_yl = dc_yh + 1;
 
 		dc_colormap = dc_lightlist[i].rcolormap;
+		dc_fullbright = colormaps;
 		if (encoremap)
+		{
 			dc_colormap += COLORMAP_REMAPOFFSET;
+			dc_fullbright += COLORMAP_REMAPOFFSET;
+		}
 	}
 	dc_yh = realyh;
 	if (dc_yl <= realyh)
