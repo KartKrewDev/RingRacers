@@ -4074,6 +4074,7 @@ state_t states[NUMSTATES] =
 	{SPR_SBOX, 18|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX11},	// S_SPHEREBOX10
 	{SPR_SBOX, 20|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX12},	// S_SPHEREBOX11
 	{SPR_SBOX, 22|FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM, 4, {NULL}, 1, 1, S_SPHEREBOX1},	// S_SPHEREBOX12
+	{SPR_NULL, 0, 0, {A_ItemPop}, 1, 0, S_NULL},											// S_DEADSPHEREBOX
 
 	{SPR_RPOP, FF_FULLBRIGHT,   5, {NULL}, 0, 0, S_RANDOMITEMPOP2}, // S_RANDOMITEMPOP1
 	{SPR_RPOP, FF_FULLBRIGHT|1, 5, {NULL}, 0, 0, S_RANDOMITEMPOP3}, // S_RANDOMITEMPOP2
@@ -23044,7 +23045,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,         // painsound
 		S_NULL,           // meleestate
 		S_NULL,           // missilestate
-		S_DEADRANDOMITEM, // deathstate
+		S_DEADSPHEREBOX,  // deathstate
 		S_NULL,           // xdeathstate
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed
