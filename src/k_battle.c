@@ -374,20 +374,18 @@ void K_RunPaperItemSpawners(void)
 				firstUnspawnedEmerald
 			);
 		}
-		else if (P_RandomChance(FRACUNIT/2))
-		{
-			K_SpawnSphereBox(
-				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
-				10
-			);
-		}
 		else
 		{
 			K_CreatePaperItem(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
 				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 				0, 0
+			);
+
+			K_SpawnSphereBox(
+				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				10
 			);
 		}
 	}
