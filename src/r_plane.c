@@ -235,7 +235,9 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	}
 
 	if (currentplane->slope)
+	{
 		ds_colormap = colormaps;
+	}
 	else
 	{
 		pindex = distance >> LIGHTZSHIFT;
@@ -244,8 +246,13 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		ds_colormap = planezlight[pindex];
 	}
 
+	ds_fullbright = colormaps;
+
 	if (encoremap && !currentplane->noencore)
+	{
 		ds_colormap += COLORMAP_REMAPOFFSET;
+		ds_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -968,6 +975,30 @@ void R_DrawSinglePlane(visplane_t *pl)
 			// Check if this texture or patch has power-of-two dimensions.
 			if (R_CheckPowersOfTwo())
 				R_CheckFlatLength(ds_flatwidth * ds_flatheight);
+	}
+
+	ds_brightmap = NULL;
+
+	if (type == LEVELFLAT_TEXTURE)
+	{
+		// Get the span's brightmap.
+		// FLATS not supported, SORRY!!
+		INT32 texNum = R_GetTextureNum(levelflat->u.texture.num);
+		INT32 bmNum = R_GetTextureBrightmap(texNum);
+
+		if (bmNum != 0)
+		{
+			texture_t *brightmap = textures[bmNum];
+
+			if (brightmap->flat == NULL)
+			{
+				ds_brightmap = R_GenerateTextureAsFlat(bmNum);
+			}
+			else
+			{
+				ds_brightmap = (UINT8 *)brightmap->flat;
+			}
+		}
 	}
 
 	if (!pl->slope // Don't mess with angle on slopes! We'll handle this ourselves later
