@@ -4479,11 +4479,6 @@ boolean P_AddWadFile(const char *wadfilename)
 	S_LoadMusicDefs(wadnum);
 
 	//
-	// edit music defs
-	//
-	S_LoadMusicDefs(wadnum);
-
-	//
 	// search for maps
 	//
 	lumpinfo = wadfiles[wadnum]->lumpinfo;
