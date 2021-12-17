@@ -988,16 +988,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 
 		if (bmNum != 0)
 		{
-			texture_t *brightmap = textures[bmNum];
-
-			if (brightmap->flat == NULL)
-			{
-				ds_brightmap = R_GenerateTextureAsFlat(bmNum);
-			}
-			else
-			{
-				ds_brightmap = (UINT8 *)brightmap->flat;
-			}
+			ds_brightmap = R_GenerateTextureAsFlat(bmNum);
 		}
 	}
 
