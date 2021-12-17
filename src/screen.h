@@ -116,6 +116,8 @@ extern vmode_t specialmodes[NUMSPECIALMODES];
 // color mode dependent drawer function pointers
 // ---------------------------------------------
 
+#define USE_COL_SPAN_ASM 0
+
 #define BASEDRAWFUNC 0
 
 enum
@@ -135,7 +137,9 @@ enum
 
 extern void (*colfunc)(void);
 extern void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
 extern void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
 extern int colfunctype;
 
 enum
@@ -165,7 +169,9 @@ enum
 extern void (*spanfunc)(void);
 extern void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 extern void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
 extern void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // -----
 // CPUID

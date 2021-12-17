@@ -49,13 +49,17 @@
 // --------------------------------------------
 void (*colfunc)(void);
 void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
 void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
 int colfunctype;
 
 void (*spanfunc)(void);
 void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
 void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // ------------------
 // global video state
@@ -160,7 +164,7 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
 
-#ifdef RUSEASM
+#if (defined(RUSEASM) && defined(USE_COL_SPAN_ASM))
 		if (R_ASM)
 		{
 			if (R_MMX)
@@ -210,11 +214,13 @@ void R_SetColumnFunc(size_t id, boolean brightmapped)
 
 	colfunctype = id;
 
+#ifdef USE_COL_SPAN_ASM
 	if (colfuncs_asm[id] != NULL && brightmapped == false)
 	{
 		colfunc = colfuncs_asm[id];
 	}
 	else
+#endif
 	{
 		colfunc = colfuncs[id];
 	}
@@ -228,10 +234,12 @@ void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
 	{
 		spanfunc = spanfuncs_npo2[id];
 	}
+#ifdef USE_COL_SPAN_ASM
 	else if (spanfuncs_asm[id] != NULL && brightmapped == false)
 	{
 		spanfunc = spanfuncs_asm[id];
 	}
+#endif
 	else
 	{
 		spanfunc = spanfuncs[id];
