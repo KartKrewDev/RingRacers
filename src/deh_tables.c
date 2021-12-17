@@ -3476,6 +3476,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM12",
 	"S_DEADRANDOMITEM",
 
+	// Sphere Box (for Battle)
+	"S_SPHEREBOX",
+
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
 	"S_RANDOMITEMPOP2",

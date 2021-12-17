@@ -346,7 +346,6 @@ static void kickstartaccel_OnChange(void);
 static void kickstartaccel2_OnChange(void);
 static void kickstartaccel3_OnChange(void);
 static void kickstartaccel4_OnChange(void);
-void SendWeaponPref(UINT8 n);
 
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},

@@ -1322,7 +1322,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 	if (gametype != votelevels[level][1])
 	{
 		INT16 lastgametype = gametype;
-		gametype = votelevels[level][1];
+		G_SetGametype(votelevels[level][1]);
 		D_GameTypeChanged(lastgametype);
 		forceresetplayers = true;
 	}

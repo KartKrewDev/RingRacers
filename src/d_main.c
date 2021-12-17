@@ -1418,6 +1418,9 @@ void D_SRB2Main(void)
 	// setup loading screen
 	SCR_Startup();
 
+	// Do this in background; lots of number crunching
+	R_InitTranslucencyTables();
+
 	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 
 	CONS_Printf("HU_Init()...\n");
