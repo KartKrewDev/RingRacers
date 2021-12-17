@@ -302,19 +302,47 @@ void HU_Init(void)
 	HU_LoadGraphics();
 }
 
-patch_t *HU_CachePatch(const char *format, ...)
+patch_t *HU_UpdatePatch(patch_t **user, const char *format, ...)
 {
 	va_list ap;
 	char buffer[9];
 
+	lumpnum_t lump;
+	patch_t *patch;
+
 	va_start (ap, format);
-	vsprintf(buffer, format, ap);
+	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end   (ap);
 
-	if (W_CheckNumForName(buffer) == LUMPERROR)
-		return NULL;
+	if (user && p_adding_file != INT16_MAX)
+	{
+		lump = W_CheckNumForNamePwad(buffer, p_adding_file, 0);
+
+		/* no update in this wad */
+		if (lump == INT16_MAX)
+			return *user;
+
+		lump |= (p_adding_file << 16);
+	}
 	else
-		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	{
+		lump = W_CheckNumForName(buffer);
+
+		if (lump == LUMPERROR)
+			return NULL;
+	}
+
+	patch = W_CachePatchNum(lump, PU_HUDGFX);
+
+	if (user)
+	{
+		if (*user)
+			Patch_Free(*user);
+
+		*user = patch;
+	}
+
+	return patch;
 }
 
 static inline void HU_Stop(void)

@@ -4319,6 +4319,8 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+UINT16 p_adding_file = INT16_MAX;
+
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
@@ -4355,6 +4357,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	}
 	else
 		wadnum = (UINT16)(numwadfiles-1);
+
+	p_adding_file = wadnum;
 
 	switch(wadfiles[wadnum]->type)
 	{
@@ -4537,6 +4541,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	}
 
 	refreshdirmenu &= ~REFRESHDIR_GAMEDATA; // Under usual circumstances we'd wait for REFRESHDIR_GAMEDATA to disappear the next frame, but it's a bit too dangerous for that...
+
+	p_adding_file = INT16_MAX;
 
 	return true;
 }

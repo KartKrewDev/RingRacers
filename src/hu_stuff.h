@@ -123,7 +123,8 @@ void HU_Init(void);
 void HU_LoadGraphics(void);
 
 // Load a HUDGFX patch or NULL.
-patch_t *HU_CachePatch(const char *format, ...);
+patch_t *HU_UpdatePatch(patch_t **user, const char *format, ...);
+#define HU_CachePatch(...) HU_UpdatePatch(NULL, __VA_ARGS__)
 
 // reset heads up when consoleplayer respawns.
 void HU_Start(void);
