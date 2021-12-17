@@ -135,6 +135,8 @@ enum
 
 extern void (*colfunc)(void);
 extern void (*colfuncs[COLDRAWFUNC_MAX])(void);
+extern void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+extern int colfunctype;
 
 enum
 {
@@ -163,6 +165,7 @@ enum
 extern void (*spanfunc)(void);
 extern void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 extern void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+extern void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
 
 // -----
 // CPUID
@@ -204,6 +207,13 @@ void SCR_SetMode(void);
 
 // Set drawer functions for Software
 void SCR_SetDrawFuncs(void);
+
+// Set current column / span drawers
+void R_SetColumnFunc(size_t id, boolean brightmapped);
+void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped);
+
+// Compare current column drawer
+boolean R_CheckColumnFunc(size_t id);
 
 // Recalc screen size dependent stuff
 void SCR_Recalc(void);
