@@ -820,6 +820,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 	}
 
 	planeripple.active = false;
+	ds_brightmap = NULL;
 	R_SetSpanFunc(BASEDRAWFUNC, false, false);
 
 	if (pl->polyobj)
@@ -977,18 +978,14 @@ void R_DrawSinglePlane(visplane_t *pl)
 				R_CheckFlatLength(ds_flatwidth * ds_flatheight);
 	}
 
-	ds_brightmap = NULL;
-
 	if (type == LEVELFLAT_TEXTURE)
 	{
 		// Get the span's brightmap.
 		// FLATS not supported, SORRY!!
-		INT32 texNum = R_GetTextureNum(levelflat->u.texture.num);
-		INT32 bmNum = R_GetTextureBrightmap(texNum);
-
+		INT32 bmNum = R_GetTextureBrightmap(levelflat->u.texture.num);
 		if (bmNum != 0)
 		{
-			ds_brightmap = R_GenerateTextureAsFlat(bmNum);
+			ds_brightmap = (UINT8 *)R_GenerateTextureAsFlat(bmNum);
 		}
 	}
 
