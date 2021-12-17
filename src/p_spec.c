@@ -214,12 +214,19 @@ void P_InitPicAnims(void)
 		}
 		else
 		{
+			CONS_Alert(CONS_WARNING, "ANIMDEFS flats are disabled; flat support in general will be removed soon! (%s, %s)\n", animdefs[i].startname, animdefs[i].endname);
+			continue;
+		}
+#if 0
+		else
+		{
 			if ((W_CheckNumForName(animdefs[i].startname)) == LUMPERROR)
 				continue;
 
 			lastanim->picnum = R_GetFlatNumForName(animdefs[i].endname);
 			lastanim->basepic = R_GetFlatNumForName(animdefs[i].startname);
 		}
+#endif
 
 		lastanim->istexture = animdefs[i].istexture;
 		lastanim->numpics = lastanim->picnum - lastanim->basepic + 1;
