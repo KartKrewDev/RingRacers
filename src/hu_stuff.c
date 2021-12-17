@@ -73,8 +73,6 @@
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
-patch_t *tc_font[2][LT_FONTSIZE];	// Special font stuff for titlecard
-
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
@@ -180,8 +178,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
@@ -193,27 +190,6 @@ void HU_LoadGraphics(void)
 
 	emblemicon         = HU_CachePatch("EMBLICON");
 	songcreditbg       = HU_CachePatch("K_SONGCR");
-
-	// Cache titlecard font
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++, j++)
-	{
-		// cache the titlecard font
-
-		// Bottom layer
-		sprintf(buffer, "GTOL%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tc_font[0][i] = NULL;
-		else
-			tc_font[0][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// Top layer
-		sprintf(buffer, "GTFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tc_font[1][i] = NULL;
-		else
-			tc_font[1][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
@@ -277,6 +253,16 @@ void HU_Init(void)
 
 		ADIM (CRED);
 		PR   ("CRFNT");
+		REG;
+
+		DIG  (3);
+
+		ADIM (LT);
+
+		PR   ("GTOL");
+		REG;
+
+		PR   ("GTFN");
 		REG;
 
 		DIG  (1);

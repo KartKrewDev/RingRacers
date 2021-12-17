@@ -39,11 +39,6 @@
 #define LT_FONTEND 'z' // the last font characters
 #define LT_FONTSIZE (LT_FONTEND - LT_FONTSTART + 1)
 
-// Under regular circumstances, we'd use the built in font stuff, however this font is a bit messy because of how we're gonna draw shit.
-// tc_font[0][n] is used for the "bottom" layer
-// tc_font[1][n] is used for the "top" layer
-extern patch_t *tc_font[2][LT_FONTSIZE];
-
 #define CRED_FONTSTART '!' // the first font character
 #define CRED_FONTEND 'Z' // the last font character
 #define CRED_FONTSIZE (CRED_FONTEND - CRED_FONTSTART + 1)
@@ -58,6 +53,9 @@ enum
 
 	X        (LT),
 	X      (CRED),
+
+	X      (GTOL),
+	X      (GTFN),
 
 	X   (TALLNUM),
 	X (NIGHTSNUM),
