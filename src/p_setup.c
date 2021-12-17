@@ -4452,7 +4452,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	// Reload it all anyway, just in case they
 	// added some textures but didn't insert a
 	// TEXTURES/etc. list.
-	R_LoadTextures(); // numtexture changes
+	R_LoadTexturesPwad(wadnum); // numtexture changes
 
 	// Reload ANIMDEFS
 	P_InitPicAnims();
