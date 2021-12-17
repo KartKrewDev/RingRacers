@@ -186,21 +186,21 @@ void HU_LoadGraphics(void)
 	Font_Load();
 
 	// minus for negative tallnums
-	tallminus          = HU_CachePatch("STTMINUS");
+	HU_UpdatePatch(&tallminus, "STTMINUS");
 
-	emblemicon         = HU_CachePatch("EMBLICON");
-	songcreditbg       = HU_CachePatch("K_SONGCR");
+	HU_UpdatePatch(&emblemicon, "EMBLICON");
+	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		pinggfx[i] = HU_CachePatch("PINGGFX%d", i+1);
-		mping[i] = HU_CachePatch("MPING%d", i+1);
+		HU_UpdatePatch(&pinggfx[i], "PINGGFX%d", i+1);
+		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
 
 	// fps stuff
-	framecounter       = HU_CachePatch("FRAMER");
-	frameslash         = HU_CachePatch("FRAMESL");;
+	HU_UpdatePatch(&framecounter, "FRAMER");
+	HU_UpdatePatch(&frameslash, "FRAMESL");
 }
 
 // Initialise Heads up

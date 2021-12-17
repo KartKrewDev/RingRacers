@@ -4462,7 +4462,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	P_InitPicAnims();
 
 	// Flush and reload HUD graphics
-	ST_UnloadGraphics();
+	//ST_UnloadGraphics();
 	HU_LoadGraphics();
 	ST_LoadGraphics();
 

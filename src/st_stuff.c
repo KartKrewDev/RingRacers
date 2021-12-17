@@ -261,114 +261,114 @@ void ST_LoadGraphics(void)
 	// cache the status bar overlay icons (fullscreen mode)
 
 	// Prefix "STT" is whitelisted (doesn't trigger ISGAMEMODIFIED), btw
-	sborings = W_CachePatchName("STTRINGS", PU_HUDGFX);
-	sboredrings = W_CachePatchName("STTRRING", PU_HUDGFX);
-	sboscore = W_CachePatchName("STTSCORE", PU_HUDGFX);
-	sbotime = W_CachePatchName("STTTIME", PU_HUDGFX); // Time logo
-	sboredtime = W_CachePatchName("STTRTIME", PU_HUDGFX);
-	sbocolon = W_CachePatchName("STTCOLON", PU_HUDGFX); // Colon for time
-	sboperiod = W_CachePatchName("STTPERIO", PU_HUDGFX); // Period for time centiseconds
+	HU_UpdatePatch(&sborings, "STTRINGS");
+	HU_UpdatePatch(&sboredrings, "STTRRING");
+	HU_UpdatePatch(&sboscore, "STTSCORE");
+	HU_UpdatePatch(&sbotime, "STTTIME"); // Time logo
+	HU_UpdatePatch(&sboredtime, "STTRTIME");
+	HU_UpdatePatch(&sbocolon, "STTCOLON"); // Colon for time
+	HU_UpdatePatch(&sboperiod, "STTPERIO"); // Period for time centiseconds
 
-	slidgame = W_CachePatchName("SLIDGAME", PU_HUDGFX);
-	slidtime = W_CachePatchName("SLIDTIME", PU_HUDGFX);
-	slidover = W_CachePatchName("SLIDOVER", PU_HUDGFX);
+	HU_UpdatePatch(&slidgame, "SLIDGAME");
+	HU_UpdatePatch(&slidtime, "SLIDTIME");
+	HU_UpdatePatch(&slidover, "SLIDOVER");
 
-	stlivex = W_CachePatchName("STLIVEX", PU_HUDGFX);
-	livesback = W_CachePatchName("STLIVEBK", PU_HUDGFX);
-	nrec_timer = W_CachePatchName("NGRTIMER", PU_HUDGFX); // Timer for NiGHTS
-	getall = W_CachePatchName("GETALL", PU_HUDGFX); // Special Stage HUD
-	timeup = W_CachePatchName("TIMEUP", PU_HUDGFX); // Special Stage HUD
-	race1 = W_CachePatchName("RACE1", PU_HUDGFX);
-	race2 = W_CachePatchName("RACE2", PU_HUDGFX);
-	race3 = W_CachePatchName("RACE3", PU_HUDGFX);
-	racego = W_CachePatchName("RACEGO", PU_HUDGFX);
-	nightslink = W_CachePatchName("NGHTLINK", PU_HUDGFX);
+	HU_UpdatePatch(&stlivex, "STLIVEX");
+	HU_UpdatePatch(&livesback, "STLIVEBK");
+	HU_UpdatePatch(&nrec_timer, "NGRTIMER"); // Timer for NiGHTS
+	HU_UpdatePatch(&getall, "GETALL"); // Special Stage HUD
+	HU_UpdatePatch(&timeup, "TIMEUP"); // Special Stage HUD
+	HU_UpdatePatch(&race1, "RACE1");
+	HU_UpdatePatch(&race2, "RACE2");
+	HU_UpdatePatch(&race3, "RACE3");
+	HU_UpdatePatch(&racego, "RACEGO");
+	HU_UpdatePatch(&nightslink, "NGHTLINK");
 
 	for (i = 0; i < 6; ++i)
 	{
-		hunthoming[i] = W_CachePatchName(va("HOMING%d", i+1), PU_HUDGFX);
-		itemhoming[i] = W_CachePatchName(va("HOMITM%d", i+1), PU_HUDGFX);
+		HU_UpdatePatch(&hunthoming[i], "HOMING%d", i+1);
+		HU_UpdatePatch(&itemhoming[i], "HOMITM%d", i+1);
 	}
 
-	curweapon = W_CachePatchName("CURWEAP", PU_HUDGFX);
-	normring = W_CachePatchName("RINGIND", PU_HUDGFX);
-	bouncering = W_CachePatchName("BNCEIND", PU_HUDGFX);
-	infinityring = W_CachePatchName("INFNIND", PU_HUDGFX);
-	autoring = W_CachePatchName("AUTOIND", PU_HUDGFX);
-	explosionring = W_CachePatchName("BOMBIND", PU_HUDGFX);
-	scatterring = W_CachePatchName("SCATIND", PU_HUDGFX);
-	grenadering = W_CachePatchName("GRENIND", PU_HUDGFX);
-	railring = W_CachePatchName("RAILIND", PU_HUDGFX);
-	jumpshield = W_CachePatchName("TVWWICON", PU_HUDGFX);
-	forceshield = W_CachePatchName("TVFOICON", PU_HUDGFX);
-	ringshield = W_CachePatchName("TVATICON", PU_HUDGFX);
-	watershield = W_CachePatchName("TVELICON", PU_HUDGFX);
-	bombshield = W_CachePatchName("TVARICON", PU_HUDGFX);
-	pityshield = W_CachePatchName("TVPIICON", PU_HUDGFX);
-	pinkshield = W_CachePatchName("TVPPICON", PU_HUDGFX);
-	flameshield = W_CachePatchName("TVFLICON", PU_HUDGFX);
-	bubbleshield = W_CachePatchName("TVBBICON", PU_HUDGFX);
-	thundershield = W_CachePatchName("TVZPICON", PU_HUDGFX);
-	invincibility = W_CachePatchName("TVIVICON", PU_HUDGFX);
-	sneakers = W_CachePatchName("TVSSICON", PU_HUDGFX);
-	gravboots = W_CachePatchName("TVGVICON", PU_HUDGFX);
+	HU_UpdatePatch(&curweapon, "CURWEAP");
+	HU_UpdatePatch(&normring, "RINGIND");
+	HU_UpdatePatch(&bouncering, "BNCEIND");
+	HU_UpdatePatch(&infinityring, "INFNIND");
+	HU_UpdatePatch(&autoring, "AUTOIND");
+	HU_UpdatePatch(&explosionring, "BOMBIND");
+	HU_UpdatePatch(&scatterring, "SCATIND");
+	HU_UpdatePatch(&grenadering, "GRENIND");
+	HU_UpdatePatch(&railring, "RAILIND");
+	HU_UpdatePatch(&jumpshield, "TVWWICON");
+	HU_UpdatePatch(&forceshield, "TVFOICON");
+	HU_UpdatePatch(&ringshield, "TVATICON");
+	HU_UpdatePatch(&watershield, "TVELICON");
+	HU_UpdatePatch(&bombshield, "TVARICON");
+	HU_UpdatePatch(&pityshield, "TVPIICON");
+	HU_UpdatePatch(&pinkshield, "TVPPICON");
+	HU_UpdatePatch(&flameshield, "TVFLICON");
+	HU_UpdatePatch(&bubbleshield, "TVBBICON");
+	HU_UpdatePatch(&thundershield, "TVZPICON");
+	HU_UpdatePatch(&invincibility, "TVIVICON");
+	HU_UpdatePatch(&sneakers, "TVSSICON");
+	HU_UpdatePatch(&gravboots, "TVGVICON");
 
-	tagico = W_CachePatchName("TAGICO", PU_HUDGFX);
-	rflagico = W_CachePatchName("RFLAGICO", PU_HUDGFX);
-	bflagico = W_CachePatchName("BFLAGICO", PU_HUDGFX);
-	rmatcico = W_CachePatchName("RMATCICO", PU_HUDGFX);
-	bmatcico = W_CachePatchName("BMATCICO", PU_HUDGFX);
-	gotrflag = W_CachePatchName("GOTRFLAG", PU_HUDGFX);
-	gotbflag = W_CachePatchName("GOTBFLAG", PU_HUDGFX);
-	fnshico = W_CachePatchName("FNSHICO", PU_HUDGFX);
-	nonicon = W_CachePatchName("NONICON", PU_HUDGFX);
-	nonicon2 = W_CachePatchName("NONICON2", PU_HUDGFX);
+	HU_UpdatePatch(&tagico, "TAGICO");
+	HU_UpdatePatch(&rflagico, "RFLAGICO");
+	HU_UpdatePatch(&bflagico, "BFLAGICO");
+	HU_UpdatePatch(&rmatcico, "RMATCICO");
+	HU_UpdatePatch(&bmatcico, "BMATCICO");
+	HU_UpdatePatch(&gotrflag, "GOTRFLAG");
+	HU_UpdatePatch(&gotbflag, "GOTBFLAG");
+	HU_UpdatePatch(&fnshico, "FNSHICO");
+	HU_UpdatePatch(&nonicon, "NONICON");
+	HU_UpdatePatch(&nonicon2, "NONICON2");
 
 	// NiGHTS HUD things
-	bluestat = W_CachePatchName("BLUESTAT", PU_HUDGFX);
-	byelstat = W_CachePatchName("BYELSTAT", PU_HUDGFX);
-	orngstat = W_CachePatchName("ORNGSTAT", PU_HUDGFX);
-	redstat = W_CachePatchName("REDSTAT", PU_HUDGFX);
-	yelstat = W_CachePatchName("YELSTAT", PU_HUDGFX);
-	nbracket = W_CachePatchName("NBRACKET", PU_HUDGFX);
-	nring = W_CachePatchName("NRNG1", PU_HUDGFX);
+	HU_UpdatePatch(&bluestat, "BLUESTAT");
+	HU_UpdatePatch(&byelstat, "BYELSTAT");
+	HU_UpdatePatch(&orngstat, "ORNGSTAT");
+	HU_UpdatePatch(&redstat, "REDSTAT");
+	HU_UpdatePatch(&yelstat, "YELSTAT");
+	HU_UpdatePatch(&nbracket, "NBRACKET");
+	HU_UpdatePatch(&nring, "NRNG1");
 	for (i = 0; i < 12; ++i)
 	{
-		nhud[i] = W_CachePatchName(va("NHUD%d", i+1), PU_HUDGFX);
-		nbon[i] = W_CachePatchName(va("NBON%d", i+1), PU_HUDGFX);
+		HU_UpdatePatch(&nhud[i], "NHUD%d", i+1);
+		HU_UpdatePatch(&nbon[i], "NBON%d", i+1);
 	}
-	nsshud = W_CachePatchName("NSSHUD", PU_HUDGFX);
-	nssbon = W_CachePatchName("NSSBON", PU_HUDGFX);
-	minicaps = W_CachePatchName("MINICAPS", PU_HUDGFX);
+	HU_UpdatePatch(&nsshud, "NSSHUD");
+	HU_UpdatePatch(&nssbon, "NSSBON");
+	HU_UpdatePatch(&minicaps, "MINICAPS");
 
 	for (i = 0; i < 8; ++i)
 	{
-		narrow[i] = W_CachePatchName(va("NARROW%d", i+1), PU_HUDGFX);
-		nredar[i] = W_CachePatchName(va("NREDAR%d", i+1), PU_HUDGFX);
+		HU_UpdatePatch(&narrow[i], "NARROW%d", i+1);
+		HU_UpdatePatch(&nredar[i], "NREDAR%d", i+1);
 	}
 
 	// non-animated version
-	narrow[8] = W_CachePatchName("NARROW9", PU_HUDGFX);
+	HU_UpdatePatch(&narrow[8], "NARROW9");
 
-	drillbar = W_CachePatchName("DRILLBAR", PU_HUDGFX);
+	HU_UpdatePatch(&drillbar, "DRILLBAR");
 	for (i = 0; i < 3; ++i)
-		drillfill[i] = W_CachePatchName(va("DRILLFI%d", i+1), PU_HUDGFX);
-	capsulebar = W_CachePatchName("CAPSBAR", PU_HUDGFX);
-	capsulefill = W_CachePatchName("CAPSFILL", PU_HUDGFX);
-	minus5sec = W_CachePatchName("MINUS5", PU_HUDGFX);
+		HU_UpdatePatch(&drillfill[i], "DRILLFI%d", i+1);
+	HU_UpdatePatch(&capsulebar, "CAPSBAR");
+	HU_UpdatePatch(&capsulefill, "CAPSFILL");
+	HU_UpdatePatch(&minus5sec, "MINUS5");
 
 	for (i = 0; i < 7; ++i)
-		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
+		HU_UpdatePatch(&ngradeletters[i], "GRADE%d", i);
 
 	K_LoadKartHUDGraphics();
 
 	// Midnight Channel:
-	hud_tv1 = W_CachePatchName("HUD_TV1", PU_HUDGFX);
-	hud_tv2 = W_CachePatchName("HUD_TV2", PU_HUDGFX);
+	HU_UpdatePatch(&hud_tv1, "HUD_TV1");
+	HU_UpdatePatch(&hud_tv2, "HUD_TV2");
 
 #ifdef HAVE_DISCORDRPC
 	// Discord Rich Presence
-	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
+	HU_UpdatePatch(&envelope, "K_REQUES");
 #endif
 }
 
