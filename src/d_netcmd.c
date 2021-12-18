@@ -2571,7 +2571,7 @@ static void Command_Map_f(void)
 
 	mustmodifygame = !(netgame || multiplayer) && !majormods;
 
-	if (mustmodifygame)
+	if (mustmodifygame && !option_force)
 	{
 		/* May want to be more descriptive? */
 		CONS_Printf(M_GetText("Sorry, level change disabled in single player.\n"));

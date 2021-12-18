@@ -96,6 +96,8 @@ void *R_GetFlat(lumpnum_t flatnum);
 boolean R_CheckPowersOfTwo(void);
 void R_CheckFlatLength(size_t size);
 
+void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);
+
 // Returns the texture number for the texture name.
 INT32 R_TextureNumForName(const char *name);
 INT32 R_CheckTextureNumForName(const char *name);

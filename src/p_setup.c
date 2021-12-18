@@ -4463,7 +4463,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	P_InitPicAnims();
 
 	// Reload BRIGHT
-	K_InitBrightmaps();
+	K_InitBrightmapsPwad(wadnum);
 
 	// Flush and reload HUD graphics
 	//ST_UnloadGraphics();
