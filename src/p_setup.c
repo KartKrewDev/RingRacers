@@ -91,6 +91,7 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_brightmap.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -4456,6 +4457,9 @@ boolean P_AddWadFile(const char *wadfilename)
 
 	// Reload ANIMDEFS
 	P_InitPicAnims();
+
+	// Reload BRIGHT
+	K_InitBrightmaps();
 
 	// Flush and reload HUD graphics
 	ST_UnloadGraphics();
