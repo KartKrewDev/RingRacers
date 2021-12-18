@@ -55,6 +55,7 @@ INT32 *texturewidth;
 fixed_t *textureheight; // needed for texture pegging
 
 INT32 *texturetranslation;
+INT32 *texturebrightmaps;
 
 // Painfully simple texture id cacheing to make maps load faster. :3
 static struct {
@@ -499,6 +500,20 @@ INT32 R_GetTextureNum(INT32 texnum)
 	if (texnum < 0 || texnum >= numtextures)
 		return 0;
 	return texturetranslation[texnum];
+}
+
+//
+// R_GetTextureBrightmap
+//
+// Returns the actual texture id that we should use.
+// This can either be the texture's brightmap,
+// or 0 if not valid.
+//
+INT32 R_GetTextureBrightmap(INT32 texnum)
+{
+	if (texnum < 0 || texnum >= numtextures)
+		return 0;
+	return texturebrightmaps[texnum];
 }
 
 //
@@ -1038,9 +1053,22 @@ static void R_AllocateTextures(INT32 add)
 	recallocuser(&textureheight, oldsize, newsize);
 	// Create translation table for global animation.
 	Z_Realloc(texturetranslation, (newtextures + 1) * sizeof(*texturetranslation), PU_STATIC, &texturetranslation);
+	// Create brightmap texture table.
+	Z_Realloc(texturebrightmaps, (newtextures + 1) * sizeof(*texturebrightmaps), PU_STATIC, &texturebrightmaps);
 
 	for (i = numtextures; i < newtextures; ++i)
+	{
 		texturetranslation[i] = i;
+		texturebrightmaps[i] = 0;
+	}
+}
+
+void R_UpdateTextureBrightmap(INT32 tx, INT32 bm)
+{
+	I_Assert(tx > 0 && tx < numtextures);
+	I_Assert(bm >= 0 && bm < numtextures);
+
+	texturebrightmaps[tx] = bm;
 }
 
 static INT32 R_DefineTextures(INT32 i, UINT16 w)

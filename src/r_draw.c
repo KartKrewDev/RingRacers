@@ -72,12 +72,14 @@ UINT8 *topleft;
 // =========================================================================
 
 lighttable_t *dc_colormap;
+lighttable_t *dc_fullbright;
 INT32 dc_x = 0, dc_yl = 0, dc_yh = 0;
 
 fixed_t dc_iscale, dc_texturemid;
 UINT8 dc_hires; // under MSVC boolean is a byte, while on other systems, it a bit,
                // soo lets make it a byte on all system for the ASM code
 UINT8 *dc_source;
+UINT8 *dc_brightmap;
 
 // -----------------------
 // translucency stuff here
@@ -109,6 +111,7 @@ INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
 
 INT32 ds_y, ds_x1, ds_x2;
 lighttable_t *ds_colormap;
+lighttable_t *ds_fullbright;
 lighttable_t *ds_translation; // Lactozilla: Sprite splat drawer
 
 fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
@@ -118,6 +121,7 @@ UINT16 ds_flatwidth, ds_flatheight;
 boolean ds_powersoftwo;
 
 UINT8 *ds_source; // points to the start of a flat
+UINT8 *ds_brightmap; // start of brightmap flat
 UINT8 *ds_transmap; // one of the translucency tables
 
 // Vectors for Software's tilted slope drawers

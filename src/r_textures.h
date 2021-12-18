@@ -84,6 +84,7 @@ void R_FlushTextureCache(void);
 UINT8 *R_GenerateTexture(size_t texnum);
 UINT8 *R_GenerateTextureAsFlat(size_t texnum);
 INT32 R_GetTextureNum(INT32 texnum);
+INT32 R_GetTextureBrightmap(INT32 texnum);
 void R_CheckTextureCache(INT32 tex);
 void R_ClearTextureNumCache(boolean btell);
 
