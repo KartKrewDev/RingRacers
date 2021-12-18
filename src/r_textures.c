@@ -55,6 +55,7 @@ INT32 *texturewidth;
 fixed_t *textureheight; // needed for texture pegging
 
 INT32 *texturetranslation;
+INT32 *texturebrightmaps;
 
 // Painfully simple texture id cacheing to make maps load faster. :3
 static struct {
@@ -501,6 +502,20 @@ INT32 R_GetTextureNum(INT32 texnum)
 }
 
 //
+// R_GetTextureBrightmap
+//
+// Returns the actual texture id that we should use.
+// This can either be the texture's brightmap,
+// or 0 if not valid.
+//
+INT32 R_GetTextureBrightmap(INT32 texnum)
+{
+	if (texnum < 0 || texnum >= numtextures)
+		return 0;
+	return texturebrightmaps[texnum];
+}
+
+//
 // R_CheckTextureCache
 //
 // Use this if you need to make sure the texture is cached before R_GetColumn calls
@@ -725,6 +740,7 @@ Rloadflats (INT32 i, INT32 w)
 	UINT16 texstart, texend;
 	texture_t *texture;
 	texpatch_t *patch;
+	UINT8 header[PNG_HEADER_SIZE];
 
 	// Yes
 	if (wadfiles[w]->type == RET_PK3)
@@ -743,7 +759,6 @@ Rloadflats (INT32 i, INT32 w)
 		// Work through each lump between the markers in the WAD.
 		for (j = 0; j < (texend - texstart); j++)
 		{
-			UINT8 *flatlump;
 			UINT16 wadnum = (UINT16)w;
 			lumpnum_t lumpnum = texstart + j;
 			size_t lumplength;
@@ -755,7 +770,7 @@ Rloadflats (INT32 i, INT32 w)
 					continue; // If it is then SKIP IT
 			}
 
-			flatlump = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+			W_ReadLumpHeaderPwad(wadnum, lumpnum, header, sizeof header, 0);
 			lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 
 			switch (lumplength)
@@ -790,12 +805,14 @@ Rloadflats (INT32 i, INT32 w)
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
 
 #ifndef NO_PNG_LUMPS
-			if (Picture_IsLumpPNG((UINT8 *)flatlump, lumplength))
+			if (Picture_IsLumpPNG(header, lumplength))
 			{
+				UINT8 *flatlump = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
 				INT32 width, height;
 				Picture_PNGDimensions((UINT8 *)flatlump, &width, &height, NULL, NULL, lumplength);
 				texture->width = (INT16)width;
 				texture->height = (INT16)height;
+				Z_Free(flatlump);
 			}
 			else
 #endif
@@ -813,8 +830,6 @@ Rloadflats (INT32 i, INT32 w)
 			patch->wad = (UINT16)w;
 			patch->lump = texstart + j;
 			patch->flip = 0;
-
-			Z_Unlock(flatlump);
 
 			texturewidth[i] = texture->width;
 			textureheight[i] = texture->height << FRACBITS;
@@ -835,8 +850,8 @@ Rloadtextures (INT32 i, INT32 w)
 	UINT16 j;
 	UINT16 texstart, texend, texturesLumpPos;
 	texture_t *texture;
-	softwarepatch_t *patchlump;
 	texpatch_t *patch;
+	softwarepatch_t patchlump;
 
 	// Get the lump numbers for the markers in the WAD, if they exist.
 	if (wadfiles[w]->type == RET_PK3)
@@ -876,7 +891,7 @@ Rloadtextures (INT32 i, INT32 w)
 					continue; // If it is then SKIP IT
 			}
 
-			patchlump = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
+			W_ReadLumpHeaderPwad(wadnum, lumpnum, &patchlump, PNG_HEADER_SIZE, 0);
 #ifndef NO_PNG_LUMPS
 			lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 #endif
@@ -888,18 +903,20 @@ Rloadtextures (INT32 i, INT32 w)
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
 
 #ifndef NO_PNG_LUMPS
-			if (Picture_IsLumpPNG((UINT8 *)patchlump, lumplength))
+			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
 			{
+				UINT8 *png = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
 				INT32 width, height;
-				Picture_PNGDimensions((UINT8 *)patchlump, &width, &height, NULL, NULL, lumplength);
+				Picture_PNGDimensions(png, &width, &height, NULL, NULL, lumplength);
 				texture->width = (INT16)width;
 				texture->height = (INT16)height;
+				Z_Free(png);
 			}
 			else
 #endif
 			{
-				texture->width = SHORT(patchlump->width);
-				texture->height = SHORT(patchlump->height);
+				texture->width = SHORT(patchlump.width);
+				texture->height = SHORT(patchlump.height);
 			}
 
 			texture->type = TEXTURETYPE_SINGLEPATCH;
@@ -914,8 +931,6 @@ Rloadtextures (INT32 i, INT32 w)
 			patch->wad = (UINT16)w;
 			patch->lump = texstart + j;
 			patch->flip = 0;
-
-			Z_Unlock(patchlump);
 
 			texturewidth[i] = texture->width;
 			textureheight[i] = texture->height << FRACBITS;
@@ -944,6 +959,7 @@ void R_LoadTextures(void)
 			Z_Free(textures[i]);
 			Z_Free(texturecache[i]);
 		}
+		Z_Free(texturebrightmaps);
 		Z_Free(texturetranslation);
 		Z_Free(textures);
 	}
@@ -1044,9 +1060,14 @@ void R_LoadTextures(void)
 	textureheight    = (void *)((UINT8 *)textures + ((numtextures * sizeof(void *)) * 4));
 	// Create translation table for global animation.
 	texturetranslation = Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, NULL);
+	// Create brightmap texture table.
+	texturebrightmaps = Z_Malloc((numtextures + 1) * sizeof(*texturebrightmaps), PU_STATIC, NULL);
 
 	for (i = 0; i < numtextures; i++)
+	{
 		texturetranslation[i] = i;
+		texturebrightmaps[i] = 0;
+	}
 
 	for (i = 0, w = 0; w < numwadfiles; w++)
 	{

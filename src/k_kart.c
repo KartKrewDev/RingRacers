@@ -2694,7 +2694,7 @@ boolean K_ApplyOffroad(player_t *player)
 
 boolean K_SlopeResistance(player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease)
+	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease || player->flamedash)
 		return true;
 	return false;
 }
@@ -8645,8 +8645,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->pflags & PF_ATTACKDOWN));
 	boolean HOLDING_ITEM = (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
-
-	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (!player->exiting)
 	{

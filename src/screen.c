@@ -49,10 +49,17 @@
 // --------------------------------------------
 void (*colfunc)(void);
 void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
+int colfunctype;
 
 void (*spanfunc)(void);
 void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // ------------------
 // global video state
@@ -118,9 +125,6 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[BASEDRAWFUNC] = R_DrawColumn_8;
 		spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8;
 
-		colfunc = colfuncs[BASEDRAWFUNC];
-		spanfunc = spanfuncs[BASEDRAWFUNC];
-
 		colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_TRANS] = R_DrawTranslatedColumn_8;
 		colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8;
@@ -160,26 +164,29 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
 
-#ifdef RUSEASM
+#if (defined(RUSEASM) && defined(USE_COL_SPAN_ASM))
 		if (R_ASM)
 		{
 			if (R_MMX)
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
-				spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
+				spanfuncs_asm[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
 			}
 			else
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
 			}
 		}
 #endif
+
+		R_SetColumnFunc(BASEDRAWFUNC, false);
+		R_SetSpanFunc(BASEDRAWFUNC, false, false);
 	}
 /*	else if (vid.bpp > 1)
 	{
@@ -199,6 +206,65 @@ void SCR_SetDrawFuncs(void)
 	if (SCR_IsAspectCorrect(vid.width, vid.height))
 		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
 */
+}
+
+void R_SetColumnFunc(size_t id, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	colfunctype = id;
+
+#ifdef USE_COL_SPAN_ASM
+	if (colfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		colfunc = colfuncs_asm[id];
+	}
+	else
+#endif
+	{
+		colfunc = colfuncs[id];
+	}
+}
+
+void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	if (spanfuncs_npo2[id] != NULL && npo2 == true)
+	{
+		spanfunc = spanfuncs_npo2[id];
+	}
+#ifdef USE_COL_SPAN_ASM
+	else if (spanfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		spanfunc = spanfuncs_asm[id];
+	}
+#endif
+	else
+	{
+		spanfunc = spanfuncs[id];
+	}
+}
+
+boolean R_CheckColumnFunc(size_t id)
+{
+	size_t i;
+
+	if (colfunc == NULL)
+	{
+		// Shouldn't happen.
+		return false;
+	}
+
+	for (i = 0; i < COLDRAWFUNC_MAX; i++)
+	{
+		if (colfunc == colfuncs[id] || colfunc == colfuncs_asm[id])
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SCR_SetMode(void)

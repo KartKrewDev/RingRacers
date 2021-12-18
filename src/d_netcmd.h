@@ -207,7 +207,8 @@ void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void CleanupPlayerName(INT32 playernum, const char *newname);
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
-void D_SendPlayerConfig(void);
+void SendWeaponPref(UINT8 n);
+void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore

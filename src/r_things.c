@@ -286,16 +286,18 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 
 #ifndef NO_PNG_LUMPS
 			{
-				softwarepatch_t *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
+				UINT8 header[PNG_HEADER_SIZE];
 				size_t len = W_LumpLengthPwad(wadnum, l);
 
-				if (Picture_IsLumpPNG((UINT8 *)png, len))
+				W_ReadLumpHeaderPwad(wadnum, l, header, sizeof header, 0);
+
+				if (Picture_IsLumpPNG(header, len))
 				{
+					UINT8 *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
 					Picture_PNGDimensions((UINT8 *)png, &width, &height, &topoffset, &leftoffset, len);
 					isPNG = true;
+					Z_Free(png);
 				}
-
-				Z_Free(png);
 			}
 
 			if (!isPNG)
@@ -602,7 +604,7 @@ INT16 *mceilingclip;
 fixed_t spryscale = 0, sprtopscreen = 0, sprbotscreen = 0;
 fixed_t windowtop = 0, windowbottom = 0;
 
-void R_DrawMaskedColumn(column_t *column)
+void R_DrawMaskedColumn(column_t *column, column_t *brightmap)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
@@ -610,6 +612,9 @@ void R_DrawMaskedColumn(column_t *column)
 	INT32 topdelta, prevdelta = 0;
 
 	basetexturemid = dc_texturemid;
+
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
+	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -645,6 +650,11 @@ void R_DrawMaskedColumn(column_t *column)
 		if (dc_yl <= dc_yh && dc_yh > 0)
 		{
 			dc_source = (UINT8 *)column + 3;
+			if (brightmap != NULL)
+			{
+				dc_brightmap = (UINT8 *)brightmap + 3;
+			}
+
 			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Drawn by R_DrawColumn.
@@ -659,6 +669,10 @@ void R_DrawMaskedColumn(column_t *column)
 #endif
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
+		if (brightmap != NULL)
+		{
+			brightmap = (column_t *)((UINT8 *)brightmap + brightmap->length + 4);
+		}
 	}
 
 	dc_texturemid = basetexturemid;
@@ -666,13 +680,16 @@ void R_DrawMaskedColumn(column_t *column)
 
 INT32 lengthcol; // column->length : for flipped column function pointers and multi-patch on 2sided wall = texture->height
 
-void R_DrawFlippedMaskedColumn(column_t *column)
+void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
 	fixed_t basetexturemid = dc_texturemid;
 	INT32 topdelta, prevdelta = -1;
 	UINT8 *d,*s;
+
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
+	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -712,6 +729,14 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 			dc_source = ZZ_Alloc(column->length);
 			for (s = (UINT8 *)column+2+column->length, d = dc_source; d < dc_source+column->length; --s)
 				*d++ = *s;
+
+			if (brightmap != NULL)
+			{
+				dc_brightmap = ZZ_Alloc(brightmap->length);
+				for (s = (UINT8 *)brightmap+2+brightmap->length, d = dc_brightmap; d < dc_brightmap+brightmap->length; --s)
+					*d++ = *s;
+			}
+
 			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Still drawn by R_DrawColumn.
@@ -724,6 +749,10 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 			Z_Free(dc_source);
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
+		if (brightmap != NULL)
+		{
+			brightmap = (column_t *)((UINT8 *)brightmap + brightmap->length + 4);
+		}
 	}
 
 	dc_texturemid = basetexturemid;
@@ -779,7 +808,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 static void R_DrawVisSprite(vissprite_t *vis)
 {
 	column_t *column;
-	void (*localcolfunc)(column_t *);
+	void (*localcolfunc)(column_t *, column_t *);
 	INT32 texturecolumn;
 	INT32 pwidth;
 	fixed_t frac;
@@ -803,26 +832,27 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL) return; // ditto
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC]; // hack: this isn't resetting properly somewhere.
+	R_SetColumnFunc(BASEDRAWFUNC, false); // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
+	dc_fullbright = colormaps;
 	dc_translation = R_GetSpriteTranslation(vis);
 
 	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
-		colfunc = colfuncs[COLDRAWFUNC_TRANS]; // translate certain pixels to white
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
-		colfunc = colfuncs[COLDRAWFUNC_TRANSTRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
 		dc_transmap = vis->transmap;
 	}
 	else if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 	else if (vis->mobj->color) // translate green skin to another color
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 
 	if (vis->extra_colormap && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
@@ -834,8 +864,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	if (!dc_colormap)
 		dc_colormap = colormaps;
 
+	dc_fullbright = colormaps;
+
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
-			dc_colormap += COLORMAP_REMAPOFFSET;
+	{
+		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	dc_texturemid = vis->texturemid;
 	dc_texheight = 0;
@@ -908,7 +943,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 	else if (vis->cut & SC_SHEAR)
@@ -930,7 +965,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #endif
 
 			sprtopscreen = (centeryfrac - FixedMul(dc_texturemid, spryscale));
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 	else
@@ -950,11 +985,11 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #else
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 	dc_hires = 0;
 
 	vis->x1 = x1;
@@ -984,13 +1019,17 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 
 	dc_colormap = colormaps;
+	dc_fullbright = colormaps;
 	if (encoremap)
+	{
 		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
 	dc_texturemid = vis->texturemid;
@@ -1019,10 +1058,10 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 #else
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
-		R_DrawMaskedColumn(column);
+		R_DrawMaskedColumn(column, NULL);
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 }
 
 //

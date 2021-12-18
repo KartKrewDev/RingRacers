@@ -268,12 +268,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 1))
 				return;
 
-			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-			{
-				return;
-			}
-
 			special->momx = special->momy = special->momz = 0;
+			P_SetTarget(&special->target, toucher);
+			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			break;
+		case MT_SPHEREBOX:
+			if (player->bumpers <= 0)
+				return;
+
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
@@ -510,16 +512,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!(P_CanPickupItem(player, 0)))
 				return;
 
-			// Reached the cap, don't waste 'em!
-			if (player->spheres >= 40)
-				return;
-
-			// Not alive
-			if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
-				return;
-
-			special->momx = special->momy = special->momz = 0;
-			player->spheres++;
+			P_GivePlayerSpheres(player, 1);
 			break;
 
 		// Secret emblem thingy
