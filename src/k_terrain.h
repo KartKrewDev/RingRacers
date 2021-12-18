@@ -31,6 +31,8 @@ typedef struct t_splash_s
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
 	UINT16 sfx;				// Sound to play.
+	fixed_t scale;			// Thing scale multiplier.
+	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 } t_splash_t;
 
 typedef struct t_footstep_s
@@ -42,6 +44,8 @@ typedef struct t_footstep_s
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
 	UINT16 sfx;				// Sound to play.
+	fixed_t scale;			// Thing scale multiplier.
+	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 } t_footstep_t;
 
 typedef enum

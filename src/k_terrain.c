@@ -596,6 +596,14 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 	{
 		splash->sfx = get_sfx(val);
 	}
+	else if (stricmp(param, "scale") == 0)
+	{
+		splash->scale = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "color") == 0)
+	{
+		splash->color = get_skincolor(val);
+	}
 }
 
 /*--------------------------------------------------
@@ -658,6 +666,14 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "sfx") == 0)
 	{
 		footstep->sfx = get_sfx(val);
+	}
+	else if (stricmp(param, "scale") == 0)
+	{
+		footstep->scale = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "color") == 0)
+	{
+		footstep->color = get_skincolor(val);
 	}
 }
 
