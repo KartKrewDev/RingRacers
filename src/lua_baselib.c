@@ -3623,11 +3623,10 @@ static int lib_kSpawnSparkleTrail(lua_State *L)
 static int lib_kSpawnWipeoutTrail(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	boolean offroad = lua_optboolean(L, 2);
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_SpawnWipeoutTrail(mo, offroad);
+	K_SpawnWipeoutTrail(mo);
 	return 0;
 }
 

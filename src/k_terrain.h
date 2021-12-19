@@ -395,6 +395,22 @@ void K_SetDefaultFriction(mobj_t *mo);
 
 
 /*--------------------------------------------------
+	void K_HandleFootstepParticles(mobj_t *mo);
+
+		Spawns the footstep particles for an object's
+		terrain type. Intended to be called every tic.
+
+	Input Arguments:-
+		mo - The object to spawn footsteps for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_HandleFootstepParticles(mobj_t *mo);
+
+
+/*--------------------------------------------------
 	void K_InitTerrain(UINT16 wadNum);
 
 		Finds the TERRAIN lumps in a WAD/PK3, and
