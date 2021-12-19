@@ -1069,10 +1069,10 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1318,19 +1318,19 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
-	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #else
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
+	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
-	mainwads++; // followers.pk3
 
 #endif //ifndef DEVELOP
 
