@@ -20,6 +20,7 @@
 #include "doomtype.h"
 #include "fastcmp.h"
 #include "m_fixed.h"
+#include "m_random.h"
 #include "p_local.h"
 #include "p_mobj.h"
 #include "r_textures.h"
@@ -41,6 +42,7 @@ static t_floor_t *terrainFloorDefs = NULL;
 static size_t numTerrainFloorDefs = 0;
 
 static size_t defaultTerrain = SIZE_MAX;
+static size_t defaultOffroadFootstep = SIZE_MAX;
 
 /*--------------------------------------------------
 	size_t K_GetSplashHeapIndex(t_splash_t *splash)
@@ -510,6 +512,114 @@ void K_SetDefaultFriction(mobj_t *mo)
 }
 
 /*--------------------------------------------------
+	static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
+
+		See header file for description.
+--------------------------------------------------*/
+static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
+{
+	mobj_t *dust = NULL;
+	angle_t pushAngle = ANGLE_MAX;
+	angle_t tireAngle = ANGLE_MAX;
+	fixed_t momentum = INT32_MAX;
+
+	if (mo->player != NULL)
+	{
+		tireAngle = (mo->player->drawangle + ANGLE_180);
+	}
+	else
+	{
+		tireAngle = (mo->angle + ANGLE_180);
+	}
+
+	if ((leveltime / 2) & 1)
+	{
+		tireAngle -= ANGLE_45;
+		tireAngle -= P_RandomRange(0, ANGLE_11hh);
+	}
+	else
+	{
+		tireAngle += ANGLE_45;
+		tireAngle += P_RandomRange(0, ANGLE_11hh);
+	}
+
+	pushAngle = K_MomentumAngle(mo) + ANGLE_180;
+
+	dust = P_SpawnMobjFromMobj(
+		mo,
+		(P_RandomRange(-2, 2) * FRACUNIT) + (24 * FINECOSINE(tireAngle >> ANGLETOFINESHIFT)),
+		(P_RandomRange(-2, 2) * FRACUNIT) + (24 * FINESINE(tireAngle >> ANGLETOFINESHIFT)),
+		0, fs->mobjType
+	);
+
+	P_SetTarget(&dust->target, mo);
+	dust->angle = K_MomentumAngle(mo);
+
+	dust->destscale = FixedMul(mo->scale, fs->scale);
+	P_SetScale(dust, dust->destscale);
+
+	dust->momx = mo->momx;
+	dust->momy = mo->momy;
+	dust->momz = mo->momz;
+
+	momentum = P_AproxDistance(mo->momx, mo->momy) / 2;
+	dust->momx += FixedMul(momentum, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
+	dust->momy += FixedMul(momentum, FINESINE(pushAngle >> ANGLETOFINESHIFT));
+	dust->momz += (momentum / 16) * P_MobjFlip(mo);
+
+	if (fs->color != SKINCOLOR_NONE)
+	{
+		dust->color = fs->color;
+	}
+
+	if (fs->sfx != sfx_None && (leveltime % 6 == 0))
+	{
+		S_StartSound(mo, fs->sfx);
+	}
+}
+
+/*--------------------------------------------------
+	void K_HandleFootstepParticles(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_HandleFootstepParticles(mobj_t *mo)
+{
+	t_footstep_t *fs = NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
+	if (mo->terrain == NULL || mo->terrain->footstepID == SIZE_MAX)
+	{
+		// If no terrain, check for offroad.
+		// If we're in offroad, use the default particle.
+
+		if (mo->player != NULL && mo->player->boostpower < FRACUNIT)
+		{
+			fs = K_GetFootstepByIndex(defaultOffroadFootstep);
+		}
+	}
+	else
+	{
+		fs = K_GetFootstepByIndex(mo->terrain->footstepID);
+	}
+
+	if (fs == NULL || fs->mobjType == MT_NULL)
+	{
+		// No particles to spawn.
+		return;
+	}
+
+	// Idea for later: if different spawning styles are desired,
+	// we can put a switch case here!
+	K_SpawnFootstepParticle(mo, fs);
+}
+
+/*--------------------------------------------------
 	static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 
 		Sets a flag to true or false depending on
@@ -550,6 +660,8 @@ static void K_SplashDefaults(t_splash_t *splash)
 {
 	splash->mobjType = MT_NULL;
 	splash->sfx = sfx_None;
+	splash->scale = FRACUNIT;
+	splash->color = SKINCOLOR_NONE;
 }
 
 /*--------------------------------------------------
@@ -590,11 +702,11 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 
 	if (stricmp(param, "mobjType") == 0)
 	{
-		splash->mobjType = get_mobjtype(val);
+		splash->mobjType = get_number(val) + 1;
 	}
 	else if (stricmp(param, "sfx") == 0)
 	{
-		splash->sfx = get_sfx(val);
+		splash->sfx = get_number(val);
 	}
 	else if (stricmp(param, "scale") == 0)
 	{
@@ -602,7 +714,7 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 	}
 	else if (stricmp(param, "color") == 0)
 	{
-		splash->color = get_skincolor(val);
+		splash->color = get_number(val);
 	}
 }
 
@@ -621,6 +733,8 @@ static void K_FootstepDefaults(t_footstep_t *footstep)
 {
 	footstep->mobjType = MT_NULL;
 	footstep->sfx = sfx_None;
+	footstep->scale = FRACUNIT;
+	footstep->color = SKINCOLOR_NONE;
 }
 
 /*--------------------------------------------------
@@ -661,11 +775,11 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 
 	if (stricmp(param, "mobjType") == 0)
 	{
-		footstep->mobjType = get_mobjtype(val);
+		footstep->mobjType = get_number(val) + 1;
 	}
 	else if (stricmp(param, "sfx") == 0)
 	{
-		footstep->sfx = get_sfx(val);
+		footstep->sfx = get_number(val);
 	}
 	else if (stricmp(param, "scale") == 0)
 	{
@@ -673,7 +787,7 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 	}
 	else if (stricmp(param, "color") == 0)
 	{
-		footstep->color = get_skincolor(val);
+		footstep->color = get_number(val);
 	}
 }
 
@@ -1090,11 +1204,49 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 				else
 				{
 					defaultTerrain = i;
+					CONS_Printf("DefaultTerrain set to '%s'\n", tkn);
 				}
 			}
 			else
 			{
 				CONS_Alert(CONS_ERROR, "No DefaultTerrain type.\n");
+				valid = false;
+			}
+		}
+		else if (stricmp(tkn, "defaultOffroadFootstep") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				t_footstep_t *fs = NULL;
+
+				for (i = 0; i < numFootstepDefs; i++)
+				{
+					fs = &footstepDefs[i];
+
+					if (stricmp(tkn, fs->name) == 0)
+					{
+						break;
+					}
+				}
+
+				if (i == numFootstepDefs)
+				{
+					CONS_Alert(CONS_ERROR, "Invalid DefaultOffroadFootstep type.\n");
+					valid = false;
+				}
+				else
+				{
+					defaultOffroadFootstep = i;
+					CONS_Printf("DefaultOffroadFootstep set to '%s'\n", tkn);
+				}
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No DefaultOffroadFootstep type.\n");
 				valid = false;
 			}
 		}

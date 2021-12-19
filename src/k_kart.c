@@ -4346,7 +4346,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	sparkle->color = mo->color;
 }
 
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
+void K_SpawnWipeoutTrail(mobj_t *mo)
 {
 	mobj_t *dust;
 	angle_t aoff;
@@ -4373,13 +4373,6 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
-
-	if (offroad) // offroad effect
-	{
-		dust->momx = mo->momx/2;
-		dust->momy = mo->momy/2;
-		dust->momz = mo->momz/2;
-	}
 }
 
 void K_SpawnDraftDust(mobj_t *mo)
@@ -6698,16 +6691,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					ghost->renderflags |= RF_DONTDRAW;
 			}
 
+			// Could probably be moved somewhere else.
+			K_HandleFootstepParticles(player->mo);
+
 			if (P_IsObjectOnGround(player->mo))
 			{
-				// Offroad dust
-				if (player->boostpower < FRACUNIT)
-				{
-					K_SpawnWipeoutTrail(player->mo, true);
-					if (leveltime % 6 == 0)
-						S_StartSound(player->mo, sfx_cdfm70);
-				}
-
 				// Draft dust
 				if (player->draftpower >= FRACUNIT)
 				{
