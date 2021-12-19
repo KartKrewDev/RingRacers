@@ -1072,6 +1072,7 @@ static void IdentifyVersion(void)
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
 #endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1320,6 +1321,7 @@ void D_SRB2Main(void)
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
+	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #else
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures.pk3
@@ -1328,6 +1330,7 @@ void D_SRB2Main(void)
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
+	mainwads++; // followers.pk3
 
 #endif //ifndef DEVELOP
 
