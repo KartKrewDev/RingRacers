@@ -33,6 +33,13 @@ typedef struct t_splash_s
 	UINT16 sfx;				// Sound to play.
 	fixed_t scale;			// Thing scale multiplier.
 	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+
+	fixed_t pushH;			// Push-out horizontal multiplier.
+	fixed_t pushV;			// Push-out vertical multiplier.
+	fixed_t spread;			// Randomized spread distance.
+	angle_t cone;			// Randomized angle of the push-out.
+
+	UINT8 numParticles;		// Number of particles to spawn.
 } t_splash_t;
 
 typedef struct t_footstep_s
@@ -46,6 +53,13 @@ typedef struct t_footstep_s
 	UINT16 sfx;				// Sound to play.
 	fixed_t scale;			// Thing scale multiplier.
 	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+
+	fixed_t pushH;			// Push-out horizontal multiplier.
+	fixed_t pushV;			// Push-out vertical multiplier.
+	fixed_t spread;			// Randomized spread distance.
+	angle_t cone;			// Randomized angle of the push-out.
+
+	tic_t sfxFreq;			// How frequently to play the sound.
 } t_footstep_t;
 
 typedef enum
@@ -392,6 +406,21 @@ void K_ProcessTerrainEffect(mobj_t *mo);
 --------------------------------------------------*/
 
 void K_SetDefaultFriction(mobj_t *mo);
+
+
+/*--------------------------------------------------
+	void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact);
+
+		Spawns the splash particles for an object's
+		terrain type. Intended to be called when hitting a floor.
+
+	Input Arguments:-
+		mo - The object to spawn a splash for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact);
 
 
 /*--------------------------------------------------

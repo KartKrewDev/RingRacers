@@ -512,6 +512,102 @@ void K_SetDefaultFriction(mobj_t *mo)
 }
 
 /*--------------------------------------------------
+	static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
+
+		See header file for description.
+--------------------------------------------------*/
+static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
+{
+	const UINT8 numParticles = s->numParticles;
+	const angle_t particleSpread = ANGLE_MAX / numParticles;
+	size_t i;
+
+	for (i = 0; i < numParticles; i++)
+	{
+		mobj_t *dust = NULL;
+		angle_t pushAngle = (particleSpread * i);
+		fixed_t momH = INT32_MAX;
+		fixed_t momV = INT32_MAX;
+
+		if (numParticles == 1)
+		{
+			// Random angle.
+			pushAngle = P_RandomRange(0, ANGLE_MAX);
+		}
+
+		dust = P_SpawnMobjFromMobj(
+			mo,
+			(12 * FINECOSINE(pushAngle >> ANGLETOFINESHIFT)),
+			(12 * FINESINE(pushAngle >> ANGLETOFINESHIFT)),
+			0, s->mobjType
+		);
+
+		P_SetTarget(&dust->target, mo);
+		dust->angle = pushAngle;
+
+		dust->destscale = FixedMul(mo->scale, s->scale);
+		P_SetScale(dust, dust->destscale);
+
+		dust->momx = mo->momx / 2;
+		dust->momy = mo->momy / 2;
+		dust->momz = 0;
+
+		momH = FixedMul(impact, s->pushH);
+		momV = FixedMul(impact, s->pushV);
+
+		dust->momx += FixedMul(momH, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
+		dust->momy += FixedMul(momH, FINESINE(pushAngle >> ANGLETOFINESHIFT));
+		dust->momz += momV * P_MobjFlip(mo);
+
+		if (s->color != SKINCOLOR_NONE)
+		{
+			dust->color = s->color;
+		}
+
+		if (s->sfx != sfx_None)
+		{
+			S_StartSound(mo, s->sfx);
+		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
+{
+	t_splash_t *s = NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
+	if (mo->terrain == NULL || mo->terrain->splashID == SIZE_MAX)
+	{
+		// No impact for this terrain type.
+		return;
+	}
+	else
+	{
+		s = K_GetSplashByIndex(mo->terrain->splashID);
+	}
+
+	if (s == NULL || s->mobjType == MT_NULL || s->numParticles == 0)
+	{
+		// No particles to spawn.
+		return;
+	}
+
+	// Idea for later: if different spawning styles are desired,
+	// we can put a switch case here!
+	K_SpawnSplashParticles(mo, s, impact);
+}
+
+/*--------------------------------------------------
 	static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 
 		See header file for description.
@@ -522,6 +618,8 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 	angle_t pushAngle = ANGLE_MAX;
 	angle_t tireAngle = ANGLE_MAX;
 	fixed_t momentum = INT32_MAX;
+	fixed_t momH = INT32_MAX;
+	fixed_t momV = INT32_MAX;
 
 	if (mo->player != NULL)
 	{
@@ -562,17 +660,20 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 	dust->momy = mo->momy;
 	dust->momz = P_GetMobjZMovement(mo) / 2;
 
-	momentum = P_AproxDistance(mo->momx, mo->momy) / 2;
-	dust->momx += FixedMul(momentum, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
-	dust->momy += FixedMul(momentum, FINESINE(pushAngle >> ANGLETOFINESHIFT));
-	dust->momz += (momentum / 16) * P_MobjFlip(mo);
+	momentum = P_AproxDistance(mo->momx, mo->momy);
+	momH = FixedMul(momentum, fs->pushH);
+	momV = FixedMul(momentum, fs->pushV);
+
+	dust->momx += FixedMul(momH, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
+	dust->momy += FixedMul(momH, FINESINE(pushAngle >> ANGLETOFINESHIFT));
+	dust->momz += (momV / 16) * P_MobjFlip(mo);
 
 	if (fs->color != SKINCOLOR_NONE)
 	{
 		dust->color = fs->color;
 	}
 
-	if (fs->sfx != sfx_None && (leveltime % 6 == 0))
+	if ((fs->sfx != sfx_None) && (fs->sfxFreq > 0) && (leveltime % fs->sfxFreq == 0))
 	{
 		S_StartSound(mo, fs->sfx);
 	}
@@ -662,6 +763,13 @@ static void K_SplashDefaults(t_splash_t *splash)
 	splash->sfx = sfx_None;
 	splash->scale = FRACUNIT;
 	splash->color = SKINCOLOR_NONE;
+
+	splash->pushH = FRACUNIT/4;
+	splash->pushV = FRACUNIT/64;
+	splash->spread = 2;
+	splash->cone = ANGLE_11hh;
+
+	splash->numParticles = 8;
 }
 
 /*--------------------------------------------------
@@ -735,6 +843,13 @@ static void K_FootstepDefaults(t_footstep_t *footstep)
 	footstep->sfx = sfx_None;
 	footstep->scale = FRACUNIT;
 	footstep->color = SKINCOLOR_NONE;
+
+	footstep->pushH = FRACUNIT/2;
+	footstep->pushV = FRACUNIT/32;
+	footstep->spread = 2;
+	footstep->cone = ANGLE_11hh;
+
+	footstep->sfxFreq = 6;
 }
 
 /*--------------------------------------------------
