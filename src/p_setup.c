@@ -3797,12 +3797,14 @@ static void P_InitGametype(void)
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (!demo.playback && multiplayer && !dedicated)
 	{
-		static char buf[256];
-		char *path;
-		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		char buf[MAX_WADPATH];
+		int parts;
 
-		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
-		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
+		sprintf(buf, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP"%s-%s"PATHSEP"%d-%s",
+				srb2home, compbranch, comprevision, (int) (time(NULL)), G_BuildMapName(gamemap));
+
+		parts = M_PathParts(buf);
+		M_MkdirEachUntil(buf, parts - 5, parts - 1, 0755);
 
 		G_RecordDemo(buf);
 	}
