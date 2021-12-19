@@ -560,7 +560,7 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 
 	dust->momx = mo->momx;
 	dust->momy = mo->momy;
-	dust->momz = mo->momz;
+	dust->momz = P_GetMobjZMovement(mo) / 2;
 
 	momentum = P_AproxDistance(mo->momx, mo->momy) / 2;
 	dust->momx += FixedMul(momentum, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
