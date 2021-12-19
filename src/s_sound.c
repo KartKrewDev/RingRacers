@@ -678,9 +678,6 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			sep = (~sep) & 255;
 		}
 
-		// Handle closed caption input.
-		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
-
 		// At this point it is determined that a sound can and should be played, so find a free channel to play it on
 		cnum = S_getChannel(origin, sfx);
 
@@ -689,11 +686,14 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			return; // If there's no free channels, there won't be any for anymore players either
 		}
 
+		// Handle closed caption input.
+		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
+
 		// Now that we know we are going to play a sound, fill out this info
 		channels[cnum].sfxinfo = sfx;
 		channels[cnum].origin = origin;
 		channels[cnum].volume = initial_volume;
-		channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
+		channels[cnum].handle = I_StartSound(sfx_id, S_GetSoundVolume(sfx, volume), sep, pitch, priority, cnum);
 	}
 }
 
@@ -899,7 +899,7 @@ void S_UpdateSounds(void)
 						}
 
 						if (audible)
-							I_UpdateSoundParams(c->handle, volume, sep, pitch);
+							I_UpdateSoundParams(c->handle, S_GetSoundVolume(c->sfxinfo, volume), sep, pitch);
 						else
 							S_StopChannel(cnum);
 					}
@@ -1009,6 +1009,14 @@ fixed_t S_CalculateSoundDistance(fixed_t sx1, fixed_t sy1, fixed_t sz1, fixed_t 
 	approx_dist <<= FRACBITS;
 
 	return FixedDiv(approx_dist, mapobjectscale); // approx_dist
+}
+
+INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
+{
+	if (sfx->volume > 0)
+		return (volume * sfx->volume) / 100;
+
+	return volume;
 }
 
 //

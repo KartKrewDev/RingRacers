@@ -310,6 +310,7 @@ void A_JawzExplode(mobj_t *actor);
 void A_SPBChase(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
+void A_LandMineExplode(mobj_t *actor);
 void A_BallhogExplode(mobj_t *actor);
 void A_LightningFollowPlayer(mobj_t *actor);
 void A_FZBoomFlash(mobj_t *actor);
@@ -321,7 +322,6 @@ void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
-void A_SpawnItemCapsuleParts(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -1145,7 +1145,7 @@ void A_FaceStabHurl(mobj_t *actor)
 					hwork->destscale = FixedSqrt(step*basesize);
 					P_SetScale(hwork, hwork->destscale);
 					hwork->fuse = 2;
-					P_TeleportMove(hwork, actor->x + xo*(15-step), actor->y + yo*(15-step), actor->z + (actor->height - hwork->height)/2 + (P_MobjFlip(actor)*(8<<FRACBITS)));
+					P_MoveOrigin(hwork, actor->x + xo*(15-step), actor->y + yo*(15-step), actor->z + (actor->height - hwork->height)/2 + (P_MobjFlip(actor)*(8<<FRACBITS)));
 					step -= NUMGRADS;
 				}
 
@@ -1905,7 +1905,7 @@ void A_CrushclawAim(mobj_t *actor)
 #undef anglimit
 #undef angfactor
 
-	P_TeleportMove(actor,
+	P_MoveOrigin(actor,
 		crab->x + P_ReturnThrustX(actor, actor->angle, locvar1*crab->scale),
 		crab->y + P_ReturnThrustY(actor, actor->angle, locvar1*crab->scale),
 		crab->z + locvar2*crab->scale);
@@ -2043,7 +2043,7 @@ void A_CrushclawLaunch(mobj_t *actor)
 		fixed_t idx = dx, idy = dy, idz = dz;
 		while (chain)
 		{
-			P_TeleportMove(chain, actor->target->x + idx, actor->target->y + idy, actor->target->z + idz);
+			P_MoveOrigin(chain, actor->target->x + idx, actor->target->y + idy, actor->target->z + idz);
 			chain->movefactor = chain->z;
 			idx += dx;
 			idy += dy;
@@ -4023,7 +4023,7 @@ void A_AttractChase(mobj_t *actor)
 				//P_SetScale(actor, (actor->destscale = actor->target->scale));
 				actor->z = actor->target->z;
 				K_MatchGenericExtraFlags(actor, actor->target);
-				P_TeleportMove(actor, actor->target->x, actor->target->y,
+				P_MoveOrigin(actor, actor->target->x, actor->target->y,
 						actor->z +
 						( actor->target->height + offz )* P_MobjFlip(actor));
 				actor->extravalue1++;
@@ -4052,7 +4052,7 @@ void A_AttractChase(mobj_t *actor)
 				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
 				actor->z = actor->target->z;
 				K_MatchGenericExtraFlags(actor, actor->target);
-				P_TeleportMove(actor,
+				P_MoveOrigin(actor,
 					actor->target->x + FixedMul(dist, FINECOSINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->target->y + FixedMul(dist, FINESINE(actor->angle >> ANGLETOFINESHIFT)),
 					actor->z + actor->target->scale * 24 * P_MobjFlip(actor));
@@ -9911,7 +9911,7 @@ void A_VileAttack(mobj_t *actor)
 		// move the fire between the vile and the player
 		//fire->x = actor->target->x - FixedMul (24*FRACUNIT, finecosine[an]);
 		//fire->y = actor->target->y - FixedMul (24*FRACUNIT, finesine[an]);
-		P_TeleportMove(fire,
+		P_MoveOrigin(fire,
 						actor->target->x - P_ReturnThrustX(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 						actor->target->y - P_ReturnThrustY(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 						fire->z);
@@ -9956,7 +9956,7 @@ void A_VileAttack(mobj_t *actor)
 			// move the fire between the vile and the player
 			//fire->x = actor->target->x - FixedMul (24*FRACUNIT, finecosine[an]);
 			//fire->y = actor->target->y - FixedMul (24*FRACUNIT, finesine[an]);
-			P_TeleportMove(fire,
+			P_MoveOrigin(fire,
 							actor->target->x - P_ReturnThrustX(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 							actor->target->y - P_ReturnThrustY(fire, actor->angle, FixedMul(24*FRACUNIT, fire->scale)),
 							fire->z);
@@ -10629,13 +10629,13 @@ void A_FlickyCenter(mobj_t *actor)
 		if (actor->target && P_AproxDistance(actor->target->x - originx, actor->target->y - originy) < actor->extravalue1)
 		{
 			actor->extravalue2 = 1;
-		 	P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z);
+		 	P_SetOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
 			tmthing = NULL;
 		}
 		else if(actor->extravalue2)
 		{
 			actor->extravalue2 = 0;
-			P_TeleportMove(actor, originx, originy, originz);
+			P_SetOrigin(actor, originx, originy, originz);
 			tmthing = NULL;
 		}
 	}
@@ -11172,7 +11172,7 @@ void A_LightBeamReset(mobj_t *actor)
 	actor->momy = (P_SignedRandom()*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/128;
 	actor->momz = (P_SignedRandom()*FRACUNIT)/128;
 
-	P_TeleportMove(actor,
+	P_SetOrigin(actor,
 		actor->spawnpoint->x*FRACUNIT - (P_SignedRandom()*FINESINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
 		actor->spawnpoint->y*FRACUNIT + (P_SignedRandom()*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
 		actor->spawnpoint->z*FRACUNIT + (P_SignedRandom()*FRACUNIT)/2);
@@ -11195,10 +11195,13 @@ void A_MineExplode(mobj_t *actor)
 	A_Scream(actor);
 	actor->flags = MF_NOGRAVITY|MF_NOCLIP;
 
+	/*
 	quake.epicenter = NULL;
 	quake.radius = 512*FRACUNIT;
 	quake.intensity = 8*FRACUNIT;
 	quake.time = TICRATE/3;
+	*/
+	P_StartQuake(8<<FRACBITS, TICRATE/3);
 
 	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, 0, true);
 	P_MobjCheckWater(actor);
@@ -11757,7 +11760,7 @@ void A_DoNPCSkid(mobj_t *actor)
 		actor->momy = (2*actor->momy)/3;
 	}
 
-	P_TeleportMove(actor, x, y, z);
+	P_MoveOrigin(actor, x, y, z);
 
 	// Spawn a particle every 3 tics.
 	if (!(leveltime % 3))
@@ -12098,7 +12101,7 @@ void A_Boss5MakeJunk(mobj_t *actor)
 		if (locvar1 > 0)
 			P_SetMobjState(broked, locvar1);
 		if (!P_MobjWasRemoved(broked))
-			P_TeleportMove(broked, broked->x + broked->momx, broked->y + broked->momy, broked->z);
+			P_MoveOrigin(broked, broked->x + broked->momx, broked->y + broked->momy, broked->z);
 		ang += ANGLE_45;
 	}
 
@@ -12205,9 +12208,9 @@ void A_Boss5BombExplode(mobj_t *actor)
 
 	P_DustRing(locvar1, 4, actor->x, actor->y, actor->z+actor->height, 2*actor->radius, 0, FRACUNIT, actor->scale);
 	P_DustRing(locvar1, 6, actor->x, actor->y, actor->z+actor->height/2, 3*actor->radius, FRACUNIT, FRACUNIT, actor->scale);
-	//P_StartQuake(9*actor->scale, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
+	//P_StartQuake(9*FRACUNIT, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
 	// the above does not exist, so we set the quake values directly instead
-	quake.intensity = 9*actor->scale;
+	quake.intensity = 9*FRACUNIT;
 	quake.time = TICRATE/6;
 	// the following quake values have no effect atm? ah well, may as well set them anyway
 	{
@@ -13161,7 +13164,7 @@ void A_DragonWing(mobj_t *actor)
 	actor->angle = target->angle + actor->movedir;
 	x = target->x + P_ReturnThrustX(actor, actor->angle, -target->radius);
 	y = target->y + P_ReturnThrustY(actor, actor->angle, -target->radius);
-	P_TeleportMove(actor, x, y, target->z);
+	P_MoveOrigin(actor, x, y, target->z);
 }
 
 // Function: A_DragonSegment
@@ -13202,7 +13205,7 @@ void A_DragonSegment(mobj_t *actor)
 	zdist = P_ReturnThrustY(target, zangle, radius);
 
 	actor->angle = hangle;
-	P_TeleportMove(actor, target->x + xdist, target->y + ydist, target->z + zdist);
+	P_MoveOrigin(actor, target->x + xdist, target->y + ydist, target->z + zdist);
 }
 
 // Function: A_ChangeHeight
@@ -13251,6 +13254,8 @@ void A_ChangeHeight(mobj_t *actor)
 
 void A_ItemPop(mobj_t *actor)
 {
+	INT32 locvar1 = var1;
+
 	mobj_t *remains;
 	mobjtype_t explode;
 
@@ -13305,7 +13310,9 @@ void A_ItemPop(mobj_t *actor)
 	if (actor->info->deathsound)
 		S_StartSound(remains, actor->info->deathsound);
 
-	if (!((gametyperules & GTR_BUMPERS) && actor->target->player->bumpers <= 0))
+	if (locvar1 == 1)
+		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	else if (locvar1 == 0)
 		actor->target->player->itemroulette = 1;
 
 	remains->flags2 &= ~MF2_AMBUSH;
@@ -14133,6 +14140,50 @@ void A_SSMineExplode(mobj_t *actor)
 	actor->flags2 |= MF2_DEBRIS;	// Set this flag to ensure that the explosion won't be effective more than 1 frame.
 }
 
+void A_LandMineExplode(mobj_t *actor)
+{
+
+	mobj_t *expl;
+	INT32 colour = SKINCOLOR_KETCHUP;	// we spell words properly here
+	INT32 i;
+	mobj_t *smoldering;
+
+	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
+		return;
+
+	// we'll base the explosion "timer" off of some stupid variable like uh... cvmem!
+	// Yeah let's use cvmem since nobody uses that
+
+	if (actor->target && !P_MobjWasRemoved(actor->target))
+		colour = actor->target->color;
+
+	K_MineFlashScreen(actor);
+
+	// Spawn smoke remains:
+	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
+	P_SetScale(smoldering, actor->scale);
+	smoldering->tics = TICRATE*3;
+
+	actor->fuse = actor->tics;	// disappear when this state ends.
+
+	// spawn a few physics explosions
+	for (i = 0; i < 15; i++)
+	{
+		expl = P_SpawnMobj(actor->x, actor->y, actor->z + actor->scale, MT_BOOMEXPLODE);
+		expl->color = colour;
+		expl->tics = (i+1);
+
+		//K_MatchGenericExtraFlags(expl, actor);
+		P_SetScale(expl, actor->scale*4);
+
+		expl->momx = P_RandomRange(-3, 3)*actor->scale/2;
+		expl->momy = P_RandomRange(-3, 3)*actor->scale/2;
+
+		// 100/45 = 2.22 fu/t
+		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
+	}
+}
+
 void A_BallhogExplode(mobj_t *actor)
 {
 	mobj_t *mo2;
@@ -14164,10 +14215,10 @@ void A_LightningFollowPlayer(mobj_t *actor)
 		{
 			sx = actor->target->x + FixedMul((actor->target->scale*actor->extravalue1), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
 			sy = actor->target->y + FixedMul((actor->target->scale*actor->extravalue1), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
-			P_TeleportMove(actor, sx, sy, actor->target->z);
+			P_MoveOrigin(actor, sx, sy, actor->target->z);
 		}
 		else	// else just teleport to player directly
-			P_TeleportMove(actor, actor->target->x, actor->target->y, actor->target->z);
+			P_MoveOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
 
 		K_MatchGenericExtraFlags(actor, actor->target);	// copy our target for graviflip
 		actor->momx = actor->target->momx;
@@ -14644,7 +14695,7 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	sx = actor->target->x + FixedMul((actor->movefactor), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
 	sy = actor->target->y + FixedMul((actor->movefactor), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
 	sz = actor->target->z + (actor->extravalue1) + FixedMul((actor->cvmem), FINECOSINE((leveltime*ANG1*10 + actor->angle)>>ANGLETOFINESHIFT));
-	P_TeleportMove(actor, sx, sy, sz);
+	P_MoveOrigin(actor, sx, sy, sz);
 
 	actor->momx = actor->target->momx;
 	actor->momy = actor->target->momy;
@@ -14652,191 +14703,3 @@ void A_InvincSparkleRotate(mobj_t *actor)
 
 	actor->angle += ANG1*10*(actor->extravalue2);	// Arbitrary value, change this if you want, I suppose.
 }
-
-void P_RefreshItemCapsuleParts(mobj_t *mobj)
-{
-	UINT8 numNumbers = 0;
-	INT32 count = 0;
-	INT32 itemType = mobj->threshold;
-	mobj_t *part;
-	skincolornum_t color;
-	UINT32 newRenderFlags = 0;
-	boolean colorized;
-
-	if (itemType < 1 || itemType >= NUMKARTITEMS)
-		itemType = KITEM_SAD;
-
-	// update invincibility properties
-	if (itemType == KITEM_INVINCIBILITY)
-	{
-		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_FULLBRIGHT;
-		mobj->colorized = true;
-	}
-	else
-	{
-		mobj->renderflags = (mobj->renderflags & ~RF_BRIGHTMASK) | RF_SEMIBRIGHT;
-		mobj->color = SKINCOLOR_NONE;
-		mobj->colorized = false;
-	}
-
-	// update cap colors
-	if (itemType == KITEM_SUPERRING)
-	{
-		color = SKINCOLOR_GOLD;
-		newRenderFlags |= RF_SEMIBRIGHT;
-	}
-	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
-		color = SKINCOLOR_SAPPHIRE;
-	else if (itemType == KITEM_SPB)
-		color = SKINCOLOR_JET;
-	else
-		color = SKINCOLOR_NONE;
-
-	colorized = (color != SKINCOLOR_NONE);
-	part = mobj;
-	while (!P_MobjWasRemoved(part->hnext))
-	{
-		part = part->hnext;
-		part->color = color;
-		part->colorized = colorized;
-		part->renderflags = (part->renderflags & ~RF_BRIGHTMASK) | newRenderFlags;
-	}
-
-	// update inside item frame
-	part = mobj->tracer;
-	if (P_MobjWasRemoved(part))
-		return;
-
-	part->threshold = mobj->threshold;
-	part->movecount = mobj->movecount;
-
-	switch (itemType)
-	{
-		case KITEM_ORBINAUT:
-			part->sprite = SPR_ITMO;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-			break;
-		case KITEM_INVINCIBILITY:
-			part->sprite = SPR_ITMI;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-			break;
-		case KITEM_SAD:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-			break;
-		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
-			break;
-	}
-
-	// update number frame
-	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
-		;
-	else
-	{
-		switch (itemType)
-		{
-			case KITEM_ORBINAUT: // only display the number when the sprite no longer changes
-				if (mobj->movecount - 1 > K_GetOrbinautItemFrame(mobj->movecount))
-					count = mobj->movecount;
-				break;
-			case KITEM_SUPERRING: // always display the number, and multiply it by 5
-				count = mobj->movecount * 5;
-				break;
-			case KITEM_SAD: // never display the number
-			case KITEM_SPB:
-				break;
-			default:
-				if (mobj->movecount > 1)
-					count = mobj->movecount;
-				break;
-		}
-	}
-
-	while (count > 0)
-	{
-		if (P_MobjWasRemoved(part->tracer))
-		{
-			P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
-			P_SetTarget(&part->tracer->target, part);
-			P_SetMobjState(part->tracer, S_INVISIBLE);
-			part->tracer->spriteyoffset = 10*FRACUNIT;
-			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
-		}
-		part = part->tracer;
-		part->sprite = SPR_ITMN;
-		part->frame = FF_FULLBRIGHT|(count % 10);
-		count /= 10;
-		numNumbers++;
-	}
-
-	// delete any extra overlays (I guess in case the number changes?)
-	if (part->tracer)
-	{
-		P_RemoveMobj(part->tracer);
-		P_SetTarget(&part->tracer, NULL);
-	}
-}
-
-#define CAPSULESIDES 5
-#define ANG_CAPSULE (UINT32_MAX / CAPSULESIDES)
-#define ROTATIONSPEED (2*ANG2)
-void A_SpawnItemCapsuleParts(mobj_t *actor)
-{
-	UINT8 i;
-	mobj_t *part;
-	fixed_t buttScale = 0;
-	statenum_t buttState = S_ITEMCAPSULE_BOTTOM_SIDE_AIR;
-	angle_t spin = ANGLE_MAX - ROTATIONSPEED;
-
-	if (LUA_CallAction(A_SPAWNITEMCAPSULEPARTS, actor))
-		return;
-
-	if (P_IsObjectOnGround(actor))
-	{
-		buttScale = 13*FRACUNIT/10;
-		buttState = S_ITEMCAPSULE_BOTTOM_SIDE_GROUND;
-		spin = 0;
-	}
-
-	// inside item
-	part = P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART);
-	P_SetTarget(&part->target, actor);
-	P_SetMobjState(part, S_ITEMICON);
-	part->movedir = ROTATIONSPEED; // rotation speed
-	part->extravalue1 = 175*FRACUNIT/100; // relative scale
-	part->flags2 |= MF2_CLASSICPUSH; // classicpush = centered horizontally
-	P_SetTarget(&actor->tracer, part); // pointer to this item, so we can modify its sprite/frame
-
-	// capsule caps
-	part = actor;
-	for (i = 0; i < CAPSULESIDES; i++)
-	{
-		// a bottom side
-		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART));
-		P_SetTarget(&part->hnext->hprev, part);
-		part = part->hnext;
-		P_SetTarget(&part->target, actor);
-		P_SetMobjState(part, buttState);
-		part->angle = i * ANG_CAPSULE;
-		part->movedir = spin; // rotation speed
-		part->movefactor = 0; // z offset
-		part->extravalue1 = buttScale; // relative scale
-
-		// a top side
-		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(actor, 0, 0, 0, MT_ITEMCAPSULE_PART));
-		P_SetTarget(&part->hnext->hprev, part);
-		part = part->hnext;
-		P_SetTarget(&part->target, actor);
-		P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
-		part->angle = i * ANG_CAPSULE;
-		part->movedir = spin; // rotation speed
-		part->movefactor = actor->info->height - part->info->height; // z offset
-	}
-
-	P_RefreshItemCapsuleParts(actor);
-}
-#undef CAPSULESIDES
-#undef ANG_CAPSULE
-#undef ROTATIONSPEED

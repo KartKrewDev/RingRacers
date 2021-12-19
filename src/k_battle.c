@@ -179,7 +179,7 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed() * 180) + angle,
-		32 * mapobjectscale);
+		24 * mapobjectscale);
 
 	emerald->momz = flip * 24 * mapobjectscale;
 	if (emerald->eflags & MFE_UNDERWATER)
@@ -227,6 +227,28 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	overlay->color = emerald->color;
 
 	return emerald;
+}
+
+mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 amount)
+{
+	mobj_t *drop = P_SpawnMobj(x, y, z, MT_SPHEREBOX);
+
+	(void)amount;
+
+	drop->angle = angle;
+	P_Thrust(drop,
+		FixedAngle(P_RandomFixed() * 180) + angle,
+		P_RandomRange(4, 12) * mapobjectscale);
+
+	drop->momz = flip * 12 * mapobjectscale;
+	if (drop->eflags & MFE_UNDERWATER)
+		drop->momz = (117 * drop->momz) / 200;
+
+	drop->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+
+	drop->extravalue1 = amount;
+
+	return drop;
 }
 
 void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
@@ -288,12 +310,6 @@ void K_RunPaperItemSpawners(void)
 
 	if (overtime == true)
 	{
-		if (battleovertime.radius < 512*mapobjectscale)
-		{
-			// Barrier has closed in too much
-			return;
-		}
-
 		// Double frequency of items
 		interval /= 2;
 	}
@@ -364,6 +380,12 @@ void K_RunPaperItemSpawners(void)
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
 				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 				0, 0
+			);
+
+			K_SpawnSphereBox(
+				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				10
 			);
 		}
 	}
@@ -445,6 +467,14 @@ void K_RunPaperItemSpawners(void)
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 						firstUnspawnedEmerald
+					);
+				}
+				else if (P_RandomChance(FRACUNIT/3))
+				{
+					drop = K_SpawnSphereBox(
+						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
+							FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+							10
 					);
 				}
 				else
@@ -557,10 +587,12 @@ void K_RunBattleOvertime(void)
 	}
 	else if (battleovertime.radius > 0)
 	{
-		if (battleovertime.radius > 2*mapobjectscale)
+		const fixed_t minradius = 768 * mapobjectscale;
+
+		if (battleovertime.radius > minradius)
 			battleovertime.radius -= 2*mapobjectscale;
 		else
-			battleovertime.radius = 0;
+			battleovertime.radius = minradius;
 	}
 
 	if (battleovertime.radius > 0)

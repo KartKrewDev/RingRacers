@@ -45,6 +45,7 @@
 
 // SRB2Kart
 #include "../k_color.h"
+#include "../k_kart.h" // HITLAGJITTERS
 
 #ifdef HAVE_PNG
 
@@ -819,7 +820,12 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 
 	while (size--)
 	{
-		if (skinnum == TC_BOSS)
+		if (skinnum == TC_HITLAG)
+		{
+			cur->s.red = cur->s.green = cur->s.blue = K_HitlagColorValue(*image);
+			cur->s.alpha = image->s.alpha;
+		}
+		else if (skinnum == TC_BOSS)
 		{
 			// Turn everything below a certain threshold white
 			if ((image->s.red == image->s.green) && (image->s.green == image->s.blue) && image->s.blue < 127)
@@ -1350,10 +1356,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 	// Look at HWR_ProjectSprite for more
 	{
-		fixed_t thingxpos = spr->mobj->x + spr->mobj->sprxoff;
-		fixed_t thingypos = spr->mobj->y + spr->mobj->spryoff;
-		fixed_t thingzpos = spr->mobj->z + spr->mobj->sprzoff;
-
 		patch_t *gpatch, *blendgpatch;
 		GLPatch_t *hwrPatch = NULL, *hwrBlendPatch = NULL;
 		INT32 durs = spr->mobj->state->tics;
@@ -1366,20 +1368,37 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		INT32 mod;
 		float finalscale;
 
-		// hitlag vibrating
-		if (spr->mobj->hitlag > 0)
+		fixed_t interpx = spr->mobj->x;
+		fixed_t interpy = spr->mobj->y;
+		fixed_t interpz = spr->mobj->z;
+
+		// do interpolation
+		if (cv_frameinterpolation.value == 1)
 		{
-			fixed_t mul = spr->mobj->hitlag * (FRACUNIT / 10);
+			interpx = spr->mobj->old_x + FixedMul(rendertimefrac, spr->mobj->x - spr->mobj->old_x);
+			interpy = spr->mobj->old_y + FixedMul(rendertimefrac, spr->mobj->y - spr->mobj->old_y);
+			interpz = spr->mobj->old_z + FixedMul(rendertimefrac, spr->mobj->z - spr->mobj->old_z);
+		}
+
+		// hitlag vibrating
+		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
+		{
+			fixed_t mul = spr->mobj->hitlag * HITLAGJITTERS;
 
 			if (leveltime & 1)
 			{
 				mul = -mul;
 			}
 
-			thingxpos += FixedMul(spr->mobj->momx, mul);
-			thingypos += FixedMul(spr->mobj->momy, mul);
-			thingzpos += FixedMul(spr->mobj->momz, mul);
+			interpx += FixedMul(spr->mobj->momx, mul);
+			interpy += FixedMul(spr->mobj->momy, mul);
+			interpy += FixedMul(spr->mobj->momz, mul);
 		}
+
+		// sprite offset
+		interpx += spr->mobj->sprxoff;
+		interpy += spr->mobj->spryoff;
+		interpz += spr->mobj->sprzoff;
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
@@ -1486,7 +1505,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		{
 			INT32 skinnum = TC_DEFAULT;
 
-			if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
+			if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
+			{
+				skinnum = TC_HITLAG;
+			}
+			else if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
 			{
 				if (spr->mobj->type == MT_CYBRAKDEMON || spr->mobj->colorized)
 					skinnum = TC_ALLWHITE;
@@ -1596,13 +1619,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
-		p.x = FIXED_TO_FLOAT(thingxpos);
-		p.y = FIXED_TO_FLOAT(thingypos) + md2->offset;
+		p.x = FIXED_TO_FLOAT(interpx);
+		p.y = FIXED_TO_FLOAT(interpy) + md2->offset;
 
 		if (flip)
 			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
 		else
-			p.z = FIXED_TO_FLOAT(thingzpos);
+			p.z = FIXED_TO_FLOAT(interpz);
 
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			sprdef = &((skin_t *)spr->mobj->skin)->sprites[spr->mobj->sprite2];
@@ -1622,27 +1645,30 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 		else
 		{
-			const fixed_t anglef = AngleFixed((R_PointToAngle(thingxpos, thingypos))-ANGLE_180);
+			const fixed_t anglef = AngleFixed((R_PointToAngle(interpx, interpy))-ANGLE_180);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 
-		p.rollangle = 0.0f;
-
-		if (spr->mobj->rollangle)
 		{
-			fixed_t camAngleDiff = AngleFixed(viewangle) - FLOAT_TO_FIXED(p.angley); // dumb reconversion back, I know
-			fixed_t anglef = AngleFixed(spr->mobj->rollangle);
+			fixed_t anglef = AngleFixed(R_ModelRotationAngle(spr->mobj, NULL));
 
-			p.rollangle = FIXED_TO_FLOAT(anglef);
-			p.roll = true;
+			p.rollangle = 0.0f;
 
-			// rotation pivot
-			p.centerx = FIXED_TO_FLOAT(spr->mobj->radius / 2);
-			p.centery = FIXED_TO_FLOAT(spr->mobj->height / 2);
+			if (anglef)
+			{
+				fixed_t camAngleDiff = AngleFixed(viewangle) - FLOAT_TO_FIXED(p.angley); // dumb reconversion back, I know
 
-			// rotation axes relative to camera
-			p.rollx = FIXED_TO_FLOAT(FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
-			p.rollz = FIXED_TO_FLOAT(FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+				p.rollangle = FIXED_TO_FLOAT(anglef);
+				p.roll = true;
+
+				// rotation pivot
+				p.centerx = FIXED_TO_FLOAT(spr->mobj->radius / 2);
+				p.centery = FIXED_TO_FLOAT(spr->mobj->height / 2);
+
+				// rotation axes relative to camera
+				p.rollx = FIXED_TO_FLOAT(FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+				p.rollz = FIXED_TO_FLOAT(FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+			}
 		}
 
 		p.anglez = FIXED_TO_FLOAT(AngleFixed(spr->mobj->pitch));
@@ -1655,7 +1681,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		p.mirror = atransform.mirror;
 
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
+		{
+			float xs = finalscale * FIXED_TO_FLOAT(spr->mobj->spritexscale);
+			float ys = finalscale * FIXED_TO_FLOAT(spr->mobj->spriteyscale);
+			HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, xs, ys, flip, hflip, &Surf);
+		}
 	}
 
 	return true;

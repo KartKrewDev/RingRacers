@@ -222,8 +222,6 @@ static void Command_KartGiveItem_f(void);
 //                           CLIENT VARIABLES
 // =========================================================================
 
-void SendWeaponPref(UINT8 n);
-
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 
 #ifdef LJOYSTICK
@@ -768,15 +766,21 @@ void D_RegisterClientCommands(void)
 
 	for (i = 0; i < MAXSKINCOLORS; i++)
 	{
-		Color_cons_t[i].value = Followercolor_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = Followercolor_cons_t[i].strvalue = skincolors[i].name;
+		Color_cons_t[i].value = i;
+		Color_cons_t[i].strvalue = skincolors[i].name;
 	}
 
-	Followercolor_cons_t[MAXSKINCOLORS].value = MAXSKINCOLORS;
-	Followercolor_cons_t[MAXSKINCOLORS].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+	for (i = 2; i < MAXSKINCOLORS; i++)
+	{
+		Followercolor_cons_t[i].value = i-2;
+		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
+	}
 
-	Followercolor_cons_t[MAXSKINCOLORS+1].value = MAXSKINCOLORS+1;
-	Followercolor_cons_t[MAXSKINCOLORS+1].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
+	Followercolor_cons_t[1].value = -1;
+	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[0].value = -2;
+	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
 	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
@@ -1110,6 +1114,7 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
   * is restored to what it was before.
   *
   * We assume that if playernum is in ::g_localplayers
+  * (unless clientjoin is true, a necessary evil)
   * the console variable ::cv_playername[n] is
   * already set to newname. However, the player name table is assumed to
   * contain the old name.
@@ -1128,6 +1133,10 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 	char *tmpname = NULL;
 	INT32 i;
 	boolean namefailed = true;
+	boolean clientjoin = !!(playernum >= MAXPLAYERS);
+
+	if (clientjoin)
+		playernum -= MAXPLAYERS;
 
 	buf = Z_StrDup(newname);
 
@@ -1185,17 +1194,20 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 		}
 
 		// no stealing another player's name
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (!clientjoin)
 		{
-			if (i != playernum && playeringame[i]
-				&& strcasecmp(tmpname, player_names[i]) == 0)
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				break;
+				if (i != playernum && playeringame[i]
+					&& strcasecmp(tmpname, player_names[i]) == 0)
+				{
+					break;
+				}
 			}
-		}
 
-		if (i < MAXPLAYERS)
-			break;
+			if (i < MAXPLAYERS)
+				break;
+		}
 
 		// name is okay then
 		namefailed = false;
@@ -1206,18 +1218,23 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 
 	// set consvars whether namefailed or not, because even if it succeeded,
 	// spaces may have been removed
-	for (i = 0; i <= splitscreen; i++)
+	if (clientjoin)
+		CV_StealthSet(&cv_playername[playernum], tmpname);
+	else
 	{
-		if (playernum == g_localplayers[i])
+		for (i = 0; i <= splitscreen; i++)
 		{
-			CV_StealthSet(&cv_playername[i], tmpname);
-			break;
+			if (playernum == g_localplayers[i])
+			{
+				CV_StealthSet(&cv_playername[i], tmpname);
+				break;
+			}
 		}
-	}
 
-	if (i > splitscreen)
-	{
-		I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
+		if (i > splitscreen)
+		{
+			I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
+		}
 	}
 
 	Z_Free(buf);
@@ -1398,7 +1415,9 @@ static void SendNameAndColor(UINT8 n)
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
-		&& !strcmp(cv_skin[n].string, skins[player->skin].name))
+		&& !strcmp(cv_skin[n].string, skins[player->skin].name)
+		&& cv_follower[n].value == player->followerskin
+		&& cv_followercolor[n].value == player->followercolor)
 		return;
 
 	player->availabilities = R_GetSkinAvailabilities();
@@ -1811,33 +1830,28 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 	}
 }
 
-void D_SendPlayerConfig(void)
+void D_SendPlayerConfig(UINT8 n)
 {
-	UINT8 i;
+	UINT8 buf[4];
+	UINT8 *p = buf;
 
-	for (i = 0; i <= splitscreen; i++)
+	SendNameAndColor(n);
+	SendWeaponPref(n);
+
+	if (n == 0)
 	{
-		UINT8 buf[4];
-		UINT8 *p = buf;
-
-		SendNameAndColor(i);
-		SendWeaponPref(i);
-
-		if (i == 0)
-		{
-			// Send it over
-			WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
-			WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
-		}
-		else
-		{
-			// Splitscreen players have invalid powerlevel
-			WRITEUINT16(p, 0);
-			WRITEUINT16(p, 0);
-		}
-
-		SendNetXCmdForPlayer(i, XD_POWERLEVEL, buf, p-buf);
+		// Send it over
+		WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
+		WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
 	}
+	else
+	{
+		// Splitscreen players have invalid powerlevel
+		WRITEUINT16(p, 0);
+		WRITEUINT16(p, 0);
+	}
+
+	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
 }
 
 // Only works for displayplayer, sorry!

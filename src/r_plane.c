@@ -235,7 +235,9 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	}
 
 	if (currentplane->slope)
+	{
 		ds_colormap = colormaps;
+	}
 	else
 	{
 		pindex = distance >> LIGHTZSHIFT;
@@ -244,8 +246,13 @@ void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		ds_colormap = planezlight[pindex];
 	}
 
+	ds_fullbright = colormaps;
+
 	if (encoremap && !currentplane->noencore)
+	{
 		ds_colormap += COLORMAP_REMAPOFFSET;
+		ds_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	if (currentplane->extra_colormap)
 		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
@@ -641,7 +648,7 @@ static void R_DrawSkyPlane(visplane_t *pl)
 
 	// Reset column drawer function (note: couldn't we just call walldrawerfunc directly?)
 	// (that is, unless we'll need to switch drawers in future for some reason)
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 
 	// use correct aspect ratio scale
 	dc_iscale = skyscale[viewssnum];
@@ -651,8 +658,12 @@ static void R_DrawSkyPlane(visplane_t *pl)
 	// Because of this hack, sky is not affected
 	//  by sector colormaps (INVUL inverse mapping is not implemented in SRB2 so is irrelevant).
 	dc_colormap = colormaps;
+	dc_fullbright = colormaps;
 	if (encoremap)
+	{
 		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 	dc_texturemid = skytexturemid;
 	dc_texheight = textureheight[skytexture]
 		>>FRACBITS;
@@ -669,6 +680,7 @@ static void R_DrawSkyPlane(visplane_t *pl)
 			dc_source =
 				R_GetColumn(texturetranslation[skytexture],
 					-angle); // get negative of angle for each column to display sky correct way round! --Monster Iestyn 27/01/18
+			dc_brightmap = NULL;
 			colfunc();
 		}
 	}
@@ -808,7 +820,8 @@ void R_DrawSinglePlane(visplane_t *pl)
 	}
 
 	planeripple.active = false;
-	spanfunc = spanfuncs[BASEDRAWFUNC];
+	ds_brightmap = NULL;
+	R_SetSpanFunc(BASEDRAWFUNC, false, false);
 
 	if (pl->polyobj)
 	{
@@ -883,12 +896,12 @@ void R_DrawSinglePlane(visplane_t *pl)
 		{
 			INT32 top, bottom;
 
+			planeripple.active = true;
 			if (spanfunctype == SPANDRAWFUNC_TRANS)
 			{
 				UINT8 i;
 
 				spanfunctype = SPANDRAWFUNC_WATER;
-				planeripple.active = true;
 
 				// Copy the current scene, ugh
 				top = pl->high-8;
@@ -963,6 +976,17 @@ void R_DrawSinglePlane(visplane_t *pl)
 			// Check if this texture or patch has power-of-two dimensions.
 			if (R_CheckPowersOfTwo())
 				R_CheckFlatLength(ds_flatwidth * ds_flatheight);
+	}
+
+	if (type == LEVELFLAT_TEXTURE)
+	{
+		// Get the span's brightmap.
+		// FLATS not supported, SORRY!!
+		INT32 bmNum = R_GetTextureBrightmap(levelflat->u.texture.num);
+		if (bmNum != 0)
+		{
+			ds_brightmap = (UINT8 *)R_GenerateTextureAsFlat(bmNum);
+		}
 	}
 
 	if (!pl->slope // Don't mess with angle on slopes! We'll handle this ourselves later
@@ -1080,15 +1104,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 		planezlight = zlight[light];
 
 	// Use the correct span drawer depending on the powers-of-twoness
-	if (!ds_powersoftwo)
-	{
-		if (spanfuncs_npo2[spanfunctype])
-			spanfunc = spanfuncs_npo2[spanfunctype];
-		else
-			spanfunc = spanfuncs[spanfunctype];
-	}
-	else
-		spanfunc = spanfuncs[spanfunctype];
+	R_SetSpanFunc(spanfunctype, !ds_powersoftwo, ds_brightmap != NULL);
 
 	// set the maximum value for unsigned
 	pl->top[pl->maxx+1] = 0xffff;

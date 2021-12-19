@@ -19,6 +19,8 @@ Make sure this matches the actual number of states
 */
 #define KART_NUMINVSPARKLESANIM 12
 
+#define MAXHITLAGTICS 18 //12
+#define HITLAGJITTERS (FRACUNIT / 20)
 
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
@@ -50,12 +52,14 @@ void K_SpawnDriftBoostClip(player_t *player);
 void K_SpawnDriftBoostClipSpark(mobj_t *clip);
 void K_SpawnNormalSpeedLines(player_t *player);
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
+void K_SpawnBumpEffect(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngle(mobj_t *mo);
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics);
+void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
+void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
 void K_DoInstashield(player_t *player);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
@@ -66,6 +70,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);
 void K_DestroyBumpers(player_t *player, UINT8 amount);
 void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source);
+void K_MineFlashScreen(mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
 void K_RunFinishLineBeam(void);
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
@@ -74,6 +79,7 @@ void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
+void K_Squish(mobj_t *mo);
 mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);
 void K_DoSneaker(player_t *player, INT32 type);
@@ -88,6 +94,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
 void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
+INT32 K_GetUnderwaterTurnAdjust(player_t *player);
 INT32 K_GetKartDriftSparkValue(player_t *player);
 INT32 K_StairJankFlip(INT32 value);
 INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);
@@ -103,6 +110,9 @@ void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
 boolean K_SlopeResistance(player_t *player);
+boolean K_TripwirePass(player_t *player);
+boolean K_WaterRun(player_t *player);
+void K_ApplyTripWire(player_t *player, tripwirestate_t state);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);

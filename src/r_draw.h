@@ -32,11 +32,13 @@ extern UINT8 *topleft;
 // -------------------------
 
 extern lighttable_t *dc_colormap;
+extern lighttable_t *dc_fullbright;
 extern INT32 dc_x, dc_yl, dc_yh;
 extern fixed_t dc_iscale, dc_texturemid;
 extern UINT8 dc_hires;
 
 extern UINT8 *dc_source; // first pixel in a column
+extern UINT8 *dc_brightmap; // brightmap texture column, can be NULL
 
 // translucency stuff here
 extern UINT8 *dc_transmap;
@@ -57,6 +59,7 @@ extern INT32 dc_texheight;
 
 extern INT32 ds_y, ds_x1, ds_x2;
 extern lighttable_t *ds_colormap;
+extern lighttable_t *ds_fullbright;
 extern lighttable_t *ds_translation;
 
 extern fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
@@ -66,6 +69,7 @@ extern UINT16 ds_flatwidth, ds_flatheight;
 extern boolean ds_powersoftwo;
 
 extern UINT8 *ds_source;
+extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
 
 typedef struct {
@@ -119,6 +123,7 @@ enum
 	TC_RAINBOW,    // For single colour
 	TC_BLINK,      // For item blinking, according to kart
 	TC_DASHMODE,   // For Metal Sonic's dashmode
+	TC_HITLAG,     // Damage hitlag effect
 
 	TC_DEFAULT
 };
@@ -166,6 +171,7 @@ void R_DrawViewBorder(void);
 #endif
 
 #define TRANSPARENTPIXEL 255
+#define BRIGHTPIXEL 0
 
 // -----------------
 // 8bpp DRAWING CODE

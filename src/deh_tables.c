@@ -323,6 +323,7 @@ actionpointer_t actionpointers[] =
 	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
 	{{A_FZBoomFlash},            "A_FZBOOMFLASH"},
@@ -334,7 +335,6 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
-	{{A_SpawnItemCapsuleParts},  "A_SPAWNITEMCAPSULEPARTS"},
 
 	{{NULL},                     "NONE"},
 
@@ -3476,6 +3476,21 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM12",
 	"S_DEADRANDOMITEM",
 
+	// Sphere Box (for Battle)
+	"S_SPHEREBOX1",
+	"S_SPHEREBOX2",
+	"S_SPHEREBOX3",
+	"S_SPHEREBOX4",
+	"S_SPHEREBOX5",
+	"S_SPHEREBOX6",
+	"S_SPHEREBOX7",
+	"S_SPHEREBOX8",
+	"S_SPHEREBOX9",
+	"S_SPHEREBOX10",
+	"S_SPHEREBOX11",
+	"S_SPHEREBOX12",
+	"S_DEADSPHEREBOX",
+
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
 	"S_RANDOMITEMPOP2",
@@ -3490,9 +3505,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_ITEMCAPSULE_TOP_SIDE",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_AIR",
 	"S_ITEMCAPSULE_BOTTOM_SIDE_GROUND",
-	"S_ITEMCAPSULE_TOP",
-	"S_ITEMCAPSULE_BOTTOM",
-	"S_ITEMCAPSULE_INSIDE",
+	//"S_ITEMCAPSULE_TOP",
+	//"S_ITEMCAPSULE_BOTTOM",
+	//"S_ITEMCAPSULE_INSIDE",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",
@@ -4592,6 +4607,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RINGSPARKS13",
 	"S_RINGSPARKS14",
 	"S_RINGSPARKS15",
+
+	"S_GAINAX_TINY",
+	"S_GAINAX_HUGE",
+	"S_GAINAX_MID1",
+	"S_GAINAX_MID2",
 
 	"S_DRAFTDUST1",
 	"S_DRAFTDUST2",
@@ -5730,6 +5750,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
+	"MT_GAINAX",
 	"MT_DRAFTDUST",
 	"MT_SPBDUST",
 	"MT_TIREGREASE",
@@ -5852,7 +5873,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"WPNDOWN", // reserved - gonna turn this into lookback when i'm done with all the major reengineering
+	"LOOKDOWN",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
@@ -6839,6 +6860,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
+	{"TC_HITLAG",TC_HITLAG},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},

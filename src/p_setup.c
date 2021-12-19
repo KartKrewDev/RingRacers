@@ -91,6 +91,7 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_brightmap.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -1044,6 +1045,8 @@ static void P_InitializeLinedef(line_t *ld)
 	ld->validcount = 0;
 	ld->polyobj = NULL;
 
+	ld->tripwire = false;
+
 	ld->text = NULL;
 	ld->callcount = 0;
 
@@ -1936,10 +1939,22 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
+
+	const INT32 TEX_TRIPWIRE = R_TextureNumForName("TRIPWIRE");
+	const INT32 TEX_4RIPWIRE = R_TextureNumForName("4RIPWIRE");
+
 	for (; i--; ld++)
 	{
+		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
+
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
+
+		if (midtexture == TEX_TRIPWIRE ||
+				midtexture == TEX_4RIPWIRE)
+		{
+			ld->tripwire = true;
+		}
 
 		switch (ld->special)
 		{
@@ -4442,6 +4457,9 @@ boolean P_AddWadFile(const char *wadfilename)
 
 	// Reload ANIMDEFS
 	P_InitPicAnims();
+
+	// Reload BRIGHT
+	K_InitBrightmaps();
 
 	// Flush and reload HUD graphics
 	ST_UnloadGraphics();

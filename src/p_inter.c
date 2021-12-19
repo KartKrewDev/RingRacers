@@ -237,7 +237,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!special->target)
 				return;	// foolproof crash prevention check!!!!!
 
-			P_TeleportMove(player->mo, special->target->x, special->target->y, special->target->z + (48<<FRACBITS));
+			P_SetOrigin(player->mo, special->target->x, special->target->y, special->target->z + (48<<FRACBITS));
 			player->mo->angle = special->target->angle;
 			P_SetObjectMomZ(player->mo, 12<<FRACBITS, false);
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
@@ -268,29 +268,39 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 1))
 				return;
 
-			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-			{
-				return;
-			}
-
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
-		case MT_ITEMCAPSULE:
-			if (special->threshold != KITEM_SUPERRING
-				&& special->threshold != KITEM_SPB
-				&& !P_CanPickupItem(player, 1))
-					return;
+		case MT_SPHEREBOX:
+			if (player->bumpers <= 0)
+				return;
 
+			P_SetTarget(&special->target, toucher);
+			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			break;
+		case MT_ITEMCAPSULE:
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
 
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
 				return;
 
-			if (special->threshold == KITEM_SPB && K_IsSPBInGame()) // don't spawn a second SPB
-				return;
+			switch (special->threshold)
+			{
+				case KITEM_SPB:
+					if (K_IsSPBInGame()) // don't spawn a second SPB
+						return;
+					break;
+				case KITEM_SUPERRING:
+					if (player->pflags & PF_RINGLOCK) // no cheaty rings
+						return;
+					break;
+				default:
+					if (!P_CanPickupItem(player, 1))
+						return;
+					break;
+			}
 
 			S_StartSound(toucher, special->info->deathsound);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
@@ -502,16 +512,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!(P_CanPickupItem(player, 0)))
 				return;
 
-			// Reached the cap, don't waste 'em!
-			if (player->spheres >= 40)
-				return;
-
-			// Not alive
-			if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
-				return;
-
-			special->momx = special->momy = special->momz = 0;
-			player->spheres++;
+			P_GivePlayerSpheres(player, 1);
 			break;
 
 		// Secret emblem thingy
@@ -960,7 +961,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
-	//K_SetHitLagForObjects(target, inflictor, 15);
+	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
 
 	// SRB2kart
 	// I wish I knew a better way to do this
@@ -1247,6 +1248,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					kart->angle = target->angle;
 					kart->color = target->color;
 					kart->hitlag = target->hitlag;
+					kart->eflags |= MFE_DAMAGEHITLAG;
 					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
 					kart->extravalue1 = target->player->kartweight;
 				}
@@ -1737,7 +1739,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
-	K_SetHitLagForObjects(player->mo, inflictor, 15);
+	K_SetHitLagForObjects(player->mo, inflictor, MAXHITLAGTICS, true);
 
 	player->carry = CR_NONE;
 
@@ -1797,7 +1799,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	boolean force = false;
 
-	INT32 laglength = 10;
+	INT32 laglength = 6;
 	INT32 kinvextend = 0;
 
 	if (objectplacing)
@@ -1816,7 +1818,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (((damagetype & DMG_TYPEMASK) == DMG_STING)
 	|| ((inflictor && !P_MobjWasRemoved(inflictor)) && inflictor->type == MT_BANANA && inflictor->health <= 1))
 	{
-		laglength = 5;
+		laglength = 2;
 	}
 
 	// Everything above here can't be forced.
@@ -1972,6 +1974,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						// Destroy any remainder bumpers from the player for karma comeback damage
 						K_DestroyBumpers(player, player->bumpers);
 					}
+					else
+					{
+						source->player->overtimekarma += 5*TICRATE;
+					}
 
 					if (damagetype & DMG_STEAL)
 					{
@@ -1996,6 +2002,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->sneakertimer = player->numsneakers = 0;
 			player->driftboost = player->strongdriftboost = 0;
 			player->ringboost = 0;
+			player->glanceDir = 0;
+			player->pflags &= ~PF_LOOKDOWN;
 
 			switch (type)
 			{
@@ -2048,7 +2056,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			player->instashield = 15;
-			K_SetHitLagForObjects(target, inflictor, laglength);
+			K_SetHitLagForObjects(target, inflictor, laglength, true);
 			return true;
 		}
 	}
@@ -2070,7 +2078,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	K_SetHitLagForObjects(target, inflictor, laglength);
+	K_SetHitLagForObjects(target, inflictor, laglength, true);
 
 	if (target->health <= 0)
 	{
@@ -2078,7 +2086,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return true;
 	}
 
-	//K_SetHitLagForObjects(target, inflictor, laglength);
+	//K_SetHitLagForObjects(target, inflictor, laglength, true);
 
 	if (player)
 		P_ResetPlayer(target->player);

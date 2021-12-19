@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
+#include "r_fps.h"
 
 // Object place
 #include "m_cheat.h"
@@ -607,6 +608,13 @@ void P_Ticker(boolean run)
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
+
+		// Plays the music after the starting countdown.
+		if (leveltime == (starttime + (TICRATE/2)))
+		{
+			S_ChangeMusic(mapmusname, mapmusflags, true);
+			S_ShowMusicCredit();
+		}
 
 		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();

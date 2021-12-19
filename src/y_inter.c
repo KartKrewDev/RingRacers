@@ -481,7 +481,7 @@ void Y_IntermissionDrawer(void)
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
 
-	if (sorttic != -1 && intertic > sorttic && !demo.playback)
+	if (sorttic != -1 && intertic > sorttic && multiplayer)
 	{
 		INT32 count = (intertic - sorttic);
 
@@ -586,7 +586,7 @@ void Y_IntermissionDrawer(void)
 
 				y2 = y;
 
-				if (netgame && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
+				if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
 				{
 					static int alagles_timer = 0;
 					patch_t *alagles;
@@ -799,7 +799,7 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_battle)
 	{
-		if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
+		//if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
 			if (!data.rankingsmode && (intertic >= sorttic + 8))
 			{
@@ -868,8 +868,6 @@ void Y_Ticker(void)
 					endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
 			}
 		}
-		else if (!(intertic & 1))
-			S_StartSound(NULL, sfx_ptally); // tally sound effect
 	}
 }
 
@@ -1013,7 +1011,7 @@ static void K_UpdatePowerLevels(void)
 		data.increase[i] = increment[i];
 		clientpowerlevels[i][powertype] += data.increase[i];
 
-		if (i == consoleplayer)
+		if (!demo.playback && i == consoleplayer)
 		{
 			CONS_Debug(DBG_GAMELOGIC, "Player %d is you! Saving...\n", i);
 			vspowerlevel[powertype] = clientpowerlevels[i][powertype];
@@ -1069,7 +1067,7 @@ void Y_StartIntermission(void)
 	{
 		if (cv_inttime.value == 0)
 			timer = 0;
-		else if (demo.playback) // Override inttime (which is pulled from the replay anyway
+		else if (demo.playback && !multiplayer) // Override inttime (which is pulled from the replay anyway
 			timer = 10*TICRATE;
 		else
 		{
@@ -1461,7 +1459,7 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 	if (gametype != votelevels[level][1])
 	{
 		INT16 lastgametype = gametype;
-		gametype = votelevels[level][1];
+		G_SetGametype(votelevels[level][1]);
 		D_GameTypeChanged(lastgametype);
 		forceresetplayers = true;
 	}

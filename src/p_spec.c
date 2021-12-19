@@ -2018,6 +2018,12 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 		return;
 	{
 		player_t *player = thing->player;
+
+		if (P_IsLineTripWire(line))
+		{
+			K_ApplyTripWire(player, TRIP_PASSED);
+		}
+
 		switch (line->special)
 		{
 			case 2001: // Finish Line
@@ -2976,9 +2982,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 			// reasonable defaults.
 			if (!quake.intensity)
-				quake.intensity = 8<<FRACBITS;
+				quake.intensity = 8*mapobjectscale;
 			if (!quake.radius)
-				quake.radius = 512<<FRACBITS;
+				quake.radius = 512*mapobjectscale;
 			break;
 		}
 
@@ -8746,6 +8752,6 @@ static void P_SpawnPushers(void)
 // epicenter and radius are not yet used.
 void P_StartQuake(fixed_t intensity, tic_t time)
 {
-	quake.intensity = intensity;
+	quake.intensity = FixedMul(intensity, mapobjectscale);
 	quake.time = time;
 }

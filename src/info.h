@@ -276,6 +276,7 @@ enum actionnum
 	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
+	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
@@ -287,7 +288,6 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
-	A_SPAWNITEMCAPSULEPARTS,
 	NUMACTIONS
 };
 
@@ -547,6 +547,8 @@ void A_JawzExplode();
 void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_LandMineExplode();
+void A_LandMineExplode();
 void A_BallhogExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();
@@ -558,7 +560,6 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
-void A_SpawnItemCapsuleParts();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1069,6 +1070,7 @@ typedef enum sprite
 
 	// SRB2Kart
 	SPR_RNDM, // Random Item Box
+	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
@@ -1270,6 +1272,7 @@ typedef enum sprite
 	SPR_FWRK,
 	SPR_MXCL,
 	SPR_RGSP,
+	SPR_LENS,
 	SPR_DRAF,
 	SPR_GRES,
 
@@ -4451,6 +4454,21 @@ typedef enum state
 	S_RANDOMITEM12,
 	S_DEADRANDOMITEM,
 
+	// Sphere Box (for Battle)
+	S_SPHEREBOX1,
+	S_SPHEREBOX2,
+	S_SPHEREBOX3,
+	S_SPHEREBOX4,
+	S_SPHEREBOX5,
+	S_SPHEREBOX6,
+	S_SPHEREBOX7,
+	S_SPHEREBOX8,
+	S_SPHEREBOX9,
+	S_SPHEREBOX10,
+	S_SPHEREBOX11,
+	S_SPHEREBOX12,
+	S_DEADSPHEREBOX,
+
 	// Random Item Pop
 	S_RANDOMITEMPOP1,
 	S_RANDOMITEMPOP2,
@@ -4465,9 +4483,9 @@ typedef enum state
 	S_ITEMCAPSULE_TOP_SIDE,
 	S_ITEMCAPSULE_BOTTOM_SIDE_AIR,
 	S_ITEMCAPSULE_BOTTOM_SIDE_GROUND,
-	S_ITEMCAPSULE_TOP,
-	S_ITEMCAPSULE_BOTTOM,
-	S_ITEMCAPSULE_INSIDE,
+	//S_ITEMCAPSULE_TOP,
+	//S_ITEMCAPSULE_BOTTOM,
+	//S_ITEMCAPSULE_INSIDE,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
@@ -5588,6 +5606,11 @@ typedef enum state
 	S_RINGSPARKS14,
 	S_RINGSPARKS15,
 
+	S_GAINAX_TINY,
+	S_GAINAX_HUGE,
+	S_GAINAX_MID1,
+	S_GAINAX_MID2,
+
 	S_DRAFTDUST1,
 	S_DRAFTDUST2,
 	S_DRAFTDUST3,
@@ -6458,6 +6481,7 @@ typedef enum mobj_type
 
 	// SRB2kart
 	MT_RANDOMITEM,
+	MT_SPHEREBOX,
 	MT_RANDOMITEMPOP,
 	MT_FLOATINGITEM,
 	MT_ITEMCAPSULE,
@@ -6742,6 +6766,7 @@ typedef enum mobj_type
 
 	MT_KARMAFIREWORK,
 	MT_RINGSPARKS,
+	MT_GAINAX,
 	MT_DRAFTDUST,
 	MT_SPBDUST,
 	MT_TIREGREASE,

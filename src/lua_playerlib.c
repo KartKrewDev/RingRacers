@@ -356,12 +356,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickpanel);
 	else if (fastcmp(field,"tricktime"))
 		lua_pushinteger(L, plr->tricktime);
-	else if (fastcmp(field,"trickmomx"))
-		lua_pushfixed(L, plr->trickmomx);
-	else if (fastcmp(field,"trickmomy"))
-		lua_pushfixed(L, plr->trickmomy);
-	else if (fastcmp(field,"trickmomz"))
-		lua_pushfixed(L, plr->trickmomz);
 	else if (fastcmp(field,"trickboostpower"))
 		lua_pushfixed(L, plr->trickboostpower);
 	else if (fastcmp(field,"trickboostdecay"))
@@ -707,12 +701,6 @@ static int player_set(lua_State *L)
 		plr->trickpanel = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tricktime"))
 		plr->tricktime = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"trickmomx"))
-		plr->trickmomx = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"trickmomy"))
-		plr->trickmomy = luaL_checkfixed(L, 3);
-	else if (fastcmp(field,"trickmomz"))
-		plr->trickmomz = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"trickboostpower"))
 		plr->trickboostpower = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"trickboostdecay"))

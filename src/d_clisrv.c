@@ -141,7 +141,7 @@ UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
 
 // Client specific
-static ticcmd_t localcmds[MAXSPLITSCREENPLAYERS];
+static ticcmd_t localcmds[MAXSPLITSCREENPLAYERS][MAXGENTLEMENDELAY];
 static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
@@ -440,10 +440,15 @@ static void D_Clearticcmd(tic_t tic)
 
 void D_ResetTiccmds(void)
 {
-	INT32 i;
+	INT32 i, j;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		memset(&localcmds[i], 0, sizeof(ticcmd_t));
+	{
+		for (j = 0; j < MAXGENTLEMENDELAY; j++)
+		{
+			memset(&localcmds[i][j], 0, sizeof(ticcmd_t));
+		}
+	}
 
 	// Reset the net command list
 	for (i = 0; i < TEXTCMD_HASH_SIZE; i++)
@@ -790,10 +795,14 @@ static boolean CL_SendJoin(void)
 			sizeof netbuffer->u.clientcfg.application);
 
 	for (i = 0; i <= splitscreen; i++)
-		CleanupPlayerName(g_localplayers[i], cv_playername[i].zstring);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// the MAXPLAYERS addition is necessary to communicate that g_localplayers is not yet safe to reference
+		CleanupPlayerName(MAXPLAYERS+i, cv_playername[i].zstring);
 		strncpy(netbuffer->u.clientcfg.names[i], cv_playername[i].zstring, MAXPLAYERNAME);
+	}
+	// privacy shield for the local players not joining this session
+	for (; i < MAXSPLITSCREENPLAYERS; i++)
+		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -1329,7 +1338,7 @@ static void CL_ReloadReceivedSavegame(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		LUA_InvalidatePlayer(&players[i]);
-		sprintf(player_names[i], "Player %d", i + 1);
+		sprintf(player_names[i], "Player %c", 'A' + i);
 	}
 
 	CL_LoadReceivedSavegame(true);
@@ -2390,12 +2399,13 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 
 	// remove avatar of player
 	playeringame[playernum] = false;
+	demo_extradata[playernum] |= DXD_PLAYSTATE;
 	playernode[playernum] = UINT8_MAX;
 	while (!playeringame[doomcom->numslots-1] && doomcom->numslots > 1)
 		doomcom->numslots--;
 
 	// Reset the name
-	sprintf(player_names[playernum], "Player %d", playernum+1);
+	sprintf(player_names[playernum], "Player %c", 'A' + playernum);
 
 	player_name_changes[playernum] = 0;
 
@@ -3207,7 +3217,7 @@ void SV_ResetServer(void)
 		playeringame[i] = false;
 		playernode[i] = UINT8_MAX;
 		memset(playeraddress[i], 0, sizeof(*playeraddress));
-		sprintf(player_names[i], "Player %d", i + 1);
+		sprintf(player_names[i], "Player %c", 'A' + i);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
 		K_ClearClientPowerLevels();
 		splitscreen_invitations[i] = -1;
@@ -3406,7 +3416,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
 
-		D_SendPlayerConfig();
+		D_SendPlayerConfig(splitscreenplayer);
 		addedtogame = true;
 
 		if (rejoined)
@@ -3552,14 +3562,13 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	LUAh_PlayerJoin(newplayernum);
 }
 
-static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const char *name3, const char *name4)
+static boolean SV_AddWaitingPlayers(SINT8 node, const char *name, const char *name2, const char *name3, const char *name4)
 {
-	INT32 node, n, newplayer = false;
+	INT32 n, newplayernum;
 	UINT8 buf[4 + MAXPLAYERNAME];
 	UINT8 *buf_p = buf;
-	INT32 newplayernum;
+	boolean newplayer = false;
 
-	for (node = 0; node < MAXNETNODES; node++)
 	{
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
@@ -3678,6 +3687,7 @@ boolean SV_SpawnServer(void)
 	I_Error("What do you think you're doing?");
 	return false;
 #else
+	boolean result = false;
 	if (demo.playback)
 		G_StopDemo(); // reset engine parameter
 	if (metalplayback)
@@ -3704,7 +3714,14 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
-	return SV_AddWaitingPlayers(cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+	// strictly speaking, i'm not convinced the following is necessary
+	// but I'm not confident enough to remove it entirely in case it breaks something
+	{
+		SINT8 node = 0;
+		for (; node < MAXNETNODES; node++)
+			result |= SV_AddWaitingPlayers(node, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+	}
+	return result;
 #endif
 }
 
@@ -3876,7 +3893,7 @@ static void HandleConnect(SINT8 node)
 				SV_SendSaveGame(node, false); // send a complete game state
 				DEBFILE("send savegame\n");
 			}
-			SV_AddWaitingPlayers(names[0], names[1], names[2], names[3]);
+			SV_AddWaitingPlayers(node, names[0], names[1], names[2], names[3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -4934,12 +4951,6 @@ static void CL_SendClientCmd(void)
 	size_t packetsize = 0;
 	boolean mis = false;
 
-	if (lowest_lag && ( gametic % lowest_lag ))
-	{
-		cl_packetmissed = true;
-		return;
-	}
-
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
@@ -4960,27 +4971,35 @@ static void CL_SendClientCmd(void)
 	}
 	else if (gamestate != GS_NULL && (addedtogame || dedicated))
 	{
+		UINT8 lagDelay = 0;
+
+		if (lowest_lag > 0)
+		{
+			// Gentlemens' ping.
+			lagDelay = min(lowest_lag, MAXGENTLEMENDELAY);
+		}
+
 		packetsize = sizeof (clientcmd_pak);
-		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0], 1);
-		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%TICQUEUE]);
+		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0][lagDelay], 1);
+		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic % TICQUEUE]);
 
 		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
 			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds[1], 1);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds[1][lagDelay], 1);
 
 			if (splitscreen > 1)
 			{
 				netbuffer->packettype = (mis ? PT_CLIENT3MIS : PT_CLIENT3CMD);
 				packetsize = sizeof (client3cmd_pak);
-				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds[2], 1);
+				G_MoveTiccmd(&netbuffer->u.client3pak.cmd3, &localcmds[2][lagDelay], 1);
 
 				if (splitscreen > 2)
 				{
 					netbuffer->packettype = (mis ? PT_CLIENT4MIS : PT_CLIENT4CMD);
 					packetsize = sizeof (client4cmd_pak);
-					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds[3], 1);
+					G_MoveTiccmd(&netbuffer->u.client4pak.cmd4, &localcmds[3][lagDelay], 1);
 				}
 			}
 		}
@@ -5143,8 +5162,23 @@ static void SV_SendTics(void)
 //
 // TryRunTics
 //
+static void CreateNewLocalCMD(UINT8 p, INT32 realtics)
+{
+	INT32 i;
+
+	for (i = MAXGENTLEMENDELAY-1; i > 0; i--)
+	{
+		G_MoveTiccmd(&localcmds[p][i], &localcmds[p][i-1], 1);
+	}
+
+	G_BuildTiccmd(&localcmds[p][0], realtics, p+1);
+	localcmds[p][0].flags |= TICCMD_RECEIVED;
+}
+
 static void Local_Maketic(INT32 realtics)
 {
+	INT32 i;
+
 	I_OsPolling(); // I_Getevent
 	D_ProcessEvents(); // menu responder, cons responder,
 	                   // game responder calls HU_Responder, AM_Responder,
@@ -5153,25 +5187,9 @@ static void Local_Maketic(INT32 realtics)
 	if (!dedicated) rendergametic = gametic;
 
 	// translate inputs (keyboard/mouse/joystick) into game controls
-	G_BuildTiccmd(&localcmds[0], realtics, 1);
-	localcmds[0].flags |= TICCMD_RECEIVED;
-
-	if (splitscreen)
+	for (i = 0; i <= splitscreen; i++)
 	{
-		G_BuildTiccmd(&localcmds[1], realtics, 2);
-		localcmds[1].flags |= TICCMD_RECEIVED;
-
-		if (splitscreen > 1)
-		{
-			G_BuildTiccmd(&localcmds[2], realtics, 3);
-			localcmds[2].flags |= TICCMD_RECEIVED;
-
-			if (splitscreen > 2)
-			{
-				G_BuildTiccmd(&localcmds[3], realtics, 4);
-				localcmds[3].flags |= TICCMD_RECEIVED;
-			}
-		}
+		CreateNewLocalCMD(i, realtics);
 	}
 }
 
@@ -5264,12 +5282,14 @@ void TryRunTics(tic_t realtics)
 
 	if (neededtic > gametic)
 	{
-		hu_stopped = false;
+		if (realtics)
+			hu_stopped = false;
 	}
 
 	if (player_joining)
 	{
-		hu_stopped = true;
+		if (realtics)
+			hu_stopped = true;
 		return;
 	}
 
@@ -5288,6 +5308,7 @@ void TryRunTics(tic_t realtics)
 			while (neededtic > gametic)
 			{
 				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+				prev_tics = I_GetTime();
 
 				ps_tictime = I_GetPreciseTime();
 
@@ -5306,7 +5327,8 @@ void TryRunTics(tic_t realtics)
 	}
 	else
 	{
-		hu_stopped = true;
+		if (realtics)
+			hu_stopped = true;
 	}
 }
 

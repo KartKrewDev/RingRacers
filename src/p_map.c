@@ -96,7 +96,7 @@ camera_t *mapcampointer;
 //
 // P_TeleportMove
 //
-boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+static boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 {
 	numspechit = 0U;
 
@@ -128,6 +128,31 @@ boolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	thing->ceilingrover = tmceilingrover;
 
 	return true;
+}
+
+//
+// P_SetOrigin - P_TeleportMove which RESETS interpolation values.
+//
+boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+{
+	boolean result = P_TeleportMove(thing, x, y, z);
+
+	if (result == true)
+	{
+		thing->old_x = thing->x;
+		thing->old_y = thing->y;
+		thing->old_z = thing->z;
+	}
+
+	return result;
+}
+
+//
+// P_MoveOrigin - P_TeleportMove which KEEPS interpolation values.
+//
+boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
+{
+	return P_TeleportMove(thing, x, y, z);
 }
 
 // =========================================================================
@@ -206,11 +231,14 @@ static void add_spechit(line_t *ld)
 	numspechit++;
 }
 
-static boolean P_SpecialIsLinedefCrossType(UINT16 ldspecial)
+static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	switch (ldspecial)
+	if (P_IsLineTripWire(ld))
+		return true;
+
+	switch (ld->special)
 	{
 		case 2001: // Finish line
 		case 2003: // Respawn line
@@ -282,6 +310,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	if ((spring->eflags ^ object->eflags) & MFE_VERTICALFLIP)
+		vertispeed *= 2;
+
 	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 	{
@@ -345,28 +376,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			}
 		}
 
-		if (object->player)
-		{
-			// Less friction when hitting horizontal springs
-			if (!vertispeed)
-			{
-				if (!object->player->tiregrease)
-				{
-					UINT8 i;
-					for (i = 0; i < 2; i++)
-					{
-						mobj_t *grease;
-						grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
-						P_SetTarget(&grease->target, object);
-						grease->angle = K_MomentumAngle(object);
-						grease->extravalue1 = i;
-					}
-				}
-
-				object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
-			}
-		}
-
 		// Horizontal speed is used as a minimum thrust, not a direct replacement
 		finalSpeed = max(objectSpeed, finalSpeed);
 
@@ -389,6 +398,22 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
 		object->player->springcolor = starcolor;
+
+		// Less friction when hitting springs
+		if (!object->player->tiregrease)
+		{
+			UINT8 i;
+			for (i = 0; i < 2; i++)
+			{
+				mobj_t *grease;
+				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
+				P_SetTarget(&grease->target, object);
+				grease->angle = K_MomentumAngle(object);
+				grease->extravalue1 = i;
+			}
+
+			object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+		}
 	}
 
 	return true;
@@ -483,6 +508,10 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	// Ignore spectators
 	if ((tmthing->player && tmthing->player->spectator)
 	|| (thing->player && thing->player->spectator))
+		return true;
+
+	// Ignore the collision if BOTH things are in hitlag.
+	if (thing->hitlag > 0 && tmthing->hitlag > 0)
 		return true;
 
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))
@@ -1554,6 +1583,11 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 	}
 }
 
+boolean P_IsLineTripWire(const line_t *ld)
+{
+	return ld->tripwire;
+}
+
 //
 // PIT_CheckLine
 // Adjusts tmfloorz and tmceilingz as lines are contacted
@@ -1592,7 +1626,7 @@ static boolean PIT_CheckLine(line_t *ld)
 			cosradius = FixedMul(dist, FINECOSINE(langle>>ANGLETOFINESHIFT));
 			sinradius = FixedMul(dist, FINESINE(langle>>ANGLETOFINESHIFT));
 			tmthing->flags |= MF_NOCLIP;
-			P_TeleportMove(tmthing, result.x + cosradius - tmthing->momx, result.y + sinradius - tmthing->momy, tmthing->z);
+			P_MoveOrigin(tmthing, result.x + cosradius - tmthing->momx, result.y + sinradius - tmthing->momy, tmthing->z);
 			tmthing->flags &= ~MF_NOCLIP;
 		}
 #endif
@@ -1668,7 +1702,7 @@ static boolean PIT_CheckLine(line_t *ld)
 		tmdropoffz = lowfloor;
 
 	// we've crossed the line
-	if (P_SpecialIsLinedefCrossType(ld->special))
+	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
 	}
@@ -1817,7 +1851,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && P_CheckSolidLava(rover))
+			if (thing->player && P_CheckSolidFFloorSurface(thing->player, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
@@ -2383,6 +2417,56 @@ boolean PIT_PushableMoved(mobj_t *thing)
 	return true;
 }
 
+static boolean P_WaterRunning(mobj_t *thing)
+{
+	ffloor_t *rover = thing->floorrover;
+	return rover && (rover->flags & FF_SWIMMABLE) &&
+		P_IsObjectOnGround(thing);
+}
+
+static boolean P_WaterStepUp(mobj_t *thing)
+{
+	player_t *player = thing->player;
+	return (player && player->waterskip) ||
+		P_WaterRunning(thing);
+}
+
+fixed_t P_BaseStepUp(void)
+{
+	return FixedMul(MAXSTEPMOVE, mapobjectscale);
+}
+
+fixed_t P_GetThingStepUp(mobj_t *thing)
+{
+	const fixed_t maxstepmove = P_BaseStepUp();
+	fixed_t maxstep = maxstepmove;
+
+	if (thing->type == MT_SKIM)
+	{
+		// Skim special (not needed for kart?)
+		return 0;
+	}
+
+	if (P_WaterStepUp(thing) == true)
+	{
+		// Add some extra stepmove when waterskipping
+		maxstep += maxstepmove;
+	}
+
+	if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
+	{
+		// If using type Section1:13, double the maxstep.
+		maxstep <<= 1;
+	}
+	else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
+	{
+		// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
+		maxstep = 0;
+	}
+
+	return maxstep;
+}
+
 //
 // P_TryMove
 // Attempt to move to a new position.
@@ -2408,11 +2492,13 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	if (radius < mapobjectscale)
 		radius = mapobjectscale;
 
+#if 0
 	if (thing->hitlag > 0)
 	{
 		// Do not move during hitlag
 		return false;
 	}
+#endif
 
 	do {
 		if (thing->flags & MF_NOCLIP) {
@@ -2442,21 +2528,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
-			fixed_t maxstep = maxstepmove;
-
-			if (thing->player && thing->player->waterskip)
-				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
-
-			// If using type Section1:13, double the maxstep.
-			if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
-				maxstep <<= 1;
-			// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
-			else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
-				maxstep = 0;
-
-			if (thing->type == MT_SKIM)
-				maxstep = 0;
+			fixed_t maxstep = P_GetThingStepUp(thing);
 
 			if (tmceilingz - tmfloorz < thing->height)
 			{
@@ -2660,10 +2732,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 			oldside = P_PointOnLineSide(oldx, oldy, ld);
 			if (side != oldside)
 			{
-				if (ld->special)
-				{
-					P_CrossSpecialLine(ld, oldside, thing);
-				}
+				P_CrossSpecialLine(ld, oldside, thing);
 			}
 		}
 	}
@@ -2696,7 +2765,7 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y)
 
 		if (!(thing->flags & MF_NOCLIP))
 		{
-			const fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			const fixed_t maxstep = P_BaseStepUp();
 
 			if (tmceilingz - tmfloorz < thing->height)
 				return false; // doesn't fit
@@ -2745,7 +2814,7 @@ static boolean PTR_GetSpecialLines(intercept_t *in)
 		return true;
 	}
 
-	if (P_SpecialIsLinedefCrossType(ld->special))
+	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
 	}
@@ -2815,10 +2884,7 @@ void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_
 		oldside = P_PointOnLineSide(x, y, ld);
 		if (side != oldside)
 		{
-			if (ld->special)
-			{
-				P_CrossSpecialLine(ld, oldside, thing);
-			}
+			P_CrossSpecialLine(ld, oldside, thing);
 		}
 	}
 }
@@ -3022,6 +3088,7 @@ static void P_PlayerHitBounceLine(line_t *ld)
 	INT32 side;
 	angle_t lineangle;
 	fixed_t movelen;
+	fixed_t x, y;
 
 	side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
 	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy)-ANGLE_90;
@@ -3036,8 +3103,19 @@ static void P_PlayerHitBounceLine(line_t *ld)
 	if (slidemo->player && movelen < (15*mapobjectscale))
 		movelen = (15*mapobjectscale);
 
-	tmxmove += FixedMul(movelen, FINECOSINE(lineangle));
-	tmymove += FixedMul(movelen, FINESINE(lineangle));
+	x = FixedMul(movelen, FINECOSINE(lineangle));
+	y = FixedMul(movelen, FINESINE(lineangle));
+
+	if (P_IsLineTripWire(ld))
+	{
+		tmxmove = x * 4;
+		tmymove = y * 4;
+	}
+	else
+	{
+		tmxmove += x;
+		tmymove += y;
+	}
 }
 
 //
@@ -3149,7 +3227,7 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (opentop - slidemo->z < slidemo->height)
 		return true; // mobj is too high
 
-	if (openbottom - slidemo->z > FixedMul(MAXSTEPMOVE, mapobjectscale))
+	if (openbottom - slidemo->z > P_GetThingStepUp(slidemo))
 		return true; // too big a step up
 
 	return false;
@@ -3675,15 +3753,13 @@ void P_BouncePlayerMove(mobj_t *mo)
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>2) - (FRACUNIT>>3)));
 	}
 
+	if (P_IsLineTripWire(bestslideline))
 	{
-		mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
-		if (mo->eflags & MFE_VERTICALFLIP)
-			fx->eflags |= MFE_VERTICALFLIP;
-		else
-			fx->eflags &= ~MFE_VERTICALFLIP;
-		fx->scale = mo->scale;
-
-		S_StartSound(mo, sfx_s3k49);
+		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
+	}
+	else
+	{
+		K_SpawnBumpEffect(mo);
 	}
 
 	P_PlayerHitBounceLine(bestslideline);
@@ -3694,8 +3770,11 @@ void P_BouncePlayerMove(mobj_t *mo)
 	mo->player->cmomx = tmxmove;
 	mo->player->cmomy = tmymove;
 
-	if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true)) {
-		P_TryMove(mo, mo->x - oldmomx, mo->y - oldmomy, true);
+	if (!P_IsLineTripWire(bestslideline))
+	{
+		if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true)) {
+			P_TryMove(mo, mo->x - oldmomx, mo->y - oldmomy, true);
+		}
 	}
 }
 

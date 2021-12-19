@@ -35,7 +35,6 @@
 #include "p_slopes.h"
 #include "d_netfil.h" // blargh. for nameonly().
 #include "m_cheat.h" // objectplace
-#include "k_color.h" // SRB2kart
 #include "p_local.h" // stplyr
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
@@ -43,6 +42,10 @@
 #include "hardware/hw_light.h"
 #include "hardware/hw_drv.h"
 #endif
+
+// SRB2kart
+#include "k_color.h"
+#include "k_kart.h" // HITLAGJITTERS
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -283,16 +286,18 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 
 #ifndef NO_PNG_LUMPS
 			{
-				softwarepatch_t *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
+				UINT8 header[PNG_HEADER_SIZE];
 				size_t len = W_LumpLengthPwad(wadnum, l);
 
-				if (Picture_IsLumpPNG((UINT8 *)png, len))
+				W_ReadLumpHeaderPwad(wadnum, l, header, sizeof header, 0);
+
+				if (Picture_IsLumpPNG(header, len))
 				{
+					UINT8 *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
 					Picture_PNGDimensions((UINT8 *)png, &width, &height, &topoffset, &leftoffset, len);
 					isPNG = true;
+					Z_Free(png);
 				}
-
-				Z_Free(png);
 			}
 
 			if (!isPNG)
@@ -599,7 +604,7 @@ INT16 *mceilingclip;
 fixed_t spryscale = 0, sprtopscreen = 0, sprbotscreen = 0;
 fixed_t windowtop = 0, windowbottom = 0;
 
-void R_DrawMaskedColumn(column_t *column)
+void R_DrawMaskedColumn(column_t *column, column_t *brightmap)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
@@ -607,6 +612,9 @@ void R_DrawMaskedColumn(column_t *column)
 	INT32 topdelta, prevdelta = 0;
 
 	basetexturemid = dc_texturemid;
+
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
+	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -642,6 +650,11 @@ void R_DrawMaskedColumn(column_t *column)
 		if (dc_yl <= dc_yh && dc_yh > 0)
 		{
 			dc_source = (UINT8 *)column + 3;
+			if (brightmap != NULL)
+			{
+				dc_brightmap = (UINT8 *)brightmap + 3;
+			}
+
 			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Drawn by R_DrawColumn.
@@ -656,6 +669,10 @@ void R_DrawMaskedColumn(column_t *column)
 #endif
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
+		if (brightmap != NULL)
+		{
+			brightmap = (column_t *)((UINT8 *)brightmap + brightmap->length + 4);
+		}
 	}
 
 	dc_texturemid = basetexturemid;
@@ -663,13 +680,16 @@ void R_DrawMaskedColumn(column_t *column)
 
 INT32 lengthcol; // column->length : for flipped column function pointers and multi-patch on 2sided wall = texture->height
 
-void R_DrawFlippedMaskedColumn(column_t *column)
+void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap)
 {
 	INT32 topscreen;
 	INT32 bottomscreen;
 	fixed_t basetexturemid = dc_texturemid;
 	INT32 topdelta, prevdelta = -1;
 	UINT8 *d,*s;
+
+	R_SetColumnFunc(colfunctype, brightmap != NULL);
+	dc_brightmap = NULL;
 
 	for (; column->topdelta != 0xff ;)
 	{
@@ -709,6 +729,14 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 			dc_source = ZZ_Alloc(column->length);
 			for (s = (UINT8 *)column+2+column->length, d = dc_source; d < dc_source+column->length; --s)
 				*d++ = *s;
+
+			if (brightmap != NULL)
+			{
+				dc_brightmap = ZZ_Alloc(brightmap->length);
+				for (s = (UINT8 *)brightmap+2+brightmap->length, d = dc_brightmap; d < dc_brightmap+brightmap->length; --s)
+					*d++ = *s;
+			}
+
 			dc_texturemid = basetexturemid - (topdelta<<FRACBITS);
 
 			// Still drawn by R_DrawColumn.
@@ -721,6 +749,10 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 			Z_Free(dc_source);
 		}
 		column = (column_t *)((UINT8 *)column + column->length + 4);
+		if (brightmap != NULL)
+		{
+			brightmap = (column_t *)((UINT8 *)brightmap + brightmap->length + 4);
+		}
 	}
 
 	dc_texturemid = basetexturemid;
@@ -737,7 +769,11 @@ boolean R_SpriteIsFlashing(vissprite_t *vis)
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 {
-	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+	if (vis->mobj->hitlag > 0 && (vis->mobj->eflags & MFE_DAMAGEHITLAG))
+	{
+		return R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
+	}
+	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
 	{
 		if (vis->mobj->type == MT_CYBRAKDEMON || vis->mobj->colorized)
 			return R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
@@ -772,7 +808,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 static void R_DrawVisSprite(vissprite_t *vis)
 {
 	column_t *column;
-	void (*localcolfunc)(column_t *);
+	void (*localcolfunc)(column_t *, column_t *);
 	INT32 texturecolumn;
 	INT32 pwidth;
 	fixed_t frac;
@@ -796,26 +832,27 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL) return; // ditto
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC]; // hack: this isn't resetting properly somewhere.
+	R_SetColumnFunc(BASEDRAWFUNC, false); // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
+	dc_fullbright = colormaps;
 	dc_translation = R_GetSpriteTranslation(vis);
 
 	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
-		colfunc = colfuncs[COLDRAWFUNC_TRANS]; // translate certain pixels to white
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
-		colfunc = colfuncs[COLDRAWFUNC_TRANSTRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
 		dc_transmap = vis->transmap;
 	}
 	else if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 	else if (vis->mobj->color) // translate green skin to another color
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
-		colfunc = colfuncs[COLDRAWFUNC_TRANS];
+		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 
 	if (vis->extra_colormap && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
@@ -827,8 +864,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	if (!dc_colormap)
 		dc_colormap = colormaps;
 
+	dc_fullbright = colormaps;
+
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
-			dc_colormap += COLORMAP_REMAPOFFSET;
+	{
+		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	dc_texturemid = vis->texturemid;
 	dc_texheight = 0;
@@ -901,7 +943,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 	else if (vis->cut & SC_SHEAR)
@@ -923,7 +965,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #endif
 
 			sprtopscreen = (centeryfrac - FixedMul(dc_texturemid, spryscale));
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 	else
@@ -943,11 +985,11 @@ static void R_DrawVisSprite(vissprite_t *vis)
 #else
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
-			localcolfunc (column);
+			localcolfunc (column, NULL);
 		}
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 	dc_hires = 0;
 
 	vis->x1 = x1;
@@ -977,13 +1019,17 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	if (vis->transmap)
 	{
-		colfunc = colfuncs[COLDRAWFUNC_FUZZY];
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, false);
 		dc_transmap = vis->transmap;    //Fab : 29-04-98: translucency table
 	}
 
 	dc_colormap = colormaps;
+	dc_fullbright = colormaps;
 	if (encoremap)
+	{
 		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
 
 	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
 	dc_texturemid = vis->texturemid;
@@ -1012,10 +1058,10 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 #else
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
-		R_DrawMaskedColumn(column);
+		R_DrawMaskedColumn(column, NULL);
 	}
 
-	colfunc = colfuncs[BASEDRAWFUNC];
+	R_SetColumnFunc(BASEDRAWFUNC, false);
 }
 
 //
@@ -1357,15 +1403,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 //
 static void R_ProjectSprite(mobj_t *thing)
 {
-	fixed_t thingxpos = thing->x + thing->sprxoff;
-	fixed_t thingypos = thing->y + thing->spryoff;
-	fixed_t thingzpos = thing->z + thing->sprzoff;
-
 	mobj_t *oldthing = thing;
-
-	//const fixed_t oldthingxpos = oldthing->x + oldthing->sprxoff;
-	//const fixed_t oldthingypos = oldthing->y + oldthing->spryoff;
-	const fixed_t oldthingzpos = oldthing->z + oldthing->sprzoff;
 
 	fixed_t tr_x, tr_y;
 	fixed_t tx, tz;
@@ -1431,24 +1469,52 @@ static void R_ProjectSprite(mobj_t *thing)
 	angle_t spriterotangle = 0;
 #endif
 
-	// hitlag vibrating
-	if (thing->hitlag > 0)
+	// uncapped/interpolation
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
+	angle_t interpangle = (thing->player ? thing->player->drawangle : thing->angle);
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1)
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+
+		if (thing->player)
+		{
+			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
+		}
+		else
+		{
+			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
+		}
+	}
+
+	// hitlag vibrating (todo: interp somehow?)
+	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
+	{
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
 			mul = -mul;
 		}
 
-		thingxpos += FixedMul(thing->momx, mul);
-		thingypos += FixedMul(thing->momy, mul);
-		thingzpos += FixedMul(thing->momz, mul);
+		interpx += FixedMul(thing->momx, mul);
+		interpy += FixedMul(thing->momy, mul);
+		interpz += FixedMul(thing->momz, mul);
 	}
 
+	// sprite offset
+	interpx += thing->sprxoff;
+	interpy += thing->spryoff;
+	interpz += thing->sprzoff;
+
 	// transform the origin point
-	tr_x = thingxpos - viewx;
-	tr_y = thingypos - viewy;
+	tr_x = interpx - viewx;
+	tr_y = interpy - viewy;
 
 	basetz = tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
@@ -1525,7 +1591,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (sprframe->rotate != SRF_SINGLE || papersprite)
 	{
-		ang = R_PointToAngle (thingxpos, thingypos) - (thing->player ? thing->player->drawangle : thing->angle);
+		ang = R_PointToAngle (interpx, interpy) - interpangle;
 		if (mirrored)
 			ang = InvAngle(ang);
 	}
@@ -1540,7 +1606,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	else
 	{
 		// choose a different rotation based on player view
-		//ang = R_PointToAngle (thingxpos, thingypos) - thing->angle;
+		//ang = R_PointToAngle (interpx, interpy) - interpangle;
 
 		if ((sprframe->rotate & SRF_RIGHT) && (ang < ANGLE_180)) // See from right
 			rot = 6; // F7 slot
@@ -1751,12 +1817,37 @@ static void R_ProjectSprite(mobj_t *thing)
 		fixed_t linkscale;
 
 		thing = thing->tracer;
+		if (cv_frameinterpolation.value == 1)
+		{
+			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
+			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
+		}
+
+		// hitlag vibrating (todo: interp somehow?)
+		if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
+		{
+			fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+
+			if (leveltime & 1)
+			{
+				mul = -mul;
+			}
+
+			interpx += FixedMul(thing->momx, mul);
+			interpy += FixedMul(thing->momy, mul);
+			interpz += FixedMul(thing->momz, mul);
+		}
+
+		// sprite offset
+		interpx += thing->sprxoff;
+		interpy += thing->spryoff;
+		interpz += thing->sprzoff;
 
 		if (! R_ThingVisible(thing))
 			return;
 
-		tr_x = (thingxpos + sort_x) - viewx;
-		tr_y = (thingypos + sort_y) - viewy;
+		tr_x = (interpx + sort_x) - viewx;
+		tr_y = (interpy + sort_y) - viewy;
 		tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
 		linkscale = FixedDiv(projectiony[viewssnum], tz);
 
@@ -1771,8 +1862,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 	else if (splat)
 	{
-		tr_x = (thingxpos + sort_x) - viewx;
-		tr_y = (thingypos + sort_y) - viewy;
+		tr_x = (interpx + sort_x) - viewx;
+		tr_y = (interpy + sort_y) - viewy;
 		sort_z = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin);
 		sortscale = FixedDiv(projectiony[viewssnum], sort_z);
 	}
@@ -1792,7 +1883,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (x2 < portalclipstart || x1 >= portalclipend)
 			return;
 
-		if (P_PointOnLineSide(thingxpos, thingypos, portalclipline) != 0)
+		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
 			return;
 	}
 
@@ -1861,12 +1952,12 @@ static void R_ProjectSprite(mobj_t *thing)
 			// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 			// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 			// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-			gz = oldthingzpos + oldthing->height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
+			gz = interpz + oldthing->height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
 			gzt = gz + FixedMul(spr_height, FixedMul(spriteyscale, this_scale));
 		}
 		else
 		{
-			gzt = oldthingzpos + FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
+			gzt = interpz + FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
 			gz = gzt - FixedMul(spr_height, FixedMul(spriteyscale, this_scale));
 		}
 	}
@@ -1885,7 +1976,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		// R_GetPlaneLight won't work on sloped lights!
 		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], thingxpos, thingypos);
+			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interpx, interpy);
 			if (h <= top) {
 				light = lightnum - 1;
 				break;
@@ -1903,7 +1994,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	heightsec = thing->subsector->sector->heightsec;
-	if (viewplayer->mo && viewplayer->mo->subsector)
+	if (viewplayer && viewplayer->mo && viewplayer->mo->subsector)
 		phs = viewplayer->mo->subsector->sector->heightsec;
 	else
 		phs = -1;
@@ -1911,12 +2002,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
 		if (viewz < sectors[phs].floorheight ?
-		thingzpos >= sectors[heightsec].floorheight :
+		interpz >= sectors[heightsec].floorheight :
 		gzt < sectors[heightsec].floorheight)
 			return;
 		if (viewz > sectors[phs].ceilingheight ?
 		gzt < sectors[heightsec].ceilingheight && viewz >= sectors[heightsec].ceilingheight :
-		thingzpos >= sectors[heightsec].ceilingheight)
+		interpz >= sectors[heightsec].ceilingheight)
 			return;
 	}
 
@@ -1929,12 +2020,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->sortscale = sortscale;
 	vis->sortsplat = sortsplat;
 	vis->dispoffset = dispoffset; // Monster Iestyn: 23/11/15
-	vis->gx = thingxpos;
-	vis->gy = thingypos;
+	vis->gx = interpx;
+	vis->gy = interpy;
 	vis->gz = gz;
 	vis->gzt = gzt;
 	vis->thingheight = thing->height;
-	vis->pz = thingzpos;
+	vis->pz = interpz;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = FixedDiv(gzt - viewz, spriteyscale);
 	vis->scalestep = scalestep;
@@ -2069,9 +2160,22 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	//SoM: 3/17/2000
 	fixed_t gz, gzt;
 
+	// uncapped/interpolation
+	fixed_t interpx = thing->x;
+	fixed_t interpy = thing->y;
+	fixed_t interpz = thing->z;
+
+	// do interpolation
+	if (cv_frameinterpolation.value == 1)
+	{
+		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
+		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
+		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
+	}
+
 	// transform the origin point
-	tr_x = thing->x - viewx;
-	tr_y = thing->y - viewy;
+	tr_x = interpx - viewx;
+	tr_y = interpy - viewy;
 
 	tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
@@ -2135,12 +2239,12 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 		if (x2 < portalclipstart || x1 >= portalclipend)
 			return;
 
-		if (P_PointOnLineSide(thing->x, thing->y, portalclipline) != 0)
+		if (P_PointOnLineSide(interpx, interpy, portalclipline) != 0)
 			return;
 	}
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
-	gzt = thing->z + spritecachedinfo[lump].topoffset;
+	gzt = interpz + spritecachedinfo[lump].topoffset;
 	gz = gzt - spritecachedinfo[lump].height;
 
 	if (thing->subsector->sector->cullheight)
@@ -2153,10 +2257,13 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis = R_NewVisSprite();
 	vis->scale = vis->sortscale = yscale; //<<detailshift;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
-	vis->gx = thing->x;
-	vis->gy = thing->y;
+	vis->gx = interpx;
+	vis->gy = interpy;
 	vis->gz = gz;
 	vis->gzt = gzt;
+	vis->thingheight = 4*FRACUNIT;
+	vis->pz = interpz;
+	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = vis->gzt - viewz;
 	vis->scalestep = 0;
 	vis->paperdistance = 0;

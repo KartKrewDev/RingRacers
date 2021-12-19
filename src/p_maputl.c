@@ -15,6 +15,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#include "k_kart.h"
 #include "p_local.h"
 #include "r_main.h"
 #include "r_data.h"
@@ -588,7 +589,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	if (mobj)
 	{
 		// Check for collision with front side's midtexture if Effect 4 is set
-		if (linedef->flags & ML_EFFECT4
+		if ((linedef->flags & ML_EFFECT4 || (mobj->player && P_IsLineTripWire(linedef) && !K_TripwirePass(mobj->player)))
 			&& !linedef->polyobj // don't do anything for polyobjects! ...for now
 			) {
 			side_t *side = &sides[linedef->sidenum[0]];
@@ -729,7 +730,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					if (!(rover->flags & FF_EXISTS))
 						continue;
 
-					if (mobj->player && P_CheckSolidLava(rover))
+					if (mobj->player && P_CheckSolidFFloorSurface(mobj->player, rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
@@ -771,7 +772,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					if (!(rover->flags & FF_EXISTS))
 						continue;
 
-					if (mobj->player && P_CheckSolidLava(rover))
+					if (mobj->player && P_CheckSolidFFloorSurface(mobj->player, rover))
 						;
 					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
 						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))

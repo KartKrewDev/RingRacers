@@ -761,8 +761,13 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 		if (lt_exitticker < length)
 		{
-			INT32 offset = screenwidth - ((lt_exitticker * screenwidth) / length);
 			boolean slidefromright = false;
+
+			const INT32 offsetAmount = (screenwidth * FRACUNIT) / length;
+			fixed_t offset = (screenwidth * FRACUNIT) - (lt_exitticker * offsetAmount);
+
+			offset += FixedMul(offsetAmount, renderdeltatics);
+			offset /= FRACUNIT;
 
 			if (r_splitscreen > 1)
 			{
@@ -796,7 +801,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	player_t *player;
 
 	fixed_t viewpointX, viewpointY, viewpointZ;
-	angle_t viewpointAngle, viewpointAiming;
+	angle_t viewpointAngle, viewpointAiming, viewpointRoll;
 
 	INT32 screenWidth, screenHeight;
 	fixed_t screenHalfW, screenHalfH;
@@ -824,12 +829,13 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	cam = &camera[cameraNum];
 	player = &players[displayplayers[cameraNum]];
 
-	if (cam == NULL || player == NULL)
+	if (cam == NULL || player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 	{
 		// Shouldn't be possible?
 		return;
 	}
 
+	// TODO: needs da interp
 	if (cam->chase == true && !player->spectator)
 	{
 		// Use the camera's properties.
@@ -838,25 +844,44 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 		viewpointZ = cam->z - point->z;
 		viewpointAngle = (INT32)cam->angle;
 		viewpointAiming = (INT32)cam->aiming;
+		viewpointRoll = (INT32)player->viewrollangle;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			viewpointX = cam->old_x + FixedMul(rendertimefrac, cam->x - cam->old_x);
+			viewpointY = cam->old_y + FixedMul(rendertimefrac, cam->y - cam->old_y);
+			viewpointZ = (cam->old_z + FixedMul(rendertimefrac, cam->z - cam->old_z)) - point->z;
+
+			viewpointAngle = (INT32)(cam->old_angle + FixedMul(rendertimefrac, cam->angle - cam->old_angle));
+			viewpointAiming = (INT32)(cam->old_aiming + FixedMul(rendertimefrac, cam->aiming - cam->old_aiming));
+			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
+		}
 	}
 	else
 	{
 		// Use player properties.
-
-		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-		{
-			// This shouldn't happen.
-			return;
-		}
-
 		viewpointX = player->mo->x;
 		viewpointY = player->mo->y;
 		viewpointZ = player->viewz - point->z;
 		viewpointAngle = (INT32)player->mo->angle;
 		viewpointAiming = (INT32)player->aiming;
+		viewpointRoll = (INT32)player->viewrollangle;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			viewpointX = player->mo->old_x + FixedMul(rendertimefrac, player->mo->x - player->mo->old_x);
+			viewpointY = player->mo->old_y + FixedMul(rendertimefrac, player->mo->y - player->mo->old_y);
+			viewpointZ = (player->mo->old_z + FixedMul(rendertimefrac, player->viewz - player->mo->old_z)) - point->z; //player->old_viewz
+
+			viewpointAngle = (INT32)(player->mo->old_angle + FixedMul(rendertimefrac, player->mo->angle - player->mo->old_angle));
+			//viewpointAiming = (INT32)(player->mo->old_aiming + FixedMul(rendertimefrac, player->mo->aiming - player->mo->old_aiming));
+			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
+		}
 	}
 
 	viewpointAngle += (INT32)angleOffset;
+
+	(void)viewpointRoll; // will be used later...
 
 	// Calculate screen size adjustments.
 	// TODO: Anyone want to make this support non-green resolutions somehow? :V
@@ -2460,7 +2485,8 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
+			// TODO BETTER HUD
+			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
 		}
 	}
 }
@@ -2584,6 +2610,7 @@ static void K_drawKartPlayerCheck(void)
 		UINT8 *colormap = NULL;
 		UINT8 pnum = 0;
 		vector3_t v;
+		vector3_t pPos;
 		trackingResult_t result;
 
 		if (!playeringame[i] || checkplayer->spectator)
@@ -2608,7 +2635,22 @@ static void K_drawKartPlayerCheck(void)
 		v.y = checkplayer->mo->y;
 		v.z = checkplayer->mo->z;
 
-		distance = R_PointToDist2(stplyr->mo->x, stplyr->mo->y, v.x, v.y);
+		pPos.x = stplyr->mo->x;
+		pPos.y = stplyr->mo->y;
+		pPos.z = stplyr->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			v.x = checkplayer->mo->old_x + FixedMul(rendertimefrac, checkplayer->mo->x - checkplayer->mo->old_x);
+			v.y = checkplayer->mo->old_y + FixedMul(rendertimefrac, checkplayer->mo->y - checkplayer->mo->old_y);
+			v.z = checkplayer->mo->old_z + FixedMul(rendertimefrac, checkplayer->mo->z - checkplayer->mo->old_z);
+
+			pPos.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
+			pPos.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
+			pPos.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
+		}
+
+		distance = R_PointToDist2(pPos.x, pPos.y, v.x, v.y);
 
 		if (distance > maxdistance)
 		{
@@ -2795,12 +2837,26 @@ static void K_drawKartNameTags(void)
 		c.x = thiscam->x;
 		c.y = thiscam->y;
 		c.z = thiscam->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			c.x = thiscam->old_x + FixedMul(rendertimefrac, thiscam->x - thiscam->old_x);
+			c.y = thiscam->old_y + FixedMul(rendertimefrac, thiscam->y - thiscam->old_y);
+			c.z = thiscam->old_z + FixedMul(rendertimefrac, thiscam->z - thiscam->old_z);
+		}
 	}
 	else
 	{
 		c.x = stplyr->mo->x;
 		c.y = stplyr->mo->y;
 		c.z = stplyr->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			c.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
+			c.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
+			c.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2842,6 +2898,13 @@ static void K_drawKartNameTags(void)
 		v.x = ntplayer->mo->x;
 		v.y = ntplayer->mo->y;
 		v.z = ntplayer->mo->z;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
+			v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
+			v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
+		}
 
 		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
 		{
@@ -2898,7 +2961,16 @@ static void K_drawKartNameTags(void)
 
 			v.x = ntplayer->mo->x;
 			v.y = ntplayer->mo->y;
-			v.z = ntplayer->mo->z + (ntplayer->mo->height / 2);
+			v.z = ntplayer->mo->z;
+
+			if (cv_frameinterpolation.value == 1)
+			{
+				v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
+				v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
+				v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
+			}
+
+			v.z += (ntplayer->mo->height / 2);
 
 			if (stplyr->mo->eflags & MFE_VERTICALFLIP)
 			{
@@ -3040,6 +3112,7 @@ static void K_drawKartMinimap(void)
 	SINT8 numlocalplayers = 0;
 	INT32 hyu = hyudorotime;
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
+	fixed_t interpx, interpy;
 
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
@@ -3134,7 +3207,17 @@ static void K_drawKartMinimap(void)
 			}
 			else
 				colormap = NULL;
-			K_drawKartMinimapIcon(g->mo->x, g->mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+
+			interpx = g->mo->x;
+			interpy = g->mo->y;
+
+			if (cv_frameinterpolation.value == 1)
+			{
+				interpx = g->mo->old_x + FixedMul(rendertimefrac, g->mo->x - g->mo->old_x);
+				interpy = g->mo->old_y + FixedMul(rendertimefrac, g->mo->y - g->mo->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			g = g->next;
 		}
 
@@ -3190,11 +3273,22 @@ static void K_drawKartMinimap(void)
 			else
 				colormap = NULL;
 
-			K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+			interpx = players[i].mo->x;
+			interpy = players[i].mo->y;
+
+			if (cv_frameinterpolation.value == 1)
+			{
+				interpx = players[i].mo->old_x + FixedMul(rendertimefrac, players[i].mo->x - players[i].mo->old_x);
+				interpy = players[i].mo->old_y + FixedMul(rendertimefrac, players[i].mo->y - players[i].mo->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			// Target reticule
 			if ((gametype == GT_RACE && players[i].position == spbplace)
-			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
-				K_drawKartMinimapIcon(players[i].mo->x, players[i].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
+			{
+				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+			}
 		}
 	}
 
@@ -3214,7 +3308,16 @@ static void K_drawKartMinimap(void)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
 			}
 
-			K_drawKartMinimapIcon(mobj->x, mobj->y, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
+			interpx = mobj->x;
+			interpy = mobj->y;
+
+			if (cv_frameinterpolation.value == 1)
+			{
+				interpx = mobj->old_x + FixedMul(rendertimefrac, mobj->x - mobj->old_x);
+				interpy = mobj->old_y + FixedMul(rendertimefrac, mobj->y - mobj->old_y);
+			}
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
 		}
 	}
 
@@ -3242,12 +3345,23 @@ static void K_drawKartMinimap(void)
 		else
 			colormap = NULL;
 
-		K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+		interpx = players[localplayers[i]].mo->x;
+		interpy = players[localplayers[i]].mo->y;
+
+		if (cv_frameinterpolation.value == 1)
+		{
+			interpx = players[localplayers[i]].mo->old_x + FixedMul(rendertimefrac, players[localplayers[i]].mo->x - players[localplayers[i]].mo->old_x);
+			interpy = players[localplayers[i]].mo->old_y + FixedMul(rendertimefrac, players[localplayers[i]].mo->y - players[localplayers[i]].mo->old_y);
+		}
+
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
 		// Target reticule
 		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
-		|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
-			K_drawKartMinimapIcon(players[localplayers[i]].mo->x, players[localplayers[i]].mo->y, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
+		{
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
+		}
 	}
 }
 
@@ -3507,7 +3621,7 @@ static void K_drawKartFinish(void)
 
 	//else -- 1/2p, scrolling FINISH
 	{
-		INT32 x, xval;
+		INT32 x, xval, ox, interpx;
 
 		if (r_splitscreen) // wide splitscreen
 			pnum += 4;
@@ -3515,11 +3629,14 @@ static void K_drawKartFinish(void)
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kp_racefinish[pnum]->width)<<FRACBITS);
 		x = ((TICRATE - stplyr->karthud[khud_cardanimation])*(xval > x ? xval : x))/TICRATE;
+		ox = ((TICRATE - (stplyr->karthud[khud_cardanimation] - 1))*(xval > x ? xval : x))/TICRATE;
+
+		interpx = ox + FixedMul(rendertimefrac, x - ox);
 
 		if (r_splitscreen && stplyr == &players[displayplayers[1]])
-			x = -x;
+			interpx = -interpx;
 
-		V_DrawFixedPatch(x + (STCD_X<<FRACBITS) - (xval>>1),
+		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (xval>>1),
 			(STCD_Y<<FRACBITS) - (SHORT(kp_racefinish[pnum]->height)<<(FRACBITS-1)),
 			FRACUNIT,
 			splitflags, kp_racefinish[pnum], NULL);
@@ -3742,9 +3859,9 @@ static void K_drawKartFirstPerson(void)
 		fixed_t yoffs = -P_ReturnThrustX(stplyr->mo, ang, 4*FRACUNIT);
 
 		// hitlag vibrating
-		if (stplyr->mo->hitlag > 0)
+		if (stplyr->mo->hitlag > 0 && (stplyr->mo->eflags & MFE_DAMAGEHITLAG))
 		{
-			fixed_t mul = stplyr->mo->hitlag * (FRACUNIT / 10);
+			fixed_t mul = stplyr->mo->hitlag * HITLAGJITTERS;
 			if (r_splitscreen && mul > FRACUNIT)
 				mul = FRACUNIT;
 
@@ -3908,33 +4025,63 @@ static void K_drawChallengerScreen(void)
 static void K_drawLapStartAnim(void)
 {
 	// This is an EVEN MORE insanely complicated animation.
-	const UINT8 progress = 80-stplyr->karthud[khud_lapanimation];
+	const UINT8 t = stplyr->karthud[khud_lapanimation];
+	const UINT8 progress = 80 - t;
+
+	const UINT8 tOld = t - 1;
+	const UINT8 progressOld = 80 - tOld;
+
+	const tic_t leveltimeOld = leveltime - 1;
+
 	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
 
-	V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
-		(48 - (32*max(0, progress-76)))*FRACUNIT,
+	fixed_t interpx, interpy, newval, oldval;
+
+	newval = (BASEVIDWIDTH/2 + (32 * max(0, t - 76))) * FRACUNIT;
+	oldval = (BASEVIDWIDTH/2 + (32 * max(0, tOld - 76))) * FRACUNIT;
+	interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+	newval = (48 - (32 * max(0, progress - 76))) * FRACUNIT;
+	oldval = (48 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+	interpy = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+	V_DrawFixedPatch(
+		interpx, interpy,
 		FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 		(modeattacking ? kp_lapanim_emblem[1] : kp_lapanim_emblem[0]), colormap);
 
 	if (stplyr->karthud[khud_laphand] >= 1 && stplyr->karthud[khud_laphand] <= 3)
 	{
-		V_DrawFixedPatch((BASEVIDWIDTH/2 + (32*max(0, stplyr->karthud[khud_lapanimation]-76)))*FRACUNIT,
-			(48 - (32*max(0, progress-76))
-				+ 4 - abs((signed)((leveltime % 8) - 4)))*FRACUNIT,
+		newval = (4 - abs((signed)((leveltime % 8) - 4))) * FRACUNIT;
+		oldval = (4 - abs((signed)((leveltimeOld % 8) - 4))) * FRACUNIT;
+		interpy += oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, interpy,
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
 	if (stplyr->laps == (UINT8)(cv_numlaps.value))
 	{
-		V_DrawFixedPatch((62 - (32*max(0, progress-76)))*FRACUNIT, // 27
+		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
+		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, // 27
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_final[min(progress/2, 10)], NULL);
 
 		if (progress/2-12 >= 0)
 		{
-			V_DrawFixedPatch((188 + (32*max(0, progress-76)))*FRACUNIT, // 194
+			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+			V_DrawFixedPatch(
+				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 				kp_lapanim_lap[min(progress/2-12, 6)], NULL);
@@ -3942,21 +4089,36 @@ static void K_drawLapStartAnim(void)
 	}
 	else
 	{
-		V_DrawFixedPatch((82 - (32*max(0, progress-76)))*FRACUNIT, // 61
+		newval = (82 - (32 * max(0, progress - 76))) * FRACUNIT;
+		oldval = (82 - (32 * max(0, progressOld - 76))) * FRACUNIT;
+		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+		V_DrawFixedPatch(
+			interpx, // 61
 			30*FRACUNIT, // 24
 			FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 			kp_lapanim_lap[min(progress/2, 6)], NULL);
 
 		if (progress/2-8 >= 0)
 		{
-			V_DrawFixedPatch((188 + (32*max(0, progress-76)))*FRACUNIT, // 194
+			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
+			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+			V_DrawFixedPatch(
+				interpx, // 194
 				30*FRACUNIT, // 24
 				FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 				kp_lapanim_number[(((UINT32)stplyr->laps) / 10)][min(progress/2-8, 2)], NULL);
 
 			if (progress/2-10 >= 0)
 			{
-				V_DrawFixedPatch((208 + (32*max(0, progress-76)))*FRACUNIT, // 221
+				newval = (208 + (32 * max(0, progress - 76))) * FRACUNIT;
+				oldval = (208 + (32 * max(0, progressOld - 76))) * FRACUNIT;
+				interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+
+				V_DrawFixedPatch(
+					interpx, // 221
 					30*FRACUNIT, // 24
 					FRACUNIT, V_SNAPTOTOP|V_HUDTRANS,
 					kp_lapanim_number[(((UINT32)stplyr->laps) % 10)][min(progress/2-10, 2)], NULL);
