@@ -7495,7 +7495,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					fast->angle = mobj->angle;
 					fast->momx = 3*mobj->target->momx/4;
 					fast->momy = 3*mobj->target->momy/4;
-					fast->momz = 3*mobj->target->momz/4;
+					fast->momz = 3*P_GetMobjZMovement(mobj->target)/4;
 
 					K_MatchGenericExtraFlags(fast, mobj);
 					P_SetMobjState(fast, S_FLAMESHIELDLINE1 + i);
@@ -13257,4 +13257,26 @@ fixed_t P_GetMobjFeet(const mobj_t *mobj)
 fixed_t P_GetMobjGround(const mobj_t *mobj)
 {
 	return P_IsObjectFlipped(mobj) ? mobj->ceilingz : mobj->floorz;
+}
+
+//
+// P_GetMobjZMovement
+// Returns the Z momentum of the object, accounting for slopes if the object is grounded
+//
+fixed_t P_GetMobjZMovement(mobj_t *mo)
+{
+	pslope_t *slope = mo->standingslope;
+	angle_t angDiff;
+	fixed_t speed;
+
+	if (!P_IsObjectOnGround(mo))
+		return mo->momz;
+
+	if (!slope)
+		return 0;
+
+	angDiff = R_PointToAngle2(0, 0, mo->momx, mo->momy) - slope->xydirection;
+	speed = FixedHypot(mo->momx, mo->momy);
+
+	return P_ReturnThrustY(mo, slope->zangle, P_ReturnThrustX(mo, angDiff, speed));
 }
