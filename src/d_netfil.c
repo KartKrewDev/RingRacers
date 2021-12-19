@@ -459,7 +459,12 @@ INT32 CL_CheckFiles(void)
 	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
-		for (i = 0, j = mainwads+1; i < fileneedednum || j < numwadfiles;)
+#ifdef DEVELOP
+		j = 0;
+#else
+		j = mainwads + 1;
+#endif
+		for (i = 0; i < fileneedednum || j < numwadfiles;)
 		{
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
