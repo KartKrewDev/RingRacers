@@ -824,6 +824,26 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 	{
 		splash->color = get_number(val);
 	}
+	else if (stricmp(param, "pushH") == 0)
+	{
+		splash->pushH = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "pushV") == 0)
+	{
+		splash->pushV = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "spread") == 0)
+	{
+		splash->spread = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "cone") == 0)
+	{
+		splash->cone = AngleFixed(FLOAT_TO_FIXED(atof(val))); // lol
+	}
+	else if (stricmp(param, "numParticles") == 0)
+	{
+		splash->numParticles = (UINT8)atoi(val);
+	}
 }
 
 /*--------------------------------------------------
@@ -903,6 +923,26 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "color") == 0)
 	{
 		footstep->color = get_number(val);
+	}
+	else if (stricmp(param, "pushH") == 0)
+	{
+		footstep->pushH = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "pushV") == 0)
+	{
+		footstep->pushV = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "spread") == 0)
+	{
+		footstep->spread = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "cone") == 0)
+	{
+		footstep->cone = AngleFixed(FLOAT_TO_FIXED(atof(val))); // lol
+	}
+	else if (stricmp(param, "sfxFreq") == 0)
+	{
+		footstep->sfxFreq = (tic_t)atoi(val);
 	}
 }
 
