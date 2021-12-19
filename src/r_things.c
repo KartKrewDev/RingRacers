@@ -284,14 +284,13 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 			// store sprite info in lookup tables
 			//FIXME : numspritelumps do not duplicate sprite replacements
 
+			W_ReadLumpHeaderPwad(wadnum, l, &patch, PNG_HEADER_SIZE, 0);
+
 #ifndef NO_PNG_LUMPS
 			{
-				UINT8 header[PNG_HEADER_SIZE];
 				size_t len = W_LumpLengthPwad(wadnum, l);
 
-				W_ReadLumpHeaderPwad(wadnum, l, header, sizeof header, 0);
-
-				if (Picture_IsLumpPNG(header, len))
+				if (Picture_IsLumpPNG((UINT8*)&patch, len))
 				{
 					UINT8 *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
 					Picture_PNGDimensions((UINT8 *)png, &width, &height, &topoffset, &leftoffset, len);
@@ -303,7 +302,6 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 			if (!isPNG)
 #endif
 			{
-				W_ReadLumpHeaderPwad(wadnum, l, &patch, sizeof(INT16) * 4, 0);
 				width = (INT32)(SHORT(patch.width));
 				height = (INT32)(SHORT(patch.height));
 				topoffset = (INT16)(SHORT(patch.topoffset));
