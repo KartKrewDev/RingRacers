@@ -2098,8 +2098,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	//
 	// determine the colormap (lightlevel & special effects)
 	//
-	if (vis->cut & SC_FULLBRIGHT
-		&& (!vis->extra_colormap || !(vis->extra_colormap->flags & CMF_FADEFULLBRIGHTSPRITES)))
+	if (vis->cut & SC_FULLBRIGHT)
 	{
 		// full bright: goggles
 		vis->colormap = colormaps;
