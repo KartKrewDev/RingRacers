@@ -3798,10 +3798,16 @@ static void P_InitGametype(void)
 	if (!demo.playback && multiplayer && !dedicated)
 	{
 		char buf[MAX_WADPATH];
+		char ver[128];
 		int parts;
 
-		sprintf(buf, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP"%s-%s"PATHSEP"%d-%s",
-				srb2home, compbranch, comprevision, (int) (time(NULL)), G_BuildMapName(gamemap));
+#ifdef DEVELOP
+		sprintf(ver, "%s-%s", compbranch, comprevision);
+#else
+		strcpy(ver, VERSIONSTRING);
+#endif
+		sprintf(buf, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP"%s"PATHSEP"%d-%s",
+				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
 
 		parts = M_PathParts(buf);
 		M_MkdirEachUntil(buf, parts - 5, parts - 1, 0755);
