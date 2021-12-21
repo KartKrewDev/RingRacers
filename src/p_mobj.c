@@ -3574,7 +3574,8 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 
 static void P_SquishThink(mobj_t *mobj)
 {
-	if (!(mobj->eflags & MFE_SLOPELAUNCHED))
+	if (!(mobj->flags & MF_NOSQUISH) &&
+			!(mobj->eflags & MFE_SLOPELAUNCHED))
 	{
 		K_Squish(mobj);
 	}
