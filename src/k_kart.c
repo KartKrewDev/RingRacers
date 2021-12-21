@@ -1969,7 +1969,7 @@ void K_SpawnDashDustRelease(player_t *player)
 
 		dust->momx = 3*player->mo->momx/5;
 		dust->momy = 3*player->mo->momy/5;
-		//dust->momz = 3*player->mo->momz/5;
+		dust->momz = 3*P_GetMobjZMovement(player->mo)/5;
 
 		K_MatchGenericExtraFlags(dust, player->mo);
 	}
@@ -1996,6 +1996,7 @@ void K_SpawnDriftBoostClip(player_t *player)
 {
 	mobj_t *clip;
 	fixed_t scale = 115*FRACUNIT/100;
+	fixed_t momz = P_GetMobjZMovement(player->mo);
 	fixed_t z;
 
 	if (( player->mo->eflags & MFE_VERTICALFLIP ))
@@ -2012,8 +2013,8 @@ void K_SpawnDriftBoostClip(player_t *player)
 	clip->fuse = 105;
 	clip->momz = 7 * P_MobjFlip(clip) * clip->scale;
 
-	if (player->mo->momz > 0)
-		clip->momz += player->mo->momz;
+	if (momz > 0)
+		clip->momz += momz;
 
 	P_InstaThrust(clip, player->mo->angle +
 			P_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
@@ -2045,7 +2046,7 @@ void K_SpawnNormalSpeedLines(player_t *player)
 	fast->angle = K_MomentumAngle(player->mo);
 	fast->momx = 3*player->mo->momx/4;
 	fast->momy = 3*player->mo->momy/4;
-	fast->momz = 3*player->mo->momz/4;
+	fast->momz = 3*P_GetMobjZMovement(player->mo)/4;
 
 	K_MatchGenericExtraFlags(fast, player->mo);
 
@@ -2067,7 +2068,7 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 
 	fast->momx = 3*mo->momx/4;
 	fast->momy = 3*mo->momy/4;
-	fast->momz = 3*mo->momz/4;
+	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
 	P_SetTarget(&fast->target, mo);
 	fast->angle = K_MomentumAngle(mo);
@@ -4015,6 +4016,7 @@ void K_SpawnDriftElectricSparks(player_t *player)
 				P_SetObjectMomZ(spark, vspeed, false);
 				spark->momx += mo->momx; // copy player speed
 				spark->momy += mo->momy;
+				spark->momz += P_GetMobjZMovement(mo);
 
 				sparkangle += ANGLE_90;
 			}
@@ -4065,7 +4067,7 @@ static void K_SpawnDriftSparks(player_t *player)
 
 		spark->momx = player->mo->momx/2;
 		spark->momy = player->mo->momy/2;
-		//spark->momz = player->mo->momz/2;
+		spark->momz = P_GetMobjZMovement(player->mo)/2;
 
 		spark->color = K_DriftSparkColor(player, player->driftcharge);
 
@@ -4208,7 +4210,7 @@ static void K_SpawnAIZDust(player_t *player)
 
 		spark->momx = (6*player->mo->momx)/5;
 		spark->momy = (6*player->mo->momy)/5;
-		//spark->momz = player->mo->momz/2;
+		spark->momz = P_GetMobjZMovement(player->mo);
 
 		K_MatchGenericExtraFlags(spark, player->mo);
 	}
@@ -4366,7 +4368,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
 	{
 		dust->momx = mo->momx/2;
 		dust->momy = mo->momy/2;
-		dust->momz = mo->momz/2;
+		dust->momz = P_GetMobjZMovement(mo)/2;
 	}
 }
 
@@ -4437,7 +4439,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 
 		dust->momx = (4*mo->momx)/5;
 		dust->momy = (4*mo->momy)/5;
-		//dust->momz = (4*mo->momz)/5;
+		dust->momz = (4*P_GetMobjZMovement(mo))/5;
 
 		P_Thrust(dust, dust->angle, 4*mo->scale);
 
@@ -4967,7 +4969,7 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 
 		smoke->momx = 3*src->momx/4;
 		smoke->momy = 3*src->momy/4;
-		smoke->momz = 3*src->momz/4;
+		smoke->momz = 3*P_GetMobjZMovement(src)/4;
 
 		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * src->scale);
 		smoke->momz += P_RandomRange(0, 4) * src->scale;
@@ -6709,7 +6711,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (gametype == GT_RACE && player->rings <= 0) // spawn ring debt indicator
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
-				player->mo->z + player->mo->momz + player->mo->height + (24*player->mo->scale), MT_THOK);
+				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
 
 			P_SetMobjState(debtflag, S_RINGDEBT);
 			P_SetScale(debtflag, (debtflag->destscale = player->mo->scale));
@@ -6741,7 +6743,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			star->flags |= MF_NOGRAVITY;
 			star->momx = player->mo->momx / 2;
 			star->momy = player->mo->momy / 2;
-			star->momz = player->mo->momz / 2;
+			star->momz = P_GetMobjZMovement(player->mo) / 2;
 			star->fuse = 12;
 			star->scale = player->mo->scale;
 			star->destscale = star->scale / 2;
@@ -8317,7 +8319,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 	wind->momx = 3 * parent->momx / 4;
 	wind->momy = 3 * parent->momy / 4;
-	wind->momz = 3 * parent->momz / 4;
+	wind->momz = 3 * P_GetMobjZMovement(parent) / 4;
 
 	K_MatchGenericExtraFlags(wind, parent);
 }
