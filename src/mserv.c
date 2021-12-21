@@ -61,6 +61,8 @@ static void MasterServer_OnChange(void);
 
 static void Advertise_OnChange(void);
 
+static void RendezvousServer_OnChange(void);
+
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
 	{60, "MAX"},
@@ -68,7 +70,7 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ms.kartkrew.org/ms/api", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_rendezvousserver = CVAR_INIT ("rendezvousserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
+consvar_t cv_rendezvousserver = CVAR_INIT ("rendezvousserver", "relay.kartkrew.org", CV_SAVE|CV_CALL, NULL, RendezvousServer_OnChange);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 consvar_t cv_server_contact = CVAR_INIT ("server_contact", "", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
@@ -515,17 +517,6 @@ static void MasterServer_OnChange(void)
 #ifdef MASTERSERVER
 	UnregisterServer();
 
-	/*
-	TODO: remove this for v2, it's just a hack
-	for those coming in with an old config.
-	*/
-	if (
-			! cv_masterserver.changed &&
-			strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
-	){
-		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
-	}
-
 	Set_api(cv_masterserver.string);
 
 	if (Online())
@@ -563,3 +554,16 @@ Advertise_OnChange(void)
 	DRPC_UpdatePresence();
 #endif
 }
+
+#ifdef DEVELOP
+static void
+RendezvousServer_OnChange (void)
+{
+	consvar_t *cvar = &cv_rendezvousserver;
+
+	if (!strcmp(cvar->string, "jart-dev.jameds.org"))
+		CV_StealthSet(cvar, cvar->defaultvalue);
+}
+#else
+#error "This was an indev thing, remove at release."
+#endif
