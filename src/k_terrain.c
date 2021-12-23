@@ -810,7 +810,7 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 
 	if (stricmp(param, "mobjType") == 0)
 	{
-		splash->mobjType = get_number(val) + 1;
+		splash->mobjType = get_number(val);
 	}
 	else if (stricmp(param, "sfx") == 0)
 	{
@@ -910,7 +910,7 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 
 	if (stricmp(param, "mobjType") == 0)
 	{
-		footstep->mobjType = get_number(val) + 1;
+		footstep->mobjType = get_number(val);
 	}
 	else if (stricmp(param, "sfx") == 0)
 	{
