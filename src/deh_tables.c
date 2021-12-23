@@ -5466,6 +5466,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	// SRB2kart
 	"MT_RANDOMITEM",
+	"MT_SPHEREBOX",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
