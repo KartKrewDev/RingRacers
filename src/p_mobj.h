@@ -159,6 +159,8 @@ typedef enum
 	MF_DONTENCOREMAP    = 1<<28,
 	// Hitbox extends just as far below as above.
 	MF_PICKUPFROMBELOW  = 1<<29,
+	// Disable momentum-based squash and stretch.
+	MF_NOSQUISH         = 1<<30,
 	// free: to and including 1<<31
 } mobjflag_t;
 
