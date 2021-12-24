@@ -40,8 +40,11 @@
 #include "../r_things.h" // R_GetShadowZ
 #include "../d_main.h"
 #include "../p_slopes.h"
-#include "../k_kart.h" // HITLAGJITTERS
 #include "hw_md2.h"
+
+// SRB2Kart
+#include "../k_kart.h" // HITLAGJITTERS
+#include "../r_fps.h"
 
 #ifdef NEWCLIP
 #include "hw_clip.h"
@@ -3641,17 +3644,9 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t slopez;
 	pslope_t *groundslope;
 
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
@@ -5084,25 +5079,18 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	dispoffset = thing->info->dispoffset;
 
-	interpx = thing->x;
-	interpy = thing->y;
-	interpz = thing->z;
-	interpangle = (thing->player ? thing->player->drawangle : thing->angle);
+	interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	interpz = R_InterpolateFixed(thing->old_z, thing->z);
+	interpangle = ANGLE_MAX;
 
-	if (cv_frameinterpolation.value == 1)
+	if (thing->player)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-
-		if (thing->player)
-		{
-			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
-		}
-		else
-		{
-			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
-		}
+		interpangle = R_InterpolateAngle(thing->player->old_drawangle, thing->player->drawangle);
+	}
+	else
+	{
+		interpangle = R_InterpolateAngle(thing->old_angle, thing->angle);
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
@@ -5526,17 +5514,9 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (!thing)
 		return;
 
-	interpx = thing->x;
-	interpy = thing->y;
-	interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interpx) - gl_viewx;
