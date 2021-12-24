@@ -46,6 +46,7 @@
 // SRB2kart
 #include "k_color.h"
 #include "k_kart.h" // HITLAGJITTERS
+#include "r_fps.h"
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -1468,26 +1469,18 @@ static void R_ProjectSprite(mobj_t *thing)
 #endif
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-	angle_t interpangle = (thing->player ? thing->player->drawangle : thing->angle);
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
+	angle_t interpangle = ANGLE_MAX;
 
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
+	if (thing->player)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-
-		if (thing->player)
-		{
-			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
-		}
-		else
-		{
-			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
-		}
+		interpangle = R_InterpolateAngle(thing->player->old_drawangle, thing->player->drawangle);
+	}
+	else
+	{
+		interpangle = R_InterpolateAngle(thing->old_angle, thing->angle);
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
@@ -1815,11 +1808,10 @@ static void R_ProjectSprite(mobj_t *thing)
 		fixed_t linkscale;
 
 		thing = thing->tracer;
-		if (cv_frameinterpolation.value == 1)
-		{
-			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
-			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
-		}
+
+		interpx = R_InterpolateFixed(thing->old_x, thing->x);
+		interpy = R_InterpolateFixed(thing->old_y, thing->y);
+		interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 		// hitlag vibrating (todo: interp somehow?)
 		if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
@@ -2158,17 +2150,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t gz, gzt;
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// transform the origin point
 	tr_x = interpx - viewx;
