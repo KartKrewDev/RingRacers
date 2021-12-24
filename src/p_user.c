@@ -379,7 +379,7 @@ void P_GiveFinishFlags(player_t *player)
 		fixed_t xoffs = FINECOSINE(fa);
 		fixed_t yoffs = FINESINE(fa);
 		mobj_t* flag = P_SpawnMobjFromMobj(player->mo, xoffs, yoffs, 0, MT_FINISHFLAG);
-		flag->angle = angle;
+		P_InitAngle(flag, angle);
 		angle += FixedAngle(120*FRACUNIT);
 
 		P_SetTarget(&flag->target, player->mo);
@@ -2176,7 +2176,7 @@ void P_MovePlayer(player_t *player)
 		if (trailScale > 0)
 		{
 			const angle_t forwardangle = K_MomentumAngle(player->mo);
-			const fixed_t playerVisualRadius = player->mo->radius + 8*FRACUNIT;
+			const fixed_t playerVisualRadius = player->mo->radius + (8 * player->mo->scale);
 			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
 			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
 			const statenum_t curUnderlayFrame = S_WATERTRAILUNDERLAY1 + (leveltime % numFrames);
@@ -2197,7 +2197,7 @@ void P_MovePlayer(player_t *player)
 			// underlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2208,7 +2208,7 @@ void P_MovePlayer(player_t *player)
 			// overlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2220,7 +2220,7 @@ void P_MovePlayer(player_t *player)
 			// Underlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2231,7 +2231,7 @@ void P_MovePlayer(player_t *player)
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -3991,7 +3991,7 @@ static void P_HandleFollower(player_t *player)
 		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
 		P_SetFollowerState(player->follower, fl.idlestate);
 		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
-		player->follower->angle = player->mo->angle;
+		P_InitAngle(player->follower, player->mo->angle);
 
 		// This is safe to only spawn it here, the follower is removed then respawned when switched.
 		if (bubble)
@@ -4054,10 +4054,8 @@ static void P_HandleFollower(player_t *player)
 		if (player->pflags & PF_NOCONTEST)
 			player->follower->renderflags |= RF_DONTDRAW;
 
-		if (player->speed && (player->follower->momx || player->follower->momy))
-			player->follower->angle = K_MomentumAngle(player->follower);
-			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
-			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
+		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
+		player->follower->angle = K_MomentumAngle(player->follower);
 
 		// Finally, if the follower has bubbles, move them, set their scale, etc....
 		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!

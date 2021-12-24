@@ -1414,7 +1414,7 @@ static int lib_pTeleportMove(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin or P_MoveOrigin");
+	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin\" or \"P_MoveOrigin");
 	lua_pushboolean(L, P_SetOrigin(thing, x, y, z));
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
@@ -1453,6 +1453,42 @@ static int lib_pMoveOrigin(lua_State *L)
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
 	return 2;
+}
+
+static int lib_pInitAngle(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitAngle(thing, newValue);
+	return 0;
+}
+
+static int lib_pInitPitch(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitPitch(thing, newValue);
+	return 0;
+}
+
+static int lib_pInitRoll(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitRoll(thing, newValue);
+	return 0;
 }
 
 static int lib_pSlideMove(lua_State *L)
@@ -3871,6 +3907,9 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
+	{"P_InitAngle",lib_pInitAngle},
+	{"P_InitPitch",lib_pInitPitch},
+	{"P_InitRoll",lib_pInitRoll},
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
