@@ -5877,7 +5877,7 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 	}
 
 	//mobj->standingslope = slope;
-	P_InitPitchRollFromSlope(mobj, slope);
+	P_SetPitchRollFromSlope(mobj, slope);
 }
 
 // Move the hnext chain!
