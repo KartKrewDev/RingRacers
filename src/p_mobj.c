@@ -6815,12 +6815,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (( mobj->fuse & 1 ))
 			{
 				nudge = 4*mobj->target->radius;
+				/* unrotate interp angle */
+				mobj->old_angle -= ANGLE_90;
 			}
 			else
 			{
 				nudge = 2*mobj->target->radius;
 				/* rotate the papersprite frames to see the flat angle */
 				mobj->angle += ANGLE_90;
+				mobj->old_angle += ANGLE_90;
 			}
 
 			P_MoveOrigin(mobj,
