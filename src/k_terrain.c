@@ -991,7 +991,7 @@ static void K_NewTerrainDefs(void)
 }
 
 /*--------------------------------------------------
-	static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
+	static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 
 		Parser function for Terrain blocks.
 
@@ -1003,7 +1003,7 @@ static void K_NewTerrainDefs(void)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_ParseTerrainParameter(UINT32 i, char *param, char *val)
+static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 {
 	terrain_t *terrain = &terrainDefs[i];
 
@@ -1082,7 +1082,7 @@ static void K_NewTerrainFloorDefs(void)
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
+static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, char *))
 {
 	char *param, *val;
 
