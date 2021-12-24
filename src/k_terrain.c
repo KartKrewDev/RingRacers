@@ -838,7 +838,7 @@ static void K_ParseSplashParameter(size_t i, char *param, char *val)
 	}
 	else if (stricmp(param, "cone") == 0)
 	{
-		splash->cone = AngleFixed(FLOAT_TO_FIXED(atof(val))); // lol
+		splash->cone = FloatToAngle(atof(val));
 	}
 	else if (stricmp(param, "numParticles") == 0)
 	{
@@ -938,7 +938,7 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 	}
 	else if (stricmp(param, "cone") == 0)
 	{
-		footstep->cone = AngleFixed(FLOAT_TO_FIXED(atof(val))); // lol
+		footstep->cone = FloatToAngle(atof(val));
 	}
 	else if (stricmp(param, "sfxFreq") == 0)
 	{
