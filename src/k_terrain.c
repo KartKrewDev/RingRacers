@@ -630,18 +630,20 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 		tireAngle = (mo->angle + ANGLE_180);
 	}
 
+	pushAngle = K_MomentumAngle(mo) + ANGLE_180;
+
 	if ((leveltime / 2) & 1)
 	{
 		tireAngle -= ANGLE_45;
 		tireAngle -= P_RandomRange(0, fs->cone / ANG1) * ANG1;
+		pushAngle -= P_RandomRange(0, fs->cone / ANG1) * ANG1;
 	}
 	else
 	{
 		tireAngle += ANGLE_45;
 		tireAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
+		pushAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
 	}
-
-	pushAngle = K_MomentumAngle(mo) + ANGLE_180;
 
 	dust = P_SpawnMobjFromMobj(
 		mo,
