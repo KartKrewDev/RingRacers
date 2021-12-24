@@ -1231,9 +1231,9 @@ void P_CheckGravity(mobj_t *mo, boolean affect)
 }
 
 //
-// P_InitPitchRollFromSlope
+// P_SetPitchRollFromSlope
 //
-void P_InitPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
+void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 {
 	if (slope)
 	{
@@ -1251,9 +1251,9 @@ void P_InitPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 }
 
 //
-// P_InitPitchRoll
+// P_SetPitchRoll
 //
-void P_InitPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
+void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
 {
 	pitch = InvAngle(pitch);
 	yaw >>= ANGLETOFINESHIFT;
@@ -1671,7 +1671,7 @@ void P_XYMovement(mobj_t *mo)
 					{
 						mo->momz = transfermomz;
 						mo->standingslope = NULL;
-						P_InitPitchRoll(mo, ANGLE_90,
+						P_SetPitchRoll(mo, ANGLE_90,
 								transferslope->xydirection
 								+ (transferslope->zangle
 									& ANGLE_180));
@@ -1753,7 +1753,7 @@ void P_XYMovement(mobj_t *mo)
 			// Now compare the Zs of the different quantizations
 			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
-				P_InitPitchRollFromSlope(mo, mo->standingslope);
+				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
 
 				//CONS_Printf("launched off of slope - ");
@@ -2277,7 +2277,7 @@ boolean P_ZMovement(mobj_t *mo)
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
-			P_InitPitchRollFromSlope(mo, mo->standingslope);
+			P_SetPitchRollFromSlope(mo, mo->standingslope);
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
 
