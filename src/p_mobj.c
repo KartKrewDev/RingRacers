@@ -13155,6 +13155,17 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 		newmobj->z = mobj->z + mobj->height - zofs - newmobj->height;
 	}
 
+	// EXPERIMENT: Let all objects set their interp values relative to their owner's old values.
+	// This will hopefully create a lot less mobj-specific spawn cases,
+	// but if there's any weird scenarios feel free to remove again.
+	newmobj->old_x = mobj->old_x + xofs;
+	newmobj->old_y = mobj->old_y + yofs;
+	newmobj->old_z = mobj->old_z + zofs;
+	/*
+	newmobj->angle = mobj->angle;
+	newmobj->old_angle = mobj->old_angle;
+	*/
+
 	return newmobj;
 }
 
@@ -13171,6 +13182,14 @@ fixed_t P_GetMobjHead(const mobj_t *mobj)
 
 fixed_t P_GetMobjFeet(const mobj_t *mobj)
 {
+	/*
+	          |     |
+	          |     |
+	/--\------/     |
+	|               |
+	-----------------
+	*/
+
 	return P_IsObjectFlipped(mobj) ? mobj->z + mobj->height : mobj->z;
 }
 
