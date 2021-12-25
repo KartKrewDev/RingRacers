@@ -261,6 +261,8 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 
 #define V_DrawThinStringAtFixed( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,TINY_FONT,string)
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
 
 // Draws a titlecard font string.
 // timer: when the letters start appearing (leave to 0 to disable)
