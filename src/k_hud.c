@@ -3944,7 +3944,7 @@ static void K_drawLapStartAnim(void)
 	const UINT8 t = stplyr->karthud[khud_lapanimation];
 	const UINT8 progress = 80 - t;
 
-	const UINT8 tOld = t - 1;
+	const UINT8 tOld = t + 1;
 	const UINT8 progressOld = 80 - tOld;
 
 	const tic_t leveltimeOld = leveltime - 1;
