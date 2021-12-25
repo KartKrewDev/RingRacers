@@ -3668,7 +3668,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	interpy += thing->spryoff;
 	interpz += thing->sprzoff;
 
-	groundz = R_GetShadowZ(thing, &groundslope);
+	groundz = R_GetShadowZ(thing, &groundslope, interpx, interpy, interpz);
 
 	gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
@@ -5295,7 +5295,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 		if (caster && !P_MobjWasRemoved(caster))
 		{
-			fixed_t groundz = R_GetShadowZ(thing, NULL);
+			fixed_t groundz = R_GetShadowZ(thing, NULL, interpx, interpy, interpz);
 			fixed_t floordiff = abs(((thing->eflags & MFE_VERTICALFLIP) ? caster->height : 0) + caster->z - groundz);
 
 			shadowheight = FIXED_TO_FLOAT(floordiff);
