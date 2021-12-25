@@ -530,5 +530,6 @@ fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
 fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
+fixed_t P_GetMobjZMovement(mobj_t *mo);
 
 #endif // __P_LOCAL__
