@@ -1931,7 +1931,8 @@ void M_CharacterSelectInit(INT32 choice)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		// Un-set all devices upon entering this menu.
-		cv_usejoystick[i].value = -1;
+		CV_SetValue(&cv_usejoystick[i], -1);
+		CONS_Printf("Device for %d set to %d\n", i, -1);
 	}
 
 	PLAY_CharSelectDef.prevMenu = currentMenu;
@@ -2047,14 +2048,16 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 		if (M_DeviceAvailable(i, setup_numplayers) == true)
 		{
 			// Available!! Let's use this one!!
-			cv_usejoystick[setup_numplayers].value = i;
+			CV_SetValue(&cv_usejoystick[setup_numplayers], i);
+			CONS_Printf("Device for %d set to %d\n", setup_numplayers, i);
 
 			for (j = setup_numplayers+1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				if (cv_usejoystick[j].value == i)
 				{
 					// Un-set devices for other players.
-					cv_usejoystick[j].value = -1;
+					CV_SetValue(&cv_usejoystick[j], -1);
+					CONS_Printf("Device for %d set to %d\n", j, -1);
 				}
 			}
 
@@ -2144,7 +2147,7 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
 
-	if (G_PlayerInputDown(num, gc_right, true) == true)
+	if (menucmd[num].dpad_lr > 0)
 	{
 		p->clonenum++;
 		if (p->clonenum >= numclones)
@@ -2153,7 +2156,7 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		p->delay = CSROTATETICS;
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
-	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	else if (menucmd[num].dpad_lr < 0)
 	{
 		p->clonenum--;
 		if (p->clonenum < 0)
@@ -2163,13 +2166,13 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
 
-	if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_COLORS;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
 	{
 		p->mdepth = CSSTEP_CHARS;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -2179,7 +2182,7 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
-	if (G_PlayerInputDown(num, gc_right, true) == true)
+	if (menucmd[num].dpad_lr > 0)
 	{
 		p->color++;
 		if (p->color >= numskincolors)
@@ -2188,7 +2191,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
-	else if (G_PlayerInputDown(num, gc_left, true) == true)
+	else if (menucmd[num].dpad_lr < 0)
 	{
 		p->color--;
 		if (p->color < 1)
@@ -2198,7 +2201,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 
-	if (G_PlayerInputDown(num, gc_a, true) == true || G_PlayerInputDown(num, gc_start, true) == true)
+	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
@@ -2206,7 +2209,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
-	else if (G_PlayerInputDown(num, gc_b, true) == true)
+	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu

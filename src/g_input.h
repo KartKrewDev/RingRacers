@@ -84,9 +84,8 @@ extern consvar_t cv_controlperkey;
 
 // current state of the keys: JOYAXISRANGE or 0 when boolean.
 // Or anything inbetween for analog values
-extern INT32 gamekeydown[MAXSPLITSCREENPLAYERS][NUMINPUTS];
-
 #define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
+extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 extern boolean deviceResponding[MAXDEVICES];
 
 // several key codes (or virtual key) per game control
@@ -113,6 +112,8 @@ extern const INT32 gcl_full[num_gcl_full];
 
 // peace to my little coder fingers!
 // check a gamecontrol being active or not
+
+INT32 G_GetDevicePlayer(INT32 deviceID);
 
 // remaps the input event to a game control.
 void G_MapEventsToControls(event_t *ev);

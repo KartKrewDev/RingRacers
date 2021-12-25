@@ -652,27 +652,49 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-static INT32 KeyValue(UINT8 p, INT32 key)
+static INT32 KeyValue(UINT8 p, INT32 key, boolean menu)
 {
+	INT32 deviceID;
+
 	if (key <= 0 || key >= NUMINPUTS)
 	{
 		return 0;
 	}
 
-	return gamekeydown[p][key];
+	if (menu == false)
+	{
+		deviceID = cv_usejoystick[p].value;
+		if (deviceID < 0 || deviceID >= MAXDEVICES)
+		{
+			return 0;
+		}
+
+		return gamekeydown[deviceID][key];
+	}
+	else
+	{
+		// Use keyboard as alternative for P1 menu.
+		return gamekeydown[0][key];
+	}
+
+	return 0;
 }
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 {
 	INT32 i;
 	INT32 deadzone = 0;
-	boolean bound = false;
 
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
 #ifdef PARANOIA
 		CONS_Debug(DBG_GAMELOGIC, "G_PlayerInputAnalog: Invalid player ID %d\n", p);
 #endif
+		return 0;
+	}
+
+	if (p > splitscreen)
+	{
 		return 0;
 	}
 
@@ -688,14 +710,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 			continue;
 		}
 
-		value = KeyValue(p, key);
-		bound = true;
-
-		if (gc == gc_a || gc == gc_b || gc == gc_c)
-		{
-			// Handle spindash key
-			value = max(value, KeyValue(p, gamecontrol[p][gc_abc][i]));
-		}
+		value = KeyValue(p, key, false);
 
 		if (value >= deadzone)
 		{
@@ -703,7 +718,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 		}
 	}
 
-	if (menu == true && bound == false)
+	if (p == 0 && menu == true)
 	{
 		// We don't want menus to become unnavigable if people unbind
 		// all of their controls, so use the default control scheme in
@@ -719,13 +734,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 				continue;
 			}
 
-			value = KeyValue(p, key);
-
-			if (gc == gc_a || gc == gc_b || gc == gc_c)
-			{
-				// Handle spindash key
-				value = max(value, KeyValue(p, gamecontroldefault[gc_abc][i]));
-			}
+			value = KeyValue(p, key, true);
 
 			if (value >= deadzone)
 			{
