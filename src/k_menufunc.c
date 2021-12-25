@@ -1899,7 +1899,6 @@ void M_CharacterSelectInit(INT32 choice)
 	}
 
 	memset(setup_player, 0, sizeof(setup_player));
-	//setup_player[0].mdepth = CSSTEP_CHARS;
 	setup_numplayers = 0;
 
 	memset(setup_explosions, 0, sizeof(setup_explosions));
@@ -1927,6 +1926,12 @@ void M_CharacterSelectInit(INT32 choice)
 				setup_player[j].color = skins[i].prefcolor;
 			}
 		}
+	}
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Un-set all devices upon entering this menu.
+		cv_usejoystick[i].value = -1;
 	}
 
 	PLAY_CharSelectDef.prevMenu = currentMenu;
@@ -2221,9 +2226,6 @@ boolean M_CharacterSelectHandler(INT32 choice)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		setup_player_t *p = &setup_player[i];
-
-		if (i > 0)
-			break; // temp
 
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
