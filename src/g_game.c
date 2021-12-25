@@ -345,7 +345,6 @@ static void kickstartaccel_OnChange(void);
 static void kickstartaccel2_OnChange(void);
 static void kickstartaccel3_OnChange(void);
 static void kickstartaccel4_OnChange(void);
-void SendWeaponPref(UINT8 n);
 
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 

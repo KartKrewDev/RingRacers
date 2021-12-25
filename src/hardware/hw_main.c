@@ -40,6 +40,7 @@
 #include "../r_things.h" // R_GetShadowZ
 #include "../d_main.h"
 #include "../p_slopes.h"
+#include "../k_kart.h" // HITLAGJITTERS
 #include "hw_md2.h"
 
 #ifdef NEWCLIP
@@ -3628,14 +3629,14 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
 	float fscale; float fx; float fy; float offset;
+	float ph;
 	extracolormap_t *colormap = NULL;
 	UINT8 i;
 	SINT8 flip = P_MobjFlip(thing);
+	UINT32 tFlag = PF_ReverseSubtract;
 
 	INT32 light;
 	fixed_t scalemul;
-	UINT16 alpha;
-	fixed_t floordiff;
 	fixed_t groundz;
 	fixed_t slopez;
 	pslope_t *groundslope;
@@ -3645,7 +3646,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t interpz = thing->z;
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -3655,7 +3656,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -3674,32 +3675,31 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
-	floordiff = abs((flip < 0 ? thing->height : 0) + interpz - groundz);
-
-	alpha = floordiff / (4*FRACUNIT) + 75;
-	if (alpha >= 255) return;
-	alpha = 255 - alpha;
-
 	gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 	HWR_GetPatch(gpatch);
 
-	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
-	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
+	scalemul = FixedMul(scale, (thing->radius * 2) / gpatch->height);
+
+	ph = (float)gpatch->height;
 
 	fscale = FIXED_TO_FLOAT(scalemul);
 	fx = FIXED_TO_FLOAT(interpx);
 	fy = FIXED_TO_FLOAT(interpy);
 
+	if (fscale > 0.0)
+	{
+		offset = (ph / 2) * fscale;
+	}
+	else
+	{
+		return;
+	}
+
 	//  3--2
 	//  | /|
 	//  |/ |
 	//  0--1
-
-	if (thing && fabsf(fscale - 1.0f) > 1.0E-36f)
-		offset = ((gpatch->height)/2) * fscale;
-	else
-		offset = (float)((gpatch->height)/2);
 
 	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
 	shadowVerts[1].x = shadowVerts[0].x = fx - offset;
@@ -3748,10 +3748,15 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 			colormap = thing->subsector->sector->extra_colormap;
 	}
 
-	HWR_Lighting(&sSurf, 0, colormap);
-	sSurf.PolyColor.s.alpha = alpha;
+	HWR_Lighting(&sSurf, 255, colormap);
+	sSurf.PolyColor.s.alpha = 255;
 
-	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, PF_Translucent|PF_Modulated, SHADER_SPRITE, false); // sprite shader
+	if (thing->whiteshadow == true)
+	{
+		tFlag = PF_Additive;
+	}
+
+	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, tFlag|PF_Modulated, SHADER_SPRITE, false); // sprite shader
 }
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
@@ -5055,7 +5060,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	INT32 heightsec, phs;
 	const boolean splat = R_ThingIsFloorSprite(thing);
 	const boolean papersprite = (R_ThingIsPaperSprite(thing) && !splat);
-	angle_t mobjangle = (thing->player ? thing->player->drawangle : thing->angle);
 	float z1, z2;
 
 	fixed_t spr_width, spr_height;
@@ -5083,20 +5087,28 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	interpx = thing->x;
 	interpy = thing->y;
 	interpz = thing->z;
-	interpangle = mobjangle;
+	interpangle = (thing->player ? thing->player->drawangle : thing->angle);
 
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
 		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-		interpangle = mobjangle;
+
+		if (thing->player)
+		{
+			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
+		}
+		else
+		{
+			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
+		}
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
 	{
-		fixed_t mul = thing->hitlag * (FRACUNIT / 10);
+		fixed_t mul = thing->hitlag * HITLAGJITTERS;
 
 		if (leveltime & 1)
 		{
@@ -5237,6 +5249,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	spr_topoffset = spritecachedinfo[lumpoff].topoffset;
 
 #ifdef ROTSPRITE
+	spriterotangle = R_SpriteRotationAngle(thing, NULL);
+
 	if (spriterotangle != 0
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
@@ -5276,8 +5290,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (papersprite)
 	{
-		rightsin = FIXED_TO_FLOAT(FINESINE((mobjangle)>>ANGLETOFINESHIFT));
-		rightcos = FIXED_TO_FLOAT(FINECOSINE((mobjangle)>>ANGLETOFINESHIFT));
+		rightsin = FIXED_TO_FLOAT(FINESINE((interpangle)>>ANGLETOFINESHIFT));
+		rightcos = FIXED_TO_FLOAT(FINECOSINE((interpangle)>>ANGLETOFINESHIFT));
 	}
 	else
 	{
@@ -5470,8 +5484,10 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	{
 		vis->colormap = colormaps;
 
+#ifdef GLENCORE
 		if (encoremap && (thing->flags & (MF_SCENERY|MF_NOTHINK)) && !(thing->flags & MF_DONTENCOREMAP))
 			vis->colormap += COLORMAP_REMAPOFFSET;
+#endif
 	}
 
 	// set top/bottom coords
@@ -5515,7 +5531,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	interpz = thing->z;
 
 	// do interpolation
-	if (cv_frameinterpolation.value == 1 && !paused)
+	if (cv_frameinterpolation.value == 1)
 	{
 		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
 		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
@@ -5803,8 +5819,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 		dometransform.scalez = 1;
 		dometransform.fovxangle = fpov; // Tails
 		dometransform.fovyangle = fpov; // Tails
-		HWR_RollTransform(&dometransform,
-				R_ViewRollAngle(player));
+		HWR_RollTransform(&dometransform, viewroll);
 		dometransform.splitscreen = r_splitscreen;
 
 		HWR_GetTexture(texturetranslation[skytexture]);
@@ -6096,7 +6111,7 @@ void HWR_RenderSkyboxView(player_t *player)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
@@ -6308,7 +6323,7 @@ void HWR_RenderPlayerView(void)
 
 	atransform.fovxangle = fpov; // Tails
 	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, R_ViewRollAngle(player));
+	HWR_RollTransform(&atransform, viewroll);
 	atransform.splitscreen = r_splitscreen;
 
 	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));

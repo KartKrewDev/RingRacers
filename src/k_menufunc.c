@@ -169,6 +169,9 @@ static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
+static CV_PossibleValue_t dummygpdifficulty_cons_t[] = {{0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {3, "Master"}, {0, NULL}};
+static CV_PossibleValue_t dummykartspeed_cons_t[] = {{-1, "Auto"}, {0, "Easy"}, {1, "Normal"}, {2, "Hard"}, {0, NULL}};
+
 //static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
@@ -178,6 +181,26 @@ consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dumm
 consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+
+consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, dummygpdifficulty_cons_t, NULL);
+consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
+consvar_t cv_dummygpencore = CVAR_INIT ("dummygpdifficulty", "No", CV_HIDDEN, CV_YesNo, NULL);
+
+static CV_PossibleValue_t dummymatchbots_cons_t[] = {
+	{0, "Off"},
+	{1, "Lv.1"},
+	{2, "Lv.2"},
+	{3, "Lv.3"},
+	{4, "Lv.4"},
+	{5, "Lv.5"},
+	{6, "Lv.6"},
+	{7, "Lv.7"},
+	{8, "Lv.8"},
+	{9, "Lv.9"},
+	{0, NULL}
+};
+
+consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN|CV_SAVE, dummymatchbots_cons_t, NULL);	// Save this one if you wanna test your stuff without bots for instance
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -1563,6 +1586,11 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummygametype);
 	CV_RegisterVar(&cv_dummyip);
 
+	CV_RegisterVar(&cv_dummygpdifficulty);
+	CV_RegisterVar(&cv_dummykartspeed);
+	CV_RegisterVar(&cv_dummygpencore);
+	CV_RegisterVar(&cv_dummymatchbots);
+
 	M_UpdateMenuBGImage(true);
 
 #if 0
@@ -2372,6 +2400,63 @@ boolean M_CharacterSelectQuit(void)
 	return true;
 }
 
+// DIFFICULTY SELECT
+
+void M_SetupDifficultySelect(INT32 choice)
+{
+	// check what we picked.
+	choice = currentMenu->menuitems[itemOn].mvar1;
+
+	// setup the difficulty menu and then remove choices depending on choice
+	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
+
+	PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR;
+	PLAY_RaceDifficulty[1].status = IT_DISABLED;
+	PLAY_RaceDifficulty[2].status = IT_DISABLED;
+	PLAY_RaceDifficulty[3].status = IT_DISABLED;
+	PLAY_RaceDifficulty[4].status = IT_DISABLED;
+	PLAY_RaceDifficulty[5].status = IT_DISABLED;
+	PLAY_RaceDifficulty[6].status = IT_DISABLED;
+
+	if (choice)		// Match Race
+	{
+		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
+		itemOn = 5;	// Select cup select by default.
+
+	}
+	else			// GP
+	{
+		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+		PLAY_RaceDifficulty[4].status = IT_STRING|IT_CALL;	// Level Select (GP)
+		itemOn = 4;	// Select cup select by default.
+	}
+}
+
+// calls the above but changes the cvar we set
+void M_SetupDifficultySelectMP(INT32 choice)
+{
+	(void) choice;
+
+	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
+
+	PLAY_RaceDifficulty[0].status = IT_DISABLED;
+	PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR;
+	PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
+	PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
+	PLAY_RaceDifficulty[4].status = IT_DISABLED;
+	PLAY_RaceDifficulty[5].status = IT_DISABLED;
+	PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;
+
+	itemOn = 6; // Select cup select by default.
+
+	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
+	mpmenu.modewinextend[0][0] = 1;
+}
+
 // LEVEL SELECT
 
 //
@@ -2610,10 +2695,11 @@ void M_CupSelectHandler(INT32 choice)
 
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
-				// TODO: game settings screen
-				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
-				grandprixinfo.masterbots = false;
-				grandprixinfo.encore = false;
+				// read our dummy cvars
+
+				grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
+				grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
+				grandprixinfo.encore = (boolean)cv_dummygpencore.value;
 
 				grandprixinfo.cup = newcup;
 
@@ -2769,9 +2855,18 @@ void M_LevelSelectHandler(INT32 choice)
 						SV_StartSinglePlayerServer();
 						multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
 						netgame = levellist.netgame;	// ^ ditto.
-					}
 
-					D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+						// this is considered to be CV_CHEAT however...
+						CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
+
+						if (netgame)	// check for the dummy kartspeed value
+							CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
+
+
+						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+					}
+					else	// directly do the map change
+						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
 					M_ClearMenus(true);
 				}
@@ -3403,6 +3498,103 @@ void M_HandleItemToggles(INT32 choice)
 }
 
 
+// Extras menu;
+// this is copypasted from the options menu but all of these are different functions in case we ever want it to look more unique
+
+struct extrasmenu_s extrasmenu;
+
+void M_InitExtras(INT32 choice)
+{
+	(void)choice;
+
+	extrasmenu.ticker = 0;
+	extrasmenu.offset = 0;
+
+	extrasmenu.extx = 0;
+	extrasmenu.exty = 0;
+	extrasmenu.textx = 0;
+	extrasmenu.texty = 0;
+
+	M_SetupNextMenu(&EXTRAS_MainDef, false);
+}
+
+// For statistics, will maybe remain unused for a while
+boolean M_ExtrasQuit(void)
+{
+	extrasmenu.textx = 140-1;
+	extrasmenu.texty = 70+1;
+
+	return true;	// Always allow quitting, duh.
+}
+
+void M_ExtrasTick(void)
+{
+	extrasmenu.offset /= 2;
+	extrasmenu.ticker++;
+
+	extrasmenu.extx += (extrasmenu.textx - extrasmenu.extx)/2;
+	extrasmenu.exty += (extrasmenu.texty - extrasmenu.exty)/2;
+
+	if (abs(extrasmenu.extx - extrasmenu.exty) < 2)
+	{
+		extrasmenu.extx = extrasmenu.textx;
+		extrasmenu.exty = extrasmenu.texty;	// Avoid awkward 1 px errors.
+	}
+
+	// Move the button for cool animations
+	if (currentMenu == &EXTRAS_MainDef)
+	{
+		M_ExtrasQuit();	// reset the options button.
+	}
+	else
+	{
+		extrasmenu.textx = 160;
+		extrasmenu.texty = 50;
+	}
+}
+
+boolean M_ExtrasInputs(INT32 ch)
+{
+
+	switch (ch)
+	{
+		case KEY_DOWNARROW:
+		{
+			extrasmenu.offset += 48;
+			M_NextOpt();
+			S_StartSound(NULL, sfx_menu1);
+
+			if (itemOn == 0)
+				extrasmenu.offset -= currentMenu->numitems*48;
+
+			return true;
+		}
+		case KEY_UPARROW:
+		{
+			extrasmenu.offset -= 48;
+			M_PrevOpt();
+			S_StartSound(NULL, sfx_menu1);
+
+			if (itemOn == currentMenu->numitems-1)
+				extrasmenu.offset += currentMenu->numitems*48;
+
+			return true;
+		}
+		case KEY_ENTER:
+		{
+
+			if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+				return true;	// No.
+
+			extrasmenu.extx = 140;
+			extrasmenu.exty = 70;	// Default position for the currently selected option.
+
+			return false;	// Don't eat.
+		}
+	}
+	return false;
+}
+
 // =====================
 // PAUSE / IN-GAME MENUS
 // =====================
@@ -3711,11 +3903,222 @@ void M_PlaybackQuit(INT32 choice)
 		D_StartTitle();
 }
 
+void M_PrepReplayList(void)
+{
+	size_t i;
+
+	if (extrasmenu.demolist)
+		Z_Free(extrasmenu.demolist);
+
+	extrasmenu.demolist = Z_Calloc(sizeof(menudemo_t) * sizedirmenu, PU_STATIC, NULL);
+
+	for (i = 0; i < sizedirmenu; i++)
+	{
+		if (dirmenu[i][DIR_TYPE] == EXT_UP)
+		{
+			extrasmenu.demolist[i].type = MD_SUBDIR;
+			sprintf(extrasmenu.demolist[i].title, "UP");
+		}
+		else if (dirmenu[i][DIR_TYPE] == EXT_FOLDER)
+		{
+			extrasmenu.demolist[i].type = MD_SUBDIR;
+			strncpy(extrasmenu.demolist[i].title, dirmenu[i] + DIR_STRING, 64);
+		}
+		else
+		{
+			extrasmenu.demolist[i].type = MD_NOTLOADED;
+			snprintf(extrasmenu.demolist[i].filepath, 255, "%s%s", menupath, dirmenu[i] + DIR_STRING);
+			sprintf(extrasmenu.demolist[i].title, ".....");
+		}
+	}
+}
+
 
 void M_ReplayHut(INT32 choice)
 {
 	(void)choice;
+
+	extrasmenu.replayScrollTitle = 0;
+	extrasmenu.replayScrollDelay = TICRATE;
+	extrasmenu.replayScrollDir = 1;
+
+	if (!demo.inreplayhut)
+	{
+		snprintf(menupath, 1024, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
+		menupathindex[(menudepthleft = menudepth-1)] = strlen(menupath);
+	}
+	if (!preparefilemenu(false, true))
+	{
+		M_StartMessage("No replays found.\n\n(Press a key)\n", NULL, MM_NOTHING);
+		return;
+	}
+	else if (!demo.inreplayhut)
+		dir_on[menudepthleft] = 0;
+	demo.inreplayhut = true;
+
+	extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+
+	M_PrepReplayList();
+
+	menuactive = true;
+	M_SetupNextMenu(&EXTRAS_ReplayHutDef, false);
+	//G_SetGamestate(GS_TIMEATTACK);
+	//titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
+
+	demo.rewinding = false;
+	CL_ClearRewinds();
+
+	//S_ChangeMusicInternal("replst", true);
 }
+
+// key handler
+void M_HandleReplayHutList(INT32 choice)
+{
+	switch (choice)
+	{
+	case KEY_UPARROW:
+		if (dir_on[menudepthleft])
+			dir_on[menudepthleft]--;
+		else
+			return;
+			//M_PrevOpt();
+
+		S_StartSound(NULL, sfx_menu1);
+		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+		break;
+
+	case KEY_DOWNARROW:
+		if (dir_on[menudepthleft] < sizedirmenu-1)
+			dir_on[menudepthleft]++;
+		else
+			return;
+			//itemOn = 0; // Not M_NextOpt because that would take us to the extra dummy item
+
+		S_StartSound(NULL, sfx_menu1);
+		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+		break;
+
+	case KEY_ESCAPE:
+		M_QuitReplayHut();
+		break;
+
+	case KEY_ENTER:
+		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+		{
+			case EXT_FOLDER:
+				strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				if (menudepthleft)
+				{
+					menupathindex[--menudepthleft] = strlen(menupath);
+					menupath[menupathindex[menudepthleft]] = 0;
+
+					if (!preparefilemenu(false, true))
+					{
+						S_StartSound(NULL, sfx_s224);
+						M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						menupath[menupathindex[++menudepthleft]] = 0;
+
+						if (!preparefilemenu(true, true))
+						{
+							M_QuitReplayHut();
+							return;
+						}
+					}
+					else
+					{
+						S_StartSound(NULL, sfx_menu1);
+						dir_on[menudepthleft] = 1;
+						M_PrepReplayList();
+					}
+				}
+				else
+				{
+					S_StartSound(NULL, sfx_s26d);
+					M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+					menupath[menupathindex[menudepthleft]] = 0;
+				}
+				break;
+			case EXT_UP:
+				S_StartSound(NULL, sfx_menu1);
+				menupath[menupathindex[++menudepthleft]] = 0;
+				if (!preparefilemenu(false, true))
+				{
+					M_QuitReplayHut();
+					return;
+				}
+				M_PrepReplayList();
+				break;
+			default:
+				// We can't just use M_SetupNextMenu because that'll run ReplayDef's quitroutine and boot us back to the title screen!
+				currentMenu->lastOn = itemOn;
+				currentMenu = &EXTRAS_ReplayStartDef;
+
+				extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+
+				switch (extrasmenu.demolist[dir_on[menudepthleft]].addonstatus)
+				{
+				case DFILE_ERROR_CANNOTLOAD:
+					// Only show "Watch Replay Without Addons"
+					EXTRAS_ReplayStart[0].status = IT_DISABLED;
+					EXTRAS_ReplayStart[1].status = IT_CALL|IT_STRING;
+					//EXTRAS_ReplayStart[1].alphaKey = 0;
+					EXTRAS_ReplayStart[2].status = IT_DISABLED;
+					itemOn = 1;
+					break;
+
+				case DFILE_ERROR_NOTLOADED:
+				case DFILE_ERROR_INCOMPLETEOUTOFORDER:
+					// Show "Load Addons and Watch Replay" and "Watch Replay Without Addons"
+					EXTRAS_ReplayStart[0].status = IT_CALL|IT_STRING;
+					EXTRAS_ReplayStart[1].status = IT_CALL|IT_STRING;
+					//EXTRAS_ReplayStart[1].alphaKey = 10;
+					EXTRAS_ReplayStart[2].status = IT_DISABLED;
+					itemOn = 0;
+					break;
+
+				case DFILE_ERROR_EXTRAFILES:
+				case DFILE_ERROR_OUTOFORDER:
+				default:
+					// Show "Watch Replay"
+					EXTRAS_ReplayStart[0].status = IT_DISABLED;
+					EXTRAS_ReplayStart[1].status = IT_DISABLED;
+					EXTRAS_ReplayStart[2].status = IT_CALL|IT_STRING;
+					//EXTRAS_ReplayStart[2].alphaKey = 0;
+					itemOn = 2;
+					break;
+				}
+		}
+
+		break;
+	}
+}
+
+boolean M_QuitReplayHut(void)
+{
+	// D_StartTitle does its own wipe, since GS_TIMEATTACK is now a complete gamestate.
+	menuactive = false;
+	D_StartTitle();
+
+	if (extrasmenu.demolist)
+		Z_Free(extrasmenu.demolist);
+	extrasmenu.demolist = NULL;
+
+	demo.inreplayhut = false;
+
+	return true;
+}
+
+void M_HutStartReplay(INT32 choice)
+{
+	(void)choice;
+
+	M_ClearMenus(false);
+	demo.loadfiles = (itemOn == 0);
+	demo.ignorefiles = (itemOn != 0);
+
+	G_DoPlayDemo(extrasmenu.demolist[dir_on[menudepthleft]].filepath);
+}
+
 
 static void Splitplayers_OnChange(void)
 {

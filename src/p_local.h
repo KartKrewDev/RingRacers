@@ -112,6 +112,10 @@ typedef struct camera_s
 	fixed_t pan;
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
+
+	// Interpolation data
+	fixed_t old_x, old_y, old_z;
+	angle_t old_angle, old_aiming;
 } camera_t;
 
 // demo freecam or something before i commit die
@@ -171,7 +175,7 @@ void P_RestoreMusic(player_t *player);
 boolean P_EndingMusic(player_t *player);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
-void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
+INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
@@ -329,6 +333,7 @@ void P_Attract(mobj_t *source, mobj_t *enemy, boolean nightsgrab);
 mobj_t *P_GetClosestAxis(mobj_t *source);
 
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover);
+boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover);
 
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot);
 
@@ -399,6 +404,8 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
+fixed_t P_BaseStepUp(void);
+fixed_t P_GetThingStepUp(mobj_t *thing);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
@@ -408,6 +415,7 @@ void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
 boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2);
+boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2);
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius);
 
 boolean P_CheckSector(sector_t *sector, boolean crunch);

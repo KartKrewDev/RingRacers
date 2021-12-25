@@ -31,9 +31,9 @@ menuitem_t MainMenu[] =
 		"Cut to the chase and start the race!", NULL,
 		M_CharacterSelectInit, 0, 0},
 
-	{IT_STRING, "Extra",
+	{IT_STRING | IT_CALL, "Extras",
 		"Check out some bonus features.", "MENUI001",
-		NULL, 0, 0},
+		M_InitExtras, 0, 0},
 
 	{IT_STRING, "Options",
 		"Configure your controls, settings, and preferences.", NULL,
@@ -100,10 +100,10 @@ menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five races!",
-		NULL, M_LevelSelectInit, 2, GT_RACE},
+		NULL, M_SetupDifficultySelect, 0, 0},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
-		"MENIMG01", M_LevelSelectInit, 0, GT_RACE},
+		"MENIMG01", M_SetupDifficultySelect, 1, 0},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
 		NULL, M_LevelSelectInit, 1, GT_RACE},
@@ -112,6 +112,52 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 };
 
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
+
+
+// difficulty selection:
+menuitem_t PLAY_RaceDifficulty[] =
+{
+	// local play
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game difficulty",
+		NULL, &cv_dummygpdifficulty, 0, 0},
+
+	// netgames
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed",
+		NULL, &cv_dummykartspeed, 0, 0},
+
+	// DISABLE THAT OPTION OUTSIDE OF MATCH RACE
+	{IT_STRING2 | IT_CVAR, "CPU Players", "Enable or disable CPU players.",	// 2	whitestring is used by the drawer to know to draw shitstring
+		NULL, &cv_dummymatchbots, 0, 0},
+
+	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",	// 3
+		NULL, &cv_dummygpencore, 0, 0},
+
+	// For GP:
+	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", NULL, M_LevelSelectInit, 2, GT_RACE},	// 4
+
+	// For Match Race:
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, M_LevelSelectInit, 0, GT_RACE},	// 5
+
+	// For Match Race in NETGAMES:
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, M_MPSetupNetgameMapSelect, 0, GT_RACE},	// 6
+
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, M_GoBack, 0, 0},
+};
+
+menu_t PLAY_RaceDifficultyDef = {
+	sizeof(PLAY_RaceDifficulty) / sizeof(menuitem_t),
+	&PLAY_RaceGamemodesDef,
+	0,
+	PLAY_RaceDifficulty,
+	0, 0,
+	0, 0,
+	1, 10,
+	M_DrawRaceDifficulty,
+	NULL,
+	NULL,
+	NULL
+};
+
 
 menuitem_t PLAY_CupSelect[] =
 {
@@ -234,7 +280,7 @@ menuitem_t PLAY_MP_Host[] =
 		NULL, &cv_dummygametype, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
-		NULL, M_MPSetupNetgameMapSelect, 0, 0},
+		NULL, M_SetupDifficultySelectMP, 0, 0},
 
 };
 
@@ -1101,6 +1147,96 @@ menu_t OPTIONS_DataEraseDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+};
+
+
+
+// extras menu
+menuitem_t EXTRAS_Main[] =
+{
+
+	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
+		NULL, M_Addons, 0, 0},
+
+	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
+		NULL, M_ReplayHut, 0, 0},
+
+	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_TRANSTEXT, "Extras Checklist", "View the requirement for some of the secret content you can unlock!",
+		NULL, NULL, 0, 0},
+};
+
+// the extras menu essentially reuses the options menu stuff
+menu_t EXTRAS_MainDef = {
+	sizeof (EXTRAS_Main) / sizeof (menuitem_t),
+	&MainDef,
+	0,
+	EXTRAS_Main,
+	0, 0,
+	0, 0,
+	2, 10,
+	M_DrawExtras,
+	M_ExtrasTick,
+	NULL,
+	M_ExtrasInputs
+};
+
+// extras menu: replay hut
+menuitem_t EXTRAS_ReplayHut[] =
+{
+	{IT_KEYHANDLER|IT_NOTHING, "", "",			// Dummy menuitem for the replay list
+		NULL, M_HandleReplayHutList, 0, 0},
+
+	{IT_NOTHING, "", "",						// Dummy for handling wrapping to the top of the menu..
+		NULL, NULL, 0, 0},
+};
+
+menu_t EXTRAS_ReplayHutDef =
+{
+	sizeof (EXTRAS_ReplayHut)/sizeof (menuitem_t),
+	&EXTRAS_MainDef,
+	0,
+	EXTRAS_ReplayHut,
+	30, 80,
+	0, 0,
+	0, 0,
+	M_DrawReplayHut,
+	NULL,
+	M_QuitReplayHut,
+	NULL
+};
+
+menuitem_t EXTRAS_ReplayStart[] =
+{
+	{IT_CALL |IT_STRING,  "Load Addons and Watch", NULL,
+		NULL, M_HutStartReplay, 0, 0},
+
+	{IT_CALL |IT_STRING,  "Load Without Addons", NULL,
+		NULL, M_HutStartReplay, 10, 0},
+
+	{IT_CALL |IT_STRING,  "Watch Replay", NULL,
+		NULL, M_HutStartReplay, 10, 0},
+
+	{IT_SUBMENU |IT_STRING,  "Go Back", NULL,
+		NULL, &EXTRAS_ReplayHutDef, 30, 0},
+};
+
+
+menu_t EXTRAS_ReplayStartDef =
+{
+	sizeof (EXTRAS_ReplayStart)/sizeof (menuitem_t),
+	&EXTRAS_ReplayHutDef,
+	0,
+	EXTRAS_ReplayStart,
+	27, 80,
+	0, 0,
+	0, 0,
+	M_DrawReplayStartMenu,
+	NULL,
+	NULL,
+	NULL
 };
 
 // -------------------

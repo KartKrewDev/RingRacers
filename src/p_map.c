@@ -310,6 +310,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
 
+	if ((spring->eflags ^ object->eflags) & MFE_VERTICALFLIP)
+		vertispeed *= 2;
+
 	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
 	{
@@ -1848,7 +1851,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && P_CheckSolidLava(rover))
+			if (thing->player && P_CheckSolidFFloorSurface(thing->player, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
@@ -2414,6 +2417,56 @@ boolean PIT_PushableMoved(mobj_t *thing)
 	return true;
 }
 
+static boolean P_WaterRunning(mobj_t *thing)
+{
+	ffloor_t *rover = thing->floorrover;
+	return rover && (rover->flags & FF_SWIMMABLE) &&
+		P_IsObjectOnGround(thing);
+}
+
+static boolean P_WaterStepUp(mobj_t *thing)
+{
+	player_t *player = thing->player;
+	return (player && player->waterskip) ||
+		P_WaterRunning(thing);
+}
+
+fixed_t P_BaseStepUp(void)
+{
+	return FixedMul(MAXSTEPMOVE, mapobjectscale);
+}
+
+fixed_t P_GetThingStepUp(mobj_t *thing)
+{
+	const fixed_t maxstepmove = P_BaseStepUp();
+	fixed_t maxstep = maxstepmove;
+
+	if (thing->type == MT_SKIM)
+	{
+		// Skim special (not needed for kart?)
+		return 0;
+	}
+
+	if (P_WaterStepUp(thing) == true)
+	{
+		// Add some extra stepmove when waterskipping
+		maxstep += maxstepmove;
+	}
+
+	if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
+	{
+		// If using type Section1:13, double the maxstep.
+		maxstep <<= 1;
+	}
+	else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
+	{
+		// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
+		maxstep = 0;
+	}
+
+	return maxstep;
+}
+
 //
 // P_TryMove
 // Attempt to move to a new position.
@@ -2475,21 +2528,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
-			fixed_t maxstep = maxstepmove;
-
-			if (thing->player && thing->player->waterskip)
-				maxstep += maxstepmove; // Add some extra stepmove when waterskipping
-
-			// If using type Section1:13, double the maxstep.
-			if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
-				maxstep <<= 1;
-			// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
-			else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
-				maxstep = 0;
-
-			if (thing->type == MT_SKIM)
-				maxstep = 0;
+			fixed_t maxstep = P_GetThingStepUp(thing);
 
 			if (tmceilingz - tmfloorz < thing->height)
 			{
@@ -2726,7 +2765,7 @@ boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y)
 
 		if (!(thing->flags & MF_NOCLIP))
 		{
-			const fixed_t maxstep = FixedMul(MAXSTEPMOVE, mapobjectscale);
+			const fixed_t maxstep = P_BaseStepUp();
 
 			if (tmceilingz - tmfloorz < thing->height)
 				return false; // doesn't fit
@@ -3188,7 +3227,7 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (opentop - slidemo->z < slidemo->height)
 		return true; // mobj is too high
 
-	if (openbottom - slidemo->z > FixedMul(MAXSTEPMOVE, mapobjectscale))
+	if (openbottom - slidemo->z > P_GetThingStepUp(slidemo))
 		return true; // too big a step up
 
 	return false;

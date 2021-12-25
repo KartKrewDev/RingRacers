@@ -795,10 +795,14 @@ static boolean CL_SendJoin(void)
 			sizeof netbuffer->u.clientcfg.application);
 
 	for (i = 0; i <= splitscreen; i++)
-		CleanupPlayerName(g_localplayers[i], cv_playername[i].zstring);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// the MAXPLAYERS addition is necessary to communicate that g_localplayers is not yet safe to reference
+		CleanupPlayerName(MAXPLAYERS+i, cv_playername[i].zstring);
 		strncpy(netbuffer->u.clientcfg.names[i], cv_playername[i].zstring, MAXPLAYERNAME);
+	}
+	// privacy shield for the local players not joining this session
+	for (; i < MAXSPLITSCREENPLAYERS; i++)
+		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -1334,7 +1338,7 @@ static void CL_ReloadReceivedSavegame(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		LUA_InvalidatePlayer(&players[i]);
-		sprintf(player_names[i], "Player %d", i + 1);
+		sprintf(player_names[i], "Player %c", 'A' + i);
 	}
 
 	CL_LoadReceivedSavegame(true);
@@ -2424,7 +2428,7 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		doomcom->numslots--;
 
 	// Reset the name
-	sprintf(player_names[playernum], "Player %d", playernum+1);
+	sprintf(player_names[playernum], "Player %c", 'A' + playernum);
 
 	player_name_changes[playernum] = 0;
 
@@ -3236,7 +3240,7 @@ void SV_ResetServer(void)
 		playeringame[i] = false;
 		playernode[i] = UINT8_MAX;
 		memset(playeraddress[i], 0, sizeof(*playeraddress));
-		sprintf(player_names[i], "Player %d", i + 1);
+		sprintf(player_names[i], "Player %c", 'A' + i);
 		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
 		K_ClearClientPowerLevels();
 		splitscreen_invitations[i] = -1;
@@ -3435,7 +3439,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		P_ForceLocalAngle(newplayer, newplayer->angleturn);
 
-		D_SendPlayerConfig();
+		D_SendPlayerConfig(splitscreenplayer);
 		addedtogame = true;
 
 		if (rejoined)
@@ -3581,14 +3585,13 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	LUAh_PlayerJoin(newplayernum);
 }
 
-static boolean SV_AddWaitingPlayers(const char *name, const char *name2, const char *name3, const char *name4)
+static boolean SV_AddWaitingPlayers(SINT8 node, const char *name, const char *name2, const char *name3, const char *name4)
 {
-	INT32 node, n, newplayer = false;
+	INT32 n, newplayernum;
 	UINT8 buf[4 + MAXPLAYERNAME];
 	UINT8 *buf_p = buf;
-	INT32 newplayernum;
+	boolean newplayer = false;
 
-	for (node = 0; node < MAXNETNODES; node++)
 	{
 		// splitscreen can allow 2+ players in one node
 		for (; nodewaiting[node] > 0; nodewaiting[node]--)
@@ -3707,6 +3710,7 @@ boolean SV_SpawnServer(void)
 	I_Error("What do you think you're doing?");
 	return false;
 #else
+	boolean result = false;
 	if (demo.playback)
 		G_StopDemo(); // reset engine parameter
 	if (metalplayback)
@@ -3733,7 +3737,14 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
-	return SV_AddWaitingPlayers(cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+	// strictly speaking, i'm not convinced the following is necessary
+	// but I'm not confident enough to remove it entirely in case it breaks something
+	{
+		SINT8 node = 0;
+		for (; node < MAXNETNODES; node++)
+			result |= SV_AddWaitingPlayers(node, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+	}
+	return result;
 #endif
 }
 
@@ -3906,7 +3917,7 @@ static void HandleConnect(SINT8 node)
 				SV_SendSaveGame(node, false); // send a complete game state
 				DEBFILE("send savegame\n");
 			}
-			SV_AddWaitingPlayers(names[0], names[1], names[2], names[3]);
+			SV_AddWaitingPlayers(node, names[0], names[1], names[2], names[3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}

@@ -2682,7 +2682,7 @@ boolean K_ApplyOffroad(player_t *player)
 
 boolean K_SlopeResistance(player_t *player)
 {
-	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease)
+	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease || player->flamedash)
 		return true;
 	return false;
 }
@@ -2693,6 +2693,19 @@ boolean K_TripwirePass(player_t *player)
 			player->invincibilitytimer ||
 			player->sneakertimer ||
 			player->growshrinktimer > 0 ||
+			player->flamedash ||
+			player->speed > 2 * K_GetKartSpeed(player, false)
+	)
+		return true;
+	return false;
+}
+
+boolean K_WaterRun(player_t *player)
+{
+	if (
+			player->invincibilitytimer ||
+			player->sneakertimer ||
+			player->tiregrease ||
 			player->flamedash ||
 			player->speed > 2 * K_GetKartSpeed(player, false)
 	)
@@ -3623,14 +3636,9 @@ void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32
 
 #define MINEQUAKEDIST 4096
 
-// Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+// Does the proximity screen flash and quake for explosions
+void K_MineFlashScreen(mobj_t *source)
 {
-	INT32 i, radius, height;
-	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
-	mobj_t *dust;
-	mobj_t *truc;
-	INT32 speed, speed2;
 	INT32 pnum;
 	player_t *p;
 
@@ -3653,6 +3661,18 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			break;	// we can break right now because quakes are global to all split players somehow.
 		}
 	}
+}
+
+// Spawns the purely visual explosion
+void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+{
+	INT32 i, radius, height;
+	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
+	mobj_t *dust;
+	mobj_t *truc;
+	INT32 speed, speed2;
+
+	K_MineFlashScreen(source);
 
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
@@ -4525,13 +4545,18 @@ void K_DriftDustHandling(mobj_t *spawner)
 void K_Squish(mobj_t *mo)
 {
 	const fixed_t maxstretch = 4*FRACUNIT;
-	const fixed_t factor = 3 * mo->height / 2;
+	const fixed_t factor = 5 * mo->height / 4;
 	const fixed_t threshold = factor / 6;
 
-	const fixed_t old3dspeed = abs(mo->lastmomz);
-	const fixed_t new3dspeed = abs(mo->momz);
+	fixed_t old3dspeed = abs(mo->lastmomz);
+	fixed_t new3dspeed = abs(mo->momz);
 
-	const fixed_t delta = abs(old3dspeed - new3dspeed);
+	fixed_t delta = abs(old3dspeed - new3dspeed);
+	fixed_t grav = mo->height/3;
+	fixed_t add = abs(grav - new3dspeed);
+
+	if (delta < 2 * add && new3dspeed > grav)
+		delta += add;
 
 	if (delta > threshold)
 	{
@@ -4541,7 +4566,7 @@ void K_Squish(mobj_t *mo)
 		if (mo->spritexscale > maxstretch)
 			mo->spritexscale = maxstretch;
 
-		if (abs(new3dspeed) > abs(old3dspeed))
+		if (new3dspeed > old3dspeed || new3dspeed > grav)
 		{
 			mo->spritexscale =
 				FixedDiv(FRACUNIT, mo->spritexscale);
@@ -4551,7 +4576,7 @@ void K_Squish(mobj_t *mo)
 	{
 		mo->spritexscale -=
 			(mo->spritexscale - FRACUNIT)
-			/ (mo->spritexscale < FRACUNIT ? 8 : 2);
+			/ (mo->spritexscale < FRACUNIT ? 8 : 3);
 	}
 
 	mo->spriteyscale =
@@ -7565,10 +7590,12 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 		basedrift += (basedrift / greasetics) * player->tiregrease;
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+#if 0
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
 		countersteer = FixedMul(countersteer, 3*FRACUNIT/2);
 	}
+#endif
 
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
@@ -7672,15 +7699,34 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
 	{
-		turnfixed = FixedMul(turnfixed, 3*FRACUNIT/2);
+		turnfixed /= 2;
 	}
 
 	// Weight has a small effect on turning
 	turnfixed = FixedMul(turnfixed, weightadjust);
 
 	return (turnfixed / FRACUNIT);
+}
+
+INT32 K_GetUnderwaterTurnAdjust(player_t *player)
+{
+	if ((player->mo->eflags & MFE_UNDERWATER) &&
+			player->speed > 11 * player->mo->scale)
+	{
+		INT32 steer = (K_GetKartTurnValue(player,
+					player->steering) << TICCMD_REDUCE);
+
+		if (!player->drift)
+			steer = 9 * steer / 5;
+
+		return FixedMul(steer, 8 * FixedDiv(player->speed,
+					2 * K_GetKartSpeed(player, false) / 3));
+	}
+	else
+		return 0;
 }
 
 INT32 K_GetKartDriftSparkValue(player_t *player)
@@ -8449,9 +8495,14 @@ void K_AdjustPlayerFriction(player_t *player)
 	*/
 
 	// Water gets ice physics too
-	if (player->mo->eflags & (MFE_UNDERWATER|MFE_TOUCHWATER))
+	if ((player->mo->eflags & MFE_TOUCHWATER) &&
+			!player->offroad)
 	{
 		player->mo->friction += 614;
+	}
+	else if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown
@@ -8582,8 +8633,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->pflags & PF_ATTACKDOWN));
 	boolean HOLDING_ITEM = (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
-
-	player->pflags &= ~PF_HITFINISHLINE;
 
 	if (!player->exiting)
 	{

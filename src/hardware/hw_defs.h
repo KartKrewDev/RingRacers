@@ -113,7 +113,7 @@ typedef struct
 	UINT8       splitscreen;
 	boolean     flip;            // screenflip
 	boolean     shearing;        // 14042019
-	angle_t     viewaiming;      // 17052019
+	float       viewaiming;      // 17052019
 	boolean     roll;
 	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
 	FLOAT       centerx, centery;
@@ -284,7 +284,7 @@ struct FSurfaceInfo
 typedef struct FSurfaceInfo FSurfaceInfo;
 
 #define GL_DEFAULTMIX 0x00000000
-#define GL_DEFAULTFOG 0xFF000000
+#define GL_DEFAULTFOG 0x19000000
 
 //Hurdler: added for backward compatibility
 enum hwdsetspecialstate

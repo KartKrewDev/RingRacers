@@ -273,14 +273,92 @@ boolean K_PlayerUsesBotMovement(player_t *player)
 --------------------------------------------------*/
 boolean K_BotCanTakeCut(player_t *player)
 {
-	if (!K_ApplyOffroad(player)
+	if (
+#if 1
+		K_TripwirePass(player) == true
+#else
+		K_ApplyOffroad(player) == false
+#endif
 		|| player->itemtype == KITEM_SNEAKER
 		|| player->itemtype == KITEM_ROCKETSNEAKER
 		|| player->itemtype == KITEM_INVINCIBILITY
-		|| player->itemtype == KITEM_HYUDORO)
+		)
+	{
 		return true;
+	}
 
 	return false;
+}
+
+/*--------------------------------------------------
+	static line_t *K_FindBotController(mobj_t *mo)
+
+		Finds if any bot controller linedefs are tagged to the bot's sector.
+
+	Input Arguments:-
+		mo - The bot player's mobj.
+
+	Return:-
+		Linedef of the bot controller. NULL if it doesn't exist.
+--------------------------------------------------*/
+static line_t *K_FindBotController(mobj_t *mo)
+{
+	msecnode_t *node;
+	ffloor_t *rover;
+	INT16 lineNum = -1;
+	mtag_t tag;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
+	{
+		if (!node->m_sector)
+		{
+			continue;
+		}
+
+		tag = Tag_FGet(&node->m_sector->tags);
+		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
+
+		if (lineNum != -1)
+		{
+			break;
+		}
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+		{
+			sector_t *rs = NULL;
+
+			if (!(rover->flags & FF_EXISTS))
+			{
+				continue;
+			}
+
+			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
+			{
+				continue;
+			}
+
+			rs = &sectors[rover->secnum];
+			tag = Tag_FGet(&rs->tags);
+			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
+
+			if (lineNum != -1)
+			{
+				break;
+			}
+		}
+	}
+
+	if (lineNum != -1)
+	{
+		return &lines[lineNum];
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 /*--------------------------------------------------
@@ -346,12 +424,24 @@ fixed_t K_BotRubberband(player_t *player)
 	fixed_t rubberband = FRACUNIT;
 	fixed_t max, min;
 	player_t *firstplace = NULL;
+	line_t *botController = NULL;
 	UINT8 i;
 
 	if (player->exiting)
 	{
 		// You're done, we don't need to rubberband anymore.
 		return FRACUNIT;
+	}
+
+	botController = K_FindBotController(player->mo);
+
+	if (botController != NULL)
+	{
+		// No Climb Flag: Disable rubberbanding
+		if (botController->flags & ML_NOCLIMB)
+		{
+			return FRACUNIT;
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -430,8 +520,8 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 	}
 	else
 	{
-		// Max at +10% for level 9 bots
-		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 10);
+		// Max at +20% for level 9 bots
+		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 5);
 	}
 
 	// Only allow you to go faster than your regular top speed if you're facing the right direction
@@ -485,6 +575,14 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 	if (rubberband <= 0)
 	{
 		// Never get weaker than normal friction
+		return frict;
+	}
+
+	if (player->tiregrease > 0)
+	{
+		// This isn't great -- it means rubberbanding will slow down when they hit a spring
+		// But it's better than the opposite where they accelerate into hyperspace :V
+		// (would appreciate an actual fix though ... could try being additive instead of multiplicative)
 		return frict;
 	}
 
@@ -567,14 +665,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
-	const fixed_t distreduce = K_BotReducePrediction(player);
-	const fixed_t radreduce = min(distreduce + FRACUNIT/4, FRACUNIT);
-
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = max(P_AproxDistance(player->mo->momx, player->mo->momy), K_GetKartSpeed(player, false) / 4);
+	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
 
 	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
-	const INT32 distance = ((FixedMul(speed, distreduce) / FRACUNIT) * futuresight) + startDist;
+	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
 
 	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	waypoint_t *wp = player->nextwaypoint;
@@ -582,6 +677,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	INT32 distanceleft = distance;
 	fixed_t smallestradius = INT32_MAX;
 	angle_t angletonext = ANGLE_MAX;
+
+	// Halves radius when encountering a wall on your way to your destination.
+	fixed_t radreduce = FRACUNIT;
 
 	size_t nwp;
 	size_t i;
@@ -595,7 +693,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		predict->x = wp->mobj->x;
 		predict->y = wp->mobj->y;
-		predict->radius = FixedMul(wp->mobj->radius, radreduce);
+		predict->radius = wp->mobj->radius;
 		return predict;
 	}
 
@@ -635,12 +733,12 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 			for (i = 0; i < wp->numnextwaypoints; i++)
 			{
-				if (!K_GetWaypointIsEnabled(wp->nextwaypoints[i]))
+				if (K_GetWaypointIsEnabled(wp->nextwaypoints[i]) == false)
 				{
 					continue;
 				}
 
-				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) && !K_BotCanTakeCut(player))
+				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) == true && K_BotCanTakeCut(player) == false)
 				{
 					continue;
 				}
@@ -672,6 +770,13 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		);
 
 		disttonext = (INT32)wp->nextwaypointdistances[nwp];
+
+		if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
+		{
+			// If we can't get a direct path to this waypoint, we don't want to check much further...
+			disttonext *= 2;
+			radreduce = FRACUNIT/2;
+		}
 
 		if (disttonext > distanceleft)
 		{
@@ -761,7 +866,7 @@ static UINT8 K_TrySpindash(player_t *player)
 		return 0;
 	}
 
-	if (speedDiff < (3 * baseAccel / 4))
+	if (speedDiff < (baseAccel / 4))
 	{
 		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
 		{
@@ -795,70 +900,6 @@ static UINT8 K_TrySpindash(player_t *player)
 
 	// We're doing just fine, we don't need to spindash, thanks.
 	return 0;
-}
-
-/*--------------------------------------------------
-	static INT16 K_FindBotController(mobj_t *mo)
-
-		Finds if any bot controller linedefs are tagged to the bot's sector.
-
-	Input Arguments:-
-		mo - The bot player's mobj.
-
-	Return:-
-		Line number of the bot controller. -1 if it doesn't exist.
---------------------------------------------------*/
-static INT16 K_FindBotController(mobj_t *mo)
-{
-	msecnode_t *node;
-	ffloor_t *rover;
-	INT16 lineNum = -1;
-	mtag_t tag;
-
-	I_Assert(mo != NULL);
-	I_Assert(!P_MobjWasRemoved(mo));
-
-	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
-	{
-		if (!node->m_sector)
-		{
-			continue;
-		}
-
-		tag = Tag_FGet(&node->m_sector->tags);
-		lineNum = P_FindSpecialLineFromTag(2004, tag, -1); // todo: needs to not use P_FindSpecialLineFromTag
-
-		if (lineNum != -1)
-		{
-			return lineNum;
-		}
-
-		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
-		{
-			sector_t *rs = NULL;
-
-			if (!(rover->flags & FF_EXISTS))
-			{
-				continue;
-			}
-
-			if (mo->z > *rover->topheight || mo->z + mo->height < *rover->bottomheight)
-			{
-				continue;
-			}
-
-			rs = &sectors[rover->secnum];
-			tag = Tag_FGet(&rs->tags);
-			lineNum = P_FindSpecialLineFromTag(2004, tag, -1);
-
-			if (lineNum != -1)
-			{
-				return lineNum;
-			}
-		}
-	}
-
-	return -1;
 }
 
 /*--------------------------------------------------
@@ -926,6 +967,50 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 }
 
 /*--------------------------------------------------
+	static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+
+		Determines inputs for trick panels.
+
+	Input Arguments:-
+		player - Player to generate the ticcmd for.
+		cmd - The player's ticcmd to modify.
+		botController - Linedef for the bot controller. 
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+{
+	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
+	if (botController == NULL)
+	{
+		return;
+	}
+
+	if (player->trickpanel == 1)
+	{
+		INT32 type = (sides[botController->sidenum[0]].rowoffset / FRACUNIT);
+
+		// Y Offset: Trick type
+		switch (type)
+		{
+			case 1:
+				cmd->turning = KART_FULLTURN;
+				break;
+			case 2:
+				cmd->turning = -KART_FULLTURN;
+				break;
+			case 3:
+				cmd->buttons |= BT_FORWARD;
+				break;
+			case 4:
+				cmd->buttons |= BT_BACKWARD;
+				break;
+		}
+	}
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -936,7 +1021,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	boolean trySpindash = true;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
-	INT16 botController = -1;
+	line_t *botController = NULL;
 
 	// Can't build a ticcmd if we aren't spawned...
 	if (!player->mo)
@@ -959,7 +1044,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Complete override of all ticcmd functionality
-	if (LUAh_BotTiccmd(player, cmd))
+	if (LUAh_BotTiccmd(player, cmd) == true)
 	{
 		return;
 	}
@@ -968,30 +1053,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (player->trickpanel != 0)
 	{
-		// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
-
-		if (player->trickpanel == 1 && botController != -1)
-		{
-			line_t *controllerLine = &lines[botController];
-			INT32 type = (sides[controllerLine->sidenum[0]].rowoffset / FRACUNIT);
-
-			// Y Offset: Trick type
-			switch (type)
-			{
-				case 1:
-					cmd->turning = KART_FULLTURN;
-					break;
-				case 2:
-					cmd->turning = -KART_FULLTURN;
-					break;
-				case 3:
-					cmd->buttons |= BT_FORWARD;
-					break;
-				case 4:
-					cmd->buttons |= BT_BACKWARD;
-					break;
-			}
-		}
+		K_BotTrick(player, cmd, botController);
 
 		// Don't do anything else.
 		return;
@@ -1000,20 +1062,19 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if ((player->nextwaypoint != NULL
 		&& player->nextwaypoint->mobj != NULL
 		&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-		|| (botController != -1))
+		|| (botController != NULL))
 	{
 		// Handle steering towards waypoints!
 		SINT8 turnsign = 0;
 		angle_t destangle, moveangle, angle;
 		INT16 anglediff;
 
-		if (botController != -1)
+		if (botController != NULL && (botController->flags & ML_EFFECT1))
 		{
 			const fixed_t dist = (player->mo->radius * 4);
-			line_t *controllerLine = &lines[botController];
 
 			// X Offset: Movement direction
-			destangle = FixedAngle(sides[controllerLine->sidenum[0]].textureoffset);
+			destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
 
 			// Overwritten prediction
 			predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
@@ -1112,18 +1173,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					// Don't turn at all
 					turnamt = 0;
 				}
-				else
-				{
-					// Make minor adjustments
-					turnamt /= 4;
-				}
-			}
-
-			if (anglediff > 60)
-			{
-				// Actually, don't go too fast...
-				cmd->forwardmove /= 2;
-				cmd->buttons |= BT_BRAKE;
 			}
 		}
 	}

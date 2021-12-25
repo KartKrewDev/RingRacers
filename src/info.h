@@ -276,6 +276,7 @@ enum actionnum
 	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
+	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
@@ -546,6 +547,8 @@ void A_JawzExplode();
 void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_LandMineExplode();
+void A_LandMineExplode();
 void A_BallhogExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();
@@ -1067,6 +1070,7 @@ typedef enum sprite
 
 	// SRB2Kart
 	SPR_RNDM, // Random Item Box
+	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
@@ -4450,6 +4454,21 @@ typedef enum state
 	S_RANDOMITEM12,
 	S_DEADRANDOMITEM,
 
+	// Sphere Box (for Battle)
+	S_SPHEREBOX1,
+	S_SPHEREBOX2,
+	S_SPHEREBOX3,
+	S_SPHEREBOX4,
+	S_SPHEREBOX5,
+	S_SPHEREBOX6,
+	S_SPHEREBOX7,
+	S_SPHEREBOX8,
+	S_SPHEREBOX9,
+	S_SPHEREBOX10,
+	S_SPHEREBOX11,
+	S_SPHEREBOX12,
+	S_DEADSPHEREBOX,
+
 	// Random Item Pop
 	S_RANDOMITEMPOP1,
 	S_RANDOMITEMPOP2,
@@ -6462,6 +6481,7 @@ typedef enum mobj_type
 
 	// SRB2kart
 	MT_RANDOMITEM,
+	MT_SPHEREBOX,
 	MT_RANDOMITEMPOP,
 	MT_FLOATINGITEM,
 	MT_ITEMCAPSULE,

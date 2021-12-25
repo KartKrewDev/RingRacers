@@ -54,6 +54,9 @@ extern extracolormap_t *extra_colormaps;
 // for global animation
 extern INT32 *texturetranslation;
 
+// for brightmaps
+extern INT32 *texturebrightmaps;
+
 // Sprites
 extern size_t numspritelumps, max_spritelumps;
 
@@ -93,7 +96,7 @@ extern side_t *spawnsides;
 // POV data.
 //
 extern fixed_t viewx, viewy, viewz;
-extern angle_t viewangle, aimingangle;
+extern angle_t viewangle, aimingangle, viewroll;
 extern UINT8 viewssnum; // splitscreen view number
 extern boolean viewsky, skyVisible;
 extern boolean skyVisiblePerPlayer[MAXSPLITSCREENPLAYERS]; // saved values of skyVisible of each splitscreen player

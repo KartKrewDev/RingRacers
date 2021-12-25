@@ -49,10 +49,17 @@
 // --------------------------------------------
 void (*colfunc)(void);
 void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
+int colfunctype;
 
 void (*spanfunc)(void);
 void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // ------------------
 // global video state
@@ -118,9 +125,6 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[BASEDRAWFUNC] = R_DrawColumn_8;
 		spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8;
 
-		colfunc = colfuncs[BASEDRAWFUNC];
-		spanfunc = spanfuncs[BASEDRAWFUNC];
-
 		colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_TRANS] = R_DrawTranslatedColumn_8;
 		colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8;
@@ -160,26 +164,29 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
 
-#ifdef RUSEASM
+#if (defined(RUSEASM) && defined(USE_COL_SPAN_ASM))
 		if (R_ASM)
 		{
 			if (R_MMX)
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
-				spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
+				spanfuncs_asm[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
 			}
 			else
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
 			}
 		}
 #endif
+
+		R_SetColumnFunc(BASEDRAWFUNC, false);
+		R_SetSpanFunc(BASEDRAWFUNC, false, false);
 	}
 /*	else if (vid.bpp > 1)
 	{
@@ -199,6 +206,65 @@ void SCR_SetDrawFuncs(void)
 	if (SCR_IsAspectCorrect(vid.width, vid.height))
 		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
 */
+}
+
+void R_SetColumnFunc(size_t id, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	colfunctype = id;
+
+#ifdef USE_COL_SPAN_ASM
+	if (colfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		colfunc = colfuncs_asm[id];
+	}
+	else
+#endif
+	{
+		colfunc = colfuncs[id];
+	}
+}
+
+void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	if (spanfuncs_npo2[id] != NULL && npo2 == true)
+	{
+		spanfunc = spanfuncs_npo2[id];
+	}
+#ifdef USE_COL_SPAN_ASM
+	else if (spanfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		spanfunc = spanfuncs_asm[id];
+	}
+#endif
+	else
+	{
+		spanfunc = spanfuncs[id];
+	}
+}
+
+boolean R_CheckColumnFunc(size_t id)
+{
+	size_t i;
+
+	if (colfunc == NULL)
+	{
+		// Shouldn't happen.
+		return false;
+	}
+
+	for (i = 0; i < COLDRAWFUNC_MAX; i++)
+	{
+		if (colfunc == colfuncs[id] || colfunc == colfuncs_asm[id])
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SCR_SetMode(void)
@@ -447,8 +513,45 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 
 // XMOD FPS display
 // moved out of os-specific code for consistency
-static boolean fpsgraph[TICRATE];
+static boolean ticsgraph[TICRATE];
 static tic_t lasttic;
+
+static UINT32 fpstime = 0;
+static UINT32 lastupdatetime = 0;
+
+#define FPSUPDATERATE 1/20 // What fraction of a second to update at. The fraction will not simplify to 0, trust me.
+#define FPSMAXSAMPLES 16
+
+static UINT32 fpssamples[FPSMAXSAMPLES];
+static UINT32 fpssampleslen = 0;
+static UINT32 fpssum = 0;
+double aproxfps = 0.0f;
+
+void SCR_CalcAproxFps(void)
+{
+	tic_t i = 0;
+	if (I_PreciseToMicros(fpstime - lastupdatetime) > 1000000 * FPSUPDATERATE)
+	{
+		if (fpssampleslen == FPSMAXSAMPLES)
+		{
+			fpssum -= fpssamples[0];
+
+			for (i = 1; i < fpssampleslen; i++)
+				fpssamples[i-1] = fpssamples[i];
+		}
+		else
+			fpssampleslen++;
+
+		fpssamples[fpssampleslen-1] = I_GetPreciseTime() - fpstime;
+		fpssum += fpssamples[fpssampleslen-1];
+
+		aproxfps = 1000000 / (I_PreciseToMicros(fpssum) / (double)fpssampleslen);
+
+		lastupdatetime = I_GetPreciseTime();
+	}
+
+	fpstime = I_GetPreciseTime();
+}
 
 void SCR_DisplayTicRate(void)
 {
@@ -458,25 +561,51 @@ void SCR_DisplayTicRate(void)
 	const UINT8 *ticcntcolor = NULL;
 
 	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-		fpsgraph[i % TICRATE] = false;
+		ticsgraph[i % TICRATE] = false;
 
-	fpsgraph[ontic % TICRATE] = true;
+	ticsgraph[ontic % TICRATE] = true;
 
 	for (i = 0;i < TICRATE;++i)
-		if (fpsgraph[i])
+		if (ticsgraph[i])
 			++totaltics;
-
-	if (totaltics <= TICRATE/2) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
-	else if (totaltics == TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
 
 	// draw "FPS"
 	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
-	// draw total frame:
-	V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
-	// draw "/"
-	V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
-	// draw our actual framerate
-	V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
+
+	if (cv_frameinterpolation.value == 1)
+	{
+		if (aproxfps <= 15.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+		else if (aproxfps >= 60.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+
+		/*
+		if (cv_fpscap.value != 0)
+		{
+			// draw total frame:
+			//V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, cv_fpscap.value, ticcntcolor);
+			// draw "/"
+			//V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
+			// draw our actual framerate
+			V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
+		}
+		else
+		*/
+		{
+			// draw our actual framerate
+			V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
+		}
+	}
+	else
+	{
+		if (totaltics <= 15) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+		else if (totaltics >= TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+
+		// draw total frame:
+		V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
+		// draw "/"
+		V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
+		// draw our actual framerate
+		V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
+	}
 
 
 	lasttic = ontic;

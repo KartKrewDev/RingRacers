@@ -42,7 +42,11 @@ static angle_t R_PlayerSpriteRotation(player_t *player, player_t *viewPlayer)
 
 	angle_t rollAngle = 0;
 
-	if (sliptideLift)
+	if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		rollAngle -= player->underwatertilt;
+	}
+	else if (sliptideLift)
 	{
 		/* (from side) tilt downward if turning
 		   toward camera, upward if away. */
@@ -60,10 +64,9 @@ static angle_t R_PlayerSpriteRotation(player_t *player, player_t *viewPlayer)
 	return rollAngle;
 }
 
-angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+angle_t R_ModelRotationAngle(mobj_t *mobj, player_t *viewPlayer)
 {
-	angle_t rollOrPitch = R_GetPitchRollAngle(mobj, viewPlayer);
-	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
+	angle_t rollAngle = mobj->rollangle;
 
 	if (mobj->player)
 	{
@@ -71,6 +74,12 @@ angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
 	}
 
 	return rollAngle;
+}
+
+angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+{
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj, viewPlayer);
+	return (rollOrPitch + R_ModelRotationAngle(mobj, viewPlayer));
 }
 
 INT32 R_GetRollAngle(angle_t rollangle)

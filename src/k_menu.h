@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
+#include "g_demo.h"	//menudemo_t
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -173,6 +174,9 @@ extern menu_t PLAY_GamemodesDef;
 extern menuitem_t PLAY_RaceGamemodesMenu[];
 extern menu_t PLAY_RaceGamemodesDef;
 
+extern menuitem_t PLAY_RaceDifficulty[];
+extern menu_t PLAY_RaceDifficultyDef;
+
 extern menuitem_t PLAY_CupSelect[];
 extern menu_t PLAY_CupSelectDef;
 
@@ -267,6 +271,16 @@ extern menu_t OPTIONS_DataDiscordDef;
 
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;
+
+// EXTRAS
+extern menuitem_t EXTRAS_Main[];
+extern menu_t EXTRAS_MainDef;
+
+extern menuitem_t EXTRAS_ReplayHut[];
+extern menu_t EXTRAS_ReplayHutDef;
+
+extern menuitem_t EXTRAS_ReplayStart[];
+extern menu_t EXTRAS_ReplayStartDef;
 
 // PAUSE
 extern menuitem_t PAUSE_Main[];
@@ -499,6 +513,16 @@ void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
 
+// dummy consvars for GP & match race setup
+extern consvar_t cv_dummygpdifficulty;
+extern consvar_t cv_dummykartspeed;
+extern consvar_t cv_dummygpencore;
+extern consvar_t cv_dummymatchbots;
+
+void M_SetupDifficultySelect(INT32 choice);
+void M_SetupDifficultySelectMP(INT32 choice);
+void M_DifficultySelectInputs(INT32 choice);
+
 // Multiplayer menu stuff
 
 // Keep track of multiplayer menu related data
@@ -597,6 +621,46 @@ void M_EraseData(INT32 choice);	// For data erasing
 void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
 
+
+// Extras menu:
+#define DF_ENCORE       0x40
+
+extern struct extrasmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
+	// this is only used during menu transitions. (and will probably remain unused until we get the statistics menu
+	INT16 extx;
+	INT16 exty;
+	INT16 textx;
+	INT16 texty;
+
+
+	// The replay vars...... oh no......
+	menudemo_t *demolist;
+
+	INT16 replayScrollTitle;
+	SINT8 replayScrollDelay;
+	SINT8 replayScrollDir;
+
+
+
+} extrasmenu;
+
+void M_InitExtras(INT32 choice); // init for the struct
+void M_ExtrasTick(void);
+boolean M_ExtrasInputs(INT32 ch);
+boolean M_ExtrasQuit(void);	// resets buttons when you quit
+
+// Extras: Replay Hut
+void M_HandleReplayHutList(INT32 choice);
+boolean M_QuitReplayHut(void);
+void M_HutStartReplay(INT32 choice);
+void M_PrepReplayList(void);
+
+
 // Pause menu:
 
 // Keep track of some pause menu data for visual goodness.
@@ -673,6 +737,8 @@ void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);
 void M_DrawTimeAttack(void);
 
+void M_DrawRaceDifficulty(void);
+
 // Multiplayer menu stuff
 void M_DrawMPOptSelect(void);
 void M_DrawMPHost(void);
@@ -691,6 +757,13 @@ void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
+
+// Extras menu:
+void M_DrawExtrasMovingButton(void);
+void M_DrawExtras(void);
+void M_DrawReplayHut(void);
+void M_DrawReplayStartMenu(void);
+void M_DrawReplayHutReplayInfo(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
