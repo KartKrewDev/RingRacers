@@ -1234,7 +1234,7 @@ static void M_UpdateMenuCMD(UINT8 i)
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
 		// Reset delay count with no buttons.
-		menucmd[i].delayCount = 0;
+		menucmd[i].delay = menucmd[i].delayCount = 0;
 	}
 }
 
