@@ -7033,6 +7033,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		mobj->old_x = mobj->target->old_x;
+		mobj->old_y = mobj->target->old_y;
+		mobj->old_z = mobj->target->old_z;
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	case MT_BATTLEPOINT:
