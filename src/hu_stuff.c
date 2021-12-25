@@ -897,13 +897,7 @@ static inline boolean HU_keyInChatString(char *s, char ch)
 //
 static void HU_TickSongCredits(void)
 {
-	char *str;
-	INT32 len;
-	fixed_t destx;
-
-	cursongcredit.old_x = cursongcredit.x;
-
-	if (!cursongcredit.def) // No def
+	if (cursongcredit.def == NULL) // No def
 	{
 		cursongcredit.x = cursongcredit.old_x = 0;
 		cursongcredit.anim = 0;
@@ -911,12 +905,14 @@ static void HU_TickSongCredits(void)
 		return;
 	}
 
-	str = va("\x1F"" %s", cursongcredit.def->source);
-	len = V_ThinStringWidth(str, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
-	destx = (len+7) * FRACUNIT;
+	cursongcredit.old_x = cursongcredit.x;
 
 	if (cursongcredit.anim > 0)
 	{
+		char *str = va("\x1F"" %s", cursongcredit.def->source);
+		INT32 len = V_ThinStringWidth(str, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+		fixed_t destx = (len+7) * FRACUNIT;
+
 		if (cursongcredit.trans > 0)
 		{
 			cursongcredit.trans--;
