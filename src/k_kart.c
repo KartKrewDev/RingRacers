@@ -3975,6 +3975,9 @@ static void K_SpawnDriftElectricity(player_t *player)
 			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
 		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
 		P_InitAngle(spark, sparkangle);
+		spark->momx = mo->momx;
+		spark->momy = mo->momy;
+		spark->momz = mo->momz;
 		spark->color = color;
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
 
