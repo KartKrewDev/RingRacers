@@ -790,7 +790,7 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
-	if (ev->type == ev_keydown && ev->data1 < KEY_JOY1)
+	if (ev->type == ev_keydown && ev->data1 < NUMKEYS)
 	{
 		// Record keyboard presses
 		menuKey = ev->data1;

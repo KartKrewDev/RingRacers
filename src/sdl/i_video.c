@@ -798,29 +798,51 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 	D_PostEvent(&event);
 }
 
-#if 0
-static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
+static void Impl_SendHatEvent(SDL_JoyHatEvent evt, UINT64 hatFlag, UINT8 keyOffset)
 {
 	event_t event;
-	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
 
 	event.device = 1 + evt.which;
-
 	if (event.device == INT32_MAX)
 	{
 		return;
 	}
 
-	if (evt.hat >= JOYHATS)
+	event.data1 = KEY_HAT1 + keyOffset;
+
+	if (evt.hat < JOYHATS)
 	{
-		return; // ignore hats with too high an index
+		event.data1 += (evt.hat * 4);
+	}
+	else
+	{
+		return;
 	}
 
-	event.data1 = KEY_HAT1 + (evt.hat*4);
+	if (evt.value & hatFlag)
+	{
+		event.type = ev_keydown;
+	}
+	else
+	{
+		event.type = ev_keyup;
+	}
 
-	// NOTE: UNFINISHED
+	SDLJoyRemap(&event);
+
+	if (event.type != ev_console)
+	{
+		D_PostEvent(&event);
+	}
 }
-#endif
+
+static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
+{
+	Impl_SendHatEvent(evt, SDL_HAT_UP, 0);
+	Impl_SendHatEvent(evt, SDL_HAT_DOWN, 1);
+	Impl_SendHatEvent(evt, SDL_HAT_LEFT, 2);
+	Impl_SendHatEvent(evt, SDL_HAT_RIGHT, 3);
+}
 
 static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 {
@@ -908,11 +930,9 @@ void I_GetEvent(void)
 			case SDL_JOYAXISMOTION:
 				Impl_HandleJoystickAxisEvent(evt.jaxis);
 				break;
-#if 0
 			case SDL_JOYHATMOTION:
-				Impl_HandleJoystickHatEvent(evt.jhat)
+				Impl_HandleJoystickHatEvent(evt.jhat);
 				break;
-#endif
 			case SDL_JOYBUTTONUP:
 			case SDL_JOYBUTTONDOWN:
 				Impl_HandleJoystickButtonEvent(evt.jbutton, evt.type);
@@ -1113,16 +1133,12 @@ void I_StartupMouse(void)
 void I_OsPolling(void)
 {
 	SDL_Keymod mod;
-	UINT8 i;
 
 	if (consolevent)
 		I_GetConsoleEvents();
+
 	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
-	{
 		SDL_JoystickUpdate();
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-			I_GetJoystickEvents(i);
-	}
 
 	I_GetEvent();
 

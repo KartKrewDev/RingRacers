@@ -1073,14 +1073,6 @@ void I_UpdateJoystickDeviceIndices(UINT8 excludePlayer)
 	}
 }
 
-/**	\brief Joystick buttons states
-*/
-static UINT64 lastjoybuttons[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
-
-/**	\brief Joystick hats state
-*/
-static UINT64 lastjoyhats[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
-
 /**	\brief	Shuts down joystick
 	\return void
 */
@@ -1088,11 +1080,11 @@ void I_ShutdownJoystick(UINT8 index)
 {
 	INT32 i;
 	event_t event;
-	event.type=ev_keyup;
+
+	event.device = I_GetJoystickDeviceIndex(JoyInfo[index].dev);
+	event.type = ev_keyup;
 	event.data2 = 0;
 	event.data3 = 0;
-
-	lastjoybuttons[index] = lastjoyhats[index] = 0;
 
 	// emulate the up of all joystick buttons
 	for (i=0;i<JOYBUTTONS;i++)
@@ -1120,136 +1112,6 @@ void I_ShutdownJoystick(UINT8 index)
 	JoyReset(&JoyInfo[index]);
 
 	// don't shut down the subsystem here, because hotplugging
-}
-
-void I_GetJoystickEvents(UINT8 index)
-{
-	static event_t event = {0,0,0,0,0};
-	INT32 i = 0;
-	UINT64 joyhats = 0;
-#if 0
-	UINT64 joybuttons = 0;
-	Sint16 axisx, axisy;
-#endif
-
-	if (!joystick_started[index]) return;
-
-	if (!JoyInfo[index].dev) //I_ShutdownJoystick(index);
-		return;
-
-#if 0
-	//faB: look for as much buttons as g_input code supports,
-	//  we don't use the others
-	for (i = JoyInfo[index].buttons - 1; i >= 0; i--)
-	{
-		joybuttons <<= 1;
-		if (SDL_JoystickGetButton(JoyInfo[index].dev,i))
-			joybuttons |= 1;
-	}
-
-	if (joybuttons != lastjoybuttons[index])
-	{
-		INT64 j = 1; // keep only bits that changed since last time
-		INT64 newbuttons = joybuttons ^ lastjoybuttons[index];
-		lastjoybuttons[index] = joybuttons;
-
-		for (i = 0; i < JOYBUTTONS; i++, j <<= 1)
-		{
-			if (newbuttons & j) // button changed state?
-			{
-				if (joybuttons & j)
-					event.type = ev_keydown;
-				else
-					event.type = ev_keyup;
-				event.data1 = KEY_JOY1 + i;
-				D_PostEvent(&event);
-			}
-		}
-	}
-#endif
-
-	for (i = JoyInfo[index].hats - 1; i >= 0; i--)
-	{
-		Uint8 hat = SDL_JoystickGetHat(JoyInfo[index].dev, i);
-
-		if (hat & SDL_HAT_UP   ) joyhats|=(UINT64)0x1<<(0 + 4*i);
-		if (hat & SDL_HAT_DOWN ) joyhats|=(UINT64)0x1<<(1 + 4*i);
-		if (hat & SDL_HAT_LEFT ) joyhats|=(UINT64)0x1<<(2 + 4*i);
-		if (hat & SDL_HAT_RIGHT) joyhats|=(UINT64)0x1<<(3 + 4*i);
-	}
-
-	if (joyhats != lastjoyhats[index])
-	{
-		INT64 j = 1; // keep only bits that changed since last time
-		INT64 newhats = joyhats ^ lastjoyhats[index];
-		lastjoyhats[index] = joyhats;
-
-		for (i = 0; i < JOYHATS*4; i++, j <<= 1)
-		{
-			if (newhats & j) // hat changed state?
-			{
-				if (joyhats & j)
-					event.type = ev_keydown;
-				else
-					event.type = ev_keyup;
-				event.data1 = KEY_HAT1 + i;
-				D_PostEvent(&event);
-			}
-		}
-	}
-
-#if 0
-	// send joystick axis positions
-	event.type = ev_joystick;
-
-	for (i = JOYAXISSET - 1; i >= 0; i--)
-	{
-		event.data1 = i;
-		if (i*2 + 1 <= JoyInfo[index].axises)
-			axisx = SDL_JoystickGetAxis(JoyInfo[index].dev, i*2 + 0);
-		else axisx = 0;
-		if (i*2 + 2 <= JoyInfo[index].axises)
-			axisy = SDL_JoystickGetAxis(JoyInfo[index].dev, i*2 + 1);
-		else axisy = 0;
-
-
-		// -32768 to 32767
-		axisx = axisx/32;
-		axisy = axisy/32;
-
-
-		if (Joystick[index].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (axisx < -(JOYAXISRANGE/2))
-				event.data2 = -1;
-			else if (axisx > (JOYAXISRANGE/2))
-				event.data2 = 1;
-			else event.data2 = 0;
-			if (axisy < -(JOYAXISRANGE/2))
-				event.data3 = -1;
-			else if (axisy > (JOYAXISRANGE/2))
-				event.data3 = 1;
-			else event.data3 = 0;
-		}
-		else
-		{
-
-			axisx = JoyInfo[index].scale?((axisx/JoyInfo[index].scale)*JoyInfo[index].scale):axisx;
-			axisy = JoyInfo[index].scale?((axisy/JoyInfo[index].scale)*JoyInfo[index].scale):axisy;
-
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= axisx && axisx <= SDL_JDEADZONE) axisx = 0;
-			if (-SDL_JDEADZONE <= axisy && axisy <= SDL_JDEADZONE) axisy = 0;
-#endif
-
-			// analog control style , just send the raw data
-			event.data2 = axisx; // x axis
-			event.data3 = axisy; // y axis
-		}
-		D_PostEvent(&event);
-	}
-#endif
 }
 
 /**	\brief	Open joystick handle

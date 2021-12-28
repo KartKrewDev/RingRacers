@@ -718,6 +718,9 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 		}
 	}
 
+#if 1
+	(void)menu;
+#else
 	if (p == 0 && menu == true)
 	{
 		// We don't want menus to become unnavigable if people unbind
@@ -742,6 +745,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 			}
 		}
 	}
+#endif
 
 	return 0;
 }
