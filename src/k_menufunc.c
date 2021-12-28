@@ -2270,12 +2270,13 @@ boolean M_CharacterSelectHandler(INT32 choice)
 	}
 
 	// Setup new numplayers
+	setup_numplayers = 0;
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		if (setup_player[i].mdepth == CSSTEP_NONE)
 			break;
-		else
-			setup_numplayers = i+1;
+
+		setup_numplayers = i+1;
 	}
 
 	return true;
