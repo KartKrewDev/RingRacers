@@ -1163,17 +1163,11 @@ static void M_HandleMenuInput(void)
 	routine = currentMenu->menuitems[itemOn].itemaction;
 
 	// Handle menuitems which need a specific key handling
-
-	/*
-	// NOPE, we need a generic "typing" menu
-	// (sort of like the generic message menu)
-	// so that it can be gamepad friendly.
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
 	{
 		routine(-1);
 		return;
 	}
-	*/
 
 	// TODO: Move this to message menu code
 	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
@@ -2553,6 +2547,9 @@ void M_LevelSelectInit(INT32 choice)
 void M_CupSelectHandler(INT32 choice)
 {
 	cupheader_t *newcup = kartcupheaders;
+	const UINT8 pid = 0;
+
+	(void)choice;
 
 	while (newcup)
 	{
@@ -2561,119 +2558,130 @@ void M_CupSelectHandler(INT32 choice)
 		newcup = newcup->next;
 	}
 
-	switch (choice)
+	if (menucmd[pid].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			cupgrid.x++;
-			if (cupgrid.x >= CUPMENU_COLUMNS)
+		cupgrid.x++;
+		if (cupgrid.x >= CUPMENU_COLUMNS)
+		{
+			cupgrid.x = 0;
+			cupgrid.pageno++;
+			if (cupgrid.pageno >= cupgrid.numpages)
+				cupgrid.pageno = 0;
+		}
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		cupgrid.x--;
+		if (cupgrid.x < 0)
+		{
+			cupgrid.x = CUPMENU_COLUMNS-1;
+			cupgrid.pageno--;
+			if (cupgrid.pageno < 0)
+				cupgrid.pageno = cupgrid.numpages-1;
+		}
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		cupgrid.y++;
+		if (cupgrid.y >= CUPMENU_ROWS)
+			cupgrid.y = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		cupgrid.y--;
+		if (cupgrid.y < 0)
+			cupgrid.y = CUPMENU_ROWS-1;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+
+	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	{
+		M_SetMenuDelay(pid);
+
+		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			return;
+		}
+
+		if (cupgrid.grandprix == true)
+		{
+			S_StartSound(NULL, sfx_s3k63);
+
+			// Early fadeout to let the sound finish playing
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			F_WipeEndScreen();
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+			// read our dummy cvars
+
+			grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
+			grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
+			grandprixinfo.encore = (boolean)cv_dummygpencore.value;
+
+			grandprixinfo.cup = newcup;
+
+			grandprixinfo.gp = true;
+			grandprixinfo.roundnum = 1;
+			grandprixinfo.initalize = true;
+
+			paused = false;
+
+			// Don't restart the server if we're already in a game lol
+			if (gamestate == GS_MENU)
 			{
-				cupgrid.x = 0;
-				cupgrid.pageno++;
-				if (cupgrid.pageno >= cupgrid.numpages)
-					cupgrid.pageno = 0;
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				netgame = levellist.netgame;	// ^ ditto.
 			}
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_LEFTARROW:
-			cupgrid.x--;
-			if (cupgrid.x < 0)
+
+			D_MapChange(
+				grandprixinfo.cup->levellist[0] + 1,
+				GT_RACE,
+				grandprixinfo.encore,
+				true,
+				1,
+				false,
+				false
+			);
+
+			M_ClearMenus(true);
+		}
+		else
+		{
+			// Keep cursor position if you select the same cup again, reset if it's a different cup
+			if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
 			{
-				cupgrid.x = CUPMENU_COLUMNS-1;
-				cupgrid.pageno--;
-				if (cupgrid.pageno < 0)
-					cupgrid.pageno = cupgrid.numpages-1;
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_UPARROW:
-			cupgrid.y++;
-			if (cupgrid.y >= CUPMENU_ROWS)
-				cupgrid.y = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_DOWNARROW:
-			cupgrid.y--;
-			if (cupgrid.y < 0)
-				cupgrid.y = CUPMENU_ROWS-1;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
-			{
-				S_StartSound(NULL, sfx_s3kb2);
-				break;
+				levellist.cursor = 0;
+				levellist.selectedcup = newcup;
 			}
 
-			if (cupgrid.grandprix == true)
-			{
-				S_StartSound(NULL, sfx_s3k63);
+			M_LevelSelectScrollDest();
+			levellist.y = levellist.dest;
 
-				// Early fadeout to let the sound finish playing
-				F_WipeStartScreen();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+			S_StartSound(NULL, sfx_s3k63);
+		}
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_SetMenuDelay(pid);
 
-				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
-
-				// read our dummy cvars
-
-				grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
-				grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
-				grandprixinfo.encore = (boolean)cv_dummygpencore.value;
-
-				grandprixinfo.cup = newcup;
-
-				grandprixinfo.gp = true;
-				grandprixinfo.roundnum = 1;
-				grandprixinfo.initalize = true;
-
-				paused = false;
-
-				// Don't restart the server if we're already in a game lol
-				if (gamestate == GS_MENU)
-				{
-					SV_StartSinglePlayerServer();
-					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-					netgame = levellist.netgame;	// ^ ditto.
-				}
-
-				D_MapChange(
-					grandprixinfo.cup->levellist[0] + 1,
-					GT_RACE,
-					grandprixinfo.encore,
-					true,
-					1,
-					false,
-					false
-				);
-
-				M_ClearMenus(true);
-			}
-			else
-			{
-				// Keep cursor position if you select the same cup again, reset if it's a different cup
-				if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
-				{
-					levellist.cursor = 0;
-					levellist.selectedcup = newcup;
-				}
-
-				M_LevelSelectScrollDest();
-				levellist.y = levellist.dest;
-
-				M_SetupNextMenu(&PLAY_LevelSelectDef, false);
-				S_StartSound(NULL, sfx_s3k63);
-			}
-			break;
-		case KEY_ESCAPE:
-			if (currentMenu->prevMenu)
-				M_SetupNextMenu(currentMenu->prevMenu, false);
-			else
-				M_ClearMenus(true);
-			break;
-		default:
-			break;
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
 	}
 }
 
@@ -2686,124 +2694,136 @@ void M_LevelSelectHandler(INT32 choice)
 {
 	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
 	INT16 maxlevels = M_CountLevelsToShowInList(levellist.newgametype);
+	const UINT8 pid = 0;
+
+	(void)choice;
 
 	if (levellist.y != levellist.dest)
-		return;
-
-	switch (choice)
 	{
-		case KEY_UPARROW:
-			levellist.cursor--;
-			if (levellist.cursor < 0)
-				levellist.cursor = maxlevels-1;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_DOWNARROW:
-			levellist.cursor++;
-			if (levellist.cursor >= maxlevels)
-				levellist.cursor = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			{
-				INT16 map = start;
-				INT16 add = levellist.cursor;
+		return;
+	}
 
-				while (add > 0)
-				{
-					map++;
-
-					while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
-						map++;
-
-					if (map >= NUMMAPS)
-						break;
-
-					add--;
-				}
-
-				if (map >= NUMMAPS)
-					break;
-
-				levellist.choosemap = map;
-
-				if (levellist.timeattack)
-				{
-					M_SetupNextMenu(&PLAY_TimeAttackDef, false);
-					S_StartSound(NULL, sfx_s3k63);
-				}
-				else
-				{
-					if (gamestate == GS_MENU)
-					{
-						UINT8 ssplayers = cv_splitplayers.value-1;
-
-						netgame = false;
-						multiplayer = true;
-
-						strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-						// Still need to reset devmode
-						cv_debug = 0;
-
-						if (demo.playback)
-							G_StopDemo();
-						if (metalrecording)
-							G_StopMetalDemo();
-
-						/*if (levellist.choosemap == 0)
-							levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
-
-						if (cv_maxplayers.value < ssplayers+1)
-							CV_SetValue(&cv_maxplayers, ssplayers+1);
-
-						if (splitscreen != ssplayers)
-						{
-							splitscreen = ssplayers;
-							SplitScreen_OnChange();
-						}
-
-						S_StartSound(NULL, sfx_s3k63);
-
-						paused = false;
-
-						// Early fadeout to let the sound finish playing
-						F_WipeStartScreen();
-						V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-						F_WipeEndScreen();
-						F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-						SV_StartSinglePlayerServer();
-						multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-						netgame = levellist.netgame;	// ^ ditto.
-
-						// this is considered to be CV_CHEAT however...
-						CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
-
-						if (netgame)	// check for the dummy kartspeed value
-							CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
-
-
-						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
-					}
-					else	// directly do the map change
-						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-
-					M_ClearMenus(true);
-				}
-			}
-			break;
-		case KEY_ESCAPE:
-			if (currentMenu->prevMenu)
-				M_SetupNextMenu(currentMenu->prevMenu, false);
-			else
-				M_ClearMenus(true);
-			break;
-		default:
-			break;
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		levellist.cursor++;
+		if (levellist.cursor >= maxlevels)
+			levellist.cursor = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		levellist.cursor--;
+		if (levellist.cursor < 0)
+			levellist.cursor = maxlevels-1;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
 	}
 
 	M_LevelSelectScrollDest();
+
+	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	{
+		INT16 map = start;
+		INT16 add = levellist.cursor;
+
+		M_SetMenuDelay(pid);
+
+		while (add > 0)
+		{
+			map++;
+
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+				map++;
+
+			if (map >= NUMMAPS)
+				break;
+
+			add--;
+		}
+
+		if (map >= NUMMAPS)
+		{
+			// This shouldn't happen
+			return;
+		}
+
+		levellist.choosemap = map;
+
+		if (levellist.timeattack)
+		{
+			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+			S_StartSound(NULL, sfx_s3k63);
+		}
+		else
+		{
+			if (gamestate == GS_MENU)
+			{
+				UINT8 ssplayers = cv_splitplayers.value-1;
+
+				netgame = false;
+				multiplayer = true;
+
+				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+				// Still need to reset devmode
+				cv_debug = 0;
+
+				if (demo.playback)
+					G_StopDemo();
+				if (metalrecording)
+					G_StopMetalDemo();
+
+				/*if (levellist.choosemap == 0)
+					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
+
+				if (cv_maxplayers.value < ssplayers+1)
+					CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+				if (splitscreen != ssplayers)
+				{
+					splitscreen = ssplayers;
+					SplitScreen_OnChange();
+				}
+
+				S_StartSound(NULL, sfx_s3k63);
+
+				paused = false;
+
+				// Early fadeout to let the sound finish playing
+				F_WipeStartScreen();
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+				F_WipeEndScreen();
+				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				netgame = levellist.netgame;	// ^ ditto.
+
+				// this is considered to be CV_CHEAT however...
+				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
+
+				if (netgame)	// check for the dummy kartspeed value
+					CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
+
+
+				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+			}
+			else	// directly do the map change
+				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+
+			M_ClearMenus(true);
+		}
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_SetMenuDelay(pid);
+
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
+	}
 }
 
 void M_LevelSelectTick(void)
@@ -2823,8 +2843,6 @@ void M_LevelSelectTick(void)
 		times--;
 	}
 }
-
-
 
 struct mpmenu_s mpmenu;
 
