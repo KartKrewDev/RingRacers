@@ -792,18 +792,8 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 		return;
 	}
 
-	//vaule[sic]
-	if (evt.axis%2)
-	{
-		event.data1 = evt.axis / 2;
-		event.data2 = SDLJoyAxis(evt.value, event.type, event.device);
-	}
-	else
-	{
-		evt.axis--;
-		event.data1 = evt.axis / 2;
-		event.data3 = SDLJoyAxis(evt.value, event.type, event.device);
-	}
+	event.data1 = evt.axis;
+	event.data2 = SDLJoyAxis(evt.value, event.type, event.device);
 
 	D_PostEvent(&event);
 }

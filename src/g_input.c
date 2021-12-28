@@ -92,6 +92,7 @@ INT32 G_GetDevicePlayer(INT32 deviceID)
 void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
+	boolean alternate = false;
 
 	if (ev->device >= 0 && ev->device < MAXDEVICES)
 	{
@@ -142,11 +143,6 @@ void G_MapEventsToControls(event_t *ev)
 			break;
 
 		case ev_mouse: // buttons are virtual keys
-			if (menuactive)
-			{
-				break;
-			}
-
 			// X axis
 			if (ev->data2 < 0)
 			{
@@ -177,11 +173,6 @@ void G_MapEventsToControls(event_t *ev)
 			break;
 
 		case ev_joystick: // buttons are virtual keys
-			if (menuactive)
-			{
-				break;
-			}
-
 			if (ev->data1 >= JOYAXISSET)
 			{
 #ifdef PARANOIA
@@ -190,18 +181,13 @@ void G_MapEventsToControls(event_t *ev)
 				break;
 			}
 
-			i = ev->data1 * 4;
-
-			if (ev->device == 0)
-			{
-				if (CON_Ready() || chat_on)
-					break;
-			}
+			alternate = ev->data1 % 2;
+			i = (ev->data1 / 2) * 2;
+			CONS_Printf("AXIS ID IS %d\n", i);
 
 			if (ev->data2 != INT32_MAX)
 			{
-				// X axis
-				if (ev->data2 < 0)
+				if (alternate == true)
 				{
 					// Left
 					gamekeydown[ev->device][KEY_AXIS1 + i] = abs(ev->data2);
@@ -214,22 +200,10 @@ void G_MapEventsToControls(event_t *ev)
 					gamekeydown[ev->device][KEY_AXIS1 + i + 1] = abs(ev->data2);
 				}
 			}
-
-			if (ev->data3 != INT32_MAX)
+			else
 			{
-				// Y axis
-				if (ev->data3 < 0)
-				{
-					// Up
-					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = abs(ev->data3);
-					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = 0;
-				}
-				else
-				{
-					// Down
-					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = 0;
-					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = abs(ev->data3);
-				}
+				gamekeydown[ev->device][KEY_AXIS1 + i] = 0;
+				gamekeydown[ev->device][KEY_AXIS1 + i + 1] = 0;
 			}
 
 			break;
