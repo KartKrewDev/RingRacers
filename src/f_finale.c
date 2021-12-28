@@ -1788,6 +1788,8 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
+	setup_numplayers = 0;
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;

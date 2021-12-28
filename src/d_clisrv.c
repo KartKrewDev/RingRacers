@@ -1503,7 +1503,7 @@ static void M_ConfirmConnect(event_t *ev)
 #ifndef NONET
 	if (ev->type == ev_keydown)
 	{
-		if (G_PlayerInputDown(0, gc_a, true))
+		if (G_PlayerInputDown(0, gc_a, 1))
 		{
 			if (totalfilesrequestednum > 0)
 			{
@@ -1526,7 +1526,7 @@ static void M_ConfirmConnect(event_t *ev)
 
 			M_ClearMenus(true);
 		}
-		else if (G_PlayerInputDown(0, gc_b, true))
+		else if (G_PlayerInputDown(0, gc_b, 1))
 		{
 			cl_mode = CL_ABORTED;
 			M_ClearMenus(true);
@@ -1934,7 +1934,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
 
-		if (G_PlayerInputDown(0, gc_b, true) || cl_mode == CL_ABORTED)
+		if (G_PlayerInputDown(0, gc_b, 1) || cl_mode == CL_ABORTED)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
 //				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);

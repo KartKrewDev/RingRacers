@@ -862,7 +862,7 @@ boolean M_Responder(event_t *ev)
 		}
 #endif
 
-		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, true) == true)
+		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
 		{
 			if (chat_on)
 			{
@@ -893,6 +893,13 @@ void M_StartControlPanel(void)
 {
 	INT32 i;
 
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	memset(menucmd, 0, sizeof (menucmd));
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		menucmd[i].delay = MENUDELAYTIME;
+	}
+
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -913,11 +920,6 @@ void M_StartControlPanel(void)
 
 	menuactive = true;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		menucmd[i].delay = MENUDELAYTIME;
-	}
-
 	if (demo.playback)
 	{
 		currentMenu = &PAUSE_PlaybackMenuDef;
@@ -932,137 +934,6 @@ void M_StartControlPanel(void)
 		// For now let's just always open the same pause menu.
 		M_OpenPauseMenu();
 	}
-
-#if 0
-	else if (modeattacking)
-	{
-		currentMenu = &MAPauseDef;
-		itemOn = mapause_continue;
-	}
-	else if (!(netgame || multiplayer)) // Single Player
-	{
-		if (gamestate != GS_LEVEL) // intermission, so gray out stuff.
-			SPauseMenu[spause_retry].status = IT_GRAYEDOUT;
-		else
-		{
-			//INT32 numlives = 2;
-
-			/*if (&players[consoleplayer])
-			{
-				numlives = players[consoleplayer].lives;
-				if (players[consoleplayer].playerstate != PST_LIVE)
-					++numlives;
-			}
-
-			// The list of things that can disable retrying is (was?) a little too complex
-			// for me to want to use the short if statement syntax
-			if (numlives <= 1 || G_IsSpecialStage(gamemap))
-				SPauseMenu[spause_retry].status = (IT_GRAYEDOUT);
-			else*/
-				SPauseMenu[spause_retry].status = (IT_STRING | IT_CALL);
-		}
-
-		currentMenu = &SPauseDef;
-		itemOn = spause_continue;
-	}
-	else // multiplayer
-	{
-		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
-		MPauseMenu[mpause_addons].status = IT_DISABLED;
-		MPauseMenu[mpause_scramble].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit3].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit4].status = IT_DISABLED;
-		MPauseMenu[mpause_spectate].status = IT_DISABLED;
-		MPauseMenu[mpause_entergame].status = IT_DISABLED;
-		MPauseMenu[mpause_canceljoin].status = IT_DISABLED;
-		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
-		MPauseMenu[mpause_switchspectate].status = IT_DISABLED;
-		MPauseMenu[mpause_psetup].status = IT_DISABLED;
-		MISC_ChangeTeamMenu[0].status = IT_DISABLED;
-		MISC_ChangeSpectateMenu[0].status = IT_DISABLED;
-		// Reset these in case splitscreen messes things up
-		MPauseMenu[mpause_switchteam].mvar1 = 48;
-		MPauseMenu[mpause_switchspectate].mvar1 = 48;
-		MPauseMenu[mpause_options].mvar1 = 64;
-		MPauseMenu[mpause_title].mvar1 = 80;
-		MPauseMenu[mpause_quit].mvar1 = 88;
-		Dummymenuplayer_OnChange();
-
-		if ((server || IsPlayerAdmin(consoleplayer)))
-		{
-			MPauseMenu[mpause_switchmap].status = IT_STRING | IT_CALL;
-			MPauseMenu[mpause_addons].status = IT_STRING | IT_CALL;
-			if (G_GametypeHasTeams())
-				MPauseMenu[mpause_scramble].status = IT_STRING | IT_SUBMENU;
-		}
-
-		if (splitscreen)
-		{
-			MPauseMenu[mpause_psetupsplit].status = MPauseMenu[mpause_psetupsplit2].status = IT_STRING | IT_CALL;
-			MISC_ChangeTeamMenu[0].status = MISC_ChangeSpectateMenu[0].status = IT_STRING|IT_CVAR;
-
-			if (netgame)
-			{
-				if (G_GametypeHasTeams())
-				{
-					MPauseMenu[mpause_switchteam].status = IT_STRING | IT_SUBMENU;
-					MPauseMenu[mpause_switchteam].mvar1 += ((splitscreen+1) * 8);
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-				else if (G_GametypeHasSpectators())
-				{
-					MPauseMenu[mpause_switchspectate].status = IT_STRING | IT_SUBMENU;
-					MPauseMenu[mpause_switchspectate].mvar1 += ((splitscreen+1) * 8);
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-			}
-
-			if (splitscreen > 1)
-			{
-				MPauseMenu[mpause_psetupsplit3].status = IT_STRING | IT_CALL;
-
-				MPauseMenu[mpause_options].mvar1 += 8;
-				MPauseMenu[mpause_title].mvar1 += 8;
-				MPauseMenu[mpause_quit].mvar1 += 8;
-
-				if (splitscreen > 2)
-				{
-					MPauseMenu[mpause_psetupsplit4].status = IT_STRING | IT_CALL;
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-			}
-		}
-		else
-		{
-			MPauseMenu[mpause_psetup].status = IT_STRING | IT_CALL;
-
-			if (G_GametypeHasTeams())
-				MPauseMenu[mpause_switchteam].status = IT_STRING | IT_SUBMENU;
-			else if (G_GametypeHasSpectators())
-			{
-				if (!players[consoleplayer].spectator)
-					MPauseMenu[mpause_spectate].status = IT_STRING | IT_CALL;
-				else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
-					MPauseMenu[mpause_canceljoin].status = IT_STRING | IT_CALL;
-				else
-					MPauseMenu[mpause_entergame].status = IT_STRING | IT_CALL;
-			}
-			else // in this odd case, we still want something to be on the menu even if it's useless
-				MPauseMenu[mpause_spectate].status = IT_GRAYEDOUT;
-		}
-
-		currentMenu = &MPauseDef;
-		itemOn = mpause_continue;
-	}
-#endif
 
 	CON_ToggleOff(); // move away console
 }
@@ -1104,11 +975,6 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 {
 	INT16 i;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		menucmd[i].delay = MENUDELAYTIME;
-	}
-
 	if (!notransition)
 	{
 		if (currentMenu->transitionID == menudef->transitionID
@@ -1137,6 +1003,16 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 		// If you're going from a menu to itself, why are you running the quitroutine? You're not quitting it! -SH
 		if (currentMenu != menudef && !currentMenu->quitroutine())
 			return; // we can't quit this menu (also used to set parameter from the menu)
+	}
+
+	if (menudef->initroutine != NULL
+#if 0
+		&& currentMenu != menudef // Unsure if we need this...
+#endif
+		)
+	{
+		// Moving to a new menu, reinitialize.
+		menudef->initroutine();
 	}
 
 	currentMenu = menudef;
@@ -1209,27 +1085,29 @@ static void M_SetMenuDelay(UINT8 i)
 
 static void M_UpdateMenuCMD(UINT8 i)
 {
+	UINT8 mp = max(1, setup_numplayers);
+
 	menucmd[i].dpad_ud = 0;
 	menucmd[i].dpad_lr = 0;
 
 	menucmd[i].buttonsHeld = menucmd[i].buttons;
 	menucmd[i].buttons = 0;
 
-	if (G_PlayerInputDown(i, gc_up, true)) { menucmd[i].dpad_ud--; }
-	if (G_PlayerInputDown(i, gc_down, true)) { menucmd[i].dpad_ud++; }
+	if (G_PlayerInputDown(i, gc_up, mp)) { menucmd[i].dpad_ud--; }
+	if (G_PlayerInputDown(i, gc_down, mp)) { menucmd[i].dpad_ud++; }
 
-	if (G_PlayerInputDown(i, gc_left, true)) { menucmd[i].dpad_lr--; }
-	if (G_PlayerInputDown(i, gc_right, true)) { menucmd[i].dpad_lr++; }
+	if (G_PlayerInputDown(i, gc_left, mp)) { menucmd[i].dpad_lr--; }
+	if (G_PlayerInputDown(i, gc_right, mp)) { menucmd[i].dpad_lr++; }
 
-	if (G_PlayerInputDown(i, gc_a, true)) { menucmd[i].buttons |= MBT_A; }
-	if (G_PlayerInputDown(i, gc_b, true)) { menucmd[i].buttons |= MBT_B; }
-	if (G_PlayerInputDown(i, gc_c, true)) { menucmd[i].buttons |= MBT_C; }
-	if (G_PlayerInputDown(i, gc_x, true)) { menucmd[i].buttons |= MBT_X; }
-	if (G_PlayerInputDown(i, gc_y, true)) { menucmd[i].buttons |= MBT_Y; }
-	if (G_PlayerInputDown(i, gc_z, true)) { menucmd[i].buttons |= MBT_Z; }
-	if (G_PlayerInputDown(i, gc_l, true)) { menucmd[i].buttons |= MBT_L; }
-	if (G_PlayerInputDown(i, gc_r, true)) { menucmd[i].buttons |= MBT_R; }
-	if (G_PlayerInputDown(i, gc_start, true)) { menucmd[i].buttons |= MBT_START; }
+	if (G_PlayerInputDown(i, gc_a, mp)) { menucmd[i].buttons |= MBT_A; }
+	if (G_PlayerInputDown(i, gc_b, mp)) { menucmd[i].buttons |= MBT_B; }
+	if (G_PlayerInputDown(i, gc_c, mp)) { menucmd[i].buttons |= MBT_C; }
+	if (G_PlayerInputDown(i, gc_x, mp)) { menucmd[i].buttons |= MBT_X; }
+	if (G_PlayerInputDown(i, gc_y, mp)) { menucmd[i].buttons |= MBT_Y; }
+	if (G_PlayerInputDown(i, gc_z, mp)) { menucmd[i].buttons |= MBT_Z; }
+	if (G_PlayerInputDown(i, gc_l, mp)) { menucmd[i].buttons |= MBT_L; }
+	if (G_PlayerInputDown(i, gc_r, mp)) { menucmd[i].buttons |= MBT_R; }
+	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
 
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
@@ -1260,6 +1138,12 @@ static void M_HandleMenuInput(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		M_UpdateMenuCMD(i);
+	}
+
+	if (menuactive == false)
+	{
+		// We're not in the menu.
+		return;
 	}
 
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
@@ -1385,7 +1269,7 @@ static void M_HandleMenuInput(void)
 
 		return;
 	}
-	else if ((menucmd[pid].buttons & MBT_A) || (menucmd[pid].buttons & MBT_X) /*|| (menucmd[pid].buttons & MBT_START)*/)
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		noFurtherInput = true;
 		currentMenu->lastOn = itemOn;
@@ -1424,13 +1308,13 @@ static void M_HandleMenuInput(void)
 		M_SetMenuDelay(pid);
 		return;
 	}
-	else if ((menucmd[pid].buttons & MBT_B) || (menucmd[pid].buttons & MBT_Y))
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
 		M_GoBack(0);
 		M_SetMenuDelay(pid);
 		return;
 	}
-	else if ((menucmd[pid].buttons & MBT_C) || (menucmd[pid].buttons & MBT_Z))
+	else if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
 	{
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
@@ -1517,20 +1401,17 @@ void M_Ticker(void)
 		}
 	}
 
-	if (menuactive == true)
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		if (menucmd[i].delay > 0)
 		{
-			if (menucmd[i].delay > 0)
-			{
-				menucmd[i].delay--;
-			}
+			menucmd[i].delay--;
 		}
+	}
 
-		if (noFurtherInput == false)
-		{
-			M_HandleMenuInput();
-		}
+	if (noFurtherInput == false)
+	{
+		M_HandleMenuInput();
 	}
 
 	if (currentMenu->tickroutine)
@@ -1624,16 +1505,17 @@ static menuitem_t MessageMenu[] =
 
 menu_t MessageDef =
 {
-	1,                  // # of menu items
-	NULL,               // previous menu       (TO HACK)
-	0,                  // lastOn, flags       (TO HACK)
-	MessageMenu,        // menuitem_t ->
-	0, 0,               // x, y                (TO HACK)
+	1,					// # of menu items
+	NULL,				// previous menu       (TO HACK)
+	0,					// lastOn, flags       (TO HACK)
+	MessageMenu,		// menuitem_t ->
+	0, 0,				// x, y                (TO HACK)
 	0, 0,				// extra1, extra2
-	0, 0,               // transition tics
-	M_DrawMessageMenu,  // drawing routine ->
-	NULL,               // ticker routine
-	NULL,               // quit routine
+	0, 0,				// transition tics
+	M_DrawMessageMenu,	// drawing routine ->
+	NULL,				// ticker routine
+	NULL,				// init routine
+	NULL,				// quit routine
 	NULL				// input routine
 };
 
@@ -1886,14 +1768,20 @@ struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 struct setup_explosions_s setup_explosions[48];
 
-UINT8 setup_numplayers = 0;
+UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
 
-void M_CharacterSelectInit(INT32 choice)
+void M_CharacterSelectInit(void)
 {
 	UINT8 i, j;
 
-	(void)choice;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Un-set devices for other players.
+		CV_SetValue(&cv_usejoystick[i], -1);
+		CONS_Printf("Device for %d set to %d\n", i, -1);
+	}
+	CONS_Printf("========\n");
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
@@ -1931,7 +1819,11 @@ void M_CharacterSelectInit(INT32 choice)
 			}
 		}
 	}
+}
 
+void M_CharacterSelect(INT32 choice)
+{
+	(void)choice;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
@@ -1983,7 +1875,7 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 	}
 }
 
-static boolean M_DeviceAvailable(UINT8 deviceID, UINT8 numPlayers)
+static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 {
 	INT32 i;
 
@@ -2006,12 +1898,12 @@ static boolean M_DeviceAvailable(UINT8 deviceID, UINT8 numPlayers)
 	return true;
 }
 
-static void M_HandlePressStart(setup_player_t *p, UINT8 num)
+static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 {
 	INT32 i, j;
 
 	// Detect B press first ... this means P1 can actually exit out of the menu.
-	if (menucmd[num].buttons & MBT_B)
+	if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
 	{
 		M_SetMenuDelay(num);
 
@@ -2019,66 +1911,67 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 		{
 			// We're done here.
 			M_GoBack(0);
-			return;
+			return true;
 		}
 
 		// Don't allow this press to ever count as "start".
-		return;
-	}
-
-	// Ensure their device is unset
-	if (cv_usejoystick[num].value != -1)
-	{
-		CV_SetValue(&cv_usejoystick[num], -1);
+		return false;
 	}
 
 	if (num != setup_numplayers)
 	{
 		// Only detect devices for the last player.
-		return;
+		return false;
 	}
 
 	// Now detect new devices trying to join.
 	for (i = 0; i < MAXDEVICES; i++)
 	{
-		if (deviceResponding[i] == false)
+		if (deviceResponding[i] != true)
 		{
 			// No buttons are being pushed.
 			continue;
 		}
 
-		if (M_DeviceAvailable(i, num) == true)
+		if (M_DeviceAvailable(i, setup_numplayers) == true)
 		{
 			// Available!! Let's use this one!!
 			CV_SetValue(&cv_usejoystick[num], i);
 			CONS_Printf("Device for %d set to %d\n", num, i);
+			CONS_Printf("========\n");
 
 			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
-				if (cv_usejoystick[j].value == i)
-				{
-					// Un-set devices for other players.
-					CV_SetValue(&cv_usejoystick[j], -1);
-					CONS_Printf("Device for %d set to %d\n", j, -1);
-				}
-
-				// Prevent excess presses for new players.
-				setup_player[j].delay = TICRATE;
+				// Un-set devices for other players.
+				CV_SetValue(&cv_usejoystick[j], -1);
+				CONS_Printf("Device for %d set to %d\n", j, -1);
 			}
+			CONS_Printf("========\n");
 
-			setup_numplayers++;
+			//setup_numplayers++;
 			p->mdepth = CSSTEP_CHARS;
 			S_StartSound(NULL, sfx_s3k65);
 
-			// Prevent quick presses
-			p->delay = MENUDELAYTIME;
-			M_SetMenuDelay(num);
+			// Prevent quick presses for multiple players
+			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+			{
+				setup_player[j].delay = MENUDELAYTIME;
+				M_SetMenuDelay(j);
+				menucmd[j].buttonsHeld |= (MBT_B|MBT_Y);
+			}
+
+			memset(deviceResponding, false, sizeof(deviceResponding));
+			return true;
 		}
 	}
+
+	return false;
 }
 
-static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
+static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
+	INT32 i;
+
 	if (menucmd[num].dpad_ud > 0)
 	{
 		p->gridy++;
@@ -2113,7 +2006,7 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		M_SetMenuDelay(num);
 	}
 
-	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
+	if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
 		{
@@ -2131,12 +2024,22 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 
 		M_SetMenuDelay(num);
 	}
-	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
 	{
 		if (num == setup_numplayers-1)
 		{
 			p->mdepth = CSSTEP_NONE;
 			S_StartSound(NULL, sfx_s3k5b);
+
+			// Prevent quick presses for multiple players
+			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				setup_player[i].delay = MENUDELAYTIME;
+				M_SetMenuDelay(i);
+				menucmd[i].buttonsHeld |= (MBT_B|MBT_Y);
+			}
+
+			return true;
 		}
 		else
 		{
@@ -2145,6 +2048,8 @@ static void M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 
 		M_SetMenuDelay(num);
 	}
+
+	return false;
 }
 
 static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
@@ -2170,13 +2075,13 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
 
-	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
+	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_COLORS;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
-	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
 	{
 		p->mdepth = CSSTEP_CHARS;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -2205,7 +2110,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 
-	if ((menucmd[num].buttons & MBT_A) || (menucmd[num].buttons & MBT_X) /*|| (menucmd[num].buttons & MBT_START)*/)
+	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
@@ -2213,7 +2118,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
-	else if ((menucmd[num].buttons & MBT_B) || (menucmd[num].buttons & MBT_Y))
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu
@@ -2226,23 +2131,24 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 boolean M_CharacterSelectHandler(INT32 choice)
 {
-	UINT8 i;
+	INT32 i;
 
 	(void)choice;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	for (i = MAXSPLITSCREENPLAYERS-1; i >= 0; i--)
 	{
 		setup_player_t *p = &setup_player[i];
+		boolean playersChanged = false;
 
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					M_HandlePressStart(p, i);
+					playersChanged = M_HandlePressStart(p, i);
 					break;
 				case CSSTEP_CHARS: // Character Select grid
-					M_HandleCharacterGrid(p, i);
+					playersChanged = M_HandleCharacterGrid(p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
 					M_HandleCharRotate(p, i);
@@ -2252,7 +2158,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_READY:
 				default: // Unready
-					if (G_PlayerInputDown(i, gc_b, true) == true)
+					if (M_MenuButtonPressed(i, MBT_B) || M_MenuButtonPressed(i, MBT_Y))
 					{
 						p->mdepth = CSSTEP_COLORS;
 						S_StartSound(NULL, sfx_s3k5b);
@@ -2266,7 +2172,14 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 
 		if (p->mdepth < CSSTEP_COLORS)
+		{
 			p->color = skins[p->skin].prefcolor;
+		}
+
+		if (playersChanged == true)
+		{
+			break;
+		}
 	}
 
 	// Setup new numplayers
@@ -2359,7 +2272,6 @@ void M_CharacterSelectTick(void)
 
 	if (setupnext && setup_numplayers > 0)
 	{
-
 		// Selecting from the menu
 		if (gamestate == GS_MENU)
 		{
@@ -2406,7 +2318,6 @@ void M_CharacterSelectTick(void)
 
 boolean M_CharacterSelectQuit(void)
 {
-	M_CharacterSelectInit(0);
 	return true;
 }
 
@@ -3674,9 +3585,6 @@ void M_OpenPauseMenu(void)
 				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
 		}
 	}
-
-
-
 }
 
 void M_QuitPauseMenu(void)

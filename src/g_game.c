@@ -652,35 +652,67 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-static INT32 KeyValue(UINT8 p, INT32 key, boolean menu)
+static INT32 KeyValue(UINT8 p, INT32 key, UINT8 menuPlayers)
 {
 	INT32 deviceID;
+	INT32 i, j;
 
 	if (key <= 0 || key >= NUMINPUTS)
 	{
 		return 0;
 	}
 
-	if (menu == false)
+	deviceID = cv_usejoystick[p].value;
+
+	if (menuPlayers > 0)
 	{
-		deviceID = cv_usejoystick[p].value;
+		// Try every device that does NOT belong to another player.
+		for (i = MAXDEVICES-1; i >= 0; i--)
+		{
+			if (i == deviceID)
+			{
+				// We've tried this one multiple times :V
+				continue;
+			}
+
+			if (menuPlayers > 1)
+			{
+				for (j = 1; j < menuPlayers; j++)
+				{
+					if (i == cv_usejoystick[j].value)
+					{
+						break;
+					}
+				}
+
+				if (j < menuPlayers)
+				{
+					// This one's taken.
+					continue;
+				}
+			}
+
+			if (gamekeydown[i][key] != 0)
+			{
+				return gamekeydown[i][key];
+			}
+		}
+	}
+	else
+	{
 		if (deviceID < 0 || deviceID >= MAXDEVICES)
 		{
+			// Device is unset
 			return 0;
 		}
 
 		return gamekeydown[deviceID][key];
 	}
-	else
-	{
-		// Use keyboard as alternative for P1 menu.
-		return gamekeydown[0][key];
-	}
 
 	return 0;
 }
 
-INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	INT32 i;
 	INT32 deadzone = 0;
@@ -713,15 +745,12 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 		}
 	}
 
-#if 1
-	(void)menu;
-#else
-	if (p == 0 && menu == true)
+	if (menuPlayers != 0)
 	{
 		// We don't want menus to become unnavigable if people unbind
-		// all of their controls, so use the default control scheme in
-		// this scenario.
+		// all of their controls, so we do several things in this scenario.
 
+		// First: check the same device, but with default binds.
 		for (i = 0; i < MAXINPUTMAPPING; i++)
 		{
 			INT32 key = gamecontroldefault[gc][i];
@@ -732,22 +761,34 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 				continue;
 			}
 
-			value = KeyValue(p, key, true);
+			value = KeyValue(p, key, false);
 
 			if (value >= deadzone)
 			{
 				return value;
 			}
+
+			if (p == 0 && menuPlayers == 1)
+			{
+				// Second: if we're Player 1 and there are no other players,
+				// then we can use keyboard defaults as a final resort.
+
+				value = KeyValue(p, key, menuPlayers);
+
+				if (value >= deadzone)
+				{
+					return value;
+				}
+			}
 		}
 	}
-#endif
 
 	return 0;
 }
 
-boolean G_PlayerInputDown(UINT8 p, INT32 gc, boolean menu)
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-	return (G_PlayerInputAnalog(p, gc, menu) != 0);
+	return (G_PlayerInputAnalog(p, gc, menuPlayers) != 0);
 }
 
 // Take a magnitude of two axes, and adjust it to take out the deadzone
@@ -867,7 +908,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
-	joystickvector.xaxis = G_PlayerInputAnalog(forplayer, gc_right, false) - G_PlayerInputAnalog(forplayer, gc_left, false);
+	joystickvector.xaxis = G_PlayerInputAnalog(forplayer, gc_right, 0) - G_PlayerInputAnalog(forplayer, gc_left, 0);
 	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
@@ -875,7 +916,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// use it for aiming to throw items forward/backward and the vote screen
 	// This mean that the turn axis will still be gradient but up/down will be 0
 	// until the stick is pushed far enough
-	joystickvector.yaxis = G_PlayerInputAnalog(forplayer, gc_down, false) - G_PlayerInputAnalog(forplayer, gc_up, false);
+	joystickvector.yaxis = G_PlayerInputAnalog(forplayer, gc_down, 0) - G_PlayerInputAnalog(forplayer, gc_up, 0);
 
 	if (encoremode)
 	{
@@ -892,12 +933,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		if (G_PlayerInputDown(forplayer, gc_a, false))
+		if (G_PlayerInputDown(forplayer, gc_a, 0))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 		}
 
-		if (G_PlayerInputDown(forplayer, gc_b, false))
+		if (G_PlayerInputDown(forplayer, gc_b, 0))
 		{
 			cmd->buttons |= BT_BRAKE;
 		}
@@ -915,14 +956,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		fixed_t value = G_PlayerInputAnalog(forplayer, gc_a, false);
+		fixed_t value = G_PlayerInputAnalog(forplayer, gc_a, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward += ((value * MAXPLMOVE) >> 10);
 		}
 
-		value = G_PlayerInputAnalog(forplayer, gc_b, false);
+		value = G_PlayerInputAnalog(forplayer, gc_b, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
@@ -942,19 +983,19 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	}
 
 	// fire with any button/key
-	if (G_PlayerInputDown(forplayer, gc_c, false))
+	if (G_PlayerInputDown(forplayer, gc_c, 0))
 	{
 		cmd->buttons |= BT_ATTACK;
 	}
 
 	// drift with any button/key
-	if (G_PlayerInputDown(forplayer, gc_x, false))
+	if (G_PlayerInputDown(forplayer, gc_x, 0))
 	{
 		cmd->buttons |= BT_DRIFT;
 	}
 
 	// rear view with any button/key
-	if (G_PlayerInputDown(forplayer, gc_y, false))
+	if (G_PlayerInputDown(forplayer, gc_y, 0))
 	{
 		cmd->buttons |= BT_LOOKBACK;
 	}

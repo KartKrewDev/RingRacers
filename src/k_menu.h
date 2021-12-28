@@ -134,6 +134,7 @@ typedef struct menu_s
 
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
+	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
 	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 } menu_t;
@@ -475,7 +476,8 @@ typedef enum
 } splitscreencvars_t;
 extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
-void M_CharacterSelectInit(INT32 choice);
+void M_CharacterSelectInit(void);
+void M_CharacterSelect(INT32 choice);
 boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
@@ -783,6 +785,7 @@ void M_DrawAddons(void);
 	M_DrawGenericMenu,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -799,6 +802,7 @@ void M_DrawAddons(void);
 	M_DrawKartGamemodeMenu,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -812,6 +816,7 @@ void M_DrawAddons(void);
 	0, 0, \
 	1, 10,\
 	M_DrawImageDef,\
+	NULL,\
 	NULL,\
 	NULL,\
 	NULL\
