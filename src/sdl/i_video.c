@@ -526,32 +526,29 @@ static inline void SDLJoyRemap(event_t *event)
 	(void)event;
 }
 
-static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which, UINT8 pid)
+static INT32 SDLJoyAxis(const Sint16 axis, UINT8 pid)
 {
 	// -32768 to 32767
-	INT32 raxis = axis/32;
+	INT32 raxis = axis / 32;
 
-	if (which == ev_joystick)
+	if (Joystick[pid].bGamepadStyle)
 	{
-		if (Joystick[pid].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else
-				raxis = 0;
-		}
+		// gamepad control type, on or off, live or die
+		if (raxis < -(JOYAXISRANGE/2))
+			raxis = -1;
+		else if (raxis > (JOYAXISRANGE/2))
+			raxis = 1;
 		else
-		{
-			raxis = JoyInfo[pid].scale!=1?((raxis/JoyInfo[pid].scale)*JoyInfo[pid].scale):raxis;
+			raxis = 0;
+	}
+	else
+	{
+		raxis = (JoyInfo[pid].scale != 1) ? ((raxis / JoyInfo[pid].scale) * JoyInfo[pid].scale) : raxis;
 
 #ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
+		if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
+			raxis = 0;
 #endif
-		}
 	}
 
 	return raxis;
@@ -777,14 +774,16 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 {
 	event_t event;
 
-	event.data1 = event.data2 = event.data3 = INT32_MAX;
-	event.device = 1 + evt.which;
-	evt.axis++;
+	event.type = ev_joystick;
 
+	event.device = 1 + evt.which;
 	if (event.device == INT32_MAX)
 	{
 		return;
 	}
+
+	evt.axis++;
+	event.data1 = event.data2 = event.data3 = INT32_MAX;
 
 	//axis
 	if (evt.axis > JOYAXISSET*2)
@@ -792,8 +791,18 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 		return;
 	}
 
-	event.data1 = evt.axis;
-	event.data2 = SDLJoyAxis(evt.value, event.type, event.device);
+	//vaule[sic]
+	if (evt.axis % 2)
+	{
+		event.data1 = evt.axis / 2;
+		event.data2 = SDLJoyAxis(evt.value, 0); // TODO: replace 0 with pid
+	}
+	else
+	{
+		evt.axis--;
+		event.data1 = evt.axis / 2;
+		event.data3 = SDLJoyAxis(evt.value, 0); // TODO: replace 0 with pid
+	}
 
 	D_PostEvent(&event);
 }

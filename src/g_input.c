@@ -92,7 +92,6 @@ INT32 G_GetDevicePlayer(INT32 deviceID)
 void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
-	boolean alternate = false;
 
 	if (ev->device >= 0 && ev->device < MAXDEVICES)
 	{
@@ -181,13 +180,12 @@ void G_MapEventsToControls(event_t *ev)
 				break;
 			}
 
-			alternate = ev->data1 % 2;
-			i = (ev->data1 / 2) * 2;
-			CONS_Printf("AXIS ID IS %d\n", i);
+			CONS_Printf("AXIS DATA (%d, %d, %d)\n", ev->data1, ev->data2, ev->data3);
+			i = ev->data1 * 4;
 
 			if (ev->data2 != INT32_MAX)
 			{
-				if (alternate == true)
+				if (ev->data2 < 0)
 				{
 					// Left
 					gamekeydown[ev->device][KEY_AXIS1 + i] = abs(ev->data2);
@@ -200,12 +198,22 @@ void G_MapEventsToControls(event_t *ev)
 					gamekeydown[ev->device][KEY_AXIS1 + i + 1] = abs(ev->data2);
 				}
 			}
-			else
-			{
-				gamekeydown[ev->device][KEY_AXIS1 + i] = 0;
-				gamekeydown[ev->device][KEY_AXIS1 + i + 1] = 0;
-			}
 
+			if (ev->data3 != INT32_MAX)
+			{
+				if (ev->data3 < 0)
+				{
+					// Up
+					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = abs(ev->data3);
+					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = 0;
+				}
+				else
+				{
+					// Down
+					gamekeydown[ev->device][KEY_AXIS1 + i + 2] = 0;
+					gamekeydown[ev->device][KEY_AXIS1 + i + 3] = abs(ev->data3);
+				}
+			}
 			break;
 
 		default:

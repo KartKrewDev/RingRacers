@@ -1932,13 +1932,6 @@ void M_CharacterSelectInit(INT32 choice)
 		}
 	}
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		// Un-set all devices upon entering this menu.
-		CV_SetValue(&cv_usejoystick[i], -1);
-		CONS_Printf("Device for %d set to %d\n", i, -1);
-	}
-
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
@@ -2034,7 +2027,10 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 	}
 
 	// Ensure their device is unset
-	CV_SetValue(&cv_usejoystick[num], -1);
+	if (cv_usejoystick[num].value != -1)
+	{
+		CV_SetValue(&cv_usejoystick[num], -1);
+	}
 
 	if (num != setup_numplayers)
 	{

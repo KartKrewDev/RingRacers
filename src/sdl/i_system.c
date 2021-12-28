@@ -1078,7 +1078,7 @@ void I_UpdateJoystickDeviceIndices(UINT8 excludePlayer)
 */
 void I_ShutdownJoystick(UINT8 index)
 {
-	INT32 i;
+	INT32 i, j;
 	event_t event;
 
 	event.device = I_GetJoystickDeviceIndex(JoyInfo[index].dev);
@@ -1087,22 +1087,25 @@ void I_ShutdownJoystick(UINT8 index)
 	event.data3 = 0;
 
 	// emulate the up of all joystick buttons
-	for (i=0;i<JOYBUTTONS;i++)
+	for (i = 0; i < JOYBUTTONS; i++)
 	{
 		event.data1=KEY_JOY1+i;
 		D_PostEvent(&event);
 	}
 
 	// emulate the up of all joystick hats
-	for (i=0;i<JOYHATS*4;i++)
+	for (i = 0; i < JOYHATS*4; i++)
 	{
-		event.data1=KEY_HAT1+i;
-		D_PostEvent(&event);
+		for (j = 0; j < 4; j++)
+		{
+			event.data1 = KEY_HAT1 + (i * 4) + j;
+			D_PostEvent(&event);
+		}
 	}
 
 	// reset joystick position
 	event.type = ev_joystick;
-	for (i=0;i<JOYAXISSET; i++)
+	for (i = 0; i < JOYAXISSET; i++)
 	{
 		event.data1 = i;
 		D_PostEvent(&event);
