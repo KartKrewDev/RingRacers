@@ -350,6 +350,7 @@ extern INT16 skullAnimCounter; // skull animation counter
 extern INT32 menuKey; // keyboard key pressed for menu
 
 #define MENUDELAYTIME 7
+#define MENUMINDELAY 2
 
 typedef enum
 {

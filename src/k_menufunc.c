@@ -1234,7 +1234,8 @@ static void M_UpdateMenuCMD(UINT8 i)
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
 		// Reset delay count with no buttons.
-		menucmd[i].delay = menucmd[i].delayCount = 0;
+		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
+		menucmd[i].delayCount = 0;
 	}
 }
 
@@ -2034,8 +2035,7 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 
 	if (num != setup_numplayers)
 	{
-		// Only detect devices for the last player...
-		// just too complicated otherwise.
+		// Only detect devices for the last player.
 		return;
 	}
 
@@ -2062,15 +2062,17 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 					CV_SetValue(&cv_usejoystick[j], -1);
 					CONS_Printf("Device for %d set to %d\n", j, -1);
 				}
+
+				// Prevent excess presses for new players.
+				setup_player[j].delay = TICRATE;
 			}
 
 			setup_numplayers++;
 			p->mdepth = CSSTEP_CHARS;
 			S_StartSound(NULL, sfx_s3k65);
 
-			// Prevent excess presses
-			memset(deviceResponding, false, sizeof (deviceResponding));
-
+			// Prevent quick presses
+			p->delay = MENUDELAYTIME;
 			M_SetMenuDelay(num);
 		}
 	}
