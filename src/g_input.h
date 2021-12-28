@@ -67,12 +67,14 @@ typedef enum
 
 	// special keys
 	gc_abc,
+	gc_luaa,
+	gc_luab,
+	gc_luac,
 	gc_console,
 	gc_talk,
 	gc_teamtalk,
 	gc_screenshot,
 	gc_recordgif,
-	
 
 	num_gamecontrols
 } gamecontrols_e;

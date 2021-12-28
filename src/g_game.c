@@ -956,7 +956,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		fixed_t value = G_PlayerInputAnalog(forplayer, gc_a, 0);
+		INT32 value = G_PlayerInputAnalog(forplayer, gc_a, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
@@ -982,23 +982,35 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 	}
 
-	// fire with any button/key
+	// drift
 	if (G_PlayerInputDown(forplayer, gc_c, 0))
-	{
-		cmd->buttons |= BT_ATTACK;
-	}
-
-	// drift with any button/key
-	if (G_PlayerInputDown(forplayer, gc_x, 0))
 	{
 		cmd->buttons |= BT_DRIFT;
 	}
 
-	// rear view with any button/key
+	// A + B + C shortcut
+	if (G_PlayerInputDown(forplayer, gc_abc, 0))
+	{
+		forward = 0;
+		cmd->buttons |= BT_SPINDASHMASK;
+	}
+
+	// fire
+	if (G_PlayerInputDown(forplayer, gc_x, 0))
+	{
+		cmd->buttons |= BT_ATTACK;
+	}
+
+	// rear view
 	if (G_PlayerInputDown(forplayer, gc_y, 0))
 	{
 		cmd->buttons |= BT_LOOKBACK;
 	}
+
+	// lua buttons a thru c
+	if (G_PlayerInputDown(forplayer, gc_luaa, 0)) { cmd->buttons |= BT_LUAA; }
+	if (G_PlayerInputDown(forplayer, gc_luab, 0)) { cmd->buttons |= BT_LUAB; }
+	if (G_PlayerInputDown(forplayer, gc_luac, 0)) { cmd->buttons |= BT_LUAC; }
 
 	// spectator aiming shit, ahhhh...
 	/*

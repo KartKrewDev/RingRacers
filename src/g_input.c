@@ -18,6 +18,7 @@
 #include "hu_stuff.h" // need HUFONT start & end
 #include "d_net.h"
 #include "console.h"
+#include "i_joy.h" // JOYAXISRANGE
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -118,7 +119,7 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
-				gamekeydown[ev->device][ev->data1] = FRACUNIT;
+				gamekeydown[ev->device][ev->data1] = JOYAXISRANGE;
 			}
 #ifdef PARANOIA
 			else
@@ -404,6 +405,9 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"r",
 	"start",
 	"abc",
+	"luaa",
+	"luab",
+	"luac",
 	"console",
 	"talk",
 	"teamtalk",
