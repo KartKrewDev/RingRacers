@@ -1021,8 +1021,11 @@ void M_DrawCharacterSelect(void)
 			M_DrawCharSelectCursor(i);
 	}
 
-	// Draw the priority player over the other ones
-	M_DrawCharSelectCursor(priority);
+	if (setup_numplayers > 0)
+	{
+		// Draw the priority player over the other ones
+		M_DrawCharSelectCursor(priority);
+	}
 }
 
 // DIFFICULTY SELECT
