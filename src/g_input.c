@@ -398,6 +398,10 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"start",
 	"abc",
 	"console",
+	"talk",
+	"teamtalk",
+	"screenshot",
+	"recordgif",
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -538,8 +542,7 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*
 	// TODO: would be nice to get rid of this code duplication
 	for (i = 1; i < num_gamecontrols; i++)
 	{
-		fprintf(f, "setcontrol \"%s\" \"%s\"", gamecontrolname[i],
-			G_KeynumToString(fromcontrolsa[i][0]));
+		fprintf(f, "setcontrol \"%s\" \"%s\"", gamecontrolname[i], G_KeynumToString(fromcontrolsa[i][0]));
 
 		for (j = 1; j < MAXINPUTMAPPING+1; j++)
 		{
@@ -613,21 +616,23 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*
 	}
 }
 
-INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify)
+INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify)
 {
 	INT32 result = gc_null;
+
 	if (cv_controlperkey.value == 1)
 	{
-		INT32 i, j, k;
+		INT32 i, j;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
-			for (j = 0; j < 2; j++)
+			for (j = 0; j < MAXINPUTMAPPING; j++)
 			{
-				for (k = 0; k < MAXSPLITSCREENPLAYERS; k++)
+				if (gamecontrol[playernum][i][j] == keynum)
 				{
-					if (gamecontrol[k][i][j] == keynum) {
-						result = i;
-						if (modify) gamecontrol[k][i][j] = KEY_NULL;
+					result = i;
+					if (modify)
+					{
+						gamecontrol[playernum][i][j] = KEY_NULL;
 					}
 				}
 
@@ -636,191 +641,68 @@ INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify)
 			}
 		}
 	}
+
 	return result;
 }
 
-static INT32 G_FilterKeyByVersion(INT32 numctrl, INT32 keyidx, INT32 player, INT32 *keynum1, INT32 *keynum2, boolean *nestedoverride)
-{
-	// Special case: ignore KEY_PAUSE because it's hardcoded
-	if (keyidx == 0 && *keynum1 == KEY_PAUSE)
-	{
-		if (*keynum2 != KEY_PAUSE)
-		{
-			*keynum1 = *keynum2; // shift down keynum2 and continue
-			*keynum2 = 0;
-		}
-		else
-			return -1; // skip setting control
-	}
-	else if (keyidx == 1 && *keynum2 == KEY_PAUSE)
-		return -1; // skip setting control
-
-#if 1
-	// We don't have changed control defaults yet
-	(void)numctrl;
-	(void)player;
-	(void)nestedoverride;
-#else
-	if (GETMAJOREXECVERSION(cv_execversion.value) < 27 && ( // v2.1.22
-		numctrl == gc_weaponnext || numctrl == gc_weaponprev || numctrl == gc_tossflag ||
-		numctrl == gc_spin || numctrl == gc_camreset || numctrl == gc_jump ||
-		numctrl == gc_pause || numctrl == gc_systemmenu || numctrl == gc_camtoggle ||
-		numctrl == gc_screenshot || numctrl == gc_talkkey || numctrl == gc_scores ||
-		numctrl == gc_centerview
-	))
-	{
-		INT32 keynum = 0, existingctrl = 0;
-		INT32 defaultkey;
-		boolean defaultoverride = false;
-
-		// get the default gamecontrol
-		defaultkey = gamecontrol[player][numctrl][0];
-
-		// Assign joypad button defaults if there is an open slot.
-		// At this point, gamecontrol should have the default controls
-		// (unless LOADCONFIG is being run)
-		//
-		// If the player runs SETCONTROL in-game, this block should not be reached
-		// because EXECVERSION is locked onto the latest version.
-		if (keyidx == 0 && !*keynum1)
-		{
-			if (*keynum2) // push keynum2 down; this is an edge case
-			{
-				*keynum1 = *keynum2;
-				*keynum2 = 0;
-				keynum = *keynum1;
-			}
-			else
-			{
-				keynum = defaultkey;
-				defaultoverride = true;
-			}
-		}
-		else if (keyidx == 1 && (!*keynum2 || (!*keynum1 && *keynum2))) // last one is the same edge case as above
-		{
-			keynum = defaultkey;
-			defaultoverride = true;
-		}
-		else // default to the specified keynum
-			keynum = (keyidx == 1 ? *keynum2 : *keynum1);
-
-		// Did our last call override keynum2?
-		if (*nestedoverride)
-		{
-			defaultoverride = true;
-			*nestedoverride = false;
-		}
-
-		// Fill keynum2 with the default control
-		if (keyidx == 0 && !*keynum2)
-		{
-			*keynum2 = defaultkey;
-			// Tell the next call that this is an override
-			*nestedoverride = true;
-
-			// if keynum2 already matches keynum1, we probably recursed
-			// so unset it
-			if (*keynum1 == *keynum2)
-			{
-				*keynum2 = 0;
-				*nestedoverride = false;
-		}
-		}
-
-		// check if the key is being used somewhere else before passing it
-		// pass it through if it's the same numctrl. This is an edge case -- when using
-		// LOADCONFIG, gamecontrol is not reset with default.
-		//
-		// Also, only check if we're actually overriding, to preserve behavior where
-		// config'd keys overwrite default keys.
-		if (defaultoverride)
-			existingctrl = G_CheckDoubleUsage(keynum, false);
-
-		if (keynum && (!existingctrl || existingctrl == numctrl))
-			return keynum;
-		else if (keyidx == 0 && *keynum2)
-		{
-			// try it again and push down keynum2
-			*keynum1 = *keynum2;
-			*keynum2 = 0;
-			return G_FilterKeyByVersion(numctrl, keyidx, player, keynum1, keynum2, nestedoverride);
-			// recursion *should* be safe because we only assign keynum2 to a joy default
-			// and then clear it if we find that keynum1 already has the joy default.
-		}
-		else
-			return 0;
-	}
-#endif
-
-	// All's good, so pass the keynum as-is
-	if (keyidx == 1)
-		return *keynum2;
-	else //if (keyidx == 0)
-		return *keynum1;
-}
-
-static void setcontrol(INT32 (*gc)[MAXINPUTMAPPING])
+static void setcontrol(UINT8 player)
 {
 	INT32 numctrl;
 	const char *namectrl;
-	INT32 keynum, keynum1, keynum2;
-	INT32 player;
-	boolean nestedoverride = false;
-
-	if ((void*)gc == (void*)&gamecontrol[3])
-		player = 3;
-	else if ((void*)gc == (void*)&gamecontrol[2])
-		player = 2;
-	else if ((void*)gc == (void*)&gamecontrol[1])
-		player = 1;
-	else
-		player = 0;
+	INT32 keynum;
+	INT32 inputMap = 0;
+	INT32 i;
 
 	namectrl = COM_Argv(1);
 
-	for (numctrl = 0; numctrl < num_gamecontrols && stricmp(namectrl, gamecontrolname[numctrl]);
+	for (numctrl = 0;
+		numctrl < num_gamecontrols && stricmp(namectrl, gamecontrolname[numctrl]);
 		numctrl++)
-		;
+	{ ; }
+
 	if (numctrl == num_gamecontrols)
 	{
 		CONS_Printf(M_GetText("Control '%s' unknown\n"), namectrl);
 		return;
 	}
-	keynum1 = G_KeyStringtoNum(COM_Argv(2));
-	keynum2 = G_KeyStringtoNum(COM_Argv(3));
-	keynum = G_FilterKeyByVersion(numctrl, 0, player, &keynum1, &keynum2, &nestedoverride);
 
-	if (keynum >= 0)
+	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		(void)G_CheckDoubleUsage(keynum, true);
+		keynum = G_KeyStringtoNum(COM_Argv(inputMap + 2));
 
-		// if keynum was rejected, try it again with keynum2
-		if (!keynum && keynum2)
-		{
-			keynum1 = keynum2; // push down keynum2
-			keynum2 = 0;
-			keynum = G_FilterKeyByVersion(numctrl, 0, player, &keynum1, &keynum2, &nestedoverride);
-			if (keynum >= 0)
-				(void)G_CheckDoubleUsage(keynum, true);
-		}
-	}
-
-	if (keynum >= 0)
-		gc[numctrl][0] = keynum;
-
-	if (keynum2)
-	{
-		keynum = G_FilterKeyByVersion(numctrl, 1, player, &keynum1, &keynum2, &nestedoverride);
 		if (keynum >= 0)
 		{
-			if (keynum != gc[numctrl][0])
-				gc[numctrl][1] = keynum;
-			else
-				gc[numctrl][1] = 0;
+			(void)G_CheckDoubleUsage(keynum, player, true);
+
+			// if keynum was rejected, try it again with the next key.
+			while (keynum == 0)
+			{
+				inputMap++;
+				if (inputMap >= MAXINPUTMAPPING)
+				{
+					break;
+				}
+
+				keynum = G_KeyStringtoNum(COM_Argv(inputMap + 2));
+
+				if (keynum >= 0)
+				{
+					(void)G_CheckDoubleUsage(keynum, player, true);
+				}
+			}
+		}
+
+		if (keynum >= 0)
+		{
+			gamecontrol[player][numctrl][i] = keynum;
+		}
+
+		inputMap++;
+		if (inputMap >= MAXINPUTMAPPING)
+		{
+			break;
 		}
 	}
-	else
-		gc[numctrl][1] = 0;
 }
 
 void Command_Setcontrol_f(void)
@@ -829,13 +711,13 @@ void Command_Setcontrol_f(void)
 
 	na = (INT32)COM_Argc();
 
-	if (na != 3 && na != 4)
+	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
-		CONS_Printf(M_GetText("setcontrol <controlname> <keyname> [<2nd keyname>]: set controls for player 1\n"));
+		CONS_Printf(M_GetText("setcontrol <controlname> <keyname> [<keyname>] [<keyname>] [<keyname>]: set controls for player 1\n"));
 		return;
 	}
 
-	setcontrol(gamecontrol[0]);
+	setcontrol(0);
 }
 
 void Command_Setcontrol2_f(void)
@@ -844,13 +726,13 @@ void Command_Setcontrol2_f(void)
 
 	na = (INT32)COM_Argc();
 
-	if (na != 3 && na != 4)
+	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
-		CONS_Printf(M_GetText("setcontrol2 <controlname> <keyname> [<2nd keyname>]: set controls for player 2\n"));
+		CONS_Printf(M_GetText("setcontrol2 <controlname> <keyname> [<keyname>] [<keyname>] [<keyname>]: set controls for player 2\n"));
 		return;
 	}
 
-	setcontrol(gamecontrol[1]);
+	setcontrol(1);
 }
 
 void Command_Setcontrol3_f(void)
@@ -859,13 +741,13 @@ void Command_Setcontrol3_f(void)
 
 	na = (INT32)COM_Argc();
 
-	if (na != 3 && na != 4)
+	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
-		CONS_Printf(M_GetText("setcontrol3 <controlname> <keyname> [<2nd keyname>]: set controls for player 3\n"));
+		CONS_Printf(M_GetText("setcontrol3 <controlname> <keyname> [<keyname>] [<keyname>] [<keyname>]: set controls for player 3\n"));
 		return;
 	}
 
-	setcontrol(gamecontrol[2]);
+	setcontrol(2);
 }
 
 void Command_Setcontrol4_f(void)
@@ -874,11 +756,11 @@ void Command_Setcontrol4_f(void)
 
 	na = (INT32)COM_Argc();
 
-	if (na != 3 && na != 4)
+	if (na < 3 || na > MAXINPUTMAPPING+2)
 	{
-		CONS_Printf(M_GetText("setcontrol4 <controlname> <keyname> [<2nd keyname>]: set controls for player 4\n"));
+		CONS_Printf(M_GetText("setcontrol4 <controlname> <keyname> [<keyname>] [<keyname>] [<keyname>]: set controls for player 4\n"));
 		return;
 	}
 
-	setcontrol(gamecontrol[3]);
+	setcontrol(3);
 }

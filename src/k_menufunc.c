@@ -2033,6 +2033,9 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 		return;
 	}
 
+	// Ensure their device is unset
+	CV_SetValue(&cv_usejoystick[num], -1);
+
 	if (num != setup_numplayers)
 	{
 		// Only detect devices for the last player.
@@ -2048,13 +2051,13 @@ static void M_HandlePressStart(setup_player_t *p, UINT8 num)
 			continue;
 		}
 
-		if (M_DeviceAvailable(i, setup_numplayers) == true)
+		if (M_DeviceAvailable(i, num) == true)
 		{
 			// Available!! Let's use this one!!
-			CV_SetValue(&cv_usejoystick[setup_numplayers], i);
-			CONS_Printf("Device for %d set to %d\n", setup_numplayers, i);
+			CV_SetValue(&cv_usejoystick[num], i);
+			CONS_Printf("Device for %d set to %d\n", num, i);
 
-			for (j = setup_numplayers+1; j < MAXSPLITSCREENPLAYERS; j++)
+			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				if (cv_usejoystick[j].value == i)
 				{
