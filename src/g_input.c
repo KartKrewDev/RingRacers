@@ -180,7 +180,6 @@ void G_MapEventsToControls(event_t *ev)
 				break;
 			}
 
-			CONS_Printf("AXIS DATA (%d, %d, %d)\n", ev->data1, ev->data2, ev->data3);
 			i = ev->data1 * 4;
 
 			if (ev->data2 != INT32_MAX)

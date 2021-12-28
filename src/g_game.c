@@ -693,11 +693,6 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, boolean menu)
 		return 0;
 	}
 
-	if (p > splitscreen)
-	{
-		return 0;
-	}
-
 	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 
 	for (i = 0; i < MAXINPUTMAPPING; i++)
