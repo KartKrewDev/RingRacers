@@ -862,7 +862,7 @@ boolean M_Responder(event_t *ev)
 		}
 #endif
 
-		if (G_PlayerInputDown(0, gc_start, true) == true)
+		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, true) == true)
 		{
 			if (chat_on)
 			{
@@ -1516,17 +1516,20 @@ void M_Ticker(void)
 		}
 	}
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	if (menuactive == true)
 	{
-		if (menucmd[i].delay > 0)
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
-			menucmd[i].delay--;
+			if (menucmd[i].delay > 0)
+			{
+				menucmd[i].delay--;
+			}
 		}
-	}
 
-	if (noFurtherInput == false)
-	{
-		M_HandleMenuInput();
+		if (noFurtherInput == false)
+		{
+			M_HandleMenuInput();
+		}
 	}
 
 	if (currentMenu->tickroutine)
