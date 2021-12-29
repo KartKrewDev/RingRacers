@@ -834,12 +834,10 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		{
 			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
 		}
-		/*
 		else if (p->mdepth >= CSSTEP_READY)
 		{
 			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
 		}
-		*/
 	}
 
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
