@@ -537,24 +537,24 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true)
 	{
-		P_PlayerRingBurst(t2->player, 1);
-
 		if (t2->player->rings <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
 			stung = true;
 		}
+
+		P_PlayerRingBurst(t2->player, 1);
 	}
 
 	if (t2Condition == true)
 	{
-		P_PlayerRingBurst(t1->player, 1);
-
 		if (t1->player->rings <= 0)
 		{
 			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
 			stung = true;
 		}
+
+		P_PlayerRingBurst(t1->player, 1);
 	}
 
 	return stung;
