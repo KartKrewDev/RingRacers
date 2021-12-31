@@ -503,7 +503,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 	lightlevel = HWR_CalcSlopeLight(lightlevel, slope);
 	HWR_Lighting(&Surf, lightlevel, planecolormap);
 
-	if (PolyFlags & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Fog))
+	if (PolyFlags & PF_EnvironmentTrans)
 	{
 		Surf.PolyColor.s.alpha = (UINT8)alpha;
 		PolyFlags |= PF_Modulated;
@@ -932,7 +932,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 		if (polyflags & PF_Fog)
 			HWR_AddTransparentWall(wallVerts, Surf, texnum, polyflags, true, HWR_CalcWallLight(lightnum, gl_curline), colormap);
-		else if (polyflags & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Environment))
+		else if (polyflags & PF_EnvironmentTrans)
 			HWR_AddTransparentWall(wallVerts, Surf, texnum, polyflags, false, HWR_CalcWallLight(lightnum, gl_curline), colormap);
 		else
 			HWR_ProjectWall(wallVerts, Surf, polyflags, HWR_CalcWallLight(lightnum, gl_curline), colormap);
@@ -961,7 +961,7 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 	if (polyflags & PF_Fog)
 		HWR_AddTransparentWall(wallVerts, Surf, texnum, polyflags, true, HWR_CalcWallLight(lightnum, gl_curline), colormap);
-	else if (polyflags & (PF_Translucent|PF_Additive|PF_Subtractive|PF_Environment))
+	else if (polyflags & PF_EnvironmentTrans)
 		HWR_AddTransparentWall(wallVerts, Surf, texnum, polyflags, false, HWR_CalcWallLight(lightnum, gl_curline), colormap);
 	else
 		HWR_ProjectWall(wallVerts, Surf, polyflags, HWR_CalcWallLight(lightnum, gl_curline), colormap);
@@ -1419,29 +1419,24 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				case 221:
 				case 253:
 				case 256:
-					blendmode = PF_Translucent;
-					break;
-				case 913:
-					blendmode = PF_Multiplicative;
-					Surf.PolyColor.s.alpha = 0xff;
+					if (gl_linedef->blendmode != AST_FOG)
+						blendmode = HWR_SurfaceBlend(gl_linedef->blendmode, R_GetLinedefTransTable(gl_linedef->alpha), &Surf);
+					else
+						blendmode = PF_Translucent;
 					break;
 				default:
-				{
-					UINT32 blend = 0;
-					transnum_t transtable = R_GetLinedefTransTable(gl_linedef);
-					if (transtable == NUMTRANSMAPS)
-						transtable = 0;
-					if (gl_linedef->special == 910 ||
-							P_IsLineTripWire(gl_linedef))
-						blend = AST_ADD;
-					else if (gl_linedef->special == 911)
-						blend = AST_SUBTRACT;
-					else if (gl_linedef->special == 912)
-						blend = AST_REVERSESUBTRACT;
-
-					blendmode = HWR_SurfaceBlend(blend, transtable, &Surf);
+					if (gl_linedef->blendmode != AST_FOG)
+					{
+						if (gl_linedef->alpha >= 0 && gl_linedef->alpha < FRACUNIT)
+							blendmode = HWR_SurfaceBlend(gl_linedef->blendmode, R_GetLinedefTransTable(gl_linedef->alpha), &Surf);
+						else
+							blendmode = HWR_GetBlendModeFlag(gl_linedef->blendmode);
+					}
+					else if (gl_linedef->alpha >= 0 && gl_linedef->alpha < FRACUNIT)
+						blendmode = HWR_TranstableToAlpha(R_GetLinedefTransTable(gl_linedef->alpha), &Surf);
+					else
+						blendmode = PF_Masked;
 					break;
-				}
 			}
 
 			if (gl_curline->polyseg && gl_curline->polyseg->translucency > 0)

@@ -130,12 +130,15 @@ static void R_Render2sidedMultiPatchColumn(column_t *column, column_t *brightmap
 	}
 }
 
-transnum_t R_GetLinedefTransTable(line_t *ldef)
+transnum_t R_GetLinedefTransTable(fixed_t alpha)
 {
 	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
-	fixed_t alpha = ldef->alpha;
+
 	if (alpha > 0 && alpha < FRACUNIT)
+	{
 		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+	}
+
 	return transnum;
 }
 
@@ -172,40 +175,26 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	if (!ldef->alpha)
 		return;
 
-	transtable = R_GetLinedefTransTable(ldef);
-	if (ldef->special == 910 || P_IsLineTripWire(ldef))
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_ADD;
-	}
-	else if (ldef->special == 911)
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_SUBTRACT;
-	}
-	else if (ldef->special == 912)
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_REVERSESUBTRACT;
-	}
-	else if (ldef->special == 913)
+	transtable = R_GetLinedefTransTable(ldef->alpha);
+	blendmode = ldef->blendmode;
+
+	if (transtable == NUMTRANSMAPS
+		|| blendmode == AST_MODULATE
+		|| blendmode == AST_FOG)
 	{
 		transtable = 0;
-		blendmode = AST_MODULATE;
 	}
-	if (transtable != NUMTRANSMAPS && (blendmode || transtable))
-	{
-		dc_transmap = R_GetBlendTable(blendmode, transtable);
-		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
-	}
-	else if (ldef->special == 909)
+
+	if (blendmode == AST_FOG)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
 		windowtop = frontsector->ceilingheight;
 		windowbottom = frontsector->floorheight;
+	}
+	else if (transtable != NUMTRANSMAPS && (blendmode || transtable))
+	{
+		dc_transmap = R_GetBlendTable(blendmode, transtable);
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
 	}
 	else
 	{
