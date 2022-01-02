@@ -1048,7 +1048,6 @@ static void HU_queueChatChar(INT32 c)
 	{
 		char buf[2+256];
 		char *msg = &buf[2];
-		size_t i;
 		size_t ci = 2;
 		INT32 target = 0;
 
@@ -1061,15 +1060,8 @@ static void HU_queueChatChar(INT32 c)
 			if (!c || (c >= ' ' && !(c & 0x80))) // copy printable characters and terminating '\0' only.
 				buf[ci-1]=c;
 		} while (c);
-		i = 0;
-		for (;(i<HU_MAXMSGLEN);i++)
-			w_chat[i] = 0;	// reset this.
 
-		c_input = 0;
-
-		for (;(i<HU_MAXMSGLEN);i++)
-			w_chat[i] = 0; // reset this.
-
+		memset(w_chat, '\0', HU_MAXMSGLEN);
 		c_input = 0;
 
 		// last minute mute check
@@ -1153,9 +1145,7 @@ static void HU_queueChatChar(INT32 c)
 
 void HU_clearChatChars(void)
 {
-	size_t i = 0;
-	for (;i<HU_MAXMSGLEN;i++)
-		w_chat[i] = 0; // reset this.
+	memset(w_chat, '\0', HU_MAXMSGLEN);
 	chat_on = false;
 	c_input = 0;
 
