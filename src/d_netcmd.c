@@ -3560,20 +3560,6 @@ static void Command_Login_f(void)
 #endif
 }
 
-boolean IsPlayerAdmin(INT32 playernum)
-{
-#ifdef DEVELOP
-	return playernum != serverplayer;
-#else
-	INT32 i;
-	for (i = 0; i < MAXPLAYERS; i++)
-		if (playernum == adminplayers[i])
-			return true;
-
-	return false;
-#endif
-}
-
 void SetAdminPlayer(INT32 playernum)
 {
 	INT32 i;

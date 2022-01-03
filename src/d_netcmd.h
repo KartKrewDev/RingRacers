@@ -217,7 +217,7 @@ void D_SetupVote(void);
 void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer);
 void D_PickVote(void);
 void ObjectPlace_OnChange(void);
-boolean IsPlayerAdmin(INT32 playernum);
+#define IsPlayerAdmin(playernum) (0)
 void SetAdminPlayer(INT32 playernum);
 void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
