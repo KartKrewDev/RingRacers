@@ -578,6 +578,7 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 --------------------------------------------------*/
 void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 {
+	const fixed_t minImpact = 4 * mo->scale;
 	t_splash_t *s = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
@@ -600,6 +601,11 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 	{
 		// No particles to spawn.
 		return;
+	}
+
+	if (impact < minImpact)
+	{
+		impact = minImpact;
 	}
 
 	// Idea for later: if different spawning styles are desired,
