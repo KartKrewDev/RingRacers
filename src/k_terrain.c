@@ -612,7 +612,7 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 
 		See header file for description.
 --------------------------------------------------*/
-static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
+static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 {
 	mobj_t *dust = NULL;
 	angle_t pushAngle = ANGLE_MAX;
@@ -621,6 +621,13 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 	fixed_t speedValue = INT32_MAX;
 	fixed_t momH = INT32_MAX;
 	fixed_t momV = INT32_MAX;
+	fixed_t xOff = INT32_MAX;
+	fixed_t yOff = INT32_MAX;
+
+	if (timer % fs->frequency != 0)
+	{
+		return;
+	}
 
 	momentum = P_AproxDistance(mo->momx, mo->momy);
 
@@ -645,7 +652,7 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 
 	pushAngle = K_MomentumAngle(mo) + ANGLE_180;
 
-	if ((leveltime / 2) & 1)
+	if (((timer / fs->frequency) / 2) & 1)
 	{
 		tireAngle -= ANGLE_45;
 		tireAngle -= P_RandomRange(0, fs->cone / ANG1) * ANG1;
@@ -658,10 +665,13 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 		pushAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
 	}
 
+	xOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+	yOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+
 	dust = P_SpawnMobjFromMobj(
 		mo,
-		(P_RandomRange(-2, 2) * FRACUNIT) + (24 * FINECOSINE(tireAngle >> ANGLETOFINESHIFT)),
-		(P_RandomRange(-2, 2) * FRACUNIT) + (24 * FINESINE(tireAngle >> ANGLETOFINESHIFT)),
+		xOff + (24 * FINECOSINE(tireAngle >> ANGLETOFINESHIFT)),
+		yOff + (24 * FINESINE(tireAngle >> ANGLETOFINESHIFT)),
 		0, fs->mobjType
 	);
 
@@ -687,7 +697,7 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 		dust->color = fs->color;
 	}
 
-	if ((fs->sfx != sfx_None) && (fs->sfxFreq > 0) && (leveltime % fs->sfxFreq == 0))
+	if ((fs->sfx != sfx_None) && (fs->sfxFreq > 0) && (timer % fs->sfxFreq == 0))
 	{
 		S_StartSound(mo, fs->sfx);
 	}
@@ -700,6 +710,7 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 --------------------------------------------------*/
 void K_HandleFootstepParticles(mobj_t *mo)
 {
+	tic_t timer = leveltime;
 	t_footstep_t *fs = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
@@ -723,15 +734,21 @@ void K_HandleFootstepParticles(mobj_t *mo)
 		fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 	}
 
-	if (fs == NULL || fs->mobjType == MT_NULL)
+	if (fs == NULL || fs->mobjType == MT_NULL || fs->frequency <= 0)
 	{
 		// No particles to spawn.
 		return;
 	}
 
+	if (mo->player != NULL)
+	{
+		// Offset timer by player ID.
+		timer += mo->player - players;
+	}
+
 	// Idea for later: if different spawning styles are desired,
 	// we can put a switch case here!
-	K_SpawnFootstepParticle(mo, fs);
+	K_SpawnFootstepParticle(mo, fs, timer);
 }
 
 /*--------------------------------------------------
@@ -780,7 +797,7 @@ static void K_SplashDefaults(t_splash_t *splash)
 
 	splash->pushH = FRACUNIT/4;
 	splash->pushV = FRACUNIT/64;
-	splash->spread = 2;
+	splash->spread = 2*FRACUNIT;
 	splash->cone = ANGLE_11hh;
 
 	splash->numParticles = 8;
@@ -880,7 +897,7 @@ static void K_FootstepDefaults(t_footstep_t *footstep)
 
 	footstep->pushH = FRACUNIT/2;
 	footstep->pushV = FRACUNIT/32;
-	footstep->spread = 2;
+	footstep->spread = 2*FRACUNIT;
 	footstep->cone = ANGLE_11hh;
 
 	footstep->sfxFreq = 6;
