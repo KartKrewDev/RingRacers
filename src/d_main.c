@@ -1066,9 +1066,9 @@ static void IdentifyVersion(void)
 	// checking in D_SRB2Main
 
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"MISC_TEXTURES.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"MISC_MAPS.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
@@ -1087,7 +1087,7 @@ static void IdentifyVersion(void)
 	}
 
 	MUSICTEST("sounds.pk3")
-	MUSICTEST("music.pk3")
+	MUSICTEST("MISC_MUSIC.pk3")
 
 #undef MUSICTEST
 
