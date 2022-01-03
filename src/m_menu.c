@@ -229,7 +229,9 @@ static char *M_GetConditionString(condition_t cond);
 menu_t SR_MainDef, SR_UnlockChecklistDef;
 
 // Misc. Main Menu
+#ifndef TESTERS
 static void M_SinglePlayerMenu(INT32 choice);
+#endif
 static void M_Options(INT32 choice);
 static void M_Manual(INT32 choice);
 static void M_SelectableClearMenus(INT32 choice);
@@ -6814,6 +6816,7 @@ static void M_Credits(INT32 choice)
 // SINGLE PLAYER MENU
 // ==================
 
+#ifndef TESTERS
 static void M_SinglePlayerMenu(INT32 choice)
 {
 	(void)choice;
@@ -6826,6 +6829,7 @@ static void M_SinglePlayerMenu(INT32 choice)
 
 	M_SetupNextMenu(&SP_MainDef);
 }
+#endif
 
 /*static void M_LoadGameLevelSelect(INT32 choice)
 {
