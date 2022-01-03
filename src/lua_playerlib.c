@@ -499,9 +499,6 @@ static int player_set(lua_State *L)
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in CMD building code!");
 
-	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
-
 	if (fastcmp(field,"mo")) {
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 		plr->mo->player = NULL; // remove player pointer from old mobj
@@ -861,7 +858,7 @@ static int karthud_set(lua_State *L)
 	if (hud_running)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
+		return luaL_error(L, "Do not alter player_t in CMD building code!");
 	karthud[ks] = i;
 	return 0;
 }

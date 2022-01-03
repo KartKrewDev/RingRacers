@@ -60,6 +60,8 @@ typedef struct t_footstep_s
 	angle_t cone;			// Randomized angle of the push-out.
 
 	tic_t sfxFreq;			// How frequently to play the sound.
+	tic_t frequency;		// How frequently to spawn the particles.
+	fixed_t requiredSpeed;	// Speed percentage you need to be at to trigger the particles.
 } t_footstep_t;
 
 typedef enum

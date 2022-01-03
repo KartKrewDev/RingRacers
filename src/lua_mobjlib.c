@@ -494,9 +494,6 @@ static int mobj_set(lua_State *L)
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter mobj_t in CMD building code!");
 
-	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter mobj_t in BuildCMD code!");
-
 	switch(field)
 	{
 	case mobj_valid:
