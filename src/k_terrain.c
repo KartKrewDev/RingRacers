@@ -618,16 +618,29 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 	angle_t pushAngle = ANGLE_MAX;
 	angle_t tireAngle = ANGLE_MAX;
 	fixed_t momentum = INT32_MAX;
+	fixed_t speedValue = INT32_MAX;
 	fixed_t momH = INT32_MAX;
 	fixed_t momV = INT32_MAX;
+
+	momentum = P_AproxDistance(mo->momx, mo->momy);
 
 	if (mo->player != NULL)
 	{
 		tireAngle = (mo->player->drawangle + ANGLE_180);
+		speedValue = K_GetKartSpeedFromStat(mo->player->kartspeed);
 	}
 	else
 	{
 		tireAngle = (mo->angle + ANGLE_180);
+		speedValue = K_GetKartSpeedFromStat(5);
+	}
+
+	speedValue = FixedMul(speedValue, mo->scale);
+	speedValue = FixedMul(speedValue, fs->requiredSpeed);
+
+	if (momentum < speedValue)
+	{
+		return;
 	}
 
 	pushAngle = K_MomentumAngle(mo) + ANGLE_180;
@@ -662,7 +675,6 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 	dust->momy = mo->momy;
 	dust->momz = P_GetMobjZMovement(mo) / 2;
 
-	momentum = P_AproxDistance(mo->momx, mo->momy);
 	momH = FixedMul(momentum, fs->pushH);
 	momV = FixedMul(momentum, fs->pushV);
 
@@ -872,6 +884,8 @@ static void K_FootstepDefaults(t_footstep_t *footstep)
 	footstep->cone = ANGLE_11hh;
 
 	footstep->sfxFreq = 6;
+	footstep->frequency = 1;
+	footstep->requiredSpeed = 0;
 }
 
 /*--------------------------------------------------
@@ -945,6 +959,14 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "sfxFreq") == 0)
 	{
 		footstep->sfxFreq = (tic_t)atoi(val);
+	}
+	else if (stricmp(param, "frequency") == 0)
+	{
+		footstep->frequency = (tic_t)atoi(val);
+	}
+	else if (stricmp(param, "requiredSpeed") == 0)
+	{
+		footstep->requiredSpeed = FLOAT_TO_FIXED(atof(val));
 	}
 }
 
