@@ -627,8 +627,8 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 	fixed_t speedValue = INT32_MAX;
 	fixed_t momH = INT32_MAX;
 	fixed_t momV = INT32_MAX;
-	fixed_t xOff = INT32_MAX;
-	fixed_t yOff = INT32_MAX;
+	fixed_t xOff = 0;
+	fixed_t yOff = 0;
 
 	if (timer % fs->frequency != 0)
 	{
@@ -671,8 +671,11 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 		pushAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
 	}
 
-	xOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
-	yOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+	if (fs->spread > 0)
+	{
+		xOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+		yOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+	}
 
 	dust = P_SpawnMobjFromMobj(
 		mo,
