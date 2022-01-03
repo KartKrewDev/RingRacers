@@ -1167,8 +1167,9 @@ boolean HGetPacket(void)
 		if (netbuffer->checksum != NetbufferChecksum())
 		{
 			DEBFILE("Bad packet checksum\n");
-			//Net_CloseConnection(nodejustjoined ? (doomcom->remotenode | FORCECLOSE) : doomcom->remotenode);
-			Net_CloseConnection(doomcom->remotenode);
+			// Do not disconnect or anything, just ignore the packet.
+			// Bad checksums with UDP tend to happen very scarcely
+			// so they are not normally an issue.
 			continue;
 		}
 
