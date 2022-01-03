@@ -641,7 +641,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	SINT8 target;
 	UINT8 flags;
 	const char *dispname;
-	char *msg;
+	char msgbuf[HU_MAXMSGLEN + 1];
+	char *msg = msgbuf;
 	boolean action = false;
 	char *ptr;
 	INT32 spam_eatmsg = 0;
@@ -650,8 +651,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	target = READSINT8(*p);
 	flags = READUINT8(*p);
-	msg = (char *)*p;
-	SKIPSTRINGN(*p, HU_MAXMSGLEN);
+	READSTRINGN(*p, msgbuf, HU_MAXMSGLEN);
 
 	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
 	{
@@ -995,7 +995,11 @@ static void HU_sendChatMessage(void)
 		if (c >= ' ' && !(c & 0x80))
 			buf[ci] = c;
 	};
-	buf[ci] = '\0';
+	if (ci-2 < HU_MAXMSGLEN)
+	{
+		buf[ci] = '\0';
+		ci++;
+	}
 
 	memset(w_chat, '\0', sizeof(w_chat));
 	c_input = 0;
@@ -1063,7 +1067,7 @@ static void HU_sendChatMessage(void)
 	{
 		buf[0] = teamtalk ? -1 : target; // target
 		buf[1] = 0; // flags
-		SendNetXCmd(XD_SAY, buf, 2 + strlen(&buf[2]) + 1);
+		SendNetXCmd(XD_SAY, buf, ci);
 	}
 }
 
