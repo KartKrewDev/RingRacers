@@ -3866,6 +3866,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
   */
 static void Command_Addfile(void)
 {
+#ifndef TESTERS
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
@@ -3995,6 +3996,7 @@ static void Command_Addfile(void)
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
+#endif/*TESTERS*/
 }
 
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
