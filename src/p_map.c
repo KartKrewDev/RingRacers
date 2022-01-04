@@ -157,6 +157,30 @@ boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	return P_TeleportMove(thing, x, y, z);
 }
 
+//
+// P_InitAngle - Change an object's angle, including interp values.
+//
+void P_InitAngle(mobj_t *thing, angle_t newValue)
+{
+	thing->angle = thing->old_angle = newValue;
+}
+
+//
+// P_InitPitch - Change an object's pitch, including interp values.
+//
+void P_InitPitch(mobj_t *thing, angle_t newValue)
+{
+	thing->pitch = thing->old_pitch = newValue;
+}
+
+//
+// P_InitRoll - Change an object's roll, including interp values.
+//
+void P_InitRoll(mobj_t *thing, angle_t newValue)
+{
+	thing->roll = thing->old_roll = newValue;
+}
+
 // =========================================================================
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
@@ -269,9 +293,7 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 //
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
-	//INT32 pflags;
-	const fixed_t hscale = mapobjectscale + (mapobjectscale - object->scale);
-	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
+	const fixed_t scaleVal = FixedSqrt(FixedMul(mapobjectscale, spring->scale));
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
@@ -349,13 +371,13 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 	if (vertispeed)
 	{
-		object->momz = FixedMul(vertispeed, FixedSqrt(FixedMul(vscale, spring->scale)));
+		object->momz = FixedMul(vertispeed, scaleVal);
 	}
 
 	if (horizspeed)
 	{
 		angle_t finalAngle = spring->angle;
-		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
+		fixed_t finalSpeed = FixedMul(horizspeed, scaleVal);
 		fixed_t objectSpeed;
 
 		if (object->player)
@@ -411,7 +433,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				mobj_t *grease;
 				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 				P_SetTarget(&grease->target, object);
-				grease->angle = K_MomentumAngle(object);
+				P_InitAngle(grease, K_MomentumAngle(object));
 				grease->extravalue1 = i;
 			}
 

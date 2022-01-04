@@ -1202,7 +1202,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		gravityadd = -((gravityadd/5) + (gravityadd/8));
 	}
 
-	gravityadd = FixedMul(gravityadd, mo->scale);
+	gravityadd = FixedMul(gravityadd, mapobjectscale);
 
 	return gravityadd;
 }
@@ -2391,7 +2391,7 @@ boolean P_ZMovement(mobj_t *mo)
 							MT_KART_TIRE
 						);
 
-						tire->angle = mo->angle;
+						P_InitAngle(tire, mo->angle);
 						tire->fuse = 3*TICRATE;
 						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
 						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
@@ -2411,7 +2411,7 @@ boolean P_ZMovement(mobj_t *mo)
 							MT_KART_TIRE
 						);
 
-						tire->angle = mo->angle;
+						P_InitAngle(tire, mo->angle);
 						tire->fuse = 3*TICRATE;
 						P_InstaThrust(tire, tireAngle, 4 * mo->scale);
 						P_SetObjectMomZ(tire, 4*FRACUNIT, false);
@@ -4144,7 +4144,7 @@ static void P_SpawnItemCapsuleParts(mobj_t *mobj)
 		part = part->hnext;
 		P_SetTarget(&part->target, mobj);
 		P_SetMobjState(part, buttState);
-		part->angle = i * ANG_CAPSULE;
+		P_InitAngle(part, i * ANG_CAPSULE);
 		part->movedir = spin; // rotation speed
 		part->movefactor = 0; // z offset
 		part->extravalue1 = buttScale; // relative scale
@@ -4155,7 +4155,7 @@ static void P_SpawnItemCapsuleParts(mobj_t *mobj)
 		part = part->hnext;
 		P_SetTarget(&part->target, mobj);
 		P_SetMobjState(part, S_ITEMCAPSULE_TOP_SIDE);
-		part->angle = i * ANG_CAPSULE;
+		P_InitAngle(part, i * ANG_CAPSULE);
 		part->movedir = spin; // rotation speed
 		part->movefactor = mobj->info->height - part->info->height; // z offset
 	}
@@ -4480,7 +4480,7 @@ void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 numb
 		mobj->z -= mobj->height>>1;
 
 		// change angle
-		mobj->angle = R_PointToAngle2(mobj->x, mobj->y, x, y);
+		P_InitAngle(mobj, R_PointToAngle2(mobj->x, mobj->y, x, y));
 
 		// change slope
 		dist = P_AproxDistance(P_AproxDistance(x - mobj->x, y - mobj->y), z - mobj->z);
@@ -5163,7 +5163,7 @@ static void P_FlameJetSceneryThink(mobj_t *mobj)
 	flame = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_FLAMEJETFLAME);
 	P_SetMobjState(flame, S_FLAMEJETFLAME4);
 
-	flame->angle = mobj->angle;
+	P_InitAngle(flame, mobj->angle);
 
 	if (mobj->flags2 & MF2_AMBUSH) // Wave up and down instead of side-to-side
 		flame->momz = mobj->fuse << (FRACBITS - 2);
@@ -5624,7 +5624,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						mobj_t *blast = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_BATTLEBUMPER_BLAST);
 
-						blast->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_45;
+						P_InitAngle(blast, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_45);
 						blast->destscale *= 4;
 
 						if (i & 1)
@@ -6909,12 +6909,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (( mobj->fuse & 1 ))
 			{
 				nudge = 4*mobj->target->radius;
+				/* unrotate interp angle */
+				mobj->old_angle -= ANGLE_90;
 			}
 			else
 			{
 				nudge = 2*mobj->target->radius;
 				/* rotate the papersprite frames to see the flat angle */
 				mobj->angle += ANGLE_90;
+				mobj->old_angle += ANGLE_90;
 			}
 
 			P_MoveOrigin(mobj,
@@ -7109,6 +7112,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		mobj->old_x = mobj->target->old_x;
+		mobj->old_y = mobj->target->old_y;
+		mobj->old_z = mobj->target->old_z;
 		break;
 	case MT_INSTASHIELDB:
 		mobj->renderflags ^= RF_DONTDRAW;
@@ -7121,6 +7127,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		mobj->old_x = mobj->target->old_x;
+		mobj->old_y = mobj->target->old_y;
+		mobj->old_z = mobj->target->old_z;
 		K_MatchGenericExtraFlags(mobj, mobj->target);
 		break;
 	case MT_BATTLEPOINT:
@@ -7493,7 +7502,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						mobj->z + (mobj->height/2) + (P_RandomRange(-20,20) * mobj->scale),
 						MT_FASTLINE);
 
-					fast->angle = mobj->angle;
+					P_InitAngle(fast, mobj->angle);
 					fast->momx = 3*mobj->target->momx/4;
 					fast->momy = 3*mobj->target->momy/4;
 					fast->momz = 3*P_GetMobjZMovement(mobj->target)/4;
@@ -7555,7 +7564,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (underlayst != S_NULL)
 		{
 			mobj_t *underlay = P_SpawnMobj(mobj->target->x, mobj->target->y, mobj->target->z, MT_FLAMESHIELDUNDERLAY);
-			underlay->angle = mobj->angle;
+			P_InitAngle(underlay, mobj->angle);
 			P_SetMobjState(underlay, underlayst);
 		}
 		break;
@@ -8933,7 +8942,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 			for (i = 0; i < 5; i++)
 			{
 				mobj_t *debris = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SMK_ICEBLOCK_DEBRIS);
-				debris->angle = FixedAngle(P_RandomRange(0,360)<<FRACBITS);
+				P_InitAngle(debris, FixedAngle(P_RandomRange(0,360)<<FRACBITS));
 				P_InstaThrust(debris, debris->angle, P_RandomRange(3,18)*(FRACUNIT/4));
 				debris->momz = P_RandomRange(4,8)<<FRACBITS;
 				if (!i) // kinda hacky :V
@@ -9709,7 +9718,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_CRUSHSTACEAN:
 			{
 				mobj_t *bigmeatyclaw = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_CRUSHCLAW);
-				bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);;
+				P_InitAngle(bigmeatyclaw, mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270));
 				P_SetTarget(&mobj->tracer, bigmeatyclaw);
 				P_SetTarget(&bigmeatyclaw->tracer, mobj);
 				mobj->reactiontime >>= 1;
@@ -9718,7 +9727,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BANPYURA:
 			{
 				mobj_t *bigmeatyclaw = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_BANPSPRING);
-				bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);;
+				P_InitAngle(bigmeatyclaw, mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270));
 				P_SetTarget(&mobj->tracer, bigmeatyclaw);
 				P_SetTarget(&bigmeatyclaw->tracer, mobj);
 				mobj->reactiontime >>= 1;
@@ -9851,7 +9860,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_MINECARTEND:
 			P_SetTarget(&mobj->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINECARTENDSOLID));
-			mobj->tracer->angle = mobj->angle + ANGLE_90;
+			P_InitAngle(mobj->tracer, mobj->angle + ANGLE_90);
 			break;
 		case MT_TORCHFLOWER:
 			{
@@ -9973,7 +9982,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				angle_t ang = i * diff;
 				mobj_t *side = P_SpawnMobj(mobj->x + FINECOSINE((ang>>ANGLETOFINESHIFT) & FINEMASK),
 					mobj->y + FINESINE((ang>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_DAYTONAPINETREE_SIDE);
-				side->angle = ang;
+				P_InitAngle(side, ang);
 				side->target = mobj;
 				side->threshold = i;
 			}
@@ -9990,7 +9999,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 				cur = P_SpawnMobj(mobj->x + FINECOSINE(((mobj->angle*8)>>ANGLETOFINESHIFT) & FINEMASK),
 					mobj->y + FINESINE(((mobj->angle*8)>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_EZZPROPELLER_BLADE);
-				cur->angle = mobj->angle;
+				P_InitAngle(cur, mobj->angle);
 
 				P_SetTarget(&cur->hprev, prev);
 				P_SetTarget(&prev->hnext, cur);
@@ -10050,7 +10059,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					cur->threshold = i;
 					P_MoveOrigin(cur, cur->x + ((cur->radius>>FRACBITS) * FINECOSINE((FixedAngle((90*cur->threshold)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK)),
 						cur->y + ((cur->radius>>FRACBITS) * FINESINE((FixedAngle((90*cur->threshold)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK)), cur->z);
-					cur->angle = ANGLE_90*(cur->threshold+1);
+					P_InitAngle(cur, ANGLE_90*(cur->threshold+1));
 
 					P_SetTarget(&cur->hprev, prev);
 					P_SetTarget(&prev->hnext, cur);
@@ -10811,7 +10820,7 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
 	(mobj->player = p)->mo = mobj;
 
-	mobj->angle = 0;
+	mobj->angle = mobj->old_angle = 0;
 
 	// set color translations for player sprites
 	mobj->color = p->skincolor;
@@ -10897,6 +10906,12 @@ void P_AfterPlayerSpawn(INT32 playernum)
 	player_t *p = &players[playernum];
 	mobj_t *mobj = p->mo;
 	UINT8 i;
+
+	// Update interpolation
+	mobj->old_x = mobj->x;
+	mobj->old_y = mobj->y;
+	mobj->old_z = mobj->z;
+	mobj->old_angle = mobj->angle;
 
 	P_SetPlayerAngle(p, mobj->angle);
 
@@ -11492,7 +11507,7 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 	spawnee->friction = mroll;\
 	spawnee->movefactor = mwidthset;\
 	spawnee->movecount = dist;\
-	spawnee->angle = myaw;\
+	P_InitAngle(spawnee, myaw);\
 	spawnee->flags |= (MF_NOGRAVITY|mflagsapply);\
 	spawnee->flags2 |= (mflags2apply|moreflags2);\
 	spawnee->eflags |= meflagsapply;\
@@ -11691,29 +11706,29 @@ static boolean P_SetupBooster(mapthing_t* mthing, mobj_t* mobj, boolean strong)
 	statenum_t rollerstate = strong ? S_REDBOOSTERROLLER : S_YELLOWBOOSTERROLLER;
 
 	mobj_t *seg = P_SpawnMobjFromMobj(mobj, 26*x1, 26*y1, 0, MT_BOOSTERSEG);
-	seg->angle = angle - ANGLE_90;
+	P_InitAngle(seg, angle - ANGLE_90);
 	P_SetMobjState(seg, facestate);
 	seg = P_SpawnMobjFromMobj(mobj, -26*x1, -26*y1, 0, MT_BOOSTERSEG);
-	seg->angle = angle + ANGLE_90;
+	P_InitAngle(seg, angle + ANGLE_90);
 	P_SetMobjState(seg, facestate);
 	seg = P_SpawnMobjFromMobj(mobj, 21*x2, 21*y2, 0, MT_BOOSTERSEG);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, leftstate);
 	seg = P_SpawnMobjFromMobj(mobj, -21*x2, -21*y2, 0, MT_BOOSTERSEG);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, rightstate);
 
 	seg = P_SpawnMobjFromMobj(mobj, 13*(x1 + x2), 13*(y1 + y2), 0, MT_BOOSTERROLLER);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, rollerstate);
 	seg = P_SpawnMobjFromMobj(mobj, 13*(x1 - x2), 13*(y1 - y2), 0, MT_BOOSTERROLLER);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, rollerstate);
 	seg = P_SpawnMobjFromMobj(mobj, -13*(x1 + x2), -13*(y1 + y2), 0, MT_BOOSTERROLLER);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, rollerstate);
 	seg = P_SpawnMobjFromMobj(mobj, -13*(x1 - x2), -13*(y1 - y2), 0, MT_BOOSTERROLLER);
-	seg->angle = angle;
+	P_InitAngle(seg, angle);
 	P_SetMobjState(seg, rollerstate);
 
 	return true;
@@ -11890,19 +11905,19 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_THZTREE:
 	{ // Spawn the branches
 		angle_t mobjangle = FixedAngle((mthing->angle % 113) << FRACBITS);
-		P_SpawnMobjFromMobj(mobj, FRACUNIT, 0, 0, MT_THZTREEBRANCH)->angle = mobjangle + ANGLE_22h;
-		P_SpawnMobjFromMobj(mobj, 0, FRACUNIT, 0, MT_THZTREEBRANCH)->angle = mobjangle + ANGLE_157h;
-		P_SpawnMobjFromMobj(mobj, -FRACUNIT, 0, 0, MT_THZTREEBRANCH)->angle = mobjangle + ANGLE_270;
+		P_InitAngle(P_SpawnMobjFromMobj(mobj, FRACUNIT, 0, 0, MT_THZTREEBRANCH), mobjangle + ANGLE_22h);
+		P_InitAngle(P_SpawnMobjFromMobj(mobj, 0, FRACUNIT, 0, MT_THZTREEBRANCH), mobjangle + ANGLE_157h);
+		P_InitAngle(P_SpawnMobjFromMobj(mobj, -FRACUNIT, 0, 0, MT_THZTREEBRANCH), mobjangle + ANGLE_270);
 	}
 	break;
 	case MT_CEZPOLE1:
 	case MT_CEZPOLE2:
 	{ // Spawn the banner
 		angle_t mobjangle = FixedAngle(mthing->angle << FRACBITS);
-		P_SpawnMobjFromMobj(mobj,
+		P_InitAngle(P_SpawnMobjFromMobj(mobj,
 			P_ReturnThrustX(mobj, mobjangle, 4 << FRACBITS),
 			P_ReturnThrustY(mobj, mobjangle, 4 << FRACBITS),
-			0, ((mobj->type == MT_CEZPOLE1) ? MT_CEZBANNER1 : MT_CEZBANNER2))->angle = mobjangle + ANGLE_90;
+			0, ((mobj->type == MT_CEZPOLE1) ? MT_CEZBANNER1 : MT_CEZBANNER2)), mobjangle + ANGLE_90);
 	}
 	break;
 	case MT_HHZTREE_TOP:
@@ -11911,7 +11926,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		mobj_t* leaf;
 #define doleaf(x, y) \
 			leaf = P_SpawnMobjFromMobj(mobj, x, y, 0, MT_HHZTREE_PART);\
-			leaf->angle = mobjangle;\
+			P_InitAngle(leaf, mobjangle);\
 			P_SetMobjState(leaf, leaf->info->seestate);\
 			mobjangle += ANGLE_90
 		doleaf(FRACUNIT, 0);
@@ -11935,7 +11950,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			fixed_t xoffs = FINECOSINE(fa);
 			fixed_t yoffs = FINESINE(fa);
 			mobj_t* leaf = P_SpawnMobjFromMobj(mobj, xoffs, yoffs, 0, MT_BIGFERNLEAF);
-			leaf->angle = angle;
+			P_InitAngle(leaf, angle);
 			angle += ANGLE_45;
 		}
 		break;
@@ -12045,7 +12060,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 				mobj->x - P_ReturnThrustX(mobj, mobjangle, baseradius),
 				mobj->y - P_ReturnThrustY(mobj, mobjangle, baseradius),
 				mobj->z, MT_WALLSPIKEBASE);
-			base->angle = mobjangle + ANGLE_90;
+			P_InitAngle(base, mobjangle + ANGLE_90);
 			base->destscale = mobj->destscale;
 			P_SetScale(base, mobj->scale);
 			P_SetTarget(&base->target, mobj);
@@ -12231,7 +12246,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 			leaf = P_SpawnMobj(mobj->x + FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK),
 				mobj->y + FINESINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK), top, MT_AAZTREE_LEAF);
-			leaf->angle = mobj->angle;
+			P_InitAngle(leaf, mobj->angle);
 
 			// Small coconut for each leaf
 			P_SpawnMobj(mobj->x + (32 * FINECOSINE((mobj->angle>>ANGLETOFINESHIFT) & FINEMASK)),
@@ -12448,7 +12463,9 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 		return mobj;
 
 	if (doangle)
-		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
+	{
+		P_InitAngle(mobj, FixedAngle(mthing->angle << FRACBITS));
+	}
 
 	if ((mobj->flags & MF_SPRING)
 	&& mobj->info->damage != 0
@@ -12460,8 +12477,8 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
 	}
 
-	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
-	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
+	P_InitPitch(mobj, FixedAngle(mthing->pitch << FRACBITS));
+	P_InitRoll(mobj, FixedAngle(mthing->roll << FRACBITS));
 
 	mthing->mobj = mobj;
 
@@ -12868,7 +12885,7 @@ mobj_t *P_SpawnXYZMissile(mobj_t *source, mobj_t *dest, mobjtype_t type,
 	P_SetTarget(&th->target, source); // where it came from
 	an = R_PointToAngle2(x, y, dest->x, dest->y);
 
-	th->angle = an;
+	P_InitAngle(th, an);
 	an >>= ANGLETOFINESHIFT;
 	th->momx = FixedMul(speed, FINECOSINE(an));
 	th->momy = FixedMul(speed, FINESINE(an));
@@ -12930,7 +12947,7 @@ mobj_t *P_SpawnAlteredDirectionMissile(mobj_t *source, mobjtype_t type, fixed_t 
 	P_SetTarget(&th->target, source->target); // where it came from
 	an = R_PointToAngle2(0, 0, source->momx, source->momy) + (ANG1*shiftingAngle);
 
-	th->angle = an;
+	P_InitAngle(th, an);
 	an >>= ANGLETOFINESHIFT;
 	th->momx = FixedMul(speed, FINECOSINE(an));
 	th->momy = FixedMul(speed, FINESINE(an));
@@ -12995,7 +13012,7 @@ mobj_t *P_SpawnPointMissile(mobj_t *source, fixed_t xa, fixed_t ya, fixed_t za, 
 	P_SetTarget(&th->target, source); // where it came from
 	an = R_PointToAngle2(x, y, xa, ya);
 
-	th->angle = an;
+	P_InitAngle(th, an);
 	an >>= ANGLETOFINESHIFT;
 	th->momx = FixedMul(speed, FINECOSINE(an));
 	th->momy = FixedMul(speed, FINESINE(an));
@@ -13074,7 +13091,7 @@ mobj_t *P_SpawnMissile(mobj_t *source, mobj_t *dest, mobjtype_t type)
 	else
 		an = R_PointToAngle2(source->x, source->y, dest->x, dest->y);
 
-	th->angle = an;
+	P_InitAngle(th, an);
 	an >>= ANGLETOFINESHIFT;
 	th->momx = FixedMul(speed, FINECOSINE(an));
 	th->momy = FixedMul(speed, FINESINE(an));
@@ -13162,7 +13179,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 allowai
 
 	speed = th->info->speed;
 
-	th->angle = an;
+	P_InitAngle(th, an);
 	th->momx = FixedMul(speed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	th->momy = FixedMul(speed, FINESINE(an>>ANGLETOFINESHIFT));
 
@@ -13232,6 +13249,17 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 		newmobj->z = mobj->z + mobj->height - zofs - newmobj->height;
 	}
 
+	// EXPERIMENT: Let all objects set their interp values relative to their owner's old values.
+	// This will hopefully create a lot less mobj-specific spawn cases,
+	// but if there's any weird scenarios feel free to remove again.
+	newmobj->old_x = mobj->old_x + xofs;
+	newmobj->old_y = mobj->old_y + yofs;
+	newmobj->old_z = mobj->old_z + zofs;
+	/*
+	newmobj->angle = mobj->angle;
+	newmobj->old_angle = mobj->old_angle;
+	*/
+
 	return newmobj;
 }
 
@@ -13248,6 +13276,14 @@ fixed_t P_GetMobjHead(const mobj_t *mobj)
 
 fixed_t P_GetMobjFeet(const mobj_t *mobj)
 {
+	/*
+	          |     |
+	          |     |
+	/--\------/     |
+	|               |
+	-----------------
+	*/
+
 	return P_IsObjectFlipped(mobj) ? mobj->z + mobj->height : mobj->z;
 }
 

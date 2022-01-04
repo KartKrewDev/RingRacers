@@ -1256,6 +1256,7 @@ void D_SRB2Main(void)
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 
+#ifndef TESTERS
 	// add any files specified on the command line with -file wadfile
 	// to the wad list
 	if (!((M_GetUrlProtocolArg() || M_CheckParm("-connect")) && !M_CheckParm("-server")))
@@ -1273,6 +1274,7 @@ void D_SRB2Main(void)
 			}
 		}
 	}
+#endif
 
 	// get map from parms
 

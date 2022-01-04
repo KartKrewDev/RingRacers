@@ -31,6 +31,7 @@
 #include "r_main.h"
 #include "s_sound.h"
 #include "r_things.h"
+#include "r_fps.h"
 
 #define NUMPOSNUMS 10
 #define NUMPOSFRAMES 7 // White, three blues, three reds
@@ -835,48 +836,26 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 		return;
 	}
 
-	// TODO: needs da interp
+	// TODO: parts need interp
 	if (cam->chase == true && !player->spectator)
 	{
 		// Use the camera's properties.
-		viewpointX = cam->x;
-		viewpointY = cam->y;
-		viewpointZ = cam->z - point->z;
-		viewpointAngle = (INT32)cam->angle;
-		viewpointAiming = (INT32)cam->aiming;
-		viewpointRoll = (INT32)player->viewrollangle;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			viewpointX = cam->old_x + FixedMul(rendertimefrac, cam->x - cam->old_x);
-			viewpointY = cam->old_y + FixedMul(rendertimefrac, cam->y - cam->old_y);
-			viewpointZ = (cam->old_z + FixedMul(rendertimefrac, cam->z - cam->old_z)) - point->z;
-
-			viewpointAngle = (INT32)(cam->old_angle + FixedMul(rendertimefrac, cam->angle - cam->old_angle));
-			viewpointAiming = (INT32)(cam->old_aiming + FixedMul(rendertimefrac, cam->aiming - cam->old_aiming));
-			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
-		}
+		viewpointX = R_InterpolateFixed(cam->old_x, cam->x);
+		viewpointY = R_InterpolateFixed(cam->old_y, cam->y);
+		viewpointZ = R_InterpolateFixed(cam->old_z, cam->z) - point->z;
+		viewpointAngle = (INT32)R_InterpolateAngle(cam->old_angle, cam->angle);
+		viewpointAiming = (INT32)R_InterpolateAngle(cam->old_aiming, cam->aiming);
+		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
 	}
 	else
 	{
 		// Use player properties.
-		viewpointX = player->mo->x;
-		viewpointY = player->mo->y;
-		viewpointZ = player->viewz - point->z;
-		viewpointAngle = (INT32)player->mo->angle;
+		viewpointX = R_InterpolateFixed(player->mo->old_x, player->mo->x);
+		viewpointY = R_InterpolateFixed(player->mo->old_y, player->mo->y);
+		viewpointZ = R_InterpolateFixed(player->mo->old_z, player->mo->z) - point->z; //player->old_viewz
+		viewpointAngle = (INT32)R_InterpolateAngle(player->mo->old_angle, player->mo->angle);
 		viewpointAiming = (INT32)player->aiming;
-		viewpointRoll = (INT32)player->viewrollangle;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			viewpointX = player->mo->old_x + FixedMul(rendertimefrac, player->mo->x - player->mo->old_x);
-			viewpointY = player->mo->old_y + FixedMul(rendertimefrac, player->mo->y - player->mo->old_y);
-			viewpointZ = (player->mo->old_z + FixedMul(rendertimefrac, player->viewz - player->mo->old_z)) - point->z; //player->old_viewz
-
-			viewpointAngle = (INT32)(player->mo->old_angle + FixedMul(rendertimefrac, player->mo->angle - player->mo->old_angle));
-			//viewpointAiming = (INT32)(player->mo->old_aiming + FixedMul(rendertimefrac, player->mo->aiming - player->mo->old_aiming));
-			viewpointRoll = (INT32)(player->old_viewrollangle + FixedMul(rendertimefrac, player->viewrollangle - player->old_viewrollangle));
-		}
+		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
 	}
 
 	viewpointAngle += (INT32)angleOffset;
@@ -2631,24 +2610,13 @@ static void K_drawKartPlayerCheck(void)
 			continue;
 		}
 
-		v.x = checkplayer->mo->x;
-		v.y = checkplayer->mo->y;
-		v.z = checkplayer->mo->z;
+		v.x = R_InterpolateFixed(checkplayer->mo->old_x, checkplayer->mo->x);
+		v.y = R_InterpolateFixed(checkplayer->mo->old_y, checkplayer->mo->y);
+		v.z = R_InterpolateFixed(checkplayer->mo->old_z, checkplayer->mo->z);
 
-		pPos.x = stplyr->mo->x;
-		pPos.y = stplyr->mo->y;
-		pPos.z = stplyr->mo->z;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			v.x = checkplayer->mo->old_x + FixedMul(rendertimefrac, checkplayer->mo->x - checkplayer->mo->old_x);
-			v.y = checkplayer->mo->old_y + FixedMul(rendertimefrac, checkplayer->mo->y - checkplayer->mo->old_y);
-			v.z = checkplayer->mo->old_z + FixedMul(rendertimefrac, checkplayer->mo->z - checkplayer->mo->old_z);
-
-			pPos.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
-			pPos.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
-			pPos.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
-		}
+		pPos.x = R_InterpolateFixed(stplyr->mo->old_x, stplyr->mo->x);
+		pPos.y = R_InterpolateFixed(stplyr->mo->old_y, stplyr->mo->y);
+		pPos.z = R_InterpolateFixed(stplyr->mo->old_z, stplyr->mo->z);
 
 		distance = R_PointToDist2(pPos.x, pPos.y, v.x, v.y);
 
@@ -2834,29 +2802,15 @@ static void K_drawKartNameTags(void)
 
 	if (thiscam->chase == true)
 	{
-		c.x = thiscam->x;
-		c.y = thiscam->y;
-		c.z = thiscam->z;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			c.x = thiscam->old_x + FixedMul(rendertimefrac, thiscam->x - thiscam->old_x);
-			c.y = thiscam->old_y + FixedMul(rendertimefrac, thiscam->y - thiscam->old_y);
-			c.z = thiscam->old_z + FixedMul(rendertimefrac, thiscam->z - thiscam->old_z);
-		}
+		c.x = R_InterpolateFixed(thiscam->old_x, thiscam->x);
+		c.y = R_InterpolateFixed(thiscam->old_y, thiscam->y);
+		c.z = R_InterpolateFixed(thiscam->old_z, thiscam->z);
 	}
 	else
 	{
-		c.x = stplyr->mo->x;
-		c.y = stplyr->mo->y;
-		c.z = stplyr->mo->z;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			c.x = stplyr->mo->old_x + FixedMul(rendertimefrac, stplyr->mo->x - stplyr->mo->old_x);
-			c.y = stplyr->mo->old_y + FixedMul(rendertimefrac, stplyr->mo->y - stplyr->mo->old_y);
-			c.z = stplyr->mo->old_z + FixedMul(rendertimefrac, stplyr->mo->z - stplyr->mo->old_z);
-		}
+		c.x = R_InterpolateFixed(stplyr->mo->old_x, stplyr->mo->x);
+		c.y = R_InterpolateFixed(stplyr->mo->old_y, stplyr->mo->y);
+		c.z = R_InterpolateFixed(stplyr->mo->old_z, stplyr->mo->z);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2895,16 +2849,9 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		v.x = ntplayer->mo->x;
-		v.y = ntplayer->mo->y;
-		v.z = ntplayer->mo->z;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
-			v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
-			v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
-		}
+		v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
+		v.y = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
+		v.z = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
 
 		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
 		{
@@ -2959,16 +2906,9 @@ static void K_drawKartNameTags(void)
 			SINT8 localindicator = -1;
 			vector3_t v;
 
-			v.x = ntplayer->mo->x;
-			v.y = ntplayer->mo->y;
-			v.z = ntplayer->mo->z;
-
-			if (cv_frameinterpolation.value == 1)
-			{
-				v.x = ntplayer->mo->old_x + FixedMul(rendertimefrac, ntplayer->mo->x - ntplayer->mo->old_x);
-				v.y = ntplayer->mo->old_y + FixedMul(rendertimefrac, ntplayer->mo->y - ntplayer->mo->old_y);
-				v.z = ntplayer->mo->old_z + FixedMul(rendertimefrac, ntplayer->mo->z - ntplayer->mo->old_z);
-			}
+			v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
+			v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
+			v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
 
 			v.z += (ntplayer->mo->height / 2);
 
@@ -3208,14 +3148,8 @@ static void K_drawKartMinimap(void)
 			else
 				colormap = NULL;
 
-			interpx = g->mo->x;
-			interpy = g->mo->y;
-
-			if (cv_frameinterpolation.value == 1)
-			{
-				interpx = g->mo->old_x + FixedMul(rendertimefrac, g->mo->x - g->mo->old_x);
-				interpy = g->mo->old_y + FixedMul(rendertimefrac, g->mo->y - g->mo->old_y);
-			}
+			interpx = R_InterpolateFixed(g->mo->old_x, g->mo->x);
+			interpy = R_InterpolateFixed(g->mo->old_y, g->mo->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			g = g->next;
@@ -3273,14 +3207,8 @@ static void K_drawKartMinimap(void)
 			else
 				colormap = NULL;
 
-			interpx = players[i].mo->x;
-			interpy = players[i].mo->y;
-
-			if (cv_frameinterpolation.value == 1)
-			{
-				interpx = players[i].mo->old_x + FixedMul(rendertimefrac, players[i].mo->x - players[i].mo->old_x);
-				interpy = players[i].mo->old_y + FixedMul(rendertimefrac, players[i].mo->y - players[i].mo->old_y);
-			}
+			interpx = R_InterpolateFixed(players[i].mo->old_x, players[i].mo->x);
+			interpy = R_InterpolateFixed(players[i].mo->old_y, players[i].mo->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 			// Target reticule
@@ -3308,14 +3236,8 @@ static void K_drawKartMinimap(void)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
 			}
 
-			interpx = mobj->x;
-			interpy = mobj->y;
-
-			if (cv_frameinterpolation.value == 1)
-			{
-				interpx = mobj->old_x + FixedMul(rendertimefrac, mobj->x - mobj->old_x);
-				interpy = mobj->old_y + FixedMul(rendertimefrac, mobj->y - mobj->old_y);
-			}
+			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
 		}
@@ -3345,14 +3267,8 @@ static void K_drawKartMinimap(void)
 		else
 			colormap = NULL;
 
-		interpx = players[localplayers[i]].mo->x;
-		interpy = players[localplayers[i]].mo->y;
-
-		if (cv_frameinterpolation.value == 1)
-		{
-			interpx = players[localplayers[i]].mo->old_x + FixedMul(rendertimefrac, players[localplayers[i]].mo->x - players[localplayers[i]].mo->old_x);
-			interpy = players[localplayers[i]].mo->old_y + FixedMul(rendertimefrac, players[localplayers[i]].mo->y - players[localplayers[i]].mo->old_y);
-		}
+		interpx = R_InterpolateFixed(players[localplayers[i]].mo->old_x, players[localplayers[i]].mo->x);
+		interpy = R_InterpolateFixed(players[localplayers[i]].mo->old_y, players[localplayers[i]].mo->y);
 
 		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
@@ -3631,7 +3547,7 @@ static void K_drawKartFinish(void)
 		x = ((TICRATE - stplyr->karthud[khud_cardanimation])*(xval > x ? xval : x))/TICRATE;
 		ox = ((TICRATE - (stplyr->karthud[khud_cardanimation] - 1))*(xval > x ? xval : x))/TICRATE;
 
-		interpx = ox + FixedMul(rendertimefrac, x - ox);
+		interpx = R_InterpolateFixed(ox, x);
 
 		if (r_splitscreen && stplyr == &players[displayplayers[1]])
 			interpx = -interpx;
@@ -4028,7 +3944,7 @@ static void K_drawLapStartAnim(void)
 	const UINT8 t = stplyr->karthud[khud_lapanimation];
 	const UINT8 progress = 80 - t;
 
-	const UINT8 tOld = t - 1;
+	const UINT8 tOld = t + 1;
 	const UINT8 progressOld = 80 - tOld;
 
 	const tic_t leveltimeOld = leveltime - 1;
@@ -4039,11 +3955,11 @@ static void K_drawLapStartAnim(void)
 
 	newval = (BASEVIDWIDTH/2 + (32 * max(0, t - 76))) * FRACUNIT;
 	oldval = (BASEVIDWIDTH/2 + (32 * max(0, tOld - 76))) * FRACUNIT;
-	interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+	interpx = R_InterpolateFixed(oldval, newval);
 
 	newval = (48 - (32 * max(0, progress - 76))) * FRACUNIT;
 	oldval = (48 - (32 * max(0, progressOld - 76))) * FRACUNIT;
-	interpy = oldval + FixedMul(rendertimefrac, newval - oldval);
+	interpy = R_InterpolateFixed(oldval, newval);
 
 	V_DrawFixedPatch(
 		interpx, interpy,
@@ -4054,7 +3970,7 @@ static void K_drawLapStartAnim(void)
 	{
 		newval = (4 - abs((signed)((leveltime % 8) - 4))) * FRACUNIT;
 		oldval = (4 - abs((signed)((leveltimeOld % 8) - 4))) * FRACUNIT;
-		interpy += oldval + FixedMul(rendertimefrac, newval - oldval);
+		interpy += R_InterpolateFixed(oldval, newval);
 
 		V_DrawFixedPatch(
 			interpx, interpy,
@@ -4066,7 +3982,7 @@ static void K_drawLapStartAnim(void)
 	{
 		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
 		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
-		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+		interpx = R_InterpolateFixed(oldval, newval);
 
 		V_DrawFixedPatch(
 			interpx, // 27
@@ -4078,7 +3994,7 @@ static void K_drawLapStartAnim(void)
 		{
 			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
 			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
-			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+			interpx = R_InterpolateFixed(oldval, newval);
 
 			V_DrawFixedPatch(
 				interpx, // 194
@@ -4091,7 +4007,7 @@ static void K_drawLapStartAnim(void)
 	{
 		newval = (82 - (32 * max(0, progress - 76))) * FRACUNIT;
 		oldval = (82 - (32 * max(0, progressOld - 76))) * FRACUNIT;
-		interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+		interpx = R_InterpolateFixed(oldval, newval);
 
 		V_DrawFixedPatch(
 			interpx, // 61
@@ -4103,7 +4019,7 @@ static void K_drawLapStartAnim(void)
 		{
 			newval = (188 + (32 * max(0, progress - 76))) * FRACUNIT;
 			oldval = (188 + (32 * max(0, progressOld - 76))) * FRACUNIT;
-			interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+			interpx = R_InterpolateFixed(oldval, newval);
 
 			V_DrawFixedPatch(
 				interpx, // 194
@@ -4115,7 +4031,7 @@ static void K_drawLapStartAnim(void)
 			{
 				newval = (208 + (32 * max(0, progress - 76))) * FRACUNIT;
 				oldval = (208 + (32 * max(0, progressOld - 76))) * FRACUNIT;
-				interpx = oldval + FixedMul(rendertimefrac, newval - oldval);
+				interpx = R_InterpolateFixed(oldval, newval);
 
 				V_DrawFixedPatch(
 					interpx, // 221
