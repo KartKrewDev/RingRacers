@@ -291,9 +291,7 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 //
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
-	//INT32 pflags;
-	const fixed_t hscale = mapobjectscale + (mapobjectscale - object->scale);
-	const fixed_t vscale = mapobjectscale + (object->scale - mapobjectscale);
+	const fixed_t scaleVal = FixedSqrt(FixedMul(mapobjectscale, spring->scale));
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
@@ -370,13 +368,13 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 
 	if (vertispeed)
 	{
-		object->momz = FixedMul(vertispeed, FixedSqrt(FixedMul(vscale, spring->scale)));
+		object->momz = FixedMul(vertispeed, scaleVal);
 	}
 
 	if (horizspeed)
 	{
 		angle_t finalAngle = spring->angle;
-		fixed_t finalSpeed = FixedMul(horizspeed, FixedSqrt(FixedMul(hscale, spring->scale)));
+		fixed_t finalSpeed = FixedMul(horizspeed, scaleVal);
 		fixed_t objectSpeed;
 
 		if (object->player)
