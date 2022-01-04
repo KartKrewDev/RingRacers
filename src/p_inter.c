@@ -1844,8 +1844,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
+#if 0
 		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
 			return false;
+#endif
 	}
 
 	if (target->flags2 & MF2_SKULLFLY)
@@ -1928,7 +1930,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->flashing > 0)
+					if (player->mo->hitlag == 0 && player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
