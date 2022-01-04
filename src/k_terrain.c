@@ -344,6 +344,13 @@ void K_UpdateMobjTerrain(mobj_t *mo, INT32 flatID)
 		return;
 	}
 
+	if (mo->player != NULL && mo->player->spectator == true)
+	{
+		// We don't want a terrain pointer for spectators.
+		mo->terrain = NULL;
+		return;
+	}
+
 	// Update the object's terrain pointer.
 	mo->terrain = K_GetTerrainForFlatNum(flatID);
 }
