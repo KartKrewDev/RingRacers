@@ -483,7 +483,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
 	boolean t1Condition = false;
 	boolean t2Condition = false;
-	boolean stung = false;
+	boolean stungT1 = false;
+	boolean stungT2 = false;
 
 	// Grow damage
 	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
@@ -558,7 +559,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		if (t2->player->rings <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
-			stung = true;
+			stungT2 = true;
 		}
 
 		P_PlayerRingBurst(t2->player, 1);
@@ -569,11 +570,21 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		if (t1->player->rings <= 0)
 		{
 			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
-			stung = true;
+			stungT1 = true;
 		}
 
 		P_PlayerRingBurst(t1->player, 1);
 	}
 
-	return stung;
+	// No damage hitlag for stinging.
+	if (stungT1 == true && stungT2 == false)
+	{
+		t2->eflags &= ~MFE_DAMAGEHITLAG;
+	}
+	else if (stungT2 == true && stungT1 == false)
+	{
+		t1->eflags &= ~MFE_DAMAGEHITLAG;
+	}
+
+	return (stungT1 || stungT2);
 }
