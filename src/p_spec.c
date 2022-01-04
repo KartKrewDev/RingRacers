@@ -43,6 +43,7 @@
 #include "k_kart.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
+#include "k_terrain.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -4333,7 +4334,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 
 	// Conveyor stuff
 	if (section3 == 2 || section3 == 4)
+	{
 		player->onconveyor = section3;
+	}
 
 	special = section1;
 
@@ -4657,7 +4660,7 @@ DoneSection2:
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				if (!player->floorboost)
+				if (player->floorboost == 0)
 					player->floorboost = 3;
 				else
 					player->floorboost = 2;
@@ -5050,6 +5053,7 @@ void P_PlayerInSpecialSector(player_t *player)
 	if (!player->mo)
 		return;
 
+	K_ProcessTerrainEffect(player->mo);
 	originalsector = player->mo->subsector->sector;
 
 	P_PlayerOnSpecial3DFloor(player, originalsector); // Handle FOFs first.

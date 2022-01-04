@@ -52,6 +52,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_terrain.h" // K_SpawnSplashForMobj
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1274,17 +1275,18 @@ void P_DoPlayerExit(player_t *player)
 //
 // Handles player hitting floor surface.
 // Returns whether to clip momz.
-boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff)
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
 {
 	boolean clipmomz;
-
-	(void)dorollstuff;
 
 	I_Assert(player->mo != NULL);
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
 
-	// SRB2Kart: removed lots of really vanilla-specific code here
+	if (fromAir == true && clipmomz == true)
+	{
+		K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+	}
 
 	return clipmomz;
 }
@@ -2138,8 +2140,6 @@ void P_MovePlayer(player_t *player)
 		player->mo->rollangle = 0;
 	}
 
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
-
 	//{ SRB2kart
 
 	// Drifting sound
@@ -2267,7 +2267,7 @@ void P_MovePlayer(player_t *player)
 		K_SpawnSparkleTrail(player->mo);
 
 	if (player->wipeoutslow > 1 && (leveltime & 1))
-		K_SpawnWipeoutTrail(player->mo, false);
+		K_SpawnWipeoutTrail(player->mo);
 
 	K_DriftDustHandling(player->mo);
 
@@ -4501,8 +4501,6 @@ void P_PlayerThink(player_t *player)
 		// Move around.
 		P_MovePlayer(player);
 	}
-
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
 
 	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,

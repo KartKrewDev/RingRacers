@@ -40,6 +40,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
+#include "k_terrain.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -1340,7 +1341,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 				mo->momy = FixedMul(mo->momy, mo->friction);
 			}
 
-			mo->friction = ORIG_FRICTION;
+			K_SetDefaultFriction(mo);
 		}
 	}
 	else
@@ -1505,7 +1506,10 @@ void P_XYMovement(mobj_t *mo)
 	oldy = mo->y;
 
 	if (mo->flags & MF_NOCLIPHEIGHT)
+	{
 		mo->standingslope = NULL;
+		mo->terrain = NULL;
+	}
 
 	// adjust various things based on slope
 	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8) {
@@ -1671,6 +1675,7 @@ void P_XYMovement(mobj_t *mo)
 					{
 						mo->momz = transfermomz;
 						mo->standingslope = NULL;
+						mo->terrain = NULL;
 						P_SetPitchRoll(mo, ANGLE_90,
 								transferslope->xydirection
 								+ (transferslope->zangle
@@ -1782,6 +1787,7 @@ void P_XYMovement(mobj_t *mo)
 			mo->momz = P_MobjFlip(mo)*FRACUNIT/2;
 			mo->z = predictedz + P_MobjFlip(mo);
 			mo->standingslope = NULL;
+			mo->terrain = NULL;
 			//CONS_Printf("Launched off of flat surface running into downward slope\n");
 		}
 	}
@@ -2274,6 +2280,8 @@ boolean P_ZMovement(mobj_t *mo)
 		}
 
 		P_CheckPosition(mo, mo->x, mo->y); // Sets mo->standingslope correctly
+		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tmceilingpic : tmfloorpic));
+
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
 		{
 			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
@@ -2503,12 +2511,17 @@ boolean P_ZMovement(mobj_t *mo)
 		if (mo->type == MT_STEAM)
 			return true;
 	}
-	else if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+	else
 	{
-		/// \todo may not be needed (done in P_MobjThinker normally)
-		mo->eflags &= ~MFE_JUSTHITFLOOR;
+		mo->terrain = NULL;
 
-		P_CheckGravity(mo, true);
+		if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+		{
+			/// \todo may not be needed (done in P_MobjThinker normally)
+			mo->eflags &= ~MFE_JUSTHITFLOOR;
+
+			P_CheckGravity(mo, true);
+		}
 	}
 
 	if (((mo->z + mo->height > mo->ceilingz && !(mo->eflags & MFE_VERTICALFLIP))
@@ -2712,20 +2725,29 @@ void P_PlayerZMovement(mobj_t *mo)
 	if (onground && !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
+		{
 			mo->z = mo->ceilingz - mo->height;
+		}
 		else
+		{
 			mo->z = mo->floorz;
+		}
+
+		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingpic : tmfloorpic));
 
 		// Get up if you fell.
 		if (mo->player->panim == PA_HURT && mo->player->spinouttimer == 0 && mo->player->tumbleBounces == 0)
+		{
 			P_SetPlayerMobjState(mo, S_KART_STILL);
+		}
 
-		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope)) {
+		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope))
+		{
 			// Handle landing on slope during Z movement
 			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope));
 		}
 
-		if (P_MobjFlip(mo)*mo->momz < 0) // falling
+		if (P_MobjFlip(mo) * mo->momz < 0) // falling
 		{
 			boolean clipmomz = !(P_CheckDeathPitCollide(mo));
 
@@ -2736,29 +2758,38 @@ void P_PlayerZMovement(mobj_t *mo)
 			P_PlayerPolyObjectZMovement(mo);
 
 			if (clipmomz)
+			{
 				mo->momz = (tmfloorthing ? tmfloorthing->momz : 0);
+			}
 		}
 		else if (tmfloorthing)
-			mo->momz = tmfloorthing->momz;
-	}
-	else if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
-	{
-		if (P_IsObjectInGoop(mo) && !(mo->flags & MF_NOCLIPHEIGHT))
 		{
-			if (mo->z < mo->floorz)
-			{
-				mo->z = mo->floorz;
-				mo->momz = 0;
-			}
-			else if (mo->z + mo->height > mo->ceilingz)
-			{
-				mo->z = mo->ceilingz - mo->height;
-				mo->momz = 0;
-			}
+			mo->momz = tmfloorthing->momz;
 		}
-		/// \todo may not be needed (done in P_MobjThinker normally)
-		mo->eflags &= ~MFE_JUSTHITFLOOR;
-		P_CheckGravity(mo, true);
+	}
+	else
+	{
+		mo->terrain = NULL;
+
+		if (!(mo->flags & MF_NOGRAVITY)) // Gravity here!
+		{
+			if (P_IsObjectInGoop(mo) && !(mo->flags & MF_NOCLIPHEIGHT))
+			{
+				if (mo->z < mo->floorz)
+				{
+					mo->z = mo->floorz;
+					mo->momz = 0;
+				}
+				else if (mo->z + mo->height > mo->ceilingz)
+				{
+					mo->z = mo->ceilingz - mo->height;
+					mo->momz = 0;
+				}
+			}
+			/// \todo may not be needed (done in P_MobjThinker normally)
+			mo->eflags &= ~MFE_JUSTHITFLOOR;
+			P_CheckGravity(mo, true);
+		}
 	}
 
 	if (((mo->eflags & MFE_VERTICALFLIP && mo->z < mo->floorz) || (!(mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height > mo->ceilingz))
@@ -3048,6 +3079,26 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 	}
 
+	if (mobj->terrain != NULL)
+	{
+		if (mobj->terrain->flags & TRF_LIQUID)
+		{
+			// This floor is water.
+			mobj->eflags |= MFE_TOUCHWATER;
+
+			if (mobj->eflags & MFE_VERTICALFLIP)
+			{
+				mobj->watertop = thingtop + height;
+				mobj->waterbottom = thingtop;
+			}
+			else
+			{
+				mobj->watertop = mobj->z;
+				mobj->waterbottom = mobj->z - height;
+			}
+		}
+	}
+
 	if (mobj->watertop > top2)
 		mobj->watertop = top2;
 
@@ -3056,7 +3107,9 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
+	{
 		return;
+	}
 
 	// The rest of this code only executes on a water state change.
 	if (!!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
@@ -3073,6 +3126,30 @@ void P_MobjCheckWater(mobj_t *mobj)
 	 || ((mobj->info->flags & MF_PUSHABLE) && mobj->fuse) // Previously pushable, might be moving still
 	)
 	{
+		fixed_t waterZ = INT32_MAX;
+		fixed_t solidZ = INT32_MAX;
+		fixed_t diff = INT32_MAX;
+
+		fixed_t thingZ = INT32_MAX;
+		boolean splashValid = false;
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			waterZ = mobj->waterbottom;
+			solidZ = mobj->ceilingz;
+		}
+		else
+		{
+			waterZ = mobj->watertop;
+			solidZ = mobj->floorz;
+		}
+
+		diff = waterZ - solidZ;
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			diff = -diff;
+		}
+
 		// Time to spawn the bubbles!
 		{
 			INT32 i;
@@ -3131,12 +3208,15 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 		// Check to make sure you didn't just cross into a sector to jump out of
 		// that has shallower water than the block you were originally in.
-		if ((!(mobj->eflags & MFE_VERTICALFLIP) && mobj->watertop-mobj->floorz <= height>>1)
-			|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->ceilingz-mobj->waterbottom <= height>>1))
+		if (diff <= (height >> 1))
+		{
 			return;
+		}
 
-		if (mobj->eflags & MFE_GOOWATER || wasingoo) { // Decide what happens to your momentum when you enter/leave goopy water.
-			if (P_MobjFlip(mobj)*mobj->momz > 0)
+		if (mobj->eflags & MFE_GOOWATER || wasingoo)
+		{
+			// Decide what happens to your momentum when you enter/leave goopy water.
+			if (P_MobjFlip(mobj) * mobj->momz > 0)
 			{
 				mobj->momz -= (mobj->momz/8); // cut momentum a little bit to prevent multiple bobs
 				//CONS_Printf("leaving\n");
@@ -3148,25 +3228,42 @@ void P_MobjCheckWater(mobj_t *mobj)
 				//CONS_Printf("entering\n");
 			}
 		}
-		else if (wasinwater && P_MobjFlip(mobj)*mobj->momz > 0)
-			mobj->momz = FixedMul(mobj->momz, FixedDiv(780*FRACUNIT, 457*FRACUNIT)); // Give the mobj a little out-of-water boost.
-
-		if (P_MobjFlip(mobj)*mobj->momz < 0)
+		else if (wasinwater && P_MobjFlip(mobj) * mobj->momz > 0)
 		{
-			if ((mobj->eflags & MFE_VERTICALFLIP && thingtop-(height>>1)-mobj->momz <= mobj->waterbottom)
-				|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z+(height>>1)-mobj->momz >= mobj->watertop))
+			// Give the mobj a little out-of-water boost.
+			mobj->momz = FixedMul(mobj->momz, FixedDiv(780*FRACUNIT, 457*FRACUNIT));
+		}
+
+		if (mobj->eflags & MFE_VERTICALFLIP)
+		{
+			thingZ = thingtop - (height >> 1);
+			splashValid = (thingZ - mobj->momz <= waterZ);
+		}
+		else
+		{
+			thingZ = mobj->z + (height >> 1);
+			splashValid = (thingZ - mobj->momz >= waterZ);
+		}
+
+		if (P_MobjFlip(mobj) * mobj->momz <= 0)
+		{
+			if (splashValid == true)
 			{
 				// Spawn a splash
 				mobj_t *splish;
 				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
+
 				if (mobj->eflags & MFE_VERTICALFLIP)
 				{
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->waterbottom-FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ - FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
 					splish->flags2 |= MF2_OBJECTFLIP;
 					splish->eflags |= MFE_VERTICALFLIP;
 				}
 				else
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->watertop, splishtype);
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ, splishtype);
+				}
+
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
 			}
@@ -3175,40 +3272,37 @@ void P_MobjCheckWater(mobj_t *mobj)
 			if (p && p->waterskip < 2
 				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
 				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& ((!(mobj->eflags & MFE_VERTICALFLIP) && thingtop - mobj->momz > mobj->watertop)
-				|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z - mobj->momz < mobj->waterbottom)))
+				&& (splashValid == true))
 			{
-				const fixed_t hop = 5<<FRACBITS;
+				const fixed_t hop = 5 * mobj->scale;
 
 				mobj->momx = (4*mobj->momx)/5;
 				mobj->momy = (4*mobj->momy)/5;
-
-				if (mobj->eflags & MFE_VERTICALFLIP)
-					mobj->momz = FixedMul(-hop, mobj->scale);
-				else
-					mobj->momz = FixedMul(hop, mobj->scale);
+				mobj->momz = hop * P_MobjFlip(mobj);
 
 				p->waterskip++;
 			}
 
 		}
-		else if (P_MobjFlip(mobj)*mobj->momz > 0)
+		else if (P_MobjFlip(mobj) * mobj->momz > 0)
 		{
-			if (((mobj->eflags & MFE_VERTICALFLIP && thingtop-(height>>1)-mobj->momz > mobj->waterbottom)
-				|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z+(height>>1)-mobj->momz < mobj->watertop))
-				&& !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
+			if (splashValid == true && !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
 			{
 				// Spawn a splash
 				mobj_t *splish;
 				mobjtype_t splishtype = (mobj->eflags & MFE_TOUCHLAVA) ? MT_LAVASPLISH : MT_SPLISH;
+
 				if (mobj->eflags & MFE_VERTICALFLIP)
 				{
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->waterbottom-FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ - FixedMul(mobjinfo[splishtype].height, mobj->scale), splishtype);
 					splish->flags2 |= MF2_OBJECTFLIP;
 					splish->eflags |= MFE_VERTICALFLIP;
 				}
 				else
-					splish = P_SpawnMobj(mobj->x, mobj->y, mobj->watertop, splishtype);
+				{
+					splish = P_SpawnMobj(mobj->x, mobj->y, waterZ, splishtype);
+				}
+
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
 			}

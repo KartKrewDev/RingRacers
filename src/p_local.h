@@ -168,7 +168,7 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
-boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
@@ -385,6 +385,7 @@ extern camera_t *mapcampointer;
 extern fixed_t tmx;
 extern fixed_t tmy;
 extern pslope_t *tmfloorslope, *tmceilingslope;
+extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);

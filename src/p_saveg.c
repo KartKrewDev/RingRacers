@@ -38,6 +38,7 @@
 // SRB2Kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_terrain.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -1540,6 +1541,7 @@ typedef enum
 	MD2_KITEMCAP     = 1<<26,
 	MD2_ITNEXT       = 1<<27,
 	MD2_LASTMOMZ     = 1<<28,
+	MD2_TERRAIN      = 1<<29,
 } mobj_diff2_t;
 
 typedef enum
@@ -1782,6 +1784,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ITNEXT;
 	if (mobj->lastmomz)
 		diff2 |= MD2_LASTMOMZ;
+	if (mobj->terrain != NULL)
+		diff2 |= MD2_TERRAIN;
 
 	if (diff2 != 0)
 		diff |= MD_MORE;
@@ -1978,6 +1982,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		WRITEINT32(save_p, mobj->lastmomz);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		WRITEUINT32(save_p, K_GetTerrainHeapIndex(mobj->terrain));
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
@@ -3076,6 +3084,14 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		mobj->lastmomz = READINT32(save_p);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		mobj->terrain = (terrain_t *)(size_t)READUINT32(save_p);
+	}
+	else
+	{
+		mobj->terrain = NULL;
 	}
 
 	if (diff & MD_REDFLAG)

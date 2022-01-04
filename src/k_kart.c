@@ -33,6 +33,7 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_hud.h"
+#include "k_terrain.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -1605,6 +1606,7 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 
 		}
 	}
+
 	return 0;	// couldn't find any offroad
 }
 
@@ -1616,7 +1618,17 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 */
 static void K_UpdateOffroad(player_t *player)
 {
-	fixed_t offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
+	terrain_t *terrain = player->mo->terrain;
+	fixed_t offroadstrength = 0;
+
+	if (terrain != NULL && terrain->offroad > 0)
+	{
+		offroadstrength = (terrain->offroad << FRACBITS);
+	}
+	else
+	{
+		offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
+	}
 
 	// If you are in offroad, a timer starts.
 	if (offroadstrength)
@@ -4345,7 +4357,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	sparkle->color = mo->color;
 }
 
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
+void K_SpawnWipeoutTrail(mobj_t *mo)
 {
 	mobj_t *dust;
 	angle_t aoff;
@@ -4372,13 +4384,6 @@ void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad)
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
-
-	if (offroad) // offroad effect
-	{
-		dust->momx = mo->momx/2;
-		dust->momy = mo->momy/2;
-		dust->momz = P_GetMobjZMovement(mo)/2;
-	}
 }
 
 void K_SpawnDraftDust(mobj_t *mo)
@@ -5074,7 +5079,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 {
 	const fixed_t intendedboost = FRACUNIT/2;
 
-	if (!player->floorboost || player->floorboost == 3)
+	if (player->floorboost == 0 || player->floorboost == 3)
 	{
 		const sfxenum_t normalsfx = sfx_cdfm01;
 		const sfxenum_t smallsfx = sfx_cdfm40;
@@ -5097,7 +5102,7 @@ void K_DoSneaker(player_t *player, INT32 type)
 		player->numsneakers++;
 	}
 
-	if (!player->sneakertimer)
+	if (player->sneakertimer == 0)
 	{
 		if (type == 2)
 		{
@@ -5131,13 +5136,12 @@ void K_DoSneaker(player_t *player, INT32 type)
 	{
 		player->pflags |= PF_ATTACKDOWN;
 		K_PlayBoostTaunt(player->mo);
-
 	}
 
 	player->sneakertimer = sneakertime;
 
 	// set angle for spun out players:
-	player->boostangle = (INT32)player->mo->angle;
+	player->boostangle = player->mo->angle;
 }
 
 static void K_DoShrink(player_t *user)
@@ -5219,6 +5223,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		return;
 
 	mo->standingslope = NULL;
+	mo->terrain = NULL;
 
 	mo->eflags |= MFE_SPRUNG;
 
@@ -6662,7 +6667,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	// update boost angle if not spun out
 	if (!player->spinouttimer && !player->wipeoutslow)
-		player->boostangle = (INT32)player->mo->angle;
+		player->boostangle = player->mo->angle;
 
 	K_GetKartBoostPower(player);
 
@@ -6710,16 +6715,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					ghost->renderflags |= RF_DONTDRAW;
 			}
 
+			// Could probably be moved somewhere else.
+			K_HandleFootstepParticles(player->mo);
+
 			if (P_IsObjectOnGround(player->mo))
 			{
-				// Offroad dust
-				if (player->boostpower < FRACUNIT)
-				{
-					K_SpawnWipeoutTrail(player->mo, true);
-					if (leveltime % 6 == 0)
-						S_StartSound(player->mo, sfx_cdfm70);
-				}
-
 				// Draft dust
 				if (player->draftpower >= FRACUNIT)
 				{
@@ -6935,7 +6935,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->sneakertimer && player->wipeoutslow > 0 && player->wipeoutslow < wipeoutslowtime+1)
 		player->wipeoutslow = wipeoutslowtime+1;
 
-	if (player->floorboost)
+	if (player->floorboost > 0)
 		player->floorboost--;
 
 	if (player->driftboost)

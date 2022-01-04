@@ -63,6 +63,7 @@ extern fixed_t openceilingstep;
 extern fixed_t openceilingdrop;
 extern fixed_t openfloorstep;
 extern fixed_t openfloordrop;
+extern INT32 opentoppic, openbottompic;
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj);
 
