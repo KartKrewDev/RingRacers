@@ -4069,6 +4069,7 @@ static void P_HandleFollower(player_t *player)
 			// match follower's momentums and (e)flags(2).
 			bmobj->momx = player->follower->momx;
 			bmobj->momy = player->follower->momy;
+			bmobj->z += deltaz/ (INT32)fl.vertlag;
 			bmobj->momz = player->follower->momz;
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
