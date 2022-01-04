@@ -46,6 +46,7 @@
 // SRB2kart
 #include "k_color.h"
 #include "k_kart.h" // HITLAGJITTERS
+#include "r_fps.h"
 
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
@@ -1147,15 +1148,21 @@ static void R_SplitSprite(vissprite_t *sprite)
 // Get the first visible floor below the object for shadows
 // shadowslope is filled with the floor's slope, if provided
 //
-fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
+fixed_t R_GetShadowZ(
+	mobj_t *thing, pslope_t **shadowslope,
+	fixed_t interpx, fixed_t interpy, fixed_t interpz)
 {
+	fixed_t halfHeight = interpz + (thing->height >> 1);
 	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
+	fixed_t floorz = P_GetFloorZ(thing, thing->subsector->sector, interpx, interpy, NULL);
+	fixed_t ceilingz = P_GetCeilingZ(thing, thing->subsector->sector, interpx, interpy, NULL);
 	fixed_t z, groundz = isflipped ? INT32_MAX : INT32_MIN;
 	pslope_t *slope, *groundslope = NULL;
 	msecnode_t *node;
 	sector_t *sector;
 	ffloor_t *rover;
-#define CHECKZ (isflipped ? z > thing->z+thing->height/2 && z < groundz : z < thing->z+thing->height/2 && z > groundz)
+
+#define CHECKZ (isflipped ? z > halfHeight && z < groundz : z < halfHeight && z > groundz)
 
 	for (node = thing->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
@@ -1166,7 +1173,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 		if (sector->heightsec != -1)
 			z = isflipped ? sectors[sector->heightsec].ceilingheight : sectors[sector->heightsec].floorheight;
 		else
-			z = isflipped ? P_GetSectorCeilingZAt(sector, thing->x, thing->y) : P_GetSectorFloorZAt(sector, thing->x, thing->y);
+			z = isflipped ? P_GetSectorCeilingZAt(sector, interpx, interpy) : P_GetSectorFloorZAt(sector, interpx, interpy);
 
 		if CHECKZ
 		{
@@ -1180,7 +1187,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 				if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES) || (rover->alpha < 90 && !(rover->flags & FF_SWIMMABLE)))
 					continue;
 
-				z = isflipped ? P_GetFFloorBottomZAt(rover, thing->x, thing->y) : P_GetFFloorTopZAt(rover, thing->x, thing->y);
+				z = isflipped ? P_GetFFloorBottomZAt(rover, interpx, interpy) : P_GetFFloorTopZAt(rover, interpx, interpy);
 
 				if CHECKZ
 				{
@@ -1190,10 +1197,10 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 			}
 	}
 
-	if (isflipped ? (thing->ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2)))
-		: (thing->floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2))))
+	if (isflipped ? (ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2)))
+		: (floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2))))
 	{
-		groundz = isflipped ? thing->ceilingz : thing->floorz;
+		groundz = isflipped ? ceilingz : floorz;
 		groundslope = NULL;
 	}
 
@@ -1204,10 +1211,10 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 	{
 		INT32 xl, xh, yl, yh, bx, by;
 
-		xl = (unsigned)(thing->x - thing->radius - bmaporgx)>>MAPBLOCKSHIFT;
-		xh = (unsigned)(thing->x + thing->radius - bmaporgx)>>MAPBLOCKSHIFT;
-		yl = (unsigned)(thing->y - thing->radius - bmaporgy)>>MAPBLOCKSHIFT;
-		yh = (unsigned)(thing->y + thing->radius - bmaporgy)>>MAPBLOCKSHIFT;
+		xl = (unsigned)(interpx - thing->radius - bmaporgx)>>MAPBLOCKSHIFT;
+		xh = (unsigned)(interpx + thing->radius - bmaporgx)>>MAPBLOCKSHIFT;
+		yl = (unsigned)(interpy - thing->radius - bmaporgy)>>MAPBLOCKSHIFT;
+		yh = (unsigned)(interpy + thing->radius - bmaporgy)>>MAPBLOCKSHIFT;
 
 		BMBOUNDFIX(xl, xh, yl, yh);
 
@@ -1244,7 +1251,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 						// We're inside it! Yess...
 						z = po->lines[0]->backsector->ceilingheight;
 
-						if (z < thing->z+thing->height/2 && z > groundz)
+						if (z < halfHeight && z > groundz)
 						{
 							groundz = z;
 							groundslope = NULL;
@@ -1267,11 +1274,12 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 static void R_SkewShadowSprite(
 			mobj_t *thing, pslope_t *groundslope,
 			fixed_t groundz, INT32 spriteheight, fixed_t scalemul,
-			fixed_t *shadowyscale, fixed_t *shadowskew)
+			fixed_t *shadowyscale, fixed_t *shadowskew,
+			fixed_t interpx, fixed_t interpy)
 {
 	// haha let's try some dumb stuff
 	fixed_t xslope, zslope;
-	angle_t sloperelang = (R_PointToAngle(thing->x, thing->y) - groundslope->xydirection) >> ANGLETOFINESHIFT;
+	angle_t sloperelang = (R_PointToAngle(interpx, interpy) - groundslope->xydirection) >> ANGLETOFINESHIFT;
 
 	xslope = FixedMul(FINESINE(sloperelang), groundslope->zdelta);
 	zslope = FixedMul(FINECOSINE(sloperelang), groundslope->zdelta);
@@ -1287,7 +1295,10 @@ static void R_SkewShadowSprite(
 	*shadowskew = xslope;
 }
 
-static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
+static void R_ProjectDropShadow(
+	mobj_t *thing, vissprite_t *vis,
+	fixed_t scale, fixed_t tx, fixed_t tz,
+	fixed_t interpx, fixed_t interpy, fixed_t interpz)
 {
 	vissprite_t *shadow;
 	patch_t *patch;
@@ -1296,7 +1307,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	fixed_t groundz;
 	pslope_t *groundslope;
 
-	groundz = R_GetShadowZ(thing, &groundslope);
+	groundz = R_GetShadowZ(thing, &groundslope, interpx, interpy, interpz);
 
 	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
@@ -1310,7 +1321,14 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadowskew = 0;
 
 	if (groundslope)
-		R_SkewShadowSprite(thing, groundslope, groundz, patch->height, FRACUNIT, &shadowyscale, &shadowskew);
+	{
+		R_SkewShadowSprite(
+			thing,
+			groundslope, groundz,
+			patch->height, FRACUNIT,
+			&shadowyscale, &shadowskew,
+			interpx, interpy);
+	}
 
 	tx -= patch->width * shadowxscale/2;
 	x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
@@ -1329,8 +1347,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->mobjflags = 0;
 	shadow->sortscale = vis->sortscale;
 	shadow->dispoffset = vis->dispoffset - 5;
-	shadow->gx = thing->x;
-	shadow->gy = thing->y;
+	shadow->gx = interpx;
+	shadow->gy = interpy;
 	shadow->gzt = groundz + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
 	shadow->texturemid = FixedMul(thing->scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
@@ -1468,26 +1486,18 @@ static void R_ProjectSprite(mobj_t *thing)
 #endif
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-	angle_t interpangle = (thing->player ? thing->player->drawangle : thing->angle);
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
+	angle_t interpangle = ANGLE_MAX;
 
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
+	if (thing->player)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-
-		if (thing->player)
-		{
-			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
-		}
-		else
-		{
-			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
-		}
+		interpangle = R_InterpolateAngle(thing->player->old_drawangle, thing->player->drawangle);
+	}
+	else
+	{
+		interpangle = R_InterpolateAngle(thing->old_angle, thing->angle);
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
@@ -1815,11 +1825,10 @@ static void R_ProjectSprite(mobj_t *thing)
 		fixed_t linkscale;
 
 		thing = thing->tracer;
-		if (cv_frameinterpolation.value == 1)
-		{
-			interpx = thing->old_x + FixedMul(thing->x - thing->old_x, rendertimefrac);
-			interpy = thing->old_y + FixedMul(thing->y - thing->old_y, rendertimefrac);
-		}
+
+		interpx = R_InterpolateFixed(thing->old_x, thing->x);
+		interpy = R_InterpolateFixed(thing->old_y, thing->y);
+		interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 		// hitlag vibrating (todo: interp somehow?)
 		if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
@@ -1909,7 +1918,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (shadowdraw || shadoweffects)
 	{
-		fixed_t groundz = R_GetShadowZ(thing, NULL);
+		fixed_t groundz = R_GetShadowZ(thing, NULL, interpx, interpy, interpz);
 		boolean isflipped = (thing->eflags & MFE_VERTICALFLIP);
 
 		if (shadoweffects)
@@ -1933,7 +1942,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		if (shadowskew)
 		{
-			R_SkewShadowSprite(thing, thing->standingslope, groundz, patch->height, shadowscale, &spriteyscale, &sheartan);
+			R_SkewShadowSprite(thing, thing->standingslope, groundz, patch->height, shadowscale, &spriteyscale, &sheartan, interpx, interpy);
 
 			gzt = (isflipped ? (thing->z + thing->height) : thing->z) + patch->height * spriteyscale / 2;
 			gz = gzt - patch->height * spriteyscale;
@@ -2132,7 +2141,10 @@ static void R_ProjectSprite(mobj_t *thing)
 		R_SplitSprite(vis);
 
 	if (oldthing->shadowscale && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
+	{
+		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz,
+			interpx, interpy, interpz);
+	}
 
 	// Debug
 	++objectsdrawn;
@@ -2158,17 +2170,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	fixed_t gz, gzt;
 
 	// uncapped/interpolation
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// transform the origin point
 	tr_x = interpx - viewx;
