@@ -4035,7 +4035,7 @@ static void P_HandleFollower(player_t *player)
 		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
 		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
 		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
-		player->follower->z += deltaz/ (INT32)fl.vertlag;
+		player->follower->z += (deltaz/ (INT32)fl.vertlag);
 		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
@@ -4069,7 +4069,7 @@ static void P_HandleFollower(player_t *player)
 			// match follower's momentums and (e)flags(2).
 			bmobj->momx = player->follower->momx;
 			bmobj->momy = player->follower->momy;
-			bmobj->z += deltaz/ (INT32)fl.vertlag;
+			bmobj->z += (deltaz/ (INT32)fl.vertlag);
 			bmobj->momz = player->follower->momz;
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
