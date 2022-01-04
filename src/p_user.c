@@ -3965,10 +3965,10 @@ static void P_HandleFollower(player_t *player)
 	// Set follower colour
 	switch (player->followercolor)
 	{
-		case 255: // "Match" (-1)
+		case UINT16_MAX: // "Match"
 			color = player->skincolor;
 			break;
-		case 254: // "Opposite" (-2)
+		case UINT16_MAX-1: // "Opposite"
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
