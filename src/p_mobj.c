@@ -1201,7 +1201,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		gravityadd = -((gravityadd/5) + (gravityadd/8));
 	}
 
-	gravityadd = FixedMul(gravityadd, mo->scale);
+	gravityadd = FixedMul(gravityadd, mapobjectscale);
 
 	return gravityadd;
 }
