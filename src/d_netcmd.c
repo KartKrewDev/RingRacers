@@ -776,10 +776,10 @@ void D_RegisterClientCommands(void)
 		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
 	}
 
-	Followercolor_cons_t[1].value = UINT16_MAX;
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
 	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
 
-	Followercolor_cons_t[0].value = UINT16_MAX-1;
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
 	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
