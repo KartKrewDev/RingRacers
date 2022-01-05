@@ -1845,10 +1845,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-#if 0
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
+		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
 			return false;
-#endif
 	}
 
 	if (target->flags2 & MF2_SKULLFLY)
