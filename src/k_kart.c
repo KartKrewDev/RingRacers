@@ -2211,19 +2211,19 @@ void K_KartMoveAnimation(player_t *player)
 	SINT8 destGlanceDir = 0;
 	SINT8 drift = player->drift;
 
-	// Uses turning over steering -- it's important to show player feedback immediately.
-	if (player->cmd.turning < -minturn)
-	{
-		turndir = -1;
-	}
-	else if (player->cmd.turning > minturn)
-	{
-		turndir = 1;
-	}
-
 	if (!lookback)
 	{
 		player->pflags &= ~PF_LOOKDOWN;
+
+		// Uses turning over steering -- it's important to show player feedback immediately.
+		if (player->cmd.turning < -minturn)
+		{
+			turndir = -1;
+		}
+		else if (player->cmd.turning > minturn)
+		{
+			turndir = 1;
+		}
 	}
 	else if (drift == 0)
 	{
