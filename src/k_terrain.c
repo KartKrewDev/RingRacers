@@ -1019,7 +1019,7 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->splashID = SIZE_MAX;
 	terrain->footstepID = SIZE_MAX;
 
-	terrain->friction = FRACUNIT;
+	terrain->friction = 0;
 	terrain->offroad = 0;
 	terrain->damageType = -1;
 	terrain->trickPanel = 0;
