@@ -469,16 +469,15 @@ void K_RunPaperItemSpawners(void)
 						firstUnspawnedEmerald
 					);
 				}
-				else if (P_RandomChance(FRACUNIT/3))
+				else
 				{
 					drop = K_SpawnSphereBox(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 							FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 							10
 					);
-				}
-				else
-				{
+					K_FlipFromObject(drop, spotList[r]);
+
 					drop = K_CreatePaperItem(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
