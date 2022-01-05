@@ -3481,13 +3481,14 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		karmahitbox->destscale = player->mo->destscale;
 		P_SetScale(karmahitbox, player->mo->scale);
 
+		player->karmadelay = comebacktime;
+
 		if (netgame)
 		{
 			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
 		}
 	}
 
-	player->karmadelay = comebacktime;
 	K_CalculateBattleWanted();
 	K_CheckBumpers();
 }
