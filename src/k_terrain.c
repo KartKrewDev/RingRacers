@@ -416,6 +416,9 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		player->pflags |= PF_TRICKDELAY;
 		K_DoPogoSpring(mo, upwards, 1);
 
+		// Reduce speed
+		speed /= 2;
+
 		if (speed < minspeed)
 		{
 			speed = minspeed;
