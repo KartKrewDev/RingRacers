@@ -179,8 +179,9 @@ extern struct cursongcredit
 {
 	musicdef_t *def;
 	UINT16 anim;
-	INT32 x;
 	UINT8 trans;
+	fixed_t x;
+	fixed_t old_x;
 } cursongcredit;
 
 extern musicdef_t *musicdefstart;

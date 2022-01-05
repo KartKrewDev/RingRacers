@@ -410,6 +410,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
+void P_InitAngle(mobj_t *thing, angle_t newValue);
+void P_InitPitch(mobj_t *thing, angle_t newValue);
+void P_InitRoll(mobj_t *thing, angle_t newValue);
 void P_SlideMove(mobj_t *mo);
 void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
@@ -530,5 +533,6 @@ fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
 fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
+fixed_t P_GetMobjZMovement(mobj_t *mo);
 
 #endif // __P_LOCAL__

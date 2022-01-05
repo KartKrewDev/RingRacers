@@ -3477,7 +3477,19 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DEADRANDOMITEM",
 
 	// Sphere Box (for Battle)
-	"S_SPHEREBOX",
+	"S_SPHEREBOX1",
+	"S_SPHEREBOX2",
+	"S_SPHEREBOX3",
+	"S_SPHEREBOX4",
+	"S_SPHEREBOX5",
+	"S_SPHEREBOX6",
+	"S_SPHEREBOX7",
+	"S_SPHEREBOX8",
+	"S_SPHEREBOX9",
+	"S_SPHEREBOX10",
+	"S_SPHEREBOX11",
+	"S_SPHEREBOX12",
+	"S_DEADSPHEREBOX",
 
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
@@ -5454,6 +5466,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	// SRB2kart
 	"MT_RANDOMITEM",
+	"MT_SPHEREBOX",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
@@ -5794,6 +5807,8 @@ const char *const MOBJFLAG_LIST[] = {
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
 	"DONTENCOREMAP",
+	"PICKUPFROMBELOW",
+	"NOSQUISH",
 	NULL
 };
 
