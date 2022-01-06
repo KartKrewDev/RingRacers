@@ -4225,7 +4225,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		return true;
 
 	// If so...
-	G_PreLevelTitleCard();
+	// but not if joining because the fade may time us out
+	if (!fromnetsave)
+		G_PreLevelTitleCard();
 
 	return true;
 }
