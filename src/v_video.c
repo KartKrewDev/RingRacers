@@ -45,7 +45,7 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", 0, CV_YesNo, NULL);
+consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, CV_YesNo, NULL);
 
 static void CV_palette_OnChange(void);
 
