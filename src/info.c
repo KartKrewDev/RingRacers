@@ -606,6 +606,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	"TWBS", // Tripwire Boost
 	"TWBT", // Tripwire BLASTER
 	"SMLD", // Smooth landing
+
+	"TIRG", // Tire grabbers
+	"RSHT", // DEZ Ring Shooter
+
 	"DEZL", // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4463,6 +4467,14 @@ state_t states[NUMSTATES] =
 	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_BOTTOM
 
 	{SPR_SMLD, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, -1, {NULL}, 7, 2, S_NULL}, // S_SMOOTHLANDING
+
+	{SPR_TIRG, FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_TIREGRABBER
+	{SPR_RSHT,               FF_PAPERSPRITE|0,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SIDE
+	{SPR_RSHT, FF_SEMIBRIGHT|FF_PAPERSPRITE|2,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NIPPLES
+	{SPR_RSHT,               FF_PAPERSPRITE|4,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SCREEN
+	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|8,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERBACK
+	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|12,        -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERFRONT
+	{SPR_PLAY, FF_FULLBRIGHT|FF_PAPERSPRITE|SPR2_XTRA, -1, {A_RingShooterFace}, 0, 0, S_NULL}, // S_RINGSHOOTER_FACE
 
 	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
 	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL2}, // S_DEZLASER_TRAIL1
@@ -24621,6 +24633,114 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,        // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
 		S_NULL           // raisestate
+	},
+
+	{           // MT_TIREGRABBER
+		-1,             // doomednum
+		S_TIREGRABBER,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		20*FRACUNIT,    // radius
+		36*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RINGSHOOTER
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		16*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RINGSHOOTER_PART
+		-1,             // doomednum
+		S_RINGSHOOTER_SIDE, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		6*FRACUNIT,     // radius
+		70*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RINGSHOOTER_SCREEN
+		-1,             // doomednum
+		S_RINGSHOOTER_SCREEN, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		23*FRACUNIT,    // radius
+		39*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_DEZLASER

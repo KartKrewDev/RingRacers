@@ -4550,6 +4550,25 @@ static void P_SpawnItemCapsuleParts(mobj_t *mobj)
 #undef ANG_CAPSULE
 #undef ROTATIONSPEED
 
+static void P_RingShooterThinker(mobj_t *mo)
+{
+	UINT32 trans;
+	mobj_t *part = mo;
+
+	while (!P_MobjWasRemoved(part->tracer))
+		part = part->tracer;
+
+	if (part == mo) // ??? where did you go
+		return;
+
+	part->renderflags ^= RF_DONTDRAW;
+	if (part->renderflags & RF_DONTDRAW)
+		trans = FF_TRANS50;
+	else
+		trans = 0;
+	part->target->frame = (part->target->frame & ~FF_TRANSMASK) | trans;
+}
+
 //
 // P_BossTargetPlayer
 // If closest is true, find the closest player.
@@ -6640,6 +6659,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->momy = newy - mobj->y;
 			mobj->momz = newz - mobj->z;
 		}
+		break;
+	case MT_RINGSHOOTER:
+		P_RingShooterThinker(mobj);
 		break;
 	case MT_SPINDASHWIND:
 	case MT_DRIFTELECTRICSPARK:

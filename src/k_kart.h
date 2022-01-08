@@ -189,6 +189,7 @@ boolean K_IsSPBInGame(void);
 void K_KartEbrakeVisuals(player_t *p);
 void K_HandleDirectionalInfluence(player_t *player);
 fixed_t K_DefaultPlayerRadius(player_t *player);
+void K_SpawnRingShooter(player_t *player);
 
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);

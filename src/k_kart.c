@@ -11774,3 +11774,88 @@ boolean K_Cooperative(void)
 }
 
 //}
+
+void K_SpawnRingShooter(player_t *player)
+{
+	const fixed_t scale = 2*FRACUNIT;
+	mobjinfo_t *info = &mobjinfo[MT_RINGSHOOTER_PART];
+	mobj_t *mo = player->mo;
+	mobj_t *base = P_SpawnMobj(mo->x, mo->y, mo->z, MT_RINGSHOOTER);
+	mobj_t *part;
+	UINT32 frameNum;
+	angle_t angle;
+	vector2_t offset;
+	SINT8 i;
+
+	K_FlipFromObject(base, mo);
+	P_SetTarget(&base->target, mo);
+	P_SetScale(base, base->destscale = FixedMul(base->destscale, scale));
+	P_InitAngle(base, mo->angle);
+
+	// spawn the RING NIPPLES
+	part = base;
+	frameNum = 0;
+	FV2_Load(&offset, -96*FRACUNIT, 160*FRACUNIT);
+	FV2_Divide(&offset, scale);
+	for (i = -1; i < 2; i += 2)
+	{
+		P_SetTarget(&part->hprev, P_SpawnMobjFromMobj(base,
+			P_ReturnThrustX(NULL, base->angle - ANGLE_90, i*offset.x) + P_ReturnThrustX(NULL, base->angle, offset.y),
+			P_ReturnThrustY(NULL, base->angle - ANGLE_90, i*offset.x) + P_ReturnThrustY(NULL, base->angle, offset.y),
+			0, MT_RINGSHOOTER_PART));
+		P_SetTarget(&part->hprev->hnext, part);
+		part = part->hprev;
+		P_SetTarget(&part->target, base);
+
+		P_InitAngle(part, base->angle - i * ANGLE_45);
+		P_SetMobjState(part, S_RINGSHOOTER_NIPPLES);
+		part->frame += frameNum;
+		frameNum++;
+	}
+
+	// spawn the box
+	part = base;
+	frameNum = 0;
+	angle = base->angle + ANGLE_90;
+	FV2_Load(&offset, offset.x - info->radius, offset.y - info->radius); // set the new origin to the centerpoint of the box
+	FV2_Load(&offset,
+		P_ReturnThrustX(NULL, base->angle - ANGLE_90, offset.x) + P_ReturnThrustX(NULL, base->angle, offset.y),
+		P_ReturnThrustY(NULL, base->angle - ANGLE_90, offset.x) + P_ReturnThrustY(NULL, base->angle, offset.y)); // transform it relative to the base
+	for (i = 0; i < 4; i++)
+	{
+		P_SetTarget(&part->hnext, P_SpawnMobjFromMobj(base,
+			offset.x + P_ReturnThrustX(NULL, angle, info->radius),
+			offset.y + P_ReturnThrustY(NULL, angle, info->radius),
+			0, MT_RINGSHOOTER_PART));
+		P_SetTarget(&part->hnext->hprev, part);
+		part = part->hnext;
+		P_SetTarget(&part->target, base);
+
+		if (i == 2)
+			frameNum++;
+		frameNum ^= FF_HORIZONTALFLIP;
+		angle -= ANGLE_90;
+		part->frame += frameNum;
+		P_InitAngle(part, angle);
+	}
+
+	// spawn the screen
+	part = P_SpawnMobjFromMobj(base, offset.x, offset.y, info->height, MT_RINGSHOOTER_SCREEN);
+	P_SetTarget(&base->tracer, part);
+	P_SetTarget(&part->target, base);
+	P_InitAngle(part, base->angle - ANGLE_45);
+
+	// spawn the screen numbers
+	for (i = 0; i < 2; i++)
+	{
+		P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(part, 0, 0, 0, MT_OVERLAY));
+		P_SetTarget(&part->tracer->target, part);
+		part = part->tracer;
+		P_InitAngle(part, part->target->angle);
+		P_SetMobjState(part, S_RINGSHOOTER_NUMBERBACK + i);
+	}
+
+	// test face feature (to be moved into thinker later)
+	part->skin = mo->skin;
+	P_SetMobjState(part, S_RINGSHOOTER_FACE);
+}
