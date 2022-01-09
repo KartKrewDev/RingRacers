@@ -14107,7 +14107,7 @@ void A_SSMineExplode(mobj_t *actor)
 	INT32 d;
 	INT32 locvar1 = var1;
 	mobjtype_t type;
-	explodedist = FixedMul((3*actor->info->painchance)/2, mapobjectscale);
+	explodedist = FixedMul((3*actor->info->painchance)/2, actor->scale);
 
 	if (LUA_CallAction(A_SSMINEEXPLODE, actor))
 		return;
