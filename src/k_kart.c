@@ -2903,6 +2903,30 @@ static void K_GetKartBoostPower(player_t *player)
 	player->numboosts = numboosts;
 }
 
+fixed_t K_GrowShrinkSpeedMul(player_t *player)
+{
+	fixed_t scaleDiff = player->mo->scale - mapobjectscale;
+	fixed_t physicsScale = mapobjectscale;
+	fixed_t speedMul = FRACUNIT;
+
+	if (scaleDiff > 0)
+	{
+		// Grown
+		// Change x2 speed into x1.5
+		physicsScale = FixedMul(GROW_PHYSICS_SCALE, mapobjectscale);
+		speedMul = FixedDiv(physicsScale, player->mo->scale);
+	}
+	else if (scaleDiff < 0)
+	{
+		// Shrunk
+		// Change x0.5 speed into x0.75
+		physicsScale = FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale);
+		speedMul = FixedDiv(physicsScale, player->mo->scale);
+	}
+
+	return speedMul;
+}
+
 // Returns kart speed from a stat. Boost power and scale are NOT taken into account, no player or object is necessary.
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 {
@@ -2919,9 +2943,8 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 {
-	fixed_t finalspeed;
-
-	finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
+	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	fixed_t finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
 	if (player->spheres > 0)
 	{
@@ -2942,17 +2965,24 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		}
 	}
 
-	if (player->mo && !P_MobjWasRemoved(player->mo))
+	if (mobjValid == true)
+	{
 		finalspeed = FixedMul(finalspeed, player->mo->scale);
+		finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
+	}
+	else
+	{
+		finalspeed = FixedMul(finalspeed, mapobjectscale);
+	}
 
-	if (doboostpower)
+	if (doboostpower == true)
 	{
 		if (K_PlayerUsesBotMovement(player))
 		{
 			finalspeed = FixedMul(finalspeed, K_BotTopSpeedRubberband(player));
 		}
 
-		return FixedMul(finalspeed, player->boostpower+player->speedboost);
+		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
 	}
 
 	return finalspeed;
@@ -3262,8 +3292,11 @@ static void K_RemoveGrowShrink(player_t *player)
 
 		player->mo->scalespeed = mapobjectscale/TICRATE;
 		player->mo->destscale = mapobjectscale;
+
 		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
-			player->mo->destscale = (6*player->mo->destscale)/8;
+		{
+			player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
+		}
 	}
 
 	player->growshrinktimer = 0;
@@ -5197,9 +5230,13 @@ static void K_DoShrink(player_t *user)
 				if (players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				{
 					players[i].mo->scalespeed = mapobjectscale/TICRATE;
-					players[i].mo->destscale = (6*mapobjectscale)/8;
+					players[i].mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
+
 					if (cv_kartdebugshrink.value && !modeattacking && !players[i].bot)
-						players[i].mo->destscale = (6*players[i].mo->destscale)/8;
+					{
+						players[i].mo->destscale = FixedMul(players[i].mo->destscale, SHRINK_SCALE);
+					}
+
 					S_StartSound(players[i].mo, sfx_kc59);
 				}
 			}
@@ -9036,23 +9073,39 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_GROW:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								if (player->growshrinktimer < 0) // If you're shrunk, then "grow" will just make you normal again.
+								if (player->growshrinktimer < 0)
+								{
+									// If you're shrunk, then "grow" will just make you normal again.
 									K_RemoveGrowShrink(player);
+								}
 								else
 								{
 									K_PlayPowerGloatSound(player->mo);
+
 									player->mo->scalespeed = mapobjectscale/TICRATE;
-									player->mo->destscale = (3*mapobjectscale)/2;
+									player->mo->destscale = FixedMul(mapobjectscale, GROW_SCALE);
+
 									if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
-										player->mo->destscale = (6*player->mo->destscale)/8;
+									{
+										player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
+									}
+
 									player->growshrinktimer = itemtime+(4*TICRATE); // 12 seconds
-									if (P_IsLocalPlayer(player))
+
+									if (P_IsLocalPlayer(player) == true)
+									{
 										S_ChangeMusicSpecial("kgrow");
-									if (! P_IsDisplayPlayer(player))
+									}
+
+									if (P_IsDisplayPlayer(player) == false)
+									{
 										S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+									}
+
 									P_RestoreMusic(player);
 									S_StartSound(player->mo, sfx_kc5a);
 								}
+
 								player->itemamount--;
 							}
 							break;
