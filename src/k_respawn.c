@@ -674,7 +674,7 @@ static void K_HandleDropDash(player_t *player)
 		player->mo->scalespeed = mapobjectscale/TICRATE;
 		player->mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
 
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
+		if (K_PlayerShrinkCheat(player) == true)
 		{
 			player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 		}

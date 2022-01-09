@@ -122,8 +122,9 @@ demoghost *ghosts = NULL;
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
-#define DEMO_SPECTATOR 0x40
-#define DEMO_KICKSTART 0x20
+#define DEMO_SPECTATOR	0x01
+#define DEMO_KICKSTART	0x02
+#define DEMO_SHRINKME	0x04
 
 // For demos
 #define ZT_FWD     0x01
@@ -351,9 +352,20 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_WEAPONPREF)
 		{
 			i = READUINT8(demo_p);
-			players[p].pflags &= ~(PF_KICKSTARTACCEL);
+			players[p].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
 			if (i & 1)
 				players[p].pflags |= PF_KICKSTARTACCEL;
+			if (i & 2)
+				players[p].pflags |= PF_SHRINKME;
+
+			if (leveltime < 2)
+			{
+				// BAD HACK: No other place I tried to slot this in
+				// made it work for the host when they initally host,
+				// so this will have to do.
+				K_UpdateShrinkCheat(&players[p]);
+			}
+
 			//CONS_Printf("weaponpref is %d for player %d\n", i, p);
 		}
 
@@ -466,6 +478,8 @@ void G_WriteDemoExtraData(void)
 				UINT8 prefs = 0;
 				if (players[i].pflags & PF_KICKSTARTACCEL)
 					prefs |= 1;
+				if (players[i].pflags & PF_SHRINKME)
+					prefs |= 2;
 				WRITEUINT8(demo_p, prefs);
 			}
 		}
@@ -2015,12 +2029,15 @@ void G_BeginRecording(void)
 	for (p = 0; p < MAXPLAYERS; p++) {
 		if (playeringame[p]) {
 			player = &players[p];
+			WRITEUINT8(demo_p, p);
 
-			i = p;
-			if (player->pflags & PF_KICKSTARTACCEL)
-				i |= DEMO_KICKSTART;
+			i = 0;
 			if (player->spectator)
 				i |= DEMO_SPECTATOR;
+			if (player->pflags & PF_KICKSTARTACCEL)
+				i |= DEMO_KICKSTART;
+			if (player->pflags & PF_SHRINKME)
+				i |= DEMO_SHRINKME;
 			WRITEUINT8(demo_p, i);
 
 			// Name
@@ -2672,7 +2689,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT32 randseed;
 	char msg[1024];
 
-	boolean spectator, kickstart;
+	boolean spectator, kickstart, shrinkme;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
@@ -2943,9 +2960,13 @@ void G_DoPlayDemo(char *defdemoname)
 
 	while (p != 0xFF)
 	{
-		if ((spectator = !!(p & DEMO_SPECTATOR)))
+		UINT8 flags = READUINT8(demo_p);
+
+		spectator = kickstart = shrinkme = false;
+
+		if ((spectator = !!(flags & DEMO_SPECTATOR)) == true)
 		{
-			p &= ~DEMO_SPECTATOR;
+			flags &= ~DEMO_SPECTATOR;
 
 			if (modeattacking)
 			{
@@ -2960,10 +2981,14 @@ void G_DoPlayDemo(char *defdemoname)
 			}
 		}
 
-		if ((kickstart = (p & DEMO_KICKSTART)))
-			p &= ~DEMO_KICKSTART;
+		if ((kickstart = !!(flags & DEMO_KICKSTART)) == true)
+			flags &= ~DEMO_KICKSTART;
 
-		slots[numslots] = p; numslots++;
+		if ((shrinkme = !!(flags & DEMO_SHRINKME)) == true)
+			flags &= ~DEMO_SHRINKME;
+
+		slots[numslots] = p;
+		numslots++;
 
 		if (modeattacking && numslots > 1)
 		{
@@ -2982,10 +3007,18 @@ void G_DoPlayDemo(char *defdemoname)
 
 		playeringame[p] = true;
 		players[p].spectator = spectator;
+
 		if (kickstart)
 			players[p].pflags |= PF_KICKSTARTACCEL;
 		else
 			players[p].pflags &= ~PF_KICKSTARTACCEL;
+
+		if (shrinkme)
+			players[p].pflags |= PF_SHRINKME;
+		else
+			players[p].pflags &= ~PF_SHRINKME;
+
+		K_UpdateShrinkCheat(&players[p]);
 
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);
@@ -3245,7 +3278,7 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	if ((READUINT8(p) & ~DEMO_KICKSTART) != 0)
+	if ((READUINT8(p) & ~(DEMO_KICKSTART|DEMO_SHRINKME)) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
 		Z_Free(pdemoname);

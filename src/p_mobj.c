@@ -10843,7 +10843,7 @@ void P_SpawnPlayer(INT32 playernum)
 
 	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
 
-	if (cv_kartdebugshrink.value && !modeattacking && !p->bot)
+	if (K_PlayerShrinkCheat(p) == true)
 	{
 		mobj->destscale = FixedMul(mobj->destscale, SHRINK_SCALE);
 	}
