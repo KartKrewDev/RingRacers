@@ -260,6 +260,10 @@ typedef enum
 // for kickstartaccel
 #define ACCEL_KICKSTART 35
 
+#define ITEMSCALE_NORMAL 0
+#define ITEMSCALE_GROW 1
+#define ITEMSCALE_SHRINK 2
+
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {
@@ -428,6 +432,7 @@ typedef struct player_s
 	SINT8 itemtype;		// KITEM_ constant for item number
 	UINT8 itemamount;	// Amount of said item
 	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
+	UINT8 itemscale;	// Item scale value, from when an item was taken out. (0 for normal, 1 for grow, 2 for shrink.)
 
 	UINT8 sadtimer;		// How long you've been sad
 

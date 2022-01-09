@@ -148,5 +148,9 @@ void K_PlayPainSound(mobj_t *source);
 void K_PlayHitEmSound(mobj_t *source);
 void K_PlayPowerGloatSound(mobj_t *source);
 
+fixed_t K_ItemScaleForPlayer(player_t *player);
+void K_SetItemOut(player_t *player);
+void K_UnsetItemOut(player_t *player);
+
 // =========================================================================
 #endif  // __K_KART__

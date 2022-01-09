@@ -3816,24 +3816,56 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 
 #undef MINEQUAKEDIST
 
+fixed_t K_ItemScaleForPlayer(player_t *player)
+{
+	switch (player->itemscale)
+	{
+		case ITEMSCALE_GROW:
+			return FixedMul(GROW_SCALE, mapobjectscale);
+
+		case ITEMSCALE_SHRINK:
+			return FixedMul(SHRINK_SCALE, mapobjectscale);
+
+		default:
+			return mapobjectscale;
+	}
+}
+
 static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed)
 {
 	mobj_t *th;
 	fixed_t x, y, z;
 	fixed_t finalspeed = speed;
+	fixed_t finalscale = mapobjectscale;
 	mobj_t *throwmo;
 
-	if (source->player && source->player->speed > K_GetKartSpeed(source->player, false))
+	if (source->player != NULL)
 	{
-		angle_t input = source->angle - an;
-		boolean invert = (input > ANGLE_180);
-		if (invert)
-			input = InvAngle(input);
+		if (source->player->itemscale == ITEMSCALE_SHRINK)
+		{
+			// Nerf the base item speed a bit.
+			finalspeed = FixedMul(finalspeed, SHRINK_PHYSICS_SCALE);
+		}
 
-		finalspeed = max(speed, FixedMul(speed, FixedMul(
-			FixedDiv(source->player->speed, K_GetKartSpeed(source->player, false)), // Multiply speed to be proportional to your own, boosted maxspeed.
-			(((180<<FRACBITS) - AngleFixed(input)) / 180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
-			)));
+		if (source->player->speed > K_GetKartSpeed(source->player, false))
+		{
+			angle_t input = source->angle - an;
+			boolean invert = (input > ANGLE_180);
+			if (invert)
+				input = InvAngle(input);
+
+			finalspeed = max(speed, FixedMul(speed, FixedMul(
+				FixedDiv(source->player->speed, K_GetKartSpeed(source->player, false)), // Multiply speed to be proportional to your own, boosted maxspeed.
+				(((180<<FRACBITS) - AngleFixed(input)) / 180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
+				)));
+		}
+
+		finalscale = K_ItemScaleForPlayer(source->player);
+	}
+
+	if (type == MT_BUBBLESHIELDTRAP)
+	{
+		finalscale = source->scale;
 	}
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
@@ -3852,8 +3884,8 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 	P_SetTarget(&th->target, source);
 
-	P_SetScale(th, source->scale);
-	th->destscale = source->destscale;
+	P_SetScale(th, finalscale);
+	th->destscale = finalscale;
 
 	if (P_IsObjectOnGround(source))
 	{
@@ -3875,6 +3907,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	th->momx = FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	th->momy = FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	th->momz = source->momz;
+
+	if (source->player != NULL)
+	{
+		th->cusval = source->player->itemscale;
+	}
 
 	switch (type)
 	{
@@ -4769,13 +4806,15 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 	}
 	else
 	{
+		fixed_t finalscale = K_ItemScaleForPlayer(player);
+
 		player->bananadrag = 0; // RESET timer, for multiple bananas
 
 		if (dir > 0)
 		{
 			// Shoot forward
 			mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, mapthing);
-			//K_FlipFromObject(mo, player->mo);
+
 			// These are really weird so let's make it a very specific case to make SURE it works...
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 			{
@@ -4802,6 +4841,9 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 				if (mo->eflags & MFE_UNDERWATER)
 					mo->momz = (117 * mo->momz) / 200;
+
+				P_SetScale(mo, finalscale);
+				mo->destscale = finalscale;
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
@@ -4816,6 +4858,9 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			}
 
 			throwmo->movecount = 0; // above player
+
+			P_SetScale(throwmo, finalscale);
+			throwmo->destscale = finalscale;
 		}
 		else
 		{
@@ -4853,8 +4898,8 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			mo->threshold = 10;
 			P_SetTarget(&mo->target, player->mo);
 
-			P_SetScale(mo, player->mo->scale);
-			mo->destscale = player->mo->destscale;
+			P_SetScale(mo, finalscale);
+			mo->destscale = finalscale;
 
 			if (P_IsObjectOnGround(player->mo))
 			{
@@ -4924,6 +4969,10 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 		mine->floorz = origMine->floorz;
 		mine->ceilingz = origMine->ceilingz;
 
+		P_SetScale(mine, origMine->scale);
+		mine->destscale = origMine->destscale;
+		mine->scalespeed = origMine->scalespeed;
+
 		// Copy interp data
 		mine->old_angle = origMine->old_angle;
 		mine->old_x = origMine->old_x;
@@ -4932,8 +4981,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 		// Since we aren't using P_KillMobj, we need to clean up the hnext reference
 		P_SetTarget(&mineOwner->hnext, NULL);
-		mineOwner->player->bananadrag = 0;
-		mineOwner->player->pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(mineOwner->player);
 
 		if (mineOwner->player->itemamount)
 		{
@@ -5090,7 +5138,7 @@ static void K_DoHyudoroSteal(player_t *player)
 
 		player->itemtype = KITEM_KITCHENSINK;
 		player->itemamount = 1;
-		player->pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(player);
 		return;
 	}
 	else if ((gametype == GT_RACE && player->position == 1) || numplayers == 0) // No-one can be stolen from? Oh well...
@@ -5116,11 +5164,11 @@ static void K_DoHyudoroSteal(player_t *player)
 
 		player->itemtype = players[stealplayer].itemtype;
 		player->itemamount = players[stealplayer].itemamount;
-		player->pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(player);
 
 		players[stealplayer].itemtype = KITEM_NONE;
 		players[stealplayer].itemamount = 0;
-		players[stealplayer].pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(&players[stealplayer]);
 
 		if (P_IsDisplayPlayer(&players[stealplayer]) && !r_splitscreen)
 			S_StartSound(NULL, sfx_s3k92);
@@ -5440,7 +5488,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		player->curshield = KSHIELD_NONE;
 		player->itemtype = KITEM_NONE;
 		player->itemamount = 0;
-		player->pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(player);
 	}
 
 	nextwork = work->hnext;
@@ -5488,6 +5536,10 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		P_AddKartItem(dropwork); // needs to be called here so shrink can bust items off players in front of the user.
 
 		dropwork->angle = work->angle;
+
+		P_SetScale(dropwork, work->scale);
+		dropwork->destscale = work->destscale;
+		dropwork->scalespeed = work->scalespeed;
 
 		dropwork->flags |= MF_NOCLIPTHING;
 		dropwork->flags2 = work->flags2;
@@ -5578,7 +5630,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		&& (dropall || (--player->itemamount <= 0)))
 	{
 		player->itemamount = 0;
-		player->pflags &= ~PF_ITEMOUT;
+		K_UnsetItemOut(player);
 		player->itemtype = KITEM_NONE;
 	}
 }
@@ -5953,6 +6005,8 @@ static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z
 // Move the hnext chain!
 static void K_MoveHeldObjects(player_t *player)
 {
+	fixed_t finalscale = INT32_MAX;
+
 	if (!player->mo)
 		return;
 
@@ -5964,7 +6018,7 @@ static void K_MoveHeldObjects(player_t *player)
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
-			player->pflags &= ~PF_ITEMOUT;
+			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
 		return;
@@ -5980,11 +6034,13 @@ static void K_MoveHeldObjects(player_t *player)
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
-			player->pflags &= ~PF_ITEMOUT;
+			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
 		return;
 	}
+
+	finalscale = K_ItemScaleForPlayer(player);
 
 	switch (player->mo->hnext->type)
 	{
@@ -6024,7 +6080,7 @@ static void K_MoveHeldObjects(player_t *player)
 						cur->eflags &= ~MFE_VERTICALFLIP;
 
 					// Shrink your items if the player shrunk too.
-					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), player->mo->scale)));
+					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), finalscale)));
 
 					if (P_MobjFlip(cur) > 0)
 						z = player->mo->z;
@@ -6055,7 +6111,7 @@ static void K_MoveHeldObjects(player_t *player)
 					}
 
 					// Center it during the scale up animation
-					z += (FixedMul(mobjinfo[cur->type].height, player->mo->scale - cur->scale)>>1) * P_MobjFlip(cur);
+					z += (FixedMul(mobjinfo[cur->type].height, finalscale - cur->scale)>>1) * P_MobjFlip(cur);
 
 					cur->z = z;
 					cur->momx = cur->momy = 0;
@@ -6117,7 +6173,7 @@ static void K_MoveHeldObjects(player_t *player)
 						continue;
 
 					// Shrink your items if the player shrunk too.
-					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), player->mo->scale)));
+					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), finalscale)));
 
 					ang = targ->angle;
 					targx = targ->x + P_ReturnThrustX(cur, ang + ANGLE_180, dist);
@@ -8708,6 +8764,31 @@ static void K_trickPanelTimingVisual(player_t *player, fixed_t momz)
 #undef RADIUSSCALING
 #undef MINRADIUS
 
+void K_SetItemOut(player_t *player)
+{
+	player->pflags |= PF_ITEMOUT;
+
+	if (player->mo->scale >= FixedMul(GROW_PHYSICS_SCALE, mapobjectscale))
+	{
+		player->itemscale = ITEMSCALE_GROW;
+	}
+	else if (player->mo->scale <= FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale))
+	{
+		player->itemscale = ITEMSCALE_SHRINK;
+	}
+	else
+	{
+		player->itemscale = ITEMSCALE_NORMAL;
+	}
+}
+
+void K_UnsetItemOut(player_t *player)
+{
+	player->pflags &= ~PF_ITEMOUT;
+	player->itemscale = ITEMSCALE_NORMAL;
+	player->bananadrag = 0;
+}
+
 //
 // K_MoveKartPlayer
 //
@@ -8808,7 +8889,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 				else if (player->itemamount == 0)
 				{
-					player->pflags &= ~PF_ITEMOUT;
+					K_UnsetItemOut(player);
 				}
 				else
 				{
@@ -8883,7 +8964,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								mobj_t *prev = player->mo;
 
 								//K_PlayAttackTaunt(player->mo);
-								player->pflags |= PF_ITEMOUT;
+								K_SetItemOut(player);
 								S_StartSound(player->mo, sfx_s254);
 
 								for (moloop = 0; moloop < player->itemamount; moloop++)
@@ -8898,6 +8979,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->threshold = 10;
 									mo->movecount = player->itemamount;
 									mo->movedir = moloop+1;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&mo->hprev, prev);
 									P_SetTarget(&prev->hnext, mo);
@@ -8927,6 +9009,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->threshold = 10;
 									mo->movecount = 1;
 									mo->movedir = 1;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&player->mo->hnext, mo);
 								}
@@ -8941,7 +9024,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								mobj_t *prev = player->mo;
 
 								//K_PlayAttackTaunt(player->mo);
-								player->pflags |= PF_ITEMOUT;
+								K_SetItemOut(player);
 								S_StartSound(player->mo, sfx_s3k3a);
 
 								for (moloop = 0; moloop < player->itemamount; moloop++)
@@ -8959,6 +9042,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->movecount = player->itemamount;
 									mo->movedir = mo->lastlook = moloop+1;
 									mo->color = player->skincolor;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&mo->hprev, prev);
 									P_SetTarget(&prev->hnext, mo);
@@ -8982,7 +9066,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								mobj_t *prev = player->mo;
 
 								//K_PlayAttackTaunt(player->mo);
-								player->pflags |= PF_ITEMOUT;
+								K_SetItemOut(player);
 								S_StartSound(player->mo, sfx_s3k3a);
 
 								for (moloop = 0; moloop < player->itemamount; moloop++)
@@ -8999,6 +9083,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->threshold = 10;
 									mo->movecount = player->itemamount;
 									mo->movedir = mo->lastlook = moloop+1;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&mo->hprev, prev);
 									P_SetTarget(&prev->hnext, mo);
@@ -9020,7 +9105,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								mobj_t *mo;
-								player->pflags |= PF_ITEMOUT;
+								K_SetItemOut(player);
 								S_StartSound(player->mo, sfx_s254);
 								mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SSMINE_SHIELD);
 								if (mo)
@@ -9029,6 +9114,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->threshold = 10;
 									mo->movecount = 1;
 									mo->movedir = 1;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&player->mo->hnext, mo);
 								}
@@ -9278,7 +9364,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								mobj_t *mo;
-								player->pflags |= PF_ITEMOUT;
+								K_SetItemOut(player);
 								S_StartSound(player->mo, sfx_s254);
 								mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SINK_SHIELD);
 								if (mo)
@@ -9287,6 +9373,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo->threshold = 10;
 									mo->movecount = 1;
 									mo->movedir = 1;
+									mo->cusval = player->itemscale;
 									P_SetTarget(&mo->target, player->mo);
 									P_SetTarget(&player->mo->hnext, mo);
 								}
