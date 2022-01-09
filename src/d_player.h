@@ -59,10 +59,10 @@ typedef enum
 typedef enum
 {
 	// True if button down last tic.
-	PF_ATTACKDOWN = 1,
-	PF_ACCELDOWN  = 1<<1,
-	PF_BRAKEDOWN  = 1<<2,
-	PF_LOOKDOWN   = 1<<3,
+	PF_ATTACKDOWN		= 1,
+	PF_ACCELDOWN		= 1<<1,
+	PF_BRAKEDOWN		= 1<<2,
+	PF_LOOKDOWN			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -98,6 +98,9 @@ typedef enum
 
 	PF_HITFINISHLINE	= 1<<26, // Already hit the finish line this tic
 	PF_WRONGWAY			= 1<<27, // Moving the wrong way with respect to waypoints?
+
+	PF_SHRINKME			= 1<<28, // "Shrink me" cheat preference
+	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
 
 	// up to 1<<31 is free
 } pflags_t;

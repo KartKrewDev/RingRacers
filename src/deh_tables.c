@@ -5912,6 +5912,10 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"HITFINISHLINE", // Already hit the finish line this tic
 	"WRONGWAY", // Moving the wrong way with respect to waypoints?
+
+	"SHRINKME",
+	"SHRINKACTIVE",
+
 	NULL // stop loop here.
 };
 

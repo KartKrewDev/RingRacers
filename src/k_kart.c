@@ -251,7 +251,6 @@ void K_RegisterKartStuff(void)
 
 	CV_RegisterVar(&cv_kartdebugitem);
 	CV_RegisterVar(&cv_kartdebugamount);
-	CV_RegisterVar(&cv_kartdebugshrink);
 	CV_RegisterVar(&cv_kartallowgiveitem);
 	CV_RegisterVar(&cv_kartdebugdistribution);
 	CV_RegisterVar(&cv_kartdebughuddrop);
@@ -3020,6 +3019,34 @@ UINT16 K_GetKartFlashing(player_t *player)
 	return tics;
 }
 
+boolean K_PlayerShrinkCheat(player_t *player)
+{
+	return (
+		(player->pflags & PF_SHRINKACTIVE)
+		&& (player->bot == false)
+		&& (modeattacking == false) // Anyone want to make another record attack category?
+	);
+}
+
+void K_UpdateShrinkCheat(player_t *player)
+{
+	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+
+	if (player->pflags & PF_SHRINKME)
+	{
+		player->pflags |= PF_SHRINKACTIVE;
+	}
+	else
+	{
+		player->pflags &= ~PF_SHRINKACTIVE;
+	}
+
+	if (mobjValid == true && K_PlayerShrinkCheat(player) == true)
+	{
+		player->mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
+	}
+}
+
 boolean K_KartKickstart(player_t *player)
 {
 	return ((player->pflags & PF_KICKSTARTACCEL)
@@ -3293,7 +3320,7 @@ static void K_RemoveGrowShrink(player_t *player)
 		player->mo->scalespeed = mapobjectscale/TICRATE;
 		player->mo->destscale = mapobjectscale;
 
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
+		if (K_PlayerShrinkCheat(player) == true)
 		{
 			player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 		}
@@ -5288,7 +5315,7 @@ static void K_DoShrink(player_t *user)
 					players[i].mo->scalespeed = mapobjectscale/TICRATE;
 					players[i].mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
 
-					if (cv_kartdebugshrink.value && !modeattacking && !players[i].bot)
+					if (K_PlayerShrinkCheat(&players[i]) == true)
 					{
 						players[i].mo->destscale = FixedMul(players[i].mo->destscale, SHRINK_SCALE);
 					}
@@ -9182,7 +9209,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->mo->scalespeed = mapobjectscale/TICRATE;
 									player->mo->destscale = FixedMul(mapobjectscale, GROW_SCALE);
 
-									if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
+									if (K_PlayerShrinkCheat(player) == true)
 									{
 										player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 									}
