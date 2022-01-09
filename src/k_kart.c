@@ -2908,22 +2908,20 @@ static void K_GetKartBoostPower(player_t *player)
 fixed_t K_GrowShrinkSpeedMul(player_t *player)
 {
 	fixed_t scaleDiff = player->mo->scale - mapobjectscale;
-	fixed_t physicsScale = mapobjectscale;
+	fixed_t playerScale = FixedDiv(player->mo->scale, mapobjectscale);
 	fixed_t speedMul = FRACUNIT;
 
 	if (scaleDiff > 0)
 	{
 		// Grown
 		// Change x2 speed into x1.5
-		physicsScale = FixedMul(GROW_PHYSICS_SCALE, mapobjectscale);
-		speedMul = FixedDiv(physicsScale, player->mo->scale);
+		speedMul = FixedDiv(FixedMul(playerScale, GROW_PHYSICS_SCALE), GROW_SCALE);
 	}
 	else if (scaleDiff < 0)
 	{
 		// Shrunk
 		// Change x0.5 speed into x0.75
-		physicsScale = FixedMul(SHRINK_PHYSICS_SCALE, mapobjectscale);
-		speedMul = FixedDiv(physicsScale, player->mo->scale);
+		speedMul = FixedDiv(FixedMul(playerScale, SHRINK_PHYSICS_SCALE), SHRINK_SCALE);
 	}
 
 	return speedMul;
@@ -2967,18 +2965,16 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		}
 	}
 
-	if (mobjValid == true)
-	{
-		finalspeed = FixedMul(finalspeed, player->mo->scale);
-		finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
-	}
-	else
-	{
-		finalspeed = FixedMul(finalspeed, mapobjectscale);
-	}
+	finalspeed = FixedMul(finalspeed, mapobjectscale);
 
 	if (doboostpower == true)
 	{
+		if (mobjValid == true)
+		{
+			// Scale with the player.
+			finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
+		}
+
 		if (K_PlayerUsesBotMovement(player))
 		{
 			finalspeed = FixedMul(finalspeed, K_BotTopSpeedRubberband(player));
