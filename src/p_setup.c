@@ -661,6 +661,9 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
+	levelflat->terrain =
+		K_GetTerrainForTextureName(levelflat->name);
+
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
 
 	return ( numlevelflats++ );
