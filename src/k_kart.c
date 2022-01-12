@@ -1721,6 +1721,7 @@ static void K_UpdateDraft(player_t *player)
 {
 	fixed_t topspd = K_GetKartSpeed(player, false);
 	fixed_t draftdistance;
+	fixed_t minDist;
 	UINT8 leniency;
 	UINT8 i;
 
@@ -1738,6 +1739,13 @@ static void K_UpdateDraft(player_t *player)
 		if (player->speed < topspd)
 			draftdistance = FixedMul(draftdistance, FixedDiv(player->speed, topspd));
 		draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
+	}
+
+	minDist = 640 * player->mo->scale;
+	if (gametype == GT_BATTLE)
+	{
+		// TODO: gametyperules
+		minDist /= 4;
 	}
 
 	// On the contrary, the leniency period biases toward high weight.
@@ -1798,7 +1806,7 @@ static void K_UpdateDraft(player_t *player)
 
 #ifndef EASYDRAFTTEST
 			// TOO close to draft.
-			if (dist < FixedMul(RING_DIST>>1, player->mo->scale))
+			if (dist < minDist)
 				continue;
 
 			// Not close enough to draft.
@@ -2866,6 +2874,13 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// 30% - 44%, each point of speed adds 1.75%
 		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400));
+
+		if (gametype == GT_BATTLE)
+		{
+			// TODO: gametyperules
+			draftspeed *= 2;
+		}
+
 		speedboost += FixedMul(draftspeed, player->draftpower); // (Drafting suffers no boost stack penalty.)
 		numboosts++;
 	}
@@ -2962,11 +2977,18 @@ UINT16 K_GetKartFlashing(player_t *player)
 {
 	UINT16 tics = flashingtics;
 
-	if (!player)
+	if (gametype == GT_BATTLE)
+	{
+		// TODO: gametyperules
+		return 1;
+	}
+
+	if (player == NULL)
+	{
 		return tics;
+	}
 
 	tics += (tics/8) * (player->kartspeed);
-
 	return tics;
 }
 
@@ -3459,13 +3481,14 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		karmahitbox->destscale = player->mo->destscale;
 		P_SetScale(karmahitbox, player->mo->scale);
 
+		player->karmadelay = comebacktime;
+
 		if (netgame)
 		{
 			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
 		}
 	}
 
-	player->karmadelay = comebacktime;
 	K_CalculateBattleWanted();
 	K_CheckBumpers();
 }

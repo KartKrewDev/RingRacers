@@ -661,6 +661,9 @@ flatfound:
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
 
+	levelflat->terrain =
+		K_GetTerrainForTextureName(levelflat->name);
+
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
 
 	return ( numlevelflats++ );
@@ -4225,7 +4228,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		return true;
 
 	// If so...
-	G_PreLevelTitleCard();
+	// but not if joining because the fade may time us out
+	if (!fromnetsave)
+		G_PreLevelTitleCard();
 
 	return true;
 }
