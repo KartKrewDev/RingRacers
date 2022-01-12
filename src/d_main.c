@@ -785,10 +785,10 @@ void D_SRB2Loop(void)
 			if (ticked)
 				tictime = entertime;
 
-			entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
-
-			if (entertimefrac < FRACUNIT)
+			if (aproxfps < 35.0)
 				entertimefrac = FRACUNIT;
+			else
+				entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
 
 			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
 			renderdeltatics = realtics * FRACUNIT;
