@@ -10536,7 +10536,8 @@ void P_PrecipitationEffects(void)
 		volume = 255; // Sky above? We get it full blast.
 	else
 	{
-		fixed_t x, y, yl, yh, xl, xh;
+		/* GCC is optimizing away y >= yl, FUCK YOU */
+		volatile fixed_t x, y, yl, yh, xl, xh;
 		fixed_t closedist, newdist;
 
 		// Essentially check in a 1024 unit radius of the player for an outdoor area.
@@ -10545,8 +10546,8 @@ void P_PrecipitationEffects(void)
 		xl = players[g_localplayers[0]].mo->x - 1024*FRACUNIT;
 		xh = players[g_localplayers[0]].mo->x + 1024*FRACUNIT;
 		closedist = 2048*FRACUNIT;
-		for (y = yl; y <= yh; y += FRACUNIT*64)
-			for (x = xl; x <= xh; x += FRACUNIT*64)
+		for (y = yl; y >= yl && y <= yh; y += FRACUNIT*64)
+			for (x = xl; x >= xl && x <= xh; x += FRACUNIT*64)
 			{
 				if (R_PointInSubsector(x, y)->sector->ceilingpic == skyflatnum) // Found the outdoors!
 				{
