@@ -836,7 +836,15 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	dc_fullbright = colormaps;
 	dc_translation = R_GetSpriteTranslation(vis);
 
-	if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+	// Hack: Use a special column function for drop shadows that bypasses
+	// invalid memory access crashes caused by R_ProjectDropShadow putting wrong values
+	// in dc_texturemid and dc_iscale when the shadow is sloped.
+	if (vis->cut & SC_SHADOW)
+	{
+		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
+		dc_transmap = vis->transmap;
+	}
+	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
