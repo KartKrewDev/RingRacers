@@ -4119,6 +4119,15 @@ static void P_RelinkPointers(void)
 			if (!(mobj->itnext = P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
+		if (mobj->terrain)
+		{
+			temp = (UINT32)(size_t)mobj->terrain;
+			mobj->terrain = K_GetTerrainByIndex(temp);
+			if (mobj->terrain == NULL)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
+			}
+		}
 		if (mobj->player)
 		{
 			if ( mobj->player->awayviewmobj)
