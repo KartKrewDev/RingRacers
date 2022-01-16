@@ -1694,6 +1694,8 @@ void P_XYMovement(mobj_t *mo)
 				else
 				{
 					P_BounceMove(mo);
+					if (P_MobjWasRemoved(mo))
+						return;
 					xmove = ymove = 0;
 					S_StartSound(mo, mo->info->activesound);
 
@@ -1842,6 +1844,9 @@ void P_SceneryXYMovement(mobj_t *mo)
 
 	if (!P_SceneryTryMove(mo, mo->x + mo->momx, mo->y + mo->momy))
 		P_BounceMove(mo);
+
+	if (P_MobjWasRemoved(mo))
+		return;
 
 	if ((!(mo->eflags & MFE_VERTICALFLIP) && mo->z > mo->floorz) || (mo->eflags & MFE_VERTICALFLIP && mo->z+mo->height < mo->ceilingz))
 		return; // no friction when airborne
