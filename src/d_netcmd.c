@@ -3563,6 +3563,7 @@ static void Command_Login_f(void)
 boolean IsPlayerAdmin(INT32 playernum)
 {
 #if defined (TESTERS) || defined (HOSTTESTERS)
+	(void)playernum;
 	return false;
 #elif defined (DEVELOP)
 	return playernum != serverplayer;
