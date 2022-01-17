@@ -1070,12 +1070,14 @@ static void IdentifyVersion(void)
 #define TEXTURESNAME "MISC_TEXTURES.pk3"
 #define MAPSNAME "MISC_MAPS.pk3"
 #define PATCHNAME "MISC_PATCH.pk3"
+#define MUSICNAME "MISC_MUSIC.PK3"
 ////
 #else
 ////
 #define TEXTURESNAME "textures.pk3"
 #define MAPSNAME "maps.pk3"
 #define PATCHNAME "patch.pk3"
+#define MUSICNAME "music.pk3"
 ////
 #endif
 ////
@@ -1105,8 +1107,9 @@ static void IdentifyVersion(void)
 	}
 
 	MUSICTEST("sounds.pk3")
-	MUSICTEST("MISC_MUSIC.pk3")
+	MUSICTEST(MUSICNAME)
 
+#undef MUSICNAME
 #undef MUSICTEST
 
 #endif
