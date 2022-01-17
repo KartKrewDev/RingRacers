@@ -133,6 +133,7 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8;
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS] = R_Draw2sMultiPatchTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_FOG] = R_DrawFogColumn_8;
+		colfuncs[COLDRAWFUNC_DROPSHADOW] = R_DrawDropShadowColumn_8;
 
 		spanfuncs[SPANDRAWFUNC_TRANS] = R_DrawTranslucentSpan_8;
 		spanfuncs[SPANDRAWFUNC_TILTED] = R_DrawTiltedSpan_8;
