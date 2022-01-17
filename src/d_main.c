@@ -1088,7 +1088,9 @@ static void IdentifyVersion(void)
 ////
 #endif
 ////
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
+#endif
 	D_AddFile(startupiwads, va(pandf,srb2waddir,TEXTURESNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
