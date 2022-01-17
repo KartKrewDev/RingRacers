@@ -56,4 +56,7 @@ void R_UpdateViewInterpolation(void);
 // Set the current view context (the viewvars pointed to by newview)
 void R_SetViewContext(enum viewcontext_e _viewcontext);
 
+fixed_t R_InterpolateFixed(fixed_t from, fixed_t to);
+angle_t R_InterpolateAngle(angle_t from, angle_t to);
+
 #endif

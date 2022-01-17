@@ -43,6 +43,7 @@
 #include "k_kart.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
+#include "k_terrain.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -3633,7 +3634,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (mobj)
 				{
 					if (line->flags & ML_EFFECT1)
-						mobj->angle = R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y);
+						P_InitAngle(mobj, R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y));
 					CONS_Debug(DBG_GAMELOGIC, "Linedef Type %d - Spawn Object: %d spawned at (%d, %d, %d)\n", line->special, mobj->type, mobj->x>>FRACBITS, mobj->y>>FRACBITS, mobj->z>>FRACBITS); //TODO: Convert mobj->type to a string somehow.
 				}
 				else
@@ -3928,7 +3929,7 @@ void P_SetupSignExit(player_t *player)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
-		thing->angle = player->mo->angle;
+		P_InitAngle(thing, player->mo->angle);
 		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
 	}
 }
@@ -4333,7 +4334,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 
 	// Conveyor stuff
 	if (section3 == 2 || section3 == 4)
+	{
 		player->onconveyor = section3;
+	}
 
 	special = section1;
 
@@ -4657,7 +4660,7 @@ DoneSection2:
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				if (!player->floorboost)
+				if (player->floorboost == 0)
 					player->floorboost = 3;
 				else
 					player->floorboost = 2;
@@ -5050,6 +5053,7 @@ void P_PlayerInSpecialSector(player_t *player)
 	if (!player->mo)
 		return;
 
+	K_ProcessTerrainEffect(player->mo);
 	originalsector = player->mo->subsector->sector;
 
 	P_PlayerOnSpecial3DFloor(player, originalsector); // Handle FOFs first.

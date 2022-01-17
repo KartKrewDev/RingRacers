@@ -32,7 +32,6 @@ static viewvars_t skyview_new[MAXSPLITSCREENPLAYERS];
 static viewvars_t *oldview = &pview_old[0];
 viewvars_t *newview = &pview_new[0];
 
-
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 
 static fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
@@ -146,4 +145,24 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 			I_Error("viewcontext value is invalid: we should never get here without an assert!!");
 			break;
 	}
+}
+
+fixed_t R_InterpolateFixed(fixed_t from, fixed_t to)
+{
+	if (cv_frameinterpolation.value == 0)
+	{
+		return to;
+	}
+
+	return (from + R_LerpFixed(from, to, rendertimefrac));
+}
+
+angle_t R_InterpolateAngle(angle_t from, angle_t to)
+{
+	if (cv_frameinterpolation.value == 0)
+	{
+		return to;
+	}
+
+	return (from + R_LerpAngle(from, to, rendertimefrac));
 }

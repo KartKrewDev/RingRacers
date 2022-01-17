@@ -235,7 +235,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 
 	(void)amount;
 
-	drop->angle = angle;
+	P_InitAngle(drop, angle);
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed() * 180) + angle,
 		P_RandomRange(4, 12) * mapobjectscale);
@@ -469,16 +469,15 @@ void K_RunPaperItemSpawners(void)
 						firstUnspawnedEmerald
 					);
 				}
-				else if (P_RandomChance(FRACUNIT/3))
+				else
 				{
 					drop = K_SpawnSphereBox(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 							FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
 							10
 					);
-				}
-				else
-				{
+					K_FlipFromObject(drop, spotList[r]);
+
 					drop = K_CreatePaperItem(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
 						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
@@ -529,7 +528,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				mo->eflags |= MFE_VERTICALFLIP;
 			}
 
-			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
+			P_InitAngle(mo, R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90);
 			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
 
 			P_SetScale(mo, scale);

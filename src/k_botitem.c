@@ -382,6 +382,8 @@ static void K_BotItemGenericTap(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean mine)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+
 	if (abs(turnamt) >= KART_FULLTURN/2)
 	{
 		// DON'T reveal on turns, we can place bananas on turns whenever we have multiple to spare,
@@ -404,7 +406,7 @@ static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean 
 	}
 
 	// Check your behind.
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true) != NULL)
+	if (K_PlayerInCone(player, coneDist, 15, true) != NULL)
 	{
 		return true;
 	}
@@ -536,16 +538,19 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
 	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	target = K_PlayerInCone(player, coneDist, 15, true);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
+		tryLookback = true;
 	}
 
 	if (abs(turnamt) >= KART_FULLTURN/2)
@@ -564,7 +569,12 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 		}
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -585,12 +595,14 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 0;
+	boolean tryLookback = false;
 	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	target = K_PlayerInCone(player, coneDist, 15, true);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
@@ -601,6 +613,7 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	{
 		player->botvars.itemconfirm += player->botvars.difficulty / 2;
 		throwdir = -1;
+		tryLookback = true;
 	}
 	else
 	{
@@ -619,7 +632,12 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 		}
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -640,6 +658,7 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
@@ -649,13 +668,14 @@ static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 		player->botvars.itemconfirm += player->botvars.difficulty / 2;
 	}
 
-	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	target = K_PlayerInCone(player, coneDist, 15, true);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, -1);
 	}
@@ -675,8 +695,10 @@ static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
 	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
@@ -688,11 +710,12 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 		throwdir = 1;
 	}
 
-	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	target = K_PlayerInCone(player, coneDist, 15, true);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
+		tryLookback = true;
 	}
 
 	if (stealth > 1 || player->itemroulette > 0)
@@ -701,7 +724,12 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 		throwdir = -1;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -720,6 +748,7 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsEggbox(player_t *player)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	player_t *target = NULL;
 
@@ -737,7 +766,7 @@ static boolean K_BotRevealsEggbox(player_t *player)
 	}
 
 	// Check your behind.
-	target = K_PlayerInCone(player, player->mo->radius * 16, 10, true);
+	target = K_PlayerInCone(player, coneDist, 15, true);
 	if (target != NULL)
 	{
 		return true;
@@ -810,8 +839,9 @@ static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 {
 	const fixed_t topspeed = K_GetKartSpeed(player, false);
-	fixed_t radius = (player->mo->radius * 32);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
 	UINT8 snipeMul = 2;
 	player_t *target = NULL;
 
@@ -823,24 +853,30 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 
 	player->botvars.itemconfirm++;
 
-	target = K_PlayerInCone(player, radius, 10, false);
+	target = K_PlayerInCone(player, radius, 15, false);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
 		throwdir = 1;
 	}
-	else if (K_PlayerInCone(player, radius, 10, true))
+	else
 	{
-		target = K_PlayerInCone(player, radius, 10, true);
+		target = K_PlayerInCone(player, radius, 15, true);
 
 		if (target != NULL)
 		{
 			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 			throwdir = -1;
+			tryLookback = true;
 		}
 	}
 
-	if (player->botvars.itemconfirm > 5*TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -861,8 +897,9 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 {
 	const fixed_t topspeed = K_GetKartSpeed(player, false);
-	fixed_t radius = (player->mo->radius * 32);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 1;
+	boolean tryLookback = false;
 	UINT8 snipeMul = 2;
 	INT32 lastTarg = player->lastjawztarget;
 	player_t *target = NULL;
@@ -875,11 +912,12 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 
 	player->botvars.itemconfirm++;
 
-	target = K_PlayerInCone(player, radius, 10, true);
+	target = K_PlayerInCone(player, radius, 15, true);
 	if (target != NULL)
 	{
 		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
+		tryLookback = true;
 	}
 
 	if (lastTarg != -1
@@ -913,7 +951,12 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->botvars.itemconfirm > 5*TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -1007,7 +1050,7 @@ static void K_BotItemBubble(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->bubbleblowup >= bubbletime)
 	{
-		if (player->botvars.itemconfirm >= 10*TICRATE)
+		if (player->botvars.itemconfirm > 10*TICRATE)
 		{
 			hold = true;
 		}

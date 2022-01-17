@@ -69,6 +69,8 @@
 #include "m_misc.h" // M_MapNumber
 #include "g_game.h" // G_SetGameModified
 
+#include "k_terrain.h"
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #include "hardware/hw_glob.h"
@@ -865,6 +867,8 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	default:
 		break;
 	}
+
+	K_InitTerrain(numwadfiles - 1);
 
 	if (refreshdirmenu & REFRESHDIR_GAMEDATA)
 		G_LoadGameData();
