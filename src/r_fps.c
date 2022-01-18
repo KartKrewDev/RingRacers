@@ -84,8 +84,10 @@ void R_InterpolateView(fixed_t frac)
 {
 	if (frac < 0)
 		frac = 0;
+#if 0
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
+#endif
 
 	viewx = oldview->x + R_LerpFixed(oldview->x, newview->x, frac);
 	viewy = oldview->y + R_LerpFixed(oldview->y, newview->y, frac);

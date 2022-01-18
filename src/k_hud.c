@@ -2850,8 +2850,8 @@ static void K_drawKartNameTags(void)
 		}
 
 		v.x = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-		v.y = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
-		v.z = R_InterpolateFixed(ntplayer->mo->old_x, ntplayer->mo->x);
+		v.y = R_InterpolateFixed(ntplayer->mo->old_y, ntplayer->mo->y);
+		v.z = R_InterpolateFixed(ntplayer->mo->old_z, ntplayer->mo->z);
 
 		if (!(ntplayer->mo->eflags & MFE_VERTICALFLIP))
 		{

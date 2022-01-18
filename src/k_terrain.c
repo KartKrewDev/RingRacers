@@ -312,16 +312,13 @@ terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 --------------------------------------------------*/
 terrain_t *K_GetTerrainForFlatNum(INT32 flatID)
 {
-	levelflat_t *levelFlat = NULL;
-
 	if (flatID < 0 || flatID >= (signed)numlevelflats)
 	{
 		// Clearly invalid floor...
 		return NULL;
 	}
 
-	levelFlat = &levelflats[flatID];
-	return K_GetTerrainForTextureName(levelFlat->name);
+	return levelflats[flatID].terrain;
 }
 
 /*--------------------------------------------------
