@@ -2015,8 +2015,12 @@ static int lib_pSetSkyboxMobj(lua_State *L)
 	if (w > 1 || w < 0)
 		return luaL_error(L, "skybox mobj index %d is out of range for P_SetSkyboxMobj argument #2 (expected 0 or 1)", w);
 
+#if 0
 	if (!user || P_IsLocalPlayer(user))
 		skyboxmo[w] = mo;
+#else
+	CONS_Alert(CONS_WARNING, "TODO: P_SetSkyboxMobj is unimplemented\n");
+#endif
 	return 0;
 }
 
