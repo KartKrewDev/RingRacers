@@ -293,6 +293,8 @@ static void D_Display(void)
 		{
 			for (i = 0; i <= r_splitscreen; ++i)
 			{
+				R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
+				R_InterpolateViewRollAngle(rendertimefrac);
 				R_CheckViewMorph(i);
 			}
 		}
