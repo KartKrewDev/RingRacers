@@ -52,7 +52,6 @@
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
 
-mobj_t *skyboxmo[2]; // current skybox mobjs: 0 = viewpoint, 1 = centerpoint
 mobj_t *skyboxviewpnts[16]; // array of MT_SKYBOX viewpoint mobjs
 mobj_t *skyboxcenterpnts[16]; // array of MT_SKYBOX centerpoint mobjs
 
@@ -2090,6 +2089,19 @@ static mobj_t *P_GetObjectTypeInSectorNum(mobjtype_t type, size_t s)
 	return NULL;
 }
 
+static void P_SwitchSkybox(INT32 ldflags, player_t *player, skybox_t *skybox)
+{
+	if (!(ldflags & ML_EFFECT4)) // Solid Midtexture turns off viewpoint setting
+	{
+		player->skybox.viewpoint = skybox->viewpoint;
+	}
+
+	if (ldflags & ML_BLOCKPLAYERS) // Block Enemies turns ON centerpoint setting
+	{
+		player->skybox.centerpoint = skybox->centerpoint;
+	}
+}
+
 /** Processes the line special triggered by an object.
   *
   * \param line Line with the special command on it.
@@ -3155,7 +3167,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 		}
 		case 448: // Change skybox viewpoint/centerpoint
-			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
+			if ((mo && mo->player) || (line->flags & ML_NOCLIMB))
 			{
 				INT32 viewid = sides[line->sidenum[0]].textureoffset>>FRACBITS;
 				INT32 centerid = sides[line->sidenum[0]].rowoffset>>FRACBITS;
@@ -3168,23 +3180,32 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				}
 				else
 				{
+					skybox_t skybox;
+
 					// set viewpoint mobj
-					if (!(line->flags & ML_EFFECT4)) // Solid Midtexture turns off viewpoint setting
-					{
-						if (viewid >= 0 && viewid < 16)
-							skyboxmo[0] = skyboxviewpnts[viewid];
-						else
-							skyboxmo[0] = NULL;
-					}
+					if (viewid >= 0 && viewid < 16)
+						skybox.viewpoint = skyboxviewpnts[viewid];
+					else
+						skybox.viewpoint = NULL;
 
 					// set centerpoint mobj
-					if (line->flags & ML_BLOCKPLAYERS) // Block Enemies turns ON centerpoint setting
+					if (centerid >= 0 && centerid < 16)
+						skybox.centerpoint = skyboxcenterpnts[centerid];
+					else
+						skybox.centerpoint = NULL;
+
+					if (line->flags & ML_NOCLIMB) // Applies to all players
 					{
-						if (centerid >= 0 && centerid < 16)
-							skyboxmo[1] = skyboxcenterpnts[centerid];
-						else
-							skyboxmo[1] = NULL;
+						INT32 i;
+
+						for (i = 0; i < MAXPLAYERS; ++i)
+						{
+							if (playeringame[i])
+								P_SwitchSkybox(line->flags, &players[i], &skybox);
+						}
 					}
+					else
+						P_SwitchSkybox(line->flags, mo->player, &skybox);
 				}
 
 				CONS_Debug(DBG_GAMELOGIC, "Line type 448 Executor: viewid = %d, centerid = %d, viewpoint? = %s, centerpoint? = %s\n",

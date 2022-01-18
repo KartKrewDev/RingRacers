@@ -10867,6 +10867,9 @@ void P_SpawnPlayer(INT32 playernum)
 	p->awayviewmobj = NULL;
 	p->awayviewtics = 0;
 
+	p->skybox.viewpoint = skyboxviewpnts[0];
+	p->skybox.centerpoint = skyboxcenterpnts[0];
+
 	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
 
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
