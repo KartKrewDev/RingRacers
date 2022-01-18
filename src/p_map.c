@@ -3732,7 +3732,7 @@ stairstep:
 			tmymove = 0;
 		}
 		if (!P_TryMove(mo, newx, newy, true)) {
-			if (success)
+			if (success || 	P_MobjWasRemoved(mo))
 				return; // Good enough!!
 			else
 				goto retry;
@@ -3855,6 +3855,9 @@ void P_BounceMove(mobj_t *mo)
 	fixed_t newx, newy;
 	INT32 hitcount;
 	fixed_t mmomx = 0, mmomy = 0;
+
+	if (P_MobjWasRemoved(mo))
+		return;
 
 	if (mo->player)
 	{
@@ -3979,7 +3982,11 @@ bounceback:
 	mo->momy = tmymove;
 
 	if (!P_TryMove(mo, mo->x + tmxmove, mo->y + tmymove, true))
+	{
+		if (P_MobjWasRemoved(mo))
+			return;
 		goto retry;
+	}
 }
 
 //
