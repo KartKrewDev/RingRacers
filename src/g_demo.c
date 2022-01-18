@@ -60,7 +60,7 @@ boolean nodrawers; // for comparative timing purposes
 boolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
 
-static char demoname[128];
+static char demoname[MAX_WADPATH];
 static UINT8 *demobuffer = NULL;
 static UINT8 *demotime_p, *demoinfo_p;
 UINT8 *demo_p;
@@ -3791,7 +3791,7 @@ void G_SaveDemo(void)
 		demo_slug[strindex] = 0;
 		if (dash) demo_slug[strindex-1] = 0;
 
-		writepoint = strstr(demoname, "-") + 1;
+		writepoint = strstr(strrchr(demoname, *PATHSEP), "-") + 1;
 		demo_slug[128 - (writepoint - demoname) - 4] = 0;
 		sprintf(writepoint, "%s.lmp", demo_slug);
 	}
@@ -3808,7 +3808,7 @@ void G_SaveDemo(void)
 	md5_buffer((char *)p+16, (demobuffer + length) - (p+16), p);
 #endif
 
-	if (FIL_WriteFile(va(pandf, srb2home, demoname), demobuffer, demo_p - demobuffer)) // finally output the file.
+	if (FIL_WriteFile(demoname, demobuffer, demo_p - demobuffer)) // finally output the file.
 		demo.savemode = DSM_SAVED;
 	free(demobuffer);
 	demo.recording = false;
