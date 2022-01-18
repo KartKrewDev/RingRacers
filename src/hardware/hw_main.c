@@ -6221,7 +6221,7 @@ void HWR_RenderPlayerView(void)
 	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
 	postimg_t *type = &postimgtype[viewssnum];
 
-	const boolean skybox = (skyboxmo[0] && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+	const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
 
 	FRGBAFloat ClearColor;
 

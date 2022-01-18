@@ -290,6 +290,12 @@ typedef struct botvars_s
 	tic_t spindashconfirm; // When high enough, they will try spindashing
 } botvars_t;
 
+// player_t struct for all skybox variables
+typedef struct {
+	mobj_t * viewpoint;
+	mobj_t * centerpoint;
+} skybox_t;
+
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
@@ -310,6 +316,8 @@ typedef struct player_s
 	fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
 	fixed_t bob;
+
+	skybox_t skybox;
 
 	angle_t viewrollangle;
 	angle_t old_viewrollangle;

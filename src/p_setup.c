@@ -3514,6 +3514,7 @@ static void P_InitLevelSettings(void)
 	speedscramble = encorescramble = -1;
 }
 
+#if 0
 // Respawns all the mapthings and mobjs in the map from the already loaded map data.
 void P_RespawnThings(void)
 {
@@ -3548,6 +3549,7 @@ void P_RespawnThings(void)
 	skyboxmo[0] = skyboxviewpnts[(viewid >= 0) ? viewid : 0];
 	skyboxmo[1] = skyboxcenterpnts[(centerid >= 0) ? centerid : 0];
 }
+#endif
 
 static void P_RunLevelScript(const char *scriptname)
 {
@@ -3622,13 +3624,18 @@ static void P_ResetSpawnpoints(void)
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		playerstarts[i] = bluectfstarts[i] = redctfstarts[i] = NULL;
+
+		if (playeringame[i])
+		{
+			players[i].skybox.viewpoint = NULL;
+			players[i].skybox.centerpoint = NULL;
+		}
+	}
 
 	for (i = 0; i < MAX_DM_STARTS; i++)
 		deathmatchstarts[i] = NULL;
-
-	for (i = 0; i < 2; i++)
-		skyboxmo[i] = NULL;
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
@@ -4076,8 +4083,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
-	skyboxmo[0] = skyboxviewpnts[0];
-	skyboxmo[1] = skyboxcenterpnts[0];
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
 		if (!playerstarts[numcoopstarts])
