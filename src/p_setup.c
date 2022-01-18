@@ -3515,6 +3515,7 @@ static void P_InitLevelSettings(void)
 	speedscramble = encorescramble = -1;
 }
 
+#if 0
 // Respawns all the mapthings and mobjs in the map from the already loaded map data.
 void P_RespawnThings(void)
 {
@@ -3549,6 +3550,7 @@ void P_RespawnThings(void)
 	skyboxmo[0] = skyboxviewpnts[(viewid >= 0) ? viewid : 0];
 	skyboxmo[1] = skyboxcenterpnts[(centerid >= 0) ? centerid : 0];
 }
+#endif
 
 static void P_RunLevelScript(const char *scriptname)
 {
@@ -3623,13 +3625,18 @@ static void P_ResetSpawnpoints(void)
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		playerstarts[i] = bluectfstarts[i] = redctfstarts[i] = NULL;
+
+		if (playeringame[i])
+		{
+			players[i].skybox.viewpoint = NULL;
+			players[i].skybox.centerpoint = NULL;
+		}
+	}
 
 	for (i = 0; i < MAX_DM_STARTS; i++)
 		deathmatchstarts[i] = NULL;
-
-	for (i = 0; i < 2; i++)
-		skyboxmo[i] = NULL;
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
@@ -3799,12 +3806,20 @@ static void P_InitGametype(void)
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (!demo.playback && multiplayer && !dedicated)
 	{
-		static char buf[256];
-		char *path;
-		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		char buf[MAX_WADPATH];
+		char ver[128];
+		int parts;
 
-		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
-		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
+#ifdef DEVELOP
+		sprintf(ver, "%s-%s", compbranch, comprevision);
+#else
+		strcpy(ver, VERSIONSTRING);
+#endif
+		sprintf(buf, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP"%s"PATHSEP"%d-%s",
+				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
+
+		parts = M_PathParts(buf);
+		M_MkdirEachUntil(buf, parts - 5, parts - 1, 0755);
 
 		G_RecordDemo(buf);
 	}
@@ -4069,8 +4084,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
-	skyboxmo[0] = skyboxviewpnts[0];
-	skyboxmo[1] = skyboxcenterpnts[0];
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
 		if (!playerstarts[numcoopstarts])
