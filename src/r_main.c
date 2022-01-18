@@ -1199,30 +1199,13 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // R_SetupFrame
 //
 
-void R_SetupFrame(player_t *player)
+void R_SetupFrame(int s)
 {
-	camera_t *thiscam = &camera[0];
-	boolean chasecam = (cv_chasecam[0].value != 0);
-	UINT8 i = 0;
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
+	boolean chasecam = (cv_chasecam[s].value != 0);
 
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			chasecam = (cv_chasecam[i].value != 0);
-			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
-			break;
-		}
-	}
-
-	if (i > r_splitscreen)
-	{
-		i = 0; // Shouldn't be possible, but just in case.
-		thiscam = &camera[0];
-		chasecam = (cv_chasecam[0].value != 0);
-		R_SetViewContext(VIEWCONTEXT_PLAYER1);
-	}
+	R_SetViewContext(VIEWCONTEXT_PLAYER1 + s);
 
 	if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
@@ -1267,8 +1250,8 @@ void R_SetupFrame(player_t *player)
 
 		if (!demo.playback && player->playerstate != PST_DEAD)
 		{
-			newview->angle = localangle[i]; // WARNING: camera uses this
-			newview->aim = localaiming[i];
+			newview->angle = localangle[s]; // WARNING: camera uses this
+			newview->aim = localaiming[s];
 		}
 	}
 	newview->roll = R_ViewRollAngle(player);
@@ -1307,27 +1290,12 @@ void R_SetupFrame(player_t *player)
 	R_InterpolateView(rendertimefrac);
 }
 
-void R_SkyboxFrame(player_t *player)
+void R_SkyboxFrame(int s)
 {
-	camera_t *thiscam = &camera[0];
-	UINT8 i = 0;
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
 
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			R_SetViewContext(VIEWCONTEXT_SKY1 + i);
-			break;
-		}
-	}
-
-	if (i > r_splitscreen)
-	{
-		i = 0; // Shouldn't be possible, but just in case.
-		thiscam = &camera[0];
-		R_SetViewContext(VIEWCONTEXT_SKY1);
-	}
+	R_SetViewContext(VIEWCONTEXT_SKY1 + s);
 
 	// cut-away view stuff
 	newview->sky = true;
@@ -1355,8 +1323,8 @@ void R_SkyboxFrame(player_t *player)
 		newview->angle = player->mo->angle;
 		if (/*!demo.playback && */player->playerstate != PST_DEAD)
 		{
-			newview->angle = localangle[i];
-			newview->aim = localaiming[i];
+			newview->angle = localangle[s];
+			newview->aim = localaiming[s];
 		}
 	}
 	newview->angle += r_viewmobj->angle;
@@ -1561,7 +1529,7 @@ void R_RenderPlayerView(void)
 		V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
 	}
 
-	R_SetupFrame(player);
+	R_SetupFrame(viewssnum);
 	framecount++;
 	validcount++;
 

@@ -134,8 +134,8 @@ void R_SetViewSize(void);
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
 
-void R_SetupFrame(player_t *player);
-void R_SkyboxFrame(player_t *player);
+void R_SetupFrame(int split);
+void R_SkyboxFrame(int split);
 
 boolean R_ViewpointHasChasecam(player_t *player);
 boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox);
