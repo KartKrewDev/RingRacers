@@ -706,6 +706,8 @@ void P_Ticker(boolean run)
 		}
 	}
 
+	K_UpdateDirector();
+
 	// Always move the camera.
 	for (i = 0; i <= r_splitscreen; i++)
 	{

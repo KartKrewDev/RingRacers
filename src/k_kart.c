@@ -34,6 +34,7 @@
 #include "k_bot.h"
 #include "k_hud.h"
 #include "k_terrain.h"
+#include "k_director.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3231,6 +3232,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
 {
+	K_DirectorFollowAttack(player, inflictor, source);
 	(void)inflictor;
 	(void)source;
 
@@ -3273,6 +3275,7 @@ static void K_RemoveGrowShrink(player_t *player)
 
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
+	K_DirectorFollowAttack(player, inflictor, source);
 	fixed_t gravityadjust;
 	(void)source;
 
@@ -3409,6 +3412,8 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
 {
 	INT32 ringburst = 10;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	(void)source;
 
