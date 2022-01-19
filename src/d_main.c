@@ -1351,7 +1351,9 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
+#if !defined (TESTERS) || !defined (HOSTTESTERS)
 	mainwads++;	// gfx.pk3
+#endif
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
