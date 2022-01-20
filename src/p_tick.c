@@ -34,6 +34,7 @@
 #include "k_race.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
+#include "k_director.h"
 
 tic_t leveltime;
 
