@@ -37,7 +37,6 @@ INT32 sortedplayers[MAXPLAYERS] = {0}; // position-1 goes in, player index comes
 INT32 gap[MAXPLAYERS] = {0}; // gap between a given position and their closest pursuer
 INT32 boredom[MAXPLAYERS] = {0}; // how long has a given position had no credible attackers?
 
-
 fixed_t K_GetFinishGap(INT32 leader, INT32 follower) {
     fixed_t dista = players[follower].distancetofinish;
     fixed_t distb = players[leader].distancetofinish;
@@ -75,11 +74,15 @@ boolean K_CanSwitchDirector(void) {
     INT32 *displayplayerp = &displayplayers[0];
     if (players[*displayplayerp].trickpanel > 0)
         return false;
-    return cooldown >= SWITCHTIME;
+    if (cooldown < SWITCHTIME);
+        return false;
+    return true;
 }
 
 void K_DirectorSwitch(INT32 player, boolean force) {
     if (P_IsDisplayPlayer(&players[player]))
+        return;
+    if (players[player].exiting)
         return;
     if (!force && !K_CanSwitchDirector())
         return;
@@ -88,6 +91,8 @@ void K_DirectorSwitch(INT32 player, boolean force) {
 }
 
 void K_DirectorForceSwitch(INT32 player, INT32 time) {
+    if (players[player].exiting)
+        return;
     attacker = player;
     freeze = time;
 }
@@ -106,6 +111,8 @@ void K_DrawDirectorDebugger(void) {
     INT32 leader;
     INT32 follower;
     INT32 ytxt;
+    if (!cv_kartdebugdirector.value)
+        return;
     V_DrawThinString(10, 0, V_70TRANS, va("PLACE"));
     V_DrawThinString(40, 0, V_70TRANS, va("CONF?"));
     V_DrawThinString(80, 0, V_70TRANS, va("GAP"));
@@ -148,7 +155,7 @@ void K_UpdateDirector(void) {
     }
 
     // aaight, time to walk through the standings to find the first interesting pair
-    for(targetposition = 0; targetposition < MAXPLAYERS; targetposition++) {
+    for(targetposition = 0; targetposition < MAXPLAYERS-1; targetposition++) {
         INT32 target;
 
         // you are out of players, try again
@@ -163,9 +170,11 @@ void K_UpdateDirector(void) {
         if (players[sortedplayers[targetposition+1]].exiting)
             continue;
 
+        // don't risk switching away from forward pairs at race end, might miss something!
         if (maxdist > PINCHDIST) {
             // if the "next" player is close enough, they should be able to see everyone fine!
             // walk back through the standings to find a vantage that gets everyone in frame.
+            // (also creates a pretty cool effect w/ overtakes at speed)
             while (targetposition < MAXPLAYERS && gap[targetposition+1] < WALKBACKDIST) {
                 targetposition++;
             }
