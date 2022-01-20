@@ -163,7 +163,7 @@ void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 void K_DrawDirectorDebugger(void)
 {
-	INT32 playernum;
+	INT32 position;
 	INT32 leader;
 	INT32 follower;
 	INT32 ytxt;
@@ -180,32 +180,32 @@ void K_DrawDirectorDebugger(void)
 	V_DrawThinString(150, 0, V_70TRANS, va("COOLDOWN: %d", directorinfo.cooldown));
 	V_DrawThinString(230, 0, V_70TRANS, va("MAXDIST: %d", directorinfo.maxdist));
 
-	for (playernum = 0; playernum < MAXPLAYERS - 1; playernum++)
+	for (position = 0; position < MAXPLAYERS - 1; position++)
 	{
-		ytxt = 10 * (playernum + 1);
-		leader = directorinfo.sortedplayers[playernum];
-		follower = directorinfo.sortedplayers[playernum + 1];
+		ytxt = 10 * (position + 1);
+		leader = directorinfo.sortedplayers[position];
+		follower = directorinfo.sortedplayers[position + 1];
 
 		if (leader == -1 || follower == -1)
 			break;
 
-		V_DrawThinString(10, ytxt, V_70TRANS, va("%d", playernum));
-		V_DrawThinString(20, ytxt, V_70TRANS, va("%d", playernum + 1));
+		V_DrawThinString(10, ytxt, V_70TRANS, va("%d", position));
+		V_DrawThinString(20, ytxt, V_70TRANS, va("%d", position + 1));
 
 		if (players[leader].positiondelay)
 		{
 			V_DrawThinString(40, ytxt, V_70TRANS, va("NG"));
 		}
 
-		V_DrawThinString(80, ytxt, V_70TRANS, va("%d", directorinfo.gap[playernum]));
+		V_DrawThinString(80, ytxt, V_70TRANS, va("%d", directorinfo.gap[position]));
 
-		if (directorinfo.boredom[playernum] >= BOREDOMTIME)
+		if (directorinfo.boredom[position] >= BOREDOMTIME)
 		{
 			V_DrawThinString(120, ytxt, V_70TRANS, va("BORED"));
 		}
 		else
 		{
-			V_DrawThinString(120, ytxt, V_70TRANS, va("%d", directorinfo.boredom[playernum]));
+			V_DrawThinString(120, ytxt, V_70TRANS, va("%d", directorinfo.boredom[position]));
 		}
 
 		V_DrawThinString(150, ytxt, V_70TRANS, va("%s", player_names[leader]));
@@ -282,7 +282,7 @@ void K_UpdateDirector(void)
 		}
 
 		// even if we're not certain, if we're certain we're watching the WRONG player, try to switch
-		if (players[*displayplayerp].position != targetposition && !players[target].positiondelay)
+		if (players[*displayplayerp].position != targetposition+1 && !players[target].positiondelay)
 		{
 			K_DirectorSwitch(target, false);
 		}
