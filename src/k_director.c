@@ -235,7 +235,6 @@ void K_UpdateDirector(void)
 		if (!(--directorinfo.freeze))
 			K_DirectorSwitch(directorinfo.attacker, true);
 
-		directorinfo.freeze--;
 		return;
 	}
 
