@@ -1689,6 +1689,8 @@ void P_XYMovement(mobj_t *mo)
 				if (mo->flags & MF_SLIDEME)
 				{
 					P_SlideMove(mo);
+					if (P_MobjWasRemoved(mo))
+						return;
 					xmove = ymove = 0;
 				}
 				else
@@ -10866,6 +10868,9 @@ void P_SpawnPlayer(INT32 playernum)
 	//awayview stuff
 	p->awayviewmobj = NULL;
 	p->awayviewtics = 0;
+
+	p->skybox.viewpoint = skyboxviewpnts[0];
+	p->skybox.centerpoint = skyboxcenterpnts[0];
 
 	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
 

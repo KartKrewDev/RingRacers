@@ -60,6 +60,8 @@ typedef enum
 	AWAYVIEW   = 0x01,
 	FOLLOWITEM = 0x02,
 	FOLLOWER   = 0x04,
+	SKYBOXVIEW = 0x08,
+	SKYBOXCENTER = 0x10,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -178,6 +180,12 @@ static void P_NetArchivePlayers(void)
 		if (players[i].follower)
 			flags |= FOLLOWER;
 
+		if (players[i].skybox.viewpoint)
+			flags |= SKYBOXVIEW;
+
+		if (players[i].skybox.centerpoint)
+			flags |= SKYBOXCENTER;
+
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
 
@@ -189,6 +197,12 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].splitscreenindex);
 
 		WRITEUINT16(save_p, flags);
+
+		if (flags & SKYBOXVIEW)
+			WRITEUINT32(save_p, players[i].skybox.viewpoint->mobjnum);
+
+		if (flags & SKYBOXCENTER)
+			WRITEUINT32(save_p, players[i].skybox.centerpoint->mobjnum);
 
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
@@ -446,6 +460,12 @@ static void P_NetUnArchivePlayers(void)
 		players[i].splitscreenindex = READUINT8(save_p);
 
 		flags = READUINT16(save_p);
+
+		if (flags & SKYBOXVIEW)
+			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save_p);
+
+		if (flags & SKYBOXCENTER)
+			players[i].skybox.centerpoint = (mobj_t *)(size_t)READUINT32(save_p);
 
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
@@ -4130,6 +4150,20 @@ static void P_RelinkPointers(void)
 		}
 		if (mobj->player)
 		{
+			if ( mobj->player->skybox.viewpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.viewpoint;
+				mobj->player->skybox.viewpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.viewpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on %d\n", mobj->type);
+			}
+			if ( mobj->player->skybox.centerpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.centerpoint;
+				mobj->player->skybox.centerpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.centerpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on %d\n", mobj->type);
+			}
 			if ( mobj->player->awayviewmobj)
 			{
 				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
