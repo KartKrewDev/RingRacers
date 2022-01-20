@@ -3233,9 +3233,10 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
 {
-	K_DirectorFollowAttack(player, inflictor, source);
 	(void)inflictor;
 	(void)source;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	player->spinouttype = type;
 
@@ -3415,9 +3416,9 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 {
 	INT32 ringburst = 10;
 
-	K_DirectorFollowAttack(player, inflictor, source);
-
 	(void)source;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	player->mo->momz = 18*mapobjectscale*P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
 	player->mo->momx = player->mo->momy = 0;
