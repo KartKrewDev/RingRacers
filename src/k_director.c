@@ -12,13 +12,12 @@
 #include "d_netcmd.h"
 #include "p_local.h"
 
-#define SWITCHTIME  TICRATE*5
-#define DEBOUNCETIME   TICRATE/6
-#define BOREDOMTIME 3*TICRATE/2
-#define TRANSFERTIME    TICRATE
-#define BREAKAWAYDIST   4000
-#define WALKBACKDIST   600
-#define PINCHDIST   30000
+#define SWITCHTIME TICRATE*5 // cooldown between unforced switches
+#define BOREDOMTIME 3*TICRATE/2 // how long until players considered far apart?
+#define TRANSFERTIME TICRATE // how long to delay reaction shots?
+#define BREAKAWAYDIST 4000 // how *far* until players considered far apart?
+#define WALKBACKDIST 600 // how close should a trailing player be before we switch?
+#define PINCHDIST 30000 // how close should the leader be to be considered "end of race"?
 
 void K_UpdateDirectorPositions(void);
 boolean K_CanSwitchDirector(void);
@@ -31,7 +30,7 @@ void K_DirectorForceSwitch(INT32 player, INT32 time);
 INT32 cooldown = 0; // how long has it been since we last switched?
 INT32 freeze = 0; // when nonzero, fixed switch pending, freeze logic!
 INT32 attacker = 0; // who to switch to when freeze delay elapses
-INT32 maxdist = 0;
+INT32 maxdist = 0; // how far is the closest player from finishing?
 
 INT32 sortedplayers[MAXPLAYERS] = {0}; // position-1 goes in, player index comes out. 
 INT32 gap[MAXPLAYERS] = {0}; // gap between a given position and their closest pursuer
@@ -74,7 +73,7 @@ boolean K_CanSwitchDirector(void) {
     INT32 *displayplayerp = &displayplayers[0];
     if (players[*displayplayerp].trickpanel > 0)
         return false;
-    if (cooldown < SWITCHTIME);
+    if (cooldown < SWITCHTIME)
         return false;
     return true;
 }
@@ -111,20 +110,24 @@ void K_DrawDirectorDebugger(void) {
     INT32 leader;
     INT32 follower;
     INT32 ytxt;
+
     if (!cv_kartdebugdirector.value)
         return;
+
     V_DrawThinString(10, 0, V_70TRANS, va("PLACE"));
     V_DrawThinString(40, 0, V_70TRANS, va("CONF?"));
     V_DrawThinString(80, 0, V_70TRANS, va("GAP"));
     V_DrawThinString(120, 0, V_70TRANS, va("BORED"));
     V_DrawThinString(150, 0, V_70TRANS, va("COOLDOWN: %d", cooldown));
     V_DrawThinString(230, 0, V_70TRANS, va("MAXDIST: %d", maxdist));
+
     for (playernum = 0; playernum < MAXPLAYERS-1; ++playernum) {
         ytxt = 10*playernum+10;
         leader = sortedplayers[playernum];
         follower = sortedplayers[playernum+1];
         if (leader == -1 || follower == -1)
             break;
+
         V_DrawThinString(10, ytxt, V_70TRANS, va("%d", playernum));
         V_DrawThinString(20, ytxt, V_70TRANS, va("%d", playernum+1));
         if (players[leader].positiondelay)
@@ -142,6 +145,9 @@ void K_DrawDirectorDebugger(void) {
 void K_UpdateDirector(void) {
     INT32 *displayplayerp = &displayplayers[0];
     INT32 targetposition;
+
+    if (!cv_director.value)
+        return;
 
     K_UpdateDirectorPositions();
     cooldown++;
@@ -179,7 +185,6 @@ void K_UpdateDirector(void) {
                 targetposition++;
             }
         }
-
 
         target = sortedplayers[targetposition+1];
 

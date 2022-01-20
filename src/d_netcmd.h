@@ -113,6 +113,8 @@ extern consvar_t cv_sleep;
 
 extern consvar_t cv_perfstats;
 
+extern consvar_t cv_director;
+
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
 extern char timedemo_csv_id[256];

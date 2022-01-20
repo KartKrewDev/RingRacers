@@ -3276,9 +3276,10 @@ static void K_RemoveGrowShrink(player_t *player)
 
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
-	K_DirectorFollowAttack(player, inflictor, source);
 	fixed_t gravityadjust;
 	(void)source;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	player->tumbleBounces = 1;
 
