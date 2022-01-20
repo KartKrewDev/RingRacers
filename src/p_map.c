@@ -3496,6 +3496,9 @@ void P_SlideMove(mobj_t *mo)
 	vertex_t v1, v2; // fake vertexes
 	line_t junk; // fake linedef
 
+	if (P_MobjWasRemoved(mo))
+		return;
+
 	if (tmhitthing && mo->z + mo->height > tmhitthing->z && mo->z < tmhitthing->z + tmhitthing->height)
 	{
 		// Don't mess with your momentum if it's a pushable object. Pushables do their own crazy things already.

@@ -1689,6 +1689,8 @@ void P_XYMovement(mobj_t *mo)
 				if (mo->flags & MF_SLIDEME)
 				{
 					P_SlideMove(mo);
+					if (P_MobjWasRemoved(mo))
+						return;
 					xmove = ymove = 0;
 				}
 				else
