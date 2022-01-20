@@ -3945,26 +3945,21 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 
-	if (!lightset)
+	for (i = 1; i < sector->numlights; i++)
 	{
-		for (i = 1; i < sector->numlights; i++)
+		fixed_t h = P_GetLightZAt(&sector->lightlist[i], spr->mobj->x, spr->mobj->y);
+		if (h <= temp)
 		{
-			fixed_t h = P_GetLightZAt(&sector->lightlist[i], spr->mobj->x, spr->mobj->y);
-			if (h <= temp)
-			{
+			if (!lightset)
 				lightlevel = *list[i-1].lightlevel > 255 ? 255 : *list[i-1].lightlevel;
-				if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
-					colormap = *list[i-1].extra_colormap;
-				break;
-			}
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
+				colormap = *list[i-1].extra_colormap;
+			break;
 		}
 	}
 
 	if (R_ThingIsSemiBright(spr->mobj))
-	{
 		lightlevel = 128 + (lightlevel>>1);
-		colormap = NULL;
-	}
 
 	for (i = 0; i < sector->numlights; i++)
 	{
@@ -3972,13 +3967,17 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 			return;
 
 		// even if we aren't changing colormap or lightlevel, we still need to continue drawing down the sprite
-		if (!lightset && !(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
+		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
-			lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
+			if (!lightset)
+			{
+				lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
 
-			if (R_ThingIsSemiBright(spr->mobj))
-				lightlevel = 128 + (lightlevel>>1);
-			else if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+				if (R_ThingIsSemiBright(spr->mobj))
+					lightlevel = 128 + (lightlevel>>1);
+			}
+
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *list[i].extra_colormap;
 		}
 
@@ -4307,17 +4306,14 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-			if (*sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else if (!lightset)
 			lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
 
 		if (R_ThingIsSemiBright(spr->mobj))
-		{
 			lightlevel = 128 + (lightlevel>>1);
-			colormap = NULL;
-		}
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}

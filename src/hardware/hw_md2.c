@@ -1335,12 +1335,10 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
 			if (!lightset)
-			{
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-				if (*sector->lightlist[light].extra_colormap)
-					colormap = *sector->lightlist[light].extra_colormap;
-			}
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap)
+				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else if (!lightset)
 		{
@@ -1351,10 +1349,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 
 		if (R_ThingIsSemiBright(spr->mobj))
-		{
 			lightlevel = 128 + (lightlevel>>1);
-			colormap = NULL;
-		}
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
