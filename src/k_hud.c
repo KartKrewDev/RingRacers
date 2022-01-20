@@ -13,6 +13,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_color.h"
+#include "k_director.h"
 #include "screen.h"
 #include "doomtype.h"
 #include "doomdef.h"
@@ -4504,6 +4505,7 @@ void K_drawKartHUD(void)
 	}
 
 	K_DrawWaypointDebugger();
+	K_DrawDirectorDebugger();
 
 	if (gametype == GT_BATTLE)
 	{

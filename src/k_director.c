@@ -13,68 +13,30 @@
 #include "p_local.h"
 
 #define SWITCHTIME  TICRATE*5
-#define DEBOUNCETIME   TICRATE*2
+#define DEBOUNCETIME   TICRATE/6
 #define BOREDOMTIME 3*TICRATE/2
 #define TRANSFERTIME    TICRATE
 #define BREAKAWAYDIST   4000
-#define CONFUSINGDIST   250
+#define WALKBACKDIST   600
+#define PINCHDIST   30000
 
-INT32 FindPlayerByPlace(INT32 place);
 void K_UpdateDirectorPositions(void);
 boolean K_CanSwitchDirector(void);
 fixed_t K_GetFinishGap(INT32 leader, INT32 follower);
-void K_DirectorSwitch(INT32 player);
+void K_DirectorSwitch(INT32 player, boolean force);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_UpdateDirector(void);
+void K_DirectorForceSwitch(INT32 player, INT32 time);
 
-INT32 cooldown = 0;
-INT32 bored = 0;
-INT32 positions[MAXPLAYERS] = {0};
-INT32 confidence[MAXPLAYERS] = {0};
+INT32 cooldown = 0; // how long has it been since we last switched?
+INT32 freeze = 0; // when nonzero, fixed switch pending, freeze logic!
+INT32 attacker = 0; // who to switch to when freeze delay elapses
+INT32 maxdist = 0;
 
-INT32 freeze = 0;
-INT32 attacker = 0;
+INT32 sortedplayers[MAXPLAYERS] = {0}; // position-1 goes in, player index comes out. 
+INT32 gap[MAXPLAYERS] = {0}; // gap between a given position and their closest pursuer
+INT32 boredom[MAXPLAYERS] = {0}; // how long has a given position had no credible attackers?
 
-INT32 FindPlayerByPlace(INT32 place)
-{
-	INT32 playernum;
-	for (playernum = 0; playernum < MAXPLAYERS; ++playernum)
-		if (playeringame[playernum])
-	{
-		if (players[playernum].position == place)
-		{
-			return playernum;
-		}
-	}
-	return -1;
-}
-
-void K_UpdateDirectorPositions(void) {
-    INT32 playernum;
-	for (playernum = 0; playernum < MAXPLAYERS; ++playernum)
-		if (playeringame[playernum])
-	{
-		if (players[playernum].position == positions[playernum]) {
-            confidence[playernum]++;
-        }
-        else {
-			confidence[playernum] = 0;
-            positions[playernum] = players[playernum].position;
-		}
-	} else {
-        positions[playernum] = 0;
-        confidence[playernum] = 0;
-    }
-}
-
-boolean K_CanSwitchDirector(void) {
-    INT32 *displayplayerp = &displayplayers[0];
-    if (players[*displayplayerp].trickpanel > 0) {
-        // CONS_Printf("NO SWITCH, panel");
-        return false;
-    }
-    return cooldown >= SWITCHTIME;
-}
 
 fixed_t K_GetFinishGap(INT32 leader, INT32 follower) {
     fixed_t dista = players[follower].distancetofinish;
@@ -86,31 +48,88 @@ fixed_t K_GetFinishGap(INT32 leader, INT32 follower) {
     }
 }
 
-void K_DirectorSwitch(INT32 player) {
-    if (!K_CanSwitchDirector())
+void K_UpdateDirectorPositions(void) {
+    INT32 playernum;
+
+    memset(sortedplayers, -1, sizeof(sortedplayers));
+	for (playernum = 0; playernum < MAXPLAYERS; ++playernum) {
+		if (playeringame[playernum])
+            sortedplayers[players[playernum].position-1] = playernum;
+    }
+
+    memset(gap, INT32_MAX, sizeof(gap));
+    for (playernum = 0; playernum < MAXPLAYERS-1; ++playernum) {
+        if (sortedplayers[playernum] == -1 || sortedplayers[playernum+1] == -1)
+            break;
+        gap[playernum] = P_ScaleFromMap(K_GetFinishGap(sortedplayers[playernum], sortedplayers[playernum+1]), FRACUNIT);
+        if (gap[playernum] >= BREAKAWAYDIST)
+            boredom[playernum] = min(BOREDOMTIME*2, boredom[playernum]+1);
+        else if (boredom[playernum] > 0)
+            boredom[playernum]--;
+    }
+
+    maxdist = P_ScaleFromMap(players[sortedplayers[0]].distancetofinish, FRACUNIT);
+}
+
+boolean K_CanSwitchDirector(void) {
+    INT32 *displayplayerp = &displayplayers[0];
+    if (players[*displayplayerp].trickpanel > 0)
+        return false;
+    return cooldown >= SWITCHTIME;
+}
+
+void K_DirectorSwitch(INT32 player, boolean force) {
+    if (P_IsDisplayPlayer(&players[player]))
         return;
-    // CONS_Printf("SWITCHING: %s\n", player_names[player]);
+    if (!force && !K_CanSwitchDirector())
+        return;
     G_ResetView(1, player, true);
     cooldown = 0;
+}
+
+void K_DirectorForceSwitch(INT32 player, INT32 time) {
+    attacker = player;
+    freeze = time;
 }
 
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source) {
     if (!P_IsDisplayPlayer(player))
         return;
-    if (inflictor && inflictor->player) {
-        // CONS_Printf("INFLICTOR SET\n");
-        attacker = inflictor->player-players;
-        freeze = TRANSFERTIME;
-        cooldown = SWITCHTIME;
+    if (inflictor && inflictor->player)
+        K_DirectorForceSwitch(inflictor->player-players, TRANSFERTIME);
+    if (source && source->player)
+        K_DirectorForceSwitch(source->player-players, TRANSFERTIME);
+}
+
+void K_DrawDirectorDebugger(void) {
+    INT32 playernum;
+    INT32 leader;
+    INT32 follower;
+    INT32 ytxt;
+    V_DrawThinString(10, 0, V_70TRANS, va("PLACE"));
+    V_DrawThinString(40, 0, V_70TRANS, va("CONF?"));
+    V_DrawThinString(80, 0, V_70TRANS, va("GAP"));
+    V_DrawThinString(120, 0, V_70TRANS, va("BORED"));
+    V_DrawThinString(150, 0, V_70TRANS, va("COOLDOWN: %d", cooldown));
+    V_DrawThinString(230, 0, V_70TRANS, va("MAXDIST: %d", maxdist));
+    for (playernum = 0; playernum < MAXPLAYERS-1; ++playernum) {
+        ytxt = 10*playernum+10;
+        leader = sortedplayers[playernum];
+        follower = sortedplayers[playernum+1];
+        if (leader == -1 || follower == -1)
+            break;
+        V_DrawThinString(10, ytxt, V_70TRANS, va("%d", playernum));
+        V_DrawThinString(20, ytxt, V_70TRANS, va("%d", playernum+1));
+        if (players[leader].positiondelay)
+            V_DrawThinString(40, ytxt, V_70TRANS, va("NG"));
+        V_DrawThinString(80, ytxt, V_70TRANS, va("%d", gap[playernum]));
+        if (boredom[playernum] >= BOREDOMTIME)
+            V_DrawThinString(120, ytxt, V_70TRANS, va("BORED"));
+        else
+            V_DrawThinString(120, ytxt, V_70TRANS, va("%d", boredom[playernum]));
+        V_DrawThinString(150, ytxt, V_70TRANS, va("%s", player_names[leader]));
+        V_DrawThinString(230, ytxt, V_70TRANS, va("%s", player_names[follower]));
     }
-    if (source && source->player) {
-        // CONS_Printf("SOURCE SET\n");
-        attacker = source->player-players;
-        freeze = TRANSFERTIME;
-        cooldown = SWITCHTIME;
-    }
-    // CONS_Printf("FOLLOW ATTACK\n");
-    // CONS_Printf(M_GetText("%s attacked\n"), player_names[attacker]);
 }
 
 void K_UpdateDirector(void) {
@@ -120,49 +139,47 @@ void K_UpdateDirector(void) {
     K_UpdateDirectorPositions();
     cooldown++;
 
-    if (freeze >= 1) {
-        // CONS_Printf("FROZEN\n");
-        if (freeze == 1) {
-            K_DirectorSwitch(attacker);
-            // CONS_Printf("ATTACKER SWITCH\n");
-        }
+    // handle pending forced switches
+    if (freeze > 0) {
+        if (freeze == 1)
+            K_DirectorSwitch(attacker, true);
         freeze--;
         return;
     }
 
-    for(targetposition = 2; targetposition < MAXPLAYERS; targetposition++) {
-        INT32 leader = FindPlayerByPlace(targetposition - 1);
-        INT32 follower = FindPlayerByPlace(targetposition);
-        fixed_t gap = K_GetFinishGap(leader, follower);
+    // aaight, time to walk through the standings to find the first interesting pair
+    for(targetposition = 0; targetposition < MAXPLAYERS; targetposition++) {
+        INT32 target;
 
-        /*
-        CONS_Printf("Eval %d GP %d CD %d FC %d DC %d\n", 
-           targetposition, gap, cooldown, confidence[follower], confidence[*displayplayerp]);
-        */
-
-        if (gap > BREAKAWAYDIST) {
-            bored++;
-            if (bored > BOREDOMTIME) {
-                // CONS_Printf("BREAKAWAY, falling back to %d\n", targetposition);
-                continue;
-            }
-        } else if (bored > 0) {
-            bored--;
-        }
-
-        /*
-        if (gap < CONFUSINGDIST && *displayplayerp == leader) {
-            CONS_Printf("No switch: too close\n");
+        // you are out of players, try again
+        if (sortedplayers[targetposition+1] == -1)
             break;
-        }
-        */
 
-        if (*displayplayerp != follower && confidence[follower] > DEBOUNCETIME) {
-            K_DirectorSwitch(FindPlayerByPlace(targetposition));
+        // pair too far apart? try the next one
+        if (boredom[targetposition] >= BOREDOMTIME)
+            continue;
+
+        // pair finished? try the next one
+        if (players[sortedplayers[targetposition+1]].exiting)
+            continue;
+
+        if (maxdist > PINCHDIST) {
+            // if the "next" player is close enough, they should be able to see everyone fine!
+            // walk back through the standings to find a vantage that gets everyone in frame.
+            while (targetposition < MAXPLAYERS && gap[targetposition+1] < WALKBACKDIST) {
+                targetposition++;
+            }
         }
-        if (positions[*displayplayerp] != targetposition && confidence[*displayplayerp] > DEBOUNCETIME) {
-            K_DirectorSwitch(FindPlayerByPlace(targetposition));
-        }
+
+
+        target = sortedplayers[targetposition+1];
+
+        // if we're certain the back half of the pair is actually in this position, try to switch
+        if (*displayplayerp != target && !players[target].positiondelay)
+            K_DirectorSwitch(target, false);
+        // even if we're not certain, if we're certain we're watching the WRONG player, try to switch
+        if (players[*displayplayerp].position != targetposition && !players[target].positiondelay)
+            K_DirectorSwitch(target, false);
 
         break;
     }

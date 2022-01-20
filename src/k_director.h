@@ -4,4 +4,5 @@
 /// \brief SRB2kart automatic spectator camera.
 
 void K_UpdateDirector(void);
+void K_DrawDirectorDebugger(void);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
