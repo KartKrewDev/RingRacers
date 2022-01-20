@@ -93,6 +93,7 @@
 #include "k_grandprix.h"
 #include "k_brightmap.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
+#include "k_director.h" // K_InitDirector
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -4141,6 +4142,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
 	}
+
+	K_InitDirector();
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
