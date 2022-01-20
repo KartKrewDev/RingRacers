@@ -19,15 +19,6 @@
 #define WALKBACKDIST 600			// how close should a trailing player be before we switch?
 #define PINCHDIST 30000				// how close should the leader be to be considered "end of race"?
 
-void K_InitDirector(void);
-void K_UpdateDirectorPositions(void);
-boolean K_CanSwitchDirector(void);
-fixed_t K_GetFinishGap(INT32 leader, INT32 follower);
-void K_DirectorSwitch(INT32 player, boolean force);
-void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
-void K_UpdateDirector(void);
-void K_DirectorForceSwitch(INT32 player, INT32 time);
-
 struct directorinfo directorinfo;
 
 void K_InitDirector(void)
@@ -62,7 +53,7 @@ static fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
 	}
 }
 
-void K_UpdateDirectorPositions(void)
+static void K_UpdateDirectorPositions(void)
 {
 	INT32 playernum;
 	INT32 position;
