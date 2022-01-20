@@ -239,6 +239,8 @@ void K_UpdateDirector(void)
 	}
 
 	// aaight, time to walk through the standings to find the first interesting pair
+	// NB: targetposition/sortedplayers is 0-indexed, aiming at the "back half" of a given pair by default.
+	// we adjust for this when comparing to player->position or when looking at the leading player, Don't Freak Out
 	for (targetposition = 1; targetposition < MAXPLAYERS; targetposition++)
 	{
 		INT32 target;
