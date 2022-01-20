@@ -3620,6 +3620,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				INT32 delay = (sides[line->sidenum[0]].rowoffset>>FRACBITS);
 				if (mo && mo->player)
 				{
+					// Don't award rings while SPB is targetting you
+					if (mo->player->pflags & PF_RINGLOCK)
+						return;
+
 					if (delay <= 0 || !(leveltime % delay))
 						P_GivePlayerRings(mo->player, rings);
 				}
