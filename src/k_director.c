@@ -47,7 +47,7 @@ void K_InitDirector(void)
 	}
 }
 
-fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
+static fixed_t K_GetFinishGap(INT32 leader, INT32 follower)
 {
 	fixed_t dista = players[follower].distancetofinish;
 	fixed_t distb = players[leader].distancetofinish;
@@ -104,7 +104,7 @@ void K_UpdateDirectorPositions(void)
 	directorinfo.maxdist = P_ScaleFromMap(players[directorinfo.sortedplayers[0]].distancetofinish, FRACUNIT);
 }
 
-boolean K_CanSwitchDirector(void)
+static boolean K_CanSwitchDirector(void)
 {
 	INT32 *displayplayerp = &displayplayers[0];
 
@@ -121,7 +121,7 @@ boolean K_CanSwitchDirector(void)
 	return true;
 }
 
-void K_DirectorSwitch(INT32 player, boolean force)
+static void K_DirectorSwitch(INT32 player, boolean force)
 {
 	if (P_IsDisplayPlayer(&players[player]))
 	{
@@ -142,7 +142,7 @@ void K_DirectorSwitch(INT32 player, boolean force)
 	directorinfo.cooldown = SWITCHTIME;
 }
 
-void K_DirectorForceSwitch(INT32 player, INT32 time)
+static void K_DirectorForceSwitch(INT32 player, INT32 time)
 {
 	if (players[player].exiting)
 	{
