@@ -433,6 +433,7 @@ consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_N
 consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("kartdebugcolorize", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
+consvar_t cv_kartdebugdirector = CVAR_INIT ("kartdebugdirector", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
