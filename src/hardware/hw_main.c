@@ -3937,7 +3937,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	// Start with the lightlevel and colormap from the top of the sprite
 	lightlevel = *list[sector->numlights - 1].lightlevel;
-	if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+	if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 		colormap = *list[sector->numlights - 1].extra_colormap;
 
 	i = 0;
@@ -4296,7 +4296,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
-		if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+		if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 			colormap = sector->extra_colormap;
 
 		if (splat && sector->numlights)
