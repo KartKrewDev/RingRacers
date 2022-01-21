@@ -57,17 +57,17 @@ static void K_UpdateDirectorPositions(void)
 {
 	INT32 playernum;
 	INT32 position;
-	player_t target;
+	player_t* target;
 
 	memset(directorinfo.sortedplayers, -1, sizeof(directorinfo.sortedplayers));
 
 	for (playernum = 0; playernum < MAXPLAYERS; playernum++)
 	{
-		target = players[playernum];
+		target = &players[playernum];
 
-		if (playeringame[playernum] && !target.spectator && target.position > 0)
+		if (playeringame[playernum] && !target->spectator && target->position > 0)
 		{
-			directorinfo.sortedplayers[target.position - 1] = playernum;
+			directorinfo.sortedplayers[target->position - 1] = playernum;
 		}
 	}
 
