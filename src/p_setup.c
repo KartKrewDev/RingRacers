@@ -1940,6 +1940,24 @@ static void P_LoadTextmap(void)
 	}
 }
 
+static fixed_t
+P_MirrorTextureOffset
+(		fixed_t offset,
+		fixed_t source_width,
+		fixed_t actual_width)
+{
+	/*
+	Adjusting the horizontal alignment is a bit ASS...
+	Textures on the opposite side of the line will begin
+	drawing from the opposite end.
+
+	Start with the texture width and subtract the seg
+	length to account for cropping/wrapping. Subtract the
+	offset to mirror the alignment.
+	*/
+	return source_width - actual_width - offset;
+}
+
 static boolean P_CheckLineSideTripWire(line_t *ld, int p)
 {
 	INT32 n;
@@ -1961,6 +1979,28 @@ static boolean P_CheckLineSideTripWire(line_t *ld, int p)
 	terrain = K_GetTerrainForTextureNum(sda->midtexture);
 	tripwire = terrain && (terrain->flags & TRF_TRIPWIRE);
 
+	if (tripwire)
+	{
+		// copy midtexture to other side
+		n = ld->sidenum[!p];
+
+		if (n != 0xffff)
+		{
+			fixed_t linelength = FixedHypot(ld->dx, ld->dy);
+			texture_t *tex = textures[sda->midtexture];
+
+			sdb = &sides[n];
+
+			sdb->midtexture = sda->midtexture;
+			sdb->rowoffset = sda->rowoffset;
+
+			// mirror texture alignment
+			sdb->textureoffset = P_MirrorTextureOffset(
+					sda->textureoffset, tex->width * FRACUNIT,
+					linelength);
+		}
+	}
+
 	return tripwire;
 }
 
@@ -1974,7 +2014,8 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
 
-		// Check for tripwire on either side
+		// Check for tripwire, if either side matches then
+		// copy that (mid)texture to the other side.
 		ld->tripwire =
 			P_CheckLineSideTripWire(ld, 0) ||
 			P_CheckLineSideTripWire(ld, 1);
