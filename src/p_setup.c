@@ -1939,6 +1939,30 @@ static void P_LoadTextmap(void)
 	}
 }
 
+static boolean P_CheckLineSideTripWire(line_t *ld, int p)
+{
+	INT32 n;
+
+	side_t *sda;
+	side_t *sdb;
+
+	terrain_t *terrain;
+
+	boolean tripwire;
+
+	n = ld->sidenum[p];
+
+	if (n == 0xffff)
+		return false;
+
+	sda = &sides[n];
+
+	terrain = K_GetTerrainForTextureNum(sda->midtexture);
+	tripwire = terrain && (terrain->flags & TRF_TRIPWIRE);
+
+	return tripwire;
+}
+
 static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
@@ -1946,16 +1970,13 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 	for (; i--; ld++)
 	{
-		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
-		terrain_t *terrain = K_GetTerrainForTextureNum(midtexture);
-
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
 
-		if (terrain != NULL && (terrain->flags & TRF_TRIPWIRE))
-		{
-			ld->tripwire = true;
-		}
+		// Check for tripwire on either side
+		ld->tripwire =
+			P_CheckLineSideTripWire(ld, 0) ||
+			P_CheckLineSideTripWire(ld, 1);
 
 		switch (ld->special)
 		{
