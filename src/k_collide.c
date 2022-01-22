@@ -48,7 +48,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT|DMG_WOMBO);
 			K_KartBouncing(t2, t1);
 			S_StartSound(t2, sfx_s3k7b);
 		}
@@ -143,7 +143,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL|DMG_WOMBO);
 		}
 
 		damageitem = true;
