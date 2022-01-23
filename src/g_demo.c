@@ -2689,7 +2689,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT32 randseed;
 	char msg[1024];
 
-	boolean spectator, kickstart, shrinkme;
+	boolean spectator;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
@@ -2962,12 +2962,10 @@ void G_DoPlayDemo(char *defdemoname)
 	{
 		UINT8 flags = READUINT8(demo_p);
 
-		spectator = kickstart = shrinkme = false;
+		spectator = !!(flags & DEMO_SPECTATOR);
 
-		if ((spectator = !!(flags & DEMO_SPECTATOR)) == true)
+		if (spectator == true)
 		{
-			flags &= ~DEMO_SPECTATOR;
-
 			if (modeattacking)
 			{
 				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with spectators, and is thus invalid.\n"), pdemoname);
@@ -2980,12 +2978,6 @@ void G_DoPlayDemo(char *defdemoname)
 				return;
 			}
 		}
-
-		if ((kickstart = !!(flags & DEMO_KICKSTART)) == true)
-			flags &= ~DEMO_KICKSTART;
-
-		if ((shrinkme = !!(flags & DEMO_SHRINKME)) == true)
-			flags &= ~DEMO_SHRINKME;
 
 		slots[numslots] = p;
 		numslots++;
@@ -3008,12 +3000,12 @@ void G_DoPlayDemo(char *defdemoname)
 		playeringame[p] = true;
 		players[p].spectator = spectator;
 
-		if (kickstart)
+		if (flags & DEMO_KICKSTART)
 			players[p].pflags |= PF_KICKSTARTACCEL;
 		else
 			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
-		if (shrinkme)
+		if (flags & DEMO_SHRINKME)
 			players[p].pflags |= PF_SHRINKME;
 		else
 			players[p].pflags &= ~PF_SHRINKME;
@@ -3278,7 +3270,10 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	if ((READUINT8(p) & ~(DEMO_KICKSTART|DEMO_SHRINKME)) != 0)
+	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
+
+	// any invalidating flags?
+	if ((READUINT8(p) & (DEMO_SPECTATOR)) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
 		Z_Free(pdemoname);
