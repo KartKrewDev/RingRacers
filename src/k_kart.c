@@ -34,6 +34,7 @@
 #include "k_bot.h"
 #include "k_hud.h"
 #include "k_terrain.h"
+#include "k_director.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -259,6 +260,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugcheckpoint);
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
+	CV_RegisterVar(&cv_kartdebugdirector);
 }
 
 //}
@@ -3287,6 +3289,8 @@ void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 typ
 	(void)inflictor;
 	(void)source;
 
+	K_DirectorFollowAttack(player, inflictor, source);
+
 	player->spinouttype = type;
 
 	if (( player->spinouttype & KSPIN_THRUST ))
@@ -3331,6 +3335,8 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
 	fixed_t gravityadjust;
 	(void)source;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	player->tumbleBounces = 1;
 
@@ -3467,6 +3473,8 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 	INT32 ringburst = 10;
 
 	(void)source;
+
+	K_DirectorFollowAttack(player, inflictor, source);
 
 	player->mo->momz = 18*mapobjectscale*P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
 	player->mo->momx = player->mo->momy = 0;
