@@ -1689,6 +1689,8 @@ void P_XYMovement(mobj_t *mo)
 				if (mo->flags & MF_SLIDEME)
 				{
 					P_SlideMove(mo);
+					if (P_MobjWasRemoved(mo))
+						return;
 					xmove = ymove = 0;
 				}
 				else
@@ -10872,9 +10874,12 @@ void P_SpawnPlayer(INT32 playernum)
 
 	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
 
+	if (K_PlayerShrinkCheat(p) == true)
+	{
+		mobj->destscale = FixedMul(mobj->destscale, SHRINK_SCALE);
+	}
+
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
-	if (cv_kartdebugshrink.value && !modeattacking && !p->bot)
-		mobj->destscale = 6*mobj->destscale/8;
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
 

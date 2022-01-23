@@ -161,7 +161,9 @@ typedef enum
 	MF_PICKUPFROMBELOW  = 1<<29,
 	// Disable momentum-based squash and stretch.
 	MF_NOSQUISH         = 1<<30,
-	// free: to and including 1<<31
+	// Disable hitlag for this object
+	MF_NOHITLAGFORME 	= 1<<31,
+	// no more free slots, next up I suppose we can get rid of shit like MF_BOXICON?
 } mobjflag_t;
 
 typedef enum

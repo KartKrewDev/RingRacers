@@ -60,6 +60,7 @@ INT32 *texturebrightmaps;
 // Painfully simple texture id cacheing to make maps load faster. :3
 static struct {
 	char name[9];
+	UINT32 hash;
 	INT32 id;
 } *tidcache = NULL;
 static INT32 tidcachelen = 0;
@@ -803,6 +804,7 @@ Rloadflats (INT32 i, INT32 w)
 
 			// Set texture properties.
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
+			texture->hash = quickncasehash(texture->name, 8);
 
 #ifndef NO_PNG_LUMPS
 			if (Picture_IsLumpPNG(header, lumplength))
@@ -901,6 +903,7 @@ Rloadtextures (INT32 i, INT32 w)
 
 			// Set texture properties.
 			M_Memcpy(texture->name, W_CheckNameForNumPwad(wadnum, lumpnum), sizeof(texture->name));
+			texture->hash = quickncasehash(texture->name, 8);
 
 #ifndef NO_PNG_LUMPS
 			if (Picture_IsLumpPNG((UINT8 *)&patchlump, lumplength))
@@ -1389,6 +1392,7 @@ static texture_t *R_ParseTexture(boolean actuallyLoadTexture)
 			// Allocate memory for a zero-patch texture. Obviously, we'll be adding patches momentarily.
 			resultTexture = (texture_t *)Z_Calloc(sizeof(texture_t),PU_STATIC,NULL);
 			M_Memcpy(resultTexture->name, newTextureName, 8);
+			resultTexture->hash = quickncasehash(newTextureName, 8);
 			resultTexture->width = newTextureWidth;
 			resultTexture->height = newTextureHeight;
 			resultTexture->type = TEXTURETYPE_COMPOSITE;
@@ -1614,25 +1618,29 @@ void R_ClearTextureNumCache(boolean btell)
 INT32 R_CheckTextureNumForName(const char *name)
 {
 	INT32 i;
+	UINT32 hash;
 
 	// "NoTexture" marker.
 	if (name[0] == '-')
 		return 0;
 
+	hash = quickncasehash(name, 8);
+
 	for (i = 0; i < tidcachelen; i++)
-		if (!strncasecmp(tidcache[i].name, name, 8))
+		if (tidcache[i].hash == hash && !strncasecmp(tidcache[i].name, name, 8))
 			return tidcache[i].id;
 
 	// Need to parse the list backwards, so textures loaded more recently are used in lieu of ones loaded earlier
 	//for (i = 0; i < numtextures; i++) <- old
 	for (i = (numtextures - 1); i >= 0; i--) // <- new
-		if (!strncasecmp(textures[i]->name, name, 8))
+		if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
 		{
 			tidcachelen++;
 			Z_Realloc(tidcache, tidcachelen * sizeof(*tidcache), PU_STATIC, &tidcache);
 			strncpy(tidcache[tidcachelen-1].name, name, 8);
 			tidcache[tidcachelen-1].name[8] = '\0';
 			CONS_Debug(DBG_SETUP, "texture #%s: %s\n", sizeu1(tidcachelen), tidcache[tidcachelen-1].name);
+			tidcache[tidcachelen-1].hash = hash;
 			tidcache[tidcachelen-1].id = i;
 			return i;
 		}

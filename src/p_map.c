@@ -782,7 +782,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 				return true;
 
 			// Player Damage
-			P_DamageMobj(tmthing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), thing, 1, DMG_NORMAL);
+			P_DamageMobj(tmthing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), thing, 1, DMG_NORMAL|DMG_WOMBO);
 			S_StartSound(thing, sfx_s3k44);
 		}
 		else
@@ -3495,6 +3495,9 @@ void P_SlideMove(mobj_t *mo)
 	boolean papercol = false;
 	vertex_t v1, v2; // fake vertexes
 	line_t junk; // fake linedef
+
+	if (P_MobjWasRemoved(mo))
+		return;
 
 	if (tmhitthing && mo->z + mo->height > tmhitthing->z && mo->z < tmhitthing->z + tmhitthing->height)
 	{

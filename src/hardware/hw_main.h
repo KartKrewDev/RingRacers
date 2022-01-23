@@ -67,6 +67,7 @@ void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so models can use them
+boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
