@@ -8168,7 +8168,7 @@ void A_StateRangeByParameter(mobj_t *actor)
 	INT32 locvar2 = var2;
 	UINT8 parameter = (actor->spawnpoint ? actor->spawnpoint->extrainfo : 0);
 
-	if (LUA_CallAction(A_STATERANGEBYANGLE, actor))
+	if (LUA_CallAction(A_STATERANGEBYPARAMETER, actor))
 		return;
 
 	if (locvar2 - locvar1 < 0)
