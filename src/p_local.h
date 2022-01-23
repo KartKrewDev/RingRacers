@@ -123,7 +123,7 @@ struct demofreecam_s {
 
 	camera_t *cam;	// this is useful when the game is paused, notably
 	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
-	
+
 	angle_t localangle;	// keeps track of the cam angle for cmds
 	angle_t localaiming;	// ditto with aiming
 	boolean turnheld;	// holding turn button for gradual turn speed
@@ -486,6 +486,7 @@ typedef struct BasicFF_s
 #define DMG_SPECTATOR  0x83
 #define DMG_TIMEOVER   0x84
 // Masks
+#define DMG_WOMBO		 0x10 // Flag - setting this flag allows objects to damage you if you're already in spinout. The effect is reversed on objects with MF_MISSILE (setting it prevents them from comboing in spinout)
 #define DMG_STEAL        0x20 // Flag - can steal bumpers, will only deal damage to players, and will not deal damage outside Battle Mode.
 #define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team
 #define DMG_DEATHMASK    DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type

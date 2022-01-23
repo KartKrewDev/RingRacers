@@ -181,6 +181,18 @@ boolean gl_shadersavailable = true;
 // Lighting
 // ==========================================================================
 
+boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel)
+{
+	if (R_ThingIsFullBright(thing))
+		*lightlevel = 255;
+	else if (R_ThingIsFullDark(thing))
+		*lightlevel = 0;
+	else
+		return false;
+
+	return true;
+}
+
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap)
 {
 	RGBA_t poly_color, tint_color, fade_color;
@@ -3795,7 +3807,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	patch_t *gpatch;
 	FSurfaceInfo Surf;
 	extracolormap_t *colormap = NULL;
-	FUINT lightlevel;
+	INT32 lightlevel;
 	boolean lightset = true;
 	FBITFIELD blend = 0;
 	FBITFIELD occlusion;
@@ -3925,18 +3937,13 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	// Start with the lightlevel and colormap from the top of the sprite
 	lightlevel = *list[sector->numlights - 1].lightlevel;
-	if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+	if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 		colormap = *list[sector->numlights - 1].extra_colormap;
 
 	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (R_ThingIsFullBright(spr->mobj))
-		lightlevel = 255;
-	else if (R_ThingIsFullDark(spr->mobj))
-		lightlevel = 0;
-	else
-		lightset = false;
+	lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 
 	for (i = 1; i < sector->numlights; i++)
 	{
@@ -3945,7 +3952,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		{
 			if (!lightset)
 				lightlevel = *list[i-1].lightlevel > 255 ? 255 : *list[i-1].lightlevel;
-			if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *list[i-1].extra_colormap;
 			break;
 		}
@@ -3963,8 +3970,14 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!lightset)
+			{
 				lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
-			if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+
+				if (R_ThingIsSemiBright(spr->mobj))
+					lightlevel = 128 + (lightlevel>>1);
+			}
+
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *list[i].extra_colormap;
 		}
 
@@ -4279,18 +4292,11 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	// colormap test
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 0;
-		boolean lightset = true;
+		INT32 lightlevel = 0;
+		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
-		if (R_ThingIsFullBright(spr->mobj))
-			lightlevel = 255;
-		else if (R_ThingIsFullDark(spr->mobj))
-			lightlevel = 0;
-		else
-			lightset = false;
-
-		if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+		if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 			colormap = sector->extra_colormap;
 
 		if (splat && sector->numlights)
@@ -4300,7 +4306,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-			if (*sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else if (!lightset)

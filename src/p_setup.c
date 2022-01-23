@@ -93,6 +93,7 @@
 #include "k_grandprix.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_director.h" // K_InitDirector
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -1939,6 +1940,70 @@ static void P_LoadTextmap(void)
 	}
 }
 
+static fixed_t
+P_MirrorTextureOffset
+(		fixed_t offset,
+		fixed_t source_width,
+		fixed_t actual_width)
+{
+	/*
+	Adjusting the horizontal alignment is a bit ASS...
+	Textures on the opposite side of the line will begin
+	drawing from the opposite end.
+
+	Start with the texture width and subtract the seg
+	length to account for cropping/wrapping. Subtract the
+	offset to mirror the alignment.
+	*/
+	return source_width - actual_width - offset;
+}
+
+static boolean P_CheckLineSideTripWire(line_t *ld, int p)
+{
+	INT32 n;
+
+	side_t *sda;
+	side_t *sdb;
+
+	terrain_t *terrain;
+
+	boolean tripwire;
+
+	n = ld->sidenum[p];
+
+	if (n == 0xffff)
+		return false;
+
+	sda = &sides[n];
+
+	terrain = K_GetTerrainForTextureNum(sda->midtexture);
+	tripwire = terrain && (terrain->flags & TRF_TRIPWIRE);
+
+	if (tripwire)
+	{
+		// copy midtexture to other side
+		n = ld->sidenum[!p];
+
+		if (n != 0xffff)
+		{
+			fixed_t linelength = FixedHypot(ld->dx, ld->dy);
+			texture_t *tex = textures[sda->midtexture];
+
+			sdb = &sides[n];
+
+			sdb->midtexture = sda->midtexture;
+			sdb->rowoffset = sda->rowoffset;
+
+			// mirror texture alignment
+			sdb->textureoffset = P_MirrorTextureOffset(
+					sda->textureoffset, tex->width * FRACUNIT,
+					linelength);
+		}
+	}
+
+	return tripwire;
+}
+
 static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
@@ -1946,16 +2011,14 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 	for (; i--; ld++)
 	{
-		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
-		terrain_t *terrain = K_GetTerrainForTextureNum(midtexture);
-
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
 
-		if (terrain != NULL && (terrain->flags & TRF_TRIPWIRE))
-		{
-			ld->tripwire = true;
-		}
+		// Check for tripwire, if either side matches then
+		// copy that (mid)texture to the other side.
+		ld->tripwire =
+			P_CheckLineSideTripWire(ld, 0) ||
+			P_CheckLineSideTripWire(ld, 1);
 
 		switch (ld->special)
 		{
@@ -3465,6 +3528,7 @@ static void P_InitLevelSettings(void)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
+		K_UpdateShrinkCheat(&players[i]);
 	}
 
 	racecountdown = exitcountdown = exitfadestarted = 0;
@@ -4141,6 +4205,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
 	}
+
+	K_InitDirector();
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
