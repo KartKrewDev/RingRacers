@@ -492,12 +492,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 
@@ -507,12 +507,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 
@@ -522,12 +522,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT);
+		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT);
+		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_WOMBO);
 		return true;
 	}
 
@@ -540,12 +540,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		if (t1Condition == true && t2Condition == false)
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL);
+			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
 		else if (t1Condition == false && t2Condition == true)
 		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL);
+			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
 	}
@@ -558,7 +558,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		if (t2->player->rings <= 0)
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
+			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stungT2 = true;
 		}
 
@@ -569,7 +569,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		if (t1->player->rings <= 0)
 		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+			P_DamageMobj(t1, t2, t2, 1, DMG_STING|DMG_WOMBO);
 			stungT1 = true;
 		}
 
