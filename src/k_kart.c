@@ -3153,7 +3153,7 @@ angle_t K_MomentumAngle(mobj_t *mo)
 
 void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 {
-	if (mo == NULL || P_MobjWasRemoved(mo) || mo->flags & MF_NOHITLAGFORME)
+	if (mo == NULL || P_MobjWasRemoved(mo) || (mo->flags & MF_NOHITLAGFORME && mo->type != MT_PLAYER))
 	{
 		return;
 	}
