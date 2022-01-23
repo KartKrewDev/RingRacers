@@ -59,10 +59,10 @@ typedef enum
 typedef enum
 {
 	// True if button down last tic.
-	PF_ATTACKDOWN = 1,
-	PF_ACCELDOWN  = 1<<1,
-	PF_BRAKEDOWN  = 1<<2,
-	PF_LOOKDOWN   = 1<<3,
+	PF_ATTACKDOWN		= 1,
+	PF_ACCELDOWN		= 1<<1,
+	PF_BRAKEDOWN		= 1<<2,
+	PF_LOOKDOWN			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -98,6 +98,9 @@ typedef enum
 
 	PF_HITFINISHLINE	= 1<<26, // Already hit the finish line this tic
 	PF_WRONGWAY			= 1<<27, // Moving the wrong way with respect to waypoints?
+
+	PF_SHRINKME			= 1<<28, // "Shrink me" cheat preference
+	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
 
 	// up to 1<<31 is free
 } pflags_t;
@@ -259,6 +262,10 @@ typedef enum
 
 // for kickstartaccel
 #define ACCEL_KICKSTART 35
+
+#define ITEMSCALE_NORMAL 0
+#define ITEMSCALE_GROW 1
+#define ITEMSCALE_SHRINK 2
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -436,6 +443,7 @@ typedef struct player_s
 	SINT8 itemtype;		// KITEM_ constant for item number
 	UINT8 itemamount;	// Amount of said item
 	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
+	UINT8 itemscale;	// Item scale value, from when an item was taken out. (0 for normal, 1 for grow, 2 for shrink.)
 
 	UINT8 sadtimer;		// How long you've been sad
 

@@ -423,7 +423,7 @@ consvar_t cv_kartallowgiveitem = CVAR_INIT ("kartallowgiveitem",
 #endif
 	CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_YesNo, NULL
 );
-consvar_t cv_kartdebugshrink = CVAR_INIT ("kartdebugshrink", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
+
 consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
@@ -935,6 +935,7 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
+		CV_RegisterVar(&cv_shrinkme[i]);
 		CV_RegisterVar(&cv_turnaxis[i]);
 		CV_RegisterVar(&cv_moveaxis[i]);
 		CV_RegisterVar(&cv_brakeaxis[i]);
@@ -1636,9 +1637,12 @@ void SendWeaponPref(UINT8 n)
 	UINT8 buf[1];
 
 	buf[0] = 0;
-	// Player option cvars that need to be synched go HERE
+
 	if (cv_kickstartaccel[n].value)
 		buf[0] |= 1;
+
+	if (cv_shrinkme[n].value)
+		buf[0] |= 2;
 
 	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
 }
@@ -1647,10 +1651,21 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	// Player option cvars that need to be synched go HERE
-	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
+	players[playernum].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
+
 	if (prefs & 1)
 		players[playernum].pflags |= PF_KICKSTARTACCEL;
+
+	if (prefs & 2)
+		players[playernum].pflags |= PF_SHRINKME;
+
+	if (leveltime < 2)
+	{
+		// BAD HACK: No other place I tried to slot this in
+		// made it work for the host when they initally host,
+		// so this will have to do.
+		K_UpdateShrinkCheat(&players[playernum]);
+	}
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;

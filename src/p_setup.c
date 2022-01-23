@@ -3465,6 +3465,7 @@ static void P_InitLevelSettings(void)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
+		K_UpdateShrinkCheat(&players[i]);
 	}
 
 	racecountdown = exitcountdown = exitfadestarted = 0;
