@@ -670,7 +670,7 @@ const char *G_BuildMapName(INT32 map)
 			map = gamemap-1;
 		else
 			map = prevmap;
-		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, false, 0, false, NULL)+1;
+		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, 0, 0, false, NULL)+1;
 	}
 
 	if (map < 100)
@@ -3247,20 +3247,24 @@ static UINT32 TOLMaps(UINT32 tolflags)
   * \author Graue <graue@oceanbase.org>
   */
 static INT16 *okmaps = NULL;
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
 {
-	INT32 numokmaps = 0;
+	UINT32 numokmaps = 0;
 	INT16 ix, bufx;
 	UINT16 extbufsize = 0;
 	boolean usehellmaps; // Only consider Hell maps in this pick
 
 	if (!okmaps)
+	{
+		//CONS_Printf("(making okmaps)\n");
 		okmaps = Z_Malloc(NUMMAPS * sizeof(INT16), PU_STATIC, NULL);
+	}
 
 	if (extbuffer != NULL)
 	{
 		bufx = 0;
-		while (extbuffer[bufx]) {
+		while (extbuffer[bufx])
+		{
 			extbufsize++; bufx++;
 		}
 	}
@@ -3333,30 +3337,42 @@ tryagain:
 		{
 			if (randmapbuffer[3] == -1) // Is the buffer basically empty?
 			{
-				ignorebuffer = true; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
 			for (bufx = 3; bufx < NUMMAPS; bufx++) // Let's clear all but the three most recent maps...
 				randmapbuffer[bufx] = -1;
+			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
 
 		if (maphell) // Any wiggle room to loosen our restrictions here?
 		{
+			//CONS_Printf("RANDMAP -maphell decrement\n");
 			maphell--;
 			goto tryagain;
 		}
 
+		//CONS_Printf("RANDMAP - defaulting to map01\n");
 		ix = 0; // Sorry, none match. You get MAP01.
-		for (bufx = 0; bufx < NUMMAPS+1; bufx++)
-			randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		if (ignorebuffer == 1)
+		{
+			//CONS_Printf("(emptying randmapbuffer entirely)\n");
+			for (bufx = 0; bufx < NUMMAPS; bufx++)
+				randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		}
 	}
 	else
+	{
+		//CONS_Printf("RANDMAP - %d maps available to grab\n", numokmaps);
 		ix = okmaps[M_RandomKey(numokmaps)];
+	}
 
 	if (!callagainsoon)
 	{
+		//CONS_Printf("(freeing okmaps)\n");
 		Z_Free(okmaps);
 		okmaps = NULL;
 	}
@@ -3366,7 +3382,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, (INT32)TOLMaps(G_TOLFlag(gametype))-3);
+	INT16 bufx, refreshnum = max(0, TOLMaps(G_TOLFlag(gametype))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3612,7 +3628,7 @@ static void G_DoCompleted(void)
 		}
 		else if (cv_advancemap.value == 2) // Go to random map.
 		{
-			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
+			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
 		}
 	}
 

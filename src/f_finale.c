@@ -2144,7 +2144,7 @@ void F_TitleScreenTicker(boolean run)
 		}
 		*/
 
-		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, false, 0, false, NULL)+1);
+		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
 
 		numstaff = 1;
 		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)

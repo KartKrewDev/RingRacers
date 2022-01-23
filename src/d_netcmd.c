@@ -2408,7 +2408,7 @@ void D_SetupVote(void)
 	UINT8 *p = buf;
 	INT32 i;
 	UINT8 secondgt = G_SometimesGetDifferentGametype();
-	INT16 votebuffer[3] = {-1,-1,-1};
+	INT16 votebuffer[4] = {-1,-1,-1, 0};
 
 	if ((cv_kartencore.value == 1) && (gametyperules & GTR_CIRCUIT))
 		WRITEUINT8(p, (gametype|0x80));
@@ -2421,13 +2421,13 @@ void D_SetupVote(void)
 	{
 		UINT16 m;
 		if (i == 2) // sometimes a different gametype
-			m = G_RandMap(G_TOLFlag(secondgt), prevmap, false, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
 		else if (i >= 3) // unknown-random and force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, (i-2), (i < 4), votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, (i-2), (i < 4), votebuffer);
 		else
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
-			votebuffer[min(i, 2)] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
+			votebuffer[i] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
 		WRITEUINT16(p, m);
 	}
 
