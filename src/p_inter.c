@@ -1929,7 +1929,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->mo->hitlag == 0 && player->flashing > 0)
+					// Check if we should allow wombo combos (DMG_WOMBO)
+					boolean allowcombo = false;
+
+					// For MISSILE OBJECTS, allow combo BY DEFAULT. If DMG_WOMBO is set, do *NOT* allow it.
+					if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->flags & MF_MISSILE) && !(damagetype & DMG_WOMBO))
+						allowcombo = true;
+
+					// OTHERWISE, only allow combos IF DMG_WOMBO *IS* set.
+					else if (damagetype & DMG_WOMBO)
+						allowcombo = true;
+
+					if ((player->mo->hitlag == 0 || allowcombo == false) && player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
