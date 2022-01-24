@@ -1560,7 +1560,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	demo_extradata[playernum] |= DXD_COLOR;
 
 	// normal player colors
-	if (server && !P_IsLocalPlayer(p))
+	if (server && !P_IsMachineLocalPlayer(p))
 	{
 		boolean kick = false;
 

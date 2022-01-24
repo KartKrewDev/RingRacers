@@ -1070,25 +1070,51 @@ void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative)
 }
 
 //
-// P_IsLocalPlayer
+// P_IsMachineLocalPlayer
 //
 // Returns true if player is
-// on the local machine.
+// ACTUALLY on the local machine
 //
-boolean P_IsLocalPlayer(player_t *player)
+boolean P_IsMachineLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
-	if (demo.playback)
-		return P_IsDisplayPlayer(player);
-
-	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
 			return true;
 	}
 
 	return false;
+}
+
+//
+// P_IsLocalPlayer
+//
+// Returns true if player is
+// on the local machine
+// (or simulated party)
+//
+boolean P_IsLocalPlayer(player_t *player)
+{
+	UINT8 i;
+
+	// nobody is ever local when watching something back - you're a spectator there, even if your g_localplayers might say otherwise
+	if (demo.playback)
+		return false;
+
+	// parties - treat everyone as if it's couch co-op
+	if (splitscreen_partied[consoleplayer])
+	{
+		for (i = 0; i < splitscreen_party_size[consoleplayer]; i++)
+		{
+			if (splitscreen_party[consoleplayer][i] == (player-players))
+				return true;
+		}
+		return false;
+	}
+
+	return P_IsMachineLocalPlayer(player);
 }
 
 //
@@ -3539,6 +3565,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
+	INT32 changeto = 0;
+	const char *text = NULL;
+
 	// Team changing isn't allowed.
 	if (!cv_allowteamchange.value)
 	{
@@ -3546,12 +3575,13 @@ boolean P_SpectatorJoinGame(player_t *player)
 			CONS_Printf(M_GetText("Server does not allow team change.\n"));
 		//player->flashing = TICRATE + 1; //to prevent message spam.
 	}
+
 	// Team changing in Team Match and CTF
 	// Pressing fire assigns you to a team that needs players if allowed.
 	// Partial code reproduction from p_tick.c autobalance code.
-	else if (G_GametypeHasTeams())
+	// a surprise tool that will help us later...
+	if (G_GametypeHasTeams())
 	{
-		INT32 changeto = 0;
 		INT32 z, numplayersred = 0, numplayersblue = 0;
 
 		//find a team by num players, score, or random if all else fails.
@@ -3578,55 +3608,57 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 		if (!LUAh_TeamSwitch(player, changeto, true, false, false))
 			return false;
-
-		if (player->mo)
-		{
-			P_RemoveMobj(player->mo);
-			player->mo = NULL;
-		}
-		player->spectator = false;
-		player->pflags &= ~PF_WANTSTOJOIN;
-		player->spectatewait = 0;
-		player->ctfteam = changeto;
-		player->playerstate = PST_REBORN;
-
-		//Reset away view
-		if (P_IsLocalPlayer(player) && displayplayers[0] != consoleplayer)
-		{
-			// Call ViewpointSwitch hooks here.
-			// The viewpoint was forcibly changed.
-			LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
-			displayplayers[0] = consoleplayer;
-		}
-
-		if (changeto == 1)
-			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x85', M_GetText("Red team"), '\x80');
-		else if (changeto == 2)
-			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
-
-		return true; // no more player->mo, cannot continue.
 	}
-	// Joining in game from firing.
-	else
+
+	// no conditions that could cause the gamejoin to fail below this line
+
+	if (player->mo)
 	{
-		if (player->mo)
-		{
-			P_RemoveMobj(player->mo);
-			player->mo = NULL;
-		}
-		player->spectator = false;
-		player->pflags &= ~PF_WANTSTOJOIN;
-		player->spectatewait = 0;
-		player->playerstate = PST_REBORN;
-
-		//Reset away view
-		if (P_IsLocalPlayer(player) && displayplayers[0] != consoleplayer)
-			displayplayers[0] = consoleplayer;
-
-		HU_AddChatText(va(M_GetText("\x82*%s entered the game."), player_names[player-players]), false);
-		return true; // no more player->mo, cannot continue.
+		P_RemoveMobj(player->mo);
+		player->mo = NULL;
 	}
-	return false;
+	player->spectator = false;
+	player->pflags &= ~PF_WANTSTOJOIN;
+	player->spectatewait = 0;
+	player->ctfteam = changeto;
+	player->playerstate = PST_REBORN;
+
+	// Reset away view (some code referenced from P_IsLocalPlayer)
+	{
+		UINT8 i = 0;
+		if (splitscreen_partied[consoleplayer])
+		{
+			for (i = splitscreen_party_size[consoleplayer]; i > 0; i--)
+			{
+				if (splitscreen_party[consoleplayer][i-1] == (player-players))
+					break;
+			}
+		}
+
+		if (i == 0)
+			for (i = r_splitscreen; i > 0; i--)
+			{
+				if (g_localplayers[i-1] == (player-players))
+					break;
+			}
+
+		if (i && displayplayers[i-1] != (player-players))
+		{
+			LUAh_ViewpointSwitch(player, player, true);
+			displayplayers[i-1] = (player-players);
+		}
+	}
+
+	// a surprise tool that will help us later...
+	if (changeto == 1)
+		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "RED", '\x82');
+	else if (changeto == 2)
+		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "BLU", '\x82');
+	else
+		text = va("\x82*%s entered the game.", player_names[player-players]);
+
+	HU_AddChatText(text, false);
+	return true; // no more player->mo, cannot continue.
 }
 
 // the below is first person only, if you're curious. check out P_CalcChasePostImg in p_mobj.c for chasecam
