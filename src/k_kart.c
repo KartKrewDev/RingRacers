@@ -9254,8 +9254,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								K_DoThunderShield(player);
-								player->itemamount--;
-								K_PlayAttackTaunt(player->mo);
+								if (player->itemamount > 0)
+								{
+									// Why is this a conditional?
+									// Thunder shield: the only item that allows you to
+									// activate a mine while you're out of its radius,
+									// the SAME tic it sets your itemamount to 0
+									// ...:dumbestass:
+									player->itemamount--;
+									K_PlayAttackTaunt(player->mo);
+								}
 							}
 							break;
 						case KITEM_BUBBLESHIELD:
