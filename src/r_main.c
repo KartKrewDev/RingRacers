@@ -1571,6 +1571,7 @@ void R_RenderPlayerView(void)
 	R_ClipSprites(drawsegs, NULL);
 	ps_sw_spritecliptime = I_GetPreciseTime() - ps_sw_spritecliptime;
 
+
 	// Add skybox portals caused by sky visplanes.
 	if (cv_skybox.value && player->skybox.viewpoint)
 		Portal_AddSkyboxPortals(player);
