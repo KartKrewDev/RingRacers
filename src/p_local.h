@@ -410,6 +410,7 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 fixed_t P_BaseStepUp(void);
 fixed_t P_GetThingStepUp(mobj_t *thing);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
