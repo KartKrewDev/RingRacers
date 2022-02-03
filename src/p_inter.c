@@ -1868,10 +1868,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
-		const UINT8 type = (damagetype & DMG_TYPEMASK);
-		const boolean combo = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can be comboed from other damage
-		INT16 ringburst = 5;
-
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -1897,6 +1893,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 		else
 		{
+			const UINT8 type = (damagetype & DMG_TYPEMASK);
+			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
+			INT16 ringburst = 5;
+
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
@@ -1927,20 +1927,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					return false;
 				}
 
-				if (combo == false)
 				{
-					// Check if we should allow wombo combos (DMG_WOMBO)
-					boolean allowcombo = false;
+					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
+					boolean allowcombo = (hardhit == !(damagetype & DMG_WOMBO));
 
-					// For MISSILE OBJECTS, allow combo BY DEFAULT. If DMG_WOMBO is set, do *NOT* allow it.
-					if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->flags & MF_MISSILE) && !(damagetype & DMG_WOMBO))
-						allowcombo = true;
+					// NEVER allow DMG_TUMBLE stacking if you're moving upwards (relative to gravity).
+					if ((type == DMG_TUMBLE) && (P_MobjFlip(target)*target->momz > 0))
+						allowcombo = false;
 
-					// OTHERWISE, only allow combos IF DMG_WOMBO *IS* set.
-					else if (damagetype & DMG_WOMBO)
-						allowcombo = true;
-
-					if ((player->mo->hitlag == 0 || allowcombo == false) && player->flashing > 0)
+					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -2064,7 +2059,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(player->mo);
 
-			if ((combo == true) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
 				K_DropItems(player);
 			}

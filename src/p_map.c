@@ -1046,7 +1046,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	// missiles can hit other things
 	if (tmthing->flags & MF_MISSILE)
 	{
-		UINT8 damagetype = tmthing->info->mass;
+		UINT8 damagetype = (tmthing->info->mass ^ DMG_WOMBO);
 
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
