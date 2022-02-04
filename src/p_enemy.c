@@ -3137,18 +3137,18 @@ void A_SkullAttack(mobj_t *actor)
 		actor->angle += (P_RandomChance(FRACUNIT/2)) ? ANGLE_90 : -ANGLE_90;
 	else if (locvar1 == 3)
 	{
-		statenum_t oldspawnstate = mobjinfo[MT_NULL].spawnstate;
-		UINT32 oldflags = mobjinfo[MT_NULL].flags;
-		fixed_t oldradius = mobjinfo[MT_NULL].radius;
-		fixed_t oldheight = mobjinfo[MT_NULL].height;
+		statenum_t oldspawnstate = mobjinfo[MT_RAY].spawnstate;
+		UINT32 oldflags = mobjinfo[MT_RAY].flags;
+		fixed_t oldradius = mobjinfo[MT_RAY].radius;
+		fixed_t oldheight = mobjinfo[MT_RAY].height;
 		INT32 i, j;
 		static INT32 k;/* static for (at least) GCC 9.1 weirdness */
 		angle_t testang = 0;
 
-		mobjinfo[MT_NULL].spawnstate = S_INVISIBLE;
-		mobjinfo[MT_NULL].flags = MF_NOGRAVITY|MF_NOTHINK|MF_NOCLIPTHING|MF_NOBLOCKMAP;
-		mobjinfo[MT_NULL].radius = mobjinfo[actor->type].radius;
-		mobjinfo[MT_NULL].height = mobjinfo[actor->type].height;
+		mobjinfo[MT_RAY].spawnstate = S_INVISIBLE;
+		mobjinfo[MT_RAY].flags = MF_NOGRAVITY|MF_NOTHINK|MF_NOCLIPTHING|MF_NOBLOCKMAP;
+		mobjinfo[MT_RAY].radius = mobjinfo[actor->type].radius;
+		mobjinfo[MT_RAY].height = mobjinfo[actor->type].height;
 
 		if (P_RandomChance(FRACUNIT/2)) // port priority 1?
 		{
@@ -3192,10 +3192,10 @@ void A_SkullAttack(mobj_t *actor)
 
 #undef dostuff
 
-		mobjinfo[MT_NULL].spawnstate = oldspawnstate;
-		mobjinfo[MT_NULL].flags = oldflags;
-		mobjinfo[MT_NULL].radius = oldradius;
-		mobjinfo[MT_NULL].height = oldheight;
+		mobjinfo[MT_RAY].spawnstate = oldspawnstate;
+		mobjinfo[MT_RAY].flags = oldflags;
+		mobjinfo[MT_RAY].radius = oldradius;
+		mobjinfo[MT_RAY].height = oldheight;
 	}
 
 	an = actor->angle >> ANGLETOFINESHIFT;
