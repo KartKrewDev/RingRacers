@@ -1931,9 +1931,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
 					boolean allowcombo = (hardhit == !(damagetype & DMG_WOMBO));
 
-					// NEVER allow DMG_TUMBLE stacking if you're moving upwards (relative to gravity).
-					if ((type == DMG_TUMBLE) && (P_MobjFlip(target)*target->momz > 0))
-						allowcombo = false;
+					// Tumble is a special case.
+					if ((type == DMG_TUMBLE)
+					{
+						// don't allow constant combo
+						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0)
+							allowcombo = false;
+					}
 
 					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0)
 					{
