@@ -1932,10 +1932,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					boolean allowcombo = (hardhit == !(damagetype & DMG_WOMBO));
 
 					// Tumble is a special case.
-					if ((type == DMG_TUMBLE)
+					if (type == DMG_TUMBLE)
 					{
 						// don't allow constant combo
-						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0)
+						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0))
 							allowcombo = false;
 					}
 
