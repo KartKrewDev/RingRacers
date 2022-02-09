@@ -3823,10 +3823,19 @@ void P_BouncePlayerMove(mobj_t *mo)
 
 	if (P_IsLineTripWire(bestslideline))
 	{
+		// TRIPWIRE CANNOT BE MADE NONBOUNCY
 		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
 	}
 	else
 	{
+		// Some walls aren't bouncy even if you are
+		if (bestslideline && (bestslideline->flags & ML_NOTBOUNCY))
+		{
+			// SRB2Kart: Non-bouncy line!
+			P_SlideMove(mo);
+			return;
+		}
+
 		K_SpawnBumpEffect(mo);
 	}
 
