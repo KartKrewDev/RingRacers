@@ -813,6 +813,7 @@ void P_RestoreMusic(player_t *player)
 		if (r_splitscreen)
 		{
 			INT32 bestlocaltimer = 1;
+			INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
 #define setbests(p) \
 	if (players[p].playerstate == PST_LIVE) \
@@ -822,12 +823,12 @@ void P_RestoreMusic(player_t *player)
 		else if (players[p].growshrinktimer > bestlocaltimer) \
 		{ wantedmus = 2; bestlocaltimer = players[p].growshrinktimer; } \
 	}
-			setbests(displayplayers[0]);
-			setbests(displayplayers[1]);
+			setbests(localplayertable[0]);
+			setbests(localplayertable[1]);
 			if (r_splitscreen > 1)
-				setbests(displayplayers[2]);
+				setbests(localplayertable[2]);
 			if (r_splitscreen > 2)
-				setbests(displayplayers[3]);
+				setbests(localplayertable[3]);
 #undef setbests
 		}
 		else
