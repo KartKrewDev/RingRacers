@@ -3570,11 +3570,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 	// Team changing isn't allowed.
 	if (!cv_allowteamchange.value)
-	{
-		if (P_IsLocalPlayer(player))
-			CONS_Printf(M_GetText("Server does not allow team change.\n"));
-		//player->flashing = TICRATE + 1; //to prevent message spam.
-	}
+		return false;
 
 	// Team changing in Team Match and CTF
 	// Pressing fire assigns you to a team that needs players if allowed.
