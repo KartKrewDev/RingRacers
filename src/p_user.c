@@ -3620,29 +3620,19 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->ctfteam = changeto;
 	player->playerstate = PST_REBORN;
 
-	// Reset away view (some code referenced from P_IsLocalPlayer)
+	// Reset away view (some code referenced from Got_Teamchange)
 	{
 		UINT8 i = 0;
-		if (splitscreen_partied[consoleplayer])
-		{
-			for (i = splitscreen_party_size[consoleplayer]; i > 0; i--)
-			{
-				if (splitscreen_party[consoleplayer][i-1] == (player-players))
-					break;
-			}
-		}
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		if (i == 0)
-			for (i = r_splitscreen; i > 0; i--)
-			{
-				if (g_localplayers[i-1] == (player-players))
-					break;
-			}
-
-		if (i && displayplayers[i-1] != (player-players))
+		for (i = 0; i < r_splitscreen; i++)
 		{
-			LUAh_ViewpointSwitch(player, player, true);
-			displayplayers[i-1] = (player-players);
+			if (localplayertable[i] == (player-players))
+			{
+				LUAh_ViewpointSwitch(player, player, true);
+				displayplayers[i] = (player-players);
+				break;
+			}
 		}
 	}
 

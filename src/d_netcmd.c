@@ -3459,15 +3459,20 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	//reset view if you are changed, or viewing someone who was changed.
-	if (playernum == consoleplayer || displayplayers[0] == playernum)
+	// Reset away view (some code referenced from P_SpectatorJoinGame)
 	{
-		// Call ViewpointSwitch hooks here.
-		// The viewpoint was forcibly changed.
-		if (displayplayers[0] != consoleplayer) // You're already viewing yourself. No big deal.
-			LUAh_ViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		displayplayers[0] = consoleplayer;
+		for (i = 0; i < r_splitscreen; i++)
+		{
+			if (localplayertable[i] == playernum)
+			{
+				LUAh_ViewpointSwitch(players+playernum, players+playernum, true);
+				displayplayers[i] = playernum;
+				break;
+			}
+		}
 	}
 
 	/*if (G_GametypeHasTeams())
