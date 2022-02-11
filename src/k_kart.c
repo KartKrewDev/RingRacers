@@ -9222,7 +9222,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									player->growshrinktimer = itemtime+(4*TICRATE); // 12 seconds
 
-									if (P_IsLocalPlayer(player) == true)
+									if (player->invincibilitytimer > 0)
+									{
+										; // invincibility has priority in P_RestoreMusic, no point in starting here
+									}
+									else if (P_IsLocalPlayer(player) == true)
 									{
 										S_ChangeMusicSpecial("kgrow");
 									}
