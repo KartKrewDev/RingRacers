@@ -865,8 +865,8 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	// Calculate screen size adjustments.
 	// TODO: Anyone want to make this support non-green resolutions somehow? :V
-	screenWidth = BASEVIDWIDTH;
-	screenHeight = BASEVIDHEIGHT;
+	screenWidth = vid.width/vid.dupx;
+	screenHeight = vid.height/vid.dupy;
 
 	if (r_splitscreen >= 2)
 	{
@@ -924,6 +924,10 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	{
 		result->onScreen = false;
 	}
+
+	// adjust to non-green-resolution screen coordinates
+	result->x -= ((vid.width/vid.dupx) - BASEVIDWIDTH)<<(FRACBITS-((r_splitscreen >= 2) ? 2 : 1));
+	result->y -= ((vid.height/vid.dupy) - BASEVIDHEIGHT)<<(FRACBITS-((r_splitscreen >= 1) ? 2 : 1));
 
 	return;
 
