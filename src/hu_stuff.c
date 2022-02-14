@@ -996,7 +996,8 @@ void HU_Ticker(void)
 		}
 	}
 
-	cechotimer--;
+	if (cechotimer)
+		cechotimer--;
 
 	if (gamestate != GS_LEVEL)
 	{
