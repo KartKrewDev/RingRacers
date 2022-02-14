@@ -3943,9 +3943,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
 
+	// Cancel all d_main.c fadeouts (keep fade in though).
+	if (reloadinggamestate)
+		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	if (encoremode && !prevencoremode && !demo.rewinding)
+	else if (encoremode && !prevencoremode && !demo.rewinding)
 	{
 		if (rendermode != render_none)
 		{
@@ -4007,10 +4010,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 	}
 
-	// Cancel all d_main.c fadeouts (keep fade in though).
-	if (reloadinggamestate)
-		wipegamestate = gamestate; // Don't fade if reloading the gamestate
-
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
 	if (G_GetModeAttackRetryFlag())
@@ -4032,7 +4031,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (!demo.rewinding)
+	if (!demo.rewinding && !reloadinggamestate)
 	{
 		// Make sure all sounds are stopped before Z_FreeTags.
 		S_StopSounds();
@@ -4204,9 +4203,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
+		K_InitDirector();
 	}
-
-	K_InitDirector();
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
@@ -4237,7 +4235,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (!(netgame || multiplayer || demo.playback) && !majormods)
 		mapvisited[gamemap-1] |= MV_VISITED;
-	else if (netgame || multiplayer)
+	else if (!demo.playback)
 		mapvisited[gamemap-1] |= MV_MP; // you want to record that you've been there this session, but not permanently
 
 	G_AddMapToBuffer(gamemap-1);
@@ -4260,7 +4258,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		lastmaploaded = gamemap; // HAS to be set after saving!!
 	}
 
-	if (grandprixinfo.gp == true)
+	if (reloadinggamestate)
+	{
+		CONS_Printf("Gamestate reloaded; bot infomation may be corrupted, requires further testing...\n");
+	}
+	else if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
 		{
