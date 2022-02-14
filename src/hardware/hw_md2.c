@@ -46,6 +46,7 @@
 // SRB2Kart
 #include "../k_color.h"
 #include "../k_kart.h" // HITLAGJITTERS
+#include "../r_fps.h"
 
 #ifdef HAVE_PNG
 
@@ -1323,7 +1324,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
+		INT32 lightlevel = 255;
+		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
 		if (sector->numlights)
@@ -1332,22 +1334,22 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!R_ThingIsFullBright(spr->mobj))
+			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-			if (*sector->lightlist[light].extra_colormap)
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
-		else
+		else if (!lightset)
 		{
-			if (!R_ThingIsFullBright(spr->mobj))
-				lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
+			lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		//lightlevel = 128 + (lightlevel>>1);
+		if (R_ThingIsSemiBright(spr->mobj))
+			lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
@@ -1368,17 +1370,9 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		INT32 mod;
 		float finalscale;
 
-		fixed_t interpx = spr->mobj->x;
-		fixed_t interpy = spr->mobj->y;
-		fixed_t interpz = spr->mobj->z;
-
-		// do interpolation
-		if (cv_frameinterpolation.value == 1)
-		{
-			interpx = spr->mobj->old_x + FixedMul(rendertimefrac, spr->mobj->x - spr->mobj->old_x);
-			interpy = spr->mobj->old_y + FixedMul(rendertimefrac, spr->mobj->y - spr->mobj->old_y);
-			interpz = spr->mobj->old_z + FixedMul(rendertimefrac, spr->mobj->z - spr->mobj->old_z);
-		}
+		fixed_t interpx = R_InterpolateFixed(spr->mobj->old_x, spr->mobj->x);
+		fixed_t interpy = R_InterpolateFixed(spr->mobj->old_y, spr->mobj->y);
+		fixed_t interpz = R_InterpolateFixed(spr->mobj->old_z, spr->mobj->z);
 
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
@@ -1636,10 +1630,16 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		if (sprframe->rotate || papersprite)
 		{
-			fixed_t anglef = AngleFixed(spr->mobj->angle);
+			fixed_t anglef = INT32_MAX;
 
 			if (spr->mobj->player)
-				anglef = AngleFixed(spr->mobj->player->drawangle);
+			{
+				anglef = AngleFixed(R_InterpolateAngle(spr->mobj->player->old_drawangle, spr->mobj->player->drawangle));
+			}
+			else
+			{
+				anglef = AngleFixed(R_InterpolateAngle(spr->mobj->old_angle, spr->mobj->angle));
+			}
 
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
@@ -1671,8 +1671,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			}
 		}
 
-		p.anglez = FIXED_TO_FLOAT(AngleFixed(spr->mobj->pitch));
-		p.anglex = FIXED_TO_FLOAT(AngleFixed(spr->mobj->roll));
+		p.anglez = FIXED_TO_FLOAT(AngleFixed(R_InterpolateAngle(spr->mobj->old_pitch, spr->mobj->pitch)));
+		p.anglex = FIXED_TO_FLOAT(AngleFixed(R_InterpolateAngle(spr->mobj->old_roll, spr->mobj->roll)));
 
 		// SRB2CBTODO: MD2 scaling support
 		finalscale *= FIXED_TO_FLOAT(spr->mobj->scale);

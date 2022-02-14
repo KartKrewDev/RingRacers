@@ -159,7 +159,11 @@ typedef enum
 	MF_DONTENCOREMAP    = 1<<28,
 	// Hitbox extends just as far below as above.
 	MF_PICKUPFROMBELOW  = 1<<29,
-	// free: to and including 1<<31
+	// Disable momentum-based squash and stretch.
+	MF_NOSQUISH         = 1<<30,
+	// Disable hitlag for this object
+	MF_NOHITLAGFORME 	= 1<<31,
+	// no more free slots, next up I suppose we can get rid of shit like MF_BOXICON?
 } mobjflag_t;
 
 typedef enum
@@ -395,6 +399,7 @@ typedef struct mobj_s
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
+	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
 	// WARNING: New fields must be added separately to savegame and Lua.

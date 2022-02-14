@@ -662,7 +662,10 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 --------------------------------------------------*/
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
-	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN); // Reduce prediction based on how fast you can turn
+	// Stair janking makes it harder to steer, so attempt to steer harder.
+	const UINT8 jankDiv = (player->stairjank > 0 ? 2 : 1);
+
+	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN) / jankDiv; // Reduce prediction based on how fast you can turn
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict

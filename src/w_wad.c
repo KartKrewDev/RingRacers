@@ -69,6 +69,8 @@
 #include "m_misc.h" // M_MapNumber
 #include "g_game.h" // G_SetGameModified
 
+#include "k_terrain.h"
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #include "hardware/hw_glob.h"
@@ -354,6 +356,7 @@ static lumpinfo_t* ResGetLumpsStandalone (FILE* handle, UINT16* numlumps, const 
 	lumpinfo->size = ftell(handle);
 	fseek(handle, 0, SEEK_SET);
 	strcpy(lumpinfo->name, lumpname);
+	lumpinfo->hash = quickncasehash(lumpname, 8);
 
 	// Allocate the lump's long name.
 	lumpinfo->longname = Z_Malloc(9 * sizeof(char), PU_STATIC, NULL);
@@ -451,6 +454,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 			lump_p->compression = CM_NOCOMPRESSION;
 		memset(lump_p->name, 0x00, 9);
 		strncpy(lump_p->name, fileinfo->name, 8);
+		lump_p->hash = quickncasehash(lump_p->name, 8);
 
 		// Allocate the lump's long name.
 		lump_p->longname = Z_Malloc(9 * sizeof(char), PU_STATIC, NULL);
@@ -625,6 +629,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 
 		memset(lump_p->name, '\0', 9); // Making sure they're initialized to 0. Is it necessary?
 		strncpy(lump_p->name, trimname, min(8, dotpos - trimname));
+		lump_p->hash = quickncasehash(lump_p->name, 8);
 
 		lump_p->longname = Z_Calloc(dotpos - trimname + 1, PU_STATIC, NULL);
 		strlcpy(lump_p->longname, trimname, dotpos - trimname + 1);
@@ -866,6 +871,8 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		break;
 	}
 
+	K_InitTerrain(numwadfiles - 1);
+
 	if (refreshdirmenu & REFRESHDIR_GAMEDATA)
 		G_LoadGameData();
 	DEH_UpdateMaxFreeslots();
@@ -974,12 +981,14 @@ UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 {
 	UINT16 i;
 	static char uname[8 + 1];
+	UINT32 hash;
 
 	if (!TestValidLump(wad,0))
 		return INT16_MAX;
 
 	strlcpy(uname, name, sizeof uname);
 	strupr(uname);
+	hash = quickncasehash(uname, 8);
 
 	//
 	// scan forward
@@ -990,7 +999,7 @@ UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump)
 	{
 		lumpinfo_t *lump_p = wadfiles[wad]->lumpinfo + startlump;
 		for (i = startlump; i < wadfiles[wad]->numlumps; i++, lump_p++)
-			if (!strncmp(lump_p->name, uname, sizeof(uname) - 1))
+			if (lump_p->hash == hash && !strncmp(lump_p->name, uname, sizeof(uname) - 1))
 				return i;
 	}
 
@@ -1193,15 +1202,20 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 // TODO: Make it search through cache first, maybe...?
 lumpnum_t W_CheckNumForMap(const char *name)
 {
+	UINT32 hash = quickncasehash(name, 8);
 	UINT16 lumpNum, end;
 	UINT32 i;
+	lumpinfo_t *p;
 	for (i = numwadfiles - 1; i < numwadfiles; i--)
 	{
 		if (wadfiles[i]->type == RET_WAD)
 		{
 			for (lumpNum = 0; lumpNum < wadfiles[i]->numlumps; lumpNum++)
-				if (!strncmp(name, (wadfiles[i]->lumpinfo + lumpNum)->name, 8))
+			{
+				p = wadfiles[i]->lumpinfo + lumpNum;
+				if (p->hash == hash && !strncmp(name, p->name, 8))
 					return (i<<16) + lumpNum;
+			}
 		}
 		else if (wadfiles[i]->type == RET_PK3)
 		{
@@ -1212,8 +1226,11 @@ lumpnum_t W_CheckNumForMap(const char *name)
 				continue;
 			// Now look for the specified map.
 			for (; lumpNum < end; lumpNum++)
-				if (!strnicmp(name, (wadfiles[i]->lumpinfo + lumpNum)->name, 8))
+			{
+				p = wadfiles[i]->lumpinfo + lumpNum;
+				if (p->hash == hash && !strnicmp(name, p->name, 8))
 					return (i<<16) + lumpNum;
+			}
 		}
 	}
 	return LUMPERROR;

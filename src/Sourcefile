@@ -113,4 +113,6 @@ k_hud.c
 k_menudef.c
 k_menufunc.c
 k_menudraw.c
+k_terrain.c
 k_brightmap.c
+k_director.c

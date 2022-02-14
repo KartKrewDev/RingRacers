@@ -2680,26 +2680,25 @@ const char *M_FileError(FILE *fp)
 
 /** Return the number of parts of this path.
 */
-int M_PathParts(const char *path)
+int M_PathParts(const char *p)
 {
-	int n;
-	const char *p;
-	const char *t;
-	if (path == NULL)
+	int parts = 0;
+
+	if (p == NULL)
 		return 0;
-	for (n = 0, p = path ;; ++n)
+
+#ifdef _WIN32
+	if (!strncmp(&p[1], ":\\", 2))
+		p += 3;
+#endif
+
+	while (*(p += strspn(p, PATHSEP)))
 	{
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-			p += strspn(p, PATHSEP);
-		else
-		{
-			if (*t)/* there is something after the final delimiter */
-				n++;
-			break;
-		}
+		parts++;
+		p += strcspn(p, PATHSEP);
 	}
-	return n;
+
+	return parts;
 }
 
 /** Check whether a path is an absolute path.
@@ -2717,50 +2716,43 @@ boolean M_IsPathAbsolute(const char *path)
 */
 void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
 {
-	char path[MAX_WADPATH];
+	char path[256];
 	char *p;
-	char *t;
+	int n;
+	int c;
 
 	if (end > 0 && end <= start)
 		return;
 
 	strlcpy(path, cpath, sizeof path);
+
 #ifdef _WIN32
-	if (strncmp(&path[1], ":\\", 2) == 0)
+	if (!strncmp(&path[1], ":\\", 2))
 		p = &path[3];
 	else
 #endif
 		p = path;
 
-	if (end > 0)
-		end -= start;
-
-	for (; start > 0; --start)
+	while (end != 0 && *(p += strspn(p, PATHSEP)))
 	{
-		p += strspn(p, PATHSEP);
-		if (!( p = strchr(p, PATHSEP[0]) ))
-			return;
-	}
-	p += strspn(p, PATHSEP);
-	for (;;)
-	{
-		if (end > 0 && !--end)
-			break;
+		n = strcspn(p, PATHSEP);
 
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-		{
-			*p = '\0';
-			I_mkdir(path, mode);
-			*p = PATHSEP[0];
-			p += strspn(p, PATHSEP);
-		}
+		if (start > 0)
+			start--;
 		else
 		{
-			if (*t)
-				I_mkdir(path, mode);
-			break;
+			c = p[n];
+			p[n] = '\0';
+
+			I_mkdir(path, mode);
+
+			p[n] = c;
 		}
+
+		p += n;
+
+		if (end > 0)
+			end--;
 	}
 }
 

@@ -17,6 +17,9 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	boolean damageitem = false;
 	boolean sprung = false;
 
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -45,7 +48,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT|DMG_WOMBO);
 			K_KartBouncing(t2, t1);
 			S_StartSound(t2, sfx_s3k7b);
 		}
@@ -108,6 +111,9 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
 
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -137,7 +143,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL|DMG_WOMBO);
 		}
 
 		damageitem = true;
@@ -186,6 +192,9 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 {
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	// Push fakes out of other item boxes
 	if (t2->type == MT_RANDOMITEM || t2->type == MT_EGGMANITEM)
 	{
@@ -258,6 +267,9 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 {
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -331,6 +343,9 @@ boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 {
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -398,6 +413,9 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
+	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
 	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -465,7 +483,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
 	boolean t1Condition = false;
 	boolean t2Condition = false;
-	boolean stung = false;
+	boolean stungT1 = false;
+	boolean stungT2 = false;
 
 	// Grow damage
 	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
@@ -473,12 +492,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 
@@ -488,12 +507,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
+		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE|DMG_WOMBO);
 		return true;
 	}
 
@@ -503,12 +522,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true && t2Condition == false)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT);
+		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_WOMBO);
 		return true;
 	}
 	else if (t1Condition == false && t2Condition == true)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT);
+		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_WOMBO);
 		return true;
 	}
 
@@ -521,12 +540,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		if (t1Condition == true && t2Condition == false)
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL);
+			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
 		else if (t1Condition == false && t2Condition == true)
 		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL);
+			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
 	}
@@ -537,25 +556,35 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 	if (t1Condition == true)
 	{
-		P_PlayerRingBurst(t2->player, 1);
-
 		if (t2->player->rings <= 0)
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_STING);
-			stung = true;
+			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
+			stungT2 = true;
 		}
+
+		P_PlayerRingBurst(t2->player, 1);
 	}
 
 	if (t2Condition == true)
 	{
-		P_PlayerRingBurst(t1->player, 1);
-
 		if (t1->player->rings <= 0)
 		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_STING);
-			stung = true;
+			P_DamageMobj(t1, t2, t2, 1, DMG_STING|DMG_WOMBO);
+			stungT1 = true;
 		}
+
+		P_PlayerRingBurst(t1->player, 1);
 	}
 
-	return stung;
+	// No damage hitlag for stinging.
+	if (stungT1 == true && stungT2 == false)
+	{
+		t2->eflags &= ~MFE_DAMAGEHITLAG;
+	}
+	else if (stungT2 == true && stungT1 == false)
+	{
+		t1->eflags &= ~MFE_DAMAGEHITLAG;
+	}
+
+	return (stungT1 || stungT2);
 }

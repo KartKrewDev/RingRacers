@@ -23,6 +23,8 @@
 #include "z_zone.h" // Check R_Prep3DFloors
 #include "taglist.h"
 
+#include "k_terrain.h"
+
 seg_t *curline;
 side_t *sidedef;
 line_t *linedef;
@@ -67,11 +69,35 @@ boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
 
 static void R_PlaneLightOverride(sector_t *sector, boolean ceiling, INT32 *lightlevel)
 {
-	if (GETSECSPECIAL(sector->special, 4) == 6) // Fullbright sneaker panels
+	terrain_t *t = NULL;
+
+	if (ceiling == true)
 	{
-		if ((ceiling && (sector->flags & SF_FLIPSPECIAL_CEILING))
-			|| (!ceiling && (sector->flags & SF_FLIPSPECIAL_FLOOR)))
+		t = K_GetTerrainForFlatNum(sector->ceilingpic);
+	}
+	else
+	{
+		t = K_GetTerrainForFlatNum(sector->floorpic);
+	}
+
+	if (t != NULL)
+	{
+		if (t->flags & TRF_SNEAKERPANEL)
+		{
 			*lightlevel = 255;
+		}
+	}
+	else
+	{
+		// Sector effect sneaker panels (DEPRECATED)
+		if (GETSECSPECIAL(sector->special, 4) == 6)
+		{
+			if ((ceiling && (sector->flags & SF_FLIPSPECIAL_CEILING))
+				|| (!ceiling && (sector->flags & SF_FLIPSPECIAL_FLOOR)))
+			{
+				*lightlevel = 255;
+			}
+		}
 	}
 }
 

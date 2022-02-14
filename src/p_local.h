@@ -123,7 +123,7 @@ struct demofreecam_s {
 
 	camera_t *cam;	// this is useful when the game is paused, notably
 	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
-	
+
 	angle_t localangle;	// keeps track of the cam angle for cmds
 	angle_t localaiming;	// ditto with aiming
 	boolean turnheld;	// holding turn button for gradual turn speed
@@ -168,7 +168,7 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
-boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
@@ -385,6 +385,7 @@ extern camera_t *mapcampointer;
 extern fixed_t tmx;
 extern fixed_t tmy;
 extern pslope_t *tmfloorslope, *tmceilingslope;
+extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);
@@ -410,6 +411,9 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
+void P_InitAngle(mobj_t *thing, angle_t newValue);
+void P_InitPitch(mobj_t *thing, angle_t newValue);
+void P_InitRoll(mobj_t *thing, angle_t newValue);
 void P_SlideMove(mobj_t *mo);
 void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
@@ -482,6 +486,7 @@ typedef struct BasicFF_s
 #define DMG_SPECTATOR  0x83
 #define DMG_TIMEOVER   0x84
 // Masks
+#define DMG_WOMBO		 0x10 // Flag - setting this flag allows objects to damage you if you're already in spinout. The effect is reversed on objects with MF_MISSILE (setting it prevents them from comboing in spinout)
 #define DMG_STEAL        0x20 // Flag - can steal bumpers, will only deal damage to players, and will not deal damage outside Battle Mode.
 #define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team
 #define DMG_DEATHMASK    DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type
@@ -530,5 +535,6 @@ fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
 fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
+fixed_t P_GetMobjZMovement(mobj_t *mo);
 
 #endif // __P_LOCAL__

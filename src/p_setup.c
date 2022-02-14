@@ -91,7 +91,9 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_director.h" // K_InitDirector
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -659,6 +661,9 @@ flatfound:
 		levelflat->u.flat.    lumpnum = flatnum;
 		levelflat->u.flat.baselumpnum = LUMPERROR;
 	}
+
+	levelflat->terrain =
+		K_GetTerrainForTextureName(levelflat->name);
 
 	CONS_Debug(DBG_SETUP, "flat #%03d: %s\n", atoi(sizeu1(numlevelflats)), levelflat->name);
 
@@ -1935,26 +1940,85 @@ static void P_LoadTextmap(void)
 	}
 }
 
+static fixed_t
+P_MirrorTextureOffset
+(		fixed_t offset,
+		fixed_t source_width,
+		fixed_t actual_width)
+{
+	/*
+	Adjusting the horizontal alignment is a bit ASS...
+	Textures on the opposite side of the line will begin
+	drawing from the opposite end.
+
+	Start with the texture width and subtract the seg
+	length to account for cropping/wrapping. Subtract the
+	offset to mirror the alignment.
+	*/
+	return source_width - actual_width - offset;
+}
+
+static boolean P_CheckLineSideTripWire(line_t *ld, int p)
+{
+	INT32 n;
+
+	side_t *sda;
+	side_t *sdb;
+
+	terrain_t *terrain;
+
+	boolean tripwire;
+
+	n = ld->sidenum[p];
+
+	if (n == 0xffff)
+		return false;
+
+	sda = &sides[n];
+
+	terrain = K_GetTerrainForTextureNum(sda->midtexture);
+	tripwire = terrain && (terrain->flags & TRF_TRIPWIRE);
+
+	if (tripwire)
+	{
+		// copy midtexture to other side
+		n = ld->sidenum[!p];
+
+		if (n != 0xffff)
+		{
+			fixed_t linelength = FixedHypot(ld->dx, ld->dy);
+			texture_t *tex = textures[sda->midtexture];
+
+			sdb = &sides[n];
+
+			sdb->midtexture = sda->midtexture;
+			sdb->rowoffset = sda->rowoffset;
+
+			// mirror texture alignment
+			sdb->textureoffset = P_MirrorTextureOffset(
+					sda->textureoffset, tex->width * FRACUNIT,
+					linelength);
+		}
+	}
+
+	return tripwire;
+}
+
 static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
 
-	const INT32 TEX_TRIPWIRE = R_TextureNumForName("TRIPWIRE");
-	const INT32 TEX_4RIPWIRE = R_TextureNumForName("4RIPWIRE");
-
 	for (; i--; ld++)
 	{
-		INT32 midtexture = sides[ld->sidenum[0]].midtexture;
-
 		ld->frontsector = sides[ld->sidenum[0]].sector; //e6y: Can't be -1 here
 		ld->backsector = ld->sidenum[1] != 0xffff ? sides[ld->sidenum[1]].sector : 0;
 
-		if (midtexture == TEX_TRIPWIRE ||
-				midtexture == TEX_4RIPWIRE)
-		{
-			ld->tripwire = true;
-		}
+		// Check for tripwire, if either side matches then
+		// copy that (mid)texture to the other side.
+		ld->tripwire =
+			P_CheckLineSideTripWire(ld, 0) ||
+			P_CheckLineSideTripWire(ld, 1);
 
 		switch (ld->special)
 		{
@@ -3464,6 +3528,7 @@ static void P_InitLevelSettings(void)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
+		K_UpdateShrinkCheat(&players[i]);
 	}
 
 	racecountdown = exitcountdown = exitfadestarted = 0;
@@ -3513,6 +3578,7 @@ static void P_InitLevelSettings(void)
 	speedscramble = encorescramble = -1;
 }
 
+#if 0
 // Respawns all the mapthings and mobjs in the map from the already loaded map data.
 void P_RespawnThings(void)
 {
@@ -3547,6 +3613,7 @@ void P_RespawnThings(void)
 	skyboxmo[0] = skyboxviewpnts[(viewid >= 0) ? viewid : 0];
 	skyboxmo[1] = skyboxcenterpnts[(centerid >= 0) ? centerid : 0];
 }
+#endif
 
 static void P_RunLevelScript(const char *scriptname)
 {
@@ -3621,13 +3688,18 @@ static void P_ResetSpawnpoints(void)
 
 	// reset the player starts
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		playerstarts[i] = bluectfstarts[i] = redctfstarts[i] = NULL;
+
+		if (playeringame[i])
+		{
+			players[i].skybox.viewpoint = NULL;
+			players[i].skybox.centerpoint = NULL;
+		}
+	}
 
 	for (i = 0; i < MAX_DM_STARTS; i++)
 		deathmatchstarts[i] = NULL;
-
-	for (i = 0; i < 2; i++)
-		skyboxmo[i] = NULL;
 
 	for (i = 0; i < 16; i++)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
@@ -3797,12 +3869,20 @@ static void P_InitGametype(void)
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (!demo.playback && multiplayer && !dedicated)
 	{
-		static char buf[256];
-		char *path;
-		sprintf(buf, "media"PATHSEP"replay"PATHSEP"online"PATHSEP"%d-%s", (int) (time(NULL)), G_BuildMapName(gamemap));
+		char buf[MAX_WADPATH];
+		char ver[128];
+		int parts;
 
-		path = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online", srb2home);
-		M_MkdirEach(path, M_PathParts(path) - 4, 0755);
+#ifdef DEVELOP
+		sprintf(ver, "%s-%s", compbranch, comprevision);
+#else
+		strcpy(ver, VERSIONSTRING);
+#endif
+		sprintf(buf, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP"%s"PATHSEP"%d-%s",
+				srb2home, ver, (int) (time(NULL)), G_BuildMapName(gamemap));
+
+		parts = M_PathParts(buf);
+		M_MkdirEachUntil(buf, parts - 5, parts - 1, 0755);
 
 		G_RecordDemo(buf);
 	}
@@ -4067,8 +4147,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
-	skyboxmo[0] = skyboxviewpnts[0];
-	skyboxmo[1] = skyboxcenterpnts[0];
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
 		if (!playerstarts[numcoopstarts])
@@ -4127,6 +4205,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
 	}
+
+	K_InitDirector();
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
@@ -4227,7 +4307,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		return true;
 
 	// If so...
-	G_PreLevelTitleCard();
+	// but not if joining because the fade may time us out
+	if (!fromnetsave)
+		G_PreLevelTitleCard();
 
 	return true;
 }

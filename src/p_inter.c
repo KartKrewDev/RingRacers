@@ -1054,6 +1054,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
 		P_SetThingPosition(target);
 		target->standingslope = NULL;
+		target->terrain = NULL;
 		target->pmomz = 0;
 
 		target->player->playerstate = PST_DEAD;
@@ -1184,7 +1185,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					mo->angle = FixedAngle((P_RandomKey(36)*10)<<FRACBITS);
 
 					mo2 = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BOSSJUNK);
-					mo2->angle = mo->angle;
+					P_InitAngle(mo2, mo->angle);
 					P_SetMobjState(mo2, S_BOSSSEBH2);
 
 					if (++i == 2) // we've already removed 2 of these, let's stop now
@@ -1251,6 +1252,12 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					kart->eflags |= MFE_DAMAGEHITLAG;
 					P_SetObjectMomZ(kart, 6*FRACUNIT, false);
 					kart->extravalue1 = target->player->kartweight;
+
+					// Copy interp data
+					kart->old_angle = target->old_angle;
+					kart->old_x = target->old_x;
+					kart->old_y = target->old_y;
+					kart->old_z = target->old_z;
 				}
 
 				if (source && !P_MobjWasRemoved(source))
@@ -1322,7 +1329,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			for (i = 0; i < 2; i++)
 			{
 				mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
-				blast->angle = angle + i*ANGLE_90;
+				P_InitAngle(blast, angle + i*ANGLE_90);
 				P_SetScale(blast, 2*blast->scale/3);
 				blast->destscale = 2*blast->scale;
 			}
@@ -1547,7 +1554,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_SPIKE);\
 			P_SetMobjState(chunk, target->info->xdeathstate);\
 			chunk->health = 0;\
-			chunk->angle = angtweak;\
+			P_InitAngle(chunk, angtweak);\
 			P_UnsetThingPosition(chunk);\
 			chunk->flags = MF_NOCLIP;\
 			chunk->x += xmov;\
@@ -1569,7 +1576,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_SPIKE);
 		P_SetMobjState(chunk, target->info->deathstate);
 		chunk->health = 0;
-		chunk->angle = ang + ANGLE_180;
+		P_InitAngle(chunk, ang + ANGLE_180);
 		P_UnsetThingPosition(chunk);
 		chunk->flags = MF_NOCLIP;
 		chunk->x -= xoffs;
@@ -1615,7 +1622,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_WALLSPIKE);\
 			P_SetMobjState(chunk, target->info->xdeathstate);\
 			chunk->health = 0;\
-			chunk->angle = target->angle;\
+			P_InitAngle(chunk, target->angle);\
 			P_UnsetThingPosition(chunk);\
 			chunk->flags = MF_NOCLIP;\
 			chunk->x += xmov - forwardxoffs;\
@@ -1641,7 +1648,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		P_SetMobjState(chunk, target->info->deathstate);
 		chunk->health = 0;
-		chunk->angle = target->angle;
+		P_InitAngle(chunk, target->angle);
 		P_UnsetThingPosition(chunk);
 		chunk->flags = MF_NOCLIP;
 		chunk->x += forwardxoffs - xoffs;
@@ -1766,7 +1773,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 			boom->scale = player->mo->scale;
-			boom->angle = player->mo->angle;
+			P_InitAngle(boom, player->mo->angle);
 			P_SetTarget(&boom->target, player->mo);
 		}
 
@@ -1838,7 +1845,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0)
+		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
 			return false;
 	}
 
@@ -1922,7 +1929,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (combo == false)
 				{
-					if (player->flashing > 0)
+					// Check if we should allow wombo combos (DMG_WOMBO)
+					boolean allowcombo = false;
+
+					// For MISSILE OBJECTS, allow combo BY DEFAULT. If DMG_WOMBO is set, do *NOT* allow it.
+					if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->flags & MF_MISSILE) && !(damagetype & DMG_WOMBO))
+						allowcombo = true;
+
+					// OTHERWISE, only allow combos IF DMG_WOMBO *IS* set.
+					else if (damagetype & DMG_WOMBO)
+						allowcombo = true;
+
+					if ((player->mo->hitlag == 0 || allowcombo == false) && player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);

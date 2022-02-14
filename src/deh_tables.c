@@ -5466,6 +5466,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	// SRB2kart
 	"MT_RANDOMITEM",
+	"MT_SPHEREBOX",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
@@ -5806,6 +5807,9 @@ const char *const MOBJFLAG_LIST[] = {
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
 	"DONTENCOREMAP",
+	"PICKUPFROMBELOW",
+	"NOSQUISH",
+	"NOHITLAGFORME",
 	NULL
 };
 
@@ -5909,6 +5913,10 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	"HITFINISHLINE", // Already hit the finish line this tic
 	"WRONGWAY", // Moving the wrong way with respect to waypoints?
+
+	"SHRINKME",
+	"SHRINKACTIVE",
+
 	NULL // stop loop here.
 };
 
@@ -6457,6 +6465,7 @@ struct int_const_s const INT_CONST[] = {
 	//// Masks
 	{"DMG_STEAL",DMG_CANTHURTSELF},
 	{"DMG_CANTHURTSELF",DMG_CANTHURTSELF},
+	{"DMG_WOMBO", DMG_WOMBO},
 	{"DMG_DEATHMASK",DMG_DEATHMASK},
 	{"DMG_TYPEMASK",DMG_TYPEMASK},
 

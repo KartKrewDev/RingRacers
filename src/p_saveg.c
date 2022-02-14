@@ -38,6 +38,7 @@
 // SRB2Kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_terrain.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -59,6 +60,8 @@ typedef enum
 	AWAYVIEW   = 0x01,
 	FOLLOWITEM = 0x02,
 	FOLLOWER   = 0x04,
+	SKYBOXVIEW = 0x08,
+	SKYBOXCENTER = 0x10,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -177,6 +180,12 @@ static void P_NetArchivePlayers(void)
 		if (players[i].follower)
 			flags |= FOLLOWER;
 
+		if (players[i].skybox.viewpoint)
+			flags |= SKYBOXVIEW;
+
+		if (players[i].skybox.centerpoint)
+			flags |= SKYBOXCENTER;
+
 		WRITEINT16(save_p, players[i].lastsidehit);
 		WRITEINT16(save_p, players[i].lastlinehit);
 
@@ -188,6 +197,12 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].splitscreenindex);
 
 		WRITEUINT16(save_p, flags);
+
+		if (flags & SKYBOXVIEW)
+			WRITEUINT32(save_p, players[i].skybox.viewpoint->mobjnum);
+
+		if (flags & SKYBOXCENTER)
+			WRITEUINT32(save_p, players[i].skybox.centerpoint->mobjnum);
 
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
@@ -445,6 +460,12 @@ static void P_NetUnArchivePlayers(void)
 		players[i].splitscreenindex = READUINT8(save_p);
 
 		flags = READUINT16(save_p);
+
+		if (flags & SKYBOXVIEW)
+			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save_p);
+
+		if (flags & SKYBOXCENTER)
+			players[i].skybox.centerpoint = (mobj_t *)(size_t)READUINT32(save_p);
 
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
@@ -1540,6 +1561,7 @@ typedef enum
 	MD2_KITEMCAP     = 1<<26,
 	MD2_ITNEXT       = 1<<27,
 	MD2_LASTMOMZ     = 1<<28,
+	MD2_TERRAIN      = 1<<29,
 } mobj_diff2_t;
 
 typedef enum
@@ -1782,6 +1804,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ITNEXT;
 	if (mobj->lastmomz)
 		diff2 |= MD2_LASTMOMZ;
+	if (mobj->terrain != NULL)
+		diff2 |= MD2_TERRAIN;
 
 	if (diff2 != 0)
 		diff |= MD_MORE;
@@ -1978,6 +2002,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		WRITEINT32(save_p, mobj->lastmomz);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		WRITEUINT32(save_p, K_GetTerrainHeapIndex(mobj->terrain));
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
@@ -2885,19 +2913,19 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	mobj->info = &mobjinfo[mobj->type];
 	if (diff & MD_POS)
 	{
-		mobj->x = READFIXED(save_p);
-		mobj->y = READFIXED(save_p);
-		mobj->angle = READANGLE(save_p);
-		mobj->pitch = READANGLE(save_p);
-		mobj->roll = READANGLE(save_p);
+		mobj->x = mobj->old_x = READFIXED(save_p);
+		mobj->y = mobj->old_y = READFIXED(save_p);
+		mobj->angle = mobj->old_angle = READANGLE(save_p);
+		mobj->pitch = mobj->old_pitch = READANGLE(save_p);
+		mobj->roll = mobj->old_roll = READANGLE(save_p);
 	}
 	else
 	{
-		mobj->x = mobj->spawnpoint->x << FRACBITS;
-		mobj->y = mobj->spawnpoint->y << FRACBITS;
-		mobj->angle = FixedAngle(mobj->spawnpoint->angle*FRACUNIT);
-		mobj->pitch = FixedAngle(mobj->spawnpoint->pitch*FRACUNIT);
-		mobj->roll = FixedAngle(mobj->spawnpoint->roll*FRACUNIT);
+		mobj->x = mobj->old_x = mobj->spawnpoint->x << FRACBITS;
+		mobj->y = mobj->old_y = mobj->spawnpoint->y << FRACBITS;
+		mobj->angle = mobj->old_angle = FixedAngle(mobj->spawnpoint->angle*FRACUNIT);
+		mobj->pitch = mobj->old_pitch = FixedAngle(mobj->spawnpoint->pitch*FRACUNIT);
+		mobj->roll = mobj->old_roll = FixedAngle(mobj->spawnpoint->roll*FRACUNIT);
 	}
 	if (diff & MD_MOM)
 	{
@@ -3076,6 +3104,14 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		mobj->lastmomz = READINT32(save_p);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		mobj->terrain = (terrain_t *)(size_t)READUINT32(save_p);
+	}
+	else
+	{
+		mobj->terrain = NULL;
 	}
 
 	if (diff & MD_REDFLAG)
@@ -4103,8 +4139,31 @@ static void P_RelinkPointers(void)
 			if (!(mobj->itnext = P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
+		if (mobj->terrain)
+		{
+			temp = (UINT32)(size_t)mobj->terrain;
+			mobj->terrain = K_GetTerrainByIndex(temp);
+			if (mobj->terrain == NULL)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
+			}
+		}
 		if (mobj->player)
 		{
+			if ( mobj->player->skybox.viewpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.viewpoint;
+				mobj->player->skybox.viewpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.viewpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on %d\n", mobj->type);
+			}
+			if ( mobj->player->skybox.centerpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.centerpoint;
+				mobj->player->skybox.centerpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.centerpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on %d\n", mobj->type);
+			}
 			if ( mobj->player->awayviewmobj)
 			{
 				temp = (UINT32)(size_t)mobj->player->awayviewmobj;

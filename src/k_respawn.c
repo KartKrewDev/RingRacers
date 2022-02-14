@@ -582,7 +582,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 			P_SetTarget(&lasermo->target, player->mo);
 
-			lasermo->angle = stepha + ANGLE_90;
+			P_InitAngle(lasermo, stepha + ANGLE_90);
 			P_SetScale(lasermo, (lasermo->destscale = player->mo->scale));
 		}
 	}
@@ -645,7 +645,7 @@ static void K_DropDashWait(player_t *player)
 
 				P_SetTarget(&laser->target, player->mo);
 
-				laser->angle = newangle + ANGLE_90;
+				P_InitAngle(laser, newangle + ANGLE_90);
 				laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
 				P_SetScale(laser, (laser->destscale = player->mo->scale));
 			}
@@ -672,11 +672,11 @@ static void K_HandleDropDash(player_t *player)
 	if (player->growshrinktimer < 0)
 	{
 		player->mo->scalespeed = mapobjectscale/TICRATE;
-		player->mo->destscale = (6*mapobjectscale)/8;
+		player->mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
 
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
+		if (K_PlayerShrinkCheat(player) == true)
 		{
-			player->mo->destscale = (6*player->mo->destscale)/8;
+			player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 		}
 	}
 

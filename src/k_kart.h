@@ -22,6 +22,12 @@ Make sure this matches the actual number of states
 #define MAXHITLAGTICS 18 //12
 #define HITLAGJITTERS (FRACUNIT / 20)
 
+#define GROW_SCALE (2*FRACUNIT)
+#define SHRINK_SCALE (FRACUNIT/2)
+
+#define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
+#define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
@@ -76,7 +82,7 @@ void K_RunFinishLineBeam(void);
 UINT16 K_DriftSparkColor(player_t *player, INT32 charge);
 void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
-void K_SpawnWipeoutTrail(mobj_t *mo, boolean offroad);
+void K_SpawnWipeoutTrail(mobj_t *mo);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_Squish(mobj_t *mo);
@@ -115,10 +121,13 @@ boolean K_WaterRun(player_t *player);
 void K_ApplyTripWire(player_t *player, tripwirestate_t state);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
+fixed_t K_GrowShrinkSpeedMul(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
+boolean K_PlayerShrinkCheat(player_t *player);
+void K_UpdateShrinkCheat(player_t *player);
 boolean K_KartKickstart(player_t *player);
 UINT16 K_GetKartButtons(player_t *player);
 SINT8 K_GetForwardMove(player_t *player);
@@ -140,6 +149,10 @@ void K_PlayOvertakeSound(mobj_t *source);
 void K_PlayPainSound(mobj_t *source);
 void K_PlayHitEmSound(mobj_t *source);
 void K_PlayPowerGloatSound(mobj_t *source);
+
+fixed_t K_ItemScaleForPlayer(player_t *player);
+void K_SetItemOut(player_t *player);
+void K_UnsetItemOut(player_t *player);
 
 // =========================================================================
 #endif  // __K_KART__

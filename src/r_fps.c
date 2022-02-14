@@ -32,7 +32,6 @@ static viewvars_t skyview_new[MAXSPLITSCREENPLAYERS];
 static viewvars_t *oldview = &pview_old[0];
 viewvars_t *newview = &pview_new[0];
 
-
 enum viewcontext_e viewcontext = VIEWCONTEXT_PLAYER1;
 
 static fixed_t R_LerpFixed(fixed_t from, fixed_t to, fixed_t frac)
@@ -81,12 +80,19 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 
 #undef AIMINGTODY
 
+void R_InterpolateViewRollAngle(fixed_t frac)
+{
+	viewroll = oldview->roll + R_LerpAngle(oldview->roll, newview->roll, frac);
+}
+
 void R_InterpolateView(fixed_t frac)
 {
 	if (frac < 0)
 		frac = 0;
+#if 0
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
+#endif
 
 	viewx = oldview->x + R_LerpFixed(oldview->x, newview->x, frac);
 	viewy = oldview->y + R_LerpFixed(oldview->y, newview->y, frac);
@@ -94,7 +100,7 @@ void R_InterpolateView(fixed_t frac)
 
 	viewangle = oldview->angle + R_LerpAngle(oldview->angle, newview->angle, frac);
 	aimingangle = oldview->aim + R_LerpAngle(oldview->aim, newview->aim, frac);
-	viewroll = oldview->roll + R_LerpAngle(oldview->roll, newview->roll, frac);
+	R_InterpolateViewRollAngle(frac);
 
 	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
@@ -146,4 +152,24 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 			I_Error("viewcontext value is invalid: we should never get here without an assert!!");
 			break;
 	}
+}
+
+fixed_t R_InterpolateFixed(fixed_t from, fixed_t to)
+{
+	if (cv_frameinterpolation.value == 0)
+	{
+		return to;
+	}
+
+	return (from + R_LerpFixed(from, to, rendertimefrac));
+}
+
+angle_t R_InterpolateAngle(angle_t from, angle_t to)
+{
+	if (cv_frameinterpolation.value == 0)
+	{
+		return to;
+	}
+
+	return (from + R_LerpAngle(from, to, rendertimefrac));
 }

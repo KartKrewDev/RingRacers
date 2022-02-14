@@ -52,6 +52,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_terrain.h" // K_SpawnSplashForMobj
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -379,7 +380,7 @@ void P_GiveFinishFlags(player_t *player)
 		fixed_t xoffs = FINECOSINE(fa);
 		fixed_t yoffs = FINESINE(fa);
 		mobj_t* flag = P_SpawnMobjFromMobj(player->mo, xoffs, yoffs, 0, MT_FINISHFLAG);
-		flag->angle = angle;
+		P_InitAngle(flag, angle);
 		angle += FixedAngle(120*FRACUNIT);
 
 		P_SetTarget(&flag->target, player->mo);
@@ -1274,17 +1275,18 @@ void P_DoPlayerExit(player_t *player)
 //
 // Handles player hitting floor surface.
 // Returns whether to clip momz.
-boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff)
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
 {
 	boolean clipmomz;
-
-	(void)dorollstuff;
 
 	I_Assert(player->mo != NULL);
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
 
-	// SRB2Kart: removed lots of really vanilla-specific code here
+	if (fromAir == true && clipmomz == true)
+	{
+		K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+	}
 
 	return clipmomz;
 }
@@ -2138,8 +2140,6 @@ void P_MovePlayer(player_t *player)
 		player->mo->rollangle = 0;
 	}
 
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
-
 	//{ SRB2kart
 
 	// Drifting sound
@@ -2176,7 +2176,7 @@ void P_MovePlayer(player_t *player)
 		if (trailScale > 0)
 		{
 			const angle_t forwardangle = K_MomentumAngle(player->mo);
-			const fixed_t playerVisualRadius = player->mo->radius + 8*FRACUNIT;
+			const fixed_t playerVisualRadius = player->mo->radius + (8 * player->mo->scale);
 			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
 			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
 			const statenum_t curUnderlayFrame = S_WATERTRAILUNDERLAY1 + (leveltime % numFrames);
@@ -2197,7 +2197,7 @@ void P_MovePlayer(player_t *player)
 			// underlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2208,7 +2208,7 @@ void P_MovePlayer(player_t *player)
 			// overlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2220,7 +2220,7 @@ void P_MovePlayer(player_t *player)
 			// Underlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2231,7 +2231,7 @@ void P_MovePlayer(player_t *player)
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2267,7 +2267,7 @@ void P_MovePlayer(player_t *player)
 		K_SpawnSparkleTrail(player->mo);
 
 	if (player->wipeoutslow > 1 && (leveltime & 1))
-		K_SpawnWipeoutTrail(player->mo, false);
+		K_SpawnWipeoutTrail(player->mo);
 
 	K_DriftDustHandling(player->mo);
 
@@ -2464,8 +2464,10 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 			indirectitemcooldown = 0;
 		}
 
-		if (mo->flags & MF_BOSS || mo->type == MT_PLAYER) //don't OHKO bosses nor players!
+		if (mo->flags & MF_BOSS) //don't OHKO bosses nor players!
 			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF);
+		else if (mo->type == MT_PLAYER)	// Thunder shield: Combo players.
+			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
 		else
 			P_DamageMobj(mo, inflictor, source, 1000, DMG_NORMAL|DMG_CANTHURTSELF);
 	}
@@ -3989,7 +3991,7 @@ static void P_HandleFollower(player_t *player)
 		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
 		P_SetFollowerState(player->follower, fl.idlestate);
 		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
-		player->follower->angle = player->mo->angle;
+		P_InitAngle(player->follower, player->mo->angle);
 
 		// This is safe to only spawn it here, the follower is removed then respawned when switched.
 		if (bubble)
@@ -4052,10 +4054,8 @@ static void P_HandleFollower(player_t *player)
 		if (player->pflags & PF_NOCONTEST)
 			player->follower->renderflags |= RF_DONTDRAW;
 
-		if (player->speed && (player->follower->momx || player->follower->momy))
-			player->follower->angle = K_MomentumAngle(player->follower);
-			// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
-			// Make sure the follower itself is also moving however, otherwise we'll be facing angle 0
+		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
+		player->follower->angle = K_MomentumAngle(player->follower);
 
 		// Finally, if the follower has bubbles, move them, set their scale, etc....
 		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!
@@ -4504,8 +4504,6 @@ void P_PlayerThink(player_t *player)
 		P_MovePlayer(player);
 	}
 
-	player->mo->movefactor = FRACUNIT; // We're not going to do any more with this, so let's change it back for the next frame.
-
 	// Unset statis flag after moving.
 	// In other words, if you manually set stasis via code,
 	// it lasts for one tic.
@@ -4557,7 +4555,7 @@ void P_PlayerThink(player_t *player)
 		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
 		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
-		if (player->flashing > 0 && player->flashing < K_GetKartFlashing(player)
+		if (player->flashing > 1 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))
 			player->mo->renderflags |= RF_DONTDRAW;
 		else

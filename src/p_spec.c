@@ -43,6 +43,7 @@
 #include "k_kart.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
+#include "k_terrain.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -51,7 +52,6 @@
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
 
-mobj_t *skyboxmo[2]; // current skybox mobjs: 0 = viewpoint, 1 = centerpoint
 mobj_t *skyboxviewpnts[16]; // array of MT_SKYBOX viewpoint mobjs
 mobj_t *skyboxcenterpnts[16]; // array of MT_SKYBOX centerpoint mobjs
 
@@ -2089,6 +2089,19 @@ static mobj_t *P_GetObjectTypeInSectorNum(mobjtype_t type, size_t s)
 	return NULL;
 }
 
+static void P_SwitchSkybox(INT32 ldflags, player_t *player, skybox_t *skybox)
+{
+	if (!(ldflags & ML_EFFECT4)) // Solid Midtexture turns off viewpoint setting
+	{
+		player->skybox.viewpoint = skybox->viewpoint;
+	}
+
+	if (ldflags & ML_BLOCKPLAYERS) // Block Enemies turns ON centerpoint setting
+	{
+		player->skybox.centerpoint = skybox->centerpoint;
+	}
+}
+
 /** Processes the line special triggered by an object.
   *
   * \param line Line with the special command on it.
@@ -3154,7 +3167,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 		}
 		case 448: // Change skybox viewpoint/centerpoint
-			if ((mo && mo->player && P_IsLocalPlayer(mo->player)) || (line->flags & ML_NOCLIMB))
+			if ((mo && mo->player) || (line->flags & ML_NOCLIMB))
 			{
 				INT32 viewid = sides[line->sidenum[0]].textureoffset>>FRACBITS;
 				INT32 centerid = sides[line->sidenum[0]].rowoffset>>FRACBITS;
@@ -3167,23 +3180,32 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				}
 				else
 				{
+					skybox_t skybox;
+
 					// set viewpoint mobj
-					if (!(line->flags & ML_EFFECT4)) // Solid Midtexture turns off viewpoint setting
-					{
-						if (viewid >= 0 && viewid < 16)
-							skyboxmo[0] = skyboxviewpnts[viewid];
-						else
-							skyboxmo[0] = NULL;
-					}
+					if (viewid >= 0 && viewid < 16)
+						skybox.viewpoint = skyboxviewpnts[viewid];
+					else
+						skybox.viewpoint = NULL;
 
 					// set centerpoint mobj
-					if (line->flags & ML_BLOCKPLAYERS) // Block Enemies turns ON centerpoint setting
+					if (centerid >= 0 && centerid < 16)
+						skybox.centerpoint = skyboxcenterpnts[centerid];
+					else
+						skybox.centerpoint = NULL;
+
+					if (line->flags & ML_NOCLIMB) // Applies to all players
 					{
-						if (centerid >= 0 && centerid < 16)
-							skyboxmo[1] = skyboxcenterpnts[centerid];
-						else
-							skyboxmo[1] = NULL;
+						INT32 i;
+
+						for (i = 0; i < MAXPLAYERS; ++i)
+						{
+							if (playeringame[i])
+								P_SwitchSkybox(line->flags, &players[i], &skybox);
+						}
 					}
+					else
+						P_SwitchSkybox(line->flags, mo->player, &skybox);
 				}
 
 				CONS_Debug(DBG_GAMELOGIC, "Line type 448 Executor: viewid = %d, centerid = %d, viewpoint? = %s, centerpoint? = %s\n",
@@ -3598,6 +3620,10 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				INT32 delay = (sides[line->sidenum[0]].rowoffset>>FRACBITS);
 				if (mo && mo->player)
 				{
+					// Don't award rings while SPB is targetting you
+					if (mo->player->pflags & PF_RINGLOCK)
+						return;
+
 					if (delay <= 0 || !(leveltime % delay))
 						P_GivePlayerRings(mo->player, rings);
 				}
@@ -3633,7 +3659,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (mobj)
 				{
 					if (line->flags & ML_EFFECT1)
-						mobj->angle = R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y);
+						P_InitAngle(mobj, R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y));
 					CONS_Debug(DBG_GAMELOGIC, "Linedef Type %d - Spawn Object: %d spawned at (%d, %d, %d)\n", line->special, mobj->type, mobj->x>>FRACBITS, mobj->y>>FRACBITS, mobj->z>>FRACBITS); //TODO: Convert mobj->type to a string somehow.
 				}
 				else
@@ -3928,7 +3954,7 @@ void P_SetupSignExit(player_t *player)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
-		thing->angle = player->mo->angle;
+		P_InitAngle(thing, player->mo->angle);
 		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
 	}
 }
@@ -4333,7 +4359,9 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 
 	// Conveyor stuff
 	if (section3 == 2 || section3 == 4)
+	{
 		player->onconveyor = section3;
+	}
 
 	special = section1;
 
@@ -4657,7 +4685,7 @@ DoneSection2:
 		case 6: // SRB2kart 190117 - Sneaker Panel
 			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
 			{
-				if (!player->floorboost)
+				if (player->floorboost == 0)
 					player->floorboost = 3;
 				else
 					player->floorboost = 2;
@@ -5050,6 +5078,7 @@ void P_PlayerInSpecialSector(player_t *player)
 	if (!player->mo)
 		return;
 
+	K_ProcessTerrainEffect(player->mo);
 	originalsector = player->mo->subsector->sector;
 
 	P_PlayerOnSpecial3DFloor(player, originalsector); // Handle FOFs first.
