@@ -935,13 +935,6 @@ void D_RegisterClientCommands(void)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
-		CV_RegisterVar(&cv_turnaxis[i]);
-		CV_RegisterVar(&cv_moveaxis[i]);
-		CV_RegisterVar(&cv_brakeaxis[i]);
-		CV_RegisterVar(&cv_aimaxis[i]);
-		CV_RegisterVar(&cv_lookaxis[i]);
-		CV_RegisterVar(&cv_fireaxis[i]);
-		CV_RegisterVar(&cv_driftaxis[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
 	}
 
