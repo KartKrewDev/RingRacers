@@ -997,7 +997,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		w *= dupx;
 		h *= dupy;
 
-		// adjustxy
+		// Center it if necessary
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
