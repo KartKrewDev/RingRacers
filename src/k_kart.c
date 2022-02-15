@@ -81,11 +81,9 @@ void K_TimerInit(void)
 		rainbowstartavailable = false;
 	}
 
-	if (numPlayers <= 2)
-	{
-		introtime = 0; // No intro in Record Attack / 1v1
-	}
-	else
+	// No intro in Record Attack / 1v1
+	// Leave unset for the value in K_TimerReset
+	if (numPlayers > 2)
 	{
 		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 	}
