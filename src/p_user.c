@@ -804,14 +804,7 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (leveltime < (starttime + (TICRATE/2)))
-	{
-		if (encoremode)
-			S_ChangeMusicInternal("estart", false); //S_StopMusic();
-		else
-			S_StartSound(NULL, sfx_kstart);
-	}
-	else // see also where time overs are handled - search for "lives = 2" in this file
+	if (leveltime >= (starttime + (TICRATE/2))) // see also where time overs are handled - search for "lives = 2" in this file
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 

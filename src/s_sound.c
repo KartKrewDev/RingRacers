@@ -2351,12 +2351,7 @@ void S_StartEx(boolean reset)
 	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-	{
-		if (encoremode)
-			S_ChangeMusicEx("estart", 0, false, mapmusposition, 0, 0);
-		else
-			S_StartSound(NULL, sfx_kstart);
-	}
+		S_StartSound(NULL, encoremode ? sfx_ruby2 : sfx_kstart);
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 
