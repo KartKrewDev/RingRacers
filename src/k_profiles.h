@@ -26,7 +26,7 @@
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 0
+#define PROFILEVER 1
 #define MAXPROFILES 16
 #define PROFILESFILE "kartprofiles.cfg"
 
@@ -40,25 +40,26 @@
 // Man I wish I had more than 16 friends!!
 
 // profile_t definition (WIP)
-typedef struct profile_s 
+typedef struct profile_s
 {
-	
+
 	// Versionning
 	UINT8 version;						// Version of the profile, this can be useful for backwards compatibility reading if we ever update the profile structure/format after release.
+										// A version of 0 can easily be checked to identify an unitialized profile.
 
 	// Profile header
 	char profilename[PROFILENAMELEN+1];	// Profile name (not to be confused with player name)
-	
+
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
 	UINT16 color;						// Default player coloUr. ...But for consistency we'll name it color.
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
-	
+
 	// Player-specific consvars.
 	// @TODO: List all of those
 	boolean kickstartaccel;				// cv_kickstartaccel
-	
+
 	// Finally, control data itself
 	INT32 controls[num_gamecontrols][MAXINPUTMAPPING];	// Lists of all the controls, defined the same way as default inputs in g_input.c
 } profile_t;
@@ -81,6 +82,10 @@ profile_t PR_MakeProfileFromPlayer(const char *prname, const char *pname, const 
 // Returns true if succesful, false if not.
 boolean PR_AddProfile(profile_t p);
 
+// PR_GetProfile(INT32 num)
+// Returns a pointer to the profile you're asking for or NULL if the profile is uninitialized.
+profile_t* PR_GetProfile(INT32 num);
+
 // PR_SaveProfiles(void)
 // Saves all the profiles in profiles.cfg
 // This does not save profilesList[0] since that's always going to be the default profile.
@@ -88,7 +93,7 @@ void PR_SaveProfiles(void);
 
 // PR_LoadProfiles(void)
 // Loads all the profiles saved in profiles.cfg.
-// This also loads 
+// This also loads
 void PR_LoadProfiles(void);
 
 

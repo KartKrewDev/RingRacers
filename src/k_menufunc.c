@@ -3264,6 +3264,10 @@ void M_VideoModeMenu(INT32 choice)
 	M_SetupNextMenu(&OPTIONS_VideoModesDef, false);
 }
 
+void M_HandleProfileSelect(INT32 ch)
+{
+	(void) ch;
+}
 
 // special menuitem key handler for video mode list
 void M_HandleVideoModes(INT32 ch)

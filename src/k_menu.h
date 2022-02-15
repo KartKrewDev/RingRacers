@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "k_profiles.h"	// profile data & functions
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -218,6 +219,9 @@ typedef enum
 	mopt_data,
 	mopt_manual,
 } mopt_e;
+
+extern menuitem_t OPTIONS_Profiles[];
+extern menu_t OPTIONS_ProfilesDef;
 
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
@@ -619,8 +623,10 @@ void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 
-// video modes menu (resolution)
+// profile selection menu
+void M_HandleProfileSelect(INT32 ch);
 
+// video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
 
@@ -758,6 +764,7 @@ void M_DrawPlaybackMenu(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
+void M_DrawProfileSelect(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
 

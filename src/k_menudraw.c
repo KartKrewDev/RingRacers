@@ -2011,6 +2011,40 @@ void M_DrawGenericOptions(void)
 	}
 }
 
+// Draws profile selection
+void M_DrawProfileSelect(void)
+{
+	INT32 i;
+	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
+
+	INT32 x = 160;
+	INT32 y = 75 + menutransition.tics*16;
+
+	M_DrawOptionsCogs();
+	M_DrawMenuTooltips();
+	M_DrawOptionsMovingButton();
+
+	for (i=0; i < MAXPROFILES; i++)
+	{
+		profile_t *p = PR_GetProfile(i);
+		UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
+		char pname[PROFILENAMELEN+1] = "EMPTY";
+
+		if (p != NULL)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
+			strcpy(pname, p->profilename);
+		}
+
+		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
+		V_DrawCenteredGamemodeString(x, y+18, 0, 0, pname);
+
+		CONS_Printf("pname %s\n", pname);
+
+		x += 96;
+	}
+}
+
 // Draw the video modes list, a-la-Quake
 void M_DrawVideoModes(void)
 {

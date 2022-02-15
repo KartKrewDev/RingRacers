@@ -367,8 +367,8 @@ menu_t PLAY_MP_RoomSelectDef = {
 menuitem_t OPTIONS_Main[] =
 {
 
-	{IT_STRING | IT_TRANSTEXT, "Profile Setup", "Remap keys & buttons to your likings.",
-		NULL, NULL, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Profile Setup", "Remap keys & buttons to your likings.",
+		NULL, &OPTIONS_ProfilesDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
 		NULL, &OPTIONS_VideoDef, 0, 0},
@@ -406,6 +406,28 @@ menu_t OPTIONS_MainDef = {
 	NULL,
 	NULL,
 	M_OptionsInputs
+};
+
+// profiles menu
+// profile select
+menuitem_t OPTIONS_Profiles[] = {
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a Profile.",
+		NULL, M_HandleProfileSelect, 0, 0},     // dummy menuitem for the control func
+};
+
+menu_t OPTIONS_ProfilesDef = {
+	sizeof (OPTIONS_Profiles) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Profiles,
+	32, 80,
+	SKINCOLOR_ULTRAMARINE, 0,
+	2, 10,
+	M_DrawProfileSelect,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	NULL,
 };
 
 // video options menu...
