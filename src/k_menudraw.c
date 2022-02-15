@@ -754,6 +754,43 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 	}
 }
 
+static void M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, UINT8 *colormap)
+{
+	UINT8 spr;
+	spritedef_t *sprdef;
+	spriteframe_t *sprframe;
+	patch_t *sprpatch;
+
+	UINT32 flags = 0;
+	UINT32 frame;
+
+	spr = P_GetSkinSprite2(&skins[skin], SPR2_FSTN, NULL);
+	sprdef = &skins[skin].sprites[spr];
+
+	if (!sprdef->numframes) // No frames ??
+		return; // Can't render!
+
+	frame = states[S_KART_FAST].frame & FF_FRAMEMASK;
+	if (frame >= sprdef->numframes) // Walking animation missing
+		frame = 0; // Try to use standing frame
+
+	sprframe = &sprdef->spriteframes[frame];
+	sprpatch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+
+	if (sprframe->flip & 1) // Only for first sprite
+		flags |= V_FLIP; // This sprite is left/right flipped!
+
+	if (skins[skin].flags & SF_HIRES)
+	{
+		V_DrawFixedPatch(x<<FRACBITS,
+					y<<FRACBITS,
+					skins[skin].highresscale,
+					flags, sprpatch, colormap);
+	}
+	else
+		V_DrawMappedPatch(x, y, addflags|flags, sprpatch, colormap);
+}
+
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
 {
 	setup_player_t *p = &setup_player[num];
@@ -761,47 +798,13 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
 	SINT8 skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 	UINT8 color = p->color;
 	UINT8 *colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+	INT32 flags = 0;
 
-	if (skin != -1)
-	{
-		UINT8 spr;
-		spritedef_t *sprdef;
-		spriteframe_t *sprframe;
-		patch_t *sprpatch;
+	// Flip for left-side players
+	if (!(num & 1))
+		flags ^= V_FLIP;
 
-		UINT32 flags = 0;
-		UINT32 frame;
-
-		spr = P_GetSkinSprite2(&skins[skin], SPR2_FSTN, NULL);
-		sprdef = &skins[skin].sprites[spr];
-
-		if (!sprdef->numframes) // No frames ??
-			return; // Can't render!
-
-		frame = states[S_KART_FAST].frame & FF_FRAMEMASK;
-		if (frame >= sprdef->numframes) // Walking animation missing
-			frame = 0; // Try to use standing frame
-
-		sprframe = &sprdef->spriteframes[frame];
-		sprpatch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
-
-		if (sprframe->flip & 1) // Only for first sprite
-			flags |= V_FLIP; // This sprite is left/right flipped!
-
-		// Flip for left-side players
-		if (!(num & 1))
-			flags ^= V_FLIP;
-
-		if (skins[skin].flags & SF_HIRES)
-		{
-			V_DrawFixedPatch(x<<FRACBITS,
-						y<<FRACBITS,
-						skins[skin].highresscale,
-						flags, sprpatch, colormap);
-		}
-		else
-			V_DrawMappedPatch(x, y, flags, sprpatch, colormap);
-	}
+	M_DrawCharacterSprite(x, y, skin, flags, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -2016,6 +2019,7 @@ void M_DrawProfileSelect(void)
 {
 	INT32 i;
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
+	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
 
 	INT32 x = 160;
 	INT32 y = 75 + menutransition.tics*16;
@@ -2028,18 +2032,26 @@ void M_DrawProfileSelect(void)
 	{
 		profile_t *p = PR_GetProfile(i);
 		UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
-		char pname[PROFILENAMELEN+1] = "EMPTY";
+		INT32 skinnum = -1;
+		char pname[PROFILENAMELEN+1] = "empty";
 
 		if (p != NULL)
 		{
 			colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
 			strcpy(pname, p->profilename);
+			skinnum = R_SkinAvailable(p->skinname);
 		}
 
+		// Card
 		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
-		V_DrawCenteredGamemodeString(x, y+18, 0, 0, pname);
 
-		CONS_Printf("pname %s\n", pname);
+		if (skinnum > -1)
+			M_DrawCharacterSprite(x, y+104, skinnum, 0, colormap);
+
+		V_DrawCenteredGamemodeString(x, y+16, V_ALLOWLOWERCASE, 0, pname);
+
+		// Card bottom to overlay the skin preview
+		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
 
 		x += 96;
 	}

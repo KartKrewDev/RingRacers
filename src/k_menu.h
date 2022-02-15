@@ -597,6 +597,10 @@ extern struct optionsmenu_s {
 	INT16 toptx;
 	INT16 topty;
 
+	// profile garbage
+	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
+	profile_t *profile;			// Pointer to the profile we're editing
+
 	// for video mode testing:
 	INT32 vidm_testingmode;
 	INT32 vidm_previousmode;
@@ -624,6 +628,7 @@ void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 
 // profile selection menu
+void M_ProfileSelectInit(INT32 choice);
 void M_HandleProfileSelect(INT32 ch);
 
 // video modes menu (resolution)

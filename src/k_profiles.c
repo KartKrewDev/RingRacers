@@ -16,14 +16,15 @@
 static profile_t profilesList[MAXPROFILES+1];		// +1 because we're gonna add a default "GUEST' profile.
 static UINT8 numprofiles = 0;	// # of loaded profiles
 
-profile_t PR_MakeProfile(const char *prname, const char *pname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING])
+profile_t PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING])
 {
 	profile_t new;
 
 	new.version = PROFILEVER;
 
 	strcpy(new.profilename, prname);
-
+	
+	strcpy(new.skinname, sname);
 	strcpy(new.playername, pname);
 	new.color = col;
 
@@ -36,10 +37,10 @@ profile_t PR_MakeProfile(const char *prname, const char *pname, const UINT16 col
 	return new;
 }
 
-profile_t PR_MakeProfileFromPlayer(const char *prname, const char *pname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
+profile_t PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
 {
 	// Generate profile using the player's gamecontrol, as we set them directly when making profiles from menus.
-	profile_t new = PR_MakeProfile(prname, pname, col, fname, fcol, gamecontrol[pnum]);
+	profile_t new = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum]);
 
 	// Player bound cvars:
 	new.kickstartaccel = cv_kickstartaccel[pnum].value;
@@ -85,7 +86,7 @@ void PR_SaveProfiles(void)
 void PR_LoadProfiles(void)
 {
 	//FILE *f = NULL;
-	profile_t dprofile = PR_MakeProfile(PROFILEDEFAULTNAME, PROFILEDEFAULTPNAME, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
+	profile_t dprofile = PR_MakeProfile(PROFILEDEFAULTNAME, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
 	PR_AddProfile(dprofile);
 
 	/*f = fopen(PROFILESFILE, "r");

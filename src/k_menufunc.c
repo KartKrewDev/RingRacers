@@ -1146,6 +1146,11 @@ static void M_HandleMenuInput(void)
 		return;
 	}
 
+	if (menucmd[pid].delay > 0)
+	{
+		return;
+	}
+
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
 	if (currentMenu->inputroutine)
 	{
@@ -1154,12 +1159,6 @@ static void M_HandleMenuInput(void)
 			return;
 		}
 	}
-
-	if (menucmd[pid].delay > 0)
-	{
-		return;
-	}
-
 	routine = currentMenu->menuitems[itemOn].itemaction;
 
 	// Handle menuitems which need a specific key handling
@@ -3101,6 +3100,9 @@ boolean M_OptionsQuit(void)
 	optionsmenu.toptx = 140-1;
 	optionsmenu.topty = 70+1;
 
+	optionsmenu.profilemenu = false;
+	optionsmenu.profile = NULL;
+
 	return true;	// Always allow quitting, duh.
 }
 
@@ -3125,6 +3127,8 @@ void M_OptionsTick(void)
 	}
 	else
 	{
+		// I don't like this, it looks like shit but it needs to be done..........
+
 		optionsmenu.toptx = 160;
 		optionsmenu.topty = 50;
 	}
@@ -3142,45 +3146,54 @@ void M_OptionsTick(void)
 boolean M_OptionsInputs(INT32 ch)
 {
 
-	switch (ch)
+	const UINT8 pid = 0;
+	(void)ch;
+
+	if (menucmd[pid].dpad_ud > 0)
 	{
-		case KEY_DOWNARROW:
-		{
-			optionsmenu.offset += 48;
-			M_NextOpt();
-			S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
+		optionsmenu.offset += 48;
+		M_NextOpt();
+		S_StartSound(NULL, sfx_menu1);
 
-			if (itemOn == 0)
-				optionsmenu.offset -= currentMenu->numitems*48;
+		if (itemOn == 0)
+			optionsmenu.offset -= currentMenu->numitems*48;
 
-			return true;
-		}
-		case KEY_UPARROW:
-		{
-			optionsmenu.offset -= 48;
-			M_PrevOpt();
-			S_StartSound(NULL, sfx_menu1);
 
-			if (itemOn == currentMenu->numitems-1)
-				optionsmenu.offset += currentMenu->numitems*48;
-
-			return true;
-		}
-		case KEY_ENTER:
-		{
-
-			if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
-				return true;	// No.
-
-			optionsmenu.optx = 140;
-			optionsmenu.opty = 70;	// Default position for the currently selected option.
-
-			return false;	// Don't eat.
-		}
-
+		return true;
 	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		M_SetMenuDelay(pid);
+		optionsmenu.offset -= 48;
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_menu1);
 
+		if (itemOn == currentMenu->numitems-1)
+			optionsmenu.offset += currentMenu->numitems*48;
+
+
+		return true;
+	}
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
+
+		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+			return true;	// No.
+
+		optionsmenu.optx = 140;
+		optionsmenu.opty = 70;	// Default position for the currently selected option.
+		return false;	// Don't eat.
+	}
 	return false;
+}
+
+void M_ProfileSelectInit(INT32 choice)
+{
+	(void)choice;
+	optionsmenu.profilemenu = true;
+
+	M_SetupNextMenu(&OPTIONS_ProfilesDef, false);
 }
 
 // setup video mode menu
@@ -3272,52 +3285,72 @@ void M_HandleProfileSelect(INT32 ch)
 // special menuitem key handler for video mode list
 void M_HandleVideoModes(INT32 ch)
 {
-	if (optionsmenu.vidm_testingmode > 0) switch (ch)
+
+	const UINT8 pid = 0;
+	(void)ch;
+
+	if (optionsmenu.vidm_testingmode > 0)
 	{
 		// change back to the previous mode quickly
-		case KEY_ESCAPE:
+		if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+		{
 			setmodeneeded = optionsmenu.vidm_previousmode + 1;
 			optionsmenu.vidm_testingmode = 0;
-			break;
-
-		case KEY_ENTER:
+		}
+		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+		{
 			S_StartSound(NULL, sfx_menu1);
 			optionsmenu.vidm_testingmode = 0; // stop testing
+		}
 	}
 
-	else switch (ch)
+	else
 	{
-		case KEY_DOWNARROW:
+		if (menucmd[pid].dpad_ud < 0)
+		{
 			S_StartSound(NULL, sfx_menu1);
 			if (++optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
 				optionsmenu.vidm_selected = 0;
-			break;
 
-		case KEY_UPARROW:
+			M_SetMenuDelay(pid);
+		}
+
+		else if (menucmd[pid].dpad_ud > 0)
+		{
 			S_StartSound(NULL, sfx_menu1);
 			if (--optionsmenu.vidm_selected < 0)
 				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
-			break;
 
-		case KEY_LEFTARROW:
+			M_SetMenuDelay(pid);
+		}
+
+		else if (menucmd[pid].dpad_lr < 0)
+		{
 			S_StartSound(NULL, sfx_menu1);
 			optionsmenu.vidm_selected -= optionsmenu.vidm_column_size;
 			if (optionsmenu.vidm_selected < 0)
 				optionsmenu.vidm_selected = (optionsmenu.vidm_column_size*3) + optionsmenu.vidm_selected;
 			if (optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
 				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
-			break;
 
-		case KEY_RIGHTARROW:
+			M_SetMenuDelay(pid);
+		}
+
+		else if (menucmd[pid].dpad_lr > 0)
+		{
 			S_StartSound(NULL, sfx_menu1);
 			optionsmenu.vidm_selected += optionsmenu.vidm_column_size;
 			if (optionsmenu.vidm_selected >= (optionsmenu.vidm_column_size*3))
 				optionsmenu.vidm_selected %= optionsmenu.vidm_column_size;
 			if (optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
 				optionsmenu.vidm_selected = optionsmenu.vidm_nummodes - 1;
-			break;
 
-		case KEY_ENTER:
+			M_SetMenuDelay(pid);
+		}
+
+		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+		{
+			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_menu1);
 			if (vid.modenum == optionsmenu.modedescs[optionsmenu.vidm_selected].modenum)
 				SCR_SetDefaultMode();
@@ -3328,17 +3361,16 @@ void M_HandleVideoModes(INT32 ch)
 				if (!setmodeneeded) // in case the previous setmode was not finished
 					setmodeneeded = optionsmenu.modedescs[optionsmenu.vidm_selected].modenum + 1;
 			}
-			break;
+		}
 
-		case KEY_ESCAPE: // this one same as M_Responder
+		else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+		{
+			M_SetMenuDelay(pid);
 			if (currentMenu->prevMenu)
 				M_SetupNextMenu(currentMenu->prevMenu, false);
 			else
 				M_ClearMenus(true);
-			break;
-
-		default:
-			break;
+		}
 	}
 }
 
@@ -3349,86 +3381,103 @@ void M_HandleItemToggles(INT32 choice)
 	INT16 next;
 	UINT8 i;
 	boolean exitmenu = false;
+	const UINT8 pid = 0;
 
-	switch (choice)
+	(void) choice;
+
+
+	if (menucmd[pid].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			S_StartSound(NULL, sfx_menu1);
-			column++;
-			if (((column*height)+row) >= currentMenu->numitems)
-				column = 0;
-			next = min(((column*height)+row), currentMenu->numitems-1);
-			itemOn = next;
-			break;
+		S_StartSound(NULL, sfx_menu1);
+		column++;
+		if (((column*height)+row) >= currentMenu->numitems)
+			column = 0;
+		next = min(((column*height)+row), currentMenu->numitems-1);
+		itemOn = next;
 
-		case KEY_LEFTARROW:
-			S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		S_StartSound(NULL, sfx_menu1);
+		column--;
+		if (column < 0)
+			column = width-1;
+		if (((column*height)+row) >= currentMenu->numitems)
 			column--;
-			if (column < 0)
-				column = width-1;
-			if (((column*height)+row) >= currentMenu->numitems)
-				column--;
-			next = max(((column*height)+row), 0);
-			if (next >= currentMenu->numitems)
-				next = currentMenu->numitems-1;
-			itemOn = next;
-			break;
+		next = max(((column*height)+row), 0);
+		if (next >= currentMenu->numitems)
+			next = currentMenu->numitems-1;
+		itemOn = next;
 
-		case KEY_DOWNARROW:
-			S_StartSound(NULL, sfx_menu1);
-			row = (row+1) % height;
-			if (((column*height)+row) >= currentMenu->numitems)
-				row = 0;
-			next = min(((column*height)+row), currentMenu->numitems-1);
-			itemOn = next;
-			break;
+		M_SetMenuDelay(pid);
+	}
 
-		case KEY_UPARROW:
-			S_StartSound(NULL, sfx_menu1);
-			row = (row-1) % height;
-			if (row < 0)
-				row = height-1;
-			if (((column*height)+row) >= currentMenu->numitems)
-				row--;
-			next = max(((column*height)+row), 0);
-			if (next >= currentMenu->numitems)
-				next = currentMenu->numitems-1;
-			itemOn = next;
-			break;
+	else if (menucmd[pid].dpad_ud > 0)
+	{
+		S_StartSound(NULL, sfx_menu1);
+		row = (row+1) % height;
+		if (((column*height)+row) >= currentMenu->numitems)
+			row = 0;
+		next = min(((column*height)+row), currentMenu->numitems-1);
+		itemOn = next;
 
-		case KEY_ENTER:
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		S_StartSound(NULL, sfx_menu1);
+		row = (row-1) % height;
+		if (row < 0)
+			row = height-1;
+		if (((column*height)+row) >= currentMenu->numitems)
+			row--;
+		next = max(((column*height)+row), 0);
+		if (next >= currentMenu->numitems)
+			next = currentMenu->numitems-1;
+		itemOn = next;
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
+		M_SetMenuDelay(pid);
 #ifdef ITEMTOGGLEBOTTOMRIGHT
-			if (currentMenu->menuitems[itemOn].mvar1 == 255)
+		if (currentMenu->menuitems[itemOn].mvar1 == 255)
+		{
+			//S_StartSound(NULL, sfx_s26d);
+			if (!shitsfree)
 			{
-				//S_StartSound(NULL, sfx_s26d);
-				if (!shitsfree)
-				{
-					shitsfree = TICRATE;
-					S_StartSound(NULL, sfx_itfree);
-				}
+				shitsfree = TICRATE;
+				S_StartSound(NULL, sfx_itfree);
 			}
-			else
+		}
+		else
 #endif
-			if (currentMenu->menuitems[itemOn].mvar1 == 0)
+		if (currentMenu->menuitems[itemOn].mvar1 == 0)
+		{
+			INT32 v = cv_sneaker.value;
+			S_StartSound(NULL, sfx_s1b4);
+			for (i = 0; i < NUMKARTRESULTS-1; i++)
 			{
-				INT32 v = cv_sneaker.value;
-				S_StartSound(NULL, sfx_s1b4);
-				for (i = 0; i < NUMKARTRESULTS-1; i++)
-				{
-					if (KartItemCVars[i]->value == v)
-						CV_AddValue(KartItemCVars[i], 1);
-				}
+				if (KartItemCVars[i]->value == v)
+					CV_AddValue(KartItemCVars[i], 1);
 			}
-			else
-			{
-				S_StartSound(NULL, sfx_s1ba);
-				CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1], 1);
-			}
-			break;
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s1ba);
+			CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1], 1);
+		}
+	}
 
-		case KEY_ESCAPE:
-			exitmenu = true;
-			break;
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_SetMenuDelay(pid);
+		exitmenu = true;
 	}
 
 	if (exitmenu)
@@ -3499,41 +3548,46 @@ void M_ExtrasTick(void)
 boolean M_ExtrasInputs(INT32 ch)
 {
 
-	switch (ch)
+	const UINT8 pid = 0;
+	(void) ch;
+
+	if (menucmd[pid].dpad_ud > 0)
 	{
-		case KEY_DOWNARROW:
-		{
-			extrasmenu.offset += 48;
-			M_NextOpt();
-			S_StartSound(NULL, sfx_menu1);
+		extrasmenu.offset += 48;
+		M_NextOpt();
+		S_StartSound(NULL, sfx_menu1);
 
-			if (itemOn == 0)
-				extrasmenu.offset -= currentMenu->numitems*48;
+		if (itemOn == 0)
+			extrasmenu.offset -= currentMenu->numitems*48;
 
-			return true;
-		}
-		case KEY_UPARROW:
-		{
-			extrasmenu.offset -= 48;
-			M_PrevOpt();
-			S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
+		return true;
+	}
 
-			if (itemOn == currentMenu->numitems-1)
-				extrasmenu.offset += currentMenu->numitems*48;
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		extrasmenu.offset -= 48;
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_menu1);
 
-			return true;
-		}
-		case KEY_ENTER:
-		{
+		if (itemOn == currentMenu->numitems-1)
+			extrasmenu.offset += currentMenu->numitems*48;
 
-			if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
-				return true;	// No.
+		M_SetMenuDelay(pid);
+		return true;
+	}
 
-			extrasmenu.extx = 140;
-			extrasmenu.exty = 70;	// Default position for the currently selected option.
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
 
-			return false;	// Don't eat.
-		}
+		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+			return true;	// No.
+
+		extrasmenu.extx = 140;
+		extrasmenu.exty = 70;	// Default position for the currently selected option.
+
+		M_SetMenuDelay(pid);
+		return false;	// Don't eat.
 	}
 	return false;
 }
@@ -3634,36 +3688,35 @@ void M_PauseTick(void)
 boolean M_PauseInputs(INT32 ch)
 {
 
+	const UINT8 pid = 0;
+	(void) ch;
+
 	if (pausemenu.closing)
 		return true;	// Don't allow inputs.
 
-	switch (ch)
+	if (menucmd[pid].dpad_ud < 0)
 	{
-
-		case KEY_UPARROW:
-		{
-			pausemenu.offset -= 50; // Each item is spaced by 50 px
-			S_StartSound(NULL, sfx_menu1);
-			M_PrevOpt();
-			return true;
-		}
-
-		case KEY_DOWNARROW:
-		{
-			pausemenu.offset += 50;	// Each item is spaced by 50 px
-			S_StartSound(NULL, sfx_menu1);
-			M_NextOpt();
-			return true;
-		}
-
-		case KEY_ESCAPE:
-		{
-			M_QuitPauseMenu();
-			return true;
-		}
-
+		M_SetMenuDelay(pid);
+		pausemenu.offset -= 50; // Each item is spaced by 50 px
+		S_StartSound(NULL, sfx_menu1);
+		M_PrevOpt();
+		return true;
 	}
 
+	else if (menucmd[pid].dpad_ud > 0)
+	{
+		pausemenu.offset += 50;	// Each item is spaced by 50 px
+		S_StartSound(NULL, sfx_menu1);
+		M_NextOpt();
+		M_SetMenuDelay(pid);
+		return true;
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_QuitPauseMenu();
+		return true;
+	}
 	return false;
 }
 
@@ -3914,9 +3967,12 @@ void M_ReplayHut(INT32 choice)
 // key handler
 void M_HandleReplayHutList(INT32 choice)
 {
-	switch (choice)
+
+	const UINT8 pid = 0;
+	(void) choice;
+
+	if (menucmd[pid].dpad_ud > 0)
 	{
-	case KEY_UPARROW:
 		if (dir_on[menudepthleft])
 			dir_on[menudepthleft]--;
 		else
@@ -3925,9 +3981,10 @@ void M_HandleReplayHutList(INT32 choice)
 
 		S_StartSound(NULL, sfx_menu1);
 		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-		break;
+	}
 
-	case KEY_DOWNARROW:
+	else if (menucmd[pid].dpad_ud < 0)
+	{
 		if (dir_on[menudepthleft] < sizedirmenu-1)
 			dir_on[menudepthleft]++;
 		else
@@ -3936,13 +3993,15 @@ void M_HandleReplayHutList(INT32 choice)
 
 		S_StartSound(NULL, sfx_menu1);
 		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-		break;
+	}
 
-	case KEY_ESCAPE:
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
 		M_QuitReplayHut();
-		break;
+	}
 
-	case KEY_ENTER:
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
 		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 		{
 			case EXT_FOLDER:
@@ -4028,8 +4087,6 @@ void M_HandleReplayHutList(INT32 choice)
 					break;
 				}
 		}
-
-		break;
 	}
 }
 
@@ -4252,7 +4309,10 @@ static boolean M_ChangeStringAddons(INT32 choice)
 
 void M_HandleAddons(INT32 choice)
 {
+	const UINT8 pid = 0;
 	boolean exitmenu = false; // exit to previous menu
+
+	(void) choice;
 
 	if (M_ChangeStringAddons(choice))
 	{
@@ -4270,116 +4330,122 @@ void M_HandleAddons(INT32 choice)
 #endif
 	}
 
-	switch (choice)
+	if (menucmd[pid].dpad_ud < 0)
 	{
-		case KEY_DOWNARROW:
-			if (dir_on[menudepthleft] < sizedirmenu-1)
-				dir_on[menudepthleft]++;
-			S_StartSound(NULL, sfx_menu1);
-			break;
-		case KEY_UPARROW:
-			if (dir_on[menudepthleft])
-				dir_on[menudepthleft]--;
-			S_StartSound(NULL, sfx_menu1);
-			break;
-		case KEY_PGDN:
+		if (dir_on[menudepthleft] < sizedirmenu-1)
+			dir_on[menudepthleft]++;
+		S_StartSound(NULL, sfx_menu1);
+	}
+	else if (menucmd[pid].dpad_ud > 0)
+	{
+		if (dir_on[menudepthleft])
+			dir_on[menudepthleft]--;
+		S_StartSound(NULL, sfx_menu1);
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_L))
+	{
+		UINT8 i;
+		for (i = numaddonsshown; i && (dir_on[menudepthleft] < sizedirmenu-1); i--)
+			dir_on[menudepthleft]++;
+
+		S_StartSound(NULL, sfx_menu1);
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_R))
+	{
+		UINT8 i;
+		for (i = numaddonsshown; i && (dir_on[menudepthleft]); i--)
+			dir_on[menudepthleft]--;
+
+		S_StartSound(NULL, sfx_menu1);
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
+		boolean refresh = true;
+		if (!dirmenu[dir_on[menudepthleft]])
+			S_StartSound(NULL, sfx_s26d);
+		else
+		{
+			switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 			{
-				UINT8 i;
-				for (i = numaddonsshown; i && (dir_on[menudepthleft] < sizedirmenu-1); i--)
-					dir_on[menudepthleft]++;
-			}
-			S_StartSound(NULL, sfx_menu1);
-			break;
-		case KEY_PGUP:
-			{
-				UINT8 i;
-				for (i = numaddonsshown; i && (dir_on[menudepthleft]); i--)
-					dir_on[menudepthleft]--;
-			}
-			S_StartSound(NULL, sfx_menu1);
-			break;
-		case KEY_ENTER:
-			{
-				boolean refresh = true;
-				if (!dirmenu[dir_on[menudepthleft]])
-					S_StartSound(NULL, sfx_s26d);
-				else
-				{
-					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+				case EXT_FOLDER:
+					strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+					if (menudepthleft)
 					{
-						case EXT_FOLDER:
-							strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-							if (menudepthleft)
-							{
-								menupathindex[--menudepthleft] = strlen(menupath);
-								menupath[menupathindex[menudepthleft]] = 0;
+						menupathindex[--menudepthleft] = strlen(menupath);
+						menupath[menupathindex[menudepthleft]] = 0;
 
-								if (!preparefilemenu(false, false))
-								{
-									S_StartSound(NULL, sfx_s224);
-									M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
-									menupath[menupathindex[++menudepthleft]] = 0;
-
-									if (!preparefilemenu(true, false))
-									{
-										UNEXIST;
-										return;
-									}
-								}
-								else
-								{
-									S_StartSound(NULL, sfx_menu1);
-									dir_on[menudepthleft] = 1;
-								}
-								refresh = false;
-							}
-							else
-							{
-								S_StartSound(NULL, sfx_s26d);
-								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
-								menupath[menupathindex[menudepthleft]] = 0;
-							}
-							break;
-						case EXT_UP:
-							S_StartSound(NULL, sfx_menu1);
+						if (!preparefilemenu(false, false))
+						{
+							S_StartSound(NULL, sfx_s224);
+							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 							menupath[menupathindex[++menudepthleft]] = 0;
-							if (!preparefilemenu(false, false))
+
+							if (!preparefilemenu(true, false))
 							{
 								UNEXIST;
 								return;
 							}
-							break;
-						case EXT_TXT:
-							M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
-							break;
-						case EXT_CFG:
-							M_AddonExec(KEY_ENTER);
-							break;
-						case EXT_LUA:
-						case EXT_SOC:
-						case EXT_WAD:
-#ifdef USE_KART
-						case EXT_KART:
-#endif
-						case EXT_PK3:
-							COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-							break;
-						default:
-							S_StartSound(NULL, sfx_s26d);
+						}
+						else
+						{
+							S_StartSound(NULL, sfx_menu1);
+							dir_on[menudepthleft] = 1;
+						}
+						refresh = false;
 					}
-				}
-				if (refresh)
-					refreshdirmenu |= REFRESHDIR_NORMAL;
+					else
+					{
+						S_StartSound(NULL, sfx_s26d);
+						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						menupath[menupathindex[menudepthleft]] = 0;
+					}
+					break;
+
+				case EXT_UP:
+					S_StartSound(NULL, sfx_menu1);
+					menupath[menupathindex[++menudepthleft]] = 0;
+					if (!preparefilemenu(false, false))
+					{
+						UNEXIST;
+						return;
+					}
+					break;
+
+				case EXT_TXT:
+					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
+					break;
+
+				case EXT_CFG:
+					M_AddonExec(KEY_ENTER);
+					break;
+
+				case EXT_LUA:
+				case EXT_SOC:
+				case EXT_WAD:
+#ifdef USE_KART
+				case EXT_KART:
+#endif
+				case EXT_PK3:
+					COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+					break;
+
+				default:
+					S_StartSound(NULL, sfx_s26d);
 			}
-			break;
 
-		case KEY_ESCAPE:
-			exitmenu = true;
-			break;
-
-		default:
-			break;
+			if (refresh)
+				refreshdirmenu |= REFRESHDIR_NORMAL;
+		}
 	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+			exitmenu = true;
+	}
+
+
 	if (exitmenu)
 	{
 		closefilemenu(true);

@@ -30,7 +30,7 @@
 #define MAXPROFILES 16
 #define PROFILESFILE "kartprofiles.cfg"
 
-#define PROFILEDEFAULTNAME "GUEST"
+#define PROFILEDEFAULTNAME "guest"
 #define PROFILEDEFAULTPNAME "Player"
 #define PROFILEDEFAULTSKIN "sonic"
 #define PROFILEDEFAULTCOLOR SKINCOLOR_SAPPHIRE
@@ -52,6 +52,7 @@ typedef struct profile_s
 
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
+	char skinname[SKINNAMESIZE+1];		// Default Skin
 	UINT16 color;						// Default player coloUr. ...But for consistency we'll name it color.
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
@@ -70,12 +71,12 @@ typedef struct profile_s
 // PR_MakeProfile
 // Makes a profile from the supplied profile name, player name, colour, follower, followercolour and controls.
 // The consvar values are left untouched.
-profile_t PR_MakeProfile(const char *prname, const char *pname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING]);
+profile_t PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING]);
 
 // PR_MakeProfileFromPlayer
 // Makes a profile_t from the supplied profile name, player name, colour, follower and followercolour.
 // The last argument is a player number to read cvars from; as for convenience, cvars will be set directly when making a profile (since loading another one will overwrite them, this will be inconsequential)
-profile_t PR_MakeProfileFromPlayer(const char *prname, const char *pname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum);
+profile_t PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum);
 
 // PR_AddProfile(profile_t p)
 // Adds a profile to profilesList and increments numprofiles.

@@ -367,8 +367,8 @@ menu_t PLAY_MP_RoomSelectDef = {
 menuitem_t OPTIONS_Main[] =
 {
 
-	{IT_STRING | IT_SUBMENU, "Profile Setup", "Remap keys & buttons to your likings.",
-		NULL, &OPTIONS_ProfilesDef, 0, 0},
+	{IT_STRING | IT_CALL, "Profile Setup", "Remap keys & buttons to your likings.",
+		NULL, M_ProfileSelectInit, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
 		NULL, &OPTIONS_VideoDef, 0, 0},
