@@ -93,6 +93,7 @@
 #include "k_grandprix.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time

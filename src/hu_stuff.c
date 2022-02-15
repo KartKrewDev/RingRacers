@@ -973,10 +973,12 @@ void HU_Ticker(void)
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
+	/*
 	if (PlayerInputDown(1, gc_scores))
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
+	*/
 
 	hu_keystrokes = false;
 
@@ -1195,16 +1197,24 @@ boolean HU_Responder(event_t *ev)
 	// (Unless if you're sharing a keyboard, since you probably establish when you start chatting that you have dibs on it...)
 	// (Ahhh, the good ol days when I was a kid who couldn't afford an extra USB controller...)
 
-	if (ev->data1 >= KEY_MOUSE1)
+	if (ev->data1 >= NUMKEYS)
 	{
-		INT32 i;
+		INT32 i, j;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
-			if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1)
+			for (j = 0; j < MAXINPUTMAPPING; j++)
+			{
+				if (gamecontrol[0][i][j] == ev->data1)
+					break;
+			}
+
+			if (j < MAXINPUTMAPPING)
+			{
 				break;
+			}
 		}
 
-		if (i == num_gamecontrols)
+		if (i == num_gamecontrols && j == MAXINPUTMAPPING)
 			return false;
 	}
 
@@ -1212,6 +1222,7 @@ boolean HU_Responder(event_t *ev)
 	if (!chat_on)
 	{
 		// enter chat mode
+#if 0
 		if ((ev->data1 == gamecontrol[0][gc_talkkey][0] || ev->data1 == gamecontrol[0][gc_talkkey][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
@@ -1232,6 +1243,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
+#endif
 	}
 	else // if chat_on
 	{
@@ -1246,9 +1258,9 @@ boolean HU_Responder(event_t *ev)
 			return true;
 
 		// Ignore non-keyboard keys, except when the talk key is bound
-		if (ev->data1 >= KEY_MOUSE1
-		&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
-		&& ev->data1 != gamecontrol[0][gc_talkkey][1]))
+		if (ev->data1 >= NUMKEYS
+		/*&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
+		&& ev->data1 != gamecontrol[0][gc_talkkey][1])*/)
 			return false;
 
 		c = CON_ShiftChar(c);
@@ -1310,9 +1322,9 @@ boolean HU_Responder(event_t *ev)
 			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
-			|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
+			/*|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
 			|| c == gamecontrol[0][gc_teamkey][0] || c == gamecontrol[0][gc_teamkey][1])
-			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
+			&& c >= NUMKEYS)*/) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			chat_on = false;
 			c_input = 0; // reset input cursor

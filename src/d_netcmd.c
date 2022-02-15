@@ -229,7 +229,7 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 	{4, "/dev/js3"}, {0, NULL}};
 #else
 // accept whatever value - it is in fact the joystick device number
-#define usejoystick_cons_t NULL
+static CV_PossibleValue_t usejoystick_cons_t[] = {{-1, "MIN"}, {MAXGAMEPADS, "MAX"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
@@ -306,10 +306,10 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
-	CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
-	CVAR_INIT ("use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
-	CVAR_INIT ("use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
+	CVAR_INIT ("use_device", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
+	CVAR_INIT ("use_device2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
+	CVAR_INIT ("use_device3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
+	CVAR_INIT ("use_device4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
 };
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
@@ -935,15 +935,7 @@ void D_RegisterClientCommands(void)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
-		CV_RegisterVar(&cv_turnaxis[i]);
-		CV_RegisterVar(&cv_moveaxis[i]);
-		CV_RegisterVar(&cv_brakeaxis[i]);
-		CV_RegisterVar(&cv_aimaxis[i]);
-		CV_RegisterVar(&cv_lookaxis[i]);
-		CV_RegisterVar(&cv_fireaxis[i]);
-		CV_RegisterVar(&cv_driftaxis[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
-		CV_RegisterVar(&cv_digitaldeadzone[i]);
 	}
 
 	// filesrch.c
@@ -2800,10 +2792,6 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-	}
 	tutorialmode = false; // warping takes us out of tutorial mode
 
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);

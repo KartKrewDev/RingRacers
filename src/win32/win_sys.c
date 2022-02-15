@@ -55,7 +55,7 @@
 
 #include "../screen.h"
 
-#include "../m_menu.h"
+#include "../k_menu.h"
 
 // Wheel support for Win95/WinNT3.51
 #include <zmouse.h>
@@ -399,6 +399,7 @@ void I_OsPolling(void)
 {
 	MSG msg;
 	HANDLE ci = GetStdHandle(STD_INPUT_HANDLE);
+	INT32 i;
 
 	// we need to dispatch messages to the window
 	// so the window procedure can respond to messages and PostEvent() for keys
@@ -425,8 +426,8 @@ void I_OsPolling(void)
 	I_GetEvent();
 
 	// reset "emulated keys"
-	gamekeydown[KEY_MOUSEWHEELUP] = 0;
-	gamekeydown[KEY_MOUSEWHEELDOWN] = 0;
+	gamekeydown[0][KEY_MOUSEWHEELUP] = 0;
+	gamekeydown[0][KEY_MOUSEWHEELDOWN] = 0;
 }
 
 // ===========================================================================================

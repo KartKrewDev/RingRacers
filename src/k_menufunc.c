@@ -93,6 +93,9 @@ INT16 itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
 INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
+INT32 menuKey = -1; // keyboard key pressed for menu
+menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
+
 // finish wipes between screens
 boolean menuwipe = false;
 
@@ -726,6 +729,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 			}
 			break;
 	}
+
 	return false;
 }
 
@@ -770,18 +774,14 @@ static void M_PrevOpt(void)
 //
 boolean M_Responder(event_t *ev)
 {
-	INT32 ch = -1;
-//	INT32 i;
-	static tic_t joywait = 0, mousewait = 0;
-	static INT32 pjoyx = 0, pjoyy = 0;
-	static INT32 pmousex = 0, pmousey = 0;
-	static INT32 lastx = 0, lasty = 0;
-	void (*routine)(INT32 choice); // for some casting problem
+	menuKey = -1;
 
 	if (dedicated || (demo.playback && demo.title)
-	|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
-	|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+		|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
+		|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+	{
 		return false;
+	}
 
 	if (noFurtherInput)
 	{
@@ -789,131 +789,25 @@ boolean M_Responder(event_t *ev)
 		// (but still allow shift keyup so caps doesn't get stuck)
 		return false;
 	}
-	else if (ev->type == ev_keydown)
+
+	if (ev->type == ev_keydown && ev->data1 < NUMKEYS)
 	{
-		ch = ev->data1;
-
-		// added 5-2-98 remap virtual keys (mouse & joystick buttons)
-		switch (ch)
-		{
-			case KEY_MOUSE1:
-				//case KEY_JOY1:
-				//case KEY_JOY1 + 2:
-				ch = KEY_ENTER;
-				break;
-				/*case KEY_JOY1 + 3: // Brake can function as 'n' for message boxes now.
-					ch = 'n';
-					break;*/
-			case KEY_MOUSE1 + 1:
-				//case KEY_JOY1 + 1:
-				ch = KEY_BACKSPACE;
-				break;
-			case KEY_HAT1:
-				ch = KEY_UPARROW;
-				break;
-			case KEY_HAT1 + 1:
-				ch = KEY_DOWNARROW;
-				break;
-			case KEY_HAT1 + 2:
-				ch = KEY_LEFTARROW;
-				break;
-			case KEY_HAT1 + 3:
-				ch = KEY_RIGHTARROW;
-				break;
-		}
-	}
-	else if (menuactive)
-	{
-		if (ev->type == ev_joystick  && ev->data1 == 0 && joywait < I_GetTime())
-		{
-			const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_deadzone[0].value) >> FRACBITS;
-			if (ev->data3 != INT32_MAX)
-			{
-				if (Joystick[0].bGamepadStyle || abs(ev->data3) > jdeadzone)
-				{
-					if (ev->data3 < 0 && pjoyy >= 0)
-					{
-						ch = KEY_UPARROW;
-						joywait = I_GetTime() + NEWTICRATE/7;
-					}
-					else if (ev->data3 > 0 && pjoyy <= 0)
-					{
-						ch = KEY_DOWNARROW;
-						joywait = I_GetTime() + NEWTICRATE/7;
-					}
-					pjoyy = ev->data3;
-				}
-				else
-					pjoyy = 0;
-			}
-
-			if (ev->data2 != INT32_MAX)
-			{
-				if (Joystick[0].bGamepadStyle || abs(ev->data2) > jdeadzone)
-				{
-					if (ev->data2 < 0 && pjoyx >= 0)
-					{
-						ch = KEY_LEFTARROW;
-						joywait = I_GetTime() + NEWTICRATE/17;
-					}
-					else if (ev->data2 > 0 && pjoyx <= 0)
-					{
-						ch = KEY_RIGHTARROW;
-						joywait = I_GetTime() + NEWTICRATE/17;
-					}
-					pjoyx = ev->data2;
-				}
-				else
-					pjoyx = 0;
-			}
-		}
-		else if (ev->type == ev_mouse && mousewait < I_GetTime())
-		{
-			pmousey += ev->data3;
-			if (pmousey < lasty-30)
-			{
-				ch = KEY_DOWNARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousey = lasty -= 30;
-			}
-			else if (pmousey > lasty + 30)
-			{
-				ch = KEY_UPARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousey = lasty += 30;
-			}
-
-			pmousex += ev->data2;
-			if (pmousex < lastx - 30)
-			{
-				ch = KEY_LEFTARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousex = lastx -= 30;
-			}
-			else if (pmousex > lastx+30)
-			{
-				ch = KEY_RIGHTARROW;
-				mousewait = I_GetTime() + NEWTICRATE/7;
-				pmousex = lastx += 30;
-			}
-		}
+		// Record keyboard presses
+		menuKey = ev->data1;
 	}
 
-	if (ch == -1)
-		return false;
-	else if (ch == gamecontrol[0][gc_systemmenu][0] || ch == gamecontrol[0][gc_systemmenu][1]) // allow remappable ESC key
-		ch = KEY_ESCAPE;
-	else if ((ch == gamecontrol[0][gc_accelerate][0] || ch == gamecontrol[0][gc_accelerate][1])  && ch >= KEY_MOUSE1)
-		ch = KEY_ENTER;
+	// update keys current state
+	G_MapEventsToControls(ev);
 
-	// F-Keys
-	if (!menuactive)
+	// Handle menu handling in-game.
+	if (menuactive == false)
 	{
 		noFurtherInput = true;
 
-		switch (ch)
-		{
 #if 0
+		// The Fx keys.
+		switch (menuKey)
+		{
 			case KEY_F1: // Help key
 				Command_Manual_f();
 				return true;
@@ -934,7 +828,6 @@ boolean M_Responder(event_t *ev)
 				itemOn = 0;
 				return true;
 
-#ifndef DC
 			case KEY_F5: // Video Mode
 				if (modeattacking)
 					return true;
@@ -942,7 +835,6 @@ boolean M_Responder(event_t *ev)
 				M_Options(0);
 				M_VideoModeMenu(0);
 				return true;
-#endif
 
 			case KEY_F6: // Empty
 				return true;
@@ -967,289 +859,30 @@ boolean M_Responder(event_t *ev)
 				return true;
 
 			// Spymode on F12 handled in game logic
+		}
 #endif
 
-			case KEY_ESCAPE: // Pop up menu
-				if (chat_on)
-				{
-					HU_clearChatChars();
-					chat_on = false;
-				}
-				else
-					M_StartControlPanel();
-				return true;
+		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
+		{
+			if (chat_on)
+			{
+				HU_clearChatChars();
+				chat_on = false;
+			}
+			else
+			{
+				M_StartControlPanel();
+			}
+
+			return true;
 		}
+
 		noFurtherInput = false; // turns out we didn't care
 		return false;
 	}
 
-	if ((ch == gamecontrol[0][gc_brake][0] || ch == gamecontrol[0][gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
-		ch = KEY_ESCAPE;
-
-	routine = currentMenu->menuitems[itemOn].itemaction;
-
-	// Handle menuitems which need a specific key handling
-	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
-	{
-		if (shiftdown && ch >= 32 && ch <= 127)
-			ch = shiftxform[ch];
-		routine(ch);
-		return true;
-	}
-
-	// Handle menu-specific input handling. If this returns true we skip regular input handling.
-	if (currentMenu->inputroutine)
-	{
-		INT32 res = 0;
-		if (shiftdown && ch >= 32 && ch <= 127)
-			ch = shiftxform[ch];
-
-		res = currentMenu->inputroutine(ch);
-
-		if (res)
-			return true;
-	}
-
-	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
-	{
-		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
-		{
-			if (ch == ' ' || ch == 'n' || ch == 'y' || ch == KEY_ESCAPE || ch == KEY_ENTER)
-			{
-				if (routine)
-					routine(ch);
-				M_StopMessage(0);
-				noFurtherInput = true;
-				return true;
-			}
-			return true;
-		}
-		else
-		{
-			// dirty hack: for customising controls, I want only buttons/keys, not moves
-			if (ev->type == ev_mouse
-				|| ev->type == ev_joystick
-				|| ev->type == ev_joystick2
-				|| ev->type == ev_joystick3
-				|| ev->type == ev_joystick4)
-				return true;
-			if (routine)
-			{
-				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
-				otherroutine(ev); //Alam: what a hack
-			}
-			return true;
-		}
-	}
-
-	// BP: one of the more big hack i have never made
-	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
-	{
-		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING)
-		{
-
-			if (shiftdown && ch >= 32 && ch <= 127)
-				ch = shiftxform[ch];
-			if (M_ChangeStringCvar(ch))
-				return true;
-			else
-				routine = NULL;
-		}
-		else
-			routine = M_ChangeCvar;
-	}
-
-	if (currentMenu == &PAUSE_PlaybackMenuDef && !con_destlines)
-	{
-		playback_last_menu_interaction_leveltime = leveltime;
-		// Flip left/right with up/down for the playback menu, since it's a horizontal icon row.
-		switch (ch)
-		{
-			case KEY_LEFTARROW: ch = KEY_UPARROW; break;
-			case KEY_UPARROW: ch = KEY_RIGHTARROW; break;
-			case KEY_RIGHTARROW: ch = KEY_DOWNARROW; break;
-			case KEY_DOWNARROW: ch = KEY_LEFTARROW; break;
-
-			// arbitrary keyboard shortcuts because fuck you
-
-			case '\'':	// toggle freecam
-				M_PlaybackToggleFreecam(0);
-				break;
-
-			case ']':	// ffw / advance frame (depends on if paused or not)
-				if (paused)
-					M_PlaybackAdvance(0);
-				else
-					M_PlaybackFastForward(0);
-				break;
-
-			case '[':	// rewind /backupframe, uses the same function
-				M_PlaybackRewind(0);
-				break;
-
-			case '\\':	// pause
-				M_PlaybackPause(0);
-				break;
-
-			// viewpoints, an annoyance (tm)
-			case '-':	// viewpoint minus
-				M_PlaybackSetViews(-1);	// yeah lol.
-				break;
-
-			case '=':	// viewpoint plus
-				M_PlaybackSetViews(1);	// yeah lol.
-				break;
-
-			// switch viewpoints:
-			case '1':	// viewpoint for p1 (also f12)
-				// maximum laziness:
-				if (!demo.freecam)
-					G_AdjustView(1, 1, true);
-				break;
-			case '2':	// viewpoint for p2
-				if (!demo.freecam)
-					G_AdjustView(2, 1, true);
-				break;
-			case '3':	// viewpoint for p3
-				if (!demo.freecam)
-					G_AdjustView(3, 1, true);
-				break;
-			case '4':	// viewpoint for p4
-				if (!demo.freecam)
-					G_AdjustView(4, 1, true);
-				break;
-
-			default: break;
-		}
-	}
-
-	// Keys usable within menu
-	switch (ch)
-	{
-		case KEY_DOWNARROW:
-			M_NextOpt();
-			S_StartSound(NULL, sfx_s3k5b);
-			return true;
-
-		case KEY_UPARROW:
-			M_PrevOpt();
-			S_StartSound(NULL, sfx_s3k5b);
-			return true;
-
-		case KEY_LEFTARROW:
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(0);
-			}
-			return true;
-
-		case KEY_RIGHTARROW:
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(1);
-			}
-			return true;
-
-		case KEY_ENTER:
-			noFurtherInput = true;
-			currentMenu->lastOn = itemOn;
-
-#if 0
-			if (currentMenu == &PAUSE_PlaybackMenuDef)
-			{
-				boolean held = (boolean)playback_enterheld;
-				if (held)
-					return true;
-				playback_enterheld = 3;
-			}
-#endif
-
-			if (routine)
-			{
-				S_StartSound(NULL, sfx_s3k5b);
-
-				if (((currentMenu->menuitems[itemOn].status & IT_TYPE)==IT_CALL
-				 || (currentMenu->menuitems[itemOn].status & IT_TYPE)==IT_SUBMENU)
-				 && (currentMenu->menuitems[itemOn].status & IT_CALLTYPE))
-				{
-					if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
-					{
-						M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
-						return true;
-					}
-				}
-
-				switch (currentMenu->menuitems[itemOn].status & IT_TYPE)
-				{
-					case IT_CVAR:
-					case IT_ARROWS:
-						routine(1); // right arrow
-						break;
-					case IT_CALL:
-						routine(itemOn);
-						break;
-					case IT_SUBMENU:
-						currentMenu->lastOn = itemOn;
-						M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction, false);
-						break;
-				}
-			}
-			return true;
-
-		case KEY_ESCAPE:
-		//case KEY_JOY1 + 2:
-			M_GoBack(0);
-			return true;
-
-		case KEY_BACKSPACE:
-#if 0
-			if ((currentMenu->menuitems[itemOn].status) == IT_CONTROL)
-			{
-				// detach any keys associated with the game control
-				G_ClearControlKeys(setupcontrols, currentMenu->menuitems[itemOn].mvar1);
-				S_StartSound(NULL, sfx_shldls);
-				return true;
-			}
-#endif
-
-			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
-				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
-			{
-				consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
-
-				if (cv == &cv_chooseskin
-					|| cv == &cv_dummystaff
-					/*
-					|| cv == &cv_nextmap
-					|| cv == &cv_newgametype
-					*/
-					)
-					return true;
-
-#if 0
-				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-#endif
-					S_StartSound(NULL, sfx_s3k5b);
-				routine(-1);
-				return true;
-			}
-
-			return false;
-
-		default:
-			break;
-	}
-
+	// We're in the menu itself now.
+	// M_Ticker will take care of the rest.
 	return true;
 }
 
@@ -1258,6 +891,15 @@ boolean M_Responder(event_t *ev)
 //
 void M_StartControlPanel(void)
 {
+	INT32 i;
+
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	memset(menucmd, 0, sizeof (menucmd));
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		menucmd[i].delay = MENUDELAYTIME;
+	}
+
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -1292,137 +934,6 @@ void M_StartControlPanel(void)
 		// For now let's just always open the same pause menu.
 		M_OpenPauseMenu();
 	}
-
-#if 0
-	else if (modeattacking)
-	{
-		currentMenu = &MAPauseDef;
-		itemOn = mapause_continue;
-	}
-	else if (!(netgame || multiplayer)) // Single Player
-	{
-		if (gamestate != GS_LEVEL) // intermission, so gray out stuff.
-			SPauseMenu[spause_retry].status = IT_GRAYEDOUT;
-		else
-		{
-			//INT32 numlives = 2;
-
-			/*if (&players[consoleplayer])
-			{
-				numlives = players[consoleplayer].lives;
-				if (players[consoleplayer].playerstate != PST_LIVE)
-					++numlives;
-			}
-
-			// The list of things that can disable retrying is (was?) a little too complex
-			// for me to want to use the short if statement syntax
-			if (numlives <= 1 || G_IsSpecialStage(gamemap))
-				SPauseMenu[spause_retry].status = (IT_GRAYEDOUT);
-			else*/
-				SPauseMenu[spause_retry].status = (IT_STRING | IT_CALL);
-		}
-
-		currentMenu = &SPauseDef;
-		itemOn = spause_continue;
-	}
-	else // multiplayer
-	{
-		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
-		MPauseMenu[mpause_addons].status = IT_DISABLED;
-		MPauseMenu[mpause_scramble].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit3].status = IT_DISABLED;
-		MPauseMenu[mpause_psetupsplit4].status = IT_DISABLED;
-		MPauseMenu[mpause_spectate].status = IT_DISABLED;
-		MPauseMenu[mpause_entergame].status = IT_DISABLED;
-		MPauseMenu[mpause_canceljoin].status = IT_DISABLED;
-		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
-		MPauseMenu[mpause_switchspectate].status = IT_DISABLED;
-		MPauseMenu[mpause_psetup].status = IT_DISABLED;
-		MISC_ChangeTeamMenu[0].status = IT_DISABLED;
-		MISC_ChangeSpectateMenu[0].status = IT_DISABLED;
-		// Reset these in case splitscreen messes things up
-		MPauseMenu[mpause_switchteam].mvar1 = 48;
-		MPauseMenu[mpause_switchspectate].mvar1 = 48;
-		MPauseMenu[mpause_options].mvar1 = 64;
-		MPauseMenu[mpause_title].mvar1 = 80;
-		MPauseMenu[mpause_quit].mvar1 = 88;
-		Dummymenuplayer_OnChange();
-
-		if ((server || IsPlayerAdmin(consoleplayer)))
-		{
-			MPauseMenu[mpause_switchmap].status = IT_STRING | IT_CALL;
-			MPauseMenu[mpause_addons].status = IT_STRING | IT_CALL;
-			if (G_GametypeHasTeams())
-				MPauseMenu[mpause_scramble].status = IT_STRING | IT_SUBMENU;
-		}
-
-		if (splitscreen)
-		{
-			MPauseMenu[mpause_psetupsplit].status = MPauseMenu[mpause_psetupsplit2].status = IT_STRING | IT_CALL;
-			MISC_ChangeTeamMenu[0].status = MISC_ChangeSpectateMenu[0].status = IT_STRING|IT_CVAR;
-
-			if (netgame)
-			{
-				if (G_GametypeHasTeams())
-				{
-					MPauseMenu[mpause_switchteam].status = IT_STRING | IT_SUBMENU;
-					MPauseMenu[mpause_switchteam].mvar1 += ((splitscreen+1) * 8);
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-				else if (G_GametypeHasSpectators())
-				{
-					MPauseMenu[mpause_switchspectate].status = IT_STRING | IT_SUBMENU;
-					MPauseMenu[mpause_switchspectate].mvar1 += ((splitscreen+1) * 8);
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-			}
-
-			if (splitscreen > 1)
-			{
-				MPauseMenu[mpause_psetupsplit3].status = IT_STRING | IT_CALL;
-
-				MPauseMenu[mpause_options].mvar1 += 8;
-				MPauseMenu[mpause_title].mvar1 += 8;
-				MPauseMenu[mpause_quit].mvar1 += 8;
-
-				if (splitscreen > 2)
-				{
-					MPauseMenu[mpause_psetupsplit4].status = IT_STRING | IT_CALL;
-					MPauseMenu[mpause_options].mvar1 += 8;
-					MPauseMenu[mpause_title].mvar1 += 8;
-					MPauseMenu[mpause_quit].mvar1 += 8;
-				}
-			}
-		}
-		else
-		{
-			MPauseMenu[mpause_psetup].status = IT_STRING | IT_CALL;
-
-			if (G_GametypeHasTeams())
-				MPauseMenu[mpause_switchteam].status = IT_STRING | IT_SUBMENU;
-			else if (G_GametypeHasSpectators())
-			{
-				if (!players[consoleplayer].spectator)
-					MPauseMenu[mpause_spectate].status = IT_STRING | IT_CALL;
-				else if (players[consoleplayer].pflags & PF_WANTSTOJOIN)
-					MPauseMenu[mpause_canceljoin].status = IT_STRING | IT_CALL;
-				else
-					MPauseMenu[mpause_entergame].status = IT_STRING | IT_CALL;
-			}
-			else // in this odd case, we still want something to be on the menu even if it's useless
-				MPauseMenu[mpause_spectate].status = IT_GRAYEDOUT;
-		}
-
-		currentMenu = &MPauseDef;
-		itemOn = mpause_continue;
-	}
-#endif
 
 	CON_ToggleOff(); // move away console
 }
@@ -1494,6 +1005,16 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 			return; // we can't quit this menu (also used to set parameter from the menu)
 	}
 
+	if (menudef->initroutine != NULL
+#if 0
+		&& currentMenu != menudef // Unsure if we need this...
+#endif
+		)
+	{
+		// Moving to a new menu, reinitialize.
+		menudef->initroutine();
+	}
+
 	currentMenu = menudef;
 	itemOn = currentMenu->lastOn;
 
@@ -1546,8 +1067,283 @@ void M_GoBack(INT32 choice)
 //
 // M_Ticker
 //
+static void M_SetMenuDelay(UINT8 i)
+{
+	menucmd[i].delayCount++;
+	if (menucmd[i].delayCount < 1)
+	{
+		// Shouldn't happen, but for safety.
+		menucmd[i].delayCount = 1;
+	}
+
+	menucmd[i].delay = (MENUDELAYTIME / menucmd[i].delayCount);
+	if (menucmd[i].delay < 1)
+	{
+		menucmd[i].delay = 1;
+	}
+}
+
+static void M_UpdateMenuCMD(UINT8 i)
+{
+	UINT8 mp = max(1, setup_numplayers);
+
+	menucmd[i].dpad_ud = 0;
+	menucmd[i].dpad_lr = 0;
+
+	menucmd[i].buttonsHeld = menucmd[i].buttons;
+	menucmd[i].buttons = 0;
+
+	if (G_PlayerInputDown(i, gc_up, mp)) { menucmd[i].dpad_ud--; }
+	if (G_PlayerInputDown(i, gc_down, mp)) { menucmd[i].dpad_ud++; }
+
+	if (G_PlayerInputDown(i, gc_left, mp)) { menucmd[i].dpad_lr--; }
+	if (G_PlayerInputDown(i, gc_right, mp)) { menucmd[i].dpad_lr++; }
+
+	if (G_PlayerInputDown(i, gc_a, mp)) { menucmd[i].buttons |= MBT_A; }
+	if (G_PlayerInputDown(i, gc_b, mp)) { menucmd[i].buttons |= MBT_B; }
+	if (G_PlayerInputDown(i, gc_c, mp)) { menucmd[i].buttons |= MBT_C; }
+	if (G_PlayerInputDown(i, gc_x, mp)) { menucmd[i].buttons |= MBT_X; }
+	if (G_PlayerInputDown(i, gc_y, mp)) { menucmd[i].buttons |= MBT_Y; }
+	if (G_PlayerInputDown(i, gc_z, mp)) { menucmd[i].buttons |= MBT_Z; }
+	if (G_PlayerInputDown(i, gc_l, mp)) { menucmd[i].buttons |= MBT_L; }
+	if (G_PlayerInputDown(i, gc_r, mp)) { menucmd[i].buttons |= MBT_R; }
+	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
+
+	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
+	{
+		// Reset delay count with no buttons.
+		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
+		menucmd[i].delayCount = 0;
+	}
+}
+
+boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
+{
+	if (menucmd[pid].buttonsHeld & bt)
+	{
+		return false;
+	}
+
+	return (menucmd[pid].buttons & bt);
+}
+
+static void M_HandleMenuInput(void)
+{
+	void (*routine)(INT32 choice); // for some casting problem
+	INT32 i;
+	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	SINT8 lr = 0, ud = 0;
+
+	// Update menu CMD
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i);
+	}
+
+	if (menuactive == false)
+	{
+		// We're not in the menu.
+		return;
+	}
+
+	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
+	if (currentMenu->inputroutine)
+	{
+		if (currentMenu->inputroutine(menuKey))
+		{
+			return;
+		}
+	}
+
+	if (menucmd[pid].delay > 0)
+	{
+		return;
+	}
+
+	routine = currentMenu->menuitems[itemOn].itemaction;
+
+	// Handle menuitems which need a specific key handling
+	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
+	{
+		routine(-1);
+		return;
+	}
+
+	// TODO: Move this to message menu code
+	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
+	{
+		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
+		{
+			if (menucmd[pid].buttons != 0 && menucmd[pid].buttonsHeld == 0)
+			{
+				if (routine)
+				{
+					routine(menuKey);
+				}
+
+				M_StopMessage(0);
+				noFurtherInput = true;
+				M_SetMenuDelay(pid);
+				return;
+			}
+
+			return;
+		}
+		else
+		{
+#if 0 // this shit is crazy
+			if (routine)
+			{
+				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
+				otherroutine(ev); //Alam: what a hack
+			}
+#endif
+
+			return;
+		}
+	}
+
+	// BP: one of the more big hack i have never made
+	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR)
+	{
+		if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_STRING)
+		{
+			// As mentioned earlier, we need a typing submenu.
+			routine = NULL;
+		}
+		else
+		{
+			routine = M_ChangeCvar;
+		}
+	}
+
+	lr = menucmd[pid].dpad_lr;
+	ud = menucmd[pid].dpad_ud;
+
+	// LR does nothing in the default menu, just remap as dpad.
+	if (menucmd[pid].buttons & MBT_L) { lr--; }
+	if (menucmd[pid].buttons & MBT_R) { lr++; }
+
+	// Keys usable within menu
+	if (ud > 0)
+	{
+		M_NextOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (ud < 0)
+	{
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (lr < 0)
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			routine(0);
+			M_SetMenuDelay(pid);
+		}
+
+		return;
+	}
+	else if (lr > 0)
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			routine(1);
+			M_SetMenuDelay(pid);
+		}
+
+		return;
+	}
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	{
+		noFurtherInput = true;
+		currentMenu->lastOn = itemOn;
+
+		if (routine)
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+
+			if (((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CALL
+				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SUBMENU)
+				&& (currentMenu->menuitems[itemOn].status & IT_CALLTYPE))
+			{
+				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
+				{
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+					return;
+				}
+			}
+
+			switch (currentMenu->menuitems[itemOn].status & IT_TYPE)
+			{
+				case IT_CVAR:
+				case IT_ARROWS:
+					routine(1); // right arrow
+					break;
+				case IT_CALL:
+					routine(itemOn);
+					break;
+				case IT_SUBMENU:
+					currentMenu->lastOn = itemOn;
+					M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction, false);
+					break;
+			}
+		}
+
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
+	{
+		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+
+			// Make these CVar options?
+			if (cv == &cv_chooseskin
+				|| cv == &cv_dummystaff
+				/*
+				|| cv == &cv_nextmap
+				|| cv == &cv_newgametype
+				*/
+				)
+			{
+				return;
+			}
+
+			S_StartSound(NULL, sfx_s3k5b);
+
+			routine(-1);
+			M_SetMenuDelay(pid);
+			return;
+		}
+
+		return;
+	}
+
+	return;
+}
+
 void M_Ticker(void)
 {
+	INT32 i;
+
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
 		noFurtherInput = true;
@@ -1599,11 +1395,28 @@ void M_Ticker(void)
 		}
 	}
 
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (menucmd[i].delay > 0)
+		{
+			menucmd[i].delay--;
+		}
+	}
+
+	if (noFurtherInput == false)
+	{
+		M_HandleMenuInput();
+	}
+
 	if (currentMenu->tickroutine)
+	{
 		currentMenu->tickroutine();
+	}
 
 	if (dedicated)
+	{
 		return;
+	}
 
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
@@ -1686,16 +1499,17 @@ static menuitem_t MessageMenu[] =
 
 menu_t MessageDef =
 {
-	1,                  // # of menu items
-	NULL,               // previous menu       (TO HACK)
-	0,                  // lastOn, flags       (TO HACK)
-	MessageMenu,        // menuitem_t ->
-	0, 0,               // x, y                (TO HACK)
+	1,					// # of menu items
+	NULL,				// previous menu       (TO HACK)
+	0,					// lastOn, flags       (TO HACK)
+	MessageMenu,		// menuitem_t ->
+	0, 0,				// x, y                (TO HACK)
 	0, 0,				// extra1, extra2
-	0, 0,               // transition tics
-	M_DrawMessageMenu,  // drawing routine ->
-	NULL,               // ticker routine
-	NULL,               // quit routine
+	0, 0,				// transition tics
+	M_DrawMessageMenu,	// drawing routine ->
+	NULL,				// ticker routine
+	NULL,				// init routine
+	NULL,				// quit routine
 	NULL				// input routine
 };
 
@@ -1948,14 +1762,20 @@ struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 struct setup_explosions_s setup_explosions[48];
 
-UINT8 setup_numplayers = 0;
+UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
 
-void M_CharacterSelectInit(INT32 choice)
+void M_CharacterSelectInit(void)
 {
 	UINT8 i, j;
 
-	(void)choice;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		// Un-set devices for other players.
+		CV_SetValue(&cv_usejoystick[i], -1);
+		CONS_Printf("Device for %d set to %d\n", i, -1);
+	}
+	CONS_Printf("========\n");
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
@@ -1965,8 +1785,7 @@ void M_CharacterSelectInit(INT32 choice)
 	}
 
 	memset(setup_player, 0, sizeof(setup_player));
-	setup_player[0].mdepth = CSSTEP_CHARS;
-	setup_numplayers = 1;
+	setup_numplayers = 0;
 
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
@@ -1994,7 +1813,11 @@ void M_CharacterSelectInit(INT32 choice)
 			}
 		}
 	}
+}
 
+void M_CharacterSelect(INT32 choice)
+{
+	(void)choice;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
@@ -2046,205 +1869,324 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 	}
 }
 
-static void M_HandleCharacterGrid(INT32 choice, setup_player_t *p, UINT8 num)
+static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 {
-	switch (choice)
-	{
-		case KEY_DOWNARROW:
-			p->gridy++;
-			if (p->gridy > 8)
-				p->gridy = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_UPARROW:
-			p->gridy--;
-			if (p->gridy < 0)
-				p->gridy = 8;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_RIGHTARROW:
-			p->gridx++;
-			if (p->gridx > 8)
-				p->gridx = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_LEFTARROW:
-			p->gridx--;
-			if (p->gridx < 0)
-				p->gridx = 8;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
-				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
-			else
-			{
-				if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-					p->mdepth = CSSTEP_COLORS; // Skip clones menu
-				else
-					p->mdepth = CSSTEP_ALTS;
+	INT32 i;
 
-				S_StartSound(NULL, sfx_s3k63);
-			}
-			break;
-		case KEY_ESCAPE:
-			if (num == setup_numplayers-1)
-			{
-				p->mdepth = CSSTEP_NONE;
-				S_StartSound(NULL, sfx_s3k5b);
-			}
-			else
-			{
-				S_StartSound(NULL, sfx_s3kb2);
-			}
-			break;
-		default:
-			break;
+	if (numPlayers == 0)
+	{
+		// All of them are available!
+		return true;
 	}
+
+	for (i = 0; i < numPlayers; i++)
+	{
+		if (cv_usejoystick[i].value == deviceID)
+		{
+			// This one's already being used.
+			return false;
+		}
+	}
+
+	// This device is good to go.
+	return true;
 }
 
-static void M_HandleCharRotate(INT32 choice, setup_player_t *p)
+static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
+{
+	INT32 i, j;
+
+	// Detect B press first ... this means P1 can actually exit out of the menu.
+	if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		M_SetMenuDelay(num);
+
+		if (num == 0)
+		{
+			// We're done here.
+			M_GoBack(0);
+			return true;
+		}
+
+		// Don't allow this press to ever count as "start".
+		return false;
+	}
+
+	if (num != setup_numplayers)
+	{
+		// Only detect devices for the last player.
+		return false;
+	}
+
+	// Now detect new devices trying to join.
+	for (i = 0; i < MAXDEVICES; i++)
+	{
+		if (deviceResponding[i] != true)
+		{
+			// No buttons are being pushed.
+			continue;
+		}
+
+		if (M_DeviceAvailable(i, setup_numplayers) == true)
+		{
+			// Available!! Let's use this one!!
+			CV_SetValue(&cv_usejoystick[num], i);
+			CONS_Printf("Device for %d set to %d\n", num, i);
+			CONS_Printf("========\n");
+
+			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
+			{
+				// Un-set devices for other players.
+				CV_SetValue(&cv_usejoystick[j], -1);
+				CONS_Printf("Device for %d set to %d\n", j, -1);
+			}
+			CONS_Printf("========\n");
+
+			//setup_numplayers++;
+			p->mdepth = CSSTEP_CHARS;
+			S_StartSound(NULL, sfx_s3k65);
+
+			// Prevent quick presses for multiple players
+			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+			{
+				setup_player[j].delay = MENUDELAYTIME;
+				M_SetMenuDelay(j);
+				menucmd[j].buttonsHeld |= (MBT_B|MBT_Y);
+			}
+
+			memset(deviceResponding, false, sizeof(deviceResponding));
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
+{
+	INT32 i;
+
+	if (menucmd[num].dpad_ud > 0)
+	{
+		p->gridy++;
+		if (p->gridy > 8)
+			p->gridy = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (menucmd[num].dpad_ud < 0)
+	{
+		p->gridy--;
+		if (p->gridy < 0)
+			p->gridy = 8;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+
+	if (menucmd[num].dpad_lr > 0)
+	{
+		p->gridx++;
+		if (p->gridx > 8)
+			p->gridx = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->gridx--;
+		if (p->gridx < 0)
+			p->gridx = 8;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+
+	if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
+		{
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+		}
+		else
+		{
+			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+				p->mdepth = CSSTEP_COLORS; // Skip clones menu
+			else
+				p->mdepth = CSSTEP_ALTS;
+
+			S_StartSound(NULL, sfx_s3k63);
+		}
+
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		if (num == setup_numplayers-1)
+		{
+			p->mdepth = CSSTEP_NONE;
+			S_StartSound(NULL, sfx_s3k5b);
+
+			// Prevent quick presses for multiple players
+			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				setup_player[i].delay = MENUDELAYTIME;
+				M_SetMenuDelay(i);
+				menucmd[i].buttonsHeld |= (MBT_B|MBT_Y);
+			}
+
+			return true;
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+		}
+
+		M_SetMenuDelay(num);
+	}
+
+	return false;
+}
+
+static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
 
-	switch (choice)
+	if (menucmd[num].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			p->clonenum++;
-			if (p->clonenum >= numclones)
-				p->clonenum = 0;
-			p->rotate = CSROTATETICS;
-			p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
-			break;
-		case KEY_LEFTARROW:
-			p->clonenum--;
-			if (p->clonenum < 0)
-				p->clonenum = numclones-1;
-			p->rotate = -CSROTATETICS;
-			p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3kc3s);
-			break;
-		case KEY_ENTER:
-			p->mdepth = CSSTEP_COLORS;
-			S_StartSound(NULL, sfx_s3k63);
-			break;
-		case KEY_ESCAPE:
-			p->mdepth = CSSTEP_CHARS;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		default:
-			break;
+		p->clonenum++;
+		if (p->clonenum >= numclones)
+			p->clonenum = 0;
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->clonenum--;
+		if (p->clonenum < 0)
+			p->clonenum = numclones-1;
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+
+	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k63);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		p->mdepth = CSSTEP_CHARS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
 	}
 }
 
-static void M_HandleColorRotate(INT32 choice, setup_player_t *p)
+static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
-	switch (choice)
+	if (menucmd[num].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			p->color++;
-			if (p->color >= numskincolors)
-				p->color = 1;
-			p->rotate = CSROTATETICS;
-			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
-			break;
-		case KEY_LEFTARROW:
-			p->color--;
-			if (p->color < 1)
-				p->color = numskincolors-1;
-			p->rotate = -CSROTATETICS;
-			//p->delay = CSROTATETICS;
-			S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
-			break;
-		case KEY_ENTER:
-			p->mdepth = CSSTEP_READY;
-			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
-			S_StartSound(NULL, sfx_s3k4e);
-			break;
-		case KEY_ESCAPE:
-			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-				p->mdepth = CSSTEP_CHARS; // Skip clones menu
-			else
-				p->mdepth = CSSTEP_ALTS;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		default:
-			break;
+		p->color++;
+		if (p->color >= numskincolors)
+			p->color = 1;
+		p->rotate = CSROTATETICS;
+		M_SetMenuDelay(num); //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->color--;
+		if (p->color < 1)
+			p->color = numskincolors-1;
+		p->rotate = -CSROTATETICS;
+		M_SetMenuDelay(num); //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+
+	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		p->mdepth = CSSTEP_READY;
+		p->delay = TICRATE;
+		M_SetupReadyExplosions(p);
+		S_StartSound(NULL, sfx_s3k4e);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+			p->mdepth = CSSTEP_CHARS; // Skip clones menu
+		else
+			p->mdepth = CSSTEP_ALTS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
 	}
 }
 
-void M_CharacterSelectHandler(INT32 choice)
+boolean M_CharacterSelectHandler(INT32 choice)
 {
-	UINT8 i;
+	INT32 i;
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	(void)choice;
+
+	for (i = MAXSPLITSCREENPLAYERS-1; i >= 0; i--)
 	{
 		setup_player_t *p = &setup_player[i];
+		boolean playersChanged = false;
 
-		if (i > 0)
-			break; // temp
-
-		if (p->delay == 0)
+		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					if (choice == KEY_ENTER && i == setup_numplayers)
-					{
-						p->mdepth = CSSTEP_CHARS;
-						S_StartSound(NULL, sfx_s3k65);
-					}
+					playersChanged = M_HandlePressStart(p, i);
 					break;
 				case CSSTEP_CHARS: // Character Select grid
-					M_HandleCharacterGrid(choice, p, i);
+					playersChanged = M_HandleCharacterGrid(p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
-					M_HandleCharRotate(choice, p);
+					M_HandleCharRotate(p, i);
 					break;
 				case CSSTEP_COLORS: // Select color
-					M_HandleColorRotate(choice, p);
+					M_HandleColorRotate(p, i);
 					break;
 				case CSSTEP_READY:
 				default: // Unready
-					if (choice == KEY_ESCAPE)
+					if (M_MenuButtonPressed(i, MBT_B) || M_MenuButtonPressed(i, MBT_Y))
 					{
 						p->mdepth = CSSTEP_COLORS;
 						S_StartSound(NULL, sfx_s3k5b);
+						M_SetMenuDelay(i);
 					}
 					break;
 			}
 		}
 
-		if (p->mdepth < CSSTEP_ALTS)
-			p->clonenum = 0;
-
 		// Just makes it easier to access later
 		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 
 		if (p->mdepth < CSSTEP_COLORS)
+		{
 			p->color = skins[p->skin].prefcolor;
+		}
+
+		if (playersChanged == true)
+		{
+			break;
+		}
 	}
 
 	// Setup new numplayers
+	setup_numplayers = 0;
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		if (setup_player[i].mdepth == CSSTEP_NONE)
 			break;
-		else
-			setup_numplayers = i+1;
+
+		setup_numplayers = i+1;
 	}
 
-	// If the first player unjoins, then we get outta here
-	if (setup_player[0].mdepth == CSSTEP_NONE)
-	{
-		if (currentMenu->prevMenu)
-			M_SetupNextMenu(currentMenu->prevMenu, false);
-		else
-			M_ClearMenus(true);
-	}
+	return true;
 }
 
 // Apply character skin and colour changes while ingame (we just call the skin / color commands.)
@@ -2322,9 +2264,8 @@ void M_CharacterSelectTick(void)
 			setup_explosions[i].tics--;
 	}
 
-	if (setupnext)
+	if (setupnext && setup_numplayers > 0)
 	{
-
 		// Selecting from the menu
 		if (gamestate == GS_MENU)
 		{
@@ -2371,7 +2312,6 @@ void M_CharacterSelectTick(void)
 
 boolean M_CharacterSelectQuit(void)
 {
-	M_CharacterSelectInit(0);
 	return true;
 }
 
@@ -2607,6 +2547,9 @@ void M_LevelSelectInit(INT32 choice)
 void M_CupSelectHandler(INT32 choice)
 {
 	cupheader_t *newcup = kartcupheaders;
+	const UINT8 pid = 0;
+
+	(void)choice;
 
 	while (newcup)
 	{
@@ -2615,119 +2558,130 @@ void M_CupSelectHandler(INT32 choice)
 		newcup = newcup->next;
 	}
 
-	switch (choice)
+	if (menucmd[pid].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			cupgrid.x++;
-			if (cupgrid.x >= CUPMENU_COLUMNS)
+		cupgrid.x++;
+		if (cupgrid.x >= CUPMENU_COLUMNS)
+		{
+			cupgrid.x = 0;
+			cupgrid.pageno++;
+			if (cupgrid.pageno >= cupgrid.numpages)
+				cupgrid.pageno = 0;
+		}
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		cupgrid.x--;
+		if (cupgrid.x < 0)
+		{
+			cupgrid.x = CUPMENU_COLUMNS-1;
+			cupgrid.pageno--;
+			if (cupgrid.pageno < 0)
+				cupgrid.pageno = cupgrid.numpages-1;
+		}
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		cupgrid.y++;
+		if (cupgrid.y >= CUPMENU_ROWS)
+			cupgrid.y = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		cupgrid.y--;
+		if (cupgrid.y < 0)
+			cupgrid.y = CUPMENU_ROWS-1;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+
+	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	{
+		M_SetMenuDelay(pid);
+
+		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+			return;
+		}
+
+		if (cupgrid.grandprix == true)
+		{
+			S_StartSound(NULL, sfx_s3k63);
+
+			// Early fadeout to let the sound finish playing
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			F_WipeEndScreen();
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+			// read our dummy cvars
+
+			grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
+			grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
+			grandprixinfo.encore = (boolean)cv_dummygpencore.value;
+
+			grandprixinfo.cup = newcup;
+
+			grandprixinfo.gp = true;
+			grandprixinfo.roundnum = 1;
+			grandprixinfo.initalize = true;
+
+			paused = false;
+
+			// Don't restart the server if we're already in a game lol
+			if (gamestate == GS_MENU)
 			{
-				cupgrid.x = 0;
-				cupgrid.pageno++;
-				if (cupgrid.pageno >= cupgrid.numpages)
-					cupgrid.pageno = 0;
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				netgame = levellist.netgame;	// ^ ditto.
 			}
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_LEFTARROW:
-			cupgrid.x--;
-			if (cupgrid.x < 0)
+
+			D_MapChange(
+				grandprixinfo.cup->levellist[0] + 1,
+				GT_RACE,
+				grandprixinfo.encore,
+				true,
+				1,
+				false,
+				false
+			);
+
+			M_ClearMenus(true);
+		}
+		else
+		{
+			// Keep cursor position if you select the same cup again, reset if it's a different cup
+			if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
 			{
-				cupgrid.x = CUPMENU_COLUMNS-1;
-				cupgrid.pageno--;
-				if (cupgrid.pageno < 0)
-					cupgrid.pageno = cupgrid.numpages-1;
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_UPARROW:
-			cupgrid.y++;
-			if (cupgrid.y >= CUPMENU_ROWS)
-				cupgrid.y = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_DOWNARROW:
-			cupgrid.y--;
-			if (cupgrid.y < 0)
-				cupgrid.y = CUPMENU_ROWS-1;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
-			{
-				S_StartSound(NULL, sfx_s3kb2);
-				break;
+				levellist.cursor = 0;
+				levellist.selectedcup = newcup;
 			}
 
-			if (cupgrid.grandprix == true)
-			{
-				S_StartSound(NULL, sfx_s3k63);
+			M_LevelSelectScrollDest();
+			levellist.y = levellist.dest;
 
-				// Early fadeout to let the sound finish playing
-				F_WipeStartScreen();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+			S_StartSound(NULL, sfx_s3k63);
+		}
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_SetMenuDelay(pid);
 
-				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
-
-				// read our dummy cvars
-
-				grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
-				grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
-				grandprixinfo.encore = (boolean)cv_dummygpencore.value;
-
-				grandprixinfo.cup = newcup;
-
-				grandprixinfo.gp = true;
-				grandprixinfo.roundnum = 1;
-				grandprixinfo.initalize = true;
-
-				paused = false;
-
-				// Don't restart the server if we're already in a game lol
-				if (gamestate == GS_MENU)
-				{
-					SV_StartSinglePlayerServer();
-					multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-					netgame = levellist.netgame;	// ^ ditto.
-				}
-
-				D_MapChange(
-					grandprixinfo.cup->levellist[0] + 1,
-					GT_RACE,
-					grandprixinfo.encore,
-					true,
-					1,
-					false,
-					false
-				);
-
-				M_ClearMenus(true);
-			}
-			else
-			{
-				// Keep cursor position if you select the same cup again, reset if it's a different cup
-				if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
-				{
-					levellist.cursor = 0;
-					levellist.selectedcup = newcup;
-				}
-
-				M_LevelSelectScrollDest();
-				levellist.y = levellist.dest;
-
-				M_SetupNextMenu(&PLAY_LevelSelectDef, false);
-				S_StartSound(NULL, sfx_s3k63);
-			}
-			break;
-		case KEY_ESCAPE:
-			if (currentMenu->prevMenu)
-				M_SetupNextMenu(currentMenu->prevMenu, false);
-			else
-				M_ClearMenus(true);
-			break;
-		default:
-			break;
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
 	}
 }
 
@@ -2740,124 +2694,136 @@ void M_LevelSelectHandler(INT32 choice)
 {
 	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
 	INT16 maxlevels = M_CountLevelsToShowInList(levellist.newgametype);
+	const UINT8 pid = 0;
+
+	(void)choice;
 
 	if (levellist.y != levellist.dest)
-		return;
-
-	switch (choice)
 	{
-		case KEY_UPARROW:
-			levellist.cursor--;
-			if (levellist.cursor < 0)
-				levellist.cursor = maxlevels-1;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_DOWNARROW:
-			levellist.cursor++;
-			if (levellist.cursor >= maxlevels)
-				levellist.cursor = 0;
-			S_StartSound(NULL, sfx_s3k5b);
-			break;
-		case KEY_ENTER:
-			{
-				INT16 map = start;
-				INT16 add = levellist.cursor;
+		return;
+	}
 
-				while (add > 0)
-				{
-					map++;
-
-					while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
-						map++;
-
-					if (map >= NUMMAPS)
-						break;
-
-					add--;
-				}
-
-				if (map >= NUMMAPS)
-					break;
-
-				levellist.choosemap = map;
-
-				if (levellist.timeattack)
-				{
-					M_SetupNextMenu(&PLAY_TimeAttackDef, false);
-					S_StartSound(NULL, sfx_s3k63);
-				}
-				else
-				{
-					if (gamestate == GS_MENU)
-					{
-						UINT8 ssplayers = cv_splitplayers.value-1;
-
-						netgame = false;
-						multiplayer = true;
-
-						strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-						// Still need to reset devmode
-						cv_debug = 0;
-
-						if (demo.playback)
-							G_StopDemo();
-						if (metalrecording)
-							G_StopMetalDemo();
-
-						/*if (levellist.choosemap == 0)
-							levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
-
-						if (cv_maxplayers.value < ssplayers+1)
-							CV_SetValue(&cv_maxplayers, ssplayers+1);
-
-						if (splitscreen != ssplayers)
-						{
-							splitscreen = ssplayers;
-							SplitScreen_OnChange();
-						}
-
-						S_StartSound(NULL, sfx_s3k63);
-
-						paused = false;
-
-						// Early fadeout to let the sound finish playing
-						F_WipeStartScreen();
-						V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-						F_WipeEndScreen();
-						F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-						SV_StartSinglePlayerServer();
-						multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-						netgame = levellist.netgame;	// ^ ditto.
-
-						// this is considered to be CV_CHEAT however...
-						CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
-
-						if (netgame)	// check for the dummy kartspeed value
-							CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
-
-
-						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
-					}
-					else	// directly do the map change
-						D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-
-					M_ClearMenus(true);
-				}
-			}
-			break;
-		case KEY_ESCAPE:
-			if (currentMenu->prevMenu)
-				M_SetupNextMenu(currentMenu->prevMenu, false);
-			else
-				M_ClearMenus(true);
-			break;
-		default:
-			break;
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		levellist.cursor++;
+		if (levellist.cursor >= maxlevels)
+			levellist.cursor = 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		levellist.cursor--;
+		if (levellist.cursor < 0)
+			levellist.cursor = maxlevels-1;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
 	}
 
 	M_LevelSelectScrollDest();
+
+	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	{
+		INT16 map = start;
+		INT16 add = levellist.cursor;
+
+		M_SetMenuDelay(pid);
+
+		while (add > 0)
+		{
+			map++;
+
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+				map++;
+
+			if (map >= NUMMAPS)
+				break;
+
+			add--;
+		}
+
+		if (map >= NUMMAPS)
+		{
+			// This shouldn't happen
+			return;
+		}
+
+		levellist.choosemap = map;
+
+		if (levellist.timeattack)
+		{
+			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+			S_StartSound(NULL, sfx_s3k63);
+		}
+		else
+		{
+			if (gamestate == GS_MENU)
+			{
+				UINT8 ssplayers = cv_splitplayers.value-1;
+
+				netgame = false;
+				multiplayer = true;
+
+				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+				// Still need to reset devmode
+				cv_debug = 0;
+
+				if (demo.playback)
+					G_StopDemo();
+				if (metalrecording)
+					G_StopMetalDemo();
+
+				/*if (levellist.choosemap == 0)
+					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
+
+				if (cv_maxplayers.value < ssplayers+1)
+					CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+				if (splitscreen != ssplayers)
+				{
+					splitscreen = ssplayers;
+					SplitScreen_OnChange();
+				}
+
+				S_StartSound(NULL, sfx_s3k63);
+
+				paused = false;
+
+				// Early fadeout to let the sound finish playing
+				F_WipeStartScreen();
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+				F_WipeEndScreen();
+				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+				SV_StartSinglePlayerServer();
+				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
+				netgame = levellist.netgame;	// ^ ditto.
+
+				// this is considered to be CV_CHEAT however...
+				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
+
+				if (netgame)	// check for the dummy kartspeed value
+					CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
+
+
+				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+			}
+			else	// directly do the map change
+				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+
+			M_ClearMenus(true);
+		}
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		M_SetMenuDelay(pid);
+
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
+	}
 }
 
 void M_LevelSelectTick(void)
@@ -2877,8 +2843,6 @@ void M_LevelSelectTick(void)
 		times--;
 	}
 }
-
-
 
 struct mpmenu_s mpmenu;
 
@@ -3300,6 +3264,10 @@ void M_VideoModeMenu(INT32 choice)
 	M_SetupNextMenu(&OPTIONS_VideoModesDef, false);
 }
 
+void M_HandleProfileSelect(INT32 ch)
+{
+	(void) ch;
+}
 
 // special menuitem key handler for video mode list
 void M_HandleVideoModes(INT32 ch)
@@ -3639,9 +3607,6 @@ void M_OpenPauseMenu(void)
 				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
 		}
 	}
-
-
-
 }
 
 void M_QuitPauseMenu(void)

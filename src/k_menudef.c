@@ -29,7 +29,7 @@ menuitem_t MainMenu[] =
 {
 	{IT_STRING | IT_CALL, "Play",
 		"Cut to the chase and start the race!", NULL,
-		M_CharacterSelectInit, 0, 0},
+		M_CharacterSelect, 0, 0},
 
 	{IT_STRING | IT_CALL, "Extras",
 		"Check out some bonus features.", "MENUI001",
@@ -52,7 +52,7 @@ menu_t MainDef = KARTGAMEMODEMENU(MainMenu, NULL);
 
 menuitem_t PLAY_CharSelect[] =
 {
-	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_CharacterSelectHandler, 0, 0},
+	{IT_NOTHING, NULL, NULL, NULL, NULL, 0, 0},
 };
 
 menu_t PLAY_CharSelectDef = {
@@ -65,8 +65,9 @@ menu_t PLAY_CharSelectDef = {
 	0, 0,
 	M_DrawCharacterSelect,
 	M_CharacterSelectTick,
+	M_CharacterSelectInit,
 	M_CharacterSelectQuit,
-	NULL
+	M_CharacterSelectHandler
 };
 
 menuitem_t PLAY_MainMenu[] =
@@ -155,6 +156,7 @@ menu_t PLAY_RaceDifficultyDef = {
 	M_DrawRaceDifficulty,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -175,6 +177,7 @@ menu_t PLAY_CupSelectDef = {
 	M_DrawCupSelect,
 	M_CupSelectTick,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -193,6 +196,7 @@ menu_t PLAY_LevelSelectDef = {
 	2, 10,
 	M_DrawLevelSelect,
 	M_LevelSelectTick,
+	NULL,
 	NULL,
 	NULL
 };
@@ -214,6 +218,7 @@ menu_t PLAY_TimeAttackDef = {
 	0, 0,
 	2, 10,
 	M_DrawTimeAttack,
+	NULL,
 	NULL,
 	NULL,
 	NULL
@@ -259,6 +264,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	M_DrawMPOptSelect,
 	M_MPOptSelectTick,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -294,6 +300,7 @@ menu_t PLAY_MP_HostDef = {
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPHost,
 	M_MPOptSelectTick,	// This handles the unfolding options
+	NULL,
 	M_MPResetOpts,
 	NULL
 };
@@ -330,6 +337,7 @@ menu_t PLAY_MP_JoinIPDef = {
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPJoinIP,
 	M_MPOptSelectTick,	// This handles the unfolding options
+	NULL,
 	M_MPResetOpts,
 	M_JoinIPInputs
 };
@@ -351,6 +359,7 @@ menu_t PLAY_MP_RoomSelectDef = {
 	M_DrawMPRoomSelect,
 	M_MPRoomSelectTick,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -358,8 +367,8 @@ menu_t PLAY_MP_RoomSelectDef = {
 menuitem_t OPTIONS_Main[] =
 {
 
-	{IT_STRING | IT_TRANSTEXT, "Profile Setup", "Remap keys & buttons to your likings.",
-		NULL, NULL, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Profile Setup", "Remap keys & buttons to your likings.",
+		NULL, &OPTIONS_ProfilesDef, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Video Options", "Change video settings such as the resolution.",
 		NULL, &OPTIONS_VideoDef, 0, 0},
@@ -395,7 +404,30 @@ menu_t OPTIONS_MainDef = {
 	M_DrawOptions,
 	M_OptionsTick,
 	NULL,
+	NULL,
 	M_OptionsInputs
+};
+
+// profiles menu
+// profile select
+menuitem_t OPTIONS_Profiles[] = {
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a Profile.",
+		NULL, M_HandleProfileSelect, 0, 0},     // dummy menuitem for the control func
+};
+
+menu_t OPTIONS_ProfilesDef = {
+	sizeof (OPTIONS_Profiles) / sizeof (menuitem_t),
+	&OPTIONS_MainDef,
+	0,
+	OPTIONS_Profiles,
+	32, 80,
+	SKINCOLOR_ULTRAMARINE, 0,
+	2, 10,
+	M_DrawProfileSelect,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	NULL,
 };
 
 // video options menu...
@@ -457,6 +489,7 @@ menu_t OPTIONS_VideoDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_VideoModes[] = {
@@ -476,6 +509,7 @@ menu_t OPTIONS_VideoModesDef = {
 	2, 10,
 	M_DrawVideoModes,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -534,6 +568,7 @@ menu_t OPTIONS_VideoOGLDef = {
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -599,6 +634,7 @@ menu_t OPTIONS_SoundDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_HUD[] =
@@ -654,6 +690,7 @@ menu_t OPTIONS_HUDDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_HUDOnline[] =
@@ -701,6 +738,7 @@ menu_t OPTIONS_HUDOnlineDef = {
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -756,6 +794,7 @@ menu_t OPTIONS_GameplayDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_GameplayItems[] =
@@ -799,6 +838,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	2, 10,
 	M_DrawItemToggles,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -865,6 +905,7 @@ menu_t OPTIONS_ServerDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 #ifndef NONET
@@ -923,6 +964,7 @@ menu_t OPTIONS_ServerAdvancedDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 #endif
 
@@ -962,6 +1004,7 @@ menu_t OPTIONS_DataDef = {
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -1010,6 +1053,7 @@ menu_t OPTIONS_DataAddonDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_DataScreenshot[] =
@@ -1050,6 +1094,7 @@ menu_t OPTIONS_DataScreenshotDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 
 menuitem_t OPTIONS_DataReplay[] =
@@ -1074,6 +1119,7 @@ menu_t OPTIONS_DataReplayDef = {
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -1114,6 +1160,7 @@ menu_t OPTIONS_DataDiscordDef = {
 	M_OptionsTick,
 	NULL,
 	NULL,
+	NULL,
 };
 #endif
 
@@ -1145,6 +1192,7 @@ menu_t OPTIONS_DataEraseDef = {
 	2, 10,
 	M_DrawGenericOptions,
 	M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 };
@@ -1180,6 +1228,7 @@ menu_t EXTRAS_MainDef = {
 	M_DrawExtras,
 	M_ExtrasTick,
 	NULL,
+	NULL,
 	M_ExtrasInputs
 };
 
@@ -1203,6 +1252,7 @@ menu_t EXTRAS_ReplayHutDef =
 	0, 0,
 	0, 0,
 	M_DrawReplayHut,
+	NULL,
 	NULL,
 	M_QuitReplayHut,
 	NULL
@@ -1234,6 +1284,7 @@ menu_t EXTRAS_ReplayStartDef =
 	0, 0,
 	0, 0,
 	M_DrawReplayStartMenu,
+	NULL,
 	NULL,
 	NULL,
 	NULL
@@ -1276,7 +1327,7 @@ menuitem_t PAUSE_Main[] =
 		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
-		NULL, M_CharacterSelectInit, 0, 0},
+		NULL, M_CharacterSelect, 0, 0},
 
 	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
 		NULL, M_InitOptions, 0, 0},
@@ -1295,6 +1346,7 @@ menu_t PAUSE_MainDef = {
 	1, 10,	// For transition with some menus!
 	M_DrawPause,
 	M_PauseTick,
+	NULL,
 	NULL,
 	M_PauseInputs
 };
@@ -1346,6 +1398,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	M_DrawPlaybackMenu,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -1388,6 +1441,7 @@ menu_t MISC_AddonsDef = {
 	0, 0,
 	0, 0,
 	M_DrawAddons,
+	NULL,
 	NULL,
 	NULL,
 	NULL

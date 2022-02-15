@@ -915,7 +915,7 @@ boolean CON_Responder(event_t *ev)
 		if (modeattacking || metalrecording || marathonmode)
 			return false;
 
-		if (ev->data1 >= KEY_MOUSE1) // See also: HUD_Responder
+		if (ev->data1 >= NUMKEYS) // See also: HUD_Responder
 		{
 			INT32 i;
 			for (i = 0; i < num_gamecontrols; i++)

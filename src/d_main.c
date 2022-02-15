@@ -183,6 +183,7 @@ void D_ProcessEvents(void)
 
 	boolean eaten;
 
+	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
@@ -949,15 +950,6 @@ void D_StartTitle(void)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
-	/*
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
-			M_TutorialSaveControlResponse, MM_YESNO);
-	}
-	*/
-
 	tutorialmode = false;
 }
 
@@ -1101,13 +1093,12 @@ static void IdentifyVersion(void)
 #endif
 	D_AddFile(startupiwads, va(pandf,srb2waddir,TEXTURESNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-
 	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
 	// SPECIFIC HACK TO NEW-MENUS SO THAT MY DUMBASS STOPS FORGETTING TO ADD THE FILE (rip :youfuckedup:)
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));	
 #endif
 ////
 #undef TEXTURESNAME
@@ -1367,7 +1358,6 @@ void D_SRB2Main(void)
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
-
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 	// TODO: DON'T FORGET TO REMOVE THIS ONCE WE DON'T NEED IT ANYMORE.
@@ -1488,6 +1478,10 @@ void D_SRB2Main(void)
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
+
+	// Load Profiles now that default controls have been defined
+	PR_LoadProfiles();	// load control profiles
+	PR_SaveProfiles();	// Test @TODO: remove this lol
 
 	M_Init();
 

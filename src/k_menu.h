@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "k_profiles.h"	// profile data & functions
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -134,6 +135,7 @@ typedef struct menu_s
 
 	void         (*drawroutine)(void); // draw routine
 	void         (*tickroutine)(void); // ticker routine
+	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
 	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 } menu_t;
@@ -217,6 +219,9 @@ typedef enum
 	mopt_data,
 	mopt_manual,
 } mopt_e;
+
+extern menuitem_t OPTIONS_Profiles[];
+extern menu_t OPTIONS_ProfilesDef;
 
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
@@ -347,6 +352,36 @@ extern char dummystaffname[22];
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
 extern INT16 skullAnimCounter; // skull animation counter
 
+extern INT32 menuKey; // keyboard key pressed for menu
+
+#define MENUDELAYTIME 7
+#define MENUMINDELAY 2
+
+typedef enum
+{
+	MBT_A = 1,
+	MBT_B = 1<<1,
+	MBT_C = 1<<2,
+	MBT_X = 1<<3,
+	MBT_Y = 1<<4,
+	MBT_Z = 1<<5,
+	MBT_L = 1<<6,
+	MBT_R = 1<<7,
+	MBT_START = 1<<8
+} menuButtonCode_t;
+
+typedef struct menucmd_s
+{
+	SINT8 dpad_ud; // up / down dpad
+	SINT8 dpad_lr; // left / right
+	UINT32 buttons; // buttons
+	UINT32 buttonsHeld; // prev frame's buttons
+	UINT16 delay; // menu wait
+	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
+} menucmd_t;
+
+extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
+
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
@@ -367,6 +402,7 @@ void Addons_option_Onchange(void);
 void M_SortServerList(void);
 
 boolean M_Responder(event_t *ev);
+boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 void M_StartControlPanel(void);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
@@ -391,20 +427,22 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
-// I figure this will be enough clone characters to fit onto the character select.
-// (If someone runs into it after release I'll probably boost it, though.)
-#define MAXCLONES MAXSKINS/16
+// I figure this will be enough clone characters to fit onto one grid space.
+#define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
 	SINT8 skinlist[MAXCLONES];
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
-#define CSSTEP_NONE 0
-#define CSSTEP_CHARS 1
-#define CSSTEP_ALTS 2
-#define CSSTEP_COLORS 3
-#define CSSTEP_READY 4
+typedef enum
+{
+	CSSTEP_NONE = 0,
+	CSSTEP_CHARS,
+	CSSTEP_ALTS,
+	CSSTEP_COLORS,
+	CSSTEP_READY
+} setup_mdepth_t;
 
 typedef struct setup_player_s
 {
@@ -442,8 +480,9 @@ typedef enum
 } splitscreencvars_t;
 extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
-void M_CharacterSelectInit(INT32 choice);
-void M_CharacterSelectHandler(INT32 choice);
+void M_CharacterSelectInit(void);
+void M_CharacterSelect(INT32 choice);
+boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
@@ -584,8 +623,10 @@ void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
 
-// video modes menu (resolution)
+// profile selection menu
+void M_HandleProfileSelect(INT32 ch);
 
+// video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
 
@@ -682,7 +723,7 @@ char *M_AddonsHeaderPath(void);
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);
 
-// M_MENUDRAW.C
+// K_MENUDRAW.C
 
 // flags for text highlights
 #define highlightflags V_ORANGEMAP
@@ -723,6 +764,7 @@ void M_DrawPlaybackMenu(void);
 void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
+void M_DrawProfileSelect(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
 
@@ -750,6 +792,7 @@ void M_DrawAddons(void);
 	M_DrawGenericMenu,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -766,6 +809,7 @@ void M_DrawAddons(void);
 	M_DrawKartGamemodeMenu,\
 	NULL,\
 	NULL,\
+	NULL,\
 	NULL\
 }
 
@@ -779,6 +823,7 @@ void M_DrawAddons(void);
 	0, 0, \
 	1, 10,\
 	M_DrawImageDef,\
+	NULL,\
 	NULL,\
 	NULL,\
 	NULL\

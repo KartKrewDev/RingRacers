@@ -6667,9 +6667,9 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_ATTACK",BT_ATTACK},
 	{"BT_FORWARD",BT_FORWARD},
 	{"BT_BACKWARD",BT_BACKWARD},
-	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
-	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
-	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
+	{"BT_LUAA",BT_LUAA}, // Lua customizable
+	{"BT_LUAB",BT_LUAB}, // Lua customizable
+	{"BT_LUAC",BT_LUAC}, // Lua customizable
 
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},
