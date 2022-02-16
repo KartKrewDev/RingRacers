@@ -4224,7 +4224,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_MapEnd();
 
 	// Remove the loading shit from the screen
-	if (rendermode != render_none && !(titlemapinaction || reloadinggamestate))
+	if (rendermode != render_none && !titlemapinaction && !reloadinggamestate)
 		F_WipeColorFill(levelfadecol);
 
 	if (precache || dedicated)
@@ -4259,9 +4259,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	if (reloadinggamestate)
-	{
-		CONS_Printf("Gamestate reloaded; bot infomation may be corrupted, requires further testing...\n");
-	}
+		;
 	else if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
