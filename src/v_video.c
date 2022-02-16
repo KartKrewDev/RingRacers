@@ -2544,6 +2544,18 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 	V_DrawThinStringAtFixed(x, y, option, string);
 }
 
+void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_KartStringWidth(string, option)/2;
+	V_DrawKartString(x, y, option, string);
+}
+
+void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_KartStringWidth(string, option);
+	V_DrawKartString(x, y, option, string);
+}
+
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)
 {
 	x -= V_GamemodeStringWidth(string, option)/2;

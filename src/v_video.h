@@ -326,6 +326,12 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 #define V_DrawKartString( x,y,option,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,NULL,KART_FONT,string)
 
+#define V_KartStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,KART_FONT,string )
+
+void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string);
+
 #define V_DrawGamemodeString( x,y,option,cm,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)
 

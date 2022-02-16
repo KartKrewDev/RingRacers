@@ -3100,8 +3100,13 @@ boolean M_OptionsQuit(void)
 	optionsmenu.toptx = 140-1;
 	optionsmenu.topty = 70+1;
 
-	optionsmenu.profilemenu = false;
-	optionsmenu.profile = NULL;
+	// Reset button behaviour because profile menu is different, since of course it is.
+	if (optionsmenu.resetprofilemenu)
+	{
+		optionsmenu.profilemenu = false;
+		optionsmenu.profile = NULL;
+		optionsmenu.resetprofilemenu = false;
+	}
 
 	return true;	// Always allow quitting, duh.
 }
@@ -3128,9 +3133,16 @@ void M_OptionsTick(void)
 	else
 	{
 		// I don't like this, it looks like shit but it needs to be done..........
-
-		optionsmenu.toptx = 160;
-		optionsmenu.topty = 50;
+		if (optionsmenu.profilemenu)
+		{
+			optionsmenu.toptx = 420;
+			optionsmenu.topty = 70+1;
+		}
+		else
+		{
+			optionsmenu.toptx = 160;
+			optionsmenu.topty = 50;
+		}
 	}
 
 	// Handle the background stuff:
@@ -3279,7 +3291,44 @@ void M_VideoModeMenu(INT32 choice)
 
 void M_HandleProfileSelect(INT32 ch)
 {
+	const UINT8 pid = 0;
 	(void) ch;
+
+	if (menucmd[pid].dpad_lr > 0)
+	{
+		optionsmenu.profilen++;
+		optionsmenu.offset += (128 + 128/8);
+
+		if (optionsmenu.profilen > MAXPROFILES)
+		{
+			optionsmenu.profilen = 0;
+			optionsmenu.offset -= (128 + 128/8)*(MAXPROFILES+1);
+		}
+
+		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
+
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		optionsmenu.profilen--;
+		optionsmenu.offset -= (128 + 128/8);
+
+		if (optionsmenu.profilen < 0)
+		{
+			optionsmenu.profilen = MAXPROFILES;
+			optionsmenu.offset += (128 + 128/8)*(MAXPROFILES+1);
+		}
+
+		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
+	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		optionsmenu.resetprofilemenu = true;
+		M_GoBack(0);
+	}
+
 }
 
 // special menuitem key handler for video mode list

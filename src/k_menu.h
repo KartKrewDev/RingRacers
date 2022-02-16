@@ -599,6 +599,8 @@ extern struct optionsmenu_s {
 
 	// profile garbage
 	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
+	boolean resetprofilemenu;	// Reset button behaviour when exiting
+	SINT8 profilen;				// # of the selected profile.
 	profile_t *profile;			// Pointer to the profile we're editing
 
 	// for video mode testing:

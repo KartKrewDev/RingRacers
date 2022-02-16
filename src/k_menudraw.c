@@ -2020,19 +2020,21 @@ void M_DrawProfileSelect(void)
 	INT32 i;
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
 	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
+	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
 
-	INT32 x = 160;
-	INT32 y = 75 + menutransition.tics*16;
+	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
+	INT32 y = 35 + menutransition.tics*16;
 
 	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
 	M_DrawOptionsMovingButton();
 
-	for (i=0; i < MAXPROFILES; i++)
+	for (i=0; i < MAXPROFILES+1; i++)	// +1 because the default profile does not count
 	{
 		profile_t *p = PR_GetProfile(i);
 		UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
 		INT32 skinnum = -1;
+		INT32 powerlevel = -1;
 		char pname[PROFILENAMELEN+1] = "empty";
 
 		if (p != NULL)
@@ -2040,20 +2042,32 @@ void M_DrawProfileSelect(void)
 			colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
 			strcpy(pname, p->profilename);
 			skinnum = R_SkinAvailable(p->skinname);
+			powerlevel = 1000;	// Test
 		}
 
 		// Card
 		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
 
-		if (skinnum > -1)
-			M_DrawCharacterSprite(x, y+104, skinnum, 0, colormap);
+		// Draw pwlv if we can
+		if (powerlevel > -1)
+		{
+			V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
+			V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
+		}
 
-		V_DrawCenteredGamemodeString(x, y+16, V_ALLOWLOWERCASE, 0, pname);
+
+		if (skinnum > -1)
+		{
+			M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap);
+			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+		}
+
+		V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
 
 		// Card bottom to overlay the skin preview
 		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
 
-		x += 96;
+		x += 128 + 128/8;
 	}
 }
 
