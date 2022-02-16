@@ -2014,60 +2014,126 @@ void M_DrawGenericOptions(void)
 	}
 }
 
+static void M_DrawProfileCard(INT32 x, INT32 y, profile_t *p)
+{
+
+	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
+	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
+	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
+	INT32 skinnum = -1;
+	INT32 powerlevel = -1;
+
+	char pname[PROFILENAMELEN+1] = "empty";
+
+	if (p != NULL && p->version)
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
+		strcpy(pname, p->profilename);
+		skinnum = R_SkinAvailable(p->skinname);
+		powerlevel = 1000;	// Test
+	}
+
+	// Card
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
+
+	// Draw pwlv if we can
+	if (powerlevel > -1)
+	{
+		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
+		V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
+	}
+
+
+	if (skinnum > -1)
+	{
+		M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap);
+		V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+	}
+
+	V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
+
+	// Card bottom to overlay the skin preview
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
+}
+
 // Draws profile selection
 void M_DrawProfileSelect(void)
 {
 	INT32 i;
-	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
-	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
-	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
-
 	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
 	INT32 y = 35 + menutransition.tics*16;
 
 	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
-	M_DrawOptionsMovingButton();
+
+	// This shouldn't be drawn when a profile is selected as optx/opty are used to move the card.
+	if (optionsmenu.profile == NULL && menutransition.tics)
+		M_DrawOptionsMovingButton();
 
 	for (i=0; i < MAXPROFILES+1; i++)	// +1 because the default profile does not count
 	{
 		profile_t *p = PR_GetProfile(i);
-		UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLACK, GTC_CACHE);
-		INT32 skinnum = -1;
-		INT32 powerlevel = -1;
-		char pname[PROFILENAMELEN+1] = "empty";
 
-		if (p != NULL)
-		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
-			strcpy(pname, p->profilename);
-			skinnum = R_SkinAvailable(p->skinname);
-			powerlevel = 1000;	// Test
-		}
-
-		// Card
-		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
-
-		// Draw pwlv if we can
-		if (powerlevel > -1)
-		{
-			V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-			V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
-		}
-
-
-		if (skinnum > -1)
-		{
-			M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap);
-			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
-		}
-
-		V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
-
-		// Card bottom to overlay the skin preview
-		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
+		// don't draw the card in this specific scenario
+		if (!(menutransition.tics && optionsmenu.profile != NULL && optionsmenu.profilen == i))
+			M_DrawProfileCard(x, y, p);
 
 		x += 128 + 128/8;
+	}
+
+	// needs to be drawn since it happens on the transition
+	if (optionsmenu.profile != NULL)
+		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
+
+
+}
+
+// Profile edition menu
+void M_DrawEditProfile(void)
+{
+
+	INT32 y = 40;
+	INT32 x = 145;
+	INT32 i;
+
+	M_DrawOptionsCogs();
+
+	// Tooltip
+	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH*2/3, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
+
+	// Draw the menu options...
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_STRING:
+
+				UINT8 *colormap = NULL;
+				if (i == itemOn)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+				// Background
+				V_DrawFill(0, y, 400 - (menutransition.tics*32), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+				// Text
+				V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+
+
+				y += 42;
+
+				break;
+		}
+	}
+
+	// Finally, draw the card ontop
+	if (optionsmenu.profile != NULL)
+	{
+		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
 	}
 }
 

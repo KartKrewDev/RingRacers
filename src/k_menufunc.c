@@ -182,6 +182,9 @@ consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 
+consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
+consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
+
 consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, dummygpdifficulty_cons_t, NULL);
 consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
 consvar_t cv_dummygpencore = CVAR_INIT ("dummygpdifficulty", "No", CV_HIDDEN, CV_YesNo, NULL);
@@ -3130,7 +3133,7 @@ void M_OptionsTick(void)
 	{
 		M_OptionsQuit();	// ...So now this is used here.
 	}
-	else
+	else if (optionsmenu.profile == NULL)	// Not currently editing a profile (otherwise we're using these variables for other purposes....)
 	{
 		// I don't like this, it looks like shit but it needs to be done..........
 		if (optionsmenu.profilemenu)
@@ -3323,12 +3326,51 @@ void M_HandleProfileSelect(INT32 ch)
 		S_StartSound(NULL, sfx_menu1);
 		M_SetMenuDelay(pid);
 	}
+
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	{
+		S_StartSound(NULL, sfx_menu1);
+		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
+
+		// This is now used to move the card we've selected.
+		optionsmenu.optx = 160;
+		optionsmenu.opty = 35;
+		optionsmenu.toptx = 130/2;
+		optionsmenu.topty = 0;
+
+		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
+	}
+
 	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
 		optionsmenu.resetprofilemenu = true;
 		M_GoBack(0);
 	}
 
+	if (menutransition.tics == 0 && optionsmenu.resetprofile)
+	{
+		optionsmenu.profile = NULL;	// Make sure to reset that when transitions are done.'
+		optionsmenu.resetprofile = false;
+	}
+}
+
+// For profile edit, just make sure going back resets the card to its position, the rest is taken care of automatically.
+boolean M_ProfileEditInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	(void) ch;
+
+	if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		optionsmenu.toptx = 160;
+		optionsmenu.topty = 35;
+		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+
+		M_GoBack(0);
+		return true;
+	}
+
+	return false;
 }
 
 // special menuitem key handler for video mode list

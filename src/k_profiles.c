@@ -65,7 +65,7 @@ boolean PR_AddProfile(profile_t p)
 
 profile_t* PR_GetProfile(INT32 num)
 {
-	if (num < numprofiles)
+	if (num < MAXPROFILES+1)
 		return &profilesList[num];
 	else
 		return NULL;

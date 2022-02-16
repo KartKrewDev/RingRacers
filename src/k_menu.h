@@ -223,6 +223,9 @@ typedef enum
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
 
+extern menuitem_t OPTIONS_EditProfile[];
+extern menu_t OPTIONS_EditProfileDef;
+
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
 
@@ -592,6 +595,8 @@ extern struct optionsmenu_s {
 
 	// For moving the button when we get into a submenu. it's smooth and cool! (normal x/y and target x/y.)
 	// this is only used during menu transitions.
+
+	// For profiles specifically, this moves the card around since we don't have the rest of the menu displayed in that case.
 	INT16 optx;
 	INT16 opty;
 	INT16 toptx;
@@ -601,6 +606,8 @@ extern struct optionsmenu_s {
 	boolean profilemenu;		// In profile menu. (Used to know when to get the "PROFILE SETUP" button away....
 	boolean resetprofilemenu;	// Reset button behaviour when exiting
 	SINT8 profilen;				// # of the selected profile.
+
+	boolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
 	profile_t *profile;			// Pointer to the profile we're editing
 
 	// for video mode testing:
@@ -620,6 +627,9 @@ extern struct optionsmenu_s {
 	tic_t fade;
 } optionsmenu;
 
+extern consvar_t cv_dummyprofilename;
+extern consvar_t cv_dummyprofileplayername;
+
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
 boolean M_OptionsInputs(INT32 ch);
@@ -632,6 +642,7 @@ void M_EraseData(INT32 choice);	// For data erasing
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
 void M_HandleProfileSelect(INT32 ch);
+boolean M_ProfileEditInputs(INT32 ch);
 
 // video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);
@@ -772,6 +783,7 @@ void M_DrawOptionsMovingButton(void);	// for sick transitions...
 void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
 void M_DrawProfileSelect(void);
+void M_DrawEditProfile(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
 

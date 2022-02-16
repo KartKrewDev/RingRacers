@@ -430,6 +430,36 @@ menu_t OPTIONS_ProfilesDef = {
 	NULL,
 };
 
+
+menuitem_t OPTIONS_EditProfile[] = {
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile Name", "6-character long name to identify this Profile.",
+		NULL, &cv_dummyprofilename, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Name", "Name displayed online when using this Profile.",
+		NULL, &cv_dummyprofileplayername, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Character", "Default character and color for this Profile.",
+		NULL, NULL, 0, 0},
+
+	{IT_STRING | IT_SUBMENU, "Controls", "Select the button mappings for this Profile.",
+		NULL, NULL, 0, 0},
+};
+
+menu_t OPTIONS_EditProfileDef = {
+	sizeof (OPTIONS_EditProfile) / sizeof (menuitem_t),
+	&OPTIONS_ProfilesDef,
+	0,
+	OPTIONS_EditProfile,
+	32, 80,
+	SKINCOLOR_ULTRAMARINE, 0,
+	2, 10,
+	M_DrawEditProfile,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	M_ProfileEditInputs,
+};
+
 // video options menu...
 // options menu
 menuitem_t OPTIONS_Video[] =
