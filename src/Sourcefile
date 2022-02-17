@@ -113,3 +113,4 @@ k_grandprix.c
 k_hud.c
 k_terrain.c
 k_brightmap.c
+k_director.c

@@ -1080,14 +1080,36 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
+#if defined (TESTERS) || defined (HOSTTESTERS)
+////
+#define TEXTURESNAME "MISC_TEXTURES.pk3"
+#define MAPSNAME "MISC_MAPS.pk3"
+#define PATCHNAME "MISC_PATCH.pk3"
+#define MUSICNAME "MISC_MUSIC.PK3"
+////
+#else
+////
+#define TEXTURESNAME "textures.pk3"
+#define MAPSNAME "maps.pk3"
+#define PATCHNAME "patch.pk3"
+#define MUSICNAME "music.pk3"
+////
+#endif
+////
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
+#endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,TEXTURESNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
 #endif
+////
+#undef TEXTURESNAME
+#undef MAPSNAME
+#undef PATCHNAME
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1102,8 +1124,9 @@ static void IdentifyVersion(void)
 	}
 
 	MUSICTEST("sounds.pk3")
-	MUSICTEST("music.pk3")
+	MUSICTEST(MUSICNAME)
 
+#undef MUSICNAME
 #undef MUSICTEST
 
 #endif
@@ -1340,7 +1363,9 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
 	mainwads++;	// gfx.pk3
+#endif
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
@@ -1354,7 +1379,7 @@ void D_SRB2Main(void)
 	//
 	// search for maps
 	//
-	for (wadnum = 4; wadnum < 6; wadnum++) // fucking arbitrary numbers
+	for (wadnum = 0; wadnum <= mainwads; wadnum++)
 	{
 		lumpinfo = wadfiles[wadnum]->lumpinfo;
 		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)

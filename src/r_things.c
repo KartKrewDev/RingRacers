@@ -861,7 +861,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false);
 
-	if (vis->extra_colormap && !(vis->renderflags & RF_NOCOLORMAPS))
+	if (vis->extra_colormap && !(vis->cut & SC_FULLBRIGHT) && !(vis->renderflags & RF_NOCOLORMAPS))
 	{
 		if (!dc_colormap)
 			dc_colormap = vis->extra_colormap->colormap;
