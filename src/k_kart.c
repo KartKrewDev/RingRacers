@@ -81,11 +81,9 @@ void K_TimerInit(void)
 		rainbowstartavailable = false;
 	}
 
-	if (numPlayers <= 2)
-	{
-		introtime = 0; // No intro in Record Attack / 1v1
-	}
-	else
+	// No intro in Record Attack / 1v1
+	// Leave unset for the value in K_TimerReset
+	if (numPlayers > 2)
 	{
 		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
 	}
@@ -9675,11 +9673,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		if ((leveltime == starttime-(3*TICRATE)) || (leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
 			S_StartSound(NULL, sfx_s3ka7);
-		if (leveltime == starttime)
-		{
+
+		if (leveltime == starttime-(3*TICRATE))
+			S_FadeOutStopMusic(3500);
+		else if (leveltime == starttime)
 			S_StartSound(NULL, sfx_s3kad);
-			S_StopMusic(); // The GO! sound stops the level start ambience
-		}
 	}
 }
 
