@@ -39,7 +39,7 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 
 UINT16 K_RainbowColor(tic_t time)
 {
-	return (UINT16)(SKINCOLOR_PINK + (time % (SKINCOLOR_TAFFY - SKINCOLOR_PINK)));
+	return (UINT16)(FIRSTRAINBOWCOLOR + (time % (FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR)));
 }
 
 /*--------------------------------------------------
