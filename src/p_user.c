@@ -53,6 +53,7 @@
 #include "k_bot.h"
 #include "k_grandprix.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
+#include "k_color.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1629,7 +1630,7 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	if (!player->invincibilitytimer)
 		return;
 
-	player->mo->color = (UINT16)(SKINCOLOR_PINK + (leveltime % (numskincolors - SKINCOLOR_PINK)));
+	player->mo->color = K_RainbowColor(leveltime);
 
 	// Resume normal music stuff.
 	if (player->invincibilitytimer == 1)

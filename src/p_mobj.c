@@ -9789,7 +9789,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_EGGROBO1:
 			mobj->movecount = P_RandomKey(13);
-			mobj->color = SKINCOLOR_RUBY + P_RandomKey(numskincolors - SKINCOLOR_RUBY);
+			mobj->color = FIRSTRAINBOWCOLOR + P_RandomKey(FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR);
 			break;
 		case MT_HIVEELEMENTAL:
 			mobj->extravalue1 = 5;
