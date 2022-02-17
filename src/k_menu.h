@@ -357,6 +357,22 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
+extern boolean menutyping;		// Typing sub-menu
+extern boolean menutypingclose;	// if true, we're closing the menu.
+extern boolean keyboardtyping;	// If true, all keystrokes are treated as typing (ignores MBT_A etc). This is unset if you try moving the cursor on the virtual keyboard or use your controller
+extern SINT8 menutypingfade;	// Fade-in and out for typing sub-menu. (in 10 tics)
+// While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
+
+extern INT16 virtualKeyboard[5][13];
+extern INT16 shift_virtualKeyboard[5][13];
+
+// cursor position on the virtual keyboard grid
+extern SINT8 keyboardx;
+extern SINT8 keyboardy;
+extern boolean keyboardcapslock;
+extern boolean keyboardshift;
+
+
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
 

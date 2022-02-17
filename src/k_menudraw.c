@@ -223,6 +223,81 @@ void M_DrawMenuForeground(void)
 	}
 }
 
+// Draws the typing submenu
+static void M_DrawMenuTyping(void)
+{
+
+	INT32 i, j;
+
+	INT32 x = 60;
+	INT32 y = 100 + (9-menutypingfade)*8;
+	INT32 tflag = (9 - menutypingfade)<<V_ALPHASHIFT;
+
+	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+
+	char buf[8];	// We write there to use drawstring for convenience.
+
+	V_DrawFadeScreen(31, menutypingfade);
+
+	// Draw the string we're editing at the top.
+	V_DrawString(x, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
+	if (skullAnimCounter < 4)
+		V_DrawCharacter(x + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
+
+	// Some contextual stuff
+	if (keyboardtyping)
+		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+	else
+		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+
+
+	// Now the keyboard itself
+	for (i=0; i < 5; i++)
+	{
+		for (j=0; j < 13; j++)
+		{
+			INT32 mflag = 0;
+			INT16 c = virtualKeyboard[i][j];
+			if (keyboardshift ^ keyboardcapslock)
+				c = shift_virtualKeyboard[i][j];
+
+
+			if (c == KEY_BACKSPACE)
+				strcpy(buf, "DEL");
+
+			else if (c == KEY_RSHIFT)
+				strcpy(buf, "SHIFT");
+
+			else if (c == KEY_CAPSLOCK)
+				strcpy(buf, "CAPS");
+
+			else if (c == KEY_ENTER)
+				strcpy(buf, "OK");
+
+			else if (c == KEY_SPACE)
+				strcpy(buf, "SPACE");
+
+			else
+			{
+				buf[0] = c;
+				buf[1] = '\0';
+			}
+
+			// highlight:
+			if (keyboardx == j && keyboardy == i && !keyboardtyping)
+				mflag |= highlightflags;
+			else if (keyboardtyping)
+				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
+
+			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
+
+			x += V_StringWidth(buf, 0)+8;
+		}
+		x = 60;
+		y += 12;
+	}
+}
+
 //
 // M_Drawer
 // Called after the view has been rendered,
@@ -274,7 +349,12 @@ void M_Drawer(void)
 				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
 #endif
 			}
+
+
 		}
+		// Draw typing overlay when needed, above all other menu elements.
+		if (menutyping)
+			M_DrawMenuTyping();
 	}
 
 	if (menuwipe)
@@ -2093,7 +2173,7 @@ void M_DrawProfileSelect(void)
 void M_DrawEditProfile(void)
 {
 
-	INT32 y = 40;
+	INT32 y = 34;
 	INT32 x = 145;
 	INT32 i;
 
@@ -2119,12 +2199,31 @@ void M_DrawEditProfile(void)
 					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 				// Background
-				V_DrawFill(0, y, 400 - (menutransition.tics*32), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+				V_DrawFill(0, y, 400 - (menutransition.tics*64), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
 				// Text
 				V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
 
+				// Cvar specific handling
+				switch (currentMenu->menuitems[i].status & IT_TYPE)
+				{
+					case IT_CVAR:
+					{
+						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+						{
+							case IT_CV_STRING:
+								V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+								V_DrawString(x + 8, y + 29, V_ALLOWLOWERCASE, cv->string);
+								if (skullAnimCounter < 4 && i == itemOn)
+									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29,
+										'_' | 0x80, false);
+								y += 16;
+								break;
+						}
+					}
+				}
 
-				y += 42;
+				y += 34;
 
 				break;
 		}
