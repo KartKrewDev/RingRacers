@@ -1926,8 +1926,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	if (*oldtic != I_GetTime())
 	{
 		I_OsPolling();
+#if 0
 		for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			G_MapEventsToControls(&events[eventtail]);
+#endif
 
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs

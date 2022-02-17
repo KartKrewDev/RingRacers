@@ -282,7 +282,7 @@ boolean CL_CheckDownloadable(void)
 		}
 
 	// Downloading locally disabled
-#if 0
+#ifndef TESTERS
 	if (!dlstatus && M_CheckParm("-nodownload"))
 		dlstatus = 3;
 
