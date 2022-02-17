@@ -4029,13 +4029,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 	*/
 
+	// Make sure all sounds are stopped before Z_FreeTags.
+	S_StopSounds();
+	S_ClearSfx();
+
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
 	if (!demo.rewinding && !reloadinggamestate)
 	{
-		// Make sure all sounds are stopped before Z_FreeTags.
-		S_StopSounds();
-		S_ClearSfx();
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
