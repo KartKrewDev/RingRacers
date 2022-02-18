@@ -834,7 +834,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 	}
 }
 
-static void M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, UINT8 *colormap)
+// returns false if the character couldn't be rendered
+static boolean M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
@@ -848,7 +849,7 @@ static void M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, 
 	sprdef = &skins[skin].sprites[spr];
 
 	if (!sprdef->numframes) // No frames ??
-		return; // Can't render!
+		return false; // Can't render!
 
 	frame = states[S_KART_FAST].frame & FF_FRAMEMASK;
 	if (frame >= sprdef->numframes) // Walking animation missing
@@ -869,6 +870,8 @@ static void M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, 
 	}
 	else
 		V_DrawMappedPatch(x, y, addflags|flags, sprpatch, colormap);
+
+	return true;
 }
 
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
@@ -987,8 +990,12 @@ static void M_DrawCharSelectCursor(UINT8 num)
 	quadx = 4 * (p->gridx / 3);
 	quady = 4 * (p->gridy / 3);
 
-	x = 82 + (p->gridx*16) + quadx - 13,
-	y = 22 + (p->gridy*16) + quady - 12,
+	x = 82 + (p->gridx*16) + quadx - 13;
+	y = 22 + (p->gridy*16) + quady - 12;
+
+	// profiles skew the graphic to the right slightly
+	if (optionsmenu.profile)
+		x += 64;
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, (p->color != SKINCOLOR_NONE ? p->color : SKINCOLOR_GREY), GTC_MENUCACHE);
 
@@ -1015,12 +1022,77 @@ static void M_DrawCharSelectCursor(UINT8 num)
 #undef IDLELEN
 #undef SELECTLEN
 
+// Draw character profile card.
+// Moved here because in the case of profile edition this is drawn in the charsel menu.
+static void M_DrawProfileCard(INT32 x, INT32 y, profile_t *p)
+{
+
+	setup_player_t *sp = &setup_player[0];	// When editing profile character, we'll always be checking for what P1 is doing.
+	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
+	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
+	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
+	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
+	INT32 skinnum = -1;
+	INT32 powerlevel = -1;
+
+	char pname[PROFILENAMELEN+1] = "empty";
+
+	if (p != NULL && p->version)
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
+		strcpy(pname, p->profilename);
+		skinnum = R_SkinAvailable(p->skinname);
+		powerlevel = 1000;	// Test
+	}
+
+	// check setup_player for colormap for the card.
+	// we'll need to check again for drawing afterwards unfortunately.
+	if (sp->mdepth >= CSSTEP_CHARS)
+		colormap = R_GetTranslationColormap(skinnum, sp->color, GTC_MENUCACHE);
+
+	// Card
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
+
+	// Draw pwlv if we can
+	if (powerlevel > -1)
+	{
+		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
+		V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
+	}
+
+	// check what setup_player is doing in priority.
+	if (sp->mdepth >= CSSTEP_CHARS)
+	{
+		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
+
+
+		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
+			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+
+		if (sp->mdepth == CSSTEP_ALTS || sp->mdepth == CSSTEP_COLORS)
+		{
+			M_DrawCharSelectCircle(sp, x-22, y+104);
+		}
+	}
+	else if (skinnum > -1)	// otherwise, read from profile.
+	{
+		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
+			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+	}
+
+	V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
+
+	// Card bottom to overlay the skin preview
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
+}
+
 void M_DrawCharacterSelect(void)
 {
 	UINT8 i, j, k;
 	UINT8 priority = 0;
 	INT16 quadx, quady;
 	SINT8 skin;
+	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
 
 	if (setup_numplayers > 0)
 	{
@@ -1047,12 +1119,12 @@ void M_DrawCharacterSelect(void)
 			}
 
 			if (skin != -1)
-				V_DrawScaledPatch(82 + (i*16) + quadx + 1, 22 + (j*16) + quady + 1, 0, W_CachePatchName("ICONBACK", PU_CACHE));
+				V_DrawScaledPatch(basex+ 82 + (i*16) + quadx + 1, 22 + (j*16) + quady + 1, 0, W_CachePatchName("ICONBACK", PU_CACHE));
 		}
 	}
 
 	// Draw this inbetween. These drop shadows should be covered by the stat graph, but the icons shouldn't.
-	V_DrawScaledPatch(3, 2, 0, W_CachePatchName("STATGRPH", PU_CACHE));
+	V_DrawScaledPatch(basex+ 3, 2, 0, W_CachePatchName((optionsmenu.profile ? "PR_STGRPH" : "STATGRPH"), PU_CACHE));
 
 	// Draw the icons now
 	for (i = 0; i < 9; i++)
@@ -1078,10 +1150,10 @@ void M_DrawCharacterSelect(void)
 				else
 					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 
-				V_DrawMappedPatch(82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
+				V_DrawMappedPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
 
 				if (setup_chargrid[i][j].numskins > 1)
-					V_DrawScaledPatch(82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
+					V_DrawScaledPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
 			}
 		}
 	}
@@ -1092,7 +1164,10 @@ void M_DrawCharacterSelect(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		// Draw a preview for each player
-		M_DrawCharSelectPreview(i);
+		if (optionsmenu.profile == NULL)
+			M_DrawCharSelectPreview(i);
+		else if (i == 0)
+			M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
 
 		if (i >= setup_numplayers)
 			continue;
@@ -2092,49 +2167,6 @@ void M_DrawGenericOptions(void)
 			W_CachePatchName("M_CURSOR", PU_CACHE));
 		V_DrawString(x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
-}
-
-static void M_DrawProfileCard(INT32 x, INT32 y, profile_t *p)
-{
-
-	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
-	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
-	patch_t *pwrlv = W_CachePatchName("PR_PWR", PU_CACHE);
-	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
-	INT32 skinnum = -1;
-	INT32 powerlevel = -1;
-
-	char pname[PROFILENAMELEN+1] = "empty";
-
-	if (p != NULL && p->version)
-	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
-		strcpy(pname, p->profilename);
-		skinnum = R_SkinAvailable(p->skinname);
-		powerlevel = 1000;	// Test
-	}
-
-	// Card
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
-
-	// Draw pwlv if we can
-	if (powerlevel > -1)
-	{
-		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
-	}
-
-
-	if (skinnum > -1)
-	{
-		M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap);
-		V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
-	}
-
-	V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
-
-	// Card bottom to overlay the skin preview
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
 }
 
 // Draws profile selection

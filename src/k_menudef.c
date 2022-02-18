@@ -438,8 +438,8 @@ menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Player Name", "Name displayed online when using this Profile.",
 		NULL, &cv_dummyprofileplayername, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Character", "Default character and color for this Profile.",
-		NULL, NULL, 0, 0},
+	{IT_STRING | IT_CALL, "Character", "Default character and color for this Profile.",
+		NULL, M_CharacterSelect, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Controls", "Select the button mappings for this Profile.",
 		NULL, NULL, 0, 0},
@@ -454,7 +454,7 @@ menu_t OPTIONS_EditProfileDef = {
 	SKINCOLOR_ULTRAMARINE, 0,
 	2, 10,
 	M_DrawEditProfile,
-	M_OptionsTick,
+	M_HandleProfileEdit,
 	NULL,
 	NULL,
 	M_ProfileEditInputs,

@@ -658,6 +658,8 @@ void M_EraseData(INT32 choice);	// For data erasing
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
 void M_HandleProfileSelect(INT32 ch);
+
+void M_HandleProfileEdit(void);
 boolean M_ProfileEditInputs(INT32 ch);
 
 // video modes menu (resolution)

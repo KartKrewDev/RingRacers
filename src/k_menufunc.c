@@ -1990,10 +1990,13 @@ void M_CharacterSelectInit(void)
 {
 	UINT8 i, j;
 
+	// While we're editing profiles, don't unset the devices for p1
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		// Un-set devices for other players.
-		CV_SetValue(&cv_usejoystick[i], -1);
+		if (i != 0 || optionsmenu.profile)
+			CV_SetValue(&cv_usejoystick[i], -1);
+
 		CONS_Printf("Device for %d set to %d\n", i, -1);
 	}
 	CONS_Printf("========\n");
@@ -2031,6 +2034,11 @@ void M_CharacterSelectInit(void)
 				setup_player[j].gridx = x;
 				setup_player[j].gridy = y;
 				setup_player[j].color = skins[i].prefcolor;
+
+				// If we're on prpfile select, skip straight to CSSTEP_CHARS
+				if (optionsmenu.profile && j == 0)
+					setup_player[j].mdepth = CSSTEP_CHARS;
+
 			}
 		}
 	}
@@ -2243,8 +2251,18 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	{
 		if (num == setup_numplayers-1)
 		{
-			p->mdepth = CSSTEP_NONE;
-			S_StartSound(NULL, sfx_s3k5b);
+			// for profiles, exit out of the menu instantly,
+			// we don't want to go to the input detection menu.
+			if (optionsmenu.profile)
+			{
+				M_GoBack(0);
+				return true;
+			}
+			else	// for the actual player select, go back to device detection.
+			{
+				p->mdepth = CSSTEP_NONE;
+				S_StartSound(NULL, sfx_s3k5b);
+			}
 
 			// Prevent quick presses for multiple players
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -2490,14 +2508,29 @@ void M_CharacterSelectTick(void)
 		// Selecting from the menu
 		if (gamestate == GS_MENU)
 		{
-			for (i = 0; i < setup_numplayers; i++)
+			// in a profile; update the selected profile and then go back to the profile menu.
+			if (optionsmenu.profile)
 			{
-				CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
-				CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
-			}
+				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin].name);
+				optionsmenu.profile->color = setup_player[0].color;
 
-			CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
-			M_SetupNextMenu(&PLAY_MainDef, false);
+				// reset setup_player
+				memset(setup_player, 0, sizeof(setup_player));
+
+				M_GoBack(0);
+				return;
+			}
+			else	// in a normal menu, stealthset the cvars and then go to the play menu.
+			{
+				for (i = 0; i < setup_numplayers; i++)
+				{
+					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
+					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
+				}
+
+				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
+				M_SetupNextMenu(&PLAY_MainDef, false);
+			}
 		}
 		else	// In a game
 		{
@@ -3557,6 +3590,18 @@ void M_HandleProfileSelect(INT32 ch)
 		optionsmenu.toptx = 130/2;
 		optionsmenu.topty = 0;
 
+		// setup cvars
+		if (optionsmenu.profile->version)
+		{
+			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
+			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
+		}
+		else
+		{
+			CV_StealthSet(&cv_dummyprofilename, "");
+			CV_StealthSet(&cv_dummyprofileplayername, "");
+		}
+
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
 	}
 
@@ -3590,6 +3635,21 @@ boolean M_ProfileEditInputs(INT32 ch)
 	}
 
 	return false;
+}
+
+// Handle some actions in profile editing
+void M_HandleProfileEdit(void)
+{
+	M_OptionsTick();	// Keep running that ticker normally.
+
+	// Always copy the profile name and player name in the profile.
+
+	// Copy the first 6 chars for profile name
+	if (strlen(cv_dummyprofilename.string))
+		strncpy(optionsmenu.profile->profilename, cv_dummyprofilename.string, PROFILENAMELEN);
+
+	if (strlen(cv_dummyprofileplayername.string))
+		strcpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string);
 }
 
 // special menuitem key handler for video mode list
