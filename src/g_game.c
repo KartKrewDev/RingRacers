@@ -990,20 +990,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	}
 
 	// drift
-	if (G_PlayerInputDown(forplayer, gc_c, 0))
+	if (G_PlayerInputDown(forplayer, gc_r, 0))
 	{
 		cmd->buttons |= BT_DRIFT;
 	}
 
-	// A + B + C shortcut
-	if (G_PlayerInputDown(forplayer, gc_abc, 0))
+	// C
+	if (G_PlayerInputDown(forplayer, gc_c, 0))
 	{
 		forward = 0;
 		cmd->buttons |= BT_SPINDASHMASK;
 	}
 
 	// fire
-	if (G_PlayerInputDown(forplayer, gc_x, 0))
+	if (G_PlayerInputDown(forplayer, gc_l, 0))
 	{
 		cmd->buttons |= BT_ATTACK;
 	}

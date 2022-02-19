@@ -3961,7 +3961,10 @@ void M_MapProfileControl(event_t *ev)
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
 	if (ev->type != ev_keydown && ev->type != ev_joystick)
 		return;
-
+	
+	// Set menu delay regardless of what we're doing to avoid stupid stuff.
+	M_SetMenuDelay(0);
+	
 	// Check if this control is already assigned, it'd look silly to assign the same key twice on the same thing.
 	if (n == 0 && optionsmenu.profile->controls[controln][1] == c)
 	{
