@@ -3558,6 +3558,7 @@ void M_VideoModeMenu(INT32 choice)
 void M_HandleProfileSelect(INT32 ch)
 {
 	const UINT8 pid = 0;
+	const INT32 maxp = PR_GetNumProfiles();
 	(void) ch;
 
 	if (menucmd[pid].dpad_lr > 0)
@@ -3565,10 +3566,10 @@ void M_HandleProfileSelect(INT32 ch)
 		optionsmenu.profilen++;
 		optionsmenu.offset += (128 + 128/8);
 
-		if (optionsmenu.profilen > MAXPROFILES)
+		if (optionsmenu.profilen > maxp)
 		{
 			optionsmenu.profilen = 0;
-			optionsmenu.offset -= (128 + 128/8)*(MAXPROFILES+1);
+			optionsmenu.offset -= (128 + 128/8)*(maxp+1);
 		}
 
 		S_StartSound(NULL, sfx_menu1);
@@ -3582,8 +3583,8 @@ void M_HandleProfileSelect(INT32 ch)
 
 		if (optionsmenu.profilen < 0)
 		{
-			optionsmenu.profilen = MAXPROFILES;
-			optionsmenu.offset += (128 + 128/8)*(MAXPROFILES+1);
+			optionsmenu.profilen = maxp;
+			optionsmenu.offset += (128 + 128/8)*(maxp+1);
 		}
 
 		S_StartSound(NULL, sfx_menu1);
@@ -3593,6 +3594,10 @@ void M_HandleProfileSelect(INT32 ch)
 	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 	{
 		S_StartSound(NULL, sfx_menu1);
+
+		if (optionsmenu.profilen == maxp)
+			PR_InitNewProfile();	// initialize the new profile.
+
 		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
 
 		// This is now used to move the card we've selected.

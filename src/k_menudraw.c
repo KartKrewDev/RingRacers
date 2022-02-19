@@ -1024,9 +1024,8 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 // Draw character profile card.
 // Moved here because in the case of profile edition this is drawn in the charsel menu.
-static void M_DrawProfileCard(INT32 x, INT32 y, profile_t *p)
+static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 {
-
 	setup_player_t *sp = &setup_player[0];	// When editing profile character, we'll always be checking for what P1 is doing.
 	patch_t *card = W_CachePatchName("PR_CARD", PU_CACHE);
 	patch_t *cardbot = W_CachePatchName("PR_CARDB", PU_CACHE);
@@ -1051,7 +1050,10 @@ static void M_DrawProfileCard(INT32 x, INT32 y, profile_t *p)
 		colormap = R_GetTranslationColormap(skinnum, sp->color, GTC_MENUCACHE);
 
 	// Card
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, card, colormap);
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, greyedout ? V_TRANSLUCENT : 0, card, colormap);
+
+	if (greyedout)
+		return;	// only used for profiles we can't select.
 
 	// Draw pwlv if we can
 	if (powerlevel > -1)
@@ -1167,7 +1169,7 @@ void M_DrawCharacterSelect(void)
 		if (optionsmenu.profile == NULL)
 			M_DrawCharSelectPreview(i);
 		else if (i == 0)
-			M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
+			M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
 
 		if (i >= setup_numplayers)
 			continue;
@@ -2173,6 +2175,7 @@ void M_DrawGenericOptions(void)
 void M_DrawProfileSelect(void)
 {
 	INT32 i;
+	const INT32 maxp = PR_GetNumProfiles();
 	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
 	INT32 y = 35 + menutransition.tics*16;
 
@@ -2189,14 +2192,14 @@ void M_DrawProfileSelect(void)
 
 		// don't draw the card in this specific scenario
 		if (!(menutransition.tics && optionsmenu.profile != NULL && optionsmenu.profilen == i))
-			M_DrawProfileCard(x, y, p);
+			M_DrawProfileCard(x, y, i > maxp, p);
 
 		x += 128 + 128/8;
 	}
 
 	// needs to be drawn since it happens on the transition
 	if (optionsmenu.profile != NULL)
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
+		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
 
 
 }
@@ -2264,7 +2267,7 @@ void M_DrawEditProfile(void)
 	// Finally, draw the card ontop
 	if (optionsmenu.profile != NULL)
 	{
-		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, optionsmenu.profile);
+		M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
 	}
 }
 

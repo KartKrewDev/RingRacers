@@ -68,6 +68,9 @@ typedef struct profile_s
 
 // Functions
 
+// returns how many profiles there are
+INT32 PR_GetNumProfiles(void);
+
 // PR_MakeProfile
 // Makes a profile from the supplied profile name, player name, colour, follower, followercolour and controls.
 // The consvar values are left untouched.
@@ -86,6 +89,10 @@ boolean PR_AddProfile(profile_t p);
 // PR_GetProfile(INT32 num)
 // Returns a pointer to the profile you're asking for or NULL if the profile is uninitialized.
 profile_t* PR_GetProfile(INT32 num);
+
+// PR_InitNewProfile(void)
+// Initializes the first new profile
+void PR_InitNewProfile(void);
 
 // PR_SaveProfiles(void)
 // Saves all the profiles in profiles.cfg

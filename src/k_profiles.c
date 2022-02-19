@@ -16,6 +16,11 @@
 static profile_t profilesList[MAXPROFILES+1];		// +1 because we're gonna add a default "GUEST' profile.
 static UINT8 numprofiles = 0;	// # of loaded profiles
 
+INT32 PR_GetNumProfiles(void)
+{
+	return numprofiles;
+}
+
 profile_t PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING])
 {
 	profile_t new;
@@ -69,6 +74,17 @@ profile_t* PR_GetProfile(INT32 num)
 		return &profilesList[num];
 	else
 		return NULL;
+}
+
+void PR_InitNewProfile(void)
+{
+	char pname[PROFILENAMELEN+1] = "PRF";
+	profile_t dprofile;
+
+	strcpy(pname, va("PRF%c", 'A'+numprofiles-1));
+
+	dprofile = PR_MakeProfile(pname, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
+	PR_AddProfile(dprofile);
 }
 
 void PR_SaveProfiles(void)
