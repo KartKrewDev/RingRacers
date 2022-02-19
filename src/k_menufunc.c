@@ -831,6 +831,14 @@ boolean M_Responder(event_t *ev)
 	// update keys current state
 	G_MapEventsToControls(ev);
 
+	// Profiles: Control mapping.
+	// We take the WHOLE EVENT for convenience.
+	if (optionsmenu.bindcontrol)
+	{
+		M_MapProfileControl(ev);
+		return true;	// eat events.
+	}
+
 	// Handle menu handling in-game.
 	if (menuactive == false)
 	{
@@ -1399,13 +1407,14 @@ static void M_HandleMenuInput(void)
 		}
 		else
 		{
-#if 0 // this shit is crazy
+//#if 0 // this shit is crazy
 			if (routine)
 			{
-				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
-				otherroutine(ev); //Alam: what a hack
+				//void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
+				//otherroutine(menuKey); //Alam: what a hack
+				routine(menuKey);
 			}
-#endif
+//#endif
 
 			return;
 		}
@@ -3741,6 +3750,131 @@ void M_HandleVideoModes(INT32 ch)
 			else
 				M_ClearMenus(true);
 		}
+	}
+}
+
+static void M_ProfileDeviceSelectResponse(INT32 key)
+{
+	UINT8 i;
+	(void) key;
+
+	for (i=0; i < MAXDEVICES; i++)
+	{
+		if (deviceResponding[i])
+		{
+			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
+			CONS_Printf("Using device %d for mappings\n", i);
+			M_SetupNextMenu(&OPTIONS_ProfileControlsDef, false);	// with that set, send us to the control def
+			return;
+		}
+	}
+}
+
+// Prompt a device selection window (just tap any button on the device you want)
+void M_ProfileDeviceSelect(INT32 choice)
+{
+	(void)choice;
+
+	// While we're here, setup the incoming controls menu to reset the scroll & bind status:
+	optionsmenu.controlscroll = 0;
+	optionsmenu.bindcontrol = 0;
+	optionsmenu.bindtimer = 0;
+
+	optionsmenu.contx = optionsmenu.tcontx = controlleroffsets[gc_a][0];
+	optionsmenu.conty = optionsmenu.tconty = controlleroffsets[gc_a][1];
+
+	M_StartMessage(M_GetText("Press any key on the device\nyou would like to use"), M_ProfileDeviceSelectResponse, MM_EVENTHANDLER);
+}
+
+void M_HandleProfileControls(void)
+{
+	UINT8 maxscroll = currentMenu->numitems - 5;
+	M_OptionsTick();
+
+	optionsmenu.contx += (optionsmenu.tcontx - optionsmenu.contx)/2;
+	optionsmenu.conty += (optionsmenu.tconty - optionsmenu.conty)/2;
+
+	if (abs(optionsmenu.contx - optionsmenu.tcontx) < 2 && abs(optionsmenu.conty - optionsmenu.tconty) < 2)
+	{
+		optionsmenu.contx = optionsmenu.tcontx;
+		optionsmenu.conty = optionsmenu.tconty;	// Avoid awkward 1 px errors.
+	}
+
+	optionsmenu.controlscroll = itemOn - 3;	// very barebones scrolling, but it works just fine for our purpose.
+	if (optionsmenu.controlscroll > maxscroll)
+		optionsmenu.controlscroll = maxscroll;
+
+	if (optionsmenu.controlscroll < 0)
+		optionsmenu.controlscroll = 0;
+
+	// bindings, cancel if timer is depleted.
+	if (optionsmenu.bindcontrol)
+	{
+		optionsmenu.bindtimer--;
+		if (!optionsmenu.bindtimer)
+		{
+			optionsmenu.bindcontrol++;
+			if (optionsmenu.bindcontrol > 2)
+				optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
+			else
+				optionsmenu.bindtimer = TICRATE*5;	// skip control
+		}
+
+	}
+}
+
+boolean M_ProfileControlsInputs(INT32 ch)
+{
+	(void)ch;
+
+	// By default, accept all inputs.
+	if (optionsmenu.bindcontrol)
+		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
+
+	return false;
+}
+
+void M_ProfileSetControl(INT32 ch)
+{
+	(void) ch;
+
+	optionsmenu.bindcontrol = 1;
+	optionsmenu.bindtimer = TICRATE*5;
+}
+
+// Map the event to the profile.
+void M_MapProfileControl(event_t *ev)
+{
+	INT32 c = ev->data1;
+	UINT8 n = optionsmenu.bindcontrol-1;						// # of input to bind
+	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
+	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
+
+	// Only consider keydown events to make sure we ignore ev_mouse and ev_joystick as well
+	if (ev->type != ev_keydown)
+		return;
+
+	// Check if this control is already assigned, it'd look silly to assign the same key twice on the same thing.
+	if (n == 0 && optionsmenu.profile->controls[controln][1] == c)
+	{
+		optionsmenu.profile->controls[controln][1] = KEY_NULL;	// unbind
+		where = 0;												// save control in slot 0
+	}
+	else if (n == 1 && optionsmenu.profile->controls[controln][0] == c)
+	{
+		// Do nothing and exit this menu.
+		optionsmenu.bindcontrol = 0;
+		return;
+	}
+
+	optionsmenu.profile->controls[controln][where] = c;
+
+	optionsmenu.bindcontrol++;
+	optionsmenu.bindtimer = TICRATE*5;
+	if (optionsmenu.bindcontrol > 2)
+	{
+		optionsmenu.bindtimer = 0;
+		optionsmenu.bindcontrol = 0;
 	}
 }
 

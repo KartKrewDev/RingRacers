@@ -23,7 +23,7 @@ profile_t PR_MakeProfile(const char *prname, const char *pname, const char *snam
 	new.version = PROFILEVER;
 
 	strcpy(new.profilename, prname);
-	
+
 	strcpy(new.skinname, sname);
 	strcpy(new.playername, pname);
 	new.color = col;

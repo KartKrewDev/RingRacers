@@ -2268,6 +2268,126 @@ void M_DrawEditProfile(void)
 	}
 }
 
+// Controller offsets to center on each button.
+INT16 controlleroffsets[][2] = {
+	{0, 0},			// gc_none
+	{70, 112},		// gc_up
+	{70, 112},		// gc_down
+	{70, 112},		// gc_left
+	{70, 112},		// gc_right
+	{208, 200},		// gc_a
+	{237, 181},		// gc_b
+	{267, 166},		// gc_c
+	{191, 164},		// gc_x
+	{215, 149},		// gc_y
+	{242, 137},		// gc_z
+	{55, 102},		// gc_l
+	{253, 102},		// gc_r
+	{149, 187},		// gc_start
+};
+
+// the control stuff.
+// Dear god.
+void M_DrawProfileControls(void)
+{
+	const UINT8 spacing = 34;
+	INT32 y = 16 - (optionsmenu.controlscroll*spacing);
+	INT32 x = 8;
+	INT32 i, j;
+
+	M_DrawOptionsCogs();
+
+	// @TODO: have it move around and shit.
+	V_DrawScaledPatch(BASEVIDWIDTH*2/3 - optionsmenu.contx, BASEVIDHEIGHT/2 -optionsmenu.conty, 0, W_CachePatchName("PR_CONT", PU_CACHE));
+
+	// Tooltip
+	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH*2/3, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
+
+	V_DrawFill(0, 0, 138, 200, 31);	// Black border
+
+	// Draw the menu options...
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		char buf[256];
+		INT32 keys[2];
+
+		// cursor
+		if (i == itemOn)
+		{
+			for (j=0; j < 24; j++)
+				V_DrawFill(0, (y)+j, 128+j, 1, 73);
+		}
+
+		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		{
+			case IT_HEADERTEXT:
+				V_DrawFill(0, y+17, 124, 1, 0);	// underline
+				V_DrawString(x, y+8, 0, currentMenu->menuitems[i].text);
+				y += spacing;
+				break;
+
+			case IT_STRING2:
+
+				if (currentMenu->menuitems[i].patch)
+					V_DrawScaledPatch(x+12, y+12, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+				else
+					V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+
+				if (currentMenu->menuitems[i].status & IT_CONTROL)
+				{
+					// Draw what the controls are mapped to
+					keys[0] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][0];
+					keys[1] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][1];
+
+					buf[0] = '\0';
+
+					if (keys[0] == KEY_NULL && keys[1] == KEY_NULL)
+						strcpy(buf, "\x85NOT BOUND");
+					else
+					{
+						if (keys[0] != KEY_NULL)
+							strcat (buf, G_KeynumToString (keys[0]));
+
+						if (keys[0] != KEY_NULL && keys[1] != KEY_NULL)
+							strcat(buf," / ");
+
+						if (keys[1] != KEY_NULL)
+							strcat (buf, G_KeynumToString (keys[1]));
+					}
+
+					V_DrawThinString(x+32, y+12, V_6WIDTHSPACE, buf);
+
+					// controller dest coords:
+					if (itemOn == i && currentMenu->menuitems[i].mvar1 && currentMenu->menuitems[i].mvar1 <= gc_start)
+					{
+						optionsmenu.tcontx = controlleroffsets[currentMenu->menuitems[i].mvar1][0];
+						optionsmenu.tconty = controlleroffsets[currentMenu->menuitems[i].mvar1][1];
+					}
+				}
+
+				y += spacing;
+				break;
+		}
+	}
+
+	// Overlay for control binding
+	if (optionsmenu.bindcontrol)
+	{
+		V_DrawFadeScreen(31, 8);
+
+		M_DrawTextBox((BASEVIDWIDTH/2) - (120), (BASEVIDHEIGHT/2) - (16), 30, 4);
+
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), 0, va("Press key #%d for control", optionsmenu.bindcontrol));
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4) +10, 0, va("\"%s\"", currentMenu->menuitems[itemOn].text));
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4) +20, highlightflags, va("(WAIT %d SECONDS TO SKIP)", optionsmenu.bindtimer/TICRATE));
+	}
+}
+
 // Draw the video modes list, a-la-Quake
 void M_DrawVideoModes(void)
 {

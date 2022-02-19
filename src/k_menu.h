@@ -20,6 +20,7 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
 #include "k_profiles.h"	// profile data & functions
+#include "g_input.h"	// gc_
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -225,6 +226,9 @@ extern menu_t OPTIONS_ProfilesDef;
 
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
+
+extern menuitem_t OPTIONS_ProfileControls[];
+extern menu_t OPTIONS_ProfileControlsDef;
 
 extern menuitem_t OPTIONS_Video[];
 extern menu_t OPTIONS_VideoDef;
@@ -626,6 +630,17 @@ extern struct optionsmenu_s {
 	boolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
 	profile_t *profile;			// Pointer to the profile we're editing
 
+	INT16 controlscroll;		// scrolling for the control menu....
+	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2
+	INT16 bindtimer;			// Timer until binding is cancelled (5s)
+
+	// controller coords...
+	// Works the same as (t)opt
+	INT16 contx;
+	INT16 conty;
+	INT16 tcontx;
+	INT16 tconty;
+
 	// for video mode testing:
 	INT32 vidm_testingmode;
 	INT32 vidm_previousmode;
@@ -643,6 +658,8 @@ extern struct optionsmenu_s {
 	tic_t fade;
 } optionsmenu;
 
+extern INT16 controlleroffsets[][2];
+
 extern consvar_t cv_dummyprofilename;
 extern consvar_t cv_dummyprofileplayername;
 
@@ -659,8 +676,16 @@ void M_EraseData(INT32 choice);	// For data erasing
 void M_ProfileSelectInit(INT32 choice);
 void M_HandleProfileSelect(INT32 ch);
 
+// profile edition
 void M_HandleProfileEdit(void);
+void M_ProfileDeviceSelect(INT32 choice);
 boolean M_ProfileEditInputs(INT32 ch);
+
+void M_HandleProfileControls(void);
+boolean M_ProfileControlsInputs(INT32 ch);
+void M_ProfileSetControl(INT32 ch);
+
+void M_MapProfileControl(event_t *ev);
 
 // video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);
@@ -802,6 +827,7 @@ void M_DrawOptions(void);
 void M_DrawGenericOptions(void);
 void M_DrawProfileSelect(void);
 void M_DrawEditProfile(void);
+void M_DrawProfileControls(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
 
