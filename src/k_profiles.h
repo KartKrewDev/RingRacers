@@ -104,6 +104,10 @@ void PR_SaveProfiles(void);
 // This also loads
 void PR_LoadProfiles(void);
 
+// PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+// Applies the given profile's settings to the given player.
+void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
+
 
 
 #endif

@@ -2134,6 +2134,9 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 {
 	INT32 i, j;
 
+	if (optionsmenu.profile)
+		return false;	// Don't allow for the possibility of SOMEHOW another player joining in.
+
 	// Detect B press first ... this means P1 can actually exit out of the menu.
 	if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
 	{
@@ -2182,7 +2185,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			CONS_Printf("========\n");
 
 			//setup_numplayers++;
-			p->mdepth = CSSTEP_CHARS;
+			p->mdepth = CSSTEP_PROFILE;
 			S_StartSound(NULL, sfx_s3k65);
 
 			// Prevent quick presses for multiple players
@@ -2199,6 +2202,94 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	}
 
 	return false;
+}
+
+// sets up the grid pos for the skin used by the profile.
+static void M_SetupProfileGridPos(setup_player_t *p)
+{
+	profile_t *pr = PR_GetProfile(p->profilen);
+	INT32 i;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!(strcmp(pr->skinname, skins[i].name)))
+		{
+			INT32 alt = 0;	// Hey it's my character's name!
+			p->gridx = skins[i].kartspeed-1;
+			p->gridy = skins[i].kartweight-1;
+
+			// Now this put our cursor on the good alt
+			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+				alt++;
+
+			p->clonenum = alt;
+			p->color = pr->color;
+			return;	// we're done here
+		}
+	}
+}
+
+static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
+{
+	const UINT8 maxp = MAXPROFILES;
+	UINT8 i;
+
+	if (menucmd[num].dpad_ud > 0)
+	{
+		p->profilen++;
+		if (p->profilen > maxp)
+			p->profilen = 0;
+
+		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(num);
+	}
+	else if (menucmd[num].dpad_ud < 0)
+	{
+		if (p->profilen == 0)
+			p->profilen = maxp;
+		else
+			p->profilen--;
+
+		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		if (num == setup_numplayers-1)
+		{
+
+			p->mdepth = CSSTEP_NONE;
+			S_StartSound(NULL, sfx_s3k5b);
+
+			// Prevent quick presses for multiple players
+			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+			{
+				setup_player[i].delay = MENUDELAYTIME;
+				M_SetMenuDelay(i);
+				menucmd[i].buttonsHeld |= (MBT_B|MBT_Y);
+			}
+
+			return true;
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3kb2);
+		}
+
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X))
+	{
+		// Apply the profile.
+		PR_ApplyProfile(p->profilen, num);
+		M_SetupProfileGridPos(p);
+
+		p->mdepth = CSSTEP_CHARS;
+		S_StartSound(NULL, sfx_s3k63);
+	}
+
+	return false;
+
 }
 
 static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
@@ -2271,7 +2362,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			}
 			else	// for the actual player select, go back to device detection.
 			{
-				p->mdepth = CSSTEP_NONE;
+				p->mdepth = CSSTEP_PROFILE;
 				S_StartSound(NULL, sfx_s3k5b);
 			}
 
@@ -2391,8 +2482,11 @@ boolean M_CharacterSelectHandler(INT32 choice)
 				case CSSTEP_NONE: // Enter Game
 					playersChanged = M_HandlePressStart(p, i);
 					break;
+				case CSSTEP_PROFILE:
+					playersChanged = M_HandleCSelectProfile(p, i);
+					break;
 				case CSSTEP_CHARS: // Character Select grid
-					playersChanged = M_HandleCharacterGrid(p, i);
+					M_HandleCharacterGrid(p, i);
 					break;
 				case CSSTEP_ALTS: // Select clone
 					M_HandleCharRotate(p, i);
@@ -2415,10 +2509,12 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		// Just makes it easier to access later
 		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 
-		if (p->mdepth < CSSTEP_COLORS)
+		// Keep profile colour.
+		/*if (p->mdepth < CSSTEP_COLORS)
 		{
 			p->color = skins[p->skin].prefcolor;
-		}
+
+		}*/
 
 		if (playersChanged == true)
 		{
@@ -3350,6 +3446,9 @@ void M_InitOptions(INT32 choice)
 	Moviemode_option_Onchange();
 	Addons_option_Onchange();
 
+	// For profiles:
+	memset(setup_player, 0, sizeof(setup_player));
+
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
 }
 
@@ -3645,6 +3744,8 @@ boolean M_ProfileEditInputs(INT32 ch)
 		optionsmenu.toptx = 160;
 		optionsmenu.topty = 35;
 		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+
+		PR_SaveProfiles();					// save profiles after we do that.
 
 		M_GoBack(0);
 		return true;

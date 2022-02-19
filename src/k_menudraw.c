@@ -929,6 +929,41 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 	V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
 	V_DrawFileString(x+16, y+2, 0, "PLAYER");
+
+	// Profile selection
+	if (p->mdepth == CSSTEP_PROFILE)
+	{
+		UINT8 i = 0;
+		INT16 px = x+12;
+		INT16 py = y+48 - p->profilen*12;
+		UINT8 maxp = MAXPROFILES+1;
+
+		for (i=0; i < maxp; i++)
+		{
+			profile_t *pr = PR_GetProfile(i);
+			INT16 dist = abs(p->profilen - i);
+
+			if (dist > 2)
+			{
+				py += 12;
+				continue;
+			}
+			else if (dist == 2)
+			{
+				V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "EMPTY");
+				V_DrawScaledPatch(px, py, V_TRANSLUCENT, W_CachePatchName("FILEBACK", PU_CACHE));
+			}
+			else
+			{
+				V_DrawScaledPatch(px, py, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+
+				if (i != p->profilen || ((setup_animcounter/10) & 1))
+					V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "EMPTY");
+			}
+			py += 12;
+		}
+
+	}
 }
 
 static void M_DrawCharSelectExplosions(void)

@@ -94,22 +94,56 @@ void PR_SaveProfiles(void)
 	f = fopen(PROFILESFILE, "w");
 	if (f != NULL)
 	{
-		fwrite(profilesList, sizeof(profile_t), MAXPROFILES, f);
+		fwrite(profilesList, sizeof(profile_t), MAXPROFILES+1, f);
 		fclose(f);
 	}
+	else
+		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 }
 
 void PR_LoadProfiles(void)
 {
-	//FILE *f = NULL;
+	FILE *f = NULL;
 	profile_t dprofile = PR_MakeProfile(PROFILEDEFAULTNAME, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
-	PR_AddProfile(dprofile);
-
-	/*f = fopen(PROFILESFILE, "r");
+	f = fopen(PROFILESFILE, "r");
 
 	if (f != NULL)
 	{
-		fread(&profilesList[1], sizeof(profile_t)*(MAXPROFILES), MAXPROFILES, f);
+		INT32 i;
+		fread(profilesList, sizeof(profile_t)*(MAXPROFILES+1), MAXPROFILES+1, f);
 		fclose(f);
-	}*/
+
+		// Overwrite the first profile for the default profile to avoid letting anyone tamper with it.
+		memcpy(&profilesList[0], &dprofile, sizeof(profile_t));
+
+		// Omega, count how many profiles there are in the list.
+		// WHY DID YOU ASK HIM TO DO THAT IT'S GOING TO TAKE FOR-EVER
+		for (i=0; i < MAXPROFILES; i++)
+		{
+			if (!profilesList[i].version)
+			{
+				numprofiles = i;
+				return;
+			}
+		}
+
+	}
+	else
+	{
+		// No profiles. Add the default one.
+		PR_AddProfile(dprofile);
+	}
+}
+
+void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+{
+	profile_t *p = PR_GetProfile(profilenum);
+
+	CV_StealthSet(&cv_skin[playernum], p->skinname);
+	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
+	CV_StealthSet(&cv_playername[playernum], p->playername);
+	// @TODO followers
+
+	// set controls...
+	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
 }

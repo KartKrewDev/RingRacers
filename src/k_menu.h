@@ -461,6 +461,7 @@ extern struct setup_chargrid_s {
 typedef enum
 {
 	CSSTEP_NONE = 0,
+	CSSTEP_PROFILE,
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
@@ -470,6 +471,7 @@ typedef enum
 typedef struct setup_player_s
 {
 	SINT8 gridx, gridy;
+	UINT8 profilen;
 	SINT8 skin;
 	SINT8 clonenum;
 	SINT8 rotate;
