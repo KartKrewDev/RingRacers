@@ -3414,6 +3414,7 @@ void M_InitOptions(INT32 choice)
 {
 	(void)choice;
 
+	OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_SUBMENU;
 	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
 
@@ -3423,6 +3424,10 @@ void M_InitOptions(INT32 choice)
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
 	}
+
+	// disable profiles outside of gs_menu altogether.
+	if (gamestate != GS_MENU)
+		OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_TRANSTEXT;
 
 	optionsmenu.ticker = 0;
 	optionsmenu.offset = 0;
@@ -3961,10 +3966,10 @@ void M_MapProfileControl(event_t *ev)
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
 	if (ev->type != ev_keydown && ev->type != ev_joystick)
 		return;
-	
+
 	// Set menu delay regardless of what we're doing to avoid stupid stuff.
 	M_SetMenuDelay(0);
-	
+
 	// Check if this control is already assigned, it'd look silly to assign the same key twice on the same thing.
 	if (n == 0 && optionsmenu.profile->controls[controln][1] == c)
 	{

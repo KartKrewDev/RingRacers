@@ -211,7 +211,7 @@ extern menu_t OPTIONS_MainDef;
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
-	mopt_controls = 0,
+	mopt_profiles = 0,
 	mopt_video,
 	mopt_sound,
 	mopt_hud,
