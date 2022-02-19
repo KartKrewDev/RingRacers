@@ -3850,8 +3850,8 @@ void M_MapProfileControl(event_t *ev)
 	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
 
-	// Only consider keydown events to make sure we ignore ev_mouse and ev_joystick as well
-	if (ev->type != ev_keydown)
+	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
+	if (ev->type != ev_keydown && ev->type != ev_joystick)
 		return;
 
 	// Check if this control is already assigned, it'd look silly to assign the same key twice on the same thing.
