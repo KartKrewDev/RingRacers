@@ -2142,6 +2142,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 		if (num == 0)
 		{
 			// We're done here.
+			memset(setup_player, 0, sizeof(setup_player));	// Reset this to avoid funky things with profile display.
 			M_GoBack(0);
 			return true;
 		}
@@ -2264,6 +2265,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			// we don't want to go to the input detection menu.
 			if (optionsmenu.profile)
 			{
+				memset(setup_player, 0, sizeof(setup_player));	// Reset setup_player otherwise it does some VERY funky things.
 				M_GoBack(0);
 				return true;
 			}
