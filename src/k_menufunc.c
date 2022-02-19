@@ -2296,6 +2296,8 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
 	INT32 i;
 
+	UINT8 numclones;
+
 	if (menucmd[num].dpad_ud > 0)
 	{
 		p->gridy++;
@@ -2329,6 +2331,13 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
+
+	// Process this after possible pad movement,
+	// this makes sure we don't have a weird ghost hover on a character with no clones.
+	numclones = setup_chargrid[p->gridx][p->gridy].numskins;
+
+	if (p->clonenum >= numclones)
+		p->clonenum = 0;
 
 	if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
