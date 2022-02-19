@@ -3414,7 +3414,7 @@ void M_InitOptions(INT32 choice)
 {
 	(void)choice;
 
-	OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_SUBMENU;
+	OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_CALL;
 	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
 
@@ -3938,12 +3938,42 @@ void M_HandleProfileControls(void)
 
 boolean M_ProfileControlsInputs(INT32 ch)
 {
+	const UINT8 pid = 0;
 	(void)ch;
 
 	// By default, accept all inputs.
 	if (optionsmenu.bindcontrol)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
+	if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
+	{
+		// check if we're on a valid menu option...
+		if (currentMenu->menuitems[itemOn].mvar1)
+		{
+			// clear controls for that key
+			optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][0] = KEY_NULL;
+			optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][1] = KEY_NULL;
+			S_StartSound(NULL, sfx_s3k66);
+		}
+		M_SetMenuDelay(pid);
+		return true;
+	}
+
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		// Quick check...
+		UINT8 checks[7] = {gc_a, gc_b, gc_up, gc_down, gc_left, gc_right, gc_start};
+		UINT8 i;
+
+		for (i = 0; i < 7; i++)
+		{
+			if (optionsmenu.profile->controls[checks[i]][0] == KEY_NULL)	// NOT BOUND
+			{
+				M_StartMessage(M_GetText("Stupid softlock prevention!\nMake sure keys A, B, Start and\nall directions have been mapped.\n\nOtherwise, you could softlock when\nselecting this profile."), NULL, MM_NOTHING);
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
