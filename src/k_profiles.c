@@ -10,6 +10,7 @@
 /// \file  k_profiles.c
 /// \brief implements methods for profiles etc.
 
+#include "d_main.h" // pandf
 #include "k_profiles.h"
 #include "z_zone.h"
 
@@ -92,7 +93,7 @@ void PR_SaveProfiles(void)
 {
 	FILE *f = NULL;
 
-	f = fopen(PROFILESFILE, "w");
+	f = fopen(va(pandf, srb2home, PROFILESFILE), "w");
 	if (f != NULL)
 	{
 		UINT8 i;
@@ -114,7 +115,7 @@ void PR_LoadProfiles(void)
 {
 	FILE *f = NULL;
 	profile_t *dprofile = PR_MakeProfile(PROFILEDEFAULTNAME, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
-	f = fopen(PROFILESFILE, "r");
+	f = fopen(va(pandf, srb2home, PROFILESFILE), "r");
 
 	if (f != NULL)
 	{
