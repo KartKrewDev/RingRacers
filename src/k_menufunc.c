@@ -2231,7 +2231,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 {
-	const UINT8 maxp = MAXPROFILES;
+	const UINT8 maxp = PR_GetNumProfiles() -1;
 	UINT8 i;
 
 	if (menucmd[num].dpad_ud > 0)

@@ -936,7 +936,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		UINT8 i = 0;
 		INT16 px = x+12;
 		INT16 py = y+48 - p->profilen*12;
-		UINT8 maxp = MAXPROFILES+1;
+		UINT8 maxp = PR_GetNumProfiles();
 
 		for (i=0; i < maxp; i++)
 		{
