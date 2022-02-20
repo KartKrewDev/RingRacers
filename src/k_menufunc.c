@@ -3881,7 +3881,6 @@ static void SetDeviceOnPress(void)
 		{
 			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
 			CONS_Printf("Using device %d for mappings\n", i);
-			M_SetupNextMenu(&OPTIONS_ProfileControlsDef, false);	// with that set, send us to the control def
 			return;
 		}
 	}
