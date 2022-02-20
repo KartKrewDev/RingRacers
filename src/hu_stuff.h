@@ -66,6 +66,7 @@ enum
 	X   (TALLNUM),
 	X (NIGHTSNUM),
 	X   (PINGNUM),
+	X	(PROFNUM),
 
 	X      (KART),
 	X        (GM),

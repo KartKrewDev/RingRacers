@@ -154,3 +154,15 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
 }
+
+UINT8 PR_GetProfileNum(profile_t *p)
+{
+	UINT8 i;
+	for (i = 0; i < MAXPROFILES+1; i++)
+	{
+		profile_t *comp = PR_GetProfile(i);
+		if (comp == p)
+			return i;
+	}
+	return 0;
+}

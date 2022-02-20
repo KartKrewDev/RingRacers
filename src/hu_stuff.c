@@ -290,6 +290,9 @@ void HU_Init(void)
 		PR   ("PINGN");
 		REG;
 
+		PR   ("PRFN");
+		REG;
+
 		DIG  (3);
 
 		ADIM (KART);

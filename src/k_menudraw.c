@@ -1121,6 +1121,14 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 
 	// Card bottom to overlay the skin preview
 	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, cardbot, colormap);
+
+	// Profile number & player name
+
+	if (p != NULL)
+	{
+		V_DrawProfileNum(x + 37 + 10, y + 131, 0, PR_GetProfileNum(p));
+		V_DrawCenteredThinString(x, y + 151, V_GRAYMAP|V_6WIDTHSPACE, p->playername);
+	}
 }
 
 void M_DrawCharacterSelect(void)

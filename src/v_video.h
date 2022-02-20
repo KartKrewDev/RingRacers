@@ -316,6 +316,8 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 // This is a separate function because IMO lua should have access to it as well.
 void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap);
 
+void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
+
 #define V_DrawCreditString( x,y,option,string ) \
 	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,CRED_FONT,string)
 

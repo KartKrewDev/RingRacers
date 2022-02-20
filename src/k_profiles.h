@@ -108,6 +108,8 @@ void PR_LoadProfiles(void);
 // Applies the given profile's settings to the given player.
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
 
-
+// PR_GetProfileNum(profile_t *p)
+// Gets the profile's index # in profilesList
+UINT8 PR_GetProfileNum(profile_t *p);
 
 #endif
