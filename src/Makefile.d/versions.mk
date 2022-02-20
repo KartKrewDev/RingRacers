@@ -46,6 +46,7 @@ endif
  WFLAGS+=-Wpointer-arith -Wbad-function-cast
 ifdef GCC45
 #WFLAGS+=-Wc++-compat
+ WFLAGS+=-std=gnu99
 endif
  WFLAGS+=-Wcast-qual
 ifndef NOCASTALIGNWARN
