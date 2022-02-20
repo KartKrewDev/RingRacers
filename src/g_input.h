@@ -76,7 +76,17 @@ typedef enum
 	gc_screenshot,
 	gc_recordgif,
 
-	num_gamecontrols
+	num_gamecontrols,
+
+	// alias gameplay controls
+	gc_accel = gc_a,
+	gc_brake = gc_x,
+	gc_drift = gc_r,
+
+	gc_item = gc_l,
+	gc_spindash = gc_c,
+
+	gc_lookback = gc_b,
 } gamecontrols_e;
 
 // mouse values are used once

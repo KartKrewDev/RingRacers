@@ -940,12 +940,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		if (G_PlayerInputDown(forplayer, gc_a, 0))
+		if (G_PlayerInputDown(forplayer, gc_accel, 0))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 		}
 
-		if (G_PlayerInputDown(forplayer, gc_b, 0))
+		if (G_PlayerInputDown(forplayer, gc_brake, 0))
 		{
 			cmd->buttons |= BT_BRAKE;
 		}
@@ -963,14 +963,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		INT32 value = G_PlayerInputAnalog(forplayer, gc_a, 0);
+		INT32 value = G_PlayerInputAnalog(forplayer, gc_accel, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			forward += ((value * MAXPLMOVE) >> 10);
 		}
 
-		value = G_PlayerInputAnalog(forplayer, gc_b, 0);
+		value = G_PlayerInputAnalog(forplayer, gc_brake, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
@@ -990,26 +990,26 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	}
 
 	// drift
-	if (G_PlayerInputDown(forplayer, gc_r, 0))
+	if (G_PlayerInputDown(forplayer, gc_drift, 0))
 	{
 		cmd->buttons |= BT_DRIFT;
 	}
 
 	// C
-	if (G_PlayerInputDown(forplayer, gc_c, 0))
+	if (G_PlayerInputDown(forplayer, gc_spindash, 0))
 	{
 		forward = 0;
 		cmd->buttons |= BT_SPINDASHMASK;
 	}
 
 	// fire
-	if (G_PlayerInputDown(forplayer, gc_l, 0))
+	if (G_PlayerInputDown(forplayer, gc_item, 0))
 	{
 		cmd->buttons |= BT_ATTACK;
 	}
 
 	// rear view
-	if (G_PlayerInputDown(forplayer, gc_y, 0))
+	if (G_PlayerInputDown(forplayer, gc_lookback, 0))
 	{
 		cmd->buttons |= BT_LOOKBACK;
 	}
