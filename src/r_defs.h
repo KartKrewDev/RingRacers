@@ -718,7 +718,7 @@ typedef struct
 	UINT8 mode;       // see pic_mode_t above
 	INT16 height;
 	INT16 reserved1; // set to 0
-	UINT8 data[0];
+	UINT8 data[];
 } ATTRPACK pic_t;
 
 #ifdef _MSC_VER

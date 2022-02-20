@@ -212,7 +212,7 @@ typedef struct
 	UINT8 iteration;
 	UINT32 position;
 	UINT16 size;
-	UINT8 data[0]; // Size is variable using hardware_MAXPACKETLENGTH
+	UINT8 data[]; // Size is variable using hardware_MAXPACKETLENGTH
 } ATTRPACK filetx_pak;
 
 typedef struct
@@ -226,7 +226,7 @@ typedef struct
 	UINT8 fileid;
 	UINT8 iteration;
 	UINT8 numsegments;
-	fileacksegment_t segments[0];
+	fileacksegment_t segments[];
 } ATTRPACK fileack_pak;
 
 #ifdef _MSC_VER
