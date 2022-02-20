@@ -828,8 +828,7 @@ boolean M_Responder(event_t *ev)
 		menuKey = ev->data1;
 	}
 
-	// update keys current state
-	G_MapEventsToControls(ev);
+	M_MapMenuControls(ev);
 
 	// Profiles: Control mapping.
 	// We take the WHOLE EVENT for convenience.
@@ -1163,6 +1162,23 @@ static void M_UpdateMenuCMD(UINT8 i)
 	}
 }
 
+void M_MapMenuControls(event_t *ev)
+{
+	INT32 i;
+
+	if (ev)
+	{
+		// update keys current state
+		G_MapEventsToControls(ev);
+	}
+
+	// Update menu CMD
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i);
+	}
+}
+
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 {
 	if (menucmd[pid].buttonsHeld & bt)
@@ -1326,15 +1342,8 @@ static void M_MenuTypingInput(INT32 key)
 static void M_HandleMenuInput(void)
 {
 	void (*routine)(INT32 choice); // for some casting problem
-	INT32 i;
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 	SINT8 lr = 0, ud = 0;
-
-	// Update menu CMD
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		M_UpdateMenuCMD(i);
-	}
 
 	if (menuactive == false)
 	{

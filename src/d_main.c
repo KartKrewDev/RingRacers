@@ -182,6 +182,7 @@ void D_ProcessEvents(void)
 	event_t *ev;
 
 	boolean eaten;
+	boolean menuresponse = false;
 
 	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
@@ -205,6 +206,7 @@ void D_ProcessEvents(void)
 		}
 
 		// Menu input
+		menuresponse = true;
 #ifdef HAVE_THREADS
 		I_lock_mutex(&k_menu_mutex);
 #endif
@@ -243,6 +245,12 @@ void D_ProcessEvents(void)
 		}
 
 		G_Responder(ev);
+	}
+
+	// Reset menu controls when no event is processed
+	if (!menuresponse)
+	{
+		M_MapMenuControls(NULL);
 	}
 }
 

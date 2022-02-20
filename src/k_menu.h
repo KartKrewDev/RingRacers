@@ -424,6 +424,7 @@ void Addons_option_Onchange(void);
 
 void M_SortServerList(void);
 
+void M_MapMenuControls(event_t *ev);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 void M_StartControlPanel(void);
