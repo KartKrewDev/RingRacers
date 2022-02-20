@@ -30,6 +30,7 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 	new->version = PROFILEVER;
 
 	strcpy(new->profilename, prname);
+	new->profilename[sizeof new->profilename - 1] = '\0';
 
 	strcpy(new->skinname, sname);
 	strcpy(new->playername, pname);
