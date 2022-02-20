@@ -1289,7 +1289,7 @@ static void M_MenuTypingInput(INT32 key)
 			keyboardx--;
 			if (keyboardx < 0)
 			{
-				keyboardx = 13;
+				keyboardx = 12;
 				M_UpdateKeyboardX();
 			}
 			M_SetMenuDelay(pid);
