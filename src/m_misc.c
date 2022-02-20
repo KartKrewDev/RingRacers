@@ -746,12 +746,12 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 FUNCNORETURN static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
 	//CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
-	I_Error("libpng error at %p: %s", PNG, pngtext);
+	I_Error("libpng error at %p: %s", (void*)PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)
