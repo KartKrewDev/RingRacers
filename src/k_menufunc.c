@@ -921,6 +921,12 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
+	// Typing for CV_IT_STRING
+	if (menutyping && !menutypingclose && keyboardtyping)
+	{
+		M_ChangeStringCvar(menuKey);
+	}
+
 	// We're in the menu itself now.
 	// M_Ticker will take care of the rest.
 	return true;
@@ -1175,11 +1181,11 @@ static void M_UpdateKeyboardX(void)
 		keyboardx--;
 }
 
-// Hack...
-// This is used to prevent keyboard inputs from being processed when they shouldn't.
-// We need to find why this is needed so that I can remove this disgusting thing
-static INT32 lastkey = 0;
-static tic_t lastkeyheldfor = 0;
+static boolean M_IsTypingKey(INT32 key)
+{
+	return key == KEY_BACKSPACE || key == KEY_ENTER ||
+		key == KEY_DEL || isprint(key);
+}
 
 static void M_MenuTypingInput(INT32 key)
 {
@@ -1205,33 +1211,17 @@ static void M_MenuTypingInput(INT32 key)
 			return;	// Don't allow typing until it's fully opened.
 	}
 
-	// Now handle the inputs.
-	// HACK: TODO: REMOVE THIS
-	// This prevents the same key from being processed multiple times. ev_keydown should account for this but it seems like it doesn't.
-	if (lastkey != key)
-	{
-		lastkey = key;
-		lastkeyheldfor = 0;
-	}
-	else
-	{
-		lastkeyheldfor++;
-		if (lastkeyheldfor > 0 && lastkeyheldfor < TICRATE/2)
-			key = -1;
-	}
-	// END OF HACK.
-
 	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
 	if (!keyboardtyping)	// controller inputs
 	{
 		// we pressed a keyboard input that's not any of our buttons
-		if (key != -1 && menucmd[pid].dpad_lr == 0 && menucmd[pid].dpad_ud == 0
-			&& !M_MenuButtonPressed(pid, MBT_A)
-			&& !M_MenuButtonPressed(pid, MBT_B)
-			&& !M_MenuButtonPressed(pid, MBT_C)
-			&& !M_MenuButtonPressed(pid, MBT_X)
-			&& !M_MenuButtonPressed(pid, MBT_Y)
-			&& !M_MenuButtonPressed(pid, MBT_Z))
+		if (M_IsTypingKey(key) && menucmd[pid].dpad_lr == 0 && menucmd[pid].dpad_ud == 0
+			&& !(menucmd[pid].buttons & MBT_A)
+			&& !(menucmd[pid].buttons & MBT_B)
+			&& !(menucmd[pid].buttons & MBT_C)
+			&& !(menucmd[pid].buttons & MBT_X)
+			&& !(menucmd[pid].buttons & MBT_Y)
+			&& !(menucmd[pid].buttons & MBT_Z))
 		{
 			keyboardtyping = true;
 		}
@@ -1239,7 +1229,7 @@ static void M_MenuTypingInput(INT32 key)
 	else	// Keyboard inputs.
 	{
 		// On the flipside, if we're pressing any keyboard input, switch to controller inputs.
-		if (key == -1 && (
+		if (!M_IsTypingKey(key) && (
 			M_MenuButtonPressed(pid, MBT_A)
 			|| M_MenuButtonPressed(pid, MBT_B)
 			|| M_MenuButtonPressed(pid, MBT_C)
@@ -1259,10 +1249,6 @@ static void M_MenuTypingInput(INT32 key)
 		{
 			menutypingclose = true;	// close menu.
 			return;
-		}
-		else // process everything else as input for typing
-		{
-			M_ChangeStringCvar(key);
 		}
 
 	}
