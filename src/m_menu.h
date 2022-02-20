@@ -315,6 +315,7 @@ typedef union
 	struct menu_s *submenu;      // IT_SUBMENU
 	consvar_t *cvar;             // IT_CVAR
 	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
+	void (*eventhandler)(event_t *ev); // MM_EVENTHANDLER
 } itemaction_t;
 
 //
@@ -329,7 +330,7 @@ typedef struct menuitem_s
 	const char *text; // used when FONTBxx lump is found
 
 // FIXME: should be itemaction_t
-	void *itemaction;
+	itemaction_t itemaction;
 
 	// hotkey in menu or y of the item
 	UINT16 alphaKey;
