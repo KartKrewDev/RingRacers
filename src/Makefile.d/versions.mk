@@ -22,7 +22,7 @@ ifndef GCC295
 #WFLAGS+=-Wno-packed
 endif
 ifndef RELAXWARNINGS
- WFLAGS+=-W
+ WFLAGS+=-W -pedantic
 #WFLAGS+=-Wno-sign-compare
 ifndef GCC295
  WFLAGS+=-Wno-div-by-zero
