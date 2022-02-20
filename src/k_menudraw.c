@@ -2262,7 +2262,7 @@ void M_DrawEditProfile(void)
 	{
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
-			case IT_STRING:
+			case IT_STRING: {
 
 				UINT8 *colormap = NULL;
 				if (i == itemOn)
@@ -2296,6 +2296,7 @@ void M_DrawEditProfile(void)
 				y += 34;
 
 				break;
+			}
 		}
 	}
 
