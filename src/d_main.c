@@ -819,7 +819,7 @@ void D_SRB2Loop(void)
 
 			// Update display, next frame, with current state.
 			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
+			cv_frameinterpolation.value == 0 ? D_Display() : (void)0;
 
 			if (moviemode)
 				M_SaveFrame();
@@ -829,7 +829,7 @@ void D_SRB2Loop(void)
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
 			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
+			cv_frameinterpolation.value == 0 ? D_Display() : (void)0;
 
 			if (moviemode)
 				M_SaveFrame();

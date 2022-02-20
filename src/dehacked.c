@@ -51,7 +51,7 @@ void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext)
 	strlcpy(dst, src, size);
 }
 
-ATTRINLINE static FUNCINLINE char myfget_color(MYFILE *f)
+ATTRINLINE static FUNCINLINE unsigned char myfget_color(MYFILE *f)
 {
 	char c = *f->curpos++;
 	if (c == '^') // oh, nevermind then.
