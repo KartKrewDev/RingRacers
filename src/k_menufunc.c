@@ -3870,10 +3870,10 @@ void M_HandleVideoModes(INT32 ch)
 	}
 }
 
-static void M_ProfileDeviceSelectResponse(INT32 key)
+// sets whatever device has had its key pressed to the active device.
+static void SetDeviceOnPress(void)
 {
 	UINT8 i;
-	(void) key;
 
 	for (i=0; i < MAXDEVICES; i++)
 	{
@@ -3900,7 +3900,8 @@ void M_ProfileDeviceSelect(INT32 choice)
 	optionsmenu.contx = optionsmenu.tcontx = controlleroffsets[gc_a][0];
 	optionsmenu.conty = optionsmenu.tconty = controlleroffsets[gc_a][1];
 
-	M_StartMessage(M_GetText("Press any key on the device\nyou would like to use"), M_ProfileDeviceSelectResponse, MM_EVENTHANDLER);
+	//M_StartMessage(M_GetText("Press any key on the device\nyou would like to use"), M_ProfileDeviceSelectResponse, MM_EVENTHANDLER);
+	M_SetupNextMenu(&OPTIONS_ProfileControlsDef, false);	// Don't set device here anymore.
 }
 
 void M_HandleProfileControls(void)
@@ -3930,11 +3931,7 @@ void M_HandleProfileControls(void)
 		optionsmenu.bindtimer--;
 		if (!optionsmenu.bindtimer)
 		{
-			optionsmenu.bindcontrol++;
-			if (optionsmenu.bindcontrol > 2)
-				optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
-			else
-				optionsmenu.bindtimer = TICRATE*5;	// skip control
+			optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
 		}
 
 	}
@@ -3955,8 +3952,11 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		if (currentMenu->menuitems[itemOn].mvar1)
 		{
 			// clear controls for that key
-			optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][0] = KEY_NULL;
-			optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][1] = KEY_NULL;
+			INT32 i;
+
+			for (i = 0; i < MAXINPUTMAPPING; i++)
+				optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
+
 			S_StartSound(NULL, sfx_s3k66);
 		}
 		M_SetMenuDelay(pid);
@@ -3967,9 +3967,24 @@ boolean M_ProfileControlsInputs(INT32 ch)
 
 void M_ProfileSetControl(INT32 ch)
 {
+	INT32 controln = currentMenu->menuitems[itemOn].mvar1;
+	UINT8 i;
 	(void) ch;
 
-	optionsmenu.bindcontrol = 1;
+	optionsmenu.bindcontrol = 1;	// Default to control #1
+
+	for (i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		if (optionsmenu.profile->controls[controln][i] == KEY_NULL)
+		{
+			optionsmenu.bindcontrol = i+1;
+			break;
+		}
+	}
+
+	// If we could find a null key to map into, map there.
+	// Otherwise, this will stay at 1 which means we'll overwrite the first bound control.
+
 	optionsmenu.bindtimer = TICRATE*5;
 }
 
@@ -3977,9 +3992,12 @@ void M_ProfileSetControl(INT32 ch)
 void M_MapProfileControl(event_t *ev)
 {
 	INT32 c = ev->data1;
-	UINT8 n = optionsmenu.bindcontrol-1;						// # of input to bind
+	UINT8 n = optionsmenu.bindcontrol-1;					// # of input to bind
 	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
+	INT32 i;
+
+	SetDeviceOnPress();	// Update cv_usejoystick
 
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
 	if (ev->type != ev_keydown && ev->type != ev_joystick)
@@ -3988,28 +4006,22 @@ void M_MapProfileControl(event_t *ev)
 	// Set menu delay regardless of what we're doing to avoid stupid stuff.
 	M_SetMenuDelay(0);
 
-	// Check if this control is already assigned, it'd look silly to assign the same key twice on the same thing.
-	if (n == 0 && optionsmenu.profile->controls[controln][1] == c)
+	// Check if this particular key (c) is already bound in any slot.
+	// If that's the case, simply do nothing.
+	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		optionsmenu.profile->controls[controln][1] = KEY_NULL;	// unbind
-		where = 0;												// save control in slot 0
+		if (optionsmenu.profile->controls[controln][i] == c)
+		{
+			optionsmenu.bindcontrol = 0;
+			return;
+		}
 	}
-	else if (n == 1 && optionsmenu.profile->controls[controln][0] == c)
-	{
-		// Do nothing and exit this menu.
-		optionsmenu.bindcontrol = 0;
-		return;
-	}
+
+	// With the way we do things, there cannot be instances of 'gaps' within the controls, so we don't need to pretend like we need to handle that.
+	// Unless of course you tamper with the cfg file, but then it's *your* fault, not mine.
 
 	optionsmenu.profile->controls[controln][where] = c;
-
-	optionsmenu.bindcontrol++;
-	optionsmenu.bindtimer = TICRATE*5;
-	if (optionsmenu.bindcontrol > 2)
-	{
-		optionsmenu.bindtimer = 0;
-		optionsmenu.bindcontrol = 0;
-	}
+	optionsmenu.bindcontrol = 0;	// not binding anymore
 }
 
 void M_HandleItemToggles(INT32 choice)

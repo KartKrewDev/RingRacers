@@ -2332,7 +2332,7 @@ void M_DrawProfileControls(void)
 	const UINT8 spacing = 34;
 	INT32 y = 16 - (optionsmenu.controlscroll*spacing);
 	INT32 x = 8;
-	INT32 i, j;
+	INT32 i, j, k;
 
 	M_DrawOptionsCogs();
 
@@ -2353,7 +2353,7 @@ void M_DrawProfileControls(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		char buf[256];
-		INT32 keys[2];
+		INT32 keys[MAXINPUTMAPPING];
 
 		// cursor
 		if (i == itemOn)
@@ -2372,34 +2372,43 @@ void M_DrawProfileControls(void)
 
 			case IT_STRING2:
 
+				boolean drawnpatch = false;
+
 				if (currentMenu->menuitems[i].patch)
+				{
 					V_DrawScaledPatch(x+12, y+12, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
+					drawnpatch = true;
+				}
 				else
 					V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CONTROL)
 				{
 					// Draw what the controls are mapped to
-					keys[0] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][0];
-					keys[1] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][1];
+					for (k = 0; k < MAXINPUTMAPPING; k++)
+						keys[k] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][k];
 
 					buf[0] = '\0';
 
-					if (keys[0] == KEY_NULL && keys[1] == KEY_NULL)
+					if (keys[0] == KEY_NULL)	// If the first key's null, so should every other.
 						strcpy(buf, "\x85NOT BOUND");
 					else
 					{
-						if (keys[0] != KEY_NULL)
-							strcat (buf, G_KeynumToString (keys[0]));
+						for (k=0; k < MAXINPUTMAPPING && keys[k] != KEY_NULL; k++)
+						{
+							if (k > 0)
+								strcat(buf," / ");
 
-						if (keys[0] != KEY_NULL && keys[1] != KEY_NULL)
-							strcat(buf," / ");
+							if (k == 2 && drawnpatch)	// hacky...
+								strcat(buf, "\n");
 
-						if (keys[1] != KEY_NULL)
-							strcat (buf, G_KeynumToString (keys[1]));
+							strcat(buf, G_KeynumToString (keys[k]));
+
+						}
 					}
 
-					V_DrawThinString(x+32, y+12, V_6WIDTHSPACE, buf);
+					// don't shift the text if we didn't draw a patch.
+					V_DrawThinString(x+ (drawnpatch ? 32 : 0), y+ (drawnpatch? 2 : 12), V_6WIDTHSPACE, buf);
 
 					// controller dest coords:
 					if (itemOn == i && currentMenu->menuitems[i].mvar1 && currentMenu->menuitems[i].mvar1 <= gc_start)
