@@ -357,8 +357,8 @@ typedef struct
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
-		filetx_pak filetxpak;               //         139 bytes
-		fileack_pak fileack;
+		char filetxpak[sizeof (filetx_pak)];//         139 bytes
+		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
 		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
