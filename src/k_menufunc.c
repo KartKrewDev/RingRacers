@@ -3962,22 +3962,6 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 		return true;
 	}
-
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
-	{
-		// Quick check...
-		UINT8 checks[7] = {gc_a, gc_b, gc_up, gc_down, gc_left, gc_right, gc_start};
-		UINT8 i;
-
-		for (i = 0; i < 7; i++)
-		{
-			if (optionsmenu.profile->controls[checks[i]][0] == KEY_NULL)	// NOT BOUND
-			{
-				M_StartMessage(M_GetText("Stupid softlock prevention!\nMake sure keys A, B, Start and\nall directions have been mapped.\n\nOtherwise, you could softlock when\nselecting this profile."), NULL, MM_NOTHING);
-				return true;
-			}
-		}
-	}
 	return false;
 }
 
