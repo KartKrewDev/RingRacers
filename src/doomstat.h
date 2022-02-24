@@ -500,11 +500,12 @@ extern INT32 timelimits[NUMGAMETYPES];
 enum TypeOfLevel
 {
 	// Gametypes
-	TOL_RACE   = 0x0001, ///< Race
-	TOL_BATTLE = 0x0002, ///< Battle
+	TOL_RACE	= 0x0001, ///< Race
+	TOL_BATTLE	= 0x0002, ///< Battle
+	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
 
 	// Modifiers
-	TOL_TV     = 0x0100, ///< Midnight Channel specific: draw TV like overlay on HUD
+	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
 };
 
 #define MAXTOL             (1<<31)

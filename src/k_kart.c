@@ -6,6 +6,7 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_color.h"
 #include "k_respawn.h"
@@ -55,6 +56,10 @@ void K_TimerInit(void)
 {
 	UINT8 i;
 	UINT8 numPlayers = 0;//, numspec = 0;
+
+	// Bosses handle it elsewhere!
+	if (bossinfo.boss == true)
+		return;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -270,6 +275,9 @@ boolean K_IsPlayerLosing(player_t *player)
 
 	if (battlecapsules && player->bumpers <= 0)
 		return true; // DNF in break the capsules
+
+	if (bossinfo.boss)
+		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)
 		return false;
@@ -1043,12 +1051,19 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 		else if (gametype == GT_BATTLE)
 		{
-			if (mashed && (modeattacking || cv_banana.value)) // ANY mashed value? You get a banana.
+			if (mashed && (modeattacking || bossinfo.boss || cv_banana.value)) // ANY mashed value? You get a banana.
 			{
 				K_KartGetItemResult(player, KITEM_BANANA);
 				player->karthud[khud_itemblinkmode] = 1;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
+			}
+			else if (bossinfo.boss)
+			{
+				K_KartGetItemResult(player, KITEM_ORBINAUT);
+				player->karthud[khud_itemblinkmode] = 0;
+				if (P_IsDisplayPlayer(player))
+					S_StartSound(NULL, sfx_itrolf);
 			}
 			else
 			{
@@ -3545,7 +3560,11 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 
 		player->karmadelay = comebacktime;
 
-		if (netgame)
+		if (bossinfo.boss)
+		{
+			P_DoTimeOver(player);
+		}
+		else if (netgame)
 		{
 			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
 		}
@@ -5578,7 +5597,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		dropwork->angle = work->angle;
 
 		P_SetScale(dropwork, work->scale);
-		dropwork->destscale = work->destscale;
+		dropwork->destscale = K_ItemScaleForPlayer(player); //work->destscale;
 		dropwork->scalespeed = work->scalespeed;
 
 		dropwork->flags |= MF_NOCLIPTHING;

@@ -63,6 +63,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -154,7 +155,8 @@ typedef enum
 	LLM_CREATESERVER,
 	LLM_LEVELSELECT,
 	LLM_TIMEATTACK,
-	LLM_BREAKTHECAPSULES
+	LLM_BREAKTHECAPSULES,
+	LLM_BOSS
 } levellist_mode_t;
 
 levellist_mode_t levellistmode = LLM_CREATESERVER;
@@ -253,6 +255,8 @@ menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef, MISC_ChangeSpectateDef;
 // Single Player
 static void M_GrandPrixTemp(INT32 choice);
 static void M_StartGrandPrix(INT32 choice);
+static void M_BossTemp(INT32 choice);
+static void M_StartBoss(INT32 choice);
 static void M_TimeAttack(INT32 choice);
 static boolean M_QuitTimeAttackMenu(void);
 static void M_BreakTheCapsules(INT32 choice);
@@ -849,13 +853,15 @@ static menuitem_t SP_MainMenu[] =
 	{IT_STRING|IT_CALL,		NULL, "Grand Prix",			M_GrandPrixTemp,	 92},
 	{IT_SECRET,				NULL, "Time Attack",		M_TimeAttack,		100},
 	{IT_SECRET,				NULL, "Break the Capsules",	M_BreakTheCapsules,	108},
+	{IT_STRING|IT_CALL,		NULL, "Boss Missions",		M_BossTemp,	 		116},
 };
 
 enum
 {
 	spgrandprix,
 	sptimeattack,
-	spbreakthecapsules
+	spbreakthecapsules,
+	spboss
 };
 
 // Single Player Load Game
@@ -869,6 +875,17 @@ static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 
 	{IT_STRING|IT_CVAR,	NULL, "Cup",			&cv_dummygpcup,			 70},
 	{IT_STRING|IT_CALL,	NULL, "Start",			M_StartGrandPrix,		 80},
+};
+
+static menuitem_t SP_BossPlaceholderMenu[] =
+{
+	{IT_STRING|IT_CVAR,	NULL, "Character",		&cv_chooseskin,			 50},
+	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor[0],		 58},
+
+	{IT_STRING|IT_CVAR,	NULL, "Encore Rematch",	&cv_dummygpencore,		 68},
+
+	{IT_STRING|IT_CVAR,	NULL, "Boss",			&cv_nextmap,			 78},
+	{IT_STRING|IT_CALL,	NULL, "Start",			M_StartBoss,		 	130},
 };
 
 // Single Player Time Attack
@@ -1747,7 +1764,7 @@ inline static void M_GetGametypeColor(void)
 	else
 		gt = gametype;
 
-	if (gt == GT_BATTLE)
+	if (gt == GT_BATTLE || levellistmode == LLM_BOSS)
 	{
 		highlightflags = V_REDMAP;
 		warningflags = V_ORANGEMAP;
@@ -1841,6 +1858,8 @@ menu_t SP_LevelStatsDef =
 };
 
 static menu_t SP_GrandPrixTempDef = DEFAULTMENUSTYLE(MN_NONE, NULL, SP_GrandPrixPlaceholderMenu, &MainDef, 60, 30);
+
+static menu_t SP_BossTempDef = MAPICONMENUSTYLE(NULL, SP_BossPlaceholderMenu, &MainDef);
 
 static menu_t SP_TimeAttackDef =
 {
@@ -4404,7 +4423,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 {
 	// Random map!
 	if (mapnum == -1)
-		return (gamestate != GS_TIMEATTACK && !modeattacking);
+		return (levellistmode == LLM_CREATESERVER);
 
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
@@ -4459,6 +4478,13 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false;
 
 			return true;
+
+		case LLM_BOSS:
+			if (!(mapheaderinfo[mapnum]->typeoflevel & TOL_BOSS))
+				return false;
+
+			return true;
+
 		default:
 			return false;
 	}
@@ -4935,8 +4961,12 @@ static boolean M_AddonsRefresh(void)
 		return true;
 	}
 
+#ifdef DEVELOP
+	prevmajormods = majormods;
+#else
 	if (!majormods && prevmajormods)
 		prevmajormods = false;
+#endif
 
 	if ((refreshdirmenu & REFRESHDIR_ADDFILE) || (majormods && !prevmajormods))
 	{
@@ -6339,7 +6369,7 @@ static void M_RetryResponse(INT32 ch)
 static void M_Retry(INT32 choice)
 {
 	(void)choice;
-	M_StartMessage(M_GetText("Start this race over?\n\n(Press 'Y' to confirm)\n"),M_RetryResponse,MM_YESNO);
+	M_StartMessage(va("Start this %s over?\n\n(Press 'Y' to confirm)\n", (bossinfo.boss == true) ? "boss" : "race"),M_RetryResponse,MM_YESNO);
 }
 
 static void M_SelectableClearMenus(INT32 choice)
@@ -6826,6 +6856,7 @@ static void M_SinglePlayerMenu(INT32 choice)
 		(M_SecretUnlocked(SECRET_TIMEATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
 	SP_MainMenu[spbreakthecapsules].status =
 		(M_SecretUnlocked(SECRET_BREAKTHECAPSULES)) ? IT_CALL|IT_STRING : IT_SECRET;
+	SP_MainMenu[spboss].status = IT_CALL|IT_STRING;
 
 	M_SetupNextMenu(&SP_MainDef);
 }
@@ -7714,6 +7745,29 @@ static void M_GrandPrixTemp(INT32 choice)
 	M_SetupNextMenu(&SP_GrandPrixTempDef);
 }
 
+static void M_BossTemp(INT32 choice)
+{
+	(void)choice;
+
+	levellistmode = LLM_BOSS; // Don't be dependent on cv_newgametype
+
+	if (M_CountLevelsToShowInList() == 0)
+	{
+		M_StartMessage(M_GetText("No bosses found.\n"),NULL,MM_NOTHING);
+		return;
+	}
+
+	M_PatchSkinNameTable();
+
+	M_PrepareLevelSelect();
+
+	if (cv_nextmap.value)
+		Nextmap_OnChange();
+	else
+		CV_AddValue(&cv_nextmap, 1);
+	M_SetupNextMenu(&SP_BossTempDef);
+}
+
 // Start Grand Prix!
 static void M_StartGrandPrix(INT32 choice)
 {
@@ -7772,6 +7826,32 @@ static void M_StartGrandPrix(INT32 choice)
 	G_DeferedInitNew(
 		false,
 		G_BuildMapName(grandprixinfo.cup->levellist[0] + 1),
+		(UINT8)(cv_chooseskin.value - 1),
+		(UINT8)(cv_splitplayers.value - 1),
+		false
+	);
+}
+
+// Start Boss!
+static void M_StartBoss(INT32 choice)
+{
+	(void)choice;
+
+	M_ClearMenus(true);
+
+	// Reset boss info
+	if (bossinfo.enemyname)
+		Z_Free(bossinfo.enemyname);
+	if (bossinfo.subtitle)
+		Z_Free(bossinfo.subtitle);
+	memset(&bossinfo, 0, sizeof(struct bossinfo));
+
+	bossinfo.boss = true;
+	bossinfo.encore = (boolean)(cv_dummygpencore.value);
+
+	G_DeferedInitNew(
+		false,
+		G_BuildMapName(cv_nextmap.value),
 		(UINT8)(cv_chooseskin.value - 1),
 		(UINT8)(cv_splitplayers.value - 1),
 		false
@@ -8807,14 +8887,14 @@ static INT32 M_FindFirstMap(INT32 gtype)
 {
 	INT32 i;
 
-	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gtype))
+	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gametypetol[gtype]))
 		return gamemap;
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
-		if (!(mapheaderinfo[i]->typeoflevel & gtype))
+		if (!(mapheaderinfo[i]->typeoflevel & gametypetol[gtype]))
 			continue;
 		return i + 1;
 	}

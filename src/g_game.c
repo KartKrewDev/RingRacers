@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_bot.h"
 #include "doomstat.h"
 
@@ -2668,7 +2669,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		// In platform gametypes, spawn in Co-op starts first
 		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS)
+		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
 			spawnpoint = G_FindBattleStartOrFallback(playernum);
 		else
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
@@ -2775,10 +2776,30 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
+		UINT8 i;
+		boolean youlost = false;
+		if (bossinfo.boss == true)
 		{
-			UINT8 i;
+			youlost = true;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].bumpers > 0)
+					{
+						youlost = false;
+						break;
+					}
+				}
+			}
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			youlost = (grandprixinfo.wonround != true);
+		}
 
+		if (youlost)
+		{
 			// You didn't win...
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3007,6 +3028,7 @@ UINT32 gametypetol[NUMGAMETYPES] =
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
+	{"BOSS",TOL_BOSS},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -3084,10 +3106,17 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
+	if (modeattacking || metalrecording) // NOT in Record Attack
+		return false;
+
+	if (bossinfo.boss == true) // Fighting a boss?
+	{
+		return true;
+	}
+
 	if ((grandprixinfo.gp == true) // In Grand Prix
 		&& (gametype == GT_RACE) // NOT in bonus round
-		&& !G_IsSpecialStage(gamemap) // NOT in special stage
-		&& !(modeattacking || metalrecording)) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
 	{
 		return true;
 	}
@@ -3709,7 +3738,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)

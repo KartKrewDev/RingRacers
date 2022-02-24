@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 #include "deh_tables.h"
 
@@ -2376,6 +2377,10 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		// Too lazy to change the input value for every instance of this function.......
 		pencoremode = grandprixinfo.encore;
 	}
+	else if (bossinfo.boss == true)
+	{
+		pencoremode = bossinfo.encore;
+	}
 
 	if (delay != 2)
 	{
@@ -2858,7 +2863,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
-	if (!(gametyperules & GTR_CIRCUIT))
+	if (!(gametyperules & GTR_CIRCUIT) && !bossinfo.boss)
 		pencoremode = false;
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
@@ -4991,9 +4996,9 @@ void Command_Retry_f(void)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
-	else if (grandprixinfo.gp == false)
+	else if (grandprixinfo.gp == false && bossinfo.boss == false)
 	{
-		CONS_Printf(M_GetText("This only works in Grand Prix.\n"));
+		CONS_Printf(M_GetText("This only works in Grand Prix or Mission Mode.\n"));
 	}
 	else
 	{

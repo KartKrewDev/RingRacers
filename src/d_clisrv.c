@@ -53,6 +53,7 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
 
@@ -3757,7 +3758,7 @@ void SV_StartSinglePlayerServer(void)
 	netgame = false;
 	multiplayer = false;
 
-	if (modeattacking == ATTACKING_CAPSULES)
+	if ((modeattacking == ATTACKING_CAPSULES) || (bossinfo.boss == true))
 	{
 		G_SetGametype(GT_BATTLE);
 	}

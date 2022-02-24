@@ -52,6 +52,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 
@@ -805,7 +806,9 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (leveltime >= (starttime + (TICRATE/2))) // see also where time overs are handled - search for "lives = 2" in this file
+	if (bossinfo.boss == false && (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
+		return;
+
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 
@@ -3002,7 +3005,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		timeover = 0;
 
-	if (!(player->playerstate == PST_DEAD || player->exiting))
+	if (!(player->playerstate == PST_DEAD || player->exiting || leveltime < introtime))
 	{
 		if (player->spectator) // force cam off for spectators
 			return true;
@@ -3757,7 +3760,7 @@ void P_DoTimeOver(player_t *player)
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 	}
 
-	if (netgame && !player->bot)
+	if (netgame && !player->bot && !bossinfo.boss)
 	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
@@ -4322,7 +4325,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Accessibility - kickstart your acceleration
-	if (!(player->pflags & PF_KICKSTARTACCEL))
+	if (gametype == GT_BATTLE || !(player->pflags & PF_KICKSTARTACCEL))
 		player->kickstartaccel = 0;
 	else if (cmd->buttons & BT_ACCELERATE)
 	{

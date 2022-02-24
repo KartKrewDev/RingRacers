@@ -2,6 +2,7 @@
 /// \brief SRB2Kart Battle Mode specific code
 
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_kart.h"
 #include "doomtype.h"
 #include "doomdata.h"
@@ -68,6 +69,9 @@ void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
 		pt->color = victim->skincolor;
 	else
 		pt->color = source->skincolor;
+
+	if (encoremode)
+		pt->renderflags ^= RF_HORIZONTALFLIP;
 }
 
 void K_CheckBumpers(void)
@@ -107,7 +111,19 @@ void K_CheckBumpers(void)
 		winnerscoreadd -= players[i].roundscore;
 	}
 
-	if (numingame <= 1)
+	if (bossinfo.boss)
+	{
+		if (nobumpers)
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				players[i].pflags |= PF_NOCONTEST;
+				P_DoPlayerExit(&players[i]);
+			}
+		}
+		return;
+	}
+	else if (numingame <= 1)
 	{
 		if (!battlecapsules)
 		{
@@ -695,6 +711,9 @@ void K_SpawnBattleCapsules(void)
 	size_t i;
 
 	if (battlecapsules)
+		return;
+
+	if (bossinfo.boss)
 		return;
 
 	if (!(gametyperules & GTR_CAPSULES))

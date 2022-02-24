@@ -23,6 +23,7 @@
 #include "i_sound.h" // musictype_t (for lua)
 #include "g_state.h" // gamestate_t (for lua)
 #include "r_data.h" // patchalphastyle_t
+#include "k_boss.h" // spottype_t (for lua)
 
 #include "deh_tables.h"
 
@@ -5862,6 +5863,8 @@ const char *const MOBJEFLAG_LIST[] = {
 	"APPLYPMOMZ", // Platform movement
 	"TRACERANGLE", // Compute and trigger on mobj angle relative to tracer
 	"JUSTBOUNCEDWALL",
+	"DAMAGEHITLAG",
+	"SLOPELAUNCHED",
 	NULL
 };
 
@@ -6316,6 +6319,7 @@ struct int_const_s const INT_CONST[] = {
 	{"FRACUNIT",FRACUNIT},
 	{"FU"      ,FRACUNIT},
 	{"FRACBITS",FRACBITS},
+	{"M_TAU_FIXED",M_TAU_FIXED},
 
 	// doomdef.h constants
 	{"TICRATE",TICRATE},
@@ -6568,7 +6572,7 @@ struct int_const_s const INT_CONST[] = {
 	{"int_none",int_none},
 	{"int_race",int_race},
 	{"int_battle",int_battle},
-	{"int_timeattack",int_timeattack},
+	{"int_battletime", int_battletime},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},
@@ -6939,6 +6943,11 @@ struct int_const_s const INT_CONST[] = {
 	{"KSPIN_WIPEOUT",KSPIN_WIPEOUT},
 	{"KSPIN_STUNG",KSPIN_STUNG},
 	{"KSPIN_EXPLOSION",KSPIN_EXPLOSION},
+
+	// spottype_t
+	{"SPOT_NONE",SPOT_NONE},
+	{"SPOT_WEAK",SPOT_WEAK},
+	{"SPOT_BUMP",SPOT_BUMP},
 
 	{NULL,0}
 };

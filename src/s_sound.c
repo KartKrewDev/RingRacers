@@ -30,6 +30,7 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
+#include "k_boss.h" // bossinfo
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2351,7 +2352,9 @@ void S_StartEx(boolean reset)
 	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-		S_StartSound(NULL, encoremode ? sfx_ruby2 : sfx_kstart);
+	{
+		;
+	}
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 

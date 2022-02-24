@@ -12,6 +12,7 @@
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_color.h"
 #include "k_director.h"
 #include "screen.h"
@@ -33,6 +34,7 @@
 #include "s_sound.h"
 #include "r_things.h"
 #include "r_fps.h"
+#include "m_random.h"
 
 #define NUMPOSNUMS 10
 #define NUMPOSFRAMES 7 // White, three blues, three reds
@@ -163,6 +165,9 @@ static patch_t *kp_blagles[6];
 static patch_t *kp_cpu;
 
 static patch_t *kp_nametagstem;
+
+static patch_t *kp_bossbar[8];
+static patch_t *kp_bossret[4];
 
 static patch_t *kp_trickcool[2];
 
@@ -606,6 +611,20 @@ void K_LoadKartHUDGraphics(void)
 
 	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
 
+	sprintf(buffer, "K_BOSB0x");
+	for (i = 0; i < 8; i++)
+	{
+		buffer[7] = '0'+((i+1)%10);
+		kp_bossbar[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
+	sprintf(buffer, "K_BOSR0x");
+	for (i = 0; i < 4; i++)
+	{
+		buffer[7] = '0'+((i+1)%10);
+		kp_bossret[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+	}
+
 	kp_trickcool[0] = W_CachePatchName("K_COOL1", PU_HUDGFX);
 	kp_trickcool[1] = W_CachePatchName("K_COOL2", PU_HUDGFX);
 }
@@ -759,14 +778,22 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 	if (options & V_SLIDEIN)
 	{
-		const tic_t length = TICRATE/2;
+		const tic_t length = TICRATE/4;
+		tic_t timer = lt_exitticker;
+		if (bossinfo.boss == true)
+		{
+			if (leveltime <= 3)
+				timer = 0;
+			else
+				timer = leveltime-3;
+		}
 
-		if (lt_exitticker < length)
+		if (timer < length)
 		{
 			boolean slidefromright = false;
 
-			const INT32 offsetAmount = (screenwidth * FRACUNIT) / length;
-			fixed_t offset = (screenwidth * FRACUNIT) - (lt_exitticker * offsetAmount);
+			const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
+			fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
 
 			offset += FixedMul(offsetAmount, renderdeltatics);
 			offset /= FRACUNIT;
@@ -1434,7 +1461,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	if (!mode)
 	{
 		splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
-		if (cv_timelimit.value && timelimitintics > 0)
+		if (cv_timelimit.value && timelimitintics > 0 && !bossinfo.boss) // TODO
 		{
 			if (drawtime >= timelimitintics)
 				drawtime = 0;
@@ -1867,6 +1894,115 @@ static boolean K_drawKartPositionFaces(void)
 	return false;
 }
 
+static void K_drawBossHealthBar(void)
+{
+	UINT8 i = 0, barstatus = 1, randlen = 0, darken = 0;
+	const INT32 startx = BASEVIDWIDTH - 23;
+	INT32 starty = BASEVIDHEIGHT - 25;
+	INT32 rolrand = 0;
+	boolean randsign = false;
+
+	if (bossinfo.barlen <= 1)
+		return;
+
+	// Entire bar juddering!
+	if (lt_exitticker < (TICRATE/2))
+		;
+	else if (bossinfo.visualbarimpact)
+	{
+		INT32 mag = min((bossinfo.visualbarimpact/4) + 1, 8);
+		if (bossinfo.visualbarimpact & 1)
+			starty -= mag;
+		else
+			starty += mag;
+	}
+
+	if (bossinfo.enemyname)
+		V_DrawRightAlignedThinString(startx, starty-10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE, bossinfo.enemyname);
+
+	// Used for colour and randomisation.
+	if (bossinfo.healthbar <= (bossinfo.visualdiv/FRACUNIT))
+	{
+		barstatus = 3;
+	}
+	else if (bossinfo.healthbar <= bossinfo.healthbarpinch)
+	{
+		barstatus = 2;
+	}
+
+	randlen = M_RandomKey(bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT)))+1;
+	randsign = M_RandomChance(FRACUNIT/2);
+
+	// Right wing.
+	V_DrawScaledPatch(startx-1, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_FLIP, kp_bossbar[0]);
+
+	// Draw the bar itself...
+	while (i < bossinfo.barlen)
+	{
+		V_DrawScaledPatch(startx-i, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, kp_bossbar[1]);
+		if (i < bossinfo.visualbar)
+		{
+			randlen--;
+			if (!randlen)
+			{
+				randlen = M_RandomKey(bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT)))+1;
+				if (barstatus > 1)
+				{
+					rolrand = M_RandomKey(barstatus)+1;
+				}
+				else
+				{
+					rolrand = 1;
+				}
+				if (randsign)
+				{
+					rolrand = -rolrand;
+				}
+				randsign = !randsign;
+			}
+			else
+			{
+				rolrand = 0;
+			}
+			if (lt_exitticker < (TICRATE/2))
+				;
+			else if ((bossinfo.visualbar - i) < (INT32)(bossinfo.visualbarimpact/8))
+			{
+				if (bossinfo.visualbarimpact & 1)
+					rolrand += (bossinfo.visualbar - i);
+				else
+					rolrand -= (bossinfo.visualbar - i);
+			}
+			if (bossinfo.visualdiv)
+			{
+				fixed_t work = 0;
+				if ((i+1) == bossinfo.visualbar)
+					darken = 1;
+				else
+				{
+					darken = 0;
+					// a hybrid fixed-int modulo...
+					while ((work/FRACUNIT) < bossinfo.visualbar)
+					{
+						if (work/FRACUNIT != i)
+						{
+							work += bossinfo.visualdiv;
+							continue;
+						}
+						darken = 1;
+						break;
+					}
+				}
+			}
+			V_DrawScaledPatch(startx-i, starty+rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, kp_bossbar[(2*barstatus)+darken]);
+		}
+		i++;
+	}
+
+	// Left wing.
+	V_DrawScaledPatch(startx-i, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, kp_bossbar[0]);
+}
+
 static void K_drawKartEmeralds(void)
 {
 	static const INT32 emeraldOffsets[7][2] = {
@@ -2233,7 +2369,9 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 
 	if (r_splitscreen < 2) // adjust to speedometer height
 	{
-		if (gametype == GT_BATTLE)
+		if (bossinfo.boss)
+			fy += 8;
+		else if (gametype == GT_BATTLE)
 			fy -= 4;
 	}
 	else
@@ -2247,7 +2385,7 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 		}
 	}
 
-	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
+	if ((stplyr->pflags & PF_KICKSTARTACCEL) && gametype != GT_BATTLE) // just KICKSTARTACCEL right now, maybe more later
 	{
 		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
 		i = 7;
@@ -2320,7 +2458,9 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if (gametype == GT_BATTLE)
+	if (bossinfo.boss)
+		battleoffset = 8;
+	else if (gametype == GT_BATTLE)
 		battleoffset = -4;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
@@ -2470,7 +2610,10 @@ static void K_drawKartBumpersOrKarma(void)
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
 			// TODO BETTER HUD
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
+			if (bossinfo.boss)
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
+			else
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
 		}
 	}
 }
@@ -2770,6 +2913,43 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum
 	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[p - players]);
 }
 
+typedef struct weakspotdraw_t
+{
+	UINT8 i;
+	INT32 x;
+	INT32 y;
+	boolean candrawtag;
+} weakspotdraw_t;
+
+static void K_DrawWeakSpot(weakspotdraw_t *ws)
+{
+	UINT8 *colormap;
+	UINT8 j = (bossinfo.weakspots[ws->i].type == SPOT_BUMP) ? 1 : 0;
+	tic_t flashtime = ~1; // arbitrary high even number
+
+	if (bossinfo.weakspots[ws->i].time < TICRATE)
+	{
+		if (bossinfo.weakspots[ws->i].time & 1)
+			return;
+
+		flashtime = bossinfo.weakspots[ws->i].time;
+	}
+	else if (bossinfo.weakspots[ws->i].time > (WEAKSPOTANIMTIME - TICRATE))
+		flashtime = WEAKSPOTANIMTIME - bossinfo.weakspots[ws->i].time;
+
+	if (flashtime & 1)
+		colormap = R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
+	else
+		colormap = R_GetTranslationColormap(TC_RAINBOW, bossinfo.weakspots[ws->i].color, GTC_CACHE);
+
+	V_DrawFixedPatch(ws->x, ws->y, FRACUNIT, 0, kp_bossret[j], colormap);
+
+	if (!ws->candrawtag || flashtime & 1 || flashtime < TICRATE/2)
+		return;
+
+	V_DrawFixedPatch(ws->x, ws->y, FRACUNIT, 0, kp_bossret[j+1], colormap);
+}
+
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
@@ -2816,6 +2996,81 @@ static void K_drawKartNameTags(void)
 		c.x = R_InterpolateFixed(stplyr->mo->old_x, stplyr->mo->x);
 		c.y = R_InterpolateFixed(stplyr->mo->old_y, stplyr->mo->y);
 		c.z = R_InterpolateFixed(stplyr->mo->old_z, stplyr->mo->z);
+	}
+
+	// Maybe shouldn't be handling this here... but the camera info is too good.
+	if (bossinfo.boss)
+	{
+		weakspotdraw_t weakspotdraw[NUMWEAKSPOTS];
+		UINT8 numdraw = 0;
+		boolean onleft = false;
+
+		for (i = 0; i < NUMWEAKSPOTS; i++)
+		{
+			trackingResult_t result;
+			vector3_t v;
+
+			if (bossinfo.weakspots[i].spot == NULL || P_MobjWasRemoved(bossinfo.weakspots[i].spot))
+			{
+				// No object
+				continue;
+			}
+
+			if (bossinfo.weakspots[i].time == 0 || bossinfo.weakspots[i].type == SPOT_NONE)
+			{
+				// not visible
+				continue;
+			}
+
+			v.x = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_x, bossinfo.weakspots[i].spot->x);
+			v.y = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_y, bossinfo.weakspots[i].spot->y);
+			v.z = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_z, bossinfo.weakspots[i].spot->z);
+
+			v.z += (bossinfo.weakspots[i].spot->height / 2);
+
+			K_ObjectTracking(&result, &v, cnum, 0);
+			if (result.onScreen == false)
+			{
+				continue;
+			}
+
+			weakspotdraw[numdraw].i = i;
+			weakspotdraw[numdraw].x = result.x;
+			weakspotdraw[numdraw].y = result.y;
+			weakspotdraw[numdraw].candrawtag = true;
+
+			for (j = 0; j < numdraw; j++)
+			{
+				if (abs(weakspotdraw[j].x - weakspotdraw[numdraw].x) > 50*FRACUNIT)
+				{
+					continue;
+				}
+
+				onleft = (weakspotdraw[j].x < weakspotdraw[numdraw].x);
+
+				if (abs((onleft ? -5 : 5)
+					+ weakspotdraw[j].y - weakspotdraw[numdraw].y) > 18*FRACUNIT)
+				{
+					continue;
+				}
+
+				if (weakspotdraw[j].x < weakspotdraw[numdraw].x)
+				{
+					weakspotdraw[j].candrawtag = false;
+					break;
+				}
+
+				weakspotdraw[numdraw].candrawtag = false;
+				break;
+			}
+
+			numdraw++;
+		}
+
+		for (i = 0; i < numdraw; i++)
+		{
+			K_DrawWeakSpot(&weakspotdraw[i]);
+		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -3252,6 +3507,34 @@ static void K_drawKartMinimap(void)
 	splitflags &= ~V_HUDTRANSHALF;
 	splitflags |= V_HUDTRANS;
 
+	// ...but first, any boss targets.
+	if (bossinfo.boss)
+	{
+		for (i = 0; i < NUMWEAKSPOTS; i++)
+		{
+			// exists at all?
+			if (bossinfo.weakspots[i].spot == NULL || P_MobjWasRemoved(bossinfo.weakspots[i].spot))
+				continue;
+			// shows on the minimap?
+			if (bossinfo.weakspots[i].minimap == false)
+				continue;
+			// in the flashing period?
+			if ((bossinfo.weakspots[i].time > (WEAKSPOTANIMTIME-(TICRATE/2))) && (bossinfo.weakspots[i].time & 1))
+				continue;
+
+			colormap = NULL;
+
+			if (bossinfo.weakspots[i].color)
+				colormap = R_GetTranslationColormap(TC_RAINBOW, bossinfo.weakspots[i].color, GTC_CACHE);
+
+			interpx = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_x, bossinfo.weakspots[i].spot->x);
+			interpy = R_InterpolateFixed(bossinfo.weakspots[i].spot->old_y, bossinfo.weakspots[i].spot->y);
+
+			// temporary graphic?
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, colormap, AutomapPic);
+		}
+	}
+
 	for (i = 0; i < numlocalplayers; i++)
 	{
 		if (i == -1)
@@ -3482,7 +3765,8 @@ static void K_drawKartStartCountdown(void)
 	}
 	else if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
-		K_drawKartStartBulbs();
+		if (bossinfo.boss == false)
+			K_drawKartStartBulbs();
 	}
 	else
 	{
@@ -4412,14 +4696,15 @@ void K_drawKartHUD(void)
 			K_drawKartAccessibilityIcons((r_splitscreen > 1) ? 0 : 8);
 		}
 
-		if (gametyperules & GTR_SPHERES)
+		if (!bossinfo.boss && gametyperules & GTR_SPHERES)
 		{
 			K_drawBlueSphereMeter();
 		}
 	}
 
 	// Draw the countdowns after everything else.
-	if (leveltime >= introtime
+	if (starttime != introtime
+	&& leveltime >= introtime
 	&& leveltime < starttime+TICRATE)
 	{
 		K_drawKartStartCountdown();
@@ -4450,6 +4735,18 @@ void K_drawKartHUD(void)
 	if (stplyr->karthud[khud_trickcool])
 		K_drawTrickCool();
 
+	if (gametype == GT_BATTLE)
+	{
+		if (bossinfo.boss)
+		{
+			K_drawBossHealthBar();
+		}
+		else if (!freecam)
+		{
+			K_drawKartEmeralds();
+		}
+	}
+
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
@@ -4457,7 +4754,7 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (isfreeplay && !stplyr->spectator)
+	if (isfreeplay && !bossinfo.boss && !stplyr->spectator)
 	{
 		if (LUA_HudEnabled(hud_freeplay))
 			K_drawKartFreePlay();
@@ -4510,9 +4807,4 @@ void K_drawKartHUD(void)
 
 	K_DrawWaypointDebugger();
 	K_DrawDirectorDebugger();
-
-	if (gametype == GT_BATTLE)
-	{
-		K_drawKartEmeralds();
-	}
 }

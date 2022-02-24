@@ -71,6 +71,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 
 #ifdef CMAKECONFIG
@@ -928,6 +929,13 @@ void D_StartTitle(void)
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
+	// Reset boss info
+	if (bossinfo.enemyname)
+		Z_Free(bossinfo.enemyname);
+	if (bossinfo.subtitle)
+		Z_Free(bossinfo.subtitle);
+	memset(&bossinfo, 0, sizeof(struct bossinfo));
+
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
@@ -1105,6 +1113,8 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+	// lat` had the right idea
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"bosstest.pk3"));
 #endif
 ////
 #undef TEXTURESNAME

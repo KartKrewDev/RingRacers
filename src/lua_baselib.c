@@ -28,6 +28,8 @@
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
 #include "k_battle.h"
+#include "k_boss.h"
+#include "k_collide.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
@@ -2921,8 +2923,9 @@ static int lib_sSoundPlaying(lua_State *L)
 	INLEVEL
 	if (id >= NUMSFX)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
-	if (!GetValidSoundOrigin(L, &origin))
-		return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnil(L, 1))
+		if (!GetValidSoundOrigin(L, &origin))
+			return LUA_ErrInvalid(L, "mobj_t/sector_t");
 	lua_pushboolean(L, S_SoundPlaying(origin, id));
 	return 1;
 }
@@ -3807,6 +3810,66 @@ static int lib_kGetItemPatch(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetCollideAngle(lua_State *L)
+{
+	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *t2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	//HUDSAFE
+	if (!t1)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!t2)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushinteger(L, K_GetCollideAngle(t1, t2));
+	return 1;
+}
+
+static int lib_kAddHitLag(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	tic_t tics = (tic_t)luaL_checkinteger(L, 2);
+	boolean fromdamage = lua_opttrueboolean(L, 3);
+	NOHUD
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_AddHitLag(mo, tics, fromdamage);
+	return 0;
+}
+
+
+static int lib_kInitBossHealthBar(lua_State *L)
+{
+	const char *enemyname = luaL_checkstring(L, 1);
+	const char *subtitle = luaL_checkstring(L, 2);
+	sfxenum_t titlesound = luaL_checkinteger(L, 3);
+	fixed_t pinchmagnitude = luaL_checkfixed(L, 4);
+	UINT8 divisions = (UINT8)luaL_checkinteger(L, 5);
+	NOHUD
+	K_InitBossHealthBar(enemyname, subtitle, titlesound, pinchmagnitude, divisions);
+	return 0;
+}
+
+static int lib_kUpdateBossHealthBar(lua_State *L)
+{
+	fixed_t magnitude = luaL_checkfixed(L, 1);
+	tic_t jitterlen = (tic_t)luaL_checkinteger(L, 2);
+	NOHUD
+	K_UpdateBossHealthBar(magnitude, jitterlen);
+	return 0;
+}
+
+static int lib_kDeclareWeakspot(lua_State *L)
+{
+	mobj_t *spot = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	spottype_t spottype = luaL_checkinteger(L, 2);
+	UINT16 color = luaL_checkinteger(L, 3);
+	boolean minimap = lua_optboolean(L, 4);
+	NOHUD
+	if (!spot)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_DeclareWeakspot(spot, spottype, color, minimap);
+	return 0;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4076,6 +4139,14 @@ static luaL_Reg lib[] = {
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
 	{"K_GetItemPatch",lib_kGetItemPatch},
+
+	{"K_GetCollideAngle",lib_kGetCollideAngle},
+	{"K_AddHitLag",lib_kAddHitLag},
+
+	// k_boss
+	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
+	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
+	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
 
 	{NULL, NULL}
 };

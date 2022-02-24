@@ -32,8 +32,8 @@ typedef enum
 {
 	int_none,
 	int_race,		// Race
-	int_battle,		// Battle
-	int_timeattack,	// Time Attack
+	int_battle,		// Battle (score-based)
+	int_battletime,	// Battle (time-based)
 } intertype_t;
 
 extern intertype_t intertype;

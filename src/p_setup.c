@@ -91,6 +91,7 @@
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
 #include "k_director.h" // K_InitDirector
@@ -3524,7 +3525,7 @@ static void P_InitLevelSettings(void)
 		if (playeringame[i] && !players[i].spectator)
 			p++;
 
-		if (grandprixinfo.gp == false)
+		if (grandprixinfo.gp == false && bossinfo.boss == false)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
@@ -3546,6 +3547,12 @@ static void P_InitLevelSettings(void)
 			gamespeed = grandprixinfo.gamespeed;
 		}
 
+		franticitems = false;
+		comeback = true;
+	}
+	else if (bossinfo.boss)
+	{
+		gamespeed = KARTSPEED_EASY;
 		franticitems = false;
 		comeback = true;
 	}
@@ -4073,6 +4080,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+
+		{
+			sfxenum_t kstart = sfx_kstart;
+			if (bossinfo.boss)
+				kstart = sfx_ssa021;
+			else if (encoremode)
+				kstart = sfx_ruby2;
+			S_StartSound(NULL, kstart);
+		}
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/
@@ -4277,6 +4293,20 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
+	}
+
+	if (bossinfo.boss)
+	{
+		// Reset some pesky boss state that can't be handled elsewhere.
+		bossinfo.barlen = BOSSHEALTHBARLEN;
+		if (bossinfo.enemyname)
+			Z_Free(bossinfo.enemyname);
+		if (bossinfo.subtitle)
+			Z_Free(bossinfo.subtitle);
+		bossinfo.enemyname = bossinfo.subtitle = NULL;
+		bossinfo.titleshow = 0;
+		bossinfo.titlesound = sfx_typri1;
+		memset(&(bossinfo.weakspots), 0, sizeof(weakspot_t)*NUMWEAKSPOTS);
 	}
 
 	if (!fromnetsave) // uglier hack

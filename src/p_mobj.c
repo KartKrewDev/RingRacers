@@ -37,6 +37,7 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -4250,6 +4251,9 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 			if (players[c].mo->health <= 0)
 				continue; // dead
 
+			if ((gametyperules & GTR_BUMPERS) && players[c].bumpers <= 0)
+				continue; // other dead
+
 			playersinthegame[stop] = &players[c];
 			stop++;
 		}
@@ -4970,6 +4974,9 @@ void P_RunOverlays(void)
 		mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP) | (mo->target->eflags & MFE_VERTICALFLIP);
 		mo->scale = mo->destscale = mo->target->scale;
 		mo->angle = mo->target->angle + mo->movedir;
+		mo->rollangle = mo->target->rollangle;
+		mo->pitch = mo->target->pitch;
+		mo->roll = mo->target->roll;
 
 		if ((mo->flags & MF_DONTENCOREMAP) != (mo->target->flags & MF_DONTENCOREMAP))
 			mo->flags ^= MF_DONTENCOREMAP;
@@ -5360,6 +5367,8 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		else
 			P_AddOverlay(mobj);
+		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
+			return;
 		break;
 	case MT_WATERDROP:
 		P_SceneryCheckWater(mobj);
@@ -7850,7 +7859,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->extravalue1 = 1;
 		}
 
-		if (!S_SoundPlaying(mobj, mobj->info->attacksound))
+		if (mobj->extravalue1 != 2 && !S_SoundPlaying(mobj, mobj->info->attacksound))
 			S_StartSound(mobj, mobj->info->attacksound);
 
 		if (mobj->extravalue2 <= 8) // Short delay
@@ -8917,6 +8926,8 @@ static boolean P_FuseThink(mobj_t *mobj)
 			{
 				P_SpawnMapThing(mobj->spawnpoint);
 				newmobj = mobj->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
+				if (nummapboxes > 0)
+					nummapboxes--; // just to avoid doubling up
 			}
 			else
 				newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
@@ -10633,12 +10644,17 @@ void P_RespawnBattleBoxes(void)
 		if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
 			continue;
 
+		if ((tic_t)box->cvmem+1 >= leveltime) // This one was just popped, don't respawn!
+			continue;
+
 		// Respawn from mapthing if you have one!
 		if (box->spawnpoint)
 		{
 			P_SpawnMapThing(box->spawnpoint);
 			newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
 			P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
+			if (nummapboxes > 0)
+				nummapboxes--; // just to avoid doubling up
 		}
 		else
 		{
@@ -10650,9 +10666,8 @@ void P_RespawnBattleBoxes(void)
 		newmobj->flags2 = box->flags2;
 		P_RemoveMobj(box); // make sure they disappear
 
-		numgotboxes--; // you've restored a box, remove it from the count
-		if (numgotboxes < 0)
-			numgotboxes = 0;
+		if (numgotboxes > 0)
+			numgotboxes--; // you've restored a box, remove it from the count
 	}
 }
 
@@ -10678,8 +10693,8 @@ void P_RespawnSpecials(void)
 	INT32 time = 30*TICRATE; // Respawn things in empty dedicated servers
 	mapthing_t *mthing = NULL;
 
-	//if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
-		//P_RespawnBattleBoxes();
+	if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
+		P_RespawnBattleBoxes();
 
 	// wait time depends on player count
 	for (p = 0; p < MAXPLAYERS; p++)
@@ -11271,6 +11286,11 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 		break;
 	}
 
+	// No bosses outside of a combat situation.
+	// (just in case we want boss arenas to do double duty as battle maps)
+	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+		return false;
+
 	if (metalrecording) // Metal Sonic can't use these things.
 	{
 		if (mobjinfo[i].flags & (MF_ENEMY|MF_BOSS))
@@ -11287,7 +11307,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((gametyperules & GTR_SPHERES) && (i == MT_RING))
 		return MT_BLUESPHERE;
 
-	if ((gametyperules & GTR_PAPERITEMS) && (i == MT_RANDOMITEM))
+	if ((gametyperules & GTR_PAPERITEMS) && !bossinfo.boss && (i == MT_RANDOMITEM))
 		return MT_PAPERITEMSPOT;
 
 	return i;
@@ -12213,6 +12233,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->extravalue2 = mthing->args[1];
 		}
+		break;
+	}
+	case MT_RANDOMITEM:
+	{
+		nummapboxes++;
 		break;
 	}
 	case MT_ITEMCAPSULE:

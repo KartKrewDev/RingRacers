@@ -300,6 +300,12 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"leveltime")) {
 		lua_pushinteger(L, leveltime);
 		return 1;
+	} else if (fastcmp(word,"introtime")) {
+		lua_pushinteger(L, introtime);
+		return 1;
+	} else if (fastcmp(word,"starttime")) {
+		lua_pushinteger(L, starttime);
+		return 1;
 	} else if (fastcmp(word,"defrosting")) {
 		lua_pushinteger(L, hook_defrosting);
 		return 1;

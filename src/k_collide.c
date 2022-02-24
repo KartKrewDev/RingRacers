@@ -12,6 +12,30 @@
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
 
+angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
+{
+	fixed_t momux, momuy;
+	angle_t test;
+
+	if (!(t1->flags & MF_PAPERCOLLISION))
+	{
+		return R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90;
+	}
+
+	test = R_PointToAngle2(0, 0, t2->momx, t2->momy) + ANGLE_90 - t1->angle;
+	if (test > ANGLE_180)
+		test = t1->angle + ANGLE_180;
+	else
+		test = t1->angle;
+
+	// intentional way around - sine...
+	momuy = P_AproxDistance(t2->momx, t2->momy);
+	momux = t2->momx - P_ReturnThrustY(t2, test, 2*momuy);
+	momuy = t2->momy - P_ReturnThrustX(t2, test, 2*momuy);
+
+	return R_PointToAngle2(0, 0, momux, momuy);
+}
+
 boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
@@ -20,7 +44,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -61,11 +85,13 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -92,11 +118,12 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t2, t1);
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
-		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
 	if (sprung)
@@ -114,7 +141,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -154,11 +181,13 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -180,11 +209,13 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t2, t1);
+
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
-		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
 	return true;
@@ -270,7 +301,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -296,6 +327,8 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
 		// Bomb death
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		// Other Item Damage
@@ -303,7 +336,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -346,7 +379,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -380,6 +413,8 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		if (t2->eflags & MFE_VERTICALFLIP)
 			t2->z -= t2->height;
 		else
@@ -389,7 +424,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -416,7 +451,7 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t2->player)
