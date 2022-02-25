@@ -436,9 +436,9 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				P_InitAngle(grease, K_MomentumAngle(object));
 				grease->extravalue1 = i;
 			}
-
-			object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 		}
+
+		object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
 	}
 
 	return true;
