@@ -3761,10 +3761,37 @@ void M_HandleProfileSelect(INT32 ch)
 boolean M_ProfileEditInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
+	UINT8 i;
 	(void) ch;
 
 	if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
+		// check if some profiles have the same name
+		for (i = 0; i < PR_GetNumProfiles(); i++)
+		{
+			profile_t *check = PR_GetProfile(i);
+
+			// For obvious reasons don't check if our name is the same as our name....
+			if (check != optionsmenu.profile)
+			{
+				if (!(strcmp(optionsmenu.profile->profilename, check->profilename)))
+				{
+					S_StartSound(NULL, sfx_s3k7b);
+					M_StartMessage(M_GetText("Another Profile uses the same\nname identifier.\nPlease change the name\nof the Profile to save it."), NULL, MM_NOTHING);
+					M_SetMenuDelay(pid);
+					return true;
+				}
+			}
+		}
+
+		if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
+		{
+			S_StartSound(NULL, sfx_s3k7b);
+			M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
+			M_SetMenuDelay(pid);
+			return true;
+		}
+
 		optionsmenu.toptx = 160;
 		optionsmenu.topty = 35;
 		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
@@ -3787,7 +3814,17 @@ void M_HandleProfileEdit(void)
 
 	// Copy the first 6 chars for profile name
 	if (strlen(cv_dummyprofilename.string))
+	{
+		char *s;
+		// convert dummyprofilename to uppercase
 		strncpy(optionsmenu.profile->profilename, cv_dummyprofilename.string, PROFILENAMELEN);
+		s = optionsmenu.profile->profilename;
+		while (*s)
+		{
+			*s = toupper(*s);
+			s++;
+		}
+	}
 
 	if (strlen(cv_dummyprofileplayername.string))
 		strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
