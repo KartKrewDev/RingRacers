@@ -97,16 +97,10 @@ INT32 menuKey = -1; // keyboard key pressed for menu
 menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // Typing "sub"-menu
-boolean menutyping = false;
-boolean menutypingclose = false;
-SINT8 menutypingfade = 0;
-boolean keyboardtyping = false;
 
-SINT8 keyboardx = 0;
-SINT8 keyboardy = 0;
-boolean keyboardcapslock = false;
-boolean keyboardshift = false;
+struct menutyping_s menutyping;
 
+// keyboard layouts
 INT16 virtualKeyboard[5][13] = {
 
 	{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0},
@@ -922,7 +916,7 @@ boolean M_Responder(event_t *ev)
 	}
 
 	// Typing for CV_IT_STRING
-	if (menutyping && !menutypingclose && keyboardtyping)
+	if (menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
 	{
 		M_ChangeStringCvar(menuKey);
 	}
@@ -1194,8 +1188,8 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 static void M_UpdateKeyboardX(void)
 {
 	// 0s are only at the rightmost edges of the keyboard table, so just go backwards until we get something.
-	while (!virtualKeyboard[keyboardy][keyboardx])
-		keyboardx--;
+	while (!virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx])
+		menutyping.keyboardx--;
 }
 
 static boolean M_IsTypingKey(INT32 key)
@@ -1211,25 +1205,25 @@ static void M_MenuTypingInput(INT32 key)
 
 	// Fade-in
 
-	if (menutypingclose)	// closing
+	if (menutyping.menutypingclose)	// closing
 	{
-		menutypingfade--;
-		if (!menutypingfade)
-			menutyping = false;
+		menutyping.menutypingfade--;
+		if (!menutyping.menutypingfade)
+			menutyping.active = false;
 
 		return;	// prevent inputs while closing the menu.
 	}
 	else					// opening
 	{
-		menutypingfade++;
-		if (menutypingfade > 9)	// Don't fade all the way, but have it VERY strong to be readable
-			menutypingfade = 9;
-		else if (menutypingfade < 9)
+		menutyping.menutypingfade++;
+		if (menutyping.menutypingfade > 9)	// Don't fade all the way, but have it VERY strong to be readable
+			menutyping.menutypingfade = 9;
+		else if (menutyping.menutypingfade < 9)
 			return;	// Don't allow typing until it's fully opened.
 	}
 
 	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.
-	if (!keyboardtyping)	// controller inputs
+	if (!menutyping.keyboardtyping)	// controller inputs
 	{
 		// we pressed a keyboard input that's not any of our buttons
 		if (M_IsTypingKey(key) && menucmd[pid].dpad_lr == 0 && menucmd[pid].dpad_ud == 0
@@ -1240,7 +1234,7 @@ static void M_MenuTypingInput(INT32 key)
 			&& !(menucmd[pid].buttons & MBT_Y)
 			&& !(menucmd[pid].buttons & MBT_Z))
 		{
-			keyboardtyping = true;
+			menutyping.keyboardtyping = true;
 		}
 	}
 	else	// Keyboard inputs.
@@ -1257,26 +1251,26 @@ static void M_MenuTypingInput(INT32 key)
 			|| menucmd[pid].dpad_ud != 0
 		))
 		{
-			keyboardtyping = false;
+			menutyping.keyboardtyping = false;
 			return;
 		}
 
 		// OTHERWISE, process keyboard inputs for typing!
 		if (key == KEY_ENTER)
 		{
-			menutypingclose = true;	// close menu.
+			menutyping.menutypingclose = true;	// close menu.
 			return;
 		}
 
 	}
 
-	if (menucmd[pid].delay == 0 && !keyboardtyping)	// We must check for this here because we bypass the normal delay check to allow for normal keyboard inputs
+	if (menucmd[pid].delay == 0 && !menutyping.keyboardtyping)	// We must check for this here because we bypass the normal delay check to allow for normal keyboard inputs
 	{
 		if (menucmd[pid].dpad_ud > 0)	// down
 		{
-			keyboardy++;
-			if (keyboardy > 4)
-				keyboardy = 0;
+			menutyping.keyboardy++;
+			if (menutyping.keyboardy > 4)
+				menutyping.keyboardy = 0;
 
 			M_UpdateKeyboardX();
 			M_SetMenuDelay(pid);
@@ -1284,9 +1278,9 @@ static void M_MenuTypingInput(INT32 key)
 		}
 		else if (menucmd[pid].dpad_ud < 0) // up
 		{
-			keyboardy--;
-			if (keyboardy < 0)
-				keyboardy = 4;
+			menutyping.keyboardy--;
+			if (menutyping.keyboardy < 0)
+				menutyping.keyboardy = 4;
 
 			M_UpdateKeyboardX();
 			M_SetMenuDelay(pid);
@@ -1294,19 +1288,19 @@ static void M_MenuTypingInput(INT32 key)
 		}
 		else if (menucmd[pid].dpad_lr > 0)	// right
 		{
-			keyboardx++;
-			if (!virtualKeyboard[keyboardy][keyboardx])
-				keyboardx = 0;
+			menutyping.keyboardx++;
+			if (!virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx])
+				menutyping.keyboardx = 0;
 
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_menu1);
 		}
 		else if (menucmd[pid].dpad_lr < 0)	// left
 		{
-			keyboardx--;
-			if (keyboardx < 0)
+			menutyping.keyboardx--;
+			if (menutyping.keyboardx < 0)
 			{
-				keyboardx = 12;
+				menutyping.keyboardx = 12;
 				M_UpdateKeyboardX();
 			}
 			M_SetMenuDelay(pid);
@@ -1315,23 +1309,23 @@ static void M_MenuTypingInput(INT32 key)
 		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 		{
 			// Add the character. First though, check what we're pressing....
-			INT16 c = virtualKeyboard[keyboardy][keyboardx];
-			if (keyboardshift ^ keyboardcapslock)
-				c = shift_virtualKeyboard[keyboardy][keyboardx];
+			INT16 c = virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx];
+			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
+				c = shift_virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx];
 
 			if (c == KEY_RSHIFT)
-				keyboardshift = !keyboardshift;
+				menutyping.keyboardshift = !menutyping.keyboardshift;
 			else if (c == KEY_CAPSLOCK)
-				keyboardcapslock = !keyboardcapslock;
+				menutyping.keyboardcapslock = !menutyping.keyboardcapslock;
 			else if (c == KEY_ENTER)
 			{
-				menutypingclose = true;	// close menu.
+				menutyping.menutypingclose = true;	// close menu.
 				return;
 			}
 			else
 			{
 				M_ChangeStringCvar((INT32)c);	// Write!
-				keyboardshift = false;			// undo shift if it had been pressed
+				menutyping.keyboardshift = false;			// undo shift if it had been pressed
 			}
 
 			M_SetMenuDelay(pid);
@@ -1353,7 +1347,7 @@ static void M_HandleMenuInput(void)
 	}
 
 	// Typing for CV_IT_STRING
-	if (menutyping)
+	if (menutyping.active)
 	{
 		M_MenuTypingInput(menuKey);
 		return;
@@ -1427,9 +1421,9 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 			{
-				keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
-				menutyping = true;
-				menutypingclose = false;
+				menutyping.keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				menutyping.active = true;
+				menutyping.menutypingclose = false;
 				return;
 			}
 

@@ -230,14 +230,14 @@ static void M_DrawMenuTyping(void)
 	INT32 i, j;
 
 	INT32 x = 60;
-	INT32 y = 100 + (9-menutypingfade)*8;
-	INT32 tflag = (9 - menutypingfade)<<V_ALPHASHIFT;
+	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
+	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
 
 	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
-	V_DrawFadeScreen(31, menutypingfade);
+	V_DrawFadeScreen(31, menutyping.menutypingfade);
 
 	// Draw the string we're editing at the top.
 	V_DrawString(x, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
@@ -245,7 +245,7 @@ static void M_DrawMenuTyping(void)
 		V_DrawCharacter(x + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
 
 	// Some contextual stuff
-	if (keyboardtyping)
+	if (menutyping.keyboardtyping)
 		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	else
 		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
@@ -258,7 +258,7 @@ static void M_DrawMenuTyping(void)
 		{
 			INT32 mflag = 0;
 			INT16 c = virtualKeyboard[i][j];
-			if (keyboardshift ^ keyboardcapslock)
+			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
 				c = shift_virtualKeyboard[i][j];
 
 
@@ -284,9 +284,9 @@ static void M_DrawMenuTyping(void)
 			}
 
 			// highlight:
-			if (keyboardx == j && keyboardy == i && !keyboardtyping)
+			if (menutyping.keyboardx == j && menutyping.keyboardy == i && !menutyping.keyboardtyping)
 				mflag |= highlightflags;
-			else if (keyboardtyping)
+			else if (menutyping.keyboardtyping)
 				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
 
 			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
@@ -353,7 +353,7 @@ void M_Drawer(void)
 
 		}
 		// Draw typing overlay when needed, above all other menu elements.
-		if (menutyping)
+		if (menutyping.active)
 			M_DrawMenuTyping();
 	}
 
