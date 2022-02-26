@@ -1990,6 +1990,32 @@ struct setup_explosions_s setup_explosions[48];
 UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
 
+// sets up the grid pos for the skin used by the profile.
+static void M_SetupProfileGridPos(setup_player_t *p)
+{
+	profile_t *pr = PR_GetProfile(p->profilen);
+	INT32 i;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!(strcmp(pr->skinname, skins[i].name)))
+		{
+			INT32 alt = 0;	// Hey it's my character's name!
+			p->gridx = skins[i].kartspeed-1;
+			p->gridy = skins[i].kartweight-1;
+
+			// Now this put our cursor on the good alt
+			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+				alt++;
+
+			p->clonenum = alt;
+			p->color = pr->color;
+			return;	// we're done here
+		}
+	}
+}
+
+
 void M_CharacterSelectInit(void)
 {
 	UINT8 i, j;
@@ -2041,8 +2067,12 @@ void M_CharacterSelectInit(void)
 
 				// If we're on prpfile select, skip straight to CSSTEP_CHARS
 				if (optionsmenu.profile && j == 0)
+				{
+					setup_player[j].profilen = optionsmenu.profilen;
+					PR_ApplyProfile(setup_player[j].profilen, 0);
+					M_SetupProfileGridPos(&setup_player[j]);
 					setup_player[j].mdepth = CSSTEP_CHARS;
-
+				}
 			}
 		}
 	}
@@ -2197,31 +2227,6 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	}
 
 	return false;
-}
-
-// sets up the grid pos for the skin used by the profile.
-static void M_SetupProfileGridPos(setup_player_t *p)
-{
-	profile_t *pr = PR_GetProfile(p->profilen);
-	INT32 i;
-
-	for (i = 0; i < numskins; i++)
-	{
-		if (!(strcmp(pr->skinname, skins[i].name)))
-		{
-			INT32 alt = 0;	// Hey it's my character's name!
-			p->gridx = skins[i].kartspeed-1;
-			p->gridy = skins[i].kartweight-1;
-
-			// Now this put our cursor on the good alt
-			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
-				alt++;
-
-			p->clonenum = alt;
-			p->color = pr->color;
-			return;	// we're done here
-		}
-	}
 }
 
 static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
