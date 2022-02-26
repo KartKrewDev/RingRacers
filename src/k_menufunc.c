@@ -2366,6 +2366,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			if (optionsmenu.profile)
 			{
 				memset(setup_player, 0, sizeof(setup_player));	// Reset setup_player otherwise it does some VERY funky things.
+				M_SetMenuDelay(0);
 				M_GoBack(0);
 				return true;
 			}
