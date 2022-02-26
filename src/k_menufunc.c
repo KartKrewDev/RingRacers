@@ -4704,7 +4704,7 @@ void M_HandleReplayHutList(INT32 choice)
 	const UINT8 pid = 0;
 	(void) choice;
 
-	if (menucmd[pid].dpad_ud > 0)
+	if (menucmd[pid].dpad_ud < 0)
 	{
 		if (dir_on[menudepthleft])
 			dir_on[menudepthleft]--;
@@ -4713,10 +4713,11 @@ void M_HandleReplayHutList(INT32 choice)
 			//M_PrevOpt();
 
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
 	}
 
-	else if (menucmd[pid].dpad_ud < 0)
+	else if (menucmd[pid].dpad_ud > 0)
 	{
 		if (dir_on[menudepthleft] < sizedirmenu-1)
 			dir_on[menudepthleft]++;
@@ -4725,16 +4726,19 @@ void M_HandleReplayHutList(INT32 choice)
 			//itemOn = 0; // Not M_NextOpt because that would take us to the extra dummy item
 
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
 	}
 
 	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
+		M_SetMenuDelay(pid);
 		M_QuitReplayHut();
 	}
 
 	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 	{
+		M_SetMenuDelay(pid);
 		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 		{
 			case EXT_FOLDER:
@@ -5063,17 +5067,19 @@ void M_HandleAddons(INT32 choice)
 #endif
 	}
 
-	if (menucmd[pid].dpad_ud < 0)
+	if (menucmd[pid].dpad_ud > 0)
 	{
 		if (dir_on[menudepthleft] < sizedirmenu-1)
 			dir_on[menudepthleft]++;
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 	}
-	else if (menucmd[pid].dpad_ud > 0)
+	else if (menucmd[pid].dpad_ud < 0)
 	{
 		if (dir_on[menudepthleft])
 			dir_on[menudepthleft]--;
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 	}
 
 	else if (M_MenuButtonPressed(pid, MBT_L))
@@ -5083,6 +5089,7 @@ void M_HandleAddons(INT32 choice)
 			dir_on[menudepthleft]++;
 
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 	}
 
 	else if (M_MenuButtonPressed(pid, MBT_R))
@@ -5092,11 +5099,14 @@ void M_HandleAddons(INT32 choice)
 			dir_on[menudepthleft]--;
 
 		S_StartSound(NULL, sfx_menu1);
+		M_SetMenuDelay(pid);
 	}
 
 	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 	{
 		boolean refresh = true;
+		M_SetMenuDelay(pid);
+
 		if (!dirmenu[dir_on[menudepthleft]])
 			S_StartSound(NULL, sfx_s26d);
 		else
@@ -5175,7 +5185,8 @@ void M_HandleAddons(INT32 choice)
 	}
 	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
-			exitmenu = true;
+		exitmenu = true;
+		M_SetMenuDelay(pid);
 	}
 
 
@@ -5190,6 +5201,8 @@ void M_HandleAddons(INT32 choice)
 			M_SetupNextMenu(currentMenu->prevMenu, false);
 		else
 			M_ClearMenus(true);
+
+		M_SetMenuDelay(pid);
 	}
 }
 
