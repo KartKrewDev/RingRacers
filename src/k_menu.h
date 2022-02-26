@@ -379,6 +379,30 @@ extern struct menutyping_s
 } menutyping;
 // While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
 
+typedef enum
+{
+	MA_NONE = 0,
+	MA_YES,
+	MA_NO
+} manswer_e;
+
+#define MAXMENUMESSAGE 256
+extern struct menumessage_s
+{
+	boolean active;
+	INT32 flags;		// MM_
+	char message[MAXMENUMESSAGE];	// message to display
+
+	SINT8 fadetimer;	// opening
+	INT32 x;
+	INT32 y;
+	INT32 m;
+
+	void (*routine)(INT32 choice);	// Normal routine
+	void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+} menumessage;
+
+void M_HandleMenuMessage(void);
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2

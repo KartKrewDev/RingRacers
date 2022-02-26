@@ -298,6 +298,68 @@ static void M_DrawMenuTyping(void)
 	}
 }
 
+// Draw the message popup submenu
+static void M_DrawMenuMessage(void)
+{
+
+	INT32 y = menumessage.y + (9-menumessage.fadetimer)*20;
+	size_t i, start = 0;
+	INT16 max;
+	char string[MAXMENUMESSAGE];
+	INT32 mlines;
+	const char *msg = menumessage.message;
+
+	mlines = menumessage.m>>8;
+	max = (INT16)((UINT8)(menumessage.m & 0xFF)*8);
+
+	V_DrawFadeScreen(31, menumessage.fadetimer);
+	M_DrawTextBox(menumessage.x, y - 8, (max+7)>>3, mlines);
+
+	while (*(msg+start))
+	{
+		size_t len = strlen(msg+start);
+
+		for (i = 0; i < len; i++)
+		{
+			if (*(msg+start+i) == '\n')
+			{
+				memset(string, 0, MAXMENUMESSAGE);
+				if (i >= MAXMENUMESSAGE)
+				{
+					CONS_Printf("M_DrawMenuMessage: too long segment in %s\n", msg);
+					return;
+				}
+				else
+				{
+					strncpy(string,msg+start, i);
+					string[i] = '\0';
+					start += i;
+					i = (size_t)-1; //added : 07-02-98 : damned!
+					start++;
+				}
+				break;
+			}
+		}
+
+		if (i == strlen(msg+start))
+		{
+			if (i >= MAXMENUMESSAGE)
+			{
+				CONS_Printf("M_DrawMenuMessage: too long segment in %s\n", msg);
+				return;
+			}
+			else
+			{
+				strcpy(string, msg + start);
+				start += i;
+			}
+		}
+
+		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
+		y += 8;
+	}
+}
+
 //
 // M_Drawer
 // Called after the view has been rendered,
@@ -352,6 +414,11 @@ void M_Drawer(void)
 
 
 		}
+
+		// Draw message overlay when needed
+		if (menumessage.active)
+			 M_DrawMenuMessage();
+
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
 			M_DrawMenuTyping();
@@ -648,7 +715,7 @@ void M_DrawMessageMenu(void)
 	INT32 y = currentMenu->y;
 	size_t i, start = 0;
 	INT16 max;
-	char string[MAXMSGLINELEN];
+	char string[MAXMENUMESSAGE];
 	INT32 mlines;
 	const char *msg = currentMenu->menuitems[0].text;
 
@@ -665,8 +732,8 @@ void M_DrawMessageMenu(void)
 		{
 			if (*(msg+start+i) == '\n')
 			{
-				memset(string, 0, MAXMSGLINELEN);
-				if (i >= MAXMSGLINELEN)
+				memset(string, 0, MAXMENUMESSAGE);
+				if (i >= MAXMENUMESSAGE)
 				{
 					CONS_Printf("M_DrawMessageMenu: too long segment in %s\n", msg);
 					return;
@@ -685,7 +752,7 @@ void M_DrawMessageMenu(void)
 
 		if (i == strlen(msg+start))
 		{
-			if (i >= MAXMSGLINELEN)
+			if (i >= MAXMENUMESSAGE)
 			{
 				CONS_Printf("M_DrawMessageMenu: too long segment in %s\n", msg);
 				return;
@@ -2448,13 +2515,21 @@ void M_DrawProfileControls(void)
 	// Overlay for control binding
 	if (optionsmenu.bindcontrol)
 	{
-		V_DrawFadeScreen(31, 8);
+		INT16 reversetimer = TICRATE*5 - optionsmenu.bindtimer;
+		INT32 fade = reversetimer;
+		INT32 ypos;
 
-		M_DrawTextBox((BASEVIDWIDTH/2) - (120), (BASEVIDHEIGHT/2) - (16), 30, 4);
+		if (fade > 9)
+			fade = 9;
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), 0, va("Press key #%d for control", optionsmenu.bindcontrol));
-		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4) +10, 0, va("\"%s\"", currentMenu->menuitems[itemOn].text));
-		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4) +20, highlightflags, va("(WAIT %d SECONDS TO SKIP)", optionsmenu.bindtimer/TICRATE));
+		ypos = (BASEVIDHEIGHT/2) - 4 +16*(9 - fade);
+		V_DrawFadeScreen(31, fade);
+
+		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 4);
+
+		V_DrawCenteredString(BASEVIDWIDTH/2, ypos, 0, va("Press key #%d for control", optionsmenu.bindcontrol));
+		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +10, 0, va("\"%s\"", currentMenu->menuitems[itemOn].text));
+		V_DrawCenteredString(BASEVIDWIDTH/2, ypos +20, highlightflags, va("(WAIT %d SECONDS TO SKIP)", optionsmenu.bindtimer/TICRATE));
 	}
 }
 

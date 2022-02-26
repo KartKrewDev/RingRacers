@@ -96,8 +96,10 @@ struct menutransition_s menutransition; // Menu transition properties
 INT32 menuKey = -1; // keyboard key pressed for menu
 menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
-// Typing "sub"-menu
+// message prompt struct
+struct menumessage_s menumessage;
 
+// Typing "sub"-menu
 struct menutyping_s menutyping;
 
 // keyboard layouts
@@ -455,7 +457,7 @@ static void M_EraseDataResponse(INT32 ch)
 {
 	UINT8 i;
 
-	if (ch != 'y' && ch != KEY_ENTER)
+	if (ch == MA_NO)
 		return;
 
 	S_StartSound(NULL, sfx_itrole); // bweh heh heh
@@ -480,7 +482,7 @@ static void M_EraseDataResponse(INT32 ch)
 
 void M_EraseData(INT32 choice)
 {
-	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press 'Y' to confirm)\n");
+	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press A to confirm)\n");
 
 	optionsmenu.erasecontext = (UINT8)choice;
 
@@ -833,6 +835,14 @@ boolean M_Responder(event_t *ev)
 		return true;	// eat events.
 	}
 
+	// event handler for MM_EVENTHANDLER
+	if (menumessage.active && menumessage.flags == MM_EVENTHANDLER && menumessage.routine)
+	{
+		CONS_Printf("MM_EVENTHANDLER...\n");
+		menumessage.eroutine(ev); // What a terrible hack...
+		return true;
+	}
+
 	// Handle menu handling in-game.
 	if (menuactive == false)
 	{
@@ -998,6 +1008,9 @@ void M_ClearMenus(boolean callexitmenufunc)
 
 	if (gamestate == GS_MENU) // Back to title screen
 		D_StartTitle();
+
+	menutyping.active = false;
+	menumessage.active = false;
 
 	menuactive = false;
 }
@@ -1346,6 +1359,12 @@ static void M_HandleMenuInput(void)
 		return;
 	}
 
+	if (menumessage.active)
+	{
+		M_HandleMenuMessage();
+		return;
+	}
+
 	// Typing for CV_IT_STRING
 	if (menutyping.active)
 	{
@@ -1373,41 +1392,6 @@ static void M_HandleMenuInput(void)
 	{
 		routine(-1);
 		return;
-	}
-
-	// TODO: Move this to message menu code
-	if (currentMenu->menuitems[itemOn].status == IT_MSGHANDLER)
-	{
-		if (currentMenu->menuitems[itemOn].mvar1 != MM_EVENTHANDLER)
-		{
-			if (menucmd[pid].buttons != 0 && menucmd[pid].buttonsHeld == 0)
-			{
-				if (routine)
-				{
-					routine(menuKey);
-				}
-
-				M_StopMessage(0);
-				noFurtherInput = true;
-				M_SetMenuDelay(pid);
-				return;
-			}
-
-			return;
-		}
-		else
-		{
-//#if 0 // this shit is crazy
-			if (routine)
-			{
-				//void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
-				//otherroutine(menuKey); //Alam: what a hack
-				routine(menuKey);
-			}
-//#endif
-
-			return;
-		}
 	}
 
 	// BP: one of the more big hack i have never made
@@ -1727,7 +1711,7 @@ menu_t MessageDef =
 	0, 0,				// x, y                (TO HACK)
 	0, 0,				// extra1, extra2
 	0, 0,				// transition tics
-	M_DrawMessageMenu,	// drawing routine ->
+	NULL,				// drawing routine ->
 	NULL,				// ticker routine
 	NULL,				// init routine
 	NULL,				// quit routine
@@ -1753,11 +1737,15 @@ static inline size_t M_StringHeight(const char *string)
 // default message handler
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
 {
+
+	const UINT8 pid = 0;
 	size_t max = 0, start = 0, i, strlines;
 	static char *message = NULL;
 	Z_Free(message);
 	message = Z_StrDup(string);
 	DEBFILE(message);
+
+	CONS_Printf("M_StartMessage()...\n");
 
 	// Rudementary word wrapping.
 	// Simple and effective. Does not handle nonuniform letter sizes, colors, etc. but who cares.
@@ -1789,34 +1777,28 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		}
 	}
 
+	strncpy(menumessage.message, string, MAXMENUMESSAGE);
+	menumessage.flags = itemtype;
+	menumessage.routine = routine;
+	menumessage.fadetimer = 1;
+	menumessage.active = true;
+
 	start = 0;
 	max = 0;
 
-	M_StartControlPanel(); // can't put menuactive to true
-
-	if (currentMenu == &MessageDef) // Prevent recursion
-		MessageDef.prevMenu = ((demo.playback) ? &PAUSE_PlaybackMenuDef : &MainDef);
-	else
-		MessageDef.prevMenu = currentMenu;
-
-	MessageDef.menuitems[0].text     = message;
-	MessageDef.menuitems[0].mvar1 = (UINT8)itemtype;
-	if (!routine && itemtype != MM_NOTHING) itemtype = MM_NOTHING;
-	switch (itemtype)
+	if (!routine || menumessage.flags == MM_NOTHING)
 	{
-		case MM_NOTHING:
-			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = M_StopMessage;
-			break;
-		case MM_YESNO:
-			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = routine;
-			break;
-		case MM_EVENTHANDLER:
-			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = routine;
-			break;
+		menumessage.flags = MM_NOTHING;
+		menumessage.routine = M_StopMessage;
 	}
+
+	// event routine
+	if (menumessage.flags == MM_EVENTHANDLER)
+	{
+		menumessage.eroutine = routine;
+		menumessage.routine = NULL;
+	}
+
 	//added : 06-02-98: now draw a textbox around the message
 	// compute lenght max and the numbers of lines
 	for (strlines = 0; *(message+start); strlines++)
@@ -1838,21 +1820,73 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 			start += i;
 	}
 
-	MessageDef.x = (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
-	MessageDef.y = (INT16)((BASEVIDHEIGHT - M_StringHeight(message))/2);
+	menumessage.x = (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
+	menumessage.y = (INT16)((BASEVIDHEIGHT - M_StringHeight(message))/2);
 
-	MessageDef.lastOn = (INT16)((strlines<<8)+max);
+	menumessage.m = (INT16)((strlines<<8)+max);
 
-	//M_SetupNextMenu();
-	currentMenu = &MessageDef;
-	itemOn = 0;
+	M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
 }
 
 void M_StopMessage(INT32 choice)
 {
-	(void)choice;
-	if (menuactive)
-		M_SetupNextMenu(MessageDef.prevMenu, true);
+	const char pid = 0;
+	(void) choice;
+
+	menumessage.active = false;
+	M_SetMenuDelay(pid);
+}
+
+// regular handler for MM_NOTHING and MM_YESNO
+void M_HandleMenuMessage(void)
+{
+	const UINT8 pid = 0;
+	boolean btok = M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X);
+	boolean btnok = M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y);
+
+	menumessage.fadetimer++;
+
+	if (menumessage.fadetimer > 9)
+		menumessage.fadetimer = 9;
+
+
+	switch (menumessage.flags)
+	{
+		// Send 1 to the routine if we're pressing A/B/X/Y
+		case MM_NOTHING:
+		{
+			// send 1 if any button is pressed, 0 otherwise.
+			if (btok || btnok)
+				menumessage.routine(0);
+
+			break;
+		}
+		// Send 1 to the routine if we're pressing A/X, 2 if B/Y, 0 otherwise.
+		case MM_YESNO:
+		{
+			INT32 answer = MA_NONE;
+			if (btok)
+				answer = MA_YES;
+			else if (btnok)
+				answer = MA_NO;
+
+			// send 1 if btok is pressed, 2 if nok is pressed, 0 otherwise.
+			if (answer)
+			{
+				menumessage.routine(answer);
+				M_StopMessage(0);
+			}
+
+			break;
+		}
+		// MM_EVENTHANDLER: In M_Responder to allow full event compat.
+		default:
+			break;
+	}
+
+	// if we detect any keypress, don't forget to set the menu delay regardless.
+	if (btok || btnok)
+		M_SetMenuDelay(pid);
 }
 
 // =========
@@ -1941,27 +1975,26 @@ void M_QuitResponse(INT32 ch)
 	tic_t ptime;
 	INT32 mrand;
 
-	if (ch != 'y' && ch != KEY_ENTER)
-		return;
-
-	if (!(netgame || cv_debug))
+	if (ch == MA_YES)
 	{
-		mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
-		if (quitsounds[mrand])
-			S_StartSound(NULL, quitsounds[mrand]);
-
-		//added : 12-02-98: do that instead of I_WaitVbl which does not work
-		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
-		while (ptime > I_GetTime())
+		if (!(netgame || cv_debug))
 		{
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-			V_DrawSmallScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_CACHE)); // Demo 3 Quit Screen Tails 06-16-2001
-			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-			I_Sleep();
-		}
-	}
+			mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
+			if (quitsounds[mrand])
+				S_StartSound(NULL, quitsounds[mrand]);
 
-	I_Quit();
+			//added : 12-02-98: do that instead of I_WaitVbl which does not work
+			ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
+			while (ptime > I_GetTime())
+			{
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+				V_DrawSmallScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_CACHE)); // Demo 3 Quit Screen Tails 06-16-2001
+				I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
+				I_Sleep();
+			}
+		}
+		I_Quit();
+	}
 }
 
 void M_QuitSRB2(INT32 choice)
@@ -1969,7 +2002,7 @@ void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage("Are you sure you want to quit playing?\n\n(Press 'Y' to exit)", M_QuitResponse, MM_YESNO);
+	M_StartMessage("Are you sure you want to quit playing?\n\n(Press A to exit)", M_QuitResponse, MM_YESNO);
 }
 
 // =========
@@ -2577,7 +2610,7 @@ static void M_MPConfirmCharacterSelection(void)
 
 static void M_MPConfirmCharacterResponse(INT32 ch)
 {
-	if (ch == 'y' || ch == KEY_ENTER)
+	if (ch == MA_YES)
 		M_MPConfirmCharacterSelection();
 
 	M_ClearMenus(true);
@@ -2665,7 +2698,7 @@ void M_CharacterSelectTick(void)
 					if (playeringame[j] && !players[consoleplayer].spectator)
 					{
 						// Warn the player!
-						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press 'Y' to confirm)\n"), M_MPConfirmCharacterResponse, MM_YESNO);
+						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press A to confirm)\n"), M_MPConfirmCharacterResponse, MM_YESNO);
 						return;
 					}
 				}
@@ -3936,6 +3969,7 @@ static void SetDeviceOnPress(void)
 	}
 }
 
+
 // Prompt a device selection window (just tap any button on the device you want)
 void M_ProfileDeviceSelect(INT32 choice)
 {
@@ -3949,7 +3983,6 @@ void M_ProfileDeviceSelect(INT32 choice)
 	optionsmenu.contx = optionsmenu.tcontx = controlleroffsets[gc_a][0];
 	optionsmenu.conty = optionsmenu.tconty = controlleroffsets[gc_a][1];
 
-	//M_StartMessage(M_GetText("Press any key on the device\nyou would like to use"), M_ProfileDeviceSelectResponse, MM_EVENTHANDLER);
 	M_SetupNextMenu(&OPTIONS_ProfileControlsDef, false);	// Don't set device here anymore.
 }
 
@@ -4445,11 +4478,9 @@ void M_ConfirmEnterGame(INT32 choice)
 
 static void M_ExitGameResponse(INT32 ch)
 {
-	if (ch != 'y' && ch != KEY_ENTER)
-		return;
+	if (ch == MA_YES)
+		G_SetExitGameFlag();
 
-	//Command_ExitGame_f();
-	G_SetExitGameFlag();
 	M_ClearMenus(true);
 }
 
@@ -4462,7 +4493,7 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press 'Y' to confirm)\n"), M_ExitGameResponse, MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press A to confirm)\n"), M_ExitGameResponse, MM_YESNO);
 }
 
 
@@ -4951,7 +4982,7 @@ boolean M_AddonsRefresh(void)
 
 		if (message)
 		{
-			M_StartMessage(message,M_AddonsClearName,MM_EVENTHANDLER);
+			M_StartMessage(message,M_AddonsClearName,MM_YESNO);
 			return true;
 		}
 
@@ -4964,7 +4995,7 @@ boolean M_AddonsRefresh(void)
 
 static void M_AddonExec(INT32 ch)
 {
-	if (ch != 'y' && ch != KEY_ENTER)
+	if (ch == MA_NO)
 		return;
 
 	S_StartSound(NULL, sfx_zoom);
@@ -5117,11 +5148,11 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_TXT:
-					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
 					break;
 
 				case EXT_CFG:
-					M_AddonExec(KEY_ENTER);
+					M_AddonExec(MA_YES);
 					break;
 
 				case EXT_LUA:
