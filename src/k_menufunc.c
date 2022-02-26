@@ -1897,30 +1897,32 @@ void M_HandleMenuMessage(void)
 // uses left and right movement.
 void M_HandleImageDef(INT32 choice)
 {
+	const UINT8 pid = 0;
 	boolean exitmenu = false;
+	(void) choice;
 
-	switch (choice)
+	if (menucmd[pid].dpad_lr > 0)
 	{
-		case KEY_RIGHTARROW:
-			if (itemOn >= (INT16)(currentMenu->numitems-1))
-				break;
-			S_StartSound(NULL, sfx_s3k5b);
-			itemOn++;
-			break;
-
-		case KEY_LEFTARROW:
-			if (!itemOn)
-				break;
-
-			S_StartSound(NULL, sfx_s3k5b);
-			itemOn--;
-			break;
-
-		case KEY_ESCAPE:
-		case KEY_ENTER:
-			exitmenu = true;
-			break;
+		if (itemOn >= (INT16)(currentMenu->numitems-1))
+			return;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		itemOn++;
 	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		if (!itemOn)
+			return;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		itemOn--;
+	}
+	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		exitmenu = true;
+		M_SetMenuDelay(pid);
+	}
+
 
 	if (exitmenu)
 	{
