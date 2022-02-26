@@ -3707,6 +3707,15 @@ void M_HandleProfileSelect(INT32 ch)
 
 	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 	{
+
+		if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
+		{
+			S_StartSound(NULL, sfx_s3k7b);
+			M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
+			M_SetMenuDelay(pid);
+			return;
+		}
+
 		S_StartSound(NULL, sfx_menu1);
 
 		if (optionsmenu.profilen == maxp)
