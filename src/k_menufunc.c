@@ -3775,7 +3775,7 @@ void M_HandleProfileEdit(void)
 		strncpy(optionsmenu.profile->profilename, cv_dummyprofilename.string, PROFILENAMELEN);
 
 	if (strlen(cv_dummyprofileplayername.string))
-		strcpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string);
+		strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
 }
 
 // special menuitem key handler for video mode list
