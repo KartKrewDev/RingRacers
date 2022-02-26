@@ -213,6 +213,7 @@ consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN,
 
 consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
+consvar_t cv_dummyprofilekickstart = CVAR_INIT ("dummyprofilekickstart", "Off", CV_HIDDEN, CV_OnOff, NULL);
 
 consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, dummygpdifficulty_cons_t, NULL);
 consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
@@ -1689,6 +1690,7 @@ void M_Init(void)
 
 	CV_RegisterVar(&cv_dummyprofilename);
 	CV_RegisterVar(&cv_dummyprofileplayername);
+	CV_RegisterVar(&cv_dummyprofilekickstart);
 
 	CV_RegisterVar(&cv_dummygpdifficulty);
 	CV_RegisterVar(&cv_dummykartspeed);
@@ -3734,11 +3736,13 @@ void M_HandleProfileSelect(INT32 ch)
 		{
 			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
 			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
+			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
 		}
 		else
 		{
 			CV_StealthSet(&cv_dummyprofilename, "");
 			CV_StealthSet(&cv_dummyprofileplayername, "");
+			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
 		}
 
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
@@ -4013,6 +4017,9 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 		return true;
 	}
+	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+
 	return false;
 }
 

@@ -2352,7 +2352,7 @@ void M_DrawProfileControls(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH*2/3, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+		V_DrawCenteredThinString(229, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
 	}
 
 	V_DrawFill(0, 0, 138, 200, 31);	// Black border
@@ -2390,7 +2390,20 @@ void M_DrawProfileControls(void)
 				else
 					V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
-				if (currentMenu->menuitems[i].status & IT_CONTROL)
+				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
+				{
+					INT32 w;
+					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+
+					w = V_StringWidth(cv->string, 0);
+					V_DrawString(x + 12, y + 12, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+					if (i == itemOn)
+					{
+						V_DrawCharacter(x - (skullAnimCounter/5), y+12, '\x1C' | highlightflags, false); // left arrow
+						V_DrawCharacter(x + 12 + w + 2 + (skullAnimCounter/5) , y+12, '\x1D' | highlightflags, false); // right arrow
+					}
+				}
+				else if (currentMenu->menuitems[i].status & IT_CONTROL)
 				{
 					// Draw what the controls are mapped to
 					for (k = 0; k < MAXINPUTMAPPING; k++)
@@ -2425,6 +2438,7 @@ void M_DrawProfileControls(void)
 						optionsmenu.tconty = controlleroffsets[currentMenu->menuitems[i].mvar1][1];
 					}
 				}
+
 
 				y += spacing;
 				break;

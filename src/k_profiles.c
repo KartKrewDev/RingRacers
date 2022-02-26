@@ -151,6 +151,9 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	CV_StealthSet(&cv_playername[playernum], p->playername);
 	// @TODO followers
 
+	// toggles
+	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
+
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
 }

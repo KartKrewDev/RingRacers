@@ -531,6 +531,12 @@ menuitem_t OPTIONS_ProfileControls[] = {
 
 	{IT_CONTROL, "LUA/C", "May be used by add-ons.",
 		NULL, M_ProfileSetControl, gc_luac, 0},
+
+	{IT_HEADER, "TOGGLES", "For per-player commands",
+		NULL, NULL, 0, 0},
+
+	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
+		NULL, &cv_dummyprofilekickstart, 0, 0},
 };
 
 
