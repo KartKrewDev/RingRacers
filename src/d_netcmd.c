@@ -4486,7 +4486,7 @@ UINT32 timelimitintics = 0;
 static void TimeLimit_OnChange(void)
 {
 	// Don't allow timelimit in Single Player/Co-Op/Race!
-	if (server && Playing() && cv_timelimit.value != 0 && !(gametyperules & GTR_TIMELIMIT))
+	if (server && Playing() && cv_timelimit.value != 0 && (bossinfo.boss || !(gametyperules & GTR_TIMELIMIT)))
 	{
 		CV_SetValue(&cv_timelimit, 0);
 		return;
