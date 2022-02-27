@@ -13299,7 +13299,16 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
 	remains->cvmem = leveltime;
-	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
+	remains->threshold = actor->threshold;
+	if (remains->threshold != 69 && remains->threshold != 70)
+	{
+		remains->threshold = 68;
+	}
+	// To insure this information doesn't have to be rediscovered every time you look at this function...
+	// A threshold of 0 is for a "living", ordinary random item.
+	// 68 means regular popped random item debris.
+	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
+	// 70 is a powered up Overtime item.
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -13315,7 +13324,8 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if ((gametyperules & GTR_BUMPERS) && (actor->threshold != 69 && actor->threshold != 70))
+	// Here at mapload in battle?
+	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);

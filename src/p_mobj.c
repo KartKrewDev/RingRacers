@@ -8726,6 +8726,30 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_RANDOMITEM:
+		if ((leveltime == starttime) && (mobj->flags2 & MF2_BOSSNOTRAP)) // here on map start?
+		{
+			if (gametyperules & GTR_PAPERITEMS)
+			{
+				if (battlecapsules == true || bossinfo.boss == true)
+				{
+					;
+				}
+				else
+				{
+					mobj_t *paperspawner = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PAPERITEMSPOT);
+					paperspawner->spawnpoint = mobj->spawnpoint;
+					mobj->spawnpoint->mobj = paperspawner;
+					P_RemoveMobj(mobj);
+					return false;
+				}
+			}
+			// poof into existance
+			mobj->flags &= ~MF_NOCLIPTHING;
+			mobj->renderflags &= ~RF_DONTDRAW;
+			P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_EXPLODE);
+			nummapboxes++;
+		}
+		// FALLTHRU
 	case MT_SPHEREBOX:
 		if (gametype == GT_BATTLE && mobj->threshold == 70)
 		{
@@ -8860,7 +8884,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	if (mobj->type == MT_SNAPPER_HEAD || mobj->type == MT_SNAPPER_LEG || mobj->type == MT_MINECARTSEG)
 		mobj->renderflags ^= RF_DONTDRAW;
 
-	if (mobj->fuse <= TICRATE && ((mobj->type == MT_RANDOMITEM && mobj->threshold == 69) || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
+	if (mobj->fuse <= TICRATE && (mobj->type == MT_RANDOMITEM || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
 		mobj->renderflags ^= RF_DONTDRAW;
 
 	mobj->fuse--;
@@ -8912,10 +8936,13 @@ static boolean P_FuseThink(mobj_t *mobj)
 		}
 		return false;
 	case MT_RANDOMITEM:
-		if ((gametyperules & GTR_BUMPERS) && (mobj->threshold != 70))
+		if (mobj->flags2 & MF2_DONTRESPAWN)
 		{
-			if (mobj->threshold != 69)
-				break;
+			;
+		}
+		else if ((gametyperules & GTR_BUMPERS) && (mobj->threshold != 70))
+		{
+			break;
 		}
 		else
 		{
@@ -8926,14 +8953,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 			{
 				P_SpawnMapThing(mobj->spawnpoint);
 				newmobj = mobj->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-				if (nummapboxes > 0)
-					nummapboxes--; // just to avoid doubling up
 			}
 			else
 				newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
 
-			P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
-			// Transfer flags2 (strongbox, objectflip)
+			// Transfer flags2 (strongbox, objectflip, bossnotrap)
 			newmobj->flags2 = mobj->flags2;
 			if (mobj->threshold == 70)
 				newmobj->threshold = 70;
@@ -10641,28 +10665,25 @@ void P_RespawnBattleBoxes(void)
 
 		box = (mobj_t *)th;
 
-		if (box->type != MT_RANDOMITEM || box->threshold != 68 || box->fuse) // only popped items
-			continue;
-
-		if ((tic_t)box->cvmem+1 >= leveltime) // This one was just popped, don't respawn!
-			continue;
+		if (box->type != MT_RANDOMITEM
+			|| (box->flags2 & MF2_DONTRESPAWN)
+			|| box->threshold != 68
+			|| box->fuse
+			|| ((tic_t)box->cvmem+1 >= leveltime))
+			continue; // only popped items
 
 		// Respawn from mapthing if you have one!
 		if (box->spawnpoint)
 		{
 			P_SpawnMapThing(box->spawnpoint);
 			newmobj = box->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-			P_SpawnMobj(box->spawnpoint->mobj->x, box->spawnpoint->mobj->y, box->spawnpoint->mobj->z, MT_EXPLODE); // poof into existance
-			if (nummapboxes > 0)
-				nummapboxes--; // just to avoid doubling up
 		}
 		else
 		{
 			newmobj = P_SpawnMobj(box->x, box->y, box->z, box->type);
-			P_SpawnMobj(newmobj->x, newmobj->y, newmobj->z, MT_EXPLODE); // poof into existance
 		}
 
-		// Transfer flags2 (strongbox, objectflip)
+		// Transfer flags2 (strongbox, objectflip, bossnotrap)
 		newmobj->flags2 = box->flags2;
 		P_RemoveMobj(box); // make sure they disappear
 
@@ -10693,7 +10714,7 @@ void P_RespawnSpecials(void)
 	INT32 time = 30*TICRATE; // Respawn things in empty dedicated servers
 	mapthing_t *mthing = NULL;
 
-	if (!(gametyperules & GTR_CIRCUIT) && numgotboxes >= (4*nummapboxes/5)) // Battle Mode respawns all boxes in a different way
+	if (!(gametyperules & GTR_CIRCUIT) && nummapboxes && (numgotboxes >= (4*nummapboxes/5))) // Battle Mode respawns all boxes in a different way
 		P_RespawnBattleBoxes();
 
 	// wait time depends on player count
@@ -11307,8 +11328,10 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((gametyperules & GTR_SPHERES) && (i == MT_RING))
 		return MT_BLUESPHERE;
 
+	/*
 	if ((gametyperules & GTR_PAPERITEMS) && !bossinfo.boss && (i == MT_RANDOMITEM))
 		return MT_PAPERITEMSPOT;
+	*/
 
 	return i;
 }
@@ -12237,7 +12260,16 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_RANDOMITEM:
 	{
-		nummapboxes++;
+		if (leveltime < starttime)
+		{
+			mobj->flags2 |= MF2_BOSSNOTRAP; // mark as here on map start
+			mobj->flags |= MF_NOCLIPTHING;
+			mobj->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_EXPLODE);
+		}
 		break;
 	}
 	case MT_ITEMCAPSULE:

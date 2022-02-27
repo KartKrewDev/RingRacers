@@ -249,8 +249,6 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_SPHEREBOX);
 
-	(void)amount;
-
 	P_InitAngle(drop, angle);
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed() * 180) + angle,
