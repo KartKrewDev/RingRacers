@@ -73,6 +73,15 @@ CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 
+// Cheats
+#ifdef DEVELOP
+	#define VALUE "On"
+#else
+	#define VALUE "Off"
+#endif
+consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL, CV_OnOff, CV_CheatsChanged);
+#undef VALUE
+
 // SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
 	{KARTSPEED_AUTO, "Auto"},
@@ -335,6 +344,9 @@ void COM_Init(void)
 {
 	// allocate command buffer
 	VS_Alloc(&com_text, COM_BUF_SIZE);
+
+	// cheats is a special cvar, so register it ASAP
+	CV_RegisterVar(&cv_cheats);
 
 	// add standard commands
 	COM_AddCommand("alias", COM_Alias_f);
@@ -1340,12 +1352,11 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 	boolean override = false;
 	INT32 overrideval = 0;
 
-	// If we want messages informing us if cheats have been enabled or disabled,
-	// we need to rework the consvars a little bit.  This call crashes the game
-	// on load because not all variables will be registered at that time.
-/*	boolean prevcheats = false;
-	if (var->flags & CV_CHEAT)
-		prevcheats = CV_CheatsEnabled(); */
+	if ((var->flags & CV_CHEAT) && CV_CheatsEnabled() == false)
+	{
+		// Enforce to default value without cheats.
+		valstr = var->defaultvalue;
+	}
 
 	if (var->PossibleValue)
 	{
@@ -1506,17 +1517,6 @@ found:
 	}
 
 finish:
-	// See the note above.
-/* 	if (var->flags & CV_CHEAT)
-	{
-		boolean newcheats = CV_CheatsEnabled();
-
-		if (!prevcheats && newcheats)
-			CONS_Printf(M_GetText("Cheats have been enabled.\n"));
-		else if (prevcheats && !newcheats)
-			CONS_Printf(M_GetText("Cheats have been disabled.\n"));
-	} */
-
 	if (var->flags & CV_SHOWMODIFONETIME || var->flags & CV_SHOWMODIF)
 	{
 		CONS_Printf(M_GetText("%s set to %s\n"), var->name, var->string);
@@ -1526,10 +1526,13 @@ finish:
 	{
 		DEBFILE(va("%s set to %s\n", var->name, var->string));
 	}
+
 	var->flags |= CV_MODIFIED;
+
 	// raise 'on change' code
 	LUA_CVarChanged(var); // let consolelib know what cvar this is.
-	if (var->flags & CV_CALL && !stealth)
+
+	if ((var->flags & CV_CALL) && !stealth)
 		var->func();
 
 	return;
@@ -1750,14 +1753,33 @@ void CV_LoadDemoVars(UINT8 **p)
 
 static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth);
 
-void CV_ResetCheatNetVars(void)
+void CV_CheatsChanged(void)
 {
-	consvar_t *cvar;
+	if (CV_CheatsEnabled())
+	{
+		G_SetUsedCheats();
+	}
+	else
+	{
+		consvar_t *cvar;
+		UINT8 i;
 
-	// Stealthset everything back to default.
-	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (cvar->flags & CV_CHEAT)
-			CV_SetCVar(cvar, cvar->defaultvalue, true);
+		// Set everything back to default.
+		for (cvar = consvar_vars; cvar; cvar = cvar->next)
+			if (cvar->flags & CV_CHEAT)
+				CV_SetCVar(cvar, cvar->defaultvalue, false);
+
+		// Reset any other cheat command effects here, as well.
+		cv_debug = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i])
+				continue;
+
+			players[i].cheats = 0;
+		}
+	}
 }
 
 // Returns true if the variable's current value is its default value
@@ -1768,16 +1790,9 @@ boolean CV_IsSetToDefault(consvar_t *v)
 
 // If any cheats CVars are not at their default settings, return true.
 // Else return false.
-// This returns a UINT8 because I'm too lazy to deal with the packet structure.
-// Deal with it. =P
-UINT8 CV_CheatsEnabled(void)
+boolean CV_CheatsEnabled(void)
 {
-	consvar_t *cvar;
-
-	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if ((cvar->flags & CV_CHEAT) && strcmp(cvar->defaultvalue, cvar->string))
-			return 1;
-	return 0;
+	return (boolean)cv_cheats.value;
 }
 
 /** Sets a value to a variable, performing some checks and calling the

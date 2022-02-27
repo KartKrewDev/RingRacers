@@ -6376,7 +6376,7 @@ static void M_GetAllEmeralds(INT32 choice)
 	emeralds = EMERALD_ALL;
 	M_StartMessage(M_GetText("You now have all 7 emeralds.\nUse them wisely.\nWith great power comes great ring drain.\n"),NULL,MM_NOTHING);
 
-	G_SetGameModified(multiplayer, true);
+	G_SetUsedCheats();
 }
 
 static void M_DestroyRobotsResponse(INT32 ch)
@@ -6387,7 +6387,7 @@ static void M_DestroyRobotsResponse(INT32 ch)
 	// Destroy all robots
 	P_DestroyRobots();
 
-	G_SetGameModified(multiplayer, true);
+	G_SetUsedCheats();
 }
 
 static void M_DestroyRobots(INT32 choice)
