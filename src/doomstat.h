@@ -509,7 +509,7 @@ enum TypeOfLevel
 };
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (3)
+#define NUMBASETOLNAMES    (4)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
 typedef struct

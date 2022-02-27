@@ -1117,7 +1117,7 @@ void ST_drawTitleCard(void)
 	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, false, lt_ticker, TTANIMENDTHRESHOLD);
 
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", false, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
+		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
 
 	// the act has a similar graphic animation, but we'll handle it here since it's only like 2 graphics lmfao.
 	if (actnum && actnum < 10)
