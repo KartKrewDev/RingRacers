@@ -5637,6 +5637,17 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 		if (orbit) // splay out
 		{
+			if (dropwork->destscale > work->destscale)
+			{
+				fixed_t radius = FixedMul(work->info->radius, dropwork->destscale);
+				radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(radius, radius); // mobj's distance from its Target, or Radius.
+				dropwork->flags |= MF_NOCLIPTHING;
+				work->momx = FixedMul(FINECOSINE(work->angle>>ANGLETOFINESHIFT), radius);
+				work->momy = FixedMul(FINESINE(work->angle>>ANGLETOFINESHIFT), radius);
+				P_MoveOrigin(dropwork, player->mo->x + work->momx, player->mo->y + work->momy, player->mo->z);
+				dropwork->flags &= ~MF_NOCLIPTHING;
+			}
+
 			dropwork->flags2 |= MF2_AMBUSH;
 
 			dropwork->z += flip;
