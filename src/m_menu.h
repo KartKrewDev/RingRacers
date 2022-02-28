@@ -329,7 +329,6 @@ typedef struct menuitem_s
 	const char *patch;
 	const char *text; // used when FONTBxx lump is found
 
-// FIXME: should be itemaction_t
 	itemaction_t itemaction;
 
 	// hotkey in menu or y of the item
