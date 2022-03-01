@@ -261,7 +261,7 @@ typedef enum
 //}
 
 // for kickstartaccel
-#define ACCEL_KICKSTART 35
+#define ACCEL_KICKSTART (TICRATE)
 
 #define ITEMSCALE_NORMAL 0
 #define ITEMSCALE_GROW 1

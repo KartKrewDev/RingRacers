@@ -4299,6 +4299,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Reset some pesky boss state that can't be handled elsewhere.
 		bossinfo.barlen = BOSSHEALTHBARLEN;
+		bossinfo.visualbar = 0;
 		if (bossinfo.enemyname)
 			Z_Free(bossinfo.enemyname);
 		if (bossinfo.subtitle)

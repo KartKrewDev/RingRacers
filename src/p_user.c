@@ -4325,17 +4325,37 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Accessibility - kickstart your acceleration
-	if (gametype == GT_BATTLE || !(player->pflags & PF_KICKSTARTACCEL))
+	if (!(player->pflags & PF_KICKSTARTACCEL))
+	{
 		player->kickstartaccel = 0;
+	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
 		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		{
 			player->kickstartaccel = 0;
+		}
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
+		{
 			player->kickstartaccel++;
+			if ((player->kickstartaccel == ACCEL_KICKSTART) && P_IsLocalPlayer(player))
+			{
+				S_StartSound(NULL, sfx_ding);
+			}
+		}
+		else // for HUD
+		{
+			player->kickstartaccel = ACCEL_KICKSTART+1;
+		}
 	}
 	else if (player->kickstartaccel < ACCEL_KICKSTART)
+	{
 		player->kickstartaccel = 0;
+	}
+	else // for HUD
+	{
+		player->kickstartaccel = ACCEL_KICKSTART+1;
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)

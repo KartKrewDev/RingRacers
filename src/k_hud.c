@@ -1917,8 +1917,23 @@ static void K_drawBossHealthBar(void)
 			starty += mag;
 	}
 
-	if (bossinfo.enemyname)
-		V_DrawRightAlignedThinString(startx, starty-10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE, bossinfo.enemyname);
+	if ((lt_ticker >= lt_endtime) && bossinfo.enemyname)
+	{
+		if (lt_exitticker == 0)
+		{
+			rolrand = 5;
+		}
+		else if (lt_exitticker == 1)
+		{
+			rolrand = 7;
+		}
+		else
+		{
+			rolrand = 10;
+		}
+		V_DrawRightAlignedThinString(startx, starty-rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE, bossinfo.enemyname);
+		rolrand = 0;
+	}
 
 	// Used for colour and randomisation.
 	if (bossinfo.healthbar <= (bossinfo.visualdiv/FRACUNIT))
@@ -2361,7 +2376,6 @@ static void K_drawKartLapsAndRings(void)
 static void K_drawKartAccessibilityIcons(INT32 fx)
 {
 	INT32 fy = LAPS_Y-25;
-	UINT8 col = 0, i, wid, fil;
 	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	//INT32 step = 1; -- if there's ever more than one accessibility icon
 
@@ -2383,19 +2397,21 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 		}
 	}
 
-	if ((stplyr->pflags & PF_KICKSTARTACCEL) && gametype != GT_BATTLE) // just KICKSTARTACCEL right now, maybe more later
+	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
 	{
-		fil = 7-(stplyr->kickstartaccel*7)/ACCEL_KICKSTART;
-		i = 7;
+		SINT8 col = 0, wid, fil, ofs;
+		UINT8 i = 7;
+		ofs = (stplyr->kickstartaccel == ACCEL_KICKSTART) ? 1 : 0;
+		fil = i-(stplyr->kickstartaccel*i)/ACCEL_KICKSTART;
 
-		V_DrawFill(fx+4, fy-1, 2, 1, 31|V_SLIDEIN|splitflags);
-		V_DrawFill(fx, (fy-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx+4, fy+ofs-1, 2, 1, 31|V_SLIDEIN|splitflags);
+		V_DrawFill(fx, (fy+ofs-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
 
 		while (i--)
 		{
 			wid = (i/2)+1;
-			V_DrawFill(fx+4-wid, fy+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
-			if (fil)
+			V_DrawFill(fx+4-wid, fy+ofs+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+			if (fil > 0)
 			{
 				if (i < fil)
 					col = 23;
@@ -2408,7 +2424,7 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 				col = 0;
 			else
 				col = 3;
-			V_DrawFill(fx+5-wid, fy+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+			V_DrawFill(fx+5-wid, fy+ofs+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
 		}
 
 		//fx += step*12;
