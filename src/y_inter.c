@@ -489,7 +489,7 @@ void Y_IntermissionDrawer(void)
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
 
-	if (sorttic != -1 && intertic > sorttic && multiplayer)
+	if (sorttic != -1 && intertic > sorttic)
 	{
 		INT32 count = (intertic - sorttic);
 
@@ -1056,6 +1056,14 @@ void Y_DetermineIntermissionType(void)
 //
 void Y_StartIntermission(void)
 {
+	UINT8 i = 0, nump = 0;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+		nump++;
+	}
+
 	intertic = -1;
 
 #ifdef PARANOIA
@@ -1066,36 +1074,28 @@ void Y_StartIntermission(void)
 	// set player Power Level type
 	powertype = K_UsingPowerLevels();
 
-	if (!multiplayer)
+	// determine the tic the intermission ends
+	if (!multiplayer || demo.playback)
 	{
-		timer = 20*TICRATE;
+		timer = ((nump >= 2) ? 10 : 5)*TICRATE;
 	}
 	else
 	{
-		if (cv_inttime.value == 0)
-			timer = 0;
-		else if (demo.playback && !multiplayer) // Override inttime (which is pulled from the replay anyway
-			timer = 10*TICRATE;
-		else
-		{
-			timer = cv_inttime.value*TICRATE;
+		timer = cv_inttime.value*TICRATE;
 
-			if (!timer)
-				timer = 1;
-		}
+		if (!timer)
+			timer = 1; // prevent a weird bug
 	}
-	
-	if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
 
-	if (multiplayer)
+	// determine the tic everybody's scores/PWR starts getting sorted
+	sorttic = -1;
+	if (multiplayer || nump >= 2)
 	{
 		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
 	}
-	else
-	{
-		sorttic = -1;
-	}
+
+	if (intermissiontypes[gametype] != int_none)
+		intertype = intermissiontypes[gametype];
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
