@@ -819,7 +819,7 @@ void ST_runTitleCard(void)
 				}
 			}
 			// No matter the circumstances, scroll the WARN...
-			bannerx = -(lt_ticker%((encoremode ? twarn2 : twarn)->width));
+			bannerx = -((lt_ticker*2)%((encoremode ? twarn2 : twarn)->width));
 		}
 		else
 		{
@@ -944,7 +944,7 @@ void ST_runTitleCard(void)
 			}
 
 			// No matter the circumstances, scroll the banner...
-			bannerx = -(lt_ticker%(tcbanner->width));
+			bannerx = -((lt_ticker*2)%(tcbanner->width));
 		}
 
 
@@ -969,9 +969,8 @@ void ST_drawTitleCard(void)
 	fixed_t actscale;
 	angle_t fakeangle;
 
+	INT32 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
 	INT32 bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
-
-	UINT8 i;
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -1001,7 +1000,7 @@ void ST_drawTitleCard(void)
 			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
 			boolean encorehack = (encoremode && lt_ticker <= PRELEVELTIME+4);
 
-			if (lt_ticker + (HITIME-transp) <= lt_endtime)
+			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
 			{
 				if (transp > HITIME-1)
 				{
@@ -1010,9 +1009,11 @@ void ST_drawTitleCard(void)
 
 				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD);
 
-				for (i=0; i < 3; i++)
+				while (bx > -pad)
+					bx -= localwarn->width;
+				while (bx < BASEVIDWIDTH+pad)
 				{
-					V_DrawFixedPatch((bannerx + bx)*FRACUNIT, 55*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL);
+					V_DrawFixedPatch(bx*FRACUNIT, 55*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL);
 					bx += localwarn->width;
 				}
 			}
@@ -1098,11 +1099,16 @@ void ST_drawTitleCard(void)
 	// round num background
 	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
 
-	// Scrolling banner, we'll draw 3 of those back to back.
-	for (i=0; i < 3; i++)
+	// Scrolling banner
+	if (tcbanner->width > 0)
 	{
-		V_DrawFixedPatch((bannerx + bx)*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
-		bx += tcbanner->width;
+		while (bx > -pad)
+			bx -= tcbanner->width;
+		while (bx < BASEVIDWIDTH+pad)
+		{
+			V_DrawFixedPatch(bx*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
+			bx += tcbanner->width;
+		}
 	}
 
 	// If possible, draw round number
