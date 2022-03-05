@@ -1113,8 +1113,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
-	// lat` had the right idea
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"bosstest.pk3"));
 #endif
 ////
 #undef TEXTURESNAME
