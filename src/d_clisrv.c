@@ -3754,6 +3754,7 @@ void SV_StopServer(void)
 // called at singleplayer start and stopdemo
 void SV_StartSinglePlayerServer(void)
 {
+	INT32 lastgametype = gametype;
 	server = true;
 	netgame = false;
 	multiplayer = false;
@@ -3766,6 +3767,9 @@ void SV_StartSinglePlayerServer(void)
 	{
 		G_SetGametype(GT_RACE);
 	}
+
+	if (gametype != lastgametype)
+		D_GameTypeChanged(lastgametype);
 
 	// no more tic the game with this settings!
 	SV_StopServer();

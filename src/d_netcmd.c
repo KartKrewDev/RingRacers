@@ -2578,7 +2578,6 @@ static void Command_Map_f(void)
 
 	INT32 newgametype = gametype;
 	boolean newencoremode = (cv_kartencore.value == 1);
-	boolean startgp = false;
 
 	INT32 d;
 
@@ -2596,7 +2595,7 @@ static void Command_Map_f(void)
 
 	mustmodifygame = !(netgame || multiplayer) && !majormods;
 
-	if (mustmodifygame)
+	if (mustmodifygame && !option_force)
 	{
 		/* May want to be more descriptive? */
 		CONS_Printf(M_GetText("Sorry, level change disabled in single player.\n"));
@@ -2653,7 +2652,6 @@ static void Command_Map_f(void)
 	if (mustmodifygame && option_force)
 	{
 		G_SetGameModified(multiplayer, true);
-		startgp = true;
 	}
 
 	// new gametype value
@@ -2695,6 +2693,15 @@ static void Command_Map_f(void)
 			}
 		}
 	}
+	else if (!Playing())
+	{
+		newresetplayers = true;
+		if (mapheaderinfo[newmapnum-1])
+		{
+			// Let's just guess so we don't have to specify the gametype EVERY time...
+			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & TOL_RACE) ? GT_RACE : GT_BATTLE;
+		}
+	}
 
 	// new encoremode value
 	if (option_encore)
@@ -2708,67 +2715,7 @@ static void Command_Map_f(void)
 		}
 	}
 
-	if (startgp)
-	{
-		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
-		grandprixinfo.masterbots = false;
-
-		if (option_skill)
-		{
-			const char *masterstr = "Master";
-			const char *skillname = COM_Argv(option_skill + 1);
-			INT32 newskill = -1;
-			INT32 j;
-
-			if (!strcasecmp(masterstr, skillname))
-			{
-				newskill = KARTGP_MASTER;
-			}
-			else
-			{
-				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				{
-					if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
-					{
-						newskill = (INT16)kartspeed_cons_t[j].value;
-						break;
-					}
-				}
-
-				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-				{
-					INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
-					if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
-						newskill = (INT16)num;
-				}
-			}
-
-			if (newskill != -1)
-			{
-				if (newskill == KARTGP_MASTER)
-				{
-					grandprixinfo.gamespeed = KARTSPEED_HARD;
-					grandprixinfo.masterbots = true;
-				}
-				else
-				{
-					grandprixinfo.gamespeed = newskill;
-					grandprixinfo.masterbots = false;
-				}
-			}
-		}
-
-		grandprixinfo.encore = newencoremode;
-
-		grandprixinfo.gp = true;
-		grandprixinfo.roundnum = 0;
-		grandprixinfo.cup = NULL;
-		grandprixinfo.wonround = false;
-
-		grandprixinfo.initalize = true;
-	}
-
-	if (!option_force && newgametype == gametype) // SRB2Kart
+	if (!option_force && newgametype == gametype && Playing()) // SRB2Kart
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
@@ -2794,6 +2741,89 @@ static void Command_Map_f(void)
 				( netgame || multiplayer ) &&
 				newgametype == gametype    &&
 				gametypedefaultrules[newgametype] & GTR_CAMPAIGN;
+		}
+	}
+
+	if (!(netgame || multiplayer))
+	{
+		if (newgametype == GT_BATTLE)
+		{
+			grandprixinfo.gp = false;
+
+			if (mapheaderinfo[newmapnum-1] &&
+				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
+			{
+				// Reset boss info
+				if (bossinfo.enemyname)
+					Z_Free(bossinfo.enemyname);
+				if (bossinfo.subtitle)
+					Z_Free(bossinfo.subtitle);
+				memset(&bossinfo, 0, sizeof(struct bossinfo));
+
+				bossinfo.boss = true;
+				bossinfo.encore = newencoremode;
+			}
+		}
+		else // default GP
+		{
+			grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+			grandprixinfo.masterbots = false;
+
+			if (option_skill)
+			{
+				const char *masterstr = "Master";
+				const char *skillname = COM_Argv(option_skill + 1);
+				INT32 newskill = -1;
+				INT32 j;
+
+				if (!strcasecmp(masterstr, skillname))
+				{
+					newskill = KARTGP_MASTER;
+				}
+				else
+				{
+					for (j = 0; kartspeed_cons_t[j].strvalue; j++)
+					{
+						if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
+						{
+							newskill = (INT16)kartspeed_cons_t[j].value;
+							break;
+						}
+					}
+
+					if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+					{
+						INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+						if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+							newskill = (INT16)num;
+					}
+				}
+
+				if (newskill != -1)
+				{
+					if (newskill == KARTGP_MASTER)
+					{
+						grandprixinfo.gamespeed = KARTSPEED_HARD;
+						grandprixinfo.masterbots = true;
+					}
+					else
+					{
+						grandprixinfo.gamespeed = newskill;
+						grandprixinfo.masterbots = false;
+					}
+				}
+			}
+
+			grandprixinfo.encore = newencoremode;
+
+			grandprixinfo.gp = true;
+			grandprixinfo.roundnum = 0;
+			grandprixinfo.cup = NULL;
+			grandprixinfo.wonround = false;
+
+			bossinfo.boss = false;
+
+			grandprixinfo.initalize = true;
 		}
 	}
 
@@ -4541,10 +4571,12 @@ void D_GameTypeChanged(INT32 lastgametype)
 			CV_SetValue(&cv_pointlimit, pointlimits[gametype]);
 		}
 	}
+	/* -- no longer useful
 	else if (!multiplayer && !netgame)
 	{
 		G_SetGametype(GT_RACE);
 	}
+	*/
 
 	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
 	if (server)
