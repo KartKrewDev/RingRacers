@@ -42,7 +42,17 @@ INT32 K_StartingBumperCount(void)
 
 boolean K_IsPlayerWanted(player_t *player)
 {
-	return (player->position == 1);
+	UINT8 i = 0, nump = 0, numfirst = 0;
+	for (; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+		nump++;
+		if (players[i].position > 1)
+			continue;
+		numfirst++;
+	}
+	return ((numfirst < nump) && !player->spectator && (player->position == 1));
 }
 
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount)
@@ -307,6 +317,8 @@ void K_RunPaperItemSpawners(void)
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	tic_t interval = 8*TICRATE;
 
+	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
+
 	UINT32 emeraldsSpawned = 0;
 	UINT32 firstUnspawnedEmerald = 0;
 
@@ -315,6 +327,12 @@ void K_RunPaperItemSpawners(void)
 
 	UINT8 pcount = 0;
 	INT16 i;
+
+	if (battlecapsules || bossinfo.boss)
+	{
+		// Gametype uses paper items, but this specific expression doesn't
+		return;
+	}
 
 	if (leveltime < starttime)
 	{
@@ -369,14 +387,17 @@ void K_RunPaperItemSpawners(void)
 			}
 		}
 
-		for (i = 0; i < 7; i++)
+		if (canmakeemeralds)
 		{
-			UINT32 emeraldFlag = (1 << i);
-
-			if (!(emeraldsSpawned & emeraldFlag))
+			for (i = 0; i < 7; i++)
 			{
-				firstUnspawnedEmerald = emeraldFlag;
-				break;
+				UINT32 emeraldFlag = (1 << i);
+
+				if (!(emeraldsSpawned & emeraldFlag))
+				{
+					firstUnspawnedEmerald = emeraldFlag;
+					break;
+				}
 			}
 		}
 
@@ -396,11 +417,14 @@ void K_RunPaperItemSpawners(void)
 				0, 0
 			);
 
-			K_SpawnSphereBox(
-				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
-				10
-			);
+			if (gametyperules & GTR_SPHERES)
+			{
+				K_SpawnSphereBox(
+					battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
+					FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+					10
+				);
+			}
 		}
 	}
 	else
@@ -442,15 +466,18 @@ void K_RunPaperItemSpawners(void)
 				return;
 			}
 
-			for (i = 0; i < 7; i++)
+			if (canmakeemeralds)
 			{
-				UINT32 emeraldFlag = (1 << i);
-
-				if (!(emeraldsSpawned & emeraldFlag))
+				for (i = 0; i < 7; i++)
 				{
-					firstUnspawnedEmerald = emeraldFlag;
-					starti = -1;
-					break;
+					UINT32 emeraldFlag = (1 << i);
+
+					if (!(emeraldsSpawned & emeraldFlag))
+					{
+						firstUnspawnedEmerald = emeraldFlag;
+						starti = -1;
+						break;
+					}
 				}
 			}
 
@@ -485,12 +512,15 @@ void K_RunPaperItemSpawners(void)
 				}
 				else
 				{
-					drop = K_SpawnSphereBox(
-						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-							FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
-							10
-					);
-					K_FlipFromObject(drop, spotList[r]);
+					if (gametyperules & GTR_SPHERES)
+					{
+						drop = K_SpawnSphereBox(
+							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
+								FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+								10
+						);
+						K_FlipFromObject(drop, spotList[r]);
+					}
 
 					drop = K_CreatePaperItem(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
@@ -703,44 +733,79 @@ void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 	}
 }
 
-void K_SpawnBattleCapsules(void)
+void K_SpawnPlayerBattleBumpers(player_t *p)
 {
-	mapthing_t *mt;
+	if (!p->mo || p->bumpers <= 0)
+		return;
+
+	{
+		INT32 i;
+		angle_t diff = FixedAngle(360*FRACUNIT/p->bumpers);
+		angle_t newangle = p->mo->angle;
+		mobj_t *bump;
+
+		for (i = 0; i < p->bumpers; i++)
+		{
+			bump = P_SpawnMobjFromMobj(p->mo,
+				P_ReturnThrustX(p->mo, newangle + ANGLE_180, 64*FRACUNIT),
+				P_ReturnThrustY(p->mo, newangle + ANGLE_180, 64*FRACUNIT),
+				0, MT_BATTLEBUMPER);
+			bump->threshold = i;
+			P_SetTarget(&bump->target, p->mo);
+			bump->angle = newangle;
+			bump->color = p->mo->color;
+			if (p->mo->renderflags & RF_DONTDRAW)
+				bump->renderflags |= RF_DONTDRAW;
+			else
+				bump->renderflags &= ~RF_DONTDRAW;
+			newangle += diff;
+		}
+	}
+}
+
+void K_BattleInit(void)
+{
 	size_t i;
 
-	if (battlecapsules)
-		return;
-
-	if (bossinfo.boss)
-		return;
-
-	if (!(gametyperules & GTR_CAPSULES))
-		return;
-
-	if (modeattacking != ATTACKING_CAPSULES)
+	if ((gametyperules & GTR_CAPSULES) && !battlecapsules && !bossinfo.boss)
 	{
-		UINT8 n = 0;
+		mapthing_t *mt;
+		if (modeattacking != ATTACKING_CAPSULES)
+		{
+			UINT8 n = 0;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator)
+					continue;
+				n++;
+			}
+
+			if (n > 1)
+				goto aftercapsules;
+		}
+
+		mt = mapthings;
+		for (i = 0; i < nummapthings; i++, mt++)
+		{
+			if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+				P_SpawnMapThing(mt);
+		}
+
+		battlecapsules = true;
+	}
+aftercapsules:
+
+	if (gametyperules & GTR_BUMPERS)
+	{
+		INT32 maxbumpers = K_StartingBumperCount();
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i] && !players[i].spectator)
-				n++;
-			if (players[i].exiting)
-				return;
-			if (n > 1)
-				break;
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			players[i].bumpers = maxbumpers;
+			K_SpawnPlayerBattleBumpers(players+i);
 		}
-
-		if (n > 1)
-			return;
 	}
-
-	mt = mapthings;
-	for (i = 0; i < nummapthings; i++, mt++)
-	{
-		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-			P_SpawnMapThing(mt);
-	}
-
-	battlecapsules = true;
 }

@@ -634,10 +634,10 @@ void P_CheckTimeLimit(void)
 	if (!(gametyperules & GTR_TIMELIMIT))
 		return;
 
-	if (leveltime < (timelimitintics + starttime))
+	if (bossinfo.boss == true)
 		return;
 
-	if (bossinfo.boss == true)
+	if (leveltime < (timelimitintics + starttime))
 		return;
 
 	if (gameaction == ga_completed)
@@ -734,6 +734,9 @@ void P_CheckPointLimit(void)
 		return;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
+		return;
+
+	if (bossinfo.boss == true)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player

@@ -28,6 +28,7 @@ UINT8 K_NumEmeralds(player_t *player);
 void K_RunPaperItemSpawners(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
-void K_SpawnBattleCapsules(void);
+void K_SpawnPlayerBattleBumpers(player_t *p);
+void K_BattleInit(void);
 
 #endif

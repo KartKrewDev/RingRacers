@@ -10935,29 +10935,14 @@ void P_SpawnPlayer(INT32 playernum)
 		{
 			if ((leveltime < starttime) || (pcount <= 1)) // Start of the map?
 			{
-				// Reset those bumpers!
-				p->bumpers = K_StartingBumperCount();
-			}
-
-			if (p->bumpers)
-			{
-				angle_t diff = FixedAngle(360*FRACUNIT/p->bumpers);
-				angle_t newangle = mobj->angle;
-				fixed_t newx = mobj->x + P_ReturnThrustX(mobj, newangle + ANGLE_180, 64*FRACUNIT);
-				fixed_t newy = mobj->y + P_ReturnThrustY(mobj, newangle + ANGLE_180, 64*FRACUNIT);
-				mobj_t *mo;
-
-				for (i = 0; i < p->bumpers; i++)
+				if (leveltime > 2) // Reset those bumpers!
 				{
-					mo = P_SpawnMobj(newx, newy, mobj->z, MT_BATTLEBUMPER);
-					mo->threshold = i;
-					P_SetTarget(&mo->target, mobj);
-					mo->angle = (diff * (i-1));
-					mo->color = mobj->color;
-					if (mobj->renderflags & RF_DONTDRAW)
-						mo->renderflags |= RF_DONTDRAW;
-					else
-						mo->renderflags &= ~RF_DONTDRAW;
+					p->bumpers = K_StartingBumperCount();
+					K_SpawnPlayerBattleBumpers(p);
+				}
+				else // temp, will get overwritten in K_BattleInit
+				{
+					p->bumpers = 1;
 				}
 			}
 		}

@@ -86,7 +86,7 @@
 // SRB2Kart
 #include "k_kart.h"
 #include "k_race.h"
-#include "k_battle.h" // K_SpawnBattleCapsules
+#include "k_battle.h" // K_BattleInit
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
 #include "k_bot.h"

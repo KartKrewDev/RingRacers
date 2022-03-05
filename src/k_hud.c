@@ -55,6 +55,7 @@ static patch_t *kp_capsulesticker;
 static patch_t *kp_capsulestickerwide;
 static patch_t *kp_karmasticker;
 static patch_t *kp_spheresticker;
+static patch_t *kp_splitspheresticker;
 static patch_t *kp_splitkarmabomb;
 static patch_t *kp_timeoutsticker;
 
@@ -192,6 +193,7 @@ void K_LoadKartHUDGraphics(void)
 	kp_capsulestickerwide = 	W_CachePatchName("K_STCAPW", PU_HUDGFX);
 	kp_karmasticker = 			W_CachePatchName("K_STKARM", PU_HUDGFX);
 	kp_spheresticker = 			W_CachePatchName("K_STBSMT", PU_HUDGFX);
+	kp_splitspheresticker =		W_CachePatchName("K_SPBSMT", PU_HUDGFX);
 	kp_splitkarmabomb = 		W_CachePatchName("K_SPTKRM", PU_HUDGFX);
 	kp_timeoutsticker = 		W_CachePatchName("K_STTOUT", PU_HUDGFX);
 
@@ -1456,17 +1458,34 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	// TIME_Y = 6;					//   6
 
 	tic_t worktime;
+	boolean dontdraw = false;
 
 	INT32 splitflags = 0;
 	if (!mode)
 	{
 		splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
-		if (cv_timelimit.value && timelimitintics > 0 && !bossinfo.boss) // TODO
+
+#ifndef TESTOVERTIMEINFREEPLAY
+		if (battlecapsules) // capsules override any time limit settings
+			;
+		else
+#endif
+		if (bossinfo.boss == true)
+			;
+		else if (timelimitintics > 0 && (gametyperules & GTR_TIMELIMIT)) // TODO
 		{
 			if (drawtime >= timelimitintics)
+			{
+				if (((drawtime-timelimitintics)/TICRATE) & 1)
+				{
+					dontdraw = true;
+				}
 				drawtime = 0;
+			}
 			else
+			{
 				drawtime = timelimitintics - drawtime;
+			}
 		}
 	}
 
@@ -1478,6 +1497,8 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 
 	if (mode && !drawtime)
 		V_DrawKartString(TX, TY+3, splitflags, va("--'--\"--"));
+	else if (dontdraw) // overtime flash
+		;
 	else if (worktime < 100) // 99:99:99 only
 	{
 		// zero minute
@@ -1581,13 +1602,13 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 					goto bademblem;
 			}
 
-			V_DrawRightAlignedString(workx, worky, splitflags, targettext);
+			V_DrawRightAlignedString(workx, worky, splitflags|V_6WIDTHSPACE, targettext);
 			workx -= 67;
 			V_DrawSmallScaledPatch(workx + 4, worky, splitflags, W_CachePatchName("NEEDIT", PU_CACHE));
 
 			break;
 
-			bademblem:
+bademblem:
 			emblem = M_GetLevelEmblems(-1);
 		}
 
@@ -2020,22 +2041,49 @@ static void K_drawBossHealthBar(void)
 
 static void K_drawKartEmeralds(void)
 {
-	static const INT32 emeraldOffsets[7][2] = {
-		{34, 0},
-		{25, 8},
-		{43, 8},
-		{16, 0},
-		{52, 0},
-		{7, 8},
-		{61, 8}
+	static const INT32 emeraldOffsets[7][3] = {
+		{34, 0, 15},
+		{25, 8, 11},
+		{43, 8, 19},
+		{16, 0,  7},
+		{52, 0, 23},
+		{ 7, 8,  3},
+		{61, 8, 27}
 	};
 
-	const INT32 startx = BASEVIDWIDTH - 77 - 8;
-	const INT32 starty = BASEVIDHEIGHT - 29 - 8;
+	INT32 splitflags = V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN;
+	INT32 startx = BASEVIDWIDTH - 77;
+	INT32 starty = BASEVIDHEIGHT - 29;
+	INT32 i = 0, xindex = 0;
 
-	INT32 i;
+	{
+		if (r_splitscreen)
+		{
+			starty = (starty/2) - 8;
+		}
+		starty -= 8;
 
-	V_DrawScaledPatch(startx, starty, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, kp_rankemeraldback);
+		if (r_splitscreen < 2)
+		{
+			startx -= 8;
+			V_DrawScaledPatch(startx, starty, V_HUDTRANS|splitflags, kp_rankemeraldback);
+		}
+		else
+		{
+			xindex = 2;
+			starty -= 15;
+			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			{
+				startx = LAPS_X;
+				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+			}
+			else // else, that means we're P2 or P4.
+			{
+				startx = LAPS2_X + 1;
+				splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+			}
+		}
+	}
 
 	for (i = 0; i < 7; i++)
 	{
@@ -2054,16 +2102,16 @@ static void K_drawKartEmeralds(void)
 
 			colormap = R_GetTranslationColormap(TC_DEFAULT, emeraldColor, GTC_CACHE);
 			V_DrawMappedPatch(
-				startx + emeraldOffsets[i][0], starty + emeraldOffsets[i][1],
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT,
+				startx + emeraldOffsets[i][xindex], starty + emeraldOffsets[i][1],
+				V_HUDTRANS|splitflags,
 				kp_rankemerald, colormap
 			);
 
 			if (whiteFlash == true)
 			{
 				V_DrawScaledPatch(
-					startx + emeraldOffsets[i][0], starty + emeraldOffsets[i][1],
-					V_HUDTRANSHALF|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT,
+					startx + emeraldOffsets[i][xindex], starty + emeraldOffsets[i][1],
+					V_HUDTRANSHALF|splitflags,
 					kp_rankemeraldflash
 				);
 			}
@@ -2328,7 +2376,8 @@ static void K_drawKartLapsAndRings(void)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(fr+21, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
-			V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives % 10)]); // make sure this doesn't overflow
+			if (stplyr->lives >= 0)
+				V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
 		}
 	}
 	else
@@ -2366,7 +2415,8 @@ static void K_drawKartLapsAndRings(void)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(LAPS_X+46, LAPS_Y-16, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
-			V_DrawScaledPatch(LAPS_X+63, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow
+			if (stplyr->lives >= 0)
+				V_DrawScaledPatch(LAPS_X+63, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
 		}
 	}
 }
@@ -2388,7 +2438,8 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 	}
 	else
 	{
-		fy += 4;
+		fx = LAPS_X+43;
+		fy = LAPS_Y;
 		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
 		{
 			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
@@ -2492,25 +2543,81 @@ static void K_drawBlueSphereMeter(void)
 
 	UINT8 numBars = min((sphere / 10), maxBars);
 	UINT8 colorIndex = (sphere * sizeof(segColors)) / (40 + 1);
-	INT32 x = LAPS_X + 25;
+	INT32 fx, fy;
 	UINT8 i;
+	INT32 splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
+	INT32 flipflag = 0;
+	INT32 xstep = 15;
 
-	V_DrawScaledPatch(LAPS_X, LAPS_Y - 22, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, kp_spheresticker);
+	// pain and suffering defined below
+	if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
+	{
+		fx = LAPS_X;
+		fy = LAPS_Y-22;
+		V_DrawScaledPatch(fx, fy, splitflags|flipflag, kp_spheresticker);
+	}
+	else
+	{
+		xstep = 8;
+		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+		{
+			fx = LAPS_X-2;
+			fy = LAPS_Y;
+		}
+		else // else, that means we're P2 or P4.
+		{
+			fx = LAPS2_X+(SHORT(kp_splitspheresticker->width) - 10);
+			fy = LAPS2_Y;
+			splitflags ^= V_SNAPTOLEFT|V_SNAPTORIGHT;
+			flipflag = V_FLIP; // make the string right aligned and other shit
+			xstep = -xstep;
+		}
+		fy -= 16;
+		V_DrawScaledPatch(fx, fy, splitflags|flipflag, kp_splitspheresticker);
+	}
+
+	if (r_splitscreen < 2)
+	{
+		fx += 25;
+	}
+	else
+	{
+		fx += (flipflag) ? -18 : 13;
+	}
 
 	for (i = 0; i <= numBars; i++)
 	{
-		UINT8 segLen = 10;
+		UINT8 segLen = (r_splitscreen < 2) ? 10 : 5;
 
 		if (i == numBars)
 		{
 			segLen = (sphere % 10);
+			if (r_splitscreen < 2)
+				;
+			else
+			{
+				segLen = (segLen+1)/2; // offset so nonzero spheres shows up IMMEDIATELY
+				if (!segLen)
+					break;
+				if (flipflag)
+					fx += (5-segLen);
+			}
 		}
 
-		V_DrawFill(x, LAPS_Y - 16, segLen, 3, segColors[max(colorIndex-1, 0)] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
-		V_DrawFill(x, LAPS_Y - 15, segLen, 1, segColors[max(colorIndex-2, 0)] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
-		V_DrawFill(x, LAPS_Y - 13, segLen, 3, segColors[colorIndex] | V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN);
+		if (r_splitscreen < 2)
+		{
+			V_DrawFill(fx, fy + 6, segLen, 3, segColors[max(colorIndex-1, 0)] | splitflags);
+			V_DrawFill(fx, fy + 7, segLen, 1, segColors[max(colorIndex-2, 0)] | splitflags);
+			V_DrawFill(fx, fy + 9, segLen, 3, segColors[colorIndex] | splitflags);
+		}
+		else
+		{
+			V_DrawFill(fx, fy + 5, segLen, 1, segColors[max(colorIndex-1, 0)] | splitflags);
+			V_DrawFill(fx, fy + 6, segLen, 1, segColors[max(colorIndex-2, 0)] | splitflags);
+			V_DrawFill(fx, fy + 7, segLen, 2, segColors[colorIndex] | splitflags);
+		}
 
-		x += 15;
+		fx += xstep;
 	}
 }
 
@@ -2536,13 +2643,13 @@ static void K_drawKartBumpersOrKarma(void)
 			{
 				fx = LAPS_X;
 				fy = LAPS_Y;
-				splitflags = V_SNAPTOLEFT|((stplyr == &players[displayplayers[2]]) ? V_SPLITSCREEN|V_SNAPTOBOTTOM : 0); // flip P3 to the bottom.
+				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 			}
 			else // else, that means we're P2 or P4.
 			{
 				fx = LAPS2_X;
 				fy = LAPS2_Y;
-				splitflags = V_SNAPTORIGHT|((stplyr == &players[displayplayers[3]]) ? V_SPLITSCREEN|V_SNAPTOBOTTOM : 0); // flip P4 to the bottom
+				splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 				flipflag = V_FLIP; // make the string right aligned and other shit
 			}
 		}
@@ -3316,7 +3423,8 @@ static void K_drawKartMinimap(void)
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
-	INT32 minimaptrans, splitflags = (r_splitscreen == 3 ? 0 : (V_SLIDEIN|V_SNAPTORIGHT)); // flags should only be 0 when it's centered (4p split)
+	INT32 minimaptrans = cv_kartminimap.value;
+	INT32 splitflags = 0;
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
 	SINT8 localplayers[4];
@@ -3342,20 +3450,26 @@ static void K_drawKartMinimap(void)
 	else
 		return; // no pic, just get outta here
 
-	x = MINI_X - (AutomapPic->width/2);
-	y = MINI_Y - (AutomapPic->height/2);
-
+	if (r_splitscreen < 2) // 1/2P right aligned
+	{
+		splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
+	}
+	else if (r_splitscreen == 3) // 4P centered
 	{
 		const tic_t length = TICRATE/2;
 
 		if (!lt_exitticker)
 			return;
-		minimaptrans = cv_kartminimap.value;
 		if (lt_exitticker < length)
 			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
-		if (!minimaptrans)
-			return;
 	}
+	// 3P lives in the middle of the bottom right player and shouldn't fade in OR slide
+
+	if (!minimaptrans)
+		return;
+
+	x = MINI_X - (AutomapPic->width/2);
+	y = MINI_Y - (AutomapPic->height/2);
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 	splitflags |= minimaptrans;
@@ -3365,7 +3479,6 @@ static void K_drawKartMinimap(void)
 	else
 		V_DrawScaledPatch(x, y, splitflags, AutomapPic);
 
-	if (r_splitscreen != 2)
 	{
 		splitflags &= ~minimaptrans;
 		splitflags |= V_HUDTRANSHALF;
@@ -3515,8 +3628,10 @@ static void K_drawKartMinimap(void)
 	}
 
 	// draw our local players here, opaque.
-	splitflags &= ~V_HUDTRANSHALF;
-	splitflags |= V_HUDTRANS;
+	{
+		splitflags &= ~V_HUDTRANSHALF;
+		splitflags |= V_HUDTRANS;
+	}
 
 	// ...but first, any boss targets.
 	if (bossinfo.boss)
@@ -4571,7 +4686,7 @@ static void K_DrawWaypointDebugger(void)
 
 void K_drawKartHUD(void)
 {
-	boolean isfreeplay = false;
+	boolean islonesome = false;
 	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 i;
@@ -4645,12 +4760,7 @@ void K_drawKartHUD(void)
 		if (LUA_HudEnabled(hud_time))
 			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, gamemap, 0);
 
-		if (!modeattacking)
-		{
-			// The top-four faces on the left
-			//if (LUA_HudEnabled(hud_minirankings))
-				isfreeplay = K_drawKartPositionFaces();
-		}
+		islonesome = K_drawKartPositionFaces();
 	}
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
@@ -4669,47 +4779,64 @@ void K_drawKartHUD(void)
 			V_DrawTinyScaledPatch(x-54, y, snapflags|V_SLIDEIN, W_CachePatchName("TTKBANNR", PU_CACHE));
 			V_DrawTinyScaledPatch(x-54, y+25, snapflags|V_SLIDEIN, W_CachePatchName("TTKART", PU_CACHE));
 		}
-		else if (gametype == GT_RACE) // Race-only elements
+		else
 		{
-			// Draw the lap counter
-			if (LUA_HudEnabled(hud_gametypeinfo))
-				K_drawKartLapsAndRings();
-
-			if (isfreeplay)
-				;
-			else if (!modeattacking)
+			if (LUA_HudEnabled(hud_position))
 			{
-				// Draw the numerical position
-				if (LUA_HudEnabled(hud_position))
-					K_DrawKartPositionNum(stplyr->position);
+				if (bossinfo.boss)
+				{
+					K_drawBossHealthBar();
+				}
+				else if (gametype == GT_RACE) // Race-only elements (not currently gametyperuleable)
+				{
+					if (!islonesome)
+					{
+						// Draw the numerical position
+						K_DrawKartPositionNum(stplyr->position);
+					}
+				}
+				else if (gametype == GT_BATTLE) // Battle-only (ditto)
+				{
+					if (!freecam && !battlecapsules)
+					{
+						K_drawKartEmeralds();
+					}
+				}
 			}
-			else //if (!(demo.playback && hu_showscores))
+
+			if (LUA_HudEnabled(hud_gametypeinfo))
+			{
+				if (gametyperules & GTR_CIRCUIT)
+				{
+					K_drawKartLapsAndRings();
+				}
+				else if (gametyperules & GTR_BUMPERS)
+				{
+					K_drawKartBumpersOrKarma();
+				}
+			}
+
+			// Draw the speedometer and/or accessibility icons
+			if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
+			{
+				K_drawKartSpeedometer();
+			}
+			else
+			{
+				K_drawKartAccessibilityIcons(0);
+			}
+
+			if (gametyperules & GTR_SPHERES)
+			{
+				K_drawBlueSphereMeter();
+			}
+
+			if (modeattacking && !bossinfo.boss)
 			{
 				// Draw the input UI
 				if (LUA_HudEnabled(hud_position))
 					K_drawInput();
 			}
-		}
-		else if (gametype == GT_BATTLE) // Battle-only
-		{
-			// Draw the hits left!
-			if (LUA_HudEnabled(hud_gametypeinfo))
-				K_drawKartBumpersOrKarma();
-		}
-
-		// Draw the speedometer and/or accessibility icons
-		if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
-		{
-			K_drawKartSpeedometer();
-		}
-		else
-		{
-			K_drawKartAccessibilityIcons((r_splitscreen > 1) ? 0 : 8);
-		}
-
-		if (gametyperules & GTR_SPHERES)
-		{
-			K_drawBlueSphereMeter();
 		}
 	}
 
@@ -4746,18 +4873,6 @@ void K_drawKartHUD(void)
 	if (stplyr->karthud[khud_trickcool])
 		K_drawTrickCool();
 
-	if (gametype == GT_BATTLE)
-	{
-		if (bossinfo.boss)
-		{
-			K_drawBossHealthBar();
-		}
-		else if (!freecam)
-		{
-			K_drawKartEmeralds();
-		}
-	}
-
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
@@ -4765,7 +4880,7 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (isfreeplay && !bossinfo.boss && !stplyr->spectator)
+	if (islonesome && !modeattacking && !bossinfo.boss && !stplyr->spectator)
 	{
 		if (LUA_HudEnabled(hud_freeplay))
 			K_drawKartFreePlay();

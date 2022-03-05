@@ -6369,7 +6369,7 @@ static void M_RetryResponse(INT32 ch)
 static void M_Retry(INT32 choice)
 {
 	(void)choice;
-	M_StartMessage(va("Start this %s over?\n\n(Press 'Y' to confirm)\n", (bossinfo.boss == true) ? "boss" : "race"),M_RetryResponse,MM_YESNO);
+	M_StartMessage(va("Start this %s over?\n\n(Press 'Y' to confirm)\n", (gametyperules & GTR_CIRCUIT) ? "race" : "battle"),M_RetryResponse,MM_YESNO);
 }
 
 static void M_SelectableClearMenus(INT32 choice)
