@@ -57,50 +57,49 @@ void K_TimerInit(void)
 	UINT8 i;
 	UINT8 numPlayers = 0;//, numspec = 0;
 
-	// Bosses handle it elsewhere!
-	if (bossinfo.boss == true)
-		return;
-
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (!bossinfo.boss)
 	{
-		if (!playeringame[i])
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			continue;
+			if (!playeringame[i])
+			{
+				continue;
+			}
+
+			if (players[i].spectator == true)
+			{
+				//numspec++;
+				continue;
+			}
+
+			numPlayers++;
 		}
 
-		if (players[i].spectator == true)
+		if (numPlayers >= 2)
 		{
-			//numspec++;
-			continue;
+			rainbowstartavailable = true;
+		}
+		else
+		{
+			rainbowstartavailable = false;
 		}
 
-		numPlayers++;
-	}
+		// No intro in Record Attack / 1v1
+		// Leave unset for the value in K_TimerReset
+		if (numPlayers > 2)
+		{
+			introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+		}
 
-	if (numPlayers >= 2)
-	{
-		rainbowstartavailable = true;
-	}
-	else
-	{
-		rainbowstartavailable = false;
-	}
+		numbulbs = 5;
 
-	// No intro in Record Attack / 1v1
-	// Leave unset for the value in K_TimerReset
-	if (numPlayers > 2)
-	{
-		introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+		if (numPlayers > 2)
+		{
+			numbulbs += (numPlayers-2);
+		}
+
+		starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 	}
-
-	numbulbs = 5;
-
-	if (numPlayers > 2)
-	{
-		numbulbs += (numPlayers-2);
-	}
-
-	starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_BattleInit();
