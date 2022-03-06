@@ -333,6 +333,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEUINT32(save_p, players[i].overtimekarma);
 		WRITEINT16(save_p, players[i].spheres);
+		WRITEINT16(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
 		WRITEUINT8(save_p, players[i].tripWireState);
@@ -597,6 +598,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].karmadelay = READINT16(save_p);
 		players[i].overtimekarma = READUINT32(save_p);
 		players[i].spheres = READINT16(save_p);
+		players[i].spheredigestion = READINT16(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
 		players[i].tripWireState = READUINT8(save_p);

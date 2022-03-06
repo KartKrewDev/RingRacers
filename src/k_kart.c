@@ -7065,12 +7065,32 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		// Deplete 1 every tic when removed from the game.
 		player->spheres--;
+		player->spheredigestion = 0;
 	}
 	else
 	{
-		// Deplete 1 every second when playing.
-		if ((leveltime % TICRATE) == 0)
-			player->spheres--;
+		INT16 spheredigestion = TICRATE; // Base rate of 1 every second when playing.
+		INT16 digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
+		spheredigestion -= ((player->spheres*digestionpower)/20);
+
+		if (spheredigestion < 1) // just in case
+		{
+			spheredigestion = 1;
+		}
+
+		if ((player->spheres > 0) && (player->spheredigestion > 0))
+		{
+			player->spheredigestion--;
+			if (player->spheredigestion == 0)
+			{
+				player->spheres--;
+				player->spheredigestion = (tic_t)spheredigestion;
+			}
+		}
+		else
+		{
+			player->spheredigestion = (tic_t)spheredigestion;
+		}
 	}
 
 	if (player->spheres > 40)

@@ -494,6 +494,7 @@ typedef struct player_s
 	INT16 karmadelay;
 	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
+	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
 
