@@ -7061,6 +7061,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (player->rings < -20)
 		player->rings = -20;
 
+	if (player->spheres > 40)
+		player->spheres = 40;
+	// where's the < 0 check? see below the following block!
+
 	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
 	{
 		// Deplete 1 every tic when removed from the game.
@@ -7069,33 +7073,45 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 	else
 	{
-		INT16 spheredigestion = TICRATE; // Base rate of 1 every second when playing.
-		INT16 digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
-		spheredigestion -= ((player->spheres*digestionpower)/20);
+		tic_t spheredigestion = TICRATE; // Base rate of 1 every second when playing.
+		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
 
-		if (spheredigestion < 1) // just in case
+		// currently 0-34
+		digestionpower = ((player->spheres*digestionpower)/20);
+
+		if (digestionpower >= spheredigestion)
 		{
 			spheredigestion = 1;
+		}
+		else
+		{
+			spheredigestion -= digestionpower;
 		}
 
 		if ((player->spheres > 0) && (player->spheredigestion > 0))
 		{
+			// If you got a massive boost in spheres, catch up digestion as necessary.
+			if (spheredigestion < player->spheredigestion)
+			{
+				player->spheredigestion = (spheredigestion + player->spheredigestion)/2;
+			}
+
 			player->spheredigestion--;
+
 			if (player->spheredigestion == 0)
 			{
 				player->spheres--;
-				player->spheredigestion = (tic_t)spheredigestion;
+				player->spheredigestion = spheredigestion;
 			}
 		}
 		else
 		{
-			player->spheredigestion = (tic_t)spheredigestion;
+			player->spheredigestion = spheredigestion;
 		}
 	}
 
-	if (player->spheres > 40)
-		player->spheres = 40;
-	else if (player->spheres < 0)
+	// where's the > 40 check? see above the previous block!
+	if (player->spheres < 0)
 		player->spheres = 0;
 
 	if (comeback == false || !(gametyperules & GTR_KARMA) || (player->pflags & PF_ELIMINATED))
