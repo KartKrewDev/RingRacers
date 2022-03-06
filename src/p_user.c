@@ -708,7 +708,7 @@ boolean P_EndingMusic(player_t *player)
 {
 	char buffer[9];
 	boolean looping = true;
-	INT32 bestlocalpos;
+	INT32 bestlocalpos, test;
 	player_t *bestlocalplayer;
 
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
@@ -719,6 +719,11 @@ boolean P_EndingMusic(player_t *player)
 
 	// Event - Level Finish
 	// Check for if this is valid or not
+#define getplayerpos(p) \
+	(((players[p].position < 1) || (players[p].pflags & PF_NOCONTEST)) \
+		? MAXPLAYERS+1 \
+		: players[p].position);
+
 	if (r_splitscreen)
 	{
 		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_NOCONTEST))
@@ -728,12 +733,13 @@ boolean P_EndingMusic(player_t *player)
 			return false;
 
 		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = ((players[displayplayers[0]].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[displayplayers[0]].position);
+		bestlocalpos = getplayerpos(displayplayers[0]);
 #define setbests(p) \
-	if (((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position) < bestlocalpos) \
+	test = getplayerpos(p); \
+	if (test < bestlocalpos) \
 	{ \
 		bestlocalplayer = &players[p]; \
-		bestlocalpos = ((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position); \
+		bestlocalpos = test; \
 	}
 		setbests(displayplayers[1]);
 		if (r_splitscreen > 1)
@@ -748,8 +754,10 @@ boolean P_EndingMusic(player_t *player)
 			return false;
 
 		bestlocalplayer = player;
-		bestlocalpos = ((player->pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : player->position);
+		bestlocalpos = getplayerpos((player-players));
 	}
+
+#undef getplayerpos
 
 	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme

@@ -2066,6 +2066,10 @@ static void K_drawKartEmeralds(void)
 		if (r_splitscreen < 2)
 		{
 			startx -= 8;
+			if (r_splitscreen == 1 && stplyr == &players[displayplayers[0]])
+			{
+				starty = 1;
+			}
 			V_DrawScaledPatch(startx, starty, V_HUDTRANS|splitflags, kp_rankemeraldback);
 		}
 		else
@@ -2935,7 +2939,9 @@ static boolean K_ShowPlayerNametag(player_t *p)
 
 	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((p->position < stplyr->position-2)
+		if ((p->position == 0)
+		|| (stplyr->position == 0)
+		|| (p->position < stplyr->position-2)
 		|| (p->position > stplyr->position+2))
 		{
 			return false;

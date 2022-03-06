@@ -10788,7 +10788,7 @@ void P_RespawnSpecials(void)
 //
 void P_SpawnPlayer(INT32 playernum)
 {
-	UINT8 i, pcount = 0;
+	UINT8 i, pcount = 0; // MAXPLAYERS if exiting
 	player_t *p = &players[playernum];
 	mobj_t *mobj;
 
@@ -10801,6 +10801,11 @@ void P_SpawnPlayer(INT32 playernum)
 			continue;
 		if (!playeringame[i] || players[i].spectator)
 			continue;
+		if (players[i].exiting)
+		{
+			pcount = MAXPLAYERS;
+			break;
+		}
 		if (players[i].jointime <= 1) // Prevent splitscreen hosters/joiners from only adding 1 player at a time in empty servers
 			continue;
 		pcount++;

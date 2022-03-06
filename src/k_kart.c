@@ -7206,7 +7206,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED))
+	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED) && !player->exiting)
 	{
 		fixed_t distanceToBarrier = 0;
 
@@ -8416,7 +8416,10 @@ void K_StripOther(player_t *player)
 	player->roulettetype = 0;
 
 	player->invincibilitytimer = 0;
-	K_RemoveGrowShrink(player);
+	if (player->growshrinktimer)
+	{
+		K_RemoveGrowShrink(player);
+	}
 
 	if (player->eggmanexplode)
 	{

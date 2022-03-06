@@ -2099,6 +2099,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
 	UINT16 skincolor;
@@ -2186,11 +2187,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
 		spheres = 0;
 		kickstartaccel = 0;
-		khudfault = nocontrol = 0;
+		khudfault = 0;
+		nocontrol = 0;
 		laps = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudcardanimation = 0;
 		starpostnum = 0;
 		xtralife = 0;
 
@@ -2229,7 +2232,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		laps = players[player].laps;
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
+
 		exiting = players[player].exiting;
+		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+
 		starpostnum = players[player].starpostnum;
 
 		xtralife = players[player].xtralife;
@@ -2275,6 +2281,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
 	p->totalring = totalring;
@@ -2358,23 +2365,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (leveltime < starttime)
 		return;
 
-	if (p-players == consoleplayer)
-	{
-		if (mapmusflags & MUSIC_RELOADRESET)
-		{
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-			mapmusresume = 0;
-			songcredit = true;
-		}
-
-		// This is in S_Start, but this was not here previously.
-		// if (RESETMUSIC)
-		// 	S_StopMusic();
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-	}
+	if (exiting)
+		return;
 
 	P_RestoreMusic(p);
 
