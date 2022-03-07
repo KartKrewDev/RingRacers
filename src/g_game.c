@@ -2249,8 +2249,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (!(netgame || multiplayer))
 		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
 
-	// Obliterate follower from existence
-	P_SetTarget(&players[player].follower, NULL);
+	if (!betweenmaps)
+	{
+		// Obliterate follower from existence (if valid memory)
+		P_SetTarget(&players[player].follower, NULL);
+	}
 
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
