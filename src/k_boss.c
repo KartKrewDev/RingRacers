@@ -23,6 +23,18 @@
 struct bossinfo bossinfo;
 
 /*--------------------------------------------------
+	void K_ClearBossInfo(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_ResetBossInfo(void)
+{
+	Z_Free(bossinfo.enemyname);
+	Z_Free(bossinfo.subtitle);
+	memset(&bossinfo, 0, sizeof(struct bossinfo));
+}
+
+/*--------------------------------------------------
 	void K_BossInfoTicker(void)
 
 		See header file for description.
@@ -118,6 +130,11 @@ void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t 
 	bossinfo.barlen = BOSSHEALTHBARLEN;
 	K_UpdateBossHealthBar(FRACUNIT, 0);
 
+	if (pinchmagnitude > FRACUNIT)
+		pinchmagnitude = FRACUNIT;
+	else if (pinchmagnitude < 0)
+		pinchmagnitude = 0;
+
 	bossinfo.healthbarpinch = FixedMul(pinchmagnitude, BOSSHEALTHBARLEN*FRACUNIT)>>FRACBITS;
 
 	// we do this here so we can fudge our working a bit
@@ -143,6 +160,11 @@ void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t 
 
 void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen)
 {
+	if (magnitude > FRACUNIT)
+		magnitude = FRACUNIT;
+	else if (magnitude < 0)
+		magnitude = 0;
+
 	if (jitterlen > bossinfo.visualbarimpact)
 		bossinfo.visualbarimpact = jitterlen;
 	bossinfo.healthbar = FixedMul(magnitude, BOSSHEALTHBARLEN);

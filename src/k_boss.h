@@ -55,9 +55,61 @@ extern struct bossinfo
 	char *subtitle;						///< The subtitle under the titlecard
 } bossinfo;
 
+/*--------------------------------------------------
+	void K_ResetBossInfo(void);
+
+		Resets boss information to a clean slate.
+--------------------------------------------------*/
+
+void K_ResetBossInfo(void);
+
+/*--------------------------------------------------
+	void K_ResetBossInfo(void);
+
+		Updates boss information and timers for this level tic.
+--------------------------------------------------*/
+
 void K_BossInfoTicker(void);
+
+/*--------------------------------------------------
+	void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t titlesound, fixed_t pinchmagnitude, UINT8 divisions);
+
+		Initialises boss information for opponent spawn, including filling the health bar.
+
+	Input Arguments:-
+		enemyname - Zone memory string for HUD/titlecard name.
+		subtitle - Zone memory string for titlecard subtitle.
+		titlesound - Sound effect enum for titlecard typewriting.
+		pinchmagnitude - 0-FRACUNIT range for healthbar to display pinch status at.
+		divisions - # of segments on healthbar.
+--------------------------------------------------*/
+
 void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t titlesound, fixed_t pinchmagnitude, UINT8 divisions);
+
+/*--------------------------------------------------
+	void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen);
+
+		Updates boss healthbar to a new magnitude.
+
+	Input Arguments:-
+		magnitude - 0-FRACUNIT range for healthbar to update to.
+		jitterlen - Duration healthbar should vibrate for.
+--------------------------------------------------*/
+
 void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen);
+
+/*--------------------------------------------------
+	void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean minimap);
+
+		Updates the list of Weakspots for the HUD/minimap object tracking.
+
+	Input Arguments:-
+		spot - mobj_t reference.
+		spottype - Type of spot.
+		color - Color of associated UI elements.
+		minimap - If true, appear on minimap.
+--------------------------------------------------*/
+
 void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean minimap);
 
 #endif

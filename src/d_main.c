@@ -930,11 +930,7 @@ void D_StartTitle(void)
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
 	// Reset boss info
-	if (bossinfo.enemyname)
-		Z_Free(bossinfo.enemyname);
-	if (bossinfo.subtitle)
-		Z_Free(bossinfo.subtitle);
-	memset(&bossinfo, 0, sizeof(struct bossinfo));
+	K_ResetBossInfo();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;

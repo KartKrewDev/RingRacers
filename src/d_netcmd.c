@@ -2749,17 +2749,11 @@ static void Command_Map_f(void)
 		if (newgametype == GT_BATTLE)
 		{
 			grandprixinfo.gp = false;
+			K_ResetBossInfo();
 
 			if (mapheaderinfo[newmapnum-1] &&
 				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
 			{
-				// Reset boss info
-				if (bossinfo.enemyname)
-					Z_Free(bossinfo.enemyname);
-				if (bossinfo.subtitle)
-					Z_Free(bossinfo.subtitle);
-				memset(&bossinfo, 0, sizeof(struct bossinfo));
-
 				bossinfo.boss = true;
 				bossinfo.encore = newencoremode;
 			}

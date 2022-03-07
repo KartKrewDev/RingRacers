@@ -7839,13 +7839,7 @@ static void M_StartBoss(INT32 choice)
 
 	M_ClearMenus(true);
 
-	// Reset boss info
-	if (bossinfo.enemyname)
-		Z_Free(bossinfo.enemyname);
-	if (bossinfo.subtitle)
-		Z_Free(bossinfo.subtitle);
-	memset(&bossinfo, 0, sizeof(struct bossinfo));
-
+	K_ResetBossInfo();
 	bossinfo.boss = true;
 	bossinfo.encore = (boolean)(cv_dummygpencore.value);
 
