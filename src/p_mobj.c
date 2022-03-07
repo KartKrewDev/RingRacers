@@ -8726,7 +8726,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_RANDOMITEM:
-		if ((leveltime == starttime) && (mobj->flags2 & MF2_BOSSNOTRAP)) // here on map start?
+		if ((leveltime == starttime) && !(gametyperules & GTR_CIRCUIT) && (mobj->flags2 & MF2_BOSSNOTRAP)) // here on map start?
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
@@ -8744,8 +8744,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 			}
 			// poof into existance
-			mobj->flags &= ~MF_NOCLIPTHING;
+			P_UnsetThingPosition(mobj);
+			mobj->flags &= ~(MF_NOCLIPTHING|MF_NOBLOCKMAP);
 			mobj->renderflags &= ~RF_DONTDRAW;
+			P_SetThingPosition(mobj);
 			P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_EXPLODE);
 			nummapboxes++;
 		}
@@ -12250,11 +12252,17 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_RANDOMITEM:
 	{
-		if (leveltime < starttime)
+		boolean delayed = !(gametyperules & GTR_CIRCUIT);
+		if (leveltime < (delayed ? starttime : 3))
 		{
 			mobj->flags2 |= MF2_BOSSNOTRAP; // mark as here on map start
-			mobj->flags |= MF_NOCLIPTHING;
-			mobj->renderflags |= RF_DONTDRAW;
+			if (delayed)
+			{
+				P_UnsetThingPosition(mobj);
+				mobj->flags |= (MF_NOCLIPTHING|MF_NOBLOCKMAP);
+				mobj->renderflags |= RF_DONTDRAW;
+				P_SetThingPosition(mobj);
+			}
 		}
 		else
 		{
