@@ -89,7 +89,7 @@ void K_CheckBumpers(void)
 	UINT8 i;
 	UINT8 numingame = 0;
 	SINT8 winnernum = -1;
-	INT32 winnerscoreadd = 0;
+	INT32 winnerscoreadd = 0, maxroundscore = 0;
 	boolean nobumpers = false;
 
 	if (!(gametyperules & GTR_BUMPERS))
@@ -108,6 +108,11 @@ void K_CheckBumpers(void)
 
 		numingame++;
 		winnerscoreadd += players[i].roundscore;
+
+		if (players[i].roundscore > maxroundscore)
+		{
+			maxroundscore = players[i].roundscore;
+		}
 
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
@@ -157,6 +162,8 @@ void K_CheckBumpers(void)
 
 	if (winnernum > -1 && playeringame[winnernum])
 	{
+		if ((players[winnernum].roundscore+winnerscoreadd) == maxroundscore)
+			winnerscoreadd++; // break ties if luigi wins by doing nothing
 		players[winnernum].roundscore += winnerscoreadd;
 		CONS_Printf(M_GetText("%s recieved %d point%s for winning!\n"), player_names[winnernum], winnerscoreadd, (winnerscoreadd == 1 ? "" : "s"));
 	}
