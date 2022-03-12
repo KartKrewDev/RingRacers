@@ -1821,6 +1821,8 @@ void Y_EndVote(void)
 //
 static void Y_UnloadVoteData(void)
 {
+	UINT8 i;
+
 	voteclient.loaded = false;
 
 	if (rendermode != render_soft)
@@ -1836,11 +1838,27 @@ static void Y_UnloadVoteData(void)
 	UNLOAD(randomlvl);
 	UNLOAD(rubyicon);
 
-	UNLOAD(levelinfo[4].pic);
-	UNLOAD(levelinfo[3].pic);
-	UNLOAD(levelinfo[2].pic);
-	UNLOAD(levelinfo[1].pic);
-	UNLOAD(levelinfo[0].pic);
+	// to prevent double frees...
+	for (i = 0; i < 5; i++)
+	{
+	// I went to all the trouble of doing this,
+	// but literally nowhere else frees level pics.
+#if 0
+		UINT8 j;
+
+		if (!levelinfo[i].pic)
+			continue;
+
+		for (j = i+1; j < 5; j++)
+		{
+			if (levelinfo[j].pic == levelinfo[i].pic)
+				levelinfo[j].pic = NULL;
+		}
+		UNLOAD(levelinfo[i].pic);
+#else
+		CLEANUP(levelinfo[i].pic);
+#endif
+	}
 }
 
 //

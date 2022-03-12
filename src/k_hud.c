@@ -1307,7 +1307,8 @@ static void K_drawKartItem(void)
 					localpatch = kp_sadface[offset];
 					break;
 				default:
-					return;
+					localpatch = kp_nodraw; // diagnose underflows
+					break;
 			}
 
 			if ((stplyr->pflags & PF_ITEMOUT) && !(leveltime & 1))

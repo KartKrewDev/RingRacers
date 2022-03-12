@@ -1212,20 +1212,7 @@ static void ST_overlayDrawer(void)
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!(multiplayer && demo.playback))
-			{
-				if(!P_IsLocalPlayer(stplyr))
-				{
-					/*char name[MAXPLAYERNAME+1];
-					// shorten the name if its more than twelve characters.
-					strlcpy(name, player_names[stplyr-players], 13);*/
-
-					// Show name of player being displayed
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("VIEWPOINT:"));
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
-				}
-			}
-			else if (!demo.title)
+			if (!demo.title && !P_IsLocalPlayer(stplyr))
 			{
 				if (!r_splitscreen)
 				{

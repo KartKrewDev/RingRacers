@@ -4498,7 +4498,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
-	mapmusflags |= MUSIC_RELOADRESET;
+	if (!reloading)
+		mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save_p));
 

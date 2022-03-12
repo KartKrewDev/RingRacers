@@ -782,10 +782,10 @@ void D_RegisterClientCommands(void)
 		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
 	}
 
-	Followercolor_cons_t[1].value = -1;
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
 	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
 
-	Followercolor_cons_t[0].value = -2;
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
 	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
@@ -1450,6 +1450,8 @@ static void SendNameAndColor(UINT8 n)
 		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
 			SetFollower(playernum, cv_follower[n].value);
 
+		player->followercolor = cv_followercolor[n].value;
+
 		if (metalrecording && n == 0)
 		{ // Starring Metal Sonic as themselves, obviously.
 			SetPlayerSkinByNum(playernum, 5);
@@ -1504,7 +1506,7 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITESINT8(p, (SINT8)cv_follower[n].value);
-	WRITEUINT16(p, (UINT8)cv_followercolor[n].value);
+	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
@@ -1561,7 +1563,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	demo_extradata[playernum] |= DXD_COLOR;
 
 	// normal player colors
-	if (server && !P_IsLocalPlayer(p))
+	if (server && !P_IsMachineLocalPlayer(p))
 	{
 		boolean kick = false;
 
@@ -2433,7 +2435,7 @@ void D_SetupVote(void)
 	UINT8 *p = buf;
 	INT32 i;
 	UINT8 secondgt = G_SometimesGetDifferentGametype();
-	INT16 votebuffer[3] = {-1,-1,-1};
+	INT16 votebuffer[4] = {-1,-1,-1, 0};
 
 	if ((cv_kartencore.value == 1) && (gametyperules & GTR_CIRCUIT))
 		WRITEUINT8(p, (gametype|0x80));
@@ -2446,13 +2448,13 @@ void D_SetupVote(void)
 	{
 		UINT16 m;
 		if (i == 2) // sometimes a different gametype
-			m = G_RandMap(G_TOLFlag(secondgt), prevmap, false, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
 		else if (i >= 3) // unknown-random and force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, (i-2), (i < 4), votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, (i-2), (i < 4), votebuffer);
 		else
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
-			votebuffer[min(i, 2)] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
+			votebuffer[i] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
 		WRITEUINT16(p, m);
 	}
 
@@ -3488,15 +3490,20 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	//reset view if you are changed, or viewing someone who was changed.
-	if (playernum == consoleplayer || displayplayers[0] == playernum)
+	// Reset away view (some code referenced from P_SpectatorJoinGame)
 	{
-		// Call ViewpointSwitch hooks here.
-		// The viewpoint was forcibly changed.
-		if (displayplayers[0] != consoleplayer) // You're already viewing yourself. No big deal.
-			LUAh_ViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		displayplayers[0] = consoleplayer;
+		for (i = 0; i < r_splitscreen; i++)
+		{
+			if (localplayertable[i] == playernum)
+			{
+				LUAh_ViewpointSwitch(players+playernum, players+playernum, true);
+				displayplayers[i] = playernum;
+				break;
+			}
+		}
 	}
 
 	/*if (G_GametypeHasTeams())

@@ -1293,20 +1293,23 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	// load a base level
 	if (P_LoadNetGame(reloading))
 	{
-		CON_LogMessage(va(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap)));
-
-		if (strlen(mapheaderinfo[gamemap-1]->lvlttl) > 0)
+		if (!reloading)
 		{
-			CON_LogMessage(va(": %s", mapheaderinfo[gamemap-1]->lvlttl));
-			if (strlen(mapheaderinfo[gamemap-1]->zonttl) > 0)
-				CON_LogMessage(va(" %s", mapheaderinfo[gamemap-1]->zonttl));
-			else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-				CON_LogMessage(M_GetText(" Zone"));
-			if (mapheaderinfo[gamemap-1]->actnum > 0)
-				CON_LogMessage(va(" %d", mapheaderinfo[gamemap-1]->actnum));
-		}
+			CON_LogMessage(va(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap)));
 
-		CON_LogMessage("\"\n");
+			if (strlen(mapheaderinfo[gamemap-1]->lvlttl) > 0)
+			{
+				CON_LogMessage(va(": %s", mapheaderinfo[gamemap-1]->lvlttl));
+				if (strlen(mapheaderinfo[gamemap-1]->zonttl) > 0)
+					CON_LogMessage(va(" %s", mapheaderinfo[gamemap-1]->zonttl));
+				else if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+					CON_LogMessage(M_GetText(" Zone"));
+				if (mapheaderinfo[gamemap-1]->actnum > 0)
+					CON_LogMessage(va(" %d", mapheaderinfo[gamemap-1]->actnum));
+			}
+
+			CON_LogMessage("\"\n");
+		}
 	}
 	else
 	{
