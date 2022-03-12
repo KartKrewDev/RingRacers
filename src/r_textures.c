@@ -1056,10 +1056,20 @@ static void R_AllocateTextures(INT32 add)
 	// Create brightmap texture table.
 	Z_Realloc(texturebrightmaps, (newtextures + 1) * sizeof(*texturebrightmaps), PU_STATIC, &texturebrightmaps);
 
-	for (i = numtextures; i < newtextures; ++i)
+	for (i = 0; i < numtextures; ++i)
+	{
+		// R_FlushTextureCache relies on the user for
+		// Z_Free, texturecache has been reallocated so the
+		// user is now garbage memory.
+		Z_SetUser(texturecache[i],
+				(void**)&texturecache[i]);
+	}
+
+	while (i < newtextures)
 	{
 		texturetranslation[i] = i;
 		texturebrightmaps[i] = 0;
+		i++;
 	}
 }
 
