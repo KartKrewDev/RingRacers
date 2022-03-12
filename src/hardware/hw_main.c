@@ -6048,7 +6048,7 @@ void HWR_RenderSkyboxView(player_t *player)
 	}
 
 	// note: sets viewangle, viewx, viewy, viewz
-	R_SkyboxFrame(player);
+	R_SkyboxFrame(viewssnum);
 
 	// copy view cam position for local use
 	dup_viewx = viewx;
@@ -6259,7 +6259,7 @@ void HWR_RenderPlayerView(void)
 	}
 
 	// note: sets viewangle, viewx, viewy, viewz
-	R_SetupFrame(player);
+	R_SetupFrame(viewssnum);
 	framecount++; // timedemo
 
 	// copy view cam position for local use

@@ -1199,30 +1199,61 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // R_SetupFrame
 //
 
-void R_SetupFrame(player_t *player)
+static void
+R_SetupCommonFrame
+(		player_t * player,
+		subsector_t * subsector)
 {
-	camera_t *thiscam = &camera[0];
-	boolean chasecam = (cv_chasecam[0].value != 0);
-	UINT8 i = 0;
+	newview->player = player;
 
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			chasecam = (cv_chasecam[i].value != 0);
-			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
-			break;
-		}
-	}
+	newview->x += quake.x;
+	newview->y += quake.y;
+	newview->z += quake.z;
 
-	if (i > r_splitscreen)
+	newview->roll = R_ViewRollAngle(player);
+
+	if (subsector)
+		newview->sector = subsector->sector;
+	else
+		newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
+
+	R_InterpolateView(rendertimefrac);
+}
+
+static void R_SetupAimingFrame(int s)
+{
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
+
+	if (player->awayviewtics)
 	{
-		i = 0; // Shouldn't be possible, but just in case.
-		thiscam = &camera[0];
-		chasecam = (cv_chasecam[0].value != 0);
-		R_SetViewContext(VIEWCONTEXT_PLAYER1);
+		newview->aim = player->awayviewaiming;
+		newview->angle = player->awayviewmobj->angle;
 	}
+	else if (thiscam && thiscam->chase)
+	{
+		newview->aim = thiscam->aiming;
+		newview->angle = thiscam->angle;
+	}
+	else if (!demo.playback && player->playerstate != PST_DEAD)
+	{
+		newview->aim = localaiming[s];
+		newview->angle = localangle[s];
+	}
+	else
+	{
+		newview->aim = player->aiming;
+		newview->angle = player->mo->angle;
+	}
+}
+
+void R_SetupFrame(int s)
+{
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
+	boolean chasecam = (cv_chasecam[s].value != 0);
+
+	R_SetViewContext(VIEWCONTEXT_PLAYER1 + s);
 
 	if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
@@ -1237,97 +1268,51 @@ void R_SetupFrame(player_t *player)
 
 	newview->sky = false;
 
+	R_SetupAimingFrame(s);
+
 	if (player->awayviewtics)
 	{
 		// cut-away view stuff
 		r_viewmobj = player->awayviewmobj; // should be a MT_ALTVIEWMAN
 		I_Assert(r_viewmobj != NULL);
+
+		newview->x = r_viewmobj->x;
+		newview->y = r_viewmobj->y;
 		newview->z = r_viewmobj->z + 20*FRACUNIT;
-		newview->aim = player->awayviewaiming;
-		newview->angle = r_viewmobj->angle;
+
+		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
 	else if (!player->spectator && chasecam)
 	// use outside cam view
 	{
 		r_viewmobj = NULL;
+
+		newview->x = thiscam->x;
+		newview->y = thiscam->y;
 		newview->z = thiscam->z + (thiscam->height>>1);
-		newview->aim = thiscam->aiming;
-		newview->angle = thiscam->angle;
+
+		R_SetupCommonFrame(player, thiscam->subsector);
 	}
 	else
 	// use the player's eyes view
 	{
-		newview->z = player->viewz;
-
 		r_viewmobj = player->mo;
 		I_Assert(r_viewmobj != NULL);
 
-		newview->aim = player->aiming;
-		newview->angle = r_viewmobj->angle;
-
-		if (!demo.playback && player->playerstate != PST_DEAD)
-		{
-			newview->angle = localangle[i]; // WARNING: camera uses this
-			newview->aim = localaiming[i];
-		}
-	}
-	newview->roll = R_ViewRollAngle(player);
-	newview->z += quake.z;
-
-	newview->player = player;
-
-	if (chasecam && !player->awayviewtics && !player->spectator)
-	{
-		newview->x = thiscam->x;
-		newview->y = thiscam->y;
-		newview->x += quake.x;
-		newview->y += quake.y;
-
-		if (thiscam->subsector)
-			newview->sector = thiscam->subsector->sector;
-		else
-			newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
-	}
-	else
-	{
 		newview->x = r_viewmobj->x;
 		newview->y = r_viewmobj->y;
-		newview->x += quake.x;
-		newview->y += quake.y;
+		newview->z = player->viewz;
 
-		if (r_viewmobj->subsector)
-			newview->sector = r_viewmobj->subsector->sector;
-		else
-			newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
+		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
-
-	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
-
-	R_InterpolateView(rendertimefrac);
 }
 
-void R_SkyboxFrame(player_t *player)
+void R_SkyboxFrame(int s)
 {
-	camera_t *thiscam = &camera[0];
-	UINT8 i = 0;
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
 
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			R_SetViewContext(VIEWCONTEXT_SKY1 + i);
-			break;
-		}
-	}
-
-	if (i > r_splitscreen)
-	{
-		i = 0; // Shouldn't be possible, but just in case.
-		thiscam = &camera[0];
-		R_SetViewContext(VIEWCONTEXT_SKY1);
-	}
+	R_SetViewContext(VIEWCONTEXT_SKY1 + s);
 
 	// cut-away view stuff
 	newview->sky = true;
@@ -1339,30 +1324,8 @@ void R_SkyboxFrame(player_t *player)
 		I_Error("R_SkyboxFrame: r_viewmobj null (player %s)", sizeu1(playeri));
 	}
 #endif
-	if (player->awayviewtics)
-	{
-		newview->aim = player->awayviewaiming;
-		newview->angle = player->awayviewmobj->angle;
-	}
-	else if (thiscam && thiscam->chase)
-	{
-		newview->aim = thiscam->aiming;
-		newview->angle = thiscam->angle;
-	}
-	else
-	{
-		newview->aim = player->aiming;
-		newview->angle = player->mo->angle;
-		if (/*!demo.playback && */player->playerstate != PST_DEAD)
-		{
-			newview->angle = localangle[i];
-			newview->aim = localaiming[i];
-		}
-	}
-	newview->angle += r_viewmobj->angle;
-	newview->roll = R_ViewRollAngle(player);
 
-	newview->player = player;
+	R_SetupAimingFrame(s);
 
 	newview->x = r_viewmobj->x;
 	newview->y = r_viewmobj->y;
@@ -1440,15 +1403,8 @@ void R_SkyboxFrame(player_t *player)
 			newview->z += campos.z * -mh->skybox_scalez;
 	}
 
-	if (r_viewmobj->subsector)
-		newview->sector = r_viewmobj->subsector->sector;
-	else
-		newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
 
-	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
-
-	R_InterpolateView(rendertimefrac);
+	R_SetupCommonFrame(player, r_viewmobj->subsector);
 }
 
 boolean R_ViewpointHasChasecam(player_t *player)
@@ -1562,7 +1518,7 @@ void R_RenderPlayerView(void)
 		V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
 	}
 
-	R_SetupFrame(player);
+	R_SetupFrame(viewssnum);
 	framecount++;
 	validcount++;
 
