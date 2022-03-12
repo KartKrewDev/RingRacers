@@ -3916,7 +3916,7 @@ static void P_HandleFollower(player_t *player)
 	follower_t fl;
 	angle_t an;
 	fixed_t zoffs;
-	fixed_t sx, sy, sz;
+	fixed_t sx, sy, sz, deltaz;
 	UINT16 color;
 
 	fixed_t bubble;	// bubble scale (0 if no bubble)
@@ -3950,6 +3950,9 @@ static void P_HandleFollower(player_t *player)
 	sx = player->mo->x + FixedMul((player->mo->scale*fl.dist), FINECOSINE((an)>>ANGLETOFINESHIFT));
 	sy = player->mo->y + FixedMul((player->mo->scale*fl.dist), FINESINE((an)>>ANGLETOFINESHIFT));
 
+	// interp info helps with stretchy fix
+	deltaz = (player->mo->z - player->mo->old_z);
+
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
 	sz = player->mo->z + FixedMul(player->mo->scale, zoffs)*P_MobjFlip(player->mo);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -3966,10 +3969,10 @@ static void P_HandleFollower(player_t *player)
 	// Set follower colour
 	switch (player->followercolor)
 	{
-		case 255: // "Match" (-1)
+		case FOLLOWERCOLOR_MATCH: // "Match"
 			color = player->skincolor;
 			break;
-		case 254: // "Opposite" (-2)
+		case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
@@ -4033,6 +4036,7 @@ static void P_HandleFollower(player_t *player)
 		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
 		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
 		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
+		player->follower->z += (deltaz/ (INT32)fl.vertlag);
 		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
@@ -4066,6 +4070,7 @@ static void P_HandleFollower(player_t *player)
 			// match follower's momentums and (e)flags(2).
 			bmobj->momx = player->follower->momx;
 			bmobj->momy = player->follower->momy;
+			bmobj->z += (deltaz/ (INT32)fl.vertlag);
 			bmobj->momz = player->follower->momz;
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));

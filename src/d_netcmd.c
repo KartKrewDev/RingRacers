@@ -781,10 +781,10 @@ void D_RegisterClientCommands(void)
 		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
 	}
 
-	Followercolor_cons_t[1].value = -1;
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
 	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
 
-	Followercolor_cons_t[0].value = -2;
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
 	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
@@ -1449,6 +1449,8 @@ static void SendNameAndColor(UINT8 n)
 		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
 			SetFollower(playernum, cv_follower[n].value);
 
+		player->followercolor = cv_followercolor[n].value;
+
 		if (metalrecording && n == 0)
 		{ // Starring Metal Sonic as themselves, obviously.
 			SetPlayerSkinByNum(playernum, 5);
@@ -1503,7 +1505,7 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITESINT8(p, (SINT8)cv_follower[n].value);
-	WRITEUINT16(p, (UINT8)cv_followercolor[n].value);
+	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
