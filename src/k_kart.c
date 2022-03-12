@@ -6595,7 +6595,7 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 {
 	INT32 sfxnum = sfx_None;
 
-	if (player->mo->health > 0 && !P_IsDisplayPlayer(player))
+	if (player->mo->health > 0 && !P_IsLocalPlayer(player)) // used to be !P_IsDisplayPlayer(player)
 	{
 		if (cv_kartinvinsfx.value)
 		{
@@ -8987,10 +8987,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									P_SetScale(overlay, player->mo->scale);
 								}
 								player->invincibilitytimer = itemtime+(2*TICRATE); // 10 seconds
-								if (P_IsLocalPlayer(player))
+
+								if (P_IsLocalPlayer(player) == true)
+								{
 									S_ChangeMusicSpecial("kinvnc");
-								if (! P_IsDisplayPlayer(player))
-									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kinvnc));
+								}
+								else //used to be "if (P_IsDisplayPlayer(player) == false)"
+								{
+									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
+								}
+
 								P_RestoreMusic(player);
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
@@ -9214,12 +9220,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									player->growshrinktimer = itemtime+(4*TICRATE); // 12 seconds
 
-									if (P_IsLocalPlayer(player) == true)
+									if (player->invincibilitytimer > 0)
+									{
+										; // invincibility has priority in P_RestoreMusic, no point in starting here
+									}
+									else if (P_IsLocalPlayer(player) == true)
 									{
 										S_ChangeMusicSpecial("kgrow");
 									}
-
-									if (P_IsDisplayPlayer(player) == false)
+									else //used to be "if (P_IsDisplayPlayer(player) == false)"
 									{
 										S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
 									}

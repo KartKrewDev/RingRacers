@@ -682,6 +682,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	if (state >= NUMSTATES)
 		return luaL_error(L, "state %d out of range (0 - %d)", state, NUMSTATES-1);
+#if 0
 	if (P_IsLocalPlayer(player)) // Only display it on your own view.
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
@@ -689,6 +690,9 @@ static int lib_pSpawnLockOn(lua_State *L)
 		visual->renderflags |= RF_DONTDRAW;
 		P_SetMobjStateNF(visual, state);
 	}
+#else
+	CONS_Alert(CONS_WARNING, "TODO: P_SpawnLockOn is deprecated\n");
+#endif
 	return 0;
 }
 
