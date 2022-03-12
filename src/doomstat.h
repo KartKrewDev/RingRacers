@@ -414,7 +414,7 @@ typedef struct
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
-#define LF2_TIMEATTACK    (1<<2) ///< Show this map in Time Attack modes
+#define LF2_NOTIMEATTACK  (1<<2) ///< Hide this map in Time Attack modes
 #define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];

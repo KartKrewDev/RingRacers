@@ -4458,7 +4458,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			return true;*/
 		case LLM_TIMEATTACK:
 		case LLM_BREAKTHECAPSULES:
-			if (!(mapheaderinfo[mapnum]->menuflags & LF2_TIMEATTACK))
+			if (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK)
 				return false;
 
 			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
@@ -7667,7 +7667,7 @@ static void M_DrawLevelStats(void)
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_TIMEATTACK))
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
 		if (!mainrecords[i] || mainrecords[i]->time <= 0)
