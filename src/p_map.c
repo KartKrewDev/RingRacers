@@ -438,7 +438,10 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			}
 		}
 
-		object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+		if (object->player->tiregrease < greasetics)
+		{
+			object->player->tiregrease = greasetics;
+		}
 	}
 
 	return true;
