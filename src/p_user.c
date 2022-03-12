@@ -726,14 +726,16 @@ boolean P_EndingMusic(player_t *player)
 
 	if (r_splitscreen)
 	{
-		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_NOCONTEST))
-			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_NOCONTEST))
-			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_NOCONTEST)))
-			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_NOCONTEST)))))
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
+			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
+			|| ((r_splitscreen < 2) && (players[localplayertable[2]].exiting || (players[localplayertable[2]].pflags & PF_NOCONTEST)))
+			|| ((r_splitscreen < 3) && (players[localplayertable[3]].exiting || (players[localplayertable[3]].pflags & PF_NOCONTEST)))))
 			return false;
 
-		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = getplayerpos(displayplayers[0]);
+		bestlocalplayer = &players[localplayertable[0]];
+		bestlocalpos = getplayerpos(localplayertable[0]);
 #define setbests(p) \
 	test = getplayerpos(p); \
 	if (test < bestlocalpos) \
@@ -741,11 +743,11 @@ boolean P_EndingMusic(player_t *player)
 		bestlocalplayer = &players[p]; \
 		bestlocalpos = test; \
 	}
-		setbests(displayplayers[1]);
+		setbests(localplayertable[1]);
 		if (r_splitscreen > 1)
-			setbests(displayplayers[2]);
+			setbests(localplayertable[2]);
 		if (r_splitscreen > 2)
-			setbests(displayplayers[3]);
+			setbests(localplayertable[3]);
 #undef setbests
 	}
 	else
