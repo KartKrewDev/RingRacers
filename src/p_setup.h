@@ -17,6 +17,7 @@
 #include "doomdata.h"
 #include "doomstat.h"
 #include "r_defs.h"
+#include "k_terrain.h"
 
 // map md5, sent to players via PT_SERVERINFO
 extern unsigned char mapmd5[16];
@@ -70,6 +71,8 @@ typedef struct
 	u;
 
 	UINT16 width, height;
+
+	terrain_t *terrain;
 
 	// for flat animation
 	INT32 animseq; // start pos. in the anim sequence

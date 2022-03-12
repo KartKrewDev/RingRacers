@@ -261,7 +261,7 @@ INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
 INT32 bubbletime = TICRATE/2;
-INT32 comebacktime = 10*TICRATE;
+INT32 comebacktime = 3*TICRATE;
 INT32 bumptime = 6;
 INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
@@ -342,10 +342,10 @@ INT16 prevmap, nextmap;
 
 static UINT8 *savebuffer;
 
-static void kickstartaccel_OnChange(void);
-static void kickstartaccel2_OnChange(void);
-static void kickstartaccel3_OnChange(void);
-static void kickstartaccel4_OnChange(void);
+static void weaponPrefChange(void);
+static void weaponPrefChange2(void);
+static void weaponPrefChange3(void);
+static void weaponPrefChange4(void);
 
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
@@ -406,10 +406,17 @@ consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE,
 consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel_OnChange),
-	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel2_OnChange),
-	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel3_OnChange),
-	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
+	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
+};
+
+consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("shrinkme", "Off", CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("shrinkme2", "Off", CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("shrinkme3", "Off", CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("shrinkme4", "Off", CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
@@ -1183,22 +1190,22 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	return dest;
 }
 
-static void kickstartaccel_OnChange(void)
+static void weaponPrefChange(void)
 {
 	SendWeaponPref(0);
 }
 
-static void kickstartaccel2_OnChange(void)
+static void weaponPrefChange2(void)
 {
 	SendWeaponPref(1);
 }
 
-static void kickstartaccel3_OnChange(void)
+static void weaponPrefChange3(void)
 {
 	SendWeaponPref(2);
 }
 
-static void kickstartaccel4_OnChange(void)
+static void weaponPrefChange4(void)
 {
 	SendWeaponPref(3);
 }
@@ -2164,7 +2171,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
 	if (betweenmaps || leveltime < introtime)
@@ -2234,7 +2241,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
 		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
-
 
 	// Obliterate follower from existence
 	P_SetTarget(&players[player].follower, NULL);

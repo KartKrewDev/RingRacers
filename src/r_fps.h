@@ -51,9 +51,14 @@ extern viewvars_t *newview;
 
 // Interpolates the current view variables (r_state.h) against the selected view context in R_SetViewContext
 void R_InterpolateView(fixed_t frac);
+// Special function just for software
+void R_InterpolateViewRollAngle(fixed_t frac);
 // Buffer the current new views into the old views. Call once after each real tic.
 void R_UpdateViewInterpolation(void);
 // Set the current view context (the viewvars pointed to by newview)
 void R_SetViewContext(enum viewcontext_e _viewcontext);
+
+fixed_t R_InterpolateFixed(fixed_t from, fixed_t to);
+angle_t R_InterpolateAngle(angle_t from, angle_t to);
 
 #endif

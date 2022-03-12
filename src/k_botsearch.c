@@ -619,7 +619,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	fixed_t avgX = 0, avgY = 0;
 	fixed_t avgDist = 0;
 
-	const fixed_t baseNudge = 128 * mapobjectscale;
+	const fixed_t baseNudge = predict->radius;
 	fixed_t maxNudge = distToPredict;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;

@@ -34,6 +34,7 @@
 #include "k_race.h"
 #include "k_battle.h"
 #include "k_waypoint.h"
+#include "k_director.h"
 
 tic_t leveltime;
 
@@ -616,6 +617,19 @@ void P_Ticker(boolean run)
 			S_ShowMusicCredit();
 		}
 
+		if (encoremode)
+		{
+			// Encore humming starts immediately.
+			if (leveltime == 3)
+				S_ChangeMusicInternal("encore", true);
+		}
+		else
+		{
+			// Plays the POSITION music after the camera spin
+			if (leveltime == introtime)
+				S_ChangeMusicInternal("postn", true);
+		}
+
 		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
@@ -705,6 +719,8 @@ void P_Ticker(boolean run)
 			K_DebugWaypointsVisualise();
 		}
 	}
+
+	K_UpdateDirector();
 
 	// Always move the camera.
 	for (i = 0; i <= r_splitscreen; i++)

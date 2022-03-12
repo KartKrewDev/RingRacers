@@ -45,7 +45,7 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", 0, CV_YesNo, NULL);
+consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, CV_YesNo, NULL);
 
 static void CV_palette_OnChange(void);
 
@@ -997,7 +997,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		w *= dupx;
 		h *= dupy;
 
-		// adjustxy
+		// Center it if necessary
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -2214,6 +2215,18 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 {
 	x -= V_ThinStringWidth(string, option);
 	V_DrawThinString(x, y, option, string);
+}
+
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+{
+	x -= (V_ThinStringWidth(string, option) / 2) * FRACUNIT;
+	V_DrawThinStringAtFixed(x, y, option, string);
+}
+
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+{
+	x -= V_ThinStringWidth(string, option) * FRACUNIT;
+	V_DrawThinStringAtFixed(x, y, option, string);
 }
 
 // Draws a number using the PING font thingy.

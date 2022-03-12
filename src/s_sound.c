@@ -1580,7 +1580,7 @@ void S_ShowMusicCredit(void)
 		{
 			cursongcredit.def = def;
 			cursongcredit.anim = 5*TICRATE;
-			cursongcredit.x = 0;
+			cursongcredit.x = cursongcredit.old_x =0;
 			cursongcredit.trans = NUMTRANSMAPS;
 			return;
 		}
@@ -2351,7 +2351,7 @@ void S_StartEx(boolean reset)
 	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-		S_ChangeMusicEx((encoremode ? "estart" : "kstart"), 0, false, mapmusposition, 0, 0);
+		S_StartSound(NULL, encoremode ? sfx_ruby2 : sfx_kstart);
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 

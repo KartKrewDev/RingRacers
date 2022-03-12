@@ -1926,8 +1926,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	if (*oldtic != I_GetTime())
 	{
 		I_OsPolling();
+#if 0
 		for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			G_MapEventsToControls(&events[eventtail]);
+#endif
 
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
@@ -5235,8 +5237,10 @@ static void SV_Maketic(void)
 	maketic++;
 }
 
-void TryRunTics(tic_t realtics)
+boolean TryRunTics(tic_t realtics)
 {
+	boolean ticking;
+
 	// the machine has lagged but it is not so bad
 	if (realtics > TICRATE/7) // FIXME: consistency failure!!
 	{
@@ -5280,7 +5284,9 @@ void TryRunTics(tic_t realtics)
 	}
 #endif
 
-	if (neededtic > gametic)
+	ticking = neededtic > gametic;
+
+	if (ticking)
 	{
 		if (realtics)
 			hu_stopped = false;
@@ -5290,10 +5296,10 @@ void TryRunTics(tic_t realtics)
 	{
 		if (realtics)
 			hu_stopped = true;
-		return;
+		return false;
 	}
 
-	if (neededtic > gametic)
+	if (ticking)
 	{
 		if (advancedemo)
 		{
@@ -5330,6 +5336,8 @@ void TryRunTics(tic_t realtics)
 		if (realtics)
 			hu_stopped = true;
 	}
+
+	return ticking;
 }
 
 

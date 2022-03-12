@@ -40,8 +40,11 @@
 #include "../r_things.h" // R_GetShadowZ
 #include "../d_main.h"
 #include "../p_slopes.h"
-#include "../k_kart.h" // HITLAGJITTERS
 #include "hw_md2.h"
+
+// SRB2Kart
+#include "../k_kart.h" // HITLAGJITTERS
+#include "../r_fps.h"
 
 #ifdef NEWCLIP
 #include "hw_clip.h"
@@ -177,6 +180,18 @@ boolean gl_shadersavailable = true;
 // ==========================================================================
 // Lighting
 // ==========================================================================
+
+boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel)
+{
+	if (R_ThingIsFullBright(thing))
+		*lightlevel = 255;
+	else if (R_ThingIsFullDark(thing))
+		*lightlevel = 0;
+	else
+		return false;
+
+	return true;
+}
 
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap)
 {
@@ -3641,17 +3656,9 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	fixed_t slopez;
 	pslope_t *groundslope;
 
-	fixed_t interpx = thing->x;
-	fixed_t interpy = thing->y;
-	fixed_t interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	fixed_t interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	fixed_t interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	fixed_t interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))
@@ -3673,7 +3680,7 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	interpy += thing->spryoff;
 	interpz += thing->sprzoff;
 
-	groundz = R_GetShadowZ(thing, &groundslope);
+	groundz = R_GetShadowZ(thing, &groundslope, interpx, interpy, interpz);
 
 	gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
@@ -3800,7 +3807,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	patch_t *gpatch;
 	FSurfaceInfo Surf;
 	extracolormap_t *colormap = NULL;
-	FUINT lightlevel;
+	INT32 lightlevel;
 	boolean lightset = true;
 	FBITFIELD blend = 0;
 	FBITFIELD occlusion;
@@ -3930,18 +3937,13 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	// Start with the lightlevel and colormap from the top of the sprite
 	lightlevel = *list[sector->numlights - 1].lightlevel;
-	if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+	if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 		colormap = *list[sector->numlights - 1].extra_colormap;
 
 	i = 0;
 	temp = FLOAT_TO_FIXED(realtop);
 
-	if (R_ThingIsFullBright(spr->mobj))
-		lightlevel = 255;
-	else if (R_ThingIsFullDark(spr->mobj))
-		lightlevel = 0;
-	else
-		lightset = false;
+	lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 
 	for (i = 1; i < sector->numlights; i++)
 	{
@@ -3950,7 +3952,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		{
 			if (!lightset)
 				lightlevel = *list[i-1].lightlevel > 255 ? 255 : *list[i-1].lightlevel;
-			if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *list[i-1].extra_colormap;
 			break;
 		}
@@ -3968,8 +3970,14 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
 		{
 			if (!lightset)
+			{
 				lightlevel = *list[i].lightlevel > 255 ? 255 : *list[i].lightlevel;
-			if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+
+				if (R_ThingIsSemiBright(spr->mobj))
+					lightlevel = 128 + (lightlevel>>1);
+			}
+
+			if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *list[i].extra_colormap;
 		}
 
@@ -4284,18 +4292,11 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	// colormap test
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 0;
-		boolean lightset = true;
+		INT32 lightlevel = 0;
+		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
-		if (R_ThingIsFullBright(spr->mobj))
-			lightlevel = 255;
-		else if (R_ThingIsFullDark(spr->mobj))
-			lightlevel = 0;
-		else
-			lightset = false;
-
-		if (!(spr->mobj->renderflags & RF_NOCOLORMAPS))
+		if (!R_ThingIsFullBright(spr->mobj) && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 			colormap = sector->extra_colormap;
 
 		if (splat && sector->numlights)
@@ -4305,7 +4306,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-			if (*sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap && !(spr->mobj->renderflags & RF_NOCOLORMAPS))
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
 		else if (!lightset)
@@ -5084,25 +5085,18 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	dispoffset = thing->info->dispoffset;
 
-	interpx = thing->x;
-	interpy = thing->y;
-	interpz = thing->z;
-	interpangle = (thing->player ? thing->player->drawangle : thing->angle);
+	interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	interpz = R_InterpolateFixed(thing->old_z, thing->z);
+	interpangle = ANGLE_MAX;
 
-	if (cv_frameinterpolation.value == 1)
+	if (thing->player)
 	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-
-		if (thing->player)
-		{
-			interpangle = thing->player->old_drawangle + FixedMul(rendertimefrac, thing->player->drawangle - thing->player->old_drawangle);
-		}
-		else
-		{
-			interpangle = thing->old_angle + FixedMul(rendertimefrac, thing->angle - thing->old_angle);
-		}
+		interpangle = R_InterpolateAngle(thing->player->old_drawangle, thing->player->drawangle);
+	}
+	else
+	{
+		interpangle = R_InterpolateAngle(thing->old_angle, thing->angle);
 	}
 
 	// hitlag vibrating (todo: interp somehow?)
@@ -5307,7 +5301,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 		if (caster && !P_MobjWasRemoved(caster))
 		{
-			fixed_t groundz = R_GetShadowZ(thing, NULL);
+			fixed_t groundz = R_GetShadowZ(thing, NULL, interpx, interpy, interpz);
 			fixed_t floordiff = abs(((thing->eflags & MFE_VERTICALFLIP) ? caster->height : 0) + caster->z - groundz);
 
 			shadowheight = FIXED_TO_FLOAT(floordiff);
@@ -5526,17 +5520,9 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (!thing)
 		return;
 
-	interpx = thing->x;
-	interpy = thing->y;
-	interpz = thing->z;
-
-	// do interpolation
-	if (cv_frameinterpolation.value == 1)
-	{
-		interpx = thing->old_x + FixedMul(rendertimefrac, thing->x - thing->old_x);
-		interpy = thing->old_y + FixedMul(rendertimefrac, thing->y - thing->old_y);
-		interpz = thing->old_z + FixedMul(rendertimefrac, thing->z - thing->old_z);
-	}
+	interpx = R_InterpolateFixed(thing->old_x, thing->x);
+	interpy = R_InterpolateFixed(thing->old_y, thing->y);
+	interpz = R_InterpolateFixed(thing->old_z, thing->z);
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interpx) - gl_viewx;
@@ -6241,7 +6227,7 @@ void HWR_RenderPlayerView(void)
 	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
 	postimg_t *type = &postimgtype[viewssnum];
 
-	const boolean skybox = (skyboxmo[0] && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+	const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
 
 	FRGBAFloat ClearColor;
 
@@ -6771,7 +6757,6 @@ void HWR_DoPostProcessor(player_t *player)
 		// 10 by 10 grid. 2 coordinates (xy)
 		float v[SCREENVERTS][SCREENVERTS][2];
 		static double disStart = 0;
-		static fixed_t last_fractime = 0;
 
 		UINT8 x, y;
 		INT32 WAVELENGTH;
@@ -6781,15 +6766,15 @@ void HWR_DoPostProcessor(player_t *player)
 		// Modifies the wave.
 		if (*type == postimg_water)
 		{
-			WAVELENGTH = 20; // Lower is longer
-			AMPLITUDE = 20; // Lower is bigger
-			FREQUENCY = 16; // Lower is faster
+			WAVELENGTH = 5;
+			AMPLITUDE = 20;
+			FREQUENCY = 8;
 		}
 		else
 		{
-			WAVELENGTH = 10; // Lower is longer
-			AMPLITUDE = 30; // Lower is bigger
-			FREQUENCY = 4; // Lower is faster
+			WAVELENGTH = 10;
+			AMPLITUDE = 60;
+			FREQUENCY = 4;
 		}
 
 		for (x = 0; x < SCREENVERTS; x++)
@@ -6803,16 +6788,7 @@ void HWR_DoPostProcessor(player_t *player)
 		}
 		HWD.pfnPostImgRedraw(v);
 		if (!(paused || P_AutoPause()))
-			disStart += 1;
-		if (renderdeltatics > FRACUNIT)
-		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + 1 + FIXED_TO_FLOAT(rendertimefrac);
-		}
-		else
-		{
-			disStart = disStart - FIXED_TO_FLOAT(last_fractime) + FIXED_TO_FLOAT(rendertimefrac);
-		}
-		last_fractime = rendertimefrac;
+			disStart += FIXED_TO_FLOAT(renderdeltatics);
 
 		// Capture the screen again for screen waving on the intermission
 		if(gamestate != GS_INTERMISSION)

@@ -281,7 +281,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"handleboost"))
 		lua_pushinteger(L, plr->handleboost);
 	else if (fastcmp(field,"boostangle"))
-		lua_pushinteger(L, plr->boostangle);
+		lua_pushangle(L, plr->boostangle);
 	else if (fastcmp(field,"draftpower"))
 		lua_pushinteger(L, plr->draftpower);
 	else if (fastcmp(field,"draftleeway"))
@@ -499,9 +499,6 @@ static int player_set(lua_State *L)
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter player_t in CMD building code!");
 
-	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
-
 	if (fastcmp(field,"mo")) {
 		mobj_t *newmo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 		plr->mo->player = NULL; // remove player pointer from old mobj
@@ -626,7 +623,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"handleboost"))
 		plr->handleboost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"boostangle"))
-		plr->boostangle = luaL_checkinteger(L, 3);
+		plr->boostangle = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"draftpower"))
 		plr->draftpower = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"draftleeway"))
@@ -861,7 +858,7 @@ static int karthud_set(lua_State *L)
 	if (hud_running)
 		return luaL_error(L, "Do not alter player_t in HUD rendering code!");
 	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter player_t in BuildCMD code!");
+		return luaL_error(L, "Do not alter player_t in CMD building code!");
 	karthud[ks] = i;
 	return 0;
 }
