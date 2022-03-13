@@ -570,8 +570,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// (Pogo Spring damage is handled in head-stomping code)
 	if (gametyperules & GTR_BUMPERS)
 	{
-		t1Condition = (t1->player->sneakertimer > 0 && t1->player->flashing != 0);
-		t2Condition = (t2->player->sneakertimer > 0 && t2->player->flashing != 0);
+		t1Condition = ((t1->player->sneakertimer > 0)
+			&& !P_PlayerInPain(t1->player)
+			&& (t1->player->flashing == 0));
+		t2Condition = ((t2->player->sneakertimer > 0)
+			&& !P_PlayerInPain(t2->player)
+			&& (t2->player->flashing == 0));
 
 		if (t1Condition == true && t2Condition == false)
 		{
