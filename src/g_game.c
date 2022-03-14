@@ -1889,7 +1889,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % TICQUEUE;
+	buf = gametic % BACKUPTICS;
 
 	if (!demo.playback)
 	{

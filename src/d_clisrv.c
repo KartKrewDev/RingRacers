@@ -128,7 +128,7 @@ static tic_t firstticstosend; // min of the nettics
 static tic_t tictoclear = 0; // optimize d_clearticcmd
 static tic_t maketic;
 
-static INT16 consistancy[TICQUEUE];
+static INT16 consistancy[BACKUPTICS];
 
 static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
@@ -176,7 +176,7 @@ typedef struct textcmdtic_s
 	struct textcmdtic_s *next;
 } textcmdtic_t;
 
-ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
+ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 
 
@@ -432,9 +432,9 @@ static void D_Clearticcmd(tic_t tic)
 	D_FreeTextcmd(tic);
 
 	for (i = 0; i < MAXPLAYERS; i++)
-		netcmds[tic%TICQUEUE][i].flags = 0;
+		netcmds[tic%BACKUPTICS][i].flags = 0;
 
-	DEBFILE(va("clear tic %5u (%2u)\n", tic, tic%TICQUEUE));
+	DEBFILE(va("clear tic %5u (%2u)\n", tic, tic%BACKUPTICS));
 }
 
 void D_ResetTiccmds(void)
@@ -1285,7 +1285,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	save_p = NULL;
 	if (unlink(tmpsave) == -1)
 		CONS_Alert(CONS_ERROR, M_GetText("Can't delete %s\n"), tmpsave);
-	consistancy[gametic%TICQUEUE] = Consistancy();
+	consistancy[gametic%BACKUPTICS] = Consistancy();
 	CON_ToggleOff();
 
 	// Tell the server we have received and reloaded the gamestate
@@ -3634,7 +3634,7 @@ void SV_StopServer(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		localtextcmd[i][0] = 0;
 
-	for (i = firstticstosend; i < firstticstosend + TICQUEUE; i++)
+	for (i = firstticstosend; i < firstticstosend + BACKUPTICS; i++)
 		D_Clearticcmd(i);
 
 	consoleplayer = 0;
@@ -4140,8 +4140,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
   */
 static boolean CheckForSpeedHacks(UINT8 p)
 {
-	if (netcmds[maketic%TICQUEUE][p].forwardmove > MAXPLMOVE || netcmds[maketic%TICQUEUE][p].forwardmove < -MAXPLMOVE
-		|| netcmds[maketic%TICQUEUE][p].turning > KART_FULLTURN || netcmds[maketic%TICQUEUE][p].turning < -KART_FULLTURN)
+	if (netcmds[maketic%BACKUPTICS][p].forwardmove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][p].forwardmove < -MAXPLMOVE
+		|| netcmds[maketic%BACKUPTICS][p].turning > KART_FULLTURN || netcmds[maketic%BACKUPTICS][p].turning < -KART_FULLTURN)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), playernode[p]);
 		//D_Clearticcmd(k);
@@ -4235,7 +4235,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 
 			// Copy ticcmd
-			G_MoveTiccmd(&netcmds[maketic%TICQUEUE][netconsole], &netbuffer->u.clientpak.cmd, 1);
+			G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
 
 			// Check ticcmd for "speed hacks"
 			if (CheckForSpeedHacks((UINT8)netconsole))
@@ -4247,7 +4247,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer2[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%TICQUEUE][(UINT8)nodetoplayer2[node]],
+				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
 					&netbuffer->u.client2pak.cmd2, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer2[node]))
@@ -4258,7 +4258,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer3[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%TICQUEUE][(UINT8)nodetoplayer3[node]],
+				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer3[node]],
 					&netbuffer->u.client3pak.cmd3, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer3[node]))
@@ -4268,7 +4268,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if ((netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS)
 				&& (nodetoplayer4[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%TICQUEUE][(UINT8)nodetoplayer4[node]],
+				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer4[node]],
 					&netbuffer->u.client4pak.cmd4, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer4[node]))
@@ -4276,8 +4276,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 
 			// Check player consistancy during the level
-			if (realstart <= gametic && realstart + TICQUEUE - 1 > gametic && gamestate == GS_LEVEL
-				&& consistancy[realstart%TICQUEUE] != SHORT(netbuffer->u.clientpak.consistancy)
+			if (realstart <= gametic && realstart + BACKUPTICS - 1 > gametic && gamestate == GS_LEVEL
+				&& consistancy[realstart%BACKUPTICS] != SHORT(netbuffer->u.clientpak.consistancy)
 				&& !resendingsavegame[node] && savegameresendcooldown[node] <= I_GetTime()
 				&& !SV_ResendingSavegameToAnyone())
 			{
@@ -4292,10 +4292,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 					if (cv_blamecfail.value)
 						CONS_Printf(M_GetText("Synch failure for player %d (%s); expected %hd, got %hd\n"),
 							netconsole+1, player_names[netconsole],
-							consistancy[realstart%TICQUEUE],
+							consistancy[realstart%BACKUPTICS],
 							SHORT(netbuffer->u.clientpak.consistancy));
 					DEBFILE(va("Restoring player %d (synch failure) [%update] %d!=%d\n",
-						netconsole, realstart, consistancy[realstart%TICQUEUE],
+						netconsole, realstart, consistancy[realstart%BACKUPTICS],
 						SHORT(netbuffer->u.clientpak.consistancy)));
 					break;
 				}
@@ -4303,7 +4303,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				{
 					SendKick(netconsole, KICK_MSG_CON_FAIL);
 					DEBFILE(va("player %d kicked (synch failure) [%u] %d!=%d\n",
-						netconsole, realstart, consistancy[realstart%TICQUEUE],
+						netconsole, realstart, consistancy[realstart%BACKUPTICS],
 						SHORT(netbuffer->u.clientpak.consistancy)));
 					break;
 				}
@@ -4376,10 +4376,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				// search a tic that have enougth space in the ticcmd
 				while ((textcmd = D_GetExistingTextcmd(tic, netconsole)),
 					(TotalTextCmdPerTic(tic) > j || netbuffer->u.textcmd[0] + (textcmd ? textcmd[0] : 0) > MAXTEXTCMD)
-					&& tic < firstticstosend + TICQUEUE)
+					&& tic < firstticstosend + BACKUPTICS)
 					tic++;
 
-				if (tic >= firstticstosend + TICQUEUE)
+				if (tic >= firstticstosend + BACKUPTICS)
 				{
 					DEBFILE(va("GetPacket: Textcmd too long (max %s, used %s, mak %d, "
 						"tosend %u, node %u, player %d)\n", sizeu1(j), sizeu2(TotalTextCmdPerTic(maketic)),
@@ -4505,8 +4505,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 				txtpak = (UINT8 *)&netbuffer->u.serverpak.cmds[netbuffer->u.serverpak.numslots
 					* netbuffer->u.serverpak.numtics];
 
-			if (realend > gametic + TICQUEUE)
-				realend = gametic + TICQUEUE;
+			if (realend > gametic + CLIENTBACKUPTICS)
+				realend = gametic + CLIENTBACKUPTICS;
 			cl_packetmissed = realstart > neededtic;
 
 			if (realstart <= neededtic && realend > neededtic)
@@ -4520,7 +4520,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					D_Clearticcmd(i);
 
 					// copy the tics
-					pak = G_ScpyTiccmd(netcmds[i%TICQUEUE], pak,
+					pak = G_ScpyTiccmd(netcmds[i%BACKUPTICS], pak,
 						netbuffer->u.serverpak.numslots*sizeof (ticcmd_t));
 
 					// copy the textcmds
@@ -4873,7 +4873,7 @@ static void CL_SendClientCmd(void)
 
 		packetsize = sizeof (clientcmd_pak);
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds[0][lagDelay], 1);
-		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic % TICQUEUE]);
+		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic % BACKUPTICS]);
 
 		if (splitscreen) // Send a special packet with 2 cmd for splitscreen
 		{
@@ -4951,10 +4951,10 @@ static void SV_SendTics(void)
 		{
 			// assert supposedtics[n]>=nettics[n]
 			realfirsttic = supposedtics[n];
-			lasttictosend = maketic;
 
-			if (lasttictosend - nettics[n] >= TICQUEUE)
-				lasttictosend = nettics[n] + TICQUEUE-1;
+			lasttictosend = nettics[n] + CLIENTBACKUPTICS;
+			if (lasttictosend > maketic)
+				lasttictosend = maketic;
 
 			if (realfirsttic >= lasttictosend)
 			{
@@ -5015,7 +5015,7 @@ static void SV_SendTics(void)
 
 			for (i = realfirsttic; i < lasttictosend; i++)
 			{
-				bufpos = G_DcpyTiccmd(bufpos, netcmds[i%TICQUEUE], doomcom->numslots * sizeof (ticcmd_t));
+				bufpos = G_DcpyTiccmd(bufpos, netcmds[i%BACKUPTICS], doomcom->numslots * sizeof (ticcmd_t));
 			}
 
 			// add textcmds
@@ -5097,15 +5097,15 @@ static void SV_Maketic(void)
 
 		if (K_PlayerUsesBotMovement(&players[i]))
 		{
-			K_BuildBotTiccmd(&players[i], &netcmds[maketic%TICQUEUE][i]);
+			K_BuildBotTiccmd(&players[i], &netcmds[maketic%BACKUPTICS][i]);
 			continue;
 		}
 
 		// We didn't receive this tic
-		if ((netcmds[maketic % TICQUEUE][i].flags & TICCMD_RECEIVED) == 0)
+		if ((netcmds[maketic % BACKUPTICS][i].flags & TICCMD_RECEIVED) == 0)
 		{
-			ticcmd_t *    ticcmd = &netcmds[(maketic    ) % TICQUEUE][i];
-			ticcmd_t *prevticcmd = &netcmds[(maketic - 1) % TICQUEUE][i];
+			ticcmd_t *    ticcmd = &netcmds[(maketic    ) % BACKUPTICS][i];
+			ticcmd_t *prevticcmd = &netcmds[(maketic - 1) % BACKUPTICS][i];
 
 			{
 				DEBFILE(va("MISS tic%4d for player %d\n", maketic, i));
@@ -5204,7 +5204,7 @@ boolean TryRunTics(tic_t realtics)
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
 				gametic++;
-				consistancy[gametic%TICQUEUE] = Consistancy();
+				consistancy[gametic%BACKUPTICS] = Consistancy();
 
 				ps_tictime = I_GetPreciseTime() - ps_tictime;
 
@@ -5521,15 +5521,15 @@ void NetUpdate(void)
 				{
 					firstticstosend = nettics[i];
 
-					if (maketic + 1 >= nettics[i] + TICQUEUE)
+					if (maketic + 1 >= nettics[i] + BACKUPTICS)
 						Net_ConnectionTimeout(i);
 				}
 
 			// Don't erase tics not acknowledged
 			counts = realtics;
 
-			if (maketic + counts >= firstticstosend + TICQUEUE)
-				counts = firstticstosend+TICQUEUE-maketic-1;
+			if (maketic + counts >= firstticstosend + BACKUPTICS)
+				counts = firstticstosend+BACKUPTICS-maketic-1;
 
 			for (i = 0; i < counts; i++)
 				SV_Maketic(); // Create missed tics and increment maketic
