@@ -171,6 +171,15 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].checkskip);
 
+		WRITEINT16(save_p, players[i].lastsidehit);
+		WRITEINT16(save_p, players[i].lastlinehit);
+
+		WRITEINT32(save_p, players[i].onconveyor);
+
+		WRITEUINT32(save_p, players[i].jointime);
+
+		WRITEUINT8(save_p, players[i].splitscreenindex);
+
 		if (players[i].awayviewmobj)
 			flags |= AWAYVIEW;
 
@@ -185,15 +194,6 @@ static void P_NetArchivePlayers(void)
 
 		if (players[i].skybox.centerpoint)
 			flags |= SKYBOXCENTER;
-
-		WRITEINT16(save_p, players[i].lastsidehit);
-		WRITEINT16(save_p, players[i].lastlinehit);
-
-		WRITEINT32(save_p, players[i].onconveyor);
-
-		WRITEUINT32(save_p, players[i].jointime);
-
-		WRITEUINT8(save_p, players[i].splitscreenindex);
 
 		WRITEUINT16(save_p, flags);
 
@@ -341,6 +341,8 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].kickstartaccel);
 
+		WRITEUINT8(save_p, players[i].stairjank);
+
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -405,7 +407,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].steering = READINT16(save_p);
 		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
-		players[i].drawangle = READANGLE(save_p);
+		players[i].drawangle = players[i].old_drawangle = READANGLE(save_p);
 		players[i].viewrollangle = READANGLE(save_p);
 		players[i].tilt = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
@@ -603,6 +605,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].typing_duration = READUINT8(save_p);
 
 		players[i].kickstartaccel = READUINT8(save_p);
+
+		players[i].stairjank = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -1677,7 +1681,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	diff2 = 0;
 
 	// not the default but the most probable
-	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0)
+	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0)
 		diff |= MD_MOM;
 	if (mobj->radius != mobj->info->radius)
 		diff |= MD_RADIUS;
@@ -1862,6 +1866,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->momx);
 		WRITEFIXED(save_p, mobj->momy);
 		WRITEFIXED(save_p, mobj->momz);
+		WRITEFIXED(save_p, mobj->pmomz);
 	}
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save_p, mobj->radius);
@@ -2930,6 +2935,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->momx = READFIXED(save_p);
 		mobj->momy = READFIXED(save_p);
 		mobj->momz = READFIXED(save_p);
+		mobj->pmomz = READFIXED(save_p);
 	} // otherwise they're zero, and the memset took care of it
 
 	if (diff & MD_RADIUS)
