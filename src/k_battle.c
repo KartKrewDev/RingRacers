@@ -89,7 +89,7 @@ void K_CheckBumpers(void)
 	UINT8 i;
 	UINT8 numingame = 0;
 	SINT8 winnernum = -1;
-	INT32 winnerscoreadd = 0, maxroundscore = 0;
+	UINT32 winnerscoreadd = 0, maxroundscore = 0;
 	boolean nobumpers = false;
 
 	if (!(gametyperules & GTR_BUMPERS))
