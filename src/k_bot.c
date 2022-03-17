@@ -260,7 +260,7 @@ void K_UpdateMatchRaceBots(void)
 --------------------------------------------------*/
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
-	if (player->bot || player->exiting || player->quittime)
+	if (player->bot || player->exiting)
 		return true;
 
 	return false;
