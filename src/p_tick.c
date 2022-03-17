@@ -504,15 +504,6 @@ void P_Ticker(boolean run)
 		if (playeringame[i])
 		{
 			players[i].jointime++;
-
-			if (players[i].quittime)
-			{
-				players[i].quittime++;
-
-				if (server && players[i].quittime >= (tic_t)FixedMul(cv_rejointimeout.value, 60 * TICRATE)
-				&& !(players[i].quittime % TICRATE))
-					SendKick(i, KICK_MSG_PLAYER_QUIT);
-			}
 		}
 
 	if (objectplacing)

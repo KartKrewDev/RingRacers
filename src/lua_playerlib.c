@@ -463,8 +463,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->jointime);
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
-	else if (fastcmp(field,"quittime"))
-		lua_pushinteger(L, plr->quittime);
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);

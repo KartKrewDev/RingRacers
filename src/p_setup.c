@@ -4313,7 +4313,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (!fromnetsave) // uglier hack
 	{ // to make a newly loaded level start on the second frame.
-		INT32 buf = gametic % TICQUEUE;
+		INT32 buf = gametic % BACKUPTICS;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])

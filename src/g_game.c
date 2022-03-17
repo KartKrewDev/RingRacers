@@ -1890,7 +1890,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % TICQUEUE;
+	buf = gametic % BACKUPTICS;
 
 	if (!demo.playback)
 	{
@@ -2107,7 +2107,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 availabilities;
 
 	tic_t jointime;
-	tic_t quittime;
 
 	UINT8 splitscreenindex;
 	boolean spectator;
@@ -2142,7 +2141,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	ctfteam = players[player].ctfteam;
 
 	jointime = players[player].jointime;
-	quittime = players[player].quittime;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2266,7 +2264,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
-	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
 	p->steering = steering;

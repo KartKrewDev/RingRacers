@@ -642,7 +642,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
 			player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -656,7 +656,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[playernum]);
 				if (server)
-					SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+					SendKick(playernum, KICK_MSG_CON_FAIL);
 				return;
 			}
 		}
