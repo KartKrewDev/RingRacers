@@ -4714,6 +4714,9 @@ void K_Squish(mobj_t *mo)
 	fixed_t grav = mo->height/3;
 	fixed_t add = abs(grav - new3dspeed);
 
+	if (R_ThingIsFloorSprite(mo))
+		return;
+
 	if (delta < 2 * add && new3dspeed > grav)
 		delta += add;
 
