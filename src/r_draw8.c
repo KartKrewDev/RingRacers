@@ -1801,11 +1801,11 @@ void R_DrawFloorSprite_8 (void)
 			{
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = fullbright[translation[val & 0xFF]];
+					dest[i] = fullbright[translation[val & 0xFF]];
 				}
 				else
 				{
-					*dest = colormap[translation[val & 0xFF]];
+					dest[i] = colormap[translation[val & 0xFF]];
 				}
 			}
 			xposition += xstep;
