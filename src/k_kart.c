@@ -7722,7 +7722,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			const boolean useshortcuts = false;
 			const boolean huntbackwards = false;
 			boolean pathfindsuccess = false;
-			path_t pathtofinish = {};
+			path_t pathtofinish = {0};
 
 			pathfindsuccess =
 				K_PathfindToWaypoint(player->nextwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);

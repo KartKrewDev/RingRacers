@@ -36,7 +36,7 @@ extern size_t validcount, linecount, loopcount, framecount;
 // The fraction of a tic being drawn (for interpolation between two tics)
 extern fixed_t rendertimefrac;
 // Evaluated delta tics for this frame (how many tics since the last frame)
-extern fixed_t renderdeltatics;;
+extern fixed_t renderdeltatics;
 
 //
 // Lighting LUT.

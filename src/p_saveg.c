@@ -1531,7 +1531,7 @@ typedef enum
 	MD_DSCALE      = 1<<28,
 	MD_BLUEFLAG    = 1<<29,
 	MD_REDFLAG     = 1<<30,
-	MD_MORE        = 1<<31
+	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
 typedef enum

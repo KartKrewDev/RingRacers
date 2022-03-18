@@ -873,13 +873,13 @@ static int PNG_ChunkReader(png_structp png_ptr, png_unknown_chunkp chonk)
 
 static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", (void*)PNG, pngtext);
 	//I_Error("libpng error at %p: %s", PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static png_byte grAb_chunk[5] = {'g', 'r', 'A', 'b', (png_byte)'\0'};

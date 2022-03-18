@@ -48,7 +48,7 @@ typedef struct
 typedef struct
 {
 	INT32 numpts;
-	polyvertex_t pts[0];
+	polyvertex_t pts[];
 } poly_t;
 
 #ifdef _MSC_VER

@@ -8237,7 +8237,7 @@ void A_RemoteAction(mobj_t *actor)
 		astate = &states[locvar2];
 
 		CONS_Debug(DBG_GAMELOGIC, "A_RemoteAction: Calling action on %p\n"
-				"var1 is %d\nvar2 is %d\n", actor->target, var1, var2);
+				"var1 is %d\nvar2 is %d\n", (void*)actor->target, var1, var2);
 		states[locvar2].action.acp1(actor->target);
 	}
 

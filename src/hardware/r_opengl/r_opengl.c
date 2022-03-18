@@ -457,7 +457,7 @@ boolean SetupGLfunc(void)
 {
 #ifndef STATIC_OPENGL
 #define GETOPENGLFUNC(func, proc) \
-	func = GetGLFunc(#proc); \
+	*(void**)&func = GetGLFunc(#proc); \
 	if (!func) \
 	{ \
 		GL_MSG_Warning("failed to get OpenGL function: %s", #proc); \
@@ -900,46 +900,46 @@ static struct {
 
 void SetupGLFunc4(void)
 {
-	pglActiveTexture = GetGLFunc("glActiveTexture");
-	pglMultiTexCoord2f = GetGLFunc("glMultiTexCoord2f");
-	pglClientActiveTexture = GetGLFunc("glClientActiveTexture");
-	pglMultiTexCoord2fv = GetGLFunc("glMultiTexCoord2fv");
+	*(void**)&pglActiveTexture = GetGLFunc("glActiveTexture");
+	*(void**)&pglMultiTexCoord2f = GetGLFunc("glMultiTexCoord2f");
+	*(void**)&pglClientActiveTexture = GetGLFunc("glClientActiveTexture");
+	*(void**)&pglMultiTexCoord2fv = GetGLFunc("glMultiTexCoord2fv");
 
 	/* 1.5 funcs */
-	pglGenBuffers = GetGLFunc("glGenBuffers");
-	pglBindBuffer = GetGLFunc("glBindBuffer");
-	pglBufferData = GetGLFunc("glBufferData");
-	pglDeleteBuffers = GetGLFunc("glDeleteBuffers");
+	*(void**)&pglGenBuffers = GetGLFunc("glGenBuffers");
+	*(void**)&pglBindBuffer = GetGLFunc("glBindBuffer");
+	*(void**)&pglBufferData = GetGLFunc("glBufferData");
+	*(void**)&pglDeleteBuffers = GetGLFunc("glDeleteBuffers");
 
 	/* 2.0 funcs */
-	pglBlendEquation = GetGLFunc("glBlendEquation");
+	*(void**)&pglBlendEquation = GetGLFunc("glBlendEquation");
 
 #ifdef GL_SHADERS
-	pglCreateShader = GetGLFunc("glCreateShader");
-	pglShaderSource = GetGLFunc("glShaderSource");
-	pglCompileShader = GetGLFunc("glCompileShader");
-	pglGetShaderiv = GetGLFunc("glGetShaderiv");
-	pglGetShaderInfoLog = GetGLFunc("glGetShaderInfoLog");
-	pglDeleteShader = GetGLFunc("glDeleteShader");
-	pglCreateProgram = GetGLFunc("glCreateProgram");
-	pglDeleteProgram = GetGLFunc("glDeleteProgram");
-	pglAttachShader = GetGLFunc("glAttachShader");
-	pglLinkProgram = GetGLFunc("glLinkProgram");
-	pglGetProgramiv = GetGLFunc("glGetProgramiv");
-	pglUseProgram = GetGLFunc("glUseProgram");
-	pglUniform1i = GetGLFunc("glUniform1i");
-	pglUniform1f = GetGLFunc("glUniform1f");
-	pglUniform2f = GetGLFunc("glUniform2f");
-	pglUniform3f = GetGLFunc("glUniform3f");
-	pglUniform4f = GetGLFunc("glUniform4f");
-	pglUniform1fv = GetGLFunc("glUniform1fv");
-	pglUniform2fv = GetGLFunc("glUniform2fv");
-	pglUniform3fv = GetGLFunc("glUniform3fv");
-	pglGetUniformLocation = GetGLFunc("glGetUniformLocation");
+	*(void**)&pglCreateShader = GetGLFunc("glCreateShader");
+	*(void**)&pglShaderSource = GetGLFunc("glShaderSource");
+	*(void**)&pglCompileShader = GetGLFunc("glCompileShader");
+	*(void**)&pglGetShaderiv = GetGLFunc("glGetShaderiv");
+	*(void**)&pglGetShaderInfoLog = GetGLFunc("glGetShaderInfoLog");
+	*(void**)&pglDeleteShader = GetGLFunc("glDeleteShader");
+	*(void**)&pglCreateProgram = GetGLFunc("glCreateProgram");
+	*(void**)&pglDeleteProgram = GetGLFunc("glDeleteProgram");
+	*(void**)&pglAttachShader = GetGLFunc("glAttachShader");
+	*(void**)&pglLinkProgram = GetGLFunc("glLinkProgram");
+	*(void**)&pglGetProgramiv = GetGLFunc("glGetProgramiv");
+	*(void**)&pglUseProgram = GetGLFunc("glUseProgram");
+	*(void**)&pglUniform1i = GetGLFunc("glUniform1i");
+	*(void**)&pglUniform1f = GetGLFunc("glUniform1f");
+	*(void**)&pglUniform2f = GetGLFunc("glUniform2f");
+	*(void**)&pglUniform3f = GetGLFunc("glUniform3f");
+	*(void**)&pglUniform4f = GetGLFunc("glUniform4f");
+	*(void**)&pglUniform1fv = GetGLFunc("glUniform1fv");
+	*(void**)&pglUniform2fv = GetGLFunc("glUniform2fv");
+	*(void**)&pglUniform3fv = GetGLFunc("glUniform3fv");
+	*(void**)&pglGetUniformLocation = GetGLFunc("glGetUniformLocation");
 #endif
 
 	// GLU
-	pgluBuild2DMipmaps = GetGLFunc("gluBuild2DMipmaps");
+	*(void**)&pgluBuild2DMipmaps = GetGLFunc("gluBuild2DMipmaps");
 }
 
 // jimita

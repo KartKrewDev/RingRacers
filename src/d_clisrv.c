@@ -1549,7 +1549,7 @@ static boolean CL_FinishedFileList(void)
 				"You may load server addons (if any), and wait for a slot.\n"
 				"\n"
 				"Press ACCEL to continue or BRAKE to cancel.\n\n"
-			), M_ConfirmConnect, MM_EVENTHANDLER);
+			), FUNCPTRCAST (M_ConfirmConnect), MM_EVENTHANDLER);
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1616,13 +1616,13 @@ static boolean CL_FinishedFileList(void)
 					"You may download, load server addons, and wait for a slot.\n"
 					"\n"
 					"Press ACCEL to continue or BRAKE to cancel.\n\n"
-				), downloadsize), M_ConfirmConnect, MM_EVENTHANDLER);
+				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
 			else
 				M_StartMessage(va(M_GetText(
 					"Download of %s additional content is required to join.\n"
 					"\n"
 					"Press ACCEL to continue or BRAKE to cancel.\n\n"
-				), downloadsize), M_ConfirmConnect, MM_EVENTHANDLER);
+				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
