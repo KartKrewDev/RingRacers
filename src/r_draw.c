@@ -27,6 +27,7 @@
 #include "console.h" // Until buffering gets finished
 #include "k_color.h" // SRB2kart
 #include "i_threads.h"
+#include "libdivide.h" // used by NPO2 tilted span functions
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
