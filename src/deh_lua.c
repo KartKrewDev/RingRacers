@@ -673,7 +673,7 @@ void LUA_SetActionByName(void *state, const char *actiontocompare)
 	}
 }
 
-enum actionnum LUA_GetActionNumByName(const char *actiontocompare)
+size_t LUA_GetActionNumByName(const char *actiontocompare)
 {
 	size_t z;
 	for (z = 0; actionpointers[z].name; z++)

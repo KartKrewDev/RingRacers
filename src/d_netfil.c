@@ -1124,7 +1124,7 @@ void FileSendTicker(void)
 		}
 
 		// Build a packet containing a file fragment
-		p = &netbuffer->u.filetxpak;
+		p = (void*)&netbuffer->u.filetxpak;
 		fragmentsize = FILEFRAGMENTSIZE;
 		if (f->size-transfer[i].position < fragmentsize)
 			fragmentsize = f->size-transfer[i].position;
@@ -1166,7 +1166,7 @@ void FileSendTicker(void)
 
 void PT_FileAck(void)
 {
-	fileack_pak *packet = &netbuffer->u.fileack;
+	fileack_pak *packet = (void*)&netbuffer->u.fileack;
 	INT32 node = doomcom->remotenode;
 	filetran_t *trans = &transfer[node];
 	INT32 i, j;
@@ -1310,10 +1310,11 @@ void FileReceiveTicker(void)
 
 void PT_FileFragment(void)
 {
-	INT32 filenum = netbuffer->u.filetxpak.fileid;
+	filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
+	INT32 filenum = pak->fileid;
 	fileneeded_t *file = &fileneeded[filenum];
-	UINT32 fragmentpos = LONG(netbuffer->u.filetxpak.position);
-	UINT16 fragmentsize = SHORT(netbuffer->u.filetxpak.size);
+	UINT32 fragmentpos = LONG(pak->position);
+	UINT16 fragmentsize = SHORT(pak->size);
 	UINT16 boundedfragmentsize = doomcom->datalength - BASEPACKETSIZE - sizeof(netbuffer->u.filetxpak);
 	char *filename;
 
@@ -1381,7 +1382,7 @@ void PT_FileFragment(void)
 			CONS_Printf("\r%s...\n",filename);
 
 			file->currentsize = 0;
-			file->totalsize = LONG(netbuffer->u.filetxpak.filesize);
+			file->totalsize = LONG(pak->filesize);
 			file->ackresendposition = UINT32_MAX; // Only used for resumed downloads
 
 			file->receivedfragments = calloc(file->totalsize / fragmentsize + 1, sizeof(*file->receivedfragments));
@@ -1397,7 +1398,7 @@ void PT_FileFragment(void)
 		if (fragmentpos >= file->totalsize)
 			I_Error("Invalid file fragment\n");
 
-		file->iteration = max(file->iteration, netbuffer->u.filetxpak.iteration);
+		file->iteration = max(file->iteration, pak->iteration);
 
 		if (!file->receivedfragments[fragmentpos / fragmentsize]) // Not received yet
 		{
@@ -1405,7 +1406,7 @@ void PT_FileFragment(void)
 
 			// We can receive packets in the wrong order, anyway all OSes support gaped files
 			fseek(file->file, fragmentpos, SEEK_SET);
-			if (fragmentsize && fwrite(netbuffer->u.filetxpak.data, boundedfragmentsize, 1, file->file) != 1)
+			if (fragmentsize && fwrite(pak->data, boundedfragmentsize, 1, file->file) != 1)
 				I_Error("Can't write to %s: %s\n",filename, M_FileError(file->file));
 			file->currentsize += boundedfragmentsize;
 

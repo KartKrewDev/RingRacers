@@ -63,7 +63,7 @@ typedef struct
 
 	// All the patches[patchcount] are drawn back to front into the cached texture.
 	INT16 patchcount;
-	texpatch_t patches[0];
+	texpatch_t patches[];
 } texture_t;
 
 // all loaded and prepared textures from the start of the game

@@ -162,7 +162,7 @@ typedef enum
 	// Disable momentum-based squash and stretch.
 	MF_NOSQUISH         = 1<<30,
 	// Disable hitlag for this object
-	MF_NOHITLAGFORME 	= 1<<31,
+	MF_NOHITLAGFORME    = (INT32)(1U<<31),
 	// no more free slots, next up I suppose we can get rid of shit like MF_BOXICON?
 } mobjflag_t;
 

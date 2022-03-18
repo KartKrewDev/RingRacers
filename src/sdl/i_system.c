@@ -2120,7 +2120,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 
 	if (!testwin95)
 	{
-		pfnGetDiskFreeSpaceEx = (p_GetDiskFreeSpaceExA)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA");
+		*(void**)&pfnGetDiskFreeSpaceEx = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA"));
 		testwin95 = true;
 	}
 	if (pfnGetDiskFreeSpaceEx)
@@ -2628,7 +2628,8 @@ const CPUInfoFlags *I_CPUInfo(void)
 #if defined (_WIN32)
 	static CPUInfoFlags WIN_CPUInfo;
 	SYSTEM_INFO SI;
-	p_IsProcessorFeaturePresent pfnCPUID = (p_IsProcessorFeaturePresent)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent");
+	p_IsProcessorFeaturePresent pfnCPUID;
+	*(void**)&pfnCPUID = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent"));
 
 	ZeroMemory(&WIN_CPUInfo,sizeof (WIN_CPUInfo));
 	if (pfnCPUID)

@@ -913,11 +913,13 @@ static void DebugPrintpacket(const char *header)
 		case PT_SERVERREFUSE:
 			fprintf(debugfile, "    reason %s\n", netbuffer->u.serverrefuse.reason);
 			break;
-		case PT_FILEFRAGMENT:
+		case PT_FILEFRAGMENT: {
+			filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
 			fprintf(debugfile, "    fileid %d datasize %d position %u\n",
-				netbuffer->u.filetxpak.fileid, (UINT16)SHORT(netbuffer->u.filetxpak.size),
-				(UINT32)LONG(netbuffer->u.filetxpak.position));
+				pak->fileid, (UINT16)SHORT(pak->size),
+				(UINT32)LONG(pak->position));
 			break;
+		}
 		case PT_REQUESTFILE:
 		default: // write as a raw packet
 			fprintfstringnewline((char *)netbuffer->u.textcmd,
