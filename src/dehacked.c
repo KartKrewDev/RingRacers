@@ -51,6 +51,13 @@ void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext)
 	strlcpy(dst, src, size);
 }
 
+int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
+void DEH_UpdateMaxFreeslots(void)
+{
+	freeslotusage[0][1] = freeslotusage[0][0];
+	freeslotusage[1][1] = freeslotusage[1][0];
+}
+
 ATTRINLINE static FUNCINLINE unsigned char myfget_color(MYFILE *f)
 {
 	char c = *f->curpos++;
