@@ -461,7 +461,7 @@ void VID_BlitLinearScreen_ASM(const UINT8 *srcptr, UINT8 *destptr, INT32 width, 
 
 static void CV_constextsize_OnChange(void)
 {
-	if (!con_refresh)
+	if (!con_startup)
 		con_recalc = true;
 }
 
