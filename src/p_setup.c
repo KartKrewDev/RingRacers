@@ -4191,7 +4191,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_ResetTubeWaypoints();
 
-	P_MapStart();
+	P_MapStart(); // tmthing can be used starting from this point
 
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
@@ -4283,8 +4283,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
-	P_MapEnd();
-
 	// Remove the loading shit from the screen
 	if (rendermode != render_none && !titlemapinaction && !reloadinggamestate)
 		F_WipeColorFill(levelfadecol);
@@ -4368,7 +4366,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		LUAh_MapLoad();
 	}
 
+
 	K_TimerReset();
+
+	P_MapEnd(); // tmthing is no longer needed from this point onwards
 
 	// No render mode or reloading gamestate, stop here.
 	if (rendermode == render_none || reloadinggamestate)
