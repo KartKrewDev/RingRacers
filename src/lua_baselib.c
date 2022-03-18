@@ -35,9 +35,8 @@
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "m_menu.h" // Player Setup menu color stuff
 #include "m_misc.h" // M_MapNumber
-
-// SRB2Kart
 #include "p_spec.h" // P_StartQuake
+#include "i_system.h" // I_GetPreciseTime, I_PreciseToMicros
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -3843,6 +3842,12 @@ static int lib_kDeclareWeakspot(lua_State *L)
 	return 0;
 }
 
+static int lib_iGetTimestamp(lua_State *L)
+{
+	lua_pushinteger(L, I_PreciseToMicros(I_GetPreciseTime()));
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4076,6 +4081,7 @@ static luaL_Reg lib[] = {
 	{"G_TicsToSeconds",lib_gTicsToSeconds},
 	{"G_TicsToCentiseconds",lib_gTicsToCentiseconds},
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
+	{"I_GetTimestamp",lib_iGetTimestamp},
 
 	// k_kart
 	{"K_PlayAttackTaunt", lib_kAttackSound},
