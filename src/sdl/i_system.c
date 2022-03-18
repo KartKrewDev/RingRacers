@@ -340,9 +340,10 @@ static void I_ReportSignal(int num, int coredumped)
 
 	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Process killed by signal",
-		sigmsg, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Process killed by signal",
+			sigmsg, NULL);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -1711,9 +1712,10 @@ static void newsignalhandler_Warn(const char *pr)
 
 	I_OutputMsg("%s\n", text);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Startup error",
-		text, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Startup error",
+			text, NULL);
 
 	I_ShutdownConsole();
 	exit(-1);
@@ -1919,9 +1921,10 @@ void I_Error(const char *error, ...)
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-				"SRB2Kart "VERSIONSTRING" Recursive Error",
-				buffer, NULL);
+			if (!M_CheckParm("-dedicated"))
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+					"SRB2Kart "VERSIONSTRING" Recursive Error",
+					buffer, NULL);
 
 			W_Shutdown();
 			exit(-1); // recursive errors detected
@@ -1967,9 +1970,11 @@ void I_Error(const char *error, ...)
 	// Implement message box with SDL_ShowSimpleMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"SRB2Kart "VERSIONSTRING" Error",
-		buffer, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"SRB2Kart "VERSIONSTRING" Error",
+			buffer, NULL);
+
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is
 	// perfectly okay! In addition, we do this on purpose so the
