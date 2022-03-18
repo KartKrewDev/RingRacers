@@ -4244,8 +4244,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapStart(); // tmthing can be used starting from this point
 
-	// init anything that P_SpawnSlopes/P_LoadThings needs to know
-	P_InitSpecials();
+	P_InitSlopes(); //Initialize slopes before the map loads.
 
 	if (!P_LoadMapFromFile())
 		return false;
