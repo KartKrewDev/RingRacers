@@ -3797,7 +3797,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					break;
 				}
 
-				TAG_ITER_SECTORS(0, tag, secnum)
+				TAG_ITER_SECTORS(tag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -7437,7 +7437,7 @@ static void P_SpawnScrollers(void)
 				break;
 
 			case 509: // scroll front and backside of tagged lines
-				TAG_ITER_LINES(0, tag, s)
+				TAG_ITER_LINES(tag, s)
 				{
 					if (s != (INT32)i)
 					{
