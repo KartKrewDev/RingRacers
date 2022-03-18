@@ -6905,7 +6905,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 /** Fuck polyobjects
   */
-void P_SpawnSpecialsThatRequireObjects(void)
+void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 {
 	size_t i;
 

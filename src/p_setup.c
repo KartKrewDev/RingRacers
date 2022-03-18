@@ -4345,7 +4345,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (!playerstarts[numcoopstarts])
 			break;
 
-	P_SpawnSpecialsThatRequireObjects();
+	P_SpawnSpecialsThatRequireObjects(fromnetsave);
 
 	if (!udmf)
 	{
