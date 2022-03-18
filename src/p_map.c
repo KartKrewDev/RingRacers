@@ -493,12 +493,11 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				break;
 			if (spring->state != &states[S_STEAM1]) // Only when it bursts
 				break;
+			if (object->eflags & MFE_SPRUNG)
+				break;
 
 			if (spring->spawnpoint && spring->spawnpoint->options & MTF_OBJECTSPECIAL)
 			{
-				if (object->eflags & MFE_SPRUNG)
-					break;
-
 				if (object->player)
 				{
 					object->player->trickpanel = 1;
@@ -506,10 +505,13 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				}
 
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
-				return;
 			}
 			else
+			{
 				object->momz = flipval*FixedMul(speed, FixedSqrt(FixedMul(spring->scale, object->scale))); // scale the speed with both objects' scales, just like with springs!
+			}
+
+			object->eflags |= MFE_SPRUNG;
 			break;
 		default:
 			break;
