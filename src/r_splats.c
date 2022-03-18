@@ -437,6 +437,12 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 			ds_colormap = &vis->extra_colormap->colormap[ds_colormap - colormaps];
 	}
 
+	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
+	{
+		dc_colormap += COLORMAP_REMAPOFFSET;
+		dc_fullbright += COLORMAP_REMAPOFFSET;
+	}
+
 	if (vis->transmap)
 	{
 		ds_transmap = vis->transmap;
