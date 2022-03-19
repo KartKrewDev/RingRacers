@@ -63,7 +63,6 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -255,8 +254,6 @@ menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef, MISC_ChangeSpectateDef;
 // Single Player
 static void M_GrandPrixTemp(INT32 choice);
 static void M_StartGrandPrix(INT32 choice);
-static void M_BossTemp(INT32 choice);
-static void M_StartBoss(INT32 choice);
 static void M_TimeAttack(INT32 choice);
 static boolean M_QuitTimeAttackMenu(void);
 static void M_BreakTheCapsules(INT32 choice);
@@ -853,7 +850,6 @@ static menuitem_t SP_MainMenu[] =
 	{IT_STRING|IT_CALL,		NULL, "Grand Prix",			{.routine = M_GrandPrixTemp},	 92},
 	{IT_SECRET,				NULL, "Time Attack",		{.routine = M_TimeAttack},		100},
 	{IT_SECRET,				NULL, "Break the Capsules",	{.routine = M_BreakTheCapsules},	108},
-	{IT_STRING|IT_CALL,		NULL, "Boss Missions",		{.routine = M_BossTemp},	 		116},
 };
 
 enum
@@ -861,7 +857,6 @@ enum
 	spgrandprix,
 	sptimeattack,
 	spbreakthecapsules,
-	spboss
 };
 
 // Single Player Load Game
@@ -875,17 +870,6 @@ static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 
 	{IT_STRING|IT_CVAR,	NULL, "Cup",			{.cvar = &cv_dummygpcup},			 70},
 	{IT_STRING|IT_CALL,	NULL, "Start",			{.routine = M_StartGrandPrix},		 80},
-};
-
-static menuitem_t SP_BossPlaceholderMenu[] =
-{
-	{IT_STRING|IT_CVAR,	NULL, "Character",		&cv_chooseskin,			 50},
-	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor[0],		 58},
-
-	{IT_STRING|IT_CVAR,	NULL, "Encore Rematch",	&cv_dummygpencore,		 68},
-
-	{IT_STRING|IT_CVAR,	NULL, "Boss",			&cv_nextmap,			 78},
-	{IT_STRING|IT_CALL,	NULL, "Start",			M_StartBoss,		 	130},
 };
 
 // Single Player Time Attack
@@ -1858,8 +1842,6 @@ menu_t SP_LevelStatsDef =
 };
 
 static menu_t SP_GrandPrixTempDef = DEFAULTMENUSTYLE(MN_NONE, NULL, SP_GrandPrixPlaceholderMenu, &MainDef, 60, 30);
-
-static menu_t SP_BossTempDef = MAPICONMENUSTYLE(NULL, SP_BossPlaceholderMenu, &MainDef);
 
 static menu_t SP_TimeAttackDef =
 {
@@ -4379,12 +4361,15 @@ static void M_PatchSkinNameTable(void)
 //
 // M_PrepareCupList
 //
-static void M_PrepareCupList(void)
+static boolean M_PrepareCupList(void)
 {
 	cupheader_t *cup = kartcupheaders;
 	INT32 i = 0;
 
 	memset(dummygpcup_cons_t, 0, sizeof (dummygpcup_cons_t));
+
+	if (cup == NULL)
+		return false;
 
 	while (cup != NULL)
 	{
@@ -4403,6 +4388,8 @@ static void M_PrepareCupList(void)
 	}
 
 	CV_SetValue(&cv_dummygpcup, 1); // This causes crash sometimes?!
+
+	return true;
 }
 
 // Call before showing any level-select menus
@@ -6853,7 +6840,6 @@ static void M_SinglePlayerMenu(INT32 choice)
 		(M_SecretUnlocked(SECRET_TIMEATTACK)) ? IT_CALL|IT_STRING : IT_SECRET;
 	SP_MainMenu[spbreakthecapsules].status =
 		(M_SecretUnlocked(SECRET_BREAKTHECAPSULES)) ? IT_CALL|IT_STRING : IT_SECRET;
-	SP_MainMenu[spboss].status = IT_CALL|IT_STRING;
 
 	M_SetupNextMenu(&SP_MainDef);
 }
@@ -7737,32 +7723,13 @@ static void M_HandleLevelStats(INT32 choice)
 static void M_GrandPrixTemp(INT32 choice)
 {
 	(void)choice;
-	M_PatchSkinNameTable();
-	M_PrepareCupList();
-	M_SetupNextMenu(&SP_GrandPrixTempDef);
-}
-
-static void M_BossTemp(INT32 choice)
-{
-	(void)choice;
-
-	levellistmode = LLM_BOSS; // Don't be dependent on cv_newgametype
-
-	if (M_CountLevelsToShowInList() == 0)
+	if (!M_PrepareCupList())
 	{
-		M_StartMessage(M_GetText("No bosses found.\n"),NULL,MM_NOTHING);
+		M_StartMessage(M_GetText("No cups found for Grand Prix.\n"),NULL,MM_NOTHING);
 		return;
 	}
-
 	M_PatchSkinNameTable();
-
-	M_PrepareLevelSelect();
-
-	if (cv_nextmap.value)
-		Nextmap_OnChange();
-	else
-		CV_AddValue(&cv_nextmap, 1);
-	M_SetupNextMenu(&SP_BossTempDef);
+	M_SetupNextMenu(&SP_GrandPrixTempDef);
 }
 
 // Start Grand Prix!
@@ -7823,26 +7790,6 @@ static void M_StartGrandPrix(INT32 choice)
 	G_DeferedInitNew(
 		false,
 		G_BuildMapName(grandprixinfo.cup->levellist[0] + 1),
-		(UINT8)(cv_chooseskin.value - 1),
-		(UINT8)(cv_splitplayers.value - 1),
-		false
-	);
-}
-
-// Start Boss!
-static void M_StartBoss(INT32 choice)
-{
-	(void)choice;
-
-	M_ClearMenus(true);
-
-	K_ResetBossInfo();
-	bossinfo.boss = true;
-	bossinfo.encore = (boolean)(cv_dummygpencore.value);
-
-	G_DeferedInitNew(
-		false,
-		G_BuildMapName(cv_nextmap.value),
 		(UINT8)(cv_chooseskin.value - 1),
 		(UINT8)(cv_splitplayers.value - 1),
 		false
