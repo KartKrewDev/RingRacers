@@ -1164,6 +1164,8 @@ typedef enum
 	sfx_cock,
 	sfx_itcaps,
 	sfx_kstart,
+	sfx_typri1,
+	sfx_typri2,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

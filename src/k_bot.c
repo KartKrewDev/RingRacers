@@ -27,6 +27,7 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
+#include "k_boss.h"
 
 
 /*--------------------------------------------------
@@ -166,7 +167,7 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (difficulty == 0)
+	if (difficulty == 0 || bossinfo.boss == true)
 	{
 		wantedbots = 0;
 	}
@@ -260,7 +261,10 @@ void K_UpdateMatchRaceBots(void)
 --------------------------------------------------*/
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
-	if (player->bot || player->exiting)
+	if (player->exiting)
+		return true;
+
+	if (player->bot)
 		return true;
 
 	return false;
@@ -1040,6 +1044,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		|| player->mo->scale <= 1
 		|| player->playerstate == PST_DEAD
 		|| leveltime <= introtime
+		|| (player->exiting && !(gametyperules & GTR_CIRCUIT))
 		)
 	{
 		// No need to do anything else.

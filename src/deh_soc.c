@@ -1631,9 +1631,9 @@ void readlevelheader(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "TIMEATTACK") || fastcmp(word, "RECORDATTACK"))
 			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_TIMEATTACK;
+					mapheaderinfo[num-1]->menuflags &= ~LF2_NOTIMEATTACK;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_TIMEATTACK;
+					mapheaderinfo[num-1]->menuflags |= LF2_NOTIMEATTACK;
 			}
 			else if (fastcmp(word, "VISITNEEDED"))
 			{

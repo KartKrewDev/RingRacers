@@ -33,6 +33,7 @@
 #include "k_kart.h"
 #include "k_race.h"
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_waypoint.h"
 #include "k_director.h"
 
@@ -327,6 +328,7 @@ if ((*mop = targ) != NULL) // Set new target and if non-NULL, increase its count
 static inline void P_RunThinkers(void)
 {
 	size_t i;
+
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
 		ps_thlist_times[i] = I_GetPreciseTime();
@@ -601,24 +603,36 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		// Plays the music after the starting countdown.
-		if (leveltime == (starttime + (TICRATE/2)))
+		// Bosses have a punchy start, so no position.
+		if (bossinfo.boss == true)
 		{
-			S_ChangeMusic(mapmusname, mapmusflags, true);
-			S_ShowMusicCredit();
-		}
-
-		if (encoremode)
-		{
-			// Encore humming starts immediately.
 			if (leveltime == 3)
-				S_ChangeMusicInternal("encore", true);
+			{
+				S_ChangeMusic(mapmusname, mapmusflags, true);
+				S_ShowMusicCredit();
+			}
 		}
+		// Plays the music after the starting countdown.
 		else
 		{
-			// Plays the POSITION music after the camera spin
-			if (leveltime == introtime)
-				S_ChangeMusicInternal("postn", true);
+			if (leveltime == (starttime + (TICRATE/2)))
+			{
+				S_ChangeMusic(mapmusname, mapmusflags, true);
+				S_ShowMusicCredit();
+			}
+
+			if (encoremode)
+			{
+				// Encore humming starts immediately.
+				if (leveltime == 3)
+					S_ChangeMusicInternal("encore", true);
+			}
+			else
+			{
+				// Plays the POSITION music after the camera spin
+				if (leveltime == introtime)
+					S_ChangeMusicInternal("postn", true);
+			}
 		}
 
 		ps_lua_thinkframe_time = I_GetPreciseTime();
@@ -655,6 +669,8 @@ void P_Ticker(boolean run)
 			indirectitemcooldown--;
 		if (hyubgone > 0)
 			hyubgone--;
+
+		K_BossInfoTicker();
 
 		if ((gametyperules & GTR_BUMPERS))
 		{

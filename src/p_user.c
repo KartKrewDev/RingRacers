@@ -52,6 +52,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 
@@ -707,7 +708,7 @@ boolean P_EndingMusic(player_t *player)
 {
 	char buffer[9];
 	boolean looping = true;
-	INT32 bestlocalpos;
+	INT32 bestlocalpos, test;
 	player_t *bestlocalplayer;
 
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
@@ -718,27 +719,35 @@ boolean P_EndingMusic(player_t *player)
 
 	// Event - Level Finish
 	// Check for if this is valid or not
+#define getplayerpos(p) \
+	(((players[p].position < 1) || (players[p].pflags & PF_NOCONTEST)) \
+		? MAXPLAYERS+1 \
+		: players[p].position);
+
 	if (r_splitscreen)
 	{
-		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_NOCONTEST))
-			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_NOCONTEST))
-			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_NOCONTEST)))
-			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_NOCONTEST)))))
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
+			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
+			|| ((r_splitscreen < 2) && (players[localplayertable[2]].exiting || (players[localplayertable[2]].pflags & PF_NOCONTEST)))
+			|| ((r_splitscreen < 3) && (players[localplayertable[3]].exiting || (players[localplayertable[3]].pflags & PF_NOCONTEST)))))
 			return false;
 
-		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = ((players[displayplayers[0]].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[displayplayers[0]].position);
+		bestlocalplayer = &players[localplayertable[0]];
+		bestlocalpos = getplayerpos(localplayertable[0]);
 #define setbests(p) \
-	if (((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position) < bestlocalpos) \
+	test = getplayerpos(p); \
+	if (test < bestlocalpos) \
 	{ \
 		bestlocalplayer = &players[p]; \
-		bestlocalpos = ((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position); \
+		bestlocalpos = test; \
 	}
-		setbests(displayplayers[1]);
+		setbests(localplayertable[1]);
 		if (r_splitscreen > 1)
-			setbests(displayplayers[2]);
+			setbests(localplayertable[2]);
 		if (r_splitscreen > 2)
-			setbests(displayplayers[3]);
+			setbests(localplayertable[3]);
 #undef setbests
 	}
 	else
@@ -747,8 +756,10 @@ boolean P_EndingMusic(player_t *player)
 			return false;
 
 		bestlocalplayer = player;
-		bestlocalpos = ((player->pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : player->position);
+		bestlocalpos = getplayerpos((player-players));
 	}
+
+#undef getplayerpos
 
 	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
@@ -805,7 +816,9 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (leveltime >= (starttime + (TICRATE/2))) // see also where time overs are handled - search for "lives = 2" in this file
+	if (bossinfo.boss == false && (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
+		return;
+
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 
@@ -3029,7 +3042,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		timeover = 0;
 
-	if (!(player->playerstate == PST_DEAD || player->exiting))
+	if (!(player->playerstate == PST_DEAD || player->exiting || leveltime < introtime))
 	{
 		if (player->spectator) // force cam off for spectators
 			return true;
@@ -3776,7 +3789,7 @@ void P_DoTimeOver(player_t *player)
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 	}
 
-	if (netgame && !player->bot)
+	if (netgame && !player->bot && !bossinfo.boss)
 	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
@@ -4347,16 +4360,36 @@ void P_PlayerThink(player_t *player)
 
 	// Accessibility - kickstart your acceleration
 	if (!(player->pflags & PF_KICKSTARTACCEL))
+	{
 		player->kickstartaccel = 0;
+	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
 		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		{
 			player->kickstartaccel = 0;
+		}
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
+		{
 			player->kickstartaccel++;
+			if ((player->kickstartaccel == ACCEL_KICKSTART) && P_IsLocalPlayer(player))
+			{
+				S_StartSound(NULL, sfx_ding);
+			}
+		}
+		else // for HUD
+		{
+			player->kickstartaccel = ACCEL_KICKSTART+1;
+		}
 	}
 	else if (player->kickstartaccel < ACCEL_KICKSTART)
+	{
 		player->kickstartaccel = 0;
+	}
+	else // for HUD
+	{
+		player->kickstartaccel = ACCEL_KICKSTART+1;
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)

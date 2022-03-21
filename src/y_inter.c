@@ -42,6 +42,7 @@
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PlayerInputDown
 #include "k_battle.h"
+#include "k_boss.h"
 #include "k_pwrlv.h"
 #include "console.h" // cons_menuhighlight
 #include "k_grandprix.h"
@@ -222,7 +223,14 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	else
 	{
 		// set up the levelstring
-		if (mapheaderinfo[prevmap]->levelflags & LF_NOZONE)
+		if (bossinfo.boss == true && bossinfo.enemyname)
+		{
+			snprintf(data.levelstring,
+				sizeof data.levelstring,
+				"* %s *",
+				bossinfo.enemyname);
+		}
+		else if (mapheaderinfo[prevmap]->levelflags & LF_NOZONE)
 		{
 			if (mapheaderinfo[prevmap]->actnum > 0)
 				snprintf(data.levelstring,
@@ -481,7 +489,7 @@ void Y_IntermissionDrawer(void)
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
 
-	if (sorttic != -1 && intertic > sorttic && multiplayer)
+	if (sorttic != -1 && intertic > sorttic)
 	{
 		INT32 count = (intertic - sorttic);
 
@@ -493,7 +501,7 @@ void Y_IntermissionDrawer(void)
 			x += (((16 - count) * vid.width) / (8 * vid.dupx));
 	}
 
-	if (intertype == int_race || intertype == int_battle)
+	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
 	{
 #define NUMFORNEWCOLUMN 8
 		INT32 y = 41, gutter = ((data.numplayers > NUMFORNEWCOLUMN) ? 0 : (BASEVIDWIDTH/2));
@@ -516,19 +524,11 @@ void Y_IntermissionDrawer(void)
 		{
 			switch (intertype)
 			{
-				default:
-				case int_race:
-					timeheader = "TIME";
-					break;
 				case int_battle:
-					if (battlecapsules)
-					{
-						timeheader = "TIME";
-					}
-					else
-					{
-						timeheader = "SCORE";
-					}
+					timeheader = "SCORE";
+					break;
+				default:
+					timeheader = "TIME";
 					break;
 			}
 		}
@@ -653,7 +653,7 @@ void Y_IntermissionDrawer(void)
 						V_DrawRightAlignedThinString(x+152+gutter, y-1, (data.numplayers > NUMFORNEWCOLUMN ? V_6WIDTHSPACE : 0), "NO CONTEST.");
 					else
 					{
-						if (intertype == int_race || (intertype == int_battle && battlecapsules))
+						if (intertype == int_race || intertype == int_battletime)
 						{
 							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
 							G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
@@ -695,7 +695,7 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false)
+	if (timer && grandprixinfo.gp == false && bossinfo.boss == false)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
@@ -797,11 +797,11 @@ void Y_Ticker(void)
 	if (intertic < TICRATE || intertic & 1 || endtic != -1)
 		return;
 
-	if (intertype == int_race || intertype == int_battle)
+	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
 	{
 		//if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
-			if (!data.rankingsmode && (intertic >= sorttic + 8))
+			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
@@ -1034,12 +1034,19 @@ void Y_DetermineIntermissionType(void)
 
 	if (intermissiontypes[gametype] != int_none)
 		intertype = intermissiontypes[gametype];
-	else if (modeattacking)
-		intertype = int_timeattack;
 	else if (gametype == GT_RACE)
 		intertype = int_race;
 	else if (gametype == GT_BATTLE)
-		intertype = int_battle;
+	{
+		UINT8 i = 0, nump = 0;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			nump++;
+		}
+		intertype = (nump < 2 ? int_battletime : int_battle);
+	}
 }
 
 //
@@ -1049,6 +1056,14 @@ void Y_DetermineIntermissionType(void)
 //
 void Y_StartIntermission(void)
 {
+	UINT8 i = 0, nump = 0;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+		nump++;
+	}
+
 	intertic = -1;
 
 #ifdef PARANOIA
@@ -1059,29 +1074,28 @@ void Y_StartIntermission(void)
 	// set player Power Level type
 	powertype = K_UsingPowerLevels();
 
-	if (!multiplayer)
+	// determine the tic the intermission ends
+	if (!multiplayer || demo.playback)
 	{
-		timer = 20*TICRATE;
+		timer = ((nump >= 2) ? 10 : 5)*TICRATE;
 	}
 	else
 	{
-		if (cv_inttime.value == 0)
-			timer = 1;
-		else if (demo.playback && !multiplayer) // Override inttime (which is pulled from the replay anyway
-			timer = 10*TICRATE;
-		else
-		{
-			timer = cv_inttime.value*TICRATE;
+		timer = cv_inttime.value*TICRATE;
 
-			if (!timer)
-				timer = 1;
-		}
+		if (!timer)
+			timer = 1; // prevent a weird bug
 	}
-	
+
+	// determine the tic everybody's scores/PWR starts getting sorted
+	sorttic = -1;
+	if (multiplayer || nump >= 2)
+	{
+		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
+	}
+
 	if (intermissiontypes[gametype] != int_none)
 		intertype = intermissiontypes[gametype];
-
-	sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
@@ -1094,23 +1108,20 @@ void Y_StartIntermission(void)
 	switch (intertype)
 	{
 		case int_battle:
+		case int_battletime:
 		{
-			// Calculate who won
-			if (battlecapsules)
-			{
-				Y_CalculateMatchData(0, Y_CompareTime);
-			}
-			else
-			{
-				Y_CalculateMatchData(0, Y_CompareScore);
-			}
-
 			if (cv_inttime.value > 0)
 				S_ChangeMusicInternal("racent", true); // loop it
 
-			break;
+			// Calculate who won
+			if (intertype == int_battle)
+			{
+				Y_CalculateMatchData(0, Y_CompareScore);
+				break;
+			}
 		}
-		case int_race: // (time-only race)
+		// FALLTHRU
+		case int_race:
 		{
 			// Calculate who won
 			Y_CalculateMatchData(0, Y_CompareTime);

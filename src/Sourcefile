@@ -110,6 +110,7 @@ k_bot.c
 k_botitem.c
 k_botsearch.c
 k_grandprix.c
+k_boss.c
 k_hud.c
 k_terrain.c
 k_brightmap.c

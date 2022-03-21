@@ -9429,7 +9429,7 @@ void A_ForceWin(mobj_t *actor)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] && ((players[i].mo && players[i].mo->health)
-		    || ((netgame || multiplayer) && players[i].lives)))
+		    && !(players[i].pflags & PF_NOCONTEST)))
 			break;
 	}
 
@@ -11086,14 +11086,10 @@ void A_Boss5Jump(mobj_t *actor)
 	if (!actor->tracer)
 		return; // Don't even bother if we've got nothing to aim at.
 
-	// Look up actor's current gravity situation
-	if (actor->subsector->sector->gravity)
-		g = FixedMul(gravity,(FixedDiv(*actor->subsector->sector->gravity>>FRACBITS, 1000)));
-	else
-		g = gravity;
+	g = FixedMul(gravity, mapobjectscale);
 
 	// Look up distance between actor and its tracer
-	x = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
+	x = FixedHypot(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
 	// Look up height difference between actor and its tracer
 	y = actor->tracer->z - actor->z;
 
@@ -13299,7 +13295,17 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
+	remains->cvmem = leveltime;
+	remains->threshold = actor->threshold;
+	if (remains->threshold != 69 && remains->threshold != 70)
+	{
+		remains->threshold = 68;
+	}
+	// To insure this information doesn't have to be rediscovered every time you look at this function...
+	// A threshold of 0 is for a "living", ordinary random item.
+	// 68 means regular popped random item debris.
+	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
+	// 70 is a powered up Overtime item.
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -13315,7 +13321,8 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if ((gametyperules & GTR_BUMPERS) && (actor->threshold != 69 && actor->threshold != 70))
+	// Here at mapload in battle?
+	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);

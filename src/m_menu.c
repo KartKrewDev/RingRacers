@@ -154,7 +154,8 @@ typedef enum
 	LLM_CREATESERVER,
 	LLM_LEVELSELECT,
 	LLM_TIMEATTACK,
-	LLM_BREAKTHECAPSULES
+	LLM_BREAKTHECAPSULES,
+	LLM_BOSS
 } levellist_mode_t;
 
 levellist_mode_t levellistmode = LLM_CREATESERVER;
@@ -855,7 +856,7 @@ enum
 {
 	spgrandprix,
 	sptimeattack,
-	spbreakthecapsules
+	spbreakthecapsules,
 };
 
 // Single Player Load Game
@@ -1747,7 +1748,7 @@ inline static void M_GetGametypeColor(void)
 	else
 		gt = gametype;
 
-	if (gt == GT_BATTLE)
+	if (gt == GT_BATTLE || levellistmode == LLM_BOSS)
 	{
 		highlightflags = V_REDMAP;
 		warningflags = V_ORANGEMAP;
@@ -4360,12 +4361,15 @@ static void M_PatchSkinNameTable(void)
 //
 // M_PrepareCupList
 //
-static void M_PrepareCupList(void)
+static boolean M_PrepareCupList(void)
 {
 	cupheader_t *cup = kartcupheaders;
 	INT32 i = 0;
 
 	memset(dummygpcup_cons_t, 0, sizeof (dummygpcup_cons_t));
+
+	if (cup == NULL)
+		return false;
 
 	while (cup != NULL)
 	{
@@ -4384,6 +4388,8 @@ static void M_PrepareCupList(void)
 	}
 
 	CV_SetValue(&cv_dummygpcup, 1); // This causes crash sometimes?!
+
+	return true;
 }
 
 // Call before showing any level-select menus
@@ -4405,7 +4411,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 {
 	// Random map!
 	if (mapnum == -1)
-		return (gamestate != GS_TIMEATTACK && !modeattacking);
+		return (levellistmode == LLM_CREATESERVER);
 
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
@@ -4440,7 +4446,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			return true;*/
 		case LLM_TIMEATTACK:
 		case LLM_BREAKTHECAPSULES:
-			if (!(mapheaderinfo[mapnum]->menuflags & LF2_TIMEATTACK))
+			if (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK)
 				return false;
 
 			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
@@ -4460,6 +4466,13 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false;
 
 			return true;
+
+		case LLM_BOSS:
+			if (!(mapheaderinfo[mapnum]->typeoflevel & TOL_BOSS))
+				return false;
+
+			return true;
+
 		default:
 			return false;
 	}
@@ -4932,8 +4945,12 @@ static boolean M_AddonsRefresh(void)
 		return true;
 	}
 
+#ifdef DEVELOP
+	prevmajormods = majormods;
+#else
 	if (!majormods && prevmajormods)
 		prevmajormods = false;
+#endif
 
 	if ((refreshdirmenu & REFRESHDIR_ADDFILE) || (majormods && !prevmajormods))
 	{
@@ -6336,7 +6353,7 @@ static void M_RetryResponse(INT32 ch)
 static void M_Retry(INT32 choice)
 {
 	(void)choice;
-	M_StartMessage(M_GetText("Start this race over?\n\n(Press 'Y' to confirm)\n"), FUNCPTRCAST(M_RetryResponse), MM_YESNO);
+	M_StartMessage(va("Start this %s over?\n\n(Press 'Y' to confirm)\n", (gametyperules & GTR_CIRCUIT) ? "race" : "battle"),FUNCPTRCAST(M_RetryResponse),MM_YESNO);
 }
 
 static void M_SelectableClearMenus(INT32 choice)
@@ -7633,7 +7650,7 @@ static void M_DrawLevelStats(void)
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_TIMEATTACK))
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
 		if (!mainrecords[i] || mainrecords[i]->time <= 0)
@@ -7706,8 +7723,12 @@ static void M_HandleLevelStats(INT32 choice)
 static void M_GrandPrixTemp(INT32 choice)
 {
 	(void)choice;
+	if (!M_PrepareCupList())
+	{
+		M_StartMessage(M_GetText("No cups found for Grand Prix.\n"),NULL,MM_NOTHING);
+		return;
+	}
 	M_PatchSkinNameTable();
-	M_PrepareCupList();
 	M_SetupNextMenu(&SP_GrandPrixTempDef);
 }
 
@@ -8804,14 +8825,14 @@ static INT32 M_FindFirstMap(INT32 gtype)
 {
 	INT32 i;
 
-	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gtype))
+	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gametypetol[gtype]))
 		return gamemap;
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
-		if (!(mapheaderinfo[i]->typeoflevel & gtype))
+		if (!(mapheaderinfo[i]->typeoflevel & gametypetol[gtype]))
 			continue;
 		return i + 1;
 	}

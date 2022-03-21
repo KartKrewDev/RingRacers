@@ -34,6 +34,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_respawn.h"
 #include "p_spec.h"
 
@@ -633,6 +634,9 @@ void P_CheckTimeLimit(void)
 	if (!(gametyperules & GTR_TIMELIMIT))
 		return;
 
+	if (bossinfo.boss == true)
+		return;
+
 	if (leveltime < (timelimitintics + starttime))
 		return;
 
@@ -730,6 +734,9 @@ void P_CheckPointLimit(void)
 		return;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
+		return;
+
+	if (bossinfo.boss == true)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
