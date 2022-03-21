@@ -1178,6 +1178,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				case MT_EGGMANITEM:
 				case MT_SSMINE:
 				case MT_LANDMINE:
+				case MT_DROPTARGET:
 				case MT_SINK:
 				case MT_EMERALD:
 					if (mo->extravalue2 > 0)
@@ -2044,7 +2045,8 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 	|| (mo->z + mo->height >= mo->subsector->sector->ceilingheight
 		&& ((mo->subsector->sector->flags & SF_TRIGGERSPECIAL_HEADBUMP) || (mo->eflags & MFE_VERTICALFLIP)) && (mo->subsector->sector->flags & SF_FLIPSPECIAL_CEILING)))
 	&& (GETSECSPECIAL(mo->subsector->sector->special, 1) == 6
-	|| GETSECSPECIAL(mo->subsector->sector->special, 1) == 7))
+	|| GETSECSPECIAL(mo->subsector->sector->special, 1) == 7
+	|| GETSECSPECIAL(mo->subsector->sector->special, 1) == 8))
 		return true;
 
 	return false;
@@ -2142,6 +2144,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BALLHOG:
 		case MT_SSMINE:
 		case MT_LANDMINE:
+		case MT_DROPTARGET:
 		case MT_BUBBLESHIELDTRAP:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
@@ -4862,6 +4865,7 @@ boolean P_IsKartItem(INT32 type)
 {
 	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
 		type == MT_BANANA || type == MT_BANANA_SHIELD ||
+		type == MT_DROPTARGET || type == MT_DROPTARGET_SHIELD ||
 		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
 		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
@@ -4899,12 +4903,14 @@ static void P_RemoveKartItem(mobj_t *thing)
 {
 	mobj_t *mo;
 	for (mo = kitemcap; mo; mo = mo->itnext)
-		if (mo->itnext == thing)
-		{
-			P_SetTarget(&mo->itnext, thing->itnext);
-			P_SetTarget(&thing->itnext, NULL);
-			return;
-		}
+	{
+		if (mo->itnext != thing)
+			continue;
+
+		P_SetTarget(&mo->itnext, thing->itnext);
+		P_SetTarget(&thing->itnext, NULL);
+		return;
+	}
 }
 
 // Doesn't actually do anything since items have their own thinkers,
@@ -5631,14 +5637,15 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						mobj_t *blast = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_BATTLEBUMPER_BLAST);
 
-						P_InitAngle(blast, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_45);
-						blast->destscale *= 4;
-
+						blast->angle = R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_45;
 						if (i & 1)
 						{
 							blast->angle += ANGLE_90;
 							S_StartSound(blast, sfx_cdfm64);
 						}
+						P_InitAngle(blast, blast->angle);
+
+						blast->destscale *= 4;
 					}
 
 					for (i = 0; i < 10; i++)
@@ -6155,6 +6162,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_BANANA:
 	case MT_EGGMANITEM:
 	case MT_LANDMINE:
+	//case MT_DROPTARGET:
 	case MT_SPB:
 		if (P_IsObjectOnGround(mobj))
 		{
@@ -6833,6 +6841,45 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->momx = mobj->momy = 0;
 			mobj->health = 1;
 		}
+
+		if (mobj->threshold > 0)
+			mobj->threshold--;
+		break;
+	case MT_DROPTARGET:
+		if (mobj->reactiontime > 0)
+		{
+			// Slippery tipping mode.
+			INT32 slippytip = 1 + (mobj->reactiontime/2);
+			if (slippytip > 64)
+				slippytip = 64;
+			else if (slippytip < 8)
+				slippytip = 8;
+			if (!(mobj->health & 1) == !(mobj->flags2 & MF2_AMBUSH))
+			{
+				slippytip = -slippytip;
+			}
+			mobj->angle += slippytip*ANG2;
+
+			mobj->friction = ((2*ORIG_FRICTION)+FRACUNIT)/3; // too low still?
+
+			/*if (mobj->momx || mobj->momy || mobj->momz)
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+				ghost->colorized = true; // already has color!
+			}*/
+
+			if (!--mobj->reactiontime)
+			{
+				P_SetMobjState(mobj, mobj->info->spawnstate);
+			}
+		}
+		else
+		{
+			// Time to stop, ramp up the friction...
+			mobj->friction = ORIG_FRICTION/4; // too high still?
+		}
+
+		mobj->renderflags = (mobj->renderflags|RF_FULLBRIGHT) ^ RF_FULLDARK; // the difference between semi and fullbright
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
@@ -9013,6 +9060,13 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->hitlag > 0)
 	{
 		mobj->hitlag--;
+
+		if (mobj->type == MT_DROPTARGET && mobj->reactiontime > 0 && mobj->hitlag == 2)
+		{
+			mobj->spritexscale = FRACUNIT;
+			mobj->spriteyscale = 5*FRACUNIT;
+		}
+
 		return;
 	}
 
@@ -9197,7 +9251,8 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_CANNONBALLDECOR
 		|| mobj->type == MT_FALLINGROCK
 		|| mobj->type == MT_ORBINAUT
-		|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD) {
+		|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
+		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime)) {
 		P_TryMove(mobj, mobj->x, mobj->y, true); // Sets mo->standingslope correctly
 		if (P_MobjWasRemoved(mobj)) // anything that calls checkposition can be lethal
 			return;
@@ -9509,6 +9564,10 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_EGGMANITEM_SHIELD:
 			thing->shadowscale = 3*FRACUNIT/2;
 			thing->whiteshadow = false;
+			break;
+		case MT_DROPTARGET:
+			thing->shadowscale = 3*FRACUNIT/2;
+			thing->whiteshadow = true;
 			break;
 		case MT_THUNDERSHIELD:
 		case MT_BUBBLESHIELD:
@@ -10044,6 +10103,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 						P_SpawnMobj(newx, newy, mobj->z, MT_EERIEFOG);
 				}
 			}
+			break;
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+			mobj->color = SKINCOLOR_LIME;
+			mobj->colorized = true;
+			mobj->renderflags |= RF_FULLBRIGHT;
 			break;
 		case MT_SMK_MOLE:
 			mobj->reactiontime = P_RandomRange(0, 3*mobj->info->reactiontime/2); // Random delay on start of level

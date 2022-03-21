@@ -883,6 +883,64 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
+	static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+
+		Item usage for Drop Target throwing.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+{
+	const fixed_t topspeed = K_GetKartSpeed(player, false);
+	fixed_t radius = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	UINT8 snipeMul = 2;
+	player_t *target = NULL;
+
+	if (player->speed > topspeed)
+	{
+		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
+	}
+
+	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, radius, 15, false);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
+		throwdir = 1;
+	}
+	else
+	{
+		target = K_PlayerInCone(player, radius, 15, true);
+
+		if (target != NULL)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+			throwdir = -1;
+			tryLookback = true;
+		}
+	}
+
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, throwdir);
+	}
+}
+
+/*--------------------------------------------------
 	static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 
 		Item usage for Jawz throwing.
@@ -1286,6 +1344,16 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						break;
 					case KITEM_LANDMINE:
 						K_BotItemLandmine(player, cmd, turnamt);
+						break;
+					case KITEM_DROPTARGET:
+						if (!(player->pflags & PF_ITEMOUT))
+						{
+							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
+						}
+						else
+						{
+							K_BotItemDropTarget(player, cmd);
+						}
 						break;
 					case KITEM_THUNDERSHIELD:
 						K_BotItemThunder(player, cmd);

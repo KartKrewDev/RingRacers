@@ -348,6 +348,7 @@ consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR|CV_CHEAT, C
 consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
