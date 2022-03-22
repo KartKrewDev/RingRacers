@@ -351,7 +351,6 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			 /*Land Mine*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
-		   /*Drop Target*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
@@ -363,6 +362,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
+		   /*Drop Target*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0, 2, 2, 1, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 6,10, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -384,7 +384,6 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 				  /*Jawz*/ { 8, 1 }, // Jawz
 				  /*Mine*/ { 6, 1 }, // Mine
 			 /*Land Mine*/ { 0, 0 }, // Land Mine
-		   /*Drop Target*/ { 0, 0 }, // Drop Target
 			   /*Ballhog*/ { 2, 1 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
@@ -396,6 +395,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 		   /*Pogo Spring*/ { 2, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
+		   /*Drop Target*/ { 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 1, 1 }, // Sneaker x3
 			 /*Banana x3*/ { 1, 0 }, // Banana x3
