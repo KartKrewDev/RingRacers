@@ -88,7 +88,7 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum)
 //
 // P_SetupStateAnimation
 //
-FUNCINLINE static ATTRINLINE void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
+static void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
 {
 	INT32 animlength = (mobj->sprite == SPR_PLAY && mobj->skin)
 		? (INT32)(((skin_t *)mobj->skin)->sprites[mobj->sprite2].numframes) - 1
@@ -2291,6 +2291,9 @@ boolean P_ZMovement(mobj_t *mo)
 		}
 
 		P_CheckPosition(mo, mo->x, mo->y); // Sets mo->standingslope correctly
+		if (P_MobjWasRemoved(mo)) // mobjs can be removed by P_CheckPosition -- Monster Iestyn 31/07/21
+			return false;
+
 		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tmceilingpic : tmfloorpic));
 
 		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
@@ -3039,8 +3042,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 	{
 		fixed_t topheight, bottomheight;
 
-		topheight    = P_GetFFloorTopZAt   (rover, mobj->x, mobj->y);
-		bottomheight = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
+		topheight = P_GetSpecialTopZ(mobj, sectors + rover->secnum, sector);
+		bottomheight = P_GetSpecialBottomZ(mobj, sectors + rover->secnum, sector);
 
 		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
 		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
@@ -4979,7 +4982,7 @@ void P_RunOverlays(void)
 
 		mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP) | (mo->target->eflags & MFE_VERTICALFLIP);
 		mo->scale = mo->destscale = mo->target->scale;
-		mo->angle = mo->target->angle + mo->movedir;
+		mo->angle = (mo->target->player ? mo->target->player->drawangle : mo->target->angle) + mo->movedir;
 		mo->rollangle = mo->target->rollangle;
 		mo->pitch = mo->target->pitch;
 		mo->roll = mo->target->roll;

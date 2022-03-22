@@ -54,7 +54,7 @@ float I_GetTimeFrac(void);
   */
 precise_t I_GetPreciseTime(void);
 
-/**	\brief	Returns the difference between precise times as microseconds.
+/**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
   */
 int I_PreciseToMicros(precise_t d);
 

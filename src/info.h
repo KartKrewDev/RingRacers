@@ -161,6 +161,8 @@ enum actionnum
 	A_SETOBJECTFLAGS2,
 	A_RANDOMSTATE,
 	A_RANDOMSTATERANGE,
+	A_STATERANGEBYANGLE,
+	A_STATERANGEBYPARAMETER,
 	A_DUALACTION,
 	A_REMOTEACTION,
 	A_TOGGLEFLAMEJET,
@@ -428,6 +430,8 @@ void A_SetObjectFlags();
 void A_SetObjectFlags2();
 void A_RandomState();
 void A_RandomStateRange();
+void A_StateRangeByAngle();
+void A_StateRangeByParameter();
 void A_DualAction();
 void A_RemoteAction();
 void A_ToggleFlameJet();

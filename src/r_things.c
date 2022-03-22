@@ -236,7 +236,7 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 	UINT8 rotation;
 	lumpinfo_t *lumpinfo;
 	softwarepatch_t patch;
-	UINT8 numadded = 0;
+	UINT16 numadded = 0;
 
 	memset(sprtemp,0xFF, sizeof (sprtemp));
 	maxframe = (size_t)-1;
@@ -2052,9 +2052,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->paperoffset = paperoffset;
 	vis->paperdistance = paperdistance;
 	vis->centerangle = centerangle;
-	vis->viewangle = viewangle;
 	vis->shear.tan = sheartan;
 	vis->shear.offset = 0;
+	vis->viewpoint.x = viewx;
+	vis->viewpoint.y = viewy;
+	vis->viewpoint.z = viewz;
+	vis->viewpoint.angle = viewangle;
 
 	vis->mobj = thing; // Easy access! Tails 06-07-2002
 
@@ -3087,12 +3090,24 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 
 	if (portal)
 	{
-		for (x = x1; x <= x2; x++)
+		INT32 start_index = max(portal->start, x1);
+		INT32 end_index = min(portal->start + portal->end - portal->start, x2);
+		for (x = x1; x < start_index; x++)
+		{
+			spr->clipbot[x] = -1;
+			spr->cliptop[x] = -1;
+		}
+		for (x = start_index; x <= end_index; x++)
 		{
 			if (spr->clipbot[x] > portal->floorclip[x - portal->start])
 				spr->clipbot[x] = portal->floorclip[x - portal->start];
 			if (spr->cliptop[x] < portal->ceilingclip[x - portal->start])
 				spr->cliptop[x] = portal->ceilingclip[x - portal->start];
+		}
+		for (x = end_index + 1; x <= x2; x++)
+		{
+			spr->clipbot[x] = -1;
+			spr->cliptop[x] = -1;
 		}
 	}
 }
@@ -3259,10 +3274,10 @@ static void R_DrawMaskedList (drawnode_t* head)
 	}
 }
 
-void R_DrawMasked(maskcount_t* masks, UINT8 nummasks)
+void R_DrawMasked(maskcount_t* masks, INT32 nummasks)
 {
 	drawnode_t *heads;	/**< Drawnode lists; as many as number of views/portals. */
-	SINT8 i;
+	INT32 i;
 
 	heads = calloc(nummasks, sizeof(drawnode_t));
 

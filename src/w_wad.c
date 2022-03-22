@@ -1229,7 +1229,11 @@ lumpnum_t W_CheckNumForMap(const char *name)
 			{
 				p = wadfiles[i]->lumpinfo + lumpNum;
 				if (p->hash == hash && !strnicmp(name, p->name, 8))
-					return (i<<16) + lumpNum;
+				{
+					const char *extension = strrchr(p->fullname, '.');
+					if (!(extension && stricmp(extension, ".wad")))
+						return (i<<16) + lumpNum;
+				}
 			}
 		}
 	}

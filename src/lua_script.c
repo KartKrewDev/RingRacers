@@ -24,7 +24,7 @@
 #include "byteptr.h"
 #include "p_saveg.h"
 #include "p_local.h"
-#include "p_slopes.h" // for P_SlopeById
+#include "p_slopes.h" // for P_SlopeById and slopelist
 #include "p_polyobj.h" // polyobj_t, PolyObjects
 #ifdef LUA_ALLOW_BYTECODE
 #include "d_netfil.h" // for LUA_DumpFile
@@ -758,27 +758,6 @@ fixed_t LUA_EvalMath(const char *word)
 	return res;
 }
 
-/*
-LUA_PushUserdata but no userdata is created.
-You can't invalidate it therefore.
-*/
-
-void LUA_PushLightUserdata (lua_State *L, void *data, const char *meta)
-{
-	if (data)
-	{
-		lua_pushlightuserdata(L, data);
-		luaL_getmetatable(L, meta);
-		/*
-		The metatable is the last value on the stack, so this
-		applies it to the second value, which is the userdata.
-		*/
-		lua_setmetatable(L, -2);
-	}
-	else
-		lua_pushnil(L);
-}
-
 // Takes a pointer, any pointer, and a metatable name
 // Creates a userdata for that pointer with the given metatable
 // Pushes it to the stack and stores it in the registry.
@@ -909,6 +888,8 @@ void LUA_InvalidateLevel(void)
 	{
 		LUA_InvalidateUserdata(&lines[i]);
 		LUA_InvalidateUserdata(&lines[i].tags);
+		LUA_InvalidateUserdata(lines[i].args);
+		LUA_InvalidateUserdata(lines[i].stringargs);
 		LUA_InvalidateUserdata(lines[i].sidenum);
 	}
 	for (i = 0; i < numsides; i++)
@@ -920,6 +901,13 @@ void LUA_InvalidateLevel(void)
 		LUA_InvalidateUserdata(&PolyObjects[i]);
 		LUA_InvalidateUserdata(&PolyObjects[i].vertices);
 		LUA_InvalidateUserdata(&PolyObjects[i].lines);
+	}
+	for (pslope_t *slope = slopelist; slope; slope = slope->next)
+	{
+		LUA_InvalidateUserdata(slope);
+		LUA_InvalidateUserdata(&slope->normal);
+		LUA_InvalidateUserdata(&slope->o);
+		LUA_InvalidateUserdata(&slope->d);
 	}
 #ifdef HAVE_LUA_SEGS
 	for (i = 0; i < numsegs; i++)
@@ -943,6 +931,8 @@ void LUA_InvalidateMapthings(void)
 	{
 		LUA_InvalidateUserdata(&mapthings[i]);
 		LUA_InvalidateUserdata(&mapthings[i].tags);
+		LUA_InvalidateUserdata(mapthings[i].args);
+		LUA_InvalidateUserdata(mapthings[i].stringargs);
 	}
 }
 
@@ -1423,21 +1413,13 @@ static void ArchiveTables(UINT8 **p)
 			// Write key
 			e = ArchiveValue(p, TABLESINDEX, -2); // key should be either a number or a string, ArchiveValue can handle this.
 			if (e == 2) // invalid key type (function, thread, lightuserdata, or anything we don't recognise)
-			{
-				lua_pushvalue(gL, -2);
-				CONS_Alert(CONS_ERROR, "Index '%s' (%s) of table %d could not be archived!\n", lua_tostring(gL, -1), luaL_typename(gL, -1), i);
-				lua_pop(gL, 1);
-			}
+				CONS_Alert(CONS_ERROR, "Index '%s' (%s) of table %d could not be archived!\n", lua_tostring(gL, -2), luaL_typename(gL, -2), i);
 			// Write value
 			e = ArchiveValue(p, TABLESINDEX, -1);
 			if (e == 1)
 				n++; // the table contained a new table we'll have to archive. :(
 			else if (e == 2) // invalid value type
-			{
-				lua_pushvalue(gL, -2);
-				CONS_Alert(CONS_ERROR, "Type of value for table %d entry '%s' (%s) could not be archived!\n", i, lua_tostring(gL, -1), luaL_typename(gL, -1));
-				lua_pop(gL, 1);
-			}
+				CONS_Alert(CONS_ERROR, "Type of value for table %d entry '%s' (%s) could not be archived!\n", i, lua_tostring(gL, -2), luaL_typename(gL, -1));
 
 			lua_pop(gL, 1);
 		}
