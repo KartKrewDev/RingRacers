@@ -110,15 +110,13 @@ void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t 
 {
 	if (enemyname && enemyname[0])
 	{
-		if (bossinfo.enemyname)
-			Z_Free(bossinfo.enemyname);
+		Z_Free(bossinfo.enemyname);
 		bossinfo.enemyname = Z_StrDup(enemyname);
 	}
 
 	if (subtitle && subtitle[0])
 	{
-		if (bossinfo.subtitle)
-			Z_Free(bossinfo.subtitle);
+		Z_Free(bossinfo.subtitle);
 		bossinfo.subtitle = Z_StrDup(subtitle);
 	}
 

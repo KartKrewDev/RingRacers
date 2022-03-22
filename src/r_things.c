@@ -757,17 +757,32 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap)
 	dc_texturemid = basetexturemid;
 }
 
-boolean R_SpriteIsFlashing(vissprite_t *vis)
+static boolean hitlag_is_flashing(mobj_t *thing)
 {
-	return (!(vis->cut & SC_PRECIP)
-	&& (vis->mobj->flags & (MF_ENEMY|MF_BOSS))
-	&& (vis->mobj->flags2 & MF2_FRET)
-	&& !(vis->mobj->flags & MF_GRENADEBOUNCE));
+	return
+		(thing->hitlag > 0) &&
+		(thing->eflags & (MFE_DAMAGEHITLAG));
+}
+
+static boolean baddie_is_flashing(mobj_t *thing)
+{
+	return
+		(thing->flags & (MF_ENEMY|MF_BOSS)) &&
+		(thing->flags2 & (MF2_FRET)) &&
+		!(thing->flags & MF_GRENADEBOUNCE);
+}
+
+boolean R_ThingIsFlashing(mobj_t *thing)
+{
+	return
+		hitlag_is_flashing(thing) ||
+		baddie_is_flashing(thing);
 }
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 {
-	if ((vis->mobj->hitlag > 0 && (vis->mobj->eflags & MFE_DAMAGEHITLAG)) || R_SpriteIsFlashing(vis))
+	if (!(vis->cut & SC_PRECIP) &&
+			R_ThingIsFlashing(vis->mobj))
 	{
 		return R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
 	}
@@ -845,8 +860,11 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
 		dc_transmap = vis->transmap;
 	}
-	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+	else if (!(vis->cut & SC_PRECIP) &&
+			R_ThingIsFlashing(vis->mobj)) // Bosses "flash"
+	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
+	}
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
