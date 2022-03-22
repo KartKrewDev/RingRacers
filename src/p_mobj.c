@@ -9566,7 +9566,8 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->whiteshadow = false;
 			break;
 		case MT_DROPTARGET:
-			thing->shadowscale = 3*FRACUNIT/2;
+		case MT_DROPTARGET_SHIELD:
+			thing->shadowscale = 5*FRACUNIT/4;
 			thing->whiteshadow = true;
 			break;
 		case MT_THUNDERSHIELD:
