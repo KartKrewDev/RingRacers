@@ -215,6 +215,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_jawz);
 	CV_RegisterVar(&cv_mine);
 	CV_RegisterVar(&cv_landmine);
+	CV_RegisterVar(&cv_droptarget);
 	CV_RegisterVar(&cv_ballhog);
 	CV_RegisterVar(&cv_selfpropelledbomb);
 	CV_RegisterVar(&cv_grow);
@@ -321,6 +322,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_jawz,
 	&cv_mine,
 	&cv_landmine,
+	&cv_droptarget,
 	&cv_ballhog,
 	&cv_selfpropelledbomb,
 	&cv_grow,
@@ -350,12 +352,12 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
 		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
-				/*Banana*/ { 5, 3, 1, 0, 0, 0, 0, 0 }, // Banana
+				/*Banana*/ { 4, 3, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 7, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
+			  /*Orbinaut*/ { 5, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
-			 /*Land Mine*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
+			 /*Land Mine*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
@@ -367,6 +369,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
+		   /*Drop Target*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0, 2, 2, 1, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 6,10, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -399,6 +402,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 		   /*Pogo Spring*/ { 2, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
+		   /*Drop Target*/ { 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 1, 1 }, // Sneaker x3
 			 /*Banana x3*/ { 1, 0 }, // Banana x3
@@ -674,6 +678,7 @@ INT32 K_KartGetItemOdds(
 		case KITEM_ROCKETSNEAKER:
 		case KITEM_JAWZ:
 		case KITEM_LANDMINE:
+		case KITEM_DROPTARGET:
 		case KITEM_BALLHOG:
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEORBINAUT:
@@ -1231,6 +1236,10 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 			else
 				weight += 3*FRACUNIT;
 			break;
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+			if (against->player)
+				weight = K_PlayerWeight(against, NULL);
 		default:
 			break;
 	}
@@ -1263,6 +1272,12 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 	|| (mobj2->player && mobj2->player->itemtype == KITEM_BUBBLESHIELD))
 	{
 		S_StartSound(mobj1, sfx_s3k44);
+	}
+	else if (mobj1->type == MT_DROPTARGET || mobj1->type == MT_DROPTARGET_SHIELD) // no need to check the other way around
+	{
+		S_StartSound(mobj2, sfx_s258);
+		fx->colorized = true;
+		fx->color = mobj1->color;
 	}
 	else
 	{
@@ -1379,6 +1394,7 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 		|| (mobj2->player && mobj2->player->respawn.state != RESPAWNST_NONE))
 		return false;
 
+	if (mobj1->type != MT_DROPTARGET && mobj1->type != MT_DROPTARGET_SHIELD)
 	{ // Don't bump if you're flashing
 		INT32 flash;
 
@@ -4857,6 +4873,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 				// Shoot forward
 				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle, 0, PROJSPEED);
 			}
+
+			if (mapthing == MT_DROPTARGET && mo)
+			{
+				mo->reactiontime = TICRATE/2;
+				P_SetMobjState(mo, mo->info->painstate);
+			}
 		}
 	}
 	else
@@ -4886,7 +4908,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
-				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (player->mo->momz*P_MobjFlip(player->mo)); // Also intentionally not player scale
+				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (FixedDiv(player->mo->momz, mapobjectscale)*P_MobjFlip(player->mo)); // Also intentionally not player scale
 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
@@ -5352,7 +5374,8 @@ static void K_DoShrink(player_t *user)
 
 		if (mobj->type == MT_BANANA_SHIELD || mobj->type == MT_JAWZ_SHIELD ||
 		mobj->type == MT_SSMINE_SHIELD || mobj->type == MT_EGGMANITEM_SHIELD ||
-		mobj->type == MT_SINK_SHIELD || mobj->type == MT_ORBINAUT_SHIELD)
+		mobj->type == MT_SINK_SHIELD || mobj->type == MT_ORBINAUT_SHIELD ||
+		mobj->type == MT_DROPTARGET_SHIELD)
 		{
 			if (mobj->target && mobj->target->player)
 			{
@@ -5555,6 +5578,9 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 	{
 		nextwork = work->hnext;
 
+		if (!work->health)
+			continue; // taking care of itself
+
 		switch (work->type)
 		{
 			// Kart orbit items
@@ -5575,6 +5601,11 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 				orbit = false;
 				dropall = false;
 				type = MT_SSMINE;
+				break;
+			case MT_DROPTARGET_SHIELD:
+				orbit = false;
+				dropall = false;
+				type = MT_DROPTARGET;
 				break;
 			case MT_EGGMANITEM_SHIELD:
 				orbit = false;
@@ -5598,13 +5629,23 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		P_SetScale(dropwork, work->scale);
 		dropwork->destscale = K_ItemScaleForPlayer(player); //work->destscale;
 		dropwork->scalespeed = work->scalespeed;
+		dropwork->spritexscale = work->spritexscale;
+		dropwork->spriteyscale = work->spriteyscale;
 
 		dropwork->flags |= MF_NOCLIPTHING;
 		dropwork->flags2 = work->flags2;
 		dropwork->eflags = work->eflags;
 
+		dropwork->renderflags = work->renderflags;
+		dropwork->color = work->color;
+		dropwork->colorized = work->colorized;
+		dropwork->whiteshadow = work->whiteshadow;
+
 		dropwork->floorz = work->floorz;
 		dropwork->ceilingz = work->ceilingz;
+
+		dropwork->health = work->health; // will never be set to 0 as long as above guard exists
+		dropwork->hitlag = work->hitlag;
 
 		// Copy interp data
 		dropwork->old_angle = work->old_angle;
@@ -5673,14 +5714,22 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 			}
 			else
 			{
-				dropwork->color = work->color;
 				dropwork->angle -= ANGLE_90;
 			}
 		}
 		else // plop on the ground
 		{
-			dropwork->flags &= ~MF_NOCLIPTHING;
 			dropwork->threshold = 10;
+			dropwork->flags &= ~MF_NOCLIPTHING;
+
+			if (type == MT_DROPTARGET && dropwork->hitlag)
+			{
+				dropwork->momx = work->momx;
+				dropwork->momy = work->momy;
+				dropwork->momz = work->momz;
+				dropwork->reactiontime = work->reactiontime;
+				P_SetMobjState(dropwork, mobjinfo[type].painstate);
+			}
 		}
 
 		P_RemoveMobj(work);
@@ -6192,10 +6241,12 @@ static void K_MoveHeldObjects(player_t *player)
 			break;
 		case MT_BANANA_SHIELD: // Kart trailing items
 		case MT_SSMINE_SHIELD:
+		case MT_DROPTARGET_SHIELD:
 		case MT_EGGMANITEM_SHIELD:
 		case MT_SINK_SHIELD:
 			{
 				mobj_t *cur = player->mo->hnext;
+				mobj_t *curnext;
 				mobj_t *targ = player->mo;
 
 				if (P_IsObjectOnGround(player->mo) && player->speed > 0)
@@ -6208,10 +6259,16 @@ static void K_MoveHeldObjects(player_t *player)
 					fixed_t targx, targy, targz;
 					fixed_t speed, dist;
 
+					curnext = cur->hnext;
+
 					if (cur->type == MT_EGGMANITEM_SHIELD)
 					{
 						// Decided that this should use their "canon" color.
 						cur->color = SKINCOLOR_BLACK;
+					}
+					else if (cur->type == MT_DROPTARGET_SHIELD)
+					{
+						cur->renderflags = (cur->renderflags|RF_FULLBRIGHT) ^ RF_FULLDARK; // the difference between semi and fullbright
 					}
 
 					cur->flags &= ~MF_NOCLIPTHING;
@@ -6221,7 +6278,7 @@ static void K_MoveHeldObjects(player_t *player)
 
 					if (!cur->health)
 					{
-						cur = cur->hnext;
+						cur = curnext;
 						continue;
 					}
 
@@ -6239,7 +6296,10 @@ static void K_MoveHeldObjects(player_t *player)
 						dist = cur->extravalue1/2;
 
 					if (!targ || P_MobjWasRemoved(targ))
+					{
+						cur = curnext;
 						continue;
+					}
 
 					// Shrink your items if the player shrunk too.
 					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), finalscale)));
@@ -6270,7 +6330,14 @@ static void K_MoveHeldObjects(player_t *player)
 					P_SetObjectMomZ(cur, FixedMul(targz - cur->z, 7*FRACUNIT/8) - gravity, false);
 
 					if (R_PointToDist2(cur->x, cur->y, targx, targy) > 768*FRACUNIT)
+					{
 						P_MoveOrigin(cur, targx, targy, cur->z);
+						if (P_MobjWasRemoved(cur))
+						{
+							cur = curnext;
+							continue;
+						}
+					}
 
 					if (P_IsObjectOnGround(cur))
 					{
@@ -6278,7 +6345,7 @@ static void K_MoveHeldObjects(player_t *player)
 							cur->radius, cur->height, (cur->eflags & MFE_VERTICALFLIP), false);
 					}
 
-					cur = cur->hnext;
+					cur = curnext;
 				}
 			}
 			break;
@@ -9248,6 +9315,33 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->itemamount--;
 								K_ThrowLandMine(player);
 								K_PlayAttackTaunt(player->mo);
+							}
+							break;
+						case KITEM_DROPTARGET:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								mobj_t *mo;
+								K_SetItemOut(player);
+								S_StartSound(player->mo, sfx_s254);
+								mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DROPTARGET_SHIELD);
+								if (mo)
+								{
+									mo->flags |= MF_NOCLIPTHING;
+									mo->threshold = 10;
+									mo->movecount = 1;
+									mo->movedir = 1;
+									mo->cusval = player->itemscale;
+									P_SetTarget(&mo->target, player->mo);
+									P_SetTarget(&player->mo->hnext, mo);
+								}
+							}
+							else if (ATTACK_IS_DOWN && (player->pflags & PF_ITEMOUT))
+							{
+								K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0);
+								K_PlayAttackTaunt(player->mo);
+								player->itemamount--;
+								player->pflags &= ~PF_ITEMOUT;
+								K_UpdateHnextList(player, true);
 							}
 							break;
 						case KITEM_BALLHOG:

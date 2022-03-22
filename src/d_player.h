@@ -151,7 +151,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (HYUDORO,       17),\
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
-	FOREACH (KITCHENSINK,   20)
+	FOREACH (KITCHENSINK,   20),\
+	FOREACH (DROPTARGET,    21)
 
 typedef enum
 {

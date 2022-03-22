@@ -1101,6 +1101,7 @@ typedef enum sprite
 	SPR_SSMN, // SS Mine
 	SPR_KRBM, // SS Mine BOOM
 	SPR_LNDM, // Land Mine
+	SPR_DTRG, // Drop Target
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
@@ -4789,6 +4790,10 @@ typedef enum state
 	S_LANDMINE,
 	S_LANDMINE_EXPLODE,
 
+	// Drop Target
+	S_DROPTARGET,
+	S_DROPTARGET_SPIN,
+
 	// Ballhog
 	S_BALLHOG1,
 	S_BALLHOG2,
@@ -6535,6 +6540,9 @@ typedef enum mobj_type
 	MT_BOOMPARTICLE,
 
 	MT_LANDMINE, // Land Mine
+
+	MT_DROPTARGET, // Drop Target
+	MT_DROPTARGET_SHIELD,
 
 	MT_BALLHOG, // Ballhog
 	MT_BALLHOGBOOM,

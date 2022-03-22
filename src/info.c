@@ -557,6 +557,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SSMN", // SS Mine
 	"KRBM", // SS Mine BOOM
 	"LNDM", // Land Mine
+	"DTRG", // Drop Target
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
 	"SPBM", // Self-Propelled Bomb
@@ -4374,6 +4375,9 @@ state_t states[NUMSTATES] =
 
 	{SPR_LNDM, 0, -1, {NULL}, 0, 0, S_LANDMINE},	// S_LANDMINE
 	{SPR_NULL, 0,  1, {A_LandMineExplode}, 0, 0, S_NULL},		// S_LANDMINE_EXPLODE
+
+	{SPR_DTRG, 0, -1, {NULL}, 0, 0, S_NULL},	// S_DROPTARGET
+	{SPR_DTRG, 1, -1, {NULL}, 0, 0, S_NULL},	// S_DROPTARGET_SPIN
 
 	{SPR_BHOG,               0, 3, {A_PlaySound}, sfx_s1bd, 1, S_BALLHOG2},	// S_BALLHOG1
 	{SPR_BHOG, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_BALLHOG3},					// S_BALLHOG2
@@ -24191,6 +24195,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_s3k5c,				// activesound
 		MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
 		S_NULL					// raisestate
+	},
+
+	{           // MT_DROPTARGET
+		-1,             // doomednum
+		S_DROPTARGET,   // spawnstate
+		3,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_tossed,     // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_DROPTARGET_SPIN, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_DROPTARGET_SPIN, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		128*FRACUNIT,	// speed
+		45*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_s3k96,      // activesound
+		MF_SPECIAL|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DROPTARGET_SHIELD
+		-1,             // doomednum
+		S_DROPTARGET,   // spawnstate
+		3,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_DROPTARGET_SPIN, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_DROPTARGET_SPIN, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,				// speed
+		45*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_BALLHOG

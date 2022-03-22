@@ -3812,6 +3812,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_LANDMINE",
 	"S_LANDMINE_EXPLODE",
 
+	// Drop Target
+	"S_DROPTARGET",
+	"S_DROPTARGET_SPIN",
+
 	// Ballhog
 	"S_BALLHOG1",
 	"S_BALLHOG2",
@@ -5521,6 +5525,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BOOMPARTICLE",
 
 	"MT_LANDMINE", // Land Mine
+
+	"MT_DROPTARGET", // Drop Target
+	"MT_DROPTARGET_SHIELD",
 
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
