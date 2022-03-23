@@ -9207,14 +9207,19 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			if (mobj->extravalue2 >= 2)
 			{
+				UINT32 dontdraw = RF_DONTDRAW;
+
+				if (mobj->tracer)
+					dontdraw &= ~(mobj->tracer->renderflags);
+
 				if (mobj->extravalue2 == 2) // I don't know why the normal logic doesn't work for this.
-					mobj->renderflags ^= RF_DONTDRAW;
+					mobj->renderflags ^= dontdraw;
 				else
 				{
 					if (mobj->fuse == mobj->extravalue2)
-						mobj->renderflags &= ~RF_DONTDRAW;
+						mobj->renderflags &= ~(dontdraw);
 					else
-						mobj->renderflags |= RF_DONTDRAW;
+						mobj->renderflags |= dontdraw;
 				}
 			}
 		}
