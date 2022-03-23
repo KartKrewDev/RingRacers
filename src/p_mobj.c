@@ -5307,6 +5307,15 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 
 	switch (mobj->type)
 	{
+	case MT_SHADOW:
+		if (mobj->tracer)
+		{
+			P_MoveOrigin(mobj,
+					mobj->tracer->x,
+					mobj->tracer->y,
+					mobj->tracer->z);
+		}
+		break;
 	case MT_BOSSJUNK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;

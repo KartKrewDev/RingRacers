@@ -576,6 +576,7 @@ extern boolean actionsoverridden[NUMACTIONS];
 typedef enum sprite
 {
 	SPR_NULL, // invisible object
+	SPR_NONE, // invisible but still rendered
 	SPR_UNKN,
 
 	SPR_THOK, // Thok! mobj
@@ -1351,8 +1352,8 @@ typedef enum state
 	S_XDEATHSTATE,
 	S_RAISESTATE,
 
-	// Thok
 	S_THOK,
+	S_SHADOW,
 
 	S_KART_STILL,
 	S_KART_STILL_L,
@@ -5723,6 +5724,7 @@ typedef enum mobj_type
 	MT_UNKNOWN,
 
 	MT_THOK, // Thok! mobj
+	MT_SHADOW, // Linkdraw Shadow (for invisible objects)
 	MT_PLAYER,
 	MT_KART_LEFTOVER,
 	MT_KART_TIRE,

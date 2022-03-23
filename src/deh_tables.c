@@ -369,8 +369,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_XDEATHSTATE",
 	"S_RAISESTATE",
 
-	// Thok
 	"S_THOK",
+	"S_SHADOW",
 
 	// SRB2kart Frames
 	"S_KART_STILL",
@@ -4705,6 +4705,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_UNKNOWN",
 
 	"MT_THOK", // Thok! mobj
+	"MT_SHADOW", // Linkdraw Shadow (for invisible objects)
 	"MT_PLAYER",
 	"MT_KART_LEFTOVER",
 	"MT_KART_TIRE",

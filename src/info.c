@@ -28,6 +28,7 @@
 char sprnames[NUMSPRITES + 1][5] =
 {
 	"NULL", // invisible object
+	"NONE", // invisible but still rendered
 	"UNKN",
 
 	"THOK", // Thok! mobj
@@ -850,6 +851,7 @@ state_t states[NUMSTATES] =
 	{SPR_UNKN, FF_FULLBRIGHT, -1, {A_InfoState}, 6, 0, S_NULL}, // S_RAISESTATE
 
 	{SPR_THOK, FF_TRANS50, 8, {NULL}, 0, 0, S_NULL}, // S_THOK
+	{SPR_NONE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHADOW
 
 	// Player
 	{SPR_PLAY, SPR2_STIN,					  1, {NULL}, 0, 0, S_KART_STILL},				// S_KART_STILL
@@ -5357,6 +5359,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		32*FRACUNIT,    // radius
 		64*FRACUNIT,    // height
 		0,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHADOW
+		-1,             // doomednum
+		S_SHADOW,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		32*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		-1,             // display offset
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
