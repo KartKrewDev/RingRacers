@@ -613,7 +613,7 @@ INT32 K_KartGetItemOdds(
 
 	if (gametype == GT_BATTLE)
 	{
-		I_Assert(pos < 6); // DO NOT allow positions past the bounds of the table
+		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
 		newodds = K_KartItemOddsBattle[item-1][pos];
 	}
 	else

@@ -1088,6 +1088,7 @@ static void K_initKartHUD(void)
 	}
 }
 
+// see also MT_PLAYERARROW mobjthinker in p_mobj.c
 static void K_drawKartItem(void)
 {
 	// ITEM_X = BASEVIDWIDTH-50;	// 270
@@ -1181,15 +1182,15 @@ static void K_drawKartItem(void)
 				localpatch = kp_landmine[offset];
 				//localcolor = SKINCOLOR_JET;
 				break;
-			case 16: // Land Mine
+			case 16: // Drop Target
 				localpatch = kp_droptarget[offset];
 				//localcolor = SKINCOLOR_LIME;
 				break;
-			/*case 15: // Pogo Spring
+			/*case 17: // Pogo Spring
 				localpatch = kp_pogospring[offset];
 				localcolor = SKINCOLOR_TANGERINE;
 				break;
-			case 16: // Kitchen Sink
+			case 18: // Kitchen Sink
 				localpatch = kp_kitchensink[offset];
 				localcolor = SKINCOLOR_STEEL;
 				break;*/
@@ -1782,7 +1783,7 @@ static boolean K_drawKartPositionFaces(void)
 	// FACE_X = 15;				//  15
 	// FACE_Y = 72;				//  72
 
-	INT32 Y = FACE_Y+9; // +9 to offset where it's being drawn if there are more than one
+	INT32 Y = FACE_Y-9; // -9 to offset where it's being drawn if there are more than one
 	INT32 i, j, ranklines, strank = -1;
 	boolean completed[MAXPLAYERS];
 	INT32 rankplayer[MAXPLAYERS];
@@ -1838,29 +1839,32 @@ static boolean K_drawKartPositionFaces(void)
 	}
 
 	if (ranklines < 5)
-		Y -= (9*ranklines);
+		Y += (9*ranklines);
 	else
-		Y -= (9*5);
+		Y += (9*5);
+
+	ranklines--;
+	i = ranklines;
 
 	if (gametype == GT_BATTLE || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
-		i = 0;
-		if (ranklines > 5) // could be both...
-			ranklines = 5;
+		if (i > 4) // could be both...
+			i = 4;
+		ranklines = 0;
 	}
-	else if (strank+3 > ranklines) // too close to the bottom?
+	else if (strank+2 >= ranklines) // too close to the bottom?
 	{
-		i = ranklines - 5;
-		if (i < 0)
-			i = 0;
+		ranklines -= 4;
+		if (ranklines < 0)
+			ranklines = 0;
 	}
 	else
 	{
-		i = strank-2;
-		ranklines = strank+3;
+		i = strank+2;
+		ranklines = strank-2;
 	}
 
-	for (; i < ranklines; i++)
+	for (; i >= ranklines; i--)
 	{
 		if (!playeringame[rankplayer[i]]) continue;
 		if (players[rankplayer[i]].spectator) continue;
@@ -1920,7 +1924,7 @@ static boolean K_drawKartPositionFaces(void)
 			V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
 		}
 
-		Y += 18;
+		Y -= 18;
 	}
 
 	return false;
@@ -2143,20 +2147,28 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 	INT32 i, rightoffset = 240;
 	const UINT8 *colormap;
 	INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
-	int y2;
+	int basey = y, basex = x, y2;
 
 	//this function is designed for 9 or less score lines only
 	//I_Assert(scorelines <= 9); -- not today bitch, kart fixed it up
 
 	V_DrawFill(1-duptweak, 26, dupadjust-2, 1, 0); // Draw a horizontal line because it looks nice!
-	if (scorelines > 8)
+
+	scorelines--;
+	if (scorelines >= 8)
 	{
 		V_DrawFill(160, 26, 1, 147, 0); // Draw a vertical line to separate the two sides.
 		V_DrawFill(1-duptweak, 173, dupadjust-2, 1, 0); // And a horizontal line near the bottom.
 		rightoffset = (BASEVIDWIDTH/2) - 4 - x;
+		x = (BASEVIDWIDTH/2) + 4;
+		y += 18*(scorelines-8);
+	}
+	else
+	{
+		y += 18*scorelines;
 	}
 
-	for (i = 0; i < scorelines; i++)
+	for (i = scorelines; i >= 0; i--)
 	{
 		char strtime[MAXPLAYERNAME+1];
 
@@ -2201,7 +2213,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			y2 += SHORT (kp_alagles[0]->height) + 1;
 		}
 
-		if (scorelines > 8)
+		if (scorelines >= 8)
 			V_DrawThinString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
 		else
 			V_DrawString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
@@ -2244,7 +2256,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		if (gametype == GT_RACE)
 		{
 #define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
-			if (scorelines > 8)
+			if (scorelines >= 8)
 			{
 				if (players[tab[i].num].exiting)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, hilicol|V_6WIDTHSPACE, timestring(players[tab[i].num].realtime));
@@ -2267,11 +2279,11 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		else
 			V_DrawRightAlignedString(x+rightoffset, y, 0, va("%u", tab[i].count));
 
-		y += 18;
-		if (i == 7)
+		y -= 18;
+		if (i == 8)
 		{
-			y = 33;
-			x = (BASEVIDWIDTH/2) + 4;
+			y = basey + 7*18;
+			x = basex;
 		}
 	}
 }

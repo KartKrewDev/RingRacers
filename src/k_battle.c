@@ -439,13 +439,11 @@ void K_RunPaperItemSpawners(void)
 		if (pcount > 0)
 		{
 #define MAXITEM 64
-			UINT8 item = 0;
 			mobj_t *spotList[MAXITEM];
-			boolean spotUsed[MAXITEM];
+			UINT8 spotMap[MAXITEM];
+			UINT8 spotCount = 0, spotBackup = 0;
 
 			INT16 starti = 0;
-
-			memset(spotUsed, false, sizeof(spotUsed));
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -454,21 +452,23 @@ void K_RunPaperItemSpawners(void)
 
 				mo = (mobj_t *)th;
 
-				if (mo->type == MT_PAPERITEMSPOT)
-				{
-					if (item >= MAXITEM)
-						continue;
-
-					spotList[item] = mo;
-					item++;
-				}
-				else if (mo->type == MT_EMERALD)
+				if (mo->type == MT_EMERALD)
 				{
 					emeraldsSpawned |= mo->extravalue1;
 				}
+
+				if (mo->type != MT_PAPERITEMSPOT)
+					continue;
+
+				if (spotCount >= MAXITEM)
+					continue;
+
+				spotList[spotCount] = mo;
+				spotMap[spotCount] = spotCount;
+				spotCount++;
 			}
 
-			if (item <= 0)
+			if (spotCount <= 0)
 			{
 				return;
 			}
@@ -488,23 +488,33 @@ void K_RunPaperItemSpawners(void)
 				}
 			}
 
-			for (i = starti; i < min(item + starti, pcount); i++)
+			//CONS_Printf("leveltime = %d ", leveltime);
+
+			spotBackup = spotCount;
+			for (i = starti; i < pcount; i++)
 			{
-				UINT8 r = P_RandomKey(item);
-				UINT8 recursion = 0;
+				UINT8 r = 0, key = 0;
 				mobj_t *drop = NULL;
 				SINT8 flip = 1;
 
-				while (spotUsed[r] == true)
+				if (spotCount == 0)
 				{
-					r = P_RandomKey(item);
-
-					if ((recursion++) > MAXITEM)
-					{
-						// roll with it anyway I guess
-						break;
-					}
+					// all are accessible again
+					spotCount = spotBackup;
 				}
+
+				if (spotCount == 1)
+				{
+					key = 0;
+				}
+				else
+				{
+					key = P_RandomKey(spotCount);
+				}
+
+				r = spotMap[key];
+
+				//CONS_Printf("[%d %d %d] ", i, key, r);
 
 				flip = P_MobjFlip(spotList[r]);
 
@@ -537,8 +547,23 @@ void K_RunPaperItemSpawners(void)
 				}
 
 				K_FlipFromObject(drop, spotList[r]);
-				spotUsed[r] = true;
+
+				spotCount--;
+				if (key != spotCount)
+				{
+					// So the core theory of what's going on is that we keep every
+					// available option at the front of the array, so we don't have
+					// to skip over any gaps or do recursion to avoid doubles.
+					// But because spotCount can be reset in the case of a low
+					// quanitity of item spawnpoints in a map, we still need every
+					// entry in the array, even outside of the "visible" range.
+					// A series of swaps allows us to adhere to both constraints.
+					// -toast 22/03/22 (semipalindromic!)
+					spotMap[key] = spotMap[spotCount];
+					spotMap[spotCount] = r; // was set to spotMap[key] previously
+				}
 			}
+			//CONS_Printf("\n");
 		}
 	}
 }
