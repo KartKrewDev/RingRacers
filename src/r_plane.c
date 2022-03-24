@@ -209,7 +209,7 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	ds_colormap = planezlight[pindex];
 
 	if (currentplane->extra_colormap)
-		ds_colormap = currentplane->extra_colormap->colormap;
+		ds_colormap = currentplane->extra_colormap->colormap + (ds_colormap - colormaps);
 
 	ds_fullbright = colormaps;
 	if (encoremap && !currentplane->noencore)
