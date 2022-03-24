@@ -332,7 +332,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEUINT32(save_p, players[i].overtimekarma);
 		WRITEINT16(save_p, players[i].spheres);
-		WRITEINT16(save_p, players[i].spheredigestion);
+		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
 		WRITEUINT8(save_p, players[i].tripWireState);
@@ -598,7 +598,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].karmadelay = READINT16(save_p);
 		players[i].overtimekarma = READUINT32(save_p);
 		players[i].spheres = READINT16(save_p);
-		players[i].spheredigestion = READINT16(save_p);
+		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
 		players[i].tripWireState = READUINT8(save_p);
@@ -1662,7 +1662,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
 		return;
 
-	if (mobj->spawnpoint && mobj->info->doomednum != -1)
+	if (mobj->spawnpoint)
 	{
 		// spawnpoint is not modified but we must save it since it is an identifier
 		diff = MD_SPAWNPOINT;
@@ -1847,8 +1847,12 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		size_t z;
 
 		for (z = 0; z < nummapthings; z++)
-			if (&mapthings[z] == mobj->spawnpoint)
-				WRITEUINT16(save_p, z);
+		{
+			if (&mapthings[z] != mobj->spawnpoint)
+				continue;
+			WRITEUINT16(save_p, z);
+			break;
+		}
 		if (mobj->type == MT_HOOPCENTER)
 			return;
 	}

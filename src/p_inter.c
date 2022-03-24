@@ -112,10 +112,12 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
 		return false;
 
+	if ((gametyperules & GTR_BUMPERS) // No bumpers in Match
 #ifndef OTHERKARMAMODES
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0) // No bumpers in Match
-		return false;
+	&& !weapon
 #endif
+	&& player->bumpers <= 0)
+		return false;
 
 	if (weapon)
 	{
@@ -274,9 +276,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
 		case MT_SPHEREBOX:
-			if (player->bumpers <= 0)
+			if (!P_CanPickupItem(player, 0))
 				return;
 
+			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;

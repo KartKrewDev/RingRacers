@@ -5778,6 +5778,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 
+	// see also K_drawKartItem in k_hud.c
 	case MT_PLAYERARROW:
 		if (mobj->target && mobj->target->health
 			&& mobj->target->player && !mobj->target->player->spectator
@@ -5799,7 +5800,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->x = mobj->target->x;
 			mobj->y = mobj->target->y;
 
-			mobj->angle = R_PointToAngle(mobj->x, mobj->y) + ANGLE_90; // literally only happened because i wanted to ^L^R the SPR_ITEM's
+			P_InitAngle (mobj, R_PointToAngle(mobj->x, mobj->y) + ANGLE_90); // literally only happened because i wanted to ^L^R the SPR_ITEM's
 
 			if (!r_splitscreen && players[displayplayers[0]].mo)
 			{
@@ -5852,7 +5853,79 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				{
 					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
 					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = FF_FULLBRIGHT|(((mobj->target->player->itemroulette % (13*3)) / 3) + 1);
+					switch((mobj->target->player->itemroulette % (16*3)) / 3)
+					{
+						// Each case is handled in threes, to give three frames of in-game time to see the item on the roulette
+						case 0: // Sneaker
+							mobj->tracer->frame = KITEM_SNEAKER;
+							//localcolor = SKINCOLOR_RASPBERRY;
+							break;
+						case 1: // Banana
+							mobj->tracer->frame = KITEM_BANANA;
+							//localcolor = SKINCOLOR_YELLOW;
+							break;
+						case 2: // Orbinaut
+							mobj->tracer->frame = KITEM_ORBINAUT;
+							//localcolor = SKINCOLOR_STEEL;
+							break;
+						case 3: // Mine
+							mobj->tracer->frame = KITEM_MINE;
+							//localcolor = SKINCOLOR_JET;
+							break;
+						case 4: // Grow
+							mobj->tracer->frame = KITEM_GROW;
+							//localcolor = SKINCOLOR_TEAL;
+							break;
+						case 5: // Hyudoro
+							mobj->tracer->frame = KITEM_HYUDORO;
+							//localcolor = SKINCOLOR_STEEL;
+							break;
+						case 6: // Rocket Sneaker
+							mobj->tracer->frame = KITEM_ROCKETSNEAKER;
+							//localcolor = SKINCOLOR_TANGERINE;
+							break;
+						case 7: // Jawz
+							mobj->tracer->frame = KITEM_JAWZ;
+							//localcolor = SKINCOLOR_JAWZ;
+							break;
+						case 8: // Self-Propelled Bomb
+							mobj->tracer->frame = KITEM_SPB;
+							//localcolor = SKINCOLOR_JET;
+							break;
+						case 9: // Shrink
+							mobj->tracer->frame = KITEM_SHRINK;
+							//localcolor = SKINCOLOR_ORANGE;
+							break;
+						case 10: // Invincibility
+							mobj->tracer->frame = KITEM_INVINCIBILITY;
+							//localcolor = SKINCOLOR_GREY;
+							break;
+						case 11: // Eggman Monitor
+							mobj->tracer->frame = KITEM_EGGMAN;
+							//localcolor = SKINCOLOR_ROSE;
+							break;
+						case 12: // Ballhog
+							mobj->tracer->frame = KITEM_BALLHOG;
+							//localcolor = SKINCOLOR_LILAC;
+							break;
+						case 13: // Thunder Shield
+							mobj->tracer->frame = KITEM_THUNDERSHIELD;
+							//localcolor = SKINCOLOR_CYAN;
+							break;
+						case 14: // Super Ring
+							mobj->tracer->frame = KITEM_SUPERRING;
+							//localcolor = SKINCOLOR_GOLD;
+							break;
+						case 15: // Land Mine
+							mobj->tracer->frame = KITEM_LANDMINE;
+							//localcolor = SKINCOLOR_JET;
+							break;
+						case 16: // Drop Target
+							mobj->tracer->frame = KITEM_DROPTARGET;
+							//localcolor = SKINCOLOR_LIME;
+							break;
+					}
+					mobj->tracer->frame |= FF_FULLBRIGHT;
 					mobj->tracer->renderflags &= ~RF_DONTDRAW;
 				}
 				else if (mobj->target->player->stealingtimer < 0)
@@ -10361,6 +10434,7 @@ void P_RemoveMobj(mobj_t *mobj)
 		|| mobj->type == MT_BLUESPHERE)
 		&& !(mobj->flags2 & MF2_DONTRESPAWN))
 	{
+		//CONS_Printf("added to queue at tic %d\n", leveltime);
 		itemrespawnque[iquehead] = mobj->spawnpoint;
 		itemrespawntime[iquehead] = leveltime;
 		iquehead = (iquehead+1)&(ITEMQUESIZE-1);
@@ -10847,6 +10921,8 @@ void P_RespawnSpecials(void)
 
 	if (mthing)
 		P_SpawnMapThing(mthing);
+
+	//CONS_Printf("respawn happened on tic %d, irt %d, t %d\n", leveltime, itemrespawntime[iquetail], time);
 
 	// pull it from the que
 	iquetail = (iquetail+1)&(ITEMQUESIZE-1);
