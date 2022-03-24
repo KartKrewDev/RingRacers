@@ -8729,7 +8729,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		25*FRACUNIT,    // mass
+		40*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8756,7 +8756,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		40*FRACUNIT,    // mass
+		64*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8783,7 +8783,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		64*FRACUNIT,    // mass
+		102*FRACUNIT,   // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8810,7 +8810,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		15*FRACUNIT,    // mass
+		25*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8837,8 +8837,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		25*FRACUNIT,    // mass
-		25*FRACUNIT,    // damage
+		40*FRACUNIT,    // mass
+		40*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YDIAG2        // raisestate
@@ -8864,8 +8864,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		40*FRACUNIT,    // mass
-		40*FRACUNIT,    // damage
+		64*FRACUNIT,    // mass
+		64*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RDIAG2        // raisestate
@@ -8891,8 +8891,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		64*FRACUNIT,    // mass
-		64*FRACUNIT,    // damage
+		102*FRACUNIT,   // mass
+		102*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BDIAG2        // raisestate
@@ -8918,8 +8918,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		15*FRACUNIT,    // mass
-		15*FRACUNIT,    // damage
+		25*FRACUNIT,    // mass
+		25*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GDIAG2        // raisestate
@@ -8946,7 +8946,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		45*FRACUNIT,    // damage
+		72*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YHORIZ2       // raisestate
@@ -8973,7 +8973,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		72*FRACUNIT,    // damage
+		115*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RHORIZ2       // raisestate
@@ -9000,7 +9000,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		115*FRACUNIT,   // damage
+		184*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BHORIZ2       // raisestate
@@ -9027,7 +9027,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		27*FRACUNIT,    // damage
+		45*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GHORIZ2       // raisestate
