@@ -522,6 +522,7 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 // moved out of os-specific code for consistency
 static boolean ticsgraph[TICRATE];
 static tic_t lasttic;
+static tic_t totaltics;
 
 static UINT32 fpstime = 0;
 static UINT32 lastupdatetime = 0;
@@ -537,6 +538,11 @@ double aproxfps = 0.0f;
 void SCR_CalcAproxFps(void)
 {
 	tic_t i = 0;
+	tic_t ontic = I_GetTime();
+
+	totaltics = 0;
+
+	// Update FPS time
 	if (I_PreciseToMicros(fpstime - lastupdatetime) > 1000000 * FPSUPDATERATE)
 	{
 		if (fpssampleslen == FPSMAXSAMPLES)
@@ -558,15 +564,8 @@ void SCR_CalcAproxFps(void)
 	}
 
 	fpstime = I_GetPreciseTime();
-}
 
-void SCR_DisplayTicRate(void)
-{
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
-	const UINT8 *ticcntcolor = NULL;
-
+	// Update ticrate time
 	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
 		ticsgraph[i % TICRATE] = false;
 
@@ -575,6 +574,13 @@ void SCR_DisplayTicRate(void)
 	for (i = 0;i < TICRATE;++i)
 		if (ticsgraph[i])
 			++totaltics;
+
+	lasttic = ontic;
+}
+
+void SCR_DisplayTicRate(void)
+{
+	const UINT8 *ticcntcolor = NULL;
 
 	// draw "FPS"
 	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
@@ -613,9 +619,6 @@ void SCR_DisplayTicRate(void)
 		// draw our actual framerate
 		V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
 	}
-
-
-	lasttic = ontic;
 }
 
 // SCR_DisplayLocalPing
