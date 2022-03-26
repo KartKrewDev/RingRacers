@@ -1257,6 +1257,10 @@ void I_UpdateNoBlit(void)
 static inline boolean I_SkipFrame(void)
 {
 #if 1
+	// While I fixed the FPS counter bugging out with this,
+	// I actually really like being able to pause and
+	// use perfstats to measure rendering performance
+	// without game logic changes.
 	return false;
 #else
 	static boolean skip = false;
@@ -1280,6 +1284,8 @@ static inline boolean I_SkipFrame(void)
 //
 // I_FinishUpdate
 //
+static SDL_Rect src_rect = { 0, 0, 0, 0 };
+
 void I_FinishUpdate(void)
 {
 	int player;
@@ -1340,16 +1346,18 @@ void I_FinishUpdate(void)
 		{
 			Impl_VideoSetupSDLBuffer();
 		}
+
 		if (bufSurface)
 		{
-			SDL_BlitSurface(bufSurface, NULL, vidSurface, &rect);
+			SDL_BlitSurface(bufSurface, &src_rect, vidSurface, &src_rect);
 			// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
 			SDL_LockSurface(vidSurface);
-			SDL_UpdateTexture(texture, &rect, vidSurface->pixels, vidSurface->pitch);
+			SDL_UpdateTexture(texture, &src_rect, vidSurface->pixels, vidSurface->pitch);
 			SDL_UnlockSurface(vidSurface);
 		}
+
 		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
 	}
 #ifdef HWRENDER
@@ -1358,6 +1366,7 @@ void I_FinishUpdate(void)
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
+
 	exposevideo = SDL_FALSE;
 }
 
@@ -1709,6 +1718,9 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.width = windowedModes[modeNum][0];
 	vid.height = windowedModes[modeNum][1];
 	vid.modenum = modeNum;
+
+	src_rect.w = vid.width;
+	src_rect.h = vid.height;
 
 	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
 	VID_CheckRenderer();
