@@ -20,6 +20,7 @@
 #include "r_plane.h"
 #include "p_spec.h"
 #include "r_state.h"
+#include "console.h" // con_startup_loadprogress
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // for cv_glshearing
 #endif
@@ -51,6 +52,11 @@ consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap
 
 UINT32 R_GetFramerateCap(void)
 {
+	if (con_startup_loadprogress != LOADED_ALLDONE)
+	{
+		return 0;
+	}
+
 	if (cv_fpscap.value < 0)
 	{
 		return I_GetRefreshRate();
