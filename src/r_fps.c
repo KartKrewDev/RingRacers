@@ -37,6 +37,7 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 	{30, "30"},
 #endif
 	{35, "35"},
+	{50, "50"},
 	{60, "60"},
 	{70, "70"},
 	{75, "75"},
