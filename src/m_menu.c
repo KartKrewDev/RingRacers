@@ -63,6 +63,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
+#include "r_fps.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -1259,18 +1260,18 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			{.cvar = &cv_fullscreen},			 20},
 #endif
 #ifdef HWRENDER
-	{IT_STRING | IT_CVAR, NULL, "Renderer",					{.cvar = &cv_renderer},			 30},
+	{IT_STRING | IT_CVAR, NULL, "Renderer",					{.cvar = &cv_renderer},				 30},
 #else
-	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",		{.cvar = &cv_renderer},			 30},
+	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",		{.cvar = &cv_renderer},				 30},
 #endif
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-							NULL,	"Gamma",				{.cvar = &cv_globalgamma},		 50},
+							NULL,	"Gamma",				{.cvar = &cv_globalgamma},			 50},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Show FPS",				{.cvar = &cv_ticrate},			 60},
-	{IT_STRING | IT_CVAR,	NULL,	"Vertical Sync",		{.cvar = &cv_vidwait},			 70},
+	{IT_STRING | IT_CVAR,	NULL,	"Show FPS",				{.cvar = &cv_ticrate},				 60},
+	{IT_STRING | IT_CVAR,	NULL,	"FPS Cap",				{.cvar = &cv_fpscap},				 70},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		{.cvar = &cv_drawdist},			 90},
-	{IT_STRING | IT_CVAR,	NULL,	"Weather Draw Distance", {.cvar = &cv_drawdist_precip},	100},
+	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		{.cvar = &cv_drawdist},				 90},
+	{IT_STRING | IT_CVAR,	NULL,	"Weather Draw Distance", {.cvar = &cv_drawdist_precip},		100},
 	{IT_STRING | IT_CVAR,	NULL,	"Skyboxes",				{.cvar = &cv_skybox},				110},
 
 #ifdef HWRENDER

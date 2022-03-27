@@ -104,9 +104,6 @@ lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 lighttable_t *scalelightfixed[MAXLIGHTSCALE];
 lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 
-// Frame interpolation/uncapped
-tic_t prev_tics;
-
 // Hack to support extra boom colormaps.
 extracolormap_t *extra_colormaps = NULL;
 
@@ -174,9 +171,6 @@ consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("fov3", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange),
 	CVAR_INIT ("fov4", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange)
 };
-
-// Frame interpolation/uncapped
-consvar_t cv_frameinterpolation = CVAR_INIT ("frameinterpolation", "On", CV_SAVE, CV_OnOff, NULL);
 
 // Okay, whoever said homremoval causes a performance hit should be shot.
 consvar_t cv_homremoval = CVAR_INIT ("homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL);
@@ -1679,5 +1673,5 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_movebob);
 
 	// Frame interpolation/uncapped
-	CV_RegisterVar(&cv_frameinterpolation);
+	CV_RegisterVar(&cv_fpscap);
 }

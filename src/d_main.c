@@ -688,6 +688,7 @@ void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
 	boolean ticked;
+	boolean interp;
 
 	if (dedicated)
 		server = true;
@@ -759,10 +760,19 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics && cv_frameinterpolation.value != 1)
+		interp = R_UsingFrameInterpolation();
+		if (interp)
 		{
-			I_Sleep();
-			continue;
+			if (I_CheckFrameCap())
+				continue;
+		}
+		else
+		{
+			if (!realtics && !singletics)
+			{
+				I_Sleep();
+				continue;
+			}
 		}
 
 #ifdef HW3SOUND
@@ -777,20 +787,22 @@ void D_SRB2Loop(void)
 		// process tics (but maybe not if realtic == 0)
 		ticked = TryRunTics(realtics);
 
-		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
+		if (interp && !(paused || P_AutoPause()))
 		{
-			static float tictime;
+			static float tictime = 0.0f;
 			float entertime = I_GetTimeFrac();
-
+			float ticdiff = 0.0f;
 			fixed_t entertimefrac;
 
 			if (ticked)
 				tictime = entertime;
 
-			if (aproxfps < 35.0)
+			ticdiff = entertime - tictime;
+
+			if (ticdiff >= 1.0f)
 				entertimefrac = FRACUNIT;
 			else
-				entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
+				entertimefrac = FLOAT_TO_FIXED(ticdiff);
 
 			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
 			renderdeltatics = realtics * FRACUNIT;
@@ -807,7 +819,7 @@ void D_SRB2Loop(void)
 			renderdeltatics = realtics * FRACUNIT;
 		}
 
-		if (cv_frameinterpolation.value == 1)
+		if (interp)
 		{
 			D_Display();
 		}
@@ -817,9 +829,10 @@ void D_SRB2Loop(void)
 			rendergametic = gametic;
 			rendertimeout = entertic+TICRATE/17;
 
-			// Update display, next frame, with current state.
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : (void)0;
+			if (!interp)
+			{
+				D_Display();
+			}
 
 			if (moviemode)
 				M_SaveFrame();
@@ -828,8 +841,10 @@ void D_SRB2Loop(void)
 		}
 		else if (rendertimeout < entertic) // in case the server hang or netsplit
 		{
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : (void)0;
+			if (!interp)
+			{
+				D_Display();
+			}
 
 			if (moviemode)
 				M_SaveFrame();
@@ -853,6 +868,11 @@ void D_SRB2Loop(void)
 			Discord_RunCallbacks();
 		}
 #endif
+
+		// Moved to here from I_FinishUpdate.
+		// It doesn't track fades properly anymore by being here (might be easy fix),
+		// but it's a little more accurate for actual game logic when its here.
+		SCR_CalculateFPS();
 	}
 }
 

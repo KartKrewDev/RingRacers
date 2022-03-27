@@ -173,7 +173,6 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
-#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -181,7 +180,10 @@ static char returnWadPath[256];
 
 #include "../m_argv.h"
 
+// SRB2Kart
+#include "../k_pwrlv.h"
 #include "../r_main.h" // Frame interpolation/uncapped
+#include "../r_fps.h"
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"
@@ -1669,9 +1671,9 @@ precise_t I_GetPreciseTime(void)
 	return SDL_GetPerformanceCounter();
 }
 
-int I_PreciseToMicros(precise_t d)
+INT64 I_PreciseToMicros(precise_t d)
 {
-	return (int)(d / (timer_frequency / 1000000.0));
+	return (INT64)(d / (timer_frequency / 1000000.0));
 }
 
 //
@@ -1690,6 +1692,58 @@ void I_Sleep(void)
 {
 	if (cv_sleep.value > 0)
 		SDL_Delay(cv_sleep.value);
+}
+
+boolean I_CheckFrameCap(void)
+{
+	static precise_t start = 0;
+	precise_t end;
+	INT64 elapsed;
+
+	UINT32 capFrames = R_GetFramerateCap();
+	int capMicros = 0;
+
+	end = I_GetPreciseTime();
+
+	if (capFrames == 0)
+	{
+		// We don't want to cap.
+		start = end;
+		return false;
+	}
+
+	elapsed = I_PreciseToMicros(end - start);
+	capMicros = 1000000 / capFrames;
+
+	if (elapsed < capMicros)
+	{
+		// Wait to draw the next frame.
+		UINT32 wait = ((capMicros - elapsed) / 1000);
+
+		if (cv_sleep.value > 1)
+		{
+			// 1 is the default, and in non-interpolated mode is just the bare minimum wait.
+			// Since we're already adding some wait with an FPS cap, only apply when it's above 1.
+			wait += cv_sleep.value - 1;
+		}
+
+		// If the wait's greater than our granularity value,
+		// we'll just burn the couple extra cycles in the main loop
+		// in order to get to the next frame. This makes us reach just
+		// that much closer to exactly the FPS cap!
+#define DELAY_GRANULARITY 10 // 10ms is the average clock tick of most OS scheduling. (https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdldelay.html)
+		if (wait >= DELAY_GRANULARITY)
+		{
+			SDL_Delay(wait);
+		}
+#undef DELAY_GRANULARITY
+
+		return true;
+	}
+
+	// Waited enough to draw again.
+	start = end;
+	return false;
 }
 
 #ifdef NEWSIGNALHANDLER

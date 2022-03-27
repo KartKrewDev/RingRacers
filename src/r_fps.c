@@ -24,6 +24,32 @@
 #include "hardware/hw_main.h" // for cv_glshearing
 #endif
 
+static CV_PossibleValue_t fpscap_cons_t[] = {
+	{-1, "MIN"},
+	{1000, "MAX"},
+	//{0, "Uncapped"},
+	//{-1, "Refresh"},
+	{0, NULL}
+};
+consvar_t cv_fpscap = CVAR_INIT ("fpscap", "-1", CV_SAVE, fpscap_cons_t, NULL);
+
+UINT32 R_GetFramerateCap(void)
+{
+	if (cv_fpscap.value < 0)
+	{
+		return I_GetRefreshRate();
+	}
+	else
+	{
+		return cv_fpscap.value;
+	}
+}
+
+boolean R_UsingFrameInterpolation(void)
+{
+	return (R_GetFramerateCap() != TICRATE); // maybe use ">" instead?
+}
+
 static viewvars_t pview_old[MAXSPLITSCREENPLAYERS];
 static viewvars_t pview_new[MAXSPLITSCREENPLAYERS];
 static viewvars_t skyview_old[MAXSPLITSCREENPLAYERS];
@@ -156,7 +182,7 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 
 fixed_t R_InterpolateFixed(fixed_t from, fixed_t to)
 {
-	if (cv_frameinterpolation.value == 0)
+	if (!R_UsingFrameInterpolation())
 	{
 		return to;
 	}
@@ -166,7 +192,7 @@ fixed_t R_InterpolateFixed(fixed_t from, fixed_t to)
 
 angle_t R_InterpolateAngle(angle_t from, angle_t to)
 {
-	if (cv_frameinterpolation.value == 0)
+	if (!R_UsingFrameInterpolation())
 	{
 		return to;
 	}
