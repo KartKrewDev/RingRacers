@@ -187,6 +187,8 @@ void A_SetObjectFlags(mobj_t *actor);
 void A_SetObjectFlags2(mobj_t *actor);
 void A_RandomState(mobj_t *actor);
 void A_RandomStateRange(mobj_t *actor);
+void A_StateRangeByAngle(mobj_t *actor);
+void A_StateRangeByParameter(mobj_t *actor);
 void A_DualAction(mobj_t *actor);
 void A_RemoteAction(mobj_t *actor);
 void A_ToggleFlameJet(mobj_t *actor);
@@ -4332,8 +4334,11 @@ void A_OverlayThink(mobj_t *actor)
 		actor->z = actor->target->z + actor->target->height - mobjinfo[actor->type].height  - ((var2>>16) ? -1 : 1)*(var2&0xFFFF)*FRACUNIT;
 	else
 		actor->z = actor->target->z + ((var2>>16) ? -1 : 1)*(var2&0xFFFF)*FRACUNIT;
-	actor->angle = actor->target->angle + actor->movedir;
-	actor->eflags = actor->target->eflags;
+	actor->angle = (actor->target->player ? actor->target->player->drawangle : actor->target->angle) + actor->movedir;
+	actor->rollangle = actor->target->rollangle;
+	actor->pitch = actor->target->pitch;
+	actor->roll = actor->target->roll;
+	actor->eflags = (actor->eflags & ~MFE_VERTICALFLIP) | (actor->target->eflags & MFE_VERTICALFLIP);
 
 	actor->momx = actor->target->momx;
 	actor->momy = actor->target->momy;
@@ -7112,7 +7117,7 @@ void A_Boss3ShockThink(mobj_t *actor)
 		fixed_t x0, y0, x1, y1;
 
 		// Break the link if movements are too different
-		if (FixedHypot(snext->momx - actor->momx, snext->momy - actor->momy) > 12*actor->scale)
+		if (R_PointToDist2(0, 0, snext->momx - actor->momx, snext->momy - actor->momy) > 12*actor->scale)
 		{
 			P_SetTarget(&actor->hnext, NULL);
 			return;
@@ -7123,15 +7128,21 @@ void A_Boss3ShockThink(mobj_t *actor)
 		y0 = actor->y;
 		x1 = snext->x;
 		y1 = snext->y;
-		if (FixedHypot(x1 - x0, y1 - y0) > 2*actor->radius)
+		if (R_PointToDist2(0, 0, x1 - x0, y1 - y0) > 2*actor->radius)
 		{
-			snew = P_SpawnMobj((x0 + x1) >> 1, (y0 + y1) >> 1, (actor->z + snext->z) >> 1, actor->type);
+			snew = P_SpawnMobj((x0 >> 1) + (x1 >> 1),
+				(y0 >> 1) + (y1 >> 1),
+				(actor->z >> 1) + (snext->z >> 1), actor->type);
 			snew->momx = (actor->momx + snext->momx) >> 1;
 			snew->momy = (actor->momy + snext->momy) >> 1;
 			snew->momz = (actor->momz + snext->momz) >> 1; // is this really needed?
 			P_InitAngle(snew, (actor->angle + snext->angle) >> 1);
 			P_SetTarget(&snew->target, actor->target);
 			snew->fuse = actor->fuse;
+
+			P_SetScale(snew, actor->scale);
+			snew->destscale = actor->destscale;
+			snew->scalespeed = actor->scalespeed;
 
 			P_SetTarget(&actor->hnext, snew);
 			P_SetTarget(&snew->hnext, snext);
@@ -8126,6 +8137,49 @@ void A_RandomStateRange(mobj_t *actor)
 	P_SetMobjState(actor, P_RandomRange(locvar1, locvar2));
 }
 
+// Function: A_StateRangeByAngle
+//
+// Description: Chooses a state within the range supplied, depending on the actor's angle.
+//
+// var1 = Minimum state number to use.
+// var2 = Maximum state number to use. The difference will act as a modulo operator.
+//
+void A_StateRangeByAngle(mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+
+	if (LUA_CallAction(A_STATERANGEBYANGLE, actor))
+		return;
+
+	if (locvar2 - locvar1 < 0)
+		return; // invalid range
+
+	P_SetMobjState(actor, locvar1 + (AngleFixed(actor->angle)>>FRACBITS % (1 + locvar2 - locvar1)));
+}
+
+// Function: A_StateRangeByParameter
+//
+// Description: Chooses a state within the range supplied, depending on the actor's parameter/extrainfo value.
+//
+// var1 = Minimum state number to use.
+// var2 = Maximum state number to use. The difference will act as a modulo operator.
+//
+void A_StateRangeByParameter(mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+	UINT8 parameter = (actor->spawnpoint ? actor->spawnpoint->extrainfo : 0);
+
+	if (LUA_CallAction(A_STATERANGEBYPARAMETER, actor))
+		return;
+
+	if (locvar2 - locvar1 < 0)
+		return; // invalid range
+
+	P_SetMobjState(actor, locvar1 + (parameter % (1 + locvar2 - locvar1)));
+}
+
 // Function: A_DualAction
 //
 // Description: Calls two actions. Be careful, if you reference the same state this action is called from, you can create an infinite loop.
@@ -8728,8 +8782,8 @@ void A_Custom3DRotate(mobj_t *actor)
 
 	const fixed_t radius = FixedMul(loc1lw*FRACUNIT, actor->scale);
 	const fixed_t hOff = FixedMul(loc1up*FRACUNIT, actor->scale);
-	const fixed_t hspeed = FixedMul(loc2up*FRACUNIT/10, actor->scale);
-	const fixed_t vspeed = FixedMul(loc2lw*FRACUNIT/10, actor->scale);
+	const fixed_t hspeed = loc2up*FRACUNIT/10; // Monster's note (29/05/21): DO NOT SCALE, this is an angular speed!
+	const fixed_t vspeed = loc2lw*FRACUNIT/10; // ditto
 
 	if (LUA_CallAction(A_CUSTOM3DROTATE, actor))
 		return;
@@ -9429,7 +9483,7 @@ void A_ForceWin(mobj_t *actor)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] && ((players[i].mo && players[i].mo->health)
-		    || ((netgame || multiplayer) && players[i].lives)))
+		    && !(players[i].pflags & PF_NOCONTEST)))
 			break;
 	}
 
@@ -11086,14 +11140,10 @@ void A_Boss5Jump(mobj_t *actor)
 	if (!actor->tracer)
 		return; // Don't even bother if we've got nothing to aim at.
 
-	// Look up actor's current gravity situation
-	if (actor->subsector->sector->gravity)
-		g = FixedMul(gravity,(FixedDiv(*actor->subsector->sector->gravity>>FRACBITS, 1000)));
-	else
-		g = gravity;
+	g = FixedMul(gravity, mapobjectscale);
 
 	// Look up distance between actor and its tracer
-	x = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
+	x = FixedHypot(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
 	// Look up height difference between actor and its tracer
 	y = actor->tracer->z - actor->z;
 
@@ -13299,7 +13349,17 @@ void A_ItemPop(mobj_t *actor)
 	remains->flags = actor->flags; // Transfer flags
 	remains->flags2 = actor->flags2; // Transfer flags2
 	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->threshold = (actor->threshold == 70 ? 70 : (actor->threshold == 69 ? 69 : 68));
+	remains->cvmem = leveltime;
+	remains->threshold = actor->threshold;
+	if (remains->threshold != 69 && remains->threshold != 70)
+	{
+		remains->threshold = 68;
+	}
+	// To insure this information doesn't have to be rediscovered every time you look at this function...
+	// A threshold of 0 is for a "living", ordinary random item.
+	// 68 means regular popped random item debris.
+	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
+	// 70 is a powered up Overtime item.
 	remains->skin = NULL;
 	remains->spawnpoint = actor->spawnpoint;
 
@@ -13315,7 +13375,8 @@ void A_ItemPop(mobj_t *actor)
 
 	remains->flags2 &= ~MF2_AMBUSH;
 
-	if ((gametyperules & GTR_BUMPERS) && (actor->threshold != 69 && actor->threshold != 70))
+	// Here at mapload in battle?
+	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
 		numgotboxes++;
 
 	P_RemoveMobj(actor);

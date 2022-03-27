@@ -236,7 +236,7 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 	UINT8 rotation;
 	lumpinfo_t *lumpinfo;
 	softwarepatch_t patch;
-	UINT8 numadded = 0;
+	UINT16 numadded = 0;
 
 	memset(sprtemp,0xFF, sizeof (sprtemp));
 	maxframe = (size_t)-1;
@@ -757,21 +757,36 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap)
 	dc_texturemid = basetexturemid;
 }
 
-boolean R_SpriteIsFlashing(vissprite_t *vis)
+static boolean hitlag_is_flashing(mobj_t *thing)
 {
-	return (!(vis->cut & SC_PRECIP)
-	&& (vis->mobj->flags & (MF_ENEMY|MF_BOSS))
-	&& (vis->mobj->flags2 & MF2_FRET)
-	&& !(vis->mobj->flags & MF_GRENADEBOUNCE)
-	&& (leveltime & 1));
+	return
+		(thing->hitlag > 0) &&
+		(thing->eflags & (MFE_DAMAGEHITLAG));
+}
+
+static boolean baddie_is_flashing(mobj_t *thing)
+{
+	return
+		(thing->flags & (MF_ENEMY|MF_BOSS)) &&
+		(thing->flags2 & (MF2_FRET)) &&
+		!(thing->flags & MF_GRENADEBOUNCE);
+}
+
+boolean R_ThingIsFlashing(mobj_t *thing)
+{
+	return
+		hitlag_is_flashing(thing) ||
+		baddie_is_flashing(thing);
 }
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 {
-	if (vis->mobj->hitlag > 0 && (vis->mobj->eflags & MFE_DAMAGEHITLAG))
+	if (!(vis->cut & SC_PRECIP) &&
+			R_ThingIsFlashing(vis->mobj))
 	{
 		return R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
 	}
+	/*
 	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
 	{
 		if (vis->mobj->type == MT_CYBRAKDEMON || vis->mobj->colorized)
@@ -781,6 +796,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 		else
 			return R_GetTranslationColormap(TC_BOSS, 0, GTC_CACHE);
 	}
+	*/
 	else if (vis->mobj->color)
 	{
 		// New colormap stuff for skins Tails 06-07-2002
@@ -844,8 +860,11 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
 		dc_transmap = vis->transmap;
 	}
-	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
+	else if (!(vis->cut & SC_PRECIP) &&
+			R_ThingIsFlashing(vis->mobj)) // Bosses "flash"
+	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANS, false); // translate certain pixels to white
+	}
 	else if (vis->mobj->color && vis->transmap) // Color mapping
 	{
 		R_SetColumnFunc(COLDRAWFUNC_TRANSTRANS, false);
@@ -2051,9 +2070,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->paperoffset = paperoffset;
 	vis->paperdistance = paperdistance;
 	vis->centerangle = centerangle;
-	vis->viewangle = viewangle;
 	vis->shear.tan = sheartan;
 	vis->shear.offset = 0;
+	vis->viewpoint.x = viewx;
+	vis->viewpoint.y = viewy;
+	vis->viewpoint.z = viewz;
+	vis->viewpoint.angle = viewangle;
 
 	vis->mobj = thing; // Easy access! Tails 06-07-2002
 
@@ -3086,12 +3108,24 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 
 	if (portal)
 	{
-		for (x = x1; x <= x2; x++)
+		INT32 start_index = max(portal->start, x1);
+		INT32 end_index = min(portal->start + portal->end - portal->start, x2);
+		for (x = x1; x < start_index; x++)
+		{
+			spr->clipbot[x] = -1;
+			spr->cliptop[x] = -1;
+		}
+		for (x = start_index; x <= end_index; x++)
 		{
 			if (spr->clipbot[x] > portal->floorclip[x - portal->start])
 				spr->clipbot[x] = portal->floorclip[x - portal->start];
 			if (spr->cliptop[x] < portal->ceilingclip[x - portal->start])
 				spr->cliptop[x] = portal->ceilingclip[x - portal->start];
+		}
+		for (x = end_index + 1; x <= x2; x++)
+		{
+			spr->clipbot[x] = -1;
+			spr->cliptop[x] = -1;
 		}
 	}
 }
@@ -3258,10 +3292,10 @@ static void R_DrawMaskedList (drawnode_t* head)
 	}
 }
 
-void R_DrawMasked(maskcount_t* masks, UINT8 nummasks)
+void R_DrawMasked(maskcount_t* masks, INT32 nummasks)
 {
 	drawnode_t *heads;	/**< Drawnode lists; as many as number of views/portals. */
-	SINT8 i;
+	INT32 i;
 
 	heads = calloc(nummasks, sizeof(drawnode_t));
 

@@ -32,6 +32,7 @@
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
 #include "k_grandprix.h"	// we need to know grandprix status for titlecards
+#include "k_boss.h"
 
 //random index
 #include "m_random.h"
@@ -647,6 +648,9 @@ static patch_t *tcroundnum[10];
 static patch_t *tcactnum[10];
 static patch_t *tcact;
 
+static patch_t *twarn;
+static patch_t *twarn2;
+
 // some coordinates define to make my life easier....
 #define FINAL_ROUNDX (24)
 #define FINAL_EGGY (160)
@@ -699,6 +703,9 @@ static void ST_cacheLevelTitle(void)
 	tcbanner2 = 	(patch_t *)W_CachePatchName("TCBC0", PU_HUDGFX);
 
 	tcact =			(patch_t *)W_CachePatchName("TT_ACT", PU_HUDGFX);
+
+	twarn = 		(patch_t *)W_CachePatchName("K_BOSW01", PU_HUDGFX);
+	twarn2 = 		(patch_t *)W_CachePatchName("K_BOSW02", PU_HUDGFX);
 
 	// Cache round #
 	for (i=1; i < 11; i++)
@@ -786,7 +793,36 @@ void ST_runTitleCard(void)
 
 		// SRB2KART
 		// side Zig-Zag positions...
-
+		if (bossinfo.boss == true)
+		{
+			// Handle name info...
+			if (bossinfo.enemyname)
+			{
+				UINT32 len = strlen(bossinfo.enemyname)+1;
+				if (len > 1 && bossinfo.titleshow < len)
+				{
+					len = (lt_endtime-(TICRATE/2))/len;
+					if (lt_ticker % len == 0)
+					{
+						char c = toupper(bossinfo.enemyname[bossinfo.titleshow]);
+						bossinfo.titleshow++;
+						c -= LT_FONTSTART;
+						if (c < 0 || c >= LT_FONTSIZE || !tc_font[1][(INT32)c] || !bossinfo.titlesound)
+						{
+							;
+						}
+						else
+						{
+							S_StartSound(NULL, bossinfo.titlesound);
+						}
+					}
+				}
+			}
+			// No matter the circumstances, scroll the WARN...
+			bannerx = -((lt_ticker*2)%((encoremode ? twarn2 : twarn)->width));
+		}
+		else
+		{
 			// TITLECARD START
 			if (lt_ticker < TTANIMSTART)
 			{
@@ -908,7 +944,8 @@ void ST_runTitleCard(void)
 			}
 
 			// No matter the circumstances, scroll the banner...
-			bannerx = -(lt_ticker%(tcbanner->width));
+			bannerx = -((lt_ticker*2)%(tcbanner->width));
+		}
 
 
 		// used for hud slidein
@@ -932,9 +969,8 @@ void ST_drawTitleCard(void)
 	fixed_t actscale;
 	angle_t fakeangle;
 
+	INT32 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
 	INT32 bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
-
-	UINT8 i;
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -952,6 +988,103 @@ void ST_drawTitleCard(void)
 	if (lt_ticker < TTANIMSTART)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
+	if (bossinfo.boss == true)
+	{
+		// WARNING!
+		// https://twitter.com/matthewseiji/status/1485003284196716544
+		// the above tweet is directly responsible for the existence of bosses in this game at all
+		{
+#define LOTIME 5
+#define HITIME 15
+			patch_t *localwarn = (encoremode ? twarn2 : twarn);
+			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
+			boolean encorehack = (encoremode && lt_ticker <= PRELEVELTIME+4);
+
+			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
+			{
+				if (transp > HITIME-1)
+				{
+					transp = HITIME-1;
+				}
+
+				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD);
+
+				while (bx > -pad)
+					bx -= localwarn->width;
+				while (bx < BASEVIDWIDTH+pad)
+				{
+					V_DrawFixedPatch(bx*FRACUNIT, 55*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL);
+					bx += localwarn->width;
+				}
+			}
+#undef LOTIME
+#undef HITIME
+		}
+
+		// Everything else...
+		if (bossinfo.enemyname)
+		{
+			bx = V_TitleCardStringWidth(bossinfo.enemyname);
+
+			// Name.
+			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 75, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker);
+
+			// Under-bar.
+			{
+				angle_t fakeang = 0;
+				fixed_t scalex = FRACUNIT;
+
+				// Handle scaling.
+				if (lt_ticker <= 3)
+				{
+					fakeang = (lt_ticker*ANGLE_45)/2;
+					scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
+				}
+				else if (lt_exitticker > 1)
+				{
+					if (lt_exitticker <= 4)
+					{
+						fakeang = ((lt_exitticker-1)*ANGLE_45)/2;
+						scalex = FINECOSINE(fakeang>>ANGLETOFINESHIFT);
+					}
+					else
+					{
+						scalex = 0;
+					}
+				}
+				// Handle subtitle.
+				else if (bossinfo.subtitle && lt_ticker >= TICRATE/2)
+				{
+					INT32 by = 75+32;
+					if (lt_ticker == TICRATE/2 || lt_exitticker == 1)
+					{
+						;
+					}
+					else if (lt_ticker == (TICRATE/2)+1 || lt_ticker == lt_endtime)
+					{
+						by += 3;
+					}
+					else
+					{
+						by += 5;
+					}
+
+					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, V_6WIDTHSPACE, bossinfo.subtitle);
+				}
+
+				// Now draw the under-bar itself.
+				if (scalex > 0)
+				{
+					bx = FixedMul(bx, scalex);
+					V_DrawFill((BASEVIDWIDTH-(bx+2))/2, 75+32, bx+2, 3, 31);
+					V_DrawFill((BASEVIDWIDTH-(bx))/2, 75+32+1, bx, 1, 0);
+				}
+			}
+		}
+		lt_lasttic = lt_ticker;
+		goto luahook;
+	}
+
 	// Background zig-zags
 	V_DrawFixedPatch((chev1x)*FRACUNIT, (chev1y)*FRACUNIT, FRACUNIT, chevtflag, tcchev1, NULL);
 	V_DrawFixedPatch((chev2x)*FRACUNIT, (chev2y)*FRACUNIT, FRACUNIT, chevtflag, tcchev2, NULL);
@@ -966,11 +1099,16 @@ void ST_drawTitleCard(void)
 	// round num background
 	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
 
-	// Scrolling banner, we'll draw 3 of those back to back.
-	for (i=0; i < 3; i++)
+	// Scrolling banner
+	if (tcbanner->width > 0)
 	{
-		V_DrawFixedPatch((bannerx + bx)*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
-		bx += tcbanner->width;
+		while (bx > -pad)
+			bx -= tcbanner->width;
+		while (bx < BASEVIDWIDTH+pad)
+		{
+			V_DrawFixedPatch(bx*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
+			bx += tcbanner->width;
+		}
 	}
 
 	// If possible, draw round number
@@ -982,10 +1120,10 @@ void ST_drawTitleCard(void)
 	V_DrawFixedPatch(eggx2*FRACUNIT, eggy2*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebottom, NULL);
 
 	// Now the level name.
-	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, true, lt_ticker, TTANIMENDTHRESHOLD);
+	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, false, lt_ticker, TTANIMENDTHRESHOLD);
 
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, true, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
+		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
 
 	// the act has a similar graphic animation, but we'll handle it here since it's only like 2 graphics lmfao.
 	if (actnum && actnum < 10)

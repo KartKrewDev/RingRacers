@@ -1499,10 +1499,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		{
 			INT32 skinnum = TC_DEFAULT;
 
-			if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
+			if (R_ThingIsFlashing(spr->mobj))
 			{
 				skinnum = TC_HITLAG;
 			}
+			/*
 			else if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
 			{
 				if (spr->mobj->type == MT_CYBRAKDEMON || spr->mobj->colorized)
@@ -1512,6 +1513,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				else
 					skinnum = TC_BOSS;
 			}
+			*/
 			else if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE)
 			{
 				if (spr->mobj->colorized)
@@ -1586,7 +1588,12 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				{
 					nextFrame = (spr->mobj->frame & FF_FRAMEMASK) + 1;
 					if (nextFrame >= mod)
-						nextFrame = 0;
+					{
+						if (spr->mobj->state->frame & FF_SPR2ENDSTATE)
+							nextFrame--;
+						else
+							nextFrame = 0;
+					}
 					if (frame || !(spr->mobj->state->frame & FF_SPR2ENDSTATE))
 						nextFrame = md2->model->spr2frames[spr2].frames[nextFrame];
 					else

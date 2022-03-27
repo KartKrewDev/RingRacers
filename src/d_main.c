@@ -71,6 +71,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 
 #ifdef CMAKECONFIG
@@ -947,6 +948,9 @@ void D_StartTitle(void)
 
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+	// Reset boss info
+	K_ResetBossInfo();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;

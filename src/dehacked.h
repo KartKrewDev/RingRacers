@@ -30,7 +30,9 @@ typedef enum
 void DEH_LoadDehackedLump(lumpnum_t lumpnum);
 void DEH_LoadDehackedLumpPwad(UINT16 wad, UINT16 lump, boolean mainfile);
 
-
+// SRB2Kart
+extern int freeslotusage[2][2];
+void DEH_UpdateMaxFreeslots(void);
 
 void DEH_Check(void);
 

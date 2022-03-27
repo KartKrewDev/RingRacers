@@ -924,8 +924,8 @@ void R_DrawTiltedSpan_8(void)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z) + viewx;
-		v = (INT64)(vz*z) + viewy;
+		u = (INT64)(uz*z);
+		v = (INT64)(vz*z);
 		bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 		if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 		{
@@ -963,8 +963,8 @@ void R_DrawTiltedSpan_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -1016,8 +1016,8 @@ void R_DrawTiltedSpan_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -1093,8 +1093,8 @@ void R_DrawTiltedTranslucentSpan_8(void)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z) + viewx;
-		v = (INT64)(vz*z) + viewy;
+		u = (INT64)(uz*z);
+		v = (INT64)(vz*z);
 
 		bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 		if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
@@ -1133,8 +1133,8 @@ void R_DrawTiltedTranslucentSpan_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -1186,8 +1186,8 @@ void R_DrawTiltedTranslucentSpan_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -1264,8 +1264,8 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z) + viewx;
-		v = (INT64)(vz*z) + viewy;
+		u = (INT64)(uz*z);
+		v = (INT64)(vz*z);
 
 		bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 		if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
@@ -1304,8 +1304,8 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -1357,8 +1357,8 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -1433,8 +1433,8 @@ void R_DrawTiltedSplat_8(void)
 	do
 	{
 		double z = 1.f/iz;
-		u = (INT64)(uz*z) + viewx;
-		v = (INT64)(vz*z) + viewy;
+		u = (INT64)(uz*z);
+		v = (INT64)(vz*z);
 
 		bit = ((v >> nflatyshift) & nflatmask) | (u >> nflatxshift);
 		val = source[bit];
@@ -1478,8 +1478,8 @@ void R_DrawTiltedSplat_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -1539,8 +1539,8 @@ void R_DrawTiltedSplat_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -1801,11 +1801,11 @@ void R_DrawFloorSprite_8 (void)
 			{
 				if (brightmap != NULL && brightmap[bit] == BRIGHTPIXEL)
 				{
-					*dest = fullbright[translation[val & 0xFF]];
+					dest[i] = fullbright[translation[val & 0xFF]];
 				}
 				else
 				{
-					*dest = colormap[translation[val & 0xFF]];
+					dest[i] = colormap[translation[val & 0xFF]];
 				}
 			}
 			xposition += xstep;
@@ -1983,8 +1983,8 @@ void R_DrawTiltedFloorSprite_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -2043,8 +2043,8 @@ void R_DrawTiltedFloorSprite_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{
@@ -2127,8 +2127,8 @@ void R_DrawTiltedTranslucentFloorSprite_8(void)
 		endv = vz*endz;
 		stepu = (INT64)((endu - startu) * INVSPAN);
 		stepv = (INT64)((endv - startv) * INVSPAN);
-		u = (INT64)(startu) + viewx;
-		v = (INT64)(startv) + viewy;
+		u = (INT64)(startu);
+		v = (INT64)(startv);
 
 		for (i = SPANSIZE-1; i >= 0; i--)
 		{
@@ -2187,8 +2187,8 @@ void R_DrawTiltedTranslucentFloorSprite_8(void)
 			left = 1.f/left;
 			stepu = (INT64)((endu - startu) * left);
 			stepv = (INT64)((endv - startv) * left);
-			u = (INT64)(startu) + viewx;
-			v = (INT64)(startv) + viewy;
+			u = (INT64)(startu);
+			v = (INT64)(startv);
 
 			for (; width != 0; width--)
 			{

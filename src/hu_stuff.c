@@ -54,6 +54,7 @@
 // SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_boss.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
@@ -2365,13 +2366,13 @@ static void HU_DrawRankings(void)
 	else
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
 
-	if (gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT))
+	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
 	{
 		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
 		{
 			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
 			if (timeval > timelimitintics+1)
-				timeval = timelimitintics;
+				timeval = timelimitintics+1;
 			timeval /= TICRATE;
 
 			if (leveltime <= (timelimitintics + starttime))

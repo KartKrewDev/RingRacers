@@ -2120,7 +2120,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 {
 	INT32 secnum = -1;
 	mtag_t tag = Tag_FGet(&line->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	I_Assert(!mo || !P_MobjWasRemoved(mo)); // If mo is there, mo must be valid!
 
@@ -2145,7 +2144,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				newceilinglightsec = line->frontsector->ceilinglightsec;
 
 				// act on all sectors with the same tag as the triggering linedef
-				TAG_ITER_SECTORS(0, tag, secnum)
+				TAG_ITER_SECTORS(tag, secnum)
 				{
 					if (sectors[secnum].lightingdata)
 					{
@@ -2200,7 +2199,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 409: // Change tagged sectors' tag
 		// (formerly "Change calling sectors' tag", but behavior was changed)
 		{
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 				Tag_SectorFSet(secnum,(INT16)(sides[line->sidenum[0]].textureoffset>>FRACBITS));
 			break;
 		}
@@ -2210,7 +2209,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 411: // Stop floor/ceiling movement in tagged sector(s)
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				if (sectors[secnum].floordata)
 				{
@@ -2394,7 +2393,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						// Additionally play the sound from tagged sectors' soundorgs
 						sector_t *sec;
 
-						TAG_ITER_SECTORS(0, tag, secnum)
+						TAG_ITER_SECTORS(tag, secnum)
 						{
 							sec = &sectors[secnum];
 							S_StartSound(&sec->soundorg, sfxnum);
@@ -2511,7 +2510,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 416: // Spawn adjustable fire flicker
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				if (line->flags & ML_NOCLIMB && line->backsector)
 				{
@@ -2545,7 +2544,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 417: // Spawn adjustable glowing light
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				if (line->flags & ML_NOCLIMB && line->backsector)
 				{
@@ -2579,7 +2578,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 418: // Spawn adjustable strobe flash (unsynchronized)
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				if (line->flags & ML_NOCLIMB && line->backsector)
 				{
@@ -2613,7 +2612,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 419: // Spawn adjustable strobe flash (synchronized)
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				if (line->flags & ML_NOCLIMB && line->backsector)
 				{
@@ -2661,7 +2660,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 421: // Stop lighting effect in tagged sectors
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 				if (sectors[secnum].lightingdata)
 				{
 					P_RemoveThinker(&((elevator_t *)sectors[secnum].lightingdata)->thinker);
@@ -2829,7 +2828,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				ffloor_t *rover; // FOF that we are going to crumble
 				boolean foundrover = false; // for debug, "Can't find a FOF" message
 
-				TAG_ITER_SECTORS(0, sectag, secnum)
+				TAG_ITER_SECTORS(sectag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -2950,7 +2949,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			if (line->sidenum[1] != 0xffff)
 				state = (statenum_t)sides[line->sidenum[1]].toptexture;
 
-			TAG_ITER_SECTORS(0, tag, secnum)
+			TAG_ITER_SECTORS(tag, secnum)
 			{
 				boolean tryagain;
 				sec = sectors + secnum;
@@ -3010,7 +3009,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				boolean foundrover = false; // for debug, "Can't find a FOF" message
 				ffloortype_e oldflags; // store FOF's old flags
 
-				TAG_ITER_SECTORS(0, sectag, secnum)
+				TAG_ITER_SECTORS(sectag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -3068,7 +3067,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (line->flags & ML_NOCLIMB) // don't respawn!
 					respawn = false;
 
-				TAG_ITER_SECTORS(0, sectag, secnum)
+				TAG_ITER_SECTORS(sectag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -3124,7 +3123,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					source = sectors[sourcesec].extra_colormap;
 				}
 			}
-			TAG_ITER_SECTORS(0, line->args[0], secnum)
+			TAG_ITER_SECTORS(line->args[0], secnum)
 			{
 				if (sectors[secnum].colormap_protected)
 					continue;
@@ -3268,7 +3267,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			ffloor_t *rover; // FOF that we are going to operate
 			boolean foundrover = false; // for debug, "Can't find a FOF" message
 
-			TAG_ITER_SECTORS(0, sectag, secnum)
+			TAG_ITER_SECTORS(sectag, secnum)
 			{
 				sec = sectors + secnum;
 
@@ -3332,7 +3331,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			boolean foundrover = false; // for debug, "Can't find a FOF" message
 			size_t j = 0; // sec->ffloors is saved as ffloor #0, ss->ffloors->next is #1, etc
 
-			TAG_ITER_SECTORS(0, sectag, secnum)
+			TAG_ITER_SECTORS(sectag, secnum)
 			{
 				sec = sectors + secnum;
 
@@ -3417,7 +3416,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			ffloor_t *rover; // FOF that we are going to operate
 			boolean foundrover = false; // for debug, "Can't find a FOF" message
 
-			TAG_ITER_SECTORS(0, sectag, secnum)
+			TAG_ITER_SECTORS(sectag, secnum)
 			{
 				sec = sectors + secnum;
 
@@ -3468,7 +3467,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				}
 			}
 
-			TAG_ITER_SECTORS(0, line->args[0], secnum)
+			TAG_ITER_SECTORS(line->args[0], secnum)
 			{
 				extracolormap_t *source_exc, *dest_exc, *exc;
 
@@ -3548,7 +3547,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 		}
 		case 456: // Stop fade colormap
-			TAG_ITER_SECTORS(0, line->args[0], secnum)
+			TAG_ITER_SECTORS(line->args[0], secnum)
 				P_ResetColormapFader(&sectors[secnum]);
 			break;
 
@@ -3742,12 +3741,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 		case 465: // Set linedef executor delay
 			{
 				INT32 linenum;
-				TAG_ITER_DECLARECOUNTER(1);
 
 				if (!udmf)
 					break;
 
-				TAG_ITER_LINES(1, line->args[0], linenum)
+				TAG_ITER_LINES(line->args[0], linenum)
 				{
 					if (line->args[2])
 						lines[linenum].executordelay += line->args[1];
@@ -3799,7 +3797,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					break;
 				}
 
-				TAG_ITER_SECTORS(0, tag, secnum)
+				TAG_ITER_SECTORS(tag, secnum)
 				{
 					sec = sectors + secnum;
 
@@ -5752,9 +5750,8 @@ void T_LaserFlash(laserthink_t *flash)
 	sector_t *sector;
 	sector_t *sourcesec = flash->sourceline->frontsector;
 	fixed_t top, bottom;
-	TAG_ITER_DECLARECOUNTER(0);
 
-	TAG_ITER_SECTORS(0, flash->tag, s)
+	TAG_ITER_SECTORS(flash->tag, s)
 	{
 		sector = &sectors[s];
 		for (fflr = sector->ffloors; fflr; fflr = fflr->next)
@@ -6027,11 +6024,10 @@ void P_SpawnSpecials(boolean fromnetsave)
 			INT32 s;
 			size_t sec;
 			ffloortype_e ffloorflags;
-			TAG_ITER_DECLARECOUNTER(0);
 
 			case 1: // Definable gravity per sector
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 				{
 					sectors[s].gravity = &sectors[sec].floorheight; // This allows it to change in realtime!
 
@@ -6055,7 +6051,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			case 5: // Change camera info
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					P_AddCameraScanner(&sectors[sec], &sectors[s], R_PointToAngle2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y));
 				break;
 
@@ -6082,7 +6078,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 						P_ApplyFlatAlignment(lines + i, lines[i].frontsector, flatangle, xoffs, yoffs);
 					else
 					{
-						TAG_ITER_SECTORS(0, tag, s)
+						TAG_ITER_SECTORS(tag, s)
 							P_ApplyFlatAlignment(lines + i, sectors + s, flatangle, xoffs, yoffs);
 					}
 				}
@@ -6093,7 +6089,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 8: // Sector Parameters
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 				{
 					if (lines[i].flags & ML_NOCLIMB)
 					{
@@ -6126,7 +6122,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 10: // Vertical culling plane for sprites and FOFs
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					sectors[s].cullheight = &lines[i]; // This allows it to change in realtime!
 				break;
 
@@ -6187,19 +6183,19 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			case 63: // support for drawn heights coming from different sector
 				sec = sides[*lines[i].sidenum].sector-sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					sectors[s].heightsec = (INT32)sec;
 				break;
 
 			case 64: // Appearing/Disappearing FOF option
 				if (lines[i].flags & ML_BLOCKPLAYERS) { // Find FOFs by control sector tag
-					TAG_ITER_SECTORS(0, tag, s)
+					TAG_ITER_SECTORS(tag, s)
 						for (j = 0; (unsigned)j < sectors[s].linecount; j++)
 							if (sectors[s].lines[j]->special >= 100 && sectors[s].lines[j]->special < 300)
 								Add_MasterDisappearer(abs(lines[i].dx>>FRACBITS), abs(lines[i].dy>>FRACBITS), abs(sides[lines[i].sidenum[0]].sector->floorheight>>FRACBITS), (INT32)(sectors[s].lines[j]-lines), (INT32)i);
 				} else // Find FOFs by effect sector tag
 				{
-					TAG_ITER_LINES(0, tag, s)
+					TAG_ITER_LINES(tag, s)
 					{
 						if ((size_t)s == i)
 							continue;
@@ -6210,16 +6206,16 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 
 			case 66: // Displace floor by front sector
-				TAG_ITER_SECTORS(0, tag, s)
-					P_AddPlaneDisplaceThinker(pd_floor, P_AproxDistance(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
+				TAG_ITER_SECTORS(tag, s)
+					P_AddPlaneDisplaceThinker(pd_floor, FixedHypot(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
 				break;
 			case 67: // Displace ceiling by front sector
-				TAG_ITER_SECTORS(0, tag, s)
-					P_AddPlaneDisplaceThinker(pd_ceiling, P_AproxDistance(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
+				TAG_ITER_SECTORS(tag, s)
+					P_AddPlaneDisplaceThinker(pd_ceiling, FixedHypot(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
 				break;
 			case 68: // Displace both floor AND ceiling by front sector
-				TAG_ITER_SECTORS(0, tag, s)
-					P_AddPlaneDisplaceThinker(pd_both, P_AproxDistance(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
+				TAG_ITER_SECTORS(tag, s)
+					P_AddPlaneDisplaceThinker(pd_both, FixedHypot(lines[i].dx, lines[i].dy)>>8, sides[lines[i].sidenum[0]].sector-sectors, s, !!(lines[i].flags & ML_NOCLIMB));
 				break;
 
 			case 100: // FOF (solid, opaque, shadows)
@@ -6810,46 +6806,46 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			case 600: // floor lighting independently (e.g. lava)
 				sec = sides[*lines[i].sidenum].sector-sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					sectors[s].floorlightsec = (INT32)sec;
 				break;
 
 			case 601: // ceiling lighting independently
 				sec = sides[*lines[i].sidenum].sector-sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					sectors[s].ceilinglightsec = (INT32)sec;
 				break;
 
 			case 602: // Adjustable pulsating light
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					P_SpawnAdjustableGlowingLight(&sectors[sec], &sectors[s],
 						P_AproxDistance(lines[i].dx, lines[i].dy)>>FRACBITS);
 				break;
 
 			case 603: // Adjustable flickering light
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					P_SpawnAdjustableFireFlicker(&sectors[sec], &sectors[s],
 						P_AproxDistance(lines[i].dx, lines[i].dy)>>FRACBITS);
 				break;
 
 			case 604: // Adjustable Blinking Light (unsynchronized)
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					P_SpawnAdjustableStrobeFlash(&sectors[sec], &sectors[s],
 						abs(lines[i].dx)>>FRACBITS, abs(lines[i].dy)>>FRACBITS, false);
 				break;
 
 			case 605: // Adjustable Blinking Light (synchronized)
 				sec = sides[*lines[i].sidenum].sector - sectors;
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					P_SpawnAdjustableStrobeFlash(&sectors[sec], &sectors[s],
 						abs(lines[i].dx)>>FRACBITS, abs(lines[i].dy)>>FRACBITS, true);
 				break;
 
 			case 606: // HACK! Copy colormaps. Just plain colormaps.
-				TAG_ITER_SECTORS(0, lines[i].args[0], s)
+				TAG_ITER_SECTORS(lines[i].args[0], s)
 				{
 					extracolormap_t *exc;
 
@@ -6909,7 +6905,7 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 /** Fuck polyobjects
   */
-void P_SpawnSpecialsThatRequireObjects(void)
+void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 {
 	size_t i;
 
@@ -6934,7 +6930,8 @@ void P_SpawnSpecialsThatRequireObjects(void)
 		}
 	}
 
-	P_RunLevelLoadExecutors();
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Fuck ML_NONET
@@ -6977,13 +6974,12 @@ void P_SpawnSpecialsAfterSlopes(void)
   */
 static void P_AddFakeFloorsByLine(size_t line, ffloortype_e ffloorflags, thinkerlist_t *secthinkers)
 {
-	TAG_ITER_DECLARECOUNTER(0);
 	INT32 s;
 	mtag_t tag = Tag_FGet(&lines[line].tags);
 	size_t sec = sides[*lines[line].sidenum].sector-sectors;
 
 	line_t* li = lines + line;
-	TAG_ITER_SECTORS(0, tag, s)
+	TAG_ITER_SECTORS(tag, s)
 		P_AddFakeFloor(&sectors[s], &sectors[sec], li, ffloorflags, secthinkers);
 }
 
@@ -7091,7 +7087,6 @@ void T_Scroll(scroll_t *s)
 		size_t i;
 		INT32 sect;
 		ffloor_t *rover;
-		TAG_ITER_DECLARECOUNTER(0);
 
 		case sc_side: // scroll wall texture
 			side = sides + s->affectee;
@@ -7128,7 +7123,7 @@ void T_Scroll(scroll_t *s)
 				if (!is3dblock)
 					continue;
 
-				TAG_ITER_SECTORS(0, Tag_FGet(&line->tags), sect)
+				TAG_ITER_SECTORS(Tag_FGet(&line->tags), sect)
 				{
 					sector_t *psec;
 					psec = sectors + sect;
@@ -7203,7 +7198,7 @@ void T_Scroll(scroll_t *s)
 
 				if (!is3dblock)
 					continue;
-				TAG_ITER_SECTORS(0, Tag_FGet(&line->tags), sect)
+				TAG_ITER_SECTORS(Tag_FGet(&line->tags), sect)
 				{
 					sector_t *psec;
 					psec = sectors + sect;
@@ -7315,7 +7310,6 @@ static void P_SpawnScrollers(void)
 		INT32 special = l->special;
 
 		register INT32 s;
-		TAG_ITER_DECLARECOUNTER(0);
 
 		tag = Tag_FGet(&l->tags);
 
@@ -7360,7 +7354,7 @@ static void P_SpawnScrollers(void)
 		{
 			case 513: // scroll effect ceiling
 			case 533: // scroll and carry objects on ceiling
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Scroller(sc_ceiling, -dx, dy, control, s, accel, l->flags & ML_NOCLIMB);
 				if (special != 533)
 					break;
@@ -7369,13 +7363,13 @@ static void P_SpawnScrollers(void)
 			case 523:	// carry objects on ceiling
 				dx = FixedMul(dx, CARRYFACTOR);
 				dy = FixedMul(dy, CARRYFACTOR);
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Scroller(sc_carry_ceiling, dx, dy, control, s, accel, l->flags & ML_NOCLIMB);
 				break;
 
 			case 510: // scroll effect floor
 			case 530: // scroll and carry objects on floor
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Scroller(sc_floor, -dx, dy, control, s, accel, l->flags & ML_NOCLIMB);
 				if (special != 530)
 					break;
@@ -7384,7 +7378,7 @@ static void P_SpawnScrollers(void)
 			case 520:	// carry objects on floor
 				dx = FixedMul(dx, CARRYFACTOR);
 				dy = FixedMul(dy, CARRYFACTOR);
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Scroller(sc_carry, dx, dy, control, s, accel, l->flags & ML_NOCLIMB);
 				break;
 
@@ -7392,7 +7386,7 @@ static void P_SpawnScrollers(void)
 			// (same direction and speed as scrolling floors)
 			case 502:
 			{
-				TAG_ITER_LINES(0, tag, s)
+				TAG_ITER_LINES(tag, s)
 					if (s != (INT32)i)
 					{
 						if (l->flags & ML_EFFECT2) // use texture offsets instead
@@ -7444,7 +7438,7 @@ static void P_SpawnScrollers(void)
 				break;
 
 			case 509: // scroll front and backside of tagged lines
-				TAG_ITER_LINES(0, tag, s)
+				TAG_ITER_LINES(tag, s)
 				{
 					if (s != (INT32)i)
 					{
@@ -7506,9 +7500,8 @@ void T_Disappear(disappear_t *d)
 		ffloor_t *rover;
 		register INT32 s;
 		mtag_t afftag = Tag_FGet(&lines[d->affectee].tags);
-		TAG_ITER_DECLARECOUNTER(0);
 
-		TAG_ITER_SECTORS(0, afftag, s)
+		TAG_ITER_SECTORS(afftag, s)
 		{
 			for (rover = sectors[s].ffloors; rover; rover = rover->next)
 			{
@@ -8239,7 +8232,6 @@ static void P_SpawnFriction(void)
 	fixed_t strength; // frontside texture offset controls magnitude
 	fixed_t friction; // friction value to be applied during movement
 	INT32 movefactor; // applied to each player move to simulate inertia
-	TAG_ITER_DECLARECOUNTER(0);
 
 	for (i = 0; i < numlines; i++, l++)
 		if (l->special == 540)
@@ -8265,7 +8257,7 @@ static void P_SpawnFriction(void)
 			else
 				movefactor = FRACUNIT;
 
-			TAG_ITER_SECTORS(0, tag, s)
+			TAG_ITER_SECTORS(tag, s)
 				Add_Friction(friction, movefactor, s, -1);
 		}
 }
@@ -8349,6 +8341,9 @@ static pusher_t *tmpusher; // pusher structure for blockmap searches
 static inline boolean PIT_PushThing(mobj_t *thing)
 {
 	if (thing->eflags & MFE_PUSHED)
+		return false;
+
+	if (!tmpusher->source)
 		return false;
 
 	// Allow this to affect pushable objects at some point?
@@ -8734,7 +8729,6 @@ static void P_SpawnPushers(void)
 	mtag_t tag;
 	register INT32 s;
 	mobj_t *thing;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	for (i = 0; i < numlines; i++, l++)
 	{
@@ -8742,15 +8736,15 @@ static void P_SpawnPushers(void)
 		switch (l->special)
 		{
 			case 541: // wind
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_wind, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 			case 544: // current
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_current, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 			case 547: // push/pull
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 				{
 					thing = P_GetPushThing(s);
 					if (thing) // No MT_P* means no effect
@@ -8758,19 +8752,19 @@ static void P_SpawnPushers(void)
 				}
 				break;
 			case 545: // current up
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_upcurrent, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 			case 546: // current down
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_downcurrent, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 			case 542: // wind up
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_upwind, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 			case 543: // wind down
-				TAG_ITER_SECTORS(0, tag, s)
+				TAG_ITER_SECTORS(tag, s)
 					Add_Pusher(p_downwind, l->dx, l->dy, NULL, s, -1, l->flags & ML_NOCLIMB, l->flags & ML_EFFECT4);
 				break;
 		}

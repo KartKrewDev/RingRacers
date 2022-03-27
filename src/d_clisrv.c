@@ -53,6 +53,7 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
 
@@ -1275,10 +1276,6 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 			CON_LogMessage("\"\n");
 		}
 	}
-	else
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
-	}
 
 	// done
 	Z_Free(savebuffer);
@@ -2412,7 +2409,6 @@ void CL_Reset(void)
 	doomcom->numslots = 1;
 	SV_StopServer();
 	SV_ResetServer();
-	CV_RevertNetVars();
 
 	// make sure we don't leave any fileneeded gunk over from a failed join
 	fileneedednum = 0;
@@ -2774,7 +2770,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	switch (msg)
 	{
 		case KICK_MSG_GO_AWAY:
-			HU_AddChatText(va("\x82*%s has been kicked (Go away)", player_names[pnum]), false);
+			HU_AddChatText(va("\x82*%s has been kicked (No reason given)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;
 		case KICK_MSG_PING_HIGH:
@@ -2782,7 +2778,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			kickreason = KR_PINGLIMIT;
 			break;
 		case KICK_MSG_CON_FAIL:
-			HU_AddChatText(va("\x82*%s left the game (Synch Failure)", player_names[pnum]), false);
+			HU_AddChatText(va("\x82*%s left the game (Synch failure)", player_names[pnum]), false);
 			kickreason = KR_SYNCH;
 
 			if (M_CheckParm("-consisdump")) // Helps debugging some problems
@@ -2828,7 +2824,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			kickreason = KR_LEAVE;
 			break;
 		case KICK_MSG_BANNED:
-			HU_AddChatText(va("\x82*%s has been banned (Don't come back)", player_names[pnum]), false);
+			HU_AddChatText(va("\x82*%s has been banned (No reason given)", player_names[pnum]), false);
 			kickreason = KR_BAN;
 			break;
 		case KICK_MSG_CUSTOM_KICK:
@@ -3186,6 +3182,8 @@ void SV_ResetServer(void)
 
 	// clear server_context
 	memset(server_context, '-', 8);
+
+	CV_RevertNetVars();
 
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
@@ -3647,11 +3645,12 @@ void SV_StopServer(void)
 // called at singleplayer start and stopdemo
 void SV_StartSinglePlayerServer(void)
 {
+	INT32 lastgametype = gametype;
 	server = true;
 	netgame = false;
 	multiplayer = false;
 
-	if (modeattacking == ATTACKING_CAPSULES)
+	if ((modeattacking == ATTACKING_CAPSULES) || (bossinfo.boss == true))
 	{
 		G_SetGametype(GT_BATTLE);
 	}
@@ -3659,6 +3658,9 @@ void SV_StartSinglePlayerServer(void)
 	{
 		G_SetGametype(GT_RACE);
 	}
+
+	if (gametype != lastgametype)
+		D_GameTypeChanged(lastgametype);
 
 	// no more tic the game with this settings!
 	SV_StopServer();
@@ -4485,7 +4487,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 		case PT_RECEIVEDGAMESTATE:
 			sendingsavegame[node] = false;
 			resendingsavegame[node] = false;
-			savegameresendcooldown[node] = I_GetTime() + 15 * TICRATE;
+			savegameresendcooldown[node] = I_GetTime() + 5 * TICRATE;
 			break;
 // -------------------------------------------- CLIENT RECEIVE ----------
 		case PT_SERVERTICS:

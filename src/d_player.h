@@ -151,7 +151,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (HYUDORO,       17),\
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
-	FOREACH (KITCHENSINK,   20)
+	FOREACH (KITCHENSINK,   20),\
+	FOREACH (DROPTARGET,    21)
 
 typedef enum
 {
@@ -261,7 +262,7 @@ typedef enum
 //}
 
 // for kickstartaccel
-#define ACCEL_KICKSTART 35
+#define ACCEL_KICKSTART (TICRATE)
 
 #define ITEMSCALE_NORMAL 0
 #define ITEMSCALE_GROW 1
@@ -494,6 +495,7 @@ typedef struct player_s
 	INT16 karmadelay;
 	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
+	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
 

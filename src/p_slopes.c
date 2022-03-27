@@ -131,6 +131,36 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 	}
 }
 
+/// Setup slope via constants.
+static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	fixed_t m;
+	vector3_t *normal = &slope->normal;
+
+	// Set origin.
+	FV3_Load(&slope->o, 0, 0, c ? -FixedDiv(d, c) : 0);
+
+	// Get slope's normal.
+	FV3_Load(normal, a, b, c);
+	FV3_Normalize(normal);
+
+	// Invert normal if it's facing down.
+	if (normal->z < 0)
+		FV3_Negate(normal);
+
+	// Get direction vector
+	m = FixedHypot(normal->x, normal->y);
+	slope->d.x = -FixedDiv(normal->x, m);
+	slope->d.y = -FixedDiv(normal->y, m);
+
+	// Z delta
+	slope->zdelta = FixedDiv(m, normal->z);
+
+	// Get angles
+	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
+	slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+}
+
 /// Recalculate dynamic slopes.
 void T_DynamicSlopeLine (dynplanethink_t* th)
 {
@@ -595,11 +625,10 @@ static boolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, boolean ceiling)
 {
 	INT32 i;
 	pslope_t **secslope = ceiling ? &sec->c_slope : &sec->f_slope;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	if (!tag || *secslope)
 		return false;
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		pslope_t *srcslope = ceiling ? sectors[i].c_slope : sectors[i].f_slope;
 		if (srcslope)
@@ -681,12 +710,19 @@ pslope_t *P_SlopeById(UINT16 id)
 	return ret;
 }
 
+/// Creates a new slope from equation constants.
+pslope_t *MakeViaEquationConstants(const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	pslope_t* ret = Slope_Add(0);
+
+	ReconfigureViaConstants(ret, a, b, c, d);
+
+	return ret;
+}
+
 /// Initializes and reads the slopes from the map data.
 void P_SpawnSlopes(const boolean fromsave) {
 	size_t i;
-
-	slopelist = NULL;
-	slopecount = 0;
 
 	/// Generates vertex slopes.
 	SpawnVertexSlopes();
@@ -722,11 +758,21 @@ void P_SpawnSlopes(const boolean fromsave) {
 	for (i = 0; i < numlines; i++)
 		switch (lines[i].special)
 		{
+			case 700:
+				if (lines[i].flags & ML_TFERLINE) P_CopySectorSlope(&lines[i]);
+				break;
 			case 720:
 				P_CopySectorSlope(&lines[i]);
 			default:
 				break;
 		}
+}
+
+/// Initializes slopes.
+void P_InitSlopes(void)
+{
+	slopelist = NULL;
+	slopecount = 0;
 }
 
 // ============================================================================
@@ -880,7 +926,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	slopemom.x = mo->momx;
 	slopemom.y = mo->momy;
-	slopemom.z = 3*(mo->momz/2);
+	slopemom.z = mo->momz;
 
 	axis.x = -slope->d.y;
 	axis.y = slope->d.x;
@@ -888,7 +934,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	FV3_Rotate(&slopemom, &axis, ang >> ANGLETOFINESHIFT);
 
-	return 2*(slopemom.z/3);
+	return slopemom.z;
 }
 
 // Function to help handle landing on slopes

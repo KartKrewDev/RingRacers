@@ -1048,7 +1048,7 @@ void R_ExecuteSetViewSize(void)
 			j = viewheight*16;
 			for (i = 0; i < j; i++)
 			{
-				dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
+				dy = ((i - viewheight*8)<<FRACBITS);
 				dy = FixedMul(abs(dy), fovtan[s]);
 				yslopetab[s][i] = FixedDiv(centerx*FRACUNIT, dy);
 			}
@@ -1494,8 +1494,7 @@ static void Mask_Post (maskcount_t* m)
 void R_RenderPlayerView(void)
 {
 	player_t * player = &players[displayplayers[viewssnum]];
-
-	UINT8			nummasks	= 1;
+	INT32			nummasks	= 1;
 	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
 
 	// if this is display player 1

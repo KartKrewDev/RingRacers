@@ -51,6 +51,13 @@ void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext)
 	strlcpy(dst, src, size);
 }
 
+int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
+void DEH_UpdateMaxFreeslots(void)
+{
+	freeslotusage[0][1] = freeslotusage[0][0];
+	freeslotusage[1][1] = freeslotusage[1][0];
+}
+
 ATTRINLINE static FUNCINLINE unsigned char myfget_color(MYFILE *f)
 {
 	char c = *f->curpos++;
@@ -188,25 +195,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	dbg_line = -1; // start at -1 so the first line is 0.
 	while (!myfeof(f))
 	{
-		char origpos[128];
-		INT32 size = 0;
-		char *traverse;
-
 		myfgets(s, MAXLINELEN, f);
 		memcpy(textline, s, MAXLINELEN);
 		if (s[0] == '\n' || s[0] == '#')
 			continue;
-
-		traverse = s;
-
-		while (traverse[0] != '\n')
-		{
-			traverse++;
-			size++;
-		}
-
-		strncpy(origpos, s, size);
-		origpos[size] = '\0';
 
 		if (NULL != (word = strtok(s, " "))) {
 			strupr(word);

@@ -9,6 +9,7 @@
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "p_tick.h" // leveltime
 #include "k_grandprix.h"
+#include "k_boss.h"
 
 // Online rankings for the main gametypes.
 // This array is saved to the gamedata.
@@ -30,7 +31,7 @@ SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
 
-	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true)
+	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true || bossinfo.boss == true)
 	{
 		return PWRLV_DISABLED;
 	}
