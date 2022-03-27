@@ -64,7 +64,7 @@ int I_PreciseToMicros(precise_t d);
 */
 void I_Sleep(void);
 
-boolean I_CheckFrameCap(void);
+boolean I_CheckFrameCap(precise_t start, precise_t end);
 
 /**	\brief Get events
 

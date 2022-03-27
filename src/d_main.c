@@ -679,6 +679,29 @@ static void D_Display(void)
 	}
 }
 
+static boolean D_CheckFrameCap(void)
+{
+	static boolean init = false;
+	static precise_t startCap = 0;
+	precise_t endCap = 0;
+
+	endCap = I_GetPreciseTime();
+
+	if (init == false)
+	{
+		startCap = endCap;
+		init = true;
+	}
+	else if (I_CheckFrameCap(startCap, endCap))
+	{
+		// Framerate should be capped.
+		return true;
+	}
+
+	startCap = endCap;
+	return false;
+}
+
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
@@ -762,18 +785,11 @@ void D_SRB2Loop(void)
 #endif
 
 		interp = R_UsingFrameInterpolation();
-		if (interp)
+		if (!realtics && !singletics && !interp)
 		{
-			if (I_CheckFrameCap())
-				continue;
-		}
-		else
-		{
-			if (!realtics && !singletics)
-			{
-				I_Sleep();
-				continue;
-			}
+			// Non-interp sleep
+			I_Sleep();
+			continue;
 		}
 
 #ifdef HW3SOUND
@@ -788,31 +804,43 @@ void D_SRB2Loop(void)
 		// process tics (but maybe not if realtic == 0)
 		ticked = TryRunTics(realtics);
 
-		if (interp && !(paused || P_AutoPause()))
+		if (interp)
 		{
-			static float tictime = 0.0f;
-			static float prevtime = 0.0f;
-			float entertime = I_GetTimeFrac();
-			fixed_t entertimefrac;
+			if (!(paused || P_AutoPause()))
+			{
+				static float tictime = 0.0f;
+				static float prevtime = 0.0f;
+				float entertime = I_GetTimeFrac();
+				fixed_t entertimefrac;
 
-			if (ticked)
-				tictime = entertime;
+				if (ticked)
+					tictime = entertime;
 
-			if (entertime - prevtime >= 1.0f) // Lagged for more frames than a gametic... shut off interpolation.
-				entertimefrac = FRACUNIT;
-			else
-				entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
+				if (entertime - prevtime >= 1.0f) // Lagged for more frames than a gametic... shut off interpolation.
+					entertimefrac = FRACUNIT;
+				else
+					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
 
-			prevtime = entertime;
+				prevtime = entertime;
 
-			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-			renderdeltatics = realtics * FRACUNIT;
-			if (entertimefrac > rendertimefrac)
-				renderdeltatics += entertimefrac - rendertimefrac;
-			else
-				renderdeltatics -= rendertimefrac - entertimefrac;
+				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
+				renderdeltatics = realtics * FRACUNIT;
+				if (entertimefrac > rendertimefrac)
+					renderdeltatics += entertimefrac - rendertimefrac;
+				else
+					renderdeltatics -= rendertimefrac - entertimefrac;
 
-			rendertimefrac = entertimefrac;
+				rendertimefrac = entertimefrac;
+			}
+
+			// Handle interp sleep / framerate cap here.
+			// TryRunTics needs ran if possible to prevent lagged map changes,
+			// (and if that runs, the code above needs to also run)
+			// so this is done here after TryRunTics.
+			if (D_CheckFrameCap())
+			{
+				continue;
+			}
 		}
 		else
 		{

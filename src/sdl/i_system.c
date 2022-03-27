@@ -1701,32 +1701,16 @@ void I_Sleep(void)
 		SDL_Delay(cv_sleep.value);
 }
 
-boolean I_CheckFrameCap(void)
+boolean I_CheckFrameCap(precise_t start, precise_t end)
 {
-	static boolean init = false;
-
-	static precise_t start = 0;
-	precise_t end;
-
-	int elapsed;
-
 	UINT32 capFrames = R_GetFramerateCap();
 	int capMicros = 0;
 
-	end = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		// Just initialized.
-		start = end;
-		init = true;
-		return false;
-	}
+	int elapsed;
 
 	if (capFrames == 0)
 	{
 		// We don't want to cap.
-		start = end;
 		return false;
 	}
 
@@ -1760,7 +1744,6 @@ boolean I_CheckFrameCap(void)
 	}
 
 	// Waited enough to draw again.
-	start = end;
 	return false;
 }
 
