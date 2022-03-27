@@ -1731,9 +1731,14 @@ boolean I_CheckFrameCap(precise_t start, precise_t end)
 
 		// If the wait's greater than our granularity value,
 		// we'll just burn the couple extra cycles in the main loop
-		// in order to get to the next frame. This makes us reach just
-		// that much closer to exactly the FPS cap!
-#define DELAY_GRANULARITY 10 // 10ms is the average clock tick of most OS scheduling. (https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdldelay.html)
+		// in order to get to the next frame.
+		// This makes us get to the exact FPS cap more often.
+
+		// Higher values have more wasted CPU cycles, but the in-game frame performance is better.
+		// 10ms is the average clock tick of most OS scheduling.
+		// 15ms is a little more than that, for leniency on slow machines. (This helps mine reach a stable 60, at least!)
+		// (https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdldelay.html)
+#define DELAY_GRANULARITY 15
 		if (wait >= DELAY_GRANULARITY)
 		{
 			SDL_Delay(wait);
