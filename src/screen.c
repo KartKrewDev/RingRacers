@@ -535,7 +535,7 @@ void SCR_CalculateFPS(void)
 	precise_t endTime = 0;
 
 	static precise_t updateTime = 0;
-	INT64 updateElapsed = 0;
+	int updateElapsed = 0;
 	int i;
 
 	endTime = I_GetPreciseTime();
@@ -545,7 +545,7 @@ void SCR_CalculateFPS(void)
 	if (updateElapsed >= FPS_SAMPLE_RATE)
 	{
 		static int sampleIndex = 0;
-		INT64 frameElapsed = I_PreciseToMicros(endTime - startTime);
+		int frameElapsed = I_PreciseToMicros(endTime - startTime);
 
 		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
 

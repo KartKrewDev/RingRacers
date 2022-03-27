@@ -56,7 +56,7 @@ precise_t I_GetPreciseTime(void);
 
 /**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
   */
-INT64 I_PreciseToMicros(precise_t d);
+int I_PreciseToMicros(precise_t d);
 
 /**	\brief	The I_Sleep function
 

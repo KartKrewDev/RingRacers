@@ -1672,7 +1672,7 @@ precise_t I_GetPreciseTime(void)
 	return SDL_GetPerformanceCounter();
 }
 
-INT64 I_PreciseToMicros(precise_t d)
+int I_PreciseToMicros(precise_t d)
 {
 	// d is going to be converted into a double. So remove the highest bits
 	// to avoid loss of precision in the lower bits, for the (probably rare) case
@@ -1705,7 +1705,7 @@ boolean I_CheckFrameCap(void)
 {
 	static precise_t start = 0;
 	precise_t end;
-	INT64 elapsed;
+	int elapsed;
 
 	UINT32 capFrames = R_GetFramerateCap();
 	int capMicros = 0;
