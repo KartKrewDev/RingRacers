@@ -531,6 +531,8 @@ static double fps_samples[NUM_FPS_SAMPLES];
 
 void SCR_CalculateFPS(void)
 {
+	static boolean init = false;
+
 	static precise_t startTime = 0;
 	precise_t endTime = 0;
 
@@ -539,6 +541,13 @@ void SCR_CalculateFPS(void)
 	int i;
 
 	endTime = I_GetPreciseTime();
+
+	if (init == false)
+	{
+		startTime = updateTime = endTime;
+		init = true;
+		return;
+	}
 
 	updateElapsed = I_PreciseToMicros(endTime - updateTime);
 

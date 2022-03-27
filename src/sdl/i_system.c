@@ -1703,14 +1703,25 @@ void I_Sleep(void)
 
 boolean I_CheckFrameCap(void)
 {
+	static boolean init = false;
+
 	static precise_t start = 0;
 	precise_t end;
+
 	int elapsed;
 
 	UINT32 capFrames = R_GetFramerateCap();
 	int capMicros = 0;
 
 	end = I_GetPreciseTime();
+
+	if (init == false)
+	{
+		// Just initialized.
+		start = end;
+		init = true;
+		return false;
+	}
 
 	if (capFrames == 0)
 	{

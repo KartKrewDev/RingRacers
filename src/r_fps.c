@@ -52,19 +52,12 @@ consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap
 
 UINT32 R_GetFramerateCap(void)
 {
-	if (con_startup_loadprogress != LOADED_ALLDONE)
-	{
-		return 0;
-	}
-
 	if (cv_fpscap.value < 0)
 	{
 		return I_GetRefreshRate();
 	}
-	else
-	{
-		return cv_fpscap.value;
-	}
+
+	return cv_fpscap.value;
 }
 
 boolean R_UsingFrameInterpolation(void)
