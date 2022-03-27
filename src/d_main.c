@@ -791,23 +791,19 @@ void D_SRB2Loop(void)
 		if (interp && !(paused || P_AutoPause()))
 		{
 			static float tictime = 0.0f;
+			static float prevtime = 0.0f;
 			float entertime = I_GetTimeFrac();
 			fixed_t entertimefrac;
 
-#if 1
-			(void)ticked;
-			//CONS_Printf("Avg FPS: %f, diff: %f\n========\n", averageFPS, entertime - tictime);
-			entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-			tictime = entertime;
-#else
 			if (ticked)
 				tictime = entertime;
 
-			if (averageFPS < 35.0) // Not convinced it should be doing it this way, but couldn't figure out anything better...
+			if (entertime - prevtime >= 1.0f) // Lagged for more frames than a gametic... shut off interpolation.
 				entertimefrac = FRACUNIT;
 			else
-				entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
-#endif
+				entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
+
+			prevtime = entertime;
 
 			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
 			renderdeltatics = realtics * FRACUNIT;
