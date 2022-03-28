@@ -713,6 +713,7 @@ void D_SRB2Loop(void)
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
 	boolean ticked;
 	boolean interp;
+	boolean doDisplay = false;
 
 	if (dedicated)
 		server = true;
@@ -784,7 +785,9 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
+		doDisplay = false;
 		interp = R_UsingFrameInterpolation();
+
 		if (!realtics && !singletics && !interp)
 		{
 			// Non-interp sleep
@@ -804,24 +807,61 @@ void D_SRB2Loop(void)
 		// process tics (but maybe not if realtic == 0)
 		ticked = TryRunTics(realtics);
 
+		if (lastdraw || singletics || gametic > rendergametic)
+		{
+			rendergametic = gametic;
+			rendertimeout = entertic+TICRATE/17;
+
+			doDisplay = true;
+		}
+		else if (rendertimeout < entertic) // in case the server hang or netsplit
+		{
+			doDisplay = true;
+		}
+
 		if (interp)
 		{
+			static float tictime = 0.0f;
+			static float prevtime = 0.0f;
+			float entertime = I_GetTimeFrac();
+
+			fixed_t entertimefrac = FRACUNIT;
+
+			if (ticked)
+			{
+				tictime = entertime;
+			}
+
+			// Handle interp sleep / framerate cap here.
+			// TryRunTics needs ran if possible to prevent lagged map changes,
+			// (and if that runs, the code above needs to also run)
+			// so this is done here after TryRunTics.
+			if (D_CheckFrameCap())
+			{
+				continue;
+			}
+
 			if (!(paused || P_AutoPause()))
 			{
-				static float tictime = 0.0f;
-				static float prevtime = 0.0f;
-				float entertime = I_GetTimeFrac();
-				fixed_t entertimefrac;
+#if 1
+				CONS_Printf("prevtime = %f\n", prevtime);
+				CONS_Printf("entertime = %f\n", entertime);
+				CONS_Printf("tictime = %f\n", tictime);
+				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
+				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
+				CONS_Printf("========\n");
+#endif
 
-				if (ticked)
-					tictime = entertime;
-
-				if (entertime - prevtime >= 1.0f) // Lagged for more frames than a gametic... shut off interpolation.
+				if (entertime - prevtime >= 1.0f)
+				{
+					// Lagged for more frames than a gametic...
+					// No need for interpolation.
 					entertimefrac = FRACUNIT;
+				}
 				else
+				{
 					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-
-				prevtime = entertime;
+				}
 
 				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
 				renderdeltatics = realtics * FRACUNIT;
@@ -833,48 +873,21 @@ void D_SRB2Loop(void)
 				rendertimefrac = entertimefrac;
 			}
 
-			// Handle interp sleep / framerate cap here.
-			// TryRunTics needs ran if possible to prevent lagged map changes,
-			// (and if that runs, the code above needs to also run)
-			// so this is done here after TryRunTics.
-			if (D_CheckFrameCap())
-			{
-				continue;
-			}
+			prevtime = entertime;
 		}
 		else
 		{
-			rendertimefrac = FRACUNIT;
 			renderdeltatics = realtics * FRACUNIT;
+			rendertimefrac = FRACUNIT;
 		}
 
-		if (interp)
+		if (interp || doDisplay)
 		{
 			D_Display();
 		}
 
-		if (lastdraw || singletics || gametic > rendergametic)
+		if (doDisplay)
 		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
-
-			if (!interp)
-			{
-				D_Display();
-			}
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
-		{
-			if (!interp)
-			{
-				D_Display();
-			}
-
 			if (moviemode)
 				M_SaveFrame();
 			if (takescreenshot) // Only take screenshots after drawing.
