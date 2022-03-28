@@ -806,25 +806,27 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
-		// don't skip more than 10 frames at a time
-		// (fadein / fadeout cause massive frame skip!)
-		if (realtics > 8)
-			realtics = 1;
-
-		// process tics (but maybe not if realtic == 0)
 		if (realtics > 0 || singletics)
+		{
+			// don't skip more than 10 frames at a time
+			// (fadein / fadeout cause massive frame skip!)
+			if (realtics > 8)
+				realtics = 1;
+
+			// process tics (but maybe not if realtic == 0)
 			ticked = TryRunTics(realtics);
 
-		if (lastdraw || singletics || gametic > rendergametic)
-		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
+			if (lastdraw || singletics || gametic > rendergametic)
+			{
+				rendergametic = gametic;
+				rendertimeout = entertic+TICRATE/17;
 
-			doDisplay = true;
-		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
-		{
-			doDisplay = true;
+				doDisplay = true;
+			}
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			{
+				doDisplay = true;
+			}
 		}
 
 		if (interp)
@@ -894,13 +896,10 @@ void D_SRB2Loop(void)
 			D_Display();
 		}
 
-		if (doDisplay)
-		{
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot) // Only take screenshots after drawing.
+			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
