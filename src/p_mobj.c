@@ -2808,6 +2808,47 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->eflags &= ~MFE_JUSTHITFLOOR;
 			P_CheckGravity(mo, true);
 		}
+
+		// Even out pitch & roll slowly over time when falling.
+		// Helps give OpenGL models a bit of the tumble tell.
+		if (P_MobjFlip(mo) * mo->momz < 0)
+		{
+			const angle_t evenSpeed = (ANG1 << 1) / 3; // 0.66 degrees
+			INT32 pitchDelta = AngleDeltaSigned(mo->pitch, 0);
+			INT32 rollDelta = AngleDeltaSigned(mo->roll, 0);
+
+			if (abs(pitchDelta) <= evenSpeed) 
+			{
+				mo->pitch = 0;
+			}
+			else
+			{
+				if (pitchDelta > 0)
+				{
+					mo->pitch -= evenSpeed;
+				}
+				else
+				{
+					mo->pitch += evenSpeed;
+				}
+			}
+
+			if (abs(rollDelta) <= evenSpeed) 
+			{
+				mo->roll = 0;
+			}
+			else
+			{
+				if (rollDelta > 0)
+				{
+					mo->roll -= evenSpeed;
+				}
+				else
+				{
+					mo->roll += evenSpeed;
+				}
+			}
+		}
 	}
 
 	if (((mo->eflags & MFE_VERTICALFLIP && mo->z < mo->floorz) || (!(mo->eflags & MFE_VERTICALFLIP) && mo->z + mo->height > mo->ceilingz))

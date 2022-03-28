@@ -3415,7 +3415,7 @@ static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
 	return FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
 }
 
-#define STEEP_VAL (ANG60)
+#define STEEP_VAL (ANGLE_45 - ANGLE_11hh) // (ANG60)
 
 void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
 {
