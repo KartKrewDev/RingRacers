@@ -2685,12 +2685,16 @@ static boolean P_PlayerPolyObjectZMovement(mobj_t *mo)
 void P_PlayerZMovement(mobj_t *mo)
 {
 	boolean onground;
+	angle_t oldPitch, oldRoll;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
 	if (!mo->player)
 		return;
+
+	oldPitch = mo->pitch;
+	oldRoll = mo->roll;
 
 	// Intercept the stupid 'fall through 3dfloors' bug
 	if (mo->subsector->sector->ffloors)
@@ -2768,7 +2772,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->pmomz = 0; // We're on a new floor, don't keep doing platform movement.
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
-			clipmomz = P_PlayerHitFloor(mo->player, true);
+			clipmomz = P_PlayerHitFloor(mo->player, true, oldPitch, oldRoll);
 			P_PlayerPolyObjectZMovement(mo);
 
 			if (clipmomz)

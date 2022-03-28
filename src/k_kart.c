@@ -3407,6 +3407,89 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		P_StartQuake(64<<FRACBITS, 10);
 }
 
+static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
+{
+	fixed_t pitchMul = -FINESINE(mobj->angle >> ANGLETOFINESHIFT);
+	fixed_t rollMul = FINECOSINE(mobj->angle >> ANGLETOFINESHIFT);
+
+	return FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
+}
+
+#define STEEP_VAL (ANG60)
+
+void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
+{
+	fixed_t gravityadjust;
+	angle_t oldSlope, newSlope;
+	angle_t slopeDelta;
+	angle_t oldSteepness;
+
+	// If you don't land upright on a slope, then you tumble,
+	// kinda like Kirby Air Ride
+
+	if (player->tumbleBounces)
+	{
+		// Already tumbling.
+		return;
+	}
+
+	oldSlope = K_TumbleSlope(player->mo, oldPitch, oldRoll);
+
+	oldSteepness = oldSlope;
+	if (oldSteepness > ANGLE_180)
+	{
+		oldSteepness = InvAngle(oldSteepness);
+	}
+
+	if (oldSteepness <= STEEP_VAL)
+	{
+		// Transferring from flat ground to a steep slope
+		// is a free action. (The other way around isn't, though.)
+		return;
+	}
+
+	newSlope = K_TumbleSlope(player->mo, player->mo->pitch, player->mo->roll);
+	slopeDelta = AngleDelta(oldSlope, newSlope);
+
+	if (slopeDelta <= STEEP_VAL)
+	{
+		// Needs to be VERY steep before we'll punish this.
+		return;
+	}
+
+	// Oh jeez, you landed on your side.
+	// You get to tumble.
+
+#if 0
+	// Single, medium bounce
+	player->tumbleBounces = TUMBLEBOUNCES;
+	player->tumbleHeight = 30;
+#else
+	// Two small bounces
+	player->tumbleBounces = TUMBLEBOUNCES-1;
+	player->tumbleHeight = 20;
+#endif
+
+	player->pflags &= ~PF_TUMBLESOUND;
+	S_StartSound(player->mo, sfx_s3k9b);
+
+	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
+
+	if (player->mo->eflags & MFE_UNDERWATER)
+		gravityadjust /= 2;	// halve "gravity" underwater
+
+	// and then modulate momz like that...
+	player->mo->momz = -gravityadjust * player->tumbleHeight;
+
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+
+	if (P_IsDisplayPlayer(player))
+		P_StartQuake(64<<FRACBITS, 10);
+
+	// Reset slope.
+	player->mo->pitch = player->mo->roll = 0;
+}
+
 static boolean K_LastTumbleBounceCondition(player_t *player)
 {
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
