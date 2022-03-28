@@ -779,14 +779,21 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+		if (demo.playback && gamestate == GS_LEVEL)
+		{
+			// Nicer place to put this.
+			realtics = realtics * cv_playbackspeed.value;
+		}
+
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		doDisplay = false;
 		interp = R_UsingFrameInterpolation();
+		doDisplay = false;
+		ticked = false;
 
 		if (!realtics && !singletics && !interp)
 		{
@@ -805,7 +812,8 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
-		ticked = TryRunTics(realtics);
+		if (realtics > 0 || singletics)
+			ticked = TryRunTics(realtics);
 
 		if (lastdraw || singletics || gametic > rendergametic)
 		{
@@ -843,7 +851,7 @@ void D_SRB2Loop(void)
 
 			if (!(paused || P_AutoPause()))
 			{
-#if 1
+#if 0
 				CONS_Printf("prevtime = %f\n", prevtime);
 				CONS_Printf("entertime = %f\n", entertime);
 				CONS_Printf("tictime = %f\n", tictime);
