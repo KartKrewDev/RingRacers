@@ -23,6 +23,7 @@
 #include "i_sound.h" // musictype_t (for lua)
 #include "g_state.h" // gamestate_t (for lua)
 #include "r_data.h" // patchalphastyle_t
+#include "k_boss.h" // spottype_t (for lua)
 
 #include "deh_tables.h"
 
@@ -206,6 +207,8 @@ actionpointer_t actionpointers[] =
 	{{A_SetObjectFlags2},        "A_SETOBJECTFLAGS2"},
 	{{A_RandomState},            "A_RANDOMSTATE"},
 	{{A_RandomStateRange},       "A_RANDOMSTATERANGE"},
+	{{A_StateRangeByAngle},      "A_STATERANGEBYANGLE"},
+	{{A_StateRangeByParameter},  "A_STATERANGEBYPARAMETER"},
 	{{A_DualAction},             "A_DUALACTION"},
 	{{A_RemoteAction},           "A_REMOTEACTION"},
 	{{A_ToggleFlameJet},         "A_TOGGLEFLAMEJET"},
@@ -3811,6 +3814,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_LANDMINE",
 	"S_LANDMINE_EXPLODE",
 
+	// Drop Target
+	"S_DROPTARGET",
+	"S_DROPTARGET_SPIN",
+
 	// Ballhog
 	"S_BALLHOG1",
 	"S_BALLHOG2",
@@ -5521,6 +5528,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LANDMINE", // Land Mine
 
+	"MT_DROPTARGET", // Drop Target
+	"MT_DROPTARGET_SHIELD",
+
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
 
@@ -5862,6 +5872,8 @@ const char *const MOBJEFLAG_LIST[] = {
 	"APPLYPMOMZ", // Platform movement
 	"TRACERANGLE", // Compute and trigger on mobj angle relative to tracer
 	"JUSTBOUNCEDWALL",
+	"DAMAGEHITLAG",
+	"SLOPELAUNCHED",
 	NULL
 };
 
@@ -6221,6 +6233,7 @@ struct int_const_s const INT_CONST[] = {
 	{"FRACUNIT",FRACUNIT},
 	{"FU"      ,FRACUNIT},
 	{"FRACBITS",FRACBITS},
+	{"M_TAU_FIXED",M_TAU_FIXED},
 
 	// doomdef.h constants
 	{"TICRATE",TICRATE},
@@ -6374,7 +6387,7 @@ struct int_const_s const INT_CONST[] = {
 	// And map flags
 	{"LF2_HIDEINMENU",LF2_HIDEINMENU},
 	{"LF2_HIDEINSTATS",LF2_HIDEINSTATS},
-	{"LF2_TIMEATTACK",LF2_TIMEATTACK},
+	{"LF2_NOTIMEATTACK",LF2_NOTIMEATTACK},
 	{"LF2_VISITNEEDED",LF2_VISITNEEDED},
 
 	// Emeralds
@@ -6463,7 +6476,7 @@ struct int_const_s const INT_CONST[] = {
 	{"DMG_SPECTATOR",DMG_SPECTATOR},
 	{"DMG_TIMEOVER",DMG_TIMEOVER},
 	//// Masks
-	{"DMG_STEAL",DMG_CANTHURTSELF},
+	{"DMG_STEAL",DMG_STEAL},
 	{"DMG_CANTHURTSELF",DMG_CANTHURTSELF},
 	{"DMG_WOMBO", DMG_WOMBO},
 	{"DMG_DEATHMASK",DMG_DEATHMASK},
@@ -6473,7 +6486,7 @@ struct int_const_s const INT_CONST[] = {
 	{"int_none",int_none},
 	{"int_race",int_race},
 	{"int_battle",int_battle},
-	{"int_timeattack",int_timeattack},
+	{"int_battletime", int_battletime},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},
@@ -6843,6 +6856,11 @@ struct int_const_s const INT_CONST[] = {
 	{"KSPIN_WIPEOUT",KSPIN_WIPEOUT},
 	{"KSPIN_STUNG",KSPIN_STUNG},
 	{"KSPIN_EXPLOSION",KSPIN_EXPLOSION},
+
+	// spottype_t
+	{"SPOT_NONE",SPOT_NONE},
+	{"SPOT_WEAK",SPOT_WEAK},
+	{"SPOT_BUMP",SPOT_BUMP},
 
 	{NULL,0}
 };

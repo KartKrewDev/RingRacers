@@ -52,7 +52,9 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
+#include "k_color.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -706,7 +708,7 @@ boolean P_EndingMusic(player_t *player)
 {
 	char buffer[9];
 	boolean looping = true;
-	INT32 bestlocalpos;
+	INT32 bestlocalpos, test;
 	player_t *bestlocalplayer;
 
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
@@ -717,27 +719,35 @@ boolean P_EndingMusic(player_t *player)
 
 	// Event - Level Finish
 	// Check for if this is valid or not
+#define getplayerpos(p) \
+	(((players[p].position < 1) || (players[p].pflags & PF_NOCONTEST)) \
+		? MAXPLAYERS+1 \
+		: players[p].position);
+
 	if (r_splitscreen)
 	{
-		if (!((players[displayplayers[0]].exiting || (players[displayplayers[0]].pflags & PF_NOCONTEST))
-			|| (players[displayplayers[1]].exiting || (players[displayplayers[1]].pflags & PF_NOCONTEST))
-			|| ((r_splitscreen < 2) && (players[displayplayers[2]].exiting || (players[displayplayers[2]].pflags & PF_NOCONTEST)))
-			|| ((r_splitscreen < 3) && (players[displayplayers[3]].exiting || (players[displayplayers[3]].pflags & PF_NOCONTEST)))))
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
+			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
+			|| ((r_splitscreen > 1) && (players[localplayertable[2]].exiting || (players[localplayertable[2]].pflags & PF_NOCONTEST)))
+			|| ((r_splitscreen > 2) && (players[localplayertable[3]].exiting || (players[localplayertable[3]].pflags & PF_NOCONTEST)))))
 			return false;
 
-		bestlocalplayer = &players[displayplayers[0]];
-		bestlocalpos = ((players[displayplayers[0]].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[displayplayers[0]].position);
+		bestlocalplayer = &players[localplayertable[0]];
+		bestlocalpos = getplayerpos(localplayertable[0]);
 #define setbests(p) \
-	if (((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position) < bestlocalpos) \
+	test = getplayerpos(p); \
+	if (test < bestlocalpos) \
 	{ \
 		bestlocalplayer = &players[p]; \
-		bestlocalpos = ((players[p].pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : players[p].position); \
+		bestlocalpos = test; \
 	}
-		setbests(displayplayers[1]);
+		setbests(localplayertable[1]);
 		if (r_splitscreen > 1)
-			setbests(displayplayers[2]);
+			setbests(localplayertable[2]);
 		if (r_splitscreen > 2)
-			setbests(displayplayers[3]);
+			setbests(localplayertable[3]);
 #undef setbests
 	}
 	else
@@ -746,8 +756,10 @@ boolean P_EndingMusic(player_t *player)
 			return false;
 
 		bestlocalplayer = player;
-		bestlocalpos = ((player->pflags & PF_NOCONTEST) ? MAXPLAYERS+1 : player->position);
+		bestlocalpos = getplayerpos((player-players));
 	}
+
+#undef getplayerpos
 
 	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
@@ -804,15 +816,16 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (leveltime < (starttime + (TICRATE/2)))
-		S_ChangeMusicInternal((encoremode ? "estart" : "kstart"), false); //S_StopMusic();
-	else // see also where time overs are handled - search for "lives = 2" in this file
+	if (bossinfo.boss == false && (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
+		return;
+
 	{
 		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
 
 		if (r_splitscreen)
 		{
 			INT32 bestlocaltimer = 1;
+			INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
 #define setbests(p) \
 	if (players[p].playerstate == PST_LIVE) \
@@ -822,12 +835,12 @@ void P_RestoreMusic(player_t *player)
 		else if (players[p].growshrinktimer > bestlocaltimer) \
 		{ wantedmus = 2; bestlocaltimer = players[p].growshrinktimer; } \
 	}
-			setbests(displayplayers[0]);
-			setbests(displayplayers[1]);
+			setbests(localplayertable[0]);
+			setbests(localplayertable[1]);
 			if (r_splitscreen > 1)
-				setbests(displayplayers[2]);
+				setbests(localplayertable[2]);
 			if (r_splitscreen > 2)
-				setbests(displayplayers[3]);
+				setbests(localplayertable[3]);
 #undef setbests
 		}
 		else
@@ -1070,25 +1083,51 @@ void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative)
 }
 
 //
-// P_IsLocalPlayer
+// P_IsMachineLocalPlayer
 //
 // Returns true if player is
-// on the local machine.
+// ACTUALLY on the local machine
 //
-boolean P_IsLocalPlayer(player_t *player)
+boolean P_IsMachineLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
-	if (demo.playback)
-		return P_IsDisplayPlayer(player);
-
-	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
 			return true;
 	}
 
 	return false;
+}
+
+//
+// P_IsLocalPlayer
+//
+// Returns true if player is
+// on the local machine
+// (or simulated party)
+//
+boolean P_IsLocalPlayer(player_t *player)
+{
+	UINT8 i;
+
+	// nobody is ever local when watching something back - you're a spectator there, even if your g_localplayers might say otherwise
+	if (demo.playback)
+		return false;
+
+	// parties - treat everyone as if it's couch co-op
+	if (splitscreen_partied[consoleplayer])
+	{
+		for (i = 0; i < splitscreen_party_size[consoleplayer]; i++)
+		{
+			if (splitscreen_party[consoleplayer][i] == (player-players))
+				return true;
+		}
+		return false;
+	}
+
+	return P_IsMachineLocalPlayer(player);
 }
 
 //
@@ -1118,6 +1157,8 @@ boolean P_IsDisplayPlayer(player_t *player)
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 {
 	mobj_t *ghost = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_GHOST);
+
+	P_SetTarget(&ghost->target, mobj);
 
 	P_SetScale(ghost, mobj->scale);
 	ghost->destscale = mobj->scale;
@@ -1631,7 +1672,7 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	if (!player->invincibilitytimer)
 		return;
 
-	player->mo->color = (UINT16)(SKINCOLOR_PINK + (leveltime % (numskincolors - SKINCOLOR_PINK)));
+	player->mo->color = K_RainbowColor(leveltime);
 
 	// Resume normal music stuff.
 	if (player->invincibilitytimer == 1)
@@ -3005,7 +3046,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	else
 		timeover = 0;
 
-	if (!(player->playerstate == PST_DEAD || player->exiting))
+	if (!(player->playerstate == PST_DEAD || player->exiting || leveltime < introtime))
 	{
 		if (player->spectator) // force cam off for spectators
 			return true;
@@ -3541,19 +3582,19 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
+	INT32 changeto = 0;
+	const char *text = NULL;
+
 	// Team changing isn't allowed.
 	if (!cv_allowteamchange.value)
-	{
-		if (P_IsLocalPlayer(player))
-			CONS_Printf(M_GetText("Server does not allow team change.\n"));
-		//player->flashing = TICRATE + 1; //to prevent message spam.
-	}
+		return false;
+
 	// Team changing in Team Match and CTF
 	// Pressing fire assigns you to a team that needs players if allowed.
 	// Partial code reproduction from p_tick.c autobalance code.
-	else if (G_GametypeHasTeams())
+	// a surprise tool that will help us later...
+	if (G_GametypeHasTeams())
 	{
-		INT32 changeto = 0;
 		INT32 z, numplayersred = 0, numplayersblue = 0;
 
 		//find a team by num players, score, or random if all else fails.
@@ -3580,55 +3621,47 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 		if (!LUAh_TeamSwitch(player, changeto, true, false, false))
 			return false;
-
-		if (player->mo)
-		{
-			P_RemoveMobj(player->mo);
-			player->mo = NULL;
-		}
-		player->spectator = false;
-		player->pflags &= ~PF_WANTSTOJOIN;
-		player->spectatewait = 0;
-		player->ctfteam = changeto;
-		player->playerstate = PST_REBORN;
-
-		//Reset away view
-		if (P_IsLocalPlayer(player) && displayplayers[0] != consoleplayer)
-		{
-			// Call ViewpointSwitch hooks here.
-			// The viewpoint was forcibly changed.
-			LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
-			displayplayers[0] = consoleplayer;
-		}
-
-		if (changeto == 1)
-			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x85', M_GetText("Red team"), '\x80');
-		else if (changeto == 2)
-			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
-
-		return true; // no more player->mo, cannot continue.
 	}
-	// Joining in game from firing.
-	else
+
+	// no conditions that could cause the gamejoin to fail below this line
+
+	if (player->mo)
 	{
-		if (player->mo)
-		{
-			P_RemoveMobj(player->mo);
-			player->mo = NULL;
-		}
-		player->spectator = false;
-		player->pflags &= ~PF_WANTSTOJOIN;
-		player->spectatewait = 0;
-		player->playerstate = PST_REBORN;
-
-		//Reset away view
-		if (P_IsLocalPlayer(player) && displayplayers[0] != consoleplayer)
-			displayplayers[0] = consoleplayer;
-
-		HU_AddChatText(va(M_GetText("\x82*%s entered the game."), player_names[player-players]), false);
-		return true; // no more player->mo, cannot continue.
+		P_RemoveMobj(player->mo);
+		player->mo = NULL;
 	}
-	return false;
+	player->spectator = false;
+	player->pflags &= ~PF_WANTSTOJOIN;
+	player->spectatewait = 0;
+	player->ctfteam = changeto;
+	player->playerstate = PST_REBORN;
+
+	// Reset away view (some code referenced from Got_Teamchange)
+	{
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		for (i = 0; i < r_splitscreen; i++)
+		{
+			if (localplayertable[i] == (player-players))
+			{
+				LUAh_ViewpointSwitch(player, player, true);
+				displayplayers[i] = (player-players);
+				break;
+			}
+		}
+	}
+
+	// a surprise tool that will help us later...
+	if (changeto == 1)
+		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "RED", '\x82');
+	else if (changeto == 2)
+		text = va("\x82*%s switched to the %c%s%c team.\n", player_names[player-players], '\x85', "BLU", '\x82');
+	else
+		text = va("\x82*%s entered the game.", player_names[player-players]);
+
+	HU_AddChatText(text, false);
+	return true; // no more player->mo, cannot continue.
 }
 
 // the below is first person only, if you're curious. check out P_CalcChasePostImg in p_mobj.c for chasecam
@@ -3760,7 +3793,7 @@ void P_DoTimeOver(player_t *player)
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 	}
 
-	if (netgame && !player->bot)
+	if (netgame && !player->bot && !bossinfo.boss)
 	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
@@ -3919,7 +3952,7 @@ static void P_HandleFollower(player_t *player)
 	follower_t fl;
 	angle_t an;
 	fixed_t zoffs;
-	fixed_t sx, sy, sz;
+	fixed_t sx, sy, sz, deltaz;
 	UINT16 color;
 
 	fixed_t bubble;	// bubble scale (0 if no bubble)
@@ -3953,6 +3986,9 @@ static void P_HandleFollower(player_t *player)
 	sx = player->mo->x + FixedMul((player->mo->scale*fl.dist), FINECOSINE((an)>>ANGLETOFINESHIFT));
 	sy = player->mo->y + FixedMul((player->mo->scale*fl.dist), FINESINE((an)>>ANGLETOFINESHIFT));
 
+	// interp info helps with stretchy fix
+	deltaz = (player->mo->z - player->mo->old_z);
+
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
 	sz = player->mo->z + FixedMul(player->mo->scale, zoffs)*P_MobjFlip(player->mo);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -3969,10 +4005,10 @@ static void P_HandleFollower(player_t *player)
 	// Set follower colour
 	switch (player->followercolor)
 	{
-		case 255: // "Match" (-1)
+		case FOLLOWERCOLOR_MATCH: // "Match"
 			color = player->skincolor;
 			break;
-		case 254: // "Opposite" (-2)
+		case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
 			color = skincolors[player->skincolor].invcolor;
 			break;
 		default:
@@ -4036,6 +4072,7 @@ static void P_HandleFollower(player_t *player)
 		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
 		player->follower->momx = (sx - player->follower->x)/ (INT32)fl.horzlag;
 		player->follower->momy = (sy - player->follower->y)/ (INT32)fl.horzlag;
+		player->follower->z += (deltaz/ (INT32)fl.vertlag);
 		player->follower->momz = (sz - player->follower->z)/ (INT32)fl.vertlag;
 		player->follower->angle = player->mo->angle;
 
@@ -4069,6 +4106,7 @@ static void P_HandleFollower(player_t *player)
 			// match follower's momentums and (e)flags(2).
 			bmobj->momx = player->follower->momx;
 			bmobj->momy = player->follower->momy;
+			bmobj->z += (deltaz/ (INT32)fl.vertlag);
 			bmobj->momz = player->follower->momz;
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
@@ -4326,16 +4364,36 @@ void P_PlayerThink(player_t *player)
 
 	// Accessibility - kickstart your acceleration
 	if (!(player->pflags & PF_KICKSTARTACCEL))
+	{
 		player->kickstartaccel = 0;
+	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
 		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		{
 			player->kickstartaccel = 0;
+		}
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
+		{
 			player->kickstartaccel++;
+			if ((player->kickstartaccel == ACCEL_KICKSTART) && P_IsLocalPlayer(player))
+			{
+				S_StartSound(NULL, sfx_ding);
+			}
+		}
+		else // for HUD
+		{
+			player->kickstartaccel = ACCEL_KICKSTART+1;
+		}
 	}
 	else if (player->kickstartaccel < ACCEL_KICKSTART)
+	{
 		player->kickstartaccel = 0;
+	}
+	else // for HUD
+	{
+		player->kickstartaccel = ACCEL_KICKSTART+1;
+	}
 
 #ifdef PARANOIA
 	if (player->playerstate == PST_REBORN)

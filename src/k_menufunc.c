@@ -493,7 +493,7 @@ void M_EraseData(INT32 choice)
 	else
 		eschoice = M_GetText("ALL game data");
 
-	M_StartMessage(va(esstr, eschoice),M_EraseDataResponse,MM_YESNO);
+	M_StartMessage(va(esstr, eschoice), FUNCPTRCAST(M_EraseDataResponse), MM_YESNO);
 }
 
 
@@ -676,7 +676,7 @@ void M_FreePlayerSetupColors(void) {
 
 static void M_ChangeCvar(INT32 choice)
 {
-	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	// Backspace sets values to default value
 	if (choice == -1)
@@ -716,7 +716,7 @@ static void M_ChangeCvar(INT32 choice)
 
 static boolean M_ChangeStringCvar(INT32 choice)
 {
-	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 	char buf[MAXSTRINGLENGTH];
 	size_t len;
 
@@ -767,7 +767,7 @@ static void M_NextOpt(void)
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
 	if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
-		((consvar_t *)currentMenu->menuitems[itemOn].itemaction)->value = 0;
+		(currentMenu->menuitems[itemOn].itemaction.cvar)->value = 0;
 
 	do
 	{
@@ -785,7 +785,7 @@ static void M_PrevOpt(void)
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
 	if ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_PASSWORD)
-		((consvar_t *)currentMenu->menuitems[itemOn].itemaction)->value = 0;
+		(currentMenu->menuitems[itemOn].itemaction.cvar)->value = 0;
 
 	do
 	{
@@ -1385,7 +1385,8 @@ static void M_HandleMenuInput(void)
 			return;
 		}
 	}
-	routine = currentMenu->menuitems[itemOn].itemaction;
+
+	routine = currentMenu->menuitems[itemOn].itemaction.routine;
 
 	// Handle menuitems which need a specific key handling
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
@@ -1495,7 +1496,7 @@ static void M_HandleMenuInput(void)
 					break;
 				case IT_SUBMENU:
 					currentMenu->lastOn = itemOn;
-					M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction, false);
+					M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction.submenu, false);
 					break;
 			}
 		}
@@ -1514,7 +1515,7 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+			consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 			// Make these CVar options?
 			if (cv == &cv_chooseskin
@@ -1699,7 +1700,7 @@ void M_Init(void)
 static menuitem_t MessageMenu[] =
 {
 	// TO HACK
-	{0, NULL, NULL, NULL, NULL, 0, 0}
+	{0, NULL, NULL, NULL, {NULL}, 0, 0}
 };
 
 menu_t MessageDef =
@@ -1737,7 +1738,6 @@ static inline size_t M_StringHeight(const char *string)
 // default message handler
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
 {
-
 	const UINT8 pid = 0;
 	size_t max = 0, start = 0, i, strlines;
 	static char *message = NULL;
@@ -1779,7 +1779,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);
 	menumessage.flags = itemtype;
-	menumessage.routine = routine;
+	*(void**)&menumessage.routine = routine;
 	menumessage.fadetimer = 1;
 	menumessage.active = true;
 
@@ -1795,7 +1795,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 	// event routine
 	if (menumessage.flags == MM_EVENTHANDLER)
 	{
-		menumessage.eroutine = routine;
+		*(void**)&menumessage.eroutine = routine;
 		menumessage.routine = NULL;
 	}
 
@@ -2004,7 +2004,7 @@ void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage("Are you sure you want to quit playing?\n\n(Press A to exit)", M_QuitResponse, MM_YESNO);
+	M_StartMessage("Are you sure you want to quit playing?\n\n(Press A to exit)", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
 }
 
 // =========
@@ -2700,7 +2700,7 @@ void M_CharacterSelectTick(void)
 					if (playeringame[j] && !players[consoleplayer].spectator)
 					{
 						// Warn the player!
-						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press A to confirm)\n"), M_MPConfirmCharacterResponse, MM_YESNO);
+						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press A to confirm)\n"), FUNCPTRCAST(M_MPConfirmCharacterResponse), MM_YESNO);
 						return;
 					}
 				}
@@ -2797,6 +2797,10 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 
 	// Should the map be hidden?
 	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
+		return false;
+
+	// I don't know why, but some may have exceptions.
+	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
 	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
@@ -3177,7 +3181,7 @@ void M_LevelSelectHandler(INT32 choice)
 					G_StopMetalDemo();
 
 				/*if (levellist.choosemap == 0)
-					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, false, 0, false, NULL);*/
+					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
 
 				if (cv_maxplayers.value < ssplayers+1)
 					CV_SetValue(&cv_maxplayers, ssplayers+1);
@@ -3622,7 +3626,8 @@ void M_ProfileSelectInit(INT32 choice)
 // setup video mode menu
 void M_VideoModeMenu(INT32 choice)
 {
-	INT32 i, j, vdup, nummodes, width, height;
+	INT32 i, j, vdup, nummodes;
+	UINT32 width, height;
 	const char *desc;
 
 	(void)choice;
@@ -4400,8 +4405,9 @@ void M_OpenPauseMenu(void)
 	}
 }
 
-void M_QuitPauseMenu(void)
+void M_QuitPauseMenu(INT32 choice)
 {
+	(void)choice;
 	// M_PauseTick actually handles the quitting when it's been long enough.
 	pausemenu.closing = true;
 	pausemenu.openoffset = 4;
@@ -4451,7 +4457,7 @@ boolean M_PauseInputs(INT32 ch)
 
 	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
 	{
-		M_QuitPauseMenu();
+		M_QuitPauseMenu(-1);
 		return true;
 	}
 	return false;
@@ -4462,7 +4468,7 @@ void M_ConfirmSpectate(INT32 choice)
 {
 	(void)choice;
 	// We allow switching to spectator even if team changing is not allowed
-	M_QuitPauseMenu();
+	M_QuitPauseMenu(-1);
 	COM_ImmedExecute("changeteam spectator");
 }
 
@@ -4474,7 +4480,7 @@ void M_ConfirmEnterGame(INT32 choice)
 		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\nPress a key.\n"), NULL, MM_NOTHING);
 		return;
 	}
-	M_QuitPauseMenu();
+	M_QuitPauseMenu(-1);
 	COM_ImmedExecute("changeteam playing");
 }
 
@@ -4495,7 +4501,7 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press A to confirm)\n"), M_ExitGameResponse, MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press A to confirm)\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
 }
 
 
@@ -4959,8 +4965,12 @@ boolean M_AddonsRefresh(void)
 		return true;
 	}
 
-	if (!majormods && prevmajormods)
-		prevmajormods = false;
+#ifdef DEVELOP
+	prevmajormods = majormods;
+#else
+ 	if (!majormods && prevmajormods)
+ 		prevmajormods = false;
+#endif
 
 	if ((refreshdirmenu & REFRESHDIR_ADDFILE) || (majormods && !prevmajormods))
 	{
@@ -4988,7 +4998,7 @@ boolean M_AddonsRefresh(void)
 
 		if (message)
 		{
-			M_StartMessage(message,M_AddonsClearName,MM_YESNO);
+			M_StartMessage(message,FUNCPTRCAST(M_AddonsClearName),MM_YESNO);
 			return true;
 		}
 
@@ -5160,7 +5170,7 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_TXT:
-					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_CFG:

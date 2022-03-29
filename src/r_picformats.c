@@ -541,9 +541,7 @@ void *Picture_GetPatchPixel(
 {
 	fixed_t ofs;
 	column_t *column;
-	UINT8 *s8 = NULL;
-	UINT16 *s16 = NULL;
-	UINT32 *s32 = NULL;
+	INT32 inbpp = Picture_FormatBPP(informat);
 	softwarepatch_t *doompatch = (softwarepatch_t *)patch;
 	boolean isdoompatch = Picture_IsDoomPatchFormat(informat);
 	INT16 width;
@@ -567,30 +565,36 @@ void *Picture_GetPatchPixel(
 
 		while (column->topdelta != 0xff)
 		{
+			UINT8 *s8 = NULL;
+			UINT16 *s16 = NULL;
+			UINT32 *s32 = NULL;
+
 			topdelta = column->topdelta;
 			if (topdelta <= prevdelta)
 				topdelta += prevdelta;
 			prevdelta = topdelta;
-			s8 = (UINT8 *)(column) + 3;
-			if (Picture_FormatBPP(informat) == PICDEPTH_32BPP)
-				s32 = (UINT32 *)s8;
-			else if (Picture_FormatBPP(informat) == PICDEPTH_16BPP)
-				s16 = (UINT16 *)s8;
-			for (ofs = 0; ofs < column->length; ofs++)
+
+			ofs = (y - topdelta);
+
+			if (y >= topdelta && ofs < column->length)
 			{
-				if ((topdelta + ofs) == y)
+				s8 = (UINT8 *)(column) + 3;
+				switch (inbpp)
 				{
-					if (Picture_FormatBPP(informat) == PICDEPTH_32BPP)
+					case PICDEPTH_32BPP:
+						s32 = (UINT32 *)s8;
 						return &s32[ofs];
-					else if (Picture_FormatBPP(informat) == PICDEPTH_16BPP)
+					case PICDEPTH_16BPP:
+						s16 = (UINT16 *)s8;
 						return &s16[ofs];
-					else // PICDEPTH_8BPP
+					default: // PICDEPTH_8BPP
 						return &s8[ofs];
 				}
 			}
-			if (Picture_FormatBPP(informat) == PICDEPTH_32BPP)
+
+			if (inbpp == PICDEPTH_32BPP)
 				column = (column_t *)((UINT32 *)column + column->length);
-			else if (Picture_FormatBPP(informat) == PICDEPTH_16BPP)
+			else if (inbpp == PICDEPTH_16BPP)
 				column = (column_t *)((UINT16 *)column + column->length);
 			else
 				column = (column_t *)((UINT8 *)column + column->length);
@@ -873,13 +877,13 @@ static int PNG_ChunkReader(png_structp png_ptr, png_unknown_chunkp chonk)
 
 static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", (void*)PNG, pngtext);
 	//I_Error("libpng error at %p: %s", PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static png_byte grAb_chunk[5] = {'g', 'r', 'A', 'b', (png_byte)'\0'};
@@ -980,8 +984,8 @@ static png_bytep *PNG_Read(
 
 				for (i = 0; i < 256; i++)
 				{
-					UINT32 rgb = R_PutRgbaRGBA(pal->red, pal->green, pal->blue, 0xFF);
-					if (rgb != pMasterPalette[i].rgba)
+					byteColor_t *curpal = &(pMasterPalette[i].s);
+					if (pal->red != curpal->red || pal->green != curpal->green || pal->blue != curpal->blue)
 					{
 						usepal = false;
 						break;
@@ -997,12 +1001,12 @@ static png_bytep *PNG_Read(
 		{
 			png_get_tRNS(png_ptr, png_info_ptr, &trans, &trans_num, &trans_values);
 
-			if (trans && trans_num == 256)
+			if (trans && trans_num > 0)
 			{
 				INT32 i;
 				for (i = 0; i < trans_num; i++)
 				{
-					// libpng will transform this image into RGB even if
+					// libpng will transform this image into RGBA even if
 					// the transparent index does not exist in the image,
 					// and there is no way around that.
 					if (trans[i] < 0xFF)

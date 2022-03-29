@@ -113,7 +113,7 @@ typedef struct menuitem_s
 	const char *tooltip; // description of option used by K_MenuTooltips
 	const char *patch; // image of option used by K_MenuPreviews
 
-	void *itemaction; // FIXME: should be itemaction_t
+	itemaction_t itemaction;
 
 	// extra variables
 	INT32 mvar1;
@@ -775,7 +775,7 @@ extern struct pausemenu_s {
 } pausemenu;
 
 void M_OpenPauseMenu(void);
-void M_QuitPauseMenu(void);
+void M_QuitPauseMenu(INT32 choice);
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
 

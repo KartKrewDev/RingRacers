@@ -233,7 +233,7 @@ static void M_DrawMenuTyping(void)
 	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
 	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
 
-	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
@@ -524,7 +524,7 @@ void M_DrawGenericMenu(void)
 				break;
 #if 0
 			case IT_BIGSLIDER:
-				M_DrawThermo(x, y, (consvar_t *)currentMenu->menuitems[i].itemaction);
+				M_DrawThermo(x, y, currentMenu->menuitems[i].itemaction.cvar);
 				y += LINEHEIGHT;
 				break;
 #endif
@@ -544,7 +544,7 @@ void M_DrawGenericMenu(void)
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 #if 0
@@ -1355,7 +1355,7 @@ void M_DrawRaceDifficulty(void)
 				{
 					// implicitely we'll only take care of normal cvars
 					INT32 cx = 260 + 24*menutransition.tics;
-					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					V_DrawCenteredString(cx, y, f, cv->string);
 
@@ -1396,7 +1396,7 @@ void M_DrawRaceDifficulty(void)
 					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*24);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					// implicitely we'll only take care of normal consvars
-					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUSHRT", PU_CACHE), colormap);
 					V_DrawCenteredGamemodeString(centx, y - 3, V_ALLOWLOWERCASE, colormap, cv->string);
@@ -1886,7 +1886,7 @@ void M_DrawMPHost(void)
 					{
 						case IT_CVAR:
 						{
-							consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+							consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 							{
 								case IT_CV_STRING:
@@ -1972,7 +1972,7 @@ void M_DrawMPJoinIP(void)
 				{
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_STRING:
@@ -2177,7 +2177,7 @@ void M_DrawGenericOptions(void)
 				break;
 #if 0
 			case IT_BIGSLIDER:
-				M_DrawThermo(x, y, (consvar_t *)currentMenu->menuitems[i].itemaction);
+				M_DrawThermo(x, y, currentMenu->menuitems[i].itemaction.cvar);
 				y += LINEHEIGHT;
 				break;
 #endif
@@ -2195,7 +2195,7 @@ void M_DrawGenericOptions(void)
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
@@ -2233,13 +2233,13 @@ void M_DrawGenericOptions(void)
 				/* FALLTHRU */
 			case IT_DYLITLSPACE:
 			case IT_SPACE:
-				y += (currentMenu->menuitems[i].mvar1 ? : SMALLLINEHEIGHT);
+				y += (currentMenu->menuitems[i].mvar1 ? currentMenu->menuitems[i].mvar1 : SMALLLINEHEIGHT);
 				break;
 			case IT_GRAYPATCH:
 				if (currentMenu->menuitems[i].patch && currentMenu->menuitems[i].patch[0])
 					V_DrawMappedPatch(x, y, 0,
 						W_CachePatchName(currentMenu->menuitems[i].patch,PU_CACHE), graymap);
-				y += (currentMenu->menuitems[i].mvar1 ? : SMALLLINEHEIGHT);
+				y += (currentMenu->menuitems[i].mvar1 ? currentMenu->menuitems[i].mvar1 : SMALLLINEHEIGHT);
 				break;
 			case IT_TRANSTEXT:
 				if (currentMenu->menuitems[i].mvar1)
@@ -2353,7 +2353,7 @@ void M_DrawEditProfile(void)
 				{
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_STRING:
@@ -2446,7 +2446,7 @@ void M_DrawProfileControls(void)
 				break;
 
 			case IT_STRING2:
-
+			{
 				boolean drawnpatch = false;
 
 				if (currentMenu->menuitems[i].patch)
@@ -2460,7 +2460,7 @@ void M_DrawProfileControls(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
 				{
 					INT32 w;
-					consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					w = V_StringWidth(cv->string, 0);
 					V_DrawString(x + 12, y + 12, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
@@ -2509,6 +2509,7 @@ void M_DrawProfileControls(void)
 
 				y += spacing;
 				break;
+			}
 		}
 	}
 

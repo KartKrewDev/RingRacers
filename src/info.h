@@ -161,6 +161,8 @@ enum actionnum
 	A_SETOBJECTFLAGS2,
 	A_RANDOMSTATE,
 	A_RANDOMSTATERANGE,
+	A_STATERANGEBYANGLE,
+	A_STATERANGEBYPARAMETER,
 	A_DUALACTION,
 	A_REMOTEACTION,
 	A_TOGGLEFLAMEJET,
@@ -428,6 +430,8 @@ void A_SetObjectFlags();
 void A_SetObjectFlags2();
 void A_RandomState();
 void A_RandomStateRange();
+void A_StateRangeByAngle();
+void A_StateRangeByParameter();
 void A_DualAction();
 void A_RemoteAction();
 void A_ToggleFlameJet();
@@ -1101,6 +1105,7 @@ typedef enum sprite
 	SPR_SSMN, // SS Mine
 	SPR_KRBM, // SS Mine BOOM
 	SPR_LNDM, // Land Mine
+	SPR_DTRG, // Drop Target
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
@@ -4789,6 +4794,10 @@ typedef enum state
 	S_LANDMINE,
 	S_LANDMINE_EXPLODE,
 
+	// Drop Target
+	S_DROPTARGET,
+	S_DROPTARGET_SPIN,
+
 	// Ballhog
 	S_BALLHOG1,
 	S_BALLHOG2,
@@ -6535,6 +6544,9 @@ typedef enum mobj_type
 	MT_BOOMPARTICLE,
 
 	MT_LANDMINE, // Land Mine
+
+	MT_DROPTARGET, // Drop Target
+	MT_DROPTARGET_SHIELD,
 
 	MT_BALLHOG, // Ballhog
 	MT_BALLHOGBOOM,

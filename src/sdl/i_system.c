@@ -173,7 +173,6 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
-#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -181,7 +180,10 @@ static char returnWadPath[256];
 
 #include "../m_argv.h"
 
+// SRB2Kart
+#include "../k_pwrlv.h"
 #include "../r_main.h" // Frame interpolation/uncapped
+#include "../r_fps.h"
 
 #include "../k_menu.h"
 
@@ -385,9 +387,10 @@ static void I_ReportSignal(int num, int coredumped)
 
 	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Process killed by signal",
-		sigmsg, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Process killed by signal",
+			sigmsg, NULL);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -1581,7 +1584,13 @@ precise_t I_GetPreciseTime(void)
 
 int I_PreciseToMicros(precise_t d)
 {
-	return (int)(d / (timer_frequency / 1000000.0));
+	// d is going to be converted into a double. So remove the highest bits
+	// to avoid loss of precision in the lower bits, for the (probably rare) case
+	// that the higher bits are actually used.
+	d &= ((precise_t)1 << 53) - 1; // The mantissa of a double can handle 53 bits at most.
+	// The resulting double from the calculation is converted first to UINT64 to avoid overflow,
+	// which is undefined behaviour when converting floating point values to integers.
+	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
 }
 
 //
@@ -1602,6 +1611,57 @@ void I_Sleep(void)
 		SDL_Delay(cv_sleep.value);
 }
 
+boolean I_CheckFrameCap(precise_t start, precise_t end)
+{
+	UINT32 capFrames = R_GetFramerateCap();
+	int capMicros = 0;
+
+	int elapsed;
+
+	if (capFrames == 0)
+	{
+		// We don't want to cap.
+		return false;
+	}
+
+	elapsed = I_PreciseToMicros(end - start);
+	capMicros = 1000000 / capFrames;
+
+	if (elapsed < capMicros)
+	{
+		// Wait to draw the next frame.
+		UINT32 wait = ((capMicros - elapsed) / 1000);
+
+		if (cv_sleep.value > 1)
+		{
+			// 1 is the default, and in non-interpolated mode is just the bare minimum wait.
+			// Since we're already adding some wait with an FPS cap, only apply when it's above 1.
+			wait += cv_sleep.value - 1;
+		}
+
+		// If the wait's greater than our granularity value,
+		// we'll just burn the couple extra cycles in the main loop
+		// in order to get to the next frame.
+		// This makes us get to the exact FPS cap more often.
+
+		// Higher values have more wasted CPU cycles, but the in-game frame performance is better.
+		// 10ms is the average clock tick of most OS scheduling.
+		// 15ms is a little more than that, for leniency on slow machines. (This helps mine reach a stable 60, at least!)
+		// (https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdldelay.html)
+#define DELAY_GRANULARITY 15
+		if (wait >= DELAY_GRANULARITY)
+		{
+			SDL_Delay(wait);
+		}
+#undef DELAY_GRANULARITY
+
+		return true;
+	}
+
+	// Waited enough to draw again.
+	return false;
+}
+
 #ifdef NEWSIGNALHANDLER
 static void newsignalhandler_Warn(const char *pr)
 {
@@ -1615,9 +1675,10 @@ static void newsignalhandler_Warn(const char *pr)
 
 	I_OutputMsg("%s\n", text);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Startup error",
-		text, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Startup error",
+			text, NULL);
 
 	I_ShutdownConsole();
 	exit(-1);
@@ -1824,9 +1885,10 @@ void I_Error(const char *error, ...)
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-				"SRB2Kart "VERSIONSTRING" Recursive Error",
-				buffer, NULL);
+			if (!M_CheckParm("-dedicated"))
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+					"SRB2Kart "VERSIONSTRING" Recursive Error",
+					buffer, NULL);
 
 			W_Shutdown();
 			exit(-1); // recursive errors detected
@@ -1872,9 +1934,11 @@ void I_Error(const char *error, ...)
 	// Implement message box with SDL_ShowSimpleMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"SRB2Kart "VERSIONSTRING" Error",
-		buffer, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"SRB2Kart "VERSIONSTRING" Error",
+			buffer, NULL);
+
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is
 	// perfectly okay! In addition, we do this on purpose so the
@@ -2031,7 +2095,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 
 	if (!testwin95)
 	{
-		pfnGetDiskFreeSpaceEx = (p_GetDiskFreeSpaceExA)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA");
+		*(void**)&pfnGetDiskFreeSpaceEx = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA"));
 		testwin95 = true;
 	}
 	if (pfnGetDiskFreeSpaceEx)
@@ -2539,7 +2603,8 @@ const CPUInfoFlags *I_CPUInfo(void)
 #if defined (_WIN32)
 	static CPUInfoFlags WIN_CPUInfo;
 	SYSTEM_INFO SI;
-	p_IsProcessorFeaturePresent pfnCPUID = (p_IsProcessorFeaturePresent)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent");
+	p_IsProcessorFeaturePresent pfnCPUID;
+	*(void**)&pfnCPUID = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent"));
 
 	ZeroMemory(&WIN_CPUInfo,sizeof (WIN_CPUInfo));
 	if (pfnCPUID)

@@ -63,7 +63,14 @@ typedef off_t off64_t;
 #if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
 #define PRIdS "u"
 #elif defined (_WIN32)
-#define PRIdS "Iu"
+// pedantic: %I is nonstandard, is it ok to assume
+// unsigned int?
+//#define PRIdS "Iu"
+#ifdef _WIN64
+#define PRIdS "lu"
+#else
+#define PRIdS "u"
+#endif
 #elif defined (DJGPP)
 #define PRIdS "u"
 #else
@@ -206,7 +213,8 @@ void M_AddToJoinedIPs(char *address, char *servname)
 
 	// Start by moving every IP up 1 slot (dropping the last IP in the table)
 	// If we found duplicates, start here instead and pull the rest up.
-	for (i = dupeindex ? :  NUMLOGIP; i; i--)
+	i = dupeindex ? dupeindex : NUMLOGIP;
+	for (; i; i--)
 	{
 		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
 		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
@@ -863,12 +871,12 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 FUNCNORETURN static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
 	//CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
-	I_Error("libpng error at %p: %s", PNG, pngtext);
+	I_Error("libpng error at %p: %s", (void*)PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)

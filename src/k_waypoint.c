@@ -302,7 +302,7 @@ static void K_CompareOverlappingWaypoint
 	const boolean useshortcuts = false;
 	const boolean huntbackwards = false;
 	boolean pathfindsuccess = false;
-	path_t pathtofinish = {};
+	path_t pathtofinish = {0};
 
 	pathfindsuccess =
 		K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
@@ -1064,7 +1064,7 @@ boolean K_PathfindToWaypoint(
 	}
 	else
 	{
-		pathfindsetup_t            pathfindsetup   = {};
+		pathfindsetup_t            pathfindsetup   = {0};
 		getconnectednodesfunc      nextnodesfunc   = K_WaypointPathfindGetNext;
 		getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
 		getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
@@ -1158,8 +1158,8 @@ waypoint_t *K_GetNextWaypointToDestination(
 		}
 		else
 		{
-			path_t                     pathtowaypoint  = {};
-			pathfindsetup_t            pathfindsetup   = {};
+			path_t                     pathtowaypoint  = {0};
+			pathfindsetup_t            pathfindsetup   = {0};
 			boolean                    pathfindsuccess = false;
 			getconnectednodesfunc      nextnodesfunc   = K_WaypointPathfindGetNext;
 			getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
@@ -1559,7 +1559,7 @@ static UINT32 K_SetupCircuitLength(void)
 	{
 		// Create a fake finishline waypoint, then try and pathfind to the finishline from it
 		waypoint_t    fakefinishline  = *finishline;
-		path_t        bestcircuitpath = {};
+		path_t        bestcircuitpath = {0};
 		const boolean useshortcuts    = false;
 		const boolean huntbackwards   = false;
 

@@ -56,6 +56,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_bot.h"
 #include "doomstat.h"
 
@@ -605,7 +606,7 @@ const char *G_BuildMapName(INT32 map)
 			map = gamemap-1;
 		else
 			map = prevmap;
-		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, false, 0, false, NULL)+1;
+		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, 0, 0, false, NULL)+1;
 	}
 #endif
 
@@ -1817,7 +1818,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % TICQUEUE;
+	buf = gametic % BACKUPTICS;
 
 	if (!demo.playback)
 	{
@@ -2025,6 +2026,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
 	UINT16 skincolor;
@@ -2032,7 +2034,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 availabilities;
 
 	tic_t jointime;
-	tic_t quittime;
 
 	UINT8 splitscreenindex;
 	boolean spectator;
@@ -2067,7 +2068,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	ctfteam = players[player].ctfteam;
 
 	jointime = players[player].jointime;
-	quittime = players[player].quittime;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2112,11 +2112,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
 		spheres = 0;
 		kickstartaccel = 0;
-		khudfault = nocontrol = 0;
+		khudfault = 0;
+		nocontrol = 0;
 		laps = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudcardanimation = 0;
 		starpostnum = 0;
 		xtralife = 0;
 
@@ -2155,7 +2157,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		laps = players[player].laps;
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
+
 		exiting = players[player].exiting;
+		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+
 		starpostnum = players[player].starpostnum;
 
 		xtralife = players[player].xtralife;
@@ -2169,8 +2174,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (!(netgame || multiplayer))
 		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
 
-	// Obliterate follower from existence
-	P_SetTarget(&players[player].follower, NULL);
+	if (!betweenmaps)
+	{
+		// Obliterate follower from existence (if valid memory)
+		P_SetTarget(&players[player].follower, NULL);
+	}
 
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
@@ -2183,7 +2191,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
-	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
 	p->steering = steering;
@@ -2201,6 +2208,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
 	p->totalring = totalring;
@@ -2284,23 +2292,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (leveltime < starttime)
 		return;
 
-	if (p-players == consoleplayer)
-	{
-		if (mapmusflags & MUSIC_RELOADRESET)
-		{
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-			mapmusresume = 0;
-			songcredit = true;
-		}
-
-		// This is in S_Start, but this was not here previously.
-		// if (RESETMUSIC)
-		// 	S_StopMusic();
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-	}
+	if (exiting)
+		return;
 
 	P_RestoreMusic(p);
 
@@ -2595,7 +2588,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		// In platform gametypes, spawn in Co-op starts first
 		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS)
+		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
 			spawnpoint = G_FindBattleStartOrFallback(playernum);
 		else
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
@@ -2702,10 +2695,30 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
+		UINT8 i;
+		boolean youlost = false;
+		if (bossinfo.boss == true)
 		{
-			UINT8 i;
+			youlost = true;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].bumpers > 0)
+					{
+						youlost = false;
+						break;
+					}
+				}
+			}
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			youlost = (grandprixinfo.wonround != true);
+		}
 
+		if (youlost)
+		{
 			// You didn't win...
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -2934,6 +2947,7 @@ UINT32 gametypetol[NUMGAMETYPES] =
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
+	{"BOSS",TOL_BOSS},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -3011,10 +3025,17 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
+	if (modeattacking || metalrecording) // NOT in Record Attack
+		return false;
+
+	if (bossinfo.boss == true) // Fighting a boss?
+	{
+		return true;
+	}
+
 	if ((grandprixinfo.gp == true) // In Grand Prix
 		&& (gametype == GT_RACE) // NOT in bonus round
-		&& !G_IsSpecialStage(gamemap) // NOT in special stage
-		&& !(modeattacking || metalrecording)) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
 	{
 		return true;
 	}
@@ -3125,7 +3146,7 @@ INT16 G_SometimesGetDifferentGametype(void)
 // G_GetGametypeColor
 //
 // Pretty and consistent ^u^
-// See also M_GetGametypeColor.
+// See also M_GetGametypeColor (if that still exists).
 //
 UINT8 G_GetGametypeColor(INT16 gt)
 {
@@ -3179,20 +3200,24 @@ static UINT32 TOLMaps(UINT32 tolflags)
   * \author Graue <graue@oceanbase.org>
   */
 static INT16 *okmaps = NULL;
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
 {
-	INT32 numokmaps = 0;
+	UINT32 numokmaps = 0;
 	INT16 ix, bufx;
 	UINT16 extbufsize = 0;
 	boolean usehellmaps; // Only consider Hell maps in this pick
 
 	if (!okmaps)
+	{
+		//CONS_Printf("(making okmaps)\n");
 		okmaps = Z_Malloc(NUMMAPS * sizeof(INT16), PU_STATIC, NULL);
+	}
 
 	if (extbuffer != NULL)
 	{
 		bufx = 0;
-		while (extbuffer[bufx]) {
+		while (extbuffer[bufx])
+		{
 			extbufsize++; bufx++;
 		}
 	}
@@ -3265,30 +3290,42 @@ tryagain:
 		{
 			if (randmapbuffer[3] == -1) // Is the buffer basically empty?
 			{
-				ignorebuffer = true; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
 			for (bufx = 3; bufx < NUMMAPS; bufx++) // Let's clear all but the three most recent maps...
 				randmapbuffer[bufx] = -1;
+			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
 
 		if (maphell) // Any wiggle room to loosen our restrictions here?
 		{
+			//CONS_Printf("RANDMAP -maphell decrement\n");
 			maphell--;
 			goto tryagain;
 		}
 
+		//CONS_Printf("RANDMAP - defaulting to map01\n");
 		ix = 0; // Sorry, none match. You get MAP01.
-		for (bufx = 0; bufx < NUMMAPS+1; bufx++)
-			randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		if (ignorebuffer == 1)
+		{
+			//CONS_Printf("(emptying randmapbuffer entirely)\n");
+			for (bufx = 0; bufx < NUMMAPS; bufx++)
+				randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		}
 	}
 	else
+	{
+		//CONS_Printf("RANDMAP - %d maps available to grab\n", numokmaps);
 		ix = okmaps[M_RandomKey(numokmaps)];
+	}
 
 	if (!callagainsoon)
 	{
+		//CONS_Printf("(freeing okmaps)\n");
 		Z_Free(okmaps);
 		okmaps = NULL;
 	}
@@ -3298,7 +3335,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, (INT32)TOLMaps(G_TOLFlag(gametype))-3);
+	INT16 bufx, refreshnum = max(0, ((INT32)TOLMaps(G_TOLFlag(gametype)))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3396,6 +3433,9 @@ static void G_DoCompleted(void)
 	if (metalrecording)
 		G_StopMetalRecording(false);
 
+	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playeringame[i])
 		{
@@ -3478,7 +3518,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!modeattacking && grandprixinfo.gp == false)
+	if (!modeattacking && grandprixinfo.gp == false && bossinfo.boss == false)
 	{
 		if (nextmap >= 0 && nextmap < NUMMAPS)
 		{
@@ -3544,7 +3584,7 @@ static void G_DoCompleted(void)
 		}
 		else if (cv_advancemap.value == 2) // Go to random map.
 		{
-			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
+			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
 		}
 	}
 
@@ -3635,7 +3675,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)

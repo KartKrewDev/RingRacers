@@ -57,7 +57,7 @@
 
 #define GETFUNC(func) \
 	else if (0 == strcmp(#func, funcName)) \
-		funcPointer = &func \
+		funcPointer = FUNCPTRCAST(&func) \
 //
 //
 /**	\brief	The *hwSym function
@@ -75,7 +75,7 @@ void *hwSym(const char *funcName,void *handle)
 	void *funcPointer = NULL;
 #ifdef HWRENDER
 	if (0 == strcmp("SetPalette", funcName))
-		funcPointer = &OglSdlSetPalette;
+		funcPointer = FUNCPTRCAST(&OglSdlSetPalette);
 
 	GETFUNC(Init);
 	GETFUNC(Draw2DLine);

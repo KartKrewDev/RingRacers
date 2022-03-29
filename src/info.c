@@ -557,6 +557,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SSMN", // SS Mine
 	"KRBM", // SS Mine BOOM
 	"LNDM", // Land Mine
+	"DTRG", // Drop Target
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
 	"SPBM", // Self-Propelled Bomb
@@ -4375,6 +4376,9 @@ state_t states[NUMSTATES] =
 	{SPR_LNDM, 0, -1, {NULL}, 0, 0, S_LANDMINE},	// S_LANDMINE
 	{SPR_NULL, 0,  1, {A_LandMineExplode}, 0, 0, S_NULL},		// S_LANDMINE_EXPLODE
 
+	{SPR_DTRG, 0, -1, {NULL}, 0, 0, S_NULL},	// S_DROPTARGET
+	{SPR_DTRG, 1, -1, {NULL}, 0, 0, S_NULL},	// S_DROPTARGET_SPIN
+
 	{SPR_BHOG,               0, 3, {A_PlaySound}, sfx_s1bd, 1, S_BALLHOG2},	// S_BALLHOG1
 	{SPR_BHOG, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_BALLHOG3},					// S_BALLHOG2
 	{SPR_BHOG, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_BALLHOG4},					// S_BALLHOG3
@@ -6784,7 +6788,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,                       // mass
 		0,                       // damage
 		sfx_None,                // activesound
-		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL                   // raisestate
 	},
 
@@ -8725,7 +8729,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		25*FRACUNIT,    // mass
+		40*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8752,7 +8756,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		40*FRACUNIT,    // mass
+		64*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8779,7 +8783,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		64*FRACUNIT,    // mass
+		102*FRACUNIT,   // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8806,7 +8810,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
-		15*FRACUNIT,    // mass
+		25*FRACUNIT,    // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
@@ -8833,8 +8837,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		25*FRACUNIT,    // mass
-		25*FRACUNIT,    // damage
+		40*FRACUNIT,    // mass
+		40*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YDIAG2        // raisestate
@@ -8860,8 +8864,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		40*FRACUNIT,    // mass
-		40*FRACUNIT,    // damage
+		64*FRACUNIT,    // mass
+		64*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RDIAG2        // raisestate
@@ -8887,8 +8891,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		64*FRACUNIT,    // mass
-		64*FRACUNIT,    // damage
+		102*FRACUNIT,   // mass
+		102*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BDIAG2        // raisestate
@@ -8914,8 +8918,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		48*FRACUNIT,    // radius
 		56*FRACUNIT,    // height
 		0,              // display offset
-		15*FRACUNIT,    // mass
-		15*FRACUNIT,    // damage
+		25*FRACUNIT,    // mass
+		25*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GDIAG2        // raisestate
@@ -8942,7 +8946,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		45*FRACUNIT,    // damage
+		72*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_YHORIZ2       // raisestate
@@ -8969,7 +8973,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		72*FRACUNIT,    // damage
+		115*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_RHORIZ2       // raisestate
@@ -8996,7 +9000,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		115*FRACUNIT,   // damage
+		184*FRACUNIT,   // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_BHORIZ2       // raisestate
@@ -9023,7 +9027,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		56*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
-		27*FRACUNIT,    // damage
+		45*FRACUNIT,    // damage
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GHORIZ2       // raisestate
@@ -24191,6 +24195,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_s3k5c,				// activesound
 		MF_SHOOTABLE|MF_DONTENCOREMAP, // flags
 		S_NULL					// raisestate
+	},
+
+	{           // MT_DROPTARGET
+		-1,             // doomednum
+		S_DROPTARGET,   // spawnstate
+		3,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_tossed,     // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_DROPTARGET_SPIN, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_DROPTARGET_SPIN, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		128*FRACUNIT,	// speed
+		45*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_s3k96,      // activesound
+		MF_SPECIAL|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DROPTARGET_SHIELD
+		-1,             // doomednum
+		S_DROPTARGET,   // spawnstate
+		3,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_DROPTARGET_SPIN, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_DROPTARGET_SPIN, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,				// speed
+		45*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_BALLHOG

@@ -127,6 +127,7 @@ extern char logfilename[1024];
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSIONSTRING "Development EXE"
+#define VERSIONSTRING_RC "Development EXE" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
@@ -245,7 +246,10 @@ typedef enum
 	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_PINK,
+
+	FIRSTRAINBOWCOLOR,
+
+	SKINCOLOR_PINK = FIRSTRAINBOWCOLOR,
 	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
@@ -644,10 +648,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Experimental tweaks to analog mode. (Needs a lot of work before it's ready for primetime.)
 //#define REDSANALOG
-
-/// Backwards compatibility with musicslots.
-/// \note	You should leave this enabled unless you're working with a future SRB2 version.
-#define MUSICSLOT_COMPATIBILITY
 
 /// Experimental attempts at preventing MF_PAPERCOLLISION objects from getting stuck in walls.
 //#define PAPER_COLLISIONCORRECTION

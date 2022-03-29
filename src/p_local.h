@@ -155,6 +155,7 @@ void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
 
 boolean P_IsLocalPlayer(player_t *player);
+boolean P_IsMachineLocalPlayer(player_t *player);
 boolean P_IsDisplayPlayer(player_t *player);
 
 void P_SetPlayerAngle(player_t *player, angle_t angle);

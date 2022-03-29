@@ -28,6 +28,7 @@ m_argv.c
 m_bbox.c
 m_cheat.c
 m_cond.c
+m_easing.c
 m_fixed.c
 m_misc.c
 m_perfstats.c
@@ -109,6 +110,7 @@ k_bot.c
 k_botitem.c
 k_botsearch.c
 k_grandprix.c
+k_boss.c
 k_hud.c
 k_menudef.c
 k_menufunc.c

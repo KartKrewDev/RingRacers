@@ -461,7 +461,8 @@ void VID_BlitLinearScreen_ASM(const UINT8 *srcptr, UINT8 *destptr, INT32 width, 
 
 static void CV_constextsize_OnChange(void)
 {
-	con_recalc = true;
+	if (!con_startup)
+		con_recalc = true;
 }
 
 
@@ -997,7 +998,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		w *= dupx;
 		h *= dupy;
 
-		// adjustxy
+		// Center it if necessary
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -1718,7 +1720,7 @@ INT32 V_TitleCardStringWidth(const char *str)
 // V_DrawTitleCardScreen.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean alignright, INT32 timer, INT32 threshold)
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold)
 {
 
 	INT32 xoffs = 0;
@@ -1739,7 +1741,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 
 	x -= 2;	// Account for patch width...
 
-	if (alignright)
+	if (flags & V_SNAPTORIGHT)
 		x -= V_TitleCardStringWidth(str);
 
 
@@ -1777,11 +1779,25 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		ol = tc_font[0][(INT32)c];
 		pp = tc_font[1][(INT32)c];
 
-		if (timer)
+		if (bossmode)
 		{
-
+			if (let_time <= 0)
+				return;
+			if (threshold > 0)
+			{
+				if (threshold > 3)
+					return;
+				fakeang = (threshold*ANGLE_45)/2;
+				scalex = FINECOSINE(fakeang>>ANGLETOFINESHIFT);
+			}
+			offs = ((FRACUNIT-scalex)*pp->width)/2;
+		}
+		else if (timer)
+		{
 			// make letters appear
-			if (!threshold || let_time < threshold)
+			if (!threshold)
+				;
+			else if (let_time < threshold)
 			{
 				if (let_time <= 0)
 					return;	// No reason to continue drawing, none of the next letters will be drawn either.
@@ -1791,7 +1807,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 				fakeang = min(360 + 90, let_time*41) * ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
-			else if (let_time > threshold)
+			else if (!bossmode && let_time > threshold)
 			{
 				// Make letters disappear...
 				let_time -= threshold;

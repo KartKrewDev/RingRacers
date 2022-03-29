@@ -171,6 +171,15 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].checkskip);
 
+		WRITEINT16(save_p, players[i].lastsidehit);
+		WRITEINT16(save_p, players[i].lastlinehit);
+
+		WRITEINT32(save_p, players[i].onconveyor);
+
+		WRITEUINT32(save_p, players[i].jointime);
+
+		WRITEUINT8(save_p, players[i].splitscreenindex);
+
 		if (players[i].awayviewmobj)
 			flags |= AWAYVIEW;
 
@@ -185,16 +194,6 @@ static void P_NetArchivePlayers(void)
 
 		if (players[i].skybox.centerpoint)
 			flags |= SKYBOXCENTER;
-
-		WRITEINT16(save_p, players[i].lastsidehit);
-		WRITEINT16(save_p, players[i].lastlinehit);
-
-		WRITEINT32(save_p, players[i].onconveyor);
-
-		WRITEUINT32(save_p, players[i].jointime);
-		WRITEUINT32(save_p, players[i].quittime);
-
-		WRITEUINT8(save_p, players[i].splitscreenindex);
 
 		WRITEUINT16(save_p, flags);
 
@@ -333,6 +332,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEUINT32(save_p, players[i].overtimekarma);
 		WRITEINT16(save_p, players[i].spheres);
+		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
 		WRITEUINT8(save_p, players[i].tripWireState);
@@ -341,6 +341,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].typing_duration);
 
 		WRITEUINT8(save_p, players[i].kickstartaccel);
+
+		WRITEUINT8(save_p, players[i].stairjank);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -406,7 +408,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].steering = READINT16(save_p);
 		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
-		players[i].drawangle = READANGLE(save_p);
+		players[i].drawangle = players[i].old_drawangle = READANGLE(save_p);
 		players[i].viewrollangle = READANGLE(save_p);
 		players[i].tilt = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
@@ -455,7 +457,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].onconveyor = READINT32(save_p);
 
 		players[i].jointime = READUINT32(save_p);
-		players[i].quittime = READUINT32(save_p);
 
 		players[i].splitscreenindex = READUINT8(save_p);
 
@@ -597,6 +598,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].karmadelay = READINT16(save_p);
 		players[i].overtimekarma = READUINT32(save_p);
 		players[i].spheres = READINT16(save_p);
+		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
 		players[i].tripWireState = READUINT8(save_p);
@@ -605,6 +607,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].typing_duration = READUINT8(save_p);
 
 		players[i].kickstartaccel = READUINT8(save_p);
+
+		players[i].stairjank = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -1527,7 +1531,7 @@ typedef enum
 	MD_DSCALE      = 1<<28,
 	MD_BLUEFLAG    = 1<<29,
 	MD_REDFLAG     = 1<<30,
-	MD_MORE        = 1<<31
+	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
 typedef enum
@@ -1658,7 +1662,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
 		return;
 
-	if (mobj->spawnpoint && mobj->info->doomednum != -1)
+	if (mobj->spawnpoint)
 	{
 		// spawnpoint is not modified but we must save it since it is an identifier
 		diff = MD_SPAWNPOINT;
@@ -1679,7 +1683,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	diff2 = 0;
 
 	// not the default but the most probable
-	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0)
+	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0)
 		diff |= MD_MOM;
 	if (mobj->radius != mobj->info->radius)
 		diff |= MD_RADIUS;
@@ -1843,8 +1847,12 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		size_t z;
 
 		for (z = 0; z < nummapthings; z++)
-			if (&mapthings[z] == mobj->spawnpoint)
-				WRITEUINT16(save_p, z);
+		{
+			if (&mapthings[z] != mobj->spawnpoint)
+				continue;
+			WRITEUINT16(save_p, z);
+			break;
+		}
 		if (mobj->type == MT_HOOPCENTER)
 			return;
 	}
@@ -1864,6 +1872,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->momx);
 		WRITEFIXED(save_p, mobj->momy);
 		WRITEFIXED(save_p, mobj->momz);
+		WRITEFIXED(save_p, mobj->pmomz);
 	}
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save_p, mobj->radius);
@@ -2932,6 +2941,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->momx = READFIXED(save_p);
 		mobj->momy = READFIXED(save_p);
 		mobj->momz = READFIXED(save_p);
+		mobj->pmomz = READFIXED(save_p);
 	} // otherwise they're zero, and the memset took care of it
 
 	if (diff & MD_RADIUS)
@@ -4496,7 +4506,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
-	mapmusflags |= MUSIC_RELOADRESET;
+	if (!reloading)
+		mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save_p));
 
@@ -4518,7 +4529,10 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	encoremode = (boolean)READUINT8(save_p);
 
 	if (!P_LoadLevel(true, reloading))
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
+	}
 
 	// get the time
 	leveltime = READUINT32(save_p);
@@ -4645,19 +4659,26 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 {
 	switch (READUINT8(save_p))
 	{
-		case 0xb7:
+		case 0xb7: // luabanks marker
 			{
 				UINT8 i, banksinuse = READUINT8(save_p);
 				if (banksinuse > NUM_LUABANKS)
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Too many banks in use)\n"));
 					return false;
+				}
 				for (i = 0; i < banksinuse; i++)
 					luabanks[i] = READINT32(save_p);
-				if (READUINT8(save_p) != 0x1d)
+				if (READUINT8(save_p) != 0x1d) // consistency marker
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Failed consistency check)\n"));
 					return false;
+				}
 			}
-		case 0x1d:
+		case 0x1d: // consistency marker
 			break;
-		default:
+		default: // anything else is nonsense
+			CONS_Alert(CONS_ERROR, M_GetText("Failed consistency check (???)\n"));
 			return false;
 	}
 

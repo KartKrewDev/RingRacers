@@ -372,6 +372,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->karmadelay);
 	else if (fastcmp(field,"spheres"))
 		lua_pushinteger(L, plr->spheres);
+	else if (fastcmp(field,"spheredigestion"))
+		lua_pushinteger(L, plr->spheredigestion);
 	else if (fastcmp(field,"pflags"))
 		lua_pushinteger(L, plr->pflags);
 	else if (fastcmp(field,"panim"))
@@ -461,8 +463,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->jointime);
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
-	else if (fastcmp(field,"quittime"))
-		lua_pushinteger(L, plr->quittime);
 #ifdef HWRENDER
 	else if (fastcmp(field,"fovadd"))
 		lua_pushfixed(L, plr->fovadd);
@@ -714,6 +714,8 @@ static int player_set(lua_State *L)
 		plr->karmadelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spheres"))
 		plr->spheres = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"spheredigestion"))
+		plr->spheredigestion = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartspeed"))
 		plr->kartspeed = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"kartweight"))

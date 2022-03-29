@@ -49,6 +49,7 @@
 #include "k_battle.h"
 #include "k_respawn.h"
 #include "k_bot.h"
+#include "k_color.h"
 
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
@@ -300,12 +301,14 @@ void G_ReadDemoExtraData(void)
 			// Follower's color
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
-			for (i = 0; i < numskincolors; i++)
-				if (!stricmp(skincolors[i].name, name))				// SRB2kart
-				{
-					players[p].followercolor = i;
-					break;
-				}
+			for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
+			{
+					if (!stricmp(Followercolor_cons_t[i].strvalue, name))
+					{
+							players[p].followercolor = i;
+							break;
+					}
+			}
 		}
 		if (extradata & DXD_PLAYSTATE)
 		{
@@ -455,7 +458,7 @@ void G_WriteDemoExtraData(void)
 
 				// write follower color
 				memset(name, 0, 16);
-				strncpy(name, Followercolor_cons_t[players[i].followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				strncpy(name, Followercolor_cons_t[(UINT16)(players[i].followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 
@@ -1330,7 +1333,7 @@ skippedghosttic:
 			g->mo->color += abs( ( (signed)( (unsigned)leveltime >> 1 ) % 9) - 4);
 			break;
 		case GHC_INVINCIBLE: // Mario invincibility (P_CheckInvincibilityTimer)
-			g->mo->color = (UINT16)(SKINCOLOR_RUBY + (leveltime % (FIRSTSUPERCOLOR - SKINCOLOR_RUBY))); // Passes through all saturated colours
+			g->mo->color = K_RainbowColor(leveltime); // Passes through all saturated colours
 			break;
 		default:
 			break;
@@ -2073,7 +2076,7 @@ void G_BeginRecording(void)
 
 			// Save follower's colour
 			memset(name, 0, 16);
-			strncpy(name, Followercolor_cons_t[player->followercolor].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			strncpy(name, Followercolor_cons_t[(UINT16)(player->followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 			M_Memcpy(demo_p, name, 16);
 			demo_p += 16;
 

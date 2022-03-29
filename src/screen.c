@@ -33,12 +33,15 @@
 #include "s_sound.h" // ditto
 #include "g_game.h" // ditto
 #include "p_local.h" // P_AutoPause()
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #include "hardware/hw_light.h"
 #include "hardware/hw_model.h"
 #endif
 
+// SRB2Kart
+#include "r_fps.h" // R_GetFramerateCap
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
 #define RUSEASM //MSC.NET can't patch itself
@@ -68,16 +71,17 @@ viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
 UINT8 setrenderneeded = 0;
 
-static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
-
-static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
-
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = CVAR_INIT ("scr_width", "640", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_height = CVAR_INIT ("scr_height", "400", CV_SAVE, CV_Unsigned, NULL);
+
+static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
+
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
 consvar_t cv_vhseffect = CVAR_INIT ("vhspause", "On", CV_SAVE, CV_OnOff, NULL);
+
+static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
 consvar_t cv_shittyscreen = CVAR_INIT ("televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL);
 
 CV_PossibleValue_t cv_renderer_t[] = {
@@ -512,104 +516,96 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 	 );
 }
 
-// XMOD FPS display
-// moved out of os-specific code for consistency
-static boolean ticsgraph[TICRATE];
-static tic_t lasttic;
+double averageFPS = 0.0f;
 
-static UINT32 fpstime = 0;
-static UINT32 lastupdatetime = 0;
+#define FPS_SAMPLE_RATE (50000) // How often to update FPS samples, in microseconds
+#define NUM_FPS_SAMPLES 16 // Number of samples to store
 
-#define FPSUPDATERATE 1/20 // What fraction of a second to update at. The fraction will not simplify to 0, trust me.
-#define FPSMAXSAMPLES 16
+static double fps_samples[NUM_FPS_SAMPLES];
 
-static UINT32 fpssamples[FPSMAXSAMPLES];
-static UINT32 fpssampleslen = 0;
-static UINT32 fpssum = 0;
-double aproxfps = 0.0f;
-
-void SCR_CalcAproxFps(void)
+void SCR_CalculateFPS(void)
 {
-	tic_t i = 0;
-	if (I_PreciseToMicros(fpstime - lastupdatetime) > 1000000 * FPSUPDATERATE)
+	static boolean init = false;
+
+	static precise_t startTime = 0;
+	precise_t endTime = 0;
+
+	static precise_t updateTime = 0;
+	int updateElapsed = 0;
+	int i;
+
+	endTime = I_GetPreciseTime();
+
+	if (init == false)
 	{
-		if (fpssampleslen == FPSMAXSAMPLES)
-		{
-			fpssum -= fpssamples[0];
-
-			for (i = 1; i < fpssampleslen; i++)
-				fpssamples[i-1] = fpssamples[i];
-		}
-		else
-			fpssampleslen++;
-
-		fpssamples[fpssampleslen-1] = I_GetPreciseTime() - fpstime;
-		fpssum += fpssamples[fpssampleslen-1];
-
-		aproxfps = 1000000 / (I_PreciseToMicros(fpssum) / (double)fpssampleslen);
-
-		lastupdatetime = I_GetPreciseTime();
+		startTime = updateTime = endTime;
+		init = true;
+		return;
 	}
 
-	fpstime = I_GetPreciseTime();
+	updateElapsed = I_PreciseToMicros(endTime - updateTime);
+
+	if (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		static int sampleIndex = 0;
+		int frameElapsed = I_PreciseToMicros(endTime - startTime);
+
+		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
+
+		sampleIndex++;
+		if (sampleIndex >= NUM_FPS_SAMPLES)
+			sampleIndex = 0;
+
+		averageFPS = 0.0f;
+		for (i = 0; i < NUM_FPS_SAMPLES; i++)
+		{
+			averageFPS += fps_samples[i];
+		}
+		averageFPS = 1000.0f / (averageFPS / NUM_FPS_SAMPLES);
+
+		updateTime = endTime;
+	}
+
+	startTime = endTime;
 }
 
 void SCR_DisplayTicRate(void)
 {
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
 	const UINT8 *ticcntcolor = NULL;
-
-	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-		ticsgraph[i % TICRATE] = false;
-
-	ticsgraph[ontic % TICRATE] = true;
-
-	for (i = 0;i < TICRATE;++i)
-		if (ticsgraph[i])
-			++totaltics;
+	UINT32 cap = R_GetFramerateCap();
+	UINT32 benchmark = (cap == 0) ? I_GetRefreshRate() : cap;
+	INT32 x = 318;
+	double fps = ceil(averageFPS);
 
 	// draw "FPS"
 	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
 
-	if (cv_frameinterpolation.value == 1)
-	{
-		if (aproxfps <= 15.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
-		else if (aproxfps >= 60.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+	if (fps > (benchmark - 5))
+		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+	else if (fps < 20)
+		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
-		/*
-		if (cv_fpscap.value != 0)
-		{
-			// draw total frame:
-			//V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, cv_fpscap.value, ticcntcolor);
-			// draw "/"
-			//V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
-			// draw our actual framerate
-			V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
-		}
-		else
-		*/
-		{
-			// draw our actual framerate
-			V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
-		}
-	}
-	else
+	if (cap != 0)
 	{
-		if (totaltics <= 15) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
-		else if (totaltics >= TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+		UINT32 digits = 1;
+		UINT32 c2 = cap;
+
+		while (c2 > 0)
+		{
+			c2 = c2 / 10;
+			digits++;
+		}
 
 		// draw total frame:
-		V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
+		V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, cap, ticcntcolor);
+		x -= digits * 4;
+
 		// draw "/"
-		V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
-		// draw our actual framerate
-		V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
+		V_DrawFixedPatch(x<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
 	}
 
-
-	lasttic = ontic;
+	// draw our actual framerate
+	V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, fps, ticcntcolor);
 }
 
 // SCR_DisplayLocalPing

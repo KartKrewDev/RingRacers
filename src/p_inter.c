@@ -34,6 +34,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_respawn.h"
 #include "p_spec.h"
 
@@ -111,10 +112,12 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
 		return false;
 
+	if ((gametyperules & GTR_BUMPERS) // No bumpers in Match
 #ifndef OTHERKARMAMODES
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0) // No bumpers in Match
-		return false;
+	&& !weapon
 #endif
+	&& player->bumpers <= 0)
+		return false;
 
 	if (weapon)
 	{
@@ -273,9 +276,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
 		case MT_SPHEREBOX:
-			if (player->bumpers <= 0)
+			if (!P_CanPickupItem(player, 0))
 				return;
 
+			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			break;
@@ -518,7 +522,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback)
+				if (demo.playback || special->health > MAXEMBLEMS)
 					return;
 
 				emblemlocations[special->health-1].collected = true;
@@ -633,6 +637,9 @@ void P_CheckTimeLimit(void)
 	if (!(gametyperules & GTR_TIMELIMIT))
 		return;
 
+	if (bossinfo.boss == true)
+		return;
+
 	if (leveltime < (timelimitintics + starttime))
 		return;
 
@@ -730,6 +737,9 @@ void P_CheckPointLimit(void)
 		return;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
+		return;
+
+	if (bossinfo.boss == true)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
@@ -935,6 +945,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		 && !(target->type == MT_ORBINAUT || target->type == MT_ORBINAUT_SHIELD
 		 || target->type == MT_JAWZ || target->type == MT_JAWZ_DUD || target->type == MT_JAWZ_SHIELD
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
+		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
 		 || target->type == MT_BALLHOG || target->type == MT_SPB)) // kart dead items
 		target->flags |= MF_NOGRAVITY; // Don't drop Tails 03-08-2000
@@ -974,6 +985,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		{
 			if ((target->type == MT_BANANA_SHIELD && target->target->player->itemtype == KITEM_BANANA) // trail items
 				|| (target->type == MT_SSMINE_SHIELD && target->target->player->itemtype == KITEM_MINE)
+				|| (target->type == MT_DROPTARGET_SHIELD && target->target->player->itemtype == KITEM_DROPTARGET)
 				|| (target->type == MT_SINK_SHIELD && target->target->player->itemtype == KITEM_KITCHENSINK))
 			{
 				if (target->movedir != 0 && target->movedir < (UINT16)target->target->player->itemamount)
@@ -1489,6 +1501,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			}
 			break;
 
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
+			target->fuse = 1;
+			break;
+
 		default:
 			break;
 	}
@@ -1827,6 +1844,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	{
 		laglength = 2;
 	}
+	else if (target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD)
+	{
+		laglength = 0; // handled elsewhere
+	}
 
 	// Everything above here can't be forced.
 	if (!metalrecording)
@@ -1868,10 +1889,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
-		const UINT8 type = (damagetype & DMG_TYPEMASK);
-		const boolean combo = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can be comboed from other damage
-		INT16 ringburst = 5;
-
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -1897,9 +1914,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 		else
 		{
+			const UINT8 type = (damagetype & DMG_TYPEMASK);
+			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
+			INT16 ringburst = 5;
+
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
-			if (!force)
+			if (!force && !(inflictor && inflictor->type == MT_SPBEXPLOSION && inflictor->extravalue1 == 1))
 			{
 				if (gametyperules & GTR_BUMPERS)
 				{
@@ -1927,20 +1948,19 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					return false;
 				}
 
-				if (combo == false)
 				{
-					// Check if we should allow wombo combos (DMG_WOMBO)
-					boolean allowcombo = false;
+					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
+					boolean allowcombo = (hardhit == !(damagetype & DMG_WOMBO));
 
-					// For MISSILE OBJECTS, allow combo BY DEFAULT. If DMG_WOMBO is set, do *NOT* allow it.
-					if (inflictor && !P_MobjWasRemoved(inflictor) && (inflictor->flags & MF_MISSILE) && !(damagetype & DMG_WOMBO))
-						allowcombo = true;
+					// Tumble is a special case.
+					if (type == DMG_TUMBLE)
+					{
+						// don't allow constant combo
+						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0))
+							allowcombo = false;
+					}
 
-					// OTHERWISE, only allow combos IF DMG_WOMBO *IS* set.
-					else if (damagetype & DMG_WOMBO)
-						allowcombo = true;
-
-					if ((player->mo->hitlag == 0 || allowcombo == false) && player->flashing > 0)
+					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -2064,7 +2084,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(player->mo);
 
-			if ((combo == true) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
 				K_DropItems(player);
 			}

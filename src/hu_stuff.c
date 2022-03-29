@@ -54,6 +54,7 @@
 // SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
+#include "k_boss.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
@@ -660,7 +661,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
 			player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -674,7 +675,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[playernum]);
 				if (server)
-					SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+					SendKick(playernum, KICK_MSG_CON_FAIL);
 				return;
 			}
 		}
@@ -1017,7 +1018,8 @@ void HU_Ticker(void)
 		}
 	}
 
-	cechotimer--;
+	if (cechotimer)
+		cechotimer--;
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -2393,13 +2395,13 @@ static void HU_DrawRankings(void)
 	else
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, Gametype_Names[gametype]);
 
-	if (gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT))
+	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
 	{
 		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
 		{
 			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
 			if (timeval > timelimitintics+1)
-				timeval = timelimitintics;
+				timeval = timelimitintics+1;
 			timeval /= TICRATE;
 
 			if (leveltime <= (timelimitintics + starttime))

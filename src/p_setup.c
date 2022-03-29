@@ -86,11 +86,12 @@
 // SRB2Kart
 #include "k_kart.h"
 #include "k_race.h"
-#include "k_battle.h" // K_SpawnBattleCapsules
+#include "k_battle.h" // K_BattleInit
 #include "k_pwrlv.h"
 #include "k_waypoint.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
@@ -1497,6 +1498,22 @@ typedef struct textmap_colormap_s {
 
 textmap_colormap_t textmap_colormap = { false, 0, 25, 0, 25, 0, 31, 0 };
 
+typedef enum
+{
+    PD_A = 1,
+    PD_B = 1<<1,
+    PD_C = 1<<2,
+    PD_D = 1<<3,
+} planedef_t;
+
+typedef struct textmap_plane_s {
+    UINT8 defined;
+    fixed_t a, b, c, d;
+} textmap_plane_t;
+
+textmap_plane_t textmap_planefloor = {0, 0, 0, 0, 0};
+textmap_plane_t textmap_planeceiling = {0, 0, 0, 0, 0};
+
 static void ParseTextmapSectorParameter(UINT32 i, char *param, char *val)
 {
 	if (fastcmp(param, "heightfloor"))
@@ -1535,6 +1552,46 @@ static void ParseTextmapSectorParameter(UINT32 i, char *param, char *val)
 		sectors[i].floorpic_angle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
 	else if (fastcmp(param, "rotationceiling"))
 		sectors[i].ceilingpic_angle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
+	else if (fastcmp(param, "floorplane_a"))
+	{
+		textmap_planefloor.defined |= PD_A;
+		textmap_planefloor.a = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "floorplane_b"))
+	{
+		textmap_planefloor.defined |= PD_B;
+		textmap_planefloor.b = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "floorplane_c"))
+	{
+		textmap_planefloor.defined |= PD_C;
+		textmap_planefloor.c = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "floorplane_d"))
+	{
+		textmap_planefloor.defined |= PD_D;
+		textmap_planefloor.d = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "ceilingplane_a"))
+	{
+		textmap_planeceiling.defined |= PD_A;
+		textmap_planeceiling.a = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "ceilingplane_b"))
+	{
+		textmap_planeceiling.defined |= PD_B;
+		textmap_planeceiling.b = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "ceilingplane_c"))
+	{
+		textmap_planeceiling.defined |= PD_C;
+		textmap_planeceiling.c = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (fastcmp(param, "ceilingplane_d"))
+	{
+		textmap_planeceiling.defined |= PD_D;
+		textmap_planeceiling.d = FLOAT_TO_FIXED(atof(val));
+	}
 	else if (fastcmp(param, "lightcolor"))
 	{
 		textmap_colormap.used = true;
@@ -1864,6 +1921,10 @@ static void P_LoadTextmap(void)
 		textmap_colormap.fadestart = 0;
 		textmap_colormap.fadeend = 31;
 		textmap_colormap.flags = 0;
+
+		textmap_planefloor.defined = 0;
+		textmap_planeceiling.defined = 0;
+
 		TextmapParse(sectorsPos[i], i, ParseTextmapSectorParameter);
 
 		P_InitializeSector(sc);
@@ -1873,6 +1934,19 @@ static void P_LoadTextmap(void)
 			INT32 fadergba = P_ColorToRGBA(textmap_colormap.fadecolor, textmap_colormap.fadealpha);
 			sc->extra_colormap = sc->spawn_extra_colormap = R_CreateColormap(rgba, fadergba, textmap_colormap.fadestart, textmap_colormap.fadeend, textmap_colormap.flags);
 		}
+
+		if (textmap_planefloor.defined == (PD_A|PD_B|PD_C|PD_D))
+        {
+			sc->f_slope = MakeViaEquationConstants(textmap_planefloor.a, textmap_planefloor.b, textmap_planefloor.c, textmap_planefloor.d);
+			sc->hasslope = true;
+        }
+
+		if (textmap_planeceiling.defined == (PD_A|PD_B|PD_C|PD_D))
+        {
+			sc->c_slope = MakeViaEquationConstants(textmap_planeceiling.a, textmap_planeceiling.b, textmap_planeceiling.c, textmap_planeceiling.d);
+			sc->hasslope = true;
+        }
+
 		TextmapFixFlatOffsets(sc);
 	}
 
@@ -2466,7 +2540,7 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 
 				segs[k - 1 + ((m == 0) ? subsectors[i].numlines : 0)].v2 = segs[k].v1 = &vertexes[vertexnum];
 
-				READUINT32((*data)); // partner, can be ignored by software renderer
+				*data += sizeof (UINT32); // partner, can be ignored by software renderer
 
 				linenum = (nodetype == NT_XGL3) ? READUINT32((*data)) : READUINT16((*data));
 				if (linenum != 0xFFFF && linenum >= numlines)
@@ -2511,7 +2585,10 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 		P_InitializeSeg(seg);
 		seg->angle = R_PointToAngle2(v1->x, v1->y, v2->x, v2->y);
 		if (seg->linedef)
-			segs[i].offset = FixedHypot(v1->x - seg->linedef->v1->x, v1->y - seg->linedef->v1->y);
+		{
+			vertex_t *v = (seg->side == 1) ? seg->linedef->v2 : seg->linedef->v1;
+			segs[i].offset = FixedHypot(v1->x - v->x, v1->y - v->y);
+		}
 		seg->length = P_SegLength(seg);
 #ifdef HWRENDER
 		seg->flength = (rendermode == render_opengl) ? P_SegLengthFloat(seg) : 0;
@@ -2576,7 +2653,7 @@ static void P_LoadMapBSP(const virtres_t *virt)
 		if (numsubsectors <= 0)
 			I_Error("Level has no subsectors (did you forget to run it through a nodesbuilder?)");
 		if (numnodes <= 0)
-			I_Error("Level has no nodes");
+			I_Error("Level has no nodes (does your map have at least 2 sectors?)");
 		if (numsegs <= 0)
 			I_Error("Level has no segs");
 
@@ -3040,6 +3117,82 @@ static void P_LinkMapData(void)
 	}
 }
 
+// For maps in binary format, add multi-tags from linedef specials. This must be done
+// before any linedef specials have been processed.
+static void P_AddBinaryMapTagsFromLine(sector_t *sector, line_t *line)
+{
+	Tag_Add(&sector->tags, Tag_FGet(&line->tags));
+	if (line->flags & ML_EFFECT6) {
+		if (sides[line->sidenum[0]].textureoffset)
+			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[0]].textureoffset / FRACUNIT);
+		if (sides[line->sidenum[0]].rowoffset)
+			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[0]].rowoffset / FRACUNIT);
+	}
+	if (line->flags & ML_TFERLINE) {
+		if (sides[line->sidenum[1]].textureoffset)
+			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[1]].textureoffset / FRACUNIT);
+		if (sides[line->sidenum[1]].rowoffset)
+			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[1]].rowoffset / FRACUNIT);
+	}
+}
+
+static void P_AddBinaryMapTags(void)
+{
+	size_t i;
+
+	for (i = 0; i < numlines; i++) {
+		// 97: Apply Tag to Front Sector
+		// 98: Apply Tag to Back Sector
+		// 99: Apply Tag to Front and Back Sectors
+		if (lines[i].special == 97 || lines[i].special == 99)
+			P_AddBinaryMapTagsFromLine(lines[i].frontsector, &lines[i]);
+		if (lines[i].special == 98 || lines[i].special == 99)
+			P_AddBinaryMapTagsFromLine(lines[i].backsector, &lines[i]);
+	}
+
+	// Run this loop after the 97-99 loop to ensure that 96 can search through all of the
+	// 97-99-applied tags.
+	for (i = 0; i < numlines; i++) {
+		size_t j;
+		mtag_t tag, target_tag;
+		mtag_t offset_tags[4];
+
+		// 96: Apply Tag to Tagged Sectors
+		if (lines[i].special != 96)
+			continue;
+
+		tag = Tag_FGet(&lines[i].frontsector->tags);
+		target_tag = Tag_FGet(&lines[i].tags);
+		memset(offset_tags, 0, sizeof(mtag_t)*4);
+		if (lines[i].flags & ML_EFFECT6) {
+			offset_tags[0] = (INT32)sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
+			offset_tags[1] = (INT32)sides[lines[i].sidenum[0]].rowoffset / FRACUNIT;
+		}
+		if (lines[i].flags & ML_TFERLINE) {
+			offset_tags[2] = (INT32)sides[lines[i].sidenum[1]].textureoffset / FRACUNIT;
+			offset_tags[3] = (INT32)sides[lines[i].sidenum[1]].rowoffset / FRACUNIT;
+		}
+
+		for (j = 0; j < numsectors; j++) {
+			boolean matches_target_tag = target_tag && Tag_Find(&sectors[j].tags, target_tag);
+			size_t k;
+			for (k = 0; k < 4; k++) {
+				if (lines[i].flags & ML_EFFECT5) {
+					if (matches_target_tag || (offset_tags[k] && Tag_Find(&sectors[j].tags, offset_tags[k]))) {
+						Tag_Add(&sectors[j].tags, tag);
+						break;
+					}
+				} else if (matches_target_tag) {
+					if (k == 0)
+						Tag_Add(&sectors[j].tags, tag);
+					if (offset_tags[k])
+						Tag_Add(&sectors[j].tags, offset_tags[k]);
+				}
+			}
+		}
+	}
+}
+
 //For maps in binary format, converts setup of specials to UDMF format.
 static void P_ConvertBinaryMap(void)
 {
@@ -3056,9 +3209,7 @@ static void P_ConvertBinaryMap(void)
 			INT32 check = -1;
 			INT32 paramline = -1;
 
-			TAG_ITER_DECLARECOUNTER(0);
-
-			TAG_ITER_LINES(0, tag, check)
+			TAG_ITER_LINES(tag, check)
 			{
 				if (lines[check].special == 22)
 				{
@@ -3231,6 +3382,34 @@ static void P_ConvertBinaryMap(void)
 				lines[i].args[1] = tag;
 			lines[i].special = 720;
 			break;
+		case 723: //Copy back side floor slope
+		case 724: //Copy back side ceiling slope
+		case 725: //Copy back side floor and ceiling slope
+			if (lines[i].special != 724)
+				lines[i].args[2] = tag;
+			if (lines[i].special != 723)
+				lines[i].args[3] = tag;
+			lines[i].special = 720;
+			break;
+		case 730: //Copy front side floor slope to back side
+		case 731: //Copy front side ceiling slope to back side
+		case 732: //Copy front side floor and ceiling slope to back side
+			if (lines[i].special != 731)
+				lines[i].args[4] |= TMSC_FRONTTOBACKFLOOR;
+			if (lines[i].special != 730)
+				lines[i].args[4] |= TMSC_FRONTTOBACKCEILING;
+			lines[i].special = 720;
+			break;
+		case 733: //Copy back side floor slope to front side
+		case 734: //Copy back side ceiling slope to front side
+		case 735: //Copy back side floor and ceiling slope to front side
+			if (lines[i].special != 734)
+				lines[i].args[4] |= TMSC_BACKTOFRONTFLOOR;
+			if (lines[i].special != 733)
+				lines[i].args[4] |= TMSC_BACKTOFRONTCEILING;
+			lines[i].special = 720;
+			break;
+
 		case 900: //Translucent wall (10%)
 		case 901: //Translucent wall (20%)
 		case 902: //Translucent wall (30%)
@@ -3273,11 +3452,9 @@ static void P_ConvertBinaryMap(void)
 			INT32 firstline = -1;
 			mtag_t tag = mapthings[i].angle;
 
-			TAG_ITER_DECLARECOUNTER(0);
-
 			Tag_FSet(&mapthings[i].tags, tag);
 
-			TAG_ITER_LINES(0, tag, check)
+			TAG_ITER_LINES(tag, check)
 			{
 				if (lines[check].special == 20)
 				{
@@ -3406,6 +3583,9 @@ static boolean P_LoadMapFromFile(void)
 
 	P_LinkMapData();
 
+	if (!udmf)
+		P_AddBinaryMapTags();
+
 	Taglist_InitGlobalTables();
 
 	if (!udmf)
@@ -3525,7 +3705,7 @@ static void P_InitLevelSettings(void)
 		if (playeringame[i] && !players[i].spectator)
 			p++;
 
-		if (grandprixinfo.gp == false)
+		if (grandprixinfo.gp == false && bossinfo.boss == false)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
@@ -3547,6 +3727,12 @@ static void P_InitLevelSettings(void)
 			gamespeed = grandprixinfo.gamespeed;
 		}
 
+		franticitems = false;
+		comeback = true;
+	}
+	else if (bossinfo.boss)
+	{
+		gamespeed = KARTSPEED_EASY;
 		franticitems = false;
 		comeback = true;
 	}
@@ -3944,9 +4130,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
 
+	// Cancel all d_main.c fadeouts (keep fade in though).
+	if (reloadinggamestate)
+		wipegamestate = gamestate; // Don't fade if reloading the gamestate
 	// Encore mode fade to pink to white
 	// This is handled BEFORE sounds are stopped.
-	if (encoremode && !prevencoremode && !demo.rewinding)
+	else if (encoremode && !prevencoremode && !demo.rewinding)
 	{
 		if (rendermode != render_none)
 		{
@@ -4008,10 +4197,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 	}
 
-	// Cancel all d_main.c fadeouts (keep fade in though).
-	if (reloadinggamestate)
-		wipegamestate = gamestate; // Don't fade if reloading the gamestate
-
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
 	if (G_GetModeAttackRetryFlag())
@@ -4031,13 +4216,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 	*/
 
+	// Make sure all sounds are stopped before Z_FreeTags.
+	S_StopSounds();
+	S_ClearSfx();
+
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
-	if (!demo.rewinding)
+	if (!demo.rewinding && !reloadinggamestate)
 	{
-		// Make sure all sounds are stopped before Z_FreeTags.
-		S_StopSounds();
-		S_ClearSfx();
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
@@ -4074,6 +4260,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+
+		{
+			sfxenum_t kstart = sfx_kstart;
+			if (bossinfo.boss)
+				kstart = sfx_ssa021;
+			else if (encoremode)
+				kstart = sfx_ruby2;
+			S_StartSound(NULL, kstart);
+		}
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/
@@ -4116,7 +4311,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// internal game map
 	maplumpname = G_BuildMapName(gamemap);
-	lastloadedmaplumpnum = W_CheckNumForName(maplumpname);
+	lastloadedmaplumpnum = W_CheckNumForMap(maplumpname);
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
@@ -4131,10 +4326,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_ResetTubeWaypoints();
 
-	P_MapStart();
+	P_MapStart(); // tmthing can be used starting from this point
 
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
+
+	P_InitSlopes(); //Initialize slopes before the map loads.
 
 	if (!P_LoadMapFromFile())
 		return false;
@@ -4153,7 +4350,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (!playerstarts[numcoopstarts])
 			break;
 
-	P_SpawnSpecialsThatRequireObjects();
+	P_SpawnSpecialsThatRequireObjects(fromnetsave);
 
 	if (!udmf)
 	{
@@ -4205,9 +4402,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
+		K_InitDirector();
 	}
-
-	K_InitDirector();
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
@@ -4224,10 +4420,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// clear special respawning que
 	iquehead = iquetail = 0;
 
-	P_MapEnd();
-
 	// Remove the loading shit from the screen
-	if (rendermode != render_none && !(titlemapinaction || reloadinggamestate))
+	if (rendermode != render_none && !titlemapinaction && !reloadinggamestate)
 		F_WipeColorFill(levelfadecol);
 
 	if (precache || dedicated)
@@ -4238,7 +4432,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (!(netgame || multiplayer || demo.playback) && !majormods)
 		mapvisited[gamemap-1] |= MV_VISITED;
-	else if (netgame || multiplayer)
+	else if (!demo.playback)
 		mapvisited[gamemap-1] |= MV_MP; // you want to record that you've been there this session, but not permanently
 
 	G_AddMapToBuffer(gamemap-1);
@@ -4246,6 +4440,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	levelloading = false;
 
 	P_RunCachedActions();
+
+	P_MapEnd(); // tmthing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)
@@ -4261,7 +4457,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		lastmaploaded = gamemap; // HAS to be set after saving!!
 	}
 
-	if (grandprixinfo.gp == true)
+	if (reloadinggamestate)
+		;
+	else if (grandprixinfo.gp == true)
 	{
 		if (grandprixinfo.initalize == true)
 		{
@@ -4280,16 +4478,31 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		K_UpdateMatchRaceBots();
 	}
 
+	if (bossinfo.boss)
+	{
+		// Reset some pesky boss state that can't be handled elsewhere.
+		bossinfo.barlen = BOSSHEALTHBARLEN;
+		bossinfo.visualbar = 0;
+		Z_Free(bossinfo.enemyname);
+		Z_Free(bossinfo.subtitle);
+		bossinfo.enemyname = bossinfo.subtitle = NULL;
+		bossinfo.titleshow = 0;
+		bossinfo.titlesound = sfx_typri1;
+		memset(&(bossinfo.weakspots), 0, sizeof(weakspot_t)*NUMWEAKSPOTS);
+	}
+
 	if (!fromnetsave) // uglier hack
 	{ // to make a newly loaded level start on the second frame.
-		INT32 buf = gametic % TICQUEUE;
+		INT32 buf = gametic % BACKUPTICS;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
 				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
 		}
 		P_PreTicker(2);
+		P_MapStart(); // just in case MapLoad modifies tmthing
 		LUAh_MapLoad();
+		P_MapEnd(); // just in case MapLoad modifies tmthing
 	}
 
 	K_TimerReset();
