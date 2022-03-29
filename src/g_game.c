@@ -74,8 +74,8 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 #define SAVEGAMESIZE (1024)
 
 // SRB2kart
-char gamedatafilename[64] = "kartdata.dat";
-char timeattackfolder[64] = "kart";
+char gamedatafilename[64] = "ringdata.dat";
+char timeattackfolder[64] = "ringracers";
 char customversionstring[32] = "\0";
 
 static void G_DoCompleted(void);

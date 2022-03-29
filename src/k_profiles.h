@@ -28,7 +28,7 @@
 #define PROFILENAMELEN 6
 #define PROFILEVER 1
 #define MAXPROFILES 16
-#define PROFILESFILE "kartprofiles.cfg"
+#define PROFILESFILE "ringprofiles.cfg"
 
 #define PROFILEDEFAULTNAME "guest"
 #define PROFILEDEFAULTPNAME "Player"
