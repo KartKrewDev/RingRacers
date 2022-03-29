@@ -2811,9 +2811,10 @@ void P_PlayerZMovement(mobj_t *mo)
 
 		// Even out pitch & roll slowly over time when falling.
 		// Helps give OpenGL models a bit of the tumble tell.
+		if (P_MobjFlip(mo) * mo->momz <= 0)
 		{
-			const angle_t speed = ANG1;
-			angle_t dest = ANGLE_45 + (ANG10 >> 1);
+			const angle_t speed = ANG2;
+			angle_t dest = FixedAngle(50*FRACUNIT);
 			INT32 pitchDelta = AngleDeltaSigned(mo->pitch, 0);
 			INT32 rollDelta = AngleDeltaSigned(mo->roll, 0);
 

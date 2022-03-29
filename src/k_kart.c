@@ -3412,17 +3412,23 @@ static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
 	fixed_t pitchMul = -FINESINE(mobj->angle >> ANGLETOFINESHIFT);
 	fixed_t rollMul = FINECOSINE(mobj->angle >> ANGLETOFINESHIFT);
 
-	return FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
+	angle_t slope = FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
+
+	if (slope > ANGLE_180)
+	{
+		slope = InvAngle(slope);
+	}
+
+	return slope;
 }
 
-#define STEEP_VAL (ANGLE_45)
+#define STEEP_VAL (FixedAngle(40*FRACUNIT))
 
 void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
 {
 	fixed_t gravityadjust;
 	angle_t oldSlope, newSlope;
 	angle_t slopeDelta;
-	angle_t oldSteepness;
 
 	// If you don't land upright on a slope, then you tumble,
 	// kinda like Kirby Air Ride
@@ -3435,13 +3441,7 @@ void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
 
 	oldSlope = K_TumbleSlope(player->mo, oldPitch, oldRoll);
 
-	oldSteepness = oldSlope;
-	if (oldSteepness > ANGLE_180)
-	{
-		oldSteepness = InvAngle(oldSteepness);
-	}
-
-	if (oldSteepness <= STEEP_VAL)
+	if (oldSlope <= STEEP_VAL)
 	{
 		// Transferring from flat ground to a steep slope
 		// is a free action. (The other way around isn't, though.)
