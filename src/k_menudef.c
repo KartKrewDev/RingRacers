@@ -940,17 +940,17 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Mines",					NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mines",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEORBINAUT, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x4",			NULL, {.routine = M_HandleItemToggles}, KRITEM_QUADORBINAUT, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Targets",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Land Mines",			NULL, {.routine = M_HandleItemToggles}, KITEM_LANDMINE, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz",					NULL, {.routine = M_HandleItemToggles}, KITEM_JAWZ, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz x2",				NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALJAWZ, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhogs",				NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Land Mines",			NULL, {.routine = M_HandleItemToggles}, KITEM_LANDMINE, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Targets",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_THUNDERSHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bubble Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
