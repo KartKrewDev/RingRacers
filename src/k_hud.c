@@ -662,6 +662,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISMINE" : "K_ITMINE");
 		case KITEM_LANDMINE:
 			return (tiny ? "K_ISLNDM" : "K_ITLNDM");
+		case KITEM_DROPTARGET:
+			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
 		case KITEM_BALLHOG:
 			return (tiny ? "K_ISBHOG" : "K_ITBHOG");
 		case KITEM_SPB:

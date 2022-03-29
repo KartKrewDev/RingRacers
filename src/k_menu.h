@@ -861,6 +861,7 @@ void M_DrawEditProfile(void);
 void M_DrawProfileControls(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
+extern tic_t shitsfree;
 
 // Extras menu:
 void M_DrawExtrasMovingButton(void);

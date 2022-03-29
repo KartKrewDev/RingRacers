@@ -11,6 +11,7 @@
 #include "console.h" // console cvars
 #include "filesrch.h" // addons cvars
 #include "m_misc.h" // screenshot cvars
+#include "r_fps.h" // fps cvars
 #include "discord.h" // discord rpc cvars
 
 // ==========================================================================
@@ -578,8 +579,8 @@ menuitem_t OPTIONS_Video[] =
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Gamma", "Adjusts the overall brightness of the game.",
 		NULL, {.cvar = &cv_globalgamma}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Vertical Sync", "Locks the framerate to your monitor's refresh rate.",
-		NULL, {.cvar = &cv_vidwait}, 0, 0},
+	{IT_STRING | IT_CVAR, "FPS Cap", "Handles the refresh rate of the game (does not affect gamelogic).",
+		NULL, {.cvar = &cv_fpscap}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Enable Skyboxes", "Turning this off will improve performance at the detriment of visuals for many maps.",
 		NULL, {.cvar = &cv_skybox}, 0, 0},
@@ -926,32 +927,45 @@ menu_t OPTIONS_GameplayDef = {
 menuitem_t OPTIONS_GameplayItems[] =
 {
 	// Mostly handled by the drawing function.
-	{IT_KEYHANDLER | IT_NOTHING, "Sneakers",				NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_SNEAKER, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Sneakers x3",				NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLESNEAKER, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Toggle All",				NULL, NULL, {.routine = M_HandleItemToggles}, 0, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Rocket Sneakers",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_ROCKETSNEAKER, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Bananas",					NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Bananas x3",				NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Bananas x10",				NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Eggman Monitors",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts",				NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts x3",			NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEORBINAUT, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Orbinauts x4",			NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_QUADORBINAUT, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Mines",					NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Jawz",					NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_JAWZ, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Jawz x2",					NULL, NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALJAWZ, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Ballhogs",				NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Self-Propelled Bombs",	NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_SPB, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Invinciblity",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_INVINCIBILITY, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Grow",					NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_GROW, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Shrink",					NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_SHRINK, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Thunder Shields",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_THUNDERSHIELD, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Bubble Shields",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Flame Shields",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_FLAMESHIELD, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Hyudoros",				NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Pogo Springs",		 	NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Super Rings",				NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_SUPERRING, 0},
-	{IT_KEYHANDLER | IT_NOTHING, "Kitchen Sinks",			NULL, NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			NULL, {.routine = M_HandleItemToggles}, KITEM_SUPERRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bombs",	NULL, {.routine = M_HandleItemToggles}, KITEM_SPB, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggman Marks",			NULL, {.routine = M_HandleItemToggles}, KITEM_EGGMAN, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All",			NULL, {.routine = M_HandleItemToggles}, 0, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers",				NULL, {.routine = M_HandleItemToggles}, KITEM_SNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers x2",			NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALSNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLESNEAKER, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Rocket Sneakers",		NULL, {.routine = M_HandleItemToggles}, KITEM_ROCKETSNEAKER, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Mines",					NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x4",			NULL, {.routine = M_HandleItemToggles}, KRITEM_QUADORBINAUT, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Targets",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz",					NULL, {.routine = M_HandleItemToggles}, KITEM_JAWZ, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz x2",				NULL, {.routine = M_HandleItemToggles}, KRITEM_DUALJAWZ, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhogs",				NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Land Mines",			NULL, {.routine = M_HandleItemToggles}, KITEM_LANDMINE, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_THUNDERSHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bubble Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Flame Shields",			NULL, {.routine = M_HandleItemToggles}, KITEM_FLAMESHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invinciblity",			NULL, {.routine = M_HandleItemToggles}, KITEM_INVINCIBILITY, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					NULL, {.routine = M_HandleItemToggles}, KITEM_GROW, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Shrink",				NULL, {.routine = M_HandleItemToggles}, KITEM_SHRINK, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0},
+
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	NULL, {.routine = M_HandleItemToggles}, KITEM_POGOSPRING, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sinks",			NULL, {.routine = M_HandleItemToggles}, KITEM_KITCHENSINK, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL, NULL, {.routine = M_HandleItemToggles}, 255, 0}
 };
 
 menu_t OPTIONS_GameplayItemsDef = {
@@ -959,7 +973,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	&OPTIONS_GameplayDef,
 	0,
 	OPTIONS_GameplayItems,
-	0, 75,
+	14, 40,
 	SKINCOLOR_SCARLET, 0,
 	2, 10,
 	M_DrawItemToggles,

@@ -3553,6 +3553,11 @@ void M_OptionsTick(void)
 			optionsmenu.toptx = 420;
 			optionsmenu.topty = 70+1;
 		}
+		else if (currentMenu == &OPTIONS_GameplayItemsDef)
+		{
+			optionsmenu.toptx = -160; // off the side of the screen
+			optionsmenu.topty = 50;
+		}
 		else
 		{
 			optionsmenu.toptx = 160;
@@ -4118,7 +4123,7 @@ void M_MapProfileControl(event_t *ev)
 
 void M_HandleItemToggles(INT32 choice)
 {
-	const INT32 width = 9, height = 3;
+	const INT32 width = 8, height = 4;
 	INT32 column = itemOn/height, row = itemOn%height;
 	INT16 next;
 	UINT8 i;
@@ -4126,7 +4131,6 @@ void M_HandleItemToggles(INT32 choice)
 	const UINT8 pid = 0;
 
 	(void) choice;
-
 
 	if (menucmd[pid].dpad_lr > 0)
 	{
@@ -4187,7 +4191,6 @@ void M_HandleItemToggles(INT32 choice)
 	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
 	{
 		M_SetMenuDelay(pid);
-#ifdef ITEMTOGGLEBOTTOMRIGHT
 		if (currentMenu->menuitems[itemOn].mvar1 == 255)
 		{
 			//S_StartSound(NULL, sfx_s26d);
@@ -4198,7 +4201,6 @@ void M_HandleItemToggles(INT32 choice)
 			}
 		}
 		else
-#endif
 		if (currentMenu->menuitems[itemOn].mvar1 == 0)
 		{
 			INT32 v = cv_sneaker.value;
@@ -4211,7 +4213,14 @@ void M_HandleItemToggles(INT32 choice)
 		}
 		else
 		{
-			S_StartSound(NULL, sfx_s1ba);
+			if (currentMenu->menuitems[itemOn].mvar2)
+			{
+				S_StartSound(NULL, currentMenu->menuitems[itemOn].mvar2);
+			}
+			else
+			{
+				S_StartSound(NULL, sfx_s1ba);
+			}
 			CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1], 1);
 		}
 	}

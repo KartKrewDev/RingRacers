@@ -150,8 +150,9 @@ static void M_DrawSlider(INT32 x, INT32 y, const consvar_t *cv, boolean ontop)
 
 static patch_t *addonsp[NUM_EXT+5];
 
-static UINT32 bgTextScroll = 0;
-static UINT32 bgImageScroll = 0;
+static fixed_t bgText1Scroll = 0;
+static fixed_t bgText2Scroll = 0;
+static fixed_t bgImageScroll = 0;
 static char bgImageName[9];
 
 #define MENUBG_TEXTSCROLL 6
@@ -174,7 +175,7 @@ void M_UpdateMenuBGImage(boolean forceReset)
 
 	if (forceReset == false && strcmp(bgImageName, oldName))
 	{
-		bgImageScroll = (BASEVIDWIDTH / 2) / MENUBG_IMAGESCROLL;
+		bgImageScroll = (BASEVIDWIDTH / 2)*FRACUNIT;
 	}
 }
 
@@ -183,34 +184,41 @@ void M_DrawMenuBackground(void)
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
 	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
 
-	INT32 text1loop = SHORT(text1->height);
-	INT32 text2loop = SHORT(text2->width);
-
-	fixed_t text1scroll = -((bgTextScroll * MENUBG_TEXTSCROLL) % text1loop) * FRACUNIT;
-	fixed_t text2scroll = -((bgTextScroll * MENUBG_TEXTSCROLL) % text2loop) * FRACUNIT;
+	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
+	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUBG4", PU_CACHE), NULL);
 
-	V_DrawFixedPatch(-(bgImageScroll * MENUBG_IMAGESCROLL) * FRACUNIT, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
-	V_DrawFixedPatch(-(bgImageScroll * MENUBG_IMAGESCROLL) * FRACUNIT, 0, FRACUNIT, 0, W_CachePatchName(bgImageName, PU_CACHE), NULL);
+	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
+	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName(bgImageName, PU_CACHE), NULL);
 
 	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
 
-	V_DrawFixedPatch(text2scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
+	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_TRANSLUCENT, text2, NULL);
-	V_DrawFixedPatch(text2scroll + (text2loop * FRACUNIT), (BASEVIDHEIGHT-8) * FRACUNIT,
+	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_TRANSLUCENT, text2, NULL);
 
-	V_DrawFixedPatch(8 * FRACUNIT, text1scroll,
+	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll,
 		FRACUNIT, V_TRANSLUCENT, text1, NULL);
-	V_DrawFixedPatch(8 * FRACUNIT, text1scroll + (text1loop * FRACUNIT),
+	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll + text1loop,
 		FRACUNIT, V_TRANSLUCENT, text1, NULL);
 
-	bgTextScroll++;
+	bgText1Scroll += (MENUBG_TEXTSCROLL*rendertimefrac);
+	while (bgText1Scroll > text1loop)
+		bgText1Scroll -= text1loop;
+
+	bgText2Scroll += (MENUBG_TEXTSCROLL*rendertimefrac);
+	while (bgText2Scroll > text2loop)
+		bgText2Scroll -= text2loop;
 
 	if (bgImageScroll > 0)
 	{
-		bgImageScroll--;
+		bgImageScroll -= (MENUBG_IMAGESCROLL*rendertimefrac);
+		if (bgImageScroll < 0)
+		{
+			bgImageScroll = 0;
+		}
 	}
 }
 
@@ -2608,17 +2616,17 @@ void M_DrawVideoModes(void)
 }
 
 // Gameplay Item Tggles:
-static tic_t shitsfree = 0;
+tic_t shitsfree = 0;
 
 void M_DrawItemToggles(void)
 {
-	const INT32 edges = 9;
-	const INT32 height = 3;
+	const INT32 edges = 8;
+	const INT32 height = 4;
 	const INT32 spacing = 35;
 	const INT32 column = itemOn/height;
 	//const INT32 row = itemOn%height;
 	INT32 leftdraw, rightdraw, totaldraw;
-	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y+(spacing/4);
+	INT32 x = currentMenu->x + menutransition.tics*64, y = currentMenu->y;
 	INT32 onx = 0, ony = 0;
 	consvar_t *cv;
 	INT32 i, translucent, drawnum;
@@ -2653,7 +2661,7 @@ void M_DrawItemToggles(void)
 			const INT32 thisitem = (i*height)+j;
 
 			if (thisitem >= currentMenu->numitems)
-				continue;
+				break;
 
 			if (thisitem == itemOn)
 			{
@@ -2667,6 +2675,14 @@ void M_DrawItemToggles(void)
 			{
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISTOGL", PU_CACHE));
+				y += spacing;
+				continue;
+			}
+
+			if (currentMenu->menuitems[thisitem].mvar1 == 255)
+			{
+				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
+				y += spacing;
 				continue;
 			}
 
@@ -2713,7 +2729,7 @@ void M_DrawItemToggles(void)
 		}
 
 		x += spacing;
-		y = currentMenu->y+(spacing/4);
+		y = currentMenu->y;
 	}
 
 	{
@@ -2721,6 +2737,19 @@ void M_DrawItemToggles(void)
 		{
 			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
 			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITTOGL", PU_CACHE));
+		}
+		else if (currentMenu->menuitems[itemOn].mvar1 == 255)
+		{
+			V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
+			if (shitsfree)
+			{
+				INT32 trans = V_TRANSLUCENT;
+				if (shitsfree-1 > TICRATE-5)
+					trans = ((10-TICRATE)+shitsfree-1)<<V_ALPHASHIFT;
+				else if (shitsfree < 5)
+					trans = (10-shitsfree)<<V_ALPHASHIFT;
+				V_DrawScaledPatch(onx-1, ony-2, trans, W_CachePatchName("K_ITFREE", PU_CACHE));
+			}
 		}
 		else
 		{
@@ -2764,8 +2793,6 @@ void M_DrawItemToggles(void)
 
 	if (shitsfree)
 		shitsfree--;
-
-	V_DrawCenteredString(BASEVIDWIDTH/2 + menutransition.tics*48, currentMenu->y, highlightflags, va("* %s *", currentMenu->menuitems[itemOn].text));
 }
 
 
