@@ -18,7 +18,10 @@
 #include "r_defs.h"
 
 // Maximum value of botvars.difficulty
-#define MAXBOTDIFFICULTY 9
+#define MAXBOTDIFFICULTY 13
+
+// Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
+#define DIFFICULTBOT 9
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.

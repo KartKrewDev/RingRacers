@@ -3413,7 +3413,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
-	UINT8 difficulty = MAXBOTDIFFICULTY;
+	UINT8 difficulty = DIFFICULTBOT;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{

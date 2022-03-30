@@ -477,24 +477,34 @@ fixed_t K_BotRubberband(player_t *player)
 		if (wanteddist > player->distancetofinish)
 		{
 			// Whoa, you're too far ahead! Slow back down a little.
-			rubberband += (MAXBOTDIFFICULTY - player->botvars.difficulty) * (distdiff / 3);
+			rubberband += (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty)) * (distdiff / 3);
 		}
 		else
 		{
 			// Catch up to your position!
-			rubberband += (2*player->botvars.difficulty) * distdiff;
+			rubberband += player->botvars.difficulty * distdiff;
 		}
 	}
 
-	// Lv. 1: x1.0 max
-	// Lv. 5: x1.5 max
-	// Lv. 9: x2.0 max
+#if 0
+	// Lv.   1: x1.0 max
+	// Lv.   5: x1.5 max
+	// Lv.   9: x2.0 max
+	// Lv. MAX: x2.5 max
+	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (DIFFICULTBOT - 1));
+#else
+	// Lv.   1: x1.0 max
+	// Lv.   5: x1.333 max
+	// Lv.   9: x1.667 max
+	// Lv. MAX: x2.0 max
 	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (MAXBOTDIFFICULTY - 1));
+#endif
 
-	// Lv. 1: x0.75 min
-	// Lv. 5: x0.875 min
-	// Lv. 9: x1.0 min
-	min = FRACUNIT - (((FRACUNIT/4) * (MAXBOTDIFFICULTY - player->botvars.difficulty)) / (MAXBOTDIFFICULTY - 1));
+	// Lv.   1: x0.75 min
+	// Lv.   5: x0.875 min
+	// Lv.   9: x1.0 min
+	// Lv. MAX: x1.0 min
+	min = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty))) / (DIFFICULTBOT - 1));
 
 	if (rubberband > max)
 	{
@@ -851,7 +861,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	{
 		INT32 boosthold = starttime - K_GetSpindashChargeTime(player);
 
-		boosthold -= (MAXBOTDIFFICULTY - player->botvars.difficulty) * difficultyModifier;
+		boosthold -= (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty)) * difficultyModifier;
 
 		if (leveltime >= (unsigned)boosthold)
 		{
