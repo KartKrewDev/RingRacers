@@ -4088,7 +4088,7 @@ void M_ProfileSetControl(INT32 ch)
 // Map the event to the profile.
 void M_MapProfileControl(event_t *ev)
 {
-	INT32 c = ev->data1;
+	INT32 c = 0;
 	UINT8 n = optionsmenu.bindcontrol-1;					// # of input to bind
 	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
@@ -4097,7 +4097,75 @@ void M_MapProfileControl(event_t *ev)
 	SetDeviceOnPress();	// Update cv_usejoystick
 
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
-	if (ev->type != ev_keydown && ev->type != ev_joystick)
+	// See also G_MapEventsToControls
+	switch (ev->type)
+	{
+		case ev_keydown:
+			if (ev->data1 < NUMINPUTS)
+			{
+				c = ev->data1;
+			}
+#ifdef PARANOIA
+			else
+			{
+				CONS_Debug(DBG_GAMELOGIC, "Bad downkey input %d\n", ev->data1);
+			}
+#endif
+			break;
+		case ev_joystick:
+			if (ev->data1 >= JOYAXISSET)
+			{
+#ifdef PARANOIA
+				CONS_Debug(DBG_GAMELOGIC, "Bad joystick axis event %d\n", ev->data1);
+#endif
+				return;
+			}
+			else
+			{
+				INT32 deadzone = deadzone = (JOYAXISRANGE * cv_deadzone[0].value) / FRACUNIT; // TODO how properly account for different deadzone cvars for different devices
+				boolean responsivelr = ((ev->data2 != INT32_MAX) && (abs(ev->data2) >= deadzone));
+				boolean responsiveud = ((ev->data3 != INT32_MAX) && (abs(ev->data3) >= deadzone));
+
+				// Only consider unambiguous assignment.
+				if (responsivelr == responsiveud)
+					return;
+
+				i = (ev->data1 * 4);
+
+				if (responsivelr)
+				{
+					if (ev->data2 < 0)
+					{
+						// Left
+						c = KEY_AXIS1 + i;
+					}
+					else
+					{
+						// Right
+						c = KEY_AXIS1 + i + 1;
+					}
+				}
+				else //if (responsiveud)
+				{
+					if (ev->data3 < 0)
+					{
+						// Up
+						c = KEY_AXIS1 + i + 2;
+					}
+					else
+					{
+						// Down
+						c = KEY_AXIS1 + i + 3;
+					}
+				}
+			}
+			break;
+		default:
+			return;
+	}
+
+	// safety result
+	if (!c)
 		return;
 
 	// Set menu delay regardless of what we're doing to avoid stupid stuff.
