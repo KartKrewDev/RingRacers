@@ -167,7 +167,7 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (difficulty == 0 || bossinfo.boss == true)
+	if (difficulty == 0 || !(gametyperules & GTR_BOTS) || bossinfo.boss == true)
 	{
 		wantedbots = 0;
 	}
