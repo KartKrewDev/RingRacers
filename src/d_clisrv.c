@@ -5092,6 +5092,8 @@ static void SV_Maketic(void)
 {
 	INT32 i;
 
+	ps_botticcmd_time = 0;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
@@ -5099,7 +5101,9 @@ static void SV_Maketic(void)
 
 		if (K_PlayerUsesBotMovement(&players[i]))
 		{
+			precise_t t = I_GetPreciseTime();
 			K_BuildBotTiccmd(&players[i], &netcmds[maketic%BACKUPTICS][i]);
+			ps_botticcmd_time += I_GetPreciseTime() - t;
 			continue;
 		}
 
