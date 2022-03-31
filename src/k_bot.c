@@ -1165,7 +1165,7 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 	}
 
 	if (player->nextwaypoint == NULL
-		|| player->nextwaypoint->mobj != NULL
+		|| player->nextwaypoint->mobj == NULL
 		|| P_MobjWasRemoved(player->nextwaypoint->mobj))
 	{
 		// No data available...
