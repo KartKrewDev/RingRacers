@@ -295,6 +295,60 @@ boolean K_BotCanTakeCut(player_t *player)
 }
 
 /*--------------------------------------------------
+	static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
+
+		Gets the bot's speed value, adjusted for predictions.
+		Mainly to make bots brake earlier when on friction sectors.
+
+	Input Arguments:-
+		player - The bot player to calculate speed for.
+		speed - Raw speed value.
+
+	Return:-
+		The bot's speed value for calculations.
+--------------------------------------------------*/
+static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
+{
+	fixed_t friction = player->mo->friction;
+	fixed_t result = speed;
+
+#ifdef SUBZEROFIX // Intended for Subzero Peak's opening, but doesn't work...
+	// Going uphill: pretend speed is x0
+	// Going downhill: pretend speed is x2
+	if (player->mo->standingslope != NULL)
+	{
+		const pslope_t *slope = player->mo->standingslope;
+
+		if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
+		{
+			fixed_t slopeMul = FRACUNIT;
+			angle_t angle = K_MomentumAngle(player->mo) - slope->xydirection;
+
+			if (P_MobjFlip(player->mo) * slope->zdelta < 0)
+				angle ^= ANGLE_180;
+
+			slopeMul = FRACUNIT + FINECOSINE(angle >> ANGLETOFINESHIFT);
+			result = FixedMul(result, slopeMul);
+		}
+	}
+#endif
+
+	// Reverse against friction. Allows for bots to
+	// acknowledge they'll be moving faster on ice,
+	// and to steer harder / brake earlier.
+
+	if (friction == 0)
+	{
+		// There isn't really a good value to use in this instance.
+		friction = 1;
+	}
+
+	result = FixedDiv(speed, friction);
+
+	return result;
+}
+
+/*--------------------------------------------------
 	static line_t *K_FindBotController(mobj_t *mo)
 
 		Finds if any bot controller linedefs are tagged to the bot's sector.
@@ -1108,7 +1162,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 
 		if (dirdist <= rad)
 		{
-			fixed_t speedmul = FixedDiv(player->speed, K_GetKartSpeed(player, false));
+			fixed_t speedmul = FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false));
 			fixed_t speedrad = rad/4;
 
 			if (speedmul > FRACUNIT)
@@ -1156,7 +1210,7 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 	INT32 turnamt = 0;
 	SINT8 turnsign = 0;
 	angle_t moveangle, angle;
-	INT16 anglediff;
+	INT16 anglediff, momdiff;
 
 	if (predict != NULL)
 	{
@@ -1192,6 +1246,7 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 		}
 	}
 
+	// Calculate turn direction first.
 	moveangle = player->mo->angle;
 	angle = (moveangle - destangle);
 
@@ -1209,21 +1264,72 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 	anglediff = abs(anglediff);
 	turnamt = KART_FULLTURN * turnsign;
 
-	if (anglediff > 90)
+	// Now calculate momentum
+	momdiff = 180;
+	if (player->speed > player->mo->scale)
 	{
-		// We're not facing the track...
+		momdiff = 0;
+		moveangle = K_MomentumAngle(player->mo);
+		angle = (moveangle - destangle);
+
+		if (angle < ANGLE_180)
+		{
+			momdiff = AngleFixed(angle)>>FRACBITS;
+		}
+		else 
+		{
+			momdiff = 360-(AngleFixed(angle)>>FRACBITS);
+		}
+
+		momdiff = abs(momdiff);
+	}
+
+	if (anglediff > 90 || momdiff < 90)
+	{
+		// We're not facing the track,
+		// or we're going too fast.
+		// Let's E-Brake.
 		cmd->forwardmove = 0;
 		cmd->buttons |= BT_ACCELERATE|BT_BRAKE;
 	}
 	else
 	{
+#ifdef SUBZEROFIX
+		fixed_t slopeMul = FRACUNIT;
+
+		if (player->mo->standingslope != NULL)
+		{
+			const pslope_t *slope = player->mo->standingslope;
+
+			if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
+			{
+				angle_t sangle = player->mo->angle - slope->xydirection;
+
+				if (P_MobjFlip(player->mo) * slope->zdelta < 0)
+					sangle ^= ANGLE_180;
+
+				slopeMul = FRACUNIT - FINECOSINE(sangle >> ANGLETOFINESHIFT);
+			}
+		}
+
+
+		if (slopeMul > (FRACUNIT + (FRACUNIT >> 4)))
+		{
+			// Slope is too steep to reverse -- EBrake.
+			cmd->forwardmove = 0;
+			cmd->buttons |= BT_ACCELERATE|BT_BRAKE;
+		}
+		else
+#endif
+		{
+			cmd->forwardmove = -MAXPLMOVE;
+			cmd->buttons |= BT_BRAKE; //|BT_LOOKBACK
+		}
+
 		if (anglediff < 10)
 		{
 			turnamt = 0;
 		}
-
-		cmd->forwardmove = -MAXPLMOVE;
-		cmd->buttons |= BT_BRAKE|BT_LOOKBACK;
 	}
 
 	return turnamt;
@@ -1308,7 +1414,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			finishBeamLine->v1->x, finishBeamLine->v1->y,
 			finishBeamLine->v2->x, finishBeamLine->v2->y,
 			player->mo->x, player->mo->y
-		) - player->speed;
+		) - K_BotSpeedScaled(player, player->speed);
 
 		// Don't run the spindash code at all until we're in the right place
 		trySpindash = false;
