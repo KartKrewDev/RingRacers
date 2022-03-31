@@ -63,6 +63,16 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------
+	SINT8 K_BotDefaultSkin(void);
+
+		Returns the skin number of the skin the game
+		uses as a fallback option.
+--------------------------------------------------*/
+
+SINT8 K_BotDefaultSkin(void);
+
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void);
 
 		Spawns bots specifically tailored for Grand Prix mode.
@@ -93,6 +103,22 @@ void K_UpdateGrandPrixBots(void);
 --------------------------------------------------*/
 
 void K_IncreaseBotDifficulty(player_t *bot);
+
+
+/*--------------------------------------------------
+	void K_ReplaceBot(player_t *bot);
+
+		"Replaces" a bot, by refreshing their difficulty
+		and changing their skin.
+
+	Input Arguments:-
+		bot - Player to do this for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_ReplaceBot(player_t *bot);
 
 
 /*--------------------------------------------------
