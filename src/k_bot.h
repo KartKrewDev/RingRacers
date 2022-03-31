@@ -224,6 +224,21 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 
 /*--------------------------------------------------
+	INT32 K_PositionBully(player_t *player)
+
+		Calculates a turn value to reach a player that can be bullied.
+
+	Input Arguments:-
+		player - Bot to run this for.
+
+	Return:-
+		INT32_MAX if couldn't find anything, otherwise a steering value.
+--------------------------------------------------*/
+
+INT32 K_PositionBully(player_t *player);
+
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 
 		Creates a bot's ticcmd, looking at its surroundings to

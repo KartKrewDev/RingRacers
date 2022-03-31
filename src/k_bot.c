@@ -1028,6 +1028,208 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 }
 
 /*--------------------------------------------------
+	static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
+
+		Determines inputs for standard track driving.
+
+	Input Arguments:-
+		player - Player to generate the ticcmd for.
+		cmd - The player's ticcmd to modify.
+		predict - Pointer to the bot's prediction.
+
+	Return:-
+		New value for turn amount.
+--------------------------------------------------*/
+static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
+{
+	// Handle steering towards waypoints!
+	INT32 turnamt = 0;
+	SINT8 turnsign = 0;
+	angle_t moveangle, angle;
+	INT16 anglediff;
+
+	I_Assert(predict != NULL);
+
+	moveangle = player->mo->angle;
+	angle = (moveangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		turnsign = -1; // Turn right
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		turnsign = 1; // Turn left
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	anglediff = abs(anglediff);
+	turnamt = KART_FULLTURN * turnsign;
+
+	if (anglediff > 90)
+	{
+		// Wrong way!
+		cmd->forwardmove = -MAXPLMOVE;
+		cmd->buttons |= BT_BRAKE;
+	}
+	else
+	{
+		const fixed_t playerwidth = (player->mo->radius * 2);
+		fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
+		fixed_t rad = realrad;
+		fixed_t dirdist = K_DistanceOfLineFromPoint(
+			player->mo->x, player->mo->y,
+			player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
+			predict->x, predict->y
+		);
+
+		if (anglediff > 0)
+		{
+			// Become more precise based on how hard you need to turn
+			// This makes predictions into turns a little nicer
+			// Facing 90 degrees away from the predicted point gives you a 1/3 radius
+			rad = FixedMul(rad, ((135 - anglediff) * FRACUNIT) / 135);
+		}
+
+		if (rad > realrad)
+		{
+			rad = realrad;
+		}
+		else if (rad < playerwidth)
+		{
+			rad = playerwidth;
+		}
+
+		cmd->buttons |= BT_ACCELERATE;
+
+		// Full speed ahead!
+		cmd->forwardmove = MAXPLMOVE;
+
+		if (dirdist <= rad)
+		{
+			fixed_t speedmul = FixedDiv(player->speed, K_GetKartSpeed(player, false));
+			fixed_t speedrad = rad/4;
+
+			if (speedmul > FRACUNIT)
+			{
+				speedmul = FRACUNIT;
+			}
+
+			// Increase radius with speed
+			// At low speed, the CPU will try to be more accurate
+			// At high speed, they're more likely to lawnmower
+			speedrad += FixedMul(speedmul, rad - speedrad);
+
+			if (speedrad < playerwidth)
+			{
+				speedrad = playerwidth;
+			}
+
+			if (dirdist <= speedrad)
+			{
+				// Don't turn at all
+				turnamt = 0;
+			}
+		}
+	}
+
+	return turnamt;
+}
+
+/*--------------------------------------------------
+	static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
+
+		Determines inputs for reversing.
+
+	Input Arguments:-
+		player - Player to generate the ticcmd for.
+		cmd - The player's ticcmd to modify.
+		predict - Pointer to the bot's prediction.
+
+	Return:-
+		New value for turn amount.
+--------------------------------------------------*/
+static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t *predict, angle_t destangle)
+{
+	// Handle steering towards waypoints!
+	INT32 turnamt = 0;
+	SINT8 turnsign = 0;
+	angle_t moveangle, angle;
+	INT16 anglediff;
+
+	if (predict != NULL)
+	{
+		// TODO: Should we reverse through bot controllers?
+		return K_HandleBotTrack(player, cmd, predict, destangle);
+	}
+
+	if (player->nextwaypoint == NULL
+		|| player->nextwaypoint->mobj != NULL
+		|| P_MobjWasRemoved(player->nextwaypoint->mobj))
+	{
+		// No data available...
+		return 0;
+	}
+
+	if ((player->nextwaypoint->prevwaypoints != NULL)
+		&& (player->nextwaypoint->numprevwaypoints > 0U))
+	{
+		size_t i;
+		for (i = 0U; i < player->nextwaypoint->numprevwaypoints; i++)
+		{
+			if (!K_GetWaypointIsEnabled(player->nextwaypoint->prevwaypoints[i]))
+			{
+				continue;
+			}
+
+			destangle = R_PointToAngle2(
+				player->nextwaypoint->prevwaypoints[i]->mobj->x, player->nextwaypoint->prevwaypoints[i]->mobj->y,
+				player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
+			);
+
+			break;
+		}
+	}
+
+	moveangle = player->mo->angle;
+	angle = (moveangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		turnsign = -1; // Turn right
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		turnsign = 1; // Turn left
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	anglediff = abs(anglediff);
+	turnamt = KART_FULLTURN * turnsign;
+
+	if (anglediff > 90)
+	{
+		// We're not facing the track...
+		cmd->forwardmove = 0;
+		cmd->buttons |= BT_ACCELERATE|BT_BRAKE;
+	}
+	else
+	{
+		if (anglediff < 10)
+		{
+			turnamt = 0;
+		}
+
+		cmd->forwardmove = -MAXPLMOVE;
+		cmd->buttons |= BT_BRAKE|BT_LOOKBACK;
+	}
+
+	return turnamt;
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -1036,6 +1238,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
 	botprediction_t *predict = NULL;
 	boolean trySpindash = true;
+	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
 	line_t *botController = NULL;
@@ -1049,13 +1252,11 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (
-		gamestate != GS_LEVEL
+	if (gamestate != GS_LEVEL
 		|| player->mo->scale <= 1
 		|| player->playerstate == PST_DEAD
 		|| leveltime <= introtime
-		|| (player->exiting && !(gametyperules & GTR_CIRCUIT))
-		)
+		|| !(gametyperules & GTR_BOTS))
 	{
 		// No need to do anything else.
 		return;
@@ -1077,126 +1278,26 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if ((player->nextwaypoint != NULL
-		&& player->nextwaypoint->mobj != NULL
-		&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-		|| (botController != NULL))
+	destangle = player->mo->angle;
+
+	if (botController != NULL && (botController->flags & ML_EFFECT1))
 	{
-		// Handle steering towards waypoints!
-		SINT8 turnsign = 0;
-		angle_t destangle, moveangle, angle;
-		INT16 anglediff;
+		const fixed_t dist = (player->mo->radius * 4);
 
-		if (botController != NULL && (botController->flags & ML_EFFECT1))
-		{
-			const fixed_t dist = (player->mo->radius * 4);
+		// X Offset: Movement direction
+		destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
 
-			// X Offset: Movement direction
-			destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
+		// Overwritten prediction
+		predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 
-			// Overwritten prediction
-			predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
-
-			predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
-			predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
-			predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
-		}
-		else
-		{
-			predict = K_CreateBotPrediction(player);
-
-			K_NudgePredictionTowardsObjects(predict, player);
-
-			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
-		}
-
-		moveangle = player->mo->angle;
-		angle = (moveangle - destangle);
-
-		if (angle < ANGLE_180)
-		{
-			turnsign = -1; // Turn right
-			anglediff = AngleFixed(angle)>>FRACBITS;
-		}
-		else 
-		{
-			turnsign = 1; // Turn left
-			anglediff = 360-(AngleFixed(angle)>>FRACBITS);
-		}
-
-		anglediff = abs(anglediff);
-		turnamt = KART_FULLTURN * turnsign;
-
-		if (anglediff > 90)
-		{
-			// Wrong way!
-			cmd->forwardmove = -MAXPLMOVE;
-			cmd->buttons |= BT_BRAKE;
-		}
-		else
-		{
-			const fixed_t playerwidth = (player->mo->radius * 2);
-			fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
-			fixed_t rad = realrad;
-			fixed_t dirdist = K_DistanceOfLineFromPoint(
-				player->mo->x, player->mo->y,
-				player->mo->x + FINECOSINE(moveangle >> ANGLETOFINESHIFT), player->mo->y + FINESINE(moveangle >> ANGLETOFINESHIFT),
-				predict->x, predict->y
-			);
-
-			if (anglediff > 0)
-			{
-				// Become more precise based on how hard you need to turn
-				// This makes predictions into turns a little nicer
-				// Facing 90 degrees away from the predicted point gives you a 1/3 radius
-				rad = FixedMul(rad, ((135 - anglediff) * FRACUNIT) / 135);
-			}
-
-			if (rad > realrad)
-			{
-				rad = realrad;
-			}
-			else if (rad < playerwidth)
-			{
-				rad = playerwidth;
-			}
-
-			cmd->buttons |= BT_ACCELERATE;
-
-			// Full speed ahead!
-			cmd->forwardmove = MAXPLMOVE;
-
-			if (dirdist <= rad)
-			{
-				fixed_t speedmul = FixedDiv(player->speed, K_GetKartSpeed(player, false));
-				fixed_t speedrad = rad/4;
-
-				if (speedmul > FRACUNIT)
-				{
-					speedmul = FRACUNIT;
-				}
-
-				// Increase radius with speed
-				// At low speed, the CPU will try to be more accurate
-				// At high speed, they're more likely to lawnmower
-				speedrad += FixedMul(speedmul, rad - speedrad);
-
-				if (speedrad < playerwidth)
-				{
-					speedrad = playerwidth;
-				}
-
-				if (dirdist <= speedrad)
-				{
-					// Don't turn at all
-					turnamt = 0;
-				}
-			}
-		}
+		predict->x = player->mo->x + FixedMul(dist, FINECOSINE(destangle >> ANGLETOFINESHIFT));
+		predict->y = player->mo->y + FixedMul(dist, FINESINE(destangle >> ANGLETOFINESHIFT));
+		predict->radius = (DEFAULT_WAYPOINT_RADIUS / 4) * mapobjectscale;
 	}
 
 	if (leveltime <= starttime && finishBeamLine != NULL)
 	{
+		// Handle POSITION!!
 		const fixed_t distBase = 384*mapobjectscale;
 		const fixed_t distAdjust = 64*mapobjectscale;
 
@@ -1212,35 +1313,100 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		// Don't run the spindash code at all until we're in the right place
 		trySpindash = false;
 
-		// If you're too far, enable spindash & stay still.
-		// If you're too close, start backing up.
+#define QuickDebugPrint(input) \
+	if (player - players == displayplayers[0]) \
+		CONS_Printf(input);
 
 		if (distToFinish < closeDist)
 		{
-			// Silly way of getting us to reverse, but it respects the above code
-			// where we figure out what the shape of the track looks like.
-			UINT16 oldButtons = cmd->buttons;
-
-			cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
-
-			if (oldButtons & BT_ACCELERATE)
-			{
-				cmd->buttons |= BT_BRAKE;
-			}
-
-			if (oldButtons & BT_BRAKE)
-			{
-				cmd->buttons |= BT_ACCELERATE;
-			}
-
-			cmd->forwardmove = -cmd->forwardmove;
+			// We're too close, we need to start backing up.
+			turnamt = K_HandleBotReverse(player, cmd, predict, destangle);
+			QuickDebugPrint("Too close\n");
 		}
 		else if (distToFinish < farDist)
 		{
-			// We're in about the right place, spindash now.
-			cmd->forwardmove = 0;
-			trySpindash = true;
+			INT32 bullyTurn = INT32_MAX;
+
+			// We're in about the right place, let's do whatever we want to.
+
+			if (player->kartspeed > 3)
+			{
+				// Faster characters want to spindash.
+				// Slower characters will use their momentum.
+				trySpindash = true;
+			}
+
+			// Look for characters to bully.
+			bullyTurn = K_PositionBully(player);
+			if (bullyTurn == INT32_MAX)
+			{
+				// No one to bully, just go for a spindash as anyone.
+				if (predict == NULL)
+				{
+					// Create a prediction.
+					if (player->nextwaypoint != NULL
+						&& player->nextwaypoint->mobj != NULL
+						&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
+					{
+						predict = K_CreateBotPrediction(player);
+						K_NudgePredictionTowardsObjects(predict, player);
+						destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+					}
+				}
+
+				QuickDebugPrint("No one to bully\n");
+				turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+				cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
+				cmd->forwardmove = 0;
+				trySpindash = true;
+			}
+			else
+			{
+				QuickDebugPrint("Go get 'em\n");
+				turnamt = bullyTurn;
+
+				trySpindash = false;
+				cmd->buttons |= BT_ACCELERATE;
+				cmd->forwardmove = MAXPLMOVE;
+			}
 		}
+		else
+		{
+			QuickDebugPrint("Too far\n");
+			// Too far away, we need to just drive up.
+			if (predict == NULL)
+			{
+				// Create a prediction.
+				if (player->nextwaypoint != NULL
+					&& player->nextwaypoint->mobj != NULL
+					&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
+				{
+					predict = K_CreateBotPrediction(player);
+					K_NudgePredictionTowardsObjects(predict, player);
+					destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+				}
+			}
+
+			turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+		}
+	}
+	else
+	{
+		// Handle steering towards waypoints!
+		if (predict == NULL)
+		{
+			// Create a prediction.
+			if (player->nextwaypoint != NULL
+				&& player->nextwaypoint->mobj != NULL
+				&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
+			{
+				predict = K_CreateBotPrediction(player);
+				K_NudgePredictionTowardsObjects(predict, player);
+				destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+			}
+		}
+
+		turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
 	}
 
 	if (trySpindash == true)
@@ -1325,4 +1491,3 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		Z_Free(predict);
 	}
 }
-
