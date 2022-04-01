@@ -309,12 +309,29 @@ boolean K_BotCanTakeCut(player_t *player)
 --------------------------------------------------*/
 static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 {
-	fixed_t friction = player->mo->friction;
+	fixed_t moveFactor = player->mo->movefactor;
 	fixed_t result = speed;
 
-#ifdef SUBZEROFIX // Intended for Subzero Peak's opening, but doesn't work...
-	// Going uphill: pretend speed is x0
-	// Going downhill: pretend speed is x2
+#if 0 // I still think this is a good idea, but it makes them move way slower on ice. Needs investigating.
+	if (moveFactor != FRACUNIT)
+	{
+		if (moveFactor == 0)
+		{
+			moveFactor = 1;
+		}
+
+		// Reverse against friction. Allows for bots to
+		// acknowledge they'll be moving faster on ice,
+		// and to steer harder / brake earlier.
+		moveFactor = FixedDiv(FRACUNIT, moveFactor);
+
+		// The full value is way too strong, reduce it.
+		moveFactor -= (moveFactor - FRACUNIT)*3/4;
+
+		result = FixedMul(result, moveFactor);
+	}
+#endif
+
 	if (player->mo->standingslope != NULL)
 	{
 		const pslope_t *slope = player->mo->standingslope;
@@ -327,23 +344,14 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 			if (P_MobjFlip(player->mo) * slope->zdelta < 0)
 				angle ^= ANGLE_180;
 
+			// Going uphill: 0
+			// Going downhill: FRACUNIT*2
 			slopeMul = FRACUNIT + FINECOSINE(angle >> ANGLETOFINESHIFT);
-			result = FixedMul(result, slopeMul);
+
+			// Range: 0.9 to 1.1
+			result = FixedMul(result, (FRACUNIT*9/10) + (slopeMul/10));
 		}
 	}
-#endif
-
-	// Reverse against friction. Allows for bots to
-	// acknowledge they'll be moving faster on ice,
-	// and to steer harder / brake earlier.
-
-	if (friction == 0)
-	{
-		// There isn't really a good value to use in this instance.
-		friction = 1;
-	}
-
-	result = FixedDiv(speed, friction);
 
 	return result;
 }
@@ -737,7 +745,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
 	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
-	const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+	const fixed_t speed = K_BotSpeedScaled(player, P_AproxDistance(player->mo->momx, player->mo->momy));
 
 	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
 	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
@@ -1294,7 +1302,6 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 	}
 	else
 	{
-#ifdef SUBZEROFIX
 		fixed_t slopeMul = FRACUNIT;
 
 		if (player->mo->standingslope != NULL)
@@ -1312,19 +1319,19 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 			}
 		}
 
-
-		if (slopeMul > (FRACUNIT + (FRACUNIT >> 4)))
+#define STEEP_SLOPE (FRACUNIT*11/10)
+		if (slopeMul > STEEP_SLOPE)
 		{
 			// Slope is too steep to reverse -- EBrake.
 			cmd->forwardmove = 0;
 			cmd->buttons |= BT_ACCELERATE|BT_BRAKE;
 		}
 		else
-#endif
 		{
 			cmd->forwardmove = -MAXPLMOVE;
 			cmd->buttons |= BT_BRAKE; //|BT_LOOKBACK
 		}
+#undef STEEP_SLOPE
 
 		if (anglediff < 10)
 		{
@@ -1410,24 +1417,21 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
 		const fixed_t farDist = closeDist + (distAdjust * 2);
 
+		const tic_t futureSight = (TICRATE >> 1);
+
 		fixed_t distToFinish = K_DistanceOfLineFromPoint(
 			finishBeamLine->v1->x, finishBeamLine->v1->y,
 			finishBeamLine->v2->x, finishBeamLine->v2->y,
 			player->mo->x, player->mo->y
-		) - K_BotSpeedScaled(player, player->speed);
+		) - (K_BotSpeedScaled(player, player->speed) * futureSight);
 
 		// Don't run the spindash code at all until we're in the right place
 		trySpindash = false;
-
-#define QuickDebugPrint(input) \
-	if (player - players == displayplayers[0]) \
-		CONS_Printf(input);
 
 		if (distToFinish < closeDist)
 		{
 			// We're too close, we need to start backing up.
 			turnamt = K_HandleBotReverse(player, cmd, predict, destangle);
-			QuickDebugPrint("Too close\n");
 		}
 		else if (distToFinish < farDist)
 		{
@@ -1460,7 +1464,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					}
 				}
 
-				QuickDebugPrint("No one to bully\n");
 				turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
 				cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
 				cmd->forwardmove = 0;
@@ -1468,7 +1471,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			}
 			else
 			{
-				QuickDebugPrint("Go get 'em\n");
 				turnamt = bullyTurn;
 
 				trySpindash = false;
@@ -1478,7 +1480,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			QuickDebugPrint("Too far\n");
 			// Too far away, we need to just drive up.
 			if (predict == NULL)
 			{
