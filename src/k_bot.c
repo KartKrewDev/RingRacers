@@ -644,7 +644,7 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
-	const fixed_t value = 1024;
+	const fixed_t value = 20776;
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
 	fixed_t newFrict = frict;
 
