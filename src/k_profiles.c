@@ -38,6 +38,7 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 
 	strcpy(new->follower, fname);
 	new->followercolor = fcol;
+	new->kickstartaccel = false;
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
