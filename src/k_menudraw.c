@@ -2337,7 +2337,7 @@ void M_DrawEditProfile(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH*2/3, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+		V_DrawCenteredThinString(224, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
 	}
 
 	// Draw the menu options...
@@ -2480,18 +2480,76 @@ void M_DrawProfileControls(void)
 				}
 				else if (currentMenu->menuitems[i].status & IT_CONTROL)
 				{
-					// Draw what the controls are mapped to
+					UINT32 vflags = V_6WIDTHSPACE;
+					INT32 gc = currentMenu->menuitems[i].mvar1;
+					UINT8 available = 0, set = 0;
+
+					// Get userbound controls...
 					for (k = 0; k < MAXINPUTMAPPING; k++)
-						keys[k] = optionsmenu.profile->controls[currentMenu->menuitems[i].mvar1][k];
+					{
+						keys[k] = optionsmenu.profile->controls[gc][k];
+						if (keys[k] == KEY_NULL)
+							continue;
+						set++;
+						if (!G_KeyIsAvailable(keys[k], cv_usejoystick[0].value))
+							continue;
+						available++;
+					};
 
 					buf[0] = '\0';
 
-					if (keys[0] == KEY_NULL)	// If the first key's null, so should every other.
-						strcpy(buf, "\x85NOT BOUND");
+					// Can't reach any of them?
+					if (available == 0)
+					{
+						if (((3*optionsmenu.ticker)/(2*TICRATE)) & 1) // 1.5 seconds
+						{
+							vflags |= V_ORANGEMAP;
+#ifdef SHOWCONTROLDEFAULT
+							if (G_KeyBindIsNecessary(gc))
+							{
+								// Get the defaults for essential keys.
+								// Went through all the trouble of making this look cool,
+								// then realised defaulting should only apply to menus.
+								// Too much opportunity for confusion if kept.
+								for (k = 0; k < MAXINPUTMAPPING; k++)
+								{
+									keys[k] = gamecontroldefault[gc][k];
+									if (keys[k] == KEY_NULL)
+										continue;
+									available++;
+								}
+								set = available;
+							}
+							else if (set)
+#else
+							if (!set)
+							{
+								if (!G_KeyBindIsNecessary(gc))
+									vflags = V_REDMAP|V_6WIDTHSPACE;
+							}
+							else
+#endif
+							{
+								strcpy(buf, "CURRENTLY UNAVAILABLE");
+							}
+						}
+						else
+						{
+							vflags |= V_REDMAP;
+						}
+					}
+
+					if (buf[0])
+						;
+					else if (!set)
+						strcpy(buf, "NOT BOUND");
 					else
 					{
-						for (k=0; k < MAXINPUTMAPPING && keys[k] != KEY_NULL; k++)
+						for (k = 0; k < MAXINPUTMAPPING; k++)
 						{
+							if (keys[k] == KEY_NULL)
+								continue;
+
 							if (k > 0)
 								strcat(buf," / ");
 
@@ -2499,18 +2557,17 @@ void M_DrawProfileControls(void)
 								strcat(buf, "\n");
 
 							strcat(buf, G_KeynumToString (keys[k]));
-
 						}
 					}
 
 					// don't shift the text if we didn't draw a patch.
-					V_DrawThinString(x+ (drawnpatch ? 32 : 0), y+ (drawnpatch? 2 : 12), V_6WIDTHSPACE, buf);
+					V_DrawThinString(x + (drawnpatch ? 32 : 0), y + (drawnpatch ? 2 : 12), vflags, buf);
 
 					// controller dest coords:
-					if (itemOn == i && currentMenu->menuitems[i].mvar1 && currentMenu->menuitems[i].mvar1 <= gc_start)
+					if (itemOn == i && gc > 0 && gc <= gc_start)
 					{
-						optionsmenu.tcontx = controlleroffsets[currentMenu->menuitems[i].mvar1][0];
-						optionsmenu.tconty = controlleroffsets[currentMenu->menuitems[i].mvar1][1];
+						optionsmenu.tcontx = controlleroffsets[gc][0];
+						optionsmenu.tconty = controlleroffsets[gc][1];
 					}
 				}
 

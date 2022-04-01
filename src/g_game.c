@@ -660,70 +660,14 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-static INT32 KeyValue(UINT8 p, INT32 key, UINT8 menuPlayers)
-{
-	INT32 deviceID;
-	INT32 i, j;
-
-	if (key <= 0 || key >= NUMINPUTS)
-	{
-		return 0;
-	}
-
-	deviceID = cv_usejoystick[p].value;
-
-	if (menuPlayers > 0)
-	{
-		// Try every device that does NOT belong to another player.
-		for (i = MAXDEVICES-1; i >= 0; i--)
-		{
-			if (i == deviceID)
-			{
-				// We've tried this one multiple times :V
-				continue;
-			}
-
-			if (menuPlayers > 1)
-			{
-				for (j = 1; j < menuPlayers; j++)
-				{
-					if (i == cv_usejoystick[j].value)
-					{
-						break;
-					}
-				}
-
-				if (j < menuPlayers)
-				{
-					// This one's taken.
-					continue;
-				}
-			}
-
-			if (gamekeydown[i][key] != 0)
-			{
-				return gamekeydown[i][key];
-			}
-		}
-	}
-	else
-	{
-		if (deviceID < 0 || deviceID >= MAXDEVICES)
-		{
-			// Device is unset
-			return 0;
-		}
-
-		return gamekeydown[deviceID][key];
-	}
-
-	return 0;
-}
-
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
+	INT32 deviceID;
 	INT32 i;
 	INT32 deadzone = 0;
+	boolean trydefaults = true;
+	boolean tryingotherID = false;
+	INT32 *controltable = &(gamecontrol[p][gc][0]);
 
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
@@ -735,17 +679,24 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 
 	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 
+	deviceID = cv_usejoystick[p].value;
+
+retrygetcontrol:
 	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		INT32 key = gamecontrol[p][gc][i];
+		INT32 key = controltable[i];
 		INT32 value = 0;
 
-		if (key <= 0 || key >= NUMINPUTS)
+		// Invalid key number.
+		if (!G_KeyIsAvailable(key, deviceID))
 		{
 			continue;
 		}
 
-		value = KeyValue(p, key, false);
+		// It's possible to access this control right now, so let's disable the default control backup for later.
+		trydefaults = false;
+
+		value = gamekeydown[deviceID][key];
 
 		if (value >= deadzone)
 		{
@@ -753,42 +704,51 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		}
 	}
 
-	if (menuPlayers != 0)
+	// If you're on controller, try your keyboard-based binds as an immediate backup.
+	if (p == 0 && deviceID > 0 && !tryingotherID)
 	{
-		// We don't want menus to become unnavigable if people unbind
-		// all of their controls, so we do several things in this scenario.
+		deviceID = 0;
+		goto retrygetcontrol;
+	}
 
-		// First: check the same device, but with default binds.
-		for (i = 0; i < MAXINPUTMAPPING; i++)
+	if (menuPlayers == 0)
+	{
+		return 0;
+	}
+
+	// We don't want menus to become unnavigable if people unbind
+	// all of their controls, so we do several things in this scenario.
+	// First: try other controllers.
+
+	if (!tryingotherID)
+	{
+		deviceID = MAXDEVICES;
+		tryingotherID = true;
+	}
+loweringid:
+	deviceID--;
+	if (deviceID > 0)
+	{
+		for (i = 0; i < menuPlayers; i++)
 		{
-			INT32 key = gamecontroldefault[gc][i];
-			INT32 value = 0;
-
-			if (key <= 0 || key >= NUMINPUTS)
-			{
+			if (deviceID != cv_usejoystick[i].value)
 				continue;
-			}
-
-			value = KeyValue(p, key, false);
-
-			if (value >= deadzone)
-			{
-				return value;
-			}
-
-			if (p == 0 && menuPlayers == 1)
-			{
-				// Second: if we're Player 1 and there are no other players,
-				// then we can use keyboard defaults as a final resort.
-
-				value = KeyValue(p, key, menuPlayers);
-
-				if (value >= deadzone)
-				{
-					return value;
-				}
-			}
+			// Controller taken? Try again...
+			goto loweringid;
 		}
+		goto retrygetcontrol;
+	}
+
+	if (trydefaults && G_KeyBindIsNecessary(gc))
+	{
+		// If we still haven't found anything and the keybind is necessary,
+		// try it all again but with default binds.
+		trydefaults = false;
+		controltable = &(gamecontroldefault[gc][0]);
+		tryingotherID = false;
+		deviceID = cv_usejoystick[p].value;
+		goto retrygetcontrol;
+
 	}
 
 	return 0;

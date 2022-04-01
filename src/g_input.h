@@ -37,13 +37,15 @@ typedef enum
 	KEY_JOY1 = NUMKEYS,
 	KEY_HAT1 = KEY_JOY1 + JOYBUTTONS,
 	KEY_AXIS1 = KEY_HAT1 + JOYHATS*4,
+	JOYINPUTEND = KEY_AXIS1 + JOYAXISSET*2*2, // 4 sets of 2 axes, each with positive & negative
 
-	KEY_MOUSE1 = KEY_AXIS1 + JOYAXISSET*2*2, // 4 sets of 2 axes, each with positive & negative
+	KEY_MOUSE1 = JOYINPUTEND,
 	KEY_MOUSEMOVE = KEY_MOUSE1 + MOUSEBUTTONS,
 	KEY_MOUSEWHEELUP = KEY_MOUSEMOVE + 4,
 	KEY_MOUSEWHEELDOWN = KEY_MOUSEWHEELUP + 1,
+	MOUSEINPUTEND = KEY_MOUSEWHEELDOWN + 1,
 
-	NUMINPUTS = KEY_MOUSEWHEELDOWN + 1,
+	NUMINPUTS = MOUSEINPUTEND,
 } key_input_e;
 
 typedef enum
@@ -133,6 +135,9 @@ void G_MapEventsToControls(event_t *ev);
 // returns the name of a key
 const char *G_KeynumToString(INT32 keynum);
 INT32 G_KeyStringtoNum(const char *keystr);
+
+boolean G_KeyBindIsNecessary(INT32 gc);
+boolean G_KeyIsAvailable(INT32 key, INT32 deviceID);
 
 // detach any keys associated to the given game control
 void G_ClearControlKeys(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 control);
