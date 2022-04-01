@@ -309,12 +309,15 @@ boolean K_BotCanTakeCut(player_t *player)
 --------------------------------------------------*/
 static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 {
-	fixed_t moveFactor = player->mo->movefactor;
 	fixed_t result = speed;
 
-#if 0 // I still think this is a good idea, but it makes them move way slower on ice. Needs investigating.
-	if (moveFactor != FRACUNIT)
+	// I still think this is a good idea, but it makes them move way slower on ice / slopes.
+	// Needs investigating.
+#if 0
+	if (player->mo->movefactor != FRACUNIT)
 	{
+		fixed_t moveFactor = player->mo->movefactor;
+
 		if (moveFactor == 0)
 		{
 			moveFactor = 1;
@@ -330,7 +333,6 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 
 		result = FixedMul(result, moveFactor);
 	}
-#endif
 
 	if (player->mo->standingslope != NULL)
 	{
@@ -352,6 +354,7 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 			result = FixedMul(result, (FRACUNIT*9/10) + (slopeMul/10));
 		}
 	}
+#endif
 
 	return result;
 }
@@ -1439,7 +1442,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 			// We're in about the right place, let's do whatever we want to.
 
-			if (player->kartspeed > 3)
+			if (player->kartspeed >= 5)
 			{
 				// Faster characters want to spindash.
 				// Slower characters will use their momentum.
@@ -1473,9 +1476,17 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			{
 				turnamt = bullyTurn;
 
-				trySpindash = false;
-				cmd->buttons |= BT_ACCELERATE;
-				cmd->forwardmove = MAXPLMOVE;
+				// If already spindashing, wait until we get a relatively OK charge first.
+				if (player->spindash > 0 && player->spindash <= TICRATE)
+				{
+					trySpindash = true;
+				}
+				else
+				{
+					trySpindash = false;
+					cmd->buttons |= BT_ACCELERATE;
+					cmd->forwardmove = MAXPLMOVE;
+				}
 			}
 		}
 		else
