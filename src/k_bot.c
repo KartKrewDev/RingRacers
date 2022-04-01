@@ -311,9 +311,6 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 {
 	fixed_t result = speed;
 
-	// I still think this is a good idea, but it makes them move way slower on ice / slopes.
-	// Needs investigating.
-#if 0
 	if (player->mo->movefactor != FRACUNIT)
 	{
 		fixed_t moveFactor = player->mo->movefactor;
@@ -354,7 +351,6 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 			result = FixedMul(result, (FRACUNIT*9/10) + (slopeMul/10));
 		}
 	}
-#endif
 
 	return result;
 }
@@ -648,8 +644,9 @@ fixed_t K_BotTopSpeedRubberband(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 {
+	const fixed_t value = 1024;
 	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-	fixed_t origFrict, newFrict;
+	fixed_t newFrict = frict;
 
 	if (rubberband <= 0)
 	{
@@ -657,32 +654,7 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 		return frict;
 	}
 
-	if (player->tiregrease > 0)
-	{
-		// This isn't great -- it means rubberbanding will slow down when they hit a spring
-		// But it's better than the opposite where they accelerate into hyperspace :V
-		// (would appreciate an actual fix though ... could try being additive instead of multiplicative)
-		return frict;
-	}
-
-	origFrict = FixedDiv(ORIG_FRICTION, FRACUNIT + (rubberband / 2));
-
-	if (frict == ORIG_FRICTION)
-	{
-		newFrict = origFrict;
-	}
-	else
-	{
-		// Do some mumbo jumbo to make our friction value
-		// relative to what it WOULD be for ORIG_FRICTION.
-		// (I hate multiplicative friction :/)
-
-		fixed_t offset = ORIG_FRICTION - frict;
-		fixed_t ratio = FixedDiv(frict, ORIG_FRICTION);
-
-		offset = FixedDiv(offset, ratio);
-		newFrict = frict + offset;
-	}
+	newFrict = frict - FixedMul(value, rubberband);
 
 	if (newFrict < 0)
 		newFrict = 0;
