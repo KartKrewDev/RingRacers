@@ -654,6 +654,12 @@ fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
 		return frict;
 	}
 
+	if (player->tiregrease > 0)
+	{
+		// Bots will lose all of their momentum without this.
+		return frict;
+	}
+
 	newFrict = frict - FixedMul(value, rubberband);
 
 	if (newFrict < 0)
