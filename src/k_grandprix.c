@@ -528,6 +528,12 @@ void K_ReplaceBot(player_t *bot)
 
 	UINT8 i;
 
+	if (grandprixinfo.gp == true && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+	{
+		// Was last map, no replacement.
+		return;
+	}
+
 	// init usable bot skins list
 	for (i = 0; i < MAXSKINS; i++)
 	{
@@ -582,7 +588,7 @@ void K_ReplaceBot(player_t *bot)
 	else
 	{
 		const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
-		newDifficulty = startingdifficulty - 3 + (grandprixinfo.roundnum - 1);
+		newDifficulty = startingdifficulty - 4 + grandprixinfo.roundnum;
 	}
 
 	if (newDifficulty > MAXBOTDIFFICULTY)
