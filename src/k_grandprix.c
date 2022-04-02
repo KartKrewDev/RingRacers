@@ -513,18 +513,16 @@ void K_IncreaseBotDifficulty(player_t *bot)
 }
 
 /*--------------------------------------------------
-	void K_ReplaceBot(player_t *bot)
+	void K_RetireBots(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_ReplaceBot(player_t *bot)
+void K_RetireBots(void)
 {
 	const SINT8 defaultbotskin = K_BotDefaultSkin();
 	SINT8 newDifficulty;
 
 	boolean skinusable[MAXSKINS];
-	UINT8 skinnum;
-	UINT8 loops = 0;
 
 	UINT8 i;
 
@@ -555,32 +553,6 @@ void K_ReplaceBot(player_t *bot)
 		}
 	}
 
-	skinnum = P_RandomKey(numskins);
-
-	while (!skinusable[skinnum])
-	{
-		if (loops >= numskins)
-		{
-			// no more skins
-			break;
-		}
-
-		skinnum++;
-
-		if (skinnum >= numskins)
-		{
-			skinnum = 0;
-		}
-
-		loops++;
-	}
-
-	if (loops >= numskins)
-	{
-		// Use default skin
-		skinnum = defaultbotskin;
-	}
-
 	if (!grandprixinfo.gp) // Sure, let's let this happen all the time :)
 	{
 		newDifficulty = cv_kartbot.value;
@@ -600,14 +572,64 @@ void K_ReplaceBot(player_t *bot)
 		newDifficulty = 1;
 	}
 
-	bot->botvars.difficulty = newDifficulty;
-	bot->botvars.diffincrease = 0;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *bot = NULL;
 
-	SetPlayerSkinByNum(bot - players, skinnum);
-	bot->skincolor = skins[skinnum].prefcolor;
-	sprintf(player_names[bot - players], "%s", skins[skinnum].realname);
+		if (!playeringame[i] || !players[i].bot)
+		{
+			continue;
+		}
 
-	bot->score = 0;
+		bot = players[i];
+
+		if (bot->spectator)
+		{
+			continue;
+		}
+
+		if (bot->pflags & PF_NOCONTEST)
+		{
+			UINT8 skinnum = P_RandomKey(numskins);
+			UINT8 loops = 0;
+
+			while (!skinusable[skinnum])
+			{
+				if (loops >= numskins)
+				{
+					// no more skins
+					break;
+				}
+
+				skinnum++;
+
+				if (skinnum >= numskins)
+				{
+					skinnum = 0;
+				}
+
+				loops++;
+			}
+
+			if (loops >= numskins)
+			{
+				// Use default skin
+				skinnum = defaultbotskin;
+			}
+
+			skinusable[skinnum] = false;
+
+			bot->botvars.difficulty = newDifficulty;
+			bot->botvars.diffincrease = 0;
+
+			SetPlayerSkinByNum(bot - players, skinnum);
+			bot->skincolor = skins[skinnum].prefcolor;
+			sprintf(player_names[bot - players], "%s", skins[skinnum].realname);
+
+			bot->score = 0;
+			bot->pflags &= ~PF_NOCONTEST;
+		}
+	}
 }
 
 /*--------------------------------------------------

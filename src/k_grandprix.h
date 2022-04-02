@@ -106,19 +106,13 @@ void K_IncreaseBotDifficulty(player_t *bot);
 
 
 /*--------------------------------------------------
-	void K_ReplaceBot(player_t *bot);
+	void K_RetireBots(player_t *bot);
 
-		"Replaces" a bot, by refreshing their difficulty
+		Replaces PF_NOCONTEST bots, by refreshing their difficulty
 		and changing their skin.
-
-	Input Arguments:-
-		bot - Player to do this for.
-
-	Return:-
-		None
 --------------------------------------------------*/
 
-void K_ReplaceBot(player_t *bot);
+void K_RetireBots(player_t *bot);
 
 
 /*--------------------------------------------------
@@ -162,7 +156,7 @@ void K_PlayerLoseLife(player_t *player);
 		None
 
 	Return:-
-		None
+		true if can change important gameplay rules, otherwise false.
 --------------------------------------------------*/
 
 boolean K_CanChangeRules(void);
