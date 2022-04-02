@@ -96,14 +96,32 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
+	SINT8 K_BotDefaultSkin(void)
+
+		See header file for description.
+--------------------------------------------------*/
+SINT8 K_BotDefaultSkin(void)
+{
+	const char *defaultbotskinname = "eggrobo";
+	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
+
+	if (defaultbotskin == -1)
+	{
+		// This shouldn't happen, but just in case
+		defaultbotskin = 0;
+	}
+
+	return defaultbotskin;
+}
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
 		See header file for description.
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const char *defaultbotskinname = "eggrobo";
-	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
+	const SINT8 defaultbotskin = K_BotDefaultSkin();
 
 	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
@@ -120,12 +138,6 @@ void K_InitGrandPrixBots(void)
 
 	UINT8 newplayernum = 0;
 	UINT8 i, j;
-
-	if (defaultbotskin == -1)
-	{
-		// This shouldn't happen, but just in case
-		defaultbotskin = 0;
-	}
 
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
@@ -144,7 +156,7 @@ void K_InitGrandPrixBots(void)
 	}
 
 #if MAXPLAYERS != 16
-	I_Error("GP bot difficulty levels need rebalacned for the new player count!\n");
+	I_Error("GP bot difficulty levels need rebalanced for the new player count!\n");
 #endif
 
 	if (grandprixinfo.masterbots)
@@ -498,6 +510,104 @@ void K_IncreaseBotDifficulty(player_t *bot)
 	{
 		bot->botvars.diffincrease = 0;
 	}
+}
+
+/*--------------------------------------------------
+	void K_ReplaceBot(player_t *bot)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_ReplaceBot(player_t *bot)
+{
+	const SINT8 defaultbotskin = K_BotDefaultSkin();
+	SINT8 newDifficulty;
+
+	boolean skinusable[MAXSKINS];
+	UINT8 skinnum;
+	UINT8 loops = 0;
+
+	UINT8 i;
+
+	if (grandprixinfo.gp == true && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+	{
+		// Was last map, no replacement.
+		return;
+	}
+
+	// init usable bot skins list
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		if (i < numskins)
+		{
+			skinusable[i] = true;
+		}
+		else
+		{
+			skinusable[i] = false;
+		}
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			skinusable[players[i].skin] = false;
+		}
+	}
+
+	skinnum = P_RandomKey(numskins);
+
+	while (!skinusable[skinnum])
+	{
+		if (loops >= numskins)
+		{
+			// no more skins
+			break;
+		}
+
+		skinnum++;
+
+		if (skinnum >= numskins)
+		{
+			skinnum = 0;
+		}
+
+		loops++;
+	}
+
+	if (loops >= numskins)
+	{
+		// Use default skin
+		skinnum = defaultbotskin;
+	}
+
+	if (!grandprixinfo.gp) // Sure, let's let this happen all the time :)
+	{
+		newDifficulty = cv_kartbot.value;
+	}
+	else
+	{
+		const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+		newDifficulty = startingdifficulty - 4 + grandprixinfo.roundnum;
+	}
+
+	if (newDifficulty > MAXBOTDIFFICULTY)
+	{
+		newDifficulty = MAXBOTDIFFICULTY;
+	}
+	else if (newDifficulty < 1)
+	{
+		newDifficulty = 1;
+	}
+
+	bot->botvars.difficulty = newDifficulty;
+	bot->botvars.diffincrease = 0;
+
+	SetPlayerSkinByNum(bot - players, skinnum);
+	bot->skincolor = skins[skinnum].prefcolor;
+	sprintf(player_names[bot - players], "%s", skins[skinnum].realname);
+
+	bot->score = 0;
 }
 
 /*--------------------------------------------------
