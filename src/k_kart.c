@@ -3407,7 +3407,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		P_StartQuake(64<<FRACBITS, 10);
 }
 
-static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
+angle_t K_StumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
 {
 	fixed_t pitchMul = -FINESINE(mobj->angle >> ANGLETOFINESHIFT);
 	fixed_t rollMul = FINECOSINE(mobj->angle >> ANGLETOFINESHIFT);
@@ -3422,11 +3422,7 @@ static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
 	return slope;
 }
 
-
-#define STEEP_VAL ANG60
-#define STEEP_VAL_AIR ANG30 + ANG10
-
-boolean K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
+boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
 {
 	angle_t steepVal = ANGLE_MAX;
 	fixed_t gravityadjust;
@@ -3451,14 +3447,14 @@ boolean K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll, 
 
 	if (fromAir == true)
 	{
-		steepVal = STEEP_VAL_AIR;
+		steepVal = STUMBLE_STEEP_VAL_AIR;
 	}
 	else
 	{
-		steepVal = STEEP_VAL;
+		steepVal = STUMBLE_STEEP_VAL;
 	}
 
-	oldSlope = K_TumbleSlope(player->mo, oldPitch, oldRoll);
+	oldSlope = K_StumbleSlope(player->mo, oldPitch, oldRoll);
 
 	if (oldSlope <= steepVal)
 	{
@@ -3467,7 +3463,7 @@ boolean K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll, 
 		return false;
 	}
 
-	newSlope = K_TumbleSlope(player->mo, player->mo->pitch, player->mo->roll);
+	newSlope = K_StumbleSlope(player->mo, player->mo->pitch, player->mo->roll);
 	slopeDelta = AngleDelta(oldSlope, newSlope);
 
 	if (slopeDelta <= steepVal)

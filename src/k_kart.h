@@ -28,6 +28,9 @@ Make sure this matches the actual number of states
 #define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
+#define STUMBLE_STEEP_VAL ANG60
+#define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
@@ -70,7 +73,8 @@ void K_DoInstashield(player_t *player);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
-boolean K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir);
+angle_t K_StumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll);
+boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);

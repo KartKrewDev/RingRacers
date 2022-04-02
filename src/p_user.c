@@ -1338,7 +1338,7 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 			if (P_IsObjectOnGround(player->mo) && (player->mo->eflags & MFE_JUSTHITFLOOR))
 				air = true;
 
-			if (K_CheckSlopeTumble(player, oldPitch, oldRoll, air))
+			if (K_CheckStumble(player, oldPitch, oldRoll, air))
 				return false;
 		}
 	}
