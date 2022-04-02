@@ -547,19 +547,11 @@ fixed_t K_BotRubberband(player_t *player)
 		}
 	}
 
-#if 0
 	// Lv.   1: x1.0 max
-	// Lv.   5: x1.5 max
-	// Lv.   9: x2.0 max
-	// Lv. MAX: x2.5 max
-	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (DIFFICULTBOT - 1));
-#else
-	// Lv.   1: x1.0 max
-	// Lv.   5: x1.333 max
-	// Lv.   9: x1.667 max
-	// Lv. MAX: x2.0 max
-	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / (MAXBOTDIFFICULTY - 1));
-#endif
+	// Lv.   5: x1.4 max
+	// Lv.   9: x1.8 max
+	// Lv. MAX: x2.2 max
+	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / 10);
 
 	// Lv.   1: x0.75 min
 	// Lv.   5: x0.875 min
