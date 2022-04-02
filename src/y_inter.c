@@ -584,7 +584,7 @@ void Y_IntermissionDrawer(void)
 					V_DrawScaledPatch(x+16, y-4, 0, W_CachePatchName(va("K_CHILI%d", cursorframe+1), PU_CACHE));
 				}
 
-				if (!data.rankingsmode && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
+				if ((players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
 				{
 					// RETIRED!!
 					V_DrawScaledPatch(x+12, y-7, 0, W_CachePatchName("K_NOBLNS", PU_CACHE));
@@ -811,15 +811,7 @@ void Y_Ticker(void)
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
-				UINT8 i;
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if ((players[i].pflags & PF_NOCONTEST) && players[i].bot)
-					{
-						K_ReplaceBot(&players[i]);
-					}
-				}
-
+				K_RetireBots();
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
 
@@ -1170,6 +1162,7 @@ void Y_StartIntermission(void)
 //
 void Y_EndIntermission(void)
 {
+	K_RetireBots();
 	Y_UnloadData();
 
 	endtic = -1;

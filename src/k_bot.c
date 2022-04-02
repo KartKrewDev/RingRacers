@@ -487,7 +487,7 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 fixed_t K_BotRubberband(player_t *player)
 {
 	fixed_t rubberband = FRACUNIT;
-	fixed_t max, min;
+	fixed_t rubbermax, rubbermin;
 	player_t *firstplace = NULL;
 	line_t *botController = NULL;
 	UINT8 i;
@@ -551,21 +551,21 @@ fixed_t K_BotRubberband(player_t *player)
 	// Lv.   5: x1.4 max
 	// Lv.   9: x1.8 max
 	// Lv. MAX: x2.2 max
-	max = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / 10);
+	rubbermax = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / 10);
 
 	// Lv.   1: x0.75 min
 	// Lv.   5: x0.875 min
 	// Lv.   9: x1.0 min
 	// Lv. MAX: x1.0 min
-	min = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty))) / (DIFFICULTBOT - 1));
+	rubbermin = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty))) / (DIFFICULTBOT - 1));
 
-	if (rubberband > max)
+	if (rubberband > rubbermax)
 	{
-		rubberband = max;
+		rubberband = rubbermax;
 	}
-	else if (rubberband < min)
+	else if (rubberband < rubbermin)
 	{
-		rubberband = min;
+		rubberband = rubbermin;
 	}
 
 	return rubberband;
@@ -1119,6 +1119,11 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 			predict->x, predict->y
 		);
 
+		if (realrad < player->mo->radius)
+		{
+			realrad = player->mo->radius;
+		}
+
 		if (anglediff > 0)
 		{
 			// Become more precise based on how hard you need to turn
@@ -1447,11 +1452,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				turnamt = bullyTurn;
 
 				// If already spindashing, wait until we get a relatively OK charge first.
-				if (player->spindash > 0 && player->spindash <= TICRATE)
-				{
-					trySpindash = true;
-				}
-				else
+				if (player->spindash == 0 || player->spindash > TICRATE)
 				{
 					trySpindash = false;
 					cmd->buttons |= BT_ACCELERATE;
