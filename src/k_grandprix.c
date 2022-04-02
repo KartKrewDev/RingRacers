@@ -581,7 +581,7 @@ void K_RetireBots(void)
 			continue;
 		}
 
-		bot = players[i];
+		bot = &players[i];
 
 		if (bot->spectator)
 		{

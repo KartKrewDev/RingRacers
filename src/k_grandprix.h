@@ -106,13 +106,13 @@ void K_IncreaseBotDifficulty(player_t *bot);
 
 
 /*--------------------------------------------------
-	void K_RetireBots(player_t *bot);
+	void K_RetireBots(void);
 
 		Replaces PF_NOCONTEST bots, by refreshing their difficulty
 		and changing their skin.
 --------------------------------------------------*/
 
-void K_RetireBots(player_t *bot);
+void K_RetireBots(void);
 
 
 /*--------------------------------------------------
