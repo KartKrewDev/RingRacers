@@ -1324,14 +1324,23 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
 
-	if (fromAir == true && clipmomz == true)
+	if (clipmomz == true)
 	{
-		K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
-	}
+		if (fromAir == true)
+		{
+			K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+		}
 
-	if (player->mo->health)
-	{
-		K_CheckSlopeTumble(player, oldPitch, oldRoll);
+		if (player->mo->health)
+		{
+			boolean air = fromAir;
+
+			if (P_IsObjectOnGround(player->mo) && (player->mo->eflags & MFE_JUSTHITFLOOR))
+				air = true;
+
+			if (K_CheckSlopeTumble(player, oldPitch, oldRoll, air))
+				return false;
+		}
 	}
 
 	return clipmomz;

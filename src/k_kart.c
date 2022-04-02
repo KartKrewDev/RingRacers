@@ -3422,10 +3422,13 @@ static angle_t K_TumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
 	return slope;
 }
 
-#define STEEP_VAL (FixedAngle(40*FRACUNIT))
 
-void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
+#define STEEP_VAL ANG60
+#define STEEP_VAL_AIR ANG30 + ANG10
+
+boolean K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
 {
+	angle_t steepVal = ANGLE_MAX;
 	fixed_t gravityadjust;
 	angle_t oldSlope, newSlope;
 	angle_t slopeDelta;
@@ -3436,25 +3439,41 @@ void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
 	if (player->tumbleBounces)
 	{
 		// Already tumbling.
-		return;
+		return false;
+	}
+
+	if ((player->mo->pitch == oldPitch)
+		&& (player->mo->roll == oldRoll))
+	{
+		// No change.
+		return false;
+	}
+
+	if (fromAir == true)
+	{
+		steepVal = STEEP_VAL_AIR;
+	}
+	else
+	{
+		steepVal = STEEP_VAL;
 	}
 
 	oldSlope = K_TumbleSlope(player->mo, oldPitch, oldRoll);
 
-	if (oldSlope <= STEEP_VAL)
+	if (oldSlope <= steepVal)
 	{
 		// Transferring from flat ground to a steep slope
 		// is a free action. (The other way around isn't, though.)
-		return;
+		return false;
 	}
 
 	newSlope = K_TumbleSlope(player->mo, player->mo->pitch, player->mo->roll);
 	slopeDelta = AngleDelta(oldSlope, newSlope);
 
-	if (slopeDelta <= STEEP_VAL)
+	if (slopeDelta <= steepVal)
 	{
 		// Needs to be VERY steep before we'll punish this.
-		return;
+		return false;
 	}
 
 	// Oh jeez, you landed on your side.
@@ -3488,6 +3507,7 @@ void K_CheckSlopeTumble(player_t *player, angle_t oldPitch, angle_t oldRoll)
 
 	// Reset slope.
 	player->mo->pitch = player->mo->roll = 0;
+	return true;
 }
 
 static boolean K_LastTumbleBounceCondition(player_t *player)
@@ -3525,6 +3545,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->tumbleHeight = 10;
 			player->pflags |= PF_TUMBLELASTBOUNCE;
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
+			player->mo->pitch = player->mo->roll = 0; // Prevent Kodachrome Void infinite
 		}
 	}
 

@@ -2480,7 +2480,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
-	fixed_t startingonground = P_IsObjectOnGround(thing);
+	boolean startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
 	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
@@ -2673,7 +2673,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				thing->standingslope = tmfloorslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player)
+				if (thing->player)
 				{
 					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
@@ -2696,7 +2696,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 				thing->standingslope = tmceilingslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player)
+				if (thing->player)
 				{
 					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
