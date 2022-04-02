@@ -2831,8 +2831,8 @@ void P_PlayerZMovement(mobj_t *mo)
 		// Helps give OpenGL models a bit of the tumble tell.
 		if (P_MobjFlip(mo) * mo->momz <= 0)
 		{
-			const angle_t speed = ANG2;
-			angle_t dest = FixedAngle(50*FRACUNIT);
+			const angle_t speed = ANG2; //FixedMul(ANG2, abs(mo->momz) / 8);
+			angle_t dest = ANG60 - ANG10;
 			INT32 pitchDelta = AngleDeltaSigned(mo->pitch, 0);
 			INT32 rollDelta = AngleDeltaSigned(mo->roll, 0);
 
