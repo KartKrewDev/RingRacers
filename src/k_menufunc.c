@@ -4040,6 +4040,8 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	if (optionsmenu.bindcontrol)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
+	SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
+
 	if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
 	{
 		// check if we're on a valid menu option...

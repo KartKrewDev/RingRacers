@@ -669,6 +669,11 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	boolean tryingotherID = false;
 	INT32 *controltable = &(gamecontrol[p][gc][0]);
 
+	// Due to issues currently, force menus to use default controls regardless.
+	// @FIXME ?
+	if (gamestate == GS_MENU || menuactive == true)
+		controltable = &(gamecontroldefault[gc][0]);
+
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
 #ifdef PARANOIA

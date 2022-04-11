@@ -35,7 +35,7 @@ consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", CV_SAVE, onecont
 // current state of the keys
 // FRACUNIT for fully pressed, 0 for not pressed
 INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
-boolean deviceResponding[MAXDEVICES]; 
+boolean deviceResponding[MAXDEVICES];
 
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
