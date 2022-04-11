@@ -128,6 +128,9 @@ typedef struct follower_s
 	INT32 losestate;		// state when the player has lost
 	INT32 hitconfirmstate;	// state for hit confirm
 	UINT32 hitconfirmtime;	// time to keep the above playing for
+
+	// visual
+	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
 } follower_t;
 
 extern INT32 numfollowers;

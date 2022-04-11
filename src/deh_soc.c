@@ -3505,6 +3505,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobamp = 4;
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
+	strcpy(followers[numfollowers].icon, "M_NORANK");
 
 	do
 	{
@@ -3536,6 +3537,11 @@ void readfollower(MYFILE *f)
 			if (fastcmp(word, "NAME"))
 			{
 				strcpy(followers[numfollowers].name, word2);
+				nameset = true;
+			}
+			else if (fastcmp(word, "ICON"))
+			{
+				strcpy(followers[numfollowers].icon, word2);
 				nameset = true;
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))

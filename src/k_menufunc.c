@@ -2027,6 +2027,11 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	profile_t *pr = PR_GetProfile(p->profilen);
 	INT32 i;
 
+	// While we're here, read follower values.
+	p->followern = R_FollowerAvailable(pr->follower);
+	p->followercolor = pr->followercolor;
+
+	// Now position the grid for skin
 	for (i = 0; i < numskins; i++)
 	{
 		if (!(strcmp(pr->skinname, skins[i].name)))
@@ -2058,9 +2063,9 @@ void M_CharacterSelectInit(void)
 		if (i != 0 || optionsmenu.profile)
 			CV_SetValue(&cv_usejoystick[i], -1);
 
-		CONS_Printf("Device for %d set to %d\n", i, -1);
+		//CONS_Printf("Device for %d set to %d\n", i, -1);
 	}
-	CONS_Printf("========\n");
+	//CONS_Printf("========\n");
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
@@ -2074,6 +2079,13 @@ void M_CharacterSelectInit(void)
 
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
+
+	// Default to no follower / Match
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		setup_player[i].followern = -1;
+		setup_player[i].followercolor = -1;
+	}
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -2229,16 +2241,16 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 		{
 			// Available!! Let's use this one!!
 			CV_SetValue(&cv_usejoystick[num], i);
-			CONS_Printf("Device for %d set to %d\n", num, i);
-			CONS_Printf("========\n");
+			//CONS_Printf("Device for %d set to %d\n", num, i);
+			//CONS_Printf("========\n");
 
 			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				// Un-set devices for other players.
 				CV_SetValue(&cv_usejoystick[j], -1);
-				CONS_Printf("Device for %d set to %d\n", j, -1);
+				//CONS_Printf("Device for %d set to %d\n", j, -1);
 			}
-			CONS_Printf("========\n");
+			//CONS_Printf("========\n");
 
 			//setup_numplayers++;
 			p->mdepth = CSSTEP_PROFILE;
@@ -2428,6 +2440,21 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	return false;
 }
 
+// Gets the selected follower's state for a given setup player.
+static void M_GetFollowerState(setup_player_t *p)
+{
+
+	p->follower_state = &states[followers[p->followern].followstate];
+
+	if (p->follower_state->frame & FF_ANIMATE)
+		p->follower_tics = p->follower_state->var2;	// support for FF_ANIMATE
+	else
+		p->follower_tics = p->follower_state->tics;
+
+	p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
+}
+
+
 static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
@@ -2488,10 +2515,12 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_READY;
-		p->delay = TICRATE;
-		M_SetupReadyExplosions(p);
-		S_StartSound(NULL, sfx_s3k4e);
+		p->mdepth = CSSTEP_FOLLOWER;
+		M_GetFollowerState(p);
+
+		//p->delay = TICRATE;
+		//M_SetupReadyExplosions(p);
+		//S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
 	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
@@ -2500,6 +2529,133 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu
 		else
 			p->mdepth = CSSTEP_ALTS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+}
+
+static void M_AnimateFollower(setup_player_t *p)
+{
+	if (--p->follower_tics <= 0)
+	{
+
+		// FF_ANIMATE; cycle through FRAMES and get back afterwards. This will be prominent amongst followers hence why it's being supported here.
+		if (p->follower_state->frame & FF_ANIMATE)
+		{
+			p->follower_frame++;
+			p->follower_tics = p->follower_state->var2;
+			if (p->follower_frame > (p->follower_state->frame & FF_FRAMEMASK) + p->follower_state->var1)	// that's how it works, right?
+				p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
+		}
+		else
+		{
+			if (p->follower_state->nextstate != S_NULL)
+				p->follower_state = &states[p->follower_state->nextstate];
+			p->follower_tics = p->follower_state->tics;
+			/*if (p->follower_tics == -1)
+				p->follower_tics = 15;	// er, what?*/
+			// get spritedef:
+			p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
+		}
+	}
+
+	p->follower_timer++;
+}
+
+static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
+{
+
+	M_AnimateFollower(p);
+
+	if (menucmd[num].dpad_lr > 0 && numfollowers)
+	{
+		p->followern++;
+		if (p->followern > numfollowers-1)
+			p->followern = -1;
+
+		M_SetMenuDelay(num);
+		S_StartSound(NULL, sfx_menu1);
+		M_GetFollowerState(p);
+	}
+	else if (menucmd[num].dpad_lr < 0 && numfollowers)
+	{
+		p->followern--;
+		if (p->followern < -1)
+			p->followern = numfollowers-1;
+
+		M_SetMenuDelay(num);
+		S_StartSound(NULL, sfx_menu1);
+		M_GetFollowerState(p);
+	}
+	else if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X))
+	{
+		if (p->followern > -1)
+			p->mdepth = CSSTEP_FOLLOWERCOLORS;
+		else
+		{
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(p);
+			S_StartSound(NULL, sfx_s3k4e);
+			M_SetMenuDelay(num);
+		}
+
+		S_StartSound(NULL, sfx_s3k63);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+}
+
+static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
+{
+	M_AnimateFollower(p);
+
+	if (menucmd[num].dpad_lr > 0)
+	{
+		p->followercolor++;
+
+		// Go back to -2 (Opposite)
+		if (p->followercolor >= numskincolors)
+			p->followercolor = -2;
+
+		// Make sure we skip 0.
+		if (p->followercolor == 0)
+			p->followercolor++;
+
+		p->rotate = CSROTATETICS;
+		M_SetMenuDelay(num); //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->followercolor--;
+		if (p->followercolor < -2)
+			p->followercolor = numskincolors-1;
+
+		if (p->followercolor == 0)
+			p->followercolor--;
+
+		p->rotate = -CSROTATETICS;
+		M_SetMenuDelay(num); //CSROTATETICS
+		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
+	}
+
+	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		p->mdepth = CSSTEP_READY;
+		p->delay = TICRATE;
+		M_SetupReadyExplosions(p);
+		S_StartSound(NULL, sfx_s3k4e);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	{
+		p->mdepth = CSSTEP_FOLLOWER;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -2534,6 +2690,12 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_COLORS: // Select color
 					M_HandleColorRotate(p, i);
+					break;
+				case CSSTEP_FOLLOWER:
+					M_HandleChooseFollower(p, i);
+					break;
+				case CSSTEP_FOLLOWERCOLORS:
+					M_HandleFollowerColorRotate(p, i);
 					break;
 				case CSSTEP_READY:
 				default: // Unready
@@ -2584,7 +2746,7 @@ static void M_MPConfirmCharacterSelection(void)
 	INT16 col;
 
 	char colstr[8];
-	char commandnames[][2][MAXSTRINGLENGTH] = { {"skin ", "color "}, {"skin2 ", "color2 "}, {"skin3 ", "color3 "}, {"skin4 ", "color4 "}};
+	char commandnames[][4][MAXSTRINGLENGTH] = { {"skin ", "color ", "follower ", "followercolor "}, {"skin2 ", "color2 ", "follower2 ", "followercolor2 "}, {"skin3 ", "color3 " "follower3 ", "followercolor3 "}, {"skin4 ", "color4 ", "follower4 ", "followercolor4 "}};
 	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
@@ -2594,7 +2756,6 @@ static void M_MPConfirmCharacterSelection(void)
 		// skin
 		strcpy(cmd, commandnames[i][0]);
 		strcat(cmd, skins[setup_player[i].skin].name);
-
 		COM_ImmedExecute(cmd);
 
 		// colour
@@ -2603,10 +2764,18 @@ static void M_MPConfirmCharacterSelection(void)
 		sprintf(colstr, "%d", col);
 		strcpy(cmd, commandnames[i][1]);
 		strcat(cmd, colstr);
+		COM_ImmedExecute(cmd);
 
+		// follower
+		strcpy(cmd, commandnames[i][2]);
+		strcat(cmd, va("%d", setup_player[i].followern));
+		COM_ImmedExecute(cmd);
+
+		// follower color
+		strcpy(cmd, commandnames[i][3]);
+		strcat(cmd, va("%d", setup_player[i].followercolor));
 		COM_ImmedExecute(cmd);
 	}
-
 	M_ClearMenus(true);
 }
 
@@ -2659,8 +2828,13 @@ void M_CharacterSelectTick(void)
 			// in a profile; update the selected profile and then go back to the profile menu.
 			if (optionsmenu.profile)
 			{
+				// save player
 				strcpy(optionsmenu.profile->skinname, skins[setup_player[0].skin].name);
 				optionsmenu.profile->color = setup_player[0].color;
+
+				// save follower
+				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].skinname);
+				optionsmenu.profile->followercolor = setup_player[0].followercolor;
 
 				// reset setup_player
 				memset(setup_player, 0, sizeof(setup_player));
@@ -2674,6 +2848,9 @@ void M_CharacterSelectTick(void)
 				{
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
+
+					CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
+					CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
 				}
 
 				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);

@@ -493,6 +493,8 @@ typedef enum
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
+	CSSTEP_FOLLOWER,
+	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
 } setup_mdepth_t;
 
@@ -506,6 +508,13 @@ typedef struct setup_player_s
 	UINT8 delay;
 	UINT8 color;
 	UINT8 mdepth;
+
+	INT32 followern;
+	INT16 followercolor;
+	tic_t follower_tics;
+	tic_t follower_timer;
+	UINT8 follower_frame;
+	state_t *follower_state;
 } setup_player_t;
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];

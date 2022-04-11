@@ -823,6 +823,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 	if (p->mdepth == CSSTEP_ALTS)
 		numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
+	else if (p->mdepth == CSSTEP_FOLLOWERCOLORS)
+		numoptions = numskincolors-1 +2;
 	else
 		numoptions = numskincolors-1;
 
@@ -856,6 +858,55 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
 			cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+		}
+
+		else if (p->mdepth == CSSTEP_FOLLOWERCOLORS)
+		{
+			INT16 diff;
+			UINT16 col;
+
+			n = (p->followercolor-1) + numoptions/2;
+
+			if (subtract)
+				n -= ((i+1)/2);
+			else
+				n += ((i+1)/2);
+
+			n %= numoptions;
+			n++;
+
+			if (!n)
+				continue;
+
+			col = (unsigned)(n);
+			switch (col)
+			{
+				case FOLLOWERCOLOR_MATCH: // "Match"
+					col = p->color;
+					break;
+				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+					col = skincolors[p->color].invcolor;
+					break;
+			}
+
+			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+
+			if (n > p->followercolor)
+				diff = n - p->followercolor;
+			else
+				diff = p->followercolor - n;
+
+			if (diff == 0)
+				patch = W_CachePatchName("COLORSP2", PU_CACHE);
+			else if (abs(diff) < 25)
+				patch = W_CachePatchName("COLORSP1", PU_CACHE);
+			else
+				patch = W_CachePatchName("COLORSP0", PU_CACHE);
+
+			radius = 28<<FRACBITS;
+			//radius -= SHORT(patch->width) << FRACBITS;
+
+			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
 		}
 		else
 		{
@@ -949,6 +1000,164 @@ static boolean M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflag
 	return true;
 }
 
+// Draws the follower list.
+static void M_DrawFollowerList(setup_player_t *p, UINT8 num)
+{
+	INT16 x = 82;
+	INT16 y = 3;
+	INT32 cf = p->followern;
+	UINT8 i;
+	UINT8 *colormap = NULL;
+
+	if (num & 1)
+		x = 172;
+
+	if (num >= 2)
+		y = 176;
+
+	// this places it at the bottom of the card!
+	if (optionsmenu.profile)
+	{
+		x = 35;
+		y = 143;
+	}
+
+	// Start 1 follower below.
+	cf--;
+	if (cf < -1)
+		cf = numfollowers-1;
+
+	for (i = 0; i < 3; i++)
+	{
+		patch_t *pp = NULL;
+		follower_t fl = followers[cf];
+
+		if (W_LumpExists(fl.icon) && cf >= 0)
+		{
+			UINT16 col = (unsigned)p->followercolor;
+			pp = W_CachePatchName(fl.icon, PU_CACHE);
+
+			switch (col)
+			{
+				case FOLLOWERCOLOR_MATCH: // "Match"
+					col = p->color;
+					break;
+				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+					col = skincolors[p->color].invcolor;
+					break;
+			}
+
+			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+			V_DrawMappedPatch(x, y, 0, pp, colormap);
+			if (i == 1)
+				V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("K_CHILI%d", p->follower_timer%16 /2 +1), PU_CACHE), NULL);
+
+		}
+		// No patch....
+		else
+		{
+			V_DrawFill(x, y, 16, 16, 0);
+
+			if (i == 1)
+				V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("K_CHILI%d", p->follower_timer%16 /2 +1), PU_CACHE), NULL);
+
+			if (cf >= 0)
+				V_DrawString(x, y, 0, va("%d\n", cf));
+			else
+				V_DrawMappedPatch(x-4, y-3, 0, W_CachePatchName("K_NOBLNS", PU_CACHE), NULL);
+
+		}
+
+		cf++;
+		if (cf > numfollowers-1)
+			cf = -1;
+
+		x += 23;
+	}
+}
+
+// Returns false is the follower shouldn't be rendered.
+// 'num' can be used to directly specify the follower number, but doing this will not animate it.
+// if a setup_player_t is specified instead, its data will be used to animate the follower sprite.
+static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags, UINT16 color, setup_player_t *p)
+{
+
+	spritedef_t *sprdef;
+	spriteframe_t *sprframe;
+	patch_t *patch;
+	INT32 followernum;
+	state_t *usestate;
+	UINT32 useframe;
+	follower_t fl;
+	UINT8 *colormap = NULL;
+
+	if (p != NULL)
+		followernum = p->followern;
+	else
+		followernum = num;
+
+	// Don't draw if we're outta bounds.
+	if (followernum < 0 || followernum > numfollowers-1)
+		return false;
+
+	fl = followers[followernum];
+
+	if (p != NULL)
+	{
+		usestate = p->follower_state;
+		useframe = p->follower_frame;
+	}
+	else
+	{
+		usestate = &states[followers[followernum].followstate];
+		useframe = usestate->frame & FF_FRAMEMASK;
+	}
+
+	sprdef = &sprites[usestate->sprite];
+
+	// draw the follower
+
+	if (useframe >= sprdef->numframes)
+		useframe = 0;	// frame doesn't exist, we went beyond it... what?
+
+	sprframe = &sprdef->spriteframes[useframe];
+	patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+
+	if (sprframe->flip & 2) // Only for first sprite
+	{
+		if (addflags & V_FLIP)
+			addflags &= ~V_FLIP;
+		else
+			addflags |= V_FLIP; // This sprite is left/right flipped!
+	}
+
+	fixed_t sine = 0;
+
+	if (p != NULL)
+	{
+		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
+		sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK);
+		color = p->followercolor;
+
+		switch (color)
+		{
+			case FOLLOWERCOLOR_MATCH: // "Match"
+				color = p->color;
+				break;
+			case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+				color = skincolors[p->color].invcolor;
+				break;
+			default:
+				break;
+		}
+	}
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
+	V_DrawFixedPatch((x)*FRACUNIT, (y-12)*FRACUNIT+sine, fl.scale, addflags, patch, colormap);
+
+	return true;
+}
+
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
 {
 	setup_player_t *p = &setup_player[num];
@@ -983,7 +1192,15 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	{
 		M_DrawCharSelectSprite(num, x+32, y+75);
 
-		if (p->mdepth == CSSTEP_ALTS || p->mdepth == CSSTEP_COLORS)
+		if (p->mdepth >= CSSTEP_FOLLOWER)
+		{
+			M_DrawFollowerSprite(x+16, y+75, -1, !(num & 1) ? V_FLIP : 0, 0, p);
+
+			if (p->mdepth == CSSTEP_FOLLOWER)
+				M_DrawFollowerList(p, num);
+		}
+
+		if (p->mdepth == CSSTEP_ALTS || p->mdepth == CSSTEP_COLORS || p->mdepth == CSSTEP_FOLLOWERCOLORS)
 		{
 			M_DrawCharSelectCircle(p, x+32, y+64);
 		}
@@ -1175,21 +1392,63 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
 
+		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
 
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
 
-		if (sp->mdepth == CSSTEP_ALTS || sp->mdepth == CSSTEP_COLORS)
+		if (M_DrawFollowerSprite(x-44 +12, y+119, 0, V_FLIP, 0, sp))
+		{
+			UINT16 col = (unsigned)p->followercolor;
+			patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
+			UINT8 *fcolormap;
+
+			switch (col)
+			{
+				case FOLLOWERCOLOR_MATCH: // "Match"
+					col = sp->color;
+					break;
+				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+					col = skincolors[sp->color].invcolor;
+					break;
+			}
+
+			fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+			V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+		}
+
+		if (sp->mdepth == CSSTEP_ALTS || sp->mdepth == CSSTEP_COLORS || sp->mdepth == CSSTEP_FOLLOWERCOLORS)
 		{
 			M_DrawCharSelectCircle(sp, x-22, y+104);
 		}
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
+
+		UINT16 col = (unsigned)p->followercolor;
+		UINT8 fln = R_FollowerAvailable(p->follower);
+
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+
+		switch (col)
+		{
+			case FOLLOWERCOLOR_MATCH: // "Match"
+				col = p->color;
+				break;
+			case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+				col = skincolors[p->color].invcolor;
+				break;
+		}
+
+
+		if (M_DrawFollowerSprite(x-44 +12, y+119, fln, V_FLIP, col, NULL))
+		{
+			patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
+			UINT8 *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+			V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+		}
 	}
 
 	V_DrawCenteredGamemodeString(x, y+24, 0, 0, pname);
@@ -1287,7 +1546,12 @@ void M_DrawCharacterSelect(void)
 		if (optionsmenu.profile == NULL)
 			M_DrawCharSelectPreview(i);
 		else if (i == 0)
+		{
 			M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
+
+			if (setup_player[0].mdepth == CSSTEP_FOLLOWER)
+				M_DrawFollowerList(&setup_player[0], 0);
+		}
 
 		if (i >= setup_numplayers)
 			continue;
