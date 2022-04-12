@@ -1197,6 +1197,11 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 	return (menucmd[pid].buttons & bt);
 }
 
+boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
+{
+	return (menucmd[pid].buttons & bt);
+}
+
 // Returns true if we press the confirmation button
 static boolean M_MenuConfirmPressed(UINT8 pid)
 {
@@ -4188,6 +4193,9 @@ void M_ProfileDeviceSelect(INT32 choice)
 	optionsmenu.bindcontrol = 0;
 	optionsmenu.bindtimer = 0;
 
+	optionsmenu.lastkey = 0;
+	optionsmenu.keyheldfor = 0;
+
 	optionsmenu.contx = optionsmenu.tcontx = controlleroffsets[gc_a][0];
 	optionsmenu.conty = optionsmenu.tconty = controlleroffsets[gc_a][1];
 
@@ -4255,7 +4263,9 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		return true;
 	}
 	else if (M_MenuBackPressed(pid))
+	{
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+	}
 
 	return false;
 }
@@ -4284,6 +4294,8 @@ void M_ProfileSetControl(INT32 ch)
 }
 
 // Map the event to the profile.
+
+#define KEYHOLDFOR 1
 void M_MapProfileControl(event_t *ev)
 {
 	INT32 c = 0;
@@ -4357,6 +4369,32 @@ void M_MapProfileControl(event_t *ev)
 					}
 				}
 			}
+
+			/* 	I hate this.
+				I shouldn't have to do this.
+				But we HAVE to because of some controllers, INCLUDING MINE.
+
+				Triggers on X360 controllers go from -1024 when not held
+				To 1023 when pressed.
+				The result is that pressing the trigger makes the game THINK the input is for a negative value.
+				Which then means that the input is considered pressed when the trigger is released.
+
+				So what we're going to do is make sure that the detected 'c' key is the same for multiple rolls of ev_joystick.
+				NOTE: We need the player to press the key all the way down otherwise this might just not work...
+
+				@TODO: This isn't entirely consistent because we only check for events..... maybe check continuously for gamekeydown[]?
+				but this seems messy...
+			*/
+
+			//CONS_Printf("mapping joystick ... attempt (%d)\n", optionsmenu.keyheldfor);
+
+			if (c != optionsmenu.lastkey)
+			{
+				optionsmenu.lastkey = c;
+				optionsmenu.keyheldfor = 0;
+				return;
+			}
+
 			break;
 		default:
 			return;
@@ -4386,6 +4424,7 @@ void M_MapProfileControl(event_t *ev)
 	optionsmenu.profile->controls[controln][where] = c;
 	optionsmenu.bindcontrol = 0;	// not binding anymore
 }
+#undef KEYHOLDFOR
 
 void M_HandleItemToggles(INT32 choice)
 {

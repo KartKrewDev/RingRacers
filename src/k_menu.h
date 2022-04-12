@@ -454,6 +454,7 @@ void M_SortServerList(void);
 void M_MapMenuControls(event_t *ev);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
+boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
 void M_StartControlPanel(void);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
@@ -672,6 +673,10 @@ extern struct optionsmenu_s {
 	INT16 controlscroll;		// scrolling for the control menu....
 	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
+
+	// Used for horrible axis shenanigans
+	INT32 lastkey;
+	tic_t keyheldfor;
 
 	// controller coords...
 	// Works the same as (t)opt
