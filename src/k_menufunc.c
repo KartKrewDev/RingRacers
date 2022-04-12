@@ -1197,6 +1197,25 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 	return (menucmd[pid].buttons & bt);
 }
 
+// Returns true if we press the confirmation button
+static boolean M_MenuConfirmPressed(UINT8 pid)
+{
+	 return M_MenuButtonPressed(pid, MBT_A);
+}
+
+// Returns true if we press the Cancel button
+static boolean M_MenuBackPressed(UINT8 pid)
+{
+	 return M_MenuButtonPressed(pid, MBT_X);
+}
+
+// Retrurns true if we press the tertiary option button (C)
+static boolean M_MenuExtraPressed(UINT8 pid)
+{
+	 return M_MenuButtonPressed(pid, MBT_C);
+}
+
+
 // Updates the x coordinate of the keybord so prevent it from going in weird places
 static void M_UpdateKeyboardX(void)
 {
@@ -1319,7 +1338,7 @@ static void M_MenuTypingInput(INT32 key)
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_menu1);
 		}
-		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+		else if (M_MenuConfirmPressed(pid))
 		{
 			// Add the character. First though, check what we're pressing....
 			INT16 c = virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx];
@@ -1404,7 +1423,7 @@ static void M_HandleMenuInput(void)
 			routine = NULL;
 
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
-			if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+			if (M_MenuConfirmPressed(pid))
 			{
 				menutyping.keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				menutyping.active = true;
@@ -1465,7 +1484,7 @@ static void M_HandleMenuInput(void)
 
 		return;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	else if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		noFurtherInput = true;
 		currentMenu->lastOn = itemOn;
@@ -1504,13 +1523,13 @@ static void M_HandleMenuInput(void)
 		M_SetMenuDelay(pid);
 		return;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_GoBack(0);
 		M_SetMenuDelay(pid);
 		return;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
+	else if (M_MenuExtraPressed(pid))
 	{
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
@@ -1841,8 +1860,8 @@ void M_StopMessage(INT32 choice)
 void M_HandleMenuMessage(void)
 {
 	const UINT8 pid = 0;
-	boolean btok = M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X);
-	boolean btnok = M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y);
+	boolean btok = M_MenuConfirmPressed(pid);
+	boolean btnok = M_MenuBackPressed(pid);
 
 	menumessage.fadetimer++;
 
@@ -1917,7 +1936,7 @@ void M_HandleImageDef(INT32 choice)
 		M_SetMenuDelay(pid);
 		itemOn--;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuConfirmPressed(pid) || M_MenuButtonPressed(pid, MBT_X) || M_MenuButtonPressed(pid, MBT_Y))
 	{
 		exitmenu = true;
 		M_SetMenuDelay(pid);
@@ -2206,7 +2225,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 		return false;	// Don't allow for the possibility of SOMEHOW another player joining in.
 
 	// Detect B press first ... this means P1 can actually exit out of the menu.
-	if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	if (M_MenuBackPressed(num))
 	{
 		M_SetMenuDelay(num);
 
@@ -2261,7 +2280,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			{
 				setup_player[j].delay = MENUDELAYTIME;
 				M_SetMenuDelay(j);
-				menucmd[j].buttonsHeld |= (MBT_B|MBT_Y);
+				menucmd[j].buttonsHeld |= MBT_X;
 			}
 
 			memset(deviceResponding, false, sizeof(deviceResponding));
@@ -2296,7 +2315,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_menu1);
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		if (num == setup_numplayers-1)
 		{
@@ -2309,7 +2328,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 			{
 				setup_player[i].delay = MENUDELAYTIME;
 				M_SetMenuDelay(i);
-				menucmd[i].buttonsHeld |= (MBT_B|MBT_Y);
+				menucmd[i].buttonsHeld |= MBT_X;
 			}
 
 			return true;
@@ -2321,7 +2340,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X))
+	else if (M_MenuConfirmPressed(num))
 	{
 		// Apply the profile.
 		PR_ApplyProfile(p->profilen, num);
@@ -2382,7 +2401,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	if (p->clonenum >= numclones)
 		p->clonenum = 0;
 
-	if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
 		{
@@ -2400,7 +2419,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		if (num == setup_numplayers-1)
 		{
@@ -2424,7 +2443,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			{
 				setup_player[i].delay = MENUDELAYTIME;
 				M_SetMenuDelay(i);
-				menucmd[i].buttonsHeld |= (MBT_B|MBT_Y);
+				menucmd[i].buttonsHeld |= MBT_X;
 			}
 
 			return true;
@@ -2478,13 +2497,13 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3kc3s);
 	}
 
-	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_COLORS;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		p->mdepth = CSSTEP_CHARS;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -2513,7 +2532,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 
-	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_FOLLOWER;
 		M_GetFollowerState(p);
@@ -2523,7 +2542,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		//S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu
@@ -2587,7 +2606,7 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_menu1);
 		M_GetFollowerState(p);
 	}
-	else if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X))
+	else if (M_MenuConfirmPressed(num))
 	{
 		if (p->followern > -1)
 			p->mdepth = CSSTEP_FOLLOWERCOLORS;
@@ -2603,7 +2622,7 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		p->mdepth = CSSTEP_COLORS;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -2645,7 +2664,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 
-	 if (M_MenuButtonPressed(num, MBT_A) || M_MenuButtonPressed(num, MBT_X) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
@@ -2653,7 +2672,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
-	else if (M_MenuButtonPressed(num, MBT_B) || M_MenuButtonPressed(num, MBT_Y))
+	else if (M_MenuBackPressed(num))
 	{
 		p->mdepth = CSSTEP_FOLLOWER;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -2699,7 +2718,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_READY:
 				default: // Unready
-					if (M_MenuButtonPressed(i, MBT_B) || M_MenuButtonPressed(i, MBT_Y))
+					if (M_MenuBackPressed(i))
 					{
 						p->mdepth = CSSTEP_COLORS;
 						S_StartSound(NULL, sfx_s3k5b);
@@ -3185,7 +3204,7 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 	}
 
-	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		M_SetMenuDelay(pid);
 
@@ -3257,7 +3276,7 @@ void M_CupSelectHandler(INT32 choice)
 			S_StartSound(NULL, sfx_s3k63);
 		}
 	}
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 
@@ -3305,7 +3324,7 @@ void M_LevelSelectHandler(INT32 choice)
 
 	M_LevelSelectScrollDest();
 
-	if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		INT16 map = start;
 		INT16 add = levellist.cursor;
@@ -3398,7 +3417,7 @@ void M_LevelSelectHandler(INT32 choice)
 			M_ClearMenus(true);
 		}
 	}
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 
@@ -3784,7 +3803,7 @@ boolean M_OptionsInputs(INT32 ch)
 
 		return true;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 
 		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
@@ -3923,7 +3942,7 @@ void M_HandleProfileSelect(INT32 ch)
 		M_SetMenuDelay(pid);
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 
 		if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
@@ -3964,7 +3983,7 @@ void M_HandleProfileSelect(INT32 ch)
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		optionsmenu.resetprofilemenu = true;
 		M_GoBack(0);
@@ -3984,7 +4003,7 @@ boolean M_ProfileEditInputs(INT32 ch)
 	UINT8 i;
 	(void) ch;
 
-	if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	if (M_MenuBackPressed(pid))
 	{
 		// check if some profiles have the same name
 		for (i = 0; i < PR_GetNumProfiles(); i++)
@@ -4060,12 +4079,12 @@ void M_HandleVideoModes(INT32 ch)
 	if (optionsmenu.vidm_testingmode > 0)
 	{
 		// change back to the previous mode quickly
-		if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+		if (M_MenuBackPressed(pid))
 		{
 			setmodeneeded = optionsmenu.vidm_previousmode + 1;
 			optionsmenu.vidm_testingmode = 0;
 		}
-		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+		else if (M_MenuConfirmPressed(pid))
 		{
 			S_StartSound(NULL, sfx_menu1);
 			optionsmenu.vidm_testingmode = 0; // stop testing
@@ -4116,7 +4135,7 @@ void M_HandleVideoModes(INT32 ch)
 			M_SetMenuDelay(pid);
 		}
 
-		else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+		else if (M_MenuConfirmPressed(pid))
 		{
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_menu1);
@@ -4131,7 +4150,7 @@ void M_HandleVideoModes(INT32 ch)
 			}
 		}
 
-		else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+		else if (M_MenuBackPressed(pid))
 		{
 			M_SetMenuDelay(pid);
 			if (currentMenu->prevMenu)
@@ -4219,7 +4238,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 
 	SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
 
-	if (M_MenuButtonPressed(pid, MBT_C) || M_MenuButtonPressed(pid, MBT_Z))
+	if (M_MenuExtraPressed(pid))
 	{
 		// check if we're on a valid menu option...
 		if (currentMenu->menuitems[itemOn].mvar1)
@@ -4235,7 +4254,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 		return true;
 	}
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
 
 	return false;
@@ -4435,7 +4454,7 @@ void M_HandleItemToggles(INT32 choice)
 		M_SetMenuDelay(pid);
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 		if (currentMenu->menuitems[itemOn].mvar1 == 255)
@@ -4472,7 +4491,7 @@ void M_HandleItemToggles(INT32 choice)
 		}
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 		exitmenu = true;
@@ -4575,7 +4594,7 @@ boolean M_ExtrasInputs(INT32 ch)
 		return true;
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 
 		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
@@ -4711,7 +4730,7 @@ boolean M_PauseInputs(INT32 ch)
 		return true;
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_QuitPauseMenu(-1);
 		return true;
@@ -4994,13 +5013,13 @@ void M_HandleReplayHutList(INT32 choice)
 		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 		M_QuitReplayHut();
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 		M_SetMenuDelay(pid);
 		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
@@ -5370,7 +5389,7 @@ void M_HandleAddons(INT32 choice)
 		M_SetMenuDelay(pid);
 	}
 
-	else if (M_MenuButtonPressed(pid, MBT_A) || M_MenuButtonPressed(pid, MBT_X))
+	else if (M_MenuConfirmPressed(pid))
 	{
 		boolean refresh = true;
 		M_SetMenuDelay(pid);
@@ -5451,7 +5470,7 @@ void M_HandleAddons(INT32 choice)
 				refreshdirmenu |= REFRESHDIR_NORMAL;
 		}
 	}
-	else if (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_Y))
+	else if (M_MenuBackPressed(pid))
 	{
 		exitmenu = true;
 		M_SetMenuDelay(pid);

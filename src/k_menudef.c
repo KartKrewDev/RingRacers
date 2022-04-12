@@ -469,20 +469,20 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "A", "Accelerate / Confirm",
 		"PR_BTA", {.routine = M_ProfileSetControl}, gc_a, 0},
 
-	{IT_CONTROL, "B", "Look backwards / Back",
+	{IT_CONTROL, "B", "Look backwards",
 		"PR_BTB", {.routine = M_ProfileSetControl}, gc_b, 0},
 
-	{IT_CONTROL, "C", "Spindash",
+	{IT_CONTROL, "C", "Spindash / Extra",
 		"PR_BTC", {.routine = M_ProfileSetControl}, gc_c, 0},
 
-	{IT_CONTROL, "X", "Brake",
+	{IT_CONTROL, "X", "Brake / Back",
 		"PR_BTX", {.routine = M_ProfileSetControl}, gc_x, 0},
 
 	// @TODO What does this do???
-	{IT_CONTROL, "Y", "We just don't know",
+	{IT_CONTROL, "Y", "N/A ?",
 		"PR_BTY", {.routine = M_ProfileSetControl}, gc_y, 0},
 
-	{IT_CONTROL, "Z", "We just don't know",
+	{IT_CONTROL, "Z", "N/A ?",
 		"PR_BTZ", {.routine = M_ProfileSetControl}, gc_z, 0},
 
 	{IT_CONTROL, "L", "Use item",

@@ -561,9 +561,9 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_left ][1] = KEY_HAT1+2; // D-Pad Left
 	gamecontroldefault[gc_right][1] = KEY_HAT1+3; // D-Pad Right
 	gamecontroldefault[gc_a    ][1] = KEY_JOY1+0; // A
-	gamecontroldefault[gc_b    ][1] = KEY_JOY1+1; // B
-	gamecontroldefault[gc_c    ][1] = KEY_JOY1+2; // ?
-	gamecontroldefault[gc_x    ][1] = KEY_JOY1+3;
+	gamecontroldefault[gc_b    ][1] = KEY_JOY1+2; // X
+	gamecontroldefault[gc_c    ][1] = KEY_JOY1+3; // Y
+	gamecontroldefault[gc_x    ][1] = KEY_JOY1+1; // B
 	gamecontroldefault[gc_y    ][1] = KEY_JOY1+6;
 	gamecontroldefault[gc_z    ][1] = KEY_JOY1+8;
 	gamecontroldefault[gc_l    ][1] = KEY_JOY1+4; // LB
