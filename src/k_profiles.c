@@ -150,13 +150,19 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
 	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
 	CV_StealthSet(&cv_playername[playernum], p->playername);
-	// @TODO followers
+
+	// Followers
+	CV_StealthSet(&cv_follower[playernum], p->follower);
+	CV_StealthSetValue(&cv_followercolor[playernum], p->followercolor);
 
 	// toggles
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
+
+	// set memory cvar
+	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 }
 
 UINT8 PR_GetProfileNum(profile_t *p)

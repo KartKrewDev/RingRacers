@@ -1171,7 +1171,8 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
 	if (!(num & 1))
 		flags ^= V_FLIP;
 
-	M_DrawCharacterSprite(x, y, skin, flags, colormap);
+	if (skin >= 0)
+		M_DrawCharacterSprite(x, y, skin, flags, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1206,7 +1207,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		}
 	}
 
-	if ((setup_animcounter/10) & 1)
+	if ((setup_animcounter/10) & 1 && gamestate == GS_MENU)	// Not drawn outside of GS_MENU.
 	{
 		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
 		{

@@ -2104,11 +2104,15 @@ void M_CharacterSelectInit(void)
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
 
-	// Default to no follower / Match
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
+		// Default to no follower / match colour.
 		setup_player[i].followern = -1;
 		setup_player[i].followercolor = -1;
+
+		// Set default selected profile to the last used profile for each player:
+		// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
+		setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
 	}
 
 	for (i = 0; i < numskins; i++)
@@ -2133,10 +2137,18 @@ void M_CharacterSelectInit(void)
 				setup_player[j].color = skins[i].prefcolor;
 
 				// If we're on prpfile select, skip straight to CSSTEP_CHARS
-				if (optionsmenu.profile && j == 0)
+				if ((optionsmenu.profile || gamestate != GS_MENU) && j == 0)
 				{
-					setup_player[j].profilen = optionsmenu.profilen;
-					PR_ApplyProfile(setup_player[j].profilen, 0);
+					if (optionsmenu.profile)	// In menu, setting up profile character/follower
+					{
+						setup_player[j].profilen = optionsmenu.profilen;
+						PR_ApplyProfile(setup_player[j].profilen, 0);
+					}
+					else	// gamestate != GS_MENU, in that case, assume this is whatever profile we chose to play with.
+						setup_player[j].profilen = cv_lastprofile[j].value;
+						// Don't reapply the profile here, it was already applied.
+
+
 					M_SetupProfileGridPos(&setup_player[j]);
 					setup_player[j].mdepth = CSSTEP_CHARS;
 				}
@@ -2428,9 +2440,9 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	{
 		if (num == setup_numplayers-1)
 		{
-			// for profiles, exit out of the menu instantly,
+			// for profiles / gameplay, exit out of the menu instantly,
 			// we don't want to go to the input detection menu.
-			if (optionsmenu.profile)
+			if (optionsmenu.profile || gamestate != GS_MENU)
 			{
 				memset(setup_player, 0, sizeof(setup_player));	// Reset setup_player otherwise it does some VERY funky things.
 				M_SetMenuDelay(0);
@@ -2701,7 +2713,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
-					playersChanged = M_HandlePressStart(p, i);
+					if (gamestate == GS_MENU)	// do NOT handle that outside of GS_MENU.
+						playersChanged = M_HandlePressStart(p, i);
+
 					break;
 				case CSSTEP_PROFILE:
 					playersChanged = M_HandleCSelectProfile(p, i);
@@ -2770,10 +2784,10 @@ static void M_MPConfirmCharacterSelection(void)
 	INT16 col;
 
 	char colstr[8];
-	char commandnames[][4][MAXSTRINGLENGTH] = { {"skin ", "color ", "follower ", "followercolor "}, {"skin2 ", "color2 ", "follower2 ", "followercolor2 "}, {"skin3 ", "color3 " "follower3 ", "followercolor3 "}, {"skin4 ", "color4 ", "follower4 ", "followercolor4 "}};
+	char commandnames[][4][MAXSTRINGLENGTH] = { {"skin ", "color ", "follower ", "followercolor "}, {"skin2 ", "color2 ", "follower2 ", "followercolor2 "}, {"skin3 ", "color3 ", "follower3 ", "followercolor3 "}, {"skin4 ", "color4 ", "follower4 ", "followercolor4 "}};
 	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	for (i = 0; i < splitscreen +1; i++)
 	{
 		char cmd[MAXSTRINGLENGTH];
 
@@ -4264,7 +4278,22 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
+		UINT8 i;
+		UINT8 pnum;
+
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+		pnum = PR_GetProfileNum(optionsmenu.profile);
+
+		// Check if this profile is one we have last used on any player:
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			if (cv_lastprofile[i].value == pnum)
+			{
+				PR_ApplyProfile(pnum, i);
+				break;
+			}
+		}
+
 	}
 
 	return false;

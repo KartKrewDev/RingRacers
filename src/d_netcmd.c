@@ -300,6 +300,18 @@ consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
 };
 
+// last selected profile, unaccessible cvar only set internally but is saved.
+// It's used to know what profile to autoload you to when you get into the character setup.
+
+static CV_PossibleValue_t lastprofile_cons_t[] = {{0, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
+
+consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("lastprofile", "1", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile2", "1", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile3", "1", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile4", "1", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+};
+
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
 INT32 cv_debug;
@@ -861,6 +873,7 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_skin[i]);
 		CV_RegisterVar(&cv_follower[i]);
 		CV_RegisterVar(&cv_followercolor[i]);
+		CV_RegisterVar(&cv_lastprofile[i]);
 	}
 
 	// preferred number of players
