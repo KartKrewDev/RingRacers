@@ -2723,6 +2723,29 @@ void M_DrawProfileControls(void)
 		}
 	}
 
+	if (optionsmenu.trycontroller)
+	{
+		optionsmenu.tcontx = BASEVIDWIDTH*2/3 - 10;
+		optionsmenu.tconty = BASEVIDHEIGHT/2 +70;
+
+		V_DrawCenteredString(160, 180, highlightflags, va("HOLD [X] FOR %d SECONDS TO BACK OUT", optionsmenu.trycontroller/TICRATE));
+		return;	// Don't draw the rest if we're trying the controller.
+	}
+
+	// If we're past here, draw some text warnings.
+	if (gamestate == GS_MENU || PR_GetProfileNum(optionsmenu.profile) == cv_lastprofile[pid].value)
+	{
+		if (gamestate != GS_MENU)	// If we're in a menu we'll always use the current profile to map controls from regardless.
+			V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "This is your last used profile,");
+
+		V_DrawCenteredThinString(229, 190, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Control changes will happen in real time");
+	}
+	else
+	{
+		V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "This isn't your last used profile,");
+		V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Changes will apply on next profile selection.");
+	}
+
 	// Tooltip
 	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
@@ -2752,6 +2775,10 @@ void M_DrawProfileControls(void)
 				V_DrawFill(0, y+17, 124, 1, 0);	// underline
 				V_DrawString(x, y+8, 0, currentMenu->menuitems[i].text);
 				y += spacing;
+				break;
+
+			case IT_STRING:
+				V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 				break;
 
 			case IT_STRING2:

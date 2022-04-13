@@ -538,6 +538,12 @@ menuitem_t OPTIONS_ProfileControls[] = {
 
 	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
 		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
+
+	{IT_HEADER, "EXTRA", "",
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Only display the controller for testing.",
+		NULL, {.routine = M_ProfileTryController}, 0, 0},
 };
 
 

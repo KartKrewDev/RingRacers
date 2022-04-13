@@ -674,6 +674,8 @@ extern struct optionsmenu_s {
 	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
 
+	INT16 trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
+
 	// Used for horrible axis shenanigans
 	INT32 lastkey;
 	tic_t keyheldfor;
@@ -731,6 +733,7 @@ boolean M_ProfileControlsInputs(INT32 ch);
 void M_ProfileSetControl(INT32 ch);
 
 void M_MapProfileControl(event_t *ev);
+void M_ProfileTryController(INT32 choice);
 
 // video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);

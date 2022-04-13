@@ -4249,12 +4249,36 @@ void M_HandleProfileControls(void)
 	}
 }
 
+void M_ProfileTryController(INT32 choice)
+{
+	(void) choice;
+
+	// I managed to softlock myself during testing lol.
+	if (!optionsmenu.profile->controls[gc_x][0])
+	{
+		M_StartMessage(M_GetText("You need to bind a key to [X]\nto use this feature.\n"), NULL, MM_NOTHING);
+		return;
+	}
+
+	optionsmenu.trycontroller = TICRATE*3;
+}
+
 boolean M_ProfileControlsInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	(void)ch;
 
 	// By default, accept all inputs.
+	if (optionsmenu.trycontroller)
+	{
+		if (M_MenuButtonHeld(pid, MBT_X))
+			optionsmenu.trycontroller--;
+		else
+			optionsmenu.trycontroller = TICRATE*3;
+
+		return true;
+	}
+
 	if (optionsmenu.bindcontrol)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
@@ -4278,22 +4302,10 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
-		UINT8 i;
-		UINT8 pnum;
-
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
-		pnum = PR_GetProfileNum(optionsmenu.profile);
 
-		// Check if this profile is one we have last used on any player:
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		{
-			if (cv_lastprofile[i].value == pnum)
-			{
-				PR_ApplyProfile(pnum, i);
-				break;
-			}
-		}
-
+		// Reapply player 1's real profile.
+		PR_ApplyProfile(cv_lastprofile[0].value, 0);
 	}
 
 	return false;
@@ -4452,6 +4464,28 @@ void M_MapProfileControl(event_t *ev)
 
 	optionsmenu.profile->controls[controln][where] = c;
 	optionsmenu.bindcontrol = 0;	// not binding anymore
+
+	// If possible, reapply the profile...
+	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
+	{
+		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
+		UINT8 lastp = cv_lastprofile[0].value;
+		PR_ApplyProfile(PR_GetProfileNum(optionsmenu.profile), 0);
+		CV_StealthSetValue(&cv_lastprofile[0], lastp);
+	}
+	else	// != GS_MENU
+	{
+		// ONLY apply the profile if it's in use by anything currently.
+		UINT8 pnum = PR_GetProfileNum(optionsmenu.profile);
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			if (cv_lastprofile[i].value == pnum)
+			{
+				PR_ApplyProfile(pnum, i);
+				break;
+			}
+		}
+	}
 }
 #undef KEYHOLDFOR
 
