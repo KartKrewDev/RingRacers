@@ -20,6 +20,7 @@
 #include "p_local.h"
 #include "p_setup.h" // levelflats for flat animation
 #include "r_data.h"
+#include "r_fps.h"
 #include "r_textures.h"
 #include "m_random.h"
 #include "p_mobj.h"
@@ -5512,6 +5513,10 @@ static void P_AddFloatThinker(sector_t *sec, UINT16 tag, line_t *sourceline)
 	floater->sector = sec;
 	floater->tag = (INT16)tag;
 	floater->sourceline = sourceline;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&floater->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&floater->thinker, sec, true);
 }
 
 /**
@@ -5541,6 +5546,9 @@ static void P_AddPlaneDisplaceThinker(INT32 type, fixed_t speed, INT32 control, 
 	displace->speed = speed;
 	displace->type = type;
 	displace->reverse = reverse;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&displace->thinker, &sectors[affectee], false);
 }
 
 /** Adds a Mario block thinker, which changes the block's texture between blank
@@ -5600,6 +5608,10 @@ static void P_AddRaiseThinker(sector_t *sec, INT16 tag, fixed_t speed, fixed_t c
 		raise->flags |= RF_REVERSE;
 	if (spindash)
 		raise->flags |= RF_SPINDASH;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&raise->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&raise->thinker, sec, true);
 }
 
 static void P_AddAirbob(sector_t *sec, INT16 tag, fixed_t dist, boolean raise, boolean spindash, boolean dynamic)
@@ -5625,6 +5637,10 @@ static void P_AddAirbob(sector_t *sec, INT16 tag, fixed_t dist, boolean raise, b
 		airbob->flags |= RF_SPINDASH;
 	if (dynamic)
 		airbob->flags |= RF_DYNAMIC;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&airbob->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&airbob->thinker, sec, true);
 }
 
 /** Adds a thwomp thinker.
@@ -5665,6 +5681,10 @@ static inline void P_AddThwompThinker(sector_t *sec, line_t *sourceline, fixed_t
 	sec->ceilingdata = thwomp;
 	// Start with 'resting' texture
 	sides[sourceline->sidenum[0]].midtexture = sides[sourceline->sidenum[0]].bottomtexture;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&thwomp->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&thwomp->thinker, sec, true);
 }
 
 /** Adds a thinker which checks if any MF_ENEMY objects with health are in the defined area.
@@ -7285,6 +7305,22 @@ static void Add_Scroller(INT32 type, fixed_t dx, fixed_t dy, INT32 control, INT3
 		s->last_height = sectors[control].floorheight + sectors[control].ceilingheight;
 	s->affectee = affectee;
 	P_AddThinker(THINK_MAIN, &s->thinker);
+
+	// interpolation
+	switch (type)
+	{
+		case sc_side:
+			R_CreateInterpolator_SideScroll(&s->thinker, &sides[affectee]);
+			break;
+		case sc_floor:
+			R_CreateInterpolator_SectorScroll(&s->thinker, &sectors[affectee], false);
+			break;
+		case sc_ceiling:
+			R_CreateInterpolator_SectorScroll(&s->thinker, &sectors[affectee], true);
+			break;
+		default:
+			break;
+	}
 }
 
 /** Initializes the scrollers.

@@ -261,6 +261,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 	* thinker->prev->next = thinker->next */
 	(next->prev = currentthinker = thinker->prev)->next = next;
 
+	R_DestroyLevelInterpolators(thinker);
 	Z_Free(thinker);
 }
 
@@ -545,6 +546,8 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		R_UpdateMobjInterpolators();
+
 		if (demo.recording)
 		{
 			G_WriteDemoExtraData();
@@ -737,6 +740,12 @@ void P_Ticker(boolean run)
 		LUAh_PostThinkFrame();
 	}
 
+	if (run)
+	{
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+	}
+
 	P_MapEnd();
 
 	if (demo.playback)
@@ -769,6 +778,8 @@ void P_PreTicker(INT32 frames)
 	while (hook_defrosting)
 	{
 		P_MapStart();
+
+		R_UpdateMobjInterpolators();
 
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -813,6 +824,10 @@ void P_PreTicker(INT32 frames)
 		P_RespawnSpecials();
 
 		LUAh_PostThinkFrame();
+
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 

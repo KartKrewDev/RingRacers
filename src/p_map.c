@@ -19,6 +19,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "p_setup.h" // NiGHTS stuff
+#include "r_fps.h"
 #include "r_state.h"
 #include "r_main.h"
 #include "r_sky.h"
@@ -180,6 +181,7 @@ void P_InitRoll(mobj_t *thing, angle_t newValue)
 {
 	thing->roll = thing->old_roll = newValue;
 }
+
 
 // =========================================================================
 //                       MOVEMENT ITERATOR FUNCTIONS
@@ -654,9 +656,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		if (tmthing->eflags & MFE_VERTICALFLIP)
-			thing->z = tmthing->z - thing->height - FixedMul(FRACUNIT, tmthing->scale);
+			P_SetOrigin(thing, thing->x, thing->y, tmthing->z - thing->height - FixedMul(FRACUNIT, tmthing->scale));
 		else
-			thing->z = tmthing->z + tmthing->height + FixedMul(FRACUNIT, tmthing->scale);
+			P_SetOrigin(thing, thing->x, thing->y, tmthing->z + tmthing->height + FixedMul(FRACUNIT, tmthing->scale));
 		if (thing->flags & MF_SHOOTABLE)
 			P_DamageMobj(thing, tmthing, tmthing, 1, 0);
 		return true;

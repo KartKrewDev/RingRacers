@@ -21,6 +21,7 @@
 #include "filesrch.h" // for refreshdirmenu
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -1336,7 +1337,10 @@ void G_PreLevelTitleCard(void)
             M_DoScreenShot();
 
         while (!((nowtime = I_GetTime()) - lasttime))
-            I_Sleep();
+        {
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
         lasttime = nowtime;
     }
 #endif
@@ -1928,7 +1932,6 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
-			R_UpdateViewInterpolation();
 
 			break;
 
@@ -1987,10 +1990,7 @@ void G_Ticker(boolean run)
 
 		case GS_TITLESCREEN:
 			if (titlemapinaction)
-			{
 				P_Ticker(run);
-				R_UpdateViewInterpolation();
-			}
 
 			F_TitleScreenTicker(run);
 			break;

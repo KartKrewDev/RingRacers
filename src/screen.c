@@ -15,6 +15,7 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "r_local.h"
@@ -549,12 +550,12 @@ void SCR_CalculateFPS(void)
 		return;
 	}
 
-	updateElapsed = I_PreciseToMicros(endTime - updateTime);
+	updateElapsed = (endTime - updateTime) / (I_GetPrecisePrecision() / 1000000);
 
 	if (updateElapsed >= FPS_SAMPLE_RATE)
 	{
 		static int sampleIndex = 0;
-		int frameElapsed = I_PreciseToMicros(endTime - startTime);
+		int frameElapsed = (endTime - startTime) / (I_GetPrecisePrecision() / 1000000);
 
 		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
 
@@ -581,7 +582,7 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	UINT32 benchmark = (cap == 0) ? I_GetRefreshRate() : cap;
 	INT32 x = 318;
-	double fps = ceil(averageFPS);
+	double fps = round(averageFPS);
 
 	// draw "FPS"
 	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));

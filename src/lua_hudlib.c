@@ -572,7 +572,8 @@ static int libd_draw(lua_State *L)
 {
 	INT32 x, y, flags;
 	patch_t *patch;
-	const UINT8 *colormap = NULL;
+	UINT8 *colormap = NULL;
+	huddrawlist_h list;
 
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
@@ -586,7 +587,14 @@ static int libd_draw(lua_State *L)
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
-	V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, patch, colormap);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDraw(list, x, y, patch, flags, colormap);
+	else
+		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, patch, colormap);
 	return 0;
 }
 
@@ -595,7 +603,8 @@ static int libd_drawScaled(lua_State *L)
 	fixed_t x, y, scale;
 	INT32 flags;
 	patch_t *patch;
-	const UINT8 *colormap = NULL;
+	UINT8 *colormap = NULL;
+	huddrawlist_h list;
 
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
@@ -612,7 +621,14 @@ static int libd_drawScaled(lua_State *L)
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
-	V_DrawFixedPatch(x, y, scale, flags, patch, colormap);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawScaled(list, x, y, scale, patch, flags, colormap);
+	else
+		V_DrawFixedPatch(x, y, scale, flags, patch, colormap);
 	return 0;
 }
 
@@ -621,7 +637,8 @@ static int libd_drawStretched(lua_State *L)
 	fixed_t x, y, hscale, vscale;
 	INT32 flags;
 	patch_t *patch;
-	const UINT8 *colormap = NULL;
+	UINT8 *colormap = NULL;
+	huddrawlist_h list;
 
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
@@ -639,7 +656,14 @@ static int libd_drawStretched(lua_State *L)
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
-	V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawStretched(list, x, y, hscale, vscale, patch, flags, colormap);
+	else
+		V_DrawStretchyFixedPatch(x, y, hscale, vscale, flags, patch, colormap);
 	return 0;
 }
 
@@ -650,6 +674,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	patch_t *patch;	// patch we want to draw
 	const UINT8 *colormap = NULL;	// do we want to colormap this patch?
 	boolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
+	huddrawlist_h list;
 
 	// variables used to replicate k_kart's mmap drawer:
 	INT32 lumpnum;
@@ -812,13 +837,22 @@ static int libd_drawOnMinimap(lua_State *L)
 	amypos = amnumypos + ((my + AutomapPic->height/2)<<FRACBITS) - patchh;
 
 	// and NOW we can FINALLY DRAW OUR GOD DAMN PATCH :V
-	V_DrawFixedPatch(amxpos, amypos, scale, splitflags, patch, colormap);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawScaled(list, amxpos, amypos, scale, patch, splitflags, colormap);
+	else
+		V_DrawFixedPatch(amxpos, amypos, scale, splitflags, patch, colormap);
 	return 0;
 }
 
 static int libd_drawNum(lua_State *L)
 {
 	INT32 x, y, flags, num;
+	huddrawlist_h list;
+
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
 	y = luaL_checkinteger(L, 2);
@@ -826,13 +860,22 @@ static int libd_drawNum(lua_State *L)
 	flags = luaL_optinteger(L, 4, 0);
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
-	V_DrawTallNum(x, y, flags, num);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawNum(list, x, y, num, flags);
+	else
+		V_DrawTallNum(x, y, flags, num);
 	return 0;
 }
 
 static int libd_drawPaddedNum(lua_State *L)
 {
 	INT32 x, y, flags, num, digits;
+	huddrawlist_h list;
+
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
 	y = luaL_checkinteger(L, 2);
@@ -841,7 +884,14 @@ static int libd_drawPaddedNum(lua_State *L)
 	flags = luaL_optinteger(L, 5, 0);
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
-	V_DrawPaddedTallNum(x, y, flags, num, digits);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawPaddedNum(list, x, y, num, digits, flags);
+	else
+		V_DrawPaddedTallNum(x, y, flags, num, digits);
 	return 0;
 }
 
@@ -849,6 +899,7 @@ static int libd_drawPingNum(lua_State *L)
 {
 	INT32 x, y, flags, num;
 	const UINT8 *colormap = NULL;
+	huddrawlist_h list;
 	HUDONLY
 	x = luaL_checkinteger(L, 1);
 	y = luaL_checkinteger(L, 2);
@@ -858,12 +909,20 @@ static int libd_drawPingNum(lua_State *L)
 	if (!lua_isnoneornil(L, 5))
 		colormap = *((UINT8 **)luaL_checkudata(L, 5, META_COLORMAP));
 
-	V_DrawPingNum(x, y, flags, num, colormap);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawPingNum(list, x, y, flags, num, colormap);
+	else
+		V_DrawPingNum(x, y, flags, num, colormap);
 	return 0;
 }
 
 static int libd_drawFill(lua_State *L)
 {
+	huddrawlist_h list;
 	INT32 x = luaL_optinteger(L, 1, 0);
 	INT32 y = luaL_optinteger(L, 2, 0);
 	INT32 w = luaL_optinteger(L, 3, BASEVIDWIDTH);
@@ -871,7 +930,15 @@ static int libd_drawFill(lua_State *L)
 	INT32 c = luaL_optinteger(L, 5, 31);
 
 	HUDONLY
-	V_DrawFill(x, y, w, h, c);
+
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawFill(list, x, y, w, h, c);
+	else
+		V_DrawFill(x, y, w, h, c);
 	return 0;
 }
 
@@ -880,6 +947,7 @@ static int libd_fadeScreen(lua_State *L)
 	UINT16 color = luaL_checkinteger(L, 1);
 	UINT8 strength = luaL_checkinteger(L, 2);
 	const UINT8 maxstrength = ((color & 0xFF00) ? 32 : 10);
+	huddrawlist_h list;
 
 	HUDONLY
 
@@ -889,18 +957,29 @@ static int libd_fadeScreen(lua_State *L)
 	if (strength > maxstrength)
 		return luaL_error(L, "%s fade strength %d out of range (0 - %d)", ((color & 0xFF00) ? "COLORMAP" : "TRANSMAP"), strength, maxstrength);
 
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
 	if (strength == maxstrength) // Allow as a shortcut for drawfill...
 	{
-		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, ((color & 0xFF00) ? 31 : color));
+		if (LUA_HUD_IsDrawListValid(list))
+			LUA_HUD_AddDrawFill(list, 0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, ((color & 0xFF00) ? 31 : color));
+		else
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, ((color & 0xFF00) ? 31 : color));
 		return 0;
 	}
 
-	V_DrawFadeScreen(color, strength);
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddFadeScreen(list, color, strength);
+	else
+		V_DrawFadeScreen(color, strength);
 	return 0;
 }
 
 static int libd_drawString(lua_State *L)
 {
+	huddrawlist_h list;
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
@@ -910,6 +989,15 @@ static int libd_drawString(lua_State *L)
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
 	HUDONLY
+
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	// okay, sorry, this is kind of ugly
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawString(list, x, y, str, flags, align);
+	else
 	switch(align)
 	{
 	// hu_font
@@ -956,11 +1044,19 @@ static int libd_drawTitleCardString(lua_State *L)
 	boolean rightalign = lua_optboolean(L, 5);
 	INT32 timer = luaL_optinteger(L, 6, 0);
 	INT32 threshold = luaL_optinteger(L, 7, 0);
+	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
 	HUDONLY
-	V_DrawTitleCardString(x, y, str, flags, rightalign, timer, threshold);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawTitleCardString(list, x, y, flags, str, rightalign, timer, threshold);
+	else
+		V_DrawTitleCardString(x, y, str, flags, rightalign, timer, threshold);
 	return 0;
 }
 
@@ -970,11 +1066,19 @@ static int libd_drawKartString(lua_State *L)
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
 	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
 
 	HUDONLY
-	V_DrawKartString(x, y, flags, str);
+	lua_getfield(L, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
+	list = (huddrawlist_h) lua_touserdata(L, -1);
+	lua_pop(L, 1);
+
+	if (LUA_HUD_IsDrawListValid(list))
+		LUA_HUD_AddDrawKartString(list, x, y, str, flags);
+	else
+		V_DrawKartString(x, y, flags, str);
 	return 0;
 }
 
@@ -1172,6 +1276,14 @@ static int libd_getusertransflag(lua_State *L)
 	return 1;
 }
 
+// Return the time elapsed for the previous frame, in tics.
+static int libd_getDeltaTime(lua_State *L)
+{
+	HUDONLY
+	lua_pushfixed(L, renderdeltatics);
+	return 1;
+}
+
 static luaL_Reg lib_draw[] = {
 	// cache
 	{"patchExists", libd_patchExists},
@@ -1211,6 +1323,7 @@ static luaL_Reg lib_draw[] = {
 	{"localTransFlag", libd_getlocaltransflag},
 	{"drawOnMinimap", libd_drawOnMinimap},
 	{"userTransFlag", libd_getusertransflag},
+	{"getDeltaTime", libd_getDeltaTime},
 	{NULL, NULL}
 };
 
@@ -1358,10 +1471,13 @@ boolean LUA_HudEnabled(enum hud option)
 }
 
 // Hook for HUD rendering
-void LUAh_GameHUD(player_t *stplayr)
+void LUAh_GameHUD(player_t *stplayr, huddrawlist_h list)
 {
 	if (!gL || !(hudAvailable & (1<<hudhook_game)))
 		return;
+
+	lua_pushlightuserdata(gL, list);
+	lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 
 	hud_running = true;
 	lua_settop(gL, 0);
@@ -1410,10 +1526,13 @@ void LUAh_GameHUD(player_t *stplayr)
 	hud_running = false;
 }
 
-void LUAh_ScoresHUD(void)
+void LUAh_ScoresHUD(huddrawlist_h list)
 {
 	if (!gL || !(hudAvailable & (1<<hudhook_scores)))
 		return;
+
+	lua_pushlightuserdata(gL, list);
+	lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 
 	hud_running = true;
 	lua_settop(gL, 0);
@@ -1437,10 +1556,13 @@ void LUAh_ScoresHUD(void)
 	hud_running = false;
 }
 
-void LUAh_TitleHUD(void)
+void LUAh_TitleHUD(huddrawlist_h list)
 {
 	if (!gL || !(hudAvailable & (1<<hudhook_title)))
 		return;
+
+	lua_pushlightuserdata(gL, list);
+	lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 
 	hud_running = true;
 	lua_settop(gL, 0);
@@ -1464,10 +1586,13 @@ void LUAh_TitleHUD(void)
 	hud_running = false;
 }
 
-void LUAh_TitleCardHUD(player_t *stplayr)
+void LUAh_TitleCardHUD(player_t *stplayr, huddrawlist_h list)
 {
 	if (!gL || !(hudAvailable & (1<<hudhook_titlecard)))
 		return;
+
+	lua_pushlightuserdata(gL, list);
+	lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 
 	hud_running = true;
 	lua_settop(gL, 0);
@@ -1500,10 +1625,13 @@ void LUAh_TitleCardHUD(player_t *stplayr)
 	hud_running = false;
 }
 
-void LUAh_IntermissionHUD(void)
+void LUAh_IntermissionHUD(huddrawlist_h list)
 {
 	if (!gL || !(hudAvailable & (1<<hudhook_intermission)))
 		return;
+
+	lua_pushlightuserdata(gL, list);
+	lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 
 	hud_running = true;
 	lua_settop(gL, 0);

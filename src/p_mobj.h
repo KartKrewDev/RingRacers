@@ -282,6 +282,7 @@ typedef struct mobj_s
 	// Info for drawing: position.
 	fixed_t x, y, z;
 	fixed_t old_x, old_y, old_z; // position interpolation
+	fixed_t old_x2, old_y2, old_z2;
 
 	// More list: links in sector (if needed)
 	struct mobj_s *snext;
@@ -290,6 +291,7 @@ typedef struct mobj_s
 	// More drawing info: to determine current sprite.
 	angle_t angle, pitch, roll; // orientation
 	angle_t old_angle, old_pitch, old_roll; // orientation interpolation
+	angle_t old_angle2, old_pitch2, old_roll2;
 	angle_t rollangle;
 	spritenum_t sprite; // used to find patch_t and flip value
 	UINT32 frame; // frame number, plus bits see p_pspr.h
@@ -299,6 +301,8 @@ typedef struct mobj_s
 	UINT32 renderflags; // render flags
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
+	fixed_t old_spritexscale, old_spriteyscale;
+	fixed_t old_spritexoffset, old_spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
 
 	struct msecnode_s *touching_sectorlist; // a linked list of sectors where this object appears
@@ -377,6 +381,8 @@ typedef struct mobj_s
 	UINT32 mobjnum; // A unique number for this mobj. Used for restoring pointers on save games.
 
 	fixed_t scale;
+	fixed_t old_scale; // interpolation
+	fixed_t old_scale2;
 	fixed_t destscale;
 	fixed_t scalespeed;
 
@@ -391,6 +397,7 @@ typedef struct mobj_s
 
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
 
+	boolean resetinterp; // if true, some fields should not be interpolated (see R_InterpolateMobjState implementation)
 	boolean colorized; // Whether the mobj uses the rainbow colormap
 	boolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
 
@@ -423,6 +430,7 @@ typedef struct precipmobj_s
 	// Info for drawing: position.
 	fixed_t x, y, z;
 	fixed_t old_x, old_y, old_z; // position interpolation
+	fixed_t old_x2, old_y2, old_z2;
 
 	// More list: links in sector (if needed)
 	struct precipmobj_s *snext;
@@ -431,6 +439,7 @@ typedef struct precipmobj_s
 	// More drawing info: to determine current sprite.
 	angle_t angle, pitch, roll; // orientation
 	angle_t old_angle, old_pitch, old_roll; // orientation interpolation
+	angle_t old_angle2, old_pitch2, old_roll2;
 	angle_t rollangle;
 	spritenum_t sprite; // used to find patch_t and flip value
 	UINT32 frame; // frame number, plus bits see p_pspr.h
@@ -440,6 +449,8 @@ typedef struct precipmobj_s
 	UINT32 renderflags; // render flags
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
+	fixed_t old_spritexscale, old_spriteyscale;
+	fixed_t old_spritexoffset, old_spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
 
 	struct mprecipsecnode_s *touching_sectorlist; // a linked list of sectors where this object appears
