@@ -913,7 +913,7 @@ void S_UpdateSounds(void)
 								{
 									continue;
 								}
-								
+
 								recdist = thisdist;
 								i = j;
 							}
