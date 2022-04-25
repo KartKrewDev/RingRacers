@@ -560,6 +560,14 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		t2->threshold = 10;
 	}
 
+	if (t1->reactiontime > 1000) {
+		S_StartSound(t2, sfx_kdtrg3);
+	} else if (t1->reactiontime > 500) {
+		S_StartSound(t2, sfx_kdtrg2);
+	} else {
+		S_StartSound(t2, sfx_kdtrg1);
+	}
+
 	if (draggeddroptarget && draggeddroptarget->player)
 	{
 		// The following removes t1, be warned

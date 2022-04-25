@@ -1275,7 +1275,8 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 	}
 	else if (mobj1->type == MT_DROPTARGET || mobj1->type == MT_DROPTARGET_SHIELD) // no need to check the other way around
 	{
-		S_StartSound(mobj2, sfx_s258);
+		// Sound handled in K_DropTargetCollide
+		// S_StartSound(mobj2, sfx_s258);
 		fx->colorized = true;
 		fx->color = mobj1->color;
 	}
