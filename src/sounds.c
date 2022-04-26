@@ -1104,9 +1104,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"typri2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 final boss-type typewriting
 
   // SRB2Kart - Drop target sounds
-  {"kdtrg1", false,  64, 8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"kdtrg2", false,  64, 8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"kdtrg3", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
+  {"kdtrg2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Medium energy, SF_X8AWAYSOUND
+  {"kdtrg3", false,  64, 80, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // High energy, SF_X2AWAYSOUND|SF_X8AWAYSOUND
 
   // SRB2Kart - Engine sounds
   // Engine class A
