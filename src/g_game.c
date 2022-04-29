@@ -1308,6 +1308,16 @@ void G_StartTitleCard(void)
 	// prepare status bar
 	ST_startTitleCard();
 
+	// play the sound
+	{
+		sfxenum_t kstart = sfx_kstart;
+		if (bossinfo.boss)
+			kstart = sfx_ssa021;
+		else if (encoremode)
+			kstart = sfx_ruby2;
+		S_StartSound(NULL, kstart);
+	}
+
 	// start the title card
 	WipeStageTitle = (!titlemapinaction);
 }
