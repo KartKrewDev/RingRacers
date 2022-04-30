@@ -42,6 +42,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_terrain.h"
+#include "k_objects.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -6559,8 +6560,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 			else if (P_IsObjectOnGround(mobj))
 			{
-				mobj->momx = 1;
-				mobj->momy = 0;
+				//mobj->momx = 1;
+				//mobj->momy = 0;
 				mobj->flags &= ~MF_NOCLIPTHING;
 				mobj->flags |= MF_NOGRAVITY;
 			}
@@ -7715,6 +7716,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_InitAngle(underlay, mobj->angle);
 			P_SetMobjState(underlay, underlayst);
 		}
+		break;
+	}
+	case MT_HYUDORO:
+	{
+		Obj_HyudoroThink(mobj);
+		break;
+	}
+	case MT_HYUDORO_CENTER:
+	{
+		Obj_HyudoroCenterThink(mobj);
 		break;
 	}
 	case MT_ROCKETSNEAKER:
@@ -9671,6 +9682,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SSMINE_SHIELD:
 		case MT_LANDMINE:
 		case MT_BALLHOG:
+		case MT_HYUDORO:
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:

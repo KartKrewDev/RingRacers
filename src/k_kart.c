@@ -36,6 +36,7 @@
 #include "k_hud.h"
 #include "k_terrain.h"
 #include "k_director.h"
+#include "k_objects.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -5178,6 +5179,7 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 	}
 }
 
+#if 0
 static void K_DoHyudoroSteal(player_t *player)
 {
 	INT32 i, numplayers = 0;
@@ -5255,6 +5257,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			S_StartSound(NULL, sfx_s3k92);
 	}
 }
+#endif
 
 void K_DoSneaker(player_t *player, INT32 type)
 {
@@ -9563,7 +9566,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
-								K_DoHyudoroSteal(player); // yes. yes they do.
+								//K_DoHyudoroSteal(player); // yes. yes they do.
+								Obj_HyudoroDeploy(player->mo);
+								K_PlayAttackTaunt(player->mo);
 							}
 							break;
 						case KITEM_POGOSPRING:

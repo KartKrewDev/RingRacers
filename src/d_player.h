@@ -465,6 +465,7 @@ typedef struct player_s
 
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
+	mobj_t *hoverhyudoro;   // First hyudoro hovering next to player
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
