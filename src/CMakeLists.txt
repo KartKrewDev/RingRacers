@@ -302,6 +302,7 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 #)
 
 add_subdirectory(sdl)
+add_subdirectory(objects)
 
 if(${CMAKE_SYSTEM} MATCHES Windows)
 	add_subdirectory(win32)
