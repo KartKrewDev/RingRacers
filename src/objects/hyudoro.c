@@ -83,6 +83,14 @@ get_hyudoro_master (mobj_t *hyu)
 	return center ? hyudoro_center_master(center) : NULL;
 }
 
+static player_t *
+get_hyudoro_target_player (mobj_t *hyu)
+{
+	mobj_t *target = hyudoro_target(hyu);
+
+	return target ? target->player : NULL;
+}
+
 static void
 sine_bob
 (		mobj_t * hyu,
@@ -193,9 +201,12 @@ deliver_item (mobj_t *hyu)
 
 	P_SetTarget(&hyudoro_target(hyu), NULL);
 
-	K_ChangePlayerItem(player,
-			hyudoro_itemtype(hyu),
-			hyudoro_itemcount(hyu));
+	if (player)
+	{
+		K_ChangePlayerItem(player,
+				hyudoro_itemtype(hyu),
+				player->itemamount + hyudoro_itemcount(hyu));
+	}
 
 	S_StartSound(target, sfx_itpick);
 
@@ -224,6 +235,33 @@ append_hyudoro
 	}
 
 	hyudoro_stackpos(hyu) = lastpos + 1;
+	*head = hyu;
+}
+
+static void
+pop_hyudoro (mobj_t **head)
+{
+	mobj_t *hyu = *head;
+
+	INT32 lastpos;
+	INT32 thispos;
+
+	if (is_hyudoro(hyu))
+	{
+		lastpos = hyudoro_stackpos(hyu);
+		hyu = hyudoro_next(hyu);
+
+		while (is_hyudoro(hyu))
+		{
+			thispos = hyudoro_stackpos(hyu);
+
+			hyudoro_stackpos(hyu) = lastpos;
+			lastpos = thispos;
+
+			hyu = hyudoro_next(hyu);
+		}
+	}
+
 	*head = hyu;
 }
 
@@ -274,26 +312,64 @@ hyudoro_patrol_hit_player
 }
 
 static boolean
+award_immediately (mobj_t *hyu)
+{
+	player_t *player = get_hyudoro_target_player(hyu);
+
+	if (player)
+	{
+		if (player->itemamount &&
+				player->itemtype != hyudoro_itemtype(hyu))
+		{
+			return false;
+		}
+
+		// Same as picking up paper items; get stacks
+		// immediately
+		if (!P_CanPickupItem(player, 3))
+			return false;
+	}
+
+	deliver_item(hyu);
+
+	return true;
+}
+
+static boolean
 hyudoro_return_hit_player
 (		mobj_t * hyu,
 		mobj_t * toucher)
 {
-	player_t *player = toucher->player;
-
 	if (toucher != hyudoro_target(hyu))
 		return false;
 
 	// If the player already has an item, just hover beside
 	// them until they use/lose it.
-	if (player->itemamount || player->itemroulette)
+	if (!award_immediately(hyu))
 	{
 		hyudoro_mode(hyu) = HYU_HOVER;
-		append_hyudoro(&player->hoverhyudoro, hyu);
+		append_hyudoro(&toucher->player->hoverhyudoro, hyu);
 	}
-	else
-	{
-		deliver_item(hyu);
-	}
+
+	return true;
+}
+
+static boolean
+hyudoro_hover_await_stack (mobj_t *hyu)
+{
+	player_t *player = get_hyudoro_target_player(hyu);
+
+	if (!player)
+		return false;
+
+	// First in stack goes first
+	if (hyu == player->hoverhyudoro)
+		return false;
+
+	if (!award_immediately(hyu))
+		return false;
+
+	pop_hyudoro(&player->hoverhyudoro);
 
 	return true;
 }
@@ -370,7 +446,10 @@ Obj_HyudoroThink (mobj_t *hyu)
 
 		case HYU_HOVER:
 			if (hyudoro_target(hyu))
+			{
 				project_hyudoro_hover(hyu);
+				hyudoro_hover_await_stack(hyu);
+			}
 			break;
 	}
 }
