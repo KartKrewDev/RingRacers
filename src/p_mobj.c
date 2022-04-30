@@ -5316,6 +5316,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					mobj->tracer->y,
 					mobj->tracer->z);
 		}
+		else
+		{
+			P_RemoveMobj(mobj);
+			return;
+		}
 		break;
 	case MT_BOSSJUNK:
 		mobj->renderflags ^= RF_DONTDRAW;
