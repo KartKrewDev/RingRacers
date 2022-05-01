@@ -5741,6 +5741,29 @@ static void K_ThrowLandMine(player_t *player)
 	throwmo->movecount = 0; // above player
 }
 
+void K_DoInvincibility(player_t *player)
+{
+	if (!player->invincibilitytimer)
+	{
+		mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INVULNFLASH);
+		P_SetTarget(&overlay->target, player->mo);
+		overlay->destscale = player->mo->scale;
+		P_SetScale(overlay, player->mo->scale);
+	}
+	player->invincibilitytimer += itemtime+(2*TICRATE); // 10 seconds
+
+	if (P_IsLocalPlayer(player) == true)
+	{
+		S_ChangeMusicSpecial("kinvnc");
+	}
+	else //used to be "if (P_IsDisplayPlayer(player) == false)"
+	{
+		S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
+	}
+
+	P_RestoreMusic(player);
+}
+
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
 {
 	mobj_t *cachenext;
@@ -9662,25 +9685,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_INVINCIBILITY:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO) // Doesn't hold your item slot hostage normally, so you're free to waste it if you have multiple
 							{
-								if (!player->invincibilitytimer)
-								{
-									mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INVULNFLASH);
-									P_SetTarget(&overlay->target, player->mo);
-									overlay->destscale = player->mo->scale;
-									P_SetScale(overlay, player->mo->scale);
-								}
-								player->invincibilitytimer += itemtime+(2*TICRATE); // 10 seconds
-
-								if (P_IsLocalPlayer(player) == true)
-								{
-									S_ChangeMusicSpecial("kinvnc");
-								}
-								else //used to be "if (P_IsDisplayPlayer(player) == false)"
-								{
-									S_StartSound(player->mo, (cv_kartinvinsfx.value ? sfx_alarmi : sfx_kinvnc));
-								}
-
-								P_RestoreMusic(player);
+								K_DoInvincibility(player);
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
 							}
