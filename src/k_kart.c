@@ -8985,9 +8985,10 @@ static INT32 K_FlameShieldMax(player_t *player)
 			disttofinish = players[i].distancetofinish;
 	}
 
-	if (numplayers <= 1)
+	if (numplayers <= 1 || gametype == GT_BATTLE)
 	{
 		return 16; // max when alone, for testing
+		// and when in battle, for chaos
 	}
 	else if (player->position == 1)
 	{
