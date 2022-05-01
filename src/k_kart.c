@@ -387,32 +387,32 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 				//P-Odds	 0  1
 			   /*Sneaker*/ { 2, 1 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0 }, // Rocket Sneaker
-		 /*Invincibility*/ { 2, 1 }, // Invincibility
-				/*Banana*/ { 1, 0 }, // Banana
+		 /*Invincibility*/ { 4, 1 }, // Invincibility
+				/*Banana*/ { 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 1, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 8, 0 }, // Orbinaut
 				  /*Jawz*/ { 8, 1 }, // Jawz
 				  /*Mine*/ { 6, 1 }, // Mine
-			 /*Land Mine*/ { 0, 0 }, // Land Mine
+			 /*Land Mine*/ { 2, 0 }, // Land Mine
 			   /*Ballhog*/ { 2, 1 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
 				/*Shrink*/ { 0, 0 }, // Shrink
 	  /*Lightning Shield*/ { 4, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
-		  /*Flame Shield*/ { 0, 0 }, // Flame Shield
+		  /*Flame Shield*/ { 1, 0 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
-		   /*Pogo Spring*/ { 2, 0 }, // Pogo Spring
+		   /*Pogo Spring*/ { 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
-		   /*Drop Target*/ { 0, 0 }, // Drop Target
+		   /*Drop Target*/ { 2, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 1, 1 }, // Sneaker x3
-			 /*Banana x3*/ { 1, 0 }, // Banana x3
+			/*Sneaker x3*/ { 0, 1 }, // Sneaker x3
+			 /*Banana x3*/ { 0, 0 }, // Banana x3
 			/*Banana x10*/ { 1, 1 }, // Banana x10
 		   /*Orbinaut x3*/ { 2, 0 }, // Orbinaut x3
 		   /*Orbinaut x4*/ { 1, 1 }, // Orbinaut x4
-			   /*Jawz x2*/ { 2, 1 }  // Jawz x2
+			   /*Jawz x2*/ { 5, 1 }  // Jawz x2
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
