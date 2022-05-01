@@ -1842,10 +1842,9 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 
 	\return	boolean
 */
-static UINT8 K_CheckOffroadCollide(mobj_t *mo)
+static fixed_t K_CheckOffroadCollide(mobj_t *mo)
 {
 	// Check for sectors in touching_sectorlist
-	UINT8 i;			// special type iter
 	msecnode_t *node;	// touching_sectorlist iter
 	sector_t *s;		// main sector shortcut
 	sector_t *s2;		// FOF sector shortcut
@@ -1874,13 +1873,11 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 		cel = P_MobjCeilingZ(mo, s, s, mo->x, mo->y, NULL, true, true);	// get Z coords of both floors and ceilings for this sector (this accounts for slopes properly.)
 		// NOTE: we don't use P_GetZAt with our x/y directly because the mobj won't have the same height because of its hitbox on the slope. Complex garbage but tldr it doesn't work.
 
-		if ( ((s->flags & SF_FLIPSPECIAL_FLOOR) && mo->z == flr)	// floor check
-			|| ((mo->eflags & MFE_VERTICALFLIP && (s->flags & SF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == cel)) )	// ceiling check.
-
-			for (i = 2; i < 5; i++)	// check for sector special
-
-				if (GETSECSPECIAL(s->special, 1) == i)
-					return i-1;	// return offroad type
+		if ( ((s->flags & MSF_FLIPSPECIAL_FLOOR) && mo->z == flr)	// floor check
+			|| ((mo->eflags & MFE_VERTICALFLIP && (s->flags & MSF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == cel)) )	// ceiling check.
+		{
+			return s->offroad;
+		}
 
 		// 2: If we're here, we haven't found anything. So let's try looking for FOFs in the sectors using the same logic.
 		for (rover = s->ffloors; rover; rover = rover->next)
@@ -1895,18 +1892,15 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 
 			// we will do essentially the same checks as above instead of bothering with top/bottom height of the FOF.
 			// Reminder that an FOF's floor is its bottom, silly!
-			if ( ((s2->flags & SF_FLIPSPECIAL_FLOOR) && mo->z == cel)	// "floor" check
-				|| ((s2->flags & SF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == flr) )	// "ceiling" check.
-
-				for (i = 2; i < 5; i++)	// check for sector special
-
-					if (GETSECSPECIAL(s2->special, 1) == i)
-						return i-1;	// return offroad type
-
+			if ( ((s2->flags & MSF_FLIPSPECIAL_FLOOR) && mo->z == cel)	// "floor" check
+				|| ((s2->flags & MSF_FLIPSPECIAL_CEILING) && (mo->z + mo->height) == flr) )	// "ceiling" check.
+			{
+				return s2->offroad;
+			}
 		}
 	}
 
-	return 0;	// couldn't find any offroad
+	return 0; // couldn't find any offroad
 }
 
 /**	\brief	Updates the Player's offroad value once per frame
@@ -1920,13 +1914,14 @@ static void K_UpdateOffroad(player_t *player)
 	terrain_t *terrain = player->mo->terrain;
 	fixed_t offroadstrength = 0;
 
+	// TODO: Make this use actual special touch code.
 	if (terrain != NULL && terrain->offroad > 0)
 	{
 		offroadstrength = (terrain->offroad << FRACBITS);
 	}
 	else
 	{
-		offroadstrength = (K_CheckOffroadCollide(player->mo) << FRACBITS);
+		offroadstrength = K_CheckOffroadCollide(player->mo);
 	}
 
 	// If you are in offroad, a timer starts.

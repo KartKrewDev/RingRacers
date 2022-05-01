@@ -1318,7 +1318,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (botController != NULL && (botController->flags & ML_EFFECT2))
+	if (botController != NULL && (botController->flags & ML_NOSKEW)) // FIXME: UDMF-ify
 	{
 		// Disable bot controls entirely.
 		return;
@@ -1326,7 +1326,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	destangle = player->mo->angle;
 
-	if (botController != NULL && (botController->flags & ML_EFFECT1))
+	if (botController != NULL && (botController->flags & ML_SKEWTD)) // FIXME: UDMF-ify
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
 

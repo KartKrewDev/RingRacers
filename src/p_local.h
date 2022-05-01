@@ -371,7 +371,7 @@ void P_NewChaseDir(mobj_t *actor);
 boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed_t dist);
 
 mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz, boolean lookforplayers, SINT8 moveforward);
-void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo);
+void P_InternalFlickySetColor(mobj_t *actor, UINT8 color);
 #define P_IsFlickyCenter(type) (type > MT_FLICKY_01 && type < MT_SEED && (type - MT_FLICKY_01) % 2 ? 1 : 0)
 void P_InternalFlickyBubble(mobj_t *actor);
 void P_InternalFlickyFly(mobj_t *actor, fixed_t flyspeed, fixed_t targetdist, fixed_t chasez);
@@ -414,7 +414,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 fixed_t P_BaseStepUp(void);
-fixed_t P_GetThingStepUp(mobj_t *thing);
+fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);

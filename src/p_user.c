@@ -1417,6 +1417,14 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 	return false; // No sand here, Captain!
 }
 
+static boolean P_PlayerCanBust(player_t *player, ffloor_t *rover)
+{
+	// TODO: Make these act like the Lua SA2 boxes.
+	(void)player;
+	(void)rover;
+	return false;
+}
+
 static void P_CheckBustableBlocks(player_t *player)
 {
 	msecnode_t *node;
@@ -1429,8 +1437,6 @@ static void P_CheckBustableBlocks(player_t *player)
 	oldx = player->mo->x;
 	oldy = player->mo->y;
 
-	// SRB2Kart TODO: make shatter blocks the default behavior, we don't need the hundreds of other types
-
 	P_UnsetThingPosition(player->mo);
 	player->mo->x += player->mo->momx;
 	player->mo->y += player->mo->momy;
@@ -1438,90 +1444,86 @@ static void P_CheckBustableBlocks(player_t *player)
 
 	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
+		ffloor_t *rover;
+		fixed_t topheight, bottomheight;
+
 		if (!node->m_sector)
 			break;
 
-		if (node->m_sector->ffloors)
+		if (!node->m_sector->ffloors)
+			continue;
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			ffloor_t *rover;
-			fixed_t topheight, bottomheight;
+			if (!P_PlayerCanBust(player, rover))
+				continue;
 
-			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+			bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+
+			// Height checks
+			if (rover->bustflags & FB_ONLYBOTTOM)
 			{
-				if (!(rover->flags & FF_EXISTS)) continue;
+				if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+					continue;
 
-				if ((rover->flags & FF_BUSTUP)/* && rover->master->frontsector->crumblestate == CRUMBLE_NONE*/)
+				if (player->mo->z + player->mo->height > bottomheight)
+					continue;
+			}
+			else
+			{
+				switch (rover->busttype)
 				{
-					// If it's an FF_SHATTER, you can break it just by touching it.
-					if (rover->flags & FF_SHATTER)
-						goto bust;
-
-					if (rover->flags & FF_STRONGBUST)
+				case BT_TOUCH:
+					if (player->mo->z + player->mo->momz > topheight)
 						continue;
 
-				bust:
-					topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-					bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+					if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+						continue;
 
-					// Height checks
-					if (rover->flags & FF_SHATTERBOTTOM)
-					{
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
+					break;
+				case BT_SPINBUST:
+					if (player->mo->z + player->mo->momz > topheight)
+						continue;
 
-						if (player->mo->z+player->mo->height > bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SPINBUST)
-					{
-						if (player->mo->z+player->mo->momz > topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SHATTER)
-					{
-						if (player->mo->z + player->mo->momz > topheight)
-							continue;
+					break;
+				default:
+					if (player->mo->z >= topheight)
+						continue;
 
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
-					}
-					else
-					{
-						if (player->mo->z >= topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-
-					// Impede the player's fall a bit
-					if (((rover->flags & FF_SPINBUST) || (rover->flags & FF_SHATTER)) && player->mo->z >= topheight)
-						player->mo->momz >>= 1;
-					else if (rover->flags & FF_SHATTER)
-					{
-						player->mo->momx >>= 1;
-						player->mo->momy >>= 1;
-					}
-
-					//if (metalrecording)
-					//	G_RecordBustup(rover);
-
-					EV_CrumbleChain(NULL, rover); // node->m_sector
-
-					// Run a linedef executor??
-					if (rover->master->flags & ML_EFFECT5)
-						P_LinedefExecute((INT16)(P_AproxDistance(rover->master->dx, rover->master->dy)>>FRACBITS), player->mo, node->m_sector);
-
-					goto bustupdone;
+					break;
 				}
 			}
+
+			// Impede the player's fall a bit
+			if (((rover->busttype == BT_TOUCH) || (rover->busttype == BT_SPINBUST)) && player->mo->z >= topheight)
+				player->mo->momz >>= 1;
+			else if (rover->busttype == BT_TOUCH)
+			{
+				player->mo->momx >>= 1;
+				player->mo->momy >>= 1;
+			}
+
+			//if (metalrecording)
+			//	G_RecordBustup(rover);
+
+			EV_CrumbleChain(NULL, rover); // node->m_sector
+
+			// Run a linedef executor??
+			if (rover->bustflags & FB_EXECUTOR)
+				P_LinedefExecute(rover->busttag, player->mo, node->m_sector);
+
+			goto bustupdone;
 		}
 	}
-bustupdone:
 
+bustupdone:
 	P_UnsetThingPosition(player->mo);
 	player->mo->x = oldx;
 	player->mo->y = oldy;

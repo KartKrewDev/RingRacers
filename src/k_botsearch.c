@@ -144,22 +144,14 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 --------------------------------------------------*/
 static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 {
-	switch (GETSECSPECIAL(sec->special, 1))
+	if (sec->damagetype != SD_NONE)
 	{
-		case 1: // Damage
-		case 5: // Spikes
-		case 6: case 7: // Death Pit
-		case 8: // Instant Kill
-			return true;
-		//case 2: case 3: // Offroad (let's let them lawnmower)
-		case 4: // Offroad (Strong)
-			if (!K_BotCanTakeCut(player))
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
+		return true;
+	}
+
+	if (sec->offroad > FRACUNIT) // Only care about strong offroad.
+	{
+		return !K_BotCanTakeCut(player);
 	}
 
 	return false;
@@ -177,7 +169,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 	sector_t *bestsector = NULL;
 	ffloor_t *rover;
 
-	// TODO: Properly support SF_FLIPSPECIAL_FLOOR / SF_FLIPSPECIAL_CEILING.
+	// TODO: Properly support MSF_FLIPSPECIAL_FLOOR / MSF_FLIPSPECIAL_CEILING.
 	// An earlier attempt at it caused lots of false positives and other weird
 	// quirks with intangible FOFs.
 

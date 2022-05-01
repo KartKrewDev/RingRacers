@@ -481,7 +481,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 	switch (spring->type)
 	{
 		case MT_FAN: // fan
-			if (zdist > (spring->health << FRACBITS)) // max z distance determined by health (set by map thing angle)
+			if (zdist > (spring->health << FRACBITS)) // max z distance determined by health (set by map thing args[0])
 				break;
 			if (flipval*object->momz >= FixedMul(speed, spring->scale)) // if object's already moving faster than your best, don't bother
 				break;
@@ -2143,7 +2143,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 
 	mapcampointer = thiscam;
 
-	if (GETSECSPECIAL(newsubsec->sector->special, 4) == 12)
+	if (newsubsec->sector->flags & MSF_NOCLIPCAMERA)
 	{ // Camera noclip on entire sector.
 		tmfloorz = tmdropoffz = thiscam->z;
 		tmceilingz = tmdrpoffceilz = thiscam->z + thiscam->height;
@@ -2183,7 +2183,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERALL) || GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
+			if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERALL) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
 				continue;
 
 			topheight = P_CameraGetFOFTopZ(thiscam, newsubsec->sector, rover, x, y, NULL);
@@ -2255,7 +2255,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 						// We're inside it! Yess...
 						polysec = po->lines[0]->backsector;
 
-						if (GETSECSPECIAL(polysec->special, 4) == 12)
+						if (polysec->flags & MSF_NOCLIPCAMERA)
 						{ // Camera noclip polyobj.
 							plink = (polymaplink_t *)(plink->link.next);
 							continue;
@@ -2509,7 +2509,7 @@ fixed_t P_BaseStepUp(void)
 	return FixedMul(MAXSTEPMOVE, mapobjectscale);
 }
 
-fixed_t P_GetThingStepUp(mobj_t *thing)
+fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 {
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
@@ -2520,12 +2520,14 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 		maxstep += maxstepmove;
 	}
 
-	if (P_MobjTouchingSectorSpecial(thing, 1, 13, false))
+	if (P_MobjTouchingSectorSpecialFlag(thing, SSF_DOUBLESTEPUP)
+		|| (R_PointInSubsector(destX, destY)->sector->specialflags & SSF_DOUBLESTEPUP))
 	{
 		// If using type Section1:13, double the maxstep.
 		maxstep <<= 1;
 	}
-	else if (P_MobjTouchingSectorSpecial(thing, 1, 12, false))
+	else if (P_MobjTouchingSectorSpecialFlag(thing, SSF_NOSTEPUP)
+		|| (R_PointInSubsector(destX, destY)->sector->specialflags & SSF_NOSTEPUP))
 	{
 		// If using type Section1:12, no maxstep. For short walls, like Egg Zeppelin
 		maxstep = 0;
@@ -2599,7 +2601,7 @@ increment_move
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = P_GetThingStepUp(thing);
+			fixed_t maxstep = P_GetThingStepUp(thing, x, y);
 
 			if (tmceilingz - tmfloorz < thing->height)
 			{
@@ -2651,7 +2653,8 @@ increment_move
 					}
 				}
 				else if (thing->momz * P_MobjFlip(thing) <= 0 // Step down requires moving down.
-					&& !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
+					&& !(P_MobjTouchingSectorSpecialFlag(thing, SSF_NOSTEPDOWN)
+					|| (R_PointInSubsector(x, y)->sector->specialflags & SSF_NOSTEPDOWN)))
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
@@ -3150,7 +3153,7 @@ static void P_HitCameraSlideLine(line_t *ld, camera_t *thiscam)
 	}
 
 	side = P_PointOnLineSide(thiscam->x, thiscam->y, ld);
-	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy);
+	lineangle = ld->angle;
 
 	if (side == 1)
 		lineangle += ANGLE_180;
@@ -3196,7 +3199,7 @@ static void P_HitSlideLine(line_t *ld)
 
 	side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
 
-	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy);
+	lineangle = ld->angle;
 
 	if (side == 1)
 		lineangle += ANGLE_180;
@@ -3230,7 +3233,7 @@ static void P_PlayerHitBounceLine(line_t *ld)
 	fixed_t x, y;
 
 	side = P_PointOnLineSide(slidemo->x, slidemo->y, ld);
-	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy)-ANGLE_90;
+	lineangle = ld->angle - ANGLE_90;
 
 	if (side == 1)
 		lineangle += ANGLE_180;
@@ -3279,7 +3282,7 @@ static void P_HitBounceLine(line_t *ld)
 		return;
 	}
 
-	lineangle = R_PointToAngle2(0, 0, ld->dx, ld->dy);
+	lineangle = ld->angle;
 
 	if (lineangle >= ANGLE_180)
 		lineangle -= ANGLE_180;
@@ -3366,7 +3369,7 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	if (opentop - slidemo->z < slidemo->height)
 		return true; // mobj is too high
 
-	if (openbottom - slidemo->z > P_GetThingStepUp(slidemo))
+	if (openbottom - slidemo->z > P_GetThingStepUp(slidemo, slidemo->x, slidemo->y))
 		return true; // too big a step up
 
 	return false;
@@ -3387,7 +3390,7 @@ static boolean PTR_SlideTraverse(intercept_t *in)
 	// see if it is closer than best so far
 	if (li->polyobj && slidemo->player)
 	{
-		if ((li->polyobj->lines[0]->backsector->flags & SF_TRIGGERSPECIAL_TOUCH) && !(li->polyobj->flags & POF_NOSPECIALS))
+		if ((li->polyobj->lines[0]->backsector->flags & MSF_TRIGGERSPECIAL_TOUCH) && !(li->polyobj->flags & POF_NOSPECIALS))
 			P_ProcessSpecialSector(slidemo->player, slidemo->subsector->sector, li->polyobj->lines[0]->backsector);
 	}
 
@@ -3514,10 +3517,7 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 		if (!(rover->flags & FF_SWIMMABLE))
 			continue;
 
-		if (GETSECSPECIAL(rover->master->frontsector->special, 1) != 3)
-			continue;
-
-		if (rover->master->flags & ML_BLOCKPLAYERS)
+		if (rover->master->frontsector->damagetype != SD_LAVA)
 			continue;
 
 		topheight = P_GetFFloorTopZAt(rover, mo->x, mo->y);
