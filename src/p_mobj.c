@@ -6565,8 +6565,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 			else if (P_IsObjectOnGround(mobj))
 			{
-				//mobj->momx = 1;
-				//mobj->momy = 0;
+				mobj->momx = 1;
+				mobj->momy = 0;
 				mobj->flags &= ~MF_NOCLIPTHING;
 				mobj->flags |= MF_NOGRAVITY;
 			}
