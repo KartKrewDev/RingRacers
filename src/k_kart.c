@@ -3159,6 +3159,9 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
 	fixed_t finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
+	if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
+		finalspeed = 3 * finalspeed / 2;
+
 	if (player->spheres > 0)
 	{
 		fixed_t sphereAdd = (FRACUNIT/80); // 50% at max
