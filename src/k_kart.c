@@ -2773,8 +2773,8 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
-	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
-	return (player->kartspeed + 4) * (TICRATE/3);
+	// Tails = 2s, Knuckles = 2.6s, Metal = 3.2s
+	return (player->kartspeed + 8) * (TICRATE/5);
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
@@ -8641,6 +8641,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 	K_MatchGenericExtraFlags(wind, parent);
 }
 
+// Time after which you get a thrust for releasing spindash
+#define SPINDASHTHRUSTTIME 20
+
 static void K_KartSpindash(player_t *player)
 {
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
@@ -8656,6 +8659,13 @@ static void K_KartSpindash(player_t *player)
 	{
 		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
+
+		// if spindash was charged enough, give a small thrust.
+		if (player->spindash >= SPINDASHTHRUSTTIME)
+		{
+			// Give a bit of a boost depending on charge.
+			P_InstaThrust(player->mo, player->mo->angle, FixedMul(player->mo->scale, player->spindash*FRACUNIT/5));
+		}
 
 		if (!player->tiregrease)
 		{
@@ -8706,7 +8716,7 @@ static void K_KartSpindash(player_t *player)
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 			boolean spawnOldEffect = true;
 
-			if (chargetime <= (MAXCHARGETIME / 2))
+			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{
 				K_KartSpindashDust(player->mo);
 				spawnOldEffect = false;
@@ -8752,6 +8762,8 @@ static void K_KartSpindash(player_t *player)
 			S_StartSound(player->mo, sfx_kc2b);
 	}
 }
+
+#undef SPINDASHTHRUSTTIME
 
 static void K_AirFailsafe(player_t *player)
 {
