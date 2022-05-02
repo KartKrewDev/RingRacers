@@ -402,7 +402,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 1, 0 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
-		   /*Pogo Spring*/ { 0, 0 }, // Pogo Spring
+		   /*Pogo Spring*/ { 1, 0 }, // Pogo Spring
 			/*Super Ring*/ { 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
 		   /*Drop Target*/ { 2, 0 }, // Drop Target
@@ -10124,9 +10124,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && onground && NO_HYUDORO && player->trickpanel == 0)
 							{
 								K_PlayBoostTaunt(player->mo);
-								K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
-								player->trickpanel = 1;
-								player->pflags |= PF_TRICKDELAY;
+								//K_DoPogoSpring(player->mo, 32<<FRACBITS, 2);
+								P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_POGOSPRING);
 								player->itemamount--;
 							}
 							break;

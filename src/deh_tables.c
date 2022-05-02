@@ -2544,6 +2544,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Orange Spring (Pogo)
 	"S_POGOSPRING1",
 	"S_POGOSPRING2",
+	"S_POGOSPRING2B",
 	"S_POGOSPRING3",
 	"S_POGOSPRING4",
 

@@ -3532,6 +3532,7 @@ typedef enum state
 	// Orange Spring (Pogo)
 	S_POGOSPRING1,
 	S_POGOSPRING2,
+	S_POGOSPRING2B,
 	S_POGOSPRING3,
 	S_POGOSPRING4,
 

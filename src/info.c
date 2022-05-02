@@ -3075,6 +3075,7 @@ state_t states[NUMSTATES] =
 	// Orange Spring (Pogo)
 	{SPR_SPVB, 0, -1, {NULL}, 0, 0, S_NULL},         // S_POGOSPRING1
 	{SPR_SPVB, 1, 1, {A_Pain}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2
+	{SPR_SPVB, 1, 1, {A_PlaySeeSound}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2B
 	{SPR_SPVB, 0, 1, {NULL}, 0, 0, S_POGOSPRING4},   // S_POGOSPRING3
 	{SPR_SPVB, 2, 4, {NULL}, 0, 0, S_POGOSPRING1},   // S_POGOSPRING4
 
@@ -8246,9 +8247,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		-1,             // doomednum
 		S_POGOSPRING1,  // spawnstate
 		1000,           // spawnhealth
-		S_POGOSPRING2,  // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
+		S_POGOSPRING2B, // seestate
+		sfx_eggspr,     // seesound
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		SKINCOLOR_SUNSLAM, // painchance
