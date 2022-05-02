@@ -363,7 +363,7 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 		return false;
 
 	// First in stack goes first
-	if (hyu == player->hoverhyudoro)
+	if (hyu != player->hoverhyudoro)
 		return false;
 
 	if (!award_immediately(hyu))
