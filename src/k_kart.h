@@ -141,6 +141,7 @@ void K_CheckSpectateStatus(void);
 UINT8 K_GetInvincibilityItemFrame(void);
 UINT8 K_GetOrbinautItemFrame(UINT8 count);
 boolean K_IsSPBInGame(void);
+void K_KartEbrakeVisuals(player_t *p);
 
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);

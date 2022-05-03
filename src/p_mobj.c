@@ -9590,6 +9590,16 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	P_CycleMobjState(mobj);
 
+	// Flicker softlanding mobj, this just prevents us from needing like 20 states.
+	if (mobj->type == MT_SOFTLANDING)
+	{
+		mobj->renderflags |= RF_NOSPLATBILLBOARD|RF_OBJECTSLOPESPLAT;
+		if (mobj->tics & 1)
+			mobj->renderflags |= RF_DONTDRAW;
+		else
+			mobj->renderflags &= ~RF_DONTDRAW;
+	}
+
 	if (mobj->type != MT_RANDOMAUDIENCE)
 		return;
 

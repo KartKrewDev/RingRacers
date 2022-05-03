@@ -488,6 +488,7 @@ typedef struct player_s
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;

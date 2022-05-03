@@ -7416,6 +7416,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		player->tripWireState = TRIP_NONE;
 	}
+
+	K_KartEbrakeVisuals(player);
 }
 
 void K_KartPlayerAfterThink(player_t *player)
@@ -8583,6 +8585,61 @@ SINT8 K_Sliptiding(player_t *player)
 INT32 K_StairJankFlip(INT32 value)
 {
 	return P_AltFlip(value, 2);
+}
+
+// Ebraking visuals for mo
+void K_KartEbrakeVisuals(player_t *p)
+{
+	mobj_t *wave;
+	mobj_t *spdl;
+	fixed_t sx, sy;
+
+	if (K_PlayerEBrake(p))
+	{
+
+		if (p->ebrakefor % 20 == 0)
+		{
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
+			P_SetScale(wave, p->mo->scale);
+			wave->standingslope = p->mo->standingslope;
+		}
+
+		if (!p->spindash)
+		{
+			// Spawn downwards fastline
+			sx = p->mo->x + P_RandomRange(-48, 48)*p->mo->scale;
+			sy = p->mo->y + P_RandomRange(-48, 48)*p->mo->scale;
+
+			spdl = P_SpawnMobj(sx, sy, p->mo->z, MT_DOWNLINE);
+			spdl->colorized = true;
+			spdl->color = SKINCOLOR_WHITE;
+			K_MatchGenericExtraFlags(spdl, p->mo);
+			P_SetScale(spdl, p->mo->scale);
+
+			// squish the player a little bit.
+			p->mo->spritexscale = FRACUNIT*115/100;
+			p->mo->spriteyscale = FRACUNIT*85/100;
+		}
+		else
+		{
+			// sqish them a little MORE....
+			p->mo->spritexscale = FRACUNIT*12/10;
+			p->mo->spriteyscale = FRACUNIT*8/10;
+		}
+
+
+
+
+		p->ebrakefor++;
+	}
+	else if (p->ebrakefor)	// cancel effects
+	{
+		// reset scale
+		p->mo->spritexscale = FRACUNIT;
+		p->mo->spriteyscale = FRACUNIT;
+
+		p->ebrakefor = 0;
+	}
 }
 
 static void K_KartSpindashDust(mobj_t *parent)

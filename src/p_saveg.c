@@ -326,6 +326,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].trickboostdecay);
 		WRITEUINT8(save_p, players[i].trickboost);
 
+		WRITEUINT32(save_p, players[i].ebrakefor);
+
 		WRITEUINT32(save_p, players[i].roundscore);
 		WRITEUINT8(save_p, players[i].emeralds);
 		WRITEUINT8(save_p, players[i].bumpers);
@@ -591,6 +593,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].trickboostpower = READUINT32(save_p);
 		players[i].trickboostdecay = READUINT8(save_p);
 		players[i].trickboost = READUINT8(save_p);
+
+		players[i].ebrakefor = READUINT32(save_p);
 
 		players[i].roundscore = READUINT32(save_p);
 		players[i].emeralds = READUINT8(save_p);
