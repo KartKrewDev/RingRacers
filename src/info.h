@@ -1302,6 +1302,7 @@ typedef enum sprite
 	SPR_SDWN, // Spindash wind
 	SPR_EBRK, // Soft Landing / Ebrake aura stuff.
 	SPR_HMTR, // downwards line
+	SPR_HBUB, // HOLD! Bubble
 
 	SPR_TRCK,
 
@@ -5676,6 +5677,8 @@ typedef enum state
 	S_DOWNLINE4,
 	S_DOWNLINE5,
 
+	S_HOLDBUBBLE,
+
 	S_FINISHBEAM1,
 	S_FINISHBEAM2,
 	S_FINISHBEAM3,
@@ -6814,6 +6817,7 @@ typedef enum mobj_type
 	MT_SPINDASHWIND,
 	MT_SOFTLANDING,
 	MT_DOWNLINE,
+	MT_HOLDBUBBLE,
 
 	MT_PAPERITEMSPOT,
 

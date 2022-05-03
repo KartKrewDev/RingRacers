@@ -754,6 +754,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SDWN", // Spindash wind
 	"EBRK", // Soft Landing / Ebrake aura stuff.
 	"HMTR", // Down Lines
+	"HBUB", // HOLD! Bubble
 
 	"TRCK",
 
@@ -5256,11 +5257,14 @@ state_t states[NUMSTATES] =
 	{SPR_EBRK, 4|FF_ADD|FF_FLOORSPRITE, 4, {NULL}, 0, 0, S_NULL}, 		// S_SOFTLANDING5
 
 	// Downwards Lines
-	{SPR_HMTR, 0, 2, {NULL}, 0, 0, S_DOWNLINE2}, 	// S_DOWNLINE1
-	{SPR_HMTR, 1, 2, {NULL}, 0, 0, S_DOWNLINE3}, 	// S_DOWNLINE2
-	{SPR_HMTR, 2, 2, {NULL}, 0, 0, S_DOWNLINE4}, 	// S_DOWNLINE3
-	{SPR_HMTR, 3, 2, {NULL}, 0, 0, S_DOWNLINE5}, 	// S_DOWNLINE4
-	{SPR_HMTR, 4, 2, {NULL}, 0, 0, S_NULL}, 		// S_DOWNLINE5
+	{SPR_HMTR, 0|FF_ADD, 1, {NULL}, 0, 0, S_DOWNLINE2}, 	// S_DOWNLINE1
+	{SPR_HMTR, 1|FF_ADD, 1, {NULL}, 0, 0, S_DOWNLINE3}, 	// S_DOWNLINE2
+	{SPR_HMTR, 2|FF_ADD, 1, {NULL}, 0, 0, S_DOWNLINE4}, 	// S_DOWNLINE3
+	{SPR_HMTR, 3|FF_ADD, 1, {NULL}, 0, 0, S_DOWNLINE5}, 	// S_DOWNLINE4
+	{SPR_HMTR, 4|FF_ADD, 1, {NULL}, 0, 0, S_NULL}, 		// S_DOWNLINE5
+
+	// HOLD Bubble
+	{SPR_HBUB, 0|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_HOLDBUBBLE}, 	// S_HOLDBUBBLE
 
 	// Finish line beam
 	{SPR_FLBM, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_NULL}, // S_FINISHBEAM1
@@ -29242,7 +29246,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_DOWNLINE
 		-1,             // doomednum
-		S_DOWNLINE1, // spawnstate
+		S_DOWNLINE1, 	// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		12*FRACUNIT,    // radius
+		24*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_HOLDBUBBLE
+		-1,             // doomednum
+		S_HOLDBUBBLE, 	// spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

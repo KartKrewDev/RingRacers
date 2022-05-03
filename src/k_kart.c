@@ -8588,6 +8588,8 @@ INT32 K_StairJankFlip(INT32 value)
 }
 
 // Ebraking visuals for mo
+// we use mo->hprev for the hold bubble. If another hprev exists for some reason, remove it.
+
 void K_KartEbrakeVisuals(player_t *p)
 {
 	mobj_t *wave;
@@ -8601,8 +8603,34 @@ void K_KartEbrakeVisuals(player_t *p)
 		{
 			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
 			P_SetScale(wave, p->mo->scale);
+			wave->momx = p->mo->momx;
+			wave->momy = p->mo->momy;
+			wave->momz = p->mo->momz;
 			wave->standingslope = p->mo->standingslope;
 		}
+
+		// HOLD! bubble.
+		if (!p->ebrakefor)
+		{
+			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+			{
+				// for some reason, there's already an hprev. Remove it.
+				P_RemoveMobj(p->mo->hprev);
+			}
+
+			p->mo->hprev = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_HOLDBUBBLE);
+			p->mo->hprev->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(p));
+		}
+
+		// Update HOLD bubble.
+		if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+		{
+			P_MoveOrigin(p->mo->hprev, p->mo->x, p->mo->y, p->mo->z);
+			p->mo->hprev->angle = p->mo->angle;
+			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
+			K_FlipFromObject(p->mo->hprev, p->mo);
+		}
+
 
 		if (!p->spindash)
 		{
@@ -8622,12 +8650,43 @@ void K_KartEbrakeVisuals(player_t *p)
 		}
 		else
 		{
+			const UINT16 MAXCHARGETIME = K_GetSpindashChargeTime(p);
+			const fixed_t MAXSHAKE = FRACUNIT;
+
+			// update HOLD bubble with numbers based on charge.
+			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+			{
+				UINT8 frame = min(1 + ((p->spindash*3) / MAXCHARGETIME), 4);
+
+				// ?! limit.
+				if (p->spindash >= MAXCHARGETIME +TICRATE)
+					frame = 5;
+
+				p->mo->hprev->frame = frame|FF_FULLBRIGHT;
+			}
+
+			// shake the player as they charge their spindash!
+
+			// "gentle" shaking as we start...
+			if (p->spindash < MAXCHARGETIME)
+			{
+				fixed_t shake = FixedMul(((p->spindash)*FRACUNIT/MAXCHARGETIME), MAXSHAKE);
+				SINT8 mult = leveltime & 1 ? 1 : -1;
+
+				p->mo->spritexoffset = shake*mult;
+			}
+			else	// get VIOLENT on overcharge :)
+			{
+				fixed_t shake = MAXSHAKE + FixedMul(((p->spindash-MAXCHARGETIME)*FRACUNIT/TICRATE), MAXSHAKE)*3;
+				SINT8 mult = leveltime & 1 ? 1 : -1;
+
+				p->mo->spritexoffset = shake*mult;
+			}
+
 			// sqish them a little MORE....
 			p->mo->spritexscale = FRACUNIT*12/10;
 			p->mo->spriteyscale = FRACUNIT*8/10;
 		}
-
-
 
 
 		p->ebrakefor++;
@@ -8637,6 +8696,16 @@ void K_KartEbrakeVisuals(player_t *p)
 		// reset scale
 		p->mo->spritexscale = FRACUNIT;
 		p->mo->spriteyscale = FRACUNIT;
+
+		// reset shake
+		p->mo->spritexoffset = 0;
+
+		// remove the bubble instantly unless it's in the !? state
+		if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev) && (p->mo->hprev->frame & FF_FRAMEMASK) != 5)
+		{
+			P_RemoveMobj(p->mo->hprev);
+			p->mo->hprev = NULL;
+		}
 
 		p->ebrakefor = 0;
 	}
