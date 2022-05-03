@@ -8713,6 +8713,7 @@ static void K_KartSpindash(player_t *player)
 	{
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
+			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 			boolean spawnOldEffect = true;
 
@@ -8727,7 +8728,7 @@ static void K_KartSpindash(player_t *player)
 				K_KartSpindashWind(player->mo);
 			}
 
-			if (player->flashing > 0 && (leveltime & 1) && player->hyudorotimer == 0)
+			if (player->flashing > 0 && (player->spindash % ringdropframes == 0) && player->hyudorotimer == 0)
 			{
 				// Every frame that you're invisible from flashing, spill a ring.
 				// Intentionally a lop-sided trade-off, so the game doesn't become
