@@ -8613,6 +8613,10 @@ void K_KartEbrakeVisuals(player_t *p)
 			wave->standingslope = p->mo->standingslope;
 		}
 
+		// sound
+		if (!S_SoundPlaying(p->mo, sfx_s3kc6s))
+			S_StartSound(p->mo, sfx_s3kc6s);
+
 		// HOLD! bubble.
 		if (!p->ebrakefor)
 		{
