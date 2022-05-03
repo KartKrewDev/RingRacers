@@ -1592,6 +1592,10 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
+	// If tiregrease is active, don't
+	if (mo->player && mo->player->tiregrease)
+		return 0;
+
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (!node->m_sector)
