@@ -8789,7 +8789,7 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 	}
 
-	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
+	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
 		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
