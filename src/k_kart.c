@@ -8614,8 +8614,8 @@ void K_KartEbrakeVisuals(player_t *p)
 		}
 
 		// sound
-		if (!S_SoundPlaying(p->mo, sfx_s3kc6s))
-			S_StartSound(p->mo, sfx_s3kc6s);
+		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
+			S_StartSound(p->mo, sfx_s3kd9s);
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)
