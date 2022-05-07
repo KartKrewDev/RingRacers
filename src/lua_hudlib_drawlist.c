@@ -279,10 +279,17 @@ void LUA_HUD_AddDrawPingNum(
 	INT32 y,
 	INT32 flags,
 	INT32 num,
-	const UINT8 *colormap
+	UINT8 *colormap
 )
 {
-	*(int*)(NULL + 1);
+	size_t i = AllocateDrawItem(list);
+	drawitem_t *item = &list->items[i];
+	item->type = DI_DrawPingNum;
+	item->x = x;
+	item->y = y;
+	item->flags = flags;
+	item->num = num;
+	item->colormap = colormap;
 }
 
 void LUA_HUD_AddDrawFill(
@@ -363,8 +370,8 @@ void LUA_HUD_AddDrawKartString(
 	huddrawlist_h list,
 	fixed_t x,
 	fixed_t y,
-	INT32 flags,
-	const char *str
+	const char *str,
+	INT32 flags
 )
 {
 	size_t i = AllocateDrawItem(list);

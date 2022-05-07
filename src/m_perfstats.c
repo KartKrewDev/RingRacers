@@ -566,7 +566,7 @@ void M_DrawPerfStats(void)
 				len = (int)strlen(str);
 				if (len > 20)
 					str += len - 20;
-				snprintf(s, sizeof s - 1, "%20s: %lld", str, (thinkframe_hooks[i].time_taken) / (I_GetPrecisePrecision() / 1000000));
+				snprintf(s, sizeof s - 1, "%20s: %ld", str, (long)((thinkframe_hooks[i].time_taken) / (I_GetPrecisePrecision() / 1000000)));
 				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | text_color, s);
 				y += 4; // repeated code!
 				if (y > 192)

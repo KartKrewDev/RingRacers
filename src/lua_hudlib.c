@@ -672,7 +672,7 @@ static int libd_drawOnMinimap(lua_State *L)
 {
 	fixed_t x, y, scale;	// coordinates of the object
 	patch_t *patch;	// patch we want to draw
-	const UINT8 *colormap = NULL;	// do we want to colormap this patch?
+	UINT8 *colormap = NULL;	// do we want to colormap this patch?
 	boolean centered;	// the patch is centered and doesn't need readjusting on x/y coordinates.
 	huddrawlist_h list;
 
@@ -898,7 +898,7 @@ static int libd_drawPaddedNum(lua_State *L)
 static int libd_drawPingNum(lua_State *L)
 {
 	INT32 x, y, flags, num;
-	const UINT8 *colormap = NULL;
+	UINT8 *colormap = NULL;
 	huddrawlist_h list;
 	HUDONLY
 	x = luaL_checkinteger(L, 1);

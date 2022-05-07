@@ -683,29 +683,6 @@ static void D_Display(void)
 	}
 }
 
-static boolean D_CheckFrameCap(void)
-{
-	static boolean init = false;
-	static precise_t startCap = 0;
-	precise_t endCap = 0;
-
-	endCap = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		startCap = endCap;
-		init = true;
-	}
-	else if (I_CheckFrameCap(startCap, endCap))
-	{
-		// Framerate should be capped.
-		return true;
-	}
-
-	startCap = endCap;
-	return false;
-}
-
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================

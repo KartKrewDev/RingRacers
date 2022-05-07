@@ -5388,7 +5388,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (thing->renderflags & RF_SHADOWEFFECTS)
 	{
 		mobj_t *caster = thing->target;
-		interpmobjstate_t casterinterp = {};
+		interpmobjstate_t casterinterp = {0};
 
 		if (R_UsingFrameInterpolation() && !paused)
 		{
@@ -5481,7 +5481,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if ((thing->flags2 & MF2_LINKDRAW) && thing->tracer)
 	{
-		interpmobjstate_t tracer_interp = {};
+		interpmobjstate_t tracer_interp = {0};
 
 		if (! R_ThingVisible(thing->tracer))
 			return;

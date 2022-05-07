@@ -82,7 +82,7 @@ void LUA_HUD_AddDrawPingNum(
 	INT32 y,
 	INT32 flags,
 	INT32 num,
-	const UINT8 *colormap
+	UINT8 *colormap
 );
 void LUA_HUD_AddDrawFill(
 	huddrawlist_h list,
@@ -119,8 +119,8 @@ void LUA_HUD_AddDrawKartString(
 	huddrawlist_h list,
 	fixed_t x,
 	fixed_t y,
-	INT32 flags,
-	const char *str
+	const char *str,
+	INT32 flags
 );
 
 // Draws the given draw list
