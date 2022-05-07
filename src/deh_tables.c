@@ -4662,6 +4662,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPINDASHDUST",
 	"S_SPINDASHWIND",
 
+	"S_SOFTLANDING1",
+	"S_SOFTLANDING2",
+	"S_SOFTLANDING3",
+	"S_SOFTLANDING4",
+	"S_SOFTLANDING5",
+
+	"S_DOWNLINE1",
+	"S_DOWNLINE2",
+	"S_DOWNLINE3",
+	"S_DOWNLINE4",
+	"S_DOWNLINE5",
+
+	"S_HOLDBUBBLE",
+
 	// Finish line beam
 	"S_FINISHBEAM1",
 	"S_FINISHBEAM2",
@@ -5781,6 +5795,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SPINDASHDUST",
 	"MT_SPINDASHWIND",
+	"MT_SOFTLANDING",
+	"MT_DOWNLINE",
+	"MT_HOLDBUBBLE",
 
 	"MT_PAPERITEMSPOT",
 
