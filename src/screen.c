@@ -587,9 +587,9 @@ void SCR_DisplayTicRate(void)
 	// draw "FPS"
 	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
 
-	if (fps > (benchmark - 5))
+	if (fps > (benchmark * 0.9))
 		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
-	else if (fps < 20)
+	else if (fps < (benchmark * 0.5))
 		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
 	if (cap != 0)
