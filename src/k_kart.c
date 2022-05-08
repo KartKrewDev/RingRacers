@@ -2104,10 +2104,22 @@ void K_SpawnNormalSpeedLines(player_t *player)
 
 	K_MatchGenericExtraFlags(fast, player->mo);
 
-	// Make it red when you have the eggman speed boost
+	if (player->tripwireLeniency)
+	{
+		fast->destscale = fast->destscale * 2;
+		P_SetScale(fast, 3*fast->scale/2);
+	}
+
 	if (player->eggmanexplode)
 	{
+		// Make it red when you have the eggman speed boost
 		fast->color = SKINCOLOR_RED;
+		fast->colorized = true;
+	}
+	else if (player->tripwireLeniency)
+	{
+		// Make it pink+blue+big when you can go through tripwire
+		fast->color = (leveltime & 1) ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
 		fast->colorized = true;
 	}
 }
@@ -4727,6 +4739,90 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 }
 
+static void K_SpawnTripwireVFX(mobj_t *mo)
+{
+	tic_t t = leveltime;
+	angle_t ang, aoff;
+	SINT8 sign = 1;
+	boolean altColor = false;
+	mobj_t *dust;
+	boolean drifting = false;
+	UINT8 i;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	if (!P_IsObjectOnGround(mo))
+		return;
+
+	if (mo->player)
+	{
+		ang = mo->player->drawangle;
+
+		if (mo->player->drift != 0)
+		{
+			drifting = true;
+			ang += (mo->player->drift * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
+			if (mo->player->drift < 0)
+				sign = 1;
+			else
+				sign = -1;
+		}
+	}
+	else
+		ang = mo->angle;
+
+	if (drifting == false)
+	{
+		i = (t & 1);
+
+		if (i & 1)
+			sign = -1;
+		else
+			sign = 1;
+	}
+	else
+	{
+		if (t & 1)
+		{
+			return;
+		}
+
+		t /= 2;
+		i = (t & 1);
+	}
+
+	aoff = (ang + ANGLE_180) + (ANGLE_45 * sign);
+
+	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
+		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
+		mo->z, MT_DRIFTDUST);
+
+	P_SetTarget(&dust->target, mo);
+	P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
+	P_SetScale(dust, mo->scale);
+	dust->destscale = mo->scale * 6;
+	dust->scalespeed = mo->scale/12;
+	K_FlipFromObject(dust, mo);
+
+	altColor = (sign > 0);
+
+	if ((t / 2) & 1)
+	{
+		dust->tics++; // "randomize" animation
+		altColor = !altColor;
+	}
+
+	dust->colorized = true;
+	dust->color = altColor ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
+
+	dust->momx = (4*mo->momx)/5;
+	dust->momy = (4*mo->momy)/5;
+	dust->momz = (4*P_GetMobjZMovement(mo))/5;
+
+	P_Thrust(dust, dust->angle, 4*mo->scale);
+}
+
 void K_Squish(mobj_t *mo)
 {
 	const fixed_t maxstretch = 4*FRACUNIT;
@@ -7315,6 +7411,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->tripwireLeniency > 0)
 	{
 		player->tripwireLeniency--;
+		K_SpawnTripwireVFX(player->mo);
 	}
 
 	if (K_TripwirePassConditions(player) == true)
