@@ -4047,7 +4047,7 @@ void A_AttractChase(mobj_t *actor)
 			}
 			else
 			{
-				fixed_t dist = (actor->target->radius/4) * (16 - actor->extravalue1);
+				fixed_t dist = (4*actor->target->scale) * (16 - actor->extravalue1);
 
 				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
 				actor->z = actor->target->z;
@@ -14748,6 +14748,7 @@ void A_FlameShieldPaper(mobj_t *actor)
 void A_InvincSparkleRotate(mobj_t *actor)
 {
 	fixed_t sx, sy, sz;	// Teleport dests.
+	mobj_t *ghost = NULL;
 
 	if (LUA_CallAction(A_INVINCSPARKLEROTATE, actor))
 		return;
@@ -14766,4 +14767,11 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	actor->momz = actor->target->momz;	// Give momentum for eventual interp builds idk.
 
 	actor->angle += ANG1*10*(actor->extravalue2);	// Arbitrary value, change this if you want, I suppose.
+
+	ghost = P_SpawnGhostMobj(actor);
+	if (ghost != NULL && P_MobjWasRemoved(ghost) == false)
+	{
+		ghost->frame |= FF_ADD;
+		ghost->fuse = 4;
+	}
 }

@@ -4232,10 +4232,10 @@ state_t states[NUMSTATES] =
 	{SPR_KINB, FF_FULLBRIGHT|10,  1, {A_InvincSparkleRotate}, 0, 0, S_KARTINVULNB12},	// S_KARTINVULNB11
 	{SPR_KINB, FF_FULLBRIGHT|11,  1, {A_InvincSparkleRotate}, 0, 0, S_NULL},	// S_KARTINVULNB12
 
-	{SPR_KINF, FF_FULLBRIGHT|FF_TRANS90, 1, {NULL}, 0, 0, S_INVULNFLASH2},	// S_INVULNFLASH1
-	{SPR_NULL, FF_FULLBRIGHT|FF_TRANS90, 1, {NULL}, 0, 0, S_INVULNFLASH3},	// S_INVULNFLASH2
-	{SPR_KINF, FF_FULLBRIGHT|FF_TRANS90|1, 1, {NULL}, 0, 0, S_INVULNFLASH4},	// S_INVULNFLASH3
-	{SPR_NULL, FF_FULLBRIGHT|FF_TRANS90, 1, {NULL}, 0, 0, S_INVULNFLASH1},	// S_INVULNFLASH4
+	{SPR_KINF, FF_FULLBRIGHT|FF_TRANS80|FF_ADD, 1, {NULL}, 0, 0, S_INVULNFLASH2},	// S_INVULNFLASH1
+	{SPR_NULL, FF_FULLBRIGHT|FF_TRANS80|FF_ADD, 1, {NULL}, 0, 0, S_INVULNFLASH3},	// S_INVULNFLASH2
+	{SPR_KINF, FF_FULLBRIGHT|FF_TRANS80|FF_ADD|1, 1, {NULL}, 0, 0, S_INVULNFLASH4},	// S_INVULNFLASH3
+	{SPR_NULL, FF_FULLBRIGHT|FF_TRANS80|FF_ADD, 1, {NULL}, 0, 0, S_INVULNFLASH1},	// S_INVULNFLASH4
 
 	{SPR_INVI, FF_FULLBRIGHT|FF_PAPERSPRITE,    1, {NULL}, 0, 0, S_KARTINVLINES2}, // S_KARTINVLINES1
 	{SPR_INVI, FF_FULLBRIGHT|FF_PAPERSPRITE|1,  1, {NULL}, 0, 0, S_KARTINVLINES3}, // S_KARTINVLINES2
@@ -5398,7 +5398,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		1,              // speed
-		16*FRACUNIT,    // radius
+		24*FRACUNIT,    // radius
 		48*FRACUNIT,    // height
 		0,              // display offset
 		1000,           // mass
@@ -29518,7 +29518,9 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Chaos Emerald 4", {  0, 144, 146, 147, 149, 165, 167, 169,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD4
 	{"Chaos Emerald 5", {  0,   1, 144,   4,   9, 170,  14,  21,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD5
 	{"Chaos Emerald 6", {  0, 208,  50,  32,  34,  37,  40,  44,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD6
-	{"Chaos Emerald 7", {  0, 120, 121, 140, 133, 135, 149, 156,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_CHAOSEMERALD7
+	{"Chaos Emerald 7", {  0, 120, 121, 140, 133, 135, 149, 156,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD7
+
+	{"Invinc Flash", {  0,   0,   0,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_INVINCFLASH
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.
