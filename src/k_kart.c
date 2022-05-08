@@ -2029,6 +2029,17 @@ void K_SpawnDashDustRelease(player_t *player)
 	}
 }
 
+static fixed_t K_GetBrakeFXScale(player_t *player)
+{
+	fixed_t s = FixedDiv(player->speed,
+			K_GetKartSpeed(player, false));
+
+	s = max(s, FRACUNIT);
+	s = min(s, 2*FRACUNIT);
+
+	return s;
+}
+
 static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the mobj thinker case too!
 {
 	mobj_t *sparks;
@@ -2041,9 +2052,83 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	// This avoids needing to dupe code if we don't need it.
 	sparks = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BRAKEDRIFT);
 	P_SetTarget(&sparks->target, player->mo);
-	P_SetScale(sparks, (sparks->destscale = player->mo->scale));
+	P_SetScale(sparks, (sparks->destscale = FixedMul(K_GetBrakeFXScale(player), player->mo->scale)));
 	K_MatchGenericExtraFlags(sparks, player->mo);
 	sparks->renderflags |= RF_DONTDRAW;
+}
+
+static void
+spawn_brake_dust
+(		mobj_t * master,
+		angle_t aoff,
+		int radf,
+		fixed_t scale)
+{
+	const fixed_t rad = radf * master->radius;
+
+	const angle_t a = master->angle + aoff;
+
+	mobj_t *spark = P_SpawnMobjFromMobj(master,
+			P_ReturnThrustX(NULL, a, rad),
+			P_ReturnThrustY(NULL, a, rad), 0,
+			MT_BRAKEDUST);
+
+	spark->momx = master->momx;
+	spark->momy = master->momy;
+	spark->momz = P_GetMobjZMovement(master);
+	spark->angle = a - ANGLE_180;
+	spark->pitch = master->pitch;
+	spark->roll = master->roll;
+
+	P_Thrust(spark, a, 16 * spark->scale);
+
+	P_SetScale(spark, (spark->destscale =
+				FixedMul(scale, spark->scale)));
+}
+
+static void K_SpawnBrakeVisuals(player_t *player)
+{
+	const fixed_t scale = K_GetBrakeFXScale(player);
+
+	if (leveltime & 1)
+	{
+		angle_t aoff;
+		UINT8 radm;
+
+		UINT8 wheel = 3;
+
+		if (player->drift)
+		{
+			/* brake-drifting: dust flies from outer wheel */
+			wheel ^= 1 << (player->drift < 0);
+
+			aoff = 7 * ANG10;
+			radm = 8;
+		}
+		else
+		{
+			aoff = ANG30;
+			radm = 6;
+		}
+
+		if (wheel & 1)
+		{
+			spawn_brake_dust(player->mo,
+					aoff, radm, scale);
+		}
+
+		if (wheel & 2)
+		{
+			spawn_brake_dust(player->mo,
+					InvAngle(aoff), radm, scale);
+		}
+	}
+
+	if (leveltime % 4 == 0)
+		S_StartSound(player->mo, sfx_s3k67);
+
+	/* vertical shaking, scales with speed */
+	player->mo->spriteyoffset = P_RandomFlip(2 * scale);
 }
 
 void K_SpawnDriftBoostClip(player_t *player)
@@ -7418,6 +7503,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_KartEbrakeVisuals(player);
+
+	if (K_GetKartButtons(player) & BT_BRAKE &&
+			P_IsObjectOnGround(player->mo) &&
+			K_GetKartSpeed(player, false) / 2 <= player->speed)
+	{
+		K_SpawnBrakeVisuals(player);
+	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)

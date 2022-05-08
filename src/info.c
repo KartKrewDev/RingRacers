@@ -542,6 +542,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
 	"BDRF", // Brake drift sparks
+	"BRAK", // Brake dust
 	"DRWS", // Drift dust sparks
 	"DREL", // Drift electricity
 	"DRES", // Drift electric sparks
@@ -3882,6 +3883,9 @@ state_t states[NUMSTATES] =
 	{SPR_DRIF, FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_DRIFTSPARK_A2}, // S_DRIFTSPARK_D2 (Loop back to A2)
 
 	{SPR_BDRF, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, -1, {NULL}, 5, 2, S_BRAKEDRIFT}, // S_BRAKEDRIFT
+
+	{SPR_BRAK, FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_BRAKEDUST2}, // S_BRAKEDUST1
+	{SPR_BRAK, FF_FULLBRIGHT|FF_ANIMATE, 7, {NULL}, 6, 1, S_NULL}, // S_BRAKEDUST2
 
 	{SPR_DUST, 0,  3, {NULL}, 0, 0, S_DRIFTDUST2}, // S_DRIFTDUST1
 	{SPR_DUST, 1,  3, {NULL}, 0, 0, S_DRIFTDUST3}, // S_DRIFTDUST2
@@ -22948,6 +22952,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,						// damage
 		sfx_None,				// activesound
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL					// raisestate
+	},
+
+	{           // MT_BRAKEDUST
+		-1,						// doomednum
+		S_BRAKEDUST1,			// spawnstate
+		1000,					// spawnhealth
+		S_NULL,					// seestate
+		sfx_None,				// seesound
+		8,						// reactiontime
+		sfx_None,				// attacksound
+		S_NULL,					// painstate
+		0,						// painchance
+		sfx_None,				// painsound
+		S_NULL,					// meleestate
+		S_NULL,					// missilestate
+		S_NULL,					// deathstate
+		S_NULL,					// xdeathstate
+		sfx_None,				// deathsound
+		8,						// speed
+		8*FRACUNIT,				// radius
+		8*FRACUNIT,				// height
+		1,						// display offset
+		100,					// mass
+		0,						// damage
+		sfx_None,				// activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL					// raisestate
 	},
 

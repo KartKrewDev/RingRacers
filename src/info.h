@@ -1089,6 +1089,7 @@ typedef enum sprite
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
+	SPR_BRAK, // Brake brak
 	SPR_DRWS, // Drift dust sparks
 	SPR_DREL, // Drift electricity
 	SPR_DRES, // Drift electric sparks
@@ -4289,6 +4290,10 @@ typedef enum state
 	// Brake drift sparks
 	S_BRAKEDRIFT,
 
+	// Brake dust
+	S_BRAKEDUST1,
+	S_BRAKEDUST2,
+
 	// Drift Smoke
 	S_DRIFTDUST1,
 	S_DRIFTDUST2,
@@ -6278,6 +6283,7 @@ typedef enum mobj_type
 	MT_WIPEOUTTRAIL,
 	MT_DRIFTSPARK,
 	MT_BRAKEDRIFT,
+	MT_BRAKEDUST,
 	MT_DRIFTDUST,
 	MT_DRIFTELECTRICITY,
 	MT_DRIFTELECTRICSPARK,
