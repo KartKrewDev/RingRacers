@@ -10283,13 +10283,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		}
 	}
 
-	// OK so we kind of need NOTHINK objects to still think
-	// because otherwise they can never update their
-	// interpolation values. They might need some other kind
-	// of system, so consider this temporary...
-#if 0
 	if (!(mobj->flags & MF_NOTHINK))
-#endif
 		P_AddThinker(THINK_MOBJ, &mobj->thinker);
 
 	if (mobj->skin) // correct inadequecies above.
