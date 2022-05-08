@@ -774,6 +774,8 @@ void D_SRB2Loop(void)
 		realtics = entertic - oldentertics;
 		oldentertics = entertic;
 
+		refreshdirmenu = 0; // not sure where to put this, here as good as any?
+
 		if (demo.playback && gamestate == GS_LEVEL)
 		{
 			// Nicer place to put this.
