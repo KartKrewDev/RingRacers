@@ -2742,7 +2742,7 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
-boolean K_TripwirePass(player_t *player)
+boolean K_TripwirePassConditions(player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
@@ -2753,6 +2753,11 @@ boolean K_TripwirePass(player_t *player)
 	)
 		return true;
 	return false;
+}
+
+boolean K_TripwirePass(player_t *player)
+{
+	return (K_TripwirePassConditions(player) || (player->tripwireLeniency > 0));
 }
 
 boolean K_WaterRun(player_t *player)
@@ -7305,6 +7310,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		K_HandleTumbleSound(player);
 		if (P_IsObjectOnGround(player->mo) && player->mo->momz * P_MobjFlip(player->mo) <= 0)
 			K_HandleTumbleBounce(player);
+	}
+
+	if (player->tripwireLeniency > 0)
+	{
+		player->tripwireLeniency--;
+	}
+
+	if (K_TripwirePassConditions(player) == true)
+	{
+		player->tripwireLeniency = max(player->tripwireLeniency, TICRATE);
 	}
 
 	K_KartPlayerHUDUpdate(player);
