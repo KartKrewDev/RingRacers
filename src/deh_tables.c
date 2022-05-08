@@ -3784,8 +3784,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SSMINE_DEPLOY12",
 	"S_SSMINE_DEPLOY13",
 	"S_SSMINE_EXPLODE",
-	"S_MINEEXPLOSION1",
-	"S_MINEEXPLOSION2",
+	"S_SSMINE_EXPLODE2",
 
 	// New explosion
 	"S_QUICKBOOM1",
@@ -4540,6 +4539,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_EBARREL16",
 	"S_EBARREL17",
 	"S_EBARREL18",
+	"S_EBARREL19",
 	"S_MERRYHORSE",
 	"S_BLUEFRUIT",
 	"S_ORANGEFRUIT",
@@ -5533,8 +5533,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SSMINE_SHIELD", // Special Stage Mine stuff
 	"MT_SSMINE",
-	"MT_MINEEXPLOSION",
-	"MT_MINEEXPLOSIONSOUND",
 
 	"MT_SMOLDERING", // New explosion
 	"MT_BOOMEXPLODE",
