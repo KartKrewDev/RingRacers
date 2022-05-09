@@ -278,6 +278,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
 
+		WRITEUINT16(save_p, players[i].tripwireLeniency);
+
 		WRITEUINT16(save_p, players[i].itemroulette);
 		WRITEUINT8(save_p, players[i].roulettetype);
 
@@ -545,6 +547,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftpower = READFIXED(save_p);
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
+
+		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
 		players[i].roulettetype = READUINT8(save_p);

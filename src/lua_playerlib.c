@@ -288,6 +288,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->draftleeway);
 	else if (fastcmp(field,"lastdraft"))
 		lua_pushinteger(L, plr->lastdraft);
+	else if (fastcmp(field,"tripwireLeniency"))
+		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
 	else if (fastcmp(field,"roulettetype"))
@@ -630,6 +632,8 @@ static int player_set(lua_State *L)
 		plr->draftleeway = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastdraft"))
 		plr->lastdraft = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireLeniency"))
+		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"roulettetype"))
