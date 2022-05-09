@@ -1672,15 +1672,15 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	if (!player->invincibilitytimer)
 		return;
 
-	player->mo->color = K_RainbowColor(leveltime);
-
 	// Resume normal music stuff.
 	if (player->invincibilitytimer == 1)
 	{
 		player->mo->color = player->skincolor;
+		player->mo->colorized = false;
 		G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
 
 		P_RestoreMusic(player);
+		return;
 	}
 }
 

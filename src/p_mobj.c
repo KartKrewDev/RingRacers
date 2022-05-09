@@ -7175,15 +7175,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_Thrust(smoke, mobj->angle+FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * mobj->target->scale);
 		}
 		break;
-	case MT_SPARKLETRAIL:
-		if (!mobj->target)
-		{
-			P_RemoveMobj(mobj);
-			return false;
-		}
-		mobj->color = mobj->target->color;
-		mobj->colorized = mobj->target->colorized;
-		break;
 	case MT_INVULNFLASH:
 		if (!mobj->target || !mobj->target->health || (mobj->target->player && !mobj->target->player->invincibilitytimer))
 		{
@@ -9649,6 +9640,8 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	{
 		case MT_PLAYER:
 		case MT_KART_LEFTOVER:
+			thing->shadowscale = FRACUNIT;
+			break;
 		case MT_SMALLMACE:
 		case MT_BIGMACE:
 		case MT_PUMA:
