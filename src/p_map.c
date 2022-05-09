@@ -892,27 +892,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		return K_MineCollide(thing, tmthing);
 	}
 
-	if (tmthing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(tmthing, thing);
-	}
-	else if (thing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(thing, tmthing);
-	}
-
 	if (tmthing->type == MT_LANDMINE)
 	{
 		// see if it went over / under

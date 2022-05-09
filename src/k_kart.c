@@ -3711,88 +3711,6 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 	K_HandleBumperChanges(victim, oldVictimBumpers);
 }
 
-// source is the mobj that originally threw the bomb that exploded etc.
-// Spawns the sphere around the explosion that handles spinout
-void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source)
-{
-	mobj_t *mobj;
-	mobj_t *ghost = NULL;
-	INT32 i;
-	TVector v;
-	TVector *res;
-	fixed_t finalx, finaly, finalz, dist;
-	//mobj_t hoopcenter;
-	angle_t degrees, fa, closestangle;
-	fixed_t mobjx, mobjy, mobjz;
-
-	//hoopcenter.x = x;
-	//hoopcenter.y = y;
-	//hoopcenter.z = z;
-
-	//hoopcenter.z = z - mobjinfo[type].height/2;
-
-	degrees = FINEANGLES/number;
-
-	closestangle = 0;
-
-	// Create the hoop!
-	for (i = 0; i < number; i++)
-	{
-		fa = (i*degrees);
-		v[0] = FixedMul(FINECOSINE(fa),radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa),radius);
-		v[3] = FRACUNIT;
-
-		res = VectorMatrixMultiply(v, *RotateXMatrix(rotangle));
-		M_Memcpy(&v, res, sizeof (v));
-		res = VectorMatrixMultiply(v, *RotateZMatrix(closestangle));
-		M_Memcpy(&v, res, sizeof (v));
-
-		finalx = x + v[0];
-		finaly = y + v[1];
-		finalz = z + v[2];
-
-		mobj = P_SpawnMobj(finalx, finaly, finalz, type);
-
-		mobj->z -= mobj->height>>1;
-
-		// change angle
-		P_InitAngle(mobj, R_PointToAngle2(mobj->x, mobj->y, x, y));
-
-		// change slope
-		dist = P_AproxDistance(P_AproxDistance(x - mobj->x, y - mobj->y), z - mobj->z);
-
-		if (dist < 1)
-			dist = 1;
-
-		mobjx = mobj->x;
-		mobjy = mobj->y;
-		mobjz = mobj->z;
-
-		if (ghostit)
-		{
-			ghost = P_SpawnGhostMobj(mobj);
-			P_SetMobjState(mobj, S_NULL);
-			mobj = ghost;
-		}
-
-		if (spawncenter)
-		{
-			mobj->x = x;
-			mobj->y = y;
-			mobj->z = z;
-		}
-
-		mobj->momx = FixedMul(FixedDiv(mobjx - x, dist), FixedDiv(dist, 6*FRACUNIT));
-		mobj->momy = FixedMul(FixedDiv(mobjy - y, dist), FixedDiv(dist, 6*FRACUNIT));
-		mobj->momz = FixedMul(FixedDiv(mobjz - z, dist), FixedDiv(dist, 6*FRACUNIT));
-
-		if (source && !P_MobjWasRemoved(source))
-			P_SetTarget(&mobj->target, source);
-	}
-}
-
 #define MINEQUAKEDIST 4096
 
 // Does the proximity screen flash and quake for explosions
@@ -3837,6 +3755,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	smoldering->tics = TICRATE*3;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;
+
+	S_StartSound(smoldering, sfx_s3k4e);
 
 	if (!color)
 		color = SKINCOLOR_KETCHUP;

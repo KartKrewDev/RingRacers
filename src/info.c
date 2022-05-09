@@ -4349,10 +4349,8 @@ state_t states[NUMSTATES] =
 	{SPR_SSMN, 12,                3, {NULL}, 0, 0, S_SSMINE_DEPLOY12},					// S_SSMINE_DEPLOY11
 	{SPR_SSMN, 13,                3, {NULL}, 0, 0, S_SSMINE_DEPLOY13},					// S_SSMINE_DEPLOY12
 	{SPR_SSMN, 14,                3, {NULL}, 0, 0, S_SSMINE1},							// S_SSMINE_DEPLOY13
-	{SPR_SSMN,  3,                1, {A_SSMineExplode}, MT_MINEEXPLOSION, 0, S_NULL},	// S_SSMINE_EXPLODE
-
-	{SPR_NULL,  0,  6, {NULL}, 0, 0, S_MINEEXPLOSION2},	// S_MINEEXPLOSION1
-	{SPR_NULL,  1, 22, {A_ForceStop}, 0, 0, S_NULL},	// S_MINEEXPLOSION2
+	{SPR_SSMN,  3,                1, {A_SSMineExplode}, 0, 0, S_SSMINE_EXPLODE2},		// S_SSMINE_EXPLODE
+	{SPR_NULL,  0,               12, {A_SSMineExplode}, 1, 0, S_NULL},					// S_SSMINE_EXPLODE2
 
 	{SPR_KRBM, FF_FULLBRIGHT,   1, {NULL}, 0, 0, S_QUICKBOOM2},		// S_QUICKBOOM1
 	{SPR_KRBM, FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_QUICKBOOM3},		// S_QUICKBOOM2
@@ -5093,7 +5091,7 @@ state_t states[NUMSTATES] =
 	{SPR_TOAH, 2, 3, {NULL}, 0, 0, S_TOADHIT4},  // S_TOADHIT3
 	{SPR_TOAH, 3, 3, {NULL}, 0, 0, S_EBARREL18}, // S_TOADHIT4
 
-	{SPR_BRRL, 0, 1, {A_Look}, (96<<16)|1, 0, S_EBARRELIDLE}, // S_EBARRELIDLE
+	{SPR_BRRL,  0, 1, {A_Look}, (96<<16)|1, 0, S_EBARRELIDLE}, // S_EBARRELIDLE
 	{SPR_BRRR,  0, 4, {NULL}, 0, 0, S_EBARREL2},  // S_EBARREL1
 	{SPR_BRRR,  1, 4, {NULL}, 0, 0, S_EBARREL3},  // S_EBARREL2
 	{SPR_BRRR,  2, 4, {NULL}, 0, 0, S_EBARREL4},  // S_EBARREL3
@@ -5111,7 +5109,8 @@ state_t states[NUMSTATES] =
 	{SPR_BRRR, 14, 4, {NULL}, 0, 0, S_EBARREL16}, // S_EBARREL15
 	{SPR_BRRR, 15, 4, {NULL}, 0, 0, S_EBARREL17}, // S_EBARREL16
 	{SPR_BRRR, 16, 4, {NULL}, 0, 0, S_EBARREL18}, // S_EBARREL17
-	{SPR_BRRR, 16, 0, {A_SSMineExplode}, MT_MINEEXPLOSION, 0, S_NULL}, // S_EBARREL18
+	{SPR_BRRR, 16, 1, {A_SSMineExplode}, 0, 0, S_EBARREL19}, // S_EBARREL18
+	{SPR_NULL, 0, 12, {A_SSMineExplode}, 1, 0, S_NULL}, // S_EBARREL19
 
 	{SPR_HRSE, 0, 230, {A_PlaySeeSound}, 0, 0, S_MERRYHORSE}, // S_MERRYHORSE
 
@@ -24052,60 +24051,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1,              // damage
 		sfx_None,       // activesound
 		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_MINEEXPLOSION
-		-1,             // doomednum
-		S_MINEEXPLOSION1,  // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		8,              // speed
-		32*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SOLID|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_MINEEXPLOSIONSOUND
-		-1,             // doomednum
-		S_INVISIBLE,    // spawnstate
-		100,            // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		16*FRACUNIT,    // radius
-		16*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
 

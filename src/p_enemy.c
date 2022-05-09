@@ -25,10 +25,13 @@
 #include "i_video.h"
 #include "z_zone.h"
 #include "lua_hook.h"
-#include "k_kart.h" // SRB2kart
+
+// SRB2kart
+#include "k_kart.h"
 #include "k_waypoint.h"
 #include "k_battle.h"
 #include "k_respawn.h"
+#include "k_collide.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -14050,55 +14053,9 @@ void A_SPBChase(mobj_t *actor)
 	return;
 }
 
-static mobj_t *grenade;
-static fixed_t explodedist;
-
-static inline boolean PIT_SSMineSearch(mobj_t *thing)
-{
-	if (!grenade)
-		return false;
-
-	if (grenade->flags2 & MF2_DEBRIS)
-		return false;
-
-	if (thing->type != MT_PLAYER) // Don't explode for anything but an actual player.
-		return true;
-
-	if (!(thing->flags & MF_SHOOTABLE))
-	{
-		// didn't do any damage
-		return true;
-	}
-
-	if (netgame && thing->player && thing->player->spectator)
-		return true;
-
-	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner.
-		return true;
-
-	if (thing->player && (thing->player->hyudorotimer
-		|| ((gametyperules & GTR_BUMPERS) && thing->player && thing->player->bumpers <= 0 && thing->player->karmadelay)))
-		return true;
-
-	// see if it went over / under
-	if (grenade->z - explodedist > thing->z + thing->height)
-		return true; // overhead
-	if (grenade->z + grenade->height + explodedist < thing->z)
-		return true; // underneath
-
-	if (P_AproxDistance(P_AproxDistance(thing->x - grenade->x, thing->y - grenade->y),
-		thing->z - grenade->z) > explodedist)
-		return true; // Too far away
-
-	// Explode!
-	P_SetMobjState(grenade, grenade->info->deathstate);
-	return false;
-}
-
 void A_SSMineSearch(mobj_t *actor)
 {
-	INT32 bx, by, xl, xh, yl, yh;
-	explodedist = FixedMul(actor->info->painchance, mapobjectscale);
+	fixed_t dis = INT32_MAX;
 
 	if (LUA_CallAction(A_SSMINESEARCH, actor))
 		return;
@@ -14106,66 +14063,19 @@ void A_SSMineSearch(mobj_t *actor)
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	if (actor->state == &states[S_SSMINE_DEPLOY8])
-		explodedist = (3*explodedist)/2;
-
 	if (leveltime % 35 == 0)
 		S_StartSound(actor, actor->info->activesound);
 
-	// Use blockmap to check for nearby shootables
-	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	dis = actor->info->painchance;
+	if (actor->state == &states[S_SSMINE_DEPLOY8])
+		dis = (3*dis)>>1;
 
-	grenade = actor;
-
-	for (by = yl; by <= yh; by++)
-		for (bx = xl; bx <= xh; bx++)
-			P_BlockThingsIterator(bx, by, PIT_SSMineSearch);
-}
-
-static inline boolean PIT_MineExplode(mobj_t *thing)
-{
-	if (!grenade || P_MobjWasRemoved(grenade))
-		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
-
-	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
-		return false;
-
-	if (thing == grenade || thing->type == MT_MINEEXPLOSIONSOUND) // Don't explode yourself! Endless loop!
-		return true;
-
-	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
-		return true;
-
-	if (netgame && thing->player && thing->player->spectator)
-		return true;
-
-	if ((gametyperules & GTR_BUMPERS) && grenade->target && grenade->target->player && grenade->target->player->bumpers <= 0 && thing == grenade->target)
-		return true;
-
-	// see if it went over / under
-	if (grenade->z - explodedist > thing->z + thing->height)
-		return true; // overhead
-	if (grenade->z + grenade->height + explodedist < thing->z)
-		return true; // underneath
-
-	if (P_AproxDistance(P_AproxDistance(thing->x - grenade->x, thing->y - grenade->y),
-		thing->z - grenade->z) > explodedist)
-		return true; // Too far away
-
-	P_DamageMobj(thing, grenade, grenade->target, 1, DMG_EXPLODE);
-	return true;
+	K_DoMineSearch(actor, dis);
 }
 
 void A_SSMineExplode(mobj_t *actor)
 {
-	INT32 bx, by, xl, xh, yl, yh;
-	INT32 d;
 	INT32 locvar1 = var1;
-	mobjtype_t type;
-	explodedist = FixedMul((3*actor->info->painchance)/2, actor->scale);
 
 	if (LUA_CallAction(A_SSMINEEXPLODE, actor))
 		return;
@@ -14173,33 +14083,8 @@ void A_SSMineExplode(mobj_t *actor)
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	type = (mobjtype_t)locvar1;
-
-	// Use blockmap to check for nearby shootables
-	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
-
-	BMBOUNDFIX (xl, xh, yl, yh);
-
-	grenade = actor;
-
-	for (by = yl; by <= yh; by++)
-		for (bx = xl; bx <= xh; bx++)
-			P_BlockThingsIterator(bx, by, PIT_MineExplode);
-
-	for (d = 0; d < 16; d++)
-		K_SpawnKartExplosion(actor->x, actor->y, actor->z, explodedist + 32*mapobjectscale, 32, type, d*(ANGLE_45/4), true, false, actor->target); // 32 <-> 64
-
-	if (actor->target && actor->target->player)
-		K_SpawnMineExplosion(actor, actor->target->player->skincolor);
-	else
-		K_SpawnMineExplosion(actor, SKINCOLOR_KETCHUP);
-
-	P_SpawnMobj(actor->x, actor->y, actor->z, MT_MINEEXPLOSIONSOUND);
-
-	actor->flags2 |= MF2_DEBRIS;	// Set this flag to ensure that the explosion won't be effective more than 1 frame.
+	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP);
+	K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
 }
 
 void A_LandMineExplode(mobj_t *actor)
