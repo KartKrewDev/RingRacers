@@ -2132,8 +2132,9 @@ void K_SpawnNormalSpeedLines(player_t *player)
 	else if (player->tripwireLeniency)
 	{
 		// Make it pink+blue+big when you can go through tripwire
-		fast->color = (leveltime & 1) ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
+		fast->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ;
 		fast->colorized = true;
+		fast->renderflags |= RF_ADD;
 	}
 }
 
