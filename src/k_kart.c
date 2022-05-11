@@ -2029,13 +2029,13 @@ void K_SpawnDashDustRelease(player_t *player)
 	}
 }
 
-static fixed_t K_GetBrakeFXScale(player_t *player)
+static fixed_t K_GetBrakeFXScale(player_t *player, fixed_t maxScale)
 {
 	fixed_t s = FixedDiv(player->speed,
 			K_GetKartSpeed(player, false));
 
 	s = max(s, FRACUNIT);
-	s = min(s, 2*FRACUNIT);
+	s = min(s, maxScale);
 
 	return s;
 }
@@ -2052,7 +2052,7 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	// This avoids needing to dupe code if we don't need it.
 	sparks = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BRAKEDRIFT);
 	P_SetTarget(&sparks->target, player->mo);
-	P_SetScale(sparks, (sparks->destscale = FixedMul(K_GetBrakeFXScale(player), player->mo->scale)));
+	P_SetScale(sparks, (sparks->destscale = FixedMul(K_GetBrakeFXScale(player, 3*FRACUNIT), player->mo->scale)));
 	K_MatchGenericExtraFlags(sparks, player->mo);
 	sparks->renderflags |= RF_DONTDRAW;
 }
@@ -2086,7 +2086,8 @@ spawn_brake_dust
 
 static void K_SpawnBrakeVisuals(player_t *player)
 {
-	const fixed_t scale = K_GetBrakeFXScale(player);
+	const fixed_t scale =
+		K_GetBrakeFXScale(player, 2*FRACUNIT);
 
 	if (leveltime & 1)
 	{
