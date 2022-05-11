@@ -2061,11 +2061,9 @@ static void
 spawn_brake_dust
 (		mobj_t * master,
 		angle_t aoff,
-		int radf,
+		fixed_t rad,
 		fixed_t scale)
 {
-	const fixed_t rad = radf * master->radius;
-
 	const angle_t a = master->angle + aoff;
 
 	mobj_t *spark = P_SpawnMobjFromMobj(master,
@@ -2093,7 +2091,7 @@ static void K_SpawnBrakeVisuals(player_t *player)
 	if (leveltime & 1)
 	{
 		angle_t aoff;
-		UINT8 radm;
+		fixed_t radf;
 
 		UINT8 wheel = 3;
 
@@ -2103,24 +2101,24 @@ static void K_SpawnBrakeVisuals(player_t *player)
 			wheel ^= 1 << (player->drift < 0);
 
 			aoff = 7 * ANG10;
-			radm = 8;
+			radf = 32 * FRACUNIT;
 		}
 		else
 		{
 			aoff = ANG30;
-			radm = 6;
+			radf = 24 * FRACUNIT;
 		}
 
 		if (wheel & 1)
 		{
 			spawn_brake_dust(player->mo,
-					aoff, radm, scale);
+					aoff, radf, scale);
 		}
 
 		if (wheel & 2)
 		{
 			spawn_brake_dust(player->mo,
-					InvAngle(aoff), radm, scale);
+					InvAngle(aoff), radf, scale);
 		}
 	}
 
