@@ -1172,6 +1172,9 @@ typedef enum
 	sfx_kdtrg2,
 	sfx_kdtrg3,
 
+	// SRB2Kart - Powerup clash SFX
+	sfx_parry,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

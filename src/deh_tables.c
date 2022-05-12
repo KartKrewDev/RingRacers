@@ -3955,6 +3955,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTASHIELDB6",
 	"S_INSTASHIELDB7",
 
+	"S_POWERCLASH", // Invinc/Grow no damage collide VFX
+
 	"S_PLAYERARROW", // Above player arrow
 	"S_PLAYERARROW_BOX",
 	"S_PLAYERARROW_ITEM",
@@ -5383,6 +5385,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_INSTASHIELDA",
 	"MT_INSTASHIELDB",
+
+	"MT_POWERCLASH", // Invinc/Grow no damage clash VFX
 
 	"MT_PLAYERARROW",
 	"MT_PLAYERWANTED",
