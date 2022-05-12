@@ -144,7 +144,6 @@ void A_RingExplode(mobj_t *actor);
 void A_OldRingExplode(mobj_t *actor);
 void A_MixUp(mobj_t *actor);
 void A_Boss2TakeDamage(mobj_t *actor);
-void A_Boss7Chase(mobj_t *actor);
 void A_GoopSplat(mobj_t *actor);
 void A_Boss2PogoSFX(mobj_t *actor);
 void A_Boss2PogoTarget(mobj_t *actor);
@@ -2493,26 +2492,15 @@ void A_LobShot(mobj_t *actor)
 	if (actor->eflags & MFE_VERTICALFLIP)
 	{
 		z = actor->z + actor->height - FixedMul(locvar2*FRACUNIT, actor->scale);
-		if (actor->type == MT_BLACKEGGMAN)
-			z -= FixedMul(mobjinfo[locvar1].height, actor->scale/2);
-		else
-			z -= FixedMul(mobjinfo[locvar1].height, actor->scale);
+		z -= FixedMul(mobjinfo[locvar1].height, actor->scale);
 	}
 	else
 		z = actor->z + FixedMul(locvar2*FRACUNIT, actor->scale);
 
 	shot = P_SpawnMobj(actor->x, actor->y, z, locvar1);
 
-	if (actor->type == MT_BLACKEGGMAN)
-	{
-		shot->destscale = actor->scale/2;
-		P_SetScale(shot, actor->scale/2);
-	}
-	else
-	{
-		shot->destscale = actor->scale;
-		P_SetScale(shot, actor->scale);
-	}
+	shot->destscale = actor->scale;
+	P_SetScale(shot, actor->scale);
 
 	// Keep track of where it's going to land
 	hitspot = P_SpawnMobj(actor->target->x&(64*FRACUNIT-1), actor->target->y&(64*FRACUNIT-1), actor->target->subsector->sector->floorheight, MT_NULL);
@@ -3579,28 +3567,6 @@ bossjustdie:
 	// now do another switch case for escaping
 	switch (mo->type)
 	{
-		case MT_BLACKEGGMAN:
-		{
-			mo->flags |= MF_NOCLIP;
-			mo->flags &= ~MF_SPECIAL;
-
-			S_StartSound(NULL, sfx_befall);
-			break;
-		}
-		case MT_CYBRAKDEMON:
-		{
-			mo->flags |= MF_NOCLIP;
-			mo->flags &= ~(MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT);
-
-			S_StartSound(NULL, sfx_bedie2);
-			P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_CYBRAKDEMON_VILE_EXPLOSION);
-			mo->z += P_MobjFlip(mo);
-			P_SetObjectMomZ(mo, 12*FRACUNIT, false);
-			S_StartSound(mo, sfx_bgxpld);
-			if (mo->spawnpoint && !(mo->spawnpoint->options & MTF_EXTRA))
-				P_InstaThrust(mo, R_PointToAngle2(0, 0, mo->x, mo->y), 14*FRACUNIT);
-			break;
-		}
 		case MT_KOOPA:
 		{
 			// Initialize my junk
@@ -6191,128 +6157,6 @@ void A_Boss2TakeDamage(mobj_t *actor)
 		actor->movecount = TICRATE;
 	else
 		actor->movecount = locvar1; // become flashing invulnerable for this long.
-}
-
-// Function: A_Boss7Chase
-//
-// Description: Like A_Chase, but for Black Eggman
-//
-// var1 = unused
-// var2 = unused
-//
-void A_Boss7Chase(mobj_t *actor)
-{
-	INT32 delta;
-	INT32 i;
-
-	if (LUA_CallAction(A_BOSS7CHASE, actor))
-		return;
-
-	if (actor->z != actor->floorz)
-		return;
-
-	// Self-adjust if stuck on the edge
-	if (actor->tracer)
-	{
-		if (P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y) > 128*FRACUNIT - actor->radius)
-			P_InstaThrust(actor, R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y), FRACUNIT);
-	}
-
-	if (actor->flags2 & MF2_FRET)
-	{
-		P_SetMobjState(actor, S_BLACKEGG_DESTROYPLAT1);
-		S_StartSound(0, sfx_s3k53);
-		actor->flags2 &= ~MF2_FRET;
-		return;
-	}
-
-	// turn towards movement direction if not there yet
-	if (actor->movedir < NUMDIRS)
-	{
-		actor->angle &= (7<<29);
-		delta = actor->angle - (actor->movedir << 29);
-
-		if (delta > 0)
-			actor->angle -= ANGLE_45;
-		else if (delta < 0)
-			actor->angle += ANGLE_45;
-	}
-
-	// Is a player on top of us?
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-
-		if (!players[i].mo)
-			continue;
-
-		if (players[i].mo->health <= 0)
-			continue;
-
-		if (P_AproxDistance(players[i].mo->x - actor->x, players[i].mo->y - actor->y) > actor->radius)
-			continue;
-
-		if (players[i].mo->z > actor->z + actor->height - 2*FRACUNIT
-			&& players[i].mo->z < actor->z + actor->height + 32*FRACUNIT)
-		{
-			// Punch him!
-			P_SetMobjState(actor, actor->info->meleestate);
-			S_StartSound(0, sfx_begrnd); // warning sound
-			return;
-		}
-	}
-
-	if (actor->reactiontime)
-		actor->reactiontime--;
-
-	if (actor->reactiontime <= 0 && actor->z == actor->floorz)
-	{
-		// Here, we'll call P_RandomByte() and decide what kind of attack to do
-		switch(actor->threshold)
-		{
-			case 0: // Lob cannon balls
-				if (actor->z < 1056*FRACUNIT)
-				{
-					A_FaceTarget(actor);
-					P_SetMobjState(actor, actor->info->xdeathstate);
-					actor->movecount = 7*TICRATE + P_RandomByte();
-					break;
-				}
-				actor->threshold++;
-				/* FALLTHRU */
-			case 1: // Chaingun Goop
-				A_FaceTarget(actor);
-				P_SetMobjState(actor, S_BLACKEGG_SHOOT1);
-
-				if (actor->health > actor->info->damage)
-					actor->movecount = TICRATE + P_RandomByte()/3;
-				else
-					actor->movecount = TICRATE + P_RandomByte()/2;
-				break;
-			case 2: // Homing Missile
-				A_FaceTarget(actor);
-				P_SetMobjState(actor, actor->info->missilestate);
-				S_StartSound(0, sfx_beflap);
-				break;
-		}
-
-		actor->threshold++;
-		actor->threshold %= 3;
-		return;
-	}
-
-	// possibly choose another target
-	if (multiplayer && (actor->target->health <= 0 || !P_CheckSight(actor, actor->target))
-		&& P_BossTargetPlayer(actor, false))
-		return; // got a new target
-
-	if (leveltime & 1)
-	{
-		// chase towards player
-		if (--actor->movecount < 0 || !P_Move(actor, actor->info->speed))
-			P_NewChaseDir(actor);
-	}
 }
 
 // Function: A_GoopSplat
@@ -9849,7 +9693,7 @@ void A_VileTarget(mobj_t *actor)
 
 	// Determine object to spawn
 	if (locvar1 <= 0 || locvar1 >= NUMMOBJTYPES)
-		fogtype = MT_CYBRAKDEMON_TARGET_RETICULE;
+		return;
 	else
 		fogtype = (mobjtype_t)locvar1;
 
@@ -10145,8 +9989,6 @@ void A_BrakChase(mobj_t *actor)
 	if (actor->reactiontime)
 	{
 		actor->reactiontime--;
-		if (actor->reactiontime == 0 && actor->type == MT_CYBRAKDEMON)
-			S_StartSound(0, sfx_bewar1 + P_RandomKey(4));
 	}
 
 	// modify target threshold
@@ -10225,7 +10067,7 @@ void A_BrakChase(mobj_t *actor)
 		S_StartSound(actor, (sfxenum_t)locvar2);
 
 	// make active sound
-	if (actor->type != MT_CYBRAKDEMON && actor->info->activesound && P_RandomChance(3*FRACUNIT/256))
+	if (actor->info->activesound && P_RandomChance(3*FRACUNIT/256))
 	{
 		S_StartSound(actor, actor->info->activesound);
 	}
