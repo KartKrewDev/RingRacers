@@ -279,6 +279,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
 
+		WRITEUINT16(save_p, players[i].tripwireLeniency);
+
 		WRITEUINT16(save_p, players[i].itemroulette);
 		WRITEUINT8(save_p, players[i].roulettetype);
 
@@ -326,6 +328,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].trickboostpower);
 		WRITEUINT8(save_p, players[i].trickboostdecay);
 		WRITEUINT8(save_p, players[i].trickboost);
+
+		WRITEUINT32(save_p, players[i].ebrakefor);
 
 		WRITEUINT32(save_p, players[i].roundscore);
 		WRITEUINT8(save_p, players[i].emeralds);
@@ -545,6 +549,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
 
+		players[i].tripwireLeniency = READUINT16(save_p);
+
 		players[i].itemroulette = READUINT16(save_p);
 		players[i].roulettetype = READUINT8(save_p);
 
@@ -592,6 +598,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].trickboostpower = READUINT32(save_p);
 		players[i].trickboostdecay = READUINT8(save_p);
 		players[i].trickboost = READUINT8(save_p);
+
+		players[i].ebrakefor = READUINT32(save_p);
 
 		players[i].roundscore = READUINT32(save_p);
 		players[i].emeralds = READUINT8(save_p);

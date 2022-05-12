@@ -438,6 +438,8 @@ typedef struct player_s
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
+	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
+
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
 	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
 
@@ -489,6 +491,7 @@ typedef struct player_s
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;
