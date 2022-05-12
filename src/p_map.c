@@ -2469,8 +2469,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 	// This makes sure that there are no freezes from computing extremely small movements.
 	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
-	if (radius < mapobjectscale)
-		radius = mapobjectscale;
+	radius = max(radius, mapobjectscale);
+
+	// And Big Large (tm) movements can skip over slopes.
+	radius = min(radius, 16*mapobjectscale);
 
 #if 0
 	if (thing->hitlag > 0)
