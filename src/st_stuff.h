@@ -81,54 +81,7 @@ extern UINT32 st_translucency;
 
 extern lumpnum_t st_borderpatchnum;
 // patches, also used in intermission
-extern patch_t *sboscore;
-extern patch_t *sbotime;
-extern patch_t *sbocolon;
-extern patch_t *sboperiod;
 extern patch_t *faceprefix[MAXSKINS][NUMFACES];
-extern patch_t *livesback;
-extern patch_t *stlivex;
-extern patch_t *ngradeletters[7];
-
-/** HUD location information (don't move this comment)
-  */
-typedef struct
-{
-	INT32 x, y, f;
-} hudinfo_t;
-
-typedef enum
-{
-	HUD_LIVES,
-
-	HUD_RINGS,
-	HUD_RINGSNUM,
-	HUD_RINGSNUMTICS,
-
-	HUD_SCORE,
-	HUD_SCORENUM,
-
-	HUD_TIME,
-	HUD_MINUTES,
-	HUD_TIMECOLON,
-	HUD_SECONDS,
-	HUD_TIMETICCOLON,
-	HUD_TICS,
-
-	HUD_SS_TOTALRINGS,
-
-	HUD_GETRINGS,
-	HUD_GETRINGSNUM,
-	HUD_TIMELEFT,
-	HUD_TIMELEFTNUM,
-	HUD_TIMEUP,
-	HUD_HUNTPICS,
-	HUD_POWERUPS,
-
-	NUMHUDITEMS
-} hudnum_t;
-
-extern hudinfo_t hudinfo[NUMHUDITEMS];
 
 extern UINT16 objectsdrawn;
 

@@ -623,14 +623,14 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
-		HU_UpdatePatch(&kp_bossbar[i], buffer);
+		HU_UpdatePatch(&kp_bossbar[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_BOSR0x");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
-		HU_UpdatePatch(&kp_bossret[i], buffer);
+		HU_UpdatePatch(&kp_bossret[i], "%s", buffer);
 	}
 }
 

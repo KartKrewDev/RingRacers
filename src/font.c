@@ -27,7 +27,8 @@ FontCache (font_t *fnt)
 	c = fnt->start;
 	for (i = 0; i < fnt->size; ++i, ++c)
 	{
-		HU_UpdatePatch(&fnt->font[i],
+		HU_UpdateOrBlankPatch(&fnt->font[i],
+				false,
 				"%s%.*d",
 				fnt->prefix,
 				fnt->digits,

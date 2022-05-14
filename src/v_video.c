@@ -2310,8 +2310,8 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	} while (num);
 
 	// draw a minus sign if necessary
-	if (neg)
-		V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
+	//if (neg)
+		//V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
 }
 
 // Draws a number with a set number of digits.

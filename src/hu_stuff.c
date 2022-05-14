@@ -87,23 +87,11 @@ static boolean headsupactive = false;
 boolean hu_showscores; // draw rankings
 static char hu_tick;
 
-patch_t *rflagico;
-patch_t *bflagico;
-patch_t *rmatcico;
-patch_t *bmatcico;
-patch_t *tagico;
-patch_t *tallminus;
-patch_t *tallinfin;
-
-//-------------------------------------------
-//              coop hud
-//-------------------------------------------
-
-static patch_t *emblemicon;
-
 //-------------------------------------------
 //              misc vars
 //-------------------------------------------
+
+patch_t *missingpat;
 
 // song credits
 static patch_t *songcreditbg;
@@ -189,10 +177,6 @@ void HU_LoadGraphics(void)
 
 	Font_Load();
 
-	// minus for negative tallnums
-	HU_UpdatePatch(&tallminus, "STTMINUS");
-
-	HU_UpdatePatch(&emblemicon, "EMBLICON");
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
 	// cache ping gfx:
@@ -221,6 +205,16 @@ void HU_Init(void)
 	COM_AddCommand("csay", Command_CSay_f);
 	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 #endif
+
+	// only allocate if not present, to save us a lot of headache
+	if (missingpat == NULL)
+	{
+		lumpnum_t missingnum = W_GetNumForName("MISSING");
+		if (missingnum == LUMPERROR)
+			I_Error("HU_LoadGraphics: \"MISSING\" patch not present in resource files.");
+
+		missingpat = W_CachePatchNum(W_GetNumForName("MISSING"), PU_STATIC);
+	}
 
 	// set shift translation table
 	shiftxform = english_shiftxform;
@@ -292,7 +286,7 @@ void HU_Init(void)
 	HU_LoadGraphics();
 }
 
-patch_t *HU_UpdatePatch(patch_t **user, const char *format, ...)
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...)
 {
 	va_list ap;
 	char buffer[9];
@@ -319,7 +313,12 @@ patch_t *HU_UpdatePatch(patch_t **user, const char *format, ...)
 		lump = W_CheckNumForName(buffer);
 
 		if (lump == LUMPERROR)
-			return NULL;
+		{
+			if (required == true)
+				*user = missingpat;
+
+			return *user;
+		}
 	}
 
 	patch = W_CachePatchNum(lump, PU_HUDGFX);
@@ -2151,10 +2150,10 @@ void HU_Drawer(void)
 	if (modeattacking && pausedelay > 0 && !pausebreakkey)
 	{
 		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
-		INT32 y = hudinfo[HUD_LIVES].y - 13;
+		INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT/2; // obviously incorrect values while we scrap hudinfo
 
-		V_DrawThinString(hudinfo[HUD_LIVES].x-2, y,
-			hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
+		V_DrawThinString(x, y,
+			((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
 			"HOLD TO RETRY...");
 
 		if (strength > 9)

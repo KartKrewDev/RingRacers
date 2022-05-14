@@ -104,14 +104,6 @@ extern patch_t *pinggfx[5];
 extern patch_t *framecounter;
 extern patch_t *frameslash;
 
-extern patch_t *rflagico;
-extern patch_t *bflagico;
-extern patch_t *rmatcico;
-extern patch_t *bmatcico;
-extern patch_t *tagico;
-extern patch_t *tallminus;
-extern patch_t *tallinfin;
-
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
 
@@ -120,9 +112,10 @@ void HU_Init(void);
 
 void HU_LoadGraphics(void);
 
-// Load a HUDGFX patch or NULL.
-patch_t *HU_UpdatePatch(patch_t **user, const char *format, ...);
-#define HU_CachePatch(...) HU_UpdatePatch(NULL, __VA_ARGS__)
+// Load a HUDGFX patch or NULL/missingpat (dependent on required boolean).
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...);
+//#define HU_CachePatch(...) HU_UpdateOrBlankPatch(NULL, false, __VA_ARGS__) -- not sure how to default the missingpat here plus not currently used
+#define HU_UpdatePatch(user, ...) HU_UpdateOrBlankPatch(user, true, __VA_ARGS__)
 
 // reset heads up when consoleplayer respawns.
 void HU_Start(void);

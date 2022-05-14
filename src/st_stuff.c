@@ -63,77 +63,6 @@ patch_t *faceprefix[MAXSKINS][NUMFACES];
 //             status bar overlay
 // ------------------------------------------
 
-// icons for overlay
-patch_t *sboscore; // Score logo
-patch_t *sbotime; // Time logo
-patch_t *sbocolon; // Colon for time
-patch_t *sboperiod; // Period for time centiseconds
-patch_t *livesback; // Lives icon background
-patch_t *stlivex;
-static patch_t *nrec_timer; // Timer for NiGHTS records
-static patch_t *sborings;
-static patch_t *slidgame;
-static patch_t *slidtime;
-static patch_t *slidover;
-static patch_t *sboredrings;
-static patch_t *sboredtime;
-static patch_t *getall; // Special Stage HUD
-static patch_t *timeup; // Special Stage HUD
-static patch_t *hunthoming[6];
-static patch_t *itemhoming[6];
-static patch_t *race1;
-static patch_t *race2;
-static patch_t *race3;
-static patch_t *racego;
-static patch_t *nightslink;
-static patch_t *curweapon;
-static patch_t *normring;
-static patch_t *bouncering;
-static patch_t *infinityring;
-static patch_t *autoring;
-static patch_t *explosionring;
-static patch_t *scatterring;
-static patch_t *grenadering;
-static patch_t *railring;
-static patch_t *jumpshield;
-static patch_t *forceshield;
-static patch_t *ringshield;
-static patch_t *watershield;
-static patch_t *bombshield;
-static patch_t *pityshield;
-static patch_t *pinkshield;
-static patch_t *flameshield;
-static patch_t *bubbleshield;
-static patch_t *thundershield;
-static patch_t *invincibility;
-static patch_t *sneakers;
-static patch_t *gravboots;
-static patch_t *nonicon;
-static patch_t *nonicon2;
-static patch_t *bluestat;
-static patch_t *byelstat;
-static patch_t *orngstat;
-static patch_t *redstat;
-static patch_t *yelstat;
-static patch_t *nbracket;
-static patch_t *nring;
-static patch_t *nhud[12];
-static patch_t *nsshud;
-static patch_t *nbon[12];
-static patch_t *nssbon;
-static patch_t *narrow[9];
-static patch_t *nredar[8]; // Red arrow
-static patch_t *drillbar;
-static patch_t *drillfill[3];
-static patch_t *capsulebar;
-static patch_t *capsulefill;
-patch_t *ngradeletters[7];
-static patch_t *minus5sec;
-static patch_t *minicaps;
-static patch_t *gotrflag;
-static patch_t *gotbflag;
-static patch_t *fnshico;
-
 // Midnight Channel:
 static patch_t *hud_tv1;
 static patch_t *hud_tv2;
@@ -142,38 +71,6 @@ static patch_t *hud_tv2;
 // Discord Rich Presence
 static patch_t *envelope;
 #endif
-
-// SRB2kart
-
-hudinfo_t hudinfo[NUMHUDITEMS] =
-{
-	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVES
-
-	{  16,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGS
-	{  96,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUM
-	{ 120,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUMTICS
-
-	{  16,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORE
-	{ 120,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUM
-
-	{  16,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIME
-	{  72,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_MINUTES
-	{  72,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMECOLON
-	{  96,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SECONDS
-	{  96,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMETICCOLON
-	{ 120,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TICS
-
-	{   0,  56, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SS_TOTALRINGS
-
-	{ 110,  93, 0}, // HUD_GETRINGS
-	{ 160,  93, 0}, // HUD_GETRINGSNUM
-	{ 124, 160, 0}, // HUD_TIMELEFT
-	{ 168, 176, 0}, // HUD_TIMELEFTNUM
-	{ 130,  93, 0}, // HUD_TIMEUP
-	{ 152, 168, 0}, // HUD_HUNTPICS
-
-	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
-};
 
 //
 // STATUS BAR CODE
@@ -249,8 +146,6 @@ void ST_UnloadGraphics(void)
 
 void ST_LoadGraphics(void)
 {
-	int i;
-
 	// SRB2 border patch
 	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
 	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
@@ -260,107 +155,6 @@ void ST_LoadGraphics(void)
 	//                   but load them in R_AddSkins, that gets called
 	//                   first anyway
 	// cache the status bar overlay icons (fullscreen mode)
-
-	// Prefix "STT" is whitelisted (doesn't trigger ISGAMEMODIFIED), btw
-	HU_UpdatePatch(&sborings, "STTRINGS");
-	HU_UpdatePatch(&sboredrings, "STTRRING");
-	HU_UpdatePatch(&sboscore, "STTSCORE");
-	HU_UpdatePatch(&sbotime, "STTTIME"); // Time logo
-	HU_UpdatePatch(&sboredtime, "STTRTIME");
-	HU_UpdatePatch(&sbocolon, "STTCOLON"); // Colon for time
-	HU_UpdatePatch(&sboperiod, "STTPERIO"); // Period for time centiseconds
-
-	HU_UpdatePatch(&slidgame, "SLIDGAME");
-	HU_UpdatePatch(&slidtime, "SLIDTIME");
-	HU_UpdatePatch(&slidover, "SLIDOVER");
-
-	HU_UpdatePatch(&stlivex, "STLIVEX");
-	HU_UpdatePatch(&livesback, "STLIVEBK");
-	HU_UpdatePatch(&nrec_timer, "NGRTIMER"); // Timer for NiGHTS
-	HU_UpdatePatch(&getall, "GETALL"); // Special Stage HUD
-	HU_UpdatePatch(&timeup, "TIMEUP"); // Special Stage HUD
-	HU_UpdatePatch(&race1, "RACE1");
-	HU_UpdatePatch(&race2, "RACE2");
-	HU_UpdatePatch(&race3, "RACE3");
-	HU_UpdatePatch(&racego, "RACEGO");
-	HU_UpdatePatch(&nightslink, "NGHTLINK");
-
-	for (i = 0; i < 6; ++i)
-	{
-		HU_UpdatePatch(&hunthoming[i], "HOMING%d", i+1);
-		HU_UpdatePatch(&itemhoming[i], "HOMITM%d", i+1);
-	}
-
-	HU_UpdatePatch(&curweapon, "CURWEAP");
-	HU_UpdatePatch(&normring, "RINGIND");
-	HU_UpdatePatch(&bouncering, "BNCEIND");
-	HU_UpdatePatch(&infinityring, "INFNIND");
-	HU_UpdatePatch(&autoring, "AUTOIND");
-	HU_UpdatePatch(&explosionring, "BOMBIND");
-	HU_UpdatePatch(&scatterring, "SCATIND");
-	HU_UpdatePatch(&grenadering, "GRENIND");
-	HU_UpdatePatch(&railring, "RAILIND");
-	HU_UpdatePatch(&jumpshield, "TVWWICON");
-	HU_UpdatePatch(&forceshield, "TVFOICON");
-	HU_UpdatePatch(&ringshield, "TVATICON");
-	HU_UpdatePatch(&watershield, "TVELICON");
-	HU_UpdatePatch(&bombshield, "TVARICON");
-	HU_UpdatePatch(&pityshield, "TVPIICON");
-	HU_UpdatePatch(&pinkshield, "TVPPICON");
-	HU_UpdatePatch(&flameshield, "TVFLICON");
-	HU_UpdatePatch(&bubbleshield, "TVBBICON");
-	HU_UpdatePatch(&thundershield, "TVZPICON");
-	HU_UpdatePatch(&invincibility, "TVIVICON");
-	HU_UpdatePatch(&sneakers, "TVSSICON");
-	HU_UpdatePatch(&gravboots, "TVGVICON");
-
-	HU_UpdatePatch(&tagico, "TAGICO");
-	HU_UpdatePatch(&rflagico, "RFLAGICO");
-	HU_UpdatePatch(&bflagico, "BFLAGICO");
-	HU_UpdatePatch(&rmatcico, "RMATCICO");
-	HU_UpdatePatch(&bmatcico, "BMATCICO");
-	HU_UpdatePatch(&gotrflag, "GOTRFLAG");
-	HU_UpdatePatch(&gotbflag, "GOTBFLAG");
-	HU_UpdatePatch(&fnshico, "FNSHICO");
-	HU_UpdatePatch(&nonicon, "NONICON");
-	HU_UpdatePatch(&nonicon2, "NONICON2");
-
-	// NiGHTS HUD things
-	HU_UpdatePatch(&bluestat, "BLUESTAT");
-	HU_UpdatePatch(&byelstat, "BYELSTAT");
-	HU_UpdatePatch(&orngstat, "ORNGSTAT");
-	HU_UpdatePatch(&redstat, "REDSTAT");
-	HU_UpdatePatch(&yelstat, "YELSTAT");
-	HU_UpdatePatch(&nbracket, "NBRACKET");
-	HU_UpdatePatch(&nring, "NRNG1");
-	for (i = 0; i < 12; ++i)
-	{
-		HU_UpdatePatch(&nhud[i], "NHUD%d", i+1);
-		HU_UpdatePatch(&nbon[i], "NBON%d", i+1);
-	}
-	HU_UpdatePatch(&nsshud, "NSSHUD");
-	HU_UpdatePatch(&nssbon, "NSSBON");
-	HU_UpdatePatch(&minicaps, "MINICAPS");
-
-	for (i = 0; i < 8; ++i)
-	{
-		HU_UpdatePatch(&narrow[i], "NARROW%d", i+1);
-		HU_UpdatePatch(&nredar[i], "NREDAR%d", i+1);
-	}
-
-	// non-animated version
-	HU_UpdatePatch(&narrow[8], "NARROW9");
-
-	HU_UpdatePatch(&drillbar, "DRILLBAR");
-	for (i = 0; i < 3; ++i)
-		HU_UpdatePatch(&drillfill[i], "DRILLFI%d", i+1);
-	HU_UpdatePatch(&capsulebar, "CAPSBAR");
-	HU_UpdatePatch(&capsulefill, "CAPSFILL");
-	HU_UpdatePatch(&minus5sec, "MINUS5");
-
-	for (i = 0; i < 7; ++i)
-		HU_UpdatePatch(&ngradeletters[i], "GRADE%d", i);
-
 	K_LoadKartHUDGraphics();
 
 	// Midnight Channel:
@@ -547,17 +341,6 @@ static INT32 SCR(INT32 r)
 // =========================================================================
 //                          INTERNAL DRAWING
 // =========================================================================
-#define ST_DrawTopLeftOverlayPatch(x,y,p)         V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_SNAPTOTOP|V_SNAPTOLEFT|V_HUDTRANS, p)
-#define ST_DrawOverlayNum(x,y,n)           V_DrawTallNum(x, y, V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPaddedOverlayNum(x,y,n,d)   V_DrawPaddedTallNum(x, y, V_NOSCALESTART|V_HUDTRANS, n, d)
-#define ST_DrawOverlayPatch(x,y,p)         V_DrawScaledPatch(x, y, V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawMappedOverlayPatch(x,y,p,c) V_DrawMappedScaledPatch(x, y, V_NOSCALESTART|V_HUDTRANS, p, c)
-#define ST_DrawNumFromHud(h,n)        V_DrawTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHud(h,n,q)   V_DrawPaddedTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHud(h,p)      V_DrawScaledPatch(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
 
 // Devmode information
 static void ST_drawDebugInfo(void)
@@ -807,7 +590,7 @@ void ST_runTitleCard(void)
 						char c = toupper(bossinfo.enemyname[bossinfo.titleshow]);
 						bossinfo.titleshow++;
 						c -= LT_FONTSTART;
-						if (c < 0 || c >= LT_FONTSIZE || !tc_font[1][(INT32)c] || !bossinfo.titlesound)
+						if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c] || !bossinfo.titlesound)
 						{
 							;
 						}
