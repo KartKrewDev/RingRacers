@@ -213,7 +213,7 @@ void HU_Init(void)
 		if (missingnum == LUMPERROR)
 			I_Error("HU_LoadGraphics: \"MISSING\" patch not present in resource files.");
 
-		missingpat = W_CachePatchNum(W_GetNumForName("MISSING"), PU_STATIC);
+		missingpat = W_CachePatchNum(missingnum, PU_STATIC);
 	}
 
 	// set shift translation table
