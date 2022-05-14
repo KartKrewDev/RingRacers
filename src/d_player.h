@@ -151,7 +151,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (HYUDORO,       17),\
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
-	FOREACH (KITCHENSINK,   20)
+	FOREACH (KITCHENSINK,   20),\
+	FOREACH (DROPTARGET,    21)
 
 typedef enum
 {
@@ -261,7 +262,7 @@ typedef enum
 //}
 
 // for kickstartaccel
-#define ACCEL_KICKSTART 35
+#define ACCEL_KICKSTART (TICRATE)
 
 #define ITEMSCALE_NORMAL 0
 #define ITEMSCALE_GROW 1
@@ -436,6 +437,8 @@ typedef struct player_s
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
+	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
+
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
 	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
 
@@ -487,6 +490,7 @@ typedef struct player_s
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;
@@ -494,6 +498,7 @@ typedef struct player_s
 	INT16 karmadelay;
 	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
+	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
 
@@ -547,7 +552,6 @@ typedef struct player_s
 	UINT8 splitscreenindex;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
-	tic_t quittime; // Time elapsed since user disconnected, zero if connected
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer

@@ -84,6 +84,8 @@ boolean R_ThingIsFullBright (mobj_t *thing);
 boolean R_ThingIsSemiBright (mobj_t *thing);
 boolean R_ThingIsFullDark (mobj_t *thing);
 
+boolean R_ThingIsFlashing(mobj_t *thing);
+
 // --------------
 // MASKED DRAWING
 // --------------
@@ -99,7 +101,7 @@ typedef struct
 	sector_t* viewsector;
 } maskcount_t;
 
-void R_DrawMasked(maskcount_t* masks, UINT8 nummasks);
+void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
 
 // ----------
 // VISSPRITES
@@ -166,7 +168,12 @@ typedef struct vissprite_s
 	fixed_t xiscale; // negative if flipped
 
 	angle_t centerangle; // for paper sprites
-	angle_t viewangle; // for floor sprites, the viewpoint's current angle
+
+	// for floor sprites
+	struct {
+		fixed_t x, y, z; // the viewpoint's current position
+		angle_t angle; // the viewpoint's current angle
+	} viewpoint;
 
 	struct {
 		fixed_t tan; // The amount to shear the sprite vertically per row
@@ -187,9 +194,11 @@ typedef struct vissprite_s
 
 	extracolormap_t *extra_colormap; // global colormaps
 
-	// Precalculated top and bottom screen coords for the sprite.
-	fixed_t thingheight; // The actual height of the thing
+	fixed_t thingheight; // The actual height of the thing (for 3D floors)
+
 	sector_t *sector; // The sector containing the thing.
+
+	// Precalculated top and bottom screen coords for the sprite.
 	INT16 sz, szt;
 
 	spritecut_e cut;
@@ -211,7 +220,6 @@ extern UINT32 visspritecount;
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
 void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, portal_t* portal);
 
-boolean R_SpriteIsFlashing(vissprite_t *vis);
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
 
 // ----------

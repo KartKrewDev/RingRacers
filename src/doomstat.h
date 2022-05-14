@@ -414,7 +414,7 @@ typedef struct
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
-#define LF2_TIMEATTACK    (1<<2) ///< Show this map in Time Attack modes
+#define LF2_NOTIMEATTACK  (1<<2) ///< Hide this map in Time Attack modes
 #define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
@@ -500,15 +500,16 @@ extern INT32 timelimits[NUMGAMETYPES];
 enum TypeOfLevel
 {
 	// Gametypes
-	TOL_RACE   = 0x0001, ///< Race
-	TOL_BATTLE = 0x0002, ///< Battle
+	TOL_RACE	= 0x0001, ///< Race
+	TOL_BATTLE	= 0x0002, ///< Battle
+	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
 
 	// Modifiers
-	TOL_TV     = 0x0100, ///< Midnight Channel specific: draw TV like overlay on HUD
+	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
 };
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (3)
+#define NUMBASETOLNAMES    (4)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
 typedef struct
@@ -774,7 +775,7 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern consvar_t cv_maxping;
-extern ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
+extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 

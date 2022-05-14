@@ -11,6 +11,7 @@
 /// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -592,6 +593,12 @@ boolean K_CanChangeRules(void)
 	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
 	{
 		// Don't cheat the rules of the GP!
+		return false;
+	}
+
+	if (bossinfo.boss == true)
+	{
+		// Don't cheat the boss!
 		return false;
 	}
 

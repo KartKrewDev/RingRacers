@@ -637,8 +637,6 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		lump_p->fullname = Z_Calloc(zentry.namelen + 1, PU_STATIC, NULL);
 		strncpy(lump_p->fullname, fullname, zentry.namelen);
 
-		free(fullname);
-
 		switch(zentry.compression)
 		{
 		case 0:
@@ -657,6 +655,8 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			lump_p->compression = CM_UNSUPPORTED;
 			break;
 		}
+
+		free(fullname);
 
 		// skip and ignore comments/extra fields
 		if (fseek(handle, zentry.xtralen + zentry.commlen, SEEK_CUR) != 0)
@@ -1229,7 +1229,11 @@ lumpnum_t W_CheckNumForMap(const char *name)
 			{
 				p = wadfiles[i]->lumpinfo + lumpNum;
 				if (p->hash == hash && !strnicmp(name, p->name, 8))
-					return (i<<16) + lumpNum;
+				{
+					const char *extension = strrchr(p->fullname, '.');
+					if (!(extension && stricmp(extension, ".wad")))
+						return (i<<16) + lumpNum;
+				}
 			}
 		}
 	}

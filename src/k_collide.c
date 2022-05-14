@@ -12,6 +12,30 @@
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
 
+angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
+{
+	fixed_t momux, momuy;
+	angle_t test;
+
+	if (!(t1->flags & MF_PAPERCOLLISION))
+	{
+		return R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90;
+	}
+
+	test = R_PointToAngle2(0, 0, t2->momx, t2->momy) + ANGLE_90 - t1->angle;
+	if (test > ANGLE_180)
+		test = t1->angle + ANGLE_180;
+	else
+		test = t1->angle;
+
+	// intentional way around - sine...
+	momuy = P_AproxDistance(t2->momx, t2->momy);
+	momux = t2->momx - P_ReturnThrustY(t2, test, 2*momuy);
+	momuy = t2->momy - P_ReturnThrustX(t2, test, 2*momuy);
+
+	return R_PointToAngle2(0, 0, momux, momuy);
+}
+
 boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
@@ -20,7 +44,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -61,11 +85,13 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -92,11 +118,12 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t2, t1);
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
-		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
 	if (sprung)
@@ -114,7 +141,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -154,11 +181,13 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -180,11 +209,13 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	if (damageitem)
 	{
 		// This Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t2, t1);
+
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
-		P_InstaThrust(t1, R_PointToAngle2(t2->x, t2->y, t1->x, t1->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
 	return true;
@@ -265,12 +296,121 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+static mobj_t *grenade;
+static fixed_t explodedist;
+static boolean explodespin;
+
+static inline boolean PIT_SSMineChecks(mobj_t *thing)
+{
+	if (thing == grenade) // Don't explode yourself! Endless loop!
+		return true;
+
+	if (thing->health <= 0)
+		return true;
+
+	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
+		return true;
+
+	if (thing->player && thing->player->spectator)
+		return true;
+
+	if (P_AproxDistance(P_AproxDistance(thing->x - grenade->x, thing->y - grenade->y), thing->z - grenade->z) > explodedist)
+		return true; // Too far away
+
+	if (P_CheckSight(grenade, thing) == false)
+		return true; // Not in sight
+
+	return false;
+}
+
+static inline boolean PIT_SSMineSearch(mobj_t *thing)
+{
+	if (grenade == NULL || P_MobjWasRemoved(grenade))
+		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
+		return false;
+
+	if (thing->type != MT_PLAYER) // Don't explode for anything but an actual player.
+		return true;
+
+	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
+		return true;
+
+	if (PIT_SSMineChecks(thing) == true)
+		return true;
+
+	// Explode!
+	P_SetMobjState(grenade, grenade->info->deathstate);
+	return false;
+}
+
+void K_DoMineSearch(mobj_t *actor, fixed_t size)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+
+	explodedist = FixedMul(size, actor->scale);
+	grenade = actor;
+
+	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX (xl, xh, yl, yh);
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_SSMineSearch);
+}
+
+static inline boolean PIT_SSMineExplode(mobj_t *thing)
+{
+	if (grenade == NULL || P_MobjWasRemoved(grenade))
+		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+
+#if 0
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
+		return false;
+#endif
+
+	if (PIT_SSMineChecks(thing) == true)
+		return true;
+
+	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
+	return true;
+}
+
+void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+
+	explodespin = spin;
+	explodedist = FixedMul(size, actor->scale);
+	grenade = actor;
+
+	// Use blockmap to check for nearby shootables
+	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX (xl, xh, yl, yh);
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_SSMineExplode);
+
+	// Set this flag to ensure that the inital action won't be triggered twice.
+	actor->flags2 |= MF2_DEBRIS;
+}
+
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 {
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -296,6 +436,8 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
 		// Bomb death
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		// Other Item Damage
@@ -303,7 +445,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
 	{
@@ -316,37 +458,12 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
-{
-	if (t2->player)
-	{
-		if (t2->player->flashing > 0 && t2->hitlag == 0)
-			return true;
-
-		if (t1->state == &states[S_MINEEXPLOSION1])
-		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_EXPLODE);
-		}
-		else
-		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-		}
-	}
-	else if (t2->flags & MF_SHOOTABLE)
-	{
-		// Shootable damage
-		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-	}
-
-	return true;
-}
-
 boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 {
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -380,6 +497,8 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
+		angle_t bounceangle = K_GetCollideAngle(t1, t2);
+
 		if (t2->eflags & MFE_VERTICALFLIP)
 			t2->z -= t2->height;
 		else
@@ -389,7 +508,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
 		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y)+ANGLE_90, 16*FRACUNIT);
+		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
@@ -411,12 +530,194 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
+{
+	mobj_t *draggeddroptarget = (t1->type == MT_DROPTARGET_SHIELD) ? t1->target : NULL;
+
+	if ((t1->threshold > 0 && (t2->hitlag > 0 || !draggeddroptarget)) || (t2->threshold > 0 && t1->hitlag > 0))
+		return true;
+
+	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+		return true;
+
+	if (t1->health <= 0 || t2->health <= 0)
+		return true;
+
+	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
+		return true;
+
+	// Intensify bumps if already spinning...
+	P_Thrust(t1, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y),
+		(t1->reactiontime && !draggeddroptarget) ? 35*FRACUNIT : 20*FRACUNIT);
+
+	if (draggeddroptarget)
+	{
+		// "Pass through" the shock of the impact, part 1.
+		t1->momx = t1->target->momx;
+		t1->momy = t1->target->momy;
+		t1->momz = t1->target->momz;
+	}
+
+	{
+		angle_t t2angle = R_PointToAngle2(t2->momx, t2->momy, 0, 0);
+		angle_t t2deflect;
+		fixed_t t1speed, t2speed;
+		K_KartBouncing(t1, t2);
+		t1speed = FixedHypot(t1->momx, t1->momy);
+		t2speed = FixedHypot(t2->momx, t2->momy);
+
+		t2deflect = t2angle - R_PointToAngle2(0, 0, t2->momx, t2->momy);
+		if (t2deflect > ANGLE_180)
+			t2deflect = InvAngle(t2deflect);
+		if (t2deflect < ANG10)
+			P_InstaThrust(t2, t2angle, t2speed);
+
+		P_InitAngle(t1, R_PointToAngle2(0, 0, t1->momx, t1->momy));
+
+		t1->reactiontime = 7*(t1speed+t2speed)/FRACUNIT;
+		if (t1->reactiontime < 10)
+			t1->reactiontime = 10;
+		t1->threshold = 10;
+	}
+
+	t1->renderflags &= ~RF_FULLDARK; // brightest on the bump
+
+	if (draggeddroptarget)
+	{
+		// "Pass through" the shock of the impact, part 2.
+		draggeddroptarget->momx = t1->momx;
+		draggeddroptarget->momy = t1->momy;
+		draggeddroptarget->momz = t1->momz;
+
+		// Have the drop target travel between them.
+		t1->momx = (t1->momx + t2->momx)/2;
+		t1->momy = (t1->momy + t2->momy)/2;
+		t1->momz = (t1->momz + t2->momz)/2;
+
+		K_AddHitLag(t1->target, 6, false);
+	}
+
+	K_AddHitLag(t1, 6, true);
+	K_AddHitLag(t2, 6, false);
+
+	{
+		mobj_t *ghost = P_SpawnGhostMobj(t1);
+		UINT8 i;
+
+		P_SetScale(ghost, 3*ghost->destscale/2);
+		ghost->destscale = 15*ghost->destscale/2;
+		ghost->fuse = 10;
+		ghost->scalespeed = (ghost->destscale - ghost->scale)/ghost->fuse;
+
+		for (i = 0; i < 2; i++)
+		{
+			mobj_t *blast = P_SpawnMobjFromMobj(t1, 0, 0, FixedDiv(t1->height, t1->scale), MT_BATTLEBUMPER_BLAST);
+			P_SetScale(blast, 5*blast->scale/2);
+
+			blast->angle = R_PointToAngle2(0, 0, t1->momx, t1->momy) + ANGLE_45;
+			if (i & 1)
+			{
+				blast->angle += ANGLE_90;
+			}
+			P_InitAngle(blast, blast->angle);
+
+			blast->destscale *= 10;
+		}
+	}
+
+	t1->flags |= MF_SHOOTABLE;
+	// The following sets t1->target to t2, so draggeddroptarget keeps it persisting...
+	P_DamageMobj(t1, t2, (t2->target ? t2->target : t2), 1, DMG_NORMAL);
+	t1->color = (t1->health > 1)
+		? SKINCOLOR_GOLD
+		: SKINCOLOR_CRIMSON;
+	t1->flags &= ~MF_SHOOTABLE;
+
+	t1->spritexscale = 3*FRACUNIT;
+	t1->spriteyscale = 3*FRACUNIT/2;
+
+	if (!t2->player)
+	{
+		t2->angle += ANGLE_180;
+		if (t2->type == MT_JAWZ)
+			P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+		t2->threshold = 10;
+	}
+
+	if (t1->reactiontime > 1000) {
+		S_StartSound(t2, sfx_kdtrg3);
+	} else if (t1->reactiontime > 500) {
+		S_StartSound(t2, sfx_kdtrg2);
+	} else {
+		S_StartSound(t2, sfx_kdtrg1);
+	}
+
+	if (draggeddroptarget && draggeddroptarget->player)
+	{
+		// The following removes t1, be warned
+		// (its newly assigned properties are moved across)
+		K_DropHnextList(draggeddroptarget->player, true);
+		// Do NOT modify or reference t1 after this line
+		// I mean it! Do not even absentmindedly try it
+	}
+
+	return true;
+}
+
+boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
+{
+	if (t2->type == MT_PLAYER)
+	{
+		// Counter desyncs
+		/*mobj_t *oldthing = thing;
+		mobj_t *oldtmthing = tmthing;
+
+		P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+
+		thing = oldthing;
+		P_SetTarget(&tmthing, oldtmthing);*/
+
+		if (P_PlayerInPain(t2->player)
+			|| t2->player->flashing || t2->player->hyudorotimer
+			|| t2->player->justbumped || t2->scale > t1->scale + (mapobjectscale/8))
+			return true;
+
+		// Player Damage
+		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
+		S_StartSound(t1, sfx_s3k44);
+	}
+	else
+	{
+		if (!t2->threshold)
+		{
+			if (!t2->momx && !t2->momy)
+			{
+				t2->momz += (24*t2->scale) * P_MobjFlip(t2);
+			}
+			else
+			{
+				t2->momx = -4*t2->momx;
+				t2->momy = -4*t2->momy;
+				t2->momz = -4*t2->momz;
+				t2->angle += ANGLE_180;
+			}
+			if (t2->type == MT_JAWZ)
+				P_SetTarget(&t2->tracer, t2->target); // Back to the source!
+			t2->threshold = 10;
+			S_StartSound(t1, sfx_s3k44);
+		}
+	}
+
+	// no interaction
+	return true;
+}
+
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (t1->target == t2->target)) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t2->player)
@@ -463,6 +764,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_EGGMANITEM || t2->type == MT_EGGMANITEM_SHIELD
 		|| t2->type == MT_SSMINE || t2->type == MT_SSMINE_SHIELD
+		|| t2->type == MT_DROPTARGET_SHIELD
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 		return false;
 
@@ -535,8 +837,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// (Pogo Spring damage is handled in head-stomping code)
 	if (gametyperules & GTR_BUMPERS)
 	{
-		t1Condition = (t1->player->sneakertimer > 0 && t1->player->flashing != 0);
-		t2Condition = (t2->player->sneakertimer > 0 && t2->player->flashing != 0);
+		t1Condition = ((t1->player->sneakertimer > 0)
+			&& !P_PlayerInPain(t1->player)
+			&& (t1->player->flashing == 0));
+		t2Condition = ((t2->player->sneakertimer > 0)
+			&& !P_PlayerInPain(t2->player)
+			&& (t2->player->flashing == 0));
 
 		if (t1Condition == true && t2Condition == false)
 		{

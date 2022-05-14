@@ -1974,8 +1974,17 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "SRB2 Kart v2.0");
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "SRB2 Kart v2.0");
+
+#ifdef DEVELOP
+#if defined(TESTERS)
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP|V_ALLOWLOWERCASE, "Tester EXE");
+#elif defined(HOSTTESTERS)
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 96, V_REDMAP|V_ALLOWLOWERCASE, "Tester netgame host EXE");
+#else
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_ALLOWLOWERCASE, "Development EXE");
+#endif
+#endif
 			break;
 
 		case TTMODE_USER:
@@ -2144,7 +2153,7 @@ void F_TitleScreenTicker(boolean run)
 		}
 		*/
 
-		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, false, 0, false, NULL)+1);
+		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
 
 		numstaff = 1;
 		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)

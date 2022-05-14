@@ -436,8 +436,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				P_InitAngle(grease, K_MomentumAngle(object));
 				grease->extravalue1 = i;
 			}
+		}
 
-			object->player->tiregrease = greasetics; //FixedMul(greasetics << FRACBITS, finalSpeed/72) >> FRACBITS
+		if (object->player->tiregrease < greasetics)
+		{
+			object->player->tiregrease = greasetics;
 		}
 	}
 
@@ -490,12 +493,11 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				break;
 			if (spring->state != &states[S_STEAM1]) // Only when it bursts
 				break;
+			if (object->eflags & MFE_SPRUNG)
+				break;
 
 			if (spring->spawnpoint && spring->spawnpoint->options & MTF_OBJECTSPECIAL)
 			{
-				if (object->eflags & MFE_SPRUNG)
-					break;
-
 				if (object->player)
 				{
 					object->player->trickpanel = 1;
@@ -503,10 +505,13 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 				}
 
 				K_DoPogoSpring(object, 32<<FRACBITS, 0);
-				return;
 			}
 			else
+			{
 				object->momz = flipval*FixedMul(speed, FixedSqrt(FixedMul(spring->scale, object->scale))); // scale the speed with both objects' scales, just like with springs!
+			}
+
+			object->eflags |= MFE_SPRUNG;
 			break;
 		default:
 			break;
@@ -765,50 +770,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		if (tmthing->type == MT_PLAYER)
-		{
-			// Counter desyncs
-			/*mobj_t *oldthing = thing;
-			mobj_t *oldtmthing = tmthing;
-
-			P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
-
-			thing = oldthing;
-			P_SetTarget(&tmthing, oldtmthing);*/
-
-			if (P_PlayerInPain(tmthing->player)
-				|| tmthing->player->flashing || tmthing->player->hyudorotimer
-				|| tmthing->player->justbumped || tmthing->scale > thing->scale + (mapobjectscale/8))
-				return true;
-
-			// Player Damage
-			P_DamageMobj(tmthing, ((thing->type == MT_BUBBLESHIELD) ? thing->target : thing), thing, 1, DMG_NORMAL|DMG_WOMBO);
-			S_StartSound(thing, sfx_s3k44);
-		}
-		else
-		{
-			if (!tmthing->threshold)
-			{
-				if (!tmthing->momx && !tmthing->momy)
-				{
-					tmthing->momz += (24*tmthing->scale) * P_MobjFlip(tmthing);
-				}
-				else
-				{
-					tmthing->momx = -tmthing->momx;
-					tmthing->momy = -tmthing->momy;
-					tmthing->momz = -tmthing->momz;
-					tmthing->angle += ANGLE_180;
-				}
-				if (tmthing->type == MT_JAWZ)
-					P_SetTarget(&tmthing->tracer, tmthing->target); // Back to the source!
-				tmthing->threshold = 10;
-				S_StartSound(thing, sfx_s3k44);
-			}
-		}
-
-		// no interaction
-		return true;
+		return K_BubbleShieldCollide(thing, tmthing);
 	}
 	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->bubbleblowup)
 		|| (tmthing->player && tmthing->player->bubbleblowup))
@@ -823,54 +785,46 @@ static boolean PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return true; // underneath
 
-		if (thing->type == MT_PLAYER)
-		{
-			// Counter desyncs
-			/*mobj_t *oldthing = thing;
-			mobj_t *oldtmthing = tmthing;
-
-			P_Thrust(thing, R_PointToAngle2(tmthing->x, tmthing->y, thing->x, thing->y), 4*tmthing->scale);
-
-			thing = oldthing;
-			P_SetTarget(&tmthing, oldtmthing);*/
-
-			if (P_PlayerInPain(thing->player)
-				|| thing->player->flashing || thing->player->hyudorotimer
-				|| thing->player->justbumped || thing->scale > tmthing->scale + (mapobjectscale/8))
-				return true;
-
-			// Player Damage
-			P_DamageMobj(thing, ((tmthing->type == MT_BUBBLESHIELD) ? tmthing->target : tmthing), tmthing, 1, DMG_NORMAL);
-			S_StartSound(tmthing, sfx_s3k44);
-		}
-		else
-		{
-			if (!thing->threshold)
-			{
-				if (!thing->momx && !thing->momy)
-				{
-					thing->momz += (24*thing->scale) * P_MobjFlip(thing);
-				}
-				else
-				{
-					thing->momx = -thing->momx;
-					thing->momy = -thing->momy;
-					thing->momz = -thing->momz;
-					thing->angle += ANGLE_180;
-				}
-				if (thing->type == MT_JAWZ)
-					P_SetTarget(&thing->tracer, thing->target); // Back to the source!
-				thing->threshold = 10;
-				S_StartSound(tmthing, sfx_s3k44);
-			}
-		}
-
-		// no interaction
-		return true;
+		return K_BubbleShieldCollide(tmthing, thing);
 	}
 
 	// double make sure bubbles won't collide with anything else
 	if (thing->type == MT_BUBBLESHIELD || tmthing->type == MT_BUBBLESHIELD)
+		return true;
+
+	// Droptarget reflect
+	if ((thing->type == MT_DROPTARGET || thing->type == MT_DROPTARGET_SHIELD)
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
+		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
+		|| (tmthing->type == MT_PLAYER)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_DropTargetCollide(thing, tmthing);
+	}
+	else if ((tmthing->type == MT_DROPTARGET || tmthing->type == MT_DROPTARGET_SHIELD)
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
+		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| (thing->type == MT_PLAYER)))
+	{
+		// see if it went over / under
+		if (tmthing->z > thing->z + thing->height)
+			return true; // overhead
+		if (tmthing->z + tmthing->height < thing->z)
+			return true; // underneath
+
+		return K_DropTargetCollide(tmthing, thing);
+	}
+
+	// double make sure drop targets won't collide with anything else
+	if (thing->type == MT_DROPTARGET || tmthing->type == MT_DROPTARGET
+		|| thing->type == MT_DROPTARGET_SHIELD || tmthing->type == MT_DROPTARGET_SHIELD)
 		return true;
 
 	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
@@ -936,27 +890,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		return K_MineCollide(thing, tmthing);
-	}
-
-	if (tmthing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(tmthing, thing);
-	}
-	else if (thing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_LANDMINE)
@@ -2536,8 +2469,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 	// This makes sure that there are no freezes from computing extremely small movements.
 	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
-	if (radius < mapobjectscale)
-		radius = mapobjectscale;
+	radius = max(radius, mapobjectscale);
+
+	// And Big Large (tm) movements can skip over slopes.
+	radius = min(radius, 16*mapobjectscale);
 
 #if 0
 	if (thing->hitlag > 0)
@@ -3968,7 +3903,7 @@ bounceback:
 		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
 	}
-	else if (mo->type == MT_THROWNGRENADE || mo->type == MT_CYBRAKDEMON_NAPALM_BOMB_LARGE)
+	else if (mo->type == MT_THROWNGRENADE)
 	{
 		// Quickly decay speed as it bounces
 		tmxmove = FixedDiv(mmomx, 2*FRACUNIT);

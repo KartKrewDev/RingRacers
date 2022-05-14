@@ -71,6 +71,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 
 #ifdef CMAKECONFIG
@@ -678,6 +679,29 @@ static void D_Display(void)
 	}
 }
 
+static boolean D_CheckFrameCap(void)
+{
+	static boolean init = false;
+	static precise_t startCap = 0;
+	precise_t endCap = 0;
+
+	endCap = I_GetPreciseTime();
+
+	if (init == false)
+	{
+		startCap = endCap;
+		init = true;
+	}
+	else if (I_CheckFrameCap(startCap, endCap))
+	{
+		// Framerate should be capped.
+		return true;
+	}
+
+	startCap = endCap;
+	return false;
+}
+
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
@@ -688,6 +712,8 @@ void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
 	boolean ticked;
+	boolean interp;
+	boolean doDisplay = false;
 
 	if (dedicated)
 		server = true;
@@ -753,14 +779,25 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+		if (demo.playback && gamestate == GS_LEVEL)
+		{
+			// Nicer place to put this.
+			realtics = realtics * cv_playbackspeed.value;
+		}
+
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics && cv_frameinterpolation.value != 1)
+		interp = R_UsingFrameInterpolation();
+		doDisplay = false;
+		ticked = false;
+
+		if (!realtics && !singletics && !interp)
 		{
+			// Non-interp sleep
 			I_Sleep();
 			continue;
 		}
@@ -769,73 +806,100 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
-		// don't skip more than 10 frames at a time
-		// (fadein / fadeout cause massive frame skip!)
-		if (realtics > 8)
-			realtics = 1;
-
-		// process tics (but maybe not if realtic == 0)
-		ticked = TryRunTics(realtics);
-
-		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause()))
+		if (realtics > 0 || singletics)
 		{
-			static float tictime;
+			// don't skip more than 10 frames at a time
+			// (fadein / fadeout cause massive frame skip!)
+			if (realtics > 8)
+				realtics = 1;
+
+			// process tics (but maybe not if realtic == 0)
+			ticked = TryRunTics(realtics);
+
+			if (lastdraw || singletics || gametic > rendergametic)
+			{
+				rendergametic = gametic;
+				rendertimeout = entertic+TICRATE/17;
+
+				doDisplay = true;
+			}
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			{
+				doDisplay = true;
+			}
+		}
+
+		if (interp)
+		{
+			static float tictime = 0.0f;
+			static float prevtime = 0.0f;
 			float entertime = I_GetTimeFrac();
 
-			fixed_t entertimefrac;
+			fixed_t entertimefrac = FRACUNIT;
 
 			if (ticked)
+			{
 				tictime = entertime;
+			}
 
-			if (aproxfps < 35.0)
-				entertimefrac = FRACUNIT;
-			else
-				entertimefrac = FLOAT_TO_FIXED(entertime - tictime);
+			// Handle interp sleep / framerate cap here.
+			// TryRunTics needs ran if possible to prevent lagged map changes,
+			// (and if that runs, the code above needs to also run)
+			// so this is done here after TryRunTics.
+			if (D_CheckFrameCap())
+			{
+				continue;
+			}
 
-			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-			renderdeltatics = realtics * FRACUNIT;
-			if (entertimefrac > rendertimefrac)
-				renderdeltatics += entertimefrac - rendertimefrac;
-			else
-				renderdeltatics -= rendertimefrac - entertimefrac;
+			if (!(paused || P_AutoPause()))
+			{
+#if 0
+				CONS_Printf("prevtime = %f\n", prevtime);
+				CONS_Printf("entertime = %f\n", entertime);
+				CONS_Printf("tictime = %f\n", tictime);
+				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
+				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
+				CONS_Printf("========\n");
+#endif
 
-			rendertimefrac = entertimefrac;
+				if (entertime - prevtime >= 1.0f)
+				{
+					// Lagged for more frames than a gametic...
+					// No need for interpolation.
+					entertimefrac = FRACUNIT;
+				}
+				else
+				{
+					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
+				}
+
+				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
+				renderdeltatics = realtics * FRACUNIT;
+				if (entertimefrac > rendertimefrac)
+					renderdeltatics += entertimefrac - rendertimefrac;
+				else
+					renderdeltatics -= rendertimefrac - entertimefrac;
+
+				rendertimefrac = entertimefrac;
+			}
+
+			prevtime = entertime;
 		}
 		else
 		{
-			rendertimefrac = FRACUNIT;
 			renderdeltatics = realtics * FRACUNIT;
+			rendertimefrac = FRACUNIT;
 		}
 
-		if (cv_frameinterpolation.value == 1)
+		if (interp || doDisplay)
 		{
 			D_Display();
 		}
 
-		if (lastdraw || singletics || gametic > rendergametic)
-		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
-
-			// Update display, next frame, with current state.
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
-		{
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot) // Only take screenshots after drawing.
+			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -853,6 +917,11 @@ void D_SRB2Loop(void)
 			Discord_RunCallbacks();
 		}
 #endif
+
+		// Moved to here from I_FinishUpdate.
+		// It doesn't track fades properly anymore by being here (might be easy fix),
+		// but it's a little more accurate for actual game logic when its here.
+		SCR_CalculateFPS();
 	}
 }
 
@@ -927,6 +996,9 @@ void D_StartTitle(void)
 
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+	// Reset boss info
+	K_ResetBossInfo();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;

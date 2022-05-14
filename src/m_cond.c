@@ -440,7 +440,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 
 	for (i = 0; i < NUMMAPS; ++i)
 	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_TIMEATTACK))
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
 		if (!mainrecords[i] || !mainrecords[i]->time)

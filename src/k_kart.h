@@ -75,7 +75,6 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);
 void K_DestroyBumpers(player_t *player, UINT8 amount);
 void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
-void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source);
 void K_MineFlashScreen(mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color);
 void K_RunFinishLineBeam(void);
@@ -116,6 +115,7 @@ void K_StripOther(player_t *player);
 void K_MomentumToFacing(player_t *player);
 boolean K_ApplyOffroad(player_t *player);
 boolean K_SlopeResistance(player_t *player);
+boolean K_TripwirePassConditions(player_t *player);
 boolean K_TripwirePass(player_t *player);
 boolean K_WaterRun(player_t *player);
 void K_ApplyTripWire(player_t *player, tripwirestate_t state);
@@ -141,6 +141,7 @@ void K_CheckSpectateStatus(void);
 UINT8 K_GetInvincibilityItemFrame(void);
 UINT8 K_GetOrbinautItemFrame(UINT8 count);
 boolean K_IsSPBInGame(void);
+void K_KartEbrakeVisuals(player_t *p);
 
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);

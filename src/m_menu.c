@@ -63,6 +63,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
+#include "r_fps.h"
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -154,7 +155,8 @@ typedef enum
 	LLM_CREATESERVER,
 	LLM_LEVELSELECT,
 	LLM_TIMEATTACK,
-	LLM_BREAKTHECAPSULES
+	LLM_BREAKTHECAPSULES,
+	LLM_BOSS
 } levellist_mode_t;
 
 levellist_mode_t levellistmode = LLM_CREATESERVER;
@@ -313,7 +315,7 @@ static void M_ResetControls(INT32 choice);
 // Video & Sound
 menu_t OP_VideoOptionsDef, OP_VideoModeDef;
 #ifdef HWRENDER
-static void M_OpenGLOptionsMenu(void);
+static void M_OpenGLOptionsMenu(INT32 choice);
 menu_t OP_OpenGLOptionsDef;
 #endif
 menu_t OP_SoundOptionsDef;
@@ -509,17 +511,17 @@ static consvar_t cv_dummygpcup = CVAR_INIT ("dummygpcup", "TEMP", CV_HIDEN, dumm
 // ---------
 static menuitem_t MainMenu[] =
 {
-	{IT_SUBMENU|IT_STRING, NULL, "Extras",      &SR_MainDef,        76},
+	{IT_SUBMENU|IT_STRING, NULL, "Extras",      {.submenu = &SR_MainDef},        76},
 #ifdef TESTERS
-	{IT_GRAYEDOUT,         NULL, "1 Player",    NULL,               84},
+	{IT_GRAYEDOUT,         NULL, "1 Player",    {NULL},               84},
 #else
-	{IT_CALL   |IT_STRING, NULL, "1 Player",    M_SinglePlayerMenu, 84},
+	{IT_CALL   |IT_STRING, NULL, "1 Player",    {.routine = M_SinglePlayerMenu}, 84},
 #endif
-	{IT_SUBMENU|IT_STRING, NULL, "Multiplayer", &MP_MainDef,        92},
-	{IT_CALL   |IT_STRING, NULL, "Options",     M_Options,          100},
+	{IT_SUBMENU|IT_STRING, NULL, "Multiplayer", {.submenu = &MP_MainDef},        92},
+	{IT_CALL   |IT_STRING, NULL, "Options",     {.routine = M_Options},          100},
 	/* I don't think is useful at all... */
-	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,           108},
-	{IT_CALL   |IT_STRING, NULL, "Quit  Game",  M_QuitSRB2,         116},
+	{IT_CALL   |IT_STRING, NULL, "Addons",      {.routine = M_Addons},           108},
+	{IT_CALL   |IT_STRING, NULL, "Quit  Game",  {.routine = M_QuitSRB2},         116},
 };
 
 typedef enum
@@ -534,49 +536,49 @@ typedef enum
 
 static menuitem_t MISC_AddonsMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleAddons, 0},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", {.routine = M_HandleAddons}, 0},     // dummy menuitem for the control func
 };
 
 static menuitem_t MISC_ReplayHutMenu[] =
 {
-	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleReplayHutList, 0}, // Dummy menuitem for the replay list
-	{IT_NOTHING,               NULL, "", NULL,                  0}, // Dummy for handling wrapping to the top of the menu..
+	{IT_KEYHANDLER|IT_NOTHING, NULL, "", {.routine = M_HandleReplayHutList}, 0}, // Dummy menuitem for the replay list
+	{IT_NOTHING,               NULL, "", {NULL},                  0}, // Dummy for handling wrapping to the top of the menu..
 };
 
 static menuitem_t MISC_ReplayStartMenu[] =
 {
-	{IT_CALL      |IT_STRING,  NULL, "Load Addons and Watch", M_HutStartReplay,   0},
-	{IT_CALL      |IT_STRING,  NULL, "Watch Without Addons",  M_HutStartReplay,   10},
-	{IT_CALL      |IT_STRING,  NULL, "Watch Replay",          M_HutStartReplay,   10},
-	{IT_SUBMENU   |IT_STRING,  NULL, "Back",                  &MISC_ReplayHutDef, 30},
+	{IT_CALL      |IT_STRING,  NULL, "Load Addons and Watch", {.routine = M_HutStartReplay},   0},
+	{IT_CALL      |IT_STRING,  NULL, "Watch Without Addons",  {.routine = M_HutStartReplay},   10},
+	{IT_CALL      |IT_STRING,  NULL, "Watch Replay",          {.routine = M_HutStartReplay},   10},
+	{IT_SUBMENU   |IT_STRING,  NULL, "Back",                  {.submenu = &MISC_ReplayHutDef}, 30},
 };
 
 static menuitem_t MISC_ReplayOptionsMenu[] =
 {
-	{IT_CVAR|IT_STRING, NULL, "Record Replays",      &cv_recordmultiplayerdemos, 0},
-	{IT_CVAR|IT_STRING, NULL, "Sync Check Interval", &cv_netdemosyncquality,     10},
+	{IT_CVAR|IT_STRING, NULL, "Record Replays",      {.cvar = &cv_recordmultiplayerdemos}, 0},
+	{IT_CVAR|IT_STRING, NULL, "Sync Check Interval", {.cvar = &cv_netdemosyncquality},     10},
 };
 
 static tic_t playback_last_menu_interaction_leveltime = 0;
 static menuitem_t PlaybackMenu[] =
 {
-	{IT_CALL   | IT_STRING, "M_PHIDE",  "Hide Menu (Esc)", M_SelectableClearMenus, 0},
+	{IT_CALL   | IT_STRING, "M_PHIDE",  "Hide Menu (Esc)", {.routine = M_SelectableClearMenus}, 0},
 
-	{IT_CALL   | IT_STRING, "M_PREW",   "Rewind ([)",        M_PlaybackRewind,      20},
-	{IT_CALL   | IT_STRING, "M_PPAUSE", "Pause (\\)",         M_PlaybackPause,       36},
-	{IT_CALL   | IT_STRING, "M_PFFWD",  "Fast-Forward (])",  M_PlaybackFastForward, 52},
-	{IT_CALL   | IT_STRING, "M_PSTEPB", "Backup Frame ([)",  M_PlaybackRewind,      20},
-	{IT_CALL   | IT_STRING, "M_PRESUM", "Resume",        M_PlaybackPause,       36},
-	{IT_CALL   | IT_STRING, "M_PFADV",  "Advance Frame (])", M_PlaybackAdvance,     52},
+	{IT_CALL   | IT_STRING, "M_PREW",   "Rewind ([)",        {.routine = M_PlaybackRewind},      20},
+	{IT_CALL   | IT_STRING, "M_PPAUSE", "Pause (\\)",         {.routine = M_PlaybackPause},       36},
+	{IT_CALL   | IT_STRING, "M_PFFWD",  "Fast-Forward (])",  {.routine = M_PlaybackFastForward}, 52},
+	{IT_CALL   | IT_STRING, "M_PSTEPB", "Backup Frame ([)",  {.routine = M_PlaybackRewind},      20},
+	{IT_CALL   | IT_STRING, "M_PRESUM", "Resume",        {.routine = M_PlaybackPause},       36},
+	{IT_CALL   | IT_STRING, "M_PFADV",  "Advance Frame (])", {.routine = M_PlaybackAdvance},     52},
 
-	{IT_ARROWS | IT_STRING, "M_PVIEWS", "View Count (- and =)",  M_PlaybackSetViews, 72},
-	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint (1)",   M_PlaybackAdjustView, 88},
-	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 2 (2)", M_PlaybackAdjustView, 104},
-	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 3 (3)", M_PlaybackAdjustView, 120},
-	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 4 (4)", M_PlaybackAdjustView, 136},
+	{IT_ARROWS | IT_STRING, "M_PVIEWS", "View Count (- and =)",  {.routine = M_PlaybackSetViews}, 72},
+	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint (1)",   {.routine = M_PlaybackAdjustView}, 88},
+	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 2 (2)", {.routine = M_PlaybackAdjustView}, 104},
+	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 3 (3)", {.routine = M_PlaybackAdjustView}, 120},
+	{IT_ARROWS | IT_STRING, "M_PNVIEW", "Viewpoint 4 (4)", {.routine = M_PlaybackAdjustView}, 136},
 
-	{IT_CALL   | IT_STRING, "M_PVIEWS", "Toggle Free Camera (')",	M_PlaybackToggleFreecam, 156},
-	{IT_CALL   | IT_STRING, "M_PEXIT",  "Stop Playback",   M_PlaybackQuit, 172},
+	{IT_CALL   | IT_STRING, "M_PVIEWS", "Toggle Free Camera (')",	{.routine = M_PlaybackToggleFreecam}, 156},
+	{IT_CALL   | IT_STRING, "M_PEXIT",  "Stop Playback",   {.routine = M_PlaybackQuit}, 172},
 };
 typedef enum
 {
@@ -602,9 +604,9 @@ typedef enum
 // ---------------------------------
 static menuitem_t MAPauseMenu[] =
 {
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_ModeAttackRetry,     56},
-	{IT_CALL | IT_STRING,    NULL, "Abort",                M_ModeAttackEndGame,   64},
+	{IT_CALL | IT_STRING,    NULL, "Continue",             {.routine = M_SelectableClearMenus},48},
+	{IT_CALL | IT_STRING,    NULL, "Retry",                {.routine = M_ModeAttackRetry},     56},
+	{IT_CALL | IT_STRING,    NULL, "Abort",                {.routine = M_ModeAttackEndGame},   64},
 };
 
 typedef enum
@@ -619,30 +621,30 @@ typedef enum
 // ---------------------
 static menuitem_t MPauseMenu[] =
 {
-	{IT_STRING | IT_CALL,     NULL, "Addons...",        M_Addons,                8},
-	{IT_STRING | IT_SUBMENU,  NULL, "Scramble Teams...", &MISC_ScrambleTeamDef,  16},
-	{IT_STRING | IT_CALL,     NULL, "Switch Map..."    , M_MapChange,            24},
+	{IT_STRING | IT_CALL,     NULL, "Addons...",        {.routine = M_Addons},                8},
+	{IT_STRING | IT_SUBMENU,  NULL, "Scramble Teams...", {.submenu = &MISC_ScrambleTeamDef},  16},
+	{IT_STRING | IT_CALL,     NULL, "Switch Map..."    , {.routine = M_MapChange},            24},
 
 #ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_SUBMENU,  NULL, "Ask To Join Requests...", &MISC_DiscordRequestsDef, 24},
+	{IT_STRING | IT_SUBMENU,  NULL, "Ask To Join Requests...", {.submenu = &MISC_DiscordRequestsDef}, 24},
 #endif
 
-	{IT_CALL | IT_STRING,    NULL, "Continue",           M_SelectableClearMenus, 40},
-	{IT_CALL | IT_STRING,    NULL, "P1 Setup...",        M_SetupMultiPlayer,     48}, // splitscreen
-	{IT_CALL | IT_STRING,    NULL, "P2 Setup...",        M_SetupMultiPlayer2,    56}, // splitscreen
-	{IT_CALL | IT_STRING,    NULL, "P3 Setup...",        M_SetupMultiPlayer3,    64}, // splitscreen
-	{IT_CALL | IT_STRING,    NULL, "P4 Setup...",        M_SetupMultiPlayer4,    72}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "Continue",           {.routine = M_SelectableClearMenus}, 40},
+	{IT_CALL | IT_STRING,    NULL, "P1 Setup...",        {.routine = M_SetupMultiPlayer},     48}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "P2 Setup...",        {.routine = M_SetupMultiPlayer2},    56}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "P3 Setup...",        {.routine = M_SetupMultiPlayer3},    64}, // splitscreen
+	{IT_CALL | IT_STRING,    NULL, "P4 Setup...",        {.routine = M_SetupMultiPlayer4},    72}, // splitscreen
 
-	{IT_STRING | IT_CALL,    NULL, "Spectate",           M_ConfirmSpectate,      48}, // alone
-	{IT_STRING | IT_CALL,    NULL, "Enter Game",         M_ConfirmEnterGame,     48}, // alone
-	{IT_STRING | IT_CALL,    NULL, "Cancel Join",        M_ConfirmSpectate,      48}, // alone
-	{IT_STRING | IT_SUBMENU, NULL, "Switch Team...",     &MISC_ChangeTeamDef,    48},
-	{IT_STRING | IT_SUBMENU, NULL, "Enter/Spectate...",  &MISC_ChangeSpectateDef,48},
-	{IT_CALL | IT_STRING,    NULL, "Player Setup...",    M_SetupMultiPlayer,     56}, // alone
-	{IT_CALL | IT_STRING,    NULL, "Options",            M_Options,              64},
+	{IT_STRING | IT_CALL,    NULL, "Spectate",           {.routine = M_ConfirmSpectate},      48}, // alone
+	{IT_STRING | IT_CALL,    NULL, "Enter Game",         {.routine = M_ConfirmEnterGame},     48}, // alone
+	{IT_STRING | IT_CALL,    NULL, "Cancel Join",        {.routine = M_ConfirmSpectate},      48}, // alone
+	{IT_STRING | IT_SUBMENU, NULL, "Switch Team...",     {.submenu = &MISC_ChangeTeamDef},    48},
+	{IT_STRING | IT_SUBMENU, NULL, "Enter/Spectate...",  {.submenu = &MISC_ChangeSpectateDef}, 48},
+	{IT_CALL | IT_STRING,    NULL, "Player Setup...",    {.routine = M_SetupMultiPlayer},     56}, // alone
+	{IT_CALL | IT_STRING,    NULL, "Options",            {.routine = M_Options},              64},
 
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",    M_EndGame,              80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",          M_QuitSRB2,             88},
+	{IT_CALL | IT_STRING,    NULL, "Return to Title",    {.routine = M_EndGame},              80},
+	{IT_CALL | IT_STRING,    NULL, "Quit Game",          {.routine = M_QuitSRB2},             88},
 };
 
 typedef enum
@@ -678,16 +680,16 @@ typedef enum
 static menuitem_t SPauseMenu[] =
 {
 	// Pandora's Box will be shifted up if both options are available
-	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         16},
-	{IT_CALL | IT_STRING,    NULL, "Medal Hints...",       M_EmblemHints,         24},
+	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     {.routine = M_PandorasBox},         16},
+	{IT_CALL | IT_STRING,    NULL, "Medal Hints...",       {.routine = M_EmblemHints},         24},
 	//{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_LoadGameLevelSelect, 32},
 
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               56},
-	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             64},
+	{IT_CALL | IT_STRING,    NULL, "Continue",             {.routine = M_SelectableClearMenus},48},
+	{IT_CALL | IT_STRING,    NULL, "Retry",                {.routine = M_Retry},               56},
+	{IT_CALL | IT_STRING,    NULL, "Options",              {.routine = M_Options},             64},
 
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            88},
+	{IT_CALL | IT_STRING,    NULL, "Return to Title",      {.routine = M_EndGame},             80},
+	{IT_CALL | IT_STRING,    NULL, "Quit Game",            {.routine = M_QuitSRB2},            88},
 };
 
 typedef enum
@@ -706,7 +708,7 @@ typedef enum
 #ifdef HAVE_DISCORDRPC
 static menuitem_t MISC_DiscordRequestsMenu[] =
 {
-	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleDiscordRequests, 0},
+	{IT_KEYHANDLER|IT_NOTHING, NULL, "", {.routine = M_HandleDiscordRequests}, 0},
 };
 #endif
 
@@ -716,47 +718,47 @@ static menuitem_t MISC_DiscordRequestsMenu[] =
 // Prefix: MISC_
 static menuitem_t MISC_ScrambleTeamMenu[] =
 {
-	{IT_STRING|IT_CVAR,      NULL, "Scramble Method", &cv_dummyscramble,     30},
-	{IT_WHITESTRING|IT_CALL, NULL, "Confirm",         M_ConfirmTeamScramble, 90},
+	{IT_STRING|IT_CVAR,      NULL, "Scramble Method", {.cvar = &cv_dummyscramble},     30},
+	{IT_WHITESTRING|IT_CALL, NULL, "Confirm",         {.routine = M_ConfirmTeamScramble}, 90},
 };
 
 static menuitem_t MISC_ChangeTeamMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Player",            &cv_dummymenuplayer,    30},
-	{IT_STRING|IT_CVAR,              NULL, "Team",              &cv_dummyteam,          40},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",           M_ConfirmTeamChange,    90},
+	{IT_STRING|IT_CVAR,              NULL, "Player",            {.cvar = &cv_dummymenuplayer},    30},
+	{IT_STRING|IT_CVAR,              NULL, "Team",              {.cvar = &cv_dummyteam},          40},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",           {.routine = M_ConfirmTeamChange},    90},
 };
 
 static menuitem_t MISC_ChangeSpectateMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Player",        &cv_dummymenuplayer,        30},
-	{IT_STRING|IT_CVAR,              NULL, "Status",        &cv_dummyspectate,          40},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",       M_ConfirmSpectateChange,    90},
+	{IT_STRING|IT_CVAR,              NULL, "Player",        {.cvar = &cv_dummymenuplayer},        30},
+	{IT_STRING|IT_CVAR,              NULL, "Status",        {.cvar = &cv_dummyspectate},          40},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Confirm",       {.routine = M_ConfirmSpectateChange},    90},
 };
 
 static menuitem_t MISC_ChangeLevelMenu[] =
 {
-	{IT_STRING|IT_CVAR,              NULL, "Game Type",             &cv_newgametype,    68},
-	{IT_STRING|IT_CVAR,              NULL, "Level",                 &cv_nextmap,        78},
-	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",          M_ChangeLevel,     130},
+	{IT_STRING|IT_CVAR,              NULL, "Game Type",             {.cvar = &cv_newgametype},    68},
+	{IT_STRING|IT_CVAR,              NULL, "Level",                 {.cvar = &cv_nextmap},        78},
+	{IT_WHITESTRING|IT_CALL,         NULL, "Change Level",          {.routine = M_ChangeLevel},     130},
 };
 
 static menuitem_t MISC_HelpMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL00", M_HandleImageDef, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL01", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL02", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL03", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL04", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL05", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL06", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL07", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL08", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL09", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL10", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL11", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL12", M_HandleImageDef, 1},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL99", M_HandleImageDef, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL00", {.routine = M_HandleImageDef}, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL01", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL02", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL03", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL04", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL05", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL06", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL07", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL08", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL09", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL10", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL11", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL12", {.routine = M_HandleImageDef}, 1},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "MANUAL99", {.routine = M_HandleImageDef}, 0},
 };
 
 // --------------------------------
@@ -767,57 +769,57 @@ static menuitem_t MISC_HelpMenu[] =
 // Pause Menu Pandora's Box Options
 static menuitem_t SR_PandorasBox[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Rings",              &cv_dummyrings,      20},
-	{IT_STRING | IT_CVAR, NULL, "Lives",              &cv_dummylives,      30},
+	{IT_STRING | IT_CVAR, NULL, "Rings",              {.cvar = &cv_dummyrings},      20},
+	{IT_STRING | IT_CVAR, NULL, "Lives",              {.cvar = &cv_dummylives},      30},
 
-	{IT_STRING | IT_CVAR, NULL, "Gravity",            &cv_gravity,         60},
+	{IT_STRING | IT_CVAR, NULL, "Gravity",            {.cvar = &cv_gravity},         60},
 
-	{IT_STRING | IT_CALL, NULL, "Get All Emeralds",   M_GetAllEmeralds,    90},
-	{IT_STRING | IT_CALL, NULL, "Destroy All Robots", M_DestroyRobots,    100},
+	{IT_STRING | IT_CALL, NULL, "Get All Emeralds",   {.routine = M_GetAllEmeralds},    90},
+	{IT_STRING | IT_CALL, NULL, "Destroy All Robots", {.routine = M_DestroyRobots},    100},
 
-	{IT_STRING | IT_CALL, NULL, "Ultimate Cheat",     M_UltimateCheat,    130},
+	{IT_STRING | IT_CALL, NULL, "Ultimate Cheat",     {.routine = M_UltimateCheat},    130},
 };
 
 // Sky Room Custom Unlocks
 static menuitem_t SR_MainMenu[] =
 {
 #ifndef TESTERS
-	{IT_STRING|IT_SUBMENU,                  NULL, "Unlockables", &SR_UnlockChecklistDef, 100},
+	{IT_STRING|IT_SUBMENU,                  NULL, "Unlockables", {.submenu = &SR_UnlockChecklistDef}, 100},
 #endif
-	{IT_CALL|IT_STRING|IT_CALL_NOTMODIFIED, NULL, "Statistics",  M_Statistics,           108},
-	{IT_CALL|IT_STRING,                     NULL, "Replay Hut",  M_ReplayHut,            116},
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom1
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom2
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom3
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom4
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom5
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom6
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom7
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom8
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom9
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom10
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom11
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom12
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom13
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom14
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom15
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom16
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom17
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom18
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom19
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom20
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom21
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom22
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom23
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom24
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom25
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom26
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom27
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom28
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom29
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom30
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom31
-	{IT_DISABLED,         NULL, "",   NULL,                 0}, // Custom32
+	{IT_CALL|IT_STRING|IT_CALL_NOTMODIFIED, NULL, "Statistics",  {.routine = M_Statistics},           108},
+	{IT_CALL|IT_STRING,                     NULL, "Replay Hut",  {.routine = M_ReplayHut},            116},
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom1
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom2
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom3
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom4
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom5
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom6
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom7
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom8
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom9
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom10
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom11
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom12
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom13
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom14
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom15
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom16
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom17
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom18
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom19
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom20
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom21
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom22
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom23
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom24
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom25
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom26
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom27
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom28
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom29
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom30
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom31
+	{IT_DISABLED,         NULL, "",   {NULL},                 0}, // Custom32
 
 };
 
@@ -829,13 +831,13 @@ static menuitem_t SR_MainMenu[] =
 
 static menuitem_t SR_UnlockChecklistMenu[] =
 {
-	{IT_SUBMENU | IT_STRING,         NULL, "NEXT", &MainDef, 192},
+	{IT_SUBMENU | IT_STRING,         NULL, "NEXT", {.submenu = &MainDef}, 192},
 };
 
 static menuitem_t SR_EmblemHintMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Medal Radar",  &cv_itemfinder, 10},
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",         &SPauseDef,     20}
+	{IT_STRING|IT_CVAR,         NULL, "Medal Radar",  {.cvar = &cv_itemfinder}, 10},
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",         {.submenu = &SPauseDef},     20}
 };
 
 // --------------------------------
@@ -846,43 +848,43 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Single Player Main
 static menuitem_t SP_MainMenu[] =
 {
-	{IT_STRING|IT_CALL,		NULL, "Grand Prix",			M_GrandPrixTemp,	 92},
-	{IT_SECRET,				NULL, "Time Attack",		M_TimeAttack,		100},
-	{IT_SECRET,				NULL, "Break the Capsules",	M_BreakTheCapsules,	108},
+	{IT_STRING|IT_CALL,		NULL, "Grand Prix",			{.routine = M_GrandPrixTemp},	 92},
+	{IT_SECRET,				NULL, "Time Attack",		{.routine = M_TimeAttack},		100},
+	{IT_SECRET,				NULL, "Break the Capsules",	{.routine = M_BreakTheCapsules},	108},
 };
 
 enum
 {
 	spgrandprix,
 	sptimeattack,
-	spbreakthecapsules
+	spbreakthecapsules,
 };
 
 // Single Player Load Game
 static menuitem_t SP_GrandPrixPlaceholderMenu[] =
 {
-	{IT_STRING|IT_CVAR,	NULL, "Character",		&cv_chooseskin,			 10},
-	{IT_STRING|IT_CVAR,	NULL, "Color",			&cv_playercolor[0],		 20},
+	{IT_STRING|IT_CVAR,	NULL, "Character",		{.cvar = &cv_chooseskin},			 10},
+	{IT_STRING|IT_CVAR,	NULL, "Color",			{.cvar = &cv_playercolor[0]},		 20},
 
-	{IT_STRING|IT_CVAR,	NULL, "Difficulty",		&cv_dummygpdifficulty,	 40},
-	{IT_STRING|IT_CVAR,	NULL, "Encore Mode",	&cv_dummygpencore,		 50},
+	{IT_STRING|IT_CVAR,	NULL, "Difficulty",		{.cvar = &cv_dummygpdifficulty},	 40},
+	{IT_STRING|IT_CVAR,	NULL, "Encore Mode",	{.cvar = &cv_dummygpencore},		 50},
 
-	{IT_STRING|IT_CVAR,	NULL, "Cup",			&cv_dummygpcup,			 70},
-	{IT_STRING|IT_CALL,	NULL, "Start",			M_StartGrandPrix,		 80},
+	{IT_STRING|IT_CVAR,	NULL, "Cup",			{.cvar = &cv_dummygpcup},			 70},
+	{IT_STRING|IT_CALL,	NULL, "Start",			{.routine = M_StartGrandPrix},		 80},
 };
 
 // Single Player Time Attack
 static menuitem_t SP_TimeAttackMenu[] =
 {
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Name",       &cv_playername[0],        0},
-	{IT_STRING|IT_CVAR,              NULL, "Character",  &cv_chooseskin,       13},
-	{IT_STRING|IT_CVAR,              NULL, "Color",      &cv_playercolor[0],      26},
-	{IT_STRING|IT_CVAR,              NULL, "Level",      &cv_nextmap,          78},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Name",       {.cvar = &cv_playername[0]},        0},
+	{IT_STRING|IT_CVAR,              NULL, "Character",  {.cvar = &cv_chooseskin},       13},
+	{IT_STRING|IT_CVAR,              NULL, "Color",      {.cvar = &cv_playercolor[0]},      26},
+	{IT_STRING|IT_CVAR,              NULL, "Level",      {.cvar = &cv_nextmap},          78},
 
-	{IT_DISABLED,                                NULL, "Guest...",      &SP_GuestReplayDef,    98},
-	{IT_DISABLED,                                NULL, "Replay...",     &SP_ReplayDef,        108},
-	{IT_WHITESTRING|IT_SUBMENU,                  NULL, "Ghosts...",     &SP_GhostDef,         118},
-	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED, NULL, "Start",         M_ChooseTimeAttack,   130},
+	{IT_DISABLED,                                NULL, "Guest...",      {.submenu = &SP_GuestReplayDef},    98},
+	{IT_DISABLED,                                NULL, "Replay...",     {.submenu = &SP_ReplayDef},        108},
+	{IT_WHITESTRING|IT_SUBMENU,                  NULL, "Ghosts...",     {.submenu = &SP_GhostDef},         118},
+	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED, NULL, "Start",         {.routine = M_ChooseTimeAttack},   130},
 };
 
 enum
@@ -900,14 +902,14 @@ enum
 
 static menuitem_t SP_ReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time",  M_ReplayTimeAttack,  90},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Lap",   M_ReplayTimeAttack,  98},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Time",  {.routine = M_ReplayTimeAttack},  90},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Best Lap",   {.routine = M_ReplayTimeAttack},  98},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",       M_ReplayTimeAttack, 106},
-	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",      M_ReplayTimeAttack, 114},
-	{IT_WHITESTRING|IT_KEYHANDLER, NULL, "Replay Staff",M_HandleStaffReplay,122},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Last",       {.routine = M_ReplayTimeAttack}, 106},
+	{IT_WHITESTRING|IT_CALL, NULL, "Replay Guest",      {.routine = M_ReplayTimeAttack}, 114},
+	{IT_WHITESTRING|IT_KEYHANDLER, NULL, "Replay Staff",{.routine = M_HandleStaffReplay},122},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",           &SP_TimeAttackDef,  130}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",           {.submenu = &SP_TimeAttackDef},  130}
 };
 
 /*static menuitem_t SP_NightsReplayMenu[] =
@@ -924,13 +926,13 @@ static menuitem_t SP_ReplayMenu[] =
 
 static menuitem_t SP_GuestReplayMenu[] =
 {
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest",  M_SetGuestReplay, 94},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Lap as Guest",   M_SetGuestReplay,102},
-	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",       M_SetGuestReplay,110},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Time as Guest",  {.routine = M_SetGuestReplay}, 94},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Best Lap as Guest",   {.routine = M_SetGuestReplay},102},
+	{IT_WHITESTRING|IT_CALL, NULL, "Save Last as Guest",       {.routine = M_SetGuestReplay},110},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay",      M_SetGuestReplay,120},
+	{IT_WHITESTRING|IT_CALL, NULL, "Delete Guest Replay",      {.routine = M_SetGuestReplay},120},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",                &SP_TimeAttackDef, 130}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",                {.submenu = &SP_TimeAttackDef}, 130}
 };
 
 /*static menuitem_t SP_NightsGuestReplayMenu[] =
@@ -946,13 +948,13 @@ static menuitem_t SP_GuestReplayMenu[] =
 
 static menuitem_t SP_GhostMenu[] =
 {
-	{IT_STRING|IT_CVAR,         NULL, "Best Time",   &cv_ghost_besttime, 88},
-	{IT_STRING|IT_CVAR,         NULL, "Best Lap",    &cv_ghost_bestlap,  96},
-	{IT_STRING|IT_CVAR,         NULL, "Last",        &cv_ghost_last,    104},
-	{IT_DISABLED,               NULL, "Guest",       &cv_ghost_guest,   112},
-	{IT_DISABLED,               NULL, "Staff Attack",&cv_ghost_staff,   120},
+	{IT_STRING|IT_CVAR,         NULL, "Best Time",   {.cvar = &cv_ghost_besttime}, 88},
+	{IT_STRING|IT_CVAR,         NULL, "Best Lap",    {.cvar = &cv_ghost_bestlap},  96},
+	{IT_STRING|IT_CVAR,         NULL, "Last",        {.cvar = &cv_ghost_last},    104},
+	{IT_DISABLED,               NULL, "Guest",       {.cvar = &cv_ghost_guest},   112},
+	{IT_DISABLED,               NULL, "Staff Attack", {.cvar = &cv_ghost_staff},   120},
 
-	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",        &SP_TimeAttackDef, 130}
+	{IT_WHITESTRING|IT_SUBMENU, NULL, "Back",        {.submenu = &SP_TimeAttackDef}, 130}
 };
 
 /*static menuitem_t SP_NightsGhostMenu[] =
@@ -993,7 +995,7 @@ enum
 // Statistics
 static menuitem_t SP_LevelStatsMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleLevelStats, '\0'},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", {.routine = M_HandleLevelStats}, '\0'},     // dummy menuitem for the control func
 };
 
 // A rare case.
@@ -1009,30 +1011,30 @@ menuitem_t PlayerMenu[MAXSKINS];
 
 static menuitem_t MP_MainMenu[] =
 {
-	{IT_HEADER, NULL, "Players", NULL, 0},
-	{IT_STRING|IT_CVAR,      NULL, "Number of local players",     &cv_splitplayers, 10},
+	{IT_HEADER, NULL, "Players", {NULL}, 0},
+	{IT_STRING|IT_CVAR,      NULL, "Number of local players",     {.cvar = &cv_splitplayers}, 10},
 
-	{IT_STRING|IT_KEYHANDLER,NULL, "Player setup...",     M_SetupMultiHandler,18},
+	{IT_STRING|IT_KEYHANDLER,NULL, "Player setup...",     {.routine = M_SetupMultiHandler}, 18},
 
-	{IT_HEADER, NULL, "Host a game", NULL, 100-24},
+	{IT_HEADER, NULL, "Host a game", {NULL}, 100-24},
 #ifndef NOMENUHOST
-	{IT_STRING|IT_CALL,       NULL, "Internet/LAN...",           M_StartServerMenu,        110-24},
+	{IT_STRING|IT_CALL,       NULL, "Internet/LAN...",           {.routine = M_StartServerMenu},        110-24},
 #else
-	{IT_GRAYEDOUT,            NULL, "Internet/LAN...",           NULL,                     110-24},
+	{IT_GRAYEDOUT,            NULL, "Internet/LAN...",           {NULL},                     110-24},
 #endif
 #ifdef TESTERS
-	{IT_GRAYEDOUT,            NULL, "Offline...",                NULL,                     118-24},
+	{IT_GRAYEDOUT,            NULL, "Offline...",                {NULL},                     118-24},
 #else
-	{IT_STRING|IT_CALL,       NULL, "Offline...",                M_StartOfflineServerMenu, 118-24},
+	{IT_STRING|IT_CALL,       NULL, "Offline...",                {.routine = M_StartOfflineServerMenu}, 118-24},
 #endif
 
-	{IT_HEADER, NULL, "Join a game", NULL, 132-24},
+	{IT_HEADER, NULL, "Join a game", {NULL}, 132-24},
 #ifndef NONET
-	{IT_STRING|IT_CALL,       NULL, "Internet server browser...",M_ConnectMenuModChecks,   142-24},
-	{IT_STRING|IT_KEYHANDLER, NULL, "Specify IPv4 address:",     M_HandleConnectIP,        150-24},
+	{IT_STRING|IT_CALL,       NULL, "Internet server browser...",{.routine = M_ConnectMenuModChecks},   142-24},
+	{IT_STRING|IT_KEYHANDLER, NULL, "Specify IPv4 address:",     {.routine = M_HandleConnectIP},        150-24},
 #else
-	{IT_GRAYEDOUT,            NULL, "Internet server browser...",NULL,                     142-24},
-	{IT_GRAYEDOUT,            NULL, "Specify IPv4 address:",     NULL,                     150-24},
+	{IT_GRAYEDOUT,            NULL, "Internet server browser...", {NULL},                     142-24},
+	{IT_GRAYEDOUT,            NULL, "Specify IPv4 address:",     {NULL},                     150-24},
 #endif
 	//{IT_HEADER, NULL, "Player setup", NULL, 80},
 	//{IT_STRING|IT_CALL,       NULL, "Name, character, color...", M_SetupMultiPlayer,       90},
@@ -1042,14 +1044,14 @@ static menuitem_t MP_MainMenu[] =
 
 static menuitem_t MP_ServerMenu[] =
 {
-	{IT_STRING|IT_CVAR,                NULL, "Max. Player Count",     &cv_maxplayers,        10},
-	{IT_STRING|IT_CVAR,                NULL, "Advertise",             &cv_advertise,         20},
-	{IT_STRING|IT_CVAR|IT_CV_STRING,   NULL, "Server Name",           &cv_servername,        30},
+	{IT_STRING|IT_CVAR,                NULL, "Max. Player Count",     {.cvar = &cv_maxplayers},        10},
+	{IT_STRING|IT_CVAR,                NULL, "Advertise",             {.cvar = &cv_advertise},         20},
+	{IT_STRING|IT_CVAR|IT_CV_STRING,   NULL, "Server Name",           {.cvar = &cv_servername},        30},
 
-	{IT_STRING|IT_CVAR,                NULL, "Game Type",             &cv_newgametype,       68},
-	{IT_STRING|IT_CVAR,                NULL, "Level",                 &cv_nextmap,           78},
+	{IT_STRING|IT_CVAR,                NULL, "Game Type",             {.cvar = &cv_newgametype},       68},
+	{IT_STRING|IT_CVAR,                NULL, "Level",                 {.cvar = &cv_nextmap},           78},
 
-	{IT_WHITESTRING|IT_CALL,           NULL, "Start",                 M_StartServer,        130},
+	{IT_WHITESTRING|IT_CALL,           NULL, "Start",                 {.routine = M_StartServer},        130},
 };
 
 #endif
@@ -1057,38 +1059,38 @@ static menuitem_t MP_ServerMenu[] =
 // Separated offline and normal servers.
 static menuitem_t MP_OfflineServerMenu[] =
 {
-	{IT_STRING|IT_CVAR,      NULL, "Game Type",             &cv_newgametype,       68},
-	{IT_STRING|IT_CVAR,      NULL, "Level",                 &cv_nextmap,           78},
+	{IT_STRING|IT_CVAR,      NULL, "Game Type",             {.cvar = &cv_newgametype},       68},
+	{IT_STRING|IT_CVAR,      NULL, "Level",                 {.cvar = &cv_nextmap},           78},
 
-	{IT_WHITESTRING|IT_CALL, NULL, "Start",                 M_StartServer,        130},
+	{IT_WHITESTRING|IT_CALL, NULL, "Start",                 {.routine = M_StartServer},        130},
 };
 
 static menuitem_t MP_PlayerSetupMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",      M_HandleSetupMultiPlayer,   0},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Character", M_HandleSetupMultiPlayer,  16}, // Tails 01-18-2001
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Follower",  M_HandleSetupMultiPlayer,  26},
-	{IT_KEYHANDLER | IT_STRING,   NULL, "Color",     M_HandleSetupMultiPlayer, 152},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Name",      {.routine = M_HandleSetupMultiPlayer},   0},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Character", {.routine = M_HandleSetupMultiPlayer},  16}, // Tails 01-18-2001
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Follower",  {.routine = M_HandleSetupMultiPlayer},  26},
+	{IT_KEYHANDLER | IT_STRING,   NULL, "Color",     {.routine = M_HandleSetupMultiPlayer}, 152},
 };
 
 #ifndef NONET
 static menuitem_t MP_ConnectMenu[] =
 {
-	{IT_STRING | IT_CVAR,       NULL, "Sort By",  &cv_serversort,      4},
-	{IT_STRING | IT_KEYHANDLER, NULL, "Page",     M_HandleServerPage, 12},
-	{IT_STRING | IT_CALL,       NULL, "Refresh",  M_Refresh,          20},
+	{IT_STRING | IT_CVAR,       NULL, "Sort By",  {.cvar = &cv_serversort},      4},
+	{IT_STRING | IT_KEYHANDLER, NULL, "Page",     {.routine = M_HandleServerPage}, 12},
+	{IT_STRING | IT_CALL,       NULL, "Refresh",  {.routine = M_Refresh},          20},
 
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          36},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          48},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          60},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          72},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          84},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          96},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         108},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         120},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         132},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         144},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         156},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          36},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          48},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          60},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          72},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          84},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},          96},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},         108},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},         120},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},         132},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},         144},
+	{IT_STRING | IT_SPACE, NULL, "",              {.routine = M_Connect},         156},
 };
 
 enum
@@ -1106,133 +1108,133 @@ enum
 // Prefix: OP_
 static menuitem_t OP_MainMenu[] =
 {
-	{IT_SUBMENU|IT_STRING,		NULL, "Control Setup...",		&OP_ControlsDef,			 10},
+	{IT_SUBMENU|IT_STRING,		NULL, "Control Setup...",		{.submenu = &OP_ControlsDef},			 10},
 
-	{IT_SUBMENU|IT_STRING,		NULL, "Video Options...",		&OP_VideoOptionsDef,		 30},
-	{IT_SUBMENU|IT_STRING,		NULL, "Sound Options...",		&OP_SoundOptionsDef,		 40},
+	{IT_SUBMENU|IT_STRING,		NULL, "Video Options...",		{.submenu = &OP_VideoOptionsDef},		 30},
+	{IT_SUBMENU|IT_STRING,		NULL, "Sound Options...",		{.submenu = &OP_SoundOptionsDef},		 40},
 
-	{IT_SUBMENU|IT_STRING,		NULL, "HUD Options...",			&OP_HUDOptionsDef,			 60},
-	{IT_SUBMENU|IT_STRING,		NULL, "Gameplay Options...",	&OP_GameOptionsDef,			 70},
-	{IT_SUBMENU|IT_STRING,		NULL, "Server Options...",		&OP_ServerOptionsDef,		 80},
+	{IT_SUBMENU|IT_STRING,		NULL, "HUD Options...",			{.submenu = &OP_HUDOptionsDef},			 60},
+	{IT_SUBMENU|IT_STRING,		NULL, "Gameplay Options...",	{.submenu = &OP_GameOptionsDef},			 70},
+	{IT_SUBMENU|IT_STRING,		NULL, "Server Options...",		{.submenu = &OP_ServerOptionsDef},		 80},
 
-	{IT_SUBMENU|IT_STRING,		NULL, "Data Options...",		&OP_DataOptionsDef,			100},
+	{IT_SUBMENU|IT_STRING,		NULL, "Data Options...",		{.submenu = &OP_DataOptionsDef},			100},
 
-	{IT_CALL|IT_STRING,			NULL, "Tricks & Secrets (F1)",	M_Manual,					120},
-	{IT_CALL|IT_STRING,			NULL, "Play Credits",			M_Credits,					130},
+	{IT_CALL|IT_STRING,			NULL, "Tricks & Secrets (F1)",	{.routine = M_Manual},					120},
+	{IT_CALL|IT_STRING,			NULL, "Play Credits",			{.routine = M_Credits},					130},
 };
 
 static menuitem_t OP_ControlsMenu[] =
 {
-	{IT_CALL | IT_STRING, NULL, "Player 1 Controls...", M_Setup1PControlsMenu,  10},
-	{IT_CALL | IT_STRING, NULL, "Player 2 Controls...", M_Setup2PControlsMenu,  20},
+	{IT_CALL | IT_STRING, NULL, "Player 1 Controls...", {.routine = M_Setup1PControlsMenu},  10},
+	{IT_CALL | IT_STRING, NULL, "Player 2 Controls...", {.routine = M_Setup2PControlsMenu},  20},
 
-	{IT_CALL | IT_STRING, NULL, "Player 3 Controls...", &M_Setup3PControlsMenu,  30},
-	{IT_CALL | IT_STRING, NULL, "Player 4 Controls...", &M_Setup4PControlsMenu,  40},
+	{IT_CALL | IT_STRING, NULL, "Player 3 Controls...", {.routine = M_Setup3PControlsMenu},  30},
+	{IT_CALL | IT_STRING, NULL, "Player 4 Controls...", {.routine = M_Setup4PControlsMenu},  40},
 
-	{IT_STRING | IT_CVAR, NULL, "Controls per key", &cv_controlperkey, 60},
+	{IT_STRING | IT_CVAR, NULL, "Controls per key", {.cvar = &cv_controlperkey}, 60},
 };
 
 static menuitem_t OP_AllControlsMenu[] =
 {
-	{IT_SUBMENU|IT_STRING, NULL, "Gamepad Options...", &OP_Joystick1Def, 0},
-	{IT_CALL|IT_STRING, NULL, "Reset to defaults", M_ResetControls, 8},
+	{IT_SUBMENU|IT_STRING, NULL, "Gamepad Options...", {.submenu = &OP_Joystick1Def}, 0},
+	{IT_CALL|IT_STRING, NULL, "Reset to defaults", {.routine = M_ResetControls}, 8},
 	//{IT_SPACE, NULL, NULL, NULL, 0},
-	{IT_HEADER, NULL, "Gameplay Controls", NULL, 0},
-	{IT_SPACE, NULL, NULL, NULL, 0},
-	{IT_CONTROL, NULL, "Accelerate",            M_ChangeControl, gc_accelerate },
-	{IT_CONTROL, NULL, "Turn Left",             M_ChangeControl, gc_turnleft   },
-	{IT_CONTROL, NULL, "Turn Right",            M_ChangeControl, gc_turnright  },
-	{IT_CONTROL, NULL, "Drift",                 M_ChangeControl, gc_drift      },
-	{IT_CONTROL, NULL, "Brake",                 M_ChangeControl, gc_brake      },
-	{IT_CONTROL, NULL, "Spindash",              M_ChangeControl, gc_spindash   },
-	{IT_CONTROL, NULL, "Use/Throw Item",        M_ChangeControl, gc_fire       },
-	{IT_CONTROL, NULL, "Aim Forward",           M_ChangeControl, gc_aimforward },
-	{IT_CONTROL, NULL, "Aim Backward",          M_ChangeControl, gc_aimbackward},
-	{IT_CONTROL, NULL, "Look Backward",         M_ChangeControl, gc_lookback   },
-	{IT_HEADER, NULL, "Miscelleanous Controls", NULL, 0},
-	{IT_SPACE, NULL, NULL, NULL, 0},
-	{IT_CONTROL, NULL, "Chat",                  M_ChangeControl, gc_talkkey    },
+	{IT_HEADER, NULL, "Gameplay Controls", {NULL}, 0},
+	{IT_SPACE, NULL, NULL, {NULL}, 0},
+	{IT_CONTROL, NULL, "Accelerate",            {.routine = M_ChangeControl}, gc_accelerate },
+	{IT_CONTROL, NULL, "Turn Left",             {.routine = M_ChangeControl}, gc_turnleft   },
+	{IT_CONTROL, NULL, "Turn Right",            {.routine = M_ChangeControl}, gc_turnright  },
+	{IT_CONTROL, NULL, "Drift",                 {.routine = M_ChangeControl}, gc_drift      },
+	{IT_CONTROL, NULL, "Brake",                 {.routine = M_ChangeControl}, gc_brake      },
+	{IT_CONTROL, NULL, "Spindash",              {.routine = M_ChangeControl}, gc_spindash   },
+	{IT_CONTROL, NULL, "Use/Throw Item",        {.routine = M_ChangeControl}, gc_fire       },
+	{IT_CONTROL, NULL, "Aim Forward",           {.routine = M_ChangeControl}, gc_aimforward },
+	{IT_CONTROL, NULL, "Aim Backward",          {.routine = M_ChangeControl}, gc_aimbackward},
+	{IT_CONTROL, NULL, "Look Backward",         {.routine = M_ChangeControl}, gc_lookback   },
+	{IT_HEADER, NULL, "Miscelleanous Controls", {NULL}, 0},
+	{IT_SPACE, NULL, NULL, {NULL}, 0},
+	{IT_CONTROL, NULL, "Chat",                  {.routine = M_ChangeControl}, gc_talkkey    },
 	//{IT_CONTROL, NULL, "Team Chat",             M_ChangeControl, gc_teamkey    },
-	{IT_CONTROL, NULL, "Show Rankings",         M_ChangeControl, gc_scores     },
-	{IT_CONTROL, NULL, "Change Viewpoint",      M_ChangeControl, gc_viewpoint  },
-	{IT_CONTROL, NULL, "Reset Camera",          M_ChangeControl, gc_camreset   },
-	{IT_CONTROL, NULL, "Toggle First-Person",   M_ChangeControl, gc_camtoggle  },
-	{IT_CONTROL, NULL, "Pause",                 M_ChangeControl, gc_pause      },
-	{IT_CONTROL, NULL, "Screenshot",            M_ChangeControl, gc_screenshot },
-	{IT_CONTROL, NULL, "Toggle GIF Recording",  M_ChangeControl, gc_recordgif  },
-	{IT_CONTROL, NULL, "Open/Close Menu (ESC)", M_ChangeControl, gc_systemmenu },
-	{IT_CONTROL, NULL, "Developer Console",     M_ChangeControl, gc_console    },
-	{IT_HEADER, NULL, "Spectator Controls", NULL, 0},
-	{IT_SPACE, NULL, NULL, NULL, 0},
-	{IT_CONTROL, NULL, "Become Spectator",      M_ChangeControl, gc_spectate   },
-	{IT_CONTROL, NULL, "Look Up",               M_ChangeControl, gc_lookup     },
-	{IT_CONTROL, NULL, "Look Down",             M_ChangeControl, gc_lookdown   },
-	{IT_CONTROL, NULL, "Center View",           M_ChangeControl, gc_centerview },
-	{IT_HEADER, NULL, "Custom Lua Actions", NULL, 0},
-	{IT_SPACE, NULL, NULL, NULL, 0},
-	{IT_CONTROL, NULL, "Custom Action 1",       M_ChangeControl, gc_custom1    },
-	{IT_CONTROL, NULL, "Custom Action 2",       M_ChangeControl, gc_custom2    },
-	{IT_CONTROL, NULL, "Custom Action 3",       M_ChangeControl, gc_custom3    },
+	{IT_CONTROL, NULL, "Show Rankings",         {.routine = M_ChangeControl}, gc_scores     },
+	{IT_CONTROL, NULL, "Change Viewpoint",      {.routine = M_ChangeControl}, gc_viewpoint  },
+	{IT_CONTROL, NULL, "Reset Camera",          {.routine = M_ChangeControl}, gc_camreset   },
+	{IT_CONTROL, NULL, "Toggle First-Person",   {.routine = M_ChangeControl}, gc_camtoggle  },
+	{IT_CONTROL, NULL, "Pause",                 {.routine = M_ChangeControl}, gc_pause      },
+	{IT_CONTROL, NULL, "Screenshot",            {.routine = M_ChangeControl}, gc_screenshot },
+	{IT_CONTROL, NULL, "Toggle GIF Recording",  {.routine = M_ChangeControl}, gc_recordgif  },
+	{IT_CONTROL, NULL, "Open/Close Menu (ESC)", {.routine = M_ChangeControl}, gc_systemmenu },
+	{IT_CONTROL, NULL, "Developer Console",     {.routine = M_ChangeControl}, gc_console    },
+	{IT_HEADER, NULL, "Spectator Controls", {NULL}, 0},
+	{IT_SPACE, NULL, NULL, {NULL}, 0},
+	{IT_CONTROL, NULL, "Become Spectator",      {.routine = M_ChangeControl}, gc_spectate   },
+	{IT_CONTROL, NULL, "Look Up",               {.routine = M_ChangeControl}, gc_lookup     },
+	{IT_CONTROL, NULL, "Look Down",             {.routine = M_ChangeControl}, gc_lookdown   },
+	{IT_CONTROL, NULL, "Center View",           {.routine = M_ChangeControl}, gc_centerview },
+	{IT_HEADER, NULL, "Custom Lua Actions", {NULL}, 0},
+	{IT_SPACE, NULL, NULL, {NULL}, 0},
+	{IT_CONTROL, NULL, "Custom Action 1",       {.routine = M_ChangeControl}, gc_custom1    },
+	{IT_CONTROL, NULL, "Custom Action 2",       {.routine = M_ChangeControl}, gc_custom2    },
+	{IT_CONTROL, NULL, "Custom Action 3",       {.routine = M_ChangeControl}, gc_custom3    },
 };
 
 static menuitem_t OP_Joystick1Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup1PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[0]       , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[0]      , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[0]      , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[0]     , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[0]     , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[0]      , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[0]      , 90},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , {.routine = M_Setup1PJoystickMenu}, 10},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , {.cvar = &cv_aimaxis[0]}       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , {.cvar = &cv_turnaxis[0]}      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , {.cvar = &cv_moveaxis[0]}      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , {.cvar = &cv_brakeaxis[0]}     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , {.cvar = &cv_driftaxis[0]}     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , {.cvar = &cv_fireaxis[0]}      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , {.cvar = &cv_lookaxis[0]}      , 90},
 };
 
 static menuitem_t OP_Joystick2Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup2PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[1]       , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[1]      , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[1]      , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[1]     , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[1]     , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[1]      , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[1]      , 90},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , {.routine = M_Setup2PJoystickMenu}, 10},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , {.cvar = &cv_aimaxis[1]}       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , {.cvar = &cv_turnaxis[1]}      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , {.cvar = &cv_moveaxis[1]}      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , {.cvar = &cv_brakeaxis[1]}     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , {.cvar = &cv_driftaxis[1]}     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , {.cvar = &cv_fireaxis[1]}      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , {.cvar = &cv_lookaxis[1]}      , 90},
 };
 
 static menuitem_t OP_Joystick3Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup3PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[2]       , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[2]      , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[2]      , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[2]     , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[2]     , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[2]      , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[2]      , 90},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , {.routine = M_Setup3PJoystickMenu}, 10},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , {.cvar = &cv_aimaxis[2]}       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , {.cvar = &cv_turnaxis[2]}      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , {.cvar = &cv_moveaxis[2]}      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , {.cvar = &cv_brakeaxis[2]}     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , {.cvar = &cv_driftaxis[2]}     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , {.cvar = &cv_fireaxis[2]}      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , {.cvar = &cv_lookaxis[2]}      , 90},
 };
 
 static menuitem_t OP_Joystick4Menu[] =
 {
-	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , M_Setup4PJoystickMenu, 10},
-	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , &cv_aimaxis[3]       , 30},
-	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , &cv_turnaxis[3]      , 40},
-	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , &cv_moveaxis[3]      , 50},
-	{IT_STRING | IT_CVAR,  NULL, "Brake"              , &cv_brakeaxis[3]     , 60},
-	{IT_STRING | IT_CVAR,  NULL, "Drift"              , &cv_driftaxis[3]     , 70},
-	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , &cv_fireaxis[3]      , 80},
-	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , &cv_lookaxis[3]      , 90},
+	{IT_STRING | IT_CALL,  NULL, "Select Gamepad..."  , {.routine = M_Setup4PJoystickMenu}, 10},
+	{IT_STRING | IT_CVAR,  NULL, "Aim Forward/Back"   , {.cvar = &cv_aimaxis[3]}       , 30},
+	{IT_STRING | IT_CVAR,  NULL, "Turn Left/Right"    , {.cvar = &cv_turnaxis[3]}      , 40},
+	{IT_STRING | IT_CVAR,  NULL, "Accelerate"         , {.cvar = &cv_moveaxis[3]}      , 50},
+	{IT_STRING | IT_CVAR,  NULL, "Brake"              , {.cvar = &cv_brakeaxis[3]}     , 60},
+	{IT_STRING | IT_CVAR,  NULL, "Drift"              , {.cvar = &cv_driftaxis[3]}     , 70},
+	{IT_STRING | IT_CVAR,  NULL, "Use Item"           , {.cvar = &cv_fireaxis[3]}      , 80},
+	{IT_STRING | IT_CVAR,  NULL, "Look Up/Down"       , {.cvar = &cv_lookaxis[3]}      , 90},
 };
 
 static menuitem_t OP_JoystickSetMenu[] =
 {
-	{IT_CALL | IT_NOTHING, "None", NULL, M_AssignJoystick, LINEHEIGHT+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*2)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*3)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*4)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*5)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*6)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*7)+5},
-	{IT_CALL | IT_NOTHING, "", NULL, M_AssignJoystick, (LINEHEIGHT*8)+5},
+	{IT_CALL | IT_NOTHING, "None", NULL, {.routine = M_AssignJoystick}, LINEHEIGHT+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*2)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*3)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*4)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*5)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*6)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*7)+5},
+	{IT_CALL | IT_NOTHING, "", NULL, {.routine = M_AssignJoystick}, (LINEHEIGHT*8)+5},
 };
 
 /*
@@ -1254,27 +1256,27 @@ static menuitem_t OP_MouseOptionsMenu[] =
 
 static menuitem_t OP_VideoOptionsMenu[] =
 {
-	{IT_STRING | IT_CALL,	NULL,	"Set Resolution...",	M_VideoModeMenu,		 10},
+	{IT_STRING | IT_CALL,	NULL,	"Set Resolution...",	{.routine = M_VideoModeMenu},		 10},
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			&cv_fullscreen,			 20},
+	{IT_STRING|IT_CVAR,		NULL,	"Fullscreen",			{.cvar = &cv_fullscreen},			 20},
 #endif
 #ifdef HWRENDER
-	{IT_STRING | IT_CVAR, NULL, "Renderer",					&cv_renderer,			 30},
+	{IT_STRING | IT_CVAR, NULL, "Renderer",					{.cvar = &cv_renderer},				 30},
 #else
-	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",		&cv_renderer,			 30},
+	{IT_TRANSTEXT | IT_PAIR, "Renderer", "Software",		{.cvar = &cv_renderer},				 30},
 #endif
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-							NULL,	"Gamma",				&cv_globalgamma,		 50},
+							NULL,	"Gamma",				{.cvar = &cv_globalgamma},			 50},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Show FPS",				&cv_ticrate,			 60},
-	{IT_STRING | IT_CVAR,	NULL,	"Vertical Sync",		&cv_vidwait,			 70},
+	{IT_STRING | IT_CVAR,	NULL,	"Show FPS",				{.cvar = &cv_ticrate},				 60},
+	{IT_STRING | IT_CVAR,	NULL,	"FPS Cap",				{.cvar = &cv_fpscap},				 70},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		&cv_drawdist,			 90},
-	{IT_STRING | IT_CVAR,	NULL,	"Weather Draw Distance",&cv_drawdist_precip,	100},
-	{IT_STRING | IT_CVAR,	NULL,	"Skyboxes",				&cv_skybox,				110},
+	{IT_STRING | IT_CVAR,	NULL,	"Draw Distance",		{.cvar = &cv_drawdist},				 90},
+	{IT_STRING | IT_CVAR,	NULL,	"Weather Draw Distance", {.cvar = &cv_drawdist_precip},		100},
+	{IT_STRING | IT_CVAR,	NULL,	"Skyboxes",				{.cvar = &cv_skybox},				110},
 
 #ifdef HWRENDER
-	{IT_CALL | IT_STRING,	NULL,	"OpenGL Options...",	&M_OpenGLOptionsMenu,	140},
+	{IT_CALL | IT_STRING,	NULL,	"OpenGL Options...",	{.routine = M_OpenGLOptionsMenu},	140},
 #endif
 };
 
@@ -1298,86 +1300,86 @@ enum
 
 static menuitem_t OP_VideoModeMenu[] =
 {
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "", M_HandleVideoMode, '\0'},     // dummy menuitem for the control func
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", {.routine = M_HandleVideoMode}, '\0'},     // dummy menuitem for the control func
 };
 
 #ifdef HWRENDER
 static menuitem_t OP_OpenGLOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR,	NULL, "3D Models",					&cv_glmodels,				 10},
-	{IT_STRING|IT_CVAR,		NULL, "Shaders",					&cv_glshaders,				 20},
+	{IT_STRING | IT_CVAR,	NULL, "3D Models",					{.cvar = &cv_glmodels},				 10},
+	{IT_STRING|IT_CVAR,		NULL, "Shaders",					{.cvar = &cv_glshaders},				 20},
 
-	{IT_STRING|IT_CVAR,		NULL, "Texture Quality",			&cv_scr_depth,				 40},
-	{IT_STRING|IT_CVAR,		NULL, "Texture Filter",				&cv_glfiltermode,			 50},
-	{IT_STRING|IT_CVAR,		NULL, "Anisotropic",				&cv_glanisotropicmode,		 60},
+	{IT_STRING|IT_CVAR,		NULL, "Texture Quality",			{.cvar = &cv_scr_depth},				 40},
+	{IT_STRING|IT_CVAR,		NULL, "Texture Filter",				{.cvar = &cv_glfiltermode},			 50},
+	{IT_STRING|IT_CVAR,		NULL, "Anisotropic",				{.cvar = &cv_glanisotropicmode},		 60},
 
-	{IT_STRING|IT_CVAR,		NULL, "Wall Contrast Style",		&cv_glfakecontrast,			 80},
-	{IT_STRING|IT_CVAR,		NULL, "Sprite Billboarding",		&cv_glspritebillboarding,	 90},
-	{IT_STRING|IT_CVAR,		NULL, "Software Perspective",		&cv_glshearing,				100},
+	{IT_STRING|IT_CVAR,		NULL, "Wall Contrast Style",		{.cvar = &cv_glfakecontrast},			 80},
+	{IT_STRING|IT_CVAR,		NULL, "Sprite Billboarding",		{.cvar = &cv_glspritebillboarding},	 90},
+	{IT_STRING|IT_CVAR,		NULL, "Software Perspective",		{.cvar = &cv_glshearing},				100},
 };
 #endif
 
 static menuitem_t OP_SoundOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR,			NULL, "SFX",					&cv_gamesounds,			 10},
+	{IT_STRING|IT_CVAR,			NULL, "SFX",					{.cvar = &cv_gamesounds},			 10},
 	{IT_STRING|IT_CVAR|IT_CV_SLIDER,
-								NULL, "SFX Volume",				&cv_soundvolume,		 18},
+								NULL, "SFX Volume",				{.cvar = &cv_soundvolume},		 18},
 
-	{IT_STRING|IT_CVAR,			NULL, "Music",					&cv_gamedigimusic,		 30},
+	{IT_STRING|IT_CVAR,			NULL, "Music",					{.cvar = &cv_gamedigimusic},		 30},
 	{IT_STRING|IT_CVAR|IT_CV_SLIDER,
-								NULL, "Music Volume",			&cv_digmusicvolume,		 38},
+								NULL, "Music Volume",			{.cvar = &cv_digmusicvolume},		 38},
 
 	//{IT_STRING|IT_CALL,			NULL, "Restart Audio System",	M_RestartAudio,			 50},
 
-	{IT_STRING|IT_CVAR,			NULL, "Reverse L/R Channels",	&stereoreverse,			 50},
-	{IT_STRING|IT_CVAR,			NULL, "Surround Sound",			&surround,			 60},
+	{IT_STRING|IT_CVAR,			NULL, "Reverse L/R Channels",	{.cvar = &stereoreverse},			 50},
+	{IT_STRING|IT_CVAR,			NULL, "Surround Sound",			{.cvar = &surround},			 60},
 
-	{IT_STRING|IT_CVAR,			NULL, "Chat Notifications",		&cv_chatnotifications,	 75},
-	{IT_STRING|IT_CVAR,			NULL, "Character voices",		&cv_kartvoices,			 85},
-	{IT_STRING|IT_CVAR,			NULL, "Powerup Warning",		&cv_kartinvinsfx,		 95},
+	{IT_STRING|IT_CVAR,			NULL, "Chat Notifications",		{.cvar = &cv_chatnotifications},	 75},
+	{IT_STRING|IT_CVAR,			NULL, "Character voices",		{.cvar = &cv_kartvoices},			 85},
+	{IT_STRING|IT_CVAR,			NULL, "Powerup Warning",		{.cvar = &cv_kartinvinsfx},		 95},
 
-	{IT_KEYHANDLER|IT_STRING,	NULL, "Sound Test",				M_HandleSoundTest,		110},
+	{IT_KEYHANDLER|IT_STRING,	NULL, "Sound Test",				{.routine = M_HandleSoundTest},		110},
 
-	{IT_STRING|IT_CVAR,        NULL, "Play Music While Unfocused", &cv_playmusicifunfocused, 125},
-	{IT_STRING|IT_CVAR,        NULL, "Play SFX While Unfocused", &cv_playsoundifunfocused, 135},
+	{IT_STRING|IT_CVAR,        NULL, "Play Music While Unfocused", {.cvar = &cv_playmusicifunfocused}, 125},
+	{IT_STRING|IT_CVAR,        NULL, "Play SFX While Unfocused", {.cvar = &cv_playsoundifunfocused}, 135},
 };
 
 static menuitem_t OP_DataOptionsMenu[] =
 {
 
-	{IT_STRING | IT_CALL,		NULL, "Screenshot Options...",	M_ScreenshotOptions,	 10},
-	{IT_STRING | IT_CALL,		NULL, "Addon Options...",		M_AddonsOptions,		 20},
-	{IT_STRING | IT_SUBMENU,	NULL, "Replay Options...",		&MISC_ReplayOptionsDef,	 30},
+	{IT_STRING | IT_CALL,		NULL, "Screenshot Options...",	{.routine = M_ScreenshotOptions},	 10},
+	{IT_STRING | IT_CALL,		NULL, "Addon Options...",		{.routine = M_AddonsOptions},		 20},
+	{IT_STRING | IT_SUBMENU,	NULL, "Replay Options...",		{.submenu = &MISC_ReplayOptionsDef},	 30},
 #ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_SUBMENU,	NULL, "Discord Options...",		&OP_DiscordOptionsDef,	 40},
+	{IT_STRING | IT_SUBMENU,	NULL, "Discord Options...",		{.submenu = &OP_DiscordOptionsDef},	 40},
 
-	{IT_STRING | IT_SUBMENU,	NULL, "Erase Data...",			&OP_EraseDataDef,		 60},
+	{IT_STRING | IT_SUBMENU,	NULL, "Erase Data...",			{.submenu = &OP_EraseDataDef},		 60},
 #else
-	{IT_STRING | IT_SUBMENU,	NULL, "Erase Data...",			&OP_EraseDataDef,		 50},
+	{IT_STRING | IT_SUBMENU,	NULL, "Erase Data...",			{.submenu = &OP_EraseDataDef},		 50},
 #endif
 };
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
 {
-	{IT_STRING|IT_CVAR, NULL, "Storage Location", &cv_screenshot_option, 10},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", &cv_screenshot_folder, 20},
+	{IT_STRING|IT_CVAR, NULL, "Storage Location", {.cvar = &cv_screenshot_option}, 10},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder", {.cvar = &cv_screenshot_folder}, 20},
 
-	{IT_HEADER, NULL, "Screenshots (F8)", NULL, 50},
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memory,      60},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_level,       70},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategy,    80},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bits, 90},
+	{IT_HEADER, NULL, "Screenshots (F8)", {NULL}, 50},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      {.cvar = &cv_zlib_memory},      60},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", {.cvar = &cv_zlib_level},       70},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          {.cvar = &cv_zlib_strategy},    80},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       {.cvar = &cv_zlib_window_bits}, 90},
 
-	{IT_HEADER, NULL, "Movie Mode (F9)", NULL, 105},
-	{IT_STRING|IT_CVAR, NULL, "Capture Mode", &cv_moviemode, 115},
+	{IT_HEADER, NULL, "Movie Mode (F9)", {NULL}, 105},
+	{IT_STRING|IT_CVAR, NULL, "Capture Mode", {.cvar = &cv_moviemode}, 115},
 
-	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", &cv_gif_optimize,  125},
-	{IT_STRING|IT_CVAR, NULL, "Downscaling",       &cv_gif_downscale, 135},
+	{IT_STRING|IT_CVAR, NULL, "Region Optimizing", {.cvar = &cv_gif_optimize},  125},
+	{IT_STRING|IT_CVAR, NULL, "Downscaling",       {.cvar = &cv_gif_downscale}, 135},
 
-	{IT_STRING|IT_CVAR, NULL, "Memory Level",      &cv_zlib_memorya,      125},
-	{IT_STRING|IT_CVAR, NULL, "Compression Level", &cv_zlib_levela,       135},
-	{IT_STRING|IT_CVAR, NULL, "Strategy",          &cv_zlib_strategya,    145},
-	{IT_STRING|IT_CVAR, NULL, "Window Size",       &cv_zlib_window_bitsa, 155},
+	{IT_STRING|IT_CVAR, NULL, "Memory Level",      {.cvar = &cv_zlib_memorya},      125},
+	{IT_STRING|IT_CVAR, NULL, "Compression Level", {.cvar = &cv_zlib_levela},       135},
+	{IT_STRING|IT_CVAR, NULL, "Strategy",          {.cvar = &cv_zlib_strategya},    145},
+	{IT_STRING|IT_CVAR, NULL, "Window Size",       {.cvar = &cv_zlib_window_bitsa}, 155},
 };
 
 enum
@@ -1392,23 +1394,23 @@ enum
 
 static menuitem_t OP_EraseDataMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Erase Record Data", M_EraseData, 10},
-	{IT_STRING | IT_CALL, NULL, "Erase Unlockable Data", M_EraseData, 20},
+	{IT_STRING | IT_CALL, NULL, "Erase Record Data", {.routine = M_EraseData}, 10},
+	{IT_STRING | IT_CALL, NULL, "Erase Unlockable Data", {.routine = M_EraseData}, 20},
 
-	{IT_STRING | IT_CALL, NULL, "\x85" "Erase ALL Data", M_EraseData, 40},
+	{IT_STRING | IT_CALL, NULL, "\x85" "Erase ALL Data", {.routine = M_EraseData}, 40},
 };
 
 static menuitem_t OP_AddonsOptionsMenu[] =
 {
-	{IT_HEADER,                      NULL, "Menu",                        NULL,                    0},
-	{IT_STRING|IT_CVAR,              NULL, "Location",                    &cv_addons_option,      10},
-	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder",               &cv_addons_folder,      20},
-	{IT_STRING|IT_CVAR,              NULL, "Identify addons via",         &cv_addons_md5,         48},
-	{IT_STRING|IT_CVAR,              NULL, "Show unsupported file types", &cv_addons_showall,     58},
+	{IT_HEADER,                      NULL, "Menu",                        {NULL},                    0},
+	{IT_STRING|IT_CVAR,              NULL, "Location",                    {.cvar = &cv_addons_option},      10},
+	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder",               {.cvar = &cv_addons_folder},      20},
+	{IT_STRING|IT_CVAR,              NULL, "Identify addons via",         {.cvar = &cv_addons_md5},         48},
+	{IT_STRING|IT_CVAR,              NULL, "Show unsupported file types", {.cvar = &cv_addons_showall},     58},
 
-	{IT_HEADER,                      NULL, "Search",                      NULL,                   76},
-	{IT_STRING|IT_CVAR,              NULL, "Matching",                    &cv_addons_search_type, 86},
-	{IT_STRING|IT_CVAR,              NULL, "Case-sensitive",              &cv_addons_search_case, 96},
+	{IT_HEADER,                      NULL, "Search",                      {NULL},                   76},
+	{IT_STRING|IT_CVAR,              NULL, "Matching",                    {.cvar = &cv_addons_search_type}, 86},
+	{IT_STRING|IT_CVAR,              NULL, "Case-sensitive",              {.cvar = &cv_addons_search_case}, 96},
 };
 
 enum
@@ -1419,94 +1421,94 @@ enum
 #ifdef HAVE_DISCORDRPC
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			{.cvar = &cv_discordrp},			 10},
 
-	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
-	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 40},
+	{IT_HEADER,					NULL, "Rich Presence Settings",	{NULL},					 30},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			{.cvar = &cv_discordstreamer},	 40},
 
-	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		{.cvar = &cv_discordasks},		 60},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			{.cvar = &cv_discordinvites},		 70},
 };
 #endif
 
 static menuitem_t OP_HUDOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Show HUD (F3)",			&cv_showhud,			 20},
+	{IT_STRING | IT_CVAR, NULL, "Show HUD (F3)",			{.cvar = &cv_showhud},			 20},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "HUD Visibility",			&cv_translucenthud,		 30},
+	                      NULL, "HUD Visibility",			{.cvar = &cv_translucenthud},		 30},
 
-	{IT_STRING | IT_SUBMENU, NULL, "Online HUD options...",&OP_ChatOptionsDef, 	 	 45},
-	{IT_STRING | IT_CVAR, NULL, "Background Glass",			&cons_backcolor,		 55},
+	{IT_STRING | IT_SUBMENU, NULL, "Online HUD options...", {.submenu = &OP_ChatOptionsDef}, 	 	 45},
+	{IT_STRING | IT_CVAR, NULL, "Background Glass",			{.cvar = &cons_backcolor},		 55},
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Minimap Visibility",		&cv_kartminimap,		 70},
-	{IT_STRING | IT_CVAR, NULL, "Speedometer Display",		&cv_kartspeedometer,	 80},
-	{IT_STRING | IT_CVAR, NULL, "Show \"CHECK\"",			&cv_kartcheck,			 90},
+						  NULL, "Minimap Visibility",		{.cvar = &cv_kartminimap},		 70},
+	{IT_STRING | IT_CVAR, NULL, "Speedometer Display",		{.cvar = &cv_kartspeedometer},	 80},
+	{IT_STRING | IT_CVAR, NULL, "Show \"CHECK\"",			{.cvar = &cv_kartcheck},			 90},
 
-	{IT_STRING | IT_CVAR, NULL,	"Menu Highlights",			&cons_menuhighlight,     105},
+	{IT_STRING | IT_CVAR, NULL,	"Menu Highlights",			{.cvar = &cons_menuhighlight},     105},
 	// highlight info - (GOOD HIGHLIGHT, WARNING HIGHLIGHT) - 105 (see M_DrawHUDOptions)
 
-	{IT_STRING | IT_CVAR, NULL,	"Console Text Size",		&cv_constextsize,		130},
+	{IT_STRING | IT_CVAR, NULL,	"Console Text Size",		{.cvar = &cv_constextsize},		130},
 
-	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  &cv_showfocuslost,   145},
+	{IT_STRING | IT_CVAR, NULL,   "Show \"FOCUS LOST\"",  {.cvar = &cv_showfocuslost},   145},
 };
 
 // Ok it's still called chatoptions but we'll put ping display in here to be clean
 static menuitem_t OP_ChatOptionsMenu[] =
 {
 	// will ANYONE who doesn't know how to use the console want to touch this one?
-	{IT_STRING | IT_CVAR, NULL, "Chat Mode",				&cv_consolechat,		10}, // nonetheless...
+	{IT_STRING | IT_CVAR, NULL, "Chat Mode",				{.cvar = &cv_consolechat},		10}, // nonetheless...
 
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Chat Box Width",			&cv_chatwidth,			25},
+	                      NULL, "Chat Box Width",			{.cvar = &cv_chatwidth},			25},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Chat Box Height",			&cv_chatheight,			35},
+	                      NULL, "Chat Box Height",			{.cvar = &cv_chatheight},			35},
 
-	{IT_STRING | IT_CVAR, NULL, "Chat Background Tint",		&cv_chatbacktint,		50},
-	{IT_STRING | IT_CVAR, NULL, "Message Fadeout Time",		&cv_chattime,			60},
-	{IT_STRING | IT_CVAR, NULL, "Spam Protection",			&cv_chatspamprotection,	70},
+	{IT_STRING | IT_CVAR, NULL, "Chat Background Tint",		{.cvar = &cv_chatbacktint},		50},
+	{IT_STRING | IT_CVAR, NULL, "Message Fadeout Time",		{.cvar = &cv_chattime},			60},
+	{IT_STRING | IT_CVAR, NULL, "Spam Protection",			{.cvar = &cv_chatspamprotection},	70},
 
-	{IT_STRING | IT_CVAR, NULL, "Local ping display",		&cv_showping,			90},	// shows ping next to framerate if we want to.
+	{IT_STRING | IT_CVAR, NULL, "Local ping display",		{.cvar = &cv_showping},			90},	// shows ping next to framerate if we want to.
 };
 
 static menuitem_t OP_GameOptionsMenu[] =
 {
-	{IT_STRING | IT_SUBMENU, NULL, "Random Item Toggles...",	&OP_MonitorToggleDef,	 10},
+	{IT_STRING | IT_SUBMENU, NULL, "Random Item Toggles...",	{.submenu = &OP_MonitorToggleDef},	 10},
 
-	{IT_STRING | IT_CVAR, NULL, "Game Speed",					&cv_kartspeed,			 30},
-	{IT_STRING | IT_CVAR, NULL, "Frantic Items",				&cv_kartfrantic,		 40},
-	{IT_SECRET,           NULL, "Encore Mode",					&cv_kartencore,			 50},
+	{IT_STRING | IT_CVAR, NULL, "Game Speed",					{.cvar = &cv_kartspeed},			 30},
+	{IT_STRING | IT_CVAR, NULL, "Frantic Items",				{.cvar = &cv_kartfrantic},		 40},
+	{IT_SECRET,           NULL, "Encore Mode",					{.cvar = &cv_kartencore},			 50},
 
-	{IT_STRING | IT_CVAR, NULL, "Number of Laps",				&cv_basenumlaps,		 70},
-	{IT_STRING | IT_CVAR, NULL, "Exit Countdown Timer",			&cv_countdowntime,		 80},
+	{IT_STRING | IT_CVAR, NULL, "Number of Laps",				{.cvar = &cv_basenumlaps},		 70},
+	{IT_STRING | IT_CVAR, NULL, "Exit Countdown Timer",			{.cvar = &cv_countdowntime},		 80},
 
-	{IT_STRING | IT_CVAR, NULL, "Time Limit",					&cv_timelimit,			100},
-	{IT_STRING | IT_CVAR, NULL, "Starting Bumpers",				&cv_kartbumpers,		110},
-	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",				&cv_kartcomeback,		120},
+	{IT_STRING | IT_CVAR, NULL, "Time Limit",					{.cvar = &cv_timelimit},			100},
+	{IT_STRING | IT_CVAR, NULL, "Starting Bumpers",				{.cvar = &cv_kartbumpers},		110},
+	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",				{.cvar = &cv_kartcomeback},		120},
 
-	{IT_STRING | IT_CVAR, NULL, "Track Power Levels",			&cv_kartusepwrlv,		140},
+	{IT_STRING | IT_CVAR, NULL, "Track Power Levels",			{.cvar = &cv_kartusepwrlv},		140},
 };
 
 static menuitem_t OP_ServerOptionsMenu[] =
 {
 #ifndef NONET
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-	                         NULL, "Server Name",					&cv_servername,			 10},
+	                         NULL, "Server Name",					{.cvar = &cv_servername},			 10},
 #endif
 
-	{IT_STRING | IT_CVAR,    NULL, "Intermission Timer",			&cv_inttime,			 40},
-	{IT_STRING | IT_CVAR,    NULL, "Map Progression",				&cv_advancemap,			 50},
-	{IT_STRING | IT_CVAR,    NULL, "Voting Timer",					&cv_votetime,			 60},
-	{IT_STRING | IT_CVAR,    NULL, "Voting Rule Changes",			&cv_kartvoterulechanges, 70},
+	{IT_STRING | IT_CVAR,    NULL, "Intermission Timer",			{.cvar = &cv_inttime},			 40},
+	{IT_STRING | IT_CVAR,    NULL, "Map Progression",				{.cvar = &cv_advancemap},			 50},
+	{IT_STRING | IT_CVAR,    NULL, "Voting Timer",					{.cvar = &cv_votetime},			 60},
+	{IT_STRING | IT_CVAR,    NULL, "Voting Rule Changes",			{.cvar = &cv_kartvoterulechanges}, 70},
 
 #ifndef NONET
-	{IT_STRING | IT_CVAR,    NULL, "Max. Player Count",				&cv_maxplayers,			 90},
-	{IT_STRING | IT_CVAR,    NULL, "Allow Players to Join",			&cv_allownewplayer,		100},
-	{IT_STRING | IT_CVAR,    NULL, "Allow Addon Downloading",		&cv_downloading,		110},
-	{IT_STRING | IT_CVAR,    NULL, "Pause Permission",				&cv_pause,				120},
-	{IT_STRING | IT_CVAR,    NULL, "Mute All Chat",					&cv_mute,				130},
+	{IT_STRING | IT_CVAR,    NULL, "Max. Player Count",				{.cvar = &cv_maxplayers},			 90},
+	{IT_STRING | IT_CVAR,    NULL, "Allow Players to Join",			{.cvar = &cv_allownewplayer},		100},
+	{IT_STRING | IT_CVAR,    NULL, "Allow Addon Downloading",		{.cvar = &cv_downloading},		110},
+	{IT_STRING | IT_CVAR,    NULL, "Pause Permission",				{.cvar = &cv_pause},				120},
+	{IT_STRING | IT_CVAR,    NULL, "Mute All Chat",					{.cvar = &cv_mute},				130},
 
-	{IT_SUBMENU|IT_STRING,   NULL, "Advanced Options...",			&OP_AdvServerOptionsDef,150},
+	{IT_SUBMENU|IT_STRING,   NULL, "Advanced Options...",			{.submenu = &OP_AdvServerOptionsDef}, 150},
 #endif
 };
 
@@ -1514,20 +1516,20 @@ static menuitem_t OP_ServerOptionsMenu[] =
 static menuitem_t OP_AdvServerOptionsMenu[] =
 {
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-	                         NULL, "Server Browser Address",		&cv_masterserver,		 10},
+	                         NULL, "Server Browser Address",		{.cvar = &cv_masterserver},		 10},
 
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",		&cv_resynchattempts,	 40},
-	{IT_STRING | IT_CVAR,    NULL, "Ping limit (ms)",				&cv_maxping,			 50},
-	{IT_STRING | IT_CVAR,    NULL, "Ping timeout (s)",				&cv_pingtimeout,		 60},
-	{IT_STRING | IT_CVAR,    NULL, "Connection timeout (tics)",		&cv_nettimeout,			 70},
-	{IT_STRING | IT_CVAR,    NULL, "Join timeout (tics)",			&cv_jointimeout,		 80},
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",		{.cvar = &cv_resynchattempts},	 40},
+	{IT_STRING | IT_CVAR,    NULL, "Ping limit (ms)",				{.cvar = &cv_maxping},			 50},
+	{IT_STRING | IT_CVAR,    NULL, "Ping timeout (s)",				{.cvar = &cv_pingtimeout},		 60},
+	{IT_STRING | IT_CVAR,    NULL, "Connection timeout (tics)",		{.cvar = &cv_nettimeout},			 70},
+	{IT_STRING | IT_CVAR,    NULL, "Join timeout (tics)",			{.cvar = &cv_jointimeout},		 80},
 
-	{IT_STRING | IT_CVAR,    NULL, "Max. file transfer send (KB)",	&cv_maxsend,			100},
-	{IT_STRING | IT_CVAR,    NULL, "File transfer packet rate",		&cv_downloadspeed,		110},
+	{IT_STRING | IT_CVAR,    NULL, "Max. file transfer send (KB)",	{.cvar = &cv_maxsend},			100},
+	{IT_STRING | IT_CVAR,    NULL, "File transfer packet rate",		{.cvar = &cv_downloadspeed},		110},
 
-	{IT_STRING | IT_CVAR,    NULL, "Log join addresses",			&cv_showjoinaddress,	130},
-	{IT_STRING | IT_CVAR,    NULL, "Log resyncs",					&cv_blamecfail,			140},
-	{IT_STRING | IT_CVAR,    NULL, "Log file transfers",			&cv_noticedownload,		150},
+	{IT_STRING | IT_CVAR,    NULL, "Log join addresses",			{.cvar = &cv_showjoinaddress},	130},
+	{IT_STRING | IT_CVAR,    NULL, "Log resyncs",					{.cvar = &cv_blamecfail},			140},
+	{IT_STRING | IT_CVAR,    NULL, "Log file transfers",			{.cvar = &cv_noticedownload},		150},
 };
 #endif
 
@@ -1569,32 +1571,32 @@ static menuitem_t OP_MonitorToggleMenu[] =
 {
 	// Mostly handled by the drawing function.
 	// Instead of using this for dumb monitors, lets use the new item bools we have :V
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers",				M_HandleMonitorToggles, KITEM_SNEAKER},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers x3",			M_HandleMonitorToggles, KRITEM_TRIPLESNEAKER},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Rocket Sneakers",		M_HandleMonitorToggles, KITEM_ROCKETSNEAKER},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All",			M_HandleMonitorToggles, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				M_HandleMonitorToggles, KITEM_BANANA},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			M_HandleMonitorToggles, KRITEM_TRIPLEBANANA},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			M_HandleMonitorToggles, KRITEM_TENFOLDBANANA},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggman Monitors",		M_HandleMonitorToggles, KITEM_EGGMAN},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				M_HandleMonitorToggles, KITEM_ORBINAUT},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x3",			M_HandleMonitorToggles, KRITEM_TRIPLEORBINAUT},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x4",			M_HandleMonitorToggles, KRITEM_QUADORBINAUT},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Mines",					M_HandleMonitorToggles, KITEM_MINE},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz",					M_HandleMonitorToggles, KITEM_JAWZ},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz x2",				M_HandleMonitorToggles, KRITEM_DUALJAWZ},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhogs",				M_HandleMonitorToggles, KITEM_BALLHOG},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bombs",	M_HandleMonitorToggles, KITEM_SPB},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invinciblity",			M_HandleMonitorToggles, KITEM_INVINCIBILITY},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					M_HandleMonitorToggles, KITEM_GROW},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Shrink",				M_HandleMonitorToggles, KITEM_SHRINK},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		M_HandleMonitorToggles, KITEM_THUNDERSHIELD},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				M_HandleMonitorToggles, KITEM_HYUDORO},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	M_HandleMonitorToggles, KITEM_POGOSPRING},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			M_HandleMonitorToggles, KITEM_SUPERRING},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sinks",			M_HandleMonitorToggles, KITEM_KITCHENSINK},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers",				{.routine = M_HandleMonitorToggles}, KITEM_SNEAKER},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Sneakers x3",			{.routine = M_HandleMonitorToggles}, KRITEM_TRIPLESNEAKER},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Rocket Sneakers",		{.routine = M_HandleMonitorToggles}, KITEM_ROCKETSNEAKER},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Toggle All",			{.routine = M_HandleMonitorToggles}, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				{.routine = M_HandleMonitorToggles}, KITEM_BANANA},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			{.routine = M_HandleMonitorToggles}, KRITEM_TRIPLEBANANA},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			{.routine = M_HandleMonitorToggles}, KRITEM_TENFOLDBANANA},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Eggman Monitors",		{.routine = M_HandleMonitorToggles}, KITEM_EGGMAN},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				{.routine = M_HandleMonitorToggles}, KITEM_ORBINAUT},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x3",			{.routine = M_HandleMonitorToggles}, KRITEM_TRIPLEORBINAUT},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts x4",			{.routine = M_HandleMonitorToggles}, KRITEM_QUADORBINAUT},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Mines",					{.routine = M_HandleMonitorToggles}, KITEM_MINE},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz",					{.routine = M_HandleMonitorToggles}, KITEM_JAWZ},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Jawz x2",				{.routine = M_HandleMonitorToggles}, KRITEM_DUALJAWZ},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhogs",				{.routine = M_HandleMonitorToggles}, KITEM_BALLHOG},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Self-Propelled Bombs",	{.routine = M_HandleMonitorToggles}, KITEM_SPB},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invinciblity",			{.routine = M_HandleMonitorToggles}, KITEM_INVINCIBILITY},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					{.routine = M_HandleMonitorToggles}, KITEM_GROW},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Shrink",				{.routine = M_HandleMonitorToggles}, KITEM_SHRINK},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		{.routine = M_HandleMonitorToggles}, KITEM_THUNDERSHIELD},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				{.routine = M_HandleMonitorToggles}, KITEM_HYUDORO},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	{.routine = M_HandleMonitorToggles}, KITEM_POGOSPRING},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			{.routine = M_HandleMonitorToggles}, KITEM_SUPERRING},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Kitchen Sinks",			{.routine = M_HandleMonitorToggles}, KITEM_KITCHENSINK},
 #ifdef ITEMTOGGLEBOTTOMRIGHT
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "---",					M_HandleMonitorToggles, 255},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "---",					{.routine = M_HandleMonitorToggles}, 255},
 #endif
 };
 
@@ -1747,7 +1749,7 @@ inline static void M_GetGametypeColor(void)
 	else
 		gt = gametype;
 
-	if (gt == GT_BATTLE)
+	if (gt == GT_BATTLE || levellistmode == LLM_BOSS)
 	{
 		highlightflags = V_REDMAP;
 		warningflags = V_ORANGEMAP;
@@ -2063,8 +2065,10 @@ menu_t OP_MonitorToggleDef =
 };
 
 #ifdef HWRENDER
-static void M_OpenGLOptionsMenu(void)
+static void M_OpenGLOptionsMenu(INT32 choice)
 {
+	(void)choice;
+
 	if (rendermode == render_opengl)
 		M_SetupNextMenu(&OP_OpenGLOptionsDef);
 	else
@@ -2376,7 +2380,7 @@ void M_InitMenuPresTables(void)
 
 static void M_ChangeCvar(INT32 choice)
 {
-	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	if (choice == -1)
 	{
@@ -2426,7 +2430,7 @@ static void M_ChangeCvar(INT32 choice)
 
 static boolean M_ChangeStringCvar(INT32 choice)
 {
-	consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 	char buf[MAXSTRINGLENGTH];
 	size_t len;
 
@@ -2729,7 +2733,7 @@ boolean M_Responder(event_t *ev)
 	if ((ch == gamecontrol[0][gc_brake][0] || ch == gamecontrol[0][gc_brake][1]) && ch >= KEY_MOUSE1) // do this here, otherwise brake opens the menu mid-game
 		ch = KEY_ESCAPE;
 
-	routine = currentMenu->menuitems[itemOn].itemaction;
+	routine = currentMenu->menuitems[itemOn].itemaction.routine;
 
 	// Handle menuitems which need a specific key handling
 	if (routine && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_KEYHANDLER)
@@ -2765,8 +2769,7 @@ boolean M_Responder(event_t *ev)
 				return true;
 			if (routine)
 			{
-				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
-				otherroutine(ev); //Alam: what a hack
+				currentMenu->menuitems[itemOn].itemaction.eventhandler(ev);
 			}
 			return true;
 		}
@@ -2933,7 +2936,7 @@ boolean M_Responder(event_t *ev)
 						break;
 					case IT_SUBMENU:
 						currentMenu->lastOn = itemOn;
-						M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction);
+						M_SetupNextMenu((menu_t *)currentMenu->menuitems[itemOn].itemaction.submenu);
 						break;
 				}
 			}
@@ -2979,7 +2982,7 @@ boolean M_Responder(event_t *ev)
 			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 			{
-				consvar_t *cv = (consvar_t *)currentMenu->menuitems[itemOn].itemaction;
+				consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 				if (cv == &cv_chooseskin
 					|| cv == &cv_dummystaff
@@ -3522,7 +3525,7 @@ void M_Init(void)
 	{
 		PlayerMenu[i].status = (i == 0 ? IT_CALL : IT_DISABLED);
 		PlayerMenu[i].patch = PlayerMenu[i].text = NULL;
-		PlayerMenu[i].itemaction = M_ChoosePlayer;
+		PlayerMenu[i].itemaction.routine = M_ChoosePlayer;
 		PlayerMenu[i].alphaKey = 0;
 	}
 
@@ -3546,7 +3549,7 @@ void M_InitCharacterTables(void)
 	{
 		PlayerMenu[i].status = (i < 4 ? IT_CALL : IT_DISABLED);
 		PlayerMenu[i].patch = PlayerMenu[i].text = NULL;
-		PlayerMenu[i].itemaction = M_ChoosePlayer;
+		PlayerMenu[i].itemaction.routine = M_ChoosePlayer;
 		PlayerMenu[i].alphaKey = 0;
 	}
 
@@ -3890,7 +3893,7 @@ static void M_DrawGenericMenu(void)
 				y = currentMenu->y+currentMenu->menuitems[i].alphaKey;//+= LINEHEIGHT;
 				break;
 			case IT_BIGSLIDER:
-				M_DrawThermo(x, y, (consvar_t *)currentMenu->menuitems[i].itemaction);
+				M_DrawThermo(x, y, currentMenu->menuitems[i].itemaction.cvar);
 				y += LINEHEIGHT;
 				break;
 			case IT_STRING:
@@ -3909,7 +3912,7 @@ static void M_DrawGenericMenu(void)
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
@@ -4213,7 +4216,7 @@ static void M_DrawCenteredMenu(void)
 				y += LINEHEIGHT;
 				break;
 			case IT_BIGSLIDER:
-				M_DrawThermo(x, y, (consvar_t *)currentMenu->menuitems[i].itemaction);
+				M_DrawThermo(x, y, currentMenu->menuitems[i].itemaction.cvar);
 				y += LINEHEIGHT;
 				break;
 			case IT_STRING:
@@ -4232,7 +4235,7 @@ static void M_DrawCenteredMenu(void)
 				switch(currentMenu->menuitems[i].status & IT_TYPE)
 					case IT_CVAR:
 					{
-						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 						switch(currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
@@ -4359,12 +4362,15 @@ static void M_PatchSkinNameTable(void)
 //
 // M_PrepareCupList
 //
-static void M_PrepareCupList(void)
+static boolean M_PrepareCupList(void)
 {
 	cupheader_t *cup = kartcupheaders;
 	INT32 i = 0;
 
 	memset(dummygpcup_cons_t, 0, sizeof (dummygpcup_cons_t));
+
+	if (cup == NULL)
+		return false;
 
 	while (cup != NULL)
 	{
@@ -4383,6 +4389,8 @@ static void M_PrepareCupList(void)
 	}
 
 	CV_SetValue(&cv_dummygpcup, 1); // This causes crash sometimes?!
+
+	return true;
 }
 
 // Call before showing any level-select menus
@@ -4404,7 +4412,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 {
 	// Random map!
 	if (mapnum == -1)
-		return (gamestate != GS_TIMEATTACK && !modeattacking);
+		return (levellistmode == LLM_CREATESERVER);
 
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
@@ -4439,7 +4447,7 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 			return true;*/
 		case LLM_TIMEATTACK:
 		case LLM_BREAKTHECAPSULES:
-			if (!(mapheaderinfo[mapnum]->menuflags & LF2_TIMEATTACK))
+			if (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK)
 				return false;
 
 			if ((levellistmode == LLM_TIMEATTACK && !(mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
@@ -4459,6 +4467,13 @@ boolean M_CanShowLevelInList(INT32 mapnum, INT32 gt)
 				return false;
 
 			return true;
+
+		case LLM_BOSS:
+			if (!(mapheaderinfo[mapnum]->typeoflevel & TOL_BOSS))
+				return false;
+
+			return true;
+
 		default:
 			return false;
 	}
@@ -4495,11 +4510,7 @@ static INT32 M_GetFirstLevelInList(void)
 static void M_DrawMessageMenu(void);
 
 // Because this is just a hack-ish 'menu', I'm not putting this with the others
-static menuitem_t MessageMenu[] =
-{
-	// TO HACK
-	{0,NULL,NULL,NULL,0}
-};
+static menuitem_t MessageMenu[] = {0};
 
 menu_t MessageDef =
 {
@@ -4571,15 +4582,15 @@ void M_StartMessage(const char *string, void *routine,
 	{
 		case MM_NOTHING:
 			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = M_StopMessage;
+			MessageDef.menuitems[0].itemaction.routine = M_StopMessage;
 			break;
 		case MM_YESNO:
 			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = routine;
+			*(void**)&MessageDef.menuitems[0].itemaction.routine = routine;
 			break;
 		case MM_EVENTHANDLER:
 			MessageDef.menuitems[0].status     = IT_MSGHANDLER;
-			MessageDef.menuitems[0].itemaction = routine;
+			*(void**)&MessageDef.menuitems[0].itemaction.eventhandler = routine;
 			break;
 	}
 	//added : 06-02-98: now draw a textbox around the message
@@ -4935,8 +4946,12 @@ static boolean M_AddonsRefresh(void)
 		return true;
 	}
 
+#ifdef DEVELOP
+	prevmajormods = majormods;
+#else
 	if (!majormods && prevmajormods)
 		prevmajormods = false;
+#endif
 
 	if ((refreshdirmenu & REFRESHDIR_ADDFILE) || (majormods && !prevmajormods))
 	{
@@ -4964,7 +4979,7 @@ static boolean M_AddonsRefresh(void)
 
 		if (message)
 		{
-			M_StartMessage(message,M_AddonsClearName,MM_EVENTHANDLER);
+			M_StartMessage(message, FUNCPTRCAST(M_AddonsClearName), MM_EVENTHANDLER);
 			return true;
 		}
 
@@ -5261,7 +5276,7 @@ static void M_HandleAddons(INT32 choice)
 							}
 							break;
 						case EXT_TXT:
-							M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
+							M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING), FUNCPTRCAST(M_AddonExec) ,MM_YESNO);
 							break;
 						case EXT_CFG:
 							M_AddonExec(KEY_ENTER);
@@ -6329,7 +6344,7 @@ static void M_RetryResponse(INT32 ch)
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
 
-	if (!&players[consoleplayer] || netgame || multiplayer) // Should never happen!
+	if (netgame || multiplayer) // Should never happen!
 		return;
 
 	M_ClearMenus(true);
@@ -6339,7 +6354,7 @@ static void M_RetryResponse(INT32 ch)
 static void M_Retry(INT32 choice)
 {
 	(void)choice;
-	M_StartMessage(M_GetText("Start this race over?\n\n(Press 'Y' to confirm)\n"),M_RetryResponse,MM_YESNO);
+	M_StartMessage(va("Start this %s over?\n\n(Press 'Y' to confirm)\n", (gametyperules & GTR_CIRCUIT) ? "race" : "battle"),FUNCPTRCAST(M_RetryResponse),MM_YESNO);
 }
 
 static void M_SelectableClearMenus(INT32 choice)
@@ -6397,7 +6412,7 @@ static void M_DestroyRobots(INT32 choice)
 {
 	(void)choice;
 
-	M_StartMessage(M_GetText("Do you want to destroy all\nrobots in the current level?\n\n(Press 'Y' to confirm)\n"),M_DestroyRobotsResponse,MM_YESNO);
+	M_StartMessage(M_GetText("Do you want to destroy all\nrobots in the current level?\n\n(Press 'Y' to confirm)\n"), FUNCPTRCAST(M_DestroyRobotsResponse), MM_YESNO);
 }
 
 /*static void M_LevelSelectWarp(INT32 choice)
@@ -6614,7 +6629,7 @@ static void M_DrawSkyRoom(void)
 
 	for (i = 0; i < currentMenu->numitems; ++i)
 	{
-		if (currentMenu->menuitems[i].itemaction == M_HandleSoundTest)
+		if (currentMenu->menuitems[i].itemaction.routine == M_HandleSoundTest)
 		{
 			y = currentMenu->menuitems[i].alphaKey;
 			break;
@@ -7636,7 +7651,7 @@ static void M_DrawLevelStats(void)
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
-		if (!mapheaderinfo[i] || !(mapheaderinfo[i]->menuflags & LF2_TIMEATTACK))
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
 		if (!mainrecords[i] || mainrecords[i]->time <= 0)
@@ -7709,8 +7724,12 @@ static void M_HandleLevelStats(INT32 choice)
 static void M_GrandPrixTemp(INT32 choice)
 {
 	(void)choice;
+	if (!M_PrepareCupList())
+	{
+		M_StartMessage(M_GetText("No cups found for Grand Prix.\n"),NULL,MM_NOTHING);
+		return;
+	}
 	M_PatchSkinNameTable();
-	M_PrepareCupList();
 	M_SetupNextMenu(&SP_GrandPrixTempDef);
 }
 
@@ -7822,7 +7841,7 @@ void M_DrawTimeAttackMenu(void)
 		// Cvar specific handling
 		if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR)
 		{
-			consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+			consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 			if (currentMenu->menuitems[i].status & IT_CV_STRING)
 			{
 				M_DrawTextBox(x + 32, y - 8, MAXPLAYERNAME, 1);
@@ -7949,7 +7968,7 @@ void M_DrawTimeAttackMenu(void)
 		{
 			y = currentMenu->y+SP_TimeAttackMenu[i].alphaKey;
 			V_DrawString(x, y, V_TRANSLUCENT, SP_TimeAttackMenu[i].text);
-			ncv = (consvar_t *)SP_TimeAttackMenu[i].itemaction;
+			ncv = SP_TimeAttackMenu[i].itemaction.cvar;
 			if (SP_TimeAttackMenu[i].status & IT_CV_STRING)
 			{
 				M_DrawTextBox(x + 32, y - 8, MAXPLAYERNAME, 1);
@@ -8259,11 +8278,11 @@ static void M_SetGuestReplay(INT32 choice)
 		break;
 	case 3: // guest
 	default:
-		M_StartMessage(M_GetText("Are you sure you want to\ndelete the guest replay data?\n\n(Press 'Y' to confirm)\n"),M_EraseGuest,MM_YESNO);
+		M_StartMessage(M_GetText("Are you sure you want to\ndelete the guest replay data?\n\n(Press 'Y' to confirm)\n"), FUNCPTRCAST(M_EraseGuest), MM_YESNO);
 		return;
 	}
 	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value))))
-		M_StartMessage(M_GetText("Are you sure you want to\noverwrite the guest replay data?\n\n(Press 'Y' to confirm)\n"),which,MM_YESNO);
+		M_StartMessage(M_GetText("Are you sure you want to\noverwrite the guest replay data?\n\n(Press 'Y' to confirm)\n"), FUNCPTRCAST(which), MM_YESNO);
 	else
 		which(0);
 }
@@ -8321,7 +8340,7 @@ static void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to end the game?\n\n(Press 'Y' to confirm)\n"), M_ExitGameResponse, MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to end the game?\n\n(Press 'Y' to confirm)\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
 }
 
 //===========================================================================
@@ -8785,7 +8804,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 
 	if (modifiedgame)
 	{
-		M_StartMessage(M_GetText("You have addons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nSRB2Kart will automatically add\neverything you need when you join.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
+		M_StartMessage(M_GetText("You have addons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nSRB2Kart will automatically add\neverything you need when you join.\n\n(Press a key)\n"), FUNCPTRCAST(M_ConnectMenu), MM_EVENTHANDLER);
 		return;
 	}
 
@@ -8807,14 +8826,14 @@ static INT32 M_FindFirstMap(INT32 gtype)
 {
 	INT32 i;
 
-	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gtype))
+	if (mapheaderinfo[gamemap] && (mapheaderinfo[gamemap]->typeoflevel & gametypetol[gtype]))
 		return gamemap;
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
-		if (!(mapheaderinfo[i]->typeoflevel & gtype))
+		if (!(mapheaderinfo[i]->typeoflevel & gametypetol[gtype]))
 			continue;
 		return i + 1;
 	}
@@ -8846,7 +8865,7 @@ static void M_StartServer(INT32 choice)
 		G_StopMetalDemo();
 
 	if (!cv_nextmap.value)
-		CV_SetValue(&cv_nextmap, G_RandMap(G_TOLFlag(cv_newgametype.value), -1, false, 0, false, NULL)+1);
+		CV_SetValue(&cv_nextmap, G_RandMap(G_TOLFlag(cv_newgametype.value), -1, 0, 0, false, NULL)+1);
 
 	if (cv_maxplayers.value < ssplayers+1)
 		CV_SetValue(&cv_maxplayers, ssplayers+1);
@@ -8896,7 +8915,7 @@ static void M_DrawLevelSelectOnly(boolean leftfade, boolean rightfade)
 	x = BASEVIDWIDTH/2 - w/2;
 	y = currentMenu->y + 130 + 8 - i;
 
-	if (currentMenu->menuitems[itemOn].itemaction == &cv_nextmap && skullAnimCounter < 4)
+	if (currentMenu->menuitems[itemOn].itemaction.cvar == &cv_nextmap && skullAnimCounter < 4)
 		trans = 0;
 	else
 		trans = G_GetGametypeColor(cv_newgametype.value);
@@ -10244,7 +10263,7 @@ static void M_EraseData(INT32 choice)
 	else
 		eschoice = M_GetText("ALL game data");
 
-	M_StartMessage(va(esstr, eschoice),M_EraseDataResponse,MM_YESNO);
+	M_StartMessage(va(esstr, eschoice), FUNCPTRCAST(M_EraseDataResponse), MM_YESNO);
 }
 
 static void M_ScreenshotOptions(INT32 choice)
@@ -10405,7 +10424,7 @@ static void M_Setup1PControlsMenu(INT32 choice)
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
-	OP_AllControlsMenu[0].itemaction = &OP_Joystick1Def;
+	OP_AllControlsMenu[0].itemaction.submenu = &OP_Joystick1Def;
 
 	// Unhide P1-only controls
 	OP_AllControlsMenu[16].status = IT_CONTROL; // Chat
@@ -10437,7 +10456,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
-	OP_AllControlsMenu[0].itemaction = &OP_Joystick2Def;
+	OP_AllControlsMenu[0].itemaction.submenu = &OP_Joystick2Def;
 
 	// Hide P1-only controls
 	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
@@ -10469,7 +10488,7 @@ static void M_Setup3PControlsMenu(INT32 choice)
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
-	OP_AllControlsMenu[0].itemaction = &OP_Joystick3Def;
+	OP_AllControlsMenu[0].itemaction.submenu = &OP_Joystick3Def;
 
 	// Hide P1-only controls
 	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
@@ -10501,7 +10520,7 @@ static void M_Setup4PControlsMenu(INT32 choice)
 	currentMenu->lastOn = itemOn;
 
 	// Set proper gamepad options
-	OP_AllControlsMenu[0].itemaction = &OP_Joystick4Def;
+	OP_AllControlsMenu[0].itemaction.submenu = &OP_Joystick4Def;
 
 	// Hide P1-only controls
 	OP_AllControlsMenu[16].status = IT_GRAYEDOUT2; // Chat
@@ -10730,7 +10749,7 @@ static void M_ChangecontrolResponse(event_t *ev)
 			sprintf(tmp, M_GetText("The \x82Pause Key \x80is enabled, but \nit is not configurable. \n\nHit another key for\n%s\nESC for Cancel"),
 				controltochangetext);
 
-		M_StartMessage(tmp, M_ChangecontrolResponse, MM_EVENTHANDLER);
+		M_StartMessage(tmp, FUNCPTRCAST(M_ChangecontrolResponse), MM_EVENTHANDLER);
 		currentMenu->prevMenu = prev;
 
 		S_StartSound(NULL, sfx_s3k42);
@@ -10753,7 +10772,7 @@ static void M_ChangeControl(INT32 choice)
 		currentMenu->menuitems[choice].text);
 	strlcpy(controltochangetext, currentMenu->menuitems[choice].text, 33);
 
-	M_StartMessage(tmp, M_ChangecontrolResponse, MM_EVENTHANDLER);
+	M_StartMessage(tmp, FUNCPTRCAST(M_ChangecontrolResponse), MM_EVENTHANDLER);
 }
 
 static void M_ResetControlsResponse(INT32 ch)
@@ -10789,7 +10808,7 @@ static void M_ResetControlsResponse(INT32 ch)
 static void M_ResetControls(INT32 choice)
 {
 	(void)choice;
-	M_StartMessage(va(M_GetText("Reset Player %d's controls to defaults?\n\n(Press 'Y' to confirm)\n"), setupcontrolplayer), M_ResetControlsResponse, MM_YESNO);
+	M_StartMessage(va(M_GetText("Reset Player %d's controls to defaults?\n\n(Press 'Y' to confirm)\n"), setupcontrolplayer), FUNCPTRCAST(M_ResetControlsResponse), MM_YESNO);
 }
 
 // =====
@@ -10813,7 +10832,8 @@ static modedesc_t modedescs[MAXMODEDESCS];
 
 static void M_VideoModeMenu(INT32 choice)
 {
-	INT32 i, j, vdup, nummodes, width, height;
+	INT32 i, j, vdup, nummodes;
+	UINT32 width, height;
 	const char *desc;
 
 	(void)choice;
@@ -11417,7 +11437,7 @@ static void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], FUNCPTRCAST(M_QuitResponse), MM_YESNO);
 }
 
 #ifdef HAVE_DISCORDRPC
