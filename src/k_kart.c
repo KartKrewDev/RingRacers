@@ -3388,6 +3388,28 @@ void K_DoInstashield(player_t *player)
 	P_SetTarget(&layerb->target, player->mo);
 }
 
+void K_DoPowerClash(player_t *t1, player_t *t2) {
+	mobj_t *clash;
+
+	// short-circuit instashield for vfx visibility
+	t1->instashield = 1;
+	t2->instashield = 1;
+
+	S_StartSound(t1->mo, sfx_parry);
+	K_AddHitLag(t1->mo, 6, false);
+	K_AddHitLag(t2->mo, 6, false);
+
+	clash = P_SpawnMobj((t1->mo->x/2) + (t2->mo->x/2), (t1->mo->y/2) + (t2->mo->y/2), (t1->mo->z/2) + (t2->mo->z/2), MT_POWERCLASH);
+
+	// needs to handle mixed scale collisions (t1 grow t2 invinc)...
+	clash->z = clash->z + (t1->mo->height/4) + (t2->mo->height/4);
+	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->mo->x, t1->mo->y) + ANGLE_90;
+
+	// Shrink over time (accidental behavior that looked good)
+	clash->destscale = (t1->mo->scale/2) + (t2->mo->scale/2);
+	P_SetScale(clash, 3*clash->destscale/2);
+}
+
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved)
 {
 	UINT8 points = 1;
