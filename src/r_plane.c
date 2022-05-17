@@ -921,8 +921,8 @@ void R_DrawSinglePlane(visplane_t *pl)
 
 				if (top < 0)
 					top = 0;
-				if (bottom > vid.height)
-					bottom = vid.height;
+				if (bottom > viewheight)
+					bottom = viewheight;
 
 				// Only copy the part of the screen we need
 				for (i = 0; i <= r_splitscreen; i++)
@@ -956,9 +956,10 @@ void R_DrawSinglePlane(visplane_t *pl)
 						offset = (scry*vid.width) + scrx;
 
 						// No idea if this works
-						VID_BlitLinearScreen(screens[0] + offset, screens[1] + offset,
-								viewwidth, bottom-top,
-								vid.width, vid.width);
+						VID_BlitLinearScreen(screens[0] + offset,
+							screens[1] + (top*vid.width), // intentionally not +offset
+							viewwidth, bottom-top,
+							vid.width, vid.width);
 					}
 				}
 			}

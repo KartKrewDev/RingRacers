@@ -520,6 +520,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	sfxinfo_t *sfx;
 	INT32 sep, pitch, priority, cnum;
 	boolean anyListeners = false;
+	boolean itsUs = false;
 	INT32 i;
 
 	listener_t listener[MAXSPLITSCREENPLAYERS];
@@ -556,6 +557,11 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		else
 		{
 			listenmobj[i] = player->mo;
+		}
+
+		if (origin && origin == listenmobj[i])
+		{
+			itsUs = true;
 		}
 	}
 
@@ -616,40 +622,51 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	// Initialize sound parameters
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
+	sep = NORM_SEP;
 
-	for (i = r_splitscreen; i >= 0; i--)
+	i = 0; // sensible default
+
 	{
-		// Copy the sound for the splitscreen players!
-		if (listenmobj[i] == NULL && i != 0)
-		{
-			continue;
-		}
-
 		// Check to see if it is audible, and if not, modify the params
-		if (origin && origin != listenmobj[i])
+		if (origin && !itsUs)
 		{
-			boolean rc = S_AdjustSoundParams(listenmobj[i], origin, &volume, &sep, &pitch, sfx);
+			boolean audible = false;
 
-			if (!rc)
+			if (r_splitscreen > 0)
 			{
-				continue; // Maybe the other player can hear it...
+				fixed_t recdist = INT32_MAX;
+				UINT8 j = 0;
+
+				for (; j <= r_splitscreen; j++)
+				{
+					fixed_t thisdist = INT32_MAX;
+
+					if (!listenmobj[j])
+					{
+						continue;
+					}
+
+					thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+					if (thisdist >= recdist)
+					{
+						continue;
+					}
+				
+					recdist = thisdist;
+					i = j;
+				}
 			}
 
-			if (origin->x == listener[i].x && origin->y == listener[i].y)
+			if (listenmobj[i])
 			{
-				sep = NORM_SEP;
+				audible = S_AdjustSoundParams(listenmobj[i], origin, &volume, &sep, &pitch, sfx);
 			}
-		}
-		else if (i > 0 && !origin)
-		{
-			// Do not play origin-less sounds for the splitscreen players.
-			// The first player will be able to hear it just fine,
-			// we really don't want it playing twice.
-			continue;
-		}
-		else
-		{
-			sep = NORM_SEP;
+
+			if (!audible)
+			{
+				return;
+			}
 		}
 
 		// This is supposed to handle the loading/caching.
@@ -857,43 +874,50 @@ void S_UpdateSounds(void)
 				{
 					boolean itsUs = false;
 
-					for (i = 0; i <= r_splitscreen; i++)
+					for (i = r_splitscreen; i >= 0; i--)
 					{
-						if (c->origin == players[displayplayers[i]].mo)
-						{
-							itsUs = true;
-							break;
-						}
+						if (c->origin != listenmobj[i])
+							continue;
+
+						itsUs = true;
 					}
 
 					if (itsUs == false)
 					{
-						const mobj_t *soundmobj = c->origin;
-						fixed_t recdist = INT32_MAX;
-						UINT8 p = 0;
+						const mobj_t *origin = c->origin;
 
-						for (i = 0; i <= r_splitscreen; i++)
+						i = 0;
+
+						if (r_splitscreen > 0)
 						{
-							fixed_t thisdist = INT32_MAX;
+							fixed_t recdist = INT32_MAX;
+							UINT8 j = 0;
 
-							if (!listenmobj[i])
+							for (; j <= r_splitscreen; j++)
 							{
-								continue;
-							}
+								fixed_t thisdist = INT32_MAX;
 
-							thisdist = P_AproxDistance(listener[i].x - soundmobj->x, listener[i].y - soundmobj->y);
+								if (!listenmobj[j])
+								{
+									continue;
+								}
 
-							if (thisdist < recdist)
-							{
+								thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+								if (thisdist >= recdist)
+								{
+									continue;
+								}
+
 								recdist = thisdist;
-								p = i;
+								i = j;
 							}
 						}
 
-						if (listenmobj[p])
+						if (listenmobj[i])
 						{
 							audible = S_AdjustSoundParams(
-								listenmobj[p], c->origin,
+								listenmobj[i], c->origin,
 								&volume, &sep, &pitch,
 								c->sfxinfo
 							);
@@ -1032,7 +1056,6 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	const boolean reverse = (stereoreverse.value ^ encoremode);
 
 	fixed_t approx_dist;
-	angle_t angle;
 
 	listener_t listensource;
 	INT32 i;
@@ -1110,28 +1133,35 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	if (approx_dist > S_CLIPPING_DIST)
 		return false;
 
-	// angle of source to listener
-	angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
-
-	if (angle > listensource.angle)
-		angle = angle - listensource.angle;
+	if (source->x == listensource.x && source->y == listensource.y)
+	{
+		*sep = NORM_SEP;
+	}
 	else
-		angle = angle + InvAngle(listensource.angle);
+	{
+		// angle of source to listener
+		angle_t angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
 
-	if (reverse)
-		angle = InvAngle(angle);
+		if (angle > listensource.angle)
+			angle = angle - listensource.angle;
+		else
+			angle = angle + InvAngle(listensource.angle);
+
+		if (reverse)
+			angle = InvAngle(angle);
 
 #ifdef SURROUND
-	// Produce a surround sound for angle from 105 till 255
-	if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
-		*sep = SURROUND_SEP;
-	else
+		// Produce a surround sound for angle from 105 till 255
+		if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
+			*sep = SURROUND_SEP;
+		else
 #endif
-	{
-		angle >>= ANGLETOFINESHIFT;
+		{
+			angle >>= ANGLETOFINESHIFT;
 
-		// stereo separation
-		*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+			// stereo separation
+			*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+		}
 	}
 
 	// volume calculation

@@ -194,6 +194,12 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 
 		filestatus = 1; // Importance - not really used any more, holds 1 by default for backwards compat with MS
 
+		/* don't send mainwads!! */
+#ifdef DEVELOP
+		if (i <= mainwads)
+			filestatus += (2 << 4);
+#endif
+
 		// Store in the upper four bits
 		if (!cv_downloading.value)
 			filestatus += (2 << 4); // Won't send

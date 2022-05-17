@@ -279,7 +279,7 @@ boolean K_BotCanTakeCut(player_t *player)
 {
 	if (
 #if 1
-		K_TripwirePass(player) == true
+		K_TripwirePassConditions(player) == true
 #else
 		K_ApplyOffroad(player) == false
 #endif

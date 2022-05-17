@@ -4260,15 +4260,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
-
-		{
-			sfxenum_t kstart = sfx_kstart;
-			if (bossinfo.boss)
-				kstart = sfx_ssa021;
-			else if (encoremode)
-				kstart = sfx_ruby2;
-			S_StartSound(NULL, kstart);
-		}
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/

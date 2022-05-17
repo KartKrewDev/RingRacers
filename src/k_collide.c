@@ -296,6 +296,115 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+static mobj_t *grenade;
+static fixed_t explodedist;
+static boolean explodespin;
+
+static inline boolean PIT_SSMineChecks(mobj_t *thing)
+{
+	if (thing == grenade) // Don't explode yourself! Endless loop!
+		return true;
+
+	if (thing->health <= 0)
+		return true;
+
+	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
+		return true;
+
+	if (thing->player && thing->player->spectator)
+		return true;
+
+	if (P_AproxDistance(P_AproxDistance(thing->x - grenade->x, thing->y - grenade->y), thing->z - grenade->z) > explodedist)
+		return true; // Too far away
+
+	if (P_CheckSight(grenade, thing) == false)
+		return true; // Not in sight
+
+	return false;
+}
+
+static inline boolean PIT_SSMineSearch(mobj_t *thing)
+{
+	if (grenade == NULL || P_MobjWasRemoved(grenade))
+		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
+		return false;
+
+	if (thing->type != MT_PLAYER) // Don't explode for anything but an actual player.
+		return true;
+
+	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
+		return true;
+
+	if (PIT_SSMineChecks(thing) == true)
+		return true;
+
+	// Explode!
+	P_SetMobjState(grenade, grenade->info->deathstate);
+	return false;
+}
+
+void K_DoMineSearch(mobj_t *actor, fixed_t size)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+
+	explodedist = FixedMul(size, actor->scale);
+	grenade = actor;
+
+	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX (xl, xh, yl, yh);
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_SSMineSearch);
+}
+
+static inline boolean PIT_SSMineExplode(mobj_t *thing)
+{
+	if (grenade == NULL || P_MobjWasRemoved(grenade))
+		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+
+#if 0
+	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
+		return false;
+#endif
+
+	if (PIT_SSMineChecks(thing) == true)
+		return true;
+
+	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
+	return true;
+}
+
+void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+
+	explodespin = spin;
+	explodedist = FixedMul(size, actor->scale);
+	grenade = actor;
+
+	// Use blockmap to check for nearby shootables
+	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX (xl, xh, yl, yh);
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_SSMineExplode);
+
+	// Set this flag to ensure that the inital action won't be triggered twice.
+	actor->flags2 |= MF2_DEBRIS;
+}
+
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 {
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
@@ -342,31 +451,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Bomb death
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
-		// Shootable damage
-		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-	}
-
-	return true;
-}
-
-boolean K_MineExplosionCollide(mobj_t *t1, mobj_t *t2)
-{
-	if (t2->player)
-	{
-		if (t2->player->flashing > 0 && t2->hitlag == 0)
-			return true;
-
-		if (t1->state == &states[S_MINEEXPLOSION1])
-		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_EXPLODE);
-		}
-		else
-		{
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-		}
-	}
-	else if (t2->flags & MF_SHOOTABLE)
-	{
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 	}
@@ -558,6 +642,14 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->type == MT_JAWZ)
 			P_SetTarget(&t2->tracer, t2->target); // Back to the source!
 		t2->threshold = 10;
+	}
+
+	if (t1->reactiontime > 1000) {
+		S_StartSound(t2, sfx_kdtrg3);
+	} else if (t1->reactiontime > 500) {
+		S_StartSound(t2, sfx_kdtrg2);
+	} else {
+		S_StartSound(t2, sfx_kdtrg1);
 	}
 
 	if (draggeddroptarget && draggeddroptarget->player)

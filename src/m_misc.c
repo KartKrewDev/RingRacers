@@ -969,7 +969,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
-	if (gamestate == GS_LEVEL && &players[g_localplayers[0]] && players[g_localplayers[0]].mo)
+	if (gamestate == GS_LEVEL && players[g_localplayers[0]].mo)
 		snprintf(locationtxt, 40, "X:%d Y:%d Z:%d A:%d",
 			players[g_localplayers[0]].mo->x>>FRACBITS,
 			players[g_localplayers[0]].mo->y>>FRACBITS,

@@ -3549,25 +3549,6 @@ static int lib_kTakeBumpersFromPlayer(lua_State *L)
 	return 0;
 }
 
-static int lib_kSpawnKartExplosion(lua_State *L)
-{
-	fixed_t x = luaL_checkfixed(L, 1);
-	fixed_t y = luaL_checkfixed(L, 2);
-	fixed_t z = luaL_checkfixed(L, 3);
-	fixed_t radius = (fixed_t)luaL_optinteger(L, 4, 32*FRACUNIT);
-	INT32 number = (INT32)luaL_optinteger(L, 5, 32);
-	mobjtype_t type = luaL_optinteger(L, 6, MT_MINEEXPLOSION);
-	angle_t rotangle = luaL_optinteger(L, 7, 0);
-	boolean spawncenter = lua_opttrueboolean(L, 8);
-	boolean ghostit = lua_optboolean(L, 9);
-	mobj_t *source = NULL;
-	NOHUD
-	if (!lua_isnone(L, 10) && lua_isuserdata(L, 10))
-		source = *((mobj_t **)luaL_checkudata(L, 10, META_MOBJ));
-	K_SpawnKartExplosion(x, y, z, radius, number, type, rotangle, spawncenter, ghostit, source);
-	return 0;
-}
-
 static int lib_kSpawnMineExplosion(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -4100,7 +4081,6 @@ static luaL_Reg lib[] = {
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
-	{"K_SpawnKartExplosion",lib_kSpawnKartExplosion},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},
 	{"K_SpawnSparkleTrail",lib_kSpawnSparkleTrail},
