@@ -2407,66 +2407,6 @@ void readmenu(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-void readhuditem(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word = s;
-	char *word2;
-	char *tmp;
-	INT32 i;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			// First remove trailing newline, if there is one
-			tmp = strchr(s, '\n');
-			if (tmp)
-				*tmp = '\0';
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			// Get the part before the " = "
-			tmp = strchr(s, '=');
-			if (tmp)
-				*(tmp-1) = '\0';
-			else
-				break;
-			strupr(word);
-
-			// Now get the part after
-			word2 = tmp += 2;
-			strupr(word2);
-
-			i = atoi(word2); // used for numerical settings
-
-			if (fastcmp(word, "X"))
-			{
-				hudinfo[num].x = i;
-			}
-			else if (fastcmp(word, "Y"))
-			{
-				hudinfo[num].y = i;
-			}
-			else if (fastcmp(word, "F"))
-			{
-				hudinfo[num].f = i;
-			}
-			else
-				deh_warning("Level header %d: unknown word '%s'", num, word);
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-
 void readframe(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -4204,20 +4144,6 @@ sfxenum_t get_sfx(const char *word)
 	return sfx_None;
 }
 
-hudnum_t get_huditem(const char *word)
-{ // Returns the value of HUD_ enumerations
-	hudnum_t i;
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (fastncmp("HUD_",word,4))
-		word += 4; // take off the HUD_
-	for (i = 0; i < NUMHUDITEMS; i++)
-		if (fastcmp(word, HUDITEMS_LIST[i]))
-			return i;
-	deh_warning("Couldn't find huditem named 'HUD_%s'",word);
-	return HUD_LIVES;
-}
-
 menutype_t get_menutype(const char *word)
 { // Returns the value of MN_ enumerations
 	menutype_t i;
@@ -4460,11 +4386,6 @@ static fixed_t find_const(const char **rword)
 		const_warning("typeoflevel",word);
 		free(word);
 		return 0;
-	}
-	else if (fastncmp("HUD_",word,4)) {
-		r = get_huditem(word);
-		free(word);
-		return r;
 	}
 	else if (fastncmp("GRADE_",word,6))
 	{

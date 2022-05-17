@@ -27,7 +27,8 @@ FontCache (font_t *fnt)
 	c = fnt->start;
 	for (i = 0; i < fnt->size; ++i, ++c)
 	{
-		fnt->font[i] = HU_CachePatch(
+		HU_UpdateOrBlankPatch(&fnt->font[i],
+				false,
 				"%s%.*d",
 				fnt->prefix,
 				fnt->digits,
@@ -57,7 +58,7 @@ Font_DumbRegister (const font_t *sfnt)
 
 	memcpy(fnt, sfnt, sizeof (font_t));
 
-	if (!( fnt->font = ZZ_Alloc(sfnt->size * sizeof (patch_t *)) ))
+	if (!( fnt->font = ZZ_Calloc(sfnt->size * sizeof (patch_t *)) ))
 		return -1;
 
 	return fontc++;

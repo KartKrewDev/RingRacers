@@ -495,18 +495,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "HUDITEM"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_huditem(word2); // find a huditem by name
-					if (i >= 0 && i < NUMHUDITEMS)
-						readhuditem(f, i);
-					else
-					{
-						deh_warning("HUD item number %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "MENU"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
