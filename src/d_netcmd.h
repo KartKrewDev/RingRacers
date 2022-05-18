@@ -25,6 +25,10 @@ extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS];
 
+// current profile loaded.
+// Used to know how to make the options menu behave among other things.
+extern consvar_t cv_currprofile;
+
 // preferred number of players
 extern consvar_t cv_splitplayers;
 

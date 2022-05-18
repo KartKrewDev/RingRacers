@@ -2622,7 +2622,7 @@ void M_DrawEditProfile(void)
 				V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
 
 				// Cvar specific handling
-				switch (currentMenu->menuitems[i].status & IT_TYPE)
+				/*switch (currentMenu->menuitems[i].status & IT_TYPE)
 				{
 					case IT_CVAR:
 					{
@@ -2639,7 +2639,7 @@ void M_DrawEditProfile(void)
 								break;
 						}
 					}
-				}
+				}*/
 
 				y += 34;
 

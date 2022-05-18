@@ -67,7 +67,7 @@ mobj_t *titlemapcameraref = NULL;
 // menu presentation state
 char curbgname[9];
 SINT8 curfadevalue;
-INT32 curbgcolor;
+INT32 curbgcolor = 31;	// Please stop assaulting my eyes.
 INT32 curbgxspeed;
 INT32 curbgyspeed;
 boolean curbghide;

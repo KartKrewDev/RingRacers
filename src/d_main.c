@@ -1023,7 +1023,8 @@ void D_StartTitle(void)
 	advancedemo = false;
 	F_StartTitleScreen();
 
-	currentMenu = &MainDef; // reset the current menu ID
+	M_InitOptions(0);		// Make sure the option menu is ready to go since we need to select a profile.
+	currentMenu = &MAIN_ProfilesDef; // reset the current menu ID
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1178,7 +1179,7 @@ static void IdentifyVersion(void)
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
 	// SPECIFIC HACK TO NEW-MENUS SO THAT MY DUMBASS STOPS FORGETTING TO ADD THE FILE (rip :youfuckedup:)
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));	
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));
 #endif
 ////
 #undef TEXTURESNAME

@@ -431,6 +431,27 @@ menu_t OPTIONS_ProfilesDef = {
 	NULL,
 };
 
+// Duplicate for main profile select.
+menuitem_t MAIN_Profiles[] = {
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Select a profile to use or create a new Profile.",
+		NULL, {.routine = M_HandleProfileSelect}, 0, 0},     // dummy menuitem for the control func
+};
+
+menu_t MAIN_ProfilesDef = {
+	sizeof (MAIN_Profiles) / sizeof (menuitem_t),
+	NULL,
+	0,
+	MAIN_Profiles,
+	32, 80,
+	SKINCOLOR_ULTRAMARINE, 0,
+	2, 10,
+	M_DrawProfileSelect,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	NULL,
+};
+
 
 menuitem_t OPTIONS_EditProfile[] = {
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Profile Name", "6-character long name to identify this Profile.",
@@ -444,6 +465,10 @@ menuitem_t OPTIONS_EditProfile[] = {
 
 	{IT_STRING | IT_CALL, "Controls", "Select the button mappings for this Profile.",
 	NULL, {.routine = M_ProfileDeviceSelect}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Confirm", "Confirm changes.",
+	NULL, {.routine = M_ConfirmProfile}, 0, 0},
+
 };
 
 menu_t OPTIONS_EditProfileDef = {

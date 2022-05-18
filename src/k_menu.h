@@ -224,6 +224,10 @@ typedef enum
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
 
+// Separate menu to avoid spaghetti code etc.
+extern menuitem_t MAIN_Profiles[];
+extern menu_t MAIN_ProfilesDef;
+
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
 
@@ -710,6 +714,7 @@ extern consvar_t cv_dummyprofilename;
 extern consvar_t cv_dummyprofileplayername;
 extern consvar_t cv_dummyprofilekickstart;
 
+void M_ResetOptions(void);
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
 void M_OptionsTick(void);
 boolean M_OptionsInputs(INT32 ch);
@@ -726,6 +731,7 @@ void M_HandleProfileSelect(INT32 ch);
 // profile edition
 void M_HandleProfileEdit(void);
 void M_ProfileDeviceSelect(INT32 choice);
+void M_ConfirmProfile(INT32 choice);
 boolean M_ProfileEditInputs(INT32 ch);
 
 void M_HandleProfileControls(void);

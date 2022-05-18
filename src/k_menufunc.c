@@ -85,7 +85,7 @@ boolean menuactive = false;
 boolean fromlevelselect = false;
 
 // current menudef
-menu_t *currentMenu = &MainDef;
+menu_t *currentMenu = &OPTIONS_ProfilesDef;
 
 char dummystaffname[22];
 
@@ -976,8 +976,20 @@ void M_StartControlPanel(void)
 	}
 	else if (!Playing())
 	{
-		currentMenu = &MainDef;
+		// options don't need initializing here.
+		PR_ApplyProfile(0, 0);	// apply guest profile to player 0 by default.
+		// this is to garantee that the controls aren't fucked up.
+
+		currentMenu = &MAIN_ProfilesDef;
+		optionsmenu.profilen = cv_lastprofile[0].value;
+
+		// make sure we don't overstep that.
+		if (optionsmenu.profilen > PR_GetNumProfiles())
+			optionsmenu.profilen = PR_GetNumProfiles();
+
 		itemOn = 0;
+
+		CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that.
 	}
 	else
 	{
@@ -3670,6 +3682,26 @@ void M_MPRoomSelectInit(INT32 choice)
 // Options menu:
 struct optionsmenu_s optionsmenu;
 
+void M_ResetOptions(void)
+{
+	optionsmenu.ticker = 0;
+	optionsmenu.offset = 0;
+
+	optionsmenu.optx = 0;
+	optionsmenu.opty = 0;
+	optionsmenu.toptx = 0;
+	optionsmenu.topty = 0;
+
+	// BG setup:
+	optionsmenu.currcolour = OPTIONS_MainDef.extra1;
+	optionsmenu.lastcolour = 0;
+	optionsmenu.fade = 0;
+
+	// For profiles:
+	memset(setup_player, 0, sizeof(setup_player));
+	optionsmenu.profile = NULL;
+}
+
 void M_InitOptions(INT32 choice)
 {
 	(void)choice;
@@ -3689,18 +3721,7 @@ void M_InitOptions(INT32 choice)
 	if (gamestate != GS_MENU)
 		OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_TRANSTEXT;
 
-	optionsmenu.ticker = 0;
-	optionsmenu.offset = 0;
-
-	optionsmenu.optx = 0;
-	optionsmenu.opty = 0;
-	optionsmenu.toptx = 0;
-	optionsmenu.topty = 0;
-
-	// BG setup:
-	optionsmenu.currcolour = OPTIONS_MainDef.extra1;
-	optionsmenu.lastcolour = 0;
-	optionsmenu.fade = 0;
+	M_ResetOptions();
 
 	// So that pause doesn't go to the main menu...
 	OPTIONS_MainDef.prevMenu = currentMenu;
@@ -3710,9 +3731,6 @@ void M_InitOptions(INT32 choice)
 	Moviemode_mode_Onchange();
 	Moviemode_option_Onchange();
 	Addons_option_Onchange();
-
-	// For profiles:
-	memset(setup_player, 0, sizeof(setup_player));
 
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
 }
@@ -3925,6 +3943,65 @@ void M_VideoModeMenu(INT32 choice)
 	M_SetupNextMenu(&OPTIONS_VideoModesDef, false);
 }
 
+// Select the current profile for menu use and go to maindef.
+static void M_FirstPickProfile(INT32 c)
+{
+	if (c == MA_YES)
+	{
+		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
+		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
+
+		CV_StealthSetValue(&cv_currprofile, optionsmenu.profilen);
+		PR_ApplyProfile(optionsmenu.profilen, 0);
+		M_SetupNextMenu(&MainDef, false);
+
+		// Tell the game this is the last profile we picked.
+		CV_StealthSetValue(&cv_lastprofile[0], optionsmenu.profilen);
+
+		// Save em!
+		PR_SaveProfiles();
+		return;
+	}
+}
+
+// Start menu edition. Call this with MA_YES if not used with a textbox.
+static void M_StartEditProfile(INT32 c)
+{
+
+	const INT32 maxp = PR_GetNumProfiles();
+
+	if (c == MA_YES)
+	{
+		if (optionsmenu.profilen == maxp)
+			PR_InitNewProfile();	// initialize the new profile.
+
+		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
+
+		// This is now used to move the card we've selected.
+		optionsmenu.optx = 160;
+		optionsmenu.opty = 35;
+		optionsmenu.toptx = 130/2;
+		optionsmenu.topty = 0;
+
+		// setup cvars
+		if (optionsmenu.profile->version)
+		{
+			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
+			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
+			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
+		}
+		else
+		{
+			CV_StealthSet(&cv_dummyprofilename, "");
+			CV_StealthSet(&cv_dummyprofileplayername, "");
+			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
+		}
+
+		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
+		return;
+	}
+}
+
 void M_HandleProfileSelect(INT32 ch)
 {
 	const UINT8 pid = 0;
@@ -3964,42 +4041,44 @@ void M_HandleProfileSelect(INT32 ch)
 	else if (M_MenuConfirmPressed(pid))
 	{
 
-		if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
+		// Boot profile setup has already been done.
+		if (cv_currprofile.value > -1)
 		{
-			S_StartSound(NULL, sfx_s3k7b);
-			M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
-			M_SetMenuDelay(pid);
-			return;
-		}
 
-		S_StartSound(NULL, sfx_menu1);
+			if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
+			{
+				S_StartSound(NULL, sfx_s3k7b);
+				M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
+				M_SetMenuDelay(pid);
+				return;
+			}
 
-		if (optionsmenu.profilen == maxp)
-			PR_InitNewProfile();	// initialize the new profile.
+			S_StartSound(NULL, sfx_menu1);
 
-		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
-
-		// This is now used to move the card we've selected.
-		optionsmenu.optx = 160;
-		optionsmenu.opty = 35;
-		optionsmenu.toptx = 130/2;
-		optionsmenu.topty = 0;
-
-		// setup cvars
-		if (optionsmenu.profile->version)
-		{
-			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
-			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
-			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
+			M_StartEditProfile(MA_YES);
 		}
 		else
 		{
-			CV_StealthSet(&cv_dummyprofilename, "");
-			CV_StealthSet(&cv_dummyprofileplayername, "");
-			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
+			// We're on the profile selection screen.
+			if (optionsmenu.profilen == 0)
+			{
+				M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+				M_SetMenuDelay(pid);
+				return;
+			}
+			else if (optionsmenu.profilen == maxp)
+			{
+				M_StartMessage(M_GetText("Create a new Profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_StartEditProfile), MM_YESNO);
+				M_SetMenuDelay(pid);
+				return;
+			}
+			else
+			{
+				M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+				M_SetMenuDelay(pid);
+				return;
+			}
 		}
-
-		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
 	}
 
 	else if (M_MenuBackPressed(pid))
@@ -4015,48 +4094,66 @@ void M_HandleProfileSelect(INT32 ch)
 	}
 }
 
+// Returns true if the profile can be saved, false otherwise. Also starts messages if necessary.
+static boolean M_ProfileEditEnd(const UINT8 pid)
+{
+	UINT8 i;
+
+	// check if some profiles have the same name
+	for (i = 0; i < PR_GetNumProfiles(); i++)
+	{
+		profile_t *check = PR_GetProfile(i);
+
+		// For obvious reasons don't check if our name is the same as our name....
+		if (check != optionsmenu.profile)
+		{
+			if (!(strcmp(optionsmenu.profile->profilename, check->profilename)))
+			{
+				S_StartSound(NULL, sfx_s3k7b);
+				M_StartMessage(M_GetText("Another Profile uses the same\nname identifier.\nPlease change the name\nof the Profile to save it."), NULL, MM_NOTHING);
+				M_SetMenuDelay(pid);
+				return false;
+			}
+		}
+	}
+
+	if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
+	{
+		S_StartSound(NULL, sfx_s3k7b);
+		M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
+		M_SetMenuDelay(pid);
+		return false;
+	}
+
+	return true;
+}
+
+static void M_ProfileEditExit(void)
+{
+	optionsmenu.toptx = 160;
+	optionsmenu.topty = 35;
+	optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
+
+	PR_SaveProfiles();					// save profiles after we do that.
+}
+
 // For profile edit, just make sure going back resets the card to its position, the rest is taken care of automatically.
 boolean M_ProfileEditInputs(INT32 ch)
 {
-	const UINT8 pid = 0;
-	UINT8 i;
+
 	(void) ch;
+	const UINT8 pid = 0;
 
 	if (M_MenuBackPressed(pid))
 	{
-		// check if some profiles have the same name
-		for (i = 0; i < PR_GetNumProfiles(); i++)
+		if (M_ProfileEditEnd(pid))
 		{
-			profile_t *check = PR_GetProfile(i);
-
-			// For obvious reasons don't check if our name is the same as our name....
-			if (check != optionsmenu.profile)
-			{
-				if (!(strcmp(optionsmenu.profile->profilename, check->profilename)))
-				{
-					S_StartSound(NULL, sfx_s3k7b);
-					M_StartMessage(M_GetText("Another Profile uses the same\nname identifier.\nPlease change the name\nof the Profile to save it."), NULL, MM_NOTHING);
-					M_SetMenuDelay(pid);
-					return true;
-				}
-			}
+			M_ProfileEditExit();
+			if (cv_currprofile.value == -1)
+				M_SetupNextMenu(&MAIN_ProfilesDef, false);
+			else
+				M_GoBack(0);
 		}
-
-		if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
-		{
-			S_StartSound(NULL, sfx_s3k7b);
-			M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
-			M_SetMenuDelay(pid);
-			return true;
-		}
-
-		optionsmenu.toptx = 160;
-		optionsmenu.topty = 35;
-		optionsmenu.resetprofile = true;	// Reset profile after the transition is done.
-
-		PR_SaveProfiles();					// save profiles after we do that.
-
-		M_GoBack(0);
 		return true;
 	}
 
@@ -4086,6 +4183,28 @@ void M_HandleProfileEdit(void)
 
 	if (strlen(cv_dummyprofileplayername.string))
 		strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
+}
+
+// Confirm Profile edi via button.
+void M_ConfirmProfile(INT32 choice)
+{
+	const UINT8 pid = 0;
+	(void) choice;
+
+	if (M_ProfileEditEnd(pid))
+	{
+		if (cv_currprofile.value > -1)
+		{
+			M_ProfileEditExit();
+			M_GoBack(0);
+		}
+		else
+		{
+			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+			M_SetMenuDelay(pid);
+		}
+	}
+	return;
 }
 
 // special menuitem key handler for video mode list
