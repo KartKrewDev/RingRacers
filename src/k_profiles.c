@@ -182,6 +182,10 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 
 	// set memory cvar
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
+
+	// If we're doing this on P1, also change current profile.
+	if (!playernum)
+		CV_StealthSetValue(&cv_currprofile, profilenum);
 }
 
 UINT8 PR_GetProfileNum(profile_t *p)

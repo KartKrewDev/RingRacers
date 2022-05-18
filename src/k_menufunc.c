@@ -976,12 +976,13 @@ void M_StartControlPanel(void)
 	}
 	else if (!Playing())
 	{
+		// we need to do this before setting ApplyProfile otherwise funky things are going to happen.
+		currentMenu = &MAIN_ProfilesDef;
+		optionsmenu.profilen = cv_lastprofile[0].value;
+
 		// options don't need initializing here.
 		PR_ApplyProfile(0, 0);	// apply guest profile to player 0 by default.
 		// this is to garantee that the controls aren't fucked up.
-
-		currentMenu = &MAIN_ProfilesDef;
-		optionsmenu.profilen = cv_lastprofile[0].value;
 
 		// make sure we don't overstep that.
 		if (optionsmenu.profilen > PR_GetNumProfiles())
@@ -989,7 +990,7 @@ void M_StartControlPanel(void)
 
 		itemOn = 0;
 
-		CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that.
+		CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
 	}
 	else
 	{
