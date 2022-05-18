@@ -90,6 +90,11 @@ boolean PR_AddProfile(profile_t *p);
 // Returns a pointer to the profile you're asking for or NULL if the profile is uninitialized.
 profile_t* PR_GetProfile(INT32 num);
 
+// PR_DeleteProfile(INT32 n)
+// Deletes the specified profile. n cannot be 0. Returns false if the profile couldn't be deleted, true otherwise.
+// This will also move every profile back accordingly to ensure the table has no empty profiles inbetween two valid profiles.
+boolean PR_DeleteProfile(INT32 n);
+
 // PR_InitNewProfile(void)
 // Initializes the first new profile
 void PR_InitNewProfile(void);

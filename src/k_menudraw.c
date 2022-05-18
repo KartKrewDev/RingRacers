@@ -2554,6 +2554,32 @@ void M_DrawGenericOptions(void)
 	}
 }
 
+// *Heavily* simplified version of the generic options menu, cattered only towards erasing profiles.
+void M_DrawProfileErase(void)
+{
+	INT32 x = currentMenu->x - menutransition.tics*48, y = currentMenu->y-SMALLLINEHEIGHT, i, cursory = 0;
+	UINT8 np = PR_GetNumProfiles();
+
+	M_DrawOptionsCogs();
+	M_DrawMenuTooltips();
+	M_DrawOptionsMovingButton();
+
+	for (i = 1; i < np; i++)
+	{
+
+		profile_t *pr = PR_GetProfile(i);
+
+		if (i == optionsmenu.eraseprofilen)
+		{
+			cursory = y;
+			V_DrawScaledPatch(x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+		}
+
+		V_DrawString(x, y, i == optionsmenu.eraseprofilen ? highlightflags : 0, va("PRF%03d - %s (%s)", i, pr->profilename, pr->playername));
+		y += SMALLLINEHEIGHT;
+	}
+}
+
 // Draws profile selection
 void M_DrawProfileSelect(void)
 {

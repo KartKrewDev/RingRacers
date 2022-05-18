@@ -1132,7 +1132,7 @@ void M_GoBack(INT32 choice)
 //
 // M_Ticker
 //
-static void M_SetMenuDelay(UINT8 i)
+void M_SetMenuDelay(UINT8 i)
 {
 	menucmd[i].delayCount++;
 	if (menucmd[i].delayCount < 1)
@@ -4727,6 +4727,84 @@ void M_HandleItemToggles(INT32 choice)
 	}
 }
 
+// Check if we have any profile loaded.
+void M_CheckProfileData(INT32 choice)
+{
+	UINT8 np = PR_GetNumProfiles();
+	(void) choice;
+
+	if (np < 2)
+	{
+		S_StartSound(NULL, sfx_s3k7b);
+		M_StartMessage("There are no custom Profiles.\n\n(Press any button)", NULL, MM_NOTHING);
+		return;
+	}
+
+	optionsmenu.eraseprofilen = 1;
+	M_SetupNextMenu(&OPTIONS_DataProfileEraseDef, false);
+}
+
+static void M_EraseProfileResponse(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		S_StartSound(NULL, sfx_itrole); // bweh heh heh
+
+		PR_DeleteProfile(optionsmenu.eraseprofilen);
+
+		if (optionsmenu.eraseprofilen == cv_currprofile.value)
+		{
+			CV_StealthSetValue(&cv_currprofile, -1);
+			F_StartIntro();
+			M_ClearMenus(true);
+		}
+		else
+			optionsmenu.eraseprofilen = 1;
+	}
+}
+
+void M_HandleProfileErase(INT32 choice)
+{
+	const UINT8 pid = 0;
+	const UINT8 np = PR_GetNumProfiles()-1;
+	(void) choice;
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		S_StartSound(NULL, sfx_menu1);
+		optionsmenu.eraseprofilen++;
+
+		if (optionsmenu.eraseprofilen > np)
+			optionsmenu.eraseprofilen = 1;
+
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		S_StartSound(NULL, sfx_menu1);
+
+		if (optionsmenu.eraseprofilen == 1)
+			optionsmenu.eraseprofilen = np;
+		else
+			optionsmenu.eraseprofilen--;
+
+		M_SetMenuDelay(pid);
+	}
+	else if (M_MenuBackPressed(pid))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+	}
+	else if (M_MenuConfirmPressed(pid))
+	{
+		if (optionsmenu.eraseprofilen == cv_currprofile.value)
+			M_StartMessage("This profile and all of\nits data will be erased.\nAre you sure you want to proceed?\nAs this is your currently loaded Profile,\ndeleting this Profile would also\nreturn you to the Title Screen\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+		else
+			M_StartMessage("This profile and all of\nits data will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+
+		M_SetMenuDelay(pid);
+	}
+}
 
 // Extras menu;
 // this is copypasted from the options menu but all of these are different functions in case we ever want it to look more unique

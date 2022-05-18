@@ -1344,6 +1344,12 @@ menuitem_t OPTIONS_DataErase[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
+	{IT_STRING | IT_CALL, "Erase Profile Data...", "Select a Profile to erase.",
+		NULL, {.routine = M_CheckProfileData}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
 	{IT_STRING | IT_CALL, "\x85\x45rase all Data", "Be careful! What's deleted is gone forever!",
 		NULL, {.routine = M_EraseData}, 0, 0},
 
@@ -1364,7 +1370,25 @@ menu_t OPTIONS_DataEraseDef = {
 	NULL,
 };
 
+menuitem_t OPTIONS_DataProfileErase[] =
+{
+	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, {.routine = M_HandleProfileErase}, 0, 0},
+};
 
+menu_t OPTIONS_DataProfileEraseDef = {
+	sizeof (OPTIONS_DataProfileErase) / sizeof (menuitem_t),
+	&OPTIONS_DataEraseDef,
+	0,
+	OPTIONS_DataProfileErase,
+	48, 80,
+	SKINCOLOR_BLUEBERRY, 0,
+	2, 10,
+	M_DrawProfileErase,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	NULL
+};
 
 // extras menu
 menuitem_t EXTRAS_Main[] =

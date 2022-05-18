@@ -288,6 +288,9 @@ extern menu_t OPTIONS_DataDiscordDef;
 extern menuitem_t OPTIONS_DataErase[];
 extern menu_t OPTIONS_DataEraseDef;
 
+extern menuitem_t OPTIONS_DataProfileErase[];
+extern menu_t OPTIONS_DataProfileEraseDef;
+
 // EXTRAS
 extern menuitem_t EXTRAS_Main[];
 extern menu_t EXTRAS_MainDef;
@@ -448,6 +451,8 @@ extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
 extern consvar_t cv_chooseskin, cv_serversort;
+
+void M_SetMenuDelay(UINT8 i);
 
 void Moviemode_mode_Onchange(void);
 void Screenshot_option_Onchange(void);
@@ -702,6 +707,8 @@ extern struct optionsmenu_s {
 
 	UINT8 erasecontext;
 
+	UINT8 eraseprofilen;
+
 	// background:
 	INT16 currcolour;
 	INT16 lastcolour;
@@ -723,6 +730,7 @@ void M_OptionsChangeBGColour(INT16 newcolour);	// changes the background colour 
 
 void M_HandleItemToggles(INT32 choice);	// For item toggling
 void M_EraseData(INT32 choice);	// For data erasing
+void M_CheckProfileData(INT32 choice);	// check if we have profiles.
 
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
@@ -744,6 +752,9 @@ void M_ProfileTryController(INT32 choice);
 // video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);
 void M_HandleVideoModes(INT32 ch);
+
+// data stuff
+void M_HandleProfileErase(INT32 choice);
 
 
 // Extras menu:
@@ -884,6 +895,7 @@ void M_DrawEditProfile(void);
 void M_DrawProfileControls(void);
 void M_DrawVideoModes(void);
 void M_DrawItemToggles(void);
+void M_DrawProfileErase(void);
 extern tic_t shitsfree;
 
 // Extras menu:

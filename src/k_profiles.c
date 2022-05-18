@@ -80,6 +80,25 @@ profile_t* PR_GetProfile(INT32 num)
 		return NULL;
 }
 
+boolean PR_DeleteProfile(INT32 num)
+{
+	UINT8 i;
+	if (num <= 0 || num > numprofiles)
+		return false;
+
+	// If we're deleting inbetween profiles, move everything.
+	if (num < numprofiles)
+		for (i = num; i < numprofiles-1; i++)
+			profilesList[i] = profilesList[i+1];
+
+	// In any case, delete the last profile as well.
+	profilesList[numprofiles] = NULL;
+	numprofiles--;
+
+	PR_SaveProfiles();
+	return true;
+}
+
 void PR_InitNewProfile(void)
 {
 	char pname[PROFILENAMELEN+1] = "PRF";
