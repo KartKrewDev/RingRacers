@@ -553,7 +553,7 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_z    ][0] = 'd';
 	gamecontroldefault[gc_l    ][0] = 'q';
 	gamecontroldefault[gc_r    ][0] = 'e';
-	gamecontroldefault[gc_start][0] = KEY_ENTER;
+	gamecontroldefault[gc_start][0] = KEY_ESCAPE;	// *
 
 	// Gamepad controls
 	gamecontroldefault[gc_up   ][1] = KEY_HAT1+0; // D-Pad Up
@@ -574,6 +574,10 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_down ][2] = KEY_AXIS1+3; // Axis Y+
 	gamecontroldefault[gc_left ][2] = KEY_AXIS1+0; // Axis X-
 	gamecontroldefault[gc_right][2] = KEY_AXIS1+1; // Axis X+
+
+	// Keyboard menu navigation
+	gamecontroldefault[gc_a    ][2] = KEY_ENTER;
+	gamecontroldefault[gc_x    ][2] = KEY_ESCAPE;	// * -> Yes, this works, gc_start will take priority to open the menu and allow closing it with gc_x which is also esc :)
 }
 
 void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen)
