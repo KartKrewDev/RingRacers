@@ -1782,8 +1782,6 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 	message = Z_StrDup(string);
 	DEBFILE(message);
 
-	CONS_Printf("M_StartMessage()...\n");
-
 	// Rudementary word wrapping.
 	// Simple and effective. Does not handle nonuniform letter sizes, colors, etc. but who cares.
 	strlines = 0;
@@ -4317,7 +4315,8 @@ void M_HandleVideoModes(INT32 ch)
 }
 
 // sets whatever device has had its key pressed to the active device.
-static void SetDeviceOnPress(void)
+// 20/05/22: Commented out for now but not deleted as it might still find some use in the future?
+/*static void SetDeviceOnPress(void)
 {
 	UINT8 i;
 
@@ -4326,11 +4325,11 @@ static void SetDeviceOnPress(void)
 		if (deviceResponding[i])
 		{
 			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
-			CONS_Printf("Using device %d for mappings\n", i);
+			//CONS_Printf("Using device %d for mappings\n", i);
 			return;
 		}
 	}
-}
+}*/
 
 
 // Prompt a device selection window (just tap any button on the device you want)
