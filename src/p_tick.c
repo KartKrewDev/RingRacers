@@ -493,6 +493,19 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+void P_RunChaseCameras(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (camera[i].chase)
+		{
+			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
+		}
+	}
+}
+
 //
 // P_Ticker
 //
@@ -733,12 +746,9 @@ void P_Ticker(boolean run)
 	K_UpdateDirector();
 
 	// Always move the camera.
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (camera[i].chase)
-			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
-		LUAh_PostThinkFrame();
-	}
+	P_RunChaseCameras();
+
+	LUAh_PostThinkFrame();
 
 	if (run)
 	{

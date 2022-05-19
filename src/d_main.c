@@ -814,6 +814,18 @@ void D_SRB2Loop(void)
 			}
 			else if (rendertimeout < entertic) // in case the server hang or netsplit
 			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						P_RunChaseCameras();
+					}
+					R_UpdateViewInterpolation();
+				}
+
 				doDisplay = true;
 			}
 
