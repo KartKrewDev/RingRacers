@@ -2084,18 +2084,13 @@ void F_TitleScreenTicker(boolean run)
 	{
 		finalecount++;
 
-		if (finalecount == 10)
-		{
-			S_StartSound(NULL, sfx_s23e);
-		}
-		else if (finalecount == 50)
+		if (finalecount == 1)
 		{
 			// Now start the music
 			if (menupres[MN_MAIN].musname[0])
 				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
 			else
 				S_ChangeMusicInternal("_title", looptitle);
-			S_StartSound(NULL, sfx_s23c);
 		}
 	}
 
