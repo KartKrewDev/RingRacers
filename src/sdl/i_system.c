@@ -145,10 +145,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 // Locations for searching for main.kart
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2Kart"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2Kart"
+#define DEFAULTWADLOCATION1 "/usr/local/share/games/DRRR"
+#define DEFAULTWADLOCATION2 "/usr/local/games/DRRR"
+#define DEFAULTWADLOCATION3 "/usr/share/games/DRRR"
+#define DEFAULTWADLOCATION4 "/usr/games/DRRR"
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
@@ -247,8 +247,8 @@ static void write_backtrace(INT32 signal)
 	void *array[BT_SIZE];
 	char timestr[STR_SIZE];
 
-	const char *error = "An error occurred within SRB2! Send this stack trace to someone who can help!\n";
-	const char *error2 = "(Or find crash-log.txt in your SRB2 directory.)\n"; // Shown only to stderr.
+	const char *error = "An error occurred within Dr. Robotnik's Ring Racers! Send this stack trace to someone who can help!\n";
+	const char *error2 = "(Or find crash-log.txt in your Ring Racers directory.)\n"; // Shown only to stderr.
 
 	fd = open(va("%s" PATHSEP "%s", srb2home, "crash-log.txt"), O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 
@@ -682,7 +682,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2Kart Console");
+		SetConsoleTitleA("Dr. Robotnik's Ring Racers Console");
 		consolevent = SDL_TRUE;
 	}
 
@@ -1513,8 +1513,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2Kart "VERSIONSTRINGW, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 Kart with integrated Mumble Link support.", 2048);
+		wcsncpy(mumble->name, L"Dr. Robotnik's Ring Racers "VERSIONSTRINGW, 256);
+		wcsncpy(mumble->description, L"Dr. Robotnik's Ring Racers with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;
@@ -1853,7 +1853,7 @@ INT32 I_StartupSystem(void)
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
 	if (SDL_Init(0) < 0)
-		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
+		I_Error("Dr. Robotnik's Ring Racers: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
 	I_SetupMumble();
 #endif
@@ -1976,7 +1976,7 @@ void I_Error(const char *error, ...)
 			// on the target system
 			if (!M_CheckParm("-dedicated"))
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-					"SRB2Kart "VERSIONSTRING" Recursive Error",
+					"Dr. Robotnik's Ring Racers "VERSIONSTRING" Recursive Error",
 					buffer, NULL);
 
 			W_Shutdown();
@@ -2025,7 +2025,7 @@ void I_Error(const char *error, ...)
 	// on the target system
 	if (!M_CheckParm("-dedicated"))
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"SRB2Kart "VERSIONSTRING" Error",
+			"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
 			buffer, NULL);
 
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be

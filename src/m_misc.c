@@ -650,7 +650,7 @@ void M_SaveConfig(const char *filename)
 	}
 
 	// header message
-	fprintf(f, "// SRB2Kart configuration file.\n");
+	fprintf(f, "// Dr. Robotnik's Ring Racers configuration file.\n");
 
 	// print execversion FIRST, because subsequent consvars need to be filtered
 	// always print current EXECVERSION
@@ -803,10 +803,10 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "SRB2Kart " VERSIONSTRING;
+	char titletxt[] = "Dr. Robotnik's Ring Racers " VERSIONSTRING;
 	png_charp playertxt =  cv_playername[0].zstring;
-	char desctxt[] = "SRB2Kart Screenshot";
-	char Movietxt[] = "SRB2Kart Movie";
+	char desctxt[] = "Ring Racers Screenshot";
+	char Movietxt[] = "Ring Racers Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL

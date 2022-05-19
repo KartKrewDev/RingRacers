@@ -526,7 +526,7 @@ boolean F_IntroResponder(event_t *event)
 //  CREDITS
 // =========
 static const char *credits[] = {
-	"\1SRB2Kart",
+	"\1Dr. Robotnik's Ring Racers",
 	"\1Credits",
 	"",
 	"\1Game Design",
@@ -2032,7 +2032,7 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "SRB2 Kart v2.0");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "Dr. Robotnik's Ring Racers v2.0");
 
 #ifdef DEVELOP
 #if defined(TESTERS)
