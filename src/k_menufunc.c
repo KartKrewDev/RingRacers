@@ -3718,10 +3718,6 @@ void M_InitOptions(INT32 choice)
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
 	}
 
-	// disable profiles outside of gs_menu altogether.
-	if (gamestate != GS_MENU)
-		OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_TRANSTEXT;
-
 	M_ResetOptions();
 
 	// So that pause doesn't go to the main menu...
@@ -3977,6 +3973,9 @@ static void M_StartEditProfile(INT32 c)
 			PR_InitNewProfile();	// initialize the new profile.
 
 		optionsmenu.profile = PR_GetProfile(optionsmenu.profilen);
+		// copy this profile's controls into optionsmenu so that we can edit controls without changing them directly.
+		// we do this so that we don't edit a profile's controls in real-time and end up doing really weird shit.
+		memcpy(&optionsmenu.tempcontrols, optionsmenu.profile->controls, sizeof(gamecontroldefault));
 
 		// This is now used to move the card we've selected.
 		optionsmenu.optx = 160;
@@ -3996,6 +3995,18 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofilename, "");
 			CV_StealthSet(&cv_dummyprofileplayername, "");
 			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
+		}
+
+		// Setup greyout and stuff.
+		OPTIONS_EditProfile[popt_profilename].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OPTIONS_EditProfile[popt_profilepname].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OPTIONS_EditProfile[popt_char].status = IT_STRING | IT_CALL;
+
+		if (gamestate != GS_MENU)	// If we're modifying things mid game, transtext some of those!
+		{
+			OPTIONS_EditProfile[popt_profilename].status |= IT_TRANSTEXT;
+			OPTIONS_EditProfile[popt_profilepname].status |= IT_TRANSTEXT;
+			OPTIONS_EditProfile[popt_char].status |= IT_TRANSTEXT;
 		}
 
 		M_SetupNextMenu(&OPTIONS_EditProfileDef, false);
@@ -4156,6 +4167,11 @@ boolean M_ProfileEditInputs(INT32 ch)
 				M_GoBack(0);
 		}
 		return true;
+	}
+	else if (M_MenuConfirmPressed(pid))
+	{
+		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+			return true;	// No.
 	}
 
 	return false;
@@ -4369,18 +4385,54 @@ void M_HandleProfileControls(void)
 	}
 }
 
+static void M_ProfileTryControllerResponse(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		optionsmenu.trycontroller = TICRATE*3;
+		// Apply these controls right now on P1's end.
+		memcpy(&gamecontrol[0], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+	}
+}
+
 void M_ProfileTryController(INT32 choice)
 {
 	(void) choice;
 
 	// I managed to softlock myself during testing lol.
-	if (!optionsmenu.profile->controls[gc_x][0])
+	if (!optionsmenu.tempcontrols[gc_x][0])
 	{
 		M_StartMessage(M_GetText("You need to bind a key to [X]\nto use this feature.\n"), NULL, MM_NOTHING);
 		return;
 	}
+	else
+	{
+		M_StartMessage(M_GetText("Your inputs will temporarily be\nremapped to match this Profile's settings.\nThe controller graphic will animate\nto show you what buttons are being pressed.\nIs this okay?\n\n(Press A to continue)"),
+		FUNCPTRCAST(M_ProfileTryControllerResponse), MM_YESNO);
+		return;
+	}
+}
 
-	optionsmenu.trycontroller = TICRATE*3;
+static void M_ProfileControlSaveResponse(INT32 choice)
+{
+
+	if (choice == MA_YES)
+	{
+		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
+		// Save the profile
+		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
+		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+
+		// If this profile is in-use by anyone, apply the changes immediately upon exiting.
+		// Don't apply the profile itself as that would lead to issues mid-game.
+		if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
+		{
+			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+			CV_StealthSetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
+		}
+
+		M_GoBack(0);
+	}
 }
 
 boolean M_ProfileControlsInputs(INT32 ch)
@@ -4396,13 +4448,21 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		else
 			optionsmenu.trycontroller = TICRATE*3;
 
+		if (!optionsmenu.trycontroller)
+		{
+			// Reset controls to that of the current profile.
+			profile_t *cpr = PR_GetProfile(cv_currprofile.value);
+			memcpy(&gamecontrol[0], cpr->controls, sizeof(gamecontroldefault));
+
+			M_StartMessage(M_GetText("Your controls have been\nreverted to their previous state.\n\n(Press any key)"), NULL, MM_NOTHING);
+		}
 		return true;
 	}
 
 	if (optionsmenu.bindcontrol)
 		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
 
-	SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
+	//SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
 
 	if (M_MenuExtraPressed(pid))
 	{
@@ -4413,7 +4473,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 			INT32 i;
 
 			for (i = 0; i < MAXINPUTMAPPING; i++)
-				optionsmenu.profile->controls[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
+				optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
 
 			S_StartSound(NULL, sfx_s3k66);
 		}
@@ -4422,10 +4482,20 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
+
+		SINT8 usedby = PR_ProfileUsedBy(optionsmenu.profile);
+
+		if (usedby > -1)
+			M_StartMessage(M_GetText(va("As this is Player %d's active Profile,\ncontrol changes will be applied \nimmediately upon exiting this menu.\nIs this okay?\n\n(Press A to confirm)", usedby+1)), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+		else
+			M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
 
 		// Reapply player 1's real profile.
 		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+
+		return true;
 	}
 
 	return false;
@@ -4441,7 +4511,7 @@ void M_ProfileSetControl(INT32 ch)
 
 	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		if (optionsmenu.profile->controls[controln][i] == KEY_NULL)
+		if (optionsmenu.tempcontrols[controln][i] == KEY_NULL)
 		{
 			optionsmenu.bindcontrol = i+1;
 			break;
@@ -4465,7 +4535,7 @@ void M_MapProfileControl(event_t *ev)
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
 	INT32 i;
 
-	SetDeviceOnPress();	// Update cv_usejoystick
+	//SetDeviceOnPress();	// Update cv_usejoystick
 
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
 	// See also G_MapEventsToControls
@@ -4572,7 +4642,7 @@ void M_MapProfileControl(event_t *ev)
 	// If that's the case, simply do nothing.
 	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		if (optionsmenu.profile->controls[controln][i] == c)
+		if (optionsmenu.tempcontrols[controln][i] == c)
 		{
 			optionsmenu.bindcontrol = 0;
 			return;
@@ -4582,11 +4652,13 @@ void M_MapProfileControl(event_t *ev)
 	// With the way we do things, there cannot be instances of 'gaps' within the controls, so we don't need to pretend like we need to handle that.
 	// Unless of course you tamper with the cfg file, but then it's *your* fault, not mine.
 
-	optionsmenu.profile->controls[controln][where] = c;
+	optionsmenu.tempcontrols[controln][where] = c;
 	optionsmenu.bindcontrol = 0;	// not binding anymore
 
 	// If possible, reapply the profile...
-	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
+	// 19/05/22: Actually, no, don't do that, it just fucks everything up in too many cases.
+
+	/*if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
 	{
 		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
 		UINT8 lastp = cv_lastprofile[0].value;
@@ -4605,7 +4677,7 @@ void M_MapProfileControl(event_t *ev)
 				break;
 			}
 		}
-	}
+	}*/
 }
 #undef KEYHOLDFOR
 

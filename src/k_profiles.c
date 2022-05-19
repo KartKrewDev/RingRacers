@@ -199,3 +199,17 @@ UINT8 PR_GetProfileNum(profile_t *p)
 	}
 	return 0;
 }
+
+SINT8 PR_ProfileUsedBy(profile_t *p)
+{
+	UINT8 i;
+	UINT8 prn = PR_GetProfileNum(p);
+
+	for (i=0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (prn == cv_lastprofile[i].value)
+			return i;
+	}
+
+	return -1;
+}

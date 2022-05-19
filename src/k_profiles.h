@@ -117,4 +117,9 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
 // Gets the profile's index # in profilesList
 UINT8 PR_GetProfileNum(profile_t *p);
 
+// PR_ProfileUsedBy(profile_t *p)
+// Returns the player # this profile is used by (if any)
+// If the profile belongs to no player, then this returns -1
+SINT8 PR_ProfileUsedBy(profile_t *p);
+
 #endif

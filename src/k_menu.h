@@ -228,6 +228,15 @@ extern menu_t OPTIONS_ProfilesDef;
 extern menuitem_t MAIN_Profiles[];
 extern menu_t MAIN_ProfilesDef;
 
+typedef enum
+{
+	popt_profilename = 0,
+	popt_profilepname,
+	popt_char,
+	popt_controls,
+	popt_confirm,
+} popt_e;
+
 extern menuitem_t OPTIONS_EditProfile[];
 extern menu_t OPTIONS_EditProfileDef;
 
@@ -678,6 +687,10 @@ extern struct optionsmenu_s {
 
 	boolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
 	profile_t *profile;			// Pointer to the profile we're editing
+
+	INT32 tempcontrols[num_gamecontrols][MAXINPUTMAPPING];
+	// Temporary buffer where we're gonna store game controls.
+	// This is only applied to the profile when you exit out of the controls menu.
 
 	INT16 controlscroll;		// scrolling for the control menu....
 	UINT8 bindcontrol;			// 0: not binding, 1: binding control #1, 2: binding control #2

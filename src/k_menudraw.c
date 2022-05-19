@@ -2634,44 +2634,37 @@ void M_DrawEditProfile(void)
 	// Draw the menu options...
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+
+		UINT8 *colormap = NULL;
+		INT32 tflag = (currentMenu->menuitems[i].status & IT_TRANSTEXT) ? V_TRANSLUCENT : 0;
+
+		if (i == itemOn)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
+
+		// Background
+		V_DrawFill(0, y, 400 - (menutransition.tics*64), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+		// Text
+		V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, V_ALLOWLOWERCASE|tflag, colormap, currentMenu->menuitems[i].text);
+
+		// Cvar specific handling
+		/*switch (currentMenu->menuitems[i].status & IT_TYPE)
 		{
-			case IT_STRING: {
-
-				UINT8 *colormap = NULL;
-				if (i == itemOn)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
-
-				// Background
-				V_DrawFill(0, y, 400 - (menutransition.tics*64), 24, itemOn == i ? 169 : 30);	// 169 is the plague colourization
-				// Text
-				V_DrawGamemodeString(x + (menutransition.tics*32), y - 6, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
-
-				// Cvar specific handling
-				/*switch (currentMenu->menuitems[i].status & IT_TYPE)
+			case IT_CVAR:
+			{
+				consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
+				switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 				{
-					case IT_CVAR:
-					{
-						consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
-						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
-						{
-							case IT_CV_STRING:
-								V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
-								V_DrawString(x + 8, y + 29, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29,
-										'_' | 0x80, false);
-								y += 16;
-								break;
-						}
+					case IT_CV_STRING:
+						V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
+						V_DrawString(x + 8, y + 29, V_ALLOWLOWERCASE, cv->string);
+						if (skullAnimCounter < 4 && i == itemOn)
+						V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29, '_' | 0x80, false);
+						y += 16;
 					}
-				}*/
+				}
+			}*/
 
-				y += 34;
-
-				break;
-			}
-		}
+		y += 34;
 	}
 
 	// Finally, draw the card ontop
@@ -2758,20 +2751,6 @@ void M_DrawProfileControls(void)
 		return;	// Don't draw the rest if we're trying the controller.
 	}
 
-	// If we're past here, draw some text warnings.
-	if (gamestate == GS_MENU || PR_GetProfileNum(optionsmenu.profile) == cv_lastprofile[pid].value)
-	{
-		if (gamestate != GS_MENU)	// If we're in a menu we'll always use the current profile to map controls from regardless.
-			V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "This is your last used profile,");
-
-		V_DrawCenteredThinString(229, 190, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Control changes will happen in real time");
-	}
-	else
-	{
-		V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "This isn't your last used profile,");
-		V_DrawCenteredThinString(229, 180, highlightflags|V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Changes will apply on next profile selection.");
-	}
-
 	// Tooltip
 	// The text is slightly shifted hence why we don't just use M_DrawMenuTooltips()
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
@@ -2841,7 +2820,7 @@ void M_DrawProfileControls(void)
 					// Get userbound controls...
 					for (k = 0; k < MAXINPUTMAPPING; k++)
 					{
-						keys[k] = optionsmenu.profile->controls[gc][k];
+						keys[k] = optionsmenu.tempcontrols[gc][k];
 						if (keys[k] == KEY_NULL)
 							continue;
 						set++;
