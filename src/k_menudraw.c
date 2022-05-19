@@ -2815,6 +2815,7 @@ void M_DrawProfileControls(void)
 				{
 					UINT32 vflags = V_6WIDTHSPACE;
 					INT32 gc = currentMenu->menuitems[i].mvar1;
+
 					UINT8 available = 0, set = 0;
 
 					// Get userbound controls...
@@ -2831,8 +2832,12 @@ void M_DrawProfileControls(void)
 
 					buf[0] = '\0';
 
+
+					// Cool as is this, this doesn't actually help show accurate info because of how some players would set inputs with keyboard and controller at once in a volatile way...
+					// @TODO: Address that mess, somehow?
+
 					// Can't reach any of them?
-					if (available == 0)
+					/*if (available == 0)
 					{
 						if (((3*optionsmenu.ticker)/(2*TICRATE)) & 1) // 1.5 seconds
 						{
@@ -2870,12 +2875,12 @@ void M_DrawProfileControls(void)
 						{
 							vflags |= V_REDMAP;
 						}
-					}
+					}*/
 
 					if (buf[0])
 						;
 					else if (!set)
-						strcpy(buf, "NOT BOUND");
+						strcpy(buf, "\x85NOT BOUND");
 					else
 					{
 						for (k = 0; k < MAXINPUTMAPPING; k++)
