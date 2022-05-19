@@ -2292,7 +2292,9 @@ void readmenu(MYFILE *f, INT32 num)
 					menupres[num].ttname[0] = 0;
 					menupres[num].hidetitlepics = true;
 				}
-				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
+				else if (fastcmp(word2, "RINGRACERS"))
+					menupres[num].ttmode = TTMODE_RINGRACERS;
+				else if (fastcmp(word2, "OLD"))
 					menupres[num].ttmode = TTMODE_OLD;
 				titlechanged = true;
 			}
@@ -3385,7 +3387,9 @@ void readmaincfg(MYFILE *f)
 					ttname[0] = 0;
 					hidetitlepics = true;
 				}
-				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
+				else if (fastcmp(word2, "RINGRACERS"))
+					ttmode = TTMODE_RINGRACERS;
+				else if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
 					ttmode = TTMODE_OLD;
 				titlechanged = true;
 			}
