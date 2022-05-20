@@ -1760,9 +1760,9 @@ static void K_UpdateDraft(player_t *player)
 	UINT8 leniency;
 	UINT8 i;
 
-	if (player->itemtype == KITEM_FLAMESHIELD)
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
 	{
-		// Flame Shield gets infinite draft distance as its passive effect.
+		// Lightning Shield gets infinite draft distance as its (other) passive effect.
 		draftdistance = 0;
 	}
 	else
