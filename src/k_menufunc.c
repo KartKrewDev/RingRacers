@@ -2287,6 +2287,13 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 		if (M_DeviceAvailable(i, setup_numplayers) == true)
 		{
 			// Available!! Let's use this one!!
+
+			// if P1 is setting up using keyboard (device 0), save their last used device.
+			// this is to allow them to retain controller usage when they play alone.
+			// Because let's face it, when you test mods, you're often lazy to grab your controller for menuing :)
+			if (!i && !num)
+				setup_player[num].ponedevice = cv_usejoystick[num].value;
+
 			CV_SetValue(&cv_usejoystick[num], i);
 			//CONS_Printf("Device for %d set to %d\n", num, i);
 			//CONS_Printf("========\n");
@@ -2903,6 +2910,14 @@ void M_CharacterSelectTick(void)
 				}
 
 				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
+
+				// P1 is alone, set their old device just in case.
+				if (setup_numplayers < 2)
+				{
+					CONS_Printf("Reseting controller device for P1...\n");
+					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
+				}
+
 				M_SetupNextMenu(&PLAY_MainDef, false);
 			}
 		}

@@ -528,6 +528,11 @@ typedef struct setup_player_s
 	UINT8 color;
 	UINT8 mdepth;
 
+	// Hack, save player 1's original device even if they init charsel with keyboard.
+	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
+	// We can allow them to retain the device with no consequence as when P1 is alone, they have exclusive keyboard fallback options.
+	UINT8 ponedevice;
+
 	INT32 followern;
 	INT16 followercolor;
 	tic_t follower_tics;
