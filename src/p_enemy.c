@@ -4044,57 +4044,76 @@ void A_AttractChase(mobj_t *actor)
 			actor->renderflags &= ~RF_DONTDRAW;
 
 		// spilled rings get capped to a certain speed
-		if (actor->type == (mobjtype_t)actor->info->reactiontime)
+		if (actor->info->reactiontime && actor->type == (mobjtype_t)actor->info->reactiontime)
 		{
-			const fixed_t maxspeed = 4<<FRACBITS;
+			const fixed_t maxspeed = 4 * actor->scale;
 			fixed_t oldspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 
 			if (oldspeed > maxspeed)
 			{
-				fixed_t newspeed = max(maxspeed, oldspeed-FRACUNIT);
+				fixed_t newspeed = max(maxspeed, oldspeed - actor->scale);
 				actor->momx = FixedMul(FixedDiv(actor->momx, oldspeed), newspeed);
 				actor->momy = FixedMul(FixedDiv(actor->momy, oldspeed), newspeed);
 			}
 		}
 
-		if (actor->tracer && actor->tracer->player && actor->tracer->health
-			//&& P_CheckSight(actor, actor->tracer)
-			&& actor->tracer->player->itemtype == KITEM_THUNDERSHIELD
-			&& RINGTOTAL(actor->tracer->player) < 20
-			&& !(actor->tracer->player->pflags & PF_RINGLOCK))
+		if (actor->tracer != NULL && P_MobjWasRemoved(actor->tracer) == false)
 		{
-			fixed_t dist;
-			angle_t hang, vang;
+			// Set attraction flag
+			actor->cusval = 1;
 
-			// If a flung ring gets attracted by a shield, change it into a normal ring.
-			if (actor->type == (mobjtype_t)actor->info->reactiontime)
+			if (
+				actor->tracer->player && actor->tracer->health
+				&& actor->tracer->player->itemtype == KITEM_LIGHTNINGSHIELD
+				&& RINGTOTAL(actor->tracer->player) < 20
+				&& !(actor->tracer->player->pflags & PF_RINGLOCK)
+				//&& P_CheckSight(actor, actor->tracer)
+				)
 			{
-				P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
-				P_RemoveMobj(actor);
-				return;
+				fixed_t dist;
+				angle_t hang, vang;
+
+				// If a flung ring gets attracted by a shield, change it into a normal ring.
+				if (actor->info->painchance && actor->type != (mobjtype_t)actor->info->painchance)
+				{
+#if 0 // old
+					P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->painchance);
+					P_RemoveMobj(actor);
+					return;
+#else // new
+					actor->type = actor->info->painchance;
+					actor->info = &mobjinfo[actor->type];
+					actor->flags = actor->info->flags;
+#endif
+				}
+
+				// Keep stuff from going down inside floors and junk
+				actor->flags &= ~MF_NOCLIPHEIGHT;
+
+				// Let attracted rings move through walls and such.
+				actor->flags |= MF_NOCLIP;
+
+				// P_Attract is too "smart" for Kart; keep it simple, stupid!
+				dist = P_AproxDistance(P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y), actor->z - actor->tracer->z);
+				hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
+				vang = R_PointToAngle2(actor->z, 0, actor->tracer->z, dist);
+
+				actor->momx -= actor->momx>>4, actor->momy -= actor->momy>>4, actor->momz -= actor->momz>>4;
+				actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+				actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
+				actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 4*actor->scale);
 			}
-
-			// Keep stuff from going down inside floors and junk
-			actor->flags &= ~MF_NOCLIPHEIGHT;
-
-			// Let attracted rings move through walls and such.
-			actor->flags |= MF_NOCLIP;
-
-			// P_Attract is too "smart" for Kart; keep it simple, stupid!
-			dist = P_AproxDistance(P_AproxDistance(actor->x - actor->tracer->x, actor->y - actor->tracer->y), actor->z - actor->tracer->z);
-			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-			vang = R_PointToAngle2(actor->z , 0, actor->tracer->z, dist);
-
-			actor->momx -= actor->momx>>4, actor->momy -= actor->momy>>4, actor->momz -= actor->momz>>4;
-			actor->momx += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
-			actor->momy += FixedMul(FINESINE(vang>>ANGLETOFINESHIFT), FixedMul(FINESINE(hang>>ANGLETOFINESHIFT), 4*actor->scale));
-			actor->momz += FixedMul(FINECOSINE(vang>>ANGLETOFINESHIFT), 4*actor->scale);
+			else
+			{
+				P_SetTarget(&actor->tracer, NULL);
+			}
 		}
 		else
 		{
 			// Turn rings back into flung rings if lost
 			if (actor->cusval && actor->info->reactiontime && actor->type != (mobjtype_t)actor->info->reactiontime)
 			{
+#if 0 // old
 				mobj_t *newring;
 				newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
 				P_InstaThrust(newring, P_RandomRange(0,7) * ANGLE_45, 2<<FRACBITS);
@@ -4102,10 +4121,18 @@ void A_AttractChase(mobj_t *actor)
 				newring->fuse = 120*TICRATE;
 				P_RemoveMobj(actor);
 				return;
+#else // new
+				actor->type = actor->info->reactiontime;
+				actor->info = &mobjinfo[actor->type];
+				actor->flags = actor->info->flags;
+
+				P_InstaThrust(actor, P_RandomRange(0,7) * ANGLE_45, 2 * actor->scale);
+				P_SetObjectMomZ(actor, 8<<FRACBITS, false);
+				actor->fuse = 120*TICRATE;
+#endif
 			}
-			/*else
-				P_LookForShield(actor);*/
-			// SRB2Kart: now it's the PLAYER'S job to use the blockmap to find rings, not the ring's.
+
+			actor->cusval = 0; // Reset attraction flag
 		}
 	}
 }

@@ -1021,9 +1021,9 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static void K_BotItemThunder(player_t *player, ticcmd_t *cmd)
+	static void K_BotItemLightning(player_t *player, ticcmd_t *cmd)
 
-		Item usage for Thunder Shield.
+		Item usage for Lightning Shield.
 
 	Input Arguments:-
 		player - Bot to do this for.
@@ -1032,7 +1032,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotItemThunder(player_t *player, ticcmd_t *cmd)
+static void K_BotItemLightning(player_t *player, ticcmd_t *cmd)
 {
 	if (K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale) == false)
 	{
@@ -1355,8 +1355,8 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 							K_BotItemDropTarget(player, cmd);
 						}
 						break;
-					case KITEM_THUNDERSHIELD:
-						K_BotItemThunder(player, cmd);
+					case KITEM_LIGHTNINGSHIELD:
+						K_BotItemLightning(player, cmd);
 						break;
 					case KITEM_BUBBLESHIELD:
 						K_BotItemBubble(player, cmd);

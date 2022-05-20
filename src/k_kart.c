@@ -36,6 +36,7 @@
 #include "k_hud.h"
 #include "k_terrain.h"
 #include "k_director.h"
+#include "k_collide.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -220,7 +221,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_selfpropelledbomb);
 	CV_RegisterVar(&cv_grow);
 	CV_RegisterVar(&cv_shrink);
-	CV_RegisterVar(&cv_thundershield);
+	CV_RegisterVar(&cv_lightningshield);
 	CV_RegisterVar(&cv_bubbleshield);
 	CV_RegisterVar(&cv_flameshield);
 	CV_RegisterVar(&cv_hyudoro);
@@ -327,7 +328,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_selfpropelledbomb,
 	&cv_grow,
 	&cv_shrink,
-	&cv_thundershield,
+	&cv_lightningshield,
 	&cv_bubbleshield,
 	&cv_flameshield,
 	&cv_hyudoro,
@@ -362,7 +363,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
-		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
+	  /*Lightning Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
 			   /*Hyudoro*/ { 0, 0, 0, 1, 1, 0, 0, 0 }, // Hyudoro
@@ -395,7 +396,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
 				/*Shrink*/ { 0, 0 }, // Shrink
-		/*Thunder Shield*/ { 4, 0 }, // Thunder Shield
+	  /*Lightning Shield*/ { 4, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
@@ -437,7 +438,7 @@ INT32 K_GetShieldFromItem(INT32 item)
 {
 	switch (item)
 	{
-		case KITEM_THUNDERSHIELD: return KSHIELD_THUNDER;
+		case KITEM_LIGHTNINGSHIELD: return KSHIELD_LIGHTNING;
 		case KITEM_BUBBLESHIELD: return KSHIELD_BUBBLE;
 		case KITEM_FLAMESHIELD: return KSHIELD_FLAME;
 		default: return KSHIELD_NONE;
@@ -733,7 +734,7 @@ INT32 K_KartGetItemOdds(
 			if (pingame-1 <= pexiting)
 				newodds = 0;
 			break;
-		case KITEM_THUNDERSHIELD:
+		case KITEM_LIGHTNINGSHIELD:
 			cooldownOnStart = true;
 			powerItem = true;
 
@@ -3361,7 +3362,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 	}
 
 	K_AddHitLag(mo1, finalTics, fromDamage);
-	K_AddHitLag(mo2, finalTics, fromDamage);
+	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
 }
 
 void K_DoInstashield(player_t *player)
@@ -5249,7 +5250,12 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 #define THUNDERRADIUS 320
 
-static void K_DoThunderShield(player_t *player)
+// Rough size of the outer-rim sprites, after scaling.
+// (The hitbox is already pretty strict due to only 1 active frame,
+// we don't need to have it disjointedly small too...)
+#define THUNDERSPRITE 80
+
+static void K_DoLightningShield(player_t *player)
 {
 	mobj_t *mo;
 	int i = 0;
@@ -5258,7 +5264,7 @@ static void K_DoThunderShield(player_t *player)
 	angle_t an;
 
 	S_StartSound(player->mo, sfx_zio3);
-	P_NukeEnemies(player->mo, player->mo, RING_DIST/4);
+	K_LightningShieldAttack(player->mo, (THUNDERRADIUS + THUNDERSPRITE) * FRACUNIT);
 
 	// spawn vertical bolt
 	mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THOK);
@@ -5299,6 +5305,7 @@ static void K_DoThunderShield(player_t *player)
 }
 
 #undef THUNDERRADIUS
+#undef THUNDERSPRITE
 
 static void K_FlameDashLeftoverSmoke(mobj_t *src)
 {
@@ -5708,9 +5715,9 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 	if (shield != KSHIELD_NONE && !keepshields)
 	{
-		if (shield == KSHIELD_THUNDER)
+		if (shield == KSHIELD_LIGHTNING)
 		{
-			K_DoThunderShield(player);
+			K_DoLightningShield(player);
 		}
 
 		player->curshield = KSHIELD_NONE;
@@ -6988,39 +6995,85 @@ void K_KartPlayerHUDUpdate(player_t *player)
 // SRB2Kart: blockmap iterate for attraction shield users
 static mobj_t *attractmo;
 static fixed_t attractdist;
+static fixed_t attractzdist;
+
 static inline boolean PIT_AttractingRings(mobj_t *thing)
 {
-	if (!attractmo || P_MobjWasRemoved(attractmo))
+	if (attractmo == NULL || P_MobjWasRemoved(attractmo) || attractmo->player == NULL)
+	{
 		return false;
+	}
 
-	if (!attractmo->player)
-		return false; // not a player
+	if (thing == NULL || P_MobjWasRemoved(thing))
+	{
+		return true; // invalid
+	}
 
-	if (thing->health <= 0 || !thing)
-		return true; // dead
+	if (thing == attractmo)
+	{
+		return true; // invalid
+	}
 
-	if (thing->type != MT_RING && thing->type != MT_FLINGRING)
+	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
+	{
 		return true; // not a ring
+	}
+
+	if (thing->health <= 0)
+	{
+		return true; // dead
+	}
 
 	if (thing->extravalue1)
+	{
 		return true; // in special ring animation
+	}
 
-	if (thing->cusval)
+	if (thing->tracer != NULL && P_MobjWasRemoved(thing->tracer) == false)
+	{
 		return true; // already attracted
+	}
 
 	// see if it went over / under
-	if (attractmo->z - (attractdist>>2) > thing->z + thing->height)
+	if (attractmo->z - attractzdist > thing->z + thing->height)
+	{
 		return true; // overhead
-	if (attractmo->z + attractmo->height + (attractdist>>2) < thing->z)
+	}
+
+	if (attractmo->z + attractmo->height + attractzdist < thing->z)
+	{
 		return true; // underneath
+	}
 
-	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) < attractdist)
+	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) > attractdist + thing->radius)
+	{
 		return true; // Too far away
+	}
 
-	// set target
-	P_SetTarget(&thing->tracer, attractmo);
-	// flag to show it's been attracted once before
-	thing->cusval = 1;
+	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
+	{
+		// Already reached max -- just joustle rings around.
+
+		// Regular ring -> fling ring
+		if (thing->info->reactiontime && thing->type != (mobjtype_t)thing->info->reactiontime)
+		{
+			thing->type = thing->info->reactiontime;
+			thing->info = &mobjinfo[thing->type];
+			thing->flags = thing->info->flags;
+
+			P_InstaThrust(thing, P_RandomRange(0,7) * ANGLE_45, 2 * thing->scale);
+			P_SetObjectMomZ(thing, 8<<FRACBITS, false);
+			thing->fuse = 120*TICRATE;
+
+			thing->cusval = 0; // Reset attraction flag
+		}
+	}
+	else
+	{
+		// set target
+		P_SetTarget(&thing->tracer, attractmo);
+	}
+
 	return true; // find other rings
 }
 
@@ -7032,15 +7085,18 @@ static inline boolean PIT_AttractingRings(mobj_t *thing)
 static void K_LookForRings(mobj_t *pmo)
 {
 	INT32 bx, by, xl, xh, yl, yh;
-	attractdist = FixedMul(RING_DIST, pmo->scale)>>2;
-
-	// Use blockmap to check for nearby rings
-	yh = (unsigned)(pmo->y + attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(pmo->y - attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(pmo->x + attractdist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(pmo->x - attractdist - bmaporgx)>>MAPBLOCKSHIFT;
 
 	attractmo = pmo;
+	attractdist = (400 * pmo->scale);
+	attractzdist = attractdist >> 2;
+
+	// Use blockmap to check for nearby rings
+	yh = (unsigned)(pmo->y + (attractdist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(pmo->y - (attractdist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(pmo->x + (attractdist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(pmo->x - (attractdist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
 
 	for (by = yl; by <= yh; by++)
 		for (bx = xl; bx <= xh; bx++)
@@ -7462,12 +7518,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->itemtype == KITEM_THUNDERSHIELD)
-	{
-		if (RINGTOTAL(player) < 20 && !(player->pflags & PF_RINGLOCK))
-			K_LookForRings(player->mo);
-	}
-
 	if (player->itemtype == KITEM_BUBBLESHIELD)
 	{
 		if (player->bubblecool)
@@ -7677,6 +7727,11 @@ void K_KartPlayerAfterThink(player_t *player)
 	{
 		player->lastjawztarget = -1;
 		player->jawztargetdelay = 0;
+	}
+
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	{
+		K_LookForRings(player->mo);
 	}
 }
 
@@ -9751,23 +9806,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_PlayPowerGloatSound(player->mo);
 							}
 							break;
-						case KITEM_THUNDERSHIELD:
-							if (player->curshield != KSHIELD_THUNDER)
+						case KITEM_LIGHTNINGSHIELD:
+							if (player->curshield != KSHIELD_LIGHTNING)
 							{
-								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THUNDERSHIELD);
+								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_LIGHTNINGSHIELD);
 								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k41);
-								player->curshield = KSHIELD_THUNDER;
+								player->curshield = KSHIELD_LIGHTNING;
 							}
 
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								K_DoThunderShield(player);
+								K_DoLightningShield(player);
 								if (player->itemamount > 0)
 								{
 									// Why is this a conditional?
-									// Thunder shield: the only item that allows you to
+									// Lightning shield: the only item that allows you to
 									// activate a mine while you're out of its radius,
 									// the SAME tic it sets your itemamount to 0
 									// ...:dumbestass:
