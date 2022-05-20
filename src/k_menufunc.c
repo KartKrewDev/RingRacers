@@ -2153,7 +2153,7 @@ void M_CharacterSelectInit(void)
 					if (optionsmenu.profile)	// In menu, setting up profile character/follower
 					{
 						setup_player[j].profilen = optionsmenu.profilen;
-						PR_ApplyProfile(setup_player[j].profilen, 0);
+						PR_ApplyProfileLight(setup_player[j].profilen, 0);
 					}
 					else	// gamestate != GS_MENU, in that case, assume this is whatever profile we chose to play with.
 						setup_player[j].profilen = cv_lastprofile[j].value;

@@ -113,6 +113,11 @@ void PR_LoadProfiles(void);
 // Applies the given profile's settings to the given player.
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
 
+// PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
+// Similar to PR_ApplyProfile but only applies skin and follower values.
+// Controls, kickstartaccel and "current profile" data is *not* modified.
+void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum);
+
 // PR_GetProfileNum(profile_t *p)
 // Gets the profile's index # in profilesList
 UINT8 PR_GetProfileNum(profile_t *p);

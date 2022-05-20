@@ -188,6 +188,19 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 		CV_StealthSetValue(&cv_currprofile, profilenum);
 }
 
+void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
+{
+	profile_t *p = PR_GetProfile(profilenum);
+
+	CV_StealthSet(&cv_skin[playernum], p->skinname);
+	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
+	CV_StealthSet(&cv_playername[playernum], p->playername);
+
+	// Followers
+	CV_StealthSet(&cv_follower[playernum], p->follower);
+	CV_StealthSetValue(&cv_followercolor[playernum], p->followercolor);
+}
+
 UINT8 PR_GetProfileNum(profile_t *p)
 {
 	UINT8 i;

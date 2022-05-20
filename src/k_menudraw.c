@@ -1399,24 +1399,27 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
 
-		if (M_DrawFollowerSprite(x-44 +12, y+119, 0, V_FLIP, 0, sp))
+		if (sp->mdepth >= CSSTEP_FOLLOWER)
 		{
-			UINT16 col = (unsigned)p->followercolor;
-			patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
-			UINT8 *fcolormap;
-
-			switch (col)
+			if (M_DrawFollowerSprite(x-44 +12, y+119, 0, V_FLIP, 0, sp))
 			{
-				case FOLLOWERCOLOR_MATCH: // "Match"
-					col = sp->color;
-					break;
-				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-					col = skincolors[sp->color].invcolor;
-					break;
-			}
+				UINT16 col = (unsigned)p->followercolor;
+				patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
+				UINT8 *fcolormap;
 
-			fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-			V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+				switch (col)
+				{
+					case FOLLOWERCOLOR_MATCH: // "Match"
+						col = sp->color;
+						break;
+					case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
+						col = skincolors[sp->color].invcolor;
+						break;
+				}
+
+				fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			}
 		}
 
 		if (sp->mdepth == CSSTEP_ALTS || sp->mdepth == CSSTEP_COLORS || sp->mdepth == CSSTEP_FOLLOWERCOLORS)
