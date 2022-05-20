@@ -4062,6 +4062,13 @@ void M_HandleProfileSelect(INT32 ch)
 				M_SetMenuDelay(pid);
 				return;
 			}
+			else if (optionsmenu.profilen == maxp && gamestate != GS_MENU)
+			{
+				S_StartSound(NULL, sfx_s3k7b);
+				M_StartMessage(M_GetText("Cannot create a New Profile\nmid-game. Return to the\nTitle Screen first."), NULL, MM_NOTHING);
+				M_SetMenuDelay(pid);
+				return;
+			}
 
 			S_StartSound(NULL, sfx_menu1);
 
