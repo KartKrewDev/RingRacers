@@ -1719,7 +1719,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	BitsPerPixel = (Uint8)cv_scr_depth.value;
 	//vid.bpp = BitsPerPixel==8?1:2;
 	// Window title
-	SDL_WM_SetCaption("SRB2Kart "VERSIONSTRING, "SRB2Kart");
+	SDL_WM_SetCaption("Dr. Robotnik's Ring Racers "VERSIONSTRING, "Dr. Robotnik's Ring Racers");
 
 	if (render_soft == rendermode)
 	{
@@ -1881,9 +1881,9 @@ void I_StartupGraphics(void)
 
 	// Window title
 #ifdef _WIN32_WCE
-	SDL_WM_SetCaption("SRB2Kart "VERSIONSTRING, "SRB2Kart");
+	SDL_WM_SetCaption("Dr. Robotnik's Ring Racers "VERSIONSTRING, "Dr. Robotnik's Ring Racers");
 #else
-	SDL_WM_SetCaption("SRB2Kart: Starting up", "SRB2Kart");
+	SDL_WM_SetCaption("Dr. Robotnik's Ring Racers: Starting up", "Dr. Robotnik's Ring Racers");
 #endif
 
 	// Window icon

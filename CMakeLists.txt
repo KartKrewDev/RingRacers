@@ -113,7 +113,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Set EXE names so the assets CMakeLists can refer to its target
-set(SRB2_SDL2_EXE_NAME drrr CACHE STRING "Executable binary output name")
+set(SRB2_SDL2_EXE_NAME ringracers CACHE STRING "Executable binary output name")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 

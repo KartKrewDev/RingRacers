@@ -235,7 +235,7 @@ bin:=../bin
 endif
 
 # default EXENAME (usually set by platform)
-EXENAME?=drrr
+EXENAME?=ringracers
 DBGNAME?=$(EXENAME).debug
 
 exe:=$(bin)/$(EXENAME)

@@ -312,7 +312,7 @@ closedir (DIR * dirp)
 
 static CV_PossibleValue_t addons_cons_t[] = {{0, "Default"},
 #if 1
-												{1, "HOME"}, {2, "DRRR"},
+												{1, "HOME"}, {2, "RINGRACERS"},
 #endif
 													{3, "CUSTOM"}, {0, NULL}};
 
