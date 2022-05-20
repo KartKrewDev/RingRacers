@@ -6549,8 +6549,6 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_DRIFT",BT_DRIFT},
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
-	{"BT_FORWARD",BT_FORWARD},
-	{"BT_BACKWARD",BT_BACKWARD},
 	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
 	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
 	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable

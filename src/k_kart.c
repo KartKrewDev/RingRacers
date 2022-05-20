@@ -3312,6 +3312,13 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 	mo->hitlag += tics;
 	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
 
+	if (mo->player != NULL)
+	{
+		// Reset each time. We want to explicitly set this for bananas afterwards,
+		// so make sure an old value doesn't possibly linger.
+		mo->player->flipDI = false;
+	}
+
 	if (fromDamage == true)
 	{
 		// Dunno if this should flat-out &~ the flag out too.
@@ -3560,6 +3567,7 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 static void K_HandleTumbleBounce(player_t *player)
 {
 	fixed_t gravityadjust;
+
 	player->tumbleBounces++;
 	player->tumbleHeight = (player->tumbleHeight * ((player->tumbleHeight > 100) ? 3 : 4)) / 5;
 	player->pflags &= ~PF_TUMBLESOUND;
@@ -3589,6 +3597,10 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
 		}
 	}
+
+	// A bit of damage hitlag.
+	// This gives a window for DI!!
+	K_AddHitLag(player->mo, 6, true);
 
 	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
 		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
@@ -8171,6 +8183,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
+	if (player->justDI == true)
+	{
+		// No turning until you let go after DI-ing.
+		return 0;
+	}
+
 	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
@@ -10115,7 +10133,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					K_trickPanelTimingVisual(player, momz);
 				}
-				else if (player->throwdir == 1)
+				else if (cmd->throwdir > 0)
 				{
 					if (player->mo->momz * P_MobjFlip(player->mo) > 0)
 					{
@@ -10130,7 +10148,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					K_trickPanelTimingVisual(player, momz);
 				}
-				else if (player->throwdir == -1)
+				else if (cmd->throwdir < 0)
 				{
 					boolean relative = true;
 
@@ -10336,6 +10354,104 @@ boolean K_IsSPBInGame(void)
 	}
 
 	return false;
+}
+
+void K_HandleDirectionalInfluence(player_t *player)
+{
+	fixed_t strength = FRACUNIT >> 1; // 1.0 == 45 degrees
+
+	ticcmd_t *cmd = NULL;
+	angle_t sideAngle = ANGLE_MAX;
+
+	INT16 inputX, inputY;
+	INT16 inputLen;
+
+	fixed_t diX, diY;
+	fixed_t diLen;
+	fixed_t diMul;
+
+	fixed_t dot, invDot;
+
+	fixed_t finalX, finalY;
+	fixed_t finalLen;
+	fixed_t speed;
+
+	if (player->playerstate != PST_LIVE || player->spectator)
+	{
+		// ded
+		return;
+	}
+
+	// DI attempted!!
+	player->justDI = true;
+
+	cmd = &player->cmd;
+
+	inputX = cmd->throwdir;
+	inputY = -cmd->turning;
+
+	if (player->flipDI == true)
+	{
+		// Bananas flip the DI direction.
+		// Otherwise, DIing bananas is a little brain-dead easy :p
+		inputX = -inputX;
+		inputY = -inputY;
+	}
+
+	if (inputX == 0 && inputY == 0)
+	{
+		// No DI input, no need to do anything else.
+		return;
+	}
+
+	inputLen = FixedHypot(inputX, inputY);
+	if (inputLen > KART_FULLTURN)
+	{
+		inputLen = KART_FULLTURN;
+	}
+
+	if (player->tumbleBounces > 0)
+	{
+		// Very strong DI for tumble.
+		strength *= 3;
+	}
+
+	sideAngle = player->mo->angle - ANGLE_90;
+
+	diX = FixedMul(inputX, FINECOSINE(player->mo->angle >> ANGLETOFINESHIFT)) + FixedMul(inputY, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+	diY = FixedMul(inputX, FINESINE(player->mo->angle >> ANGLETOFINESHIFT)) + FixedMul(inputY, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+	diLen = FixedHypot(diX, diY);
+
+	// Normalize
+	diMul = (KART_FULLTURN * FRACUNIT) / inputLen;
+	if (diLen > 0)
+	{
+		diX = FixedMul(diMul, FixedDiv(diX, diLen));
+		diY = FixedMul(diMul, FixedDiv(diY, diLen));
+	}
+
+	// Now that we got the DI direction, we can
+	// actually preform the velocity redirection.
+
+	speed = FixedHypot(player->mo->momx, player->mo->momy);
+	finalX = FixedDiv(player->mo->momx, speed);
+	finalY = FixedDiv(player->mo->momy, speed);
+
+	dot = FixedMul(diX, finalX) + FixedMul(diY, finalY);
+	invDot = FRACUNIT - abs(dot);
+
+	finalX += FixedMul(FixedMul(diX, invDot), strength);
+	finalY += FixedMul(FixedMul(diY, invDot), strength);
+	finalLen = FixedHypot(finalX, finalY);
+
+	if (finalLen > 0)
+	{
+		finalX = FixedDiv(finalX, finalLen);
+		finalY = FixedDiv(finalY, finalLen);
+	}
+
+	player->mo->momx = FixedMul(speed, finalX);
+	player->mo->momy = FixedMul(speed, finalY);
 }
 
 //}

@@ -402,6 +402,8 @@ typedef struct player_s
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
+	boolean justDI;			// Directional Influence ended, true until letting go of turn
+	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed

@@ -9150,6 +9150,11 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->spriteyscale = 5*FRACUNIT;
 		}
 
+		if (mobj->player != NULL && mobj->hitlag == 0 && (mobj->eflags & MFE_DAMAGEHITLAG))
+		{
+			K_HandleDirectionalInfluence(mobj->player);
+		}
+
 		return;
 	}
 

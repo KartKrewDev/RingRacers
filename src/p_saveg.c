@@ -244,6 +244,9 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tumbleBounces);
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 
+		WRITEUINT8(save_p, players[i].justDI);
+		WRITEUINT8(save_p, players[i].flipDI);
+
 		WRITESINT8(save_p, players[i].drift);
 		WRITEFIXED(save_p, players[i].driftcharge);
 		WRITEUINT8(save_p, players[i].driftboost);
@@ -513,6 +516,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].justbumped = READUINT8(save_p);
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
+
+		players[i].justDI = (boolean)READUINT8(save_p);
+		players[i].flipDI = (boolean)READUINT8(save_p);
 
 		players[i].drift = READSINT8(save_p);
 		players[i].driftcharge = READFIXED(save_p);

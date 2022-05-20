@@ -332,15 +332,7 @@ static boolean K_BotGenericPressItem(player_t *player, ticcmd_t *cmd, SINT8 dir)
 		return false;
 	}
 
-	if (dir == 1)
-	{
-		cmd->buttons |= BT_FORWARD;
-	}
-	else if (dir == -1)
-	{
-		cmd->buttons |= BT_BACKWARD;
-	}
-
+	cmd->throwdir = KART_FULLTURN * dir;
 	cmd->buttons |= BT_ATTACK;
 	player->botvars.itemconfirm = 0;
 	return true;
