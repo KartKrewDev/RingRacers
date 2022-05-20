@@ -705,7 +705,8 @@ retrygetcontrol:
 	}
 
 	// If you're on controller, try your keyboard-based binds as an immediate backup.
-	if (p == 0 && deviceID > 0 && !tryingotherID)
+	// Do not do this if there are more than 1 local player.
+	if (p == 0 && deviceID > 0 && !tryingotherID && menuPlayers < 2 && !splitscreen)
 	{
 		deviceID = 0;
 		goto retrygetcontrol;
