@@ -2093,19 +2093,21 @@ void M_CharacterSelectInit(void)
 	UINT8 i, j;
 
 	// While we're editing profiles, don't unset the devices for p1
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	if (gamestate == GS_MENU)
 	{
-		// Un-set devices for other players.
-		if (i != 0 || optionsmenu.profile)
-			CV_SetValue(&cv_usejoystick[i], -1);
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			// Un-set devices for other players.
+			if (i != 0 || optionsmenu.profile)
+				CV_SetValue(&cv_usejoystick[i], -1);
 
-		//CONS_Printf("Device for %d set to %d\n", i, -1);
+			//CONS_Printf("Device for %d set to %d\n", i, -1);
+		}
+
+		// On main menu, reset that!
+		CV_StealthSetValue(&cv_splitdevice, 0);
 	}
 	//CONS_Printf("========\n");
-
-	// On main menu, reset that!
-	if (gamestate == GS_MENU)
-		CV_StealthSetValue(&cv_splitdevice, 0);
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
@@ -2153,7 +2155,8 @@ void M_CharacterSelectInit(void)
 				setup_player[j].color = skins[i].prefcolor;
 
 				// If we're on prpfile select, skip straight to CSSTEP_CHARS
-				if ((optionsmenu.profile || gamestate != GS_MENU) && j == 0)
+				// do the same if we're midgame, but make sure to consider splitscreen properly.
+				if ((optionsmenu.profile && j == 0) || (gamestate != GS_MENU && j <= splitscreen))
 				{
 					if (optionsmenu.profile)	// In menu, setting up profile character/follower
 					{
@@ -2858,36 +2861,30 @@ static void M_MPConfirmCharacterSelection(void)
 	UINT8 i;
 	INT16 col;
 
-	char colstr[8];
-	char commandnames[][4][MAXSTRINGLENGTH] = { {"skin ", "color ", "follower ", "followercolor "}, {"skin2 ", "color2 ", "follower2 ", "followercolor2 "}, {"skin3 ", "color3 ", "follower3 ", "followercolor3 "}, {"skin4 ", "color4 ", "follower4 ", "followercolor4 "}};
+	char commandnames[][MAXSTRINGLENGTH] = { "skin ", "skin2 ", "skin3 ", "skin4 "};
 	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
 
 	for (i = 0; i < splitscreen +1; i++)
 	{
 		char cmd[MAXSTRINGLENGTH];
 
-		// skin
-		strcpy(cmd, commandnames[i][0]);
-		strcat(cmd, skins[setup_player[i].skin].name);
-		COM_ImmedExecute(cmd);
-
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
-		sprintf(colstr, "%d", col);
-		strcpy(cmd, commandnames[i][1]);
-		strcat(cmd, colstr);
-		COM_ImmedExecute(cmd);
+		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		strcpy(cmd, commandnames[i][2]);
-		strcat(cmd, va("%d", setup_player[i].followern));
-		COM_ImmedExecute(cmd);
+		CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
 
 		// follower color
-		strcpy(cmd, commandnames[i][3]);
-		strcat(cmd, va("%d", setup_player[i].followercolor));
+		CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
+
+		// finally, call the skin[x] console command.
+		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
+		strcpy(cmd, commandnames[i]);
+		strcat(cmd, skins[setup_player[i].skin].name);
 		COM_ImmedExecute(cmd);
+
 	}
 	M_ClearMenus(true);
 }
@@ -2970,10 +2967,7 @@ void M_CharacterSelectTick(void)
 
 				// P1 is alone, set their old device just in case.
 				if (setup_numplayers < 2)
-				{
-					CONS_Printf("Reseting controller device for P1...\n");
 					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
-				}
 
 				M_SetupNextMenu(&PLAY_MainDef, false);
 			}
