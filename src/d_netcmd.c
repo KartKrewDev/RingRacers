@@ -316,6 +316,9 @@ consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
 // You choose this profile when starting the game, this will also set lastprofile[0]
 consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofile_cons_t, NULL);
 
+// Cvar for using splitscreen with 1 device.
+consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_HIDDEN, CV_OnOff, NULL);
+
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
 INT32 cv_debug;
@@ -881,6 +884,7 @@ void D_RegisterClientCommands(void)
 	}
 
 	CV_RegisterVar(&cv_currprofile);
+	CV_RegisterVar(&cv_splitdevice);
 
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);

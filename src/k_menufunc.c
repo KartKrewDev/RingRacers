@@ -991,6 +991,7 @@ void M_StartControlPanel(void)
 		itemOn = 0;
 
 		CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
+		CV_StealthSetValue(&cv_splitdevice, 0);		// Disable this option by default.
 	}
 	else
 	{
@@ -2102,6 +2103,10 @@ void M_CharacterSelectInit(void)
 	}
 	//CONS_Printf("========\n");
 
+	// On main menu, reset that!
+	if (gamestate == GS_MENU)
+		CV_StealthSetValue(&cv_splitdevice, 0);
+
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
 	{
@@ -2329,7 +2334,11 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 {
 	const UINT8 maxp = PR_GetNumProfiles() -1;
+	UINT8 realnum = num;	// Used for profile when using splitdevice.
 	UINT8 i;
+
+	if (cv_splitdevice.value)
+		num = 0;
 
 	if (menucmd[num].dpad_ud > 0)
 	{
@@ -2378,7 +2387,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	else if (M_MenuConfirmPressed(num))
 	{
 		// Apply the profile.
-		PR_ApplyProfile(p->profilen, num);
+		PR_ApplyProfile(p->profilen, realnum);	// Otherwise P1 would inherit the last player's profile in splitdevice and that's not what we want...
 		M_SetupProfileGridPos(p);
 
 		p->mdepth = CSSTEP_CHARS;
@@ -2394,6 +2403,9 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	INT32 i;
 
 	UINT8 numclones;
+
+	if (cv_splitdevice.value)
+		num = 0;
 
 	if (menucmd[num].dpad_ud > 0)
 	{
@@ -2513,6 +2525,9 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
 
+	if (cv_splitdevice.value)
+		num = 0;
+
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->clonenum++;
@@ -2548,6 +2563,10 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
+
+	if (cv_splitdevice.value)
+		num = 0;
+
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->color++;
@@ -2619,6 +2638,9 @@ static void M_AnimateFollower(setup_player_t *p)
 static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 {
 
+	if (cv_splitdevice.value)
+		num = 0;
+
 	M_AnimateFollower(p);
 
 	if (menucmd[num].dpad_lr > 0 && numfollowers)
@@ -2667,6 +2689,10 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 
 static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 {
+
+	if (cv_splitdevice.value)
+		num = 0;
+
 	M_AnimateFollower(p);
 
 	if (menucmd[num].dpad_lr > 0)
@@ -2715,6 +2741,24 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
+//
+static void M_HandleSplitDevice(void)
+{
+
+	const UINT8 pid = 0;
+	setup_player_t *p = &setup_player[setup_numplayers];
+
+	if (M_MenuButtonPressed(pid, MBT_C))
+	{
+		if (!cv_splitdevice.value)
+			M_StartMessage(M_GetText("Split device enabled.\nP1 can add additional players with [C].\nP1 must set all Players' parameters.\n\nIntended for use for multiplayer games\non the same device (Keyboard...)\nand testing purposes.\n\nPress any key"), NULL, MM_NOTHING);
+
+		CV_StealthSetValue(&cv_splitdevice, 1);
+		S_StartSound(NULL, sfx_s3k65);
+		p->mdepth = CSSTEP_PROFILE;	// Ready the player setup.
+	}
+}
+
 boolean M_CharacterSelectHandler(INT32 choice)
 {
 	INT32 i;
@@ -2728,6 +2772,19 @@ boolean M_CharacterSelectHandler(INT32 choice)
 
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
+
+			if (p->mdepth > CSSTEP_NONE && i == 0)
+				M_HandleSplitDevice();
+
+			// If splitdevice is true, only do the last non-ready setups.
+			if (cv_splitdevice.value)
+			{
+				// Previous setup isn't ready, go there.
+				// In any case, do setup 0 first.
+				if (i > 0 && setup_player[i-1].mdepth < CSSTEP_READY)
+					continue;
+			}
+
 			switch (p->mdepth)
 			{
 				case CSSTEP_NONE: // Enter Game
