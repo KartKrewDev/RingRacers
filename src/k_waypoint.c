@@ -657,6 +657,11 @@ void K_DebugWaypointsVisualise(void)
 				debugmobj->color = SKINCOLOR_GREY;
 			}
 
+			if (!K_GetWaypointIsSpawnpoint(waypoint))
+			{
+				debugmobj->frame |= FF_TRANS40;
+			}
+
 			// Valid waypoint, so draw lines of SPARKLES to its next or previous waypoints
 			if (cv_kartdebugwaypoints.value == 1)
 			{
