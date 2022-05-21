@@ -1592,7 +1592,7 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Invinciblity",			{.routine = M_HandleMonitorToggles}, KITEM_INVINCIBILITY},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Grow",					{.routine = M_HandleMonitorToggles}, KITEM_GROW},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Shrink",				{.routine = M_HandleMonitorToggles}, KITEM_SHRINK},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		{.routine = M_HandleMonitorToggles}, KITEM_THUNDERSHIELD},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Lightning Shields",		{.routine = M_HandleMonitorToggles}, KITEM_LIGHTNINGSHIELD},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				{.routine = M_HandleMonitorToggles}, KITEM_HYUDORO},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Pogo Springs",		 	{.routine = M_HandleMonitorToggles}, KITEM_POGOSPRING},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Super Rings",			{.routine = M_HandleMonitorToggles}, KITEM_SUPERRING},
@@ -3518,7 +3518,7 @@ void M_Init(void)
 	quitmsg[QUIT3MSG1] = M_GetText("Come on, just ONE more netgame!\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG2] = M_GetText("Press 'N' to unlock\nthe Golden Kart!\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG3] = M_GetText("Couldn't handle\nthe banana meta?\n\n(Press 'Y' to quit)");
-	quitmsg[QUIT3MSG4] = M_GetText("Every time you press 'Y', an\nSRB2Kart Developer cries...\n\n(Press 'Y' to quit)");
+	quitmsg[QUIT3MSG4] = M_GetText("Every time you press 'Y', a\nRing Racers Developer cries...\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n...right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Eggman's Nightclub too\ndifficult for you?\n\n(Press 'Y' to quit)");
 
@@ -8807,7 +8807,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 
 	if (modifiedgame)
 	{
-		M_StartMessage(M_GetText("You have addons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nSRB2Kart will automatically add\neverything you need when you join.\n\n(Press a key)\n"), FUNCPTRCAST(M_ConnectMenu), MM_EVENTHANDLER);
+		M_StartMessage(M_GetText("You have addons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nRing Racers will automatically add\neverything you need when you join.\n\n(Press a key)\n"), FUNCPTRCAST(M_ConnectMenu), MM_EVENTHANDLER);
 		return;
 	}
 

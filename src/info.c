@@ -24,6 +24,7 @@
 #include "lzf.h"
 
 // Hey, moron! If you change this table, don't forget about the sprite enum in info.h and the sprite lights in hw_light.c!
+// EXCEPT HW_LIGHT.C DOESN'T EXIST ANYMORE LOVE CONTINUOUSLY FALLING ON MY ASS THROUGHOUT THIS CODEBASE - Tyron 2022-05-12
 // For the sake of constant merge conflicts, let's spread this out
 char sprnames[NUMSPRITES + 1][5] =
 {
@@ -561,7 +562,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
 	"SPBM", // Self-Propelled Bomb
-	"THNS", // Thunder Shield
+	"THNS", // Lightning Shield
 	"BUBS", // Bubble Shield (not Bubs)
 	"BWVE", // Bubble Shield waves
 	"FLMS", // Flame Shield
@@ -599,6 +600,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"PSHW", // thrown indicator
 	"ISTA", // instashield layer A
 	"ISTB", // instashield layer B
+
+	"PWCL", // Invinc/grow clash VFX
 
 	"ARRO", // player arrows
 	"ITEM",
@@ -739,6 +742,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"DBOS", // Drift boost flame
 
+	"WAYP",
 	"EGOO",
 
 	"WTRL", // Water Trail
@@ -4194,30 +4198,30 @@ state_t states[NUMSTATES] =
 	{SPR_SPBM, 8, 1, {A_SPBChase}, 0, 0,  S_SPB1}, // S_SPB20
 	{SPR_SPBM, 8, 175, {NULL}, 0, 0, S_NULL}, // S_SPB_DEAD
 
-	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_THUNDERSHIELD2},		// S_THUNDERSHIELD1
-	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_THUNDERSHIELD3},		// S_THUNDERSHIELD2
-	{SPR_THNS, FF_FULLBRIGHT|11, 2, {NULL}, 0, 0, S_THUNDERSHIELD4},		// S_THUNDERSHIELD3
-	{SPR_THNS, FF_FULLBRIGHT,    2, {NULL}, 0, 0, S_THUNDERSHIELD5},		// S_THUNDERSHIELD4
-	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_THUNDERSHIELD6},		// S_THUNDERSHIELD5
-	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_THUNDERSHIELD7},		// S_THUNDERSHIELD6
-	{SPR_THNS, FF_FULLBRIGHT|3,  2, {NULL}, 0, 0, S_THUNDERSHIELD8},		// S_THUNDERSHIELD7
-	{SPR_THNS, FF_FULLBRIGHT|4,  2, {NULL}, 0, 0, S_THUNDERSHIELD9},		// S_THUNDERSHIELD8
-	{SPR_THNS, FF_FULLBRIGHT|5,  2, {NULL}, 0, 0, S_THUNDERSHIELD10},		// S_THUNDERSHIELD9
-	{SPR_THNS, FF_FULLBRIGHT|6,  2, {NULL}, 0, 0, S_THUNDERSHIELD11},		// S_THUNDERSHIELD10
-	{SPR_THNS, FF_FULLBRIGHT|7,  2, {NULL}, 0, 0, S_THUNDERSHIELD12},		// S_THUNDERSHIELD11
-	{SPR_THNS, FF_FULLBRIGHT|8,  2, {NULL}, 0, 0, S_THUNDERSHIELD13},		// S_THUNDERSHIELD12
-	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_THUNDERSHIELD14},		// S_THUNDERSHIELD13
-	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_THUNDERSHIELD15},		// S_THUNDERSHIELD14
-	{SPR_THNS, FF_FULLBRIGHT|11, 2, {NULL}, 0, 0, S_THUNDERSHIELD16},		// S_THUNDERSHIELD15
-	{SPR_THNS, FF_FULLBRIGHT|8,  2, {NULL}, 0, 0, S_THUNDERSHIELD17},		// S_THUNDERSHIELD16
-	{SPR_THNS, FF_FULLBRIGHT|7,  2, {NULL}, 0, 0, S_THUNDERSHIELD18},		// S_THUNDERSHIELD17
-	{SPR_THNS, FF_FULLBRIGHT|6,  2, {NULL}, 0, 0, S_THUNDERSHIELD19},		// S_THUNDERSHIELD18
-	{SPR_THNS, FF_FULLBRIGHT|5,  2, {NULL}, 0, 0, S_THUNDERSHIELD20},		// S_THUNDERSHIELD19
-	{SPR_THNS, FF_FULLBRIGHT|4,  2, {NULL}, 0, 0, S_THUNDERSHIELD21},		// S_THUNDERSHIELD20
-	{SPR_THNS, FF_FULLBRIGHT|3,  2, {NULL}, 0, 0, S_THUNDERSHIELD22},		// S_THUNDERSHIELD21
-	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_THUNDERSHIELD23},		// S_THUNDERSHIELD22
-	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_THUNDERSHIELD24},		// S_THUNDERSHIELD23
-	{SPR_THNS, FF_FULLBRIGHT|0,  2, {NULL}, 0, 0, S_THUNDERSHIELD1},		// S_THUNDERSHIELD24
+	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD2},		// S_LIGHTNINGSHIELD1
+	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD3},		// S_LIGHTNINGSHIELD2
+	{SPR_THNS, FF_FULLBRIGHT|11, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD4},		// S_LIGHTNINGSHIELD3
+	{SPR_THNS, FF_FULLBRIGHT,    2, {NULL}, 0, 0, S_LIGHTNINGSHIELD5},		// S_LIGHTNINGSHIELD4
+	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD6},		// S_LIGHTNINGSHIELD5
+	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD7},		// S_LIGHTNINGSHIELD6
+	{SPR_THNS, FF_FULLBRIGHT|3,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD8},		// S_LIGHTNINGSHIELD7
+	{SPR_THNS, FF_FULLBRIGHT|4,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD9},		// S_LIGHTNINGSHIELD8
+	{SPR_THNS, FF_FULLBRIGHT|5,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD10},		// S_LIGHTNINGSHIELD9
+	{SPR_THNS, FF_FULLBRIGHT|6,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD11},		// S_LIGHTNINGSHIELD10
+	{SPR_THNS, FF_FULLBRIGHT|7,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD12},		// S_LIGHTNINGSHIELD11
+	{SPR_THNS, FF_FULLBRIGHT|8,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD13},		// S_LIGHTNINGSHIELD12
+	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD14},		// S_LIGHTNINGSHIELD13
+	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD15},		// S_LIGHTNINGSHIELD14
+	{SPR_THNS, FF_FULLBRIGHT|11, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD16},		// S_LIGHTNINGSHIELD15
+	{SPR_THNS, FF_FULLBRIGHT|8,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD17},		// S_LIGHTNINGSHIELD16
+	{SPR_THNS, FF_FULLBRIGHT|7,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD18},		// S_LIGHTNINGSHIELD17
+	{SPR_THNS, FF_FULLBRIGHT|6,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD19},		// S_LIGHTNINGSHIELD18
+	{SPR_THNS, FF_FULLBRIGHT|5,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD20},		// S_LIGHTNINGSHIELD19
+	{SPR_THNS, FF_FULLBRIGHT|4,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD21},		// S_LIGHTNINGSHIELD20
+	{SPR_THNS, FF_FULLBRIGHT|3,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD22},		// S_LIGHTNINGSHIELD21
+	{SPR_THNS, FF_FULLBRIGHT|2,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD23},		// S_LIGHTNINGSHIELD22
+	{SPR_THNS, FF_FULLBRIGHT|1,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD24},		// S_LIGHTNINGSHIELD23
+	{SPR_THNS, FF_FULLBRIGHT|0,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD1},		// S_LIGHTNINGSHIELD24
 
 	{SPR_BUBS, FF_FULLBRIGHT,     2, {NULL}, 0, 0, S_BUBBLESHIELD2},		// S_BUBBLESHIELD1
 	{SPR_BUBS, FF_FULLBRIGHT|13,  2, {NULL}, 0, 0, S_BUBBLESHIELD3},		// S_BUBBLESHIELD2
@@ -4497,6 +4501,8 @@ state_t states[NUMSTATES] =
 	{SPR_ISTB, FF_FULLBRIGHT|4, 2, {NULL}, 0, 0, S_INSTASHIELDB6},	// S_INSTASHIELDB5
 	{SPR_ISTB, FF_FULLBRIGHT|5, 2, {NULL}, 0, 0, S_INSTASHIELDB7},	// S_INSTASHIELDB6
 	{SPR_ISTB, FF_FULLBRIGHT|6, 2, {NULL}, 0, 0, S_NULL},				// S_INSTASHIELDB7
+
+	{SPR_PWCL, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE, 10, {NULL}, 9, 1, S_NULL}, // S_POWERCLASH
 
 	// Above player arrow
 	{SPR_ARRO, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_PLAYERARROW
@@ -4991,6 +4997,8 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 4, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SUPPORT
 	{SPR_CAPS, FF_ANIMATE|5, -1, {NULL}, 3, 1, S_NULL}, // S_BATTLECAPSULE_SUPPORTFLY
 
+	{SPR_WAYP, 0, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTORB
+	{SPR_WAYP, 1|FF_FLOORSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTSPLAT
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
 
 	// Water Trail
@@ -7557,7 +7565,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MT_FLINGRING,   // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		0,              // painchance
+		MT_RING,        // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -7608,10 +7616,10 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
-		MT_FLINGRING,   // reactiontime
+		0,              // reactiontime
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
-		MT_RING,        // painchance
+		0,              // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
@@ -23711,9 +23719,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_THUNDERSHIELD
+	{           // MT_LIGHTNINGSHIELD
 		-1,             // doomednum
-		S_THUNDERSHIELD1, // spawnstate
+		S_LIGHTNINGSHIELD1, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -25334,6 +25342,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_INSTASHIELDB
 		-1,						// doomednum
 		S_INSTASHIELDB1,	    // spawnstate
+		1000,					// spawnhealth
+		S_NULL,					// seestate
+		sfx_None,				// seesound
+		8,						// reactiontime
+		sfx_None,				// attacksound
+		S_NULL,					// painstate
+		0,						// painchance
+		sfx_None,				// painsound
+		S_NULL,					// meleestate
+		S_NULL,					// missilestate
+		S_NULL,					// deathstate
+		S_NULL,					// xdeathstate
+		sfx_None,				// deathsound
+		8,						// speed
+		8*FRACUNIT,				// radius
+		8*FRACUNIT,				// height
+		2,						// display offset
+		100,					// mass
+		0,						// damage
+		sfx_None,				// activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL					// raisestate
+	},
+
+	{           // MT_POWERCLASH
+		-1,						// doomednum
+		S_POWERCLASH,	    	// spawnstate
 		1000,					// spawnhealth
 		S_NULL,					// seestate
 		sfx_None,				// seesound

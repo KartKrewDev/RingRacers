@@ -1028,10 +1028,15 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 
 		// But forward/backward IS used for aiming.
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (joystickvector.yaxis < 0))
-			cmd->buttons |= BT_FORWARD;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (joystickvector.yaxis > 0))
-			cmd->buttons |= BT_BACKWARD;
+		if (PlayerInputDown(ssplayer, gc_aimforward))
+			cmd->throwdir += KART_FULLTURN;
+		if (PlayerInputDown(ssplayer, gc_aimbackward))
+			cmd->throwdir -= KART_FULLTURN;
+
+		if (analogjoystickmove && joystickvector.yaxis != 0)
+		{
+			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) >> 10;
+		}
 	}
 
 	// fire with any button/key
@@ -1161,6 +1166,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (cmd->turning < -KART_FULLTURN)
 		cmd->turning = -KART_FULLTURN;
 
+	if (cmd->throwdir > KART_FULLTURN)
+		cmd->throwdir = KART_FULLTURN;
+	else if (cmd->throwdir < -KART_FULLTURN)
+		cmd->throwdir = -KART_FULLTURN;
+
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
 		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
@@ -1184,6 +1194,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
 		dest[i].turning = (INT16)SHORT(src[i].turning);
+		dest[i].throwdir = (INT16)SHORT(src[i].throwdir);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
 		dest[i].latency = src[i].latency;
@@ -3972,7 +3983,7 @@ void G_LoadGameData(void)
 	// Version check
 	if (READUINT32(save_p) != 0xFCAFE211)
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
@@ -4062,7 +4073,7 @@ void G_LoadGameData(void)
 	// Landing point for corrupt gamedata
 	datacorrupt:
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 

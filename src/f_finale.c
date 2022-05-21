@@ -45,7 +45,7 @@
 // Stage of animation:
 // 0 = text, 1 = art screen
 INT32 finalecount;
-INT32 titlescrollxspeed = 5;
+INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
 UINT8 titlemapinaction = TITLEMAP_OFF;
 
@@ -80,7 +80,7 @@ static UINT32 demoIdleLeft;
 
 // customizable title screen graphics
 
-ttmode_enum ttmode = TTMODE_OLD;
+ttmode_enum ttmode = TTMODE_RINGRACERS;
 UINT8 ttscale = 1; // FRACUNIT / ttscale
 // ttmode user vars
 char ttname[9];
@@ -106,6 +106,13 @@ static patch_t *ttkart; // *vroom* KART
 static patch_t *ttcheckers; // *vroom* KART
 static patch_t *ttkflash; // flash screen
 */
+
+static patch_t *kts_bumper; // DR ROBOTNIKS RING RACERS
+static patch_t *kts_eggman; // dr. robotnik himself
+static patch_t *kts_tails; // tails himself
+static patch_t *kts_tails_tails; // tails' tails
+static patch_t *kts_electricity[6]; // ring o' electricity
+static patch_t *kts_copyright; // (C) SEGA
 
 #define NOWAY
 
@@ -525,7 +532,7 @@ boolean F_IntroResponder(event_t *event)
 //  CREDITS
 // =========
 static const char *credits[] = {
-	"\1SRB2Kart",
+	"\1Dr. Robotnik's Ring Racers",
 	"\1Credits",
 	"",
 	"\1Game Design",
@@ -1692,10 +1699,10 @@ void F_InitMenuPresValues(void)
 	// Set defaults for presentation values
 	strncpy(curbgname, "TITLESKY", 9);
 	curfadevalue = 16;
-	curbgcolor = 31;
-	curbgxspeed = (gamestate == GS_TIMEATTACK) ? 0 : titlescrollxspeed;
-	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 22 : titlescrollyspeed;
-	curbghide = (gamestate == GS_TIMEATTACK) ? false : true;
+	curbgcolor = -1;
+	curbgxspeed = titlescrollxspeed;
+	curbgyspeed = titlescrollyspeed;
+	curbghide = false;
 
 	curhidepics = hidetitlepics;
 	curttmode = ttmode;
@@ -1733,19 +1740,20 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 	if (rendermode == render_none)
 		return;
 
+	V_DrawFill(0, 0, vid.width, vid.height, 31);
+
 	if (!patchname || !patchname[0])
 	{
-		V_DrawFill(0, 0, vid.width, vid.height, 31);
-		return;
-	}
-
-	if (!scrollxspeed && !scrollyspeed)
-	{
-		V_DrawPatchFill(W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY));
 		return;
 	}
 
 	pat = W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY);
+
+	if (scrollxspeed == 0 && scrollyspeed == 0)
+	{
+		V_DrawPatchFill(pat);
+		return;
+	}
 
 	patwidth = pat->width;
 	patheight = pat->height;
@@ -1777,8 +1785,6 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 				V_NOSCALESTART, pat);
 		}
 	}
-
-	W_UnlockCachedPatch(pat);
 }
 
 #define LOADTTGFX(arr, name, maxf) \
@@ -1809,15 +1815,30 @@ else \
 
 static void F_CacheTitleScreen(void)
 {
+	UINT16 i;
+
 	switch(curttmode)
 	{
-		case TTMODE_OLD:
 		case TTMODE_NONE:
+			break;
+
+		case TTMODE_OLD:
+			break; // idk do we still want this?
+
+		case TTMODE_RINGRACERS:
+			kts_bumper = W_CachePatchName("KTSBUMPR1", PU_PATCH_LOWPRIORITY);
+			kts_eggman = W_CachePatchName("KTSEGG01", PU_PATCH_LOWPRIORITY);
+			kts_tails = W_CachePatchName("KTSTAL01", PU_PATCH_LOWPRIORITY);
+			kts_tails_tails = W_CachePatchName("KTSTAL02", PU_PATCH_LOWPRIORITY);
+			for (i = 0; i < 6; i++)
+			{
+				kts_electricity[i] = W_CachePatchName(va("KTSELCT%.1d", i+1), PU_PATCH_LOWPRIORITY);
+			}
+			kts_copyright = W_CachePatchName("KTSCR", PU_PATCH_LOWPRIORITY);
 			break;
 
 		case TTMODE_USER:
 		{
-			UINT16 i;
 			lumpnum_t lumpnum;
 			char lumpname[9];
 
@@ -1941,8 +1962,46 @@ void F_TitleScreenDrawer(void)
 
 	switch(curttmode)
 	{
-		case TTMODE_OLD:
 		case TTMODE_NONE:
+			break;
+
+		case TTMODE_RINGRACERS:
+		{
+			const char *eggName = "eggman";
+			INT32 eggSkin = R_SkinAvailable(eggName);
+			skincolornum_t eggColor = SKINCOLOR_RED;
+			UINT8 *eggColormap = NULL;
+
+			const char *tailsName = "tails";
+			INT32 tailsSkin = R_SkinAvailable(tailsName);
+			skincolornum_t tailsColor = SKINCOLOR_ORANGE;
+			UINT8 *tailsColormap = NULL;
+
+			if (eggSkin != -1)
+			{
+				eggColor = skins[eggSkin].prefcolor;
+			}
+			eggColormap = R_GetTranslationColormap(TC_DEFAULT, eggColor, GTC_MENUCACHE);
+
+			if (tailsSkin != -1)
+			{
+				tailsColor = skins[tailsSkin].prefcolor;
+			}
+			tailsColormap = R_GetTranslationColormap(TC_DEFAULT, tailsColor, GTC_MENUCACHE);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails_tails, tailsColormap);
+			V_DrawFixedPatch(0, 0, FRACUNIT, V_ADD, kts_electricity[finalecount % 6], NULL);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_eggman, eggColormap);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails, tailsColormap);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
+			break;
+		}
+
+		case TTMODE_OLD:
 /*
 			if (finalecount < 50)
 			{
@@ -1983,7 +2042,7 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "SRB2 Kart v2.0");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "Dr. Robotnik's Ring Racers v2.0");
 
 #ifdef DEVELOP
 #if defined(TESTERS)
@@ -2043,22 +2102,19 @@ void F_MenuPresTicker(boolean run)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
+	F_MenuPresTicker(true); // title sky
+
 	if (run)
 	{
 		finalecount++;
 
-		if (finalecount == 10)
-		{
-			S_StartSound(NULL, sfx_s23e);
-		}
-		else if (finalecount == 50)
+		if (finalecount == 1)
 		{
 			// Now start the music
 			if (menupres[MN_MAIN].musname[0])
 				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
 			else
 				S_ChangeMusicInternal("_title", looptitle);
-			S_StartSound(NULL, sfx_s23c);
 		}
 	}
 

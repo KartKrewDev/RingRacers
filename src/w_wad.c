@@ -1797,7 +1797,7 @@ void *W_CachePatchName(const char *name, INT32 tag)
 	num = W_CheckNumForName(name);
 
 	if (num == LUMPERROR)
-		return W_CachePatchNum(W_GetNumForName("MISSING"), tag);
+		return missingpat;
 	return W_CachePatchNum(num, tag);
 }
 
@@ -1808,7 +1808,7 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
 	num = W_CheckNumForLongName(name);
 
 	if (num == LUMPERROR)
-		return W_CachePatchNum(W_GetNumForLongName("MISSING"), tag);
+		return missingpat;
 	return W_CachePatchNum(num, tag);
 }
 

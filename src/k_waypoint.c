@@ -558,11 +558,9 @@ static void K_DebugWaypointsSpawnLine(waypoint_t *const waypoint1, waypoint_t *c
 --------------------------------------------------*/
 static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 {
+	const fixed_t spriteRadius = 96*FRACUNIT;
 	mobj_t *radiusOrb;
 	mobj_t *waypointmobj;
-	const INT32 numRadiusMobjs = 64;
-	INT32 i = 0;
-	angle_t spawnAngle = 0U;
 	fixed_t spawnX= 0;
 	fixed_t spawnY= 0;
 	fixed_t spawnZ= 0;
@@ -572,22 +570,21 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 
 	waypointmobj = waypoint->mobj;
 
-	for (i = 0; i < numRadiusMobjs; i++)
-	{
-		spawnAngle = (ANGLE_MAX / numRadiusMobjs) * i;
+	spawnX = waypointmobj->x;
+	spawnY = waypointmobj->y;
+	spawnZ = waypointmobj->z + 16*mapobjectscale;
 
-		spawnZ = waypointmobj->z;
-		spawnX = waypointmobj->x + P_ReturnThrustX(waypointmobj, spawnAngle, waypointmobj->radius);
-		spawnY = waypointmobj->y + P_ReturnThrustY(waypointmobj, spawnAngle, waypointmobj->radius);
+	radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
 
-		radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
-		P_SetMobjState(radiusOrb, S_THOK);
-		radiusOrb->tics = 1;
-		radiusOrb->frame &= ~FF_TRANSMASK;
-		radiusOrb->frame |= FF_FULLBRIGHT;
-		radiusOrb->color = SKINCOLOR_PURPLE;
-		radiusOrb->scale = radiusOrb->scale / 4;
-	}
+	P_SetMobjState(radiusOrb, S_WAYPOINTSPLAT);
+	radiusOrb->tics = 1;
+
+	radiusOrb->frame &= ~FF_TRANSMASK;
+	radiusOrb->frame |= FF_FULLBRIGHT;
+	radiusOrb->color = SKINCOLOR_PURPLE;
+
+	radiusOrb->destscale = FixedDiv(waypointmobj->radius, spriteRadius);
+	P_SetScale(radiusOrb, radiusOrb->destscale);
 }
 
 /*--------------------------------------------------
@@ -620,10 +617,10 @@ void K_DebugWaypointsVisualise(void)
 		waypoint = K_SearchWaypointHeapForMobj(waypointmobj);
 
 		debugmobj = P_SpawnMobj(waypointmobj->x, waypointmobj->y, waypointmobj->z, MT_SPARK);
-		P_SetMobjState(debugmobj, S_THOK);
+		P_SetMobjState(debugmobj, S_WAYPOINTORB);
 
 		debugmobj->frame &= ~FF_TRANSMASK;
-		debugmobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
+		debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
 
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
@@ -648,11 +645,21 @@ void K_DebugWaypointsVisualise(void)
 			else
 			{
 				debugmobj->color = SKINCOLOR_BLUE;
+
+				if (K_GetWaypointIsShortcut(waypoint))
+				{
+					debugmobj->color = SKINCOLOR_PINK;
+				}
 			}
 
 			if (!K_GetWaypointIsEnabled(waypoint))
 			{
 				debugmobj->color = SKINCOLOR_GREY;
+			}
+
+			if (!K_GetWaypointIsSpawnpoint(waypoint))
+			{
+				debugmobj->frame |= FF_TRANS40;
 			}
 
 			// Valid waypoint, so draw lines of SPARKLES to its next or previous waypoints
@@ -975,9 +982,11 @@ static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
 	Return:-
 		True if the waypoint is traversable, false otherwise.
 --------------------------------------------------*/
-static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
+static boolean K_WaypointPathfindTraversableAllEnabled(void *data, void *prevdata)
 {
 	boolean traversable = false;
+
+	(void)prevdata;
 
 	if (data == NULL)
 	{
@@ -1004,18 +1013,21 @@ static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
 	Return:-
 		True if the waypoint is traversable, false otherwise.
 --------------------------------------------------*/
-static boolean K_WaypointPathfindTraversableNoShortcuts(void *data)
+static boolean K_WaypointPathfindTraversableNoShortcuts(void *data, void *prevdata)
 {
 	boolean traversable = false;
 
-	if (data == NULL)
+	if (data == NULL || prevdata == NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindTraversableNoShortcuts received NULL data.\n");
 	}
 	else
 	{
 		waypoint_t *waypoint = (waypoint_t *)data;
-		traversable = ((K_GetWaypointIsShortcut(waypoint) == false) && (K_GetWaypointIsEnabled(waypoint) == true));
+		waypoint_t *prevWaypoint = (waypoint_t *)prevdata;
+
+		traversable = ((K_GetWaypointIsEnabled(waypoint) == true)
+			&& (K_GetWaypointIsShortcut(waypoint) == false || K_GetWaypointIsShortcut(prevWaypoint) == true)); // Allow shortcuts to be used if the starting waypoint is already a shortcut.
 	}
 
 	return traversable;

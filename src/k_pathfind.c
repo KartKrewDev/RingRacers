@@ -427,7 +427,7 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 					else
 					{
 						// skip this node if it isn't traversable
-						if (pathfindsetup->gettraversable(checknodedata) == false)
+						if (pathfindsetup->gettraversable(checknodedata, currentnode->nodedata) == false)
 						{
 							continue;
 						}
