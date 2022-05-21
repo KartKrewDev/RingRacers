@@ -4538,6 +4538,8 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		{
 			// Reset controls to that of the current profile.
 			profile_t *cpr = PR_GetProfile(cv_currprofile.value);
+			if (cpr == NULL)
+				cpr = PR_GetProfile(0); // Creating a profile at boot, revert to guest profile
 			memcpy(&gamecontrol[0], cpr->controls, sizeof(gamecontroldefault));
 
 			M_StartMessage(M_GetText("Your controls have been\nreverted to their previous state.\n\n(Press any key)"), NULL, MM_NOTHING);
