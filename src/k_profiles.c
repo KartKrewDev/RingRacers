@@ -87,14 +87,28 @@ profile_t* PR_GetProfile(INT32 num)
 
 boolean PR_DeleteProfile(INT32 num)
 {
-	UINT8 i;
+	UINT8 i, j;
 	if (num <= 0 || num > numprofiles)
 		return false;
 
 	// If we're deleting inbetween profiles, move everything.
 	if (num < numprofiles)
+	{
 		for (i = num; i < numprofiles-1; i++)
+		{
 			profilesList[i] = profilesList[i+1];
+
+			// Make sure to move cv_lastprofile values as well
+			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+			{
+				if (cv_lastprofile[j].value == num)
+					CV_StealthSetValue(&cv_lastprofile[j], 0);	// If we were on the deleted profile, default back to guest.
+
+				else if (cv_lastprofile[j].value == i+1)				// Otherwise, shift our lastprofile number down to match the new order.
+					CV_StealthSetValue(&cv_lastprofile[j], cv_lastprofile[j].value-1);
+			}
+		}
+	}
 
 	// In any case, delete the last profile as well.
 	profilesList[numprofiles] = NULL;
