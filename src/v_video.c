@@ -1703,13 +1703,13 @@ INT32 V_TitleCardStringWidth(const char *str)
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !tc_font[0][(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTOL_FONT].font[(INT32)c])
 		{
 			xoffs += 10;
 			continue;
 		}
 
-		pp = tc_font[1][(INT32)c];
+		pp = fontv[GTFN_FONT].font[(INT32)c];
 
 		xoffs += pp->width-5;
 	}
@@ -1770,14 +1770,14 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !tc_font[1][(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c])
 		{
 			xoffs += 10;
 			continue;
 		}
 
-		ol = tc_font[0][(INT32)c];
-		pp = tc_font[1][(INT32)c];
+		ol = fontv[GTOL_FONT].font[(INT32)c];
+		pp = fontv[GTFN_FONT].font[(INT32)c];
 
 		if (bossmode)
 		{
@@ -2641,8 +2641,8 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	} while (num);
 
 	// draw a minus sign if necessary
-	if (neg)
-		V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
+	//if (neg)
+		//V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
 }
 
 // Draws a number with a set number of digits.

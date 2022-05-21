@@ -1553,7 +1553,7 @@ void CONS_Error(const char *msg)
 #if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
 	if (!graphics_started)
 	{
-		MessageBoxA(vid.WndParent, msg, "SRB2Kart Warning", MB_OK);
+		MessageBoxA(vid.WndParent, msg, "Dr. Robotnik's Ring Racers Warning", MB_OK);
 		return;
 	}
 #endif

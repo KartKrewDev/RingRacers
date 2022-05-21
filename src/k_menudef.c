@@ -983,7 +983,7 @@ menuitem_t OPTIONS_GameplayItems[] =
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Ballhogs",				NULL, {.routine = M_HandleItemToggles}, KITEM_BALLHOG, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Drop Targets",			NULL, {.routine = M_HandleItemToggles}, KITEM_DROPTARGET, sfx_s258},
 
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Thunder Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_THUNDERSHIELD, 0},
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "Lightning Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_LIGHTNINGSHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bubble Shields",		NULL, {.routine = M_HandleItemToggles}, KITEM_BUBBLESHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Flame Shields",			NULL, {.routine = M_HandleItemToggles}, KITEM_FLAMESHIELD, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Hyudoros",				NULL, {.routine = M_HandleItemToggles}, KITEM_HYUDORO, 0},

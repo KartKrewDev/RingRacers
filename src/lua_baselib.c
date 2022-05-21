@@ -213,7 +213,6 @@ static const struct {
 
 	{META_BBOX,         "bbox"},
 
-	{META_HUDINFO,      "hudinfo_t"},
 	{META_PATCH,        "patch_t"},
 	{META_COLORMAP,     "colormap"},
 	{META_CAMERA,       "camera_t"},

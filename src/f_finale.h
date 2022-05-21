@@ -80,9 +80,9 @@ extern INT32 titlescrollyspeed;
 typedef enum
 {
 	TTMODE_NONE = 0,
+	TTMODE_RINGRACERS,
 	TTMODE_OLD,
-	TTMODE_USER,
-	//TTMODE_RINGRACERS
+	TTMODE_USER
 } ttmode_enum;
 
 #define TTMAX_ALACROIX 30 // max frames for SONIC typeface, plus one for NULL terminating entry

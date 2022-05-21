@@ -2095,6 +2095,11 @@ void P_MovePlayer(player_t *player)
 
 	P_3dMovement(player);
 
+	if (cmd->turning == 0)
+	{
+		player->justDI = false;
+	}
+
 	// Kart frames
 	if (player->tumbleBounces > 0)
 	{
@@ -2507,7 +2512,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 
 		if (mo->flags & MF_BOSS) //don't OHKO bosses nor players!
 			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF);
-		else if (mo->type == MT_PLAYER)	// Thunder shield: Combo players.
+		else if (mo->type == MT_PLAYER)	// Lightning shield: Combo players.
 			P_DamageMobj(mo, inflictor, source, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
 		else
 			P_DamageMobj(mo, inflictor, source, 1000, DMG_NORMAL|DMG_CANTHURTSELF);
@@ -4334,10 +4339,10 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Track airtime
-	if (P_IsObjectOnGround(player->mo))
+	if (P_IsObjectOnGround(player->mo)
+		&& !P_PlayerInPain(player)) // This isn't airtime, but it's control loss all the same.
 	{
-		if (!P_PlayerInPain(player))
-			player->airtime = 0;
+		player->airtime = 0;
 	}
 	else
 	{
@@ -4349,17 +4354,20 @@ void P_PlayerThink(player_t *player)
 	// SRB2kart
 	// Save the dir the player is holding
 	//  to allow items to be thrown forward or backward.
-	if (cmd->buttons & BT_FORWARD)
 	{
-		player->throwdir = 1;
-	}
-	else if (cmd->buttons & BT_BACKWARD)
-	{
-		player->throwdir = -1;
-	}
-	else
-	{
-		player->throwdir = 0;
+		const INT16 threshold = 0; //(KART_FULLTURN / 2);
+		if (cmd->throwdir > threshold)
+		{
+			player->throwdir = 1;
+		}
+		else if (cmd->throwdir < -threshold)
+		{
+			player->throwdir = -1;
+		}
+		else
+		{
+			player->throwdir = 0;
+		}
 	}
 
 	// Accessibility - kickstart your acceleration

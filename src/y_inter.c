@@ -300,25 +300,27 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			data.pos[data.numplayers] = data.numplayers+1;
 		}
 
-		if ((powertype == PWRLV_DISABLED)
-			&& (!rankingsmode)
-			&& !(players[i].pflags & PF_NOCONTEST)
-			&& (data.pos[data.numplayers] < (numplayersingame + numgriefers)))
+		if (!rankingsmode)
 		{
-			// Online rank is handled further below in this file.
-			data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], numplayersingame + numgriefers);
-			players[i].score += data.increase[i];
-		}
+			if ((powertype == PWRLV_DISABLED)
+				&& !(players[i].pflags & PF_NOCONTEST)
+				&& (data.pos[data.numplayers] < (numplayersingame + numgriefers)))
+			{
+				// Online rank is handled further below in this file.
+				data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], numplayersingame + numgriefers);
+				players[i].score += data.increase[i];
+			}
 
-		if (demo.recording && !rankingsmode)
-		{
-			G_WriteStanding(
-				data.pos[data.numplayers],
-				data.name[data.numplayers],
-				*data.character[data.numplayers],
-				*data.color[data.numplayers],
-				data.val[data.numplayers]
-			);
+			if (demo.recording)
+			{
+				G_WriteStanding(
+					data.pos[data.numplayers],
+					data.name[data.numplayers],
+					*data.character[data.numplayers],
+					*data.color[data.numplayers],
+					data.val[data.numplayers]
+				);
+			}
 		}
 
 		data.numplayers++;
@@ -446,6 +448,12 @@ void Y_IntermissionDrawer(void)
 				{
 					UINT8 cursorframe = (intertic / 4) % 8;
 					V_DrawScaledPatch(x+16, y-4, 0, W_CachePatchName(va("K_CHILI%d", cursorframe+1), PU_CACHE));
+				}
+
+				if ((players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
+				{
+					// RETIRED!!
+					V_DrawScaledPatch(x+12, y-7, 0, W_CachePatchName("K_NOBLNS", PU_CACHE));
 				}
 
 				STRBUFCPY(strtime, data.name[i]);
@@ -674,6 +682,7 @@ void Y_Ticker(void)
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
+				K_RetireBots();
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
 
@@ -1022,6 +1031,7 @@ void Y_StartIntermission(void)
 //
 void Y_EndIntermission(void)
 {
+	K_RetireBots();
 	Y_UnloadData();
 
 	endtic = -1;

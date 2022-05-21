@@ -18,7 +18,10 @@
 #include "r_defs.h"
 
 // Maximum value of botvars.difficulty
-#define MAXBOTDIFFICULTY 9
+#define MAXBOTDIFFICULTY 13
+
+// Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
+#define DIFFICULTBOT 9
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
@@ -218,6 +221,21 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 --------------------------------------------------*/
 
 void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player);
+
+
+/*--------------------------------------------------
+	INT32 K_PositionBully(player_t *player)
+
+		Calculates a turn value to reach a player that can be bullied.
+
+	Input Arguments:-
+		player - Bot to run this for.
+
+	Return:-
+		INT32_MAX if couldn't find anything, otherwise a steering value.
+--------------------------------------------------*/
+
+INT32 K_PositionBully(player_t *player);
 
 
 /*--------------------------------------------------

@@ -5897,8 +5897,8 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 							mobj->tracer->frame = KITEM_BALLHOG;
 							//localcolor = SKINCOLOR_LILAC;
 							break;
-						case 13: // Thunder Shield
-							mobj->tracer->frame = KITEM_THUNDERSHIELD;
+						case 13: // Lightning Shield
+							mobj->tracer->frame = KITEM_LIGHTNINGSHIELD;
 							//localcolor = SKINCOLOR_CYAN;
 							break;
 						case 14: // Super Ring
@@ -6500,6 +6500,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		// No need to check water. Who cares?
 		P_RingThinker(mobj);
+
 		if (mobj->flags2 & MF2_NIGHTSPULL)
 			P_NightsItemChase(mobj);
 		else
@@ -7378,11 +7379,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
 		break;
-	case MT_THUNDERSHIELD:
+	case MT_LIGHTNINGSHIELD:
 	{
 		fixed_t destx, desty;
 		if (!mobj->target || !mobj->target->health || !mobj->target->player
-			|| mobj->target->player->curshield != KSHIELD_THUNDER)
+			|| mobj->target->player->curshield != KSHIELD_LIGHTNING)
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -7401,7 +7402,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			else
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
 
-			if (curstate > S_THUNDERSHIELD15 && curstate <= S_THUNDERSHIELD24)
+			if (curstate > S_LIGHTNINGSHIELD15 && curstate <= S_LIGHTNINGSHIELD24)
 				viewingangle += ANGLE_180;
 
 			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
@@ -9143,6 +9144,11 @@ void P_MobjThinker(mobj_t *mobj)
 			mobj->spriteyscale = 5*FRACUNIT;
 		}
 
+		if (mobj->player != NULL && mobj->hitlag == 0 && (mobj->eflags & MFE_DAMAGEHITLAG))
+		{
+			K_HandleDirectionalInfluence(mobj->player);
+		}
+
 		return;
 	}
 
@@ -9331,10 +9337,13 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_FALLINGROCK
 		|| mobj->type == MT_ORBINAUT
 		|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
-		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime)) {
+		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime))
+	{
 		P_TryMove(mobj, mobj->x, mobj->y, true); // Sets mo->standingslope correctly
+
 		if (P_MobjWasRemoved(mobj)) // anything that calls checkposition can be lethal
 			return;
+
 		//if (mobj->standingslope) CONS_Printf("slope physics on mobj\n");
 		P_ButteredSlope(mobj);
 	}
@@ -9661,7 +9670,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->shadowscale = 5*FRACUNIT/4;
 			thing->whiteshadow = true;
 			break;
-		case MT_THUNDERSHIELD:
+		case MT_LIGHTNINGSHIELD:
 		case MT_BUBBLESHIELD:
 		case MT_BUBBLESHIELDTRAP:
 		case MT_FLAMESHIELD:

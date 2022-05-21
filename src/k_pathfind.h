@@ -27,7 +27,7 @@ typedef UINT32*(*getnodeconnectioncostsfunc)(void*);
 typedef UINT32(*getnodeheuristicfunc)(void*, void*);
 
 // function pointer for getting if a node is traversable from its base data
-typedef boolean(*getnodetraversablefunc)(void*);
+typedef boolean(*getnodetraversablefunc)(void*, void*);
 
 
 // A pathfindnode contains information about a node from the pathfinding

@@ -352,10 +352,10 @@ void K_DoMineSearch(mobj_t *actor, fixed_t size)
 	explodedist = FixedMul(size, actor->scale);
 	grenade = actor;
 
-	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(actor->y - explodedist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(actor->x + explodedist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(actor->x - explodedist - bmaporgx)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(actor->y + (explodedist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - (explodedist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + (explodedist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - (explodedist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX (xl, xh, yl, yh);
 
@@ -664,6 +664,85 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+static mobj_t *lightningSource;
+static fixed_t lightningDist;
+
+static inline boolean PIT_LightningShieldAttack(mobj_t *thing)
+{
+	if (lightningSource == NULL || P_MobjWasRemoved(lightningSource))
+	{
+		// Invalid?
+		return false;
+	}
+
+	if (thing == lightningSource)
+	{
+		// Don't explode yourself!!
+		return true;
+	}
+
+	if (thing->health <= 0)
+	{
+		// Dead
+		return true;
+	}
+
+	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
+	{
+		// Not shootable
+		return true;
+	}
+
+	if (thing->player && thing->player->spectator)
+	{
+		// Spectator
+		return true;
+	}
+
+	if ((lightningSource->eflags & MFE_VERTICALFLIP)
+		? (thing->z > lightningSource->z + lightningSource->height)
+		: (thing->z + thing->height < lightningSource->z))
+	{
+		// Underneath
+		return true;
+	}
+
+	if (P_AproxDistance(thing->x - lightningSource->x, thing->y - lightningSource->y) > lightningDist + thing->radius)
+	{
+		// Too far away
+		return true;
+	}
+
+	if (P_CheckSight(lightningSource, thing) == false)
+	{
+		// Not in sight
+		return true;
+	}
+
+	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
+	return true;
+}
+
+void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
+{
+	INT32 bx, by, xl, xh, yl, yh;
+
+	lightningDist = FixedMul(size, actor->scale);
+	lightningSource = actor;
+
+	// Use blockmap to check for nearby shootables
+	yh = (unsigned)(actor->y + lightningDist - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(actor->y - lightningDist - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(actor->x + lightningDist - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(actor->x - lightningDist - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX (xl, xh, yl, yh);
+
+	for (by = yl; by <= yh; by++)
+		for (bx = xl; bx <= xh; bx++)
+			P_BlockThingsIterator(bx, by, PIT_LightningShieldAttack);
+}
+
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (t2->type == MT_PLAYER)
@@ -788,9 +867,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	boolean stungT1 = false;
 	boolean stungT2 = false;
 
-	// Grow damage
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
+	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8)) || (t1->player->invincibilitytimer > 0);
+	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8)) || (t2->player->invincibilitytimer > 0);
 
 	if (t1Condition == true && t2Condition == false)
 	{
@@ -801,21 +879,9 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	{
 		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
 		return true;
-	}
-
-	// Invincibility damage
-	t1Condition = (t1->player->invincibilitytimer > 0);
-	t2Condition = (t2->player->invincibilitytimer > 0);
-
-	if (t1Condition == true && t2Condition == false)
-	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
-		return true;
-	}
-	else if (t1Condition == false && t2Condition == true)
-	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
-		return true;
+	} else if (t1Condition == true && t2Condition == true) {
+		K_DoPowerClash(t1->player, t2->player);
+		return false;
 	}
 
 	// Flame Shield dash damage

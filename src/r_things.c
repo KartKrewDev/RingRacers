@@ -261,7 +261,9 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 
 	for (l = startlump; l < endlump; l++)
 	{
-		if (memcmp(lumpinfo[l].name,sprname,4)==0)
+		if (memcmp(lumpinfo[l].name,sprname,4))
+			continue;
+
 		{
 			INT32 width, height;
 			INT16 topoffset, leftoffset;

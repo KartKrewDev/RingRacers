@@ -1668,7 +1668,7 @@ INT32 VID_SetMode(INT32 modeNum)
 	src_rect.w = vid.width;
 	src_rect.h = vid.height;
 
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_CheckRenderer();
 	return SDL_TRUE;
 }
@@ -1695,7 +1695,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	window = SDL_CreateWindow("SRB2Kart "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	window = SDL_CreateWindow("Dr. Robotnik's Ring Racers "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 
 
@@ -1871,7 +1871,7 @@ void I_StartupGraphics(void)
 
 	// Create window
 	//Impl_CreateWindow(USE_FULLSCREEN);
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
 
 	vid.width = BASEVIDWIDTH; // Default size for startup

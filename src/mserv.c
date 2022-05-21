@@ -73,7 +73,7 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ms.kartkrew.org/ms/api", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
 consvar_t cv_rendezvousserver = CVAR_INIT ("rendezvousserver", "relay.kartkrew.org", CV_SAVE|CV_CALL, NULL, RendezvousServer_OnChange);
-consvar_t cv_servername = CVAR_INIT ("servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
+consvar_t cv_servername = CVAR_INIT ("servername", "Ring Racers server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 consvar_t cv_server_contact = CVAR_INIT ("server_contact", "", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, MasterClient_Ticker);

@@ -52,7 +52,6 @@ statenum_t get_state(const char *word);
 spritenum_t get_sprite(const char *word);
 playersprite_t get_sprite2(const char *word);
 sfxenum_t get_sfx(const char *word);
-hudnum_t get_huditem(const char *word);
 //INT16 get_gametype(const char *word);
 //powertype_t get_power(const char *word);
 skincolornum_t get_skincolor(const char *word);
