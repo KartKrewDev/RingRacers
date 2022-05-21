@@ -4313,7 +4313,6 @@ void P_PlayerThink(player_t *player)
 	}
 
 	player->old_drawangle = player->drawangle;
-	player->old_viewrollangle = player->viewrollangle;
 
 	player->pflags &= ~PF_HITFINISHLINE;
 

@@ -825,16 +825,11 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 }
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
-// TODO: This should probably support view rolling if we're adding that soon...
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
 
-	camera_t *cam;
-	player_t *player;
-
-	fixed_t viewpointX, viewpointY, viewpointZ;
 	angle_t viewpointAngle, viewpointAiming, viewpointRoll;
 
 	INT32 screenWidth, screenHeight;
@@ -846,6 +841,8 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	fixed_t h;
 	INT32 da;
 
+	UINT8 cameraNum = R_GetViewNumber();
+
 	I_Assert(result != NULL);
 	I_Assert(point != NULL);
 
@@ -854,49 +851,21 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	result->scale = FRACUNIT;
 	result->onScreen = false;
 
-	if (cameraNum > r_splitscreen)
+	// Take the view's properties as necessary.
+	if (reverse)
 	{
-		// Invalid camera ID.
-		return;
-	}
-
-	cam = &camera[cameraNum];
-	player = &players[displayplayers[cameraNum]];
-
-	if (cam == NULL || player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-	{
-		// Shouldn't be possible?
-		return;
-	}
-
-	// TODO: parts need interp
-	if (cam->chase == true && !player->spectator)
-	{
-		// Use the camera's properties.
-		viewpointX = R_InterpolateFixed(cam->old_x, cam->x);
-		viewpointY = R_InterpolateFixed(cam->old_y, cam->y);
-		viewpointZ = R_InterpolateFixed(cam->old_z, cam->z) - point->z;
-		viewpointAngle = (INT32)R_InterpolateAngle(cam->old_angle, cam->angle);
-		viewpointAiming = (INT32)R_InterpolateAngle(cam->old_aiming, cam->aiming);
-		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
+		viewpointAngle = (INT32)(viewangle + ANGLE_180);
+		viewpointAiming = (INT32)InvAngle(aimingangle);
+		viewpointRoll = (INT32)viewroll;
 	}
 	else
 	{
-		// Use player properties.
-		viewpointX = R_InterpolateFixed(player->mo->old_x, player->mo->x);
-		viewpointY = R_InterpolateFixed(player->mo->old_y, player->mo->y);
-		viewpointZ = R_InterpolateFixed(player->mo->old_z, player->mo->z) - point->z; //player->old_viewz
-		viewpointAngle = (INT32)R_InterpolateAngle(player->mo->old_angle, player->mo->angle);
-		viewpointAiming = (INT32)player->aiming;
-		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
+		viewpointAngle = (INT32)viewangle;
+		viewpointAiming = (INT32)aimingangle;
+		viewpointRoll = (INT32)InvAngle(viewroll);
 	}
 
-	viewpointAngle += (INT32)angleOffset;
-
-	(void)viewpointRoll; // will be used later...
-
 	// Calculate screen size adjustments.
-	// TODO: Anyone want to make this support non-green resolutions somehow? :V
 	screenWidth = vid.width/vid.dupx;
 	screenHeight = vid.height/vid.dupy;
 
@@ -917,7 +886,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	// Calculate FOV adjustments.
 	fovDiff = cv_fov[cameraNum].value - baseFov;
-	fov = ((baseFov - fovDiff) / 2) - (player->fovadd / 2);
+	fov = ((baseFov - fovDiff) / 2) - (stplyr->fovadd / 2);
 	fovTangent = NEWTAN(FixedAngle(fov));
 
 	if (r_splitscreen == 1)
@@ -929,22 +898,35 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	fg = (screenWidth >> 1) * fovTangent;
 
 	// Determine viewpoint factors.
-	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
-	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+	h = R_PointToDist2(point->x, point->y, viewx, viewy);
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
 
-	// Set results!
-	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
-	result->y = screenHalfH + FixedMul((NEWTAN(viewpointAiming) - FixedDiv(viewpointZ, 1 + FixedMul(NEWCOS(da), h))), fg);
+	// Set results relative to top left!
+	result->x = FixedMul(NEWTAN(da), fg);
+	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((viewz - point->z), 1 + FixedMul(NEWCOS(da), h))), fg);
+
+	// Rotate for screen roll...
+	if (viewpointRoll)
+	{
+		fixed_t tempx = result->x;
+		viewpointRoll >>= ANGLETOFINESHIFT;
+		result->x = FixedMul(FINECOSINE(viewpointRoll), tempx) - FixedMul(FINESINE(viewpointRoll), result->y);
+		result->y = FixedMul(FINESINE(viewpointRoll), tempx) + FixedMul(FINECOSINE(viewpointRoll), result->y);
+	}
+
+	// Flipped screen?
+	if (encoremode)
+	{
+		result->x = -result->x;
+	}
+
+	// Center results.
+	result->x += screenHalfW;
+	result->y += screenHalfH;
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
-
-	if (encoremode)
-	{
-		// Flipped screen
-		result->x = (screenWidth << FRACBITS) - result->x;
-	}
+	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
 
 	// Cheap dirty hacks for some split-screen related cases
 	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
@@ -2841,7 +2823,6 @@ static void K_drawKartWanted(void)
 static void K_drawKartPlayerCheck(void)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	fixed_t y = CHEK_Y * FRACUNIT;
@@ -2859,20 +2840,6 @@ static void K_drawKartPlayerCheck(void)
 	if (stplyr->cmd.buttons & BT_LOOKBACK)
 	{
 		return;
-	}
-
-	if (r_splitscreen)
-	{
-		y /= 2;
-
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (stplyr == &players[displayplayers[i]])
-			{
-				cnum = i;
-				break;
-			}
-		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2933,7 +2900,7 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&result, &v, cnum, ANGLE_180);
+		K_ObjectTracking(&result, &v, true);
 
 		if (result.onScreen == true)
 		{
@@ -3008,13 +2975,15 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 	}
 }
 
-static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
 	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
+
+	UINT8 cnum = R_GetViewNumber();
 
 	// Since there's no "V_DrawFixedFill", and I don't feel like making it,
 	// fuck it, we're gonna just V_NOSCALESTART hack it
@@ -3100,9 +3069,8 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
-	camera_t *thiscam;
 	vector3_t c;
-	UINT8 cnum = 0;
+	UINT8 cnum = R_GetViewNumber();
 	UINT8 tobesorted[MAXPLAYERS];
 	fixed_t sortdist[MAXPLAYERS];
 	UINT8 sortlen = 0;
@@ -3118,32 +3086,9 @@ static void K_drawKartNameTags(void)
 		return;
 	}
 
-	if (r_splitscreen)
-	{
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (stplyr == &players[displayplayers[i]])
-			{
-				cnum = i;
-				break;
-			}
-		}
-	}
-
-	thiscam = &camera[cnum];
-
-	if (thiscam->chase == true)
-	{
-		c.x = R_InterpolateFixed(thiscam->old_x, thiscam->x);
-		c.y = R_InterpolateFixed(thiscam->old_y, thiscam->y);
-		c.z = R_InterpolateFixed(thiscam->old_z, thiscam->z);
-	}
-	else
-	{
-		c.x = R_InterpolateFixed(stplyr->mo->old_x, stplyr->mo->x);
-		c.y = R_InterpolateFixed(stplyr->mo->old_y, stplyr->mo->y);
-		c.z = R_InterpolateFixed(stplyr->mo->old_z, stplyr->mo->z);
-	}
+	c.x = viewx;
+	c.y = viewy;
+	c.z = viewz;
 
 	// Maybe shouldn't be handling this here... but the camera info is too good.
 	if (bossinfo.boss)
@@ -3175,7 +3120,7 @@ static void K_drawKartNameTags(void)
 
 			v.z += (bossinfo.weakspots[i].spot->height / 2);
 
-			K_ObjectTracking(&result, &v, cnum, 0);
+			K_ObjectTracking(&result, &v, false);
 			if (result.onScreen == false)
 			{
 				continue;
@@ -3328,7 +3273,7 @@ static void K_drawKartNameTags(void)
 				v.z += headOffset;
 			}
 
-			K_ObjectTracking(&result, &v, cnum, 0);
+			K_ObjectTracking(&result, &v, false);
 
 			if (result.onScreen == true)
 			{
@@ -3363,7 +3308,7 @@ static void K_drawKartNameTags(void)
 				{
 					if (K_ShowPlayerNametag(ntplayer) == true)
 					{
-						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
+						K_DrawNameTagForPlayer(result.x, result.y, ntplayer);
 						K_DrawTypingNotifier(result.x, result.y, ntplayer);
 					}
 				}
