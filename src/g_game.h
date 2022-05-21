@@ -117,6 +117,10 @@ INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
+extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
+extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
+extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+extern UINT8 localtic;
 
 //
 // GAME

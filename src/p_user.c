@@ -1988,13 +1988,40 @@ static void P_3dMovement(player_t *player)
 static void P_UpdatePlayerAngle(player_t *player)
 {
 	angle_t angleChange = ANGLE_MAX;
+	UINT8 p = UINT8_MAX;
 	UINT8 i;
 
-	K_UpdateSteeringValue(player, player->cmd.turning);
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			p = i;
+			break;
+		}
+	}
+
+	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
-	P_SetPlayerAngle(player, player->angleturn + angleChange);
+	player->angleturn += angleChange;
 	player->mo->angle = player->angleturn;
+
+	if (p != UINT8_MAX)
+	{
+		UINT8 lateTic = ((leveltime - player->cmd.latency) & TICCMD_LATENCYMASK);
+		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
+
+		// Undo the ticcmd's old emulated angle,
+		// now that we added the actual game logic angle.
+
+		while (lateTic != clearTic)
+		{
+			localdelta[p] -= localstoredeltas[p][lateTic];
+			localstoredeltas[p][lateTic] = 0;
+
+			lateTic = (lateTic - 1) & TICCMD_LATENCYMASK;
+		}
+	}
 
 	if (!cv_allowmlook.value || player->spectator == false)
 	{
@@ -2006,13 +2033,9 @@ static void P_UpdatePlayerAngle(player_t *player)
 		player->aiming = G_ClipAimingPitch((INT32 *)&player->aiming);
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	if (p != UINT8_MAX)
 	{
-		if (player == &players[displayplayers[i]])
-		{
-			localaiming[i] = player->aiming;
-			break;
-		}
+		localaiming[p] = player->aiming;
 	}
 }
 

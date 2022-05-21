@@ -52,6 +52,9 @@ typedef enum
 // ticcmd turning bits
 #define TICCMD_REDUCE 16
 
+// ticcmd latency mask
+#define TICCMD_LATENCYMASK 0xFF
+
 // ticcmd flags
 #define TICCMD_RECEIVED 1
 #define TICCMD_TYPING 2/* chat window or console open */

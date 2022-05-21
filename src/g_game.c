@@ -871,6 +871,35 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
+INT32 localsteering[MAXSPLITSCREENPLAYERS];
+INT32 localdelta[MAXSPLITSCREENPLAYERS];
+INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+UINT8 localtic;
+
+// Turning was removed from G_BuildTiccmd to prevent easy client hacking.
+// This brings back the camera prediction that was lost.
+static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
+{
+	INT32 angleChange = 0;
+
+	localtic = cmd->latency;
+
+	while (realtics > 0)
+	{
+		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+		angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+
+		// Store the angle we applied to this tic, so we can revert it later.
+		// If we trust the camera to do all of the work, then it can get out of sync fast.
+		localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
+		localdelta[ssplayer - 1] += angleChange;
+
+		realtics--;
+	}
+
+	localangle[ssplayer - 1] = player->angleturn + localdelta[ssplayer - 1];
+}
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
@@ -895,8 +924,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
 	const boolean mouseaiming = player->spectator;
-
-	(void)realtics;
 
 	if (demo.playback) return;
 
@@ -1148,7 +1175,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
-		cmd->latency = (leveltime & 0xFF);
+		cmd->latency = (leveltime & TICCMD_LATENCYMASK);
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1160,6 +1187,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		cmd->turning = KART_FULLTURN;
 	else if (cmd->turning < -KART_FULLTURN)
 		cmd->turning = -KART_FULLTURN;
+
+	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
 
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
@@ -1925,7 +1954,7 @@ void G_Ticker(boolean run)
 				else
 				{
 					//@TODO add a cvar to allow setting this max
-					cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
+					cmd->latency = min(((leveltime & TICCMD_LATENCYMASK) - cmd->latency) & TICCMD_LATENCYMASK, MAXPREDICTTICS-1);
 				}
 			}
 		}

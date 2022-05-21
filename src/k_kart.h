@@ -97,7 +97,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
 INT32 K_GetKartRingPower(player_t *player, boolean boosted);
 void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);
-void K_UpdateSteeringValue(player_t *player, INT16 destSteering);
+INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering);
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue);
 INT32 K_GetUnderwaterTurnAdjust(player_t *player);
 INT32 K_GetKartDriftSparkValue(player_t *player);
