@@ -602,7 +602,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				}
 				else if (fastcmp(word, "SRB2KART"))
 				{
-					deh_warning("Patch is only compatible with Ring Racers.");
+					deh_warning("Patch is only compatible with SRB2Kart.");
 				}
 				else if (fastcmp(word, "SRB2"))
 				{
