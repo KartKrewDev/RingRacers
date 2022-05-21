@@ -1288,6 +1288,7 @@ typedef enum sprite
 
 	SPR_DBOS, // Drift boost flame
 
+	SPR_WAYP,
 	SPR_EGOO,
 
 	SPR_WTRL, // Water Trail
@@ -5420,6 +5421,8 @@ typedef enum state
 	S_BATTLECAPSULE_SUPPORT,
 	S_BATTLECAPSULE_SUPPORTFLY,
 
+	S_WAYPOINTORB,
+	S_WAYPOINTSPLAT,
 	S_EGOORB,
 
 	S_WATERTRAIL1,

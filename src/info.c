@@ -742,6 +742,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"DBOS", // Drift boost flame
 
+	"WAYP",
 	"EGOO",
 
 	"WTRL", // Water Trail
@@ -4996,6 +4997,8 @@ state_t states[NUMSTATES] =
 	{SPR_CAPS, 4, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLECAPSULE_SUPPORT
 	{SPR_CAPS, FF_ANIMATE|5, -1, {NULL}, 3, 1, S_NULL}, // S_BATTLECAPSULE_SUPPORTFLY
 
+	{SPR_WAYP, 0, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTORB
+	{SPR_WAYP, 1|FF_FLOORSPRITE, 1, {NULL}, 0, 0, S_NULL}, // S_WAYPOINTSPLAT
 	{SPR_EGOO, 0, 1, {NULL}, 0, 0, S_NULL}, // S_EGOORB
 
 	// Water Trail
