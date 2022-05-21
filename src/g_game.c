@@ -660,10 +660,28 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
+// Default controls for keyboard. These are hardcoded and cannot be changed.
+static INT32 keyboardMenuDefaults[][2] = {
+	{gc_a, 		KEY_ENTER},
+	{gc_c, 		KEY_BACKSPACE},
+	{gc_x, 		KEY_ESCAPE},
+	{gc_left, 	KEY_LEFTARROW},
+	{gc_right, 	KEY_RIGHTARROW},
+	{gc_up, 	KEY_UPARROW},
+	{gc_down, 	KEY_DOWNARROW},
+
+	// special control
+	{gc_start, 	KEY_ESCAPE},
+	// 8 total controls*
+};
+
+#define KEYBOARDDEFAULTSSPLIT 7
+
+
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	INT32 deviceID;
-	INT32 i;
+	INT32 i, j;
 	INT32 deadzone = 0;
 	boolean trydefaults = true;
 	boolean tryingotherID = false;
@@ -685,22 +703,59 @@ retrygetcontrol:
 	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
 		INT32 key = controltable[i];
+		INT32 menukey = KEY_NULL;
 		INT32 value = 0;
+		boolean processinput = true;
+
+
+		// for menus, keyboards have defaults!
+		if (deviceID == 0)
+		{
+
+			// In menus, check indexes 0 through 5 (everything besides gc_start)
+			// Outside of menus, only consider the hardcoded input for gc_start at index 6
+
+			INT32 maxj = menuactive ? KEYBOARDDEFAULTSSPLIT : KEYBOARDDEFAULTSSPLIT+1;
+			j = (!menuactive) ? KEYBOARDDEFAULTSSPLIT : 0;
+
+			for (; j < maxj; j++)	// check keyboardMenuDefaults
+			{
+				// the gc we're looking for
+				if (gc == keyboardMenuDefaults[j][0])
+				{
+					menukey = keyboardMenuDefaults[j][1];
+					break;
+				}
+
+				// The key is mapped to *something else*...?
+				// Then don't process that as it would conflict with our hardcoded inputs.
+				else if (key == keyboardMenuDefaults[j][1])
+				{
+					processinput = false;
+					break;
+				}
+			}
+		}
 
 		// Invalid key number.
-		if (!G_KeyIsAvailable(key, deviceID))
+		if (!G_KeyIsAvailable(key, deviceID) && !G_KeyIsAvailable(menukey, deviceID))
 		{
 			continue;
 		}
 
-		// It's possible to access this control right now, so let's disable the default control backup for later.
-		trydefaults = false;
-
-		value = gamekeydown[deviceID][key];
-
-		if (value >= deadzone)
+		if (processinput)
 		{
-			return value;
+			// It's possible to access this control right now, so let's disable the default control backup for later.
+			trydefaults = false;
+
+			value = gamekeydown[deviceID][key];
+			if (menukey && gamekeydown[deviceID][menukey])
+				value = gamekeydown[deviceID][menukey];
+
+			if (value >= deadzone)
+			{
+				return value;
+			}
 		}
 	}
 
@@ -754,6 +809,8 @@ loweringid:
 
 	return 0;
 }
+
+#undef KEYBOARDDEFAULTSSPLIT
 
 boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
