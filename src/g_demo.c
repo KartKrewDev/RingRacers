@@ -2534,7 +2534,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	if (memcmp(info_p, DEMOHEADER, 12))
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("%s is not a SRB2Kart replay file.\n"), pdemo->filepath);
+		CONS_Alert(CONS_ERROR, M_GetText("%s is not a Ring Racers replay file.\n"), pdemo->filepath);
 		pdemo->type = MD_INVALID;
 		sprintf(pdemo->title, "INVALID REPLAY");
 		Z_Free(infobuffer);
@@ -2774,7 +2774,7 @@ void G_DoPlayDemo(char *defdemoname)
 	demo.playback = true;
 	if (memcmp(demo_p, DEMOHEADER, 12))
 	{
-		snprintf(msg, 1024, M_GetText("%s is not a SRB2Kart replay file.\n"), pdemoname);
+		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
