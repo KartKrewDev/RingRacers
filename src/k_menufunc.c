@@ -3565,8 +3565,18 @@ void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,64,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
+	const UINT8 pid = 0;
 
 	(void)choice;
+
+	// Don't allow guest profile online
+	if (cv_currprofile.value == 0)
+	{
+		M_StartMessage(M_GetText("Cannot play online with\nGuest Profile.\nMake a custom Profile and try again.\n\n(Press any key)"), NULL, MM_NOTHING);
+		S_StartSound(NULL, sfx_s3k7b);
+		M_SetMenuDelay(pid);
+		return;
+	}
 
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;

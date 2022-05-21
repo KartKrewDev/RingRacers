@@ -2246,6 +2246,33 @@ static void Command_connect(void)
 		CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
 		return;
 	}
+	else if (cv_currprofile.value == 0)
+	{
+		CONS_Printf(M_GetText("You cannot connect while using the Guest Profile. Use a Custom Profile to play Online.\n"));
+		return;
+	}
+	else if (cv_currprofile.value == -1)
+	{
+		// No profile set, we're attempting to connect from the title screen. (Discord RPC / connect command)
+		// Automatically apply the last profiles for every potential split player.
+		// Make sure Player 1's Profile ISN'T the guest profile even if we do that.
+
+		UINT8 i;
+
+		CONS_Printf(M_GetText("No Profile set, attempting to use last used Profiles...\n"));
+
+		for (i = 0; i < cv_splitplayers.value; i++)
+		{
+			if (cv_lastprofile[i].value || i > 0)
+				PR_ApplyProfile(cv_lastprofile[i].value, i);
+			else
+			{
+				CONS_Printf(M_GetText("Player 1's last used Profile is the Guest Profile, which cannot be used to play Online.\n"));
+				return;
+			}
+		}
+		CONS_Printf(M_GetText("Profiles have been automatically set according to the last used Profiles.\n"));
+	}
 
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
@@ -2308,6 +2335,7 @@ static void Command_connect(void)
 		SplitScreen_OnChange();
 	}
 
+	M_ClearMenus(true);
 	CL_ConnectToServer();
 }
 #endif

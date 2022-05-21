@@ -1369,7 +1369,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
 		strcpy(pname, p->profilename);
 		skinnum = R_SkinAvailable(p->skinname);
-		powerlevel = 1000;	// Test
+		powerlevel = p->powerlevels[0];	// Only display race power level.
 	}
 
 	// check setup_player for colormap for the card.

@@ -57,6 +57,8 @@ typedef struct profile_s
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
 
+	UINT16 powerlevels[PWRLV_NUMTYPES];	// PWRLV for race & battle.
+
 	// Player-specific consvars.
 	// @TODO: List all of those
 	boolean kickstartaccel;				// cv_kickstartaccel

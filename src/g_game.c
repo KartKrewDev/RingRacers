@@ -4122,6 +4122,9 @@ void G_SaveGameData(void)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
+
+	// Also save profiles here.
+	PR_SaveProfiles();
 }
 
 #define VERSIONSIZE 16

@@ -26,6 +26,7 @@ INT32 PR_GetNumProfiles(void)
 profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING])
 {
 	profile_t *new = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
+	UINT8 i;
 
 	new->version = PROFILEVER;
 
@@ -42,6 +43,10 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
+
+	// Init both power levels
+	for (i = 0; i < PWRLV_NUMTYPES; i++)
+		new->powerlevels[i] = PWRLVRECORD_START;
 
 	return new;
 }
@@ -114,6 +119,14 @@ void PR_SaveProfiles(void)
 {
 	FILE *f = NULL;
 
+	// save powerlevel in the current profile.
+	// granted we're using a profile that isn't guest, that is.
+	if (cv_currprofile.value > 0)
+	{
+		profile_t *pr = PR_GetProfile(cv_currprofile.value);
+		memcpy(&pr->powerlevels, vspowerlevel, sizeof(vspowerlevel));
+	}
+
 	f = fopen(va(pandf, srb2home, PROFILESFILE), "w");
 	if (f != NULL)
 	{
@@ -166,6 +179,14 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
+	// this CAN happen!!
+	if (p == NULL)
+	{
+		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		profilenum = 0;			// make sure to set this so that the cvar is set properly.
+		p = PR_GetProfile(0);	// Use guest profile instead if things went south somehow.
+	}
+
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
 	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
 	CV_StealthSet(&cv_playername[playernum], p->playername);
@@ -184,8 +205,13 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 
 	// If we're doing this on P1, also change current profile.
+	// and update the powerlevel local array.
+
 	if (!playernum)
+	{
 		CV_StealthSetValue(&cv_currprofile, profilenum);
+		memcpy(&vspowerlevel, p->powerlevels, sizeof(p->powerlevels));
+	}
 }
 
 void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
