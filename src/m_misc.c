@@ -650,7 +650,7 @@ void M_SaveConfig(const char *filename)
 	}
 
 	// header message
-	fprintf(f, "// SRB2Kart configuration file.\n");
+	fprintf(f, "// Dr. Robotnik's Ring Racers configuration file.\n");
 
 	// print execversion FIRST, because subsequent consvars need to be filtered
 	// always print current EXECVERSION
@@ -697,20 +697,20 @@ static void M_CreateScreenShotPalette(void)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[13] = "kartXXXX.ext";
+	static char freename[19] = "ringracersXXXX.ext";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
 
 	// find a file name to save it to
-	strcpy(freename+9,ext);
+	strcpy(freename+15,ext);
 
 	for (;;)
 	{
-		freename[4] = (char)('0' + (char)(i/1000));
-		freename[5] = (char)('0' + (char)((i/100)%10));
-		freename[6] = (char)('0' + (char)((i/10)%10));
-		freename[7] = (char)('0' + (char)(i%10));
+		freename[10] = (char)('0' + (char)(i/1000));
+		freename[11] = (char)('0' + (char)((i/100)%10));
+		freename[12] = (char)('0' + (char)((i/10)%10));
+		freename[13] = (char)('0' + (char)(i%10));
 
 		if (FIL_WriteFileOK(va(pandf,pathname,freename))) // access succeeds
 			result = 1; // too low
@@ -719,10 +719,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			if (!i)
 				break; // not too high, so it must be equal! YAY!
 
-			freename[4] = (char)('0' + (char)((i-1)/1000));
-			freename[5] = (char)('0' + (char)(((i-1)/100)%10));
-			freename[6] = (char)('0' + (char)(((i-1)/10)%10));
-			freename[7] = (char)('0' + (char)((i-1)%10));
+			freename[10] = (char)('0' + (char)((i-1)/1000));
+			freename[11] = (char)('0' + (char)(((i-1)/100)%10));
+			freename[12] = (char)('0' + (char)(((i-1)/10)%10));
+			freename[13] = (char)('0' + (char)((i-1)%10));
 			if (!FIL_WriteFileOK(va(pandf,pathname,freename))) // access fails
 				result = -1; // too high
 			else
@@ -740,10 +740,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			return NULL;
 	}
 
-	freename[4] = (char)('0' + (char)(i/1000));
-	freename[5] = (char)('0' + (char)((i/100)%10));
-	freename[6] = (char)('0' + (char)((i/10)%10));
-	freename[7] = (char)('0' + (char)(i%10));
+	freename[10] = (char)('0' + (char)(i/1000));
+	freename[11] = (char)('0' + (char)((i/100)%10));
+	freename[12] = (char)('0' + (char)((i/10)%10));
+	freename[13] = (char)('0' + (char)(i%10));
 
 	return freename;
 }
@@ -803,10 +803,10 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "SRB2Kart " VERSIONSTRING;
+	char titletxt[] = "Dr. Robotnik's Ring Racers " VERSIONSTRING;
 	png_charp playertxt =  cv_playername[0].zstring;
-	char desctxt[] = "SRB2Kart Screenshot";
-	char Movietxt[] = "SRB2Kart Movie";
+	char desctxt[] = "Ring Racers Screenshot";
+	char Movietxt[] = "Ring Racers Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL

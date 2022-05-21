@@ -1515,7 +1515,7 @@ static boolean CL_FinishedFileList(void)
 		M_StartMessage(M_GetText(
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
-			"Please restart SRB2Kart before connecting.\n\n"
+			"Please restart Ring Racers before connecting.\n\n"
 			"Press ESC\n"
 		), NULL, MM_NOTHING);
 		return false;
@@ -1529,7 +1529,7 @@ static boolean CL_FinishedFileList(void)
 			"You have the wrong addons loaded.\n\n"
 			"To play on this server, restart\n"
 			"the game and don't load any addons.\n"
-			"SRB2Kart will automatically add\n"
+			"Ring Racers will automatically add\n"
 			"everything you need when you join.\n\n"
 			"Press ESC\n"
 		), NULL, MM_NOTHING);
@@ -1923,7 +1923,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_DOWNLOADSAVEGAME)
 			{
-				F_MenuPresTicker(true); // title sky
 				F_TitleScreenTicker(true);
 				F_TitleScreenDrawer();
 			}
@@ -3065,7 +3064,7 @@ static void Joinable_OnChange(void)
 // called one time at init
 void D_ClientServerInit(void)
 {
-	DEBFILE(va("- - -== SRB2Kart v%d.%d "VERSIONSTRING" debugfile ==- - -\n",
+	DEBFILE(va("- - -== Ring Racers v%d.%d "VERSIONSTRING" debugfile ==- - -\n",
 		VERSION, SUBVERSION));
 
 #ifndef NONET
@@ -3413,7 +3412,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
-	UINT8 difficulty = MAXBOTDIFFICULTY;
+	UINT8 difficulty = DIFFICULTBOT;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -3716,10 +3715,10 @@ static void HandleConnect(SINT8 node)
 		SV_SendRefuse(node, "Incompatible packet formats.");
 	else if (strncmp(netbuffer->u.clientcfg.application, SRB2APPLICATION,
 				sizeof netbuffer->u.clientcfg.application))
-		SV_SendRefuse(node, "Different SRB2 modifications\nare not compatible.");
+		SV_SendRefuse(node, "Different Ring Racers modifications\nare not compatible.");
 	else if (netbuffer->u.clientcfg.version != VERSION
 		|| netbuffer->u.clientcfg.subversion != SUBVERSION)
-		SV_SendRefuse(node, va(M_GetText("Different SRB2Kart versions cannot\nplay a netgame!\n(server version %d.%d)"), VERSION, SUBVERSION));
+		SV_SendRefuse(node, va(M_GetText("Different Ring Racers versions cannot\nplay a netgame!\n(server version %d.%d)"), VERSION, SUBVERSION));
 	else if (!cv_allownewplayer.value && node)
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment."));
 	else if (D_NumPlayers() >= maxplayers)
@@ -5092,6 +5091,8 @@ static void SV_Maketic(void)
 {
 	INT32 i;
 
+	ps_botticcmd_time = 0;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
@@ -5099,7 +5100,9 @@ static void SV_Maketic(void)
 
 		if (K_PlayerUsesBotMovement(&players[i]))
 		{
+			precise_t t = I_GetPreciseTime();
 			K_BuildBotTiccmd(&players[i], &netcmds[maketic%BACKUPTICS][i]);
+			ps_botticcmd_time += I_GetPreciseTime() - t;
 			continue;
 		}
 

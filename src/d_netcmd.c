@@ -399,9 +399,13 @@ static CV_PossibleValue_t kartbot_cons_t[] = {
 	{7, "Lv.7"},
 	{8, "Lv.8"},
 	{9, "Lv.9"},
+	{10,"Lv.10"},
+	{11,"Lv.11"},
+	{12,"Lv.12"},
+	{13,"Lv.MAX"},
 	{0, NULL}
 };
-consvar_t cv_kartbot = CVAR_INIT ("kartbot", "0", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL);
+consvar_t cv_kartbot = CVAR_INIT ("kartbot", "0", CV_NETVAR, kartbot_cons_t, NULL);
 
 consvar_t cv_karteliminatelast = CVAR_INIT ("karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
@@ -4314,9 +4318,9 @@ static void Command_ListDoomednums_f(void)
 static void Command_Version_f(void)
 {
 #ifdef DEVELOP
-	CONS_Printf("SRB2Kart %s-%s (%s %s)\n", compbranch, comprevision, compdate, comptime);
+	CONS_Printf("Ring Racers %s-%s (%s %s)\n", compbranch, comprevision, compdate, comptime);
 #else
-	CONS_Printf("SRB2Kart %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
+	CONS_Printf("Ring Racers %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
 #endif
 
 	// Base library

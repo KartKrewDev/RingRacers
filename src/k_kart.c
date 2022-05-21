@@ -3106,7 +3106,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Increase bot speed by 1-10% depending on difficulty
-		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / MAXBOTDIFFICULTY;
+		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
 		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 		if (player->botvars.rival == true)
@@ -8101,7 +8101,7 @@ INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 	if (boosted == true && K_PlayerUsesBotMovement(player))
 	{
 		// Double for Lv. 9
-		ringPower += (player->botvars.difficulty * ringPower) / MAXBOTDIFFICULTY;
+		ringPower += (player->botvars.difficulty * ringPower) / DIFFICULTBOT;
 	}
 
 	return ringPower;
