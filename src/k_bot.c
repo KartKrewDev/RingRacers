@@ -1053,10 +1053,10 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 				cmd->turning = -KART_FULLTURN;
 				break;
 			case 3:
-				cmd->buttons |= BT_FORWARD;
+				cmd->throwdir = KART_FULLTURN;
 				break;
 			case 4:
-				cmd->buttons |= BT_BACKWARD;
+				cmd->throwdir = -KART_FULLTURN;
 				break;
 		}
 	}

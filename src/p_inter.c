@@ -2095,6 +2095,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			player->instashield = 15;
 			K_SetHitLagForObjects(target, inflictor, laglength, true);
+
+			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_BANANA)
+			{
+				player->flipDI = true;
+			}
+
 			return true;
 		}
 	}

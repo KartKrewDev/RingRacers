@@ -128,13 +128,16 @@ demoghost *ghosts = NULL;
 #define DEMO_SHRINKME	0x04
 
 // For demos
-#define ZT_FWD     0x01
-#define ZT_SIDE    0x02
-#define ZT_TURNING 0x04
-#define ZT_BUTTONS 0x08
-#define ZT_AIMING  0x10
-#define ZT_LATENCY 0x20
-#define ZT_FLAGS   0x40
+#define ZT_FWD		0x01
+#define ZT_SIDE		0x02
+#define ZT_TURNING	0x04
+#define ZT_THROWDIR	0x08
+#define ZT_BUTTONS	0x10
+#define ZT_AIMING	0x20
+#define ZT_LATENCY	0x40
+#define ZT_FLAGS	0x80
+// OUT OF ZIPTICS...
+
 #define DEMOMARKER 0x80 // demoend
 
 UINT8 demo_extradata[MAXPLAYERS];
@@ -524,6 +527,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		oldcmd[playernum].forwardmove = READSINT8(demo_p);
 	if (ziptic & ZT_TURNING)
 		oldcmd[playernum].turning = READINT16(demo_p);
+	if (ziptic & ZT_THROWDIR)
+		oldcmd[playernum].throwdir = READINT16(demo_p);
 	if (ziptic & ZT_BUTTONS)
 		oldcmd[playernum].buttons = READUINT16(demo_p);
 	if (ziptic & ZT_AIMING)
@@ -565,6 +570,13 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		WRITEINT16(demo_p,cmd->turning);
 		oldcmd[playernum].turning = cmd->turning;
 		ziptic |= ZT_TURNING;
+	}
+
+	if (cmd->throwdir != oldcmd[playernum].throwdir)
+	{
+		WRITEINT16(demo_p,cmd->throwdir);
+		oldcmd[playernum].throwdir = cmd->throwdir;
+		ziptic |= ZT_THROWDIR;
 	}
 
 	if (cmd->buttons != oldcmd[playernum].buttons)
@@ -1127,6 +1139,8 @@ void G_GhostTicker(void)
 		if (ziptic & ZT_FWD)
 			g->p++;
 		if (ziptic & ZT_TURNING)
+			g->p += 2;
+		if (ziptic & ZT_THROWDIR)
 			g->p += 2;
 		if (ziptic & ZT_BUTTONS)
 			g->p += 2;
