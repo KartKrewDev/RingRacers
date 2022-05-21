@@ -3,9 +3,9 @@
 #
 
 ifndef MINGW64
-EXENAME?=srb2kart.exe
+EXENAME?=ringracers.exe
 else
-EXENAME?=srb2kart64.exe
+EXENAME?=ringracers64.exe
 endif
 
 # disable dynamicbase if under msys2
