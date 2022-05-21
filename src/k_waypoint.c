@@ -975,9 +975,11 @@ static UINT32 K_WaypointPathfindGetHeuristic(void *data1, void *data2)
 	Return:-
 		True if the waypoint is traversable, false otherwise.
 --------------------------------------------------*/
-static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
+static boolean K_WaypointPathfindTraversableAllEnabled(void *data, void *prevdata)
 {
 	boolean traversable = false;
+
+	(void)prevdata;
 
 	if (data == NULL)
 	{
@@ -1004,18 +1006,21 @@ static boolean K_WaypointPathfindTraversableAllEnabled(void *data)
 	Return:-
 		True if the waypoint is traversable, false otherwise.
 --------------------------------------------------*/
-static boolean K_WaypointPathfindTraversableNoShortcuts(void *data)
+static boolean K_WaypointPathfindTraversableNoShortcuts(void *data, void *prevdata)
 {
 	boolean traversable = false;
 
-	if (data == NULL)
+	if (data == NULL || prevdata == NULL)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindTraversableNoShortcuts received NULL data.\n");
 	}
 	else
 	{
 		waypoint_t *waypoint = (waypoint_t *)data;
-		traversable = ((K_GetWaypointIsShortcut(waypoint) == false) && (K_GetWaypointIsEnabled(waypoint) == true));
+		waypoint_t *prevWaypoint = (waypoint_t *)prevdata;
+
+		traversable = ((K_GetWaypointIsEnabled(waypoint) == true)
+			&& (K_GetWaypointIsShortcut(waypoint) == false || K_GetWaypointIsShortcut(prevWaypoint) == true)); // Allow shortcuts to be used if the starting waypoint is already a shortcut.
 	}
 
 	return traversable;
