@@ -818,15 +818,15 @@ void M_DrawImageDef(void)
 static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 {
 	angle_t angamt = ANGLE_MAX;
-	UINT8 numoptions;
-	UINT8 i;
+	UINT16 i, numoptions;
+	UINT16 l = 0, r = 0;
 
 	if (p->mdepth == CSSTEP_ALTS)
 		numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
 	else if (p->mdepth == CSSTEP_FOLLOWERCOLORS)
-		numoptions = numskincolors-1 +2;
+		numoptions = nummenucolors+2;
 	else
-		numoptions = numskincolors-1;
+		numoptions = nummenucolors;
 
 	angamt /= numoptions;
 
@@ -836,9 +836,9 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		boolean subtract = (i & 1);
 		angle_t ang = ((i+1)/2) * angamt;
 		patch_t *patch = NULL;
-		UINT8 *colormap;
-		fixed_t radius;
-		INT16 n;
+		UINT8 *colormap = NULL;
+		fixed_t radius = 28<<FRACBITS;
+		UINT16 n = 0;
 
 		if (p->mdepth == CSSTEP_ALTS)
 		{
@@ -865,36 +865,24 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			INT16 diff;
 			UINT16 col;
 
-			n = (p->followercolor-1) + numoptions/2;
-
-			if (subtract)
-				n -= ((i+1)/2);
-			else
-				n += ((i+1)/2);
-
-			n %= numoptions;
-			n++;
-
-			if (!n)
-				continue;
-
-			col = (unsigned)(n);
-			switch (col)
+			if (i == 0)
 			{
-				case FOLLOWERCOLOR_MATCH: // "Match"
-					col = p->color;
-					break;
-				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-					col = skincolors[p->color].invcolor;
-					break;
+				n = l = r = M_GetColorBefore(p->followercolor, numoptions/2, true);
 			}
+			else if (subtract)
+			{
+				n = l = M_GetColorBefore(l, 1, true);
+			}
+			else
+			{
+				n = r = M_GetColorAfter(r, 1, true);
+			}
+
+			col = K_GetEffectiveFollowerColor(n, p->color);
 
 			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 
-			if (n > p->followercolor)
-				diff = n - p->followercolor;
-			else
-				diff = p->followercolor - n;
+			diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
 
 			if (diff == 0)
 				patch = W_CachePatchName("COLORSP2", PU_CACHE);
@@ -902,9 +890,6 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				patch = W_CachePatchName("COLORSP1", PU_CACHE);
 			else
 				patch = W_CachePatchName("COLORSP0", PU_CACHE);
-
-			radius = 28<<FRACBITS;
-			//radius -= SHORT(patch->width) << FRACBITS;
 
 			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
 		}
@@ -912,20 +897,22 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		{
 			INT16 diff;
 
-			n = (p->color-1) + numoptions/2;
-			if (subtract)
-				n -= ((i+1)/2);
+			if (i == 0)
+			{
+				n = l = r = M_GetColorBefore(p->color, numoptions/2, false);
+			}
+			else if (subtract)
+			{
+				n = l = M_GetColorBefore(l, 1, false);
+			}
 			else
-				n += ((i+1)/2);
-			n %= numoptions;
-			n++;
+			{
+				n = r = M_GetColorAfter(r, 1, false);
+			}
 
 			colormap = R_GetTranslationColormap(TC_DEFAULT, n, GTC_MENUCACHE);
 
-			if (n > p->color)
-				diff = n - p->color;
-			else
-				diff = p->color - n;
+			diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
 
 			if (diff == 0)
 				patch = W_CachePatchName("COLORSP2", PU_CACHE);
@@ -933,9 +920,6 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				patch = W_CachePatchName("COLORSP1", PU_CACHE);
 			else
 				patch = W_CachePatchName("COLORSP0", PU_CACHE);
-
-			radius = 28<<FRACBITS;
-			//radius -= SHORT(patch->width) << FRACBITS;
 
 			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
 		}
@@ -945,7 +929,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		else
 			ang = ANGLE_90 + ang;
 
-		if (numoptions % 2)
+		if (numoptions & 1)
 			ang = (signed)(ang - (angamt/2));
 
 		if (p->rotate)
@@ -1034,18 +1018,8 @@ static void M_DrawFollowerList(setup_player_t *p, UINT8 num)
 
 		if (W_LumpExists(fl.icon) && cf >= 0)
 		{
-			UINT16 col = (unsigned)p->followercolor;
+			UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);
 			pp = W_CachePatchName(fl.icon, PU_CACHE);
-
-			switch (col)
-			{
-				case FOLLOWERCOLOR_MATCH: // "Match"
-					col = p->color;
-					break;
-				case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-					col = skincolors[p->color].invcolor;
-					break;
-			}
 
 			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 			V_DrawMappedPatch(x, y, 0, pp, colormap);
@@ -1137,19 +1111,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 	{
 		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
 		sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK);
-		color = p->followercolor;
-
-		switch (color)
-		{
-			case FOLLOWERCOLOR_MATCH: // "Match"
-				color = p->color;
-				break;
-			case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-				color = skincolors[p->color].invcolor;
-				break;
-			default:
-				break;
-		}
+		color = K_GetEffectiveFollowerColor(p->followercolor, p->color);
 	}
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
@@ -1405,19 +1367,9 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 			{
 				if (M_DrawFollowerSprite(x-44 +12, y+119, 0, V_FLIP, 0, sp))
 				{
-					UINT16 col = (unsigned)p->followercolor;
+					UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, sp->color);;
 					patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
 					UINT8 *fcolormap;
-
-					switch (col)
-					{
-						case FOLLOWERCOLOR_MATCH: // "Match"
-							col = sp->color;
-							break;
-						case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-							col = skincolors[sp->color].invcolor;
-							break;
-					}
 
 					fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
@@ -1433,22 +1385,11 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
 
-		UINT16 col = (unsigned)p->followercolor;
+		UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);;
 		UINT8 fln = R_FollowerAvailable(p->follower);
 
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
-
-		switch (col)
-		{
-			case FOLLOWERCOLOR_MATCH: // "Match"
-				col = p->color;
-				break;
-			case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-				col = skincolors[p->color].invcolor;
-				break;
-		}
-
 
 		if (M_DrawFollowerSprite(x-44 +12, y+119, fln, V_FLIP, col, NULL))
 		{

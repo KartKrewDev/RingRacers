@@ -488,11 +488,12 @@ void M_StopMessage(INT32 choice);
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
 
+extern UINT16 nummenucolors;
 void M_AddMenuColor(UINT16 color);
 void M_MoveColorBefore(UINT16 color, UINT16 targ);
 void M_MoveColorAfter(UINT16 color, UINT16 targ);
-UINT16 M_GetColorBefore(UINT16 color);
-UINT16 M_GetColorAfter(UINT16 color);
+UINT16 M_GetColorBefore(UINT16 color, UINT16 amount, boolean follower);
+UINT16 M_GetColorAfter(UINT16 color, UINT16 amount, boolean follower);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
@@ -525,7 +526,7 @@ typedef struct setup_player_s
 	SINT8 clonenum;
 	SINT8 rotate;
 	UINT8 delay;
-	UINT8 color;
+	UINT16 color;
 	UINT8 mdepth;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
@@ -534,7 +535,7 @@ typedef struct setup_player_s
 	UINT8 ponedevice;
 
 	INT32 followern;
-	INT16 followercolor;
+	UINT16 followercolor;
 	tic_t follower_tics;
 	tic_t follower_timer;
 	UINT8 follower_frame;

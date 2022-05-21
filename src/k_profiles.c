@@ -199,6 +199,25 @@ void PR_LoadProfiles(void)
 		{
 			profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
 			fread(profilesList[i], sizeof(profile_t), 1, f);
+
+			// Attempt to correct numerical footguns
+			if (profilesList[i]->color >= numskincolors
+				|| profilesList[i]->color == 0
+				|| skincolors[profilesList[i]->color].accessible == false)
+			{
+				profilesList[i]->color = PROFILEDEFAULTCOLOR;
+			}
+			if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
+				|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
+			{
+				; // Valid, even outside the bounds
+			}
+			else if (profilesList[i]->followercolor >= numskincolors
+				|| profilesList[i]->followercolor == 0
+				|| skincolors[profilesList[i]->followercolor].accessible == false)
+			{
+				profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
+			}
 		}
 
 		fclose(f);

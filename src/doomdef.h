@@ -226,6 +226,10 @@ typedef struct skincolor_s
 	boolean accessible;         // Accessible by the color command + setup menu
 } skincolor_t;
 
+#define FOLLOWERCOLOR_MATCH UINT16_MAX
+#define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
+
 typedef enum
 {
 	SKINCOLOR_NONE = 0,

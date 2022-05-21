@@ -3948,6 +3948,16 @@ static void P_SetFollowerState(mobj_t *f, INT32 state)
 		f->tics++;
 }
 
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+{
+	if (followercolor < numskincolors) // bog standard
+		return followercolor;
+	if (followercolor == FOLLOWERCOLOR_OPPOSITE) // "Opposite"
+		return skincolors[playercolor].invcolor;
+	//if (followercolor == FOLLOWERCOLOR_MATCH) -- "Match"
+	return playercolor;
+}
+
 //
 //P_HandleFollower
 //
@@ -4007,25 +4017,7 @@ static void P_HandleFollower(player_t *player)
 		sz += FixedMul(player->mo->scale, sine)*P_MobjFlip(player->mo);
 	}
 
-	// Set follower colour
-	switch (player->followercolor)
-	{
-		case FOLLOWERCOLOR_MATCH: // "Match"
-			color = player->skincolor;
-			break;
-		case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-			color = skincolors[player->skincolor].invcolor;
-			break;
-		default:
-
-			color = player->followercolor;
-			if (!color || color > MAXSKINCOLORS+2) // Make sure this isn't garbage
-				color = player->skincolor; // "Match" as fallback.
-
-			break;
-	}
-
-
+	color = K_GetEffectiveFollowerColor(player->followercolor, player->skincolor);
 
 	if (!player->follower)	// follower doesn't exist / isn't valid
 	{

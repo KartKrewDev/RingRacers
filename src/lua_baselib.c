@@ -354,14 +354,26 @@ static int lib_pMoveColorAfter(lua_State *L)
 static int lib_pGetColorBefore(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorBefore(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorBefore(color, amount, follower));
 	return 1;
 }
 
 static int lib_pGetColorAfter(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorAfter(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorAfter(color, amount, follower));
+	return 1;
+}
+
+static int lib_pGetEffectiveFollowerColor(lua_State *L)
+{
+	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
+	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
+	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, playercolor));
 	return 1;
 }
 
@@ -3926,6 +3938,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"K_GetEffectiveFollowerColor",lib_pGetEffectiveFollowerColor},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
