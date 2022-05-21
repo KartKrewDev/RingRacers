@@ -4571,7 +4571,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 
 		SINT8 usedby = PR_ProfileUsedBy(optionsmenu.profile);
 
-		if (usedby > -1)
+		if (usedby > -1 && cv_currprofile.value)
 			M_StartMessage(M_GetText(va("As this is Player %d's active Profile,\ncontrol changes will be applied \nimmediately upon exiting this menu.\nIs this okay?\n\n(Press A to confirm)", usedby+1)), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
 		else
 			M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
@@ -4579,7 +4579,8 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
 
 		// Reapply player 1's real profile.
-		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+		if (cv_currprofile.value)
+			PR_ApplyProfile(cv_lastprofile[0].value, 0);
 
 		return true;
 	}
