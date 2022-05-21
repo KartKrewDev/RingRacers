@@ -4579,7 +4579,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
 
 		// Reapply player 1's real profile.
-		if (cv_currprofile.value)
+		if (cv_currprofile.value > -1)
 			PR_ApplyProfile(cv_lastprofile[0].value, 0);
 
 		return true;

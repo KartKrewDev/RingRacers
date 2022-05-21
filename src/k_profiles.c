@@ -108,8 +108,32 @@ void PR_InitNewProfile(void)
 {
 	char pname[PROFILENAMELEN+1] = "PRF";
 	profile_t *dprofile;
+	UINT8 usenum = numprofiles-1;
+	UINT8 i;
+	boolean nameok = false;
 
-	strcpy(pname, va("PRF%c", 'A'+numprofiles-1));
+	// When deleting profile, it's possible to do some pretty wacko stuff that would lead a new fresh profile to share the same name as another profile we have never changed the name of.
+	while (!nameok)
+	{
+		strcpy(pname, va("PRF%c", 'A'+usenum-1));
+
+		for (i = 0; i < numprofiles; i++)
+		{
+			profile_t *pr = PR_GetProfile(i);
+			if (!strcmp(pr->profilename, pname))
+			{
+				usenum++;
+				if (usenum > 'Z' -1)
+					usenum = 'A';
+
+				break;
+			}
+
+			// if we got here, then it means the name is okay!
+			if (i == numprofiles-1)
+				nameok = true;
+		}
+	}
 
 	dprofile = PR_MakeProfile(pname, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
 	PR_AddProfile(dprofile);
