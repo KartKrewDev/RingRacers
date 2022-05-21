@@ -19,6 +19,7 @@
 extern precise_t ps_tictime;
 
 extern precise_t ps_playerthink_time;
+extern precise_t ps_botticcmd_time;
 extern precise_t ps_thinkertime;
 
 extern precise_t ps_thlist_times[];
