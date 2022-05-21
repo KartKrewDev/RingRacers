@@ -2301,6 +2301,10 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			// Because let's face it, when you test mods, you're often lazy to grab your controller for menuing :)
 			if (!i && !num)
 				setup_player[num].ponedevice = cv_usejoystick[num].value;
+			else if (num)
+				// For any player past player 1, set controls to default profile controls, otherwise it's generally awful to do any menuing...
+				memcpy(&gamecontrol[num], gamecontroldefault, sizeof(gamecontroldefault));
+
 
 			CV_SetValue(&cv_usejoystick[num], i);
 			//CONS_Printf("Device for %d set to %d\n", num, i);
