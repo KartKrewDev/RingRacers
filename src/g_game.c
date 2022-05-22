@@ -899,6 +899,7 @@ void G_ResetAnglePrediction(player_t *player)
 static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
 {
 	INT32 angleChange = 0;
+	angle_t destAngle = player->angleturn;
 
 	localtic = cmd->latency;
 
@@ -923,7 +924,8 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 		}
 	}
 
-	localangle[ssplayer - 1] = player->angleturn + localdelta[ssplayer - 1];
+	destAngle = player->angleturn + localdelta[ssplayer - 1];
+	localangle[ssplayer - 1] += (destAngle - localangle[ssplayer - 1]) / 2;
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
