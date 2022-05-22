@@ -4472,8 +4472,8 @@ state_t states[NUMSTATES] =
 	{SPR_RSHT,               FF_PAPERSPRITE|0,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SIDE
 	{SPR_RSHT, FF_SEMIBRIGHT|FF_PAPERSPRITE|2,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NIPPLES
 	{SPR_RSHT,               FF_PAPERSPRITE|4,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_SCREEN
-	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|8,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERBACK
-	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|12,        -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERFRONT
+	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|5,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERBACK
+	{SPR_RSHT, FF_FULLBRIGHT|FF_PAPERSPRITE|9,         -1,              {NULL}, 0, 0, S_NULL}, // S_RINGSHOOTER_NUMBERFRONT
 	{SPR_PLAY, FF_FULLBRIGHT|FF_PAPERSPRITE|SPR2_XTRA, -1, {A_RingShooterFace}, 0, 0, S_NULL}, // S_RINGSHOOTER_FACE
 
 	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
@@ -24672,12 +24672,12 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // attacksound
 		S_NULL,         // painstate
 		0,              // painchance
-		sfx_None,       // painsound
+		sfx_s3ka7,      // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
+		sfx_s3kad,      // deathsound
 		0,              // speed
 		16*FRACUNIT,    // radius
 		16*FRACUNIT,    // height

@@ -11775,13 +11775,15 @@ boolean K_Cooperative(void)
 
 //}
 
+// I've tried to reduce redundancy as much as I can,
+// but check P_UpdateRingShooterParts if you edit this
 void K_SpawnRingShooter(player_t *player)
 {
 	const fixed_t scale = 2*FRACUNIT;
 	mobjinfo_t *info = &mobjinfo[MT_RINGSHOOTER_PART];
 	mobj_t *mo = player->mo;
 	mobj_t *base = P_SpawnMobj(mo->x, mo->y, mo->z, MT_RINGSHOOTER);
-	mobj_t *part;
+	mobj_t *part, *refNipple;
 	UINT32 frameNum;
 	angle_t angle;
 	vector2_t offset;
@@ -11791,6 +11793,15 @@ void K_SpawnRingShooter(player_t *player)
 	P_SetTarget(&base->target, mo);
 	P_SetScale(base, base->destscale = FixedMul(base->destscale, scale));
 	P_InitAngle(base, mo->angle);
+	base->scalespeed = FRACUNIT/2;
+	base->extravalue1 = FRACUNIT; // horizontal scale
+	base->extravalue2 = 0; // vertical scale
+
+	// the ring shooter object itself is invisible and acts as the thinker
+	// each ring shooter uses three linked lists to keep track of its parts
+	// the hprev chain stores the two NIPPLE BARS
+	// the hnext chain stores the four sides of the box
+	// the tracer chain stores the screen and the screen layers
 
 	// spawn the RING NIPPLES
 	part = base;
@@ -11810,8 +11821,11 @@ void K_SpawnRingShooter(player_t *player)
 		P_InitAngle(part, base->angle - i * ANGLE_45);
 		P_SetMobjState(part, S_RINGSHOOTER_NIPPLES);
 		part->frame += frameNum;
+		part->flags |= MF_NOTHINK;
+		part->old_spriteyscale = part->spriteyscale = 0;
 		frameNum++;
 	}
+	refNipple = part; // keep the second ring nipple; its position will be referenced by the box
 
 	// spawn the box
 	part = base;
@@ -11835,15 +11849,23 @@ void K_SpawnRingShooter(player_t *player)
 			frameNum++;
 		frameNum ^= FF_HORIZONTALFLIP;
 		angle -= ANGLE_90;
-		part->frame += frameNum;
 		P_InitAngle(part, angle);
+		part->frame += frameNum;
+		part->extravalue1 = part->x - refNipple->x;
+		part->extravalue2 = part->y - refNipple->y;
+		part->flags |= MF_NOTHINK;
+		part->old_spriteyscale = part->spriteyscale = 0;
 	}
 
 	// spawn the screen
-	part = P_SpawnMobjFromMobj(base, offset.x, offset.y, info->height, MT_RINGSHOOTER_SCREEN);
+	part = P_SpawnMobjFromMobj(base, offset.x, offset.y, 0, MT_RINGSHOOTER_SCREEN);
 	P_SetTarget(&base->tracer, part);
 	P_SetTarget(&part->target, base);
 	P_InitAngle(part, base->angle - ANGLE_45);
+	part->extravalue1 = part->x - refNipple->x;
+	part->extravalue2 = part->y - refNipple->y;
+	part->flags |= MF_NOTHINK;
+	part->old_spriteyscale = part->spriteyscale = 0;
 
 	// spawn the screen numbers
 	for (i = 0; i < 2; i++)
@@ -11853,9 +11875,6 @@ void K_SpawnRingShooter(player_t *player)
 		part = part->tracer;
 		P_InitAngle(part, part->target->angle);
 		P_SetMobjState(part, S_RINGSHOOTER_NUMBERBACK + i);
+		part->renderflags |= RF_DONTDRAW;
 	}
-
-	// test face feature (to be moved into thinker later)
-	part->skin = mo->skin;
-	P_SetMobjState(part, S_RINGSHOOTER_FACE);
 }

@@ -4550,16 +4550,149 @@ static void P_SpawnItemCapsuleParts(mobj_t *mobj)
 #undef ANG_CAPSULE
 #undef ROTATIONSPEED
 
-static void P_RingShooterThinker(mobj_t *mo)
+// ------------
+// RING SHOOTER
+// ------------
+
+static void P_ActivateRingShooter(mobj_t *mo)
+{
+	mobj_t *part = mo->tracer;
+
+	while (!P_MobjWasRemoved(part->tracer))
+	{
+		part = part->tracer;
+		part->renderflags &= ~RF_DONTDRAW;
+		part->frame += 4;
+	}
+}
+
+#define scaleSpeed mo->scalespeed
+#define scaleState mo->threshold
+#define xScale mo->extravalue1
+#define yScale mo->extravalue2
+#define xOffset part->extravalue1
+#define yOffset part->extravalue2
+#define SCALEPART part->spritexscale = xScale; part->spriteyscale = yScale;
+#define MOVEPART P_MoveOrigin(part, refNipple->x + FixedMul(xOffset, xScale), refNipple->y + FixedMul(yOffset, xScale), part->z);
+
+// I've tried to reduce redundancy as much as I can,
+// but check K_SpawnRingShooter if you edit this
+static void P_UpdateRingShooterParts(mobj_t *mo)
+{
+	mobj_t *part, *refNipple;
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->hprev))
+	{
+		part = part->hprev;
+		SCALEPART
+	}
+	refNipple = part;
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		MOVEPART
+		SCALEPART
+	}
+
+	part = mo->tracer;
+	part->z = mo->z + FixedMul(refNipple->height, yScale);
+	MOVEPART
+	SCALEPART
+}
+
+static boolean P_RingShooterInit(mobj_t *mo)
+{
+	if (scaleState == -1)
+		return false;
+
+	switch (scaleState) {
+		case 0:
+			yScale += scaleSpeed;
+			if (yScale >= FRACUNIT)
+			{
+				//xScale -= scaleSpeed;
+				scaleState++;
+			}
+			break;
+		case 1:
+			scaleSpeed -= FRACUNIT/5;
+			yScale += scaleSpeed;
+			xScale -= scaleSpeed;
+			if (yScale < 3*FRACUNIT/4)
+			{
+				scaleState ++;
+				scaleSpeed = FRACUNIT >> 2;
+			}
+			break;
+		case 2:
+			yScale += scaleSpeed;
+			xScale -= scaleSpeed;
+			if (yScale >= FRACUNIT)
+			{
+				scaleState = -1;
+				xScale = yScale = FRACUNIT;
+				P_ActivateRingShooter(mo);
+			}
+	}
+
+	P_UpdateRingShooterParts(mo);
+	return scaleState != -1;
+}
+#undef scaleSpeed
+#undef scaleState
+#undef xScale
+#undef yScale
+#undef xOffset
+#undef yOffset
+#undef MOVEPART
+#undef SCALEPART
+
+static void P_RingShooterCountdown(mobj_t *mo)
+{
+	mobj_t *part = mo->tracer;
+
+	if (mo->reactiontime == -1)
+		return;
+
+	if (mo->reactiontime > 0)
+	{
+		mo->reactiontime--;
+		return;
+	}
+
+	while (!P_MobjWasRemoved(part->tracer))
+	{
+		part = part->tracer;
+		part->frame--;
+	}
+
+	switch ((part->frame & FF_FRAMEMASK) - (part->state->frame & FF_FRAMEMASK)) {
+		case -1:
+			mo->reactiontime = -1;
+			part->skin = mo->skin;
+			P_SetMobjState(part, S_RINGSHOOTER_FACE);
+			break;
+		case 0:
+			mo->reactiontime = TICRATE;
+			S_StartSound(mo, mo->info->deathsound);
+			break;
+		default:
+			mo->reactiontime = TICRATE;
+			S_StartSound(mo, mo->info->painsound);
+			break;
+	}
+}
+
+static void P_RingShooterFlicker(mobj_t *mo)
 {
 	UINT32 trans;
-	mobj_t *part = mo;
+	mobj_t *part = mo->tracer;
 
 	while (!P_MobjWasRemoved(part->tracer))
 		part = part->tracer;
-
-	if (part == mo) // ??? where did you go
-		return;
 
 	part->renderflags ^= RF_DONTDRAW;
 	if (part->renderflags & RF_DONTDRAW)
@@ -4567,6 +4700,15 @@ static void P_RingShooterThinker(mobj_t *mo)
 	else
 		trans = 0;
 	part->target->frame = (part->target->frame & ~FF_TRANSMASK) | trans;
+}
+
+static void P_RingShooterThinker(mobj_t *mo)
+{
+	if (P_MobjWasRemoved(mo->tracer) || P_RingShooterInit(mo))
+		return;
+
+	P_RingShooterCountdown(mo);
+	P_RingShooterFlicker(mo);
 }
 
 //
