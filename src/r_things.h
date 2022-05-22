@@ -59,7 +59,7 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap);
 extern INT16 negonearray[MAXVIDWIDTH];
 extern INT16 screenheightarray[MAXVIDWIDTH];
 
-fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope, fixed_t interpx, fixed_t interpy, fixed_t interpz);
+fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
 
 //SoM: 6/5/2000: Light sprites correctly!
 void R_AddSprites(sector_t *sec, INT32 lightlevel);

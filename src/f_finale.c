@@ -20,6 +20,7 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
@@ -162,6 +163,8 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
+
+static huddrawlist_h luahuddrawlist_title;
 
 //
 // This alters the text string cutscene_disptext.
@@ -366,9 +369,6 @@ static void F_IntroDrawScene(void)
 
 	W_UnlockCachedPatch(background);
 
-	if (animtimer)
-		animtimer--;
-
 	V_DrawString(cx, cy, 0, cutscene_disptext);
 }
 
@@ -397,7 +397,10 @@ void F_IntroDrawer(void)
 				while (quittime > nowtime)
 				{
 					while (!((nowtime = I_GetTime()) - lasttime))
-						I_Sleep();
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime(cv_timescale.value);
+					}
 					lasttime = nowtime;
 
 					I_OsPolling();
@@ -467,6 +470,9 @@ void F_IntroTicker(void)
 	// check for skipping
 	if (keypressed)
 		keypressed = false;
+	
+	if (animtimer > 0)
+		animtimer--;
 }
 
 //
@@ -1711,6 +1717,9 @@ void F_InitMenuPresValues(void)
 	//M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
 	//M_SetMenuCurFadeValue(16);
 	//M_SetMenuCurTitlePics();
+
+	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+	luahuddrawlist_title = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -1726,7 +1735,7 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 	INT32 pw, ph; // scaled by dupz
 	patch_t *pat;
 	INT32 i, j;
-	INT32 xscrolltimer, yscrolltimer;
+	fixed_t fracmenuanimtimer, xscrolltimer, yscrolltimer;
 
 	if (rendermode == render_none)
 		return;
@@ -1754,12 +1763,13 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 	tilex = max(FixedCeil(FixedDiv(vid.width, pw)) >> FRACBITS, 1)+2; // one tile on both sides of center
 	tiley = max(FixedCeil(FixedDiv(vid.height, ph)) >> FRACBITS, 1)+2;
 
-	xscrolltimer = ((menuanimtimer*scrollxspeed)/16 + patwidth*xneg) % (patwidth);
-	yscrolltimer = ((menuanimtimer*scrollyspeed)/16 + patheight*yneg) % (patheight);
+	fracmenuanimtimer = (menuanimtimer * FRACUNIT) - (FRACUNIT - rendertimefrac);
+	xscrolltimer = ((fracmenuanimtimer*scrollxspeed)/16 + patwidth*xneg*FRACUNIT) % (patwidth * FRACUNIT);
+	yscrolltimer = ((fracmenuanimtimer*scrollyspeed)/16 + patheight*yneg*FRACUNIT) % (patheight * FRACUNIT);
 
 	// coordinate offsets
-	xscrolled = xscrolltimer * dupz;
-	yscrolled = yscrolltimer * dupz;
+	xscrolled = FixedInt(xscrolltimer * dupz);
+	yscrolled = FixedInt(yscrolltimer * dupz);
 
 	for (x = (xispos) ? -pw*(tilex-1)+pw : 0, i = 0;
 		i < tilex;
@@ -2064,7 +2074,21 @@ void F_TitleScreenDrawer(void)
 	}
 
 luahook:
-	LUAh_TitleHUD();
+	// The title drawer is sometimes called without first being started
+	// In order to avoid use-before-initialization crashes, let's check and
+	// create the drawlist if it doesn't exist.
+	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+		luahuddrawlist_title = LUA_HUD_CreateDrawList();
+	}
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_title);
+		LUAh_TitleHUD(luahuddrawlist_title);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_title);
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -2324,6 +2348,7 @@ static INT32 textxpos, textypos;
 static boolean dofadenow = false, cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
+
 static void F_AdvanceToNextScene(void)
 {
 	// Don't increment until after endcutscene check
@@ -2333,6 +2358,7 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
+
 	++scenenum;
 
 	timetonext = 0;
@@ -2348,7 +2374,6 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
-	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -2480,8 +2505,6 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
-
-	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

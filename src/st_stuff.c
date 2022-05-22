@@ -44,12 +44,15 @@
 #include "hardware/hw_main.h"
 #endif
 
+#include "lua_hudlib_drawlist.h"
 #include "lua_hud.h"
 
 // SRB2Kart
 #include "k_hud.h" // SRB2kart
 #include "v_video.h"
 #include "r_skins.h" // NUMFACES
+
+#include "r_fps.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -71,6 +74,9 @@ static patch_t *hud_tv2;
 // Discord Rich Presence
 static patch_t *envelope;
 #endif
+
+static huddrawlist_h luahuddrawlist_game;
+static huddrawlist_h luahuddrawlist_titlecard;
 
 //
 // STATUS BAR CODE
@@ -242,6 +248,9 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
+
+	luahuddrawlist_game = LUA_HUD_CreateDrawList();
+	luahuddrawlist_titlecard = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -949,8 +958,12 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	LUAh_TitleCardHUD(stplyr);
-
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
+		LUAh_TitleCardHUD(stplyr, luahuddrawlist_titlecard);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
 
 // Clear defined coordinates, we don't need them anymore
@@ -1019,7 +1032,14 @@ static void ST_overlayDrawer(void)
 	}
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-		LUAh_GameHUD(stplyr);
+	{
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game);
+	}
 
 	if (!hu_showscores && netgame && !mapreset)
 	{

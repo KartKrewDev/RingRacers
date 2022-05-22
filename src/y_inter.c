@@ -38,6 +38,7 @@
 #include "lua_hook.h" // IntermissionThinker hook
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // PlayerInputDown
@@ -113,7 +114,10 @@ static INT32 sorttic = -1;
 intertype_t intertype = int_none;
 intertype_t intermissiontypes[NUMGAMETYPES];
 
+static huddrawlist_h luahuddrawlist_intermission;
+
 static void Y_FollowIntermission(void);
+
 static void Y_RescaleScreenBuffer(void);
 static void Y_UnloadData(void);
 
@@ -474,7 +478,13 @@ void Y_IntermissionDrawer(void)
 	else if (bgtile)
 		V_DrawPatchFill(bgtile);
 
-	LUAh_IntermissionHUD();
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
+		LUAh_IntermissionHUD(luahuddrawlist_intermission);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_intermission);
+
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
@@ -1141,6 +1151,9 @@ void Y_StartIntermission(void)
 		default:
 			break;
 	}
+
+	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
+	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
 
 	if (powertype != PWRLV_DISABLED)
 	{
