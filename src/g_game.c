@@ -925,6 +925,9 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 		}
 	}
 
+	// We COULD set it to destAngle directly...
+	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
+	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
 	destAngle = player->angleturn + localdelta[ssplayer - 1];
 	diff = destAngle - localangle[ssplayer - 1];
 
