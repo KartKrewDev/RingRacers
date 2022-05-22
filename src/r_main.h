@@ -37,6 +37,8 @@ extern size_t validcount, linecount, loopcount, framecount;
 extern fixed_t rendertimefrac;
 // Evaluated delta tics for this frame (how many tics since the last frame)
 extern fixed_t renderdeltatics;
+// The current render is a new logical tic
+extern boolean renderisnewtic;
 
 //
 // Lighting LUT.

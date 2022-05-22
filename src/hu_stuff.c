@@ -49,6 +49,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 // SRB2Kart
@@ -154,6 +155,8 @@ static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
 
 static tic_t resynch_ticker = 0;
+
+static huddrawlist_h luahuddrawlist_scores;
 
 //======================================================================
 //                          HEADS UP INIT
@@ -303,6 +306,8 @@ void HU_Init(void)
 	}
 
 	HU_LoadGraphics();
+
+	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 }
 
 patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...)
@@ -401,12 +406,12 @@ static INT16 addy = 0; // use this to make the messages scroll smoothly when one
 
 static void HU_removeChatText_Mini(void)
 {
-    // MPC: Don't create new arrays, just iterate through an existing one
+	// MPC: Don't create new arrays, just iterate through an existing one
 	size_t i;
-    for(i=0;i<chat_nummsg_min-1;i++) {
-        strcpy(chat_mini[i], chat_mini[i+1]);
-        chat_timers[i] = chat_timers[i+1];
-    }
+	for(i=0;i<chat_nummsg_min-1;i++) {
+		strcpy(chat_mini[i], chat_mini[i+1]);
+		chat_timers[i] = chat_timers[i+1];
+	}
 	chat_nummsg_min--; // lost 1 msg.
 
 	// use addy and make shit slide smoothly af.
@@ -419,10 +424,10 @@ static void HU_removeChatText_Log(void)
 {
 	// MPC: Don't create new arrays, just iterate through an existing one
 	size_t i;
-    for(i=0;i<chat_nummsg_log-1;i++) {
-        strcpy(chat_log[i], chat_log[i+1]);
-    }
-    chat_nummsg_log--; // lost 1 msg.
+	for(i=0;i<chat_nummsg_log-1;i++) {
+		strcpy(chat_log[i], chat_log[i+1]);
+	}
+	chat_nummsg_log--; // lost 1 msg.
 }
 #endif
 
@@ -1005,12 +1010,8 @@ void HU_Ticker(void)
 		if (chat_scrolltime > 0)
 			chat_scrolltime--;
 	}
-	else
-	{
-		chat_scrolltime = 0;
-	}
 
-	if (netgame) // would handle that in hu_drawminichat, but it's actually kinda awkward when you're typing a lot of messages. (only handle that in netgames duh)
+	if (netgame)
 	{
 		size_t i = 0;
 
@@ -2126,6 +2127,8 @@ void HU_Drawer(void)
 	else
 	{
 		typelines = 1;
+		chat_scrolltime = 0;
+
 		if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
 			HU_drawMiniChat(); // draw messages in a cool fashion.
 	}
@@ -2148,7 +2151,12 @@ void HU_Drawer(void)
 		{
 			if (LUA_HudEnabled(hud_rankings))
 				HU_DrawRankings();
-			LUAh_ScoresHUD();
+			if (renderisnewtic)
+			{
+				LUA_HUD_ClearDrawList(luahuddrawlist_scores);
+				LUAh_ScoresHUD(luahuddrawlist_scores);
+			}
+			LUA_HUD_DrawList(luahuddrawlist_scores);
 		}
 
 		if (demo.playback)

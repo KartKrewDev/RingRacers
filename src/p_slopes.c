@@ -22,6 +22,7 @@
 #include "r_main.h"
 #include "p_maputl.h"
 #include "w_wad.h"
+#include "r_fps.h"
 #include "k_kart.h" // K_PlayerEBrake
 
 pslope_t *slopelist = NULL;
@@ -241,6 +242,9 @@ static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, l
 	th->type = type;
 
 	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+
+	// interpolation
+	R_CreateInterpolator_DynSlope(&th->thinker, slope);
 }
 
 

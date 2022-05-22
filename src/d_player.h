@@ -343,6 +343,7 @@ typedef struct player_s
 	// fun thing for player sprite
 	angle_t drawangle;
 	angle_t old_drawangle; // interp
+	angle_t old_drawangle2;
 
 	// Bit flags.
 	// See pflags_t, above.

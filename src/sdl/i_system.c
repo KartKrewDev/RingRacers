@@ -165,6 +165,7 @@ static char returnWadPath[256];
 
 #include "../doomdef.h"
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -1551,115 +1552,78 @@ ticcmd_t *I_BaseTiccmd4(void)
 
 static Uint64 timer_frequency;
 
-static double tic_frequency;
-static Uint64 tic_epoch;
-static double elapsed_tics;
-
-static void UpdateElapsedTics(void)
-{
-	const Uint64 now = SDL_GetPerformanceCounter();
-
-	elapsed_tics += (now - tic_epoch) / tic_frequency;
-	tic_epoch = now; // moving epoch
-}
-
-tic_t I_GetTime(void)
-{
-	double f = 0.0;
-	UpdateElapsedTics();
-	f = floor(elapsed_tics);
-	return (tic_t)f;
-}
-
-float I_GetTimeFrac(void)
-{
-	UpdateElapsedTics();
-	return elapsed_tics;
-}
-
 precise_t I_GetPreciseTime(void)
 {
 	return SDL_GetPerformanceCounter();
 }
 
-int I_PreciseToMicros(precise_t d)
+UINT64 I_GetPrecisePrecision(void)
 {
-	// d is going to be converted into a double. So remove the highest bits
-	// to avoid loss of precision in the lower bits, for the (probably rare) case
-	// that the higher bits are actually used.
-	d &= ((precise_t)1 << 53) - 1; // The mantissa of a double can handle 53 bits at most.
-	// The resulting double from the calculation is converted first to UINT64 to avoid overflow,
-	// which is undefined behaviour when converting floating point values to integers.
-	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
+	return SDL_GetPerformanceFrequency();
+}
+
+static UINT32 frame_rate;
+
+static double frame_frequency;
+static UINT64 frame_epoch;
+static double elapsed_frames;
+
+static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
+{
+	frame_rate = cap;
+	frame_epoch = now;
+
+	//elapsed_frames = 0.0;
+
+	if (frame_rate == 0)
+	{
+		// Shouldn't be used, but just in case...?
+		frame_frequency = 1.0;
+		return;
+	}
+
+	frame_frequency = timer_frequency / (double)frame_rate;
+}
+
+double I_GetFrameTime(void)
+{
+	const UINT64 now = SDL_GetPerformanceCounter();
+	const UINT32 cap = R_GetFramerateCap();
+
+	if (cap != frame_rate)
+	{
+		// Maybe do this in a OnChange function for cv_fpscap?
+		I_InitFrameTime(now, cap);
+	}
+
+	if (frame_rate == 0)
+	{
+		// Always advance a frame.
+		elapsed_frames += 1.0;
+	}
+	else
+	{
+		elapsed_frames += (now - frame_epoch) / frame_frequency;
+	}
+
+	frame_epoch = now; // moving epoch
+	return elapsed_frames;
 }
 
 //
-//I_StartupTimer
+// I_StartupTimer
 //
 void I_StartupTimer(void)
 {
 	timer_frequency = SDL_GetPerformanceFrequency();
-	tic_epoch       = SDL_GetPerformanceCounter();
 
-	tic_frequency   = timer_frequency / (double)NEWTICRATE;
-	elapsed_tics    = 0.0;
+	I_InitFrameTime(0, R_GetFramerateCap());
+	elapsed_frames  = 0.0;
 }
 
-void I_Sleep(void)
+void I_Sleep(UINT32 ms)
 {
-	if (cv_sleep.value > 0)
-		SDL_Delay(cv_sleep.value);
-}
-
-boolean I_CheckFrameCap(precise_t start, precise_t end)
-{
-	UINT32 capFrames = R_GetFramerateCap();
-	int capMicros = 0;
-
-	int elapsed;
-
-	if (capFrames == 0)
-	{
-		// We don't want to cap.
-		return false;
-	}
-
-	elapsed = I_PreciseToMicros(end - start);
-	capMicros = 1000000 / capFrames;
-
-	if (elapsed < capMicros)
-	{
-		// Wait to draw the next frame.
-		UINT32 wait = ((capMicros - elapsed) / 1000);
-
-		if (cv_sleep.value > 1)
-		{
-			// 1 is the default, and in non-interpolated mode is just the bare minimum wait.
-			// Since we're already adding some wait with an FPS cap, only apply when it's above 1.
-			wait += cv_sleep.value - 1;
-		}
-
-		// If the wait's greater than our granularity value,
-		// we'll just burn the couple extra cycles in the main loop
-		// in order to get to the next frame.
-		// This makes us get to the exact FPS cap more often.
-
-		// Higher values have more wasted CPU cycles, but the in-game frame performance is better.
-		// 10ms is the average clock tick of most OS scheduling.
-		// 15ms is a little more than that, for leniency on slow machines. (This helps mine reach a stable 60, at least!)
-		// (https://www.libsdl.org/release/SDL-1.2.15/docs/html/sdldelay.html)
-#define DELAY_GRANULARITY 15
-		if (wait >= DELAY_GRANULARITY)
-		{
-			SDL_Delay(wait);
-		}
-#undef DELAY_GRANULARITY
-
-		return true;
-	}
-
-	// Waited enough to draw again.
-	return false;
+	SDL_Delay(ms);
 }
 
 #ifdef NEWSIGNALHANDLER

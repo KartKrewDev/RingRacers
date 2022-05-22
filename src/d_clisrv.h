@@ -520,11 +520,11 @@ extern UINT8 hu_redownloadinggamestate;
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
 
+extern boolean hu_stopped;
+
 //
 // SRB2Kart
 //
-
-extern boolean hu_stopped;
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];

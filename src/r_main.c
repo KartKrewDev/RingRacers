@@ -82,6 +82,7 @@ int r_splitscreen;
 
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
+boolean renderisnewtic;
 
 //
 // precalculated math tables

@@ -60,6 +60,7 @@
 #include "r_textures.h"
 #include "r_patch.h"
 #include "r_picformats.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"

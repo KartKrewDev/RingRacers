@@ -40,6 +40,7 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
@@ -467,6 +468,8 @@ static void D_Display(void)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
+				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+
 				viewwindowy = 0;
 				viewwindowx = 0;
 
@@ -542,6 +545,7 @@ static void D_Display(void)
 				}
 
 				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
+				R_RestoreLevelInterpolators();
 			}
 
 			if (lastdraw)
@@ -690,29 +694,6 @@ static void D_Display(void)
 	}
 }
 
-static boolean D_CheckFrameCap(void)
-{
-	static boolean init = false;
-	static precise_t startCap = 0;
-	precise_t endCap = 0;
-
-	endCap = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		startCap = endCap;
-		init = true;
-	}
-	else if (I_CheckFrameCap(startCap, endCap))
-	{
-		// Framerate should be capped.
-		return true;
-	}
-
-	startCap = endCap;
-	return false;
-}
-
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
@@ -721,9 +702,11 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	boolean ticked;
-	boolean interp;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
+
+	boolean interp = false;
 	boolean doDisplay = false;
 
 	if (dedicated)
@@ -736,6 +719,7 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -777,6 +761,19 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
+		I_UpdateTime(cv_timescale.value);
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -802,16 +799,8 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		interp = R_UsingFrameInterpolation();
+		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
-		ticked = false;
-
-		if (!realtics && !singletics && !interp)
-		{
-			// Non-interp sleep
-			I_Sleep();
-			continue;
-		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -825,76 +814,51 @@ void D_SRB2Loop(void)
 				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			ticked = TryRunTics(realtics);
+			TryRunTics(realtics);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
 				rendergametic = gametic;
-				rendertimeout = entertic+TICRATE/17;
+				rendertimeout = entertic + TICRATE/17;
 
 				doDisplay = true;
 			}
 			else if (rendertimeout < entertic) // in case the server hang or netsplit
 			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						P_RunChaseCameras();
+					}
+					R_UpdateViewInterpolation();
+				}
+
 				doDisplay = true;
 			}
+
+			renderisnewtic = true;
+		}
+		else
+		{
+			renderisnewtic = false;
 		}
 
 		if (interp)
 		{
-			static float tictime = 0.0f;
-			static float prevtime = 0.0f;
-			float entertime = I_GetTimeFrac();
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			fixed_t entertimefrac = FRACUNIT;
-
-			if (ticked)
+			if (!(paused || P_AutoPause()) && !hu_stopped)
 			{
-				tictime = entertime;
+				rendertimefrac = g_time.timefrac;
 			}
-
-			// Handle interp sleep / framerate cap here.
-			// TryRunTics needs ran if possible to prevent lagged map changes,
-			// (and if that runs, the code above needs to also run)
-			// so this is done here after TryRunTics.
-			if (D_CheckFrameCap())
+			else
 			{
-				continue;
+				rendertimefrac = FRACUNIT;
 			}
-
-			if (!(paused || P_AutoPause()))
-			{
-#if 0
-				CONS_Printf("prevtime = %f\n", prevtime);
-				CONS_Printf("entertime = %f\n", entertime);
-				CONS_Printf("tictime = %f\n", tictime);
-				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
-				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
-				CONS_Printf("========\n");
-#endif
-
-				if (entertime - prevtime >= 1.0f)
-				{
-					// Lagged for more frames than a gametic...
-					// No need for interpolation.
-					entertimefrac = FRACUNIT;
-				}
-				else
-				{
-					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-				}
-
-				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-				renderdeltatics = realtics * FRACUNIT;
-				if (entertimefrac > rendertimefrac)
-					renderdeltatics += entertimefrac - rendertimefrac;
-				else
-					renderdeltatics -= rendertimefrac - entertimefrac;
-
-				rendertimefrac = entertimefrac;
-			}
-
-			prevtime = entertime;
 		}
 		else
 		{
@@ -907,9 +871,10 @@ void D_SRB2Loop(void)
 			D_Display();
 		}
 
+		// Only take screenshots after drawing.
 		if (moviemode)
 			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
+		if (takescreenshot)
 			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
@@ -929,10 +894,20 @@ void D_SRB2Loop(void)
 		}
 #endif
 
-		// Moved to here from I_FinishUpdate.
-		// It doesn't track fades properly anymore by being here (might be easy fix),
-		// but it's a little more accurate for actual game logic when its here.
-		SCR_CalculateFPS();
+		// Fully completed frame made.
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+			if (elapsed > 0 && (INT64)capbudget > elapsed)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
 }
 
@@ -1406,8 +1381,8 @@ void D_SRB2Main(void)
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
