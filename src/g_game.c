@@ -876,6 +876,24 @@ INT32 localdelta[MAXSPLITSCREENPLAYERS];
 INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
 UINT8 localtic;
 
+void G_ResetAnglePrediction(player_t *player)
+{
+	UINT16 i, j;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (&players[displayplayers[i]] == player)
+		{
+			localdelta[i] = 0;
+			for (j = 0; j < TICCMD_LATENCYMASK; j++)
+			{
+				localstoredeltas[i][j] = 0;
+			}
+			break;
+		}
+	}
+}
+
 // Turning was removed from G_BuildTiccmd to prevent easy client hacking.
 // This brings back the camera prediction that was lost.
 static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
@@ -884,17 +902,25 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 
 	localtic = cmd->latency;
 
-	while (realtics > 0)
+	if (player->pflags & PF_DRIFTEND)
 	{
-		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
-		angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+		// Otherwise, your angle slingshots off to the side violently...
+		G_ResetAnglePrediction(player);
+	}
+	else
+	{
+		while (realtics > 0)
+		{
+			localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+			angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
 
-		// Store the angle we applied to this tic, so we can revert it later.
-		// If we trust the camera to do all of the work, then it can get out of sync fast.
-		localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
-		localdelta[ssplayer - 1] += angleChange;
+			// Store the angle we applied to this tic, so we can revert it later.
+			// If we trust the camera to do all of the work, then it can get out of sync fast.
+			localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
+			localdelta[ssplayer - 1] += angleChange;
 
-		realtics--;
+			realtics--;
+		}
 	}
 
 	localangle[ssplayer - 1] = player->angleturn + localdelta[ssplayer - 1];

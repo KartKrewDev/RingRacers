@@ -4874,6 +4874,7 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
+			G_ResetAnglePrediction(player);
 			break;
 		}
 	}
