@@ -1093,6 +1093,11 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 {
 	UINT8 i;
 
+	if (player == NULL)
+	{
+		return false;
+	}
+
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
@@ -1112,6 +1117,11 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 boolean P_IsLocalPlayer(player_t *player)
 {
 	UINT8 i;
+
+	if (player == NULL)
+	{
+		return false;
+	}
 
 	// nobody is ever local when watching something back - you're a spectator there, even if your g_localplayers might say otherwise
 	if (demo.playback)
@@ -1140,6 +1150,11 @@ boolean P_IsLocalPlayer(player_t *player)
 boolean P_IsDisplayPlayer(player_t *player)
 {
 	UINT8 i;
+
+	if (player == NULL)
+	{
+		return false;
+	}
 
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
