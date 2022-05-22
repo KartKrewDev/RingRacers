@@ -15,6 +15,7 @@
 #include "d_netcmd.h"
 #include "r_main.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "z_zone.h"
 #include "p_local.h"
 
@@ -46,6 +47,7 @@ static precise_t ps_frametime = 0;
 precise_t ps_tictime = 0;
 
 precise_t ps_playerthink_time = 0;
+precise_t ps_botticcmd_time = 0;
 precise_t ps_thinkertime = 0;
 
 precise_t ps_thlist_times[NUM_THINKERLISTS];
@@ -116,7 +118,7 @@ static void M_DrawPerfString(perfstatcol_t *col, int type)
 	for (row = col->rows; row->lores_label; ++row)
 	{
 		if (type == PERF_TIME)
-			value = I_PreciseToMicros(*(precise_t *)row->value);
+			value = (*(precise_t *)row->value) / (I_GetPrecisePrecision() / 1000000);
 		else
 			value = *(int *)row->value;
 
@@ -363,6 +365,7 @@ static void M_DrawTickStats(void)
 
 	perfstatrow_t extra_thinker_time_row[] = {
 		{"lthinkf", "LUAh_ThinkFrame:", &ps_lua_thinkframe_time},
+		{"botcmd ", "Bot logic:      ", &ps_botticcmd_time},
 		{"other  ", "Other:          ", &extratime},
 		{0}
 	};
@@ -565,7 +568,7 @@ void M_DrawPerfStats(void)
 				len = (int)strlen(str);
 				if (len > 20)
 					str += len - 20;
-				snprintf(s, sizeof s - 1, "%20s: %d", str, I_PreciseToMicros(thinkframe_hooks[i].time_taken));
+				snprintf(s, sizeof s - 1, "%20s: %ld", str, (long)((thinkframe_hooks[i].time_taken) / (I_GetPrecisePrecision() / 1000000)));
 				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | text_color, s);
 				y += 4; // repeated code!
 				if (y > 192)

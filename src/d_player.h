@@ -145,7 +145,7 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (SPB,           11),\
 	FOREACH (GROW,          12),\
 	FOREACH (SHRINK,        13),\
-	FOREACH (THUNDERSHIELD, 14),\
+	FOREACH (LIGHTNINGSHIELD, 14),\
 	FOREACH (BUBBLESHIELD,  15),\
 	FOREACH (FLAMESHIELD,   16),\
 	FOREACH (HYUDORO,       17),\
@@ -177,7 +177,7 @@ typedef enum
 typedef enum
 {
 	KSHIELD_NONE = 0,
-	KSHIELD_THUNDER = 1,
+	KSHIELD_LIGHTNING = 1,
 	KSHIELD_BUBBLE = 2,
 	KSHIELD_FLAME = 3,
 	NUMKARTSHIELDS
@@ -343,6 +343,7 @@ typedef struct player_s
 	// fun thing for player sprite
 	angle_t drawangle;
 	angle_t old_drawangle; // interp
+	angle_t old_drawangle2;
 
 	// Bit flags.
 	// See pflags_t, above.
@@ -402,6 +403,8 @@ typedef struct player_s
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
+	boolean justDI;			// Directional Influence ended, true until letting go of turn
+	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
@@ -436,6 +439,8 @@ typedef struct player_s
 	fixed_t draftpower;		// (0 to FRACUNIT) - Drafting power, doubles your top speed & acceleration at max
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
+
+	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
 	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
@@ -489,6 +494,7 @@ typedef struct player_s
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;

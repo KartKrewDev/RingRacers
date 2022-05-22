@@ -46,6 +46,9 @@ ifdef GCC45
 #WFLAGS+=-Wc++-compat
  WFLAGS+=-std=gnu99
 endif
+ifdef GCC47
+ WFLAGS+=-std=gnu11
+endif
  WFLAGS+=-Wcast-qual
 ifndef NOCASTALIGNWARN
  WFLAGS+=-Wcast-align

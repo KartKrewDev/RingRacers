@@ -40,6 +40,9 @@ struct globalsmuggle
 	INT64 avoidAvgX[2], avoidAvgY[2];
 	UINT32 avoidObjs[2];
 
+	fixed_t annoyscore;
+	mobj_t *annoymo;
+
 	fixed_t closestlinedist;
 
 	fixed_t eggboxx, eggboxy;
@@ -478,7 +481,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			if ((RINGTOTAL(globalsmuggle.botmo->player) < 20 && !(globalsmuggle.botmo->player->pflags & PF_RINGLOCK)
 				&& P_CanPickupItem(globalsmuggle.botmo->player, 0))
 				&& !thing->extravalue1
-				&& (globalsmuggle.botmo->player->itemtype != KITEM_THUNDERSHIELD))
+				&& (globalsmuggle.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
 			{
 				K_AddAttackObject(thing, side, (RINGTOTAL(globalsmuggle.botmo->player) < 3) ? 5 : 1);
 			}
@@ -505,10 +508,10 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				{
 					break;
 				}
-				// Thunder Shield
+				// Lightning Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->itemtype == KITEM_THUNDERSHIELD,
-					thing->player->itemtype == KITEM_THUNDERSHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_LIGHTNINGSHIELD,
+					thing->player->itemtype == KITEM_LIGHTNINGSHIELD
 				))
 				{
 					break;
@@ -770,4 +773,152 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 	}
+}
+
+/*--------------------------------------------------
+	static boolean K_FindPlayersToBully(mobj_t *thing)
+
+		Blockmap search function.
+		Finds players around the bot to bump.
+
+	Input Arguments:-
+		thing - Object passed in from iteration.
+
+	Return:-
+		true continues searching, false ends the search early.
+--------------------------------------------------*/
+static boolean K_FindPlayersToBully(mobj_t *thing)
+{
+	INT16 anglediff;
+	fixed_t fulldist;
+	fixed_t ourweight, theirweight, weightdiff;
+	angle_t ourangle, destangle, angle;
+
+	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
+	{
+		return false;
+	}
+
+	if (thing->health <= 0)
+	{
+		return true;
+	}
+
+	if (!thing->player)
+	{
+		return true;
+	}
+
+	if (globalsmuggle.botmo == thing)
+	{
+		return true;
+	}
+
+	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
+
+	if (fulldist > globalsmuggle.distancetocheck)
+	{
+		return true;
+	}
+
+	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
+	{
+		return true;
+	}
+
+	ourangle = globalsmuggle.botmo->angle;
+	destangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y);
+	angle = (ourangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	anglediff = abs(anglediff);
+
+	ourweight = K_GetMobjWeight(globalsmuggle.botmo, thing);
+	theirweight = K_GetMobjWeight(thing, globalsmuggle.botmo);
+	weightdiff = 0;
+
+	if (anglediff >= 90)
+	{
+		weightdiff = theirweight - ourweight;
+	}
+	else
+	{
+		weightdiff = ourweight - theirweight;
+	}
+
+	if (weightdiff > mapobjectscale && weightdiff > globalsmuggle.annoyscore)
+	{
+		globalsmuggle.annoyscore = weightdiff;
+		globalsmuggle.annoymo = thing;
+	}
+
+	return true;
+}
+
+/*--------------------------------------------------
+	INT32 K_PositionBully(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+INT32 K_PositionBully(player_t *player)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+
+	angle_t ourangle, destangle, angle;
+	INT16 anglediff;
+
+	globalsmuggle.botmo = player->mo;
+	globalsmuggle.distancetocheck = 1024*player->mo->scale;
+
+	globalsmuggle.annoymo = NULL;
+	globalsmuggle.annoyscore = 0;
+
+	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(globalsmuggle.botmo->y - globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(globalsmuggle.botmo->y + globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockThingsIterator(bx, by, K_FindPlayersToBully);
+		}
+	}
+
+	if (globalsmuggle.annoymo == NULL)
+	{
+		return INT32_MAX;
+	}
+
+	ourangle = globalsmuggle.botmo->angle;
+	destangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.annoymo->x, globalsmuggle.annoymo->y);
+	angle = (ourangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	if (anglediff < 30)
+		return 0;
+
+	if (anglediff < 0)
+		return -KART_FULLTURN;
+
+	return KART_FULLTURN;
 }

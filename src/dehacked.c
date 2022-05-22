@@ -495,18 +495,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "HUDITEM"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_huditem(word2); // find a huditem by name
-					if (i >= 0 && i < NUMHUDITEMS)
-						readhuditem(f, i);
-					else
-					{
-						deh_warning("HUD item number %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "MENU"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
@@ -588,7 +576,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 					readcupheader(f, cup);
 				}
-				else if (fastcmp(word, "SRB2KART"))
+				else if (fastcmp(word, "RINGRACERS"))
 				{
 					if (isdigit(word2[0]))
 					{
@@ -596,7 +584,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						if (i != PATCHVERSION)
 						{
 							deh_warning(
-									"Patch is for SRB2Kart version %d, "
+									"Patch is for Ring Racers version %d, "
 									"only version %d is supported",
 									i,
 									PATCHVERSION
@@ -606,11 +594,15 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning(
-								"SRB2Kart version definition has incorrect format, "
-								"use \"SRB2KART %d\"",
+								"Ring Racers version definition has incorrect format, "
+								"use \"RINGRACERS %d\"",
 								PATCHVERSION
 						);
 					}
+				}
+				else if (fastcmp(word, "SRB2KART"))
+				{
+					deh_warning("Patch is only compatible with SRB2Kart.");
 				}
 				else if (fastcmp(word, "SRB2"))
 				{

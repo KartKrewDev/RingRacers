@@ -261,6 +261,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 	* thinker->prev->next = thinker->next */
 	(next->prev = currentthinker = thinker->prev)->next = next;
 
+	R_DestroyLevelInterpolators(thinker);
 	Z_Free(thinker);
 }
 
@@ -492,6 +493,19 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+void P_RunChaseCameras(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (camera[i].chase)
+		{
+			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
+		}
+	}
+}
+
 //
 // P_Ticker
 //
@@ -511,8 +525,10 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
+			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera[0], false);
+			R_UpdateViewInterpolation();
 			P_MapEnd();
 			S_SetStackAdjustmentStart();
 			return;
@@ -545,6 +561,8 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		R_UpdateMobjInterpolators();
+
 		if (demo.recording)
 		{
 			G_WriteDemoExtraData();
@@ -730,11 +748,14 @@ void P_Ticker(boolean run)
 	K_UpdateDirector();
 
 	// Always move the camera.
-	for (i = 0; i <= r_splitscreen; i++)
+	P_RunChaseCameras();
+
+	LUAh_PostThinkFrame();
+
+	if (run)
 	{
-		if (camera[i].chase)
-			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
-		LUAh_PostThinkFrame();
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
 	}
 
 	P_MapEnd();
@@ -769,6 +790,8 @@ void P_PreTicker(INT32 frames)
 	while (hook_defrosting)
 	{
 		P_MapStart();
+
+		R_UpdateMobjInterpolators();
 
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -813,6 +836,10 @@ void P_PreTicker(INT32 frames)
 		P_RespawnSpecials();
 
 		LUAh_PostThinkFrame();
+
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 

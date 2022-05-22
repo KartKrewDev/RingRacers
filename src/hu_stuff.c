@@ -49,6 +49,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 // SRB2Kart
@@ -75,8 +76,6 @@
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 
-patch_t *tc_font[2][LT_FONTSIZE];	// Special font stuff for titlecard
-
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
@@ -89,23 +88,11 @@ static boolean headsupactive = false;
 boolean hu_showscores; // draw rankings
 static char hu_tick;
 
-patch_t *rflagico;
-patch_t *bflagico;
-patch_t *rmatcico;
-patch_t *bmatcico;
-patch_t *tagico;
-patch_t *tallminus;
-patch_t *tallinfin;
-
-//-------------------------------------------
-//              coop hud
-//-------------------------------------------
-
-static patch_t *emblemicon;
-
 //-------------------------------------------
 //              misc vars
 //-------------------------------------------
+
+patch_t *missingpat;
 
 // song credits
 static patch_t *songcreditbg;
@@ -169,6 +156,8 @@ static INT32 cechoflags = 0;
 
 static tic_t resynch_ticker = 0;
 
+static huddrawlist_h luahuddrawlist_scores;
+
 //======================================================================
 //                          HEADS UP INIT
 //======================================================================
@@ -184,51 +173,25 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
-	char buffer[9];
-	INT32 i, j;
+	INT32 i;
 
 	if (dedicated)
 		return;
 
 	Font_Load();
 
-	// minus for negative tallnums
-	tallminus          = HU_CachePatch("STTMINUS");
-
-	emblemicon         = HU_CachePatch("EMBLICON");
-	songcreditbg       = HU_CachePatch("K_SONGCR");
-
-	// Cache titlecard font
-	j = LT_FONTSTART;
-	for (i = 0; i < LT_FONTSIZE; i++, j++)
-	{
-		// cache the titlecard font
-
-		// Bottom layer
-		sprintf(buffer, "GTOL%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tc_font[0][i] = NULL;
-		else
-			tc_font[0][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-
-		// Top layer
-		sprintf(buffer, "GTFN%.3d", j);
-		if (W_CheckNumForName(buffer) == LUMPERROR)
-			tc_font[1][i] = NULL;
-		else
-			tc_font[1][i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
-	}
+	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
 	// cache ping gfx:
 	for (i = 0; i < 5; i++)
 	{
-		pinggfx[i] = HU_CachePatch("PINGGFX%d", i+1);
-		mping[i] = HU_CachePatch("MPING%d", i+1);
+		HU_UpdatePatch(&pinggfx[i], "PINGGFX%d", i+1);
+		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
 
 	// fps stuff
-	framecounter       = HU_CachePatch("FRAMER");
-	frameslash         = HU_CachePatch("FRAMESL");;
+	HU_UpdatePatch(&framecounter, "FRAMER");
+	HU_UpdatePatch(&frameslash, "FRAMESL");
 }
 
 // Initialise Heads up
@@ -245,6 +208,16 @@ void HU_Init(void)
 	COM_AddCommand("csay", Command_CSay_f);
 	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 #endif
+
+	// only allocate if not present, to save us a lot of headache
+	if (missingpat == NULL)
+	{
+		lumpnum_t missingnum = W_GetNumForName("MISSING");
+		if (missingnum == LUMPERROR)
+			I_Error("HU_LoadGraphics: \"MISSING\" patch not present in resource files.");
+
+		missingpat = W_CachePatchNum(missingnum, PU_STATIC);
+	}
 
 	// set shift translation table
 	shiftxform = english_shiftxform;
@@ -283,6 +256,16 @@ void HU_Init(void)
 		PR   ("CRFNT");
 		REG;
 
+		DIG  (3);
+
+		ADIM (LT);
+
+		PR   ("GTOL");
+		REG;
+
+		PR   ("GTFN");
+		REG;
+
 		DIG  (1);
 
 		DIM  (0, 10);
@@ -304,21 +287,56 @@ void HU_Init(void)
 	}
 
 	HU_LoadGraphics();
+
+	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 }
 
-patch_t *HU_CachePatch(const char *format, ...)
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...)
 {
 	va_list ap;
 	char buffer[9];
 
+	lumpnum_t lump;
+	patch_t *patch;
+
 	va_start (ap, format);
-	vsprintf(buffer, format, ap);
+	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end   (ap);
 
-	if (W_CheckNumForName(buffer) == LUMPERROR)
-		return NULL;
+	if (user && p_adding_file != INT16_MAX)
+	{
+		lump = W_CheckNumForNamePwad(buffer, p_adding_file, 0);
+
+		/* no update in this wad */
+		if (lump == INT16_MAX)
+			return *user;
+
+		lump |= (p_adding_file << 16);
+	}
 	else
-		return (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
+	{
+		lump = W_CheckNumForName(buffer);
+
+		if (lump == LUMPERROR)
+		{
+			if (required == true)
+				*user = missingpat;
+
+			return *user;
+		}
+	}
+
+	patch = W_CachePatchNum(lump, PU_HUDGFX);
+
+	if (user)
+	{
+		if (*user)
+			Patch_Free(*user);
+
+		*user = patch;
+	}
+
+	return patch;
 }
 
 static inline void HU_Stop(void)
@@ -369,12 +387,12 @@ static INT16 addy = 0; // use this to make the messages scroll smoothly when one
 
 static void HU_removeChatText_Mini(void)
 {
-    // MPC: Don't create new arrays, just iterate through an existing one
+	// MPC: Don't create new arrays, just iterate through an existing one
 	size_t i;
-    for(i=0;i<chat_nummsg_min-1;i++) {
-        strcpy(chat_mini[i], chat_mini[i+1]);
-        chat_timers[i] = chat_timers[i+1];
-    }
+	for(i=0;i<chat_nummsg_min-1;i++) {
+		strcpy(chat_mini[i], chat_mini[i+1]);
+		chat_timers[i] = chat_timers[i+1];
+	}
 	chat_nummsg_min--; // lost 1 msg.
 
 	// use addy and make shit slide smoothly af.
@@ -387,10 +405,10 @@ static void HU_removeChatText_Log(void)
 {
 	// MPC: Don't create new arrays, just iterate through an existing one
 	size_t i;
-    for(i=0;i<chat_nummsg_log-1;i++) {
-        strcpy(chat_log[i], chat_log[i+1]);
-    }
-    chat_nummsg_log--; // lost 1 msg.
+	for(i=0;i<chat_nummsg_log-1;i++) {
+		strcpy(chat_log[i], chat_log[i+1]);
+	}
+	chat_nummsg_log--; // lost 1 msg.
 }
 #endif
 
@@ -971,12 +989,8 @@ void HU_Ticker(void)
 		if (chat_scrolltime > 0)
 			chat_scrolltime--;
 	}
-	else
-	{
-		chat_scrolltime = 0;
-	}
 
-	if (netgame) // would handle that in hu_drawminichat, but it's actually kinda awkward when you're typing a lot of messages. (only handle that in netgames duh)
+	if (netgame)
 	{
 		size_t i = 0;
 
@@ -2082,6 +2096,8 @@ void HU_Drawer(void)
 	else
 	{
 		typelines = 1;
+		chat_scrolltime = 0;
+
 		if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
 			HU_drawMiniChat(); // draw messages in a cool fashion.
 	}
@@ -2104,7 +2120,12 @@ void HU_Drawer(void)
 		{
 			if (LUA_HudEnabled(hud_rankings))
 				HU_DrawRankings();
-			LUAh_ScoresHUD();
+			if (renderisnewtic)
+			{
+				LUA_HUD_ClearDrawList(luahuddrawlist_scores);
+				LUAh_ScoresHUD(luahuddrawlist_scores);
+			}
+			LUA_HUD_DrawList(luahuddrawlist_scores);
 		}
 
 		if (demo.playback)
@@ -2137,10 +2158,10 @@ void HU_Drawer(void)
 	if (modeattacking && pausedelay > 0 && !pausebreakkey)
 	{
 		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
-		INT32 y = hudinfo[HUD_LIVES].y - 13;
+		INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT/2; // obviously incorrect values while we scrap hudinfo
 
-		V_DrawThinString(hudinfo[HUD_LIVES].x-2, y,
-			hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
+		V_DrawThinString(x, y,
+			((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
 			"HOLD TO RETRY...");
 
 		if (strength > 9)

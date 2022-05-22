@@ -19,6 +19,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "p_setup.h" // NiGHTS stuff
+#include "r_fps.h"
 #include "r_state.h"
 #include "r_main.h"
 #include "r_sky.h"
@@ -180,6 +181,7 @@ void P_InitRoll(mobj_t *thing, angle_t newValue)
 {
 	thing->roll = thing->old_roll = newValue;
 }
+
 
 // =========================================================================
 //                       MOVEMENT ITERATOR FUNCTIONS
@@ -654,9 +656,9 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		if (tmthing->eflags & MFE_VERTICALFLIP)
-			thing->z = tmthing->z - thing->height - FixedMul(FRACUNIT, tmthing->scale);
+			P_SetOrigin(thing, thing->x, thing->y, tmthing->z - thing->height - FixedMul(FRACUNIT, tmthing->scale));
 		else
-			thing->z = tmthing->z + tmthing->height + FixedMul(FRACUNIT, tmthing->scale);
+			P_SetOrigin(thing, thing->x, thing->y, tmthing->z + tmthing->height + FixedMul(FRACUNIT, tmthing->scale));
 		if (thing->flags & MF_SHOOTABLE)
 			P_DamageMobj(thing, tmthing, tmthing, 1, 0);
 		return true;
@@ -890,27 +892,6 @@ static boolean PIT_CheckThing(mobj_t *thing)
 			return true; // underneath
 
 		return K_MineCollide(thing, tmthing);
-	}
-
-	if (tmthing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(tmthing, thing);
-	}
-	else if (thing->type == MT_MINEEXPLOSION)
-	{
-		// see if it went over / under
-		if (tmthing->z > thing->z + thing->height)
-			return true; // overhead
-		if (tmthing->z + tmthing->height < thing->z)
-			return true; // underneath
-
-		return K_MineExplosionCollide(thing, tmthing);
 	}
 
 	if (tmthing->type == MT_LANDMINE)
@@ -2490,8 +2471,10 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 	// This makes sure that there are no freezes from computing extremely small movements.
 	// Originally was MAXRADIUS/2, but that causes some inconsistencies for small players.
-	if (radius < mapobjectscale)
-		radius = mapobjectscale;
+	radius = max(radius, mapobjectscale);
+
+	// And Big Large (tm) movements can skip over slopes.
+	radius = min(radius, 16*mapobjectscale);
 
 #if 0
 	if (thing->hitlag > 0)
@@ -3922,7 +3905,7 @@ bounceback:
 		tmxmove = FixedMul(mmomx, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
 		tmymove = FixedMul(mmomy, (FRACUNIT - (FRACUNIT>>6) - (FRACUNIT>>5)));
 	}
-	else if (mo->type == MT_THROWNGRENADE || mo->type == MT_CYBRAKDEMON_NAPALM_BOMB_LARGE)
+	else if (mo->type == MT_THROWNGRENADE)
 	{
 		// Quickly decay speed as it bounces
 		tmxmove = FixedDiv(mmomx, 2*FRACUNIT);

@@ -24,6 +24,7 @@ extern tic_t leveltime;
 void Command_Numthinkers_f(void);
 void Command_CountMobjs_f(void);
 
+void P_RunChaseCameras(void);
 void P_Ticker(boolean run);
 void P_PreTicker(INT32 frames);
 void P_DoTeamscrambling(void);

@@ -238,6 +238,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tumbleBounces);
 	else if (fastcmp(field,"tumbleHeight"))
 		lua_pushinteger(L, plr->tumbleHeight);
+	else if (fastcmp(field,"justDI"))
+		lua_pushboolean(L, plr->justDI);
+	else if (fastcmp(field,"flipDI"))
+		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"drift"))
 		lua_pushinteger(L, plr->drift);
 	else if (fastcmp(field,"driftcharge"))
@@ -288,6 +292,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->draftleeway);
 	else if (fastcmp(field,"lastdraft"))
 		lua_pushinteger(L, plr->lastdraft);
+	else if (fastcmp(field,"tripwireLeniency"))
+		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
 	else if (fastcmp(field,"roulettetype"))
@@ -582,6 +588,10 @@ static int player_set(lua_State *L)
 		plr->tumbleBounces = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tumbleHeight"))
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"justDI"))
+		plr->justDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"flipDI"))
+		plr->flipDI = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"drift"))
 		plr->drift = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftcharge"))
@@ -630,6 +640,8 @@ static int player_set(lua_State *L)
 		plr->draftleeway = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastdraft"))
 		plr->lastdraft = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireLeniency"))
+		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"roulettetype"))
@@ -887,6 +899,8 @@ static int ticcmd_get(lua_State *L)
 		lua_pushinteger(L, cmd->forwardmove);
 	else if (fastcmp(field,"turning"))
 		lua_pushinteger(L, cmd->turning);
+	else if (fastcmp(field,"throwdir"))
+		lua_pushinteger(L, cmd->throwdir);
 	else if (fastcmp(field,"aiming"))
 		lua_pushinteger(L, cmd->aiming);
 	else if (fastcmp(field,"buttons"))
@@ -915,6 +929,8 @@ static int ticcmd_set(lua_State *L)
 		cmd->forwardmove = (SINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turning"))
 		cmd->turning = (INT16)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"throwdir"))
+		cmd->throwdir = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aiming"))
 		cmd->aiming = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"buttons"))

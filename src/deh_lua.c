@@ -436,16 +436,6 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return luaL_error(L, "karthud '%s' could not be found.\n", word);
 	}
-	else if (fastncmp("HUD_",word,4)) {
-		p = word+4;
-		for (i = 0; i < NUMHUDITEMS; i++)
-			if (fastcmp(p, HUDITEMS_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "huditem '%s' could not be found.\n", word);
-		return 0;
-	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
 		for (i = 0; i < NUMCOLORFREESLOTS; i++) {

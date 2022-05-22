@@ -22,6 +22,7 @@
 #include "p_setup.h"
 #include "p_saveg.h"
 #include "r_data.h"
+#include "r_fps.h"
 #include "r_textures.h"
 #include "r_things.h"
 #include "r_skins.h"
@@ -251,6 +252,9 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tumbleBounces);
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 
+		WRITEUINT8(save_p, players[i].justDI);
+		WRITEUINT8(save_p, players[i].flipDI);
+
 		WRITESINT8(save_p, players[i].drift);
 		WRITEFIXED(save_p, players[i].driftcharge);
 		WRITEUINT8(save_p, players[i].driftboost);
@@ -284,6 +288,8 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].draftpower);
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
+
+		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
 		WRITEUINT16(save_p, players[i].itemroulette);
 		WRITEUINT8(save_p, players[i].roulettetype);
@@ -332,6 +338,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].trickboostpower);
 		WRITEUINT8(save_p, players[i].trickboostdecay);
 		WRITEUINT8(save_p, players[i].trickboost);
+
+		WRITEUINT32(save_p, players[i].ebrakefor);
 
 		WRITEUINT32(save_p, players[i].roundscore);
 		WRITEUINT8(save_p, players[i].emeralds);
@@ -520,6 +528,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 
+		players[i].justDI = (boolean)READUINT8(save_p);
+		players[i].flipDI = (boolean)READUINT8(save_p);
+
 		players[i].drift = READSINT8(save_p);
 		players[i].driftcharge = READFIXED(save_p);
 		players[i].driftboost = READUINT8(save_p);
@@ -553,6 +564,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftpower = READFIXED(save_p);
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
+
+		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
 		players[i].roulettetype = READUINT8(save_p);
@@ -601,6 +614,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].trickboostpower = READUINT32(save_p);
 		players[i].trickboostdecay = READUINT8(save_p);
 		players[i].trickboost = READUINT8(save_p);
+
+		players[i].ebrakefor = READUINT32(save_p);
 
 		players[i].roundscore = READUINT32(save_p);
 		players[i].emeralds = READUINT8(save_p);
@@ -3165,6 +3180,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		P_SetTarget(&kitemcap, mobj);
 
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
+
+	R_AddMobjInterpolator(mobj);
 
 	return &mobj->thinker;
 }

@@ -36,6 +36,7 @@
 #include "k_hud.h"
 #include "k_terrain.h"
 #include "k_director.h"
+#include "k_collide.h"
 #include "k_objects.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
@@ -221,7 +222,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_selfpropelledbomb);
 	CV_RegisterVar(&cv_grow);
 	CV_RegisterVar(&cv_shrink);
-	CV_RegisterVar(&cv_thundershield);
+	CV_RegisterVar(&cv_lightningshield);
 	CV_RegisterVar(&cv_bubbleshield);
 	CV_RegisterVar(&cv_flameshield);
 	CV_RegisterVar(&cv_hyudoro);
@@ -328,7 +329,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_selfpropelledbomb,
 	&cv_grow,
 	&cv_shrink,
-	&cv_thundershield,
+	&cv_lightningshield,
 	&cv_bubbleshield,
 	&cv_flameshield,
 	&cv_hyudoro,
@@ -363,7 +364,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
-		/*Thunder Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Thunder Shield
+	  /*Lightning Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
@@ -396,7 +397,7 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
    /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 2, 1 }, // Grow
 				/*Shrink*/ { 0, 0 }, // Shrink
-		/*Thunder Shield*/ { 4, 0 }, // Thunder Shield
+	  /*Lightning Shield*/ { 4, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0 }, // Flame Shield
 			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
@@ -438,7 +439,7 @@ INT32 K_GetShieldFromItem(INT32 item)
 {
 	switch (item)
 	{
-		case KITEM_THUNDERSHIELD: return KSHIELD_THUNDER;
+		case KITEM_LIGHTNINGSHIELD: return KSHIELD_LIGHTNING;
 		case KITEM_BUBBLESHIELD: return KSHIELD_BUBBLE;
 		case KITEM_FLAMESHIELD: return KSHIELD_FLAME;
 		default: return KSHIELD_NONE;
@@ -734,7 +735,7 @@ INT32 K_KartGetItemOdds(
 			if (pingame-1 <= pexiting)
 				newodds = 0;
 			break;
-		case KITEM_THUNDERSHIELD:
+		case KITEM_LIGHTNINGSHIELD:
 			cooldownOnStart = true;
 			powerItem = true;
 
@@ -1593,6 +1594,10 @@ static UINT8 K_CheckOffroadCollide(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
+	// If tiregrease is active, don't
+	if (mo->player && mo->player->tiregrease)
+		return 0;
+
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (!node->m_sector)
@@ -1756,9 +1761,9 @@ static void K_UpdateDraft(player_t *player)
 	UINT8 leniency;
 	UINT8 i;
 
-	if (player->itemtype == KITEM_FLAMESHIELD)
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
 	{
-		// Flame Shield gets infinite draft distance as its passive effect.
+		// Lightning Shield gets infinite draft distance as its (other) passive effect.
 		draftdistance = 0;
 	}
 	else
@@ -2026,6 +2031,17 @@ void K_SpawnDashDustRelease(player_t *player)
 	}
 }
 
+static fixed_t K_GetBrakeFXScale(player_t *player, fixed_t maxScale)
+{
+	fixed_t s = FixedDiv(player->speed,
+			K_GetKartSpeed(player, false));
+
+	s = max(s, FRACUNIT);
+	s = min(s, maxScale);
+
+	return s;
+}
+
 static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the mobj thinker case too!
 {
 	mobj_t *sparks;
@@ -2038,9 +2054,82 @@ static void K_SpawnBrakeDriftSparks(player_t *player) // Be sure to update the m
 	// This avoids needing to dupe code if we don't need it.
 	sparks = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_BRAKEDRIFT);
 	P_SetTarget(&sparks->target, player->mo);
-	P_SetScale(sparks, (sparks->destscale = player->mo->scale));
+	P_SetScale(sparks, (sparks->destscale = FixedMul(K_GetBrakeFXScale(player, 3*FRACUNIT), player->mo->scale)));
 	K_MatchGenericExtraFlags(sparks, player->mo);
 	sparks->renderflags |= RF_DONTDRAW;
+}
+
+static void
+spawn_brake_dust
+(		mobj_t * master,
+		angle_t aoff,
+		fixed_t rad,
+		fixed_t scale)
+{
+	const angle_t a = master->angle + aoff;
+
+	mobj_t *spark = P_SpawnMobjFromMobj(master,
+			P_ReturnThrustX(NULL, a, rad),
+			P_ReturnThrustY(NULL, a, rad), 0,
+			MT_BRAKEDUST);
+
+	spark->momx = master->momx;
+	spark->momy = master->momy;
+	spark->momz = P_GetMobjZMovement(master);
+	spark->angle = a - ANGLE_180;
+	spark->pitch = master->pitch;
+	spark->roll = master->roll;
+
+	P_Thrust(spark, a, 16 * spark->scale);
+
+	P_SetScale(spark, (spark->destscale =
+				FixedMul(scale, spark->scale)));
+}
+
+static void K_SpawnBrakeVisuals(player_t *player)
+{
+	const fixed_t scale =
+		K_GetBrakeFXScale(player, 2*FRACUNIT);
+
+	if (leveltime & 1)
+	{
+		angle_t aoff;
+		fixed_t radf;
+
+		UINT8 wheel = 3;
+
+		if (player->drift)
+		{
+			/* brake-drifting: dust flies from outer wheel */
+			wheel ^= 1 << (player->drift < 0);
+
+			aoff = 7 * ANG10;
+			radf = 32 * FRACUNIT;
+		}
+		else
+		{
+			aoff = ANG30;
+			radf = 24 * FRACUNIT;
+		}
+
+		if (wheel & 1)
+		{
+			spawn_brake_dust(player->mo,
+					aoff, radf, scale);
+		}
+
+		if (wheel & 2)
+		{
+			spawn_brake_dust(player->mo,
+					InvAngle(aoff), radf, scale);
+		}
+	}
+
+	if (leveltime % 4 == 0)
+		S_StartSound(player->mo, sfx_s3k67);
+
+	/* vertical shaking, scales with speed */
+	player->mo->spriteyoffset = P_RandomFlip(2 * scale);
 }
 
 void K_SpawnDriftBoostClip(player_t *player)
@@ -2101,11 +2190,37 @@ void K_SpawnNormalSpeedLines(player_t *player)
 
 	K_MatchGenericExtraFlags(fast, player->mo);
 
-	// Make it red when you have the eggman speed boost
+	if (player->tripwireLeniency)
+	{
+		fast->destscale = fast->destscale * 2;
+		P_SetScale(fast, 3*fast->scale/2);
+	}
+
 	if (player->eggmanexplode)
 	{
+		// Make it red when you have the eggman speed boost
 		fast->color = SKINCOLOR_RED;
 		fast->colorized = true;
+	}
+	else if (player->invincibilitytimer)
+	{
+		const tic_t defaultTime = itemtime+(2*TICRATE);
+		if (player->invincibilitytimer > defaultTime)
+		{
+			fast->color = player->mo->color;
+		}
+		else
+		{
+			fast->color = SKINCOLOR_INVINCFLASH;
+		}
+		fast->colorized = true;
+	}
+	else if (player->tripwireLeniency)
+	{
+		// Make it pink+blue+big when you can go through tripwire
+		fast->color = (leveltime & 1) ? SKINCOLOR_LILAC : SKINCOLOR_JAWZ;
+		fast->colorized = true;
+		fast->renderflags |= RF_ADD;
 	}
 }
 
@@ -2113,20 +2228,23 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
 	mobj_t *fast = P_SpawnMobjFromMobj(mo,
 		P_RandomRange(-48, 48) * FRACUNIT,
-  		P_RandomRange(-48, 48) * FRACUNIT,
-  		P_RandomRange(0, 64) * FRACUNIT,
-  		MT_FASTLINE);
+		P_RandomRange(-48, 48) * FRACUNIT,
+		P_RandomRange(0, 64) * FRACUNIT,
+		MT_FASTLINE);
+	P_SetMobjState(fast, S_KARTINVLINES1);
+
+	P_SetTarget(&fast->target, mo);
+	P_InitAngle(fast, K_MomentumAngle(mo));
 
 	fast->momx = 3*mo->momx/4;
 	fast->momy = 3*mo->momy/4;
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
-	P_SetTarget(&fast->target, mo);
-	P_InitAngle(fast, K_MomentumAngle(mo));
+	K_MatchGenericExtraFlags(fast, mo);
+
 	fast->color = mo->color;
 	fast->colorized = true;
-	K_MatchGenericExtraFlags(fast, mo);
-	P_SetMobjState(fast, S_KARTINVLINES1);
+
 	if (mo->player->invincibilitytimer < 10*TICRATE)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
@@ -2739,7 +2857,7 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
-boolean K_TripwirePass(player_t *player)
+boolean K_TripwirePassConditions(player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
@@ -2750,6 +2868,11 @@ boolean K_TripwirePass(player_t *player)
 	)
 		return true;
 	return false;
+}
+
+boolean K_TripwirePass(player_t *player)
+{
+	return (K_TripwirePassConditions(player) || (player->tripwireLeniency > 0));
 }
 
 boolean K_WaterRun(player_t *player)
@@ -2774,8 +2897,8 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
-	// Tails = 2s, Mighty = 3s, Fang = 4s, Metal = 4s
-	return (player->kartspeed + 4) * (TICRATE/3);
+	// Tails = 2s, Knuckles = 2.6s, Metal = 3.2s
+	return (player->kartspeed + 8) * (TICRATE/5);
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
@@ -2984,7 +3107,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Increase bot speed by 1-10% depending on difficulty
-		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / MAXBOTDIFFICULTY;
+		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
 		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 		if (player->botvars.rival == true)
@@ -3191,6 +3314,13 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 	mo->hitlag += tics;
 	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
 
+	if (mo->player != NULL)
+	{
+		// Reset each time. We want to explicitly set this for bananas afterwards,
+		// so make sure an old value doesn't possibly linger.
+		mo->player->flipDI = false;
+	}
+
 	if (fromDamage == true)
 	{
 		// Dunno if this should flat-out &~ the flag out too.
@@ -3240,7 +3370,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 	}
 
 	K_AddHitLag(mo1, finalTics, fromDamage);
-	K_AddHitLag(mo2, finalTics, fromDamage);
+	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
 }
 
 void K_DoInstashield(player_t *player)
@@ -3265,6 +3395,28 @@ void K_DoInstashield(player_t *player)
 	layerb->old_y = player->mo->old_y;
 	layerb->old_z = player->mo->old_z;
 	P_SetTarget(&layerb->target, player->mo);
+}
+
+void K_DoPowerClash(player_t *t1, player_t *t2) {
+	mobj_t *clash;
+
+	// short-circuit instashield for vfx visibility
+	t1->instashield = 1;
+	t2->instashield = 1;
+
+	S_StartSound(t1->mo, sfx_parry);
+	K_AddHitLag(t1->mo, 6, false);
+	K_AddHitLag(t2->mo, 6, false);
+
+	clash = P_SpawnMobj((t1->mo->x/2) + (t2->mo->x/2), (t1->mo->y/2) + (t2->mo->y/2), (t1->mo->z/2) + (t2->mo->z/2), MT_POWERCLASH);
+
+	// needs to handle mixed scale collisions (t1 grow t2 invinc)...
+	clash->z = clash->z + (t1->mo->height/4) + (t2->mo->height/4);
+	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->mo->x, t1->mo->y) + ANGLE_90;
+
+	// Shrink over time (accidental behavior that looked good)
+	clash->destscale = (t1->mo->scale/2) + (t2->mo->scale/2);
+	P_SetScale(clash, 3*clash->destscale/2);
 }
 
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved)
@@ -3417,6 +3569,7 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 static void K_HandleTumbleBounce(player_t *player)
 {
 	fixed_t gravityadjust;
+
 	player->tumbleBounces++;
 	player->tumbleHeight = (player->tumbleHeight * ((player->tumbleHeight > 100) ? 3 : 4)) / 5;
 	player->pflags &= ~PF_TUMBLESOUND;
@@ -3446,6 +3599,10 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
 		}
 	}
+
+	// A bit of damage hitlag.
+	// This gives a window for DI!!
+	K_AddHitLag(player->mo, 6, true);
 
 	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
 		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
@@ -3692,88 +3849,6 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 	K_HandleBumperChanges(victim, oldVictimBumpers);
 }
 
-// source is the mobj that originally threw the bomb that exploded etc.
-// Spawns the sphere around the explosion that handles spinout
-void K_SpawnKartExplosion(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 number, mobjtype_t type, angle_t rotangle, boolean spawncenter, boolean ghostit, mobj_t *source)
-{
-	mobj_t *mobj;
-	mobj_t *ghost = NULL;
-	INT32 i;
-	TVector v;
-	TVector *res;
-	fixed_t finalx, finaly, finalz, dist;
-	//mobj_t hoopcenter;
-	angle_t degrees, fa, closestangle;
-	fixed_t mobjx, mobjy, mobjz;
-
-	//hoopcenter.x = x;
-	//hoopcenter.y = y;
-	//hoopcenter.z = z;
-
-	//hoopcenter.z = z - mobjinfo[type].height/2;
-
-	degrees = FINEANGLES/number;
-
-	closestangle = 0;
-
-	// Create the hoop!
-	for (i = 0; i < number; i++)
-	{
-		fa = (i*degrees);
-		v[0] = FixedMul(FINECOSINE(fa),radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa),radius);
-		v[3] = FRACUNIT;
-
-		res = VectorMatrixMultiply(v, *RotateXMatrix(rotangle));
-		M_Memcpy(&v, res, sizeof (v));
-		res = VectorMatrixMultiply(v, *RotateZMatrix(closestangle));
-		M_Memcpy(&v, res, sizeof (v));
-
-		finalx = x + v[0];
-		finaly = y + v[1];
-		finalz = z + v[2];
-
-		mobj = P_SpawnMobj(finalx, finaly, finalz, type);
-
-		mobj->z -= mobj->height>>1;
-
-		// change angle
-		P_InitAngle(mobj, R_PointToAngle2(mobj->x, mobj->y, x, y));
-
-		// change slope
-		dist = P_AproxDistance(P_AproxDistance(x - mobj->x, y - mobj->y), z - mobj->z);
-
-		if (dist < 1)
-			dist = 1;
-
-		mobjx = mobj->x;
-		mobjy = mobj->y;
-		mobjz = mobj->z;
-
-		if (ghostit)
-		{
-			ghost = P_SpawnGhostMobj(mobj);
-			P_SetMobjState(mobj, S_NULL);
-			mobj = ghost;
-		}
-
-		if (spawncenter)
-		{
-			mobj->x = x;
-			mobj->y = y;
-			mobj->z = z;
-		}
-
-		mobj->momx = FixedMul(FixedDiv(mobjx - x, dist), FixedDiv(dist, 6*FRACUNIT));
-		mobj->momy = FixedMul(FixedDiv(mobjy - y, dist), FixedDiv(dist, 6*FRACUNIT));
-		mobj->momz = FixedMul(FixedDiv(mobjz - z, dist), FixedDiv(dist, 6*FRACUNIT));
-
-		if (source && !P_MobjWasRemoved(source))
-			P_SetTarget(&mobj->target, source);
-	}
-}
-
 #define MINEQUAKEDIST 4096
 
 // Does the proximity screen flash and quake for explosions
@@ -3818,6 +3893,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	smoldering->tics = TICRATE*3;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;
+
+	S_StartSound(smoldering, sfx_s3k4e);
 
 	if (!color)
 		color = SKINCOLOR_KETCHUP;
@@ -4465,7 +4542,6 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 {
 	const INT32 rad = (mo->radius*3)/FRACUNIT;
 	mobj_t *sparkle;
-	INT32 i;
 	UINT8 invanimnum; // Current sparkle animation number
 	INT32 invtime;// Invincibility time left, in seconds
 	UINT8 index = 0;
@@ -4474,13 +4550,6 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	if ((mo->player->sneakertimer
-		|| mo->player->ringboost || mo->player->driftboost
-		|| mo->player->startboost || mo->player->eggmanexplode))
-	{
-		return;
-	}
-
 	if (leveltime & 2)
 		index = 1;
 
@@ -4488,34 +4557,37 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 	//CONS_Printf("%d\n", index);
 
-	for (i = 0; i < 8; i++)
-	{
-		newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
-		newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
-		newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
+	newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
+	newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
+	newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
 
-		sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
-		P_InitAngle(sparkle, R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y));
-		sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
-		//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
-		sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
-		sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
-		sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
-		K_FlipFromObject(sparkle, mo);
+	sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
 
-		//if (i == 0)
-			//P_SetMobjState(sparkle, S_KARTINVULN_LARGE1);
+	P_InitAngle(sparkle, R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y));
 
-		P_SetTarget(&sparkle->target, mo);
-		sparkle->destscale = mo->destscale;
-		P_SetScale(sparkle, mo->scale);
-	}
+	sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
+	//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
+
+	sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
+	sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
+	sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
+
+	K_FlipFromObject(sparkle, mo);
+	P_SetTarget(&sparkle->target, mo);
+
+	sparkle->destscale = mo->destscale;
+	P_SetScale(sparkle, mo->scale);
 
 	invanimnum = (invtime >= 11) ? 11 : invtime;
 	//CONS_Printf("%d\n", invanimnum);
+
 	P_SetMobjState(sparkle, K_SparkleTrailStartStates[invanimnum][index]);
-	sparkle->colorized = true;
-	sparkle->color = mo->color;
+
+	if (mo->player->invincibilitytimer > itemtime+(2*TICRATE))
+	{
+		sparkle->color = mo->color;
+		sparkle->colorized = true;
+	}
 }
 
 void K_SpawnWipeoutTrail(mobj_t *mo)
@@ -4717,6 +4789,90 @@ void K_DriftDustHandling(mobj_t *spawner)
 			}
 		}
 	}
+}
+
+static void K_SpawnTripwireVFX(mobj_t *mo)
+{
+	tic_t t = leveltime;
+	angle_t ang, aoff;
+	SINT8 sign = 1;
+	boolean altColor = false;
+	mobj_t *dust;
+	boolean drifting = false;
+	UINT8 i;
+
+	I_Assert(mo != NULL);
+	I_Assert(!P_MobjWasRemoved(mo));
+
+	if (!P_IsObjectOnGround(mo))
+		return;
+
+	if (mo->player)
+	{
+		ang = mo->player->drawangle;
+
+		if (mo->player->drift != 0)
+		{
+			drifting = true;
+			ang += (mo->player->drift * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
+			if (mo->player->drift < 0)
+				sign = 1;
+			else
+				sign = -1;
+		}
+	}
+	else
+		ang = mo->angle;
+
+	if (drifting == false)
+	{
+		i = (t & 1);
+
+		if (i & 1)
+			sign = -1;
+		else
+			sign = 1;
+	}
+	else
+	{
+		if (t & 1)
+		{
+			return;
+		}
+
+		t /= 2;
+		i = (t & 1);
+	}
+
+	aoff = (ang + ANGLE_180) + (ANGLE_45 * sign);
+
+	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
+		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
+		mo->z, MT_DRIFTDUST);
+
+	P_SetTarget(&dust->target, mo);
+	P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
+	P_SetScale(dust, mo->scale);
+	dust->destscale = mo->scale * 6;
+	dust->scalespeed = mo->scale/12;
+	K_FlipFromObject(dust, mo);
+
+	altColor = (sign > 0);
+
+	if ((t / 2) & 1)
+	{
+		dust->tics++; // "randomize" animation
+		altColor = !altColor;
+	}
+
+	dust->colorized = true;
+	dust->color = altColor ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
+
+	dust->momx = (4*mo->momx)/5;
+	dust->momy = (4*mo->momy)/5;
+	dust->momz = (4*P_GetMobjZMovement(mo))/5;
+
+	P_Thrust(dust, dust->angle, 4*mo->scale);
 }
 
 void K_Squish(mobj_t *mo)
@@ -5107,7 +5263,12 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 #define THUNDERRADIUS 320
 
-static void K_DoThunderShield(player_t *player)
+// Rough size of the outer-rim sprites, after scaling.
+// (The hitbox is already pretty strict due to only 1 active frame,
+// we don't need to have it disjointedly small too...)
+#define THUNDERSPRITE 80
+
+static void K_DoLightningShield(player_t *player)
 {
 	mobj_t *mo;
 	int i = 0;
@@ -5116,7 +5277,7 @@ static void K_DoThunderShield(player_t *player)
 	angle_t an;
 
 	S_StartSound(player->mo, sfx_zio3);
-	P_NukeEnemies(player->mo, player->mo, RING_DIST/4);
+	K_LightningShieldAttack(player->mo, (THUNDERRADIUS + THUNDERSPRITE) * FRACUNIT);
 
 	// spawn vertical bolt
 	mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THOK);
@@ -5157,6 +5318,7 @@ static void K_DoThunderShield(player_t *player)
 }
 
 #undef THUNDERRADIUS
+#undef THUNDERSPRITE
 
 static void K_FlameDashLeftoverSmoke(mobj_t *src)
 {
@@ -5568,9 +5730,9 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 	if (shield != KSHIELD_NONE && !keepshields)
 	{
-		if (shield == KSHIELD_THUNDER)
+		if (shield == KSHIELD_LIGHTNING)
 		{
-			K_DoThunderShield(player);
+			K_DoLightningShield(player);
 		}
 
 		player->curshield = KSHIELD_NONE;
@@ -6848,39 +7010,85 @@ void K_KartPlayerHUDUpdate(player_t *player)
 // SRB2Kart: blockmap iterate for attraction shield users
 static mobj_t *attractmo;
 static fixed_t attractdist;
+static fixed_t attractzdist;
+
 static inline boolean PIT_AttractingRings(mobj_t *thing)
 {
-	if (!attractmo || P_MobjWasRemoved(attractmo))
+	if (attractmo == NULL || P_MobjWasRemoved(attractmo) || attractmo->player == NULL)
+	{
 		return false;
+	}
 
-	if (!attractmo->player)
-		return false; // not a player
+	if (thing == NULL || P_MobjWasRemoved(thing))
+	{
+		return true; // invalid
+	}
 
-	if (thing->health <= 0 || !thing)
-		return true; // dead
+	if (thing == attractmo)
+	{
+		return true; // invalid
+	}
 
-	if (thing->type != MT_RING && thing->type != MT_FLINGRING)
+	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
+	{
 		return true; // not a ring
+	}
+
+	if (thing->health <= 0)
+	{
+		return true; // dead
+	}
 
 	if (thing->extravalue1)
+	{
 		return true; // in special ring animation
+	}
 
-	if (thing->cusval)
+	if (thing->tracer != NULL && P_MobjWasRemoved(thing->tracer) == false)
+	{
 		return true; // already attracted
+	}
 
 	// see if it went over / under
-	if (attractmo->z - (attractdist>>2) > thing->z + thing->height)
+	if (attractmo->z - attractzdist > thing->z + thing->height)
+	{
 		return true; // overhead
-	if (attractmo->z + attractmo->height + (attractdist>>2) < thing->z)
+	}
+
+	if (attractmo->z + attractmo->height + attractzdist < thing->z)
+	{
 		return true; // underneath
+	}
 
-	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) < attractdist)
+	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) > attractdist + thing->radius)
+	{
 		return true; // Too far away
+	}
 
-	// set target
-	P_SetTarget(&thing->tracer, attractmo);
-	// flag to show it's been attracted once before
-	thing->cusval = 1;
+	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
+	{
+		// Already reached max -- just joustle rings around.
+
+		// Regular ring -> fling ring
+		if (thing->info->reactiontime && thing->type != (mobjtype_t)thing->info->reactiontime)
+		{
+			thing->type = thing->info->reactiontime;
+			thing->info = &mobjinfo[thing->type];
+			thing->flags = thing->info->flags;
+
+			P_InstaThrust(thing, P_RandomRange(0,7) * ANGLE_45, 2 * thing->scale);
+			P_SetObjectMomZ(thing, 8<<FRACBITS, false);
+			thing->fuse = 120*TICRATE;
+
+			thing->cusval = 0; // Reset attraction flag
+		}
+	}
+	else
+	{
+		// set target
+		P_SetTarget(&thing->tracer, attractmo);
+	}
+
 	return true; // find other rings
 }
 
@@ -6892,15 +7100,18 @@ static inline boolean PIT_AttractingRings(mobj_t *thing)
 static void K_LookForRings(mobj_t *pmo)
 {
 	INT32 bx, by, xl, xh, yl, yh;
-	attractdist = FixedMul(RING_DIST, pmo->scale)>>2;
-
-	// Use blockmap to check for nearby rings
-	yh = (unsigned)(pmo->y + attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(pmo->y - attractdist - bmaporgy)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(pmo->x + attractdist - bmaporgx)>>MAPBLOCKSHIFT;
-	xl = (unsigned)(pmo->x - attractdist - bmaporgx)>>MAPBLOCKSHIFT;
 
 	attractmo = pmo;
+	attractdist = (400 * pmo->scale);
+	attractzdist = attractdist >> 2;
+
+	// Use blockmap to check for nearby rings
+	yh = (unsigned)(pmo->y + (attractdist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(pmo->y - (attractdist + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(pmo->x + (attractdist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(pmo->x - (attractdist + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
 
 	for (by = yl; by <= yh; by++)
 		for (bx = xl; bx <= xh; bx++)
@@ -6947,9 +7158,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost)
 			{
+#if 0
 				if (player->invincibilitytimer)
 					K_SpawnInvincibilitySpeedLines(player->mo);
 				else
+#endif
 					K_SpawnNormalSpeedLines(player);
 			}
 
@@ -7027,56 +7240,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			player->springstars--;
 		}
-	}
-
-	if (player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Ensure these are set correctly here
-	{
-		player->mo->colorized = (player->dye != 0);
-		player->mo->color = player->dye ? player->dye : player->skincolor;
-	}
-	else if (player->eggmanexplode) // You're gonna diiiiie
-	{
-		const INT32 flashtime = 4<<(player->eggmanexplode/TICRATE);
-		if (player->eggmanexplode == 1 || (player->eggmanexplode % (flashtime/2) != 0))
-		{
-			player->mo->colorized = (player->dye != 0);
-			player->mo->color = player->dye ? player->dye : player->skincolor;
-		}
-		else if (player->eggmanexplode % flashtime == 0)
-		{
-			player->mo->colorized = true;
-			player->mo->color = SKINCOLOR_BLACK;
-		}
-		else
-		{
-			player->mo->colorized = true;
-			player->mo->color = SKINCOLOR_CRIMSON;
-		}
-	}
-	else if (player->invincibilitytimer) // setting players to use the star colormap and spawning afterimages
-	{
-		player->mo->colorized = true;
-	}
-	else if (player->growshrinktimer) // Ditto, for grow/shrink
-	{
-		if (player->growshrinktimer % 5 == 0)
-		{
-			player->mo->colorized = true;
-			player->mo->color = (player->growshrinktimer < 0 ? SKINCOLOR_CREAMSICLE : SKINCOLOR_PERIWINKLE);
-		}
-		else
-		{
-			player->mo->colorized = (player->dye != 0);
-			player->mo->color = player->dye ? player->dye : player->skincolor;
-		}
-	}
-	else if (player->ringboost && (leveltime & 1)) // ring boosting
-	{
-		player->mo->colorized = true;
-	}
-	else
-	{
-		player->mo->colorized = (player->dye != 0);
 	}
 
 	if (player->itemtype == KITEM_NONE)
@@ -7306,6 +7469,17 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_HandleTumbleBounce(player);
 	}
 
+	if (player->tripwireLeniency > 0)
+	{
+		player->tripwireLeniency--;
+		K_SpawnTripwireVFX(player->mo);
+	}
+
+	if (K_TripwirePassConditions(player) == true)
+	{
+		player->tripwireLeniency = max(player->tripwireLeniency, TICRATE);
+	}
+
 	K_KartPlayerHUDUpdate(player);
 
 	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
@@ -7357,12 +7531,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					P_SetTarget(&eggsexplode->target, players[player->eggmanblame].mo);
 			}
 		}
-	}
-
-	if (player->itemtype == KITEM_THUNDERSHIELD)
-	{
-		if (RINGTOTAL(player) < 20 && !(player->pflags & PF_RINGLOCK))
-			K_LookForRings(player->mo);
 	}
 
 	if (player->itemtype == KITEM_BUBBLESHIELD)
@@ -7419,13 +7587,103 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		player->tripWireState = TRIP_NONE;
 	}
+
+	K_KartEbrakeVisuals(player);
+
+	if (K_GetKartButtons(player) & BT_BRAKE &&
+			P_IsObjectOnGround(player->mo) &&
+			K_GetKartSpeed(player, false) / 2 <= player->speed)
+	{
+		K_SpawnBrakeVisuals(player);
+	}
 }
 
 void K_KartPlayerAfterThink(player_t *player)
 {
-	if (player->curshield
-		|| player->invincibilitytimer
-		|| (player->growshrinktimer != 0 && player->growshrinktimer % 5 == 4)) // 4 instead of 0 because this is afterthink!
+	boolean fullbright = false;
+
+	if (player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Ensure these are set correctly here
+	{
+		player->mo->colorized = (player->dye != 0);
+		player->mo->color = player->dye ? player->dye : player->skincolor;
+	}
+	else if (player->eggmanexplode) // You're gonna diiiiie
+	{
+		const INT32 flashtime = 4<<(player->eggmanexplode/TICRATE);
+		if (player->eggmanexplode == 1 || (player->eggmanexplode % (flashtime/2) != 0))
+		{
+			player->mo->colorized = (player->dye != 0);
+			player->mo->color = player->dye ? player->dye : player->skincolor;
+		}
+		else if (player->eggmanexplode % flashtime == 0)
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_BLACK;
+			fullbright = true;
+		}
+		else
+		{
+			player->mo->colorized = true;
+			player->mo->color = SKINCOLOR_CRIMSON;
+			fullbright = true;
+		}
+	}
+	else if (player->invincibilitytimer)
+	{
+		const tic_t defaultTime = itemtime+(2*TICRATE);
+		tic_t flicker = 2;
+
+		fullbright = true;
+
+		if (player->invincibilitytimer > defaultTime)
+		{
+			player->mo->color = K_RainbowColor(leveltime / 2);
+			player->mo->colorized = true;
+		}
+		else
+		{
+			player->mo->color = player->skincolor;
+			player->mo->colorized = false;
+
+			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
+		}
+
+		if (leveltime % flicker == 0)
+		{
+			player->mo->color = SKINCOLOR_INVINCFLASH;
+			player->mo->colorized = true;
+		}
+	}
+	else if (player->growshrinktimer) // Ditto, for grow/shrink
+	{
+		if (player->growshrinktimer % 5 == 0)
+		{
+			player->mo->colorized = true;
+			player->mo->color = (player->growshrinktimer < 0 ? SKINCOLOR_CREAMSICLE : SKINCOLOR_PERIWINKLE);
+			fullbright = true;
+		}
+		else
+		{
+			player->mo->colorized = (player->dye != 0);
+			player->mo->color = player->dye ? player->dye : player->skincolor;
+		}
+	}
+	else if (player->ringboost && (leveltime & 1)) // ring boosting
+	{
+		player->mo->colorized = true;
+		fullbright = true;
+	}
+	else
+	{
+		player->mo->colorized = (player->dye != 0);
+	}
+
+	if (player->curshield)
+	{
+		fullbright = true;
+	}
+
+	if (fullbright == true)
 	{
 		player->mo->frame |= FF_FULLBRIGHT;
 	}
@@ -7484,6 +7742,11 @@ void K_KartPlayerAfterThink(player_t *player)
 	{
 		player->lastjawztarget = -1;
 		player->jawztargetdelay = 0;
+	}
+
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	{
+		K_LookForRings(player->mo);
 	}
 }
 
@@ -7853,7 +8116,7 @@ INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 	if (boosted == true && K_PlayerUsesBotMovement(player))
 	{
 		// Double for Lv. 9
-		ringPower += (player->botvars.difficulty * ringPower) / MAXBOTDIFFICULTY;
+		ringPower += (player->botvars.difficulty * ringPower) / DIFFICULTBOT;
 	}
 
 	return ringPower;
@@ -7975,6 +8238,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if (player->trickpanel != 0 && player->trickpanel < 4)
 	{
 		// No turning during trick panel unless you did the upwards trick (4)
+		return 0;
+	}
+
+	if (player->justDI == true)
+	{
+		// No turning until you let go after DI-ing.
 		return 0;
 	}
 
@@ -8588,6 +8857,134 @@ INT32 K_StairJankFlip(INT32 value)
 	return P_AltFlip(value, 2);
 }
 
+// Ebraking visuals for mo
+// we use mo->hprev for the hold bubble. If another hprev exists for some reason, remove it.
+
+void K_KartEbrakeVisuals(player_t *p)
+{
+	mobj_t *wave;
+	mobj_t *spdl;
+	fixed_t sx, sy;
+
+	if (K_PlayerEBrake(p))
+	{
+
+		if (p->ebrakefor % 20 == 0)
+		{
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
+			P_SetScale(wave, p->mo->scale);
+			wave->momx = p->mo->momx;
+			wave->momy = p->mo->momy;
+			wave->momz = p->mo->momz;
+			wave->standingslope = p->mo->standingslope;
+		}
+
+		// sound
+		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
+			S_StartSound(p->mo, sfx_s3kd9s);
+
+		// HOLD! bubble.
+		if (!p->ebrakefor)
+		{
+			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+			{
+				// for some reason, there's already an hprev. Remove it.
+				P_RemoveMobj(p->mo->hprev);
+			}
+
+			p->mo->hprev = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_HOLDBUBBLE);
+			p->mo->hprev->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(p));
+		}
+
+		// Update HOLD bubble.
+		if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+		{
+			P_MoveOrigin(p->mo->hprev, p->mo->x, p->mo->y, p->mo->z);
+			p->mo->hprev->angle = p->mo->angle;
+			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
+			K_FlipFromObject(p->mo->hprev, p->mo);
+		}
+
+
+		if (!p->spindash)
+		{
+			// Spawn downwards fastline
+			sx = p->mo->x + P_RandomRange(-48, 48)*p->mo->scale;
+			sy = p->mo->y + P_RandomRange(-48, 48)*p->mo->scale;
+
+			spdl = P_SpawnMobj(sx, sy, p->mo->z, MT_DOWNLINE);
+			spdl->colorized = true;
+			spdl->color = SKINCOLOR_WHITE;
+			K_MatchGenericExtraFlags(spdl, p->mo);
+			P_SetScale(spdl, p->mo->scale);
+
+			// squish the player a little bit.
+			p->mo->spritexscale = FRACUNIT*115/100;
+			p->mo->spriteyscale = FRACUNIT*85/100;
+		}
+		else
+		{
+			const UINT16 MAXCHARGETIME = K_GetSpindashChargeTime(p);
+			const fixed_t MAXSHAKE = FRACUNIT;
+
+			// update HOLD bubble with numbers based on charge.
+			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
+			{
+				UINT8 frame = min(1 + ((p->spindash*3) / MAXCHARGETIME), 4);
+
+				// ?! limit.
+				if (p->spindash >= MAXCHARGETIME +TICRATE)
+					frame = 5;
+
+				p->mo->hprev->frame = frame|FF_FULLBRIGHT;
+			}
+
+			// shake the player as they charge their spindash!
+
+			// "gentle" shaking as we start...
+			if (p->spindash < MAXCHARGETIME)
+			{
+				fixed_t shake = FixedMul(((p->spindash)*FRACUNIT/MAXCHARGETIME), MAXSHAKE);
+				SINT8 mult = leveltime & 1 ? 1 : -1;
+
+				p->mo->spritexoffset = shake*mult;
+			}
+			else	// get VIOLENT on overcharge :)
+			{
+				fixed_t shake = MAXSHAKE + FixedMul(((p->spindash-MAXCHARGETIME)*FRACUNIT/TICRATE), MAXSHAKE)*3;
+				SINT8 mult = leveltime & 1 ? 1 : -1;
+
+				p->mo->spritexoffset = shake*mult;
+			}
+
+			// sqish them a little MORE....
+			p->mo->spritexscale = FRACUNIT*12/10;
+			p->mo->spriteyscale = FRACUNIT*8/10;
+		}
+
+
+		p->ebrakefor++;
+	}
+	else if (p->ebrakefor)	// cancel effects
+	{
+		// reset scale
+		p->mo->spritexscale = FRACUNIT;
+		p->mo->spriteyscale = FRACUNIT;
+
+		// reset shake
+		p->mo->spritexoffset = 0;
+
+		// remove the bubble instantly unless it's in the !? state
+		if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev) && (p->mo->hprev->frame & FF_FRAMEMASK) != 5)
+		{
+			P_RemoveMobj(p->mo->hprev);
+			p->mo->hprev = NULL;
+		}
+
+		p->ebrakefor = 0;
+	}
+}
+
 static void K_KartSpindashDust(mobj_t *parent)
 {
 	fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
@@ -8644,6 +9041,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 	K_MatchGenericExtraFlags(wind, parent);
 }
 
+// Time after which you get a thrust for releasing spindash
+#define SPINDASHTHRUSTTIME 20
+
 static void K_KartSpindash(player_t *player)
 {
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
@@ -8655,10 +9055,17 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 	}
 
-	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE)) != (BT_DRIFT|BT_BRAKE))
+	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
 		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
+
+		// if spindash was charged enough, give a small thrust.
+		if (player->spindash >= SPINDASHTHRUSTTIME)
+		{
+			// Give a bit of a boost depending on charge.
+			P_InstaThrust(player->mo, player->mo->angle, FixedMul(player->mo->scale, player->spindash*FRACUNIT/5));
+		}
 
 		if (!player->tiregrease)
 		{
@@ -8706,10 +9113,11 @@ static void K_KartSpindash(player_t *player)
 	{
 		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
+			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 			boolean spawnOldEffect = true;
 
-			if (chargetime <= (MAXCHARGETIME / 2))
+			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{
 				K_KartSpindashDust(player->mo);
 				spawnOldEffect = false;
@@ -8720,7 +9128,7 @@ static void K_KartSpindash(player_t *player)
 				K_KartSpindashWind(player->mo);
 			}
 
-			if (player->flashing > 0 && (leveltime & 1) && player->hyudorotimer == 0)
+			if (player->flashing > 0 && (player->spindash % ringdropframes == 0) && player->hyudorotimer == 0)
 			{
 				// Every frame that you're invisible from flashing, spill a ring.
 				// Intentionally a lop-sided trade-off, so the game doesn't become
@@ -8755,6 +9163,8 @@ static void K_KartSpindash(player_t *player)
 			S_StartSound(player->mo, sfx_kc2b);
 	}
 }
+
+#undef SPINDASHTHRUSTTIME
 
 static void K_AirFailsafe(player_t *player)
 {
@@ -9128,7 +9538,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									overlay->destscale = player->mo->scale;
 									P_SetScale(overlay, player->mo->scale);
 								}
-								player->invincibilitytimer = itemtime+(2*TICRATE); // 10 seconds
+								player->invincibilitytimer += itemtime+(2*TICRATE); // 10 seconds
 
 								if (P_IsLocalPlayer(player) == true)
 								{
@@ -9417,23 +9827,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_PlayPowerGloatSound(player->mo);
 							}
 							break;
-						case KITEM_THUNDERSHIELD:
-							if (player->curshield != KSHIELD_THUNDER)
+						case KITEM_LIGHTNINGSHIELD:
+							if (player->curshield != KSHIELD_LIGHTNING)
 							{
-								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THUNDERSHIELD);
+								mobj_t *shield = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_LIGHTNINGSHIELD);
 								P_SetScale(shield, (shield->destscale = (5*shield->destscale)>>2));
 								P_SetTarget(&shield->target, player->mo);
 								S_StartSound(player->mo, sfx_s3k41);
-								player->curshield = KSHIELD_THUNDER;
+								player->curshield = KSHIELD_LIGHTNING;
 							}
 
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								K_DoThunderShield(player);
+								K_DoLightningShield(player);
 								if (player->itemamount > 0)
 								{
 									// Why is this a conditional?
-									// Thunder shield: the only item that allows you to
+									// Lightning shield: the only item that allows you to
 									// activate a mine while you're out of its radius,
 									// the SAME tic it sets your itemamount to 0
 									// ...:dumbestass:
@@ -9783,7 +10193,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					K_trickPanelTimingVisual(player, momz);
 				}
-				else if (player->throwdir == 1)
+				else if (cmd->throwdir > 0)
 				{
 					if (player->mo->momz * P_MobjFlip(player->mo) > 0)
 					{
@@ -9798,7 +10208,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 					K_trickPanelTimingVisual(player, momz);
 				}
-				else if (player->throwdir == -1)
+				else if (cmd->throwdir < 0)
 				{
 					boolean relative = true;
 
@@ -10004,6 +10414,104 @@ boolean K_IsSPBInGame(void)
 	}
 
 	return false;
+}
+
+void K_HandleDirectionalInfluence(player_t *player)
+{
+	fixed_t strength = FRACUNIT >> 1; // 1.0 == 45 degrees
+
+	ticcmd_t *cmd = NULL;
+	angle_t sideAngle = ANGLE_MAX;
+
+	INT16 inputX, inputY;
+	INT16 inputLen;
+
+	fixed_t diX, diY;
+	fixed_t diLen;
+	fixed_t diMul;
+
+	fixed_t dot, invDot;
+
+	fixed_t finalX, finalY;
+	fixed_t finalLen;
+	fixed_t speed;
+
+	if (player->playerstate != PST_LIVE || player->spectator)
+	{
+		// ded
+		return;
+	}
+
+	// DI attempted!!
+	player->justDI = true;
+
+	cmd = &player->cmd;
+
+	inputX = cmd->throwdir;
+	inputY = -cmd->turning;
+
+	if (player->flipDI == true)
+	{
+		// Bananas flip the DI direction.
+		// Otherwise, DIing bananas is a little brain-dead easy :p
+		inputX = -inputX;
+		inputY = -inputY;
+	}
+
+	if (inputX == 0 && inputY == 0)
+	{
+		// No DI input, no need to do anything else.
+		return;
+	}
+
+	inputLen = FixedHypot(inputX, inputY);
+	if (inputLen > KART_FULLTURN)
+	{
+		inputLen = KART_FULLTURN;
+	}
+
+	if (player->tumbleBounces > 0)
+	{
+		// Very strong DI for tumble.
+		strength *= 3;
+	}
+
+	sideAngle = player->mo->angle - ANGLE_90;
+
+	diX = FixedMul(inputX, FINECOSINE(player->mo->angle >> ANGLETOFINESHIFT)) + FixedMul(inputY, FINECOSINE(sideAngle >> ANGLETOFINESHIFT));
+	diY = FixedMul(inputX, FINESINE(player->mo->angle >> ANGLETOFINESHIFT)) + FixedMul(inputY, FINESINE(sideAngle >> ANGLETOFINESHIFT));
+	diLen = FixedHypot(diX, diY);
+
+	// Normalize
+	diMul = (KART_FULLTURN * FRACUNIT) / inputLen;
+	if (diLen > 0)
+	{
+		diX = FixedMul(diMul, FixedDiv(diX, diLen));
+		diY = FixedMul(diMul, FixedDiv(diY, diLen));
+	}
+
+	// Now that we got the DI direction, we can
+	// actually preform the velocity redirection.
+
+	speed = FixedHypot(player->mo->momx, player->mo->momy);
+	finalX = FixedDiv(player->mo->momx, speed);
+	finalY = FixedDiv(player->mo->momy, speed);
+
+	dot = FixedMul(diX, finalX) + FixedMul(diY, finalY);
+	invDot = FRACUNIT - abs(dot);
+
+	finalX += FixedMul(FixedMul(diX, invDot), strength);
+	finalY += FixedMul(FixedMul(diY, invDot), strength);
+	finalLen = FixedHypot(finalX, finalY);
+
+	if (finalLen > 0)
+	{
+		finalX = FixedDiv(finalX, finalLen);
+		finalY = FixedDiv(finalY, finalLen);
+	}
+
+	player->mo->momx = FixedMul(speed, finalX);
+	player->mo->momy = FixedMul(speed, finalY);
 }
 
 //}
