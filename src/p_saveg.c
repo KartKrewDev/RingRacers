@@ -326,6 +326,9 @@ static void P_NetArchivePlayers(void)
 		WRITESINT8(save_p, players[i].lastjawztarget);
 		WRITEUINT8(save_p, players[i].jawztargetdelay);
 
+		WRITEUINT8(save_p, players[i].confirmInflictor);
+		WRITEUINT8(save_p, players[i].confirmInflictorDelay);
+
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
 		WRITEUINT32(save_p, players[i].trickboostpower);
@@ -598,6 +601,9 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].lastjawztarget = READSINT8(save_p);
 		players[i].jawztargetdelay = READUINT8(save_p);
+
+		players[i].confirmInflictor = READUINT8(save_p);
+		players[i].confirmInflictorDelay = READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
