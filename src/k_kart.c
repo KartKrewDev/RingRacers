@@ -2823,7 +2823,7 @@ void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
 
 	K_RegularVoiceTimers(source->player);
 
-	if (victimIsLocal == true)
+	if (victim != NULL && victim->player != NULL)
 	{
 		victim->player->confirmInflictor = source->player - players;
 		victim->player->confirmInflictorDelay = TICRATE/2;
