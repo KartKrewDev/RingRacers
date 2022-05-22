@@ -47,6 +47,7 @@ static precise_t ps_frametime = 0;
 precise_t ps_tictime = 0;
 
 precise_t ps_playerthink_time = 0;
+precise_t ps_botticcmd_time = 0;
 precise_t ps_thinkertime = 0;
 
 precise_t ps_thlist_times[NUM_THINKERLISTS];
@@ -364,6 +365,7 @@ static void M_DrawTickStats(void)
 
 	perfstatrow_t extra_thinker_time_row[] = {
 		{"lthinkf", "LUAh_ThinkFrame:", &ps_lua_thinkframe_time},
+		{"botcmd ", "Bot logic:      ", &ps_botticcmd_time},
 		{"other  ", "Other:          ", &extratime},
 		{0}
 	};

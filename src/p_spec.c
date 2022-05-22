@@ -165,6 +165,9 @@ void P_ParseAnimationDefintion(SINT8 istexture);
   * \sa P_FindAnimatedFlat, P_SetupLevelFlatAnims
   * \author Steven McGranahan (original), Shadow Hog (had to rewrite it to handle multiple WADs), JTE (had to rewrite it to handle multiple WADs _correctly_)
   */
+
+static boolean animdeftempflats = false; // only until ANIMDEFS flats are removed
+
 void P_InitPicAnims(void)
 {
 	// Init animation
@@ -184,6 +187,7 @@ void P_InitPicAnims(void)
 
 		while (animdefsLumpNum != INT16_MAX)
 		{
+			animdeftempflats = ((p_adding_file == INT16_MAX) || p_adding_file == w);
 			P_ParseANIMDEFSLump(w, animdefsLumpNum);
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
 		}
@@ -205,7 +209,7 @@ void P_InitPicAnims(void)
 	lastanim = anims;
 	for (i = 0; animdefs[i].istexture != -1; i++)
 	{
-		if (animdefs[i].istexture)
+		if (animdefs[i].istexture == 1)
 		{
 			if (R_CheckTextureNumForName(animdefs[i].startname) == -1)
 				continue;
@@ -215,12 +219,21 @@ void P_InitPicAnims(void)
 		}
 		else
 		{
+			if (animdefs[i].istexture == 2)
+			{
+				CONS_Alert(CONS_WARNING, "ANIMDEFS flats are disabled; flat support in general will be removed soon! (%s, %s)\n", animdefs[i].startname, animdefs[i].endname);
+			}
+			continue;
+		}
+#if 0
+		{
 			if ((W_CheckNumForName(animdefs[i].startname)) == LUMPERROR)
 				continue;
 
 			lastanim->picnum = R_GetFlatNumForName(animdefs[i].endname);
 			lastanim->basepic = R_GetFlatNumForName(animdefs[i].startname);
 		}
+#endif
 
 		lastanim->istexture = animdefs[i].istexture;
 		lastanim->numpics = lastanim->picnum - lastanim->basepic + 1;
@@ -368,7 +381,10 @@ void P_ParseAnimationDefintion(SINT8 istexture)
 	Z_Free(animdefsToken);
 
 	// set texture type
-	animdefs[i].istexture = istexture;
+	if (istexture)
+		animdefs[i].istexture = 1;
+	else
+		animdefs[i].istexture = (animdeftempflats ? 2 : 0);
 
 	// "RANGE"
 	animdefsToken = M_GetToken(NULL);

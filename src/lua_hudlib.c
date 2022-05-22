@@ -14,7 +14,7 @@
 #include "fastcmp.h"
 #include "r_defs.h"
 #include "r_local.h"
-#include "st_stuff.h" // hudinfo[]
+#include "st_stuff.h"
 #include "g_game.h"
 #include "i_video.h" // rendermode
 #include "p_local.h" // camera_t
@@ -61,18 +61,6 @@ static const char *const hud_disable_options[] = {
 
 	"intermissiontally",
 	"intermissionmessages",
-	NULL};
-
-enum hudinfo {
-	hudinfo_x = 0,
-	hudinfo_y,
-	hudinfo_f
-};
-
-static const char *const hudinfo_opt[] = {
-	"x",
-	"y",
-	"f",
 	NULL};
 
 enum patch {
@@ -181,73 +169,6 @@ static const char *const camera_opt[] = {
 	"pitch",
 	"pnum",
 	NULL};
-
-static int lib_getHudInfo(lua_State *L)
-{
-	UINT32 i;
-	lua_remove(L, 1);
-
-	i = luaL_checkinteger(L, 1);
-	if (i >= NUMHUDITEMS)
-		return luaL_error(L, "hudinfo[] index %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-	LUA_PushUserdata(L, &hudinfo[i], META_HUDINFO);
-	return 1;
-}
-
-static int lib_hudinfolen(lua_State *L)
-{
-	lua_pushinteger(L, NUMHUDITEMS);
-	return 1;
-}
-
-static int hudinfo_get(lua_State *L)
-{
-	hudinfo_t *info = *((hudinfo_t **)luaL_checkudata(L, 1, META_HUDINFO));
-	enum hudinfo field = luaL_checkoption(L, 2, hudinfo_opt[0], hudinfo_opt);
-	I_Assert(info != NULL); // huditems are always valid
-
-	switch(field)
-	{
-	case hudinfo_x:
-		lua_pushinteger(L, info->x);
-		break;
-	case hudinfo_y:
-		lua_pushinteger(L, info->y);
-		break;
-	case hudinfo_f:
-		lua_pushinteger(L, info->f);
-		break;
-	}
-	return 1;
-}
-
-static int hudinfo_set(lua_State *L)
-{
-	hudinfo_t *info = *((hudinfo_t **)luaL_checkudata(L, 1, META_HUDINFO));
-	enum hudinfo field = luaL_checkoption(L, 2, hudinfo_opt[0], hudinfo_opt);
-	I_Assert(info != NULL);
-
-	switch(field)
-	{
-	case hudinfo_x:
-		info->x = (INT32)luaL_checkinteger(L, 3);
-		break;
-	case hudinfo_y:
-		info->y = (INT32)luaL_checkinteger(L, 3);
-		break;
-	case hudinfo_f:
-		info->f = (INT32)luaL_checkinteger(L, 3);
-		break;
-	}
-	return 0;
-}
-
-static int hudinfo_num(lua_State *L)
-{
-	hudinfo_t *info = *((hudinfo_t **)luaL_checkudata(L, 1, META_HUDINFO));
-	lua_pushinteger(L, info-hudinfo);
-	return 1;
-}
 
 static int colormap_get(lua_State *L)
 {
@@ -1419,27 +1340,6 @@ int LUA_HudLib(lua_State *L)
 		lua_newtable(L);
 		lua_rawseti(L, -2, 6); // HUD[6] = title card rendering functions array
 	lua_setfield(L, LUA_REGISTRYINDEX, "HUD");
-
-	luaL_newmetatable(L, META_HUDINFO);
-		lua_pushcfunction(L, hudinfo_get);
-		lua_setfield(L, -2, "__index");
-
-		lua_pushcfunction(L, hudinfo_set);
-		lua_setfield(L, -2, "__newindex");
-
-		lua_pushcfunction(L, hudinfo_num);
-		lua_setfield(L, -2, "__len");
-	lua_pop(L,1);
-
-	lua_newuserdata(L, 0);
-		lua_createtable(L, 0, 2);
-			lua_pushcfunction(L, lib_getHudInfo);
-			lua_setfield(L, -2, "__index");
-
-			lua_pushcfunction(L, lib_hudinfolen);
-			lua_setfield(L, -2, "__len");
-		lua_setmetatable(L, -2);
-	lua_setglobal(L, "hudinfo");
 
 	luaL_newmetatable(L, META_COLORMAP);
 		lua_pushcfunction(L, colormap_get);

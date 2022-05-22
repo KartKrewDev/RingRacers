@@ -19,6 +19,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2);
 
+void K_LightningShieldAttack(mobj_t *actor, fixed_t size);
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2);
