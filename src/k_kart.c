@@ -9099,7 +9099,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 static void K_KartSpindash(player_t *player)
 {
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
-	ticcmd_t *cmd = &player->cmd;
+	UINT16 buttons = K_GetKartButtons(player);
 	boolean spawnWind = (leveltime % 2 == 0);
 
 	if (player->mo->hitlag > 0 || P_PlayerInPain(player))
@@ -9107,7 +9107,7 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 	}
 
-	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
+	if (player->spindash > 0 && (buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
 		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
@@ -9163,7 +9163,7 @@ static void K_KartSpindash(player_t *player)
 
 	if (player->speed < 6*player->mo->scale)
 	{
-		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
+		if ((buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
