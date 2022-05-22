@@ -898,10 +898,9 @@ void G_ResetAnglePrediction(player_t *player)
 // This brings back the camera prediction that was lost.
 static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
 {
-	const angle_t maxTurn = K_GetKartTurnValue(player, KART_FULLTURN) << TICCMD_REDUCE;
-	INT32 angleChange = 0;
-	INT32 destAngle = player->angleturn;
-	INT32 diff = 0;
+	angle_t angleChange = 0;
+	angle_t destAngle = player->angleturn;
+	angle_t diff = 0;
 
 	localtic = cmd->latency;
 
@@ -928,21 +927,17 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 
 	destAngle = player->angleturn + localdelta[ssplayer - 1];
 	diff = destAngle - localangle[ssplayer - 1];
-	if (abs(diff) <= maxTurn)
+
+	if (diff > ANGLE_180)
 	{
-		localangle[ssplayer - 1] = destAngle;
+		diff = InvAngle(InvAngle(diff) / 2);
 	}
 	else
 	{
-		if (diff > 0)
-		{
-			localangle[ssplayer - 1] += maxTurn;
-		}
-		else
-		{
-			localangle[ssplayer - 1] -= maxTurn;
-		}
+		diff /= 2;
 	}
+
+	localangle[ssplayer - 1] += diff;
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
