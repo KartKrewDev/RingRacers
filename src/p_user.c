@@ -2006,9 +2006,9 @@ static void P_UpdatePlayerAngle(player_t *player)
 	UINT8 p = UINT8_MAX;
 	UINT8 i;
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= splitscreen; i++)
 	{
-		if (player == &players[displayplayers[i]])
+		if (player == &players[g_localplayers[i]])
 		{
 			p = i;
 			break;
@@ -2018,13 +2018,19 @@ static void P_UpdatePlayerAngle(player_t *player)
 	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
-	player->angleturn += angleChange;
-	player->mo->angle = player->angleturn;
-
-	if (p != UINT8_MAX)
+	if (p == UINT8_MAX)
+	{
+		// When F12ing players, set local angle directly.
+		P_SetPlayerAngle(player, player->angleturn + angleChange);
+		player->mo->angle = player->angleturn;
+	}
+	else
 	{
 		UINT8 lateTic = ((leveltime - player->cmd.latency) & TICCMD_LATENCYMASK);
 		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
+
+		player->angleturn += angleChange;
+		player->mo->angle = player->angleturn;
 
 		// Undo the ticcmd's old emulated angle,
 		// now that we added the actual game logic angle.
