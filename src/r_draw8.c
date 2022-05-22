@@ -933,10 +933,11 @@ void R_DrawTiltedSpan_8(void)
 		}
 		else
 		{
-			colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+			colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 			*dest = colormap[source[bit]];
 		}
 		dest++;
+		ds_x1++;
 		iz += ds_szp->x;
 		uz += ds_sup->x;
 		vz += ds_svp->x;
@@ -975,10 +976,11 @@ void R_DrawTiltedSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = colormap[source[bit]];
 			}
 			dest++;
+			ds_x1++;
 			u += stepu;
 			v += stepv;
 		}
@@ -999,9 +1001,10 @@ void R_DrawTiltedSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = colormap[source[bit]];
 			}
+			ds_x1++;
 		}
 		else
 		{
@@ -1028,10 +1031,11 @@ void R_DrawTiltedSpan_8(void)
 				}
 				else
 				{
-					colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+					colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 					*dest = colormap[source[bit]];
 				}
 				dest++;
+				ds_x1++;
 				u += stepu;
 				v += stepv;
 			}
@@ -1103,10 +1107,11 @@ void R_DrawTiltedTranslucentSpan_8(void)
 		}
 		else
 		{
-			colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+			colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 			*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dest);
 		}
 		dest++;
+		ds_x1++;
 		iz += ds_szp->x;
 		uz += ds_sup->x;
 		vz += ds_svp->x;
@@ -1145,10 +1150,11 @@ void R_DrawTiltedTranslucentSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dest);
 			}
 			dest++;
+			ds_x1++;
 			u += stepu;
 			v += stepv;
 		}
@@ -1169,9 +1175,10 @@ void R_DrawTiltedTranslucentSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dest);
 			}
+			ds_x1++;
 		}
 		else
 		{
@@ -1198,10 +1205,11 @@ void R_DrawTiltedTranslucentSpan_8(void)
 				}
 				else
 				{
-					colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+					colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 					*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dest);
 				}
 				dest++;
+				ds_x1++;
 				u += stepu;
 				v += stepv;
 			}
@@ -1274,10 +1282,11 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 		}
 		else
 		{
-			colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+			colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 			*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dsrc++);
 		}
 		dest++;
+		ds_x1++;
 		iz += ds_szp->x;
 		uz += ds_sup->x;
 		vz += ds_svp->x;
@@ -1316,10 +1325,11 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dsrc++);
 			}
 			dest++;
+			ds_x1++;
 			u += stepu;
 			v += stepv;
 		}
@@ -1340,9 +1350,10 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dsrc++);
 			}
+			ds_x1++;
 		}
 		else
 		{
@@ -1369,10 +1380,11 @@ void R_DrawTiltedTranslucentWaterSpan_8(void)
 				}
 				else
 				{
-					colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+					colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 					*dest = *(ds_transmap + (colormap[source[bit]] << 8) + *dsrc++);
 				}
 				dest++;
+				ds_x1++;
 				u += stepu;
 				v += stepv;
 			}
@@ -1446,12 +1458,13 @@ void R_DrawTiltedSplat_8(void)
 			}
 			else
 			{
-				colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+				colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 				*dest = colormap[val];
 			}
 		}
 
 		dest++;
+		ds_x1++;
 		iz += ds_szp->x;
 		uz += ds_sup->x;
 		vz += ds_svp->x;
@@ -1493,11 +1506,12 @@ void R_DrawTiltedSplat_8(void)
 				}
 				else
 				{
-					colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+					colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 					*dest = colormap[val];
 				}
 			}
 			dest++;
+			ds_x1++;
 			u += stepu;
 			v += stepv;
 		}
@@ -1521,9 +1535,10 @@ void R_DrawTiltedSplat_8(void)
 				}
 				else
 				{
-					colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+					colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 					*dest = colormap[val];
 				}
+				ds_x1++;
 			}
 		}
 		else
@@ -1554,11 +1569,12 @@ void R_DrawTiltedSplat_8(void)
 					}
 					else
 					{
-						colormap = planezlight[tiltlighting[ds_x1++]] + (ds_colormap - colormaps);
+						colormap = planezlight[tiltlighting[ds_x1]] + (ds_colormap - colormaps);
 						*dest = colormap[val];
 					}
 				}
 				dest++;
+				ds_x1++;
 				u += stepu;
 				v += stepv;
 			}
