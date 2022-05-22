@@ -150,7 +150,7 @@ void K_PlayAttackTaunt(mobj_t *source);
 void K_PlayBoostTaunt(mobj_t *source);
 void K_PlayOvertakeSound(mobj_t *source);
 void K_PlayPainSound(mobj_t *source);
-void K_PlayHitEmSound(mobj_t *source);
+void K_PlayHitEmSound(mobj_t *source, mobj_t *victim);
 void K_PlayPowerGloatSound(mobj_t *source);
 
 fixed_t K_ItemScaleForPlayer(player_t *player);

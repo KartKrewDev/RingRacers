@@ -2799,8 +2799,9 @@ void K_PlayPainSound(mobj_t *source)
 	K_RegularVoiceTimers(source->player);
 }
 
-void K_PlayHitEmSound(mobj_t *source)
+void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
 {
+	const boolean victimIsLocal = (victim != NULL && P_IsDisplayPlayer(victim->player) == true);
 
 	if (source->player->follower)
 	{
@@ -2809,11 +2810,24 @@ void K_PlayHitEmSound(mobj_t *source)
 	}
 
 	if (cv_kartvoices.value)
-		S_StartSound(source, sfx_khitem);
+	{
+		if (victimIsLocal == false)
+		{
+			S_StartSound(source, sfx_khitem);
+		}
+	}
 	else
+	{
 		S_StartSound(source, sfx_s1c9); // The only lost gameplay functionality with voices disabled
+	}
 
 	K_RegularVoiceTimers(source->player);
+
+	if (victim != NULL && victim->player != NULL)
+	{
+		victim->player->confirmInflictor = source->player - players;
+		victim->player->confirmInflictorDelay = TICRATE/2;
+	}
 }
 
 void K_PlayPowerGloatSound(mobj_t *source)
@@ -2822,6 +2836,45 @@ void K_PlayPowerGloatSound(mobj_t *source)
 		S_StartSound(source, sfx_kgloat);
 
 	K_RegularVoiceTimers(source->player);
+}
+
+static void K_HandleDelayedHitByEm(player_t *player)
+{
+	if (player->confirmInflictorDelay == 0)
+	{
+		return;
+	}
+
+	player->confirmInflictorDelay--;
+
+	if (player->confirmInflictorDelay == 0
+		&& P_IsDisplayPlayer(player) == true
+		&& cv_kartvoices.value)
+	{
+		player_t *inflictor = NULL;
+
+		if (player->confirmInflictor >= MAXPLAYERS)
+		{
+			return;
+		}
+
+		if (!playeringame[player->confirmInflictor])
+		{
+			return;
+		}
+
+		inflictor = &players[player->confirmInflictor];
+		if (inflictor == NULL || inflictor->spectator)
+		{
+			return;
+		}
+
+		if (inflictor->mo != NULL && P_MobjWasRemoved(inflictor->mo) == false)
+		{
+			sfxenum_t sfx_id = ((skin_t *)inflictor->mo->skin)->soundsid[S_sfx[sfx_khitem].skinsound];
+			S_StartSound(NULL, sfx_id);
+		}
+	}
 }
 
 void K_MomentumToFacing(player_t *player)
@@ -7593,6 +7646,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		K_SpawnBrakeVisuals(player);
 	}
+
+	K_HandleDelayedHitByEm(player);
 }
 
 void K_KartPlayerAfterThink(player_t *player)
@@ -9047,7 +9102,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 static void K_KartSpindash(player_t *player)
 {
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
-	ticcmd_t *cmd = &player->cmd;
+	UINT16 buttons = K_GetKartButtons(player);
 	boolean spawnWind = (leveltime % 2 == 0);
 
 	if (player->mo->hitlag > 0 || P_PlayerInPain(player))
@@ -9055,7 +9110,7 @@ static void K_KartSpindash(player_t *player)
 		player->spindash = 0;
 	}
 
-	if (player->spindash > 0 && (cmd->buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
+	if (player->spindash > 0 && (buttons & (BT_DRIFT|BT_BRAKE|BT_ACCELERATE)) != (BT_DRIFT|BT_BRAKE|BT_ACCELERATE))
 	{
 		player->spindashspeed = (player->spindash * FRACUNIT) / MAXCHARGETIME;
 		player->spindashboost = TICRATE;
@@ -9111,7 +9166,7 @@ static void K_KartSpindash(player_t *player)
 
 	if (player->speed < 6*player->mo->scale)
 	{
-		if ((cmd->buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
+		if ((buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
