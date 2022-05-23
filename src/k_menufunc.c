@@ -2961,14 +2961,6 @@ static void M_MPConfirmCharacterSelection(void)
 	M_ClearMenus(true);
 }
 
-static void M_MPConfirmCharacterResponse(INT32 ch)
-{
-	if (ch == MA_YES)
-		M_MPConfirmCharacterSelection();
-
-	M_ClearMenus(true);
-}
-
 void M_CharacterSelectTick(void)
 {
 	UINT8 i;
@@ -3038,7 +3030,7 @@ void M_CharacterSelectTick(void)
 				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
 
 				// P1 is alone, set their old device just in case.
-				if (setup_numplayers < 2)
+				if (setup_numplayers < 2 && setup_player[0].ponedevice)
 					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
 
 				M_SetupNextMenu(&PLAY_MainDef, false);
