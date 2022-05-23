@@ -1241,8 +1241,7 @@ boolean HU_Responder(event_t *ev)
 	if (!chat_on)
 	{
 		// enter chat mode
-#if 0
-		if ((ev->data1 == gamecontrol[0][gc_talkkey][0] || ev->data1 == gamecontrol[0][gc_talkkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_talk][0] || ev->data1 == gamecontrol[0][gc_talk][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
 			chat_on = true;
@@ -1252,7 +1251,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-		if ((ev->data1 == gamecontrol[0][gc_teamkey][0] || ev->data1 == gamecontrol[0][gc_teamkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_teamtalk][0] || ev->data1 == gamecontrol[0][gc_teamtalk][1])
 			&& netgame && !OLD_MUTE)
 		{
 			chat_on = true;
@@ -1262,7 +1261,6 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-#endif
 	}
 	else // if chat_on
 	{

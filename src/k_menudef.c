@@ -315,7 +315,7 @@ menuitem_t PLAY_MP_JoinIP[] =
 		NULL, {.cvar = &cv_dummyip}, 0, 0},
 
 	{IT_STRING, "CONNECT ", "Attempt to connect to the server you entered the IP for.",
-		NULL, NULL, 0, 0},
+		NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SPACE, "LAST IPs JOINED:", "Kanade best waifu :)",
 		NULL, {NULL}, 0, 0},
