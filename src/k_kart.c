@@ -8236,31 +8236,34 @@ static INT16 K_GetKartDriftValue(player_t *player, fixed_t countersteer)
 	return basedrift + (FixedMul(driftadjust * FRACUNIT, countersteer) / FRACUNIT);
 }
 
-void K_UpdateSteeringValue(player_t *player, INT16 destSteering)
+INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 {
 	// player->steering is the turning value, but with easing applied.
 	// Keeps micro-turning from old easing, but isn't controller dependent.
 
 	const INT16 amount = KART_FULLTURN/4;
-	INT16 diff = destSteering - player->steering;
+	INT16 diff = destSteering - inputSteering;
+	INT16 outputSteering = inputSteering;
 
 	if (abs(diff) <= amount)
 	{
 		// Reached the intended value, set instantly.
-		player->steering = destSteering;
+		outputSteering = destSteering;
 	}
 	else
 	{
 		// Go linearly towards the value we wanted.
 		if (diff < 0)
 		{
-			player->steering -= amount;
+			outputSteering -= amount;
 		}
 		else
 		{
-			player->steering += amount;
+			outputSteering += amount;
 		}
 	}
+
+	return outputSteering;
 }
 
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)

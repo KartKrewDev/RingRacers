@@ -4509,6 +4509,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (rendermode == render_none || reloadinggamestate)
 		return true;
 
+	R_ResetViewInterpolation(0);
+	R_ResetViewInterpolation(0);
+	R_UpdateMobjInterpolators();
+
 	// Title card!
 	G_StartTitleCard();
 

@@ -328,7 +328,6 @@ typedef struct player_s
 	skybox_t skybox;
 
 	angle_t viewrollangle;
-	angle_t old_viewrollangle;
 	// camera tilt
 	// TODO: expose to lua
 	angle_t tilt;

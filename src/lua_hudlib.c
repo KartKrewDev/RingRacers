@@ -14,6 +14,7 @@
 #include "fastcmp.h"
 #include "r_defs.h"
 #include "r_local.h"
+#include "r_fps.h"
 #include "st_stuff.h"
 #include "g_game.h"
 #include "i_video.h" // rendermode
@@ -1394,26 +1395,9 @@ void LUAh_GameHUD(player_t *stplayr, huddrawlist_h list)
 	lua_remove(gL, -3); // pop HUD
 	LUA_PushUserdata(gL, stplayr, META_PLAYER);
 
-	if (r_splitscreen > 2 && stplayr == &players[displayplayers[3]])
-	{
-		LUA_PushUserdata(gL, &camera[3], META_CAMERA);
-		camnum = 4;
-	}
-	else if (r_splitscreen > 1 && stplayr == &players[displayplayers[2]])
-	{
-		LUA_PushUserdata(gL, &camera[2], META_CAMERA);
-		camnum = 3;
-	}
-	else if (r_splitscreen && stplayr == &players[displayplayers[1]])
-	{
-		LUA_PushUserdata(gL, &camera[1], META_CAMERA);
-		camnum = 2;
-	}
-	else
-	{
-		LUA_PushUserdata(gL, &camera[0], META_CAMERA);
-		camnum = 1;
-	}
+	camnum = R_GetViewNumber();
+	LUA_PushUserdata(gL, &camera[camnum], META_CAMERA);
+	camnum++; // for compatibility
 
 	lua_pushnil(gL);
 	while (lua_next(gL, -5) != 0) {

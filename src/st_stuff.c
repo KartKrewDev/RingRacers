@@ -33,6 +33,7 @@
 #include "p_setup.h" // NiGHTS grading
 #include "k_grandprix.h"	// we need to know grandprix status for titlecards
 #include "k_boss.h"
+#include "r_fps.h"
 
 //random index
 #include "m_random.h"
@@ -1002,7 +1003,16 @@ static void ST_overlayDrawer(void)
 {
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
+	{
 		K_drawKartHUD();
+
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game);
+	}
 
 	if (!hu_showscores) // hide the following if TAB is held
 	{
@@ -1029,16 +1039,6 @@ static void ST_overlayDrawer(void)
 				}
 			}
 		}
-	}
-
-	if (!(netgame || multiplayer) || !hu_showscores)
-	{
-		if (renderisnewtic)
-		{
-			LUA_HUD_ClearDrawList(luahuddrawlist_game);
-			LUAh_GameHUD(stplyr, luahuddrawlist_game);
-		}
-		LUA_HUD_DrawList(luahuddrawlist_game);
 	}
 
 	if (!hu_showscores && netgame && !mapreset)
@@ -1079,32 +1079,6 @@ static void ST_overlayDrawer(void)
 				V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Accelerate - Float"));
 				V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Brake - Sink"));
 			}
-		}
-	}
-
-	// Replay manual-save stuff
-	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
-	{
-		switch (demo.savemode)
-		{
-		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
-			break;
-
-		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
-			break;
-
-		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
-			break;
-
-		case DSM_TITLEENTRY:
-			ST_DrawDemoTitleEntry();
-			break;
-
-		default: // Don't render anything
-			break;
 		}
 	}
 }
@@ -1217,6 +1191,8 @@ void ST_Drawer(void)
 		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
+			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
+			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();
 		}
 
@@ -1231,6 +1207,32 @@ void ST_Drawer(void)
 
 	if (stagetitle)
 		ST_drawTitleCard();
+
+	// Replay manual-save stuff
+	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
+	{
+		switch (demo.savemode)
+		{
+		case DSM_NOTSAVING:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
+			break;
+
+		case DSM_WILLAUTOSAVE:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
+			break;
+
+		case DSM_WILLSAVE:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
+			break;
+
+		case DSM_TITLEENTRY:
+			ST_DrawDemoTitleEntry();
+			break;
+
+		default: // Don't render anything
+			break;
+		}
+	}
 
 	ST_drawDebugInfo();
 }
