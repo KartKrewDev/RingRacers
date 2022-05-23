@@ -530,16 +530,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	if (tmthing == NULL || P_MobjWasRemoved(tmthing) == true)
 		return BMIT_STOP; // func just popped our tmthing, cannot continue.
 
+	// Ignore... things.
+	if (thing == NULL || P_MobjWasRemoved(thing) == true)
+		return BMIT_CONTINUE;
+
 	// don't clip against self
 	if (thing == tmthing)
 		return BMIT_CONTINUE;
-
-	// Ignore... things.
-	if (!tmthing || !thing || P_MobjWasRemoved(thing))
-		return BMIT_CONTINUE;
-
-	I_Assert(!P_MobjWasRemoved(tmthing));
-	I_Assert(!P_MobjWasRemoved(thing));
 
 	// Ignore spectators
 	if ((tmthing->player && tmthing->player->spectator)
