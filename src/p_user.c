@@ -2142,7 +2142,7 @@ void P_MovePlayer(player_t *player)
 
 	if (cmd->turning == 0)
 	{
-		player->justDI = false;
+		player->justDI = 0;
 	}
 
 	// Kart frames

@@ -7561,6 +7561,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->instashield)
 		player->instashield--;
 
+	if (player->justDI)
+	{
+		player->justDI--;
+
+		// return turning if player is fully actionable, no matter when!
+		if (!player->spinouttimer && player->mo->state != &states[S_KART_SPINOUT])
+			player->justDI = 0;
+	}
+
 	if (player->eggmanexplode)
 	{
 		if (player->spectator || (gametype == GT_BATTLE && !player->bumpers))
@@ -8296,7 +8305,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->justDI == true)
+	if (player->justDI > 0)
 	{
 		// No turning until you let go after DI-ing.
 		return 0;
@@ -10496,7 +10505,7 @@ void K_HandleDirectionalInfluence(player_t *player)
 	}
 
 	// DI attempted!!
-	player->justDI = true;
+	player->justDI = MAXHITLAGTICS;
 
 	cmd = &player->cmd;
 
