@@ -37,6 +37,7 @@
 #include "k_terrain.h"
 #include "k_director.h"
 #include "k_collide.h"
+#include "k_follower.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -2806,7 +2807,7 @@ void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
 	if (source->player->follower)
 	{
 		follower_t fl = followers[source->player->followerskin];
-		source->player->follower->movecount = fl.hitconfirmtime;	// movecount is used to play the hitconfirm animation for followers.
+		source->player->follower->movecount = fl.hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
 	}
 
 	if (cv_kartvoices.value)

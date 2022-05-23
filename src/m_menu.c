@@ -65,6 +65,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
+#include "k_follower.h"
 #include "r_fps.h"
 
 #include "i_joy.h" // for joystick menu controls
@@ -9667,7 +9668,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			follower_t fl = followers[setupm_fakefollower];	// shortcut for our sanity
 			// smooth floating, totally not stolen from rocket sneakers.
 			const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-			fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK);
+			fixed_t sine = FixedMul(fl.bobamp, FINESINE((((8 * pi * (fl.bobspeed)) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK));
 
 			UINT8 *colormap = R_GetTranslationColormap(-1, setupm_fakecolor->color, 0);
 			V_DrawFixedPatch((mx+65)*FRACUNIT, (my+131-fl.zoffs)*FRACUNIT+sine, fl.scale, flags, patch, colormap);

@@ -34,8 +34,6 @@
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
-INT32 numfollowers = 0;
-
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
 #ifdef SKINVALUES
@@ -43,9 +41,6 @@ CV_PossibleValue_t skin_cons_t[MAXSKINS+1];
 #endif
 
 CV_PossibleValue_t Forceskin_cons_t[MAXSKINS+2];
-
-// SRB2Kart followers
-follower_t followers[MAXSKINS];
 
 //
 // P_GetSkinSprite2
@@ -860,97 +855,3 @@ next_token:
 }
 
 #undef SYMBOLCONVERT
-
-// SRB2Kart: Followers!
-// TODO: put this stuff in its own file?
-
-// same thing as R_SkinAvailable, but for followers
-INT32 R_FollowerAvailable(const char *name)
-{
-	INT32 i;
-
-	for (i = 0; i < numfollowers; i++)
-	{
-		if (stricmp(followers[i].skinname,name)==0)
-			return i;
-	}
-	return -1;
-}
-
-// same thing as SetPlayerSkin, but for followers
-boolean SetPlayerFollower(INT32 playernum, const char *skinname)
-{
-	INT32 i;
-	player_t *player = &players[playernum];
-
-	if (stricmp("None", skinname) == 0)
-	{
-		SetFollower(playernum, -1);	// reminder that -1 is nothing
-		return true;
-	}
-	for (i = 0; i < numfollowers; i++)
-	{
-		// search in the skin list
-		if (stricmp(followers[i].skinname, skinname) == 0)
-		{
-			SetFollower(playernum, i);
-			return true;
-		}
-	}
-
-	if (P_IsLocalPlayer(player))
-		CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found.\n"), skinname);
-	else if(server || IsPlayerAdmin(consoleplayer))
-		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) follower '%s' not found\n"), playernum, player_names[playernum], skinname);
-
-	SetFollower(playernum, -1);	// reminder that -1 is nothing
-	return false;
-}
-
-// SetPlayerSkinByNum, for followers
-void SetFollower(INT32 playernum, INT32 skinnum)
-{
-	player_t *player = &players[playernum];
-	mobj_t *bub;
-	mobj_t *tmp;
-
-	player->followerready = true; // we are ready to perform follower related actions in the player thinker, now.
-
-	if (skinnum >= -1 && skinnum <= numfollowers) // Make sure it exists!
-	{
-		/*
-			We don't spawn the follower here since it'll be easier to handle all of it in the Player thinker itself.
-			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
-		*/
-
-		if (player->follower && skinnum != player->followerskin)	// this is also called when we change colour so don't respawn the follower unless we changed skins
-		{
-			// Remove follower's possible hnext list (bubble)
-			bub = player->follower->hnext;
-
-			while (bub && !P_MobjWasRemoved(bub))
-			{
-				tmp = bub->hnext;
-				P_RemoveMobj(bub);
-				bub = tmp;
-			}
-
-			P_RemoveMobj(player->follower);
-			P_SetTarget(&player->follower, NULL);
-		}
-
-		player->followerskin = skinnum;
-
-		// for replays: We have changed our follower mid-game; let the game know so it can do the same in the replay!
-		demo_extradata[playernum] |= DXD_FOLLOWER;
-
-		return;
-	}
-
-	if (P_IsLocalPlayer(player))
-		CONS_Alert(CONS_WARNING, M_GetText("Follower %d not found\n"), skinnum);
-	else if(server || IsPlayerAdmin(consoleplayer))
-		CONS_Alert(CONS_WARNING, "Player %d (%s) follower %d not found\n", playernum, player_names[playernum], skinnum);
-
-	SetFollower(playernum, -1); // Not found, then set -1 (nothing) as our follower.
-}
