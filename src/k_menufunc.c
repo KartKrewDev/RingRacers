@@ -3633,7 +3633,7 @@ boolean M_MPResetOpts(void)
 
 void M_MPOptSelectInit(INT32 choice)
 {
-	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,64,0}};
+	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
 	const UINT8 pid = 0;
 
@@ -3748,29 +3748,24 @@ void M_JoinIP(const char *ipa)
 
 boolean M_JoinIPInputs(INT32 ch)
 {
-	if (itemOn == 0)	// connect field
+
+	const UINT8 pid = 0;
+	(void) ch;
+
+	if (itemOn == 1)	// connect field
 	{
 		// enter: connect
-		if (ch == KEY_ENTER)
+		if (M_MenuConfirmPressed(pid))
 		{
 			M_JoinIP(cv_dummyip.string);
+			M_SetMenuDelay(pid);
 			return true;
 		}
-		// ctrl+v -> copy paste!
-		else if (ctrldown && (ch == 'v' || ch == 'V'))
-		{
-			const char *paste = I_ClipboardPaste();
-			UINT16 i;
-			for (i=0; i < strlen(paste); i++)
-				M_ChangeStringCvar(paste[i]);	// We can afford to do this since we're currently on that cvar.
-
-			return true;	// Don't input the V obviously lol.
-		}
-
 	}
-	else if (currentMenu->numitems - itemOn <= NUMLOGIP && ch == KEY_ENTER)	// On one of the last 3 options for IP rejoining
+	else if (currentMenu->numitems - itemOn <= NUMLOGIP && M_MenuConfirmPressed(pid))	// On one of the last 3 options for IP rejoining
 	{
 		UINT8 index = NUMLOGIP - (currentMenu->numitems - itemOn);
+		M_SetMenuDelay(pid);
 
 		// Is there an address at this part of the table?
 		if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))
@@ -3788,29 +3783,19 @@ boolean M_JoinIPInputs(INT32 ch)
 
 void M_MPRoomSelect(INT32 choice)
 {
+	const UINT8 pid = 0;
+	(void) choice;
 
-	switch (choice)
+	if (menucmd[pid].dpad_lr)
 	{
-
-		case KEY_LEFTARROW:
-		case KEY_RIGHTARROW:
-		{
-
-			mpmenu.room = (!mpmenu.room) ? 1 : 0;
-			S_StartSound(NULL, sfx_s3k5b);
-
-			break;
-		}
-
-		case KEY_ESCAPE:
-		{
-			if (currentMenu->prevMenu)
-				M_SetupNextMenu(currentMenu->prevMenu, false);
-			else
-				M_ClearMenus(true);
-			break;
-		}
-
+		mpmenu.room = (!mpmenu.room) ? 1 : 0;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (M_MenuBackPressed(pid))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
 	}
 }
 

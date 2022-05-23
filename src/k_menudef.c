@@ -311,8 +311,11 @@ menuitem_t PLAY_MP_JoinIP[] =
 {
 	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "IP: ", "Type the IPv4 address of the server then press enter to attempt connection.",
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "IP: ", "Type the IPv4 address of the server.",
 		NULL, {.cvar = &cv_dummyip}, 0, 0},
+
+	{IT_STRING, "CONNECT ", "Attempt to connect to the server you entered the IP for.",
+		NULL, NULL, 0, 0},
 
 	{IT_STRING | IT_SPACE, "LAST IPs JOINED:", "Kanade best waifu :)",
 		NULL, {NULL}, 0, 0},
