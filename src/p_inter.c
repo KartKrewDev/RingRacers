@@ -2007,7 +2007,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->invincibilitytimer = kinvextend;
 					}
 
-					K_PlayHitEmSound(source);
+					K_PlayHitEmSound(source, target);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
 					K_TakeBumpersFromPlayer(source->player, player, takeBumpers);

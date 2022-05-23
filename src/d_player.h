@@ -488,6 +488,9 @@ typedef struct player_s
 	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
 	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
+	UINT8 confirmInflictor;			// Player ID that dealt damage to you
+	UINT8 confirmInflictorDelay;	// Delay before playing the sound
+
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
