@@ -4403,7 +4403,7 @@ void M_HandleVideoModes(INT32 ch)
 
 	else
 	{
-		if (menucmd[pid].dpad_ud < 0)
+		if (menucmd[pid].dpad_ud > 0)
 		{
 			S_StartSound(NULL, sfx_menu1);
 			if (++optionsmenu.vidm_selected >= optionsmenu.vidm_nummodes)
@@ -4412,7 +4412,7 @@ void M_HandleVideoModes(INT32 ch)
 			M_SetMenuDelay(pid);
 		}
 
-		else if (menucmd[pid].dpad_ud > 0)
+		else if (menucmd[pid].dpad_ud < 0)
 		{
 			S_StartSound(NULL, sfx_menu1);
 			if (--optionsmenu.vidm_selected < 0)
