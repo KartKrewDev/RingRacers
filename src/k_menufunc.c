@@ -2953,6 +2953,10 @@ static void M_MPConfirmCharacterSelection(void)
 
 		// finally, call the skin[x] console command.
 		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
+
+		// This is a hack to make sure we call Skin[x]_OnChange afterwards
+		CV_StealthSetValue(&cv_skin[i], -1);
+
 		strcpy(cmd, commandnames[i]);
 		strcat(cmd, skins[setup_player[i].skin].name);
 		COM_ImmedExecute(cmd);
