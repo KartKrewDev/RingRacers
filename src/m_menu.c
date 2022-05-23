@@ -3119,26 +3119,6 @@ void M_Drawer(void)
 			M_GetGametypeColor();
 			currentMenu->drawroutine(); // call current menu Draw routine
 		}
-
-		// Draw version down in corner
-		// ... but only in the MAIN MENU.  I'm a picky bastard.
-		if (currentMenu == &MainDef)
-		{
-			if (customversionstring[0] != '\0')
-			{
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
-			}
-			else
-			{
-#ifdef DEVELOP // Development -- show revision / branch info
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
-#else // Regular build
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
-#endif
-			}
-		}
 	}
 
 	// focus lost notification goes on top of everything, even the former everything
