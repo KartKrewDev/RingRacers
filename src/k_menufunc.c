@@ -3046,31 +3046,7 @@ void M_CharacterSelectTick(void)
 		}
 		else	// In a game
 		{
-			// In the midst of a game,
-			// 1: warn players that confirming will force-spectate them until next round
-			//	^ This doesn't apply in FREEPLAY
-
-			// 2: Call the "skin" and "color" commands for all local players.
-			// This command will force change team to spectate under the proper circumstances. (see d_clisrv.c)
-			UINT8 j;
-
-			// check to see if there's anyone else at all
-			if (G_GametypeHasSpectators())	// Make sure we CAN spectate.
-			{
-				for (j = 0; j < MAXPLAYERS; j++)
-				{
-					if (j == displayplayers[0])
-						continue;
-					if (playeringame[j] && !players[consoleplayer].spectator)
-					{
-						// Warn the player!
-						M_StartMessage(M_GetText("Any player who has changed skin will\nautomatically spectate. Proceed?\n(Press A to confirm)\n"), FUNCPTRCAST(M_MPConfirmCharacterResponse), MM_YESNO);
-						return;
-					}
-				}
-			}
-
-			// If we made it here then we're in freeplay or something and we can switch for free!
+			// 23/05/2022: Since there's already restrictskinchange, just allow this to happen regardless.
 			M_MPConfirmCharacterSelection();
 		}
 	}

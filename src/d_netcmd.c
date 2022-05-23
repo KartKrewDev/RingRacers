@@ -249,7 +249,7 @@ static consvar_t cv_fishcake = CVAR_INIT ("fishcake", "Off", CV_CALL|CV_NOSHOWHE
 #endif
 static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
 
-consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "No", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
+consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t ingamecap_cons_t[] = {{0, "MIN"}, {MAXPLAYERS-1, "MAX"}, {0, NULL}};
@@ -1315,6 +1315,8 @@ UINT8 CanChangeSkin(INT32 playernum)
 	// Server has skin change restrictions.
 	if (cv_restrictskinchange.value)
 	{
+		UINT8 i;
+		
 		// Can change skin during initial countdown.
 		if (leveltime < starttime)
 			return true;
@@ -1322,9 +1324,23 @@ UINT8 CanChangeSkin(INT32 playernum)
 		// Not in game, so you can change
 		if (players[playernum].spectator || players[playernum].playerstate == PST_DEAD || players[playernum].playerstate == PST_REBORN)
 			return true;
-
-		return false;
+		
+		// Check for freeeplay
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (i == consoleplayer)
+				continue;
+			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)	
+				return false;	// Not freeplay!
+		}
+		
+		// if we've gotten here, then it's freeplay, and switching anytime is fair game.
+		return true;
 	}
+	// if restrictskinchange is off and we're trying to change skins, don't allow changing skins while moving after the race has started.
+	else if (gamestate == GS_LEVEL && leveltime >= starttime)
+		return (!P_PlayerMoving(playernum));
+		
 
 	return true;
 }
@@ -5523,24 +5539,8 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
-	{
-		UINT8 i;
-
+	if (CanChangeSkin(consoleplayer))
 		SendNameAndColor(0);
-		// check to see if there's anyone else at all
-		// even if we're playing splitscreen, if it ain't free play it spectates us if it can.
-		if (G_GametypeHasSpectators() && !players[consoleplayer].spectator)	// Make sure we CAN spectate.
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (i == consoleplayer)
-					continue;
-				if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
-					COM_ImmedExecute("changeteam spectator");
-			}
-		}
-	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5558,13 +5558,8 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[1]) && !P_PlayerMoving(g_localplayers[1]))
-	{
+	if (CanChangeSkin(g_localplayers[1]))
 		SendNameAndColor(1);
-		// With how we handle splitscreen, only check for gamestate here.
-		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[1]].spectator)
-			COM_ImmedExecute("changeteam2 spectator");
-	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5577,12 +5572,8 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[2]) && !P_PlayerMoving(g_localplayers[2]))
-	{
+	if (CanChangeSkin(g_localplayers[2]))
 		SendNameAndColor(2);
-		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[2]].spectator)
-			COM_ImmedExecute("changeteam3 spectator");
-	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -5595,12 +5586,8 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[3]) && !P_PlayerMoving(g_localplayers[3]))
-	{
+	if (CanChangeSkin(g_localplayers[3]))
 		SendNameAndColor(3);
-		if (gamestate == GS_LEVEL && G_GametypeHasSpectators() && !players[g_localplayers[3]].spectator)
-			COM_ImmedExecute("changeteam4 spectator");
-	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
