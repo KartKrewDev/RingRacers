@@ -4505,7 +4505,6 @@ static void P_NetArchiveMisc(boolean resending)
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
-	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4655,7 +4654,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
-	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	for (i = 0; i < MAXPLAYERS; i++)

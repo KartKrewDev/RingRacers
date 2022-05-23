@@ -458,9 +458,6 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
 		indirectitemcooldown = 20*TICRATE;
 
-	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
-		hyubgone = 5*TICRATE;
-
 	player->botvars.itemdelay = TICRATE;
 	player->botvars.itemconfirm = 0;
 
@@ -682,6 +679,7 @@ INT32 K_KartGetItemOdds(
 		case KITEM_LANDMINE:
 		case KITEM_DROPTARGET:
 		case KITEM_BALLHOG:
+		case KITEM_HYUDORO:
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
@@ -740,13 +738,6 @@ INT32 K_KartGetItemOdds(
 			powerItem = true;
 
 			if (spbplace != -1)
-				newodds = 0;
-			break;
-		case KITEM_HYUDORO:
-			cooldownOnStart = true;
-			notNearEnd = true;
-
-			if (hyubgone > 0)
 				newodds = 0;
 			break;
 		default:
