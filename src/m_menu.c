@@ -9668,7 +9668,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 			follower_t fl = followers[setupm_fakefollower];	// shortcut for our sanity
 			// smooth floating, totally not stolen from rocket sneakers.
 			const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-			fixed_t sine = FixedMul(fl.bobamp, FINESINE((((8 * pi * fl.bobspeed) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK));
+			fixed_t sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(8 * pi, fl.bobspeed) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK));
 
 			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, setupm_fakecolor->color, GTC_MENUCACHE);
 			V_DrawFixedPatch((mx+65)*FRACUNIT, ((my+131)*FRACUNIT)-fl.zoffs+sine, fl.scale, flags, patch, colormap);
