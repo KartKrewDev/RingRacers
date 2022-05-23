@@ -228,14 +228,14 @@ void K_HandleFollower(player_t *player)
 	bubble = fl.bubblescale; // 0 if no bubble to spawn.
 
 	// do you like angle maths? I certainly don't...
-	sx = player->mo->x + FixedMul(FixedMul(player->mo->scale, fl.dist), FINECOSINE((an) >> ANGLETOFINESHIFT));
-	sy = player->mo->y + FixedMul(FixedMul(player->mo->scale, fl.dist), FINESINE((an) >> ANGLETOFINESHIFT));
+	sx = player->mo->x + player->mo->momx + FixedMul(FixedMul(player->mo->scale, fl.dist), FINECOSINE((an) >> ANGLETOFINESHIFT));
+	sy = player->mo->y + player->mo->momy + FixedMul(FixedMul(player->mo->scale, fl.dist), FINESINE((an) >> ANGLETOFINESHIFT));
 
 	// interp info helps with stretchy fix
 	deltaz = (player->mo->z - player->mo->old_z);
 
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
-	sz = player->mo->z + FixedMul(player->mo->scale, zoffs) * P_MobjFlip(player->mo);
+	sz = player->mo->z + player->mo->momz + FixedMul(player->mo->scale, zoffs) * P_MobjFlip(player->mo);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 	{
 		sz += FixedMul(fl.height, player->mo->scale);
