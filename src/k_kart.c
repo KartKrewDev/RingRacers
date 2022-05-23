@@ -10215,77 +10215,71 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
+				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
-				// "COOL" timing n shit.
-				if (cmd->turning || player->throwdir)
+				// Uses cmd->turning over steering intentionally.
+#define TRICKTHRESHOLD (KART_FULLTURN/4)
+				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
+					if (cmd->turning > 0)
+					{
+						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
+						player->trickpanel = 2;
+					}
+					else
+					{
+						P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
+						player->trickpanel = 3;
+					}
+				}
+				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				{
+					if (cmd->throwdir > 0) // back trick
+					{
+						if (player->mo->momz * P_MobjFlip(player->mo) > 0)
+						{
+							player->mo->momz = 0;
+						}
+
+						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
+						player->trickpanel = 2;
+					}
+					else if (cmd->throwdir < 0)
+					{
+						boolean relative = true;
+
+						player->mo->momx /= 3;
+						player->mo->momy /= 3;
+
+						if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
+						{
+							relative = false;
+						}
+
+						// Calculate speed boost decay:
+						// Base speed boost duration is 35 tics.
+						// At most, lose 3/4th of your boost.
+						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
+						//CONS_Printf("decay: %d\n", player->trickboostdecay);
+
+						P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+						player->trickpanel = 4;
+					}
+				}
+#undef TRICKTHRESHOLD
+
+				// Finalise everything.
+				if (player->trickpanel != 1) // just changed from 1?
+				{
+					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
+					K_trickPanelTimingVisual(player, momz);
+
 					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
 					{
 						player->karthud[khud_trickcool] = TICRATE;
 					}
-				}
-
-				// Uses cmd->turning over steering intentionally.
-				if (cmd->turning > 0)
-				{
-					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
-					player->trickpanel = 2;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->turning < 0)
-				{
-					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
-					player->trickpanel = 3;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->throwdir > 0)
-				{
-					if (player->mo->momz * P_MobjFlip(player->mo) > 0)
-					{
-						player->mo->momz = 0;
-					}
-
-					P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-					player->trickpanel = 2;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->throwdir < 0)
-				{
-					boolean relative = true;
-
-					player->mo->momx /= 3;
-					player->mo->momy /= 3;
-
-					if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
-					{
-						relative = false;
-					}
-
-					// Calculate speed boost decay:
-					// Base speed boost duration is 35 tics.
-					// At most, lose 3/4th of your boost.
-					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
-					//CONS_Printf("decay: %d\n", player->trickboostdecay);
-
-					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
-					player->trickpanel = 4;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
