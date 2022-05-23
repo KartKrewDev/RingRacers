@@ -45,6 +45,8 @@ typedef struct follower_s
 
 	fixed_t horzlag;		// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
 	fixed_t vertlag;		// Z displacement lag. Default is 6. Must be > 0 because we divide by this number.
+	fixed_t anglelag;		// Angle rotation lag. Default is 8. Must be > 0 because we divide by this number.
+
 	fixed_t bobamp;			// Bob amplitude. Default is 4.
 	tic_t bobspeed;			// Arbitrary modifier for bobbing speed. Default is TICRATE*2 (70)
 

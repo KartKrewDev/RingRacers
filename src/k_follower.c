@@ -191,6 +191,8 @@ void K_HandleFollower(player_t *player)
 	fixed_t bubble; // bubble scale (0 if no bubble)
 	mobj_t *bmobj; // temp bubble mobj
 
+	angle_t destAngle, angleDiff;
+
 	if (player->followerready == false)
 	{
 		// we aren't ready to perform anything follower related yet.
@@ -346,7 +348,27 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
-		player->follower->angle = K_MomentumAngle(player->follower);
+		destAngle = K_MomentumAngle(player->follower);
+
+		// Sal: Turn the follower around when looking backwards.
+		if ( player->cmd.buttons & BT_LOOKBACK )
+		{
+			destAngle += ANGLE_180;
+		}
+
+		// Sal: Smoothly rotate angle to the destination value.
+		angleDiff = destAngle - player->follower->angle;
+
+		if (angleDiff > ANGLE_180)
+		{
+			angleDiff = InvAngle(FixedDiv(InvAngle(angleDiff), fl.anglelag));
+		}
+		else
+		{
+			angleDiff = FixedDiv(angleDiff, fl.anglelag);
+		}
+
+		player->follower->angle += angleDiff;
 
 		// Finally, if the follower has bubbles, move them, set their scale, etc....
 		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!

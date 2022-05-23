@@ -3827,6 +3827,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].zoffs = 32*FRACUNIT;
 	followers[numfollowers].horzlag = 2*FRACUNIT;
 	followers[numfollowers].vertlag = 6*FRACUNIT;
+	followers[numfollowers].anglelag = 8*FRACUNIT;
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
@@ -3885,6 +3886,10 @@ void readfollower(MYFILE *f)
 				followers[numfollowers].horzlag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "VERTLAG"))
+			{
+				followers[numfollowers].vertlag = (fixed_t)get_number(word2);
+			}
+			else if (fastcmp(word, "ANGLELAG"))
 			{
 				followers[numfollowers].vertlag = (fixed_t)get_number(word2);
 			}
@@ -4002,8 +4007,9 @@ if ((signed)followers[numfollowers].field < threshold) \
 	FALLBACK(dist, "DIST", 0, 0);
 	FALLBACK(height, "HEIGHT", 1, 1);
 	FALLBACK(zoffs, "ZOFFS", 0, 0);
-	FALLBACK(horzlag, "HORZLAG", 1, 1);
-	FALLBACK(vertlag, "VERTLAG", 1, 1);
+	FALLBACK(horzlag, "HORZLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(vertlag, "VERTLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(anglelag, "ANGLELAG", FRACUNIT, FRACUNIT);
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
