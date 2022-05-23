@@ -1422,7 +1422,7 @@ static void SendNameAndColor(UINT8 n)
 		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
 
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
-	if (cv_follower[n].value > numfollowers-1 || cv_follower[n].value < -1)
+	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
 		CV_StealthSet(&cv_follower[n], "-1");
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])

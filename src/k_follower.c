@@ -201,7 +201,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// How about making sure our follower exists and is added before trying to spawn it n' all?
-	if (player->followerskin > numfollowers-1 || player->followerskin < -1)
+	if (player->followerskin >= numfollowers || player->followerskin < -1)
 	{
 		//CONS_Printf("Follower skin invlaid. Setting to -1.\n");
 		player->followerskin = -1;

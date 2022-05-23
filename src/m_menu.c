@@ -9683,7 +9683,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 static void M_GetFollowerState(void)
 {
 
-	if (setupm_fakefollower <= -1 || setupm_fakefollower > numfollowers-1)	// yikes, there's none!
+	if (setupm_fakefollower <= -1 || setupm_fakefollower >= numfollowers) // yikes, there's none!
 		return;
 	// ^ we don't actually need to set anything since it won't be displayed anyway.
 
@@ -9831,13 +9831,13 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 	// check followers:
 	if (setupm_fakefollower < -1)
 	{
-		setupm_fakefollower = numfollowers-1;
-		M_GetFollowerState();	// update follower state
+		setupm_fakefollower = numfollowers;
+		M_GetFollowerState(); // update follower state
 	}
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 	{
 		setupm_fakefollower = -1;
-		M_GetFollowerState();	// update follower state
+		M_GetFollowerState(); // update follower state
 	}
 
 	// check color
@@ -9879,7 +9879,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -9922,7 +9922,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -9965,7 +9965,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -10008,7 +10008,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
