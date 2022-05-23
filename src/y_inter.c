@@ -1510,7 +1510,7 @@ void Y_VoteTicker(void)
 
 				if ((playeringame[p] && !players[p].spectator)
 						&& !voteclient.playerinfo[i].delay
-						&& pickedvote == -1 && votes[p] == -1)
+						&& pickedvote == -1 && votes[p] == -1 && menuactive == false)
 				{
 					if (G_PlayerInputDown(i, gc_up, 0))
 					{
