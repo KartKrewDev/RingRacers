@@ -29,6 +29,10 @@ extern consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS];
 // Used to know how to make the options menu behave among other things.
 extern consvar_t cv_currprofile;
 
+// This is used to save the last profile you used on the title screen.
+// that way you can mash n all...
+extern consvar_t cv_ttlprofilen;
+
 // CVar that allows starting as many splitscreens as you want with one device
 // Intended for use with testing
 extern consvar_t cv_splitdevice;

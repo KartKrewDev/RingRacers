@@ -1065,7 +1065,7 @@ void M_StartControlPanel(void)
 	{
 		// we need to do this before setting ApplyProfile otherwise funky things are going to happen.
 		currentMenu = &MAIN_ProfilesDef;
-		optionsmenu.profilen = cv_lastprofile[0].value;
+		optionsmenu.profilen = cv_ttlprofilen.value;
 
 		// options don't need initializing here.
 		PR_ApplyProfile(0, 0);	// apply guest profile to player 0 by default.
@@ -1074,6 +1074,8 @@ void M_StartControlPanel(void)
 		// make sure we don't overstep that.
 		if (optionsmenu.profilen > PR_GetNumProfiles())
 			optionsmenu.profilen = PR_GetNumProfiles();
+		else if (optionsmenu.profilen < 0)
+			optionsmenu.profilen = 0;
 
 		itemOn = 0;
 
@@ -3092,7 +3094,6 @@ void M_SetupDifficultySelect(INT32 choice)
 
 	// setup the difficulty menu and then remove choices depending on choice
 	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
-	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
 
 	PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR;
 	PLAY_RaceDifficulty[1].status = IT_DISABLED;
@@ -3107,15 +3108,17 @@ void M_SetupDifficultySelect(INT32 choice)
 		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
-		itemOn = 5;	// Select cup select by default.
+		PLAY_RaceDifficultyDef.lastOn = 5;	// Select cup select by default.
 
 	}
 	else			// GP
 	{
 		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[4].status = IT_STRING|IT_CALL;	// Level Select (GP)
-		itemOn = 4;	// Select cup select by default.
+		PLAY_RaceDifficultyDef.lastOn = 4;	// Select cup select by default.
 	}
+
+	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
 }
 
 // calls the above but changes the cvar we set
@@ -3683,6 +3686,7 @@ void M_MPHostInit(INT32 choice)
 	(void)choice;
 	mpmenu.modewinextend[0][0] = 1;
 	M_SetupNextMenu(&PLAY_MP_HostDef, true);
+	itemOn = mhost_go;
 }
 
 void M_MPSetupNetgameMapSelect(INT32 choice)
@@ -4087,6 +4091,7 @@ static void M_FirstPickProfile(INT32 c)
 
 		// Tell the game this is the last profile we picked.
 		CV_StealthSetValue(&cv_lastprofile[0], optionsmenu.profilen);
+		CV_StealthSetValue(&cv_ttlprofilen, optionsmenu.profilen);
 
 		// Save em!
 		PR_SaveProfiles();
@@ -4972,6 +4977,7 @@ static void M_EraseProfileResponse(INT32 choice)
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
 		{
 			CV_StealthSetValue(&cv_currprofile, -1);
+			CV_StealthSetValue(&cv_ttlprofilen, 0);
 			F_StartIntro();
 			M_ClearMenus(true);
 		}

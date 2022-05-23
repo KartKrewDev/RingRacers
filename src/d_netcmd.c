@@ -317,6 +317,9 @@ consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
 // You choose this profile when starting the game, this will also set lastprofile[0]
 consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofile_cons_t, NULL);
 
+// This one is used exclusively for the titlescreen
+consvar_t cv_ttlprofilen = CVAR_INIT ("ttlprofilen", "0", CV_SAVE, lastprofile_cons_t, NULL);
+
 // Cvar for using splitscreen with 1 device.
 consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_HIDDEN, CV_OnOff, NULL);
 
@@ -889,6 +892,7 @@ void D_RegisterClientCommands(void)
 	}
 
 	CV_RegisterVar(&cv_currprofile);
+	CV_RegisterVar(&cv_ttlprofilen);
 	CV_RegisterVar(&cv_splitdevice);
 
 	// preferred number of players
@@ -1316,7 +1320,7 @@ UINT8 CanChangeSkin(INT32 playernum)
 	if (cv_restrictskinchange.value)
 	{
 		UINT8 i;
-		
+
 		// Can change skin during initial countdown.
 		if (leveltime < starttime)
 			return true;
@@ -1324,23 +1328,23 @@ UINT8 CanChangeSkin(INT32 playernum)
 		// Not in game, so you can change
 		if (players[playernum].spectator || players[playernum].playerstate == PST_DEAD || players[playernum].playerstate == PST_REBORN)
 			return true;
-		
+
 		// Check for freeeplay
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (i == consoleplayer)
 				continue;
-			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)	
+			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
 				return false;	// Not freeplay!
 		}
-		
+
 		// if we've gotten here, then it's freeplay, and switching anytime is fair game.
 		return true;
 	}
 	// if restrictskinchange is off and we're trying to change skins, don't allow changing skins while moving after the race has started.
 	else if (gamestate == GS_LEVEL && leveltime >= starttime)
 		return (!P_PlayerMoving(playernum));
-		
+
 
 	return true;
 }

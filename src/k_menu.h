@@ -192,6 +192,15 @@ extern menu_t PLAY_TimeAttackDef;
 extern menuitem_t PLAY_MP_OptSelect[];
 extern menu_t PLAY_MP_OptSelectDef;
 
+typedef enum
+{
+	mhost_sname = 0,
+	mhost_public,
+	mhost_maxp,
+	mhost_gametype,
+	mhost_go,
+} mhost_e;
+
 extern menuitem_t PLAY_MP_Host[];
 extern menu_t PLAY_MP_HostDef;
 
