@@ -191,7 +191,8 @@ void K_HandleFollower(player_t *player)
 	fixed_t bubble; // bubble scale (0 if no bubble)
 	mobj_t *bmobj; // temp bubble mobj
 
-	angle_t destAngle, angleDiff;
+	angle_t destAngle;
+	INT32 angleDiff;
 
 	if (player->followerready == false)
 	{
@@ -322,7 +323,6 @@ void K_HandleFollower(player_t *player)
 		player->follower->momy = FixedDiv(sy - player->follower->y, fl.horzlag);
 		player->follower->z += FixedDiv(deltaz, fl.vertlag);
 		player->follower->momz = FixedDiv(sz - player->follower->z, fl.vertlag);
-		player->follower->angle = player->mo->angle;
 
 		if (player->mo->colorized)
 		{
@@ -357,18 +357,12 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// Sal: Smoothly rotate angle to the destination value.
-		angleDiff = destAngle - player->follower->angle;
+		angleDiff = AngleDeltaSigned(destAngle, player->follower->angle);
 
-		if (angleDiff > ANGLE_180)
+		if (angleDiff != 0)
 		{
-			angleDiff = InvAngle(FixedDiv(InvAngle(angleDiff), fl.anglelag));
+			player->follower->angle += FixedDiv(angleDiff, fl.anglelag);
 		}
-		else
-		{
-			angleDiff = FixedDiv(angleDiff, fl.anglelag);
-		}
-
-		player->follower->angle += angleDiff;
 
 		// Finally, if the follower has bubbles, move them, set their scale, etc....
 		// This is what I meant earlier by it being easier, now we can just use this weird lil loop to get the job done!
