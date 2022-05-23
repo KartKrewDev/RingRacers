@@ -2908,6 +2908,7 @@ boolean K_TripwirePassConditions(player_t *player)
 			player->sneakertimer ||
 			player->growshrinktimer > 0 ||
 			player->flamedash ||
+			player->hyudorotimer ||
 			player->speed > 2 * K_GetKartSpeed(player, false)
 	)
 		return true;
