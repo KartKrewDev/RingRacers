@@ -37,47 +37,15 @@ K_ChangePlayerItem
 #define hyudoro_itemtype(o) ((o)->movefactor)
 #define hyudoro_itemcount(o) ((o)->movecount)
 #define hyudoro_hover_stack(o) ((o)->threshold)
-
-static mobj_t *
-hyudoro_next (mobj_t *o)
-{
-	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
-	I_Assert(o->tracer != NULL && P_MobjWasRemoved(o->tracer) == false);
-
-	return o->tracer;
-}
-
+#define hyudoro_next(o) ((o)->tracer)
 #define hyudoro_stackpos(o) ((o)->reactiontime)
 
-// these next two functions cannot be combined
-static mobj_t *
-hyudoro_center (mobj_t *o)
-{
-	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
-	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
-
-	return o->target;
-}
-
-static mobj_t *
-hyudoro_target (mobj_t *o)
-{
-	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
-	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
-
-	return o->target;
-}
+// cannot be combined
+#define hyudoro_center(o) ((o)->target)
+#define hyudoro_target(o) ((o)->target)
 
 #define hyudoro_center_max_radius(o) ((o)->threshold)
-
-static mobj_t *
-hyudoro_center_master (mobj_t *o)
-{
-	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
-	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
-
-	return o->target;
-}
+#define hyudoro_center_master(o) ((o)->target)
 
 static angle_t
 trace_angle (mobj_t *hyu)
@@ -125,6 +93,8 @@ static player_t *
 get_hyudoro_target_player (mobj_t *hyu)
 {
 	mobj_t *target = hyudoro_target(hyu);
+
+	I_Assert(target != NULL && P_MobjWasRemoved(target) == false);
 
 	return target ? target->player : NULL;
 }
@@ -220,6 +190,8 @@ move_to_player (mobj_t *hyu)
 
 	angle_t angle;
 
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+
 	if (target == NULL || P_MobjWasRemoved(target) == true)
 		return;
 
@@ -238,6 +210,10 @@ deliver_item (mobj_t *hyu)
 {
 	mobj_t *target = hyudoro_target(hyu);
 	player_t *player = target->player;
+
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+	I_Assert(target != NULL && P_MobjWasRemoved(target) == false);
+	I_Assert(player != NULL);
 
 	P_SetTarget(&hyudoro_target(hyu), NULL);
 
@@ -267,6 +243,8 @@ append_hyudoro
 		mobj_t * hyu)
 {
 	INT32 lastpos = 0;
+
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
 
 	while (is_hyudoro(*head))
 	{
@@ -314,7 +292,11 @@ hyudoro_patrol_hit_player
 
 	mobj_t *center = hyudoro_center(hyu);
 
-	if (!player)
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+	I_Assert(toucher != NULL && P_MobjWasRemoved(toucher) == false);
+	I_Assert(center != NULL && P_MobjWasRemoved(center) == false);
+
+	if (player == NULL)
 		return false;
 
 	// Cannot hit its master
@@ -356,6 +338,8 @@ award_immediately (mobj_t *hyu)
 {
 	player_t *player = get_hyudoro_target_player(hyu);
 
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+
 	if (player)
 	{
 		if (player->itemamount &&
@@ -380,6 +364,9 @@ hyudoro_return_hit_player
 (		mobj_t * hyu,
 		mobj_t * toucher)
 {
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+	I_Assert(toucher != NULL && P_MobjWasRemoved(toucher) == false);
+
 	if (toucher != hyudoro_target(hyu))
 		return false;
 
@@ -399,7 +386,9 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 {
 	player_t *player = get_hyudoro_target_player(hyu);
 
-	if (!player)
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+
+	if (player == NULL)
 		return false;
 
 	// First in stack goes first
@@ -453,6 +442,8 @@ Obj_HyudoroDeploy (mobj_t *master)
 void
 Obj_HyudoroThink (mobj_t *hyu)
 {
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+
 	// Might get set from clipping slopes
 	hyu->momz = 0;
 
