@@ -3891,7 +3891,7 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "ANGLELAG"))
 			{
-				followers[numfollowers].vertlag = (fixed_t)get_number(word2);
+				followers[numfollowers].anglelag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BOBSPEED"))
 			{
