@@ -2175,6 +2175,34 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	}
 }
 
+static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
+{
+	INT32 i;
+
+	// While we're here, read follower values.
+	p->followern = cv_follower[num].value;
+	p->followercolor = cv_followercolor[num].value;
+
+	// Now position the grid for skin
+	for (i = 0; i < numskins; i++)
+	{
+		if (!(strcmp(cv_skin[num].zstring, skins[i].name)))
+		{
+			INT32 alt = 0;	// Hey it's my character's name!
+			p->gridx = skins[i].kartspeed-1;
+			p->gridy = skins[i].kartweight-1;
+
+			// Now this put our cursor on the good alt
+			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+				alt++;
+
+			p->clonenum = alt;
+			p->color = cv_playercolor[num].value;
+			return;	// we're done here
+		}
+	}
+}
+
 
 void M_CharacterSelectInit(void)
 {
@@ -2250,13 +2278,15 @@ void M_CharacterSelectInit(void)
 					{
 						setup_player[j].profilen = optionsmenu.profilen;
 						PR_ApplyProfileLight(setup_player[j].profilen, 0);
+						M_SetupProfileGridPos(&setup_player[j]);
 					}
 					else	// gamestate != GS_MENU, in that case, assume this is whatever profile we chose to play with.
+					{
 						setup_player[j].profilen = cv_lastprofile[j].value;
-						// Don't reapply the profile here, it was already applied.
+						M_SetupMidGameGridPos(&setup_player[j], j);
+					}
 
-
-					M_SetupProfileGridPos(&setup_player[j]);
+					// Don't reapply the profile here, it was already applied.
 					setup_player[j].mdepth = CSSTEP_CHARS;
 				}
 			}
