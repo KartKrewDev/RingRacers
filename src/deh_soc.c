@@ -3825,7 +3825,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].dist = 32*FRACUNIT; // changed from 16 to 32 to better account for ogl models
 	followers[numfollowers].height = 16*FRACUNIT;
 	followers[numfollowers].zoffs = 32*FRACUNIT;
-	followers[numfollowers].horzlag = 2*FRACUNIT;
+	followers[numfollowers].horzlag = 3*FRACUNIT;
 	followers[numfollowers].vertlag = 6*FRACUNIT;
 	followers[numfollowers].anglelag = 8*FRACUNIT;
 	followers[numfollowers].bobspeed = TICRATE*2;

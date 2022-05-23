@@ -43,7 +43,7 @@ typedef struct follower_s
 
 	// movement options
 
-	fixed_t horzlag;		// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
+	fixed_t horzlag;		// Lag for X/Y displacement. Default is 3. Must be > 0 because we divide by this number.
 	fixed_t vertlag;		// Z displacement lag. Default is 6. Must be > 0 because we divide by this number.
 	fixed_t anglelag;		// Angle rotation lag. Default is 8. Must be > 0 because we divide by this number.
 
