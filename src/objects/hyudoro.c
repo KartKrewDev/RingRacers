@@ -291,14 +291,14 @@ hyudoro_patrol_hit_player
 
 	K_AddHitLag(toucher, TICRATE/2, true);
 
-	player->hyudorotimer = hyudorotime;
-	player->stealingtimer = hyudorotime;
-
 	hyudoro_mode(hyu) = HYU_RETURN;
 	hyudoro_itemtype(hyu) = player->itemtype;
 	hyudoro_itemcount(hyu) = player->itemamount;
 
-	K_ChangePlayerItem(player, KITEM_NONE, 0);
+	K_StripItems(player);
+
+	player->hyudorotimer = hyudorotime;
+	player->stealingtimer = hyudorotime;
 
 	P_SetTarget(&hyudoro_target(hyu),
 			hyudoro_center_master(center));
