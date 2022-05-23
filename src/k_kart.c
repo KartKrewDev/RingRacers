@@ -7566,7 +7566,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->justDI--;
 
 		// return turning if player is fully actionable, no matter when!
-		if (!player->spinouttimer && player->mo->state != &states[S_KART_SPINOUT])
+		if (!P_PlayerInPain(player))
 			player->justDI = 0;
 	}
 
