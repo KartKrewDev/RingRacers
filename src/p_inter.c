@@ -1767,8 +1767,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	player->carry = CR_NONE;
 
-	player->mo->color = player->skincolor;
-	player->mo->colorized = false;
+	K_KartResetPlayerColor(player);
 
 	P_ResetPlayer(player);
 

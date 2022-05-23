@@ -27,6 +27,9 @@
 #include "p_local.h"
 #include "dehacked.h" // get_number (for thok)
 #include "m_cond.h"
+#if 0
+#include "k_kart.h" // K_KartResetPlayerColor
+#endif
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #endif
@@ -285,7 +288,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
 	skin_t *skin = &skins[skinnum];
-	UINT16 newcolor = 0;
+	//UINT16 newcolor = 0;
 	//UINT8 i;
 
 	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum)) // Make sure it exists!
@@ -311,6 +314,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 			}
 
 			player->skincolor = newcolor = skin->prefcolor;
+			K_KartResetPlayerColor(player);
 		}
 #endif
 
@@ -323,12 +327,6 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		if (player->mo)
 		{
 			player->mo->skin = skin;
-
-			if (newcolor)
-			{
-				player->mo->color = newcolor;
-			}
-
 			P_SetScale(player->mo, player->mo->scale);
 			P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
 		}
