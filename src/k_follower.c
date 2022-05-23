@@ -7,6 +7,7 @@
 #include "doomdef.h"
 #include "g_game.h"
 #include "g_demo.h"
+#include "r_main.h"
 #include "r_skins.h"
 #include "p_local.h"
 #include "p_mobj.h"
@@ -185,7 +186,9 @@ void K_HandleFollower(player_t *player)
 	follower_t fl;
 	angle_t an;
 	fixed_t zoffs;
+	fixed_t ourheight;
 	fixed_t sx, sy, sz, deltaz;
+	fixed_t fh = INT32_MIN, ch = INT32_MAX;
 	UINT16 color;
 
 	fixed_t bubble; // bubble scale (0 if no bubble)
@@ -235,17 +238,39 @@ void K_HandleFollower(player_t *player)
 	deltaz = (player->mo->z - player->mo->old_z);
 
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
-	sz = player->mo->z + player->mo->momz + FixedMul(player->mo->scale, zoffs) * P_MobjFlip(player->mo);
+	sz = player->mo->z + player->mo->momz + FixedMul(player->mo->scale, zoffs * P_MobjFlip(player->mo));
+	ourheight = FixedMul(fl.height, player->mo->scale);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 	{
-		sz += FixedMul(fl.height, player->mo->scale);
+		sz += ourheight;
 	}
 
-	// finally, add a cool floating effect to the z height.
-	// not stolen from k_kart I swear!!
+	fh = player->mo->floorz;
+	ch = player->mo->ceilingz - ourheight;
+
+	switch (fl.mode)
 	{
-		fixed_t sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
-		sz += FixedMul(player->mo->scale, sine) * P_MobjFlip(player->mo);
+		case FOLLOWERMODE_GROUND:
+		{
+			if (player->mo->eflags & MFE_VERTICALFLIP)
+			{
+				sz = ch;
+			}
+			else
+			{
+				sz = fh;
+			}
+			break;
+		}
+		case FOLLOWERMODE_FLOAT:
+		default:
+		{
+			// finally, add a cool floating effect to the z height.
+			// not stolen from k_kart I swear!!
+			fixed_t sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
+			sz += FixedMul(player->mo->scale, sine) * P_MobjFlip(player->mo);
+			break;
+		}
 	}
 
 	// Set follower colour
@@ -317,11 +342,39 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
-		// 02/09/2021: cast lag to int32 otherwise funny things happen since it was changed to uint32 in the struct
 		player->follower->momx = FixedDiv(sx - player->follower->x, fl.horzlag);
 		player->follower->momy = FixedDiv(sy - player->follower->y, fl.horzlag);
+
 		player->follower->z += FixedDiv(deltaz, fl.vertlag);
-		player->follower->momz = FixedDiv(sz - player->follower->z, fl.vertlag);
+
+		if (fl.mode == FOLLOWERMODE_GROUND)
+		{
+			sector_t *sec = R_PointInSubsector(sx, sy)->sector;
+
+			fh = min(fh, P_GetFloorZ(player->follower, sec, sx, sy, NULL));
+			ch = max(ch, P_GetCeilingZ(player->follower, sec, sx, sy, NULL) - ourheight);
+
+			if (P_IsObjectOnGround(player->mo) == false)
+			{
+				// In the air, match their momentum.
+				player->follower->momz = player->mo->momz;
+			}
+			else
+			{
+				fixed_t fg = P_GetMobjGravity(player->mo);
+				fixed_t fz = P_GetMobjZMovement(player->follower);
+
+				player->follower->momz = fz;
+
+				// Player is on the ground ... try to get the follower
+				// back to the ground also if it is above it.
+				player->follower->momz += FixedDiv(fg * 6, fl.vertlag); // Scaled against the default value of vertlag
+			}
+		}
+		else
+		{
+			player->follower->momz = FixedDiv(sz - player->follower->z, fl.vertlag);
+		}
 
 		if (player->mo->colorized)
 		{
@@ -347,7 +400,15 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// if we're moving let's make the angle the direction we're moving towards. This is to avoid drifting / reverse looking awkward.
-		destAngle = K_MomentumAngle(player->follower);
+		if (FixedHypot(player->follower->momx, player->follower->momy) >= player->mo->scale)
+		{
+			destAngle = R_PointToAngle2(0, 0, player->follower->momx, player->follower->momy);
+		}
+		else
+		{
+			// Face the player's angle when standing still.
+			destAngle = player->mo->angle;
+		}
 
 		// Sal: Turn the follower around when looking backwards.
 		if ( player->cmd.buttons & BT_LOOKBACK )
@@ -361,6 +422,35 @@ void K_HandleFollower(player_t *player)
 		if (angleDiff != 0)
 		{
 			player->follower->angle += FixedDiv(angleDiff, fl.anglelag);
+		}
+
+		// Ground follower slope rotation
+		if (fl.mode == FOLLOWERMODE_GROUND)
+		{
+			if (player->follower->z <= fh)
+			{
+				player->follower->z = fh;
+				if (player->follower->momz < 0)
+				{
+					player->follower->momz = 0;
+				}
+			}
+			else if (player->follower->z >= ch)
+			{
+				player->follower->z = ch;
+				if (player->follower->momz > 0)
+				{
+					player->follower->momz = 0;
+				}
+			}
+
+			K_CalculateBananaSlope(
+				player->follower,
+				player->follower->x, player->follower->y, player->follower->z,
+				player->follower->radius, ourheight,
+				(player->mo->eflags & MFE_VERTICALFLIP),
+				false
+			);
 		}
 
 		// Finally, if the follower has bubbles, move them, set their scale, etc....

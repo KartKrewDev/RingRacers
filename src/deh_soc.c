@@ -3819,6 +3819,7 @@ void readfollower(MYFILE *f)
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 
 	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
 	followers[numfollowers].scale = FRACUNIT;
 	followers[numfollowers].bubblescale = 0; // No bubble by default
 	followers[numfollowers].atangle = FixedAngle(230 * FRACUNIT);
@@ -3864,6 +3865,18 @@ void readfollower(MYFILE *f)
 			{
 				strcpy(followers[numfollowers].name, word2);
 				nameset = true;
+			}
+			else if (fastcmp(word, "MODE"))
+			{
+				if (word2)
+					strupr(word2);
+
+				if (fastcmp(word2, "FLOAT") || fastcmp(word2, "DEFAULT"))
+					followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+				else if (fastcmp(word2, "GROUND"))
+					followers[numfollowers].mode = FOLLOWERMODE_GROUND;
+				else
+					deh_warning("Follower %d: unknown follower mode '%s'", numfollowers, word2);
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
@@ -3997,11 +4010,18 @@ void readfollower(MYFILE *f)
 
 	// fallbacks for variables
 	// Print a warning if the variable is on a weird value and set it back to the minimum available if that's the case.
+
+	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
+	{
+		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+	}
+
 #define FALLBACK(field, field2, threshold, set) \
 if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, set, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
@@ -4016,14 +4036,14 @@ if ((signed)followers[numfollowers].field < threshold) \
 	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
+#undef FALLBACK
+
 	// Special case for color I suppose
 	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
 	{
 		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
 	}
-
-#undef FALLBACK
 
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.

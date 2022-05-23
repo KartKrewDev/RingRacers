@@ -3347,7 +3347,7 @@ fixed_t K_3dKartMovement(player_t *player)
 
 angle_t K_MomentumAngle(mobj_t *mo)
 {
-	if (mo->momx || mo->momy)
+	if (FixedHypot(mo->momx, mo->momy) >= mo->scale)
 	{
 		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
 	}
@@ -6244,7 +6244,7 @@ static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, 
 	return P_GetZAt(slope, testx, testy, z);
 }
 
-static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
+void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
 {
 	fixed_t newz;
 	sector_t *sec;

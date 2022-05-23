@@ -22,6 +22,13 @@
 
 extern CV_PossibleValue_t Followercolor_cons_t[]; // follower colours table, not a duplicate because of the "Match" option.
 
+typedef enum
+{
+	FOLLOWERMODE_FLOAT,		// Default behavior, floats in the position you set it to.
+	FOLLOWERMODE_GROUND,	// Snaps to the ground & rotates with slopes.
+	FOLLOWERMODE__MAX
+} followermode_t;
+
 //
 // We'll define these here because they're really just a mobj that'll follow some rules behind a player
 //
@@ -31,6 +38,7 @@ typedef struct follower_s
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
 
 	skincolornum_t defaultcolor;	// default color for menus.
+	followermode_t mode;			// Follower behavior modifier.
 
 	fixed_t scale;			// Scale relative to the player's.
 	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
