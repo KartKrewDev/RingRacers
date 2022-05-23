@@ -37,20 +37,54 @@ K_ChangePlayerItem
 #define hyudoro_itemtype(o) ((o)->movefactor)
 #define hyudoro_itemcount(o) ((o)->movecount)
 #define hyudoro_hover_stack(o) ((o)->threshold)
-#define hyudoro_next(o) ((o)->tracer)
+
+static mobj_t *
+hyudoro_next (mobj_t *o)
+{
+	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
+	I_Assert(o->tracer != NULL && P_MobjWasRemoved(o->tracer) == false);
+
+	return o->tracer;
+}
+
 #define hyudoro_stackpos(o) ((o)->reactiontime)
 
-// cannot be combined
-#define hyudoro_center(o) ((o)->target)
-#define hyudoro_target(o) ((o)->target)
+// these next two functions cannot be combined
+static mobj_t *
+hyudoro_center (mobj_t *o)
+{
+	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
+	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
+
+	return o->target;
+}
+
+static mobj_t *
+hyudoro_target (mobj_t *o)
+{
+	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
+	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
+
+	return o->target;
+}
 
 #define hyudoro_center_max_radius(o) ((o)->threshold)
-#define hyudoro_center_master(o) ((o)->target)
+
+static mobj_t *
+hyudoro_center_master (mobj_t *o)
+{
+	I_Assert(o != NULL && P_MobjWasRemoved(o) == false);
+	I_Assert(o->target != NULL && P_MobjWasRemoved(o->target) == false);
+
+	return o->target;
+}
 
 static angle_t
 trace_angle (mobj_t *hyu)
 {
 	mobj_t *center = hyu->target;
+
+	I_Assert(center != NULL && P_MobjWasRemoved(center) == false);
 
 	if (hyu->x != center->x || hyu->y != center->y)
 	{
@@ -66,19 +100,23 @@ get_look_angle (mobj_t *thing)
 {
 	player_t *player = thing->player;
 
+	I_Assert(player != NULL);
+
 	return player ? player->angleturn : thing->angle;
 }
 
 static boolean
 is_hyudoro (mobj_t *thing)
 {
-	return thing && thing->type == MT_HYUDORO;
+	return thing != NULL && P_MobjWasRemoved(thing) == false && thing->type == MT_HYUDORO;
 }
 
 static mobj_t *
 get_hyudoro_master (mobj_t *hyu)
 {
 	mobj_t *center = hyudoro_center(hyu);
+
+	I_Assert(center != NULL && P_MobjWasRemoved(center) == false);
 
 	return center ? hyudoro_center_master(center) : NULL;
 }
@@ -97,6 +135,8 @@ sine_bob
 		angle_t a,
 		fixed_t sineofs)
 {
+	I_Assert(hyu != NULL && P_MobjWasRemoved(hyu) == false);
+
 	hyu->sprzoff = FixedMul(hyu->height,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT));
 }
@@ -180,7 +220,7 @@ move_to_player (mobj_t *hyu)
 
 	angle_t angle;
 
-	if (!target)
+	if (target == NULL || P_MobjWasRemoved(target) == true)
 		return;
 
 	angle = R_PointToAngle2(
