@@ -672,12 +672,11 @@ void K_RunBattleOvertime(void)
 
 	if (battleovertime.radius > 0)
 	{
-		const fixed_t pi = (22 * FRACUNIT) / 7; // loose approximation, this doesn't need to be incredibly precise
 		const INT32 orbs = 32;
 		const angle_t angoff = ANGLE_MAX / orbs;
 		const UINT8 spriteSpacing = 128;
 
-		fixed_t circumference = FixedMul(pi, battleovertime.radius * 2);
+		fixed_t circumference = FixedMul(M_PI_FIXED, battleovertime.radius * 2);
 		fixed_t scale = max(circumference / spriteSpacing / orbs, mapobjectscale);
 
 		fixed_t size = FixedMul(mobjinfo[MT_OVERTIME_PARTICLE].radius, scale);
