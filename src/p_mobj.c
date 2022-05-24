@@ -8597,8 +8597,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (mobj->extravalue1)
 			{
 				const INT32 speed = 6*TICRATE; // longer is slower
-				const fixed_t pi = 22*FRACUNIT/7; // Inaccurate, but is close enough for our usage
-				fixed_t sine = FINESINE((((2*pi*speed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK) * flip;
+				fixed_t sine = FINESINE((((M_TAU_FIXED * speed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK) * flip;
 
 				// Flying capsules are flipped upside-down, like S3K
 				flip = -flip;
