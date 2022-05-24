@@ -729,6 +729,8 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 		}
 
 		// set openrange, opentop, openbottom
+		tmx = tb->compareThing->x;
+		tmy = tb->compareThing->y;
 		P_LineOpening(line, tb->compareThing);
 		maxstep = P_GetThingStepUp(tb->compareThing);
 
