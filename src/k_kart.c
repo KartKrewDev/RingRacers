@@ -7929,6 +7929,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
 						{
+							if (P_TraceBlockingLines(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+							{
+								// Save sight checks when all of the other checks pass, so we only do it if we have to
+								continue;
+							}
+
 							bestwaypoint = waypoint->nextwaypoints[i];
 
 							if (angledelta < nextbestdelta)
@@ -7975,6 +7981,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta && momdelta < nextbestmomdelta)
 						{
+							if (P_TraceBlockingLines(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
+							{
+								// Save sight checks when all of the other checks pass, so we only do it if we have to
+								continue;
+							}
+
 							bestwaypoint = waypoint->prevwaypoints[i];
 
 							nextbestdelta = angledelta;

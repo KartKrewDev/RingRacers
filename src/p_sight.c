@@ -578,6 +578,15 @@ static boolean P_CrossBlockingSubsector(size_t num, register traceblocking_t *tb
 			// This line will always block us
 			return false;
 		}
+
+		if (tb->compareThing->player != NULL)
+		{
+			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
+			{
+				// Can't go through trip wire.
+				return false;
+			}
+		}
 	}
 
 	// passed the subsector ok
@@ -728,6 +737,15 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 			return false;
 		}
 
+		if (tb->compareThing->player != NULL)
+		{
+			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
+			{
+				// Can't go through trip wire.
+				return false;
+			}
+		}
+
 		// set openrange, opentop, openbottom
 		tmx = tb->compareThing->x;
 		tmy = tb->compareThing->y;
@@ -742,10 +760,13 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 			return false;
 		}
 
-		// Treat damage sectors like walls
 		if (tb->compareThing->player != NULL)
 		{
-			boolean alreadyHates = K_BotHatesThisSector(tb->compareThing->player, tb->compareThing->subsector->sector, tb->compareThing->x, tb->compareThing->y);
+			// Treat damage sectors like walls
+			boolean alreadyHates = K_BotHatesThisSector(
+				tb->compareThing->player, tb->compareThing->subsector->sector,
+				tb->compareThing->x, tb->compareThing->y
+			);
 
 			if (alreadyHates == false)
 			{
@@ -755,17 +776,15 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 				P_ClosestPointOnLine(tb->compareThing->x, tb->compareThing->y, line, &pos);
 				lineside = P_PointOnLineSide(tb->compareThing->x, tb->compareThing->y, line);
 
-				if (K_BotHatesThisSector(tb->compareThing->player, ((lineside == 1) ? line->frontsector : line->backsector), pos.x, pos.y))
+				if (K_BotHatesThisSector(
+						tb->compareThing->player,
+						((lineside == 1) ? line->frontsector : line->backsector),
+						pos.x, pos.y
+					))
 				{
 					// This line does not block us, but we don't want to be in it.
 					return false;
 				}
-			}
-
-			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
-			{
-				// Can't go through trip wire.
-				return false;
 			}
 		}
 	}
