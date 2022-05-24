@@ -2337,6 +2337,11 @@ void P_UpdateSegLightOffset(seg_t *li)
 #endif
 }
 
+boolean P_ApplySegLightOffset(UINT8 baselightlevel)
+{
+	return (baselightlevel < 255 && baselightlevel > 0);
+}
+
 static void P_InitializeSeg(seg_t *seg)
 {
 	if (seg->linedef)
