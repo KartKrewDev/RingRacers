@@ -2998,7 +2998,7 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 		clip > -(player->mo->height / 2) &&
 		span > player->mo->height &&
 		player->speed / 5 > abs(player->mo->momz) &&
-		player->speed > K_GetKartSpeed(player, false) &&
+		player->speed > K_GetKartSpeed(player, false, false) &&
 		K_WaterRun(player) &&
 		(rover->flags & FF_SWIMMABLE);
 }

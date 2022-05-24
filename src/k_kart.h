@@ -124,7 +124,7 @@ INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
 fixed_t K_GrowShrinkSpeedMul(player_t *player);
 fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed);
-fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower);
+fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberbanding);
 fixed_t K_GetKartAccel(player_t *player);
 UINT16 K_GetKartFlashing(player_t *player);
 boolean K_PlayerShrinkCheat(player_t *player);
