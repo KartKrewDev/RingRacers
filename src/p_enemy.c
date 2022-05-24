@@ -4018,7 +4018,7 @@ void A_AttractChase(mobj_t *actor)
 			{
 				fixed_t dist = (4*actor->target->scale) * (16 - actor->extravalue1);
 
-				P_SetScale(actor, (actor->destscale = actor->target->scale - ((actor->target->scale/14) * actor->extravalue1)));
+				P_SetScale(actor, (actor->destscale = mapobjectscale - ((mapobjectscale/14) * actor->extravalue1)));
 				actor->z = actor->target->z;
 				K_MatchGenericExtraFlags(actor, actor->target);
 				P_MoveOrigin(actor,
