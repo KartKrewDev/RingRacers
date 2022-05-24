@@ -1939,7 +1939,7 @@ static void P_3dMovement(player_t *player)
 			// Make rubberbanding bots slow down faster
 			if (K_PlayerUsesBotMovement(player))
 			{
-				fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+				fixed_t rubberband = player->botvars.rubberband - FRACUNIT;
 
 				if (rubberband > 0)
 				{

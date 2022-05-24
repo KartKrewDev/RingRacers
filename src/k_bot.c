@@ -489,7 +489,6 @@ fixed_t K_BotRubberband(player_t *player)
 	fixed_t rubberband = FRACUNIT;
 	fixed_t rubbermax, rubbermin;
 	player_t *firstplace = NULL;
-	line_t *botController = NULL;
 	UINT8 i;
 
 	if (player->exiting)
@@ -498,14 +497,17 @@ fixed_t K_BotRubberband(player_t *player)
 		return FRACUNIT;
 	}
 
-	botController = K_FindBotController(player->mo);
-
-	if (botController != NULL)
+	if (player->botvars.controller != UINT16_MAX)
 	{
-		// No Climb Flag: Disable rubberbanding
-		if (botController->flags & ML_NOCLIMB)
+		const line_t *botController = &lines[player->botvars.controller];
+
+		if (botController != NULL)
 		{
-			return FRACUNIT;
+			// No Climb Flag: Disable rubberbanding
+			if (botController->flags & ML_NOCLIMB)
+			{
+				return FRACUNIT;
+			}
 		}
 	}
 
@@ -569,6 +571,22 @@ fixed_t K_BotRubberband(player_t *player)
 	}
 
 	return rubberband;
+}
+
+/*--------------------------------------------------
+	fixed_t K_UpdateRubberband(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_UpdateRubberband(player_t *player)
+{
+	fixed_t dest = K_BotRubberband(player);
+	fixed_t ret = player->botvars.rubberband;
+
+	// Ease into the new value.
+	ret += (dest - player->botvars.rubberband) >> 3;
+
+	return ret;
 }
 
 /*--------------------------------------------------
@@ -1269,6 +1287,16 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 	botController = K_FindBotController(player->mo);
+	if (botController == NULL)
+	{
+		player->botvars.controller = UINT16_MAX;
+	}
+	else
+	{
+		player->botvars.controller = lines - botController;
+	}
+
+	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	if (player->trickpanel != 0)
 	{

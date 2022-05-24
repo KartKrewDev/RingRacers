@@ -88,6 +88,22 @@ fixed_t K_BotRubberband(player_t *player);
 
 
 /*--------------------------------------------------
+	fixed_t K_UpdateRubberband(player_t *player);
+
+		Eases the current rubberbanding value to the
+		new one, calculated by K_BotRubberband.
+
+	Input Arguments:-
+		player - Player to update.
+
+	Return:-
+		The new rubberband multiplier, in fixed point scale.
+--------------------------------------------------*/
+
+fixed_t K_UpdateRubberband(player_t *player);
+
+
+/*--------------------------------------------------
 	fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy);
 
 		Gets the distance of a point away from a line.

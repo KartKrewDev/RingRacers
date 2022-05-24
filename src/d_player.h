@@ -290,6 +290,9 @@ typedef struct botvars_s
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
+	fixed_t rubberband; // Bot rubberband value
+	UINT16 controller; // Special bot controller linedef ID
+
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
 

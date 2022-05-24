@@ -3190,7 +3190,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 
 	if (dorubberband == true && K_PlayerUsesBotMovement(player) == true)
 	{
-		finalspeed = FixedMul(finalspeed, K_BotRubberband(player));
+		finalspeed = FixedMul(finalspeed, player->botvars.rubberband);
 	}
 
 	return finalspeed;
