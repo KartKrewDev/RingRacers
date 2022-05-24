@@ -521,7 +521,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 
-		players[i].justDI = (boolean)READUINT8(save_p);
+		players[i].justDI = READUINT8(save_p);
 		players[i].flipDI = (boolean)READUINT8(save_p);
 
 		players[i].drift = READSINT8(save_p);
