@@ -1278,6 +1278,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
+	if (botController != NULL && (botController->flags & ML_EFFECT2))
+	{
+		// Disable bot controls entirely.
+		return;
+	}
+
 	destangle = player->mo->angle;
 
 	if (botController != NULL && (botController->flags & ML_EFFECT1))
