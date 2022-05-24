@@ -1484,6 +1484,43 @@ static int lib_pMoveOrigin(lua_State *L)
 	return 2;
 }
 
+static int lib_pSetAngle(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitAngle(thing, newValue);
+	return 0;
+}
+
+static int lib_pSetPitch(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitPitch(thing, newValue);
+	return 0;
+}
+
+static int lib_pSetRoll(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_InitRoll(thing, newValue);
+	return 0;
+}
+
 static int lib_pSlideMove(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3904,6 +3941,9 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
+	{"P_SetAngle",lib_pSetAngle},
+	{"P_SetPitch",lib_pSetPitch},
+	{"P_SetRoll",lib_pSetRoll},
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
