@@ -1315,7 +1315,7 @@ static boolean M_MenuConfirmPressed(UINT8 pid)
 // Returns true if we press the Cancel button
 static boolean M_MenuBackPressed(UINT8 pid)
 {
-	 return M_MenuButtonPressed(pid, MBT_X);
+	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
 // Retrurns true if we press the tertiary option button (C)
@@ -2503,6 +2503,11 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 				menucmd[i].buttonsHeld |= MBT_X;
 			}
 
+			if (num > 0)
+			{
+				CV_StealthSetValue(&cv_usejoystick[num], -1);
+			}
+
 			return true;
 		}
 		else
@@ -2691,7 +2696,6 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
-
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -2761,7 +2765,6 @@ static void M_AnimateFollower(setup_player_t *p)
 
 static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 {
-
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -2852,19 +2855,37 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 //
 static void M_HandleSplitDevice(void)
 {
-
 	const UINT8 pid = 0;
 	setup_player_t *p = &setup_player[setup_numplayers];
 
-	if (M_MenuButtonPressed(pid, MBT_C))
-	{
-		if (!cv_splitdevice.value)
-			M_StartMessage(M_GetText("Split device enabled.\nP1 can add additional players with [C].\nP1 must set all Players' parameters.\n\nIntended for use for multiplayer games\non the same device (Keyboard...)\nand testing purposes.\n\nPress any key"), NULL, MM_NOTHING);
+	if ((menucmd[pid].buttons & (MBT_L|MBT_R)) != (MBT_L|MBT_R))
+		return;
 
-		CV_StealthSetValue(&cv_splitdevice, 1);
-		S_StartSound(NULL, sfx_s3k65);
-		p->mdepth = CSSTEP_PROFILE;	// Ready the player setup.
+	if (!(menucmd[pid].buttonsHeld & MBT_L) == !(menucmd[pid].buttonsHeld & MBT_R))
+		return;
+
+	if (setup_numplayers > 1 && !cv_splitdevice.value)
+		return;
+
+	if (setup_numplayers == 4)
+	{
+		S_StartSound(NULL, sfx_s3k85);
+		while (setup_numplayers > 1)
+		{
+			setup_numplayers--;
+			setup_player[setup_numplayers].mdepth = CSSTEP_NONE;
+			CV_StealthSetValue(&cv_usejoystick[setup_numplayers], -1);
+		}
+		CV_StealthSetValue(&cv_splitdevice, 0);
+		return;
 	}
+
+	if (!cv_splitdevice.value)
+		M_StartMessage(M_GetText("Split device enabled.\nP1 can add extra players with [L]+[R].\nP1 must set all Players' parameters.\n\nIntended for use for multiplayer games\non the same device (Keyboard...)\nand testing purposes.\n\nPress any key"), NULL, MM_NOTHING);
+
+	CV_StealthSetValue(&cv_splitdevice, 1);
+	S_StartSound(NULL, sfx_s3k65);
+	p->mdepth = CSSTEP_PROFILE;	// Ready the player setup.
 }
 
 boolean M_CharacterSelectHandler(INT32 choice)
@@ -2880,17 +2901,19 @@ boolean M_CharacterSelectHandler(INT32 choice)
 
 		if (p->delay == 0 && menucmd[i].delay == 0)
 		{
-
-			if (p->mdepth > CSSTEP_NONE && i == 0)
-				M_HandleSplitDevice();
-
-			// If splitdevice is true, only do the last non-ready setups.
-			if (cv_splitdevice.value)
+			if (!optionsmenu.profile)
 			{
-				// Previous setup isn't ready, go there.
-				// In any case, do setup 0 first.
-				if (i > 0 && setup_player[i-1].mdepth < CSSTEP_READY)
-					continue;
+				if (p->mdepth > CSSTEP_NONE && i == 0)
+					M_HandleSplitDevice();
+
+				// If splitdevice is true, only do the last non-ready setups.
+				if (cv_splitdevice.value)
+				{
+					// Previous setup isn't ready, go there.
+					// In any case, do setup 0 first.
+					if (i > 0 && setup_player[i-1].mdepth < CSSTEP_READY)
+						continue;
+				}
 			}
 
 			switch (p->mdepth)
@@ -4326,26 +4349,28 @@ boolean M_ProfileEditInputs(INT32 ch)
 // Handle some actions in profile editing
 void M_HandleProfileEdit(void)
 {
-	M_OptionsTick();	// Keep running that ticker normally.
-
 	// Always copy the profile name and player name in the profile.
-
-	// Copy the first 6 chars for profile name
-	if (strlen(cv_dummyprofilename.string))
+	if (optionmenus.profile)
 	{
-		char *s;
-		// convert dummyprofilename to uppercase
-		strncpy(optionsmenu.profile->profilename, cv_dummyprofilename.string, PROFILENAMELEN);
-		s = optionsmenu.profile->profilename;
-		while (*s)
+		// Copy the first 6 chars for profile name
+		if (strlen(cv_dummyprofilename.string))
 		{
-			*s = toupper(*s);
-			s++;
+			char *s;
+			// convert dummyprofilename to uppercase
+			strncpy(optionsmenu.profile->profilename, cv_dummyprofilename.string, PROFILENAMELEN);
+			s = optionsmenu.profile->profilename;
+			while (*s)
+			{
+				*s = toupper(*s);
+				s++;
+			}
 		}
+
+		if (strlen(cv_dummyprofileplayername.string))
+			strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
 	}
 
-	if (strlen(cv_dummyprofileplayername.string))
-		strncpy(optionsmenu.profile->playername, cv_dummyprofileplayername.string, MAXPLAYERNAME);
+	M_OptionsTick();	//  Has to be afterwards because this can unset optionsmenu.profile
 }
 
 // Confirm Profile edi via button.
