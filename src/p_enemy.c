@@ -4573,26 +4573,26 @@ void A_ShootBullet(mobj_t *actor)
 
 static mobj_t *minus;
 
-static boolean PIT_MinusCarry(mobj_t *thing)
+static BlockItReturn_t PIT_MinusCarry(mobj_t *thing)
 {
 	if (minus->tracer)
-		return true;
+		return BMIT_CONTINUE;
 
 	if (minus->type == thing->type)
-		return true;
+		return BMIT_CONTINUE;
 
 	if (!(thing->flags & (MF_PUSHABLE|MF_ENEMY)))
-		return true;
+		return BMIT_CONTINUE;
 
 	if (P_AproxDistance(minus->x - thing->x, minus->y - thing->y) >= minus->radius*3)
-		return true;
+		return BMIT_CONTINUE;
 
 	if (abs(thing->z - minus->z) > minus->height)
-		return true;
+		return BMIT_CONTINUE;
 
 	P_SetTarget(&minus->tracer, thing);
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 // Function: A_MinusDigging
@@ -12145,13 +12145,13 @@ static mobj_t *barrel;
 static fixed_t exploderadius;
 static fixed_t explodethrust;
 
-static boolean PIT_TNTExplode(mobj_t *nearby)
+static BlockItReturn_t PIT_TNTExplode(mobj_t *nearby)
 {
 	fixed_t dx, dy, dz;
 	fixed_t dm;
 
 	if (nearby == barrel)
-		return true;
+		return BMIT_CONTINUE;
 
 	dx = nearby->x - barrel->x;
 	dy = nearby->y - barrel->y;
@@ -12159,7 +12159,7 @@ static boolean PIT_TNTExplode(mobj_t *nearby)
 	dm = P_AproxDistance(P_AproxDistance(dx, dy), dz);
 
 	if (dm >= exploderadius || !P_CheckSight(barrel, nearby)) // out of range or not visible
-		return true;
+		return BMIT_CONTINUE;
 
 	if (barrel->type == nearby->type) // nearby is also a barrel
 	{
@@ -12200,7 +12200,7 @@ static boolean PIT_TNTExplode(mobj_t *nearby)
 		}
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 // Function: A_TNTExplode

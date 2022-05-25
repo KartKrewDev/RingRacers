@@ -7055,57 +7055,57 @@ static mobj_t *attractmo;
 static fixed_t attractdist;
 static fixed_t attractzdist;
 
-static inline boolean PIT_AttractingRings(mobj_t *thing)
+static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 {
 	if (attractmo == NULL || P_MobjWasRemoved(attractmo) || attractmo->player == NULL)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing == NULL || P_MobjWasRemoved(thing))
 	{
-		return true; // invalid
+		return BMIT_CONTINUE; // invalid
 	}
 
 	if (thing == attractmo)
 	{
-		return true; // invalid
+		return BMIT_CONTINUE; // invalid
 	}
 
 	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
 	{
-		return true; // not a ring
+		return BMIT_CONTINUE; // not a ring
 	}
 
 	if (thing->health <= 0)
 	{
-		return true; // dead
+		return BMIT_CONTINUE; // dead
 	}
 
 	if (thing->extravalue1)
 	{
-		return true; // in special ring animation
+		return BMIT_CONTINUE; // in special ring animation
 	}
 
 	if (thing->tracer != NULL && P_MobjWasRemoved(thing->tracer) == false)
 	{
-		return true; // already attracted
+		return BMIT_CONTINUE; // already attracted
 	}
 
 	// see if it went over / under
 	if (attractmo->z - attractzdist > thing->z + thing->height)
 	{
-		return true; // overhead
+		return BMIT_CONTINUE; // overhead
 	}
 
 	if (attractmo->z + attractmo->height + attractzdist < thing->z)
 	{
-		return true; // underneath
+		return BMIT_CONTINUE; // underneath
 	}
 
 	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) > attractdist + thing->radius)
 	{
-		return true; // Too far away
+		return BMIT_CONTINUE; // Too far away
 	}
 
 	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
@@ -7132,7 +7132,7 @@ static inline boolean PIT_AttractingRings(mobj_t *thing)
 		P_SetTarget(&thing->tracer, attractmo);
 	}
 
-	return true; // find other rings
+	return BMIT_CONTINUE; // find other rings
 }
 
 /** Looks for rings near a player in the blockmap.
