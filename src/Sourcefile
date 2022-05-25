@@ -121,4 +121,5 @@ k_terrain.c
 k_brightmap.c
 k_terrain.c
 k_director.c
+k_follower.c
 k_profiles.c

@@ -207,7 +207,7 @@ extern char logfilename[1024];
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
 #define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
-#define MAXSKINS 128
+#define MAXSKINS UINT8_MAX
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32

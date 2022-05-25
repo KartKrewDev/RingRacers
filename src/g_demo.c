@@ -51,6 +51,7 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_color.h"
+#include "k_follower.h"
 
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
@@ -300,7 +301,7 @@ void G_ReadDemoExtraData(void)
 			// Set our follower
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
-			SetPlayerFollower(p, name);
+			K_SetFollowerByName(p, name);
 
 			// Follower's color
 			M_Memcpy(name, demo_p, 16);
@@ -3057,7 +3058,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// Follower
 		M_Memcpy(follower, demo_p, 16);
 		demo_p += 16;
-		SetPlayerFollower(p, follower);
+		K_SetFollowerByName(p, follower);
 
 		// Follower colour
 		M_Memcpy(color, demo_p, 16);

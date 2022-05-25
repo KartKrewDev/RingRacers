@@ -63,6 +63,7 @@ typedef enum
 	FOLLOWER   = 0x04,
 	SKYBOXVIEW = 0x08,
 	SKYBOXCENTER = 0x10,
+	HOVERHYUDORO = 0x20,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -196,6 +197,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].skybox.centerpoint)
 			flags |= SKYBOXCENTER;
 
+		if (players[i].hoverhyudoro)
+			flags |= HOVERHYUDORO;
+
 		WRITEUINT16(save_p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -209,6 +213,9 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
+
+		if (flags & HOVERHYUDORO)
+			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -325,6 +332,9 @@ static void P_NetArchivePlayers(void)
 
 		WRITESINT8(save_p, players[i].lastjawztarget);
 		WRITEUINT8(save_p, players[i].jawztargetdelay);
+
+		WRITEUINT8(save_p, players[i].confirmInflictor);
+		WRITEUINT8(save_p, players[i].confirmInflictorDelay);
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
@@ -482,6 +492,9 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
+		if (flags & HOVERHYUDORO)
+			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -518,7 +531,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 
-		players[i].justDI = (boolean)READUINT8(save_p);
+		players[i].justDI = READUINT8(save_p);
 		players[i].flipDI = (boolean)READUINT8(save_p);
 
 		players[i].drift = READSINT8(save_p);
@@ -598,6 +611,9 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].lastjawztarget = READSINT8(save_p);
 		players[i].jawztargetdelay = READUINT8(save_p);
+
+		players[i].confirmInflictor = READUINT8(save_p);
+		players[i].confirmInflictorDelay = READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
@@ -4230,6 +4246,13 @@ static void P_RelinkPointers(void)
 					CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
 				}
 			}
+			if (mobj->player->hoverhyudoro)
+			{
+				temp = (UINT32)(size_t)mobj->player->hoverhyudoro;
+				mobj->player->hoverhyudoro = NULL;
+				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
+			}
 		}
 	}
 }
@@ -4482,7 +4505,6 @@ static void P_NetArchiveMisc(boolean resending)
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
-	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4632,7 +4654,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
-	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	for (i = 0; i < MAXPLAYERS; i++)

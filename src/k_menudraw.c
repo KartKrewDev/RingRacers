@@ -45,8 +45,9 @@
 #include "byteptr.h"
 #include "st_stuff.h"
 #include "i_sound.h"
-#include "k_kart.h" // SRB2kart
-#include "k_hud.h" // SRB2kart
+#include "k_kart.h"
+#include "k_hud.h"
+#include "k_follower.h"
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
@@ -1043,7 +1044,7 @@ static void M_DrawFollowerList(setup_player_t *p, UINT8 num)
 		}
 
 		cf++;
-		if (cf > numfollowers-1)
+		if (cf >= numfollowers)
 			cf = -1;
 
 		x += 23;
@@ -1071,7 +1072,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 		followernum = num;
 
 	// Don't draw if we're outta bounds.
-	if (followernum < 0 || followernum > numfollowers-1)
+	if (followernum < 0 || followernum >= numfollowers)
 		return false;
 
 	fl = followers[followernum];
@@ -1109,13 +1110,12 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 
 	if (p != NULL)
 	{
-		const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-		sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK);
+		sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK));
 		color = K_GetEffectiveFollowerColor(p->followercolor, p->color);
 	}
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
-	V_DrawFixedPatch((x)*FRACUNIT, (y-12)*FRACUNIT+sine, fl.scale, addflags, patch, colormap);
+	V_DrawFixedPatch((x)*FRACUNIT, ((y-12)*FRACUNIT) + sine - fl.zoffs, fl.scale, addflags, patch, colormap);
 
 	return true;
 }
@@ -1386,7 +1386,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	{
 
 		UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);;
-		UINT8 fln = R_FollowerAvailable(p->follower);
+		UINT8 fln = K_FollowerAvailable(p->follower);
 
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);

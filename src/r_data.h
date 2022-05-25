@@ -40,7 +40,6 @@ extern INT16 color8to16[256]; // remap color index to highcolor
 extern INT16 *hicolormaps; // remap high colors to high colors..
 
 extern CV_PossibleValue_t Color_cons_t[];
-extern CV_PossibleValue_t Followercolor_cons_t[];	// follower colours table, not a duplicate because of the "Match" option.
 
 // I/O, setting up the stuff.
 void R_InitTextureData(void);

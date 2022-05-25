@@ -58,6 +58,7 @@
 #include "k_respawn.h"
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_follower.h"
 #include "doomstat.h"
 #include "deh_tables.h"
 
@@ -1450,7 +1451,7 @@ static void SendNameAndColor(UINT8 n)
 		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
 
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
-	if (cv_follower[n].value > numfollowers-1 || cv_follower[n].value < -1)
+	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
 		CV_StealthSet(&cv_follower[n], "-1");
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
@@ -1476,12 +1477,11 @@ static void SendNameAndColor(UINT8 n)
 
 		player->skincolor = cv_playercolor[n].value;
 
-		if (player->mo && !player->dye)
-			player->mo->color = player->skincolor;
+		K_KartResetPlayerColor(player);
 
 		// Update follower for local games:
 		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
-			SetFollower(playernum, cv_follower[n].value);
+			K_SetFollowerByNum(playernum, cv_follower[n].value);
 
 		player->followercolor = cv_followercolor[n].value;
 
@@ -1661,11 +1661,13 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		SetPlayerSkinByNum(playernum, skin);
 
 	// set follower colour:
-	// Don't bother doing garbage and kicking if we receive None, this is both silly and a waste of time, this will be handled properly in P_HandleFollower.
+	// Don't bother doing garbage and kicking if we receive None,
+	// this is both silly and a waste of time,
+	// this will be handled properly in K_HandleFollower.
 	p->followercolor = followercolor;
 
 	// set follower
-	SetFollower(playernum, follower);
+	K_SetFollowerByNum(playernum, follower);
 
 #ifdef HAVE_DISCORDRPC
 	if (playernum == consoleplayer)
@@ -4391,7 +4393,11 @@ static void Command_Version_f(void)
 #endif
 
 	// DEVELOP build
-#ifdef DEVELOP
+#if defined(TESTERS)
+	CONS_Printf("\x88" "TESTERS " "\x80");
+#elif defined(HOSTTESTERS)
+	CONS_Printf("\x82" "HOSTTESTERS " "\x80");
+#elif defined(DEVELOP)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif
 
@@ -5344,7 +5350,7 @@ static void Follower_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
@@ -5398,7 +5404,7 @@ static void Follower2_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
@@ -5449,7 +5455,7 @@ static void Follower3_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
@@ -5500,7 +5506,7 @@ static void Follower4_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);

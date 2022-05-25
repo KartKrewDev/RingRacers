@@ -49,6 +49,7 @@
 
 // SRB2Kart
 #include "filesrch.h" // refreshdirmenu
+#include "k_follower.h"
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -3435,16 +3436,18 @@ void readfollower(MYFILE *f)
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 
 	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
 	followers[numfollowers].scale = FRACUNIT;
-	followers[numfollowers].bubblescale = 0;	// No bubble by default
-	followers[numfollowers].atangle = 230;
-	followers[numfollowers].dist = 32;		// changed from 16 to 32 to better account for ogl models
-	followers[numfollowers].height = 16;
-	followers[numfollowers].zoffs = 32;
-	followers[numfollowers].horzlag = 2;
-	followers[numfollowers].vertlag = 6;
+	followers[numfollowers].bubblescale = 0; // No bubble by default
+	followers[numfollowers].atangle = FixedAngle(230 * FRACUNIT);
+	followers[numfollowers].dist = 32*FRACUNIT; // changed from 16 to 32 to better account for ogl models
+	followers[numfollowers].height = 16*FRACUNIT;
+	followers[numfollowers].zoffs = 32*FRACUNIT;
+	followers[numfollowers].horzlag = 3*FRACUNIT;
+	followers[numfollowers].vertlag = 6*FRACUNIT;
+	followers[numfollowers].anglelag = 8*FRACUNIT;
 	followers[numfollowers].bobspeed = TICRATE*2;
-	followers[numfollowers].bobamp = 4;
+	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 	strcpy(followers[numfollowers].icon, "M_NORANK");
@@ -3486,50 +3489,65 @@ void readfollower(MYFILE *f)
 				strcpy(followers[numfollowers].icon, word2);
 				nameset = true;
 			}
+			else if (fastcmp(word, "MODE"))
+			{
+				if (word2)
+					strupr(word2);
+
+				if (fastcmp(word2, "FLOAT") || fastcmp(word2, "DEFAULT"))
+					followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+				else if (fastcmp(word2, "GROUND"))
+					followers[numfollowers].mode = FOLLOWERMODE_GROUND;
+				else
+					deh_warning("Follower %d: unknown follower mode '%s'", numfollowers, word2);
+			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				followers[numfollowers].defaultcolor = (UINT16)get_number(word2);
+				followers[numfollowers].defaultcolor = get_number(word2);
 			}
-
 			else if (fastcmp(word, "SCALE"))
 			{
-				followers[numfollowers].scale = get_number(word2);
+				followers[numfollowers].scale = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BUBBLESCALE"))
 			{
-				followers[numfollowers].bubblescale = get_number(word2);
+				followers[numfollowers].bubblescale = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "ATANGLE"))
 			{
-				followers[numfollowers].atangle = (INT32)atoi(word2);
+				followers[numfollowers].atangle = (angle_t)(get_number(word2) * ANG1);
 			}
 			else if (fastcmp(word, "HORZLAG"))
 			{
-				followers[numfollowers].horzlag = (INT32)atoi(word2);
+				followers[numfollowers].horzlag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "VERTLAG"))
 			{
-				followers[numfollowers].vertlag = (INT32)atoi(word2);
+				followers[numfollowers].vertlag = (fixed_t)get_number(word2);
+			}
+			else if (fastcmp(word, "ANGLELAG"))
+			{
+				followers[numfollowers].anglelag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BOBSPEED"))
 			{
-				followers[numfollowers].bobspeed = (INT32)atoi(word2);
+				followers[numfollowers].bobspeed = (tic_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BOBAMP"))
 			{
-				followers[numfollowers].bobamp = (INT32)atoi(word2);
+				followers[numfollowers].bobamp = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "ZOFFSET") || (fastcmp(word, "ZOFFS")))
 			{
-				followers[numfollowers].zoffs = (INT32)atoi(word2);
+				followers[numfollowers].zoffs = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "DISTANCE") || (fastcmp(word, "DIST")))
 			{
-				followers[numfollowers].dist = (INT32)atoi(word2);
+				followers[numfollowers].dist = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "HEIGHT"))
 			{
-				followers[numfollowers].height = (INT32)atoi(word2);
+				followers[numfollowers].height = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "IDLESTATE"))
 			{
@@ -3570,16 +3588,19 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "HITTIME") || (fastcmp(word, "HITCONFIRMTIME")))
 			{
-				followers[numfollowers].hitconfirmtime = (INT32)atoi(word2);
+				followers[numfollowers].hitconfirmtime = (tic_t)get_number(word2);
 			}
 			else
+			{
 				deh_warning("Follower %d: unknown word '%s'", numfollowers, word);
+			}
 		}
 	} while (!myfeof(f)); // finish when the line is empty
 
-	if (!nameset)	// well this is problematic.
+	if (!nameset)
 	{
-		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers));	// this is lazy, so what
+		// well this is problematic.
+		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers)); // this is lazy, so what
 	}
 
 	// set skin name (this is just the follower's name in lowercases):
@@ -3589,7 +3610,7 @@ void readfollower(MYFILE *f)
 
 	// lower testname for skin checks...
 	strlwr(testname);
-	res = R_FollowerAvailable(testname);
+	res = K_FollowerAvailable(testname);
 	if (res > -1)	// yikes, someone else has stolen our name already
 	{
 		INT32 startlen = strlen(testname);
@@ -3612,32 +3633,40 @@ void readfollower(MYFILE *f)
 
 	// fallbacks for variables
 	// Print a warning if the variable is on a weird value and set it back to the minimum available if that's the case.
+
+	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
+	{
+		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+	}
+
 #define FALLBACK(field, field2, threshold, set) \
-if (followers[numfollowers].field < threshold) \
+if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, set, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
 	FALLBACK(height, "HEIGHT", 1, 1);
 	FALLBACK(zoffs, "ZOFFS", 0, 0);
-	FALLBACK(horzlag, "HORZLAG", 1, 1);
-	FALLBACK(vertlag, "VERTLAG", 1, 1);
+	FALLBACK(horzlag, "HORZLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(vertlag, "VERTLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(anglelag, "ANGLELAG", FRACUNIT, FRACUNIT);
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
 	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
+#undef FALLBACK
+
 	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > numskincolors-1)
+	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
 	{
 		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
 	}
-
-#undef FALLBACK
 
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
@@ -3659,7 +3688,7 @@ if (!followers[numfollowers].field) \
 #undef NOSTATE
 
 	CONS_Printf("Added follower '%s'\n", dname);
-	numfollowers++;	// add 1 follower
+	numfollowers++; // add 1 follower
 	Z_Free(s);
 }
 

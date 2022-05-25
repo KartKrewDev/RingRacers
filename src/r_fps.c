@@ -163,22 +163,7 @@ void R_InterpolateView(fixed_t frac)
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
 
-	if (viewcontext == VIEWCONTEXT_SKY1 || viewcontext == VIEWCONTEXT_PLAYER1)
-	{
-		i = 0;
-	}
-	else if (viewcontext == VIEWCONTEXT_SKY2 || viewcontext == VIEWCONTEXT_PLAYER2)
-	{
-		i = 1;
-	}
-	else if (viewcontext == VIEWCONTEXT_SKY3 || viewcontext == VIEWCONTEXT_PLAYER3)
-	{
-		i = 2;
-	}
-	else
-	{
-		i = 3;
-	}
+	i = R_GetViewNumber();
 
 	if (oldview_invalid[i] != 0)
 	{

@@ -46,7 +46,8 @@
 #include "st_stuff.h"
 #include "i_sound.h"
 #include "i_time.h"
-#include "k_kart.h" // SRB2kart
+#include "k_kart.h"
+#include "k_follower.h"
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // MAXSPLITSCREENPLAYERS
@@ -2154,7 +2155,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	INT32 i;
 
 	// While we're here, read follower values.
-	p->followern = R_FollowerAvailable(pr->follower);
+	p->followern = K_FollowerAvailable(pr->follower);
 	p->followercolor = pr->followercolor;
 
 	// Now position the grid for skin
@@ -2769,7 +2770,7 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 	if (menucmd[num].dpad_lr > 0 && numfollowers)
 	{
 		p->followern++;
-		if (p->followern > numfollowers-1)
+		if (p->followern >= numfollowers)
 			p->followern = -1;
 
 		M_SetMenuDelay(num);

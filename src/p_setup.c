@@ -4406,7 +4406,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
-	hyubgone = 0;
 	mapreset = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4509,6 +4508,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// No render mode or reloading gamestate, stop here.
 	if (rendermode == render_none || reloadinggamestate)
 		return true;
+
+	R_ResetViewInterpolation(0);
+	R_ResetViewInterpolation(0);
+	R_UpdateMobjInterpolators();
 
 	// Title card!
 	G_StartTitleCard();

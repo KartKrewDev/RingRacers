@@ -20,6 +20,7 @@
 #include "g_input.h"		// Input related stuff
 #include "string.h"			// strcpy etc
 #include "g_game.h"			// game CVs
+#include "k_follower.h"		// followers
 
 // We have to redefine this because somehow including r_skins.h causes a redefinition of node_t since that's used for both net nodes and BSP nodes too......
 // And honestly I don't wanna refactor that.

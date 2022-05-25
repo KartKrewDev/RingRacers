@@ -239,7 +239,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"tumbleHeight"))
 		lua_pushinteger(L, plr->tumbleHeight);
 	else if (fastcmp(field,"justDI"))
-		lua_pushboolean(L, plr->justDI);
+		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipDI"))
 		lua_pushboolean(L, plr->flipDI);
 	else if (fastcmp(field,"drift"))
@@ -356,6 +356,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastjawztarget);
 	else if (fastcmp(field,"jawztargetdelay"))
 		lua_pushinteger(L, plr->jawztargetdelay);
+	else if (fastcmp(field,"confirmInflictor"))
+		lua_pushinteger(L, plr->confirmInflictor);
+	else if (fastcmp(field,"confirmInflictorDelay"))
+		lua_pushinteger(L, plr->confirmInflictorDelay);
 	else if (fastcmp(field,"glanceDir"))
 		lua_pushinteger(L, plr->glanceDir);
 	else if (fastcmp(field,"trickpanel"))
@@ -589,7 +593,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"tumbleHeight"))
 		plr->tumbleHeight = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justDI"))
-		plr->justDI = luaL_checkboolean(L, 3);
+		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipDI"))
 		plr->flipDI = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"drift"))
@@ -704,6 +708,10 @@ static int player_set(lua_State *L)
 		plr->lastjawztarget = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"jawztargetdelay"))
 		plr->jawztargetdelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmInflictor"))
+		plr->confirmInflictor = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmInflictorDelay"))
+		plr->confirmInflictorDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"glanceDir"))
 		plr->glanceDir = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickpanel"))
