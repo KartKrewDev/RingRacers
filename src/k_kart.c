@@ -5609,7 +5609,6 @@ static void K_DoShrink(player_t *user)
 
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 {
-	const fixed_t vscale = mapobjectscale + (mo->scale - mapobjectscale);
 	fixed_t thrust = 0;
 
 	if (mo->player && mo->player->spectator)
@@ -5650,7 +5649,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
-	mo->momz = FixedMul(thrust, vscale);
+	mo->momz = FixedMul(thrust, mapobjectscale);
 
 	if (mo->eflags & MFE_UNDERWATER)
 	{
