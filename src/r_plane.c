@@ -388,8 +388,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 
 	if (slope != NULL && P_ApplyLightOffset(lightlevel))
 	{
-		// for software: crunchitize the light level offset, otherwise it's too bright.
-		lightlevel += (slope->lightOffset / 8) * 8;
+		lightlevel += slope->lightOffset * 8;
 	}
 
 	// This appears to fix the Nimbus Ruins sky bug.

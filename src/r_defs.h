@@ -253,7 +253,10 @@ typedef struct pslope_s
 	fixed_t highz;
 
 	// Light offsets (see seg_t)
-	INT16 lightOffset;
+	SINT8 lightOffset;
+#ifdef HWRENDER
+	INT16 hwLightOffset;
+#endif
 } pslope_t;
 
 typedef enum

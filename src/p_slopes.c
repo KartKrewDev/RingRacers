@@ -34,32 +34,49 @@ static void P_SetupAnchoredSlopes  (void);
 // Calculate light
 void P_UpdateSlopeLightOffset(pslope_t *slope)
 {
-	const boolean ceiling = (slope->normal.z < 0);
 	const UINT8 contrast = maplighting.contrast;
 
-	fixed_t contrastFixed = (contrast * FRACUNIT);
+	fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
 	fixed_t zMul = FRACUNIT;
-	angle_t slopeDir = ANGLE_MAX;
+	fixed_t light = FRACUNIT;
 	fixed_t extralight = 0;
 
 	if (slope->normal.z == 0)
 	{
-		slope->lightOffset = 0;
+		slope->lightOffset = slope->hwLightOffset = 0;
 		return;
 	}
 
-	slopeDir = R_PointToAngle2(0, 0, abs(slope->normal.y), abs(slope->normal.x));
-	if (ceiling == true)
+	if (maplighting.directional == true)
 	{
-		slopeDir ^= ANGLE_180;
+		fixed_t dX = slope->d.x;
+		fixed_t dY = slope->d.y;
+
+		if (slope->zdelta < 0)
+		{
+			dX = -dX;
+			dY = -dY;
+		}
+
+		light = FixedMul(dX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(dY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->d.x), abs(slope->d.y)), ANGLE_90);
 	}
 
 	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.
 	contrastFixed = FixedMul(contrastFixed, zMul);
-	extralight = -contrastFixed + FixedMul(FixedDiv(AngleFixed(slopeDir), 90*FRACUNIT), (contrastFixed * 2));
 
-	// -16 and 16 for both software & hardware
-	slope->lightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
 }
 
 // Calculate line normal

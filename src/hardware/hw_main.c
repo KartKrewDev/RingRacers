@@ -292,6 +292,9 @@ static FUINT HWR_CalcWallLight(FUINT lightnum, seg_t *seg)
 	if (seg != NULL && P_ApplyLightOffset(lightnum))
 	{
 		finallight += seg->hwLightOffset;
+
+		if (finallight > 255) finallight = 255;
+		if (finallight < 0) finallight = 0;
 	}
 
 	return (FUINT)finallight;
@@ -303,7 +306,10 @@ static FUINT HWR_CalcSlopeLight(FUINT lightnum, pslope_t *slope)
 
 	if (slope != NULL && P_ApplyLightOffset(lightnum))
 	{
-		finallight += slope->lightOffset;
+		finallight += slope->hwLightOffset;
+
+		if (finallight > 255) finallight = 255;
+		if (finallight < 0) finallight = 0;
 	}
 
 	return (FUINT)finallight;
