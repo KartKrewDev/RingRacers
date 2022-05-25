@@ -113,7 +113,6 @@ extern consvar_t cv_glsolvetjoin;
 extern consvar_t cv_glshearing;
 extern consvar_t cv_glspritebillboarding;
 extern consvar_t cv_glskydome;
-extern consvar_t cv_glfakecontrast;
 extern consvar_t cv_glslopecontrast;
 
 extern consvar_t cv_glbatching;
