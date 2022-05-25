@@ -51,7 +51,7 @@ struct globalsmuggle
 } globalsmuggle;
 
 /*--------------------------------------------------
-	static boolean K_FindEggboxes(mobj_t *thing)
+	static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 
 		Blockmap search function.
 		Increments the random items and egg boxes counters.
@@ -60,27 +60,27 @@ struct globalsmuggle
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindEggboxes(mobj_t *thing)
+static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 {
 	fixed_t dist;
 
 	if (thing->type != MT_RANDOMITEM && thing->type != MT_EGGMANITEM)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!thing->health)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	dist = P_AproxDistance(thing->x - globalsmuggle.eggboxx, thing->y - globalsmuggle.eggboxy);
 
 	if (dist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_RANDOMITEM)
@@ -92,7 +92,7 @@ static boolean K_FindEggboxes(mobj_t *thing)
 		globalsmuggle.eggboxes++;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -347,7 +347,7 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 }
 
 /*--------------------------------------------------
-	static boolean K_FindObjectsForNudging(mobj_t *thing)
+	static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 		Blockmap search function.
 		Finds objects around the bot to steer towards/away from.
@@ -356,9 +356,9 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindObjectsForNudging(mobj_t *thing)
+static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
 	INT16 anglediff;
 	fixed_t fulldist;
@@ -367,29 +367,29 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing->health <= 0)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (globalsmuggle.botmo == thing)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	predictangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.predict->x, globalsmuggle.predict->y);
@@ -607,7 +607,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			break;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -776,7 +776,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 }
 
 /*--------------------------------------------------
-	static boolean K_FindPlayersToBully(mobj_t *thing)
+	static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 
 		Blockmap search function.
 		Finds players around the bot to bump.
@@ -785,9 +785,9 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindPlayersToBully(mobj_t *thing)
+static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 {
 	INT16 anglediff;
 	fixed_t fulldist;
@@ -796,34 +796,34 @@ static boolean K_FindPlayersToBully(mobj_t *thing)
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing->health <= 0)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!thing->player)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (globalsmuggle.botmo == thing)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	ourangle = globalsmuggle.botmo->angle;
@@ -860,7 +860,7 @@ static boolean K_FindPlayersToBully(mobj_t *thing)
 		globalsmuggle.annoymo = thing;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------

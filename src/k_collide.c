@@ -323,26 +323,26 @@ static inline boolean PIT_SSMineChecks(mobj_t *thing)
 	return false;
 }
 
-static inline boolean PIT_SSMineSearch(mobj_t *thing)
+static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 {
 	if (grenade == NULL || P_MobjWasRemoved(grenade))
-		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+		return BMIT_ABORT; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
 
 	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
-		return false;
+		return BMIT_ABORT;
 
 	if (thing->type != MT_PLAYER) // Don't explode for anything but an actual player.
-		return true;
+		return BMIT_CONTINUE;
 
 	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
-		return true;
+		return BMIT_CONTINUE;
 
 	if (PIT_SSMineChecks(thing) == true)
-		return true;
+		return BMIT_CONTINUE;
 
 	// Explode!
 	P_SetMobjState(grenade, grenade->info->deathstate);
-	return false;
+	return BMIT_ABORT;
 }
 
 void K_DoMineSearch(mobj_t *actor, fixed_t size)
@@ -364,21 +364,21 @@ void K_DoMineSearch(mobj_t *actor, fixed_t size)
 			P_BlockThingsIterator(bx, by, PIT_SSMineSearch);
 }
 
-static inline boolean PIT_SSMineExplode(mobj_t *thing)
+static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 {
 	if (grenade == NULL || P_MobjWasRemoved(grenade))
-		return false; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
+		return BMIT_ABORT; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
 
 #if 0
 	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
-		return false;
+		return BMIT_ABORT;
 #endif
 
 	if (PIT_SSMineChecks(thing) == true)
-		return true;
+		return BMIT_CONTINUE;
 
 	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
-	return true;
+	return BMIT_CONTINUE;
 }
 
 void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
@@ -667,60 +667,54 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 static mobj_t *lightningSource;
 static fixed_t lightningDist;
 
-static inline boolean PIT_LightningShieldAttack(mobj_t *thing)
+static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 {
 	if (lightningSource == NULL || P_MobjWasRemoved(lightningSource))
 	{
 		// Invalid?
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing == lightningSource)
 	{
 		// Don't explode yourself!!
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (thing->health <= 0)
 	{
 		// Dead
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
 	{
 		// Not shootable
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (thing->player && thing->player->spectator)
 	{
 		// Spectator
-		return true;
-	}
-
-	if ((lightningSource->eflags & MFE_VERTICALFLIP)
-		? (thing->z > lightningSource->z + lightningSource->height)
-		: (thing->z + thing->height < lightningSource->z))
-	{
-		// Underneath
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_AproxDistance(thing->x - lightningSource->x, thing->y - lightningSource->y) > lightningDist + thing->radius)
 	{
 		// Too far away
-		return true;
+		return BMIT_CONTINUE;
 	}
 
+#if 0
 	if (P_CheckSight(lightningSource, thing) == false)
 	{
 		// Not in sight
-		return true;
+		return BMIT_CONTINUE;
 	}
+#endif
 
 	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
-	return true;
+	return BMIT_CONTINUE;
 }
 
 void K_LightningShieldAttack(mobj_t *actor, fixed_t size)

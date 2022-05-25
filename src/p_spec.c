@@ -8395,13 +8395,13 @@ static pusher_t *tmpusher; // pusher structure for blockmap searches
   *       ::tmpusher won't need to be used.
   * \sa T_Pusher
   */
-static inline boolean PIT_PushThing(mobj_t *thing)
+static inline BlockItReturn_t PIT_PushThing(mobj_t *thing)
 {
 	if (thing->eflags & MFE_PUSHED)
-		return false;
+		return BMIT_ABORT;
 
 	if (!tmpusher->source)
-		return false;
+		return BMIT_ABORT;
 
 	// Allow this to affect pushable objects at some point?
 	if (thing->player && !(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)))
@@ -8421,7 +8421,7 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 		{
 			// Make sure the Z is in range
 			if (thing->z < sz - tmpusher->radius || thing->z > sz + tmpusher->radius)
-				return false;
+				return BMIT_ABORT;
 
 			dist = P_AproxDistance(P_AproxDistance(thing->x - sx, thing->y - sy),
 				thing->z - sz);
@@ -8487,7 +8487,7 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 	if (tmpusher->exclusive)
 		thing->eflags |= MFE_PUSHED;
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /** Applies a pusher to all affected objects.

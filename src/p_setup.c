@@ -4426,7 +4426,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	wantedcalcdelay = wantedfrequency*2;
 	indirectitemcooldown = 0;
-	hyubgone = 0;
 	mapreset = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)

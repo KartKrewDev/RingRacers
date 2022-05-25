@@ -1692,8 +1692,7 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	// Resume normal music stuff.
 	if (player->invincibilitytimer == 1)
 	{
-		player->mo->color = player->skincolor;
-		player->mo->colorized = false;
+		//K_KartResetPlayerColor(player); -- this gets called every tic anyways
 		G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
 
 		P_RestoreMusic(player);
@@ -2680,8 +2679,7 @@ static void P_DeathThink(player_t *player)
 	if (!player->mo)
 		return;
 
-	player->mo->colorized = false;
-	player->mo->color = player->skincolor;
+	//K_KartResetPlayerColor(player); -- called at death, don't think we need to re-establish
 
 	P_CalcHeight(player);
 }
