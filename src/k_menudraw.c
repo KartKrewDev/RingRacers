@@ -1183,7 +1183,15 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 	V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
-	V_DrawFileString(x+16, y+2, 0, "PLAYER");
+	if (p->mdepth > CSSTEP_PROFILE)
+	{
+		profile_t *pr = PR_GetProfile(p->profilen);
+		V_DrawCenteredFileString(x+16+18, y+2, 0, pr->profilename);
+	}
+	else
+	{
+		V_DrawFileString(x+16, y+2, 0, "PLAYER");
+	}
 
 	// Profile selection
 	if (p->mdepth == CSSTEP_PROFILE)
