@@ -49,17 +49,31 @@ void P_UpdateSlopeLightOffset(pslope_t *slope)
 
 	if (maplighting.directional == true)
 	{
-		fixed_t dX = slope->d.x;
-		fixed_t dY = slope->d.y;
+		fixed_t nX = -slope->normal.x;
+		fixed_t nY = -slope->normal.y;
+		fixed_t nLen = FixedHypot(nX, nY);
 
-		if (slope->zdelta < 0)
+		if (nLen == 0)
 		{
-			dX = -dX;
-			dY = -dY;
+			slope->lightOffset = slope->hwLightOffset = 0;
+			return;
 		}
 
-		light = FixedMul(dX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
-			+ FixedMul(dY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		nX = FixedDiv(nX, nLen);
+		nY = FixedDiv(nY, nLen);
+
+		/*
+		if (slope is ceiling)
+		{
+			// There is no good way to calculate this condition here.
+			// We reverse it in R_FindPlane now.
+			nX = -nX;
+			nY = -nY;
+		}
+		*/
+
+		light = FixedMul(nX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(nY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
 		light = (light + FRACUNIT) / 2;
 	}
 	else
@@ -177,7 +191,7 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 
 		// Get angles
 		slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-		slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+		slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
 	}
 
 	P_UpdateSlopeLightOffset(slope);
@@ -210,7 +224,7 @@ static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fix
 
 	// Get angles
 	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-	slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+	slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
 
 	P_UpdateSlopeLightOffset(slope);
 }
@@ -597,6 +611,7 @@ static void line_SpawnViaMapthingVertexes(const int linenum, const boolean spawn
 	UINT16 tag2 = line->args[2];
 	UINT16 tag3 = line->args[3];
 	UINT8 flags = 0; // Slope flags
+
 	if (line->args[4] & TMSL_NOPHYSICS)
 		flags |= SL_NOPHYSICS;
 	if (line->args[4] & TMSL_DYNAMIC)

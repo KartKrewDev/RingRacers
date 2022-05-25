@@ -938,9 +938,14 @@ static void R_Subsector(size_t num)
 		|| frontsector->floorpic == skyflatnum
 		|| (frontsector->heightsec != -1 && sectors[frontsector->heightsec].ceilingpic == skyflatnum))
 	{
-		floorplane = R_FindPlane(frontsector->floorheight, frontsector->floorpic, floorlightlevel,
-			frontsector->floor_xoffs, frontsector->floor_yoffs, frontsector->floorpic_angle, floorcolormap, NULL, NULL, frontsector->f_slope,
-			R_NoEncore(frontsector, false), R_IsRipplePlane(frontsector, NULL, false));
+		floorplane = R_FindPlane(
+			frontsector->floorheight, frontsector->floorpic, floorlightlevel,
+			frontsector->floor_xoffs, frontsector->floor_yoffs, frontsector->floorpic_angle,
+			floorcolormap, NULL, NULL, frontsector->f_slope,
+			R_NoEncore(frontsector, false),
+			R_IsRipplePlane(frontsector, NULL, false),
+			false
+		);
 	}
 	else
 		floorplane = NULL;
@@ -949,10 +954,14 @@ static void R_Subsector(size_t num)
 		|| frontsector->ceilingpic == skyflatnum
 		|| (frontsector->heightsec != -1 && sectors[frontsector->heightsec].floorpic == skyflatnum))
 	{
-		ceilingplane = R_FindPlane(frontsector->ceilingheight, frontsector->ceilingpic,
-			ceilinglightlevel, frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
+		ceilingplane = R_FindPlane(
+			frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
+			frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
 			ceilingcolormap, NULL, NULL, frontsector->c_slope,
-			R_NoEncore(frontsector, true), R_IsRipplePlane(frontsector, NULL, true));
+			R_NoEncore(frontsector, true),
+			R_IsRipplePlane(frontsector, NULL, true),
+			true
+		);
 	}
 	else
 		ceilingplane = NULL;
@@ -993,11 +1002,14 @@ static void R_Subsector(size_t num)
 				light = R_GetPlaneLight(frontsector, planecenterz,
 					viewz < heightcheck);
 
-				ffloor[numffloors].plane = R_FindPlane(*rover->bottomheight, *rover->bottompic,
+				ffloor[numffloors].plane = R_FindPlane(
+					*rover->bottomheight, *rover->bottompic,
 					*frontsector->lightlist[light].lightlevel, *rover->bottomxoffs,
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
 					R_NoEncore(rover->master->frontsector, true),
-					R_IsRipplePlane(rover->master->frontsector, rover, true));
+					R_IsRipplePlane(rover->master->frontsector, rover, true),
+					true
+				);
 
 				ffloor[numffloors].slope = *rover->b_slope;
 
@@ -1024,11 +1036,14 @@ static void R_Subsector(size_t num)
 			{
 				light = R_GetPlaneLight(frontsector, planecenterz, viewz < heightcheck);
 
-				ffloor[numffloors].plane = R_FindPlane(*rover->topheight, *rover->toppic,
+				ffloor[numffloors].plane = R_FindPlane(
+					*rover->topheight, *rover->toppic,
 					*frontsector->lightlist[light].lightlevel, *rover->topxoffs, *rover->topyoffs, *rover->topangle,
 					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope,
 					R_NoEncore(rover->master->frontsector, false),
-					R_IsRipplePlane(rover->master->frontsector, rover, false));
+					R_IsRipplePlane(rover->master->frontsector, rover, false),
+					false
+				);
 
 				ffloor[numffloors].slope = *rover->t_slope;
 
@@ -1069,12 +1084,16 @@ static void R_Subsector(size_t num)
 			{
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
 
-				ffloor[numffloors].plane = R_FindPlane(polysec->floorheight, polysec->floorpic,
+				ffloor[numffloors].plane = R_FindPlane(
+					polysec->floorheight, polysec->floorpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->floor_xoffs, polysec->floor_yoffs,
 					polysec->floorpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, false), false);/* TODO: wet polyobjects? */
+					R_NoEncore(polysec, false),
+					false, /* TODO: wet polyobjects? */
+					true
+				);
 
 				ffloor[numffloors].height = polysec->floorheight;
 				ffloor[numffloors].polyobj = po;
@@ -1095,11 +1114,15 @@ static void R_Subsector(size_t num)
 			{
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
 
-				ffloor[numffloors].plane = R_FindPlane(polysec->ceilingheight, polysec->ceilingpic,
+				ffloor[numffloors].plane = R_FindPlane(
+					polysec->ceilingheight, polysec->ceilingpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, true), false);/* TODO: wet polyobjects? */
+					R_NoEncore(polysec, true),
+					false, /* TODO: wet polyobjects? */
+					false
+				);
 
 				ffloor[numffloors].polyobj = po;
 				ffloor[numffloors].height = polysec->ceilingheight;
