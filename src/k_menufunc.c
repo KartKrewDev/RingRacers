@@ -4350,7 +4350,7 @@ boolean M_ProfileEditInputs(INT32 ch)
 void M_HandleProfileEdit(void)
 {
 	// Always copy the profile name and player name in the profile.
-	if (optionmenus.profile)
+	if (optionsmenu.profile)
 	{
 		// Copy the first 6 chars for profile name
 		if (strlen(cv_dummyprofilename.string))
