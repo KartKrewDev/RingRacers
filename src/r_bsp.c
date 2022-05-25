@@ -67,40 +67,6 @@ boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
 		sector->flags & (SF_RIPPLE_FLOOR << ceiling);
 }
 
-static void R_PlaneLightOverride(sector_t *sector, boolean ceiling, INT32 *lightlevel)
-{
-	terrain_t *t = NULL;
-
-	if (ceiling == true)
-	{
-		t = K_GetTerrainForFlatNum(sector->ceilingpic);
-	}
-	else
-	{
-		t = K_GetTerrainForFlatNum(sector->floorpic);
-	}
-
-	if (t != NULL)
-	{
-		if (t->flags & TRF_SNEAKERPANEL)
-		{
-			*lightlevel = 255;
-		}
-	}
-	else
-	{
-		// Sector effect sneaker panels (DEPRECATED)
-		if (GETSECSPECIAL(sector->special, 4) == 6)
-		{
-			if ((ceiling && (sector->flags & SF_FLIPSPECIAL_CEILING))
-				|| (!ceiling && (sector->flags & SF_FLIPSPECIAL_FLOOR)))
-			{
-				*lightlevel = 255;
-			}
-		}
-	}
-}
-
 //
 // R_ClearDrawSegs
 //
@@ -968,9 +934,6 @@ static void R_Subsector(size_t num)
 
 	sub->sector->extra_colormap = frontsector->extra_colormap;
 
-	R_PlaneLightOverride(frontsector, false, &floorlightlevel);
-	R_PlaneLightOverride(frontsector, true, &ceilinglightlevel);
-
 	if (P_GetSectorFloorZAt(frontsector, viewx, viewy) < viewz
 		|| frontsector->floorpic == skyflatnum
 		|| (frontsector->heightsec != -1 && sectors[frontsector->heightsec].ceilingpic == skyflatnum))
@@ -1027,16 +990,11 @@ static void R_Subsector(size_t num)
 				&& ((viewz < heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
 				|| (viewz > heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
 			{
-				INT32 newlightlevel;
-
 				light = R_GetPlaneLight(frontsector, planecenterz,
 					viewz < heightcheck);
 
-				newlightlevel = *frontsector->lightlist[light].lightlevel;
-				R_PlaneLightOverride(rover->master->frontsector, true, &newlightlevel);
-
 				ffloor[numffloors].plane = R_FindPlane(*rover->bottomheight, *rover->bottompic,
-					newlightlevel, *rover->bottomxoffs,
+					*frontsector->lightlist[light].lightlevel, *rover->bottomxoffs,
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
 					R_NoEncore(rover->master->frontsector, true),
 					R_IsRipplePlane(rover->master->frontsector, rover, true));
@@ -1064,12 +1022,7 @@ static void R_Subsector(size_t num)
 				&& ((viewz > heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
 				|| (viewz < heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
 			{
-				INT32 newlightlevel;
-
 				light = R_GetPlaneLight(frontsector, planecenterz, viewz < heightcheck);
-
-				newlightlevel = *frontsector->lightlist[light].lightlevel;
-				R_PlaneLightOverride(rover->master->frontsector, false, &newlightlevel);
 
 				ffloor[numffloors].plane = R_FindPlane(*rover->topheight, *rover->toppic,
 					*frontsector->lightlist[light].lightlevel, *rover->topxoffs, *rover->topyoffs, *rover->topangle,
@@ -1114,12 +1067,7 @@ static void R_Subsector(size_t num)
 				&& polysec->floorheight >= floorcenterz
 				&& (viewz < polysec->floorheight))
 			{
-				INT32 newlightlevel;
-
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
-
-				newlightlevel = (light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel);
-				R_PlaneLightOverride(polysec, false, &newlightlevel);
 
 				ffloor[numffloors].plane = R_FindPlane(polysec->floorheight, polysec->floorpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->floor_xoffs, polysec->floor_yoffs,
@@ -1145,12 +1093,7 @@ static void R_Subsector(size_t num)
 				&& polysec->ceilingheight <= ceilingcenterz
 				&& (viewz > polysec->ceilingheight))
 			{
-				INT32 newlightlevel;
-
 				light = R_GetPlaneLight(frontsector, polysec->floorheight, viewz < polysec->floorheight);
-
-				newlightlevel = (light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel);
-				R_PlaneLightOverride(polysec, true, &newlightlevel);
 
 				ffloor[numffloors].plane = R_FindPlane(polysec->ceilingheight, polysec->ceilingpic,
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,

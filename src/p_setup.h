@@ -113,7 +113,7 @@ void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
-boolean P_ApplySegLightOffset(UINT8 baselightlevel);
+boolean P_ApplyLightOffset(UINT8 baselightlevel);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);
 

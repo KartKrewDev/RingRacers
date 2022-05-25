@@ -2337,8 +2337,9 @@ void P_UpdateSegLightOffset(seg_t *li)
 #endif
 }
 
-boolean P_ApplySegLightOffset(UINT8 baselightlevel)
+boolean P_ApplyLightOffset(UINT8 baselightlevel)
 {
+	// Don't apply light offsets at full bright or full dark.
 	return (baselightlevel < 255 && baselightlevel > 0);
 }
 

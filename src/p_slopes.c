@@ -31,11 +31,43 @@ UINT16 slopecount = 0;
 static void P_BuildSlopeAnchorList (void);
 static void P_SetupAnchoredSlopes  (void);
 
+// Calculate light
+void P_UpdateSlopeLightOffset(pslope_t *slope)
+{
+	const boolean ceiling = (slope->normal.z < 0);
+	const UINT8 contrast = 16;
+
+	fixed_t contrastFixed = (contrast * FRACUNIT);
+	fixed_t zMul = FRACUNIT;
+	angle_t slopeDir = ANGLE_MAX;
+	fixed_t extralight = 0;
+
+	if (slope->normal.z == 0)
+	{
+		slope->lightOffset = 0;
+		return;
+	}
+
+	slopeDir = R_PointToAngle2(0, 0, abs(slope->normal.y), abs(slope->normal.x));
+	if (ceiling == true)
+	{
+		slopeDir ^= ANGLE_180;
+	}
+
+	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.
+	contrastFixed = FixedMul(contrastFixed, zMul);
+	extralight = -contrastFixed + FixedMul(FixedDiv(AngleFixed(slopeDir), 90*FRACUNIT), (contrastFixed * 2));
+
+	// -16 and 16 for both software & hardware
+	slope->lightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+}
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 // Calculate slope's high & low z
@@ -130,6 +162,8 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 		slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
 		slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
 	}
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Setup slope via constants.
@@ -160,6 +194,8 @@ static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fix
 	// Get angles
 	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
 	slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Recalculate dynamic slopes.

@@ -251,6 +251,9 @@ typedef struct pslope_s
 	// SRB2Kart: For P_VeryTopOfFOF & P_VeryBottomOfFOF
 	fixed_t lowz;
 	fixed_t highz;
+
+	// Light offsets (see seg_t)
+	INT16 lightOffset;
 } pslope_t;
 
 typedef enum
