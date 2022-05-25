@@ -413,6 +413,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
+	mapheaderinfo[num]->light_contrast = 0;
+	mapheaderinfo[num]->use_light_angle = false;
+	mapheaderinfo[num]->light_angle = 0;
 #if 1 // equivalent to "FlickyList = DEMO"
 	P_SetDemoFlickies(num);
 #else // equivalent to "FlickyList = NONE"
@@ -2322,7 +2325,7 @@ static inline float P_SegLengthFloat(seg_t *seg)
   */
 void P_UpdateSegLightOffset(seg_t *li)
 {
-	const UINT8 contrast = 16;
+	const UINT8 contrast = maplighting.contrast;
 	fixed_t extralight = 0;
 
 	extralight = -((fixed_t)contrast*FRACUNIT) +

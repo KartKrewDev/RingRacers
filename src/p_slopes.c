@@ -35,7 +35,7 @@ static void P_SetupAnchoredSlopes  (void);
 void P_UpdateSlopeLightOffset(pslope_t *slope)
 {
 	const boolean ceiling = (slope->normal.z < 0);
-	const UINT8 contrast = 16;
+	const UINT8 contrast = maplighting.contrast;
 
 	fixed_t contrastFixed = (contrast * FRACUNIT);
 	fixed_t zMul = FRACUNIT;
