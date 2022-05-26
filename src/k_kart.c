@@ -37,6 +37,8 @@
 #include "k_terrain.h"
 #include "k_director.h"
 #include "k_collide.h"
+#include "k_follower.h"
+#include "k_objects.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -352,25 +354,25 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
-		 /*Invincibility*/ { 0, 0, 0, 0, 2, 4, 6, 9 }, // Invincibility
-				/*Banana*/ { 4, 3, 1, 0, 0, 0, 0, 0 }, // Banana
+		 /*Invincibility*/ { 0, 0, 0, 0, 3, 4, 6, 9 }, // Invincibility
+				/*Banana*/ { 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 5, 4, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 				  /*Jawz*/ { 0, 3, 2, 1, 1, 0, 0, 0 }, // Jawz
 				  /*Mine*/ { 0, 2, 3, 1, 0, 0, 0, 0 }, // Mine
 			 /*Land Mine*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
-			   /*Ballhog*/ { 0, 0, 2, 1, 0, 0, 0, 0 }, // Ballhog
+			   /*Ballhog*/ { 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
 	  /*Lightning Shield*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
-			   /*Hyudoro*/ { 0, 0, 0, 1, 1, 0, 0, 0 }, // Hyudoro
+			   /*Hyudoro*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
 		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
 			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-		   /*Drop Target*/ { 4, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
+		   /*Drop Target*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0, 2, 2, 1, 0, 0, 0 }, // Sneaker x2
 			/*Sneaker x3*/ { 0, 0, 0, 2, 6,10, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -456,9 +458,6 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
 	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
 		indirectitemcooldown = 20*TICRATE;
-
-	if (getitem == KITEM_HYUDORO) // Hyudoro cooldown
-		hyubgone = 5*TICRATE;
 
 	player->botvars.itemdelay = TICRATE;
 	player->botvars.itemconfirm = 0;
@@ -681,6 +680,7 @@ INT32 K_KartGetItemOdds(
 		case KITEM_LANDMINE:
 		case KITEM_DROPTARGET:
 		case KITEM_BALLHOG:
+		case KITEM_HYUDORO:
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
@@ -739,13 +739,6 @@ INT32 K_KartGetItemOdds(
 			powerItem = true;
 
 			if (spbplace != -1)
-				newodds = 0;
-			break;
-		case KITEM_HYUDORO:
-			cooldownOnStart = true;
-			notNearEnd = true;
-
-			if (hyubgone > 0)
 				newodds = 0;
 			break;
 		default:
@@ -2812,7 +2805,7 @@ void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
 	if (source->player->follower)
 	{
 		follower_t fl = followers[source->player->followerskin];
-		source->player->follower->movecount = fl.hitconfirmtime;	// movecount is used to play the hitconfirm animation for followers.
+		source->player->follower->movecount = fl.hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
 	}
 
 	if (cv_kartvoices.value)
@@ -2922,6 +2915,7 @@ boolean K_TripwirePassConditions(player_t *player)
 			player->sneakertimer ||
 			player->growshrinktimer > 0 ||
 			player->flamedash ||
+			player->hyudorotimer ||
 			player->speed > 2 * K_GetKartSpeed(player, false, true)
 	)
 		return true;
@@ -3346,7 +3340,7 @@ fixed_t K_3dKartMovement(player_t *player)
 
 angle_t K_MomentumAngle(mobj_t *mo)
 {
-	if (mo->momx || mo->momy)
+	if (FixedHypot(mo->momx, mo->momy) >= mo->scale)
 	{
 		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
 	}
@@ -3551,8 +3545,7 @@ static void K_RemoveGrowShrink(player_t *player)
 		else if (player->growshrinktimer < 0) // Play Grow noise
 			S_StartSound(player->mo, sfx_kc5a);
 
-		if (player->invincibilitytimer == 0)
-			player->mo->color = player->skincolor;
+		K_KartResetPlayerColor(player);
 
 		player->mo->scalespeed = mapobjectscale/TICRATE;
 		player->mo->destscale = mapobjectscale;
@@ -5398,6 +5391,7 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 	}
 }
 
+#if 0
 static void K_DoHyudoroSteal(player_t *player)
 {
 	INT32 i, numplayers = 0;
@@ -5475,6 +5469,7 @@ static void K_DoHyudoroSteal(player_t *player)
 			S_StartSound(NULL, sfx_s3k92);
 	}
 }
+#endif
 
 void K_DoSneaker(player_t *player, INT32 type)
 {
@@ -5619,7 +5614,6 @@ static void K_DoShrink(player_t *user)
 
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 {
-	const fixed_t vscale = mapobjectscale + (mo->scale - mapobjectscale);
 	fixed_t thrust = 0;
 
 	if (mo->player && mo->player->spectator)
@@ -5660,7 +5654,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
-	mo->momz = FixedMul(thrust, vscale);
+	mo->momz = FixedMul(thrust, mapobjectscale);
 
 	if (mo->eflags & MFE_UNDERWATER)
 	{
@@ -6248,7 +6242,7 @@ static fixed_t K_BananaSlopeZ(pslope_t *slope, fixed_t x, fixed_t y, fixed_t z, 
 	return P_GetZAt(slope, testx, testy, z);
 }
 
-static void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
+void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player)
 {
 	fixed_t newz;
 	sector_t *sec;
@@ -6637,12 +6631,10 @@ static void K_MoveHeldObjects(player_t *player)
 					targy = player->mo->y + P_ReturnThrustY(cur, cur->angle + angoffset, cur->extravalue1);
 
 					{ // bobbing, copy pasted from my kimokawaiii entry
-						const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-						fixed_t sine = FixedMul(player->mo->scale, 8 * FINESINE((((2*pi*(4*TICRATE)) * leveltime)>>ANGLETOFINESHIFT) & FINEMASK));
+						fixed_t sine = FixedMul(player->mo->scale, 8 * FINESINE((((M_TAU_FIXED * (4*TICRATE)) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
 						targz = (player->mo->z + (player->mo->height/2)) + sine;
 						if (player->mo->eflags & MFE_VERTICALFLIP)
 							targz += (player->mo->height/2 - 32*player->mo->scale)*6;
-
 					}
 
 					if (cur->tracer)
@@ -7069,57 +7061,57 @@ static mobj_t *attractmo;
 static fixed_t attractdist;
 static fixed_t attractzdist;
 
-static inline boolean PIT_AttractingRings(mobj_t *thing)
+static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 {
 	if (attractmo == NULL || P_MobjWasRemoved(attractmo) || attractmo->player == NULL)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing == NULL || P_MobjWasRemoved(thing))
 	{
-		return true; // invalid
+		return BMIT_CONTINUE; // invalid
 	}
 
 	if (thing == attractmo)
 	{
-		return true; // invalid
+		return BMIT_CONTINUE; // invalid
 	}
 
 	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
 	{
-		return true; // not a ring
+		return BMIT_CONTINUE; // not a ring
 	}
 
 	if (thing->health <= 0)
 	{
-		return true; // dead
+		return BMIT_CONTINUE; // dead
 	}
 
 	if (thing->extravalue1)
 	{
-		return true; // in special ring animation
+		return BMIT_CONTINUE; // in special ring animation
 	}
 
 	if (thing->tracer != NULL && P_MobjWasRemoved(thing->tracer) == false)
 	{
-		return true; // already attracted
+		return BMIT_CONTINUE; // already attracted
 	}
 
 	// see if it went over / under
 	if (attractmo->z - attractzdist > thing->z + thing->height)
 	{
-		return true; // overhead
+		return BMIT_CONTINUE; // overhead
 	}
 
 	if (attractmo->z + attractmo->height + attractzdist < thing->z)
 	{
-		return true; // underneath
+		return BMIT_CONTINUE; // underneath
 	}
 
 	if (P_AproxDistance(attractmo->x - thing->x, attractmo->y - thing->y) > attractdist + thing->radius)
 	{
-		return true; // Too far away
+		return BMIT_CONTINUE; // Too far away
 	}
 
 	if (RINGTOTAL(attractmo->player) >= 20 || (attractmo->player->pflags & PF_RINGLOCK))
@@ -7146,7 +7138,7 @@ static inline boolean PIT_AttractingRings(mobj_t *thing)
 		P_SetTarget(&thing->tracer, attractmo);
 	}
 
-	return true; // find other rings
+	return BMIT_CONTINUE; // find other rings
 }
 
 /** Looks for rings near a player in the blockmap.
@@ -7568,6 +7560,15 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->instashield)
 		player->instashield--;
 
+	if (player->justDI)
+	{
+		player->justDI--;
+
+		// return turning if player is fully actionable, no matter when!
+		if (!P_PlayerInPain(player))
+			player->justDI = 0;
+	}
+
 	if (player->eggmanexplode)
 	{
 		if (player->spectator || (gametype == GT_BATTLE && !player->bumpers))
@@ -7578,6 +7579,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (player->eggmanexplode <= 0)
 			{
 				mobj_t *eggsexplode;
+
+				K_KartResetPlayerColor(player);
+
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
 				if (player->eggmanblame >= 0
@@ -7657,37 +7661,45 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_HandleDelayedHitByEm(player);
 }
 
-void K_KartPlayerAfterThink(player_t *player)
+void K_KartResetPlayerColor(player_t *player)
 {
+	boolean forcereset = false;
 	boolean fullbright = false;
 
-	if (player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Ensure these are set correctly here
+	if (!player->mo || P_MobjWasRemoved(player->mo)) // Can't do anything
+		return;
+
+	if (player->mo->health <= 0 || player->playerstate == PST_DEAD || (player->respawn.state == RESPAWNST_MOVE)) // Override everything
 	{
 		player->mo->colorized = (player->dye != 0);
 		player->mo->color = player->dye ? player->dye : player->skincolor;
+		goto finalise;
 	}
-	else if (player->eggmanexplode) // You're gonna diiiiie
+
+	if (player->eggmanexplode) // You're gonna diiiiie
 	{
 		const INT32 flashtime = 4<<(player->eggmanexplode/TICRATE);
 		if (player->eggmanexplode == 1 || (player->eggmanexplode % (flashtime/2) != 0))
 		{
-			player->mo->colorized = (player->dye != 0);
-			player->mo->color = player->dye ? player->dye : player->skincolor;
+			forcereset = true;
 		}
 		else if (player->eggmanexplode % flashtime == 0)
 		{
 			player->mo->colorized = true;
 			player->mo->color = SKINCOLOR_BLACK;
 			fullbright = true;
+			goto finalise;
 		}
 		else
 		{
 			player->mo->colorized = true;
 			player->mo->color = SKINCOLOR_CRIMSON;
 			fullbright = true;
+			goto finalise;
 		}
 	}
-	else if (player->invincibilitytimer)
+
+	if (player->invincibilitytimer) // You're gonna kiiiiill
 	{
 		const tic_t defaultTime = itemtime+(2*TICRATE);
 		tic_t flicker = 2;
@@ -7698,44 +7710,56 @@ void K_KartPlayerAfterThink(player_t *player)
 		{
 			player->mo->color = K_RainbowColor(leveltime / 2);
 			player->mo->colorized = true;
+			forcereset = false;
 		}
 		else
 		{
-			player->mo->color = player->skincolor;
-			player->mo->colorized = false;
-
 			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
+			forcereset = true;
 		}
 
 		if (leveltime % flicker == 0)
 		{
 			player->mo->color = SKINCOLOR_INVINCFLASH;
 			player->mo->colorized = true;
+			forcereset = false;
+		}
+
+		if (!forcereset)
+		{
+			goto finalise;
 		}
 	}
-	else if (player->growshrinktimer) // Ditto, for grow/shrink
+
+	if (player->growshrinktimer) // Ditto, for grow/shrink
 	{
 		if (player->growshrinktimer % 5 == 0)
 		{
 			player->mo->colorized = true;
 			player->mo->color = (player->growshrinktimer < 0 ? SKINCOLOR_CREAMSICLE : SKINCOLOR_PERIWINKLE);
 			fullbright = true;
+			goto finalise;
 		}
-		else
-		{
-			player->mo->colorized = (player->dye != 0);
-			player->mo->color = player->dye ? player->dye : player->skincolor;
-		}
+
+		forcereset = true;
 	}
-	else if (player->ringboost && (leveltime & 1)) // ring boosting
+
+	if (player->ringboost && (leveltime & 1)) // ring boosting
 	{
 		player->mo->colorized = true;
 		fullbright = true;
+		goto finalise;
 	}
 	else
 	{
 		player->mo->colorized = (player->dye != 0);
+		if (forcereset)
+		{
+			player->mo->color = player->dye ? player->dye : player->skincolor;
+		}
 	}
+
+finalise:
 
 	if (player->curshield)
 	{
@@ -7751,6 +7775,11 @@ void K_KartPlayerAfterThink(player_t *player)
 		if (!(player->mo->state->frame & FF_FULLBRIGHT))
 			player->mo->frame &= ~FF_FULLBRIGHT;
 	}
+}
+
+void K_KartPlayerAfterThink(player_t *player)
+{
+	K_KartResetPlayerColor(player);
 
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
@@ -8315,7 +8344,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	if (player->justDI == true)
+	if (player->justDI > 0)
 	{
 		// No turning until you let go after DI-ing.
 		return 0;
@@ -8877,6 +8906,8 @@ void K_StripOther(player_t *player)
 	{
 		player->eggmanexplode = 0;
 		player->eggmanblame = -1;
+
+		K_KartResetPlayerColor(player);
 	}
 }
 
@@ -10042,7 +10073,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
-								K_DoHyudoroSteal(player); // yes. yes they do.
+								//K_DoHyudoroSteal(player); // yes. yes they do.
+								Obj_HyudoroDeploy(player->mo);
+								K_PlayAttackTaunt(player->mo);
 							}
 							break;
 						case KITEM_POGOSPRING:
@@ -10226,77 +10259,71 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
 			{
+				INT16 aimingcompare = abs(cmd->throwdir) - abs(cmd->turning);
 
-				// "COOL" timing n shit.
-				if (cmd->turning || player->throwdir)
+				// Uses cmd->turning over steering intentionally.
+#define TRICKTHRESHOLD (KART_FULLTURN/4)
+				if (aimingcompare < -TRICKTHRESHOLD) // side trick
 				{
+					if (cmd->turning > 0)
+					{
+						P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
+						player->trickpanel = 2;
+					}
+					else
+					{
+						P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
+						player->trickpanel = 3;
+					}
+				}
+				else if (aimingcompare > TRICKTHRESHOLD) // forward/back trick
+				{
+					if (cmd->throwdir > 0) // back trick
+					{
+						if (player->mo->momz * P_MobjFlip(player->mo) > 0)
+						{
+							player->mo->momz = 0;
+						}
+
+						P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
+						player->trickpanel = 2;
+					}
+					else if (cmd->throwdir < 0)
+					{
+						boolean relative = true;
+
+						player->mo->momx /= 3;
+						player->mo->momy /= 3;
+
+						if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
+						{
+							relative = false;
+						}
+
+						// Calculate speed boost decay:
+						// Base speed boost duration is 35 tics.
+						// At most, lose 3/4th of your boost.
+						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
+						//CONS_Printf("decay: %d\n", player->trickboostdecay);
+
+						P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+						player->trickpanel = 4;
+					}
+				}
+#undef TRICKTHRESHOLD
+
+				// Finalise everything.
+				if (player->trickpanel != 1) // just changed from 1?
+				{
+					player->mo->hitlag = TRICKLAG;
+					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
+
+					K_trickPanelTimingVisual(player, momz);
+
 					if (abs(momz) < FRACUNIT*99)	// Let's use that as baseline for PERFECT trick.
 					{
 						player->karthud[khud_trickcool] = TICRATE;
 					}
-				}
-
-				// Uses cmd->turning over steering intentionally.
-				if (cmd->turning > 0)
-				{
-					P_InstaThrust(player->mo, player->mo->angle + lr, max(basespeed, speed*5/2));
-					player->trickpanel = 2;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->turning < 0)
-				{
-					P_InstaThrust(player->mo, player->mo->angle - lr, max(basespeed, speed*5/2));
-					player->trickpanel = 3;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->throwdir > 0)
-				{
-					if (player->mo->momz * P_MobjFlip(player->mo) > 0)
-					{
-						player->mo->momz = 0;
-					}
-
-					P_InstaThrust(player->mo, player->mo->angle, max(basespeed, speed*3));
-					player->trickpanel = 2;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
-				}
-				else if (cmd->throwdir < 0)
-				{
-					boolean relative = true;
-
-					player->mo->momx /= 3;
-					player->mo->momy /= 3;
-
-					if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
-					{
-						relative = false;
-					}
-
-					// Calculate speed boost decay:
-					// Base speed boost duration is 35 tics.
-					// At most, lose 3/4th of your boost.
-					player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
-					//CONS_Printf("decay: %d\n", player->trickboostdecay);
-
-					P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
-					player->trickpanel = 4;
-
-					player->mo->hitlag = TRICKLAG;
-					player->mo->eflags &= ~MFE_DAMAGEHITLAG;
-
-					K_trickPanelTimingVisual(player, momz);
 				}
 			}
 		}
@@ -10507,7 +10534,7 @@ void K_HandleDirectionalInfluence(player_t *player)
 	}
 
 	// DI attempted!!
-	player->justDI = true;
+	player->justDI = MAXHITLAGTICS;
 
 	cmd = &player->cmd;
 

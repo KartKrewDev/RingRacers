@@ -37,6 +37,7 @@
 #include "k_boss.h"
 #include "k_respawn.h"
 #include "p_spec.h"
+#include "k_objects.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -481,6 +482,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			toucher->flags |= MF_NOGRAVITY;
 			toucher->momz = (8*toucher->scale) * P_MobjFlip(toucher);
 			S_StartSound(toucher, sfx_s1b2);
+			return;
+
+		case MT_HYUDORO:
+			Obj_HyudoroCollide(special, toucher);
 			return;
 
 		case MT_RING:
@@ -1767,8 +1772,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	player->carry = CR_NONE;
 
-	player->mo->color = player->skincolor;
-	player->mo->colorized = false;
+	K_KartResetPlayerColor(player);
 
 	P_ResetPlayer(player);
 

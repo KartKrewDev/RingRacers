@@ -1096,7 +1096,7 @@ void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 // to P_BlockLinesIterator, then make one or more calls
 // to it.
 //
-boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
+boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *))
 {
 	INT32 offset;
 	const INT32 *list; // Big blockmap
@@ -1122,11 +1122,22 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 
 			for (i = 0; i < po->numLines; ++i)
 			{
+				BlockItReturn_t ret = BMIT_CONTINUE;
+
 				if (po->lines[i]->validcount == validcount) // line has been checked
 					continue;
+
 				po->lines[i]->validcount = validcount;
-				if (!func(po->lines[i]))
+				ret = func(po->lines[i]);
+
+				if (ret == BMIT_ABORT)
+				{
 					return false;
+				}
+				else if (ret == BMIT_STOP)
+				{
+					return true;
+				}
 			}
 		}
 		plink = (polymaplink_t *)(plink->link.next);
@@ -1137,15 +1148,24 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 	// First index is really empty, so +1 it.
 	for (list = blockmaplump + offset + 1; *list != -1; list++)
 	{
+		BlockItReturn_t ret = BMIT_CONTINUE;
+
 		ld = &lines[*list];
 
 		if (ld->validcount == validcount)
 			continue; // Line has already been checked.
 
 		ld->validcount = validcount;
+		ret = func(ld);
 
-		if (!func(ld))
+		if (ret == BMIT_ABORT)
+		{
 			return false;
+		}
+		else if (ret == BMIT_STOP)
+		{
+			return true;
+		}
 	}
 	return true; // Everything was checked.
 }
@@ -1154,7 +1174,7 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 //
 // P_BlockThingsIterator
 //
-boolean P_BlockThingsIterator(INT32 x, INT32 y, boolean (*func)(mobj_t *))
+boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *))
 {
 	mobj_t *mobj, *bnext = NULL;
 
@@ -1164,19 +1184,25 @@ boolean P_BlockThingsIterator(INT32 x, INT32 y, boolean (*func)(mobj_t *))
 	// Check interaction with the objects in the blockmap.
 	for (mobj = blocklinks[y*bmapwidth + x]; mobj; mobj = bnext)
 	{
+		BlockItReturn_t ret = BMIT_CONTINUE;
+
 		P_SetTarget(&bnext, mobj->bnext); // We want to note our reference to bnext here incase it is MF_NOTHINK and gets removed!
-		if (!func(mobj))
+		ret = func(mobj);
+
+		if (ret == BMIT_ABORT)
 		{
 			P_SetTarget(&bnext, NULL);
-			return false;
+			return false; // failure
 		}
-		if (P_MobjWasRemoved(tmthing) // func just popped our tmthing, cannot continue.
-		|| (bnext && P_MobjWasRemoved(bnext))) // func just broke blockmap chain, cannot continue.
+
+		if ((ret == BMIT_STOP)
+			|| (bnext && P_MobjWasRemoved(bnext))) // func just broke blockmap chain, cannot continue.
 		{
 			P_SetTarget(&bnext, NULL);
-			return true;
+			return true; // success
 		}
 	}
+
 	return true;
 }
 
@@ -1220,7 +1246,7 @@ static void P_CheckIntercepts(void)
 // are on opposite sides of the trace.
 // Returns true if earlyout and a solid line hit.
 //
-static boolean PIT_AddLineIntercepts(line_t *ld)
+static BlockItReturn_t PIT_AddLineIntercepts(line_t *ld)
 {
 	INT32 s1, s2;
 	fixed_t frac;
@@ -1243,18 +1269,18 @@ static boolean PIT_AddLineIntercepts(line_t *ld)
 	}
 
 	if (s1 == s2)
-		return true; // Line isn't crossed.
+		return BMIT_CONTINUE; // Line isn't crossed.
 
 	// Hit the line.
 	P_MakeDivline(ld, &dl);
 	frac = P_InterceptVector(&trace, &dl);
 
 	if (frac < 0)
-		return true; // Behind source.
+		return BMIT_CONTINUE; // Behind source.
 
 	// Try to take an early out of the check.
 	if (earlyout && frac < FRACUNIT && !ld->backsector)
-		return false; // stop checking
+		return BMIT_ABORT; // stop checking
 
 	P_CheckIntercepts();
 
@@ -1263,13 +1289,13 @@ static boolean PIT_AddLineIntercepts(line_t *ld)
 	intercept_p->d.line = ld;
 	intercept_p++;
 
-	return true; // continue
+	return BMIT_CONTINUE; // continue
 }
 
 //
 // PIT_AddThingIntercepts
 //
-static boolean PIT_AddThingIntercepts(mobj_t *thing)
+static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 {
 	fixed_t px1, py1, px2, py2, frac;
 	INT32 s1, s2;
@@ -1300,7 +1326,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	s2 = P_PointOnDivlineSide(px2, py2, &trace);
 
 	if (s1 == s2)
-		return true; // Line isn't crossed.
+		return BMIT_CONTINUE; // Line isn't crossed.
 
 	dl.x = px1;
 	dl.y = py1;
@@ -1310,7 +1336,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	frac = P_InterceptVector(&trace, &dl);
 
 	if (frac < 0)
-		return true; // Behind source.
+		return BMIT_CONTINUE; // Behind source.
 
 	P_CheckIntercepts();
 
@@ -1319,7 +1345,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	intercept_p->d.thing = thing;
 	intercept_p++;
 
-	return true; // Keep going.
+	return BMIT_CONTINUE; // Keep going.
 }
 
 //

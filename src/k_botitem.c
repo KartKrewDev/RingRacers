@@ -1308,7 +1308,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 							K_BotItemGenericOrbitShield(player, cmd);
 						}
 						else if (player->position != 1) // Hold onto orbiting items when in 1st :)
-						/* FALL-THRU */
+						/* FALLTHRU */
 					case KITEM_BALLHOG:
 						{
 							K_BotItemOrbinaut(player, cmd);

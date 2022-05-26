@@ -65,6 +65,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "k_color.h"
 #include "k_grandprix.h"
+#include "k_follower.h"
 #include "r_fps.h"
 
 #include "i_joy.h" // for joystick menu controls
@@ -3118,26 +3119,6 @@ void M_Drawer(void)
 		{
 			M_GetGametypeColor();
 			currentMenu->drawroutine(); // call current menu Draw routine
-		}
-
-		// Draw version down in corner
-		// ... but only in the MAIN MENU.  I'm a picky bastard.
-		if (currentMenu == &MainDef)
-		{
-			if (customversionstring[0] != '\0')
-			{
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
-			}
-			else
-			{
-#ifdef DEVELOP // Development -- show revision / branch info
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
-#else // Regular build
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
-#endif
-			}
 		}
 	}
 
@@ -9665,12 +9646,12 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 			// Fake the follower's in game appearance by now also applying some of its variables! coolio, eh?
 			follower_t fl = followers[setupm_fakefollower];	// shortcut for our sanity
-			// smooth floating, totally not stolen from rocket sneakers.
-			const fixed_t pi = (22<<FRACBITS) / 7; // loose approximation, this doesn't need to be incredibly precise
-			fixed_t sine = fl.bobamp * FINESINE((((8*pi*(fl.bobspeed)) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK);
 
-			UINT8 *colormap = R_GetTranslationColormap(-1, setupm_fakecolor->color, 0);
-			V_DrawFixedPatch((mx+65)*FRACUNIT, (my+131-fl.zoffs)*FRACUNIT+sine, fl.scale, flags, patch, colormap);
+			// smooth floating, totally not stolen from rocket sneakers.
+			fixed_t sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * followertimer)>>ANGLETOFINESHIFT) & FINEMASK));
+
+			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, setupm_fakecolor->color, 0); // why does GTC_MENUCACHE not work here...?
+			V_DrawFixedPatch((mx+65)*FRACUNIT, ((my+131)*FRACUNIT)-fl.zoffs+sine, fl.scale, flags, patch, colormap);
 			Z_Free(colormap);
 		}
 	}
@@ -9682,7 +9663,7 @@ static void M_DrawSetupMultiPlayerMenu(void)
 static void M_GetFollowerState(void)
 {
 
-	if (setupm_fakefollower <= -1 || setupm_fakefollower > numfollowers-1)	// yikes, there's none!
+	if (setupm_fakefollower <= -1 || setupm_fakefollower >= numfollowers) // yikes, there's none!
 		return;
 	// ^ we don't actually need to set anything since it won't be displayed anyway.
 
@@ -9830,13 +9811,13 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 	// check followers:
 	if (setupm_fakefollower < -1)
 	{
-		setupm_fakefollower = numfollowers-1;
-		M_GetFollowerState();	// update follower state
+		setupm_fakefollower = numfollowers;
+		M_GetFollowerState(); // update follower state
 	}
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 	{
 		setupm_fakefollower = -1;
-		M_GetFollowerState();	// update follower state
+		M_GetFollowerState(); // update follower state
 	}
 
 	// check color
@@ -9878,7 +9859,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -9921,7 +9902,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -9964,7 +9945,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
@@ -10007,7 +9988,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
 
 	// yikes, we don't want none of that...
-	if (setupm_fakefollower > numfollowers-1)
+	if (setupm_fakefollower >= numfollowers)
 		setupm_fakefollower = -1;
 
 	M_GetFollowerState();	// update follower state
