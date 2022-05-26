@@ -15,7 +15,6 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
-#include "r_skins.h"
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
