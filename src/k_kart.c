@@ -3298,11 +3298,18 @@ fixed_t K_GetNewSpeed(player_t *player)
 {
 	const fixed_t accelmax = 4000;
 	const fixed_t p_speed = K_GetKartSpeed(player, true, true);
-	const fixed_t p_accel = K_GetKartAccel(player);
+	fixed_t p_accel = K_GetKartAccel(player);
 
 	fixed_t newspeed, oldspeed, finalspeed;
 
-	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
+	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
+	{
+		// Acceleration is tied to top speed...
+		// so if we want JUST a top speed boost, we have to do this...
+		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
+	}
+
+	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
