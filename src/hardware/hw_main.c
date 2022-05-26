@@ -5129,7 +5129,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	dispoffset = thing->info->dispoffset;
+	dispoffset = thing->dispoffset;
 
 	// hitlag vibrating (todo: interp somehow?)
 	if (thing->hitlag > 0 && (thing->eflags & MFE_DAMAGEHITLAG))

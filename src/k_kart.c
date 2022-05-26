@@ -4939,90 +4939,6 @@ void K_DriftDustHandling(mobj_t *spawner)
 	}
 }
 
-static void K_SpawnTripwireVFX(mobj_t *mo)
-{
-	tic_t t = leveltime;
-	angle_t ang, aoff;
-	SINT8 sign = 1;
-	boolean altColor = false;
-	mobj_t *dust;
-	boolean drifting = false;
-	UINT8 i;
-
-	I_Assert(mo != NULL);
-	I_Assert(!P_MobjWasRemoved(mo));
-
-	if (!P_IsObjectOnGround(mo))
-		return;
-
-	if (mo->player)
-	{
-		ang = mo->player->drawangle;
-
-		if (mo->player->drift != 0)
-		{
-			drifting = true;
-			ang += (mo->player->drift * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
-			if (mo->player->drift < 0)
-				sign = 1;
-			else
-				sign = -1;
-		}
-	}
-	else
-		ang = mo->angle;
-
-	if (drifting == false)
-	{
-		i = (t & 1);
-
-		if (i & 1)
-			sign = -1;
-		else
-			sign = 1;
-	}
-	else
-	{
-		if (t & 1)
-		{
-			return;
-		}
-
-		t /= 2;
-		i = (t & 1);
-	}
-
-	aoff = (ang + ANGLE_180) + (ANGLE_45 * sign);
-
-	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
-		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
-		mo->z, MT_DRIFTDUST);
-
-	P_SetTarget(&dust->target, mo);
-	P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
-	P_SetScale(dust, mo->scale);
-	dust->destscale = mo->scale * 6;
-	dust->scalespeed = mo->scale/12;
-	K_FlipFromObject(dust, mo);
-
-	altColor = (sign > 0);
-
-	if ((t / 2) & 1)
-	{
-		dust->tics++; // "randomize" animation
-		altColor = !altColor;
-	}
-
-	dust->colorized = true;
-	dust->color = altColor ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
-
-	dust->momx = (4*mo->momx)/5;
-	dust->momy = (4*mo->momy)/5;
-	dust->momz = (4*P_GetMobjZMovement(mo))/5;
-
-	P_Thrust(dust, dust->angle, 4*mo->scale);
-}
-
 void K_Squish(mobj_t *mo)
 {
 	const fixed_t maxstretch = 4*FRACUNIT;
@@ -7289,6 +7205,43 @@ static void K_LookForRings(mobj_t *pmo)
 			P_BlockThingsIterator(bx, by, PIT_AttractingRings);
 }
 
+static void K_UpdateTripwire(player_t *player)
+{
+	fixed_t speedThreshold = K_GetKartSpeed(player, false) *3/4;
+	boolean goodSpeed = (player->speed >= speedThreshold);
+
+	if (player->tripwireLeniency > 0)
+	{
+		player->tripwireLeniency--;
+	}
+
+	if (goodSpeed == false && player->tripwireLeniency > 0)
+	{
+		// Decrease at double speed when your speed is bad.
+		player->tripwireLeniency--;
+	}
+
+	if (K_TripwirePassConditions(player) == true)
+	{
+		if (player->tripwireLeniency == 0)
+		{
+			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+
+			P_SetTarget(&front->target, player->mo);
+			P_SetTarget(&back->target, player->mo);
+
+			front->dispoffset = 1;
+
+			back->dispoffset = -1;
+			back->extravalue1 = 1;
+			P_SetMobjState(back, S_TRIPWIREBOOST_BOTTOM1);
+		}
+
+		player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+	}
+}
+
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
 	\param	player	player object passed from P_PlayerThink
@@ -7644,16 +7597,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_HandleTumbleBounce(player);
 	}
 
-	if (player->tripwireLeniency > 0)
-	{
-		player->tripwireLeniency--;
-		K_SpawnTripwireVFX(player->mo);
-	}
-
-	if (K_TripwirePassConditions(player) == true)
-	{
-		player->tripwireLeniency = max(player->tripwireLeniency, TICRATE);
-	}
+	K_UpdateTripwire(player);
 
 	K_KartPlayerHUDUpdate(player);
 

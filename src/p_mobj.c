@@ -7163,6 +7163,47 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_TRIPWIREBOOST:
+		if (!mobj->target || !mobj->target->health
+			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->angle = K_MomentumAngle(mobj->target);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
+		mobj->target->destscale = mobj->target->scale;
+		P_SetScale(mobj, mobj->target->scale);
+
+		if (mobj->extravalue1)
+		{
+			mobj->angle += ANGLE_180;
+		}
+
+		{
+			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
+
+			if (trans > NUMTRANSMAPS)
+				trans = NUMTRANSMAPS;
+
+			trans = NUMTRANSMAPS - trans;
+
+			if (trans >= NUMTRANSMAPS)
+			{
+				mobj->renderflags |= RF_DONTDRAW;
+			}
+			else
+			{
+				mobj->renderflags &= ~(RF_TRANSMASK);
+
+				if (trans != 0)
+				{
+					mobj->renderflags |= (trans << RF_TRANSSHIFT);
+				}
+			}
+		}
+		break;
 	case MT_BOOSTFLAME:
 		if (!mobj->target || !mobj->target->health)
 		{

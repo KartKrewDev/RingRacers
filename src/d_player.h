@@ -260,6 +260,8 @@ typedef enum
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
 
+#define TRIPWIRETIME (TICRATE)
+
 //}
 
 // for kickstartaccel
