@@ -5278,9 +5278,10 @@ boolean M_PauseInputs(INT32 ch)
 		return true;
 	}
 
-	else if (M_MenuBackPressed(pid))
+	else if (M_MenuBackPressed(pid) || M_MenuButtonPressed(pid, MBT_START))
 	{
 		M_QuitPauseMenu(-1);
+		M_SetMenuDelay(pid);
 		return true;
 	}
 	return false;
