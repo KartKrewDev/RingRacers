@@ -1856,7 +1856,16 @@ static void K_UpdateDraft(player_t *player)
 			// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
 			// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
 			if (player->draftpower < FRACUNIT)
-				player->draftpower += (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));
+			{
+				fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
+				player->draftpower += add;
+
+				if (player->bot && player->botvars.rival)
+				{
+					// Double speed for the rival!
+					player->draftpower += add;
+				}
+			}
 
 			if (player->draftpower > FRACUNIT)
 				player->draftpower = FRACUNIT;
@@ -3162,7 +3171,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
 		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
-		if (player->botvars.rival == true)
+		if (player->bot && player->botvars.rival)
 		{
 			// +10% top speed for the rival
 			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
