@@ -88,36 +88,19 @@ fixed_t K_BotRubberband(player_t *player);
 
 
 /*--------------------------------------------------
-	fixed_t K_BotTopSpeedRubberband(player_t *player);
+	fixed_t K_UpdateRubberband(player_t *player);
 
-		Gives a multiplier for a bot's rubberbanding.
-		Adjusted from K_BotRubberband to be used for top speed.
-
-	Input Arguments:-
-		player - Player to check.
-
-	Return:-
-		A multiplier in fixed point scale.
---------------------------------------------------*/
-
-fixed_t K_BotTopSpeedRubberband(player_t *player);
-
-
-/*--------------------------------------------------
-	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
-
-		Gives a multiplier for a bot's rubberbanding.
-		Adjusted from K_BotRubberband to be used for friction.
+		Eases the current rubberbanding value to the
+		new one, calculated by K_BotRubberband.
 
 	Input Arguments:-
-		player - Player to check.
-		frict - Friction value to adjust.
+		player - Player to update.
 
 	Return:-
-		The new friction value.
+		The new rubberband multiplier, in fixed point scale.
 --------------------------------------------------*/
 
-fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
+fixed_t K_UpdateRubberband(player_t *player);
 
 
 /*--------------------------------------------------

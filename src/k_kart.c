@@ -1176,9 +1176,15 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	}
 	else
 	{
+		// Applies rubberbanding, to prevent rubberbanding bots
+		// from causing super crazy bumps.
+		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
+
 		weight = (mobj->player->kartweight) * FRACUNIT;
-		if (mobj->player->speed > K_GetKartSpeed(mobj->player, false))
-			weight += (mobj->player->speed - K_GetKartSpeed(mobj->player, false))/8;
+
+		if (mobj->player->speed > spd)
+			weight += (mobj->player->speed - spd) / 8;
+
 		if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
 			weight += 9*FRACUNIT;
 	}
@@ -1747,7 +1753,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 */
 static void K_UpdateDraft(player_t *player)
 {
-	fixed_t topspd = K_GetKartSpeed(player, false);
+	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
 	fixed_t minDist;
 	UINT8 leniency;
@@ -1850,7 +1856,16 @@ static void K_UpdateDraft(player_t *player)
 			// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
 			// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
 			if (player->draftpower < FRACUNIT)
-				player->draftpower += (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));
+			{
+				fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
+				player->draftpower += add;
+
+				if (player->bot && player->botvars.rival)
+				{
+					// Double speed for the rival!
+					player->draftpower += add;
+				}
+			}
 
 			if (player->draftpower > FRACUNIT)
 				player->draftpower = FRACUNIT;
@@ -2026,7 +2041,7 @@ void K_SpawnDashDustRelease(player_t *player)
 static fixed_t K_GetBrakeFXScale(player_t *player, fixed_t maxScale)
 {
 	fixed_t s = FixedDiv(player->speed,
-			K_GetKartSpeed(player, false));
+			K_GetKartSpeed(player, false, false));
 
 	s = max(s, FRACUNIT);
 	s = min(s, maxScale);
@@ -2359,7 +2374,7 @@ void K_KartMoveAnimation(player_t *player)
 {
 	const INT16 minturn = KART_FULLTURN/8;
 
-	const fixed_t fastspeed = (K_GetKartSpeed(player, false) * 17) / 20; // 85%
+	const fixed_t fastspeed = (K_GetKartSpeed(player, false, true) * 17) / 20; // 85%
 	const fixed_t speedthreshold = player->mo->scale / 8;
 
 	const boolean onground = P_IsObjectOnGround(player->mo);
@@ -2910,7 +2925,7 @@ boolean K_TripwirePassConditions(player_t *player)
 			player->growshrinktimer > 0 ||
 			player->flamedash ||
 			player->hyudorotimer ||
-			player->speed > 2 * K_GetKartSpeed(player, false)
+			player->speed > 2 * K_GetKartSpeed(player, false, true)
 	)
 		return true;
 	return false;
@@ -2928,7 +2943,7 @@ boolean K_WaterRun(player_t *player)
 			player->sneakertimer ||
 			player->tiregrease ||
 			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false)
+			player->speed > 2 * K_GetKartSpeed(player, false, true)
 	)
 		return true;
 	return false;
@@ -3139,7 +3154,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 	return finalspeed;
 }
 
-fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
+fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
 	fixed_t finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
@@ -3156,7 +3171,7 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
 		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
-		if (player->botvars.rival == true)
+		if (player->bot && player->botvars.rival)
 		{
 			// +10% top speed for the rival
 			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
@@ -3173,12 +3188,12 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower)
 			finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
 		}
 
-		if (K_PlayerUsesBotMovement(player))
-		{
-			finalspeed = FixedMul(finalspeed, K_BotTopSpeedRubberband(player));
-		}
-
 		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
+	}
+
+	if (dorubberband == true && K_PlayerUsesBotMovement(player) == true)
+	{
+		finalspeed = FixedMul(finalspeed, player->botvars.rubberband);
 	}
 
 	return finalspeed;
@@ -3291,22 +3306,23 @@ SINT8 K_GetForwardMove(player_t *player)
 fixed_t K_GetNewSpeed(player_t *player)
 {
 	const fixed_t accelmax = 4000;
-	const fixed_t p_speed = K_GetKartSpeed(player, true);
-	const fixed_t p_accel = K_GetKartAccel(player);
+	const fixed_t p_speed = K_GetKartSpeed(player, true, true);
+	fixed_t p_accel = K_GetKartAccel(player);
 
 	fixed_t newspeed, oldspeed, finalspeed;
-	fixed_t orig = ORIG_FRICTION;
 
-	if (K_PlayerUsesBotMovement(player))
+	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
 	{
-		orig = K_BotFrictionRubberband(player, ORIG_FRICTION);
+		// Acceleration is tied to top speed...
+		// so if we want JUST a top speed boost, we have to do this...
+		p_accel = FixedDiv(p_accel, player->botvars.rubberband);
 	}
 
-	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy); // FixedMul(P_AproxDistance(player->rmomx, player->rmomy), player->mo->scale);
+	oldspeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), orig);
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
 
 	finalspeed = newspeed - oldspeed;
 
@@ -3524,8 +3540,11 @@ void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 typ
 	if (( player->spinouttype & KSPIN_THRUST ))
 	{
 		// At spinout, player speed is increased to 1/4 their regular speed, moving them forward
-		if (player->speed < K_GetKartSpeed(player, true)/4)
-			P_InstaThrust(player->mo, player->mo->angle, FixedMul(K_GetKartSpeed(player, true)/4, player->mo->scale));
+		fixed_t spd = K_GetKartSpeed(player, true, true) / 4;
+
+		if (player->speed < spd)
+			P_InstaThrust(player->mo, player->mo->angle, FixedMul(spd, player->mo->scale));
+
 		S_StartSound(player->mo, sfx_slip);
 	}
 
@@ -3694,7 +3713,7 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	K_AddHitLag(player->mo, 10, false);
 
 	if (state == TRIP_PASSED && player->spinouttimer &&
-			player->speed > 2* K_GetKartSpeed(player, false))
+			player->speed > 2 * K_GetKartSpeed(player, false, true))
 	{
 		K_TumblePlayer(player, NULL, NULL);
 	}
@@ -4026,19 +4045,21 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 {
 	mobj_t *th;
 	fixed_t x, y, z;
+	fixed_t topspeed = K_GetKartSpeed(source->player, false, false);
 	fixed_t finalspeed = speed;
 	fixed_t finalscale = mapobjectscale;
 	mobj_t *throwmo;
 
 	if (source->player != NULL)
 	{
+		
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
 		{
 			// Nerf the base item speed a bit.
 			finalspeed = FixedMul(finalspeed, SHRINK_PHYSICS_SCALE);
 		}
 
-		if (source->player->speed > K_GetKartSpeed(source->player, false))
+		if (source->player->speed > topspeed)
 		{
 			angle_t input = source->angle - an;
 			boolean invert = (input > ANGLE_180);
@@ -4046,7 +4067,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 				input = InvAngle(input);
 
 			finalspeed = max(speed, FixedMul(speed, FixedMul(
-				FixedDiv(source->player->speed, K_GetKartSpeed(source->player, false)), // Multiply speed to be proportional to your own, boosted maxspeed.
+				FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
 				(((180<<FRACBITS) - AngleFixed(input)) / 180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
 				)));
 		}
@@ -4498,7 +4519,7 @@ static void K_SpawnAIZDust(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (player->speed <= K_GetKartSpeed(player, false))
+	if (player->speed <= K_GetKartSpeed(player, false, true))
 		return;
 
 	travelangle = K_MomentumAngle(player->mo);
@@ -5645,7 +5666,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 
 		mo->player->tricktime = 0; // Reset post-hitlag timer
 		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
-		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false)) - FRACUNIT, 0)*125/100;
+		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false, false)) - FRACUNIT, 0)*125/100;
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
@@ -6528,14 +6549,16 @@ static void K_MoveHeldObjects(player_t *player)
 
 					cur->angle = R_PointToAngle2(cur->x, cur->y, targx, targy);
 
-					/*if (P_IsObjectOnGround(player->mo) && player->speed > 0 && player->bananadrag > TICRATE
-						&& P_RandomChance(min(FRACUNIT/2, FixedDiv(player->speed, K_GetKartSpeed(player, false))/2)))
+					/*
+					if (P_IsObjectOnGround(player->mo) && player->speed > 0 && player->bananadrag > TICRATE
+						&& P_RandomChance(min(FRACUNIT/2, FixedDiv(player->speed, K_GetKartSpeed(player, false, false))/2)))
 					{
 						if (leveltime & 1)
 							targz += 8*(2*FRACUNIT)/7;
 						else
 							targz -= 8*(2*FRACUNIT)/7;
-					}*/
+					}
+					*/
 
 					if (speed > dist)
 						P_InstaThrust(cur, cur->angle, speed-dist);
@@ -7646,7 +7669,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
 			P_IsObjectOnGround(player->mo) &&
-			K_GetKartSpeed(player, false) / 2 <= player->speed)
+			K_GetKartSpeed(player, false, false) / 2 <= player->speed)
 	{
 		K_SpawnBrakeVisuals(player);
 	}
@@ -7951,6 +7974,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
 						{
+							if (P_TraceBlockingLines(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+							{
+								// Save sight checks when all of the other checks pass, so we only do it if we have to
+								continue;
+							}
+
 							bestwaypoint = waypoint->nextwaypoints[i];
 
 							if (angledelta < nextbestdelta)
@@ -7997,6 +8026,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta && momdelta < nextbestmomdelta)
 						{
+							if (P_TraceBlockingLines(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
+							{
+								// Save sight checks when all of the other checks pass, so we only do it if we have to
+								continue;
+							}
+
 							bestwaypoint = waypoint->prevwaypoints[i];
 
 							nextbestdelta = angledelta;
@@ -8341,14 +8376,13 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
-	p_maxspeed = K_GetKartSpeed(player, false);
+	p_maxspeed = K_GetKartSpeed(player, false, true);
 	p_speed = min(currentSpeed, (p_maxspeed * 2));
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
 	{
 		turnfixed = FixedMul(turnfixed, 5*FRACUNIT/4); // Base increase to turning
-		turnfixed = FixedMul(turnfixed, K_BotRubberband(player));
 	}
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
@@ -8394,7 +8428,7 @@ INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 			steer = 9 * steer / 5;
 
 		return FixedMul(steer, 8 * FixedDiv(player->speed,
-					2 * K_GetKartSpeed(player, false) / 3));
+					2 * K_GetKartSpeed(player, false, true) / 3));
 	}
 	else
 		return 0;
@@ -9347,13 +9381,6 @@ void K_AdjustPlayerFriction(player_t *player)
 			player->mo->movefactor = 19*player->mo->movefactor - 18*FRACUNIT;
 		else
 			player->mo->movefactor = FRACUNIT;
-	}
-
-	// Don't go too far above your top speed when rubberbanding
-	// Down here, because we do NOT want to modify movefactor
-	if (K_PlayerUsesBotMovement(player))
-	{
-		player->mo->friction = K_BotFrictionRubberband(player, player->mo->friction);
 	}
 }
 

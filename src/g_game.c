@@ -2404,6 +2404,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->kickstartaccel = kickstartaccel;
 	p->tripWireState = TRIP_NONE;
 
+	p->botvars.rubberband = FRACUNIT;
+	p->botvars.controller = UINT16_MAX;
+
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	if (follower)

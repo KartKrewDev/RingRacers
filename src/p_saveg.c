@@ -378,6 +378,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
 		WRITEUINT8(save_p, players[i].botvars.diffincrease);
 		WRITEUINT8(save_p, players[i].botvars.rival);
+		WRITEFIXED(save_p, players[i].botvars.rubberband);
+		WRITEUINT16(save_p, players[i].botvars.controller);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
@@ -657,6 +659,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.difficulty = READUINT8(save_p);
 		players[i].botvars.diffincrease = READUINT8(save_p);
 		players[i].botvars.rival = (boolean)READUINT8(save_p);
+		players[i].botvars.rubberband = READFIXED(save_p);
+		players[i].botvars.controller = READUINT16(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
