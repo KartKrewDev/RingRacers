@@ -1548,7 +1548,10 @@ void P_XYMovement(mobj_t *mo)
 		{
 			mo->health--;
 			if (mo->health == 0)
+			{
+				mo->scalespeed = mo->scale/12;
 				mo->destscale = 0;
+			}
 		}
 	}
 	//}

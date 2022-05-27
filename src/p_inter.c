@@ -1410,7 +1410,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// special behavior for SPB capsules
 				if (target->threshold == KITEM_SPB)
 				{
-					K_ThrowKartItem(player, true, MT_SPB, 1, 0);
+					K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
 					break;
 				}
 
