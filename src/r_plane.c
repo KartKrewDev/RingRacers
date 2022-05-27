@@ -388,7 +388,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 
 	if (slope != NULL && P_ApplyLightOffset(lightlevel >> LIGHTSEGSHIFT))
 	{
-		if (reverseLight)
+		if (reverseLight && maplighting.directional == true)
 		{
 			lightlevel -= slope->lightOffset * 8;
 		}
