@@ -3137,6 +3137,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		slope->normal.x = READFIXED(save_p);
 		slope->normal.y = READFIXED(save_p);
 		slope->normal.z = READFIXED(save_p);
+
+		P_UpdateSlopeLightOffset(slope);
 	}
 	if (diff2 & MD2_HITLAG)
 	{

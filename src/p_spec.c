@@ -5884,6 +5884,11 @@ void P_InitSpecials(void)
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = mapheaderinfo[gamemap-1]->gravity;
 
+	// Set map lighting settings.
+	maplighting.contrast = mapheaderinfo[gamemap-1]->light_contrast;
+	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
+	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
+
 	// Defaults in case levels don't have them set.
 	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
 	ssspheres = mapheaderinfo[gamemap-1]->ssspheres;

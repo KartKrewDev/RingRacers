@@ -386,6 +386,10 @@ typedef struct
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
 	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
+	UINT8 light_contrast; ///< Range of wall lighting. 0 is no lighting.
+	boolean use_light_angle; ///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	angle_t light_angle; ///< Angle of directional wall lighting.
+
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
 	char musintername[7];    ///< Intermission screen music.
@@ -665,6 +669,13 @@ extern tic_t racecountdown, exitcountdown;
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
+
+extern struct maplighting
+{
+	UINT8 contrast;
+	boolean directional;
+	angle_t angle;
+} maplighting;
 
 //for CTF balancing
 extern INT16 autobalance;

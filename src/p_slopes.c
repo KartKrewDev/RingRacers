@@ -31,11 +31,74 @@ UINT16 slopecount = 0;
 static void P_BuildSlopeAnchorList (void);
 static void P_SetupAnchoredSlopes  (void);
 
+// Calculate light
+void P_UpdateSlopeLightOffset(pslope_t *slope)
+{
+	const UINT8 contrast = maplighting.contrast;
+
+	fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t zMul = FRACUNIT;
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	if (slope->normal.z == 0)
+	{
+		slope->lightOffset = slope->hwLightOffset = 0;
+		return;
+	}
+
+	if (maplighting.directional == true)
+	{
+		fixed_t nX = -slope->normal.x;
+		fixed_t nY = -slope->normal.y;
+		fixed_t nLen = FixedHypot(nX, nY);
+
+		if (nLen == 0)
+		{
+			slope->lightOffset = slope->hwLightOffset = 0;
+			return;
+		}
+
+		nX = FixedDiv(nX, nLen);
+		nY = FixedDiv(nY, nLen);
+
+		/*
+		if (slope is ceiling)
+		{
+			// There is no good way to calculate this condition here.
+			// We reverse it in R_FindPlane now.
+			nX = -nX;
+			nY = -nY;
+		}
+		*/
+
+		light = FixedMul(nX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(nY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->d.x), abs(slope->d.y)), ANGLE_90);
+	}
+
+	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.
+	contrastFixed = FixedMul(contrastFixed, zMul);
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 // Calculate slope's high & low z
@@ -128,8 +191,10 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 
 		// Get angles
 		slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-		slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+		slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
 	}
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Setup slope via constants.
@@ -159,7 +224,9 @@ static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fix
 
 	// Get angles
 	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-	slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+	slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Recalculate dynamic slopes.
@@ -544,6 +611,7 @@ static void line_SpawnViaMapthingVertexes(const int linenum, const boolean spawn
 	UINT16 tag2 = line->args[2];
 	UINT16 tag3 = line->args[3];
 	UINT8 flags = 0; // Slope flags
+
 	if (line->args[4] & TMSL_NOPHYSICS)
 		flags |= SL_NOPHYSICS;
 	if (line->args[4] & TMSL_DYNAMIC)
