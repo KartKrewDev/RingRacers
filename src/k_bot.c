@@ -1293,7 +1293,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 	else
 	{
-		player->botvars.controller = lines - botController;
+		player->botvars.controller = botController - lines;
 	}
 
 	player->botvars.rubberband = K_UpdateRubberband(player);
