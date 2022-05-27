@@ -1154,8 +1154,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
-	// SPECIFIC HACK TO NEW-MENUS SO THAT MY DUMBASS STOPS FORGETTING TO ADD THE FILE (rip :youfuckedup:)
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"newmenus.pk3"));
 #endif
 ////
 #undef TEXTURESNAME
@@ -1417,8 +1415,6 @@ void D_SRB2Main(void)
 	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
-	// TODO: DON'T FORGET TO REMOVE THIS ONCE WE DON'T NEED IT ANYMORE.
-	mainwads++;	// newmenus.pk3
 #endif
 
 #endif //ifndef DEVELOP
