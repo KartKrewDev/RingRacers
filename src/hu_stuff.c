@@ -243,6 +243,9 @@ void HU_Init(void)
 		PR   ("TNYFN");
 		REG;
 
+		PR   ("FILEF");
+		REG;
+
 		ADIM (LT);
 		PR   ("LTFNT");
 		REG;
@@ -285,10 +288,6 @@ void HU_Init(void)
 
 		ADIM (LT);
 		PR   ("GAMEM");
-		REG;
-
-		ADIM (AZ);
-		PR   ("FILEF");
 		REG;
 
 		ADIM (LT);

@@ -54,6 +54,7 @@ enum
 {
 	X        (HU),
 	X      (TINY),
+	X      (FILE),
 
 	X        (LT),
 	X      (CRED),
@@ -68,7 +69,6 @@ enum
 
 	X      (KART),
 	X        (GM),
-	X      (FILE),
 	X      (LSHI),
 	X     (LSLOW),
 };

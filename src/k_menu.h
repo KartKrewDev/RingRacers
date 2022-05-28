@@ -519,6 +519,7 @@ typedef enum
 {
 	CSSTEP_NONE = 0,
 	CSSTEP_PROFILE,
+	CSSTEP_ASKCHANGES,
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
@@ -542,6 +543,8 @@ typedef struct setup_player_s
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
 	// We can allow them to retain the device with no consequence as when P1 is alone, they have exclusive keyboard fallback options.
 	UINT8 ponedevice;
+
+	UINT8 changeselect;
 
 	INT32 followern;
 	UINT16 followercolor;

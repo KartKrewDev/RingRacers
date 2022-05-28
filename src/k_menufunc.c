@@ -2351,6 +2351,21 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 	}
 }
 
+
+// Gets the selected follower's state for a given setup player.
+static void M_GetFollowerState(setup_player_t *p)
+{
+
+	p->follower_state = &states[followers[p->followern].followstate];
+
+	if (p->follower_state->frame & FF_ANIMATE)
+		p->follower_tics = p->follower_state->var2;	// support for FF_ANIMATE
+	else
+		p->follower_tics = p->follower_state->tics;
+
+	p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
+}
+
 static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 {
 	INT32 i;
@@ -2523,12 +2538,58 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 		PR_ApplyProfile(p->profilen, realnum);	// Otherwise P1 would inherit the last player's profile in splitdevice and that's not what we want...
 		M_SetupProfileGridPos(p);
 
-		p->mdepth = CSSTEP_CHARS;
+		p->changeselect = 0;
+		p->mdepth = CSSTEP_ASKCHANGES;
 		S_StartSound(NULL, sfx_s3k63);
 	}
 
 	return false;
 
+}
+
+
+static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
+{
+
+	if (cv_splitdevice.value)
+		num = 0;
+
+	// there's only 2 options so lol
+	if (menucmd[num].dpad_ud != 0)
+	{
+		p->changeselect = (p->changeselect == 0) ? 1 : 0;
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuBackPressed(num))
+	{
+		p->changeselect = 0;
+		p->mdepth = CSSTEP_PROFILE;
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuConfirmPressed(num))
+	{
+		// no changes
+		if (!p->changeselect)
+		{
+			M_GetFollowerState(p);
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+
+			S_StartSound(NULL, sfx_s3k4e);
+			M_SetupReadyExplosions(p);
+		}
+
+		// changes
+		else
+			p->mdepth = CSSTEP_CHARS;
+
+		M_SetMenuDelay(num);
+		S_StartSound(NULL, sfx_s3k63);
+	}
 }
 
 static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
@@ -2637,20 +2698,6 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	}
 
 	return false;
-}
-
-// Gets the selected follower's state for a given setup player.
-static void M_GetFollowerState(setup_player_t *p)
-{
-
-	p->follower_state = &states[followers[p->followern].followstate];
-
-	if (p->follower_state->frame & FF_ANIMATE)
-		p->follower_tics = p->follower_state->var2;	// support for FF_ANIMATE
-	else
-		p->follower_tics = p->follower_state->tics;
-
-	p->follower_frame = p->follower_state->frame & FF_FRAMEMASK;
 }
 
 
@@ -2800,7 +2847,6 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 			p->delay = TICRATE;
 			M_SetupReadyExplosions(p);
 			S_StartSound(NULL, sfx_s3k4e);
-			M_SetMenuDelay(num);
 		}
 
 		S_StartSound(NULL, sfx_s3k63);
@@ -2925,6 +2971,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_PROFILE:
 					playersChanged = M_HandleCSelectProfile(p, i);
+					break;
+				case CSSTEP_ASKCHANGES:
+					M_HandleCharAskChange(p, i);
 					break;
 				case CSSTEP_CHARS: // Character Select grid
 					M_HandleCharacterGrid(p, i);
