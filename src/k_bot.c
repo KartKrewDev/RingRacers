@@ -1270,19 +1270,25 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL
-		|| player->mo->scale <= 1
-		|| player->playerstate == PST_DEAD
-		|| leveltime <= introtime
-		|| !(gametyperules & GTR_BOTS))
+	if (gamestate != GS_LEVEL)
 	{
-		// No need to do anything else.
+		// Not in a level.
 		return;
 	}
 
 	// Complete override of all ticcmd functionality
 	if (LUAh_BotTiccmd(player, cmd) == true)
 	{
+		return;
+	}
+
+	if (!(gametyperules & GTR_BOTS) // No bot behaviors
+		|| K_GetNumWaypoints() == 0 // No waypoints
+		|| leveltime <= introtime // During intro camera
+		|| player->playerstate == PST_DEAD // Dead, respawning.
+		|| player->mo->scale <= 1) // Post-finish "death" animation
+	{
+		// No need to do anything else.
 		return;
 	}
 
