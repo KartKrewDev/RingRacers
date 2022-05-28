@@ -2594,8 +2594,6 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 
 static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
-	INT32 i;
-
 	UINT8 numclones;
 
 	if (cv_splitdevice.value)
@@ -2662,38 +2660,20 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		if (num == setup_numplayers-1)
+		// for profiles / gameplay, exit out of the menu instantly,
+		// we don't want to go to the input detection menu.
+		if (optionsmenu.profile || gamestate != GS_MENU)
 		{
-			// for profiles / gameplay, exit out of the menu instantly,
-			// we don't want to go to the input detection menu.
-			if (optionsmenu.profile || gamestate != GS_MENU)
-			{
-				memset(setup_player, 0, sizeof(setup_player));	// Reset setup_player otherwise it does some VERY funky things.
-				M_SetMenuDelay(0);
-				M_GoBack(0);
-				return true;
-			}
-			else	// for the actual player select, go back to device detection.
-			{
-				p->mdepth = CSSTEP_PROFILE;
-				S_StartSound(NULL, sfx_s3k5b);
-			}
-
-			// Prevent quick presses for multiple players
-			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-			{
-				setup_player[i].delay = MENUDELAYTIME;
-				M_SetMenuDelay(i);
-				menucmd[i].buttonsHeld |= MBT_X;
-			}
-
+			memset(setup_player, 0, sizeof(setup_player));	// Reset setup_player otherwise it does some VERY funky things.
+			M_SetMenuDelay(0);
+			M_GoBack(0);
 			return true;
 		}
-		else
+		else	// in main menu
 		{
-			S_StartSound(NULL, sfx_s3kb2);
+			p->mdepth = CSSTEP_PROFILE;
+			S_StartSound(NULL, sfx_s3k5b);
 		}
-
 		M_SetMenuDelay(num);
 	}
 
