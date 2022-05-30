@@ -1320,7 +1320,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (botController != NULL && (botController->flags & ML_EFFECT1))
 	{
-		const fixed_t dist = (player->mo->radius * 4);
+		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
 
 		// X Offset: Movement direction
 		destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
