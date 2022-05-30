@@ -639,132 +639,88 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
 	// Stair janking makes it harder to steer, so attempt to steer harder.
-	const UINT8 jankDiv = (player->stairjank > 0 ? 2 : 1);
+	const UINT8 jankDiv = (player->stairjank > 0) ? 2 : 1;
 
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN) / jankDiv; // Reduce prediction based on how fast you can turn
-	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
-	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
+	const tic_t futuresight = (TICRATE * KART_FULLTURN) / max(1, handling); // How far ahead into the future to try and predict
 	const fixed_t speed = K_BotSpeedScaled(player, P_AproxDistance(player->mo->momx, player->mo->momy));
 
-	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
+	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
 	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
-
-	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
-	waypoint_t *wp = player->nextwaypoint;
-
-	INT32 distanceleft = distance;
-	fixed_t smallestradius = INT32_MAX;
-	angle_t angletonext = ANGLE_MAX;
 
 	// Halves radius when encountering a wall on your way to your destination.
 	fixed_t radreduce = FRACUNIT;
 
-	size_t nwp;
+	INT32 distanceleft = distance;
+	fixed_t smallestradius = INT32_MAX;
+	angle_t angletonext = ANGLE_MAX;
+	INT32 disttonext = INT32_MAX;
+
+	waypoint_t *wp = player->nextwaypoint;
+	mobj_t *prevwpmobj = player->mo;
+
+	const boolean useshortcuts = K_BotCanTakeCut(player);
+	const boolean huntbackwards = false;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {0};
+
+	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	size_t i;
 
-	// Reduce distance left by your distance to the starting waypoint.
-	// This prevents looking too far ahead if the closest waypoint is really far away.
-	distanceleft -= P_AproxDistance(player->mo->x - wp->mobj->x, player->mo->y - wp->mobj->y) / FRACUNIT;
+	// Init defaults in case of pathfind failure
+	angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
+	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
 
-	// We don't want to look ahead at all, just go to the first waypoint.
-	if (distanceleft <= 0)
-	{
-		predict->x = wp->mobj->x;
-		predict->y = wp->mobj->y;
-		predict->radius = wp->mobj->radius;
-		return predict;
-	}
-
-	angletonext = R_PointToAngle2(
-		player->mo->x, player->mo->y,
-		wp->mobj->x, wp->mobj->y
+	pathfindsuccess = K_PathfindToWaypoint(
+		player->nextwaypoint, K_GetFinishLineWaypoint(),
+		&pathtofinish,
+		useshortcuts, huntbackwards
 	);
 
-	// Go through waypoints until we've traveled the distance we wanted to predict ahead!
-	while (distanceleft > 0)
+	// Go through the waypoints until we've traveled the distance we wanted to predict ahead!
+	if (pathfindsuccess == true)
 	{
-		INT32 disttonext = INT32_MAX;
-
-		if (wp->mobj->radius < smallestradius)
+		for (i = 0; i < pathtofinish.numnodes; i++)
 		{
-			smallestradius = wp->mobj->radius;
-		}
+			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
-		if (wp->numnextwaypoints == 0)
-		{
-			// Well, this is where I get off.
-			distanceleft = 0;
-			break;
-		}
-
-		// Calculate nextwaypoints index to use
-		// nextwaypoints[0] by default
-		nwp = 0;
-
-		// There are multiple nextwaypoints,
-		// so we need to find the most convenient one to us.
-		// Let's compare the angle to the player's!
-		if (wp->numnextwaypoints > 1)
-		{
-			angle_t delta = ANGLE_MAX;
-			angle_t a     = ANGLE_MAX;
-
-			for (i = 0; i < wp->numnextwaypoints; i++)
+			if (i > 0)
 			{
-				if (K_GetWaypointIsEnabled(wp->nextwaypoints[i]) == false)
-				{
-					continue;
-				}
+				prevwpmobj = ((waypoint_t *)pathtofinish.array[ i - 1 ].nodedata)->mobj;
+			}
 
-				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) == true && K_BotCanTakeCut(player) == false)
-				{
-					continue;
-				}
+			angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
+			disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
 
-				// Unlike the other parts of this function, we're comparing the player's physical position, NOT the position of the waypoint!!
-				// This should roughly correspond with how players will think about path splits.
-				a = R_PointToAngle2(
-					player->mo->x, player->mo->y,
-					wp->nextwaypoints[i]->mobj->x, wp->nextwaypoints[i]->mobj->y
-				);
-				if (a > ANGLE_180)
-				{
-					a = InvAngle(a);
-				}
+			if (wp->mobj->radius < smallestradius)
+			{
+				smallestradius = wp->mobj->radius;
+			}
 
-				a = player->mo->angle - a;
+			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
+			{
+				// If we can't get a direct path to this waypoint, predict less.
+				disttonext <<= 2;
+				radreduce = FRACUNIT >> 1;
+			}
 
-				if (a < delta)
-				{
-					nwp = i;
-					delta = a;
-				}
+			distanceleft -= disttonext;
+
+			if (distanceleft <= 0)
+			{
+				// We're done!!
+				break;
 			}
 		}
- 
-		angletonext = R_PointToAngle2(
-			wp->mobj->x, wp->mobj->y,
-			wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y
-		);
 
-		disttonext = (INT32)wp->nextwaypointdistances[nwp];
-
-		if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
+		if (i == pathtofinish.numnodes)
 		{
-			// If we can't get a direct path to this waypoint, we don't want to check much further...
-			disttonext *= 2;
-			radreduce = FRACUNIT/2;
+			// Reached the finish!!
+			distanceleft = 0;
 		}
 
-		if (disttonext > distanceleft)
-		{
-			break;
-		}
-
-		distanceleft -= disttonext;
-
-		wp = wp->nextwaypoints[nwp];
+		Z_Free(pathtofinish.array);
 	}
 
 	// Set our predicted point's coordinates,
@@ -858,7 +814,7 @@ static UINT8 K_TrySpindash(player_t *player)
 	else
 	{
 		// Logic for normal racing.
-		if (speedDiff < (baseAccel / 4) // Moving too slowly
+		if (speedDiff < (baseAccel / 8) // Moving too slowly
 			|| angleDiff > ANG60) // Being pushed backwards
 		{
 			if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
