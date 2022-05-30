@@ -7679,7 +7679,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 void K_KartResetPlayerColor(player_t *player)
 {
-	boolean forcereset = false;
 	boolean fullbright = false;
 
 	if (!player->mo || P_MobjWasRemoved(player->mo)) // Can't do anything
@@ -7695,9 +7694,9 @@ void K_KartResetPlayerColor(player_t *player)
 	if (player->eggmanexplode) // You're gonna diiiiie
 	{
 		const INT32 flashtime = 4<<(player->eggmanexplode/TICRATE);
-		if (player->eggmanexplode == 1 || (player->eggmanexplode % (flashtime/2) != 0))
+		if (player->eggmanexplode % (flashtime/2) != 0)
 		{
-			forcereset = true;
+			;
 		}
 		else if (player->eggmanexplode % flashtime == 0)
 		{
@@ -7719,6 +7718,7 @@ void K_KartResetPlayerColor(player_t *player)
 	{
 		const tic_t defaultTime = itemtime+(2*TICRATE);
 		tic_t flicker = 2;
+		boolean skip = false;
 
 		fullbright = true;
 
@@ -7726,22 +7726,21 @@ void K_KartResetPlayerColor(player_t *player)
 		{
 			player->mo->color = K_RainbowColor(leveltime / 2);
 			player->mo->colorized = true;
-			forcereset = false;
+			skip = true;
 		}
 		else
 		{
 			flicker += (defaultTime - player->invincibilitytimer) / TICRATE / 2;
-			forcereset = true;
 		}
 
 		if (leveltime % flicker == 0)
 		{
 			player->mo->color = SKINCOLOR_INVINCFLASH;
 			player->mo->colorized = true;
-			forcereset = false;
+			skip = true;
 		}
 
-		if (!forcereset)
+		if (skip)
 		{
 			goto finalise;
 		}
@@ -7756,8 +7755,6 @@ void K_KartResetPlayerColor(player_t *player)
 			fullbright = true;
 			goto finalise;
 		}
-
-		forcereset = true;
 	}
 
 	if (player->ringboost && (leveltime & 1)) // ring boosting
@@ -7769,10 +7766,7 @@ void K_KartResetPlayerColor(player_t *player)
 	else
 	{
 		player->mo->colorized = (player->dye != 0);
-		if (forcereset)
-		{
-			player->mo->color = player->dye ? player->dye : player->skincolor;
-		}
+		player->mo->color = player->dye ? player->dye : player->skincolor;
 	}
 
 finalise:
