@@ -347,8 +347,8 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 			// Going downhill: FRACUNIT*2
 			slopeMul = FRACUNIT + FINECOSINE(angle >> ANGLETOFINESHIFT);
 
-			// Range: 0.9 to 1.1
-			result = FixedMul(result, (FRACUNIT*9/10) + (slopeMul/10));
+			// Range: 0.5 to 1.5
+			result = FixedMul(result, (FRACUNIT>>1) + (slopeMul >> 1));
 		}
 	}
 
