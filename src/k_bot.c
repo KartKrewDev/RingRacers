@@ -961,29 +961,27 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
 	SINT8 turnsign = 0;
-	angle_t moveangle, angle;
-	INT16 anglediff;
+	angle_t moveangle;
+	INT32 anglediff;
 
 	I_Assert(predict != NULL);
 
 	moveangle = player->mo->angle;
-	angle = (moveangle - destangle);
+	anglediff = AngleDeltaSigned(moveangle, destangle);
 
-	if (angle < ANGLE_180)
+	if (anglediff < 0)
 	{
-		turnsign = -1; // Turn right
-		anglediff = AngleFixed(angle)>>FRACBITS;
+		turnsign = 1;
 	}
 	else 
 	{
-		turnsign = 1; // Turn left
-		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+		turnsign = -1;
 	}
 
 	anglediff = abs(anglediff);
 	turnamt = KART_FULLTURN * turnsign;
 
-	if (anglediff > 90)
+	if (anglediff > ANGLE_90)
 	{
 		// Wrong way!
 		cmd->forwardmove = -MAXPLMOVE;
@@ -992,7 +990,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	else
 	{
 		const fixed_t playerwidth = (player->mo->radius * 2);
-		fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
+		fixed_t realrad = predict->radius*3/4; // Remove a "safe" distance away from the edges of the road
 		fixed_t rad = realrad;
 		fixed_t dirdist = K_DistanceOfLineFromPoint(
 			player->mo->x, player->mo->y,
@@ -1000,19 +998,26 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 			predict->x, predict->y
 		);
 
-		if (realrad < player->mo->radius)
+		if (realrad < playerwidth)
 		{
-			realrad = player->mo->radius;
+			realrad = playerwidth;
 		}
 
-		if (anglediff > 0)
-		{
-			// Become more precise based on how hard you need to turn
-			// This makes predictions into turns a little nicer
-			// Facing 90 degrees away from the predicted point gives you a 1/3 radius
-			rad = FixedMul(rad, ((135 - anglediff) * FRACUNIT) / 135);
-		}
+		// Become more precise based on how hard you need to turn
+		// This makes predictions into turns a little nicer
+		// Facing 90 degrees away from the predicted point gives you 0 radius
+		rad = FixedMul(rad,
+			FixedDiv(max(0, ANGLE_90 - anglediff), ANGLE_90)
+		);
 
+		// Become more precise the slower you're moving
+		// Also helps with turns
+		// Full speed uses full radius
+		rad = FixedMul(rad,
+			FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false, false))
+		);
+
+		// Cap the radius to reasonable bounds
 		if (rad > realrad)
 		{
 			rad = realrad;
@@ -1022,36 +1027,14 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 			rad = playerwidth;
 		}
 
-		cmd->buttons |= BT_ACCELERATE;
-
 		// Full speed ahead!
+		cmd->buttons |= BT_ACCELERATE;
 		cmd->forwardmove = MAXPLMOVE;
 
 		if (dirdist <= rad)
 		{
-			fixed_t speedmul = FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false, false));
-			fixed_t speedrad = rad/4;
-
-			if (speedmul > FRACUNIT)
-			{
-				speedmul = FRACUNIT;
-			}
-
-			// Increase radius with speed
-			// At low speed, the CPU will try to be more accurate
-			// At high speed, they're more likely to lawnmower
-			speedrad += FixedMul(speedmul, rad - speedrad);
-
-			if (speedrad < playerwidth)
-			{
-				speedrad = playerwidth;
-			}
-
-			if (dirdist <= speedrad)
-			{
-				// Don't turn at all
-				turnamt = 0;
-			}
+			// Going the right way, don't turn at all.
+			turnamt = 0;
 		}
 	}
 
