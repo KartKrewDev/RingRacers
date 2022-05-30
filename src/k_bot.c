@@ -804,9 +804,11 @@ static UINT8 K_TrySpindash(player_t *player)
 	const fixed_t baseAccel = K_GetNewSpeed(player) - oldSpeed;
 	const fixed_t speedDiff = player->speed - player->lastspeed;
 
-	if (player->spindashboost || player->tiregrease)
+	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngle(player->mo));
+
+	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
+		|| P_PlayerInPain(player) || !P_IsObjectOnGround(player->mo)) // Not in a state where we want 'em to spindash.
 	{
-		// You just released a spindash, you don't need to try again yet, jeez.
 		player->botvars.spindashconfirm = 0;
 		return 0;
 	}
@@ -837,36 +839,13 @@ static UINT8 K_TrySpindash(player_t *player)
 		}
 	}
 
-	// Logic for normal racing.
-	if (player->flashing > 0)
-	{
-		// Don't bother trying to spindash.
-		// Trying to spindash while flashing is fine during POSITION, but not during the actual race.
-		return 0;
-	}
-
-	if (speedDiff < (baseAccel / 4))
-	{
-		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
-		{
-			player->botvars.spindashconfirm++;
-		}
-	}
-	else
-	{
-		if (player->botvars.spindashconfirm > 0)
-		{
-			player->botvars.spindashconfirm--;
-		}
-	}
-
 	if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
 	{
 		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
 
 		// Release quicker the higher the difficulty is.
 		// Sounds counter-productive, but that's actually the best strategy after the race has started.
-		chargingPoint -= player->botvars.difficulty * difficultyModifier;
+		chargingPoint -= min(DIFFICULTBOT, player->botvars.difficulty) * difficultyModifier;
 
 		if (player->spindash > chargingPoint)
 		{
@@ -875,6 +854,25 @@ static UINT8 K_TrySpindash(player_t *player)
 		}
 
 		return 2;
+	}
+	else
+	{
+		// Logic for normal racing.
+		if (speedDiff < (baseAccel / 4) // Moving too slowly
+			|| angleDiff > ANG60) // Being pushed backwards
+		{
+			if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
+			{
+				player->botvars.spindashconfirm++;
+			}
+		}
+		else if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
+		{
+			if (player->botvars.spindashconfirm > 0)
+			{
+				player->botvars.spindashconfirm--;
+			}
+		}
 	}
 
 	// We're doing just fine, we don't need to spindash, thanks.
