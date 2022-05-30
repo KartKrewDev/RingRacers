@@ -1493,7 +1493,8 @@ static int lib_pSetAngle(lua_State *L)
 
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitAngle(thing, newValue);
+	//P_SetAngle(thing, newValue);
+	thing->angle = thing->old_angle = newValue;
 	return 0;
 }
 
@@ -1505,7 +1506,8 @@ static int lib_pSetPitch(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitPitch(thing, newValue);
+	//P_SetPitch(thing, newValue);
+	thing->pitch = thing->old_pitch = newValue;
 	return 0;
 }
 
@@ -1517,7 +1519,8 @@ static int lib_pSetRoll(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitRoll(thing, newValue);
+	//P_SetRoll(thing, newValue);
+	thing->roll = thing->old_roll = newValue;
 	return 0;
 }
 

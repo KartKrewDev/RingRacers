@@ -384,7 +384,7 @@ void P_GiveFinishFlags(player_t *player)
 		fixed_t xoffs = FINECOSINE(fa);
 		fixed_t yoffs = FINESINE(fa);
 		mobj_t* flag = P_SpawnMobjFromMobj(player->mo, xoffs, yoffs, 0, MT_FINISHFLAG);
-		P_InitAngle(flag, angle);
+		flag->angle = angle;
 		angle += FixedAngle(120*FRACUNIT);
 
 		P_SetTarget(&flag->target, player->mo);
@@ -2289,7 +2289,7 @@ void P_MovePlayer(player_t *player)
 			// underlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
+			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2300,7 +2300,7 @@ void P_MovePlayer(player_t *player)
 			// overlay
 			water = P_SpawnMobj(x1, y1,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
+			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2312,7 +2312,7 @@ void P_MovePlayer(player_t *player)
 			// Underlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
+			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;
@@ -2323,7 +2323,7 @@ void P_MovePlayer(player_t *player)
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
 				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
+			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
 			water->destscale = trailScale;
 			water->momx = player->mo->momx;
 			water->momy = player->mo->momy;

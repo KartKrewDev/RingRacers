@@ -330,7 +330,7 @@ void K_HandleFollower(player_t *player)
 		K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
 
 		P_SetTarget(&player->follower->target, player->mo); // we need that to know when we need to disappear
-		P_InitAngle(player->follower, player->mo->angle);
+		player->follower->angle = player->follower->old_angle = player->mo->angle;
 
 		// This is safe to only spawn it here, the follower is removed then respawned when switched.
 		if (bubble)

@@ -2053,7 +2053,7 @@ void K_SpawnDashDustRelease(player_t *player)
 		dust = P_SpawnMobj(newx, newy, player->mo->z, MT_FASTDUST);
 
 		P_SetTarget(&dust->target, player->mo);
-		P_InitAngle(dust, travelangle - ((i&1) ? -1 : 1) * ANGLE_45);
+		dust->angle = travelangle - (((i&1) ? -1 : 1) * ANGLE_45);
 		dust->destscale = player->mo->scale;
 		P_SetScale(dust, player->mo->scale);
 
@@ -2217,7 +2217,7 @@ void K_SpawnNormalSpeedLines(player_t *player)
 		MT_FASTLINE);
 
 	P_SetTarget(&fast->target, player->mo);
-	P_InitAngle(fast, K_MomentumAngle(player->mo));
+	fast->angle = K_MomentumAngle(player->mo);
 	fast->momx = 3*player->mo->momx/4;
 	fast->momy = 3*player->mo->momy/4;
 	fast->momz = 3*P_GetMobjZMovement(player->mo)/4;
@@ -2268,7 +2268,7 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	P_SetMobjState(fast, S_KARTINVLINES1);
 
 	P_SetTarget(&fast->target, mo);
-	P_InitAngle(fast, K_MomentumAngle(mo));
+	fast->angle = K_MomentumAngle(mo);
 
 	fast->momx = 3*mo->momx/4;
 	fast->momy = 3*mo->momy/4;
@@ -3958,7 +3958,7 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 		P_SetTarget(&newmo->tracer, victim->mo);
 		P_SetTarget(&newmo->target, player->mo);
 
-		P_InitAngle(newmo, (diff * (newbumper-1)));
+		newmo->angle = (diff * (newbumper-1));
 		newmo->color = victim->skincolor;
 
 		if (newbumper+1 < 2)
@@ -4046,7 +4046,7 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	{
 		dust = P_SpawnMobj(source->x, source->y, source->z, MT_SMOKE);
 		P_SetMobjState(dust, S_OPAQUESMOKE1);
-		P_InitAngle(dust, (ANGLE_180/16) * i);
+		dust->angle = (ANGLE_180/16) * i;
 		P_SetScale(dust, source->scale);
 		dust->destscale = source->scale*10;
 		dust->scalespeed = source->scale/12;
@@ -4196,7 +4196,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			th->z = th->floorz;
 	}
 
-	P_InitAngle(th, an);
+	th->angle = an;
 
 	th->momx = FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	th->momy = FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
@@ -4369,7 +4369,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 		y = P_ReturnThrustY(mo, verticalangle, verticalradius)
 			+ P_ReturnThrustY(mo, horizonatalangle, horizontalradius);
 		spark = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRIFTELECTRICITY);
-		P_InitAngle(spark, sparkangle);
+		spark->angle = sparkangle;
 		spark->momx = mo->momx;
 		spark->momy = mo->momy;
 		spark->momz = mo->momz;
@@ -4414,7 +4414,7 @@ void K_SpawnDriftElectricSparks(player_t *player)
 				fixed_t yoff = P_ReturnThrustY(mo, sparkangle, sparkradius);
 				mobj_t *spark = P_SpawnMobjFromMobj(mo, x + xoff, y + yoff, z, MT_DRIFTELECTRICSPARK);
 
-				P_InitAngle(spark, sparkangle);
+				spark->angle = sparkangle;
 				spark->color = color;
 				P_InstaThrust(spark, mo->angle + ANGLE_90, hspeed);
 				P_SetObjectMomZ(spark, vspeed, false);
@@ -4465,7 +4465,7 @@ static void K_SpawnDriftSparks(player_t *player)
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_DRIFTSPARK);
 
 		P_SetTarget(&spark->target, player->mo);
-		P_InitAngle(spark, travelangle-(ANGLE_45/5)*player->drift);
+		spark->angle = travelangle-((ANGLE_45/5)*player->drift);
 		spark->destscale = player->mo->scale;
 		P_SetScale(spark, player->mo->scale);
 
@@ -4609,7 +4609,7 @@ static void K_SpawnAIZDust(player_t *player)
 		newy = player->mo->y + P_ReturnThrustY(player->mo, travelangle - (player->aizdriftstrat*ANGLE_45), FixedMul(24*FRACUNIT, player->mo->scale));
 		spark = P_SpawnMobj(newx, newy, player->mo->z, MT_AIZDRIFTSTRAT);
 
-		P_InitAngle(spark, travelangle+(player->aizdriftstrat*ANGLE_90));
+		spark->angle = travelangle+(player->aizdriftstrat*ANGLE_90);
 		P_SetScale(spark, (spark->destscale = (3*player->mo->scale)>>2));
 
 		spark->momx = (6*player->mo->momx)/5;
@@ -4661,7 +4661,7 @@ void K_SpawnBoostTrail(player_t *player)
 		flame = P_SpawnMobj(newx, newy, ground, MT_SNEAKERTRAIL);
 
 		P_SetTarget(&flame->target, player->mo);
-		P_InitAngle(flame, travelangle);
+		flame->angle = travelangle;
 		flame->fuse = TICRATE*2;
 		flame->destscale = player->mo->scale;
 		P_SetScale(flame, player->mo->scale);
@@ -4708,7 +4708,7 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 	sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
 
-	P_InitAngle(sparkle, R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y));
+	sparkle->angle = R_PointToAngle2(mo->x, mo->y, sparkle->x, sparkle->y);
 
 	sparkle->movefactor = R_PointToDist2(mo->x, mo->y, sparkle->x, sparkle->y);	// Save the distance we spawned away from the player.
 	//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
@@ -4758,7 +4758,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo)
 		mo->z, MT_WIPEOUTTRAIL);
 
 	P_SetTarget(&dust->target, mo);
-	P_InitAngle(dust, K_MomentumAngle(mo));
+	dust->angle = K_MomentumAngle(mo);
 	dust->destscale = mo->scale;
 	P_SetScale(dust, mo->scale);
 	K_FlipFromObject(dust, mo);
@@ -4824,7 +4824,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 		P_SetMobjState(dust, S_DRAFTDUST1 + foff);
 
 		P_SetTarget(&dust->target, mo);
-		P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
+		dust->angle = ang - (ANGLE_90 * sign); // point completely perpendicular from the player
 		dust->destscale = mo->scale;
 		P_SetScale(dust, mo->scale);
 		K_FlipFromObject(dust, mo);
@@ -4999,7 +4999,7 @@ static void K_SpawnTripwireVFX(mobj_t *mo)
 		mo->z, MT_DRIFTDUST);
 
 	P_SetTarget(&dust->target, mo);
-	P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
+	dust->angle = ang - (ANGLE_90 * sign); // point completely perpendicular from the player
 	P_SetScale(dust, mo->scale);
 	dust->destscale = mo->scale * 6;
 	dust->scalespeed = mo->scale/12;
@@ -5444,7 +5444,7 @@ static void K_DoLightningShield(player_t *player)
 	for (i=0; i<7; i++)
 	{
 		mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THOK);
-		P_InitAngle(mo, P_RandomRange(0, 359)*ANG1);
+		mo->angle = P_RandomRange(0, 359)*ANG1;
 		mo->fuse = P_RandomRange(20, 50);
 		P_SetTarget(&mo->target, player->mo);
 		P_SetMobjState(mo, S_KLIT1);
@@ -5457,7 +5457,7 @@ static void K_DoLightningShield(player_t *player)
 		sx = player->mo->x + FixedMul((player->mo->scale*THUNDERRADIUS), FINECOSINE((an*i)>>ANGLETOFINESHIFT));
 		sy = player->mo->y + FixedMul((player->mo->scale*THUNDERRADIUS), FINESINE((an*i)>>ANGLETOFINESHIFT));
 		mo = P_SpawnMobj(sx, sy, player->mo->z, MT_THOK);
-		P_InitAngle(mo, an*i);
+		mo->angle = an*i;
 		mo->extravalue1 = THUNDERRADIUS;	// Used to know whether we should teleport by radius or something.
 		mo->scale = player->mo->scale*3;
 		P_SetTarget(&mo->target, player->mo);
@@ -5782,7 +5782,7 @@ static void K_ThrowLandMine(player_t *player)
 	P_SetScale(landMine, player->mo->scale);
 	landMine->destscale = player->mo->destscale;
 
-	P_InitAngle(landMine, player->mo->angle);
+	landMine->angle = player->mo->angle;
 
 	landMine->momz = (30 * mapobjectscale * P_MobjFlip(player->mo)) + player->mo->momz;
 	landMine->color = player->skincolor;
@@ -6099,7 +6099,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	P_SetScale(drop, drop->scale>>4);
 	drop->destscale = (3*drop->destscale)/2;
 
-	P_InitAngle(drop, angle);
+	drop->angle = angle;
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed() * 180) + angle,
 		16*mapobjectscale);
@@ -7607,7 +7607,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		{
 			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 			ring->extravalue1 = 1; // Ring collect animation timer
-			P_InitAngle(ring, player->mo->angle); // animation angle
+			ring->angle = player->mo->angle; // animation angle
 			P_SetTarget(&ring->target, player->mo); // toucher for thinker
 			player->pickuprings++;
 			if (player->superring <= 3)
@@ -8575,7 +8575,7 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 {
 	mobj_t *overlay = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_DRIFTEXPLODE);
 
-	P_InitAngle(overlay, K_MomentumAngle(player->mo));
+	overlay->angle = K_MomentumAngle(player->mo);
 	P_SetTarget(&overlay->target, player->mo);
 	P_SetScale(overlay, (overlay->destscale = player->mo->scale));
 	K_FlipFromObject(overlay, player->mo);
@@ -9255,9 +9255,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 	P_SetTarget(&wind->target, parent);
 
 	if (parent->momx || parent->momy)
-		P_InitAngle(wind, R_PointToAngle2(0, 0, parent->momx, parent->momy));
+		wind->angle = R_PointToAngle2(0, 0, parent->momx, parent->momy);
 	else
-		P_InitAngle(wind, parent->player->drawangle);
+		wind->angle = parent->player->drawangle;
 
 	wind->momx = 3 * parent->momx / 4;
 	wind->momy = 3 * parent->momy / 4;
@@ -9306,7 +9306,7 @@ static void K_KartSpindash(player_t *player)
 				mobj_t *grease;
 				grease = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_TIREGREASE);
 				P_SetTarget(&grease->target, player->mo);
-				P_InitAngle(grease, K_MomentumAngle(player->mo));
+				grease->angle = K_MomentumAngle(player->mo);
 				grease->extravalue1 = i;
 			}
 		}
@@ -9741,7 +9741,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_ROCKETSNEAKER);
 									K_MatchGenericExtraFlags(mo, player->mo);
 									mo->flags |= MF_NOCLIPTHING;
-									P_InitAngle(mo, player->mo->angle);
+									mo->angle = player->mo->angle;
 									mo->threshold = 10;
 									mo->movecount = moloop%2;
 									mo->movedir = mo->lastlook = moloop+1;
@@ -9841,7 +9841,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										break;
 									}
 									mo->flags |= MF_NOCLIPTHING;
-									P_InitAngle(mo, newangle);
+									mo->angle = newangle;
 									mo->threshold = 10;
 									mo->movecount = player->itemamount;
 									mo->movedir = mo->lastlook = moloop+1;
@@ -9883,7 +9883,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										break;
 									}
 									mo->flags |= MF_NOCLIPTHING;
-									P_InitAngle(mo, newangle);
+									mo->angle = newangle;
 									mo->threshold = 10;
 									mo->movecount = player->itemamount;
 									mo->movedir = mo->lastlook = moloop+1;
@@ -10345,7 +10345,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 						spdl = P_SpawnMobj(sx, sy, sz, MT_FASTLINE);
 						P_SetTarget(&spdl->target, player->mo);
-						P_InitAngle(spdl, R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y));
+						spdl->angle = R_PointToAngle2(spdl->x, spdl->y, player->mo->x, player->mo->y);
 						spdl->rollangle = -ANG1*90*P_MobjFlip(player->mo);		// angle them downwards relative to the player's gravity...
 						spdl->spriteyscale = player->trickboostpower+FRACUNIT;
 						spdl->momx = player->mo->momx;

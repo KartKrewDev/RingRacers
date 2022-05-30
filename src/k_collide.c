@@ -572,7 +572,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 		if (t2deflect < ANG10)
 			P_InstaThrust(t2, t2angle, t2speed);
 
-		P_InitAngle(t1, R_PointToAngle2(0, 0, t1->momx, t1->momy));
+		t1->angle = t1->old_angle = R_PointToAngle2(0, 0, t1->momx, t1->momy);
 
 		t1->reactiontime = 7*(t1speed+t2speed)/FRACUNIT;
 		if (t1->reactiontime < 10)
@@ -619,7 +619,6 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 			{
 				blast->angle += ANGLE_90;
 			}
-			P_InitAngle(blast, blast->angle);
 
 			blast->destscale *= 10;
 		}
