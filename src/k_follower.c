@@ -430,16 +430,30 @@ void K_HandleFollower(player_t *player)
 			if (player->follower->z <= fh)
 			{
 				player->follower->z = fh;
-				if (player->follower->momz < 0)
+
+				if (!(player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz <= 0)
 				{
+					// Ground bounce
+					player->follower->momz = P_GetMobjZMovement(player->mo) + FixedMul(fl.bobamp, player->follower->scale);
+				}
+				else if (player->follower->momz < 0)
+				{
+					// Ceiling clip
 					player->follower->momz = 0;
 				}
 			}
 			else if (player->follower->z >= ch)
 			{
 				player->follower->z = ch;
-				if (player->follower->momz > 0)
+
+				if ((player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz >= 0)
 				{
+					// Ground bounce
+					player->follower->momz = P_GetMobjZMovement(player->mo) - FixedMul(fl.bobamp, player->follower->scale);
+				}
+				else if (player->follower->momz > 0)
+				{
+					// Ceiling clip
 					player->follower->momz = 0;
 				}
 			}
