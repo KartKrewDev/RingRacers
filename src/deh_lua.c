@@ -496,6 +496,21 @@ static inline int lib_getenum(lua_State *L)
 		if (mathlib) return luaL_error(L, "menutype '%s' could not be found.\n", word);
 		return 0;
 	}
+	else if (fastncmp("PRECIP_",word,7)) {
+		p = word+7;
+		for (i = 0; i < MAXPRECIP; i++)
+		{
+			if (precipprops[i].name == NULL)
+				break;
+
+			if (fastcmp(p, precipprops[i].name))
+			{
+				lua_pushinteger(L, PRECIP_NONE + i);
+				return 1;
+			}
+		}
+		return luaL_error(L, "weather type '%s' does not exist.\n", word);
+	}
 	else if (!mathlib && fastncmp("A_",word,2)) {
 		char *caps;
 		// Try to get a Lua action first.
