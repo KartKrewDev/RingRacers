@@ -1797,9 +1797,8 @@ static int lib_setPrecipProps(lua_State *L)
 		return luaL_error(L, "Do not alter precipprops in CMD building code!");
 
 	// clear the precipprops to start with, in case of missing table elements
-	// done manually because we do not want to clear name
-	props->type = MT_NULL;
-	props->effects = 0;
+	// make sure we do not clear the name
+	memset(props + sizeof(props->name), 0, sizeof(precipprops_t) - sizeof(props->name));
 
 	lua_pushnil(L);
 	while (lua_next(L, 1)) {
