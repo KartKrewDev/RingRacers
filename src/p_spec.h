@@ -67,7 +67,7 @@ void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
 void P_SetupSignExit(player_t *player);
 boolean P_IsFlagAtBase(mobjtype_t flag);
 
-void P_SwitchWeather(UINT8 newWeather);
+void P_SwitchWeather(preciptype_t newWeather);
 
 boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
 void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller);

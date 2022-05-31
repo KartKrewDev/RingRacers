@@ -6741,6 +6741,10 @@ struct int_const_s const INT_CONST[] = {
 	{"SPOT_WEAK",SPOT_WEAK},
 	{"SPOT_BUMP",SPOT_BUMP},
 
+	// precipeffect_t
+	{"PRECIPFX_THUNDER",PRECIPFX_THUNDER},
+	{"PRECIPFX_LIGHTNING",PRECIPFX_LIGHTNING},
+
 	{NULL,0}
 };
 

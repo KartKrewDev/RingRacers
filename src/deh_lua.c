@@ -186,6 +186,27 @@ static inline int lib_freeslot(lua_State *L)
 				}
 			}
 		}
+		else if (fastcmp(type, "PRECIP"))
+		{
+			// Search if we already have a PRECIP by that name...
+			preciptype_t i;
+			for (i = PRECIP_FIRSTFREESLOT; i < precip_freeslot; i++)
+				if (fastcmp(word, precipprops[i].name))
+					break;
+
+			// We don't, so allocate a new one.
+			if (i >= precip_freeslot) {
+				if (precip_freeslot < MAXPRECIP)
+				{
+					CONS_Printf("Weather PRECIP_%s allocated.\n",word);
+					precipprops[i].name = Z_StrDup(word);
+					lua_pushinteger(L, precip_freeslot);
+					r++;
+					precip_freeslot++;
+				} else
+					CONS_Alert(CONS_WARNING, "Ran out of free PRECIP slots!\n");
+			}
+		}
 		Z_Free(s);
 		lua_remove(L, 1);
 		continue;

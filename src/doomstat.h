@@ -41,8 +41,7 @@ extern UINT32 mapmusresume;
 // Use other bits if necessary.
 
 extern UINT32 maptol;
-extern UINT8 globalweather;
-extern UINT8 curWeather;
+
 extern INT32 cursaveslot;
 //extern INT16 lastmapsaved;
 extern INT16 lastmaploaded;
@@ -64,15 +63,22 @@ extern tic_t marathontime;
 extern UINT8 numgameovers;
 extern SINT8 startinglivesbalance[maxgameovers+1];
 
+#define NUMPRECIPFREESLOTS 64
+
 typedef enum
 {
 	PRECIP_NONE = 0,
+
 	PRECIP_RAIN,
 	PRECIP_SNOW,
 	PRECIP_BLIZZARD,
 	PRECIP_STORM,
 	PRECIP_STORM_NORAIN,
 	PRECIP_STORM_NOSTRIKES,
+
+	PRECIP_FIRSTFREESLOT,
+	PRECIP_LASTFREESLOT = PRECIP_FIRSTFREESLOT + NUMPRECIPFREESLOTS - 1,
+
 	MAXPRECIP
 } preciptype_t;
 
@@ -84,11 +90,16 @@ typedef enum
 
 typedef struct
 {
+	const char *name;
 	mobjtype_t type;
 	precipeffect_t effects;
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];
+extern preciptype_t precip_freeslot;
+
+extern preciptype_t globalweather;
+extern preciptype_t curWeather;
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
