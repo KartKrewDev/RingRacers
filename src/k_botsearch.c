@@ -172,26 +172,24 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
-	INT32 specialflag = 0;
 	fixed_t highestfloor = INT32_MAX;
 	sector_t *bestsector = NULL;
 	ffloor_t *rover;
 
+	// TODO: Properly support SF_FLIPSPECIAL_FLOOR / SF_FLIPSPECIAL_CEILING.
+	// An earlier attempt at it caused lots of false positives and other weird
+	// quirks with intangible FOFs.
+
 	if (flip == true)
 	{
-		specialflag = SF_FLIPSPECIAL_CEILING;
 		highestfloor = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight);
 	}
 	else
 	{
-		specialflag = SF_FLIPSPECIAL_FLOOR;
 		highestfloor = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 	}
 
-	if (sec->flags & specialflag)
-	{
-		bestsector = sec;
-	}
+	bestsector = sec;
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
@@ -209,15 +207,13 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		if (!(rover->flags & FF_BLOCKPLAYER))
 		{
 			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
-			&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
+				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
 			{
 				// Bad intangible sector at our height, so we DEFINITELY want to avoid
 				return true;
 			}
-		}
 
-		if ((rover->flags & FF_BLOCKPLAYER) && !(rover->master->frontsector->flags & specialflag))
-		{
+			// Ignore them, we want the one below it.
 			continue;
 		}
 
@@ -225,7 +221,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		if (flip == true)
 		{
 			if (bottom < highestfloor
-			&& bottom >= player->mo->z + player->mo->height)
+				&& bottom >= player->mo->z + player->mo->height)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = bottom;
@@ -234,7 +230,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		else
 		{
 			if (top > highestfloor
-			&& top <= player->mo->z)
+				&& top <= player->mo->z)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = top;

@@ -685,9 +685,21 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		{
 			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
-			if (i > 0)
+			if (i == 0)
+			{
+				prevwpmobj = player->mo;
+			}
+			else
 			{
 				prevwpmobj = ((waypoint_t *)pathtofinish.array[ i - 1 ].nodedata)->mobj;
+			}
+
+			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
+			{
+				// If we can't get a direct path to this waypoint, stop predicting.
+				distanceleft = 0;
+				radreduce = FRACUNIT >> 1;
+				break;
 			}
 
 			angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
@@ -696,13 +708,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			if (wp->mobj->radius < smallestradius)
 			{
 				smallestradius = wp->mobj->radius;
-			}
-
-			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
-			{
-				// If we can't get a direct path to this waypoint, predict less.
-				disttonext <<= 2;
-				radreduce = FRACUNIT >> 1;
 			}
 
 			distanceleft -= disttonext;
@@ -733,8 +738,8 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	if (distanceleft > 0)
 	{
 		// Scaled with the leftover anglemul!
-		predict->x += P_ReturnThrustX(NULL, angletonext, distanceleft * FRACUNIT);
-		predict->y += P_ReturnThrustY(NULL, angletonext, distanceleft * FRACUNIT);
+		predict->x += P_ReturnThrustX(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
+		predict->y += P_ReturnThrustY(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
 	}
 
 	return predict;
