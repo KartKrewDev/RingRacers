@@ -3812,12 +3812,11 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 {
 	//(void)mobj;
 	mobj->precipflags &= ~PCF_THUNK;
+	R_ResetPrecipitationMobjInterpolationState(mobj);
 }
 
 void P_PrecipThinker(precipmobj_t *mobj)
 {
-	R_ResetPrecipitationMobjInterpolationState(mobj);
-
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	if (mobj->state == &states[S_RAINRETURN])
@@ -3827,6 +3826,7 @@ void P_PrecipThinker(precipmobj_t *mobj)
 		mobj->z = mobj->ceilingz;
 		mobj->momz = -mobj->info->speed;
 		mobj->precipflags &= ~PCF_SPLASH;
+		R_ResetPrecipitationMobjInterpolationState(mobj);
 	}
 
 	if (mobj->tics != -1)
