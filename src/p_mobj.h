@@ -462,6 +462,8 @@ typedef struct precipmobj_s
 	fixed_t ceilingz; // Nearest ceiling above.
 	struct ffloor_s *floorrover; // FOF referred by floorz
 	struct ffloor_s *ceilingrover; // FOF referred by ceilingz
+	fixed_t floordrop;
+	fixed_t ceilingdrop;
 
 	// For movement checking.
 	fixed_t radius; // Fixed at 2*FRACUNIT
@@ -473,7 +475,7 @@ typedef struct precipmobj_s
 
 	INT32 tics; // state tic counter
 	state_t *state;
-	INT32 flags; // flags from mobjinfo tables
+	UINT32 flags; // flags from mobjinfo tables
 } precipmobj_t;
 
 typedef struct actioncache_s
