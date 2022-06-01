@@ -576,7 +576,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 					readcupheader(f, cup);
 				}
-				if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
+				else if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
 						i = get_precip(word2); // find a weather type by name
