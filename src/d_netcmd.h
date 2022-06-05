@@ -158,6 +158,7 @@ typedef enum
 	XD_GIVEITEM,    // 32
 	XD_ADDBOT,      // 33
 	XD_DISCORD,     // 34
+	XD_PLAYSOUND,   // 35
 
 	MAXNETXCMD
 } netxcmd_t;
