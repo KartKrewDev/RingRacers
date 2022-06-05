@@ -158,6 +158,8 @@ static void Command_Stopdemo_f(void);
 static void Command_StartMovie_f(void);
 static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
+static void Command_RandomMap(void);
+static void Command_RestartLevel(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
@@ -643,6 +645,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
 	COM_AddCommand("clearscores", Command_Clearscores_f);
 	COM_AddCommand("map", Command_Map_f);
+	COM_AddCommand("randommap", Command_RandomMap);
+	COM_AddCommand("restartlevel", Command_RestartLevel);
 
 	COM_AddCommand("exitgame", Command_ExitGame_f);
 	COM_AddCommand("retry", Command_Retry_f);
@@ -2941,6 +2945,67 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
+}
+
+static void Command_RandomMap(void)
+{
+	INT32 oldmapnum;
+	INT32 newmapnum;
+	INT32 newgametype;
+	boolean newencoremode;
+	boolean newresetplayers;
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	// TODO: Handle singleplayer conditions.
+	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
+
+	if (Playing())
+	{
+		newgametype = gametype;
+		newencoremode = encoremode;
+		newresetplayers = false;
+
+		if (gamestate == GS_LEVEL)
+		{
+			oldmapnum = gamemap-1;
+		}
+		else
+		{
+			oldmapnum = prevmap;
+		}
+	}
+	else
+	{
+		newgametype = cv_newgametype.value;
+		newencoremode = false;
+		newresetplayers = true;
+		oldmapnum = -1;
+	}
+
+	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
+	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, false);
+}
+
+static void Command_RestartLevel(void)
+{
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("You must be in a game to use this.\n"));
+		return;
+	}
+
+	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
 }
 
 static void Command_Pause(void)
