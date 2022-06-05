@@ -3773,7 +3773,7 @@ void P_CalculatePrecipFloor(precipmobj_t *mobj)
 
 	mobj->precipflags &= ~PCF_INVISIBLE;
 	mobj->floorz = P_GetSectorFloorZAt(mobjsecsubsec, mobj->x, mobj->y);
-	mobj->ceilingz = P_GetSectorFloorZAt(mobjsecsubsec, mobj->x, mobj->y);
+	mobj->ceilingz = P_GetSectorCeilingZAt(mobjsecsubsec, mobj->x, mobj->y);
 
 	if (mobjsecsubsec->ffloors)
 	{
