@@ -10677,7 +10677,31 @@ void P_SpawnPrecipitation(void)
 			continue;
 
 		// Not in a sector with visible sky?
-		condition = (precipsector->sector->ceilingpic == skyflatnum);
+		if (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES)
+		{
+			condition = false;
+
+			if (precipsector->sector->ffloors)
+			{
+				ffloor_t *rover;
+
+				for (rover = precipsector->sector->ffloors; rover; rover = rover->next)
+				{
+					if (!(rover->flags & FF_EXISTS))
+						continue;
+
+					if (!(rover->flags & FF_SWIMMABLE))
+						continue;
+
+					condition = true;
+					break;
+				}
+			}
+		}
+		else
+		{
+			condition = (precipsector->sector->ceilingpic == skyflatnum);
+		}
 
 		if (precipsector->sector->flags & SF_INVERTPRECIP)
 		{
