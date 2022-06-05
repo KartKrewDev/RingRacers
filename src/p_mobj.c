@@ -3764,13 +3764,16 @@ void P_CalculatePrecipFloor(precipmobj_t *mobj)
 {
 	// recalculate floorz each time
 	const sector_t *mobjsecsubsec;
+	boolean setWater = false;
 
 	if (mobj && mobj->subsector && mobj->subsector->sector)
 		mobjsecsubsec = mobj->subsector->sector;
 	else
 		return;
 
+	mobj->precipflags &= ~PCF_INVISIBLE;
 	mobj->floorz = P_GetSectorFloorZAt(mobjsecsubsec, mobj->x, mobj->y);
+	mobj->ceilingz = P_GetSectorFloorZAt(mobjsecsubsec, mobj->x, mobj->y);
 
 	if (mobjsecsubsec->ffloors)
 	{
@@ -3783,13 +3786,43 @@ void P_CalculatePrecipFloor(precipmobj_t *mobj)
 			if (!(rover->flags & FF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_BLOCKOTHERS) && !(rover->flags & FF_SWIMMABLE))
-				continue;
+			if (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES)
+			{
+				if (!(rover->flags & FF_SWIMMABLE))
+					continue;
 
-			height = P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
-			if (height > mobj->floorz)
-				mobj->floorz = height;
+				if (setWater == false)
+				{
+					mobj->ceilingz = P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
+					mobj->floorz = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
+					setWater = true;
+				}
+				else
+				{
+					height = P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
+					if (height > mobj->ceilingz)
+						mobj->ceilingz = height;
+
+					height = P_GetFFloorBottomZAt(rover, mobj->x, mobj->y);
+					if (height < mobj->floorz)
+						mobj->floorz = height;
+				}
+			}
+			else
+			{
+				if (!(rover->flags & FF_BLOCKOTHERS) && !(rover->flags & FF_SWIMMABLE))
+					continue;
+
+				height = P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
+				if (height > mobj->floorz)
+					mobj->floorz = height;
+			}
 		}
+	}
+
+	if ((precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES) && setWater == false)
+	{
+		mobj->precipflags |= PCF_INVISIBLE;
 	}
 }
 

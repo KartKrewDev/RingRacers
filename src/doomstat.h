@@ -85,7 +85,8 @@ typedef enum
 typedef enum
 {
 	PRECIPFX_THUNDER = 1,
-	PRECIPFX_LIGHTNING = 1<<1
+	PRECIPFX_LIGHTNING = 1<<1,
+	PRECIPFX_WATERPARTICLES = 1<<2
 } precipeffect_t;
 
 typedef struct

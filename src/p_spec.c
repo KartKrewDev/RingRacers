@@ -1773,6 +1773,7 @@ void P_SwitchWeather(preciptype_t newWeather)
 {
 	boolean purge = false;
 	mobjtype_t swap = MT_NULL;
+	INT32 oldEffects = precipprops[curWeather].effects;
 
 	if (newWeather >= precip_freeslot)
 	{
@@ -1796,6 +1797,8 @@ void P_SwitchWeather(preciptype_t newWeather)
 			swap = precipprops[newWeather].type;
 		}
 	}
+
+	curWeather = newWeather;
 
 	if (purge == true)
 	{
@@ -1858,12 +1861,15 @@ void P_SwitchWeather(preciptype_t newWeather)
 			{
 				precipmobj->precipflags |= PCF_FLIP;
 			}
+
+			if ((oldEffects & PRECIPFX_WATERPARTICLES) != (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES))
+			{
+				P_CalculatePrecipFloor(precipmobj);
+			}
 		}
 	}
 
-	curWeather = newWeather;
-
-	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+	if (swap == MT_NULL && precipprops[curWeather].type != MT_NULL)
 		P_SpawnPrecipitation();
 }
 
