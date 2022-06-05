@@ -122,7 +122,7 @@ SINT8 nodetoplayer4[MAXNETNODES]; // say the numplayer for this node if any (spl
 UINT8 playerpernode[MAXNETNODES]; // used specialy for splitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
 
-tic_t servermaxping = 800; // server's max ping. Defaults to 800
+tic_t servermaxping = 20; // server's max delay, in frames. Defaults to 20
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
 static tic_t supposedtics[MAXNETNODES]; // nettics prevision for smaller packet
 static UINT8 nodewaiting[MAXNETNODES];
@@ -2777,7 +2777,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			kickreason = KR_KICK;
 			break;
 		case KICK_MSG_PING_HIGH:
-			HU_AddChatText(va("\x82*%s left the game (Broke ping limit)", player_names[pnum]), false);
+			HU_AddChatText(va("\x82*%s left the game (Broke delay limit)", player_names[pnum]), false);
 			kickreason = KR_PINGLIMIT;
 			break;
 		case KICK_MSG_CON_FAIL:
@@ -2869,7 +2869,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		if (msg == KICK_MSG_CON_FAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
-			M_StartMessage(M_GetText("Server closed connection\n(Broke ping limit)\nPress ESC\n"), NULL, MM_NOTHING);
+			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_BANNED)
 			M_StartMessage(M_GetText("You have been banned by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
@@ -5337,7 +5337,7 @@ static void UpdatePingTable(void)
 				if (! server_lagless && playernode[i] > 0 && !players[i].spectator)
 				{
 					lag = GetLag(playernode[i]);
-					realpingtable[i] += (INT32)(lag * (1000.00f/TICRATE));
+					realpingtable[i] += lag;
 
 					if (! fastest || lag < fastest)
 						fastest = lag;
@@ -5345,7 +5345,7 @@ static void UpdatePingTable(void)
 				else
 				{
 					// TicsToMilliseconds can't handle pings over 1000ms lol
-					realpingtable[i] += (INT32)(GetLag(playernode[i]) * (1000.00f/TICRATE));
+					realpingtable[i] += GetLag(playernode[i]);
 				}
 			}
 		}
@@ -5363,7 +5363,7 @@ static void UpdatePingTable(void)
 			else
 				lag = GetLag(0);
 
-			lag = ( realpingtable[0] + G_TicsToMilliseconds(lag) );
+			lag = ( realpingtable[0] + lag );
 
 			switch (playerpernode[0])
 			{

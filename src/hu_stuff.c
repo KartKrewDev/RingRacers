@@ -75,6 +75,7 @@
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
+patch_t *pingmeasure[2]; // ping measurement graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -188,6 +189,9 @@ void HU_LoadGraphics(void)
 		HU_UpdatePatch(&pinggfx[i], "PINGGFX%d", i+1);
 		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
+
+	HU_UpdatePatch(&pingmeasure[0], "PINGF");
+	HU_UpdatePatch(&pingmeasure[1], "PINGMS");
 
 	// fps stuff
 	HU_UpdatePatch(&framecounter, "FRAMER");
@@ -2246,15 +2250,15 @@ void HU_Erase(void)
 //======================================================================
 
 static int
-Ping_gfx_num (int ping)
+Ping_gfx_num (int lag)
 {
-	if (ping < 76)
+	if (lag < 2)
 		return 0;
-	else if (ping < 137)
+	else if (lag < 4)
 		return 1;
-	else if (ping < 256)
+	else if (lag < 7)
 		return 2;
-	else if (ping < 500)
+	else if (lag < 10)
 		return 3;
 	else
 		return 4;
@@ -2263,22 +2267,33 @@ Ping_gfx_num (int ping)
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
+void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags)
 {
-	INT32 gfxnum;	// gfx to draw
-	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+	UINT8 *colormap = NULL;
+	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
+	INT32 gfxnum; // gfx to draw
 
-	gfxnum = Ping_gfx_num(ping);
+	gfxnum = Ping_gfx_num(lag);
 
-	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
-	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
-		V_DrawPingNum(x, y+9, flags, ping, colormap);
-	else
-		V_DrawPingNum(x, y+9, flags, ping, NULL);
+	V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+
+	if (servermaxping && lag > servermaxping && hu_tick < 4)
+	{
+		// flash ping red if too high
+		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+	}
+
+	if (cv_pingmeasurement.value)
+	{
+		lag = (INT32)(lag * (1000.00f / TICRATE));
+	}
+
+	V_DrawPingNum(x+11 - pingmeasure[measureid]->width, y+9, flags, lag, colormap);
 }
 
 void
-HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 {
 	patch_t *patch;
 	INT32 w = BASEVIDWIDTH;
@@ -2288,7 +2303,7 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 		w /= 2;
 	}
 
-	patch = mping[Ping_gfx_num(ping)];
+	patch = mping[Ping_gfx_num(lag)];
 
 	if (( flags & V_SNAPTORIGHT ))
 		x += ( w - SHORT (patch->width) );
