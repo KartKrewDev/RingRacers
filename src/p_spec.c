@@ -1851,8 +1851,13 @@ void P_SwitchWeather(preciptype_t newWeather)
 			precipmobj->sprite = precipmobj->state->sprite;
 			precipmobj->frame = precipmobj->state->frame;
 
-			precipmobj->momz = mobjinfo[swap].speed;
-			precipmobj->precipflags &= ~PCF_INVISIBLE;
+			precipmobj->momz = -mobjinfo[swap].speed;
+			precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_FLIP);
+
+			if (precipmobj->momz > 0)
+			{
+				precipmobj->precipflags |= PCF_FLIP;
+			}
 		}
 	}
 

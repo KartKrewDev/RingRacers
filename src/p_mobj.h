@@ -262,12 +262,11 @@ typedef enum
 // PRECIPITATION flags ?! ?! ?!
 //
 typedef enum {
-	PCF_INVISIBLE = 1, // Don't draw.
-	PCF_PIT       = 1<<1, // Above pit.
-	PCF_FOF       = 1<<2, // Above FOF.
-	PCF_MOVINGFOF = 1<<3, // Above MOVING FOF (this means we need to keep floorz up to date...)
-	PCF_SPLASH    = 1<<4, // Splashed on the ground, return to the ceiling after the animation's over
-	PCF_THUNK     = 1<<5, // Ran the thinker this tic.
+	PCF_THUNK		= 1,		// Ran the thinker this tic.
+	PCF_SPLASH		= 1<<1,		// Splashed on the ground, return to the ceiling after the animation's over
+	PCF_INVISIBLE	= 1<<2,		// Don't draw.
+	PCF_PIT			= 1<<3,		// Above pit.
+	PCF_FLIP		= 1<<4,		// Spawning from floor, moving upwards.
 } precipflag_t;
 
 // Map Object definition.
