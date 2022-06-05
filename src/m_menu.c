@@ -1521,8 +1521,8 @@ static menuitem_t OP_AdvServerOptionsMenu[] =
 	                         NULL, "Server Browser Address",		{.cvar = &cv_masterserver},		 10},
 
 	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",		{.cvar = &cv_resynchattempts},	 40},
-	{IT_STRING | IT_CVAR,    NULL, "Ping limit (ms)",				{.cvar = &cv_maxping},			 50},
-	{IT_STRING | IT_CVAR,    NULL, "Ping timeout (s)",				{.cvar = &cv_pingtimeout},		 60},
+	{IT_STRING | IT_CVAR,    NULL, "Delay limit (frames)",			{.cvar = &cv_maxping},			 50},
+	{IT_STRING | IT_CVAR,    NULL, "Delay timeout (s)",				{.cvar = &cv_pingtimeout},		 60},
 	{IT_STRING | IT_CVAR,    NULL, "Connection timeout (tics)",		{.cvar = &cv_nettimeout},			 70},
 	{IT_STRING | IT_CVAR,    NULL, "Join timeout (tics)",			{.cvar = &cv_jointimeout},		 80},
 
@@ -2423,8 +2423,6 @@ static void M_ChangeCvar(INT32 choice)
 			choice *= (TICRATE/7);
 		else if (cv == &cv_maxsend)
 			choice *= 512;
-		else if (cv == &cv_maxping)
-			choice *= 50;
 #endif
 		CV_AddValue(cv,choice);
 	}
