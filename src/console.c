@@ -34,6 +34,7 @@
 #include "m_menu.h"
 #include "filesrch.h"
 #include "m_misc.h"
+#include "m_random.h"
 
 #ifdef _WINDOWS
 #include "win32/win_main.h"
@@ -265,6 +266,81 @@ static void CONS_Bind_f(void)
 		bindtable[key] = Z_StrDup(COM_Argv(2));
 }
 
+static void CONS_Choose_f(void)
+{
+	size_t na = COM_Argc();
+
+	if (na < 2)
+	{
+		CONS_Printf(M_GetText("choose <option1> [<option2>] [<option3>] [...]: Picks a command at random\n"));
+		return;
+	}
+
+	COM_BufAddText(COM_Argv(M_RandomKey(na - 1) + 1));
+	COM_BufAddText("\n");
+}
+
+static void CONS_ChooseWeighted_f(void)
+{
+	size_t na = COM_Argc();
+	size_t i, cmd;
+	const char *commands[40];
+	INT32 weights[40];
+	INT32 totalWeight = 0;
+	INT32 roll;
+
+	if (na < 3)
+	{
+		CONS_Printf(M_GetText("chooseweighted <option1> <weight1> [<option2> <weight2>] [<option3> <weight3>] [...]: Picks a command with weighted randomization\n"));
+		return;
+	}
+
+	memset(weights, 0, sizeof(weights));
+
+	i = 1;
+	cmd = 0;
+	while (i < na)
+	{
+		commands[cmd] = COM_Argv(i);
+
+		i++;
+		if (i >= na)
+		{
+			break;
+		}
+
+		weights[cmd] = atoi(COM_Argv(i));
+		totalWeight += weights[cmd];
+
+		i++;
+		cmd++;
+	}
+
+	if (cmd == 0 || totalWeight <= 0)
+	{
+		return;
+	}
+
+	roll = M_RandomRange(1, totalWeight);
+
+	for (i = 0; i < cmd; i++)
+	{
+		if (roll <= weights[i])
+		{
+			if (commands[i] == NULL)
+			{
+				break;
+			}
+
+			COM_BufAddText(commands[i]);
+			COM_BufAddText("\n");
+			break;
+		}
+
+		roll -= weights[i];
+	}
+}
+
 //======================================================================
 //                          CONSOLE SETUP
 //======================================================================
@@ -468,6 +544,8 @@ void CON_Init(void)
 		CV_RegisterVar(&cons_backcolor);
 		CV_RegisterVar(&cons_menuhighlight);
 		COM_AddCommand("bind", CONS_Bind_f);
+		COM_AddCommand("choose", CONS_Choose_f);
+		COM_AddCommand("chooseweighted", CONS_ChooseWeighted_f);
 	}
 	else
 	{
