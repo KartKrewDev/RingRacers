@@ -187,6 +187,14 @@
 	#if (defined (WATTCP) && !defined (__libsocket_socklen_t)) || defined (USE_WINSOCK1)
 		typedef int socklen_t;
 	#endif
+
+	typedef struct
+	{
+		mysockaddr_t address;
+		UINT8 mask;
+		// TODO: timestamp, for tempbans!
+	} banned_t;
+
 	static SOCKET_TYPE mysockets[MAXNETNODES+1] = {ERRSOCKET};
 	static size_t mysocketses = 0;
 	static int myfamily[MAXNETNODES+1] = {0};
@@ -195,8 +203,7 @@
 	static mysockaddr_t broadcastaddress[MAXNETNODES+1];
 	static size_t broadcastaddresses = 0;
 	static boolean nodeconnected[MAXNETNODES+1];
-	static mysockaddr_t *banned;
-	static UINT8 *bannedmask;
+	static banned_t *banned;
 	static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
 #endif
 
@@ -431,7 +438,7 @@ static const char *SOCK_GetBanAddress(size_t ban)
 #ifdef NONET
 	return NULL;
 #else
-	return SOCK_AddrToStr(&banned[ban]);
+	return SOCK_AddrToStr(&banned[ban].address);
 #endif
 }
 
@@ -443,7 +450,7 @@ static const char *SOCK_GetBanMask(size_t ban)
 	static char s[16]; //255.255.255.255 netmask? no, just CDIR for only
 	if (ban >= numbans)
 		return NULL;
-	if (sprintf(s,"%d",bannedmask[ban]) > 0)
+	if (sprintf(s,"%d",banned[ban].mask) > 0)
 		return s;
 #endif
 	return NULL;
@@ -632,7 +639,7 @@ static boolean SOCK_Get(void)
 				// check if it's a banned dude so we can send a refusal later
 				for (i = 0; i < numbans; i++)
 				{
-					if (SOCK_cmpaddr(&fromaddress, &banned[i], bannedmask[i]))
+					if (SOCK_cmpaddr(&fromaddress, &banned[i].address, banned[i].mask))
 					{
 						SOCK_bannednode[j] = true;
 						DEBFILE("This dude has been banned\n");
@@ -1439,18 +1446,10 @@ static void AddBannedIndex(void)
 
 		banned = Z_ReallocAlign(
 			(void*) banned,
-			sizeof(mysockaddr_t) * banned_size,
+			sizeof(banned_t) * banned_size,
 			PU_STATIC,
 			NULL,
-			sizeof(mysockaddr_t) * 8
-		);
-
-		bannedmask = Z_ReallocAlign(
-			(void*) banned,
-			sizeof(UINT8) * banned_size,
-			PU_STATIC,
-			NULL,
-			sizeof(UINT8) * 8
+			sizeof(banned_t) * 8
 		);
 	}
 
@@ -1459,25 +1458,31 @@ static void AddBannedIndex(void)
 
 static boolean SOCK_Ban(INT32 node)
 {
+	INT32 ban;
+
 	if (node > MAXNETNODES)
 		return false;
+
 #ifdef NONET
+	(void)ban;
 	return false;
 #else
 
+	ban = numbans;
 	AddBannedIndex();
 
-	M_Memcpy(&banned[numbans-1], &clientaddress[node], sizeof (mysockaddr_t));
-	if (banned[numbans-1].any.sa_family == AF_INET)
+	M_Memcpy(&banned[ban].address, &clientaddress[node], sizeof (mysockaddr_t));
+
+	if (banned[ban].address.any.sa_family == AF_INET)
 	{
-		banned[numbans-1].ip4.sin_port = 0;
-		bannedmask[numbans-1] = 32;
+		banned[ban].address.ip4.sin_port = 0;
+		banned[ban].mask = 32;
 	}
 #ifdef HAVE_IPV6
-	else if (banned[numbans-1].any.sa_family == AF_INET6)
+	else if (banned[ban].address.any.sa_family == AF_INET6)
 	{
-		banned[numbans-1].ip6.sin6_port = 0;
-		bannedmask[numbans-1] = 128;
+		banned[ban].address.ip6.sin6_port = 0;
+		banned[ban].mask = 128;
 	}
 #endif
 
@@ -1512,25 +1517,29 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 
 	while (runp != NULL)
 	{
+		INT32 ban;
+
+		ban = numbans;
 		AddBannedIndex();
 
-		memcpy(&banned[numbans-1], runp->ai_addr, runp->ai_addrlen);
+		memcpy(&banned[ban].address, runp->ai_addr, runp->ai_addrlen);
 
 		if (mask)
-			bannedmask[numbans-1] = (UINT8)atoi(mask);
+			banned[ban].mask = (UINT8)atoi(mask);
 #ifdef HAVE_IPV6
 		else if (runp->ai_family == AF_INET6)
-			bannedmask[numbans-1] = 128;
+			banned[ban].mask = 128;
 #endif
 		else
-			bannedmask[numbans-1] = 32;
+			banned[ban].mask = 32;
 
-		if (bannedmask[numbans-1] > 32 && runp->ai_family == AF_INET)
-			bannedmask[numbans-1] = 32;
+		if (banned[ban].mask > 32 && runp->ai_family == AF_INET)
+			banned[ban].mask = 32;
 #ifdef HAVE_IPV6
-		else if (bannedmask[numbans-1] > 128 && runp->ai_family == AF_INET6)
-			bannedmask[numbans-1] = 128;
+		else if (banned[ban].mask > 128 && runp->ai_family == AF_INET6)
+			banned[ban].mask = 128;
 #endif
+
 		runp = runp->ai_next;
 	}
 
@@ -1545,7 +1554,6 @@ static void SOCK_ClearBans(void)
 	numbans = 0;
 	banned_size = 0;
 	banned = NULL;
-	bannedmask = NULL;
 }
 
 boolean I_InitTcpNetwork(void)
