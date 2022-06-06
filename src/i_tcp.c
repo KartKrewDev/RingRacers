@@ -1430,7 +1430,7 @@ static void AddBannedIndex(void)
 	{
 		if (banned_size == 0)
 		{
-			banned_size = 128;
+			banned_size = 8;
 		}
 		else
 		{
