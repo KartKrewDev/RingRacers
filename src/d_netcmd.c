@@ -943,6 +943,11 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
+
+	CV_RegisterVar(&cv_shoutname);
+	CV_RegisterVar(&cv_shoutcolor);
+	CV_RegisterVar(&cv_autoshout);
+
 	CV_RegisterVar(&cv_songcredits);
 	CV_RegisterVar(&cv_tutorialprompt);
 	CV_RegisterVar(&cv_showfocuslost);

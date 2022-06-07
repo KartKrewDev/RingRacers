@@ -1112,6 +1112,9 @@ sfxinfo_t S_sfx[NUMSFX] =
     // SRB2kart - Grow/invinc clash
   {"parry", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
+  // Shout message sound effect
+  {"sysmsg", false,  60,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
