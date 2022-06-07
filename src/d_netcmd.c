@@ -3543,6 +3543,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 		if (players[playernum].mo)
 			players[playernum].mo->health = 1;
+
+		K_StripItems(&players[playernum]);
 	}
 
 	K_CheckBumpers(); // SRB2Kart
