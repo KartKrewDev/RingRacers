@@ -189,6 +189,8 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
+consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
+
 static inline void *G_DcpyTiccmd(void* dest, const ticcmd_t* src, const size_t n)
 {
 	const size_t d = n / sizeof(ticcmd_t);
@@ -2067,6 +2069,13 @@ static void Command_ShowBan(void) //Print out ban list
 		else
 			CONS_Printf("%s: %s/%s ", sizeu1(i+1), address, mask);
 
+		if (I_GetUnbanTime && I_GetUnbanTime(i) != NO_BAN_TIME)
+		{
+			// todo: maybe try to actually print out the time remaining,
+			// and/or the datetime of the unbanning?
+			CONS_Printf("(temporary) ");
+		}
+
 		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
 			CONS_Printf("(%s)\n", reason);
 		else
@@ -2082,6 +2091,8 @@ void D_SaveBan(void)
 	FILE *f;
 	size_t i;
 	const char *address, *mask, *reason;
+	const time_t curTime = time(NULL);
+	time_t unbanTime = NO_BAN_TIME;
 	const char *path = va("%s"PATHSEP"%s", srb2home, "ban.txt");
 
 	f = fopen(path, "w");
@@ -2094,10 +2105,23 @@ void D_SaveBan(void)
 
 	for (i = 0; (address = I_GetBanAddress(i)) != NULL; i++)
 	{
+		if (I_GetUnbanTime)
+		{
+			unbanTime = I_GetUnbanTime(i);
+		}
+
+		if (unbanTime != NO_BAN_TIME && curTime >= unbanTime)
+		{
+			// Don't need to save this one anymore.
+			continue;
+		}
+
 		if (!I_GetBanMask || (mask = I_GetBanMask(i)) == NULL)
 			fprintf(f, "%s 0", address);
 		else
 			fprintf(f, "%s %s", address, mask);
+
+		fprintf(f, " %ld", (long)unbanTime);
 
 		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
 			fprintf(f, " %s\n", reason);
@@ -2122,6 +2146,7 @@ static void Ban_Load_File(boolean warning)
 	FILE *f;
 	size_t i;
 	const char *address, *mask, *reason;
+	time_t unbanTime = NO_BAN_TIME;
 	char buffer[MAX_WADPATH];
 
 	if (!I_ClearBans)
@@ -2142,9 +2167,12 @@ static void Ban_Load_File(boolean warning)
 	{
 		address = strtok(buffer, " \t\r\n");
 		mask = strtok(NULL, " \t\r\n");
+		unbanTime = atoi(strtok(NULL, " \t\r\n"));
 		reason = strtok(NULL, "\r\n");
 
 		I_SetBanAddress(address, mask);
+		if (I_SetUnbanTime)
+			I_SetUnbanTime(unbanTime);
 		if (I_SetBanReason)
 			I_SetBanReason(reason);
 	}
@@ -2620,6 +2648,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	char buf[3 + MAX_REASONLENGTH];
 	char *reason = buf;
 	kickreason_t kickreason = KR_KICK;
+	UINT32 banMinutes = 0;
 
 	pnum = READUINT8(*p);
 	msg = READUINT8(*p);
@@ -2683,17 +2712,35 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	// Save bans here. Used to be split between here and the actual command, depending on
 	// whenever the server did it or a remote admin did it, but it's simply more convenient
 	// to keep it all in one place.
-	if (server && (msg == KICK_MSG_BANNED || msg == KICK_MSG_CUSTOM_BAN))
+	if (server)
 	{
-		if (I_Ban && !I_Ban(playernode[(INT32)pnum]))
+		if (msg == KICK_MSG_GO_AWAY || msg == KICK_MSG_CUSTOM_KICK)
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("Ban failed. Invalid node?\n"));
+			// Kick as a temporary ban.
+			banMinutes = cv_kicktime.value;
 		}
-		else
+
+		if (msg == KICK_MSG_BANNED || msg == KICK_MSG_CUSTOM_BAN || banMinutes)
 		{
-			if (I_SetBanReason)
-				I_SetBanReason(reason);
-			D_SaveBan();
+			if (I_Ban && !I_Ban(playernode[(INT32)pnum]))
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Ban failed. Invalid node?\n"));
+			}
+			else
+			{
+				if (I_SetBanReason)
+					I_SetBanReason(reason);
+
+				if (I_SetUnbanTime)
+				{
+					if (banMinutes)
+						I_SetUnbanTime(time(NULL) + (banMinutes * 60));
+					else
+						I_SetUnbanTime(NO_BAN_TIME);
+				}
+
+				D_SaveBan();
+			}
 		}
 	}
 
@@ -2791,13 +2838,16 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	if (playernode[pnum] == playernode[consoleplayer])
 	{
-		LUAh_GameQuit(false);
 #ifdef DUMPCONSISTENCY
 		if (msg == KICK_MSG_CON_FAIL) SV_SavedGame();
 #endif
+
+		LUAh_GameQuit(false);
+
 		D_QuitNetGame();
 		CL_Reset();
 		D_StartTitle();
+
 		if (msg == KICK_MSG_CON_FAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
@@ -3006,6 +3056,7 @@ void D_ClientServerInit(void)
 #ifndef NONET
 	COM_AddCommand("getplayernum", Command_GetPlayerNum);
 	COM_AddCommand("kick", Command_Kick);
+	CV_RegisterVar(&cv_kicktime);
 	COM_AddCommand("ban", Command_Ban);
 	COM_AddCommand("banip", Command_BanIP);
 	COM_AddCommand("clearbans", Command_ClearBans);
@@ -3641,31 +3692,74 @@ static void HandleConnect(SINT8 node)
 	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value);
 
 	if (bannednode && bannednode[node])
-		SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server."));
+	{
+		if (bannednodetimeleft && bannednodetimeleft[node] != NO_BAN_TIME)
+		{
+			int minutes = bannednodetimeleft[node] / 60;
+			int hours = minutes / 60;
+
+			if (hours)
+			{
+				SV_SendRefuse(node, va(M_GetText("You have been temporarily\nkicked from the server.\n(Time remaining: %d hour%s)"), hours, hours > 1 ? "s" : ""));
+			}
+			else if (minutes)
+			{
+				SV_SendRefuse(node, va(M_GetText("You have been temporarily\nkicked from the server.\n(Time remaining: %d minute%s)"), minutes, minutes > 1 ? "s" : ""));
+			}
+			else
+			{
+				SV_SendRefuse(node, M_GetText("You have been temporarily\nkicked from the server.\n(Time remaining: <1 minute)"));
+			}
+		}
+		else
+		{
+			SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server."));
+		}
+	}
 	else if (netbuffer->u.clientcfg._255 != 255 ||
 			netbuffer->u.clientcfg.packetversion != PACKETVERSION)
+	{
 		SV_SendRefuse(node, "Incompatible packet formats.");
+	}
 	else if (strncmp(netbuffer->u.clientcfg.application, SRB2APPLICATION,
 				sizeof netbuffer->u.clientcfg.application))
+	{
 		SV_SendRefuse(node, "Different Ring Racers modifications\nare not compatible.");
+	}
 	else if (netbuffer->u.clientcfg.version != VERSION
 		|| netbuffer->u.clientcfg.subversion != SUBVERSION)
+	{
 		SV_SendRefuse(node, va(M_GetText("Different Ring Racers versions cannot\nplay a netgame!\n(server version %d.%d)"), VERSION, SUBVERSION));
+	}
 	else if (!cv_allownewplayer.value && node)
+	{
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment."));
+	}
 	else if (D_NumPlayers() >= maxplayers)
+	{
 		SV_SendRefuse(node, va(M_GetText("Maximum players reached: %d"), maxplayers));
+	}
 	else if (netgame && netbuffer->u.clientcfg.localplayers > MAXSPLITSCREENPLAYERS) // Hacked client?
+	{
 		SV_SendRefuse(node, M_GetText("Too many players from\nthis node."));
+	}
 	else if (netgame && D_NumPlayers() + netbuffer->u.clientcfg.localplayers > maxplayers)
+	{
 		SV_SendRefuse(node, va(M_GetText("Number of local players\nwould exceed maximum: %d"), maxplayers));
+	}
 	else if (netgame && !netbuffer->u.clientcfg.localplayers) // Stealth join?
+	{
 		SV_SendRefuse(node, M_GetText("No players from\nthis node."));
+	}
 	else if (luafiletransfers)
+	{
 		SV_SendRefuse(node, M_GetText("The server is broadcasting a file\nrequested by a Lua script.\nPlease wait a bit and then\ntry rejoining."));
+	}
 	else if (netgame && joindelay > 2 * (tic_t)cv_joindelay.value * TICRATE)
+	{
 		SV_SendRefuse(node, va(M_GetText("Too many people are connecting.\nPlease wait %d seconds and then\ntry rejoining."),
 			(joindelay - 2 * cv_joindelay.value * TICRATE) / TICRATE));
+	}
 	else
 	{
 #ifndef NONET
@@ -3939,12 +4033,12 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					break;
 				}
 
-				M_StartMessage(va(M_GetText("Server refuses connection\n\nReason:\n%s"),
-					reason), NULL, MM_NOTHING);
-
 				D_QuitNetGame();
 				CL_Reset();
 				D_StartTitle();
+
+				M_StartMessage(va(M_GetText("Server refuses connection\n\nReason:\n%s"),
+					reason), NULL, MM_NOTHING);
 
 				free(reason);
 
