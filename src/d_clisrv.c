@@ -2050,40 +2050,27 @@ static void CL_ConnectToServer(void)
 }
 
 #ifndef NONET
-typedef struct banreason_s
-{
-	char *reason;
-	struct banreason_s *prev; //-1
-	struct banreason_s *next; //+1
-} banreason_t;
-
-static banreason_t *reasontail = NULL; //last entry, use prev
-static banreason_t *reasonhead = NULL; //1st entry, use next
-
 static void Command_ShowBan(void) //Print out ban list
 {
 	size_t i;
-	const char *address, *mask;
-	banreason_t *reasonlist = reasonhead;
+	const char *address, *mask, *reason;
 
 	if (I_GetBanAddress)
 		CONS_Printf(M_GetText("Ban List:\n"));
 	else
 		return;
 
-	for (i = 0;(address = I_GetBanAddress(i)) != NULL;i++)
+	for (i = 0; (address = I_GetBanAddress(i)) != NULL; i++)
 	{
 		if (!I_GetBanMask || (mask = I_GetBanMask(i)) == NULL)
 			CONS_Printf("%s: %s ", sizeu1(i+1), address);
 		else
 			CONS_Printf("%s: %s/%s ", sizeu1(i+1), address, mask);
 
-		if (reasonlist && reasonlist->reason)
-			CONS_Printf("(%s)\n", reasonlist->reason);
+		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
+			CONS_Printf("(%s)\n", reason);
 		else
 			CONS_Printf("\n");
-
-		if (reasonlist) reasonlist = reasonlist->next;
 	}
 
 	if (i == 0 && !address)
@@ -2094,15 +2081,8 @@ void D_SaveBan(void)
 {
 	FILE *f;
 	size_t i;
-	banreason_t *reasonlist = reasonhead;
-	const char *address, *mask;
+	const char *address, *mask, *reason;
 	const char *path = va("%s"PATHSEP"%s", srb2home, "ban.txt");
-
-	if (!reasonhead)
-	{
-		remove(path);
-		return;
-	}
 
 	f = fopen(path, "w");
 
@@ -2112,57 +2092,20 @@ void D_SaveBan(void)
 		return;
 	}
 
-	for (i = 0;(address = I_GetBanAddress(i)) != NULL;i++)
+	for (i = 0; (address = I_GetBanAddress(i)) != NULL; i++)
 	{
 		if (!I_GetBanMask || (mask = I_GetBanMask(i)) == NULL)
 			fprintf(f, "%s 0", address);
 		else
 			fprintf(f, "%s %s", address, mask);
 
-		if (reasonlist && reasonlist->reason)
-			fprintf(f, " %s\n", reasonlist->reason);
+		if (I_GetBanReason && (reason = I_GetBanReason(i)) != NULL)
+			fprintf(f, " %s\n", reason);
 		else
-			fprintf(f, " %s\n", "NA");
-
-		if (reasonlist) reasonlist = reasonlist->next;
+			fprintf(f, " %s\n", "No reason given");
 	}
 
 	fclose(f);
-}
-
-static void Ban_Add(const char *reason)
-{
-	banreason_t *reasonlist = malloc(sizeof(*reasonlist));
-
-	if (!reasonlist)
-		return;
-	if (!reason)
-		reason = "NA";
-
-	reasonlist->next = NULL;
-	reasonlist->reason = Z_StrDup(reason);
-	if ((reasonlist->prev = reasontail) == NULL)
-		reasonhead = reasonlist;
-	else
-		reasontail->next = reasonlist;
-	reasontail = reasonlist;
-}
-
-static void Ban_Clear(void)
-{
-	banreason_t *temp;
-
-	I_ClearBans();
-
-	reasontail = NULL;
-
-	while (reasonhead)
-	{
-		temp = reasonhead->next;
-		Z_Free(reasonhead->reason);
-		free(reasonhead);
-		reasonhead = temp;
-	}
 }
 
 static void Command_ClearBans(void)
@@ -2170,7 +2113,7 @@ static void Command_ClearBans(void)
 	if (!I_ClearBans)
 		return;
 
-	Ban_Clear();
+	I_ClearBans();
 	D_SaveBan();
 }
 
@@ -2178,7 +2121,7 @@ static void Ban_Load_File(boolean warning)
 {
 	FILE *f;
 	size_t i;
-	const char *address, *mask;
+	const char *address, *mask, *reason;
 	char buffer[MAX_WADPATH];
 
 	if (!I_ClearBans)
@@ -2193,16 +2136,17 @@ static void Ban_Load_File(boolean warning)
 		return;
 	}
 
-	Ban_Clear();
+	I_ClearBans();
 
 	for (i=0; fgets(buffer, (int)sizeof(buffer), f); i++)
 	{
 		address = strtok(buffer, " \t\r\n");
 		mask = strtok(NULL, " \t\r\n");
+		reason = strtok(NULL, "\r\n");
 
 		I_SetBanAddress(address, mask);
-
-		Ban_Add(strtok(NULL, "\r\n"));
+		if (I_SetBanReason)
+			I_SetBanReason(reason);
 	}
 
 	fclose(f);
@@ -2539,54 +2483,37 @@ static void Command_Ban(void)
 		UINT8 buf[3 + MAX_REASONLENGTH];
 		UINT8 *p = buf;
 		const SINT8 pn = nametonum(COM_Argv(1));
-		const INT32 node = playernode[(INT32)pn];
 
 		if (pn == -1 || pn == 0)
 			return;
 
 		WRITEUINT8(p, pn);
 
-		if (server && I_Ban && !I_Ban(node)) // only the server is allowed to do this right now
+		if (COM_Argc() == 2)
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("Ban failed. Invalid node?\n"));
-			WRITEUINT8(p, KICK_MSG_GO_AWAY);
+			WRITEUINT8(p, KICK_MSG_BANNED);
 			SendNetXCmd(XD_KICK, &buf, 2);
 		}
 		else
 		{
-			if (server) // only the server is allowed to do this right now
+			size_t i, j = COM_Argc();
+			char message[MAX_REASONLENGTH];
+
+			//Steal from the motd code so you don't have to put the reason in quotes.
+			strlcpy(message, COM_Argv(2), sizeof message);
+			for (i = 3; i < j; i++)
 			{
-				Ban_Add(COM_Argv(2));
-				D_SaveBan(); // save the ban list
+				strlcat(message, " ", sizeof message);
+				strlcat(message, COM_Argv(i), sizeof message);
 			}
 
-			if (COM_Argc() == 2)
-			{
-				WRITEUINT8(p, KICK_MSG_BANNED);
-				SendNetXCmd(XD_KICK, &buf, 2);
-			}
-			else
-			{
-				size_t i, j = COM_Argc();
-				char message[MAX_REASONLENGTH];
-
-				//Steal from the motd code so you don't have to put the reason in quotes.
-				strlcpy(message, COM_Argv(2), sizeof message);
-				for (i = 3; i < j; i++)
-				{
-					strlcat(message, " ", sizeof message);
-					strlcat(message, COM_Argv(i), sizeof message);
-				}
-
-				WRITEUINT8(p, KICK_MSG_CUSTOM_BAN);
-				WRITESTRINGN(p, message, MAX_REASONLENGTH);
-				SendNetXCmd(XD_KICK, &buf, p - buf);
-			}
+			WRITEUINT8(p, KICK_MSG_CUSTOM_BAN);
+			WRITESTRINGN(p, message, MAX_REASONLENGTH);
+			SendNetXCmd(XD_KICK, &buf, p - buf);
 		}
 	}
 	else
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
-
 }
 
 static void Command_BanIP(void)
@@ -2607,7 +2534,6 @@ static void Command_BanIP(void)
 		else
 			reason = COM_Argv(2);
 
-
 		if (I_SetBanAddress && I_SetBanAddress(address, NULL))
 		{
 			if (reason)
@@ -2615,7 +2541,8 @@ static void Command_BanIP(void)
 			else
 				CONS_Printf("Banned IP address %s\n", address);
 
-			Ban_Add(reason);
+			if (I_SetBanReason)
+				I_SetBanReason(reason);
 			D_SaveBan();
 		}
 		else
@@ -2753,16 +2680,21 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	//CONS_Printf("\x82%s ", player_names[pnum]);
 
-	// If a verified admin banned someone, the server needs to know about it.
-	// If the playernum isn't zero (the server) then the server needs to record the ban.
-	if (server && playernum && (msg == KICK_MSG_BANNED || msg == KICK_MSG_CUSTOM_BAN))
+	// Save bans here. Used to be split between here and the actual command, depending on
+	// whenever the server did it or a remote admin did it, but it's simply more convenient
+	// to keep it all in one place.
+	if (server && (msg == KICK_MSG_BANNED || msg == KICK_MSG_CUSTOM_BAN))
 	{
 		if (I_Ban && !I_Ban(playernode[(INT32)pnum]))
-			CONS_Alert(CONS_WARNING, M_GetText("Too many bans! Geez, that's a lot of people you're excluding...\n"));
-#ifndef NONET
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Ban failed. Invalid node?\n"));
+		}
 		else
-			Ban_Add(reason);
-#endif
+		{
+			if (I_SetBanReason)
+				I_SetBanReason(reason);
+			D_SaveBan();
+		}
 	}
 
 	if (msg == KICK_MSG_PLAYER_QUIT)

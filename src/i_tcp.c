@@ -192,6 +192,7 @@
 	{
 		mysockaddr_t address;
 		UINT8 mask;
+		char *reason;
 		// TODO: timestamp, for tempbans!
 	} banned_t;
 
@@ -454,6 +455,16 @@ static const char *SOCK_GetBanMask(size_t ban)
 		return s;
 #endif
 	return NULL;
+}
+
+static const char *SOCK_GetBanReason(size_t ban)
+{
+#ifdef NONET
+	(void)ban;
+	return NULL;
+#else
+	return banned[ban].reason;
+#endif
 }
 
 #ifndef NONET
@@ -1549,6 +1560,23 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 #endif
 }
 
+static boolean SOCK_SetBanReason(const char *reason)
+{
+#ifdef NONET
+	(void)reason;
+	return false;
+#else
+
+	if (!reason)
+	{
+		reason = "No reason given";
+	}
+
+	banned[numbans - 1].reason = Z_StrDup(reason);
+	return true;
+#endif
+}
+
 static void SOCK_ClearBans(void)
 {
 	numbans = 0;
@@ -1648,7 +1676,9 @@ boolean I_InitTcpNetwork(void)
 	I_GetNodeAddress = SOCK_GetNodeAddress;
 	I_GetBanAddress = SOCK_GetBanAddress;
 	I_GetBanMask = SOCK_GetBanMask;
+	I_GetBanReason = SOCK_GetBanReason;
 	I_SetBanAddress = SOCK_SetBanAddress;
+	I_SetBanReason = SOCK_SetBanReason;
 	bannednode = SOCK_bannednode;
 
 	return ret;
