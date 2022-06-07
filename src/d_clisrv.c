@@ -2291,6 +2291,8 @@ void CL_ClearPlayer(INT32 playernum)
 	splitscreen_original_party_size[playernum] = 0;
 
 	memset(&players[playernum], 0, sizeof (player_t));
+
+	RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 }
 
 //
@@ -2347,11 +2349,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	sprintf(player_names[playernum], "Player %c", 'A' + playernum);
 
 	player_name_changes[playernum] = 0;
-
-	if (IsPlayerAdmin(playernum))
-	{
-		RemoveAdminPlayer(playernum); // don't stay admin after you're gone
-	}
 
 	LUA_InvalidatePlayer(&players[playernum]);
 
