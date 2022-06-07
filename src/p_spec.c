@@ -6955,6 +6955,12 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 
 	for (i = 0; i < numlines; i++)
 	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
 		switch (lines[i].special)
 		{
 			case 30: // Polyobj_Flag
@@ -6968,29 +6974,7 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 			case 32: // Polyobj_RotDisplace
 				PolyRotDisplace(&lines[i]);
 				break;
-		}
-	}
 
-	if (!fromnetsave)
-		P_RunLevelLoadExecutors();
-}
-
-/** Fuck ML_NONET
-  */
-void P_SpawnSpecialsAfterSlopes(void)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; ++i)
-	{
-		if (P_IsLineDisabled(&lines[i]))
-		{
-			/* remove the special so it can't even be found during the level */
-			lines[i].special = 0;
-		}
-
-		switch (lines[i].special)
-		{
 			case 80: // Raise tagged things by type to this FOF
 				{
 					mtag_t tag = Tag_FGet(&lines[i].tags);
@@ -7003,6 +6987,9 @@ void P_SpawnSpecialsAfterSlopes(void)
 				break;
 		}
 	}
+
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.

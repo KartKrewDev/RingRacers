@@ -42,7 +42,6 @@ void P_SetupLevelFlatAnims(void);
 // at map load
 void P_InitSpecials(void);
 void P_SpawnSpecials(boolean fromnetsave);
-void P_SpawnSpecialsAfterSlopes(void);
 void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave);
 
 // every tic
