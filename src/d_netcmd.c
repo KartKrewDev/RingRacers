@@ -5302,7 +5302,6 @@ static void Follower_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5327,8 +5326,8 @@ static void Follower_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[0], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[0], str);
+		cv_follower[0].value = num;
 	}
 
 	if (!Playing())
@@ -5356,7 +5355,6 @@ static void Follower2_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5381,8 +5379,8 @@ static void Follower2_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[1], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[1], str);
+		cv_follower[1].value = num;
 	}
 
 	if (!Playing())
@@ -5407,7 +5405,6 @@ static void Follower3_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5432,8 +5429,8 @@ static void Follower3_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[2], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[2], str);
+		cv_follower[2].value = num;
 	}
 
 	if (!Playing())
@@ -5458,7 +5455,6 @@ static void Follower4_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5483,8 +5479,8 @@ static void Follower4_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[3], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[3], str);
+		cv_follower[3].value = num;
 	}
 
 	if (!Playing())
