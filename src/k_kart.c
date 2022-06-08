@@ -10214,7 +10214,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			const angle_t lr = ANGLE_45;
 			fixed_t momz = FixedDiv(player->mo->momz, mapobjectscale);	// bring momz back to scale...
 			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
-			fixed_t basespeed = P_AproxDistance(player->mo->momx, player->mo->momy);	// at WORSE, keep your normal speed when tricking.
+			fixed_t basespeed = K_GetKartSpeed(player, false, false);	// at WORSE, keep your normal speed when tricking.
 			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
 
 			K_trickPanelTimingVisual(player, momz);
