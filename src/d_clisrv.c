@@ -2001,7 +2001,9 @@ static void CL_ConnectToServer(void)
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
+	Schedule_Clear();
 	K_ClearClientPowerLevels();
+
 	pnumnodes = 1;
 	oldtic = 0;
 #ifndef NONET
@@ -3135,14 +3137,17 @@ void SV_ResetServer(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		LUA_InvalidatePlayer(&players[i]);
-		playeringame[i] = false;
-		playernode[i] = UINT8_MAX;
 		sprintf(player_names[i], "Player %c", 'A' + i);
-		adminplayers[i] = -1; // Populate the entire adminplayers array with -1.
-		K_ClearClientPowerLevels();
-		splitscreen_invitations[i] = -1;
 	}
 
+	memset(playeringame, false, sizeof playeringame);
+	memset(playernode, UINT8_MAX, sizeof playernode);
+
+	ClearAdminPlayers();
+	Schedule_Clear();
+	K_ClearClientPowerLevels();
+
+	memset(splitscreen_invitations, -1, sizeof splitscreen_invitations);
 	memset(splitscreen_partied, 0, sizeof splitscreen_partied);
 	memset(player_name_changes, 0, sizeof player_name_changes);
 
@@ -3227,6 +3232,7 @@ void D_QuitNetGame(void)
 
 	D_CloseConnection();
 	ClearAdminPlayers();
+	Schedule_Clear();
 	K_ClearClientPowerLevels();
 
 	DEBFILE("===========================================================================\n"
@@ -5230,7 +5236,13 @@ boolean TryRunTics(tic_t realtics)
 				ps_tictime = I_GetPreciseTime();
 
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
+				if (gametic % TICRATE == 0)
+				{
+					Schedule_Run();
+				}
+
 				ExtraDataTicker();
+
 				gametic++;
 				consistancy[gametic%BACKUPTICS] = Consistancy();
 
