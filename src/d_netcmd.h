@@ -163,6 +163,7 @@ typedef enum
 	XD_PLAYSOUND,   // 35
 	XD_SCHEDULETASK, // 36
 	XD_SCHEDULECLEAR, // 37
+	XD_AUTOMATE,    // 38
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -246,6 +247,18 @@ void Schedule_Run(void);
 void Schedule_Insert(scheduleTask_t *addTask);
 void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command);
 void Schedule_Clear(void);
+
+typedef enum
+{
+	AEV_ROUNDSTART,
+	AEV_INTERMISSIONSTART,
+	AEV_VOTESTART,
+	AEV__MAX
+} automateEvents_t;
+
+void Automate_Run(automateEvents_t type);
+void Automate_Set(automateEvents_t type, const char *command);
+void Automate_Clear(void);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

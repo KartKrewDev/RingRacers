@@ -2002,6 +2002,7 @@ static void CL_ConnectToServer(void)
 
 	ClearAdminPlayers();
 	Schedule_Clear();
+	Automate_Clear();
 	K_ClearClientPowerLevels();
 
 	pnumnodes = 1;
@@ -3145,6 +3146,7 @@ void SV_ResetServer(void)
 
 	ClearAdminPlayers();
 	Schedule_Clear();
+	Automate_Clear();
 	K_ClearClientPowerLevels();
 
 	memset(splitscreen_invitations, -1, sizeof splitscreen_invitations);
@@ -3233,6 +3235,7 @@ void D_QuitNetGame(void)
 	D_CloseConnection();
 	ClearAdminPlayers();
 	Schedule_Clear();
+	Automate_Clear();
 	K_ClearClientPowerLevels();
 
 	DEBFILE("===========================================================================\n"
