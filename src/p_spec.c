@@ -3641,7 +3641,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (delay <= 0 || !(leveltime % delay))
-						P_GivePlayerRings(mo->player, rings);
+					{
+						// No Climb: don't cap rings to 20
+						K_AwardPlayerRings(mo->player, rings,
+								(line->flags & ML_NOCLIMB) == ML_NOCLIMB);
+					}
 				}
 			}
 			break;
