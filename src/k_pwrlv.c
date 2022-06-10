@@ -50,10 +50,7 @@ SINT8 K_UsingPowerLevels(void)
 
 void K_ClearClientPowerLevels(void)
 {
-	UINT8 i, j;
-	for (i = 0; i < MAXPLAYERS; i++)
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-			clientpowerlevels[i][j] = 0;
+	memset(clientpowerlevels, 0, sizeof clientpowerlevels);
 }
 
 // Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating

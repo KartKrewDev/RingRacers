@@ -116,6 +116,8 @@ extern consvar_t cv_perfstats;
 
 extern consvar_t cv_director;
 
+extern consvar_t cv_schedule;
+
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
 extern char timedemo_csv_id[256];
@@ -160,6 +162,8 @@ typedef enum
 	XD_ADDBOT,      // 33
 	XD_DISCORD,     // 34
 	XD_PLAYSOUND,   // 35
+	XD_SCHEDULETASK, // 36
+	XD_SCHEDULECLEAR, // 37
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -227,6 +231,22 @@ void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
+
+typedef struct
+{
+	UINT16 basetime;
+	UINT16 timer;
+	char *command;
+} scheduleTask_t;
+
+extern scheduleTask_t **schedule;
+extern size_t schedule_size;
+extern size_t schedule_len;
+
+void Schedule_Run(void);
+void Schedule_Insert(scheduleTask_t *addTask);
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command);
+void Schedule_Clear(void);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

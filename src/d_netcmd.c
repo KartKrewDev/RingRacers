@@ -98,6 +98,8 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -147,6 +149,8 @@ static void KartSpeed_OnChange(void);
 static void KartEncore_OnChange(void);
 static void KartComeback_OnChange(void);
 static void KartEliminateLast_OnChange(void);
+
+static void Schedule_OnChange(void);
 
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
@@ -222,6 +226,10 @@ static void Command_Archivetest_f(void);
 #endif
 
 static void Command_KartGiveItem_f(void);
+
+static void Command_Schedule_Add(void);
+static void Command_Schedule_Clear(void);
+static void Command_Schedule_List(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -524,6 +532,8 @@ consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NUL
 
 consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
 
+consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
+
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -538,6 +548,11 @@ boolean deferencoremode = false;
 UINT8 splitscreen = 0;
 boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
+
+// Scheduled cvars.
+scheduleTask_t **schedule = NULL;
+size_t schedule_size = 0;
+size_t schedule_len = 0;
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -578,7 +593,9 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"GIVEITEM", // XD_GIVEITEM
 	"ADDBOT", // XD_ADDBOT
 	"DISCORD", // XD_DISCORD
-	"PLAYSOUND" // XD_PLAYSOUND
+	"PLAYSOUND", // XD_PLAYSOUND
+	"SCHEDULETASK", // XD_SCHEDULETASK
+	"SCHEDULECLEAR" // XD_SCHEDULECLEAR
 };
 
 // =========================================================================
@@ -632,6 +649,9 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_PICKVOTE, Got_PickVotecmd);
 
 	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
+
+	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
+	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
@@ -689,6 +709,10 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("downloads", Command_Downloads_f);
 
 	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
+
+	COM_AddCommand("schedule_add", Command_Schedule_Add);
+	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
+	COM_AddCommand("schedule_list", Command_Schedule_List);
 
 	// for master server connection
 	AddMServCommands();
@@ -761,6 +785,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_showviewpointtext);
 
 	CV_RegisterVar(&cv_director);
+
+	CV_RegisterVar(&cv_schedule);
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -3733,9 +3759,7 @@ void SetAdminPlayer(INT32 playernum)
 
 void ClearAdminPlayers(void)
 {
-	INT32 i;
-	for (i = 0; i < MAXPLAYERS; i++)
-		adminplayers[i] = -1;
+	memset(adminplayers, -1, sizeof(adminplayers));
 }
 
 void RemoveAdminPlayer(INT32 playernum)
@@ -3850,6 +3874,117 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 		return;
 
 	CONS_Printf(M_GetText("You are no longer a server administrator.\n"));
+}
+
+void Schedule_Run(void)
+{
+	size_t i;
+
+	if (schedule_len == 0)
+	{
+		// No scheduled tasks to run.
+		return;
+	}
+
+	if (!cv_schedule.value)
+	{
+		// We don't WANT to run tasks.
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task == NULL)
+		{
+			// Shouldn't happen.
+			break;
+		}
+
+		if (task->timer > 0)
+		{
+			task->timer--;
+		}
+
+		if (task->timer == 0)
+		{
+			// Reset timer
+			task->timer = task->basetime;
+
+			// Run command for server
+			if (server)
+			{
+				CONS_Printf(
+					"%d seconds elapsed, running \"" "\x82" "%s" "\x80" "\".\n",
+					task->basetime,
+					task->command
+				);
+
+				COM_BufAddText(task->command);
+				COM_BufAddText("\n");
+			}
+		}
+	}
+}
+
+void Schedule_Insert(scheduleTask_t *addTask)
+{
+	if (schedule_len >= schedule_size)
+	{
+		if (schedule_size == 0)
+		{
+			schedule_size = 8;
+		}
+		else
+		{
+			schedule_size *= 2;
+		}
+		
+		schedule = Z_ReallocAlign(
+			(void*) schedule,
+			sizeof(scheduleTask_t*) * schedule_size,
+			PU_STATIC,
+			NULL,
+			sizeof(scheduleTask_t*) * 8
+		);
+	}
+
+	schedule[schedule_len] = addTask;
+	schedule_len++;
+}
+
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command)
+{
+	scheduleTask_t *task = (scheduleTask_t*) Z_CallocAlign(
+		sizeof(scheduleTask_t),
+		PU_STATIC,
+		NULL,
+		sizeof(scheduleTask_t) * 8
+	);
+
+	task->basetime = basetime;
+	task->timer = timeleft;
+	task->command = Z_StrDup(command);
+
+	Schedule_Insert(task);
+}
+
+void Schedule_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task->command)
+			Z_Free(task->command);
+	}
+
+	schedule_len = 0;
+	schedule_size = 0;
+	schedule = NULL;
 }
 
 static void Command_MotD_f(void)
@@ -5043,6 +5178,58 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	players[playernum].itemamount = amt;
 }
 
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
+{
+	char command[MAXTEXTCMD];
+	INT16 seconds;
+
+	seconds = READINT16(*cp);
+	READSTRING(*cp, command);
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule task received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Add(seconds, seconds, (const char *)command);
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf(
+			"OK! Running \"" "\x82" "%s" "\x80" "\" every " "\x82" "%d" "\x80" " seconds.\n",
+			command,
+			seconds
+		);
+	}
+}
+
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
+{
+	(void)cp;
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule clear received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Clear();
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf("All scheduled tasks have been cleared.\n");
+	}
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
@@ -5304,6 +5491,86 @@ static void Command_KartGiveItem_f(void)
 	{
 		CONS_Alert(CONS_NOTICE,
 				"The server does not allow this.\n");
+	}
+}
+
+static void Command_Schedule_Add(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+	INT16 seconds;
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("schedule <seconds> <...>: runs the specified commands on a recurring timer\n");
+		return;
+	}
+
+	seconds = atoi(COM_Argv(1));
+
+	if (seconds <= 0)
+	{
+		CONS_Printf("Timer must be at least 1 second.\n");
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEINT16(buf_p, seconds);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_SCHEDULETASK, buf, buf_p - buf);
+}
+
+static void Command_Schedule_Clear(void)
+{
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	SendNetXCmd(XD_SCHEDULECLEAR, NULL, 0);
+}
+
+static void Command_Schedule_List(void)
+{
+	size_t i;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		// I set it up in a way that this information could be available
+		// to everyone, but HOSTMOD has it server/admin-only too, so eh?
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		CONS_Printf("No tasks are scheduled.\n");
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		CONS_Printf(
+			"In " "\x82" "%d" "\x80" " second%s: " "\x82" "%s" "\x80" "\n",
+			task->timer,
+			(task->timer > 1) ? "s" : "",
+			task->command
+		);
 	}
 }
 
@@ -5932,6 +6199,28 @@ static void KartEliminateLast_OnChange(void)
 	}
 
 	P_CheckRacers();
+}
+
+static void Schedule_OnChange(void)
+{
+	size_t i;
+
+	if (cv_schedule.value)
+	{
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		return;
+	}
+
+	// Reset timers when turning off.
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		task->timer = task->basetime;
+	}
 }
 
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
