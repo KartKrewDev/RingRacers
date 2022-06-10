@@ -2140,6 +2140,8 @@ void D_SaveBan(void)
 		else
 			fprintf(f, "%s/%s", address, mask);
 
+		// TODO: it'd be nice to convert this to an actual date-time,
+		// so it'd be easier to edit outside of the game.
 		fprintf(f, " %ld", (long)unbanTime);
 
 		username = NULL;
