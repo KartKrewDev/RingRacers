@@ -100,6 +100,7 @@ static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -230,6 +231,8 @@ static void Command_KartGiveItem_f(void);
 static void Command_Schedule_Add(void);
 static void Command_Schedule_Clear(void);
 static void Command_Schedule_List(void);
+
+static void Command_Automate_Set(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -534,6 +537,8 @@ consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
 
 consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
 
+consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
+
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -549,10 +554,20 @@ UINT8 splitscreen = 0;
 boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 
-// Scheduled cvars.
+// Scheduled commands.
 scheduleTask_t **schedule = NULL;
 size_t schedule_size = 0;
 size_t schedule_len = 0;
+
+// Automation commands
+char *automate_commands[AEV__MAX];
+
+const char *automate_names[AEV__MAX] =
+{
+	"RoundStart", // AEV_ROUNDSTART
+	"IntermissionStart", // AEV_INTERMISSIONSTART
+	"VoteStart" // AEV_VOTESTART
+};
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -595,7 +610,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"DISCORD", // XD_DISCORD
 	"PLAYSOUND", // XD_PLAYSOUND
 	"SCHEDULETASK", // XD_SCHEDULETASK
-	"SCHEDULECLEAR" // XD_SCHEDULECLEAR
+	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
+	"AUTOMATE" // XD_AUTOMATE
 };
 
 // =========================================================================
@@ -652,6 +668,7 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
+	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
@@ -713,6 +730,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
 	COM_AddCommand("schedule_list", Command_Schedule_List);
+
+	COM_AddCommand("automate_set", Command_Automate_Set);
 
 	// for master server connection
 	AddMServCommands();
@@ -787,6 +806,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_director);
 
 	CV_RegisterVar(&cv_schedule);
+	CV_RegisterVar(&cv_automate);
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -3987,6 +4007,82 @@ void Schedule_Clear(void)
 	schedule = NULL;
 }
 
+void Automate_Set(automateEvents_t type, const char *command)
+{
+	if (!server)
+	{
+		// Since there's no list command or anything for this,
+		// we don't need this code to run for anyone but the server.
+		return;
+	}
+
+	if (automate_commands[type] != NULL)
+	{
+		// Free the old command.
+		Z_Free(automate_commands[type]);
+	}
+
+	if (command == NULL || strlen(command) == 0)
+	{
+		// Remove the command.
+		automate_commands[type] = NULL;
+	}
+	else
+	{
+		// New command.
+		automate_commands[type] = Z_StrDup(command);
+	}
+}
+
+void Automate_Run(automateEvents_t type)
+{
+	if (!server)
+	{
+		// Only the server should be doing this.
+		return;
+	}
+
+#ifdef PARANOIA
+	if (type >= AEV__MAX)
+	{
+		// Shouldn't happen.
+		I_Error("Attempted to run invalid automation type.");
+		return;
+	}
+#endif
+
+	if (!cv_automate.value)
+	{
+		// We don't want to run automation.
+		return;
+	}
+
+	if (automate_commands[type] == NULL)
+	{
+		// No command to run.
+		return;
+	}
+
+	CONS_Printf(
+		"Running %s automate command \"" "\x82" "%s" "\x80" "\"...\n",
+		automate_names[type],
+		automate_commands[type]
+	);
+
+	COM_BufAddText(automate_commands[type]);
+	COM_BufAddText("\n");
+}
+
+void Automate_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < AEV__MAX; i++)
+	{
+		Automate_Set(i, NULL);
+	}
+}
+
 static void Command_MotD_f(void)
 {
 	size_t i, j;
@@ -5230,6 +5326,49 @@ static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
 	}
 }
 
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
+{
+	UINT8 eventID;
+	char command[MAXTEXTCMD];
+
+	eventID = READUINT8(*cp);
+	READSTRING(*cp, command);
+
+	if (
+		(playernum != serverplayer && !IsPlayerAdmin(playernum))
+		|| (eventID >= AEV__MAX)
+	)
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal automate received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Automate_Set(eventID, command);
+
+	if (server || consoleplayer == playernum)
+	{
+		if (command == NULL || strlen(command) == 0)
+		{
+			CONS_Printf(
+				"Removed the %s automate command.\n",
+				automate_names[eventID]
+			);
+		}
+		else
+		{
+			CONS_Printf(
+				"Set the %s automate command to \"" "\x82" "%s" "\x80" "\".\n",
+				automate_names[eventID],
+				command
+			);
+		}
+	}
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
@@ -5572,6 +5711,55 @@ static void Command_Schedule_List(void)
 			task->command
 		);
 	}
+}
+
+static void Command_Automate_Set(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+
+	const char *event;
+	size_t eventID;
+
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("automate_set <event> <command>: sets the command to run each time a event triggers\n");
+		return;
+	}
+
+	event = COM_Argv(1);
+
+	for (eventID = 0; eventID < AEV__MAX; eventID++)
+	{
+		if (strcasecmp(event, automate_names[eventID]) == 0)
+		{
+			break;
+		}
+	}
+
+	if (eventID == AEV__MAX)
+	{
+		CONS_Printf("Unknown event type \"%s\".\n", event);
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEUINT8(buf_p, eventID);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_AUTOMATE, buf, buf_p - buf);
 }
 
 /** Makes a change to ::cv_forceskin take effect immediately.

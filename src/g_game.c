@@ -1332,6 +1332,7 @@ static void weaponPrefChange4(void)
 void G_DoLoadLevel(boolean resetplayer)
 {
 	INT32 i, j;
+	boolean doAutomate = false;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1360,6 +1361,10 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 	else
 		titlemapinaction = TITLEMAP_OFF;
+
+	// Doing this matches HOSTMOD behavior.
+	// Is that desired? IDK
+	doAutomate = (gamestate != GS_LEVEL);
 
 	G_SetGamestate(GS_LEVEL);
 	I_UpdateMouseGrab();
@@ -1402,6 +1407,11 @@ void G_DoLoadLevel(boolean resetplayer)
 	CON_ClearHUD();
 
 	server_lagless = cv_lagless.value;
+
+	if (doAutomate == true)
+	{
+		Automate_Run(AEV_ROUNDSTART);
+	}
 }
 
 //
