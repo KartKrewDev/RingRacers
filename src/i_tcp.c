@@ -192,6 +192,7 @@
 	{
 		mysockaddr_t address;
 		UINT8 mask;
+		char *username;
 		char *reason;
 		time_t timestamp;
 	} banned_t;
@@ -456,6 +457,18 @@ static const char *SOCK_GetBanMask(size_t ban)
 		return s;
 #endif
 	return NULL;
+}
+
+static const char *SOCK_GetBanUsername(size_t ban)
+{
+#ifdef NONET
+	(void)ban;
+	return NULL;
+#else
+	if (ban >= numbans)
+		return NULL;
+	return banned[ban].username;
+#endif
 }
 
 static const char *SOCK_GetBanReason(size_t ban)
@@ -1592,11 +1605,38 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 			banned[ban].mask = 128;
 #endif
 
+		// Set defaults, in case anything funny happens.
+		SOCK_SetBanUsername(NULL);
+		SOCK_SetBanReason(NULL);
+		SOCK_SetUnbanTime(NO_BAN_TIME);
+
 		runp = runp->ai_next;
 	}
 
 	I_freeaddrinfo(ai);
 
+	return true;
+#endif
+}
+
+static boolean SOCK_SetBanUsername(const char *username)
+{
+#ifdef NONET
+	(void)username;
+	return false;
+#else
+	if (username == NULL || strlen(username) == 0)
+	{
+		username = "Direct IP ban";
+	}
+
+	if (banned[numbans - 1].username)
+	{
+		Z_Free(banned[numbans - 1].username);
+		banned[numbans - 1].username = NULL;
+	}
+
+	banned[numbans - 1].username = Z_StrDup(username);
 	return true;
 #endif
 }
@@ -1607,9 +1647,15 @@ static boolean SOCK_SetBanReason(const char *reason)
 	(void)reason;
 	return false;
 #else
-	if (!reason)
+	if (reason == NULL || strlen(reason) == 0)
 	{
 		reason = "No reason given";
+	}
+
+	if (banned[numbans - 1].reason)
+	{
+		Z_Free(banned[numbans - 1].reason);
+		banned[numbans - 1].reason = NULL;
 	}
 
 	banned[numbans - 1].reason = Z_StrDup(reason);
@@ -1727,9 +1773,11 @@ boolean I_InitTcpNetwork(void)
 	I_GetNodeAddress = SOCK_GetNodeAddress;
 	I_GetBanAddress = SOCK_GetBanAddress;
 	I_GetBanMask = SOCK_GetBanMask;
+	I_GetBanUsername = SOCK_GetBanUsername;
 	I_GetBanReason = SOCK_GetBanReason;
 	I_GetUnbanTime = SOCK_GetUnbanTime;
 	I_SetBanAddress = SOCK_SetBanAddress;
+	I_SetBanUsername = SOCK_SetBanUsername;
 	I_SetBanReason = SOCK_SetBanReason;
 	I_SetUnbanTime = SOCK_SetUnbanTime;
 	bannednode = SOCK_bannednode;
