@@ -10642,30 +10642,26 @@ static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, 
 consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
 consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR, CV_OnOff, NULL);
 
-void P_SpawnPrecipitation(void)
+static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 {
-	INT32 i, j, k;
+	INT32 j, k;
 
 	const mobjtype_t type = precipprops[curWeather].type;
 	const UINT8 randomstates = (UINT8)mobjinfo[type].damage;
 	const boolean flip = (mobjinfo[type].speed < 0);
 
-	fixed_t basex, basey, x, y, z, height;
+	fixed_t i, x, y, z, height;
+
 	UINT16 numparticles = 0;
 	boolean condition = false;
 
 	subsector_t *precipsector = NULL;
 	precipmobj_t *rainmo = NULL;
 
-	if (dedicated || !cv_drawdist_precip.value || type == MT_NULL)
-		return;
-
-	// Use the blockmap to narrow down our placing patterns
-	for (i = 0; i < bmapwidth*bmapheight; ++i)
+	// If mobjscale < FRACUNIT, each blockmap cell covers
+	// more area so spawn more precipitation in that area.
+	for (i = 0; i < FRACUNIT; i += mapobjectscale)
 	{
-		basex = bmaporgx + (i % bmapwidth) * MAPBLOCKSIZE;
-		basey = bmaporgy + (i / bmapwidth) * MAPBLOCKSIZE;
-
 		x = basex + ((M_RandomKey(MAPBLOCKUNITS << 3) << FRACBITS) >> 3);
 		y = basey + ((M_RandomKey(MAPBLOCKUNITS << 3) << FRACBITS) >> 3);
 
@@ -10714,6 +10710,7 @@ void P_SpawnPrecipitation(void)
 		}
 
 		height = precipsector->sector->ceilingheight - precipsector->sector->floorheight;
+		height = FixedDiv(height, mapobjectscale);
 
 		// Exists, but is too small for reasonable precipitation.
 		if (height < 64<<FRACBITS)
@@ -10748,6 +10745,27 @@ void P_SpawnPrecipitation(void)
 			// Randomly assign a height, now that floorz is set.
 			rainmo->z = M_RandomRange(rainmo->floorz >> FRACBITS, rainmo->ceilingz >> FRACBITS) << FRACBITS;
 		}
+	}
+}
+
+void P_SpawnPrecipitation(void)
+{
+	INT32 i;
+
+	const mobjtype_t type = precipprops[curWeather].type;
+
+	fixed_t basex, basey;
+
+	if (dedicated || !cv_drawdist_precip.value || type == MT_NULL)
+		return;
+
+	// Use the blockmap to narrow down our placing patterns
+	for (i = 0; i < bmapwidth*bmapheight; ++i)
+	{
+		basex = bmaporgx + (i % bmapwidth) * MAPBLOCKSIZE;
+		basey = bmaporgy + (i / bmapwidth) * MAPBLOCKSIZE;
+
+		P_SpawnPrecipitationAt(basex, basey);
 	}
 }
 
