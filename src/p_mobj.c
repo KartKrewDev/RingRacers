@@ -3862,7 +3862,7 @@ void P_PrecipThinker(precipmobj_t *mobj)
 		// Reset to ceiling!
 		P_SetPrecipMobjState(mobj, mobj->info->spawnstate);
 		mobj->z = (flip) ? (mobj->floorz) : (mobj->ceilingz);
-		mobj->momz = -mobj->info->speed;
+		mobj->momz = FixedMul(-mobj->info->speed, mapobjectscale);
 		mobj->precipflags &= ~PCF_SPLASH;
 		R_ResetPrecipitationMobjInterpolationState(mobj);
 	}
@@ -10411,7 +10411,7 @@ static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype
 	mobj->ceilingrover = NULL;
 
 	mobj->z = z;
-	mobj->momz = -info->speed;
+	mobj->momz = FixedMul(-info->speed, mapobjectscale);
 
 	if (info->speed < 0)
 	{
