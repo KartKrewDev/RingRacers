@@ -18246,7 +18246,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_SPLASH1,      // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
-		-72*FRACUNIT,   // speed
+		72*FRACUNIT,    // speed
 		1*FRACUNIT,     // radius
 		8*FRACUNIT,     // height
 		0,              // display offset
@@ -18273,7 +18273,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
-		-2*FRACUNIT,    // speed
+		2*FRACUNIT,     // speed
 		4*FRACUNIT,     // radius
 		4*FRACUNIT,     // height
 		0,              // display offset
@@ -18300,7 +18300,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
-		-24*FRACUNIT,   // speed
+		24*FRACUNIT,    // speed
 		4*FRACUNIT,     // radius
 		4*FRACUNIT,     // height
 		0,              // display offset

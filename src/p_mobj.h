@@ -262,12 +262,11 @@ typedef enum
 // PRECIPITATION flags ?! ?! ?!
 //
 typedef enum {
-	PCF_INVISIBLE = 1, // Don't draw.
-	PCF_PIT       = 1<<1, // Above pit.
-	PCF_FOF       = 1<<2, // Above FOF.
-	PCF_MOVINGFOF = 1<<3, // Above MOVING FOF (this means we need to keep floorz up to date...)
-	PCF_SPLASH    = 1<<4, // Splashed on the ground, return to the ceiling after the animation's over
-	PCF_THUNK     = 1<<5, // Ran the thinker this tic.
+	PCF_THUNK		= 1,		// Ran the thinker this tic.
+	PCF_SPLASH		= 1<<1,		// Splashed on the ground, return to the ceiling after the animation's over
+	PCF_INVISIBLE	= 1<<2,		// Don't draw.
+	PCF_PIT			= 1<<3,		// Above pit.
+	PCF_FLIP		= 1<<4,		// Spawning from floor, moving upwards.
 } precipflag_t;
 
 // Map Object definition.
@@ -462,6 +461,8 @@ typedef struct precipmobj_s
 	fixed_t ceilingz; // Nearest ceiling above.
 	struct ffloor_s *floorrover; // FOF referred by floorz
 	struct ffloor_s *ceilingrover; // FOF referred by ceilingz
+	fixed_t floordrop;
+	fixed_t ceilingdrop;
 
 	// For movement checking.
 	fixed_t radius; // Fixed at 2*FRACUNIT
@@ -473,7 +474,7 @@ typedef struct precipmobj_s
 
 	INT32 tics; // state tic counter
 	state_t *state;
-	INT32 flags; // flags from mobjinfo tables
+	UINT32 flags; // flags from mobjinfo tables
 } precipmobj_t;
 
 typedef struct actioncache_s

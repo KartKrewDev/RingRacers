@@ -2188,6 +2188,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	//SoM: 3/17/2000
 	fixed_t gz, gzt;
 
+	UINT32 blendmode;
+	UINT32 trans;
+
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
 
@@ -2281,6 +2284,17 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 			goto weatherthink;
 	}
 
+	// Determine the blendmode and translucency value
+	{
+		blendmode = (thing->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+		if (blendmode)
+			blendmode++; // realign to constants
+
+		trans = (thing->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+		if (trans >= NUMTRANSMAPS)
+			goto weatherthink; // cap
+	}
+
 	// store information in a vissprite
 	vis = R_NewVisSprite();
 	vis->scale = vis->sortscale = yscale; //<<detailshift;
@@ -2318,12 +2332,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	//     than lumpid for sprites-in-pwad : the graphics are patched
 	vis->patch = W_CachePatchNum(sprframe->lumppat[0], PU_SPRITE);
 
-	// specific translucency
-	// (no draw flags)
-	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
-	else
-		vis->transmap = NULL;
+	vis->transmap = R_GetBlendTable(blendmode, trans);
 
 	vis->mobj = (mobj_t *)thing;
 	vis->mobjflags = 0;

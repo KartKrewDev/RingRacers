@@ -1769,10 +1769,18 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(UINT8 newWeather)
+void P_SwitchWeather(preciptype_t newWeather)
 {
 	boolean purge = false;
 	mobjtype_t swap = MT_NULL;
+	INT32 oldEffects = precipprops[curWeather].effects;
+
+	if (newWeather >= precip_freeslot)
+	{
+		// Weather type invalid, set to no weather.
+		CONS_Debug(DBG_SETUP, "Weather ID %d out of bounds\n", newWeather);
+		newWeather = PRECIP_NONE;
+	}
 
 	if (precipprops[newWeather].type == MT_NULL)
 	{
@@ -1789,6 +1797,8 @@ void P_SwitchWeather(UINT8 newWeather)
 			swap = precipprops[newWeather].type;
 		}
 	}
+
+	curWeather = newWeather;
 
 	if (purge == true)
 	{
@@ -1844,14 +1854,22 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->sprite = precipmobj->state->sprite;
 			precipmobj->frame = precipmobj->state->frame;
 
-			precipmobj->momz = mobjinfo[swap].speed;
-			precipmobj->precipflags &= ~PCF_INVISIBLE;
+			precipmobj->momz = -mobjinfo[swap].speed;
+			precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_FLIP);
+
+			if (precipmobj->momz > 0)
+			{
+				precipmobj->precipflags |= PCF_FLIP;
+			}
+
+			if ((oldEffects & PRECIPFX_WATERPARTICLES) != (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES))
+			{
+				P_CalculatePrecipFloor(precipmobj);
+			}
 		}
 	}
 
-	curWeather = newWeather;
-
-	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+	if (swap == MT_NULL && precipprops[curWeather].type != MT_NULL)
 		P_SpawnPrecipitation();
 }
 
