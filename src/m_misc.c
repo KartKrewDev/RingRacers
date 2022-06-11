@@ -504,7 +504,7 @@ void M_SaveJoinedIPs(void)
 	UINT8 i;
 	char *filepath;
 
-	if (!joinedIPlist[0][0] || !strlen(joinedIPlist[0][0]))
+	if (!strlen(joinedIPlist[0][0]))
 		return;	// Don't bother, there's nothing to save.
 
 	// append srb2home to beginning of filename
@@ -521,7 +521,7 @@ void M_SaveJoinedIPs(void)
 
 	for (i=0; i < NUMLOGIP; i++)
 	{
-		if (joinedIPlist[i][0] && strlen(joinedIPlist[i][0]))
+		if (strlen(joinedIPlist[i][0]))
 		{
 			char savestring[MAXSTRINGLENGTH];
 			strcpy(savestring, joinedIPlist[i][0]);

@@ -2185,9 +2185,9 @@ void M_DrawMPJoinIP(void)
 				if (currentMenu->numitems - i <= NUMLOGIP)
 				{
 					UINT8 index = NUMLOGIP - (currentMenu->numitems - i);
-					if (joinedIPlist[index][1] && strlen(joinedIPlist[index][1]))	// Try drawing server name
+					if (strlen(joinedIPlist[index][1]))	// Try drawing server name
 						strcpy(str, joinedIPlist[index][1]);
-					else if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))	// If that fails, get the address
+					else if (strlen(joinedIPlist[index][0]))	// If that fails, get the address
 						strcpy(str, joinedIPlist[index][0]);
 					else
 						strcpy(str, "---");		// If that fails too then there's nothing!

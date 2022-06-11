@@ -3796,7 +3796,7 @@ boolean M_JoinIPInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 
 		// Is there an address at this part of the table?
-		if (joinedIPlist[index][0] && strlen(joinedIPlist[index][0]))
+		if (strlen(joinedIPlist[index][0]))
 			M_JoinIP(joinedIPlist[index][0]);
 		else
 			S_StartSound(NULL, sfx_lose);
