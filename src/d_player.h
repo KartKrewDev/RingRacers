@@ -281,6 +281,7 @@ typedef struct respawnvars_s
 	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
+	boolean truedeath; // Your soul has left your body
 } respawnvars_t;
 
 // player_t struct for all bot variables

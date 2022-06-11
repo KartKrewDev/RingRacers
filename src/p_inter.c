@@ -1076,6 +1076,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		target->player->playerstate = PST_DEAD;
 
+		// respawn from where you died
+		target->player->respawn.pointx = target->x;
+		target->player->respawn.pointy = target->y;
+		target->player->respawn.pointz = target->z;
+
 		if (target->player == &players[consoleplayer])
 		{
 			// don't die in auto map,
