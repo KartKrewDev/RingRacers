@@ -3451,11 +3451,9 @@ void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
 
 	superring = player->superring + (rings * 3);
 
-	/* overflow */
-	if (superring < player->superring)
-		superring += (player->superring - superring);
-
-	player->superring = superring;
+	/* check if not overflow */
+	if (superring > player->superring)
+		player->superring = superring;
 }
 
 void K_DoInstashield(player_t *player)
