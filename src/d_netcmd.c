@@ -1302,6 +1302,10 @@ boolean CanChangeSkinWhilePlaying(INT32 playernum)
 {
 	INT32 i;
 
+	// Force skin in effect.
+	if ((cv_forceskin.value != -1))
+		return false;
+
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (D_IsPlayerHumanAndGaming(i) &&
