@@ -3435,6 +3435,27 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
 }
 
+void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
+{
+	UINT16 superring;
+
+	if (!overload)
+	{
+		INT32 totalrings =
+			RINGTOTAL(player) + (player->superring / 3);
+
+		/* capped at 20 rings */
+		if ((totalrings + rings) > 20)
+			rings = (20 - totalrings);
+	}
+
+	superring = player->superring + (rings * 3);
+
+	/* check if not overflow */
+	if (superring > player->superring)
+		player->superring = superring;
+}
+
 void K_DoInstashield(player_t *player)
 {
 	mobj_t *layera;
@@ -10099,9 +10120,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_SUPERRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO && player->superring < (UINT16_MAX - (10*3)))
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->superring += (10*3);
+								K_AwardPlayerRings(player, 10, true);
 								player->itemamount--;
 							}
 							break;

@@ -1408,7 +1408,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// special behavior for ring capsules
 				if (target->threshold == KITEM_SUPERRING)
 				{
-					player->superring = min(player->superring + 5*target->movecount*3, UINT16_MAX);
+					K_AwardPlayerRings(player, 5 * target->movecount, true);
 					break;
 				}
 
