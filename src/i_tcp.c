@@ -1638,27 +1638,33 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 	while (runp != NULL)
 	{
 		INT32 ban;
+		UINT8 numericalmask;
 
 		ban = numbans;
 		AddBannedIndex();
 
 		memcpy(&banned[ban].address, runp->ai_addr, runp->ai_addrlen);
 
-		if (mask)
-			banned[ban].mask = (UINT8)atoi(mask);
 #ifdef HAVE_IPV6
-		else if (runp->ai_family == AF_INET6)
+		if (runp->ai_family == AF_INET6)
 			banned[ban].mask = 128;
-#endif
 		else
+#endif
 			banned[ban].mask = 32;
 
-		if (banned[ban].mask > 32 && runp->ai_family == AF_INET)
-			banned[ban].mask = 32;
-#ifdef HAVE_IPV6
-		else if (banned[ban].mask > 128 && runp->ai_family == AF_INET6)
-			banned[ban].mask = 128;
-#endif
+		if (mask)
+		{
+			numericalmask = (UINT8)atoi(mask);
+		}
+		else
+		{
+			numericalmask = 0;
+		}
+
+		if (numericalmask > 0 && numericalmask < banned[ban].mask)
+		{
+			banned[ban].mask = numericalmask;
+		}
 
 		// Set defaults, in case anything funny happens.
 		SOCK_SetBanUsername(NULL);
