@@ -4591,7 +4591,11 @@ void M_StartMessage(const char *string, void *routine,
 		}
 
 		if (i == strlen(message+start))
+		{
 			start += i;
+			if (i > max)
+				max = i;
+		}
 	}
 
 	MessageDef.x = (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
