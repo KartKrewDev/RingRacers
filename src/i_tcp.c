@@ -1683,6 +1683,7 @@ static void SOCK_ClearBans(void)
 {
 	numbans = 0;
 	banned_size = 0;
+	Z_Free(banned);
 	banned = NULL;
 }
 
