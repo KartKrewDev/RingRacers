@@ -511,7 +511,7 @@ void M_FreePlayerSetupColors(void);
 #define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
-	SINT8 skinlist[MAXCLONES];
+	INT16 skinlist[MAXCLONES];
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
@@ -532,7 +532,7 @@ typedef struct setup_player_s
 {
 	SINT8 gridx, gridy;
 	UINT8 profilen;
-	SINT8 skin;
+	INT16 skin;
 	SINT8 clonenum;
 	SINT8 rotate;
 	UINT8 delay;

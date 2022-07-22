@@ -843,7 +843,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 		if (p->mdepth == CSSTEP_ALTS)
 		{
-			SINT8 skin;
+			INT16 skin;
 
 			n = (p->clonenum) + numoptions/2;
 			if (subtract)
@@ -946,7 +946,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-static boolean M_DrawCharacterSprite(INT16 x, INT16 y, SINT8 skin, INT32 addflags, UINT8 *colormap)
+static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
@@ -1451,7 +1451,7 @@ void M_DrawCharacterSelect(void)
 	UINT8 i, j, k;
 	UINT8 priority = 0;
 	INT16 quadx, quady;
-	SINT8 skin;
+	INT16 skin;
 	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
 
 	// Draw page num.
