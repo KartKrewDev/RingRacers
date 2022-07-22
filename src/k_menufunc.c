@@ -3656,20 +3656,13 @@ void M_LevelSelectHandler(INT32 choice)
 
 void M_LevelSelectTick(void)
 {
-	UINT8 times = 1 + (abs(levellist.dest - levellist.y) / 21);
 
-	while (times) // increase speed as you're farther away
-	{
-		if (levellist.y > levellist.dest)
-			levellist.y--;
-		else if (levellist.y < levellist.dest)
-			levellist.y++;
+	INT16 dist = levellist.dest - levellist.y;
 
-		if (levellist.y == levellist.dest)
-			break;
-
-		times--;
-	}
+	if (abs(dist) == 1)	// cheating to avoid off by 1 errors with divisions.
+		levellist.y = levellist.dest;
+	else
+		levellist.y += dist/2;
 }
 
 struct mpmenu_s mpmenu;

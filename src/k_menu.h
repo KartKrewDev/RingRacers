@@ -966,7 +966,7 @@ void M_DrawAddons(void);
 	source,\
 	0, 0,\
 	0, 0, \
-	1, 10,\
+	1, 5,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
 	NULL,\
@@ -982,7 +982,7 @@ void M_DrawAddons(void);
 	source,\
 	0, 0,\
 	0, 0, \
-	1, 10,\
+	1, 5,\
 	M_DrawImageDef,\
 	NULL,\
 	NULL,\

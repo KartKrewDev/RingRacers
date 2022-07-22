@@ -659,7 +659,7 @@ void M_DrawKartGamemodeMenu(void)
 
 	if (menutransition.tics)
 	{
-		x += 24 * menutransition.tics;
+		x += 48 * menutransition.tics;
 	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
@@ -671,7 +671,7 @@ void M_DrawKartGamemodeMenu(void)
 
 			if (menutransition.tics)
 			{
-				x += 24 * menutransition.tics;
+				x += 48 * menutransition.tics;
 			}
 		}
 
@@ -1560,11 +1560,11 @@ void M_DrawRaceDifficulty(void)
 	M_DrawMenuTooltips();
 
 	// Draw the box for difficulty...
-	V_DrawFixedPatch((111 + 24*menutransition.tics)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
+	V_DrawFixedPatch((111 + 48*menutransition.tics)*FRACUNIT, 33*FRACUNIT, FRACUNIT, 0, box, NULL);
 
 	if (menutransition.tics)
 	{
-		x += 24 * menutransition.tics;
+		x += 48 * menutransition.tics;
 	}
 
 	for (i = 0; i < currentMenu->numitems; i++)
@@ -1584,7 +1584,7 @@ void M_DrawRaceDifficulty(void)
 
 			if (menutransition.tics)
 			{
-				x += 24 * menutransition.tics;
+				x += 48 * menutransition.tics;
 			}
 		}
 
@@ -1597,12 +1597,12 @@ void M_DrawRaceDifficulty(void)
 
 				INT32 f = (i == itemOn) ? highlightflags : 0;
 
-				V_DrawString(140 + 24*menutransition.tics, y, f, currentMenu->menuitems[i].text);
+				V_DrawString(140 + 48*menutransition.tics, y, f, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 					// implicitely we'll only take care of normal cvars
-					INT32 cx = 260 + 24*menutransition.tics;
+					INT32 cx = 260 + 48*menutransition.tics;
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
 
 					V_DrawCenteredString(cx, y, f, cv->string);
@@ -1640,8 +1640,8 @@ void M_DrawRaceDifficulty(void)
 				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
 
-					INT32 fx = (x - 24*menutransition.tics);
-					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*24);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
+					INT32 fx = (x - 48*menutransition.tics);
+					INT32 centx = fx + (320-fx)/2 + (menutransition.tics*48);	// undo the menutransition movement to redo it here otherwise the text won't move at the same speed lole.
 
 					// implicitely we'll only take care of normal consvars
 					consvar_t *cv = currentMenu->menuitems[i].itemaction.cvar;
@@ -1783,7 +1783,7 @@ void M_DrawCupSelect(void)
 				patch = W_CachePatchName("CUPMON1A", PU_CACHE);
 
 			x = 14 + (i*42);
-			y = 20 + (j*44) - (15*menutransition.tics);
+			y = 20 + (j*44) - (30*menutransition.tics);
 
 			V_DrawScaledPatch(x, y, 0, patch);
 
@@ -1801,12 +1801,12 @@ void M_DrawCupSelect(void)
 	}
 
 	V_DrawScaledPatch(14 + (cupgrid.x*42) - 4,
-		20 + (cupgrid.y*44) - 1 - (12*menutransition.tics),
+		20 + (cupgrid.y*44) - 1 - (24*menutransition.tics),
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
-	M_DrawCupPreview(146 + (12*menutransition.tics), cup);
-	M_DrawCupTitle(120 - (12*menutransition.tics), cup);
+	M_DrawCupPreview(146 + (24*menutransition.tics), cup);
+	M_DrawCupTitle(120 - (24*menutransition.tics), cup);
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -1942,7 +1942,7 @@ void M_DrawLevelSelect(void)
 	INT16 i;
 	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
 	INT16 map = start;
-	INT16 t = (32*menutransition.tics), tay = 0;
+	INT16 t = (64*menutransition.tics), tay = 0;
 	INT16 y = 80 - (12 * levellist.y);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
 
@@ -1983,7 +1983,7 @@ void M_DrawLevelSelect(void)
 void M_DrawTimeAttack(void)
 {
 	INT16 map = levellist.choosemap;
-	INT16 t = (24*menutransition.tics);
+	INT16 t = (48*menutransition.tics);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 152;
@@ -2561,7 +2561,7 @@ void M_DrawProfileSelect(void)
 	INT32 i;
 	const INT32 maxp = PR_GetNumProfiles();
 	INT32 x = 160 - optionsmenu.profilen*(128 + 128/8) + optionsmenu.offset;
-	INT32 y = 35 + menutransition.tics*16;
+	INT32 y = 35 + menutransition.tics*32;
 
 	M_DrawOptionsCogs();
 	M_DrawMenuTooltips();
