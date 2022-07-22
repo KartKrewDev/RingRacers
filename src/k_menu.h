@@ -559,6 +559,10 @@ extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 extern UINT8 setup_numplayers;
 extern tic_t setup_animcounter;
 
+// for charsel pages.
+extern UINT8 setup_page;
+extern UINT8 setup_maxpage;
+
 #define CSROTATETICS 6
 
 // The selection spawns 3 explosions in 4 directions, and there's 4 players -- 3 * 4 * 4 = 48

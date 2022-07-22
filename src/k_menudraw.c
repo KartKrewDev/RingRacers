@@ -1123,8 +1123,13 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
 {
 	setup_player_t *p = &setup_player[num];
+	UINT8 cnum = p->clonenum;
 
-	SINT8 skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
+	// for p1 alone don't try to preview things on pages that don't exist lol.
+	if (p->mdepth == CSSTEP_CHARS && setup_numplayers == 1)
+		cnum = setup_page;
+
+	INT16 skin = setup_chargrid[p->gridx][p->gridy].skinlist[cnum];
 	UINT8 color = p->color;
 	UINT8 *colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
 	INT32 flags = 0;
@@ -1449,6 +1454,11 @@ void M_DrawCharacterSelect(void)
 	SINT8 skin;
 	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
 
+	// Draw page num.
+	// @TODO: make it fancier than the default string lol.
+	if (setup_numplayers < 2)
+		V_DrawCenteredString(160, 1, 0, va("%d/%d", setup_page+1, setup_maxpage+1));
+
 	if (setup_numplayers > 0)
 	{
 		priority = setup_animcounter % setup_numplayers;
@@ -1459,7 +1469,7 @@ void M_DrawCharacterSelect(void)
 	{
 		for (j = 0; j < 9; j++)
 		{
-			skin = setup_chargrid[i][j].skinlist[0];
+			skin = setup_chargrid[i][j].skinlist[setup_page];
 			quadx = 4 * (i / 3);
 			quady = 4 * (j / 3);
 
@@ -1467,9 +1477,9 @@ void M_DrawCharacterSelect(void)
 			// Don't draw a shadow if it'll get covered by another icon
 			if ((i % 3 < 2) && (j % 3 < 2))
 			{
-				if ((setup_chargrid[i+1][j].skinlist[0] != -1)
-				&& (setup_chargrid[i][j+1].skinlist[0] != -1)
-				&& (setup_chargrid[i+1][j+1].skinlist[0] != -1))
+				if ((setup_chargrid[i+1][j].skinlist[setup_page] != -1)
+				&& (setup_chargrid[i][j+1].skinlist[setup_page] != -1)
+				&& (setup_chargrid[i+1][j+1].skinlist[setup_page] != -1))
 					continue;
 			}
 
@@ -1492,7 +1502,7 @@ void M_DrawCharacterSelect(void)
 					break; // k == setup_numplayers means no one has it selected
 			}
 
-			skin = setup_chargrid[i][j].skinlist[0];
+			skin = setup_chargrid[i][j].skinlist[setup_page];
 			quadx = 4 * (i / 3);
 			quady = 4 * (j / 3);
 
@@ -1507,7 +1517,8 @@ void M_DrawCharacterSelect(void)
 
 				V_DrawMappedPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
 
-				if (setup_chargrid[i][j].numskins > 1)
+				// draw dot if there are more alts behind there!
+				if (setup_page+1 < setup_chargrid[i][j].numskins)
 					V_DrawScaledPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
 			}
 		}

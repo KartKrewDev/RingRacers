@@ -2148,6 +2148,9 @@ struct setup_explosions_s setup_explosions[48];
 UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
 
+UINT8 setup_page = 0;
+UINT8 setup_maxpage = 0;	// For charsel page to identify alts easier...
+
 // sets up the grid pos for the skin used by the profile.
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
@@ -2210,6 +2213,7 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 void M_CharacterSelectInit(void)
 {
 	UINT8 i, j;
+	setup_maxpage = 0;
 
 	// While we're editing profiles, don't unset the devices for p1
 	if (gamestate == GS_MENU)
@@ -2263,6 +2267,8 @@ void M_CharacterSelectInit(void)
 		{
 			setup_chargrid[x][y].skinlist[setup_chargrid[x][y].numskins] = i;
 			setup_chargrid[x][y].numskins++;
+
+			setup_maxpage = max(setup_maxpage, setup_chargrid[x][y].numskins-1);
 		}
 
 		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
@@ -2295,6 +2301,8 @@ void M_CharacterSelectInit(void)
 			}
 		}
 	}
+
+	setup_page = 0;
 }
 
 void M_CharacterSelect(INT32 choice)
@@ -2595,6 +2603,7 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones;
+	INT32 skin;
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -2633,6 +2642,9 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		M_SetMenuDelay(num);
 	}
 
+	// try to set the clone num to the page # if possible.
+	p->clonenum = setup_page;
+
 	// Process this after possible pad movement,
 	// this makes sure we don't have a weird ghost hover on a character with no clones.
 	numclones = setup_chargrid[p->gridx][p->gridy].numskins;
@@ -2642,14 +2654,15 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 
 	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		if (setup_chargrid[p->gridx][p->gridy].numskins == 0)
+		skin = setup_chargrid[p->gridx][p->gridy].skinlist[setup_page];
+		if (setup_page >= setup_chargrid[p->gridx][p->gridy].numskins || skin == -1)
 		{
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 		}
 		else
 		{
-			if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
-				p->mdepth = CSSTEP_COLORS; // Skip clones menu
+			if (setup_page+1 == setup_chargrid[p->gridx][p->gridy].numskins)
+				p->mdepth = CSSTEP_COLORS; // Skip clones menu if there are none on this page.
 			else
 				p->mdepth = CSSTEP_ALTS;
 
@@ -2675,6 +2688,30 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3k5b);
 		}
 		M_SetMenuDelay(num);
+	}
+
+	if (num == 0 && setup_numplayers == 1 && setup_maxpage)	// ONLY one player.
+	{
+		if (M_MenuButtonPressed(num, MBT_L))
+		{
+			if (setup_page == 0)
+				setup_page = setup_maxpage;
+			else
+				setup_page--;
+
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
+		else if (M_MenuButtonPressed(num, MBT_R))
+		{
+			if (setup_page == setup_maxpage)
+				setup_page = 0;
+			else
+				setup_page++;
+
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
 	}
 
 	return false;
@@ -2994,6 +3031,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 
 		if (playersChanged == true)
 		{
+			setup_page = 0;	// reset that.
 			break;
 		}
 	}
