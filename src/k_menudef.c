@@ -367,6 +367,34 @@ menu_t PLAY_MP_RoomSelectDef = {
 	NULL
 };
 
+// SERVER BROWSER
+menuitem_t PLAY_MP_ServerBrowser[] =
+{
+
+	{IT_STRING | IT_CVAR, "SORT BY", NULL,	// tooltip MUST be null.
+		NULL, {.cvar = &cv_serversort}, 0, 0},
+
+	{IT_STRING, "REFRESH", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
+};
+
+menu_t PLAY_MP_ServerBrowserDef = {
+	sizeof (PLAY_MP_ServerBrowser) / sizeof (menuitem_t),
+	&PLAY_MP_RoomSelectDef,
+	0,
+	PLAY_MP_ServerBrowser,
+	32, 36,
+	0, 0,
+	0, 0,
+	M_DrawMPServerBrowser,
+	M_MPServerBrowserTick,
+	NULL,
+	NULL,
+	M_ServerBrowserInputs
+};
+
 // options menu
 menuitem_t OPTIONS_Main[] =
 {

@@ -162,7 +162,7 @@ extern char logfilename[1024];
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #ifndef BETAVERSION
-#define UPDATE_ALERT
+//#define UPDATE_ALERT
 #endif
 
 // The string used in the alert that pops up in the event of an update being available.

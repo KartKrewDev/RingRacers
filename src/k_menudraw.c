@@ -462,10 +462,9 @@ void M_Drawer(void)
 //
 static void M_DrawMenuTooltips(void)
 {
-	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
 	}
 }
@@ -509,6 +508,7 @@ void M_DrawGenericMenu(void)
 	{
 		if (i == itemOn)
 			cursory = y;
+
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
 			case IT_PATCH:
@@ -624,6 +624,9 @@ void M_DrawGenericMenu(void)
 				break;
 		}
 	}
+
+	if ((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == 0)
+		cursory = 300;	// Put the cursor off screen if we can't even display that option and we're on it, it makes no sense otherwise...
 
 	// DRAW THE SKULL CURSOR
 	if (((currentMenu->menuitems[itemOn].status & IT_DISPLAY) == IT_PATCH)
@@ -2315,6 +2318,109 @@ void M_DrawMPRoomSelect(void)
 	// Draw buttons:
 	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
 	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+}
+
+// SERVER BROWSER
+void M_DrawMPServerBrowser(void)
+{
+	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
+	patch_t *text2 = W_CachePatchName("MENUBGT2", PU_CACHE);
+
+	patch_t *raceh = W_CachePatchName("M_SERV1", PU_CACHE);
+	patch_t *batlh = W_CachePatchName("M_SERV2", PU_CACHE);
+
+	patch_t *racehs = W_CachePatchName("M_SERV12", PU_CACHE);
+	patch_t *batlhs = W_CachePatchName("M_SERV22", PU_CACHE);
+
+	fixed_t text1loop = SHORT(text1->height)*FRACUNIT;
+	fixed_t text2loop = SHORT(text2->width)*FRACUNIT;
+
+	const UINT8 startx = 18;
+	const UINT8 basey = 56;
+	const INT32 starty = basey - 18*mpmenu.scrolln + mpmenu.slide;
+	INT32 ypos = 0;
+	UINT8 i;
+
+	// background stuff
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("BG_MPS3", PU_CACHE), NULL);
+
+	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
+
+	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_TRANSLUCENT, text2, NULL);
+	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_TRANSLUCENT, text2, NULL);
+
+	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll,
+		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll + text1loop,
+		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+
+	// bgText<x>Scroll is already handled by the menu background.
+
+	// the actual server list.
+	for (i = 0; i < serverlistcount; i++)
+	{
+
+		boolean racegt = strcmp(serverlist[i].info.gametypename, "Race") == 0;
+		INT32 transflag = 0;
+		INT32 basetransflag = 0;
+
+		if (serverlist[i].info.numberofplayer >= serverlist[i].info.maxplayer)
+			basetransflag = 5;
+
+		/*if (i < mpmenu.servernum)
+			// if slide > 0, then we went DOWN in the list and have to fade that server out.
+			if (mpmenu.slide > 0)
+				transflag = basetransflag + (18-mpmenu.slide)/2;
+			else if (mpmenu.slide < 0)
+				transflag = 10 - basetransflag - (18-mpmenu.slide)/2;*/
+
+		transflag = basetransflag;
+
+		if (transflag >= 0 && transflag < 10)
+		{
+			transflag = transflag << V_ALPHASHIFT;	// shift the translucency flag.
+
+			if (itemOn == 2 && mpmenu.servernum == i)
+				V_DrawFixedPatch(startx*FRACUNIT, (starty + ypos)*FRACUNIT, FRACUNIT, transflag, racegt ? racehs : batlhs, NULL);
+			else
+				V_DrawFixedPatch(startx*FRACUNIT, (starty + ypos)*FRACUNIT, FRACUNIT, transflag, racegt ? raceh : batlh, NULL);
+
+			// Server name:
+			V_DrawString(startx+11, starty + ypos + 6, V_ALLOWLOWERCASE|transflag, serverlist[i].info.servername);
+
+			// Ping:
+			V_DrawThinString(startx + 191, starty + ypos + 7, V_6WIDTHSPACE|transflag, va("%03d", serverlist[i].info.time));
+
+			// Playercount
+			V_DrawThinString(startx + 214, starty + ypos + 7, V_6WIDTHSPACE|transflag, va("%02d/%02d", serverlist[i].info.numberofplayer, serverlist[i].info.maxplayer));
+
+			// Power Level
+			V_DrawThinString(startx + 248, starty + ypos, V_6WIDTHSPACE|transflag, va("%04d PLv", serverlist[i].info.avgpwrlv));
+
+			// game speed if applicable:
+			if (racegt)
+			{
+				UINT8 speed = serverlist[i].info.kartvars & SV_SPEEDMASK;
+				patch_t *pp = W_CachePatchName(va("M_SDIFF%d", speed), PU_CACHE);
+
+				V_DrawFixedPatch((startx + 251)*FRACUNIT, (starty + ypos + 9)*FRACUNIT, FRACUNIT, transflag, pp, NULL);
+			}
+		}
+		ypos += SERVERSPACE;
+	}
+
+	// Draw genericmenu ontop!
+	V_DrawFill(0, 0, 320, 52, 31);
+	V_DrawFill(0, 53, 320, 1, 31);
+	V_DrawFill(0, 55, 320, 1, 31);
+
+	V_DrawCenteredGamemodeString(160, 2, V_ALLOWLOWERCASE, 0, "Server Browser");
+
+	// normal menu options
+	M_DrawGenericMenu();
+
 }
 
 // OPTIONS MENU

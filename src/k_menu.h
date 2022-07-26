@@ -21,6 +21,10 @@
 #include "g_demo.h"	//menudemo_t
 #include "k_profiles.h"	// profile data & functions
 #include "g_input.h"	// gc_
+#include "i_threads.h"
+#include "mserv.h"
+
+#define SERVERLISTDEBUG
 
 // flags for items in the menu
 // menu handle (what we do when key is pressed
@@ -82,6 +86,18 @@
 #ifdef HAVE_THREADS
 extern I_mutex k_menu_mutex;
 #endif
+
+// for server threads etc.
+typedef enum
+{
+	M_NOT_WAITING,
+
+	M_WAITING_VERSION,
+	M_WAITING_SERVERS,
+}
+M_waiting_mode_t;
+
+extern M_waiting_mode_t m_waiting_mode;
 
 typedef union
 {
@@ -209,6 +225,9 @@ extern menu_t PLAY_MP_JoinIPDef;
 
 extern menuitem_t PLAY_MP_RoomSelect[];
 extern menu_t PLAY_MP_RoomSelectDef;
+
+extern menuitem_t PLAY_MP_ServerBrowser[];
+extern menu_t PLAY_MP_ServerBrowserDef;
 
 extern menuitem_t PLAY_BattleGamemodesMenu[];
 extern menu_t PLAY_BattleGamemodesDef;
@@ -638,6 +657,9 @@ void M_DifficultySelectInputs(INT32 choice);
 // Keep track of multiplayer menu related data
 // We'll add more stuff here as we need em...
 
+#define SERVERSPERPAGE 8
+#define SERVERSPACE 18
+
 extern struct mpmenu_s {
 	UINT8 modechoice;
 	INT16 modewinextend[3][3];	// Used to "extend" the options in the mode select screen.
@@ -645,8 +667,14 @@ extern struct mpmenu_s {
 								// See M_OptSelectTick, it'll make more sense there. Sorry if this is a bit of a mess!
 
 	UINT8 room;
-
 	tic_t ticker;
+
+	UINT8 servernum;
+	UINT8 scrolln;
+	// max scrolln is always going to be serverlistcount-4 as we can display 8 servers at any time and we start scrolling at half.
+
+	INT16 slide;
+
 } mpmenu;
 
 // MP selection
@@ -671,6 +699,33 @@ void M_JoinIP(const char *ipa);
 void M_MPRoomSelect(INT32 choice);
 void M_MPRoomSelectTick(void);
 void M_MPRoomSelectInit(INT32 choice);
+
+// Server browser hell with threads...
+void M_SetWaitingMode(int mode);
+int M_GetWaitingMode(void);
+
+void M_MPServerBrowserTick(void);
+boolean M_ServerBrowserInputs(INT32 ch);
+
+#ifdef MASTERSERVER
+#ifdef HAVE_THREADS
+
+void Spawn_masterserver_thread (const char *name, void (*thread)(int*));
+int Same_instance (int id);
+
+#endif /*HAVE_THREADS*/
+
+void Fetch_servers_thread (int *id);
+
+#endif /*MASTERSERVER*/
+
+void M_RefreshServers(INT32 choice);
+void M_ServersMenu(INT32 choice);
+
+// for debugging purposes...
+#ifdef SERVERLISTDEBUG
+void M_ServerListFillDebug(void);
+#endif
 
 // Options menu:
 
@@ -914,6 +969,7 @@ void M_DrawMPOptSelect(void);
 void M_DrawMPHost(void);
 void M_DrawMPJoinIP(void);
 void M_DrawMPRoomSelect(void);
+void M_DrawMPServerBrowser(void);
 
 // Pause menu:
 void M_DrawPause(void);
