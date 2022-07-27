@@ -205,6 +205,15 @@ extern menu_t PLAY_LevelSelectDef;
 extern menuitem_t PLAY_TimeAttack[];
 extern menu_t PLAY_TimeAttackDef;
 
+extern menuitem_t PLAY_TAReplay[];
+extern menu_t PLAY_TAReplayDef;
+
+extern menuitem_t PLAY_TAReplayGuest[];
+extern menu_t PLAY_TAReplayGuestDef;
+
+extern menuitem_t PLAY_TAGhosts[];
+extern menu_t PLAY_TAGhostsDef;
+
 extern menuitem_t PLAY_MP_OptSelect[];
 extern menu_t PLAY_MP_OptSelectDef;
 
@@ -676,6 +685,12 @@ extern struct mpmenu_s {
 	INT16 slide;
 
 } mpmenu;
+
+// Time Attack
+void M_StartTimeAttack(INT32 choice);
+void M_ReplayTimeAttack(INT32 choice);
+void M_HandleStaffReplay(INT32 choice);
+void M_SetGuestReplay(INT32 choice);
 
 // MP selection
 void M_MPOptSelect(INT32 choice);

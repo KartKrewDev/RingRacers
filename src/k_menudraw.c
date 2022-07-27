@@ -2000,38 +2000,70 @@ void M_DrawTimeAttack(void)
 	INT16 t = (48*menutransition.tics);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
-	INT16 opty = 152;
+	INT16 opty = 140;
+	INT32 w;
 	lumpnum_t lumpnum;
 	UINT8 i;
+	consvar_t *cv;
 
 	M_DrawLevelSelectBlock(0, 2, map, true, false);
 
 	//V_DrawFill(24-t, 82, 100, 100, 36); // size test
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
-	if (lumpnum != LUMPERROR)
-		V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
-
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
-	K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+	if (currentMenu == &PLAY_TimeAttackDef)
+	{
+		lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
+		if (lumpnum != LUMPERROR)
+			V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
 
-	V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
-	K_drawKartTimestamp(0, 162+t, 118, map, 1);
+		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
+		K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+
+		V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
+		K_drawKartTimestamp(0, 162+t, 118, map, 1);
+	}
+	else
+		opty = 80;
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		UINT32 f = (i == itemOn) ? recommendedflags : highlightflags;
+		UINT32 f = (i == itemOn) ? highlightflags : 0;
 
 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 		{
+
+			case IT_HEADERTEXT:
+
+				V_DrawString(leftedge, opty, highlightflags, currentMenu->menuitems[i].text);
+				opty += 10;
+				break;
+
 			case IT_STRING:
+
 				if (i >= currentMenu->numitems-1)
 					V_DrawRightAlignedString(rightedge, opty, f, currentMenu->menuitems[i].text);
 				else
 					V_DrawString(leftedge, opty, f, currentMenu->menuitems[i].text);
 				opty += 10;
+
+				// Cvar specific handling
+
+				if (currentMenu->menuitems[i].status & IT_CVAR)
+				{
+					cv = currentMenu->menuitems[i].itemaction.cvar;
+
+					w = V_StringWidth(cv->string, 0);
+					V_DrawString(leftedge, opty, f, cv->string);
+					if (i == itemOn)
+					{
+						V_DrawCharacter(leftedge - 10 - (skullAnimCounter/5), opty, '\x1C' | f, false); // left arrow
+						V_DrawCharacter(leftedge + w + 2+ (skullAnimCounter/5), opty, '\x1D' | f, false); // right arrow
+					}
+					opty += 10;
+				}
+
 				break;
 			case IT_SPACE:
 				opty += 4;

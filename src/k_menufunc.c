@@ -3454,6 +3454,9 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
+
+			UINT8 ssplayers = cv_splitplayers.value-1;
+
 			S_StartSound(NULL, sfx_s3k63);
 
 			// Early fadeout to let the sound finish playing
@@ -3463,6 +3466,15 @@ void M_CupSelectHandler(INT32 choice)
 			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+			if (cv_maxplayers.value < ssplayers+1)
+				CV_SetValue(&cv_maxplayers, ssplayers+1);
+
+			if (splitscreen != ssplayers)
+			{
+				splitscreen = ssplayers;
+				SplitScreen_OnChange();
+			}
 
 			// read our dummy cvars
 
@@ -3676,6 +3688,79 @@ void M_LevelSelectTick(void)
 	else
 		levellist.y += dist/2;
 }
+
+
+// time attack stuff...
+void M_HandleStaffReplay(INT32 choice)
+{
+	// @TODO:
+	(void) choice;
+}
+
+void M_ReplayTimeAttack(INT32 choice)
+{
+	// @TODO:
+	(void) choice;
+}
+
+void M_SetGuestReplay(INT32 choice)
+{
+	// @TODO:
+	(void) choice;
+}
+
+void M_StartTimeAttack(INT32 choice)
+{
+	char *gpath;
+	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
+	char nameofdemo[256];
+	(void)choice;
+	emeralds = 0;
+
+	modeattacking = ATTACKING_TIME;
+
+	// Still need to reset devmode
+	cv_debug = 0;
+
+	if (demo.playback)
+		G_StopDemo();
+	if (metalrecording)
+		G_StopMetalDemo();
+
+	splitscreen = 0;
+	SplitScreen_OnChange();
+
+	S_StartSound(NULL, sfx_s3k63);
+
+	paused = false;
+
+	// Early fadeout to let the sound finish playing
+	F_WipeStartScreen();
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+	F_WipeEndScreen();
+	F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+	SV_StartSinglePlayerServer();
+
+	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
+			srb2home, timeattackfolder);
+	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
+
+	if ((gpath = malloc(glen)) == NULL)
+		I_Error("Out of memory for replay filepath\n");
+
+	sprintf(gpath,"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(levellist.choosemap+1));
+	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_skin[0].string);
+
+	if (!cv_autorecord.value)
+		remove(va("%s"PATHSEP"%s.lmp", srb2home, nameofdemo));
+	else
+		G_RecordDemo(nameofdemo);
+
+	M_ClearMenus(true);
+	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+}
+
 
 struct mpmenu_s mpmenu;
 
