@@ -839,9 +839,9 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 		if (endtop < endrealbot && top < realbot)
 			return;
 
-		if (!(list[i].flags & FF_NOSHADE))
+		if (!(list[i].flags & FOF_NOSHADE))
 		{
-			if (pfloor && (pfloor->flags & FF_FOG))
+			if (pfloor && (pfloor->fofflags & FOF_FOG))
 			{
 				lightnum = pfloor->master->frontsector->lightlevel;
 				colormap = pfloor->master->frontsector->extra_colormap;
@@ -855,13 +855,13 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 
 		solid = false;
 
-		if ((sector->lightlist[i].flags & FF_CUTSOLIDS) && !(cutflag & FF_EXTRA))
+		if ((sector->lightlist[i].flags & FOF_CUTSOLIDS) && !(cutflag & FOF_EXTRA))
 			solid = true;
-		else if ((sector->lightlist[i].flags & FF_CUTEXTRA) && (cutflag & FF_EXTRA))
+		else if ((sector->lightlist[i].flags & FOF_CUTEXTRA) && (cutflag & FOF_EXTRA))
 		{
-			if (sector->lightlist[i].flags & FF_EXTRA)
+			if (sector->lightlist[i].flags & FOF_EXTRA)
 			{
-				if ((sector->lightlist[i].flags & (FF_FOG|FF_SWIMMABLE)) == (cutflag & (FF_FOG|FF_SWIMMABLE))) // Only merge with your own types
+				if ((sector->lightlist[i].flags & (FOF_FOG|FOF_SWIMMABLE)) == (cutflag & (FOF_FOG|FOF_SWIMMABLE))) // Only merge with your own types
 					solid = true;
 			}
 			else
@@ -1150,7 +1150,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					polyflags = PF_Environment;
 
 				if (gl_frontsector->numlights)
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_toptexture, &Surf, FF_CUTLEVEL, NULL, polyflags);
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_toptexture, &Surf, FOF_CUTLEVEL, NULL, polyflags);
 				else if (grTex->mipmap.flags & TF_TRANSPARENT)
 					HWR_AddTransparentWall(wallVerts, &Surf, gl_toptexture, polyflags, false, lightnum, colormap);
 				else
@@ -1223,7 +1223,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					polyflags = PF_Environment;
 
 				if (gl_frontsector->numlights)
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_bottomtexture, &Surf, FF_CUTLEVEL, NULL, polyflags);
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_bottomtexture, &Surf, FOF_CUTLEVEL, NULL, polyflags);
 				else if (grTex->mipmap.flags & TF_TRANSPARENT)
 					HWR_AddTransparentWall(wallVerts, &Surf, gl_bottomtexture, polyflags, false, lightnum, colormap);
 				else
@@ -1430,10 +1430,10 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			if (gl_frontsector->numlights)
 			{
 				if (!(blendmode & PF_Masked))
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_TRANSLUCENT, NULL, blendmode); // vanilla just uses PF_Masked here - if we run into any issues, maybe change to that
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FOF_TRANSLUCENT, NULL, blendmode); // vanilla just uses PF_Masked here - if we run into any issues, maybe change to that
 				else
 				{
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL, blendmode); // vanilla just uses PF_Masked here - if we run into any issues, maybe change to that
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FOF_CUTLEVEL, NULL, blendmode); // vanilla just uses PF_Masked here - if we run into any issues, maybe change to that
 				}
 			}
 			else if (!(blendmode & PF_Masked))
@@ -1514,6 +1514,10 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			wallVerts[2].y = FIXED_TO_FLOAT(worldtopslope);
 			wallVerts[1].y = FIXED_TO_FLOAT(worldbottomslope);
 
+			// I don't think that solid walls can use translucent linedef types...
+			if (gl_frontsector->numlights)
+				HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FOF_CUTLEVEL, NULL, 0);
+			else
 			{
 				FBITFIELD blendmode = PF_Masked;
 				if (grTex->mipmap.flags & TF_TRANSPARENT)
@@ -1521,7 +1525,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 				// I don't think that solid walls can use translucent linedef types...
 				if (gl_frontsector->numlights)
-					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FF_CUTLEVEL, NULL, blendmode);
+					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FOF_CUTLEVEL, NULL, blendmode);
 				else
 				{
 					if (grTex->mipmap.flags & TF_TRANSPARENT)
@@ -1586,9 +1590,9 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 				if (bothsides) continue;
 
-				if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERSIDES))
+				if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERSIDES))
 					continue;
-				if (!(rover->flags & FF_ALLSIDES) && rover->flags & FF_INVERTSIDES)
+				if (!(rover->fofflags & FOF_ALLSIDES) && rover->fofflags & FOF_INVERTSIDES)
 					continue;
 
 				SLOPEPARAMS(*rover->t_slope, high1, highslope1, *rover->topheight)
@@ -1629,7 +1633,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				wallVerts[2].y = FIXED_TO_FLOAT(hS);
 				wallVerts[0].y = FIXED_TO_FLOAT(l);
 				wallVerts[1].y = FIXED_TO_FLOAT(lS);
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					wallVerts[3].t = wallVerts[2].t = 0;
 					wallVerts[0].t = wallVerts[1].t = 0;
@@ -1688,7 +1692,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					wallVerts[0].s = wallVerts[3].s = cliplow * grTex->scaleX;
 					wallVerts[2].s = wallVerts[1].s = cliphigh * grTex->scaleX;
 				}
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					FBITFIELD blendmode;
 
@@ -1700,7 +1704,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
 
 					if (gl_frontsector->numlights)
-						HWR_SplitWall(gl_frontsector, wallVerts, 0, &Surf, rover->flags, rover, blendmode);
+						HWR_SplitWall(gl_frontsector, wallVerts, 0, &Surf, rover->fofflags, rover, blendmode);
 					else
 						HWR_AddTransparentWall(wallVerts, &Surf, 0, blendmode, true, lightnum, colormap);
 				}
@@ -1708,7 +1712,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if (rover->flags & FF_TRANSLUCENT)
+					if (rover->fofflags & FOF_TRANSLUCENT)
 					{
 						if (rover->alpha < 256 || rover->blend)
 						{
@@ -1718,7 +1722,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					}
 
 					if (gl_frontsector->numlights)
-						HWR_SplitWall(gl_frontsector, wallVerts, texnum, &Surf, rover->flags, rover, blendmode);
+						HWR_SplitWall(gl_frontsector, wallVerts, texnum, &Surf, rover->fofflags, rover, blendmode);
 					else
 					{
 						if (blendmode != PF_Masked)
@@ -1746,9 +1750,9 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 				if (bothsides) continue;
 
-				if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERSIDES))
+				if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERSIDES))
 					continue;
-				if (!(rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES))
+				if (!(rover->fofflags & FOF_ALLSIDES || rover->fofflags & FOF_INVERTSIDES))
 					continue;
 
 				SLOPEPARAMS(*rover->t_slope, high1, highslope1, *rover->topheight)
@@ -1788,7 +1792,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				wallVerts[2].y = FIXED_TO_FLOAT(hS);
 				wallVerts[0].y = FIXED_TO_FLOAT(l);
 				wallVerts[1].y = FIXED_TO_FLOAT(lS);
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					wallVerts[3].t = wallVerts[2].t = 0;
 					wallVerts[0].t = wallVerts[1].t = 0;
@@ -1814,7 +1818,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					wallVerts[2].s = wallVerts[1].s = cliphigh * grTex->scaleX;
 				}
 
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					FBITFIELD blendmode;
 
@@ -1826,7 +1830,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					Surf.PolyColor.s.alpha = HWR_FogBlockAlpha(rover->master->frontsector->lightlevel, rover->master->frontsector->extra_colormap);
 
 					if (gl_backsector->numlights)
-						HWR_SplitWall(gl_backsector, wallVerts, 0, &Surf, rover->flags, rover, blendmode);
+						HWR_SplitWall(gl_backsector, wallVerts, 0, &Surf, rover->fofflags, rover, blendmode);
 					else
 						HWR_AddTransparentWall(wallVerts, &Surf, 0, blendmode, true, lightnum, colormap);
 				}
@@ -1834,7 +1838,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if (rover->flags & FF_TRANSLUCENT)
+					if (rover->fofflags & FOF_TRANSLUCENT)
 					{
 						if (rover->alpha < 256 || rover->blend)
 						{
@@ -1844,7 +1848,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					}
 
 					if (gl_backsector->numlights)
-						HWR_SplitWall(gl_backsector, wallVerts, texnum, &Surf, rover->flags, rover, blendmode);
+						HWR_SplitWall(gl_backsector, wallVerts, texnum, &Surf, rover->fofflags, rover, blendmode);
 					else
 					{
 						if (blendmode != PF_Masked)
@@ -3086,17 +3090,17 @@ static void HWR_Subsector(size_t num)
 			cullHeight   = P_GetFFloorBottomZAt(rover, viewx, viewy);
 			centerHeight = P_GetFFloorBottomZAt(rover, gl_frontsector->soundorg.x, gl_frontsector->soundorg.y);
 
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
 				continue;
 			if (sub->validcount == validcount)
 				continue;
 
 			if (centerHeight <= locCeilingHeight &&
 			    centerHeight >= locFloorHeight &&
-			    ((dup_viewz < cullHeight && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-			     (dup_viewz > cullHeight && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+			    ((dup_viewz < cullHeight && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+			     (dup_viewz > cullHeight && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					UINT8 alpha;
 
@@ -3111,7 +3115,7 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if (rover->flags & FF_TRANSLUCENT
+				else if (rover->fofflags & FOF_TRANSLUCENT
 					&& (rover->alpha < 256 || rover->blend)) // SoM: Flags are more efficient
 				{
 					FBITFIELD blendmode = HWR_GetBlendModeFlag(rover->blend) | HWR_RippleBlend(gl_frontsector, rover, false);
@@ -3141,10 +3145,10 @@ static void HWR_Subsector(size_t num)
 
 			if (centerHeight >= locFloorHeight &&
 			    centerHeight <= locCeilingHeight &&
-			    ((dup_viewz > cullHeight && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-			     (dup_viewz < cullHeight && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+			    ((dup_viewz > cullHeight && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+			     (dup_viewz < cullHeight && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
-				if (rover->flags & FF_FOG)
+				if (rover->fofflags & FOF_FOG)
 				{
 					UINT8 alpha;
 
@@ -3159,7 +3163,7 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if (rover->flags & FF_TRANSLUCENT
+				else if (rover->fofflags & FOF_TRANSLUCENT
 					&& (rover->alpha < 256 || rover->blend)) // SoM: Flags are more efficient
 				{
 					FBITFIELD blendmode = HWR_GetBlendModeFlag(rover->blend) | HWR_RippleBlend(gl_frontsector, rover, false);
@@ -3922,7 +3926,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 			return;
 
 		// even if we aren't changing colormap or lightlevel, we still need to continue drawing down the sprite
-		if (!(list[i].flags & FF_NOSHADE) && (list[i].flags & FF_CUTSPRITES))
+		if (!(list[i].flags & FOF_NOSHADE) && (list[i].flags & FOF_CUTSPRITES))
 		{
 			if (!lightset)
 			{

@@ -1882,7 +1882,7 @@ static fixed_t K_CheckOffroadCollide(mobj_t *mo)
 		// 2: If we're here, we haven't found anything. So let's try looking for FOFs in the sectors using the same logic.
 		for (rover = s->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))	// This FOF doesn't exist anymore.
+			if (!(rover->fofflags & FOF_EXISTS))	// This FOF doesn't exist anymore.
 				continue;
 
 			s2 = &sectors[rover->secnum];	// makes things easier for us
@@ -7133,13 +7133,13 @@ void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed
 			fixed_t top, bottom;
 			fixed_t d1, d2;
 
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if ((!(((rover->flags & FF_BLOCKPLAYER && player)
-				|| (rover->flags & FF_BLOCKOTHERS && !player))
-				|| (rover->flags & FF_QUICKSAND))
-				|| (rover->flags & FF_SWIMMABLE)))
+			if ((!(((rover->fofflags & FOF_BLOCKPLAYER && player)
+				|| (rover->fofflags & FOF_BLOCKOTHERS && !player))
+				|| (rover->fofflags & FOF_QUICKSAND))
+				|| (rover->fofflags & FOF_SWIMMABLE)))
 				continue;
 
 			top = K_BananaSlopeZ(*rover->t_slope, x, y, *rover->topheight, radius, false);
@@ -7147,7 +7147,7 @@ void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed
 
 			if (flip)
 			{
-				if (rover->flags & FF_QUICKSAND)
+				if (rover->fofflags & FOF_QUICKSAND)
 				{
 					if (z < top && (z + height) > bottom)
 					{
@@ -7171,7 +7171,7 @@ void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed
 			}
 			else
 			{
-				if (rover->flags & FF_QUICKSAND)
+				if (rover->fofflags & FOF_QUICKSAND)
 				{
 					if (z < top && (z + height) > bottom)
 					{

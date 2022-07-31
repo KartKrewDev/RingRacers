@@ -402,7 +402,7 @@ static line_t *K_FindBotController(mobj_t *mo)
 		{
 			sector_t *rs = NULL;
 
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 			{
 				continue;
 			}

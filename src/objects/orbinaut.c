@@ -125,7 +125,7 @@ void Obj_OrbinautThink(mobj_t *th)
 	}
 
 	/* todo: UDMFify
-	if (P_MobjTouchingSectorSpecialFlag(th, SS))
+	if (P_MobjTouchingSectorSpecialFlag(th, ?))
 	{
 		K_DoPogoSpring(th, 0, 1);
 	}

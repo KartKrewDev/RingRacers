@@ -1876,13 +1876,13 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 		{
 			fixed_t topheight, bottomheight;
 
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
 			topheight = P_GetFOFTopZ(thing, newsubsec->sector, rover, x, y, NULL);
 			bottomheight = P_GetFOFBottomZ(thing, newsubsec->sector, rover, x, y, NULL);
 
-			if ((rover->flags & (FF_SWIMMABLE|FF_GOOWATER)) == (FF_SWIMMABLE|FF_GOOWATER) && !(thing->flags & MF_NOGRAVITY))
+			if ((rover->fofflags & (FOF_SWIMMABLE|FOF_GOOWATER)) == (FOF_SWIMMABLE|FOF_GOOWATER) && !(thing->flags & MF_NOGRAVITY))
 			{
 				// If you're inside goowater and slowing down
 				fixed_t sinklevel = FixedMul(thing->info->height/6, thing->scale);
@@ -1923,14 +1923,14 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 
 			if (P_CheckSolidFFloorSurface(thing, rover))
 				;
-			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
+			else if (thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE))
 				;
-			else if (!((rover->flags & FF_BLOCKPLAYER && thing->player)
-			    || (rover->flags & FF_BLOCKOTHERS && !thing->player)
-				|| rover->flags & FF_QUICKSAND))
+			else if (!((rover->fofflags & FOF_BLOCKPLAYER && thing->player)
+			    || (rover->fofflags & FOF_BLOCKOTHERS && !thing->player)
+				|| rover->fofflags & FOF_QUICKSAND))
 				continue;
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
 				if (thing->z < topheight && bottomheight < thingtop)
 				{
@@ -1951,7 +1951,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				+ ((topheight - bottomheight)/2));
 
 			if (topheight > tmfloorz && abs(delta1) < abs(delta2)
-				&& !(rover->flags & FF_REVERSEPLATFORM))
+				&& !(rover->fofflags & FOF_REVERSEPLATFORM))
 			{
 				tmfloorz = tmdropoffz = topheight;
 				tmfloorrover = rover;
@@ -1959,8 +1959,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				tmfloorpic = *rover->toppic;
 			}
 			if (bottomheight < tmceilingz && abs(delta1) >= abs(delta2)
-				&& !(rover->flags & FF_PLATFORM)
-				&& !(thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE)))
+				&& !(rover->fofflags & FOF_PLATFORM)
+				&& !(thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE)))
 			{
 				tmceilingz = tmdrpoffceilz = bottomheight;
 				tmceilingrover = rover;
@@ -2183,7 +2183,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERALL) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
+			if (!(rover->fofflags & FOF_BLOCKOTHERS) || !(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERALL) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
 				continue;
 
 			topheight = P_CameraGetFOFTopZ(thiscam, newsubsec->sector, rover, x, y, NULL);
@@ -2495,7 +2495,7 @@ BlockItReturn_t PIT_PushableMoved(mobj_t *thing)
 static boolean P_WaterRunning(mobj_t *thing)
 {
 	ffloor_t *rover = thing->floorrover;
-	return rover && (rover->flags & FF_SWIMMABLE) &&
+	return rover && (rover->fofflags & FOF_SWIMMABLE) &&
 		P_IsObjectOnGround(thing);
 }
 
@@ -3076,9 +3076,9 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	{
 		rover = (thing->eflags & MFE_VERTICALFLIP) ? oldceilingrover : oldfloorrover;
 
-		// Match the Thing's old floorz to an FOF and check for FF_EXISTS
-		// If ~FF_EXISTS, don't set mobj Z.
-		if (!rover || ((rover->flags & FF_EXISTS) && (rover->flags & FF_SOLID)))
+		// Match the Thing's old floorz to an FOF and check for FOF_EXISTS
+		// If ~FOF_EXISTS, don't set mobj Z.
+		if (!rover || ((rover->fofflags & FOF_EXISTS) && (rover->fofflags & FOF_SOLID)))
 		{
 			hitfloor = false;
 			if (thing->eflags & MFE_VERTICALFLIP)
@@ -3511,10 +3511,10 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
-		if (!(rover->flags & FF_EXISTS))
+		if (!(rover->fofflags & FOF_EXISTS))
 			continue;
 
-		if (!(rover->flags & FF_SWIMMABLE))
+		if (!(rover->fofflags & FOF_SWIMMABLE))
 			continue;
 
 		if (rover->master->frontsector->damagetype != SD_LAVA)
@@ -4217,8 +4217,8 @@ static boolean PIT_ChangeSector(mobj_t *thing, boolean realcrush)
 
 			for (rover = thing->subsector->sector->ffloors; rover; rover = rover->next)
 			{
-				if (!(((rover->flags & FF_BLOCKPLAYER) && thing->player)
-				|| ((rover->flags & FF_BLOCKOTHERS) && !thing->player)) || !(rover->flags & FF_EXISTS))
+				if (!(((rover->fofflags & FOF_BLOCKPLAYER) && thing->player)
+				|| ((rover->fofflags & FOF_BLOCKOTHERS) && !thing->player)) || !(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				topheight = *rover->topheight;
@@ -5012,16 +5012,16 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 		for (rover = sec->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!((rover->flags & FF_SOLID) || (rover->flags & FF_QUICKSAND)) || (rover->flags & FF_SWIMMABLE))
+			if (!((rover->fofflags & FOF_SOLID) || (rover->fofflags & FOF_QUICKSAND)) || (rover->fofflags & FOF_SWIMMABLE))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, x, y);
 			bottomheight = P_GetFFloorBottomZAt(rover, x, y);
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
 				if (z < topheight && bottomheight < thingtop)
 				{
@@ -5056,16 +5056,16 @@ fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 		for (rover = sec->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+			if ((!(rover->fofflags & FOF_SOLID || rover->fofflags & FOF_QUICKSAND) || (rover->fofflags & FOF_SWIMMABLE)))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, x, y);
 			bottomheight = P_GetFFloorBottomZAt(rover, x, y);
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
 				if (thingtop > bottomheight && topheight > z)
 				{

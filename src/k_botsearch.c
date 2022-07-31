@@ -189,7 +189,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		fixed_t top = INT32_MAX;
 		fixed_t bottom = INT32_MAX;
 
-		if (!(rover->flags & FF_EXISTS))
+		if (!(rover->fofflags & FOF_EXISTS))
 		{
 			continue;
 		}
@@ -197,7 +197,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		top = P_GetZAt(*rover->t_slope, x, y, *rover->topheight);
 		bottom = P_GetZAt(*rover->b_slope, x, y, *rover->bottomheight);
 
-		if (!(rover->flags & FF_BLOCKPLAYER))
+		if (!(rover->fofflags & FOF_BLOCKPLAYER))
 		{
 			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
 				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
