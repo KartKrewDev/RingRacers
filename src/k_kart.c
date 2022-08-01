@@ -4726,6 +4726,9 @@ void K_SpawnDraftDust(mobj_t *mo)
 		{
 			UINT8 leniency = (3*TICRATE)/4 + ((mo->player->kartweight-1) * (TICRATE/4));
 
+			if (gametype == GT_BATTLE)
+				leniency *= 4;
+
 			ang = mo->player->drawangle;
 
 			if (mo->player->drift != 0)
