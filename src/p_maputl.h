@@ -56,6 +56,8 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing, fixed_t x,fixed_t y);
 boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y);
 void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy);
 
+boolean P_GetMidtextureTopBottom(line_t *linedef, fixed_t x, fixed_t y, fixed_t *return_top, fixed_t *return_bottom);
+
 extern fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
 extern pslope_t *opentopslope, *openbottomslope;
 extern ffloor_t *openfloorrover, *openceilingrover;
