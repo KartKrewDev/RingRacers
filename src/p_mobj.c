@@ -10014,6 +10014,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			}
 			break;
 		case MT_POGOSPRING:
+			P_SetScale(mobj, (mobj->destscale = 3 * mobj->destscale / 2));
 			mobj->color = SKINCOLOR_SUNSLAM;
 			mobj->colorized = true;
 			break;
