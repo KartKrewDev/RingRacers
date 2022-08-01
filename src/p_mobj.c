@@ -9763,6 +9763,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_BLUESPHERE:
 		case MT_EMERALD:
 		case MT_ITEMCAPSULE:
+		case MT_POGOSPRING:
 			thing->shadowscale = FRACUNIT/2;
 			break;
 		case MT_DRIFTCLIP:
