@@ -1775,16 +1775,18 @@ static void K_UpdateDraft(player_t *player)
 		draftdistance = FixedMul(draftdistance, K_GetKartGameSpeedScalar(gamespeed));
 	}
 
+	// On the contrary, the leniency period biases toward high weight.
+	// (See also: the leniency variable in K_SpawnDraftDust)
+	leniency = (3*TICRATE)/4 + ((player->kartweight-1) * (TICRATE/4));
+
 	minDist = 640 * player->mo->scale;
+
 	if (gametype == GT_BATTLE)
 	{
 		// TODO: gametyperules
 		minDist /= 4;
+		leniency *= 4;
 	}
-
-	// On the contrary, the leniency period biases toward high weight.
-	// (See also: the leniency variable in K_SpawnDraftDust)
-	leniency = (3*TICRATE)/4 + ((player->kartweight-1) * (TICRATE/4));
 
 	// Not enough speed to draft.
 	if (player->speed >= 20*player->mo->scale)
