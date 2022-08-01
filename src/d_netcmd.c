@@ -5339,7 +5339,7 @@ static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
 
 	if (server || consoleplayer == playernum)
 	{
-		if (command == NULL || strlen(command) == 0)
+		if (command[0] == '\0')
 		{
 			CONS_Printf(
 				"Removed the %s automate command.\n",
