@@ -9855,7 +9855,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 	setupm_cvname = &cv_playername[0];
 	setupm_cvfollower = &cv_follower[0];
 
-	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+	setupm_fakefollower = setupm_cvfollower->value;
 
 	// yikes, we don't want none of that...
 	if (setupm_fakefollower >= numfollowers)
@@ -9898,7 +9898,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 	setupm_cvname = &cv_playername[1];
 	setupm_cvfollower = &cv_follower[1];
 
-	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+	setupm_fakefollower = setupm_cvfollower->value;
 
 	// yikes, we don't want none of that...
 	if (setupm_fakefollower >= numfollowers)
@@ -9941,7 +9941,7 @@ static void M_SetupMultiPlayer3(INT32 choice)
 	setupm_cvname = &cv_playername[2];
 	setupm_cvfollower = &cv_follower[2];
 
-	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+	setupm_fakefollower = setupm_cvfollower->value;
 
 	// yikes, we don't want none of that...
 	if (setupm_fakefollower >= numfollowers)
@@ -9984,7 +9984,7 @@ static void M_SetupMultiPlayer4(INT32 choice)
 	setupm_cvname = &cv_playername[3];
 	setupm_cvfollower = &cv_follower[3];
 
-	setupm_fakefollower = atoi(setupm_cvfollower->string);	// update fake follower value
+	setupm_fakefollower = setupm_cvfollower->value;
 
 	// yikes, we don't want none of that...
 	if (setupm_fakefollower >= numfollowers)
@@ -10014,6 +10014,8 @@ static void M_SetupMultiPlayer4(INT32 choice)
 static boolean M_QuitMultiPlayerMenu(void)
 {
 	size_t l;
+	const char *followername = setupm_fakefollower == -1 ?
+		"None" : followers[setupm_fakefollower].skinname;
 	// send name if changed
 	if (strcmp(setupm_name, setupm_cvname->string))
 	{
@@ -10026,7 +10028,7 @@ static boolean M_QuitMultiPlayerMenu(void)
 	// you know what? always putting these in the buffer won't hurt anything.
 	COM_BufAddText (va("%s \"%s\"\n",setupm_cvskin->name,skins[setupm_fakeskin].name));
 	COM_BufAddText (va("%s %d\n",setupm_cvcolor->name,setupm_fakecolor->color));
-	COM_BufAddText (va("%s %d\n",setupm_cvfollower->name,setupm_fakefollower));
+	COM_BufAddText (va("%s %s\n",setupm_cvfollower->name,followername));
 	return true;
 }
 
