@@ -3807,7 +3807,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 
 	if (player->bumpers > 0 && prevBumpers == 0)
 	{
-		K_DoInvincibility(player);
+		K_DoInvincibility(player, 8 * TICRATE);
 
 		if (netgame)
 		{
@@ -5743,7 +5743,7 @@ static void K_ThrowLandMine(player_t *player)
 	throwmo->movecount = 0; // above player
 }
 
-void K_DoInvincibility(player_t *player)
+void K_DoInvincibility(player_t *player, tic_t time)
 {
 	if (!player->invincibilitytimer)
 	{
@@ -5752,7 +5752,8 @@ void K_DoInvincibility(player_t *player)
 		overlay->destscale = player->mo->scale;
 		P_SetScale(overlay, player->mo->scale);
 	}
-	player->invincibilitytimer += itemtime+(2*TICRATE); // 10 seconds
+
+	player->invincibilitytimer += time;
 
 	if (P_IsLocalPlayer(player) == true)
 	{
@@ -9688,7 +9689,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_INVINCIBILITY:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO) // Doesn't hold your item slot hostage normally, so you're free to waste it if you have multiple
 							{
-								K_DoInvincibility(player);
+								K_DoInvincibility(player, 10 * TICRATE);
 								K_PlayPowerGloatSound(player->mo);
 								player->itemamount--;
 							}
