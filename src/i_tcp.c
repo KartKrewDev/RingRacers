@@ -1555,6 +1555,61 @@ static boolean SOCK_Ban(INT32 node)
 #endif
 }
 
+static boolean SOCK_SetBanUsername(const char *username)
+{
+#ifdef NONET
+	(void)username;
+	return false;
+#else
+	if (username == NULL || strlen(username) == 0)
+	{
+		username = "Direct IP ban";
+	}
+
+	if (banned[numbans - 1].username)
+	{
+		Z_Free(banned[numbans - 1].username);
+		banned[numbans - 1].username = NULL;
+	}
+
+	banned[numbans - 1].username = Z_StrDup(username);
+	return true;
+#endif
+}
+
+static boolean SOCK_SetBanReason(const char *reason)
+{
+#ifdef NONET
+	(void)reason;
+	return false;
+#else
+	if (reason == NULL || strlen(reason) == 0)
+	{
+		reason = "No reason given";
+	}
+
+	if (banned[numbans - 1].reason)
+	{
+		Z_Free(banned[numbans - 1].reason);
+		banned[numbans - 1].reason = NULL;
+	}
+
+	banned[numbans - 1].reason = Z_StrDup(reason);
+	return true;
+#endif
+}
+
+static boolean SOCK_SetUnbanTime(time_t timestamp)
+{
+#ifdef NONET
+	(void)reason;
+	return false;
+#else
+	banned[numbans - 1].timestamp = timestamp;
+	return true;
+#endif
+}
+
 static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 {
 #ifdef NONET
@@ -1615,61 +1670,6 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 
 	I_freeaddrinfo(ai);
 
-	return true;
-#endif
-}
-
-static boolean SOCK_SetBanUsername(const char *username)
-{
-#ifdef NONET
-	(void)username;
-	return false;
-#else
-	if (username == NULL || strlen(username) == 0)
-	{
-		username = "Direct IP ban";
-	}
-
-	if (banned[numbans - 1].username)
-	{
-		Z_Free(banned[numbans - 1].username);
-		banned[numbans - 1].username = NULL;
-	}
-
-	banned[numbans - 1].username = Z_StrDup(username);
-	return true;
-#endif
-}
-
-static boolean SOCK_SetBanReason(const char *reason)
-{
-#ifdef NONET
-	(void)reason;
-	return false;
-#else
-	if (reason == NULL || strlen(reason) == 0)
-	{
-		reason = "No reason given";
-	}
-
-	if (banned[numbans - 1].reason)
-	{
-		Z_Free(banned[numbans - 1].reason);
-		banned[numbans - 1].reason = NULL;
-	}
-
-	banned[numbans - 1].reason = Z_StrDup(reason);
-	return true;
-#endif
-}
-
-static boolean SOCK_SetUnbanTime(time_t timestamp)
-{
-#ifdef NONET
-	(void)reason;
-	return false;
-#else
-	banned[numbans - 1].timestamp = timestamp;
 	return true;
 #endif
 }
