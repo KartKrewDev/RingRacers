@@ -3208,12 +3208,6 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
 
-	if (player->spheres > 0)
-	{
-		fixed_t sphereAdd = (FRACUNIT/10); // 500% at max
-		k_accel = FixedMul(k_accel, FRACUNIT + (sphereAdd * player->spheres));
-	}
-
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
 
