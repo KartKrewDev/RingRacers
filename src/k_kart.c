@@ -1867,6 +1867,13 @@ static void K_UpdateDraft(player_t *player)
 					// Double speed for the rival!
 					player->draftpower += add;
 				}
+
+				if (gametype == GT_BATTLE)
+				{
+					// TODO: gametyperules
+					// Double speed in Battle
+					player->draftpower += add;
+				}
 			}
 
 			if (player->draftpower > FRACUNIT)
