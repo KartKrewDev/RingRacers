@@ -1785,6 +1785,7 @@ static void K_UpdateDraft(player_t *player)
 	{
 		// TODO: gametyperules
 		minDist /= 4;
+		draftdistance *= 2;
 		leniency *= 4;
 	}
 
