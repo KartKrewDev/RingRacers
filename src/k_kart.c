@@ -3210,6 +3210,10 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
 
+	// karma bomb gets 2x acceleration
+	if (gametype == GT_BATTLE && player->bumpers <= 0)
+		k_accel *= 2;
+
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
 
