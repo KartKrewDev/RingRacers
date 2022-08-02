@@ -2977,7 +2977,10 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	// more speed for higher weight & speed
 	// Tails = +6.25%, Fang = +20.31%, Mighty = +20.31%, Metal = +25%
 	// (can be higher than this value when overcharged)
-	return (player->kartspeed + player->kartweight) * (FRACUNIT/32);
+	const fixed_t val = (player->kartspeed + player->kartweight) * (FRACUNIT/32);
+
+	// TODO: gametyperules
+	return (gametype == GT_BATTLE) ? (4 * val) : val;
 }
 
 
@@ -9239,8 +9242,14 @@ static void K_KartSpindash(player_t *player)
 		// if spindash was charged enough, give a small thrust.
 		if (player->spindash >= SPINDASHTHRUSTTIME)
 		{
+			fixed_t thrust = FixedMul(player->mo->scale, player->spindash*FRACUNIT/5);
+
+			// TODO: gametyperules
+			if (gametype == GT_BATTLE)
+				thrust *= 2;
+
 			// Give a bit of a boost depending on charge.
-			P_InstaThrust(player->mo, player->mo->angle, FixedMul(player->mo->scale, player->spindash*FRACUNIT/5));
+			P_InstaThrust(player->mo, player->mo->angle, thrust);
 		}
 
 		if (!player->tiregrease)
