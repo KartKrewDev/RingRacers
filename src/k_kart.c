@@ -10081,14 +10081,17 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY))
 								{
+									// TODO: gametyperules
+									const INT32 incr = gametype == GT_BATTLE ? 4 : 2;
+
 									if (player->flamedash == 0)
 									{
 										S_StartSound(player->mo, sfx_s3k43);
 										K_PlayBoostTaunt(player->mo);
 									}
 
-									player->flamedash += 2;
-									player->flamemeter += 2;
+									player->flamedash += incr;
+									player->flamemeter += incr;
 
 									if (!onground)
 									{
@@ -10115,8 +10118,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									player->pflags |= PF_HOLDREADY;
 
-									if (player->flamemeter > 0)
-										player->flamemeter--;
+									// TODO: gametyperules
+									if (gametype != GT_BATTLE || leveltime % 6 == 0)
+									{
+										if (player->flamemeter > 0)
+											player->flamemeter--;
+									}
 
 									if (player->flamelength > destlen)
 									{
