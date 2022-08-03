@@ -9957,7 +9957,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 									}
 
-									player->growshrinktimer = itemtime+(4*TICRATE); // 12 seconds
+									// TODO: gametyperules
+									player->growshrinktimer = (gametype == GT_BATTLE ? 8 : 12) * TICRATE;
 
 									if (player->invincibilitytimer > 0)
 									{
