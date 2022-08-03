@@ -263,9 +263,6 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	if (P_IsLineTripWire(ld))
-		return true;
-
 	switch (ld->special)
 	{
 		case 2001: // Finish line
@@ -1674,6 +1671,20 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
+	}
+	else if (P_IsLineTripWire(ld))
+	{
+		fixed_t textop, texbottom;
+
+		P_GetMidtextureTopBottom(ld, tmx, tmy,
+				&textop, &texbottom);
+
+		/* The effect handling is done later but it won't
+			know the height values anymore. So don't even add
+			this line to the list unless this thing clips the
+			tripwire's midtexture. */
+		if (tmthing->z <= textop && thingtop >= texbottom)
+			add_spechit(ld);
 	}
 
 	return BMIT_CONTINUE;
