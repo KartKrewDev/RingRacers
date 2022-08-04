@@ -3072,6 +3072,13 @@ state_t states[NUMSTATES] =
 	{SPR_SPVG, 0, 1, {NULL}, 0, 0, S_GREYSPRING4},   // S_GREYSPRING3
 	{SPR_SPVG, 2, 4, {NULL}, 0, 0, S_GREYSPRING1},   // S_GREYSPRING4
 
+	// Orange Spring (Pogo)
+	{SPR_SPVB, 0, -1, {NULL}, 0, 0, S_NULL},         // S_POGOSPRING1
+	{SPR_SPVB, 1, 1, {A_Pain}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2
+	{SPR_SPVB, 1, 1, {A_PlaySeeSound}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2B
+	{SPR_SPVB, 0, 1, {NULL}, 0, 0, S_POGOSPRING4},   // S_POGOSPRING3
+	{SPR_SPVB, 2, 4, {NULL}, 0, 0, S_POGOSPRING1},   // S_POGOSPRING4
+
 	// Yellow Diagonal Spring
 	{SPR_SPDY, 0, -1, {NULL}, 0, 0, S_NULL},    // S_YDIAG1
 	{SPR_SPDY, 1, 1, {A_Pain}, 0, 0, S_YDIAG3}, // S_YDIAG2
@@ -8234,6 +8241,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_GREYSPRING2   // raisestate
+	},
+
+	{           // MT_POGOSPRING
+		-1,             // doomednum
+		S_POGOSPRING1,  // spawnstate
+		1000,           // spawnhealth
+		S_POGOSPRING2B, // seestate
+		sfx_eggspr,     // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		SKINCOLOR_SUNSLAM, // painchance
+		sfx_s3kb1,      // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		32*FRACUNIT,    // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_SPRING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_POGOSPRING2   // raisestate
 	},
 
 	{           // MT_YELLOWDIAG
