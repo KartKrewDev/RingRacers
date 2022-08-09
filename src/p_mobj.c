@@ -88,6 +88,15 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum)
 	actioncachehead.prev = newaction;
 }
 
+static inline INT32 randomframe (mobj_t *mobj, INT32 n)
+{
+	// Only mobj thinkers should use synced RNG
+	if (mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
+		return P_RandomKey(n);
+	else
+		return M_RandomKey(n);
+}
+
 //
 // P_SetupStateAnimation
 //
@@ -118,8 +127,8 @@ static void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
 	}
 	else if (st->frame & FF_RANDOMANIM)
 	{
-		mobj->frame += P_RandomKey(animlength + 1);     // Random starting frame
-		mobj->anim_duration -= P_RandomKey(st->var2); // Random duration for first frame
+		mobj->frame += randomframe(mobj, animlength + 1);     // Random starting frame
+		mobj->anim_duration -= randomframe(mobj, st->var2); // Random duration for first frame
 	}
 }
 
