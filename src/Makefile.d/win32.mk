@@ -2,7 +2,7 @@
 # Mingw, if you don't know, that's Win32/Win64
 #
 
-exe:=$(exe)$(if $(MINGW64),64).exe
+exesuffix:=$(exesuffix)$(if $(MINGW64),64).exe
 
 # disable dynamicbase if under msys2
 ifdef MSYSTEM

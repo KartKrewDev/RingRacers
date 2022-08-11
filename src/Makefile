@@ -183,19 +183,6 @@ include Makefile.d/detect.mk
 sources:=
 makedir:=../make
 
-exe:=ringracers
-
-# append branch name by default
-ifndef EXENAME
-branch:=$(shell git symbolic-ref -q --short HEAD)
-
-# not a detached HEAD
-ifdef branch
-exe:=$(exe)_$(branch)
-endif
-
-endif
-
 # -DCOMPVERSION: flag to use comptime.h
 opts:=-DCOMPVERSION -g
 libs:=
@@ -205,6 +192,9 @@ nasm_format:=
 # This is a list of variables names, of which if defined,
 # also defines the name as a macro to the compiler.
 passthru_opts:=
+
+# separate suffix with an underscore
+exesuffix:=$(call _,$(EXESUFFIX))
 
 include Makefile.d/platform.mk
 include Makefile.d/features.mk
@@ -248,8 +238,13 @@ else
 EXEDIR?=../bin
 endif
 
-# default EXENAME (usually set by platform)
-EXENAME?=$(exe)
+# append branch name by default
+ifndef EXENAME
+base:=ringracers
+branch:=$(shell git symbolic-ref -q --short HEAD)
+EXENAME:=$(base)$(call _,$(branch))$(exesuffix)
+endif
+
 DBGNAME?=$(EXENAME).debug
 
 exe:=$(EXEDIR)/$(EXENAME)
