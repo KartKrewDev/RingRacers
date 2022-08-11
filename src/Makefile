@@ -243,17 +243,17 @@ endif
 objects:=$(addprefix $(objdir)/,$(objects))
 
 ifdef DEBUGMODE
-bin:=../bin/debug
+EXEDIR?=../bin/debug
 else
-bin:=../bin
+EXEDIR?=../bin
 endif
 
 # default EXENAME (usually set by platform)
 EXENAME?=$(exe)
 DBGNAME?=$(EXENAME).debug
 
-exe:=$(bin)/$(EXENAME)
-dbg:=$(bin)/$(DBGNAME)
+exe:=$(EXEDIR)/$(EXENAME)
+dbg:=$(EXEDIR)/$(DBGNAME)
 
 build_done==== Build is done, look for \
            $(<F) at $(abspath $(<D)) ===
