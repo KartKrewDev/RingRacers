@@ -2,11 +2,7 @@
 # Mingw, if you don't know, that's Win32/Win64
 #
 
-ifndef MINGW64
-EXENAME?=ringracers.exe
-else
-EXENAME?=ringracers64.exe
-endif
+exe:=$(exe)$(if $(MINGW64),64).exe
 
 # disable dynamicbase if under msys2
 ifdef MSYSTEM

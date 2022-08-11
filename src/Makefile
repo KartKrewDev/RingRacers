@@ -183,6 +183,19 @@ include Makefile.d/detect.mk
 sources:=
 makedir:=../make
 
+exe:=ringracers
+
+# append branch name by default
+ifndef EXENAME
+branch:=$(shell git symbolic-ref -q --short HEAD)
+
+# not a detached HEAD
+ifdef branch
+exe:=$(exe)_$(branch)
+endif
+
+endif
+
 # -DCOMPVERSION: flag to use comptime.h
 opts:=-DCOMPVERSION -g
 libs:=
@@ -236,7 +249,7 @@ bin:=../bin
 endif
 
 # default EXENAME (usually set by platform)
-EXENAME?=ringracers
+EXENAME?=$(exe)
 DBGNAME?=$(EXENAME).debug
 
 exe:=$(bin)/$(EXENAME)
