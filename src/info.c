@@ -391,6 +391,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SPHR", // Red Horizontal Spring
 	"SPHB", // Blue Horizontal Spring
 	"SPHG", // Grey Horizontal Spring
+	"POGS", // Pogo Spring
 	"BSTY", // Yellow Booster
 	"BSTR", // Red Booster
 
@@ -3073,11 +3074,11 @@ state_t states[NUMSTATES] =
 	{SPR_SPVG, 2, 4, {NULL}, 0, 0, S_GREYSPRING1},   // S_GREYSPRING4
 
 	// Orange Spring (Pogo)
-	{SPR_SPVB, 0, -1, {NULL}, 0, 0, S_NULL},         // S_POGOSPRING1
-	{SPR_SPVB, 1, 1, {A_Pain}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2
-	{SPR_SPVB, 1, 1, {A_PlaySeeSound}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2B
-	{SPR_SPVB, 0, 1, {NULL}, 0, 0, S_POGOSPRING4},   // S_POGOSPRING3
-	{SPR_SPVB, 2, 4, {NULL}, 0, 0, S_POGOSPRING1},   // S_POGOSPRING4
+	{SPR_POGS, 0, -1, {NULL}, 0, 0, S_NULL},         // S_POGOSPRING1
+	{SPR_POGS, 1, 2, {A_Pain}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2
+	{SPR_POGS, 1, 2, {A_PlaySeeSound}, 0, 0, S_POGOSPRING3}, // S_POGOSPRING2B
+	{SPR_POGS, 0, 1, {NULL}, 0, 0, S_POGOSPRING4},   // S_POGOSPRING3
+	{SPR_POGS, 2, 4, {NULL}, 0, 0, S_POGOSPRING1},   // S_POGOSPRING4
 
 	// Yellow Diagonal Spring
 	{SPR_SPDY, 0, -1, {NULL}, 0, 0, S_NULL},    // S_YDIAG1

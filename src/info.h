@@ -937,6 +937,7 @@ typedef enum sprite
 	SPR_SPHR, // Red Horizontal Spring
 	SPR_SPHB, // Blue Horizontal Spring
 	SPR_SPHG, // Grey Horizontal Spring
+	SPR_POGS, // Pogo Spring
 	SPR_BSTY, // Yellow Booster
 	SPR_BSTR, // Red Booster
 
