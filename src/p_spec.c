@@ -1968,7 +1968,7 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				if (player->laps > 1)
 				{
-				// save best lap for record attack
+					// save best lap for record attack
 					if (modeattacking && player == &players[consoleplayer])
 					{
 						if (curlap < bestlap || bestlap == 0)
@@ -1979,9 +1979,11 @@ static void K_HandleLapIncrement(player_t *player)
 						curlap = 0;
 					}
 
-					// Update power levels for this lap.
-					K_UpdatePowerLevels(player);
+
 				}
+
+				// Update power levels for this lap.
+				K_UpdatePowerLevels(player);
 
 				player->latestlap = player->laps;
 			}

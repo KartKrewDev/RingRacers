@@ -24,7 +24,7 @@ typedef enum
 } pwrlv_type_t;
 
 #define PWRLVRECORD_START 1000
-#define PWRLVRECORD_DEF 5000
+#define PWRLVRECORD_MEDIAN 5000
 #define PWRLVRECORD_MIN 1
 #define PWRLVRECORD_MAX 9999
 
@@ -39,6 +39,7 @@ extern UINT8 spectateGriefed;
 SINT8 K_UsingPowerLevels(void);
 void K_ClearClientPowerLevels(void);
 INT16 K_CalculatePowerLevelInc(INT16 diff);
+INT16 K_PowerLevelPlacementScore(player_t *player);
 INT16 K_CalculatePowerLevelAvg(void);
 void K_UpdatePowerLevels(player_t *player);
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment);

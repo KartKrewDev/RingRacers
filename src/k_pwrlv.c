@@ -87,7 +87,7 @@ INT16 K_CalculatePowerLevelInc(INT16 diff)
 		diff = -MAXDIFF;
 #undef MAXDIFF
 
-	x = ((diff-2)<<FRACBITS) / PWRLVRECORD_START;
+	x = ((diff-2)<<FRACBITS) / PWRLVRECORD_MEDIAN;
 
 	for (j = 3; j < 10; j++) // Just skipping to 3 since 0 thru 2 will always just add 0...
 	{
@@ -112,6 +112,23 @@ INT16 K_CalculatePowerLevelInc(INT16 diff)
 	}
 
 	return (INT16)(increment >> FRACBITS);
+}
+
+INT16 K_PowerLevelPlacementScore(player_t *player)
+{
+	if ((player->pflags & PF_NOCONTEST) || (player->spectator))
+	{
+		return 0;
+	}
+
+	if (gametyperules & GTR_CIRCUIT)
+	{
+		return MAXPLAYERS - player->position;
+	}
+	else
+	{
+		return player->score;
+	}
 }
 
 INT16 K_CalculatePowerLevelAvg(void)
@@ -186,7 +203,9 @@ void K_UpdatePowerLevels(player_t *player)
 		return;
 	}
 
-	CONS_Printf("Power Level Gain for player %d:\n", playerNum);
+	CONS_Printf("\n========\n");
+	CONS_Printf("* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], player->latestlap);
+	CONS_Printf("========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
 	if (yourPower == 0)
@@ -195,21 +214,16 @@ void K_UpdatePowerLevels(player_t *player)
 		return;
 	}
 
-	CONS_Printf("Player %d's PWR.LV: %d\n", playerNum, yourPower);
+	CONS_Printf("%s's PWR.LV: %d\n", player_names[playerNum], yourPower);
 
-	if (gametyperules & GTR_CIRCUIT)
-	{
-		yourScore = MAXPLAYERS - player->position;
-	}
-	else
-	{
-		yourScore = player->score;
-	}
+	yourScore = K_PowerLevelPlacementScore(player);
+	CONS_Printf("%s's gametype score: %d\n", player_names[playerNum], yourScore);
 
+	CONS_Printf("========\n");
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT16 theirScore = 0;
-		INT16 theirPower = PWRLVRECORD_DEF;
+		INT16 theirPower = 0;
 
 		INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
 		INT16 inc = 0; // Total pt increment
@@ -226,7 +240,7 @@ void K_UpdatePowerLevels(player_t *player)
 			continue;
 		}
 
-		CONS_Printf("Player %d VS Player %d:\n", playerNum, i);
+		CONS_Printf("%s VS %s:\n", player_names[playerNum], player_names[i]);
 
 		theirPower = clientpowerlevels[i][powerType];
 		if (theirPower == 0)
@@ -235,16 +249,10 @@ void K_UpdatePowerLevels(player_t *player)
 			continue;
 		}
 
-		CONS_Printf("Player %d's PWR.LV: %d\n", i, theirPower);
+		CONS_Printf("%s's PWR.LV: %d\n", player_names[i], theirPower);
 
-		if (gametyperules & GTR_CIRCUIT)
-		{
-			theirScore = MAXPLAYERS - players[i].position;
-		}
-		else
-		{
-			theirScore = players[i].score;
-		}
+		theirScore = K_PowerLevelPlacementScore(&players[i]);
+		CONS_Printf("%s's gametype score: %d\n", player_names[i], theirScore);
 
 		if (yourScore == theirScore) // Tie -- neither get any points for this match up.
 		{
@@ -258,20 +266,37 @@ void K_UpdatePowerLevels(player_t *player)
 		{
 			diff = theirPower - yourPower;
 			inc += K_CalculatePowerLevelInc(diff);
-			CONS_Printf("WON! Diff is %d, total increment is %d\n", diff, inc);
+			CONS_Printf("WON! Diff is %d, increment is %d\n", diff, inc);
 		}
 		else // This player lost...
 		{
 			diff = yourPower - theirPower;
 			inc -= K_CalculatePowerLevelInc(diff);
-			CONS_Printf("LOST... Diff is %d, total increment is %d\n", diff, inc);
+			CONS_Printf("LOST... Diff is %d, increment is %d\n", diff, inc);
 		}
 
 		if (exitBonus == false)
 		{
-			CONS_Printf("Reduced (%d / %d = %d) because it's not the end of the race\n", inc, numlaps, inc/numlaps);
+			INT16 prevInc = inc;
+
 			inc /= numlaps;
+
+			if (inc == 0)
+			{
+				if (prevInc > 0)
+				{
+					inc = 1;
+				}
+				else if (prevInc < 0)
+				{
+					inc = -1;
+				}
+			}
+
+			CONS_Printf("Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
 		}
+
+		CONS_Printf("========\n");
 
 		if (inc == 0)
 		{
@@ -279,18 +304,32 @@ void K_UpdatePowerLevels(player_t *player)
 			continue;
 		}
 
-		CONS_Printf("Total Result: Increment of %d.\n", inc);
+		CONS_Printf("Total Result:\n");
+		CONS_Printf("Increment: %d\n", inc);
 
+		CONS_Printf("%s current: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
 		clientPowerAdd[playerNum] += inc;
+		CONS_Printf("%s final: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
+
+		CONS_Printf("%s current: %d\n", player_names[i], clientPowerAdd[i]);
 		clientPowerAdd[i] -= inc;
+		CONS_Printf("%s final: %d\n", player_names[i], clientPowerAdd[i]);
+
+		CONS_Printf("========\n");
 	}
 }
 
-INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment)
+INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 {
-	INT16 inc = increment;
+	INT16 inc = baseInc;
 	UINT8 numPlayers = 0;
 	UINT8 i;
+
+	if (yourPower == 0)
+	{
+		// Guests don't record power level changes.
+		return 0;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -315,6 +354,18 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment)
 			// You trade points in 1v1s,
 			// but is more lenient in bigger lobbies.
 			inc /= max(1, numPlayers-1);
+
+			if (inc == 0)
+			{
+				if (baseInc > 0)
+				{
+					inc = 1;
+				}
+				else if (baseInc < 0)
+				{
+					inc = -1;
+				}
+			}
 		}
 	}
 
@@ -336,14 +387,20 @@ void K_CashInPowerLevels(void)
 	SINT8 powerType = K_UsingPowerLevels();
 	UINT8 i;
 
+	CONS_Printf("\n========\n");
+	CONS_Printf("Cashing in power level changes...\n");
+	CONS_Printf("========\n");
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (powerType != PWRLV_DISABLED)
+		if (powerType != PWRLV_DISABLED && playeringame[i])
 		{
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
 			clientpowerlevels[i][powerType] += inc;
 
-			if (!demo.playback && i == consoleplayer)
+			CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
+
+			if (!demo.playback && i == consoleplayer && inc != 0)
 			{
 				vspowerlevel[powerType] = clientpowerlevels[i][powerType];
 
@@ -358,6 +415,8 @@ void K_CashInPowerLevels(void)
 
 		clientPowerAdd[i] = 0;
 	}
+
+	CONS_Printf("========\n");
 }
 
 void K_SetPowerLevelScrambles(SINT8 powertype)
@@ -489,8 +548,8 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 {
 	UINT8 p = 0;
 	INT32 powertype = PWRLV_DISABLED;
-	UINT16 yourpower = PWRLVRECORD_DEF;
-	UINT16 theirpower = PWRLVRECORD_DEF;
+	UINT16 yourpower = PWRLVRECORD_MEDIAN;
+	UINT16 theirpower = PWRLVRECORD_MEDIAN;
 	INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
 	INT16 inc = 0;
 	UINT8 lapsLeft = 0;
