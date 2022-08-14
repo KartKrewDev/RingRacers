@@ -279,7 +279,7 @@ void K_UpdatePowerLevels(player_t *player)
 		{
 			INT16 prevInc = inc;
 
-			inc /= numlaps;
+			inc /= max(numlaps-1, 1);
 
 			if (inc == 0)
 			{
