@@ -1917,14 +1917,6 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
-
-				// save best lap for record attack
-				if (player == &players[consoleplayer])
-				{
-					if (curlap < bestlap || bestlap == 0)
-						bestlap = curlap;
-					curlap = 0;
-				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -1938,18 +1930,18 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
+			if (netgame && player->laps >= numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 			player->starpostnum = 0;
 
 			if (P_IsDisplayPlayer(player))
 			{
-				if (player->laps == (UINT8)(cv_numlaps.value)) // final lap
+				if (player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
-				else if ((player->laps > 1) && (player->laps < (UINT8)(cv_numlaps.value))) // non-final lap
+				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
-				else if (player->laps > (UINT8)(cv_numlaps.value))
+				else if (player->laps > numlaps)
 				{
 					// finished
 					S_StartSound(NULL, sfx_s3k6a);
@@ -1958,7 +1950,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->position == 1))
+				if ((player->laps > numlaps) && (player->position == 1))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -1966,10 +1958,32 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			// finished race exit setup
-			if (player->laps > (unsigned)cv_numlaps.value)
+			if (player->laps > numlaps)
 			{
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
+			}
+
+			if (player->laps > player->latestlap)
+			{
+				if (player->laps > 1)
+				{
+				// save best lap for record attack
+					if (modeattacking && player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+						{
+							bestlap = curlap;
+						}
+
+						curlap = 0;
+					}
+
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player);
+				}
+
+				player->latestlap = player->laps;
 			}
 
 			thwompsactive = true; // Lap 2 effects

@@ -873,7 +873,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if ((gametyperules & GTR_CIRCUIT) && player->laps >= (UINT8)(cv_numlaps.value))
+			if ((gametyperules & GTR_CIRCUIT) && player->laps >= numlaps)
 				S_SpeedMusic(1.2f);
 #endif
 			if (mapmusresume && cv_resume.value)
@@ -3851,6 +3851,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
+	K_UpdatePowerLevels(player);
 
 	if (G_GametypeUsesLives())
 	{

@@ -28,6 +28,9 @@
 
 //#define VIEWHEIGHTS "41"
 
+// Maximum laps per map.
+#define MAX_LAPS 99
+
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 

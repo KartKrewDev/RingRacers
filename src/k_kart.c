@@ -8261,7 +8261,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 				// distance calculation to work easily
 				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
 				{
-					const UINT8 numfulllapsleft = ((UINT8)cv_numlaps.value - player->laps);
+					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
 
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
 

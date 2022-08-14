@@ -214,7 +214,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 {
 	INT32 i, j;
 	boolean completed[MAXPLAYERS];
-	INT32 numplayersingame = 0, numgriefers = 0;
+	INT32 numplayersingame = 0;
 
 	// Initialize variables
 	if (rankingsmode > 1)
@@ -273,9 +273,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	{
 		data.val[i] = UINT32_MAX;
 
-		if (nospectategrief[i] != -1)
-			numgriefers++;
-
 		if (!playeringame[i] || players[i].spectator)
 		{
 			data.increase[i] = INT16_MIN;
@@ -324,10 +321,10 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		{
 			if ((powertype == PWRLV_DISABLED)
 				&& !(players[i].pflags & PF_NOCONTEST)
-				&& (data.pos[data.numplayers] < (numplayersingame + numgriefers)))
+				&& (data.pos[data.numplayers] < (numplayersingame + spectateGriefed)))
 			{
 				// Online rank is handled further below in this file.
-				data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], numplayersingame + numgriefers);
+				data.increase[i] = K_CalculateGPRankPoints(data.pos[data.numplayers], numplayersingame + spectateGriefed);
 				players[i].score += data.increase[i];
 			}
 
@@ -890,157 +887,6 @@ void Y_Ticker(void)
 	}
 }
 
-static void K_UpdatePowerLevels(void)
-{
-	INT32 i, j;
-	INT32 numplayersingame = 0, numgriefers = 0;
-	INT16 increment[MAXPLAYERS];
-
-	// Compare every single player against each other for power level increases.
-	// Every player you won against gives you more points, and vice versa.
-	// The amount of points won per match-up depends on the difference between the loser's power and the winner's power.
-	// See K_CalculatePowerLevelInc for more info.
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		increment[i] = 0;
-
-		if (nospectategrief[i] != -1)
-			numgriefers++;
-
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-
-		numplayersingame++;
-	}
-
-	for (i = 0; i < numplayersingame; i++)
-	{
-		UINT16 yourpower = PWRLVRECORD_DEF;
-		UINT16 theirpower = PWRLVRECORD_DEF;
-		INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
-		INT16 inc = 0; // Total pt increment
-		UINT8 ipnum = data.num[i];
-		UINT8 jpnum;
-
-		CONS_Debug(DBG_GAMELOGIC, "Power Level Gain for player %d:\n", ipnum);
-
-		if (clientpowerlevels[ipnum][powertype] == 0) // splitscreen guests don't record power level changes
-			continue;
-		yourpower = clientpowerlevels[ipnum][powertype];
-
-		CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", ipnum, yourpower);
-
-		for (j = 0; j < numplayersingame; j++)
-		{
-			boolean won = false;
-
-			jpnum = data.num[j];
-
-			if (i == j || ipnum == jpnum) // Same person
-				continue;
-
-			CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d:\n", ipnum, jpnum);
-
-			if (data.val[i] == data.val[j]) // Tie -- neither get any points for this match up.
-			{
-				CONS_Debug(DBG_GAMELOGIC, "TIE, no change.\n");
-				continue;
-			}
-
-			if (clientpowerlevels[jpnum][powertype] == 0) // No power level (splitscreen guests, bots)
-				continue;
-
-			theirpower = clientpowerlevels[jpnum][powertype];
-
-			CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
-
-			if ((gametyperules & GTR_CIRCUIT))
-			{
-				if (data.val[i] < data.val[j])
-					won = true;
-			}
-			else
-			{
-				if (data.val[i] > data.val[j])
-					won = true;
-			}
-
-			if (won) // This player won!
-			{
-				diff = theirpower - yourpower;
-				inc += K_CalculatePowerLevelInc(diff);
-				CONS_Debug(DBG_GAMELOGIC, "WON! Diff is %d, total increment is %d\n", diff, inc);
-			}
-			else // This player lost...
-			{
-				diff = yourpower - theirpower;
-				inc -= K_CalculatePowerLevelInc(diff);
-				CONS_Debug(DBG_GAMELOGIC, "LOST... Diff is %d, total increment is %d\n", diff, inc);
-			}
-		}
-
-		if (numgriefers != 0) // Automatic win against quitters.
-		{
-			for (jpnum = 0; jpnum < MAXPLAYERS; jpnum++)
-			{
-				if (nospectategrief[jpnum] == -1) // Empty slot
-					continue;
-
-				if (ipnum == jpnum) // Same person
-					continue;
-
-				CONS_Debug(DBG_GAMELOGIC, "Player %d VS Player %d (griefer):\n", ipnum, jpnum);
-
-				if (nospectategrief[jpnum] == 0) // No power level (splitscreen guests, bots)
-					continue;
-
-				theirpower = nospectategrief[jpnum];
-
-				CONS_Debug(DBG_GAMELOGIC, "Player %d's PWR.LV: %d\n", jpnum, theirpower);
-
-				diff = theirpower - yourpower;
-				inc += K_CalculatePowerLevelInc(diff);
-				CONS_Debug(DBG_GAMELOGIC, "AUTO-WON! Diff is %d, total increment is %d\n", diff, inc);
-			}
-		}
-
-		if (inc == 0)
-		{
-			data.increase[ipnum] = INT16_MIN;
-			CONS_Debug(DBG_GAMELOGIC, "Total Result: No increment, no change.\n");
-			continue;
-		}
-
-		if (yourpower + inc > PWRLVRECORD_MAX)
-			inc -= ((yourpower + inc) - PWRLVRECORD_MAX);
-		if (yourpower + inc < PWRLVRECORD_MIN)
-			inc -= ((yourpower + inc) - PWRLVRECORD_MIN);
-
-		CONS_Debug(DBG_GAMELOGIC, "Total Result: Increment of %d.\n", inc);
-		increment[ipnum] = inc;
-	}
-
-	CONS_Debug(DBG_GAMELOGIC, "Setting final power levels...\n");
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (increment[i] == 0)
-			continue;
-
-		data.increase[i] = increment[i];
-		clientpowerlevels[i][powertype] += data.increase[i];
-
-		if (!demo.playback && i == consoleplayer)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "Player %d is you! Saving...\n", i);
-			vspowerlevel[powertype] = clientpowerlevels[i][powertype];
-			if (M_UpdateUnlockablesAndExtraEmblems())
-				S_StartSound(NULL, sfx_ncitem);
-			G_SaveGameData();
-		}
-	}
-}
-
 //
 // Y_DetermineIntermissionType
 //
@@ -1121,7 +967,7 @@ void Y_StartIntermission(void)
 	//if (dedicated) return;
 
 	// This should always exist, but just in case...
-	if(!mapheaderinfo[prevmap])
+	if (!mapheaderinfo[prevmap])
 		P_AllocMapHeader(prevmap);
 
 	switch (intertype)
@@ -1157,7 +1003,18 @@ void Y_StartIntermission(void)
 
 	if (powertype != PWRLV_DISABLED)
 	{
-		K_UpdatePowerLevels();
+		for (i = 0; i < nump; i++)
+		{
+			// Kind of a hack to do this here,
+			// but couldn't think of a better way.
+			data.increase[i] = K_FinalPowerIncrement(
+				&players[data.num[i]],
+				clientpowerlevels[data.num[i]][powertype],
+				clientPowerAdd[data.num[i]]
+			);
+		}
+
+		K_CashInPowerLevels();
 	}
 
 	//if (intertype == int_race || intertype == int_battle)

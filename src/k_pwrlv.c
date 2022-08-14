@@ -1,5 +1,12 @@
-/// \file  k_pwrlv.c
-/// \brief SRB2Kart Power Levels
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2018-2022 by Sally Cochenour
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+// \brief Power Level system
 
 #include "k_pwrlv.h"
 #include "d_netcmd.h"
@@ -19,9 +26,12 @@ UINT16 vspowerlevel[PWRLV_NUMTYPES];
 // This is done so that clients will never be able to hack someone else's score over the server.
 UINT16 clientpowerlevels[MAXPLAYERS][PWRLV_NUMTYPES];
 
-// Which players spec-scummed, and their power level before scumming.
-// On race finish, everyone is considered to have "won" against these people.
-INT16 nospectategrief[MAXPLAYERS];
+// Total calculated power add during the match,
+// totalled at the end of the round.
+INT16 clientPowerAdd[MAXPLAYERS];
+
+// Players who spectated mid-race
+UINT8 spectateGriefed = 0;
 
 // Game setting scrambles based on server Power Level
 SINT8 speedscramble = -1;
@@ -52,8 +62,14 @@ void K_ClearClientPowerLevels(void)
 {
 	UINT8 i, j;
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		clientPowerAdd[i] = 0;
+
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
 			clientpowerlevels[i][j] = 0;
+		}
+	}
 }
 
 // Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating
@@ -143,7 +159,206 @@ INT16 K_CalculatePowerLevelAvg(void)
 	return (INT16)(avg >> FRACBITS);
 }
 
-// -- K_UpdatePowerLevels could not be moved here due to usage of y_data, unfortunately. --
+void K_UpdatePowerLevels(player_t *player)
+{
+	const UINT8 playerNum = player - players;
+	const boolean exitBonus = ((player->laps > numlaps) || (player->pflags & PF_NOCONTEST));
+
+	SINT8 powerType = K_UsingPowerLevels();
+
+	INT16 yourScore = 0;
+	UINT16 yourPower = 0;
+
+	UINT8 i;
+
+	// Compare every single player against each other for power level increases.
+	// Every player you won against gives you more points, and vice versa.
+	// The amount of points won per match-up depends on the difference between the loser's power and the winner's power.
+	// See K_CalculatePowerLevelInc for more info.
+
+	if (powerType == PWRLV_DISABLED)
+	{
+		return;
+	}
+
+	if (!playeringame[playerNum] || player->spectator)
+	{
+		return;
+	}
+
+	CONS_Printf("Power Level Gain for player %d:\n", playerNum);
+
+	yourPower = clientpowerlevels[playerNum][powerType];
+	if (yourPower == 0)
+	{
+		// Guests don't record power level changes.
+		return;
+	}
+
+	CONS_Printf("Player %d's PWR.LV: %d\n", playerNum, yourPower);
+
+	if (gametyperules & GTR_CIRCUIT)
+	{
+		yourScore = MAXPLAYERS - player->position;
+	}
+	else
+	{
+		yourScore = player->score;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		UINT16 theirScore = 0;
+		INT16 theirPower = PWRLVRECORD_DEF;
+
+		INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
+		INT16 inc = 0; // Total pt increment
+
+		boolean won = false;
+
+		if (i == playerNum) // Same person
+		{
+			continue;
+		}
+
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		CONS_Printf("Player %d VS Player %d:\n", playerNum, i);
+
+		theirPower = clientpowerlevels[i][powerType];
+		if (theirPower == 0)
+		{
+			// No power level (splitscreen guests, bots)
+			continue;
+		}
+
+		CONS_Printf("Player %d's PWR.LV: %d\n", i, theirPower);
+
+		if (gametyperules & GTR_CIRCUIT)
+		{
+			theirScore = MAXPLAYERS - players[i].position;
+		}
+		else
+		{
+			theirScore = players[i].score;
+		}
+
+		if (yourScore == theirScore) // Tie -- neither get any points for this match up.
+		{
+			CONS_Printf("TIE, no change.\n");
+			continue;
+		}
+
+		won = (yourScore > theirScore);
+
+		if (won) // This player won!
+		{
+			diff = theirPower - yourPower;
+			inc += K_CalculatePowerLevelInc(diff);
+			CONS_Printf("WON! Diff is %d, total increment is %d\n", diff, inc);
+		}
+		else // This player lost...
+		{
+			diff = yourPower - theirPower;
+			inc -= K_CalculatePowerLevelInc(diff);
+			CONS_Printf("LOST... Diff is %d, total increment is %d\n", diff, inc);
+		}
+
+		if (exitBonus == false)
+		{
+			CONS_Printf("Reduced (%d / %d = %d) because it's not the end of the race\n", inc, numlaps, inc/numlaps);
+			inc /= numlaps;
+		}
+
+		if (inc == 0)
+		{
+			CONS_Printf("Total Result: No increment, no change.\n");
+			continue;
+		}
+
+		CONS_Printf("Total Result: Increment of %d.\n", inc);
+
+		clientPowerAdd[playerNum] += inc;
+		clientPowerAdd[i] -= inc;
+	}
+}
+
+INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment)
+{
+	INT16 inc = increment;
+	UINT8 numPlayers = 0;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		numPlayers++;
+	}
+
+	if (inc <= 0)
+	{
+		if (player->position == 1)
+		{
+			// Won the whole match?
+			// Get at least one point.
+			inc = 1;
+		}
+		else
+		{
+			// You trade points in 1v1s,
+			// but is more lenient in bigger lobbies.
+			inc /= max(1, numPlayers-1);
+		}
+	}
+
+	if (yourPower + inc > PWRLVRECORD_MAX)
+	{
+		inc -= ((yourPower + inc) - PWRLVRECORD_MAX);
+	}
+
+	if (yourPower + inc < PWRLVRECORD_MIN)
+	{
+		inc -= ((yourPower + inc) - PWRLVRECORD_MIN);
+	}
+
+	return inc;
+}
+
+void K_CashInPowerLevels(void)
+{
+	SINT8 powerType = K_UsingPowerLevels();
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (powerType != PWRLV_DISABLED)
+		{
+			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
+			clientpowerlevels[i][powerType] += inc;
+
+			if (!demo.playback && i == consoleplayer)
+			{
+				vspowerlevel[powerType] = clientpowerlevels[i][powerType];
+
+				if (M_UpdateUnlockablesAndExtraEmblems())
+				{
+					S_StartSound(NULL, sfx_ncitem);
+				}
+
+				G_SaveGameData();
+			}
+		}
+
+		clientPowerAdd[i] = 0;
+	}
+}
 
 void K_SetPowerLevelScrambles(SINT8 powertype)
 {
@@ -227,7 +442,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				{
 					case 5:
 						speed = KARTSPEED_HARD;
-						encore = true;
+						encore = P_RandomChance(FRACUNIT>>1);
 						break;
 					case 4:
 						speed = P_RandomChance((7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
@@ -238,7 +453,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 						encore = P_RandomChance(FRACUNIT>>2);
 						break;
 					case 2:
-						speed = 1;
+						speed = KARTSPEED_NORMAL;
 						encore = P_RandomChance(FRACUNIT>>3);
 						break;
 					case 1: default:
@@ -254,7 +469,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				CONS_Debug(DBG_GAMELOGIC, "Rolled speed: %d\n", speed);
 				CONS_Debug(DBG_GAMELOGIC, "Rolled encore: %s\n", (encore ? "true" : "false"));
 
-				if (cv_kartspeed.value == -1)
+				if (cv_kartspeed.value == KARTSPEED_AUTO)
 					speedscramble = speed;
 				else
 					speedscramble = -1;
@@ -278,14 +493,11 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	UINT16 theirpower = PWRLVRECORD_DEF;
 	INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
 	INT16 inc = 0;
+	UINT8 lapsLeft = 0;
 	UINT8 i;
 
 	// power level & spectating is netgames only
 	if (!netgame)
-		return;
-
-	// This server isn't using power levels anyway!
-	if (!cv_kartusepwrlv.value)
 		return;
 
 	// Hey, I just got here!
@@ -296,14 +508,25 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 	if (gamestate != GS_LEVEL || leveltime <= starttime+(20*TICRATE))
 		return;
 
+	spectateGriefed++;
+
+	// This server isn't using power levels, so don't mess with them.
+	if (!cv_kartusepwrlv.value)
+		return;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && !players[i].spectator)
+		if ((playeringame[i] && !players[i].spectator)
+			|| (i == playernum))
+		{
 			p++;
+		}
 	}
 
 	if (p < 2) // no players
+	{
 		return;
+	}
 
 	if ((gametyperules & GTR_CIRCUIT))
 		powertype = PWRLV_RACE;
@@ -317,14 +540,12 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 		return;
 	yourpower = clientpowerlevels[playernum][powertype];
 
-	// Set up the point compensation.
-	nospectategrief[playernum] = yourpower;
-
-	if (!pointloss) // This is set for stuff like sync-outs, which shouldn't be so harsh on the victim!
-		return;
+	lapsLeft = (numlaps - players[playernum].latestlap);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		INT16 thisInc = 0;
+
 		if (i == playernum)
 			continue;
 
@@ -334,24 +555,40 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 		theirpower = clientpowerlevels[i][powertype];
 
 		diff = yourpower - theirpower;
-		inc -= K_CalculatePowerLevelInc(diff);
+		thisInc = K_CalculatePowerLevelInc(diff);
+
+		if (thisInc == 0)
+		{
+			continue;
+		}
+
+		thisInc *= lapsLeft;
+		clientPowerAdd[i] += thisInc;
+		inc -= thisInc;
 	}
 
-	if (inc == 0) // No change.
+	if (inc >= 0)
+	{
+		// No change. Also don't award points.
 		return;
+	}
 
-	if (yourpower + inc > PWRLVRECORD_MAX) // I mean... we're subtracting... but y'know how it is :V
+	if (yourpower + inc > PWRLVRECORD_MAX) // I mean... we're always subtracting... but y'know how it is :V
 		inc -= ((yourpower + inc) - PWRLVRECORD_MAX);
 	if (yourpower + inc < PWRLVRECORD_MIN)
 		inc -= ((yourpower + inc) - PWRLVRECORD_MIN);
 
-	clientpowerlevels[playernum][powertype] += inc;
-
-	if (!demo.playback && playernum == consoleplayer)
+	// pointloss isn't set for stuff like sync-outs,
+	// which shouldn't be so harsh on the victim!
+	if (!demo.playback && pointloss == true && playernum == consoleplayer)
 	{
-		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype];
+		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype] + inc;
+
 		if (M_UpdateUnlockablesAndExtraEmblems())
+		{
 			S_StartSound(NULL, sfx_ncitem);
-		G_SaveGameData(); // save your punishment!
+		}
+
+		G_SaveGameData();
 	}
 }
