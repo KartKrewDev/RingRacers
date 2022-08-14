@@ -1003,14 +1003,14 @@ void Y_StartIntermission(void)
 
 	if (powertype != PWRLV_DISABLED)
 	{
-		for (i = 0; i < data.numplayers; i++)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			// Kind of a hack to do this here,
 			// but couldn't think of a better way.
-			data.increase[i] = -K_FinalPowerIncrement(
-				&players[data.num[i]],
-				clientpowerlevels[data.num[i]][powertype],
-				clientPowerAdd[data.num[i]]
+			data.increase[i] = K_FinalPowerIncrement(
+				&players[i],
+				clientpowerlevels[i][powertype],
+				clientPowerAdd[i]
 			);
 		}
 

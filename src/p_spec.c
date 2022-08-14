@@ -1979,11 +1979,9 @@ static void K_HandleLapIncrement(player_t *player)
 						curlap = 0;
 					}
 
-
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player, player->laps, false);
 				}
-
-				// Update power levels for this lap.
-				K_UpdatePowerLevels(player);
 
 				player->latestlap = player->laps;
 			}

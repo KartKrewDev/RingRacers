@@ -176,10 +176,10 @@ INT16 K_CalculatePowerLevelAvg(void)
 	return (INT16)(avg >> FRACBITS);
 }
 
-void K_UpdatePowerLevels(player_t *player)
+void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 {
 	const UINT8 playerNum = player - players;
-	const boolean exitBonus = ((player->laps > numlaps) || (player->pflags & PF_NOCONTEST));
+	const boolean exitBonus = ((lap > numlaps) || (player->pflags & PF_NOCONTEST));
 
 	SINT8 powerType = K_UsingPowerLevels();
 
@@ -204,7 +204,7 @@ void K_UpdatePowerLevels(player_t *player)
 	}
 
 	CONS_Printf("\n========\n");
-	CONS_Printf("* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], player->latestlap);
+	CONS_Printf("* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], lap);
 	CONS_Printf("========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
@@ -254,7 +254,7 @@ void K_UpdatePowerLevels(player_t *player)
 		theirScore = K_PowerLevelPlacementScore(&players[i]);
 		CONS_Printf("%s's gametype score: %d\n", player_names[i], theirScore);
 
-		if (yourScore == theirScore) // Tie -- neither get any points for this match up.
+		if (yourScore == theirScore && forfeit == false) // Tie -- neither get any points for this match up.
 		{
 			CONS_Printf("TIE, no change.\n");
 			continue;
@@ -262,7 +262,7 @@ void K_UpdatePowerLevels(player_t *player)
 
 		won = (yourScore > theirScore);
 
-		if (won) // This player won!
+		if (won == true && forfeit == false) // This player won!
 		{
 			diff = theirPower - yourPower;
 			inc += K_CalculatePowerLevelInc(diff);
@@ -393,7 +393,7 @@ void K_CashInPowerLevels(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (powerType != PWRLV_DISABLED && playeringame[i])
+		if (playeringame[i] == true && powerType != PWRLV_DISABLED)
 		{
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
 			clientpowerlevels[i][powerType] += inc;
@@ -544,39 +544,47 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 	}
 }
 
-void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
+void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 {
 	UINT8 p = 0;
-	INT32 powertype = PWRLV_DISABLED;
-	UINT16 yourpower = PWRLVRECORD_MEDIAN;
-	UINT16 theirpower = PWRLVRECORD_MEDIAN;
-	INT16 diff = 0; // Loser PWR.LV - Winner PWR.LV
+
+	SINT8 powerType = PWRLV_DISABLED;
+	UINT16 yourPower = 0;
 	INT16 inc = 0;
-	UINT8 lapsLeft = 0;
+
+	INT16 lapsLeft = 0;
 	UINT8 i;
 
 	// power level & spectating is netgames only
 	if (!netgame)
+	{
 		return;
+	}
 
 	// Hey, I just got here!
-	if (players[playernum].jointime <= 1)
+	if (players[playerNum].jointime <= 1)
+	{
 		return;
+	}
 
-	// 20 sec into the match counts as a forfeit -- automatic loss against every other player in the match.
+	// 20 sec into a match counts as a forfeit -- automatic loss against every other player in the match.
 	if (gamestate != GS_LEVEL || leveltime <= starttime+(20*TICRATE))
+	{
 		return;
+	}
 
 	spectateGriefed++;
 
 	// This server isn't using power levels, so don't mess with them.
 	if (!cv_kartusepwrlv.value)
+	{
 		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if ((playeringame[i] && !players[i].spectator)
-			|| (i == playernum))
+			|| (i == playerNum))
 		{
 			p++;
 		}
@@ -587,61 +595,43 @@ void K_PlayerForfeit(UINT8 playernum, boolean pointloss)
 		return;
 	}
 
-	if ((gametyperules & GTR_CIRCUIT))
-		powertype = PWRLV_RACE;
-	else if ((gametyperules & GTR_BUMPERS))
-		powertype = PWRLV_BATTLE;
+	powerType = K_UsingPowerLevels();
 
-	if (powertype == PWRLV_DISABLED) // No power type?!
-		return;
-
-	if (clientpowerlevels[playernum][powertype] == 0) // splitscreen guests don't record power level changes
-		return;
-	yourpower = clientpowerlevels[playernum][powertype];
-
-	lapsLeft = (numlaps - players[playernum].latestlap);
-
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (powerType == PWRLV_DISABLED) // No power type?!
 	{
-		INT16 thisInc = 0;
-
-		if (i == playernum)
-			continue;
-
-		if (clientpowerlevels[i][powertype] == 0) // No power level (splitscreen guests, bots)
-			continue;
-
-		theirpower = clientpowerlevels[i][powertype];
-
-		diff = yourpower - theirpower;
-		thisInc = K_CalculatePowerLevelInc(diff);
-
-		if (thisInc == 0)
-		{
-			continue;
-		}
-
-		thisInc *= lapsLeft;
-		clientPowerAdd[i] += thisInc;
-		inc -= thisInc;
+		return;
 	}
+
+	yourPower = clientpowerlevels[playerNum][powerType];
+	if (yourPower == 0) // splitscreen guests don't record power level changes
+	{
+		return;
+	}
+
+	lapsLeft = (numlaps - players[playerNum].latestlap) + 1;
+	if (lapsLeft <= 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < lapsLeft; i++)
+	{
+		K_UpdatePowerLevels(&players[i], players[playerNum].latestlap + (i + 1), true);
+	}
+
+	inc = K_FinalPowerIncrement(&players[i], yourPower, clientPowerAdd[i]);
 
 	if (inc >= 0)
 	{
-		// No change. Also don't award points.
+		// Don't record no change or increases.
 		return;
 	}
 
-	if (yourpower + inc > PWRLVRECORD_MAX) // I mean... we're always subtracting... but y'know how it is :V
-		inc -= ((yourpower + inc) - PWRLVRECORD_MAX);
-	if (yourpower + inc < PWRLVRECORD_MIN)
-		inc -= ((yourpower + inc) - PWRLVRECORD_MIN);
-
-	// pointloss isn't set for stuff like sync-outs,
+	// pointLoss isn't set for stuff like sync-outs,
 	// which shouldn't be so harsh on the victim!
-	if (!demo.playback && pointloss == true && playernum == consoleplayer)
+	if (!demo.playback && pointLoss == true && playerNum == consoleplayer)
 	{
-		vspowerlevel[powertype] = clientpowerlevels[playernum][powertype] + inc;
+		vspowerlevel[powerType] = yourPower + inc;
 
 		if (M_UpdateUnlockablesAndExtraEmblems())
 		{
