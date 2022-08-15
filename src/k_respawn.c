@@ -278,6 +278,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.state = RESPAWNST_MOVE;
 
 	player->respawn.airtimer = player->airtime;
+	player->respawn.truedeath = false;
 }
 
 /*--------------------------------------------------
@@ -567,7 +568,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		lasersteps--;
 	}
 
-	if (lasersteps == 0) // Don't spawn them beyond the respawn point.
+	// Respawning after death: everything about the player
+	// is invisible
+	if (!player->respawn.truedeath && lasersteps == 0) // Don't spawn them beyond the respawn point.
 	{
 		mobj_t *lasermo = P_SpawnMobj(laser.x, laser.y, laser.z + (player->mo->height / 2), MT_DEZLASER);
 

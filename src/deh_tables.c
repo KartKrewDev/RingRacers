@@ -2541,6 +2541,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GREYSPRING3",
 	"S_GREYSPRING4",
 
+	// Orange Spring (Pogo)
+	"S_POGOSPRING1",
+	"S_POGOSPRING2",
+	"S_POGOSPRING2B",
+	"S_POGOSPRING3",
+	"S_POGOSPRING4",
+
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
@@ -4631,6 +4638,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_REDSPRING",
 	"MT_BLUESPRING",
 	"MT_GREYSPRING",
+	"MT_POGOSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
 	"MT_BLUEDIAG", // Blue Diagonal Spring
@@ -6740,6 +6748,11 @@ struct int_const_s const INT_CONST[] = {
 	{"SPOT_NONE",SPOT_NONE},
 	{"SPOT_WEAK",SPOT_WEAK},
 	{"SPOT_BUMP",SPOT_BUMP},
+
+	// precipeffect_t
+	{"PRECIPFX_THUNDER",PRECIPFX_THUNDER},
+	{"PRECIPFX_LIGHTNING",PRECIPFX_LIGHTNING},
+	{"PRECIPFX_WATERPARTICLES",PRECIPFX_WATERPARTICLES},
 
 	{NULL,0}
 };

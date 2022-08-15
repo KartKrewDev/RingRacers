@@ -1769,10 +1769,18 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(UINT8 newWeather)
+void P_SwitchWeather(preciptype_t newWeather)
 {
 	boolean purge = false;
 	mobjtype_t swap = MT_NULL;
+	INT32 oldEffects = precipprops[curWeather].effects;
+
+	if (newWeather >= precip_freeslot)
+	{
+		// Weather type invalid, set to no weather.
+		CONS_Debug(DBG_SETUP, "Weather ID %d out of bounds\n", newWeather);
+		newWeather = PRECIP_NONE;
+	}
 
 	if (precipprops[newWeather].type == MT_NULL)
 	{
@@ -1789,6 +1797,8 @@ void P_SwitchWeather(UINT8 newWeather)
 			swap = precipprops[newWeather].type;
 		}
 	}
+
+	curWeather = newWeather;
 
 	if (purge == true)
 	{
@@ -1844,14 +1854,22 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->sprite = precipmobj->state->sprite;
 			precipmobj->frame = precipmobj->state->frame;
 
-			precipmobj->momz = mobjinfo[swap].speed;
-			precipmobj->precipflags &= ~PCF_INVISIBLE;
+			precipmobj->momz = FixedMul(-mobjinfo[swap].speed, mapobjectscale);
+			precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_FLIP);
+
+			if (precipmobj->momz > 0)
+			{
+				precipmobj->precipflags |= PCF_FLIP;
+			}
+
+			if ((oldEffects & PRECIPFX_WATERPARTICLES) != (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES))
+			{
+				P_CalculatePrecipFloor(precipmobj);
+			}
 		}
 	}
 
-	curWeather = newWeather;
-
-	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+	if (swap == MT_NULL && precipprops[curWeather].type != MT_NULL)
 		P_SpawnPrecipitation();
 }
 
@@ -3641,7 +3659,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (delay <= 0 || !(leveltime % delay))
-						P_GivePlayerRings(mo->player, rings);
+					{
+						// No Climb: don't cap rings to 20
+						K_AwardPlayerRings(mo->player, rings,
+								(line->flags & ML_NOCLIMB) == ML_NOCLIMB);
+					}
 				}
 			}
 			break;
@@ -6955,6 +6977,12 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 
 	for (i = 0; i < numlines; i++)
 	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
 		switch (lines[i].special)
 		{
 			case 30: // Polyobj_Flag
@@ -6968,29 +6996,7 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 			case 32: // Polyobj_RotDisplace
 				PolyRotDisplace(&lines[i]);
 				break;
-		}
-	}
 
-	if (!fromnetsave)
-		P_RunLevelLoadExecutors();
-}
-
-/** Fuck ML_NONET
-  */
-void P_SpawnSpecialsAfterSlopes(void)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; ++i)
-	{
-		if (P_IsLineDisabled(&lines[i]))
-		{
-			/* remove the special so it can't even be found during the level */
-			lines[i].special = 0;
-		}
-
-		switch (lines[i].special)
-		{
 			case 80: // Raise tagged things by type to this FOF
 				{
 					mtag_t tag = Tag_FGet(&lines[i].tags);
@@ -7003,6 +7009,9 @@ void P_SpawnSpecialsAfterSlopes(void)
 				break;
 		}
 	}
+
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.

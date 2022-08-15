@@ -67,6 +67,7 @@ void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngle(mobj_t *mo);
 void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
+void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(player_t *t1, player_t *t2);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
@@ -91,6 +92,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 void K_PuntMine(mobj_t *mine, mobj_t *punter);
 void K_DoSneaker(player_t *player, INT32 type);
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound);
+void K_DoInvincibility(player_t *player, tic_t time);
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source);
 void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player, boolean keepshields);

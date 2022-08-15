@@ -13607,6 +13607,12 @@ void A_SPBChase(mobj_t *actor)
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
 				actor->tracer->player->pflags |= PF_RINGLOCK; // set ring lock
 
+				if (actor->tracer->hitlag)
+				{
+					// If the player is frozen through no fault of their own, the SPB should be too.
+					actor->hitlag = actor->tracer->hitlag;
+				}
+
 				if (!P_IsObjectOnGround(actor->tracer))
 				{
 					// In the air you have no control; basically don't hit unless you make a near complete stop

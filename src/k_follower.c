@@ -129,7 +129,6 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 	K_SetFollowerByNum(playernum, -1); // Not found, then set -1 (nothing) as our follower.
 }
 
-
 /*--------------------------------------------------
 	static void K_SetFollowerState(mobj_t *f, statenum_t state)
 
@@ -173,6 +172,35 @@ static void K_SetFollowerState(mobj_t *f, statenum_t state)
 	if (f->state->tics > 0)
 	{
 		f->tics++;
+	}
+}
+
+/*--------------------------------------------------
+	static void K_UpdateFollowerState(mobj_t *f, statenum_t state, followerstate_t type)
+
+		Sets a follower object's state & current state type tracker.
+		If the state tracker already matches, then this is ignored.
+
+	Input Arguments:-
+		f - The follower's mobj_t.
+		state - The state to set.
+		type - State type tracker.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_UpdateFollowerState(mobj_t *f, statenum_t state, followerstate_t type)
+{
+	if (f == NULL || P_MobjWasRemoved(f) == true)
+	{
+		// safety net
+		return;
+	}
+
+	if (f->extravalue1 != (INT32)type)
+	{
+		K_SetFollowerState(f, state);
+		f->extravalue1 = type;
 	}
 }
 
@@ -299,8 +327,9 @@ void K_HandleFollower(player_t *player)
 
 		// so let's spawn one!
 		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
-		K_SetFollowerState(player->follower, fl.idlestate);
-		P_SetTarget(&player->follower->target, player->mo);	// we need that to know when we need to disappear
+		K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
+
+		P_SetTarget(&player->follower->target, player->mo); // we need that to know when we need to disappear
 		P_InitAngle(player->follower, player->mo->angle);
 
 		// This is safe to only spawn it here, the follower is removed then respawned when switched.
@@ -314,16 +343,6 @@ void K_HandleFollower(player_t *player)
 			P_SetTarget(&player->follower->hnext->hnext, bmobj); // this seems absolutely stupid, I know, but this will make updating the momentums/flags of these a bit easier.
 			P_SetTarget(&bmobj->target, player->follower); // Ditto
 		}
-
-		player->follower->extravalue1 = 0; // extravalue1 is used to know what "state set" to use.
-		/*
-			0 = idle
-			1 = forwards
-			2 = hurt
-			3 = win
-			4 = lose
-			5 = hitconfirm (< this one uses ->movecount as timer to know when to end, and goes back to normal states afterwards, unless hurt)
-		*/
 	}
 	else // follower exists, woo!
 	{
@@ -430,16 +449,32 @@ void K_HandleFollower(player_t *player)
 			if (player->follower->z <= fh)
 			{
 				player->follower->z = fh;
-				if (player->follower->momz < 0)
+
+				if (!(player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz <= 0 && fl.bobamp != 0)
 				{
+					// Ground bounce
+					player->follower->momz = P_GetMobjZMovement(player->mo) + FixedMul(fl.bobamp, player->follower->scale);
+					player->follower->extravalue1 = FOLLOWERSTATE_RESET;
+				}
+				else if (player->follower->momz < 0)
+				{
+					// Ceiling clip
 					player->follower->momz = 0;
 				}
 			}
 			else if (player->follower->z >= ch)
 			{
 				player->follower->z = ch;
-				if (player->follower->momz > 0)
+
+				if ((player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz >= 0 && fl.bobamp != 0)
 				{
+					// Ground bounce
+					player->follower->momz = P_GetMobjZMovement(player->mo) - FixedMul(fl.bobamp, player->follower->scale);
+					player->follower->extravalue1 = FOLLOWERSTATE_RESET;
+				}
+				else if (player->follower->momz > 0)
+				{
+					// Ceiling clip
 					player->follower->momz = 0;
 				}
 			}
@@ -498,11 +533,7 @@ void K_HandleFollower(player_t *player)
 			// spin out
 			player->follower->angle = player->drawangle;
 
-			if (player->follower->extravalue1 != 2)
-			{
-				player->follower->extravalue1 = 2;
-				K_SetFollowerState(player->follower, fl.hurtstate);
-			}
+			K_UpdateFollowerState(player->follower, fl.hurtstate, FOLLOWERSTATE_HURT);
 
 			if (player->mo->health <= 0)
 			{
@@ -510,58 +541,32 @@ void K_HandleFollower(player_t *player)
 				player->follower->momz = player->mo->momz;
 			}
 		}
+		else if (player->exiting)
+		{
+			// win/ loss animations
+			if (K_IsPlayerLosing(player))
+			{
+				// L
+				K_UpdateFollowerState(player->follower, fl.losestate, FOLLOWERSTATE_LOSE);
+			}
+			else
+			{
+				// W
+				K_UpdateFollowerState(player->follower, fl.winstate, FOLLOWERSTATE_WIN);
+			}
+		}
 		else if (player->follower->movecount)
 		{
-			if (player->follower->extravalue1 != 5)
-			{
-				player->follower->extravalue1 = 5;
-				K_SetFollowerState(player->follower, fl.hitconfirmstate);
-			}
-
+			K_UpdateFollowerState(player->follower, fl.hitconfirmstate, FOLLOWERSTATE_HITCONFIRM);
 			player->follower->movecount--;
 		}
-		else if (player->speed > 10*player->mo->scale)	// animation for moving fast enough
+		else if (player->speed > 10*player->mo->scale) // animation for moving fast enough
 		{
-			if (player->follower->extravalue1 != 1)
-			{
-				player->follower->extravalue1 = 1;
-				K_SetFollowerState(player->follower, fl.followstate);
-			}
+			K_UpdateFollowerState(player->follower, fl.followstate, FOLLOWERSTATE_FOLLOW);
 		}
 		else
 		{
-			// animations when nearly still. This includes winning and losing.
-			if (player->follower->extravalue1 != 0)
-			{
-				if (player->exiting)
-				{
-					// win/ loss animations
-					if (K_IsPlayerLosing(player))
-					{
-						// L
-						if (player->follower->extravalue1 != 4)
-						{
-							player->follower->extravalue1 = 4;
-							K_SetFollowerState(player->follower, fl.losestate);
-						}
-					}
-					else
-					{
-						// W
-						if (player->follower->extravalue1 != 3)
-						{
-							player->follower->extravalue1 = 3;
-							K_SetFollowerState(player->follower, fl.winstate);
-						}
-					}
-				}
-				else
-				{
-					// normal standstill
-					player->follower->extravalue1 = 0;
-					K_SetFollowerState(player->follower, fl.idlestate);
-				}
-			}
+			K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
 		}
 	}
 }

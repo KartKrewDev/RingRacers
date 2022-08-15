@@ -163,6 +163,7 @@ static const struct {
 	{META_SPRITEINFO,   "spriteinfo_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
+	{META_PRECIPPROPS,  "precipprops_t"},
 
 	{META_TAGLIST,      "taglist"},
 

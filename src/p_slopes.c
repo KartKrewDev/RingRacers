@@ -78,7 +78,7 @@ void P_UpdateSlopeLightOffset(pslope_t *slope)
 	}
 	else
 	{
-		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->d.x), abs(slope->d.y)), ANGLE_90);
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->normal.y), abs(slope->normal.x)), ANGLE_90);
 	}
 
 	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.

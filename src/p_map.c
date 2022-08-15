@@ -263,9 +263,6 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	if (P_IsLineTripWire(ld))
-		return true;
-
 	switch (ld->special)
 	{
 		case 2001: // Finish line
@@ -301,6 +298,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
 	fixed_t savemomx = 0;
 	fixed_t savemomy = 0;
+	statenum_t raisestate = spring->info->raisestate;
 
 	// Object was already sprung this tic
 	if (object->eflags & MFE_SPRUNG)
@@ -412,8 +410,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	// Re-solidify
 	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
 
-	P_SetMobjState(spring, spring->info->raisestate);
-
 	if (object->player)
 	{
 		if (spring->flags & MF_ENEMY) // Spring shells
@@ -444,7 +440,36 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			object->player->tiregrease = greasetics;
 		}
+
+		if (spring->type == MT_POGOSPRING)
+		{
+			if (spring->reactiontime == 0)
+			{
+				object->player->tricktime = 0; // Reset post-hitlag timer
+				// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
+				object->player->trickboostpower = max(FixedDiv(object->player->speed, K_GetKartSpeed(object->player, false, false)) - FRACUNIT, 0)*125/100;
+				//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
+				object->player->trickpanel = 1;
+				object->player->pflags |= PF_TRICKDELAY;
+			}
+			else
+			{
+				raisestate = spring->info->seestate;
+
+				object->player->tumbleBounces = 1;
+				object->player->pflags &= ~PF_TUMBLESOUND;
+				object->player->tumbleHeight = 50;
+				P_SetPlayerMobjState(object->player->mo, S_KART_SPINOUT);
+
+				// FIXME: try to compensate tumbling gravity
+				object->momz = 3 * object->momz / 2;
+			}
+
+			spring->reactiontime++;
+		}
 	}
+
+	P_SetMobjState(spring, raisestate);
 
 	return true;
 }
@@ -1674,6 +1699,20 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
+	}
+	else if (P_IsLineTripWire(ld))
+	{
+		fixed_t textop, texbottom;
+
+		P_GetMidtextureTopBottom(ld, tmx, tmy,
+				&textop, &texbottom);
+
+		/* The effect handling is done later but it won't
+			know the height values anymore. So don't even add
+			this line to the list unless this thing clips the
+			tripwire's midtexture. */
+		if (tmthing->z <= textop && thingtop >= texbottom)
+			add_spechit(ld);
 	}
 
 	return BMIT_CONTINUE;

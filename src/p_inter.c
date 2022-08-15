@@ -1076,6 +1076,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		target->player->playerstate = PST_DEAD;
 
+		// respawn from where you died
+		target->player->respawn.pointx = target->x;
+		target->player->respawn.pointy = target->y;
+		target->player->respawn.pointz = target->z;
+
 		if (target->player == &players[consoleplayer])
 		{
 			// don't die in auto map,
@@ -1403,7 +1408,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				// special behavior for ring capsules
 				if (target->threshold == KITEM_SUPERRING)
 				{
-					player->superring = min(player->superring + 5*target->movecount*3, UINT16_MAX);
+					K_AwardPlayerRings(player, 5 * target->movecount, true);
 					break;
 				}
 
@@ -1828,7 +1833,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	boolean force = false;
 
 	INT32 laglength = 6;
-	INT32 kinvextend = 0;
 
 	if (objectplacing)
 		return false;
@@ -2001,9 +2005,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer)
 					{
-						kinvextend = (source->player->invincibilitytimer)+5*TICRATE;
-						//CONS_Printf("extend k_invincibilitytimer for %s - old value %d new value %d\n", player_names[source->player -  players], source->player->invincibilitytimer/TICRATE, kinvextend/TICRATE);
-						source->player->invincibilitytimer = kinvextend;
+						tic_t kinvextend;
+
+						if (gametype == GT_BATTLE)
+							kinvextend = 2*TICRATE;
+						else
+							kinvextend = 5*TICRATE;
+
+						source->player->invincibilitytimer += kinvextend;
 					}
 
 					K_PlayHitEmSound(source, target);
