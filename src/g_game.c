@@ -3616,11 +3616,14 @@ static void G_DoCompleted(void)
 	wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
+				clientPowerAdd[i] = 0;
+
 				if (players[i].bot)
 				{
 					K_FakeBotResults(&players[i]);
@@ -3638,6 +3641,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
+	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))

@@ -3851,8 +3851,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
-	player->latestlap = numlaps+1;
-	K_UpdatePowerLevels(player, numlaps+1, false);
+	K_UpdatePowerLevelsOnFailure(player);
 
 	if (G_GametypeUsesLives())
 	{

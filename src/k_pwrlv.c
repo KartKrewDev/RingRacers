@@ -203,9 +203,9 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		return;
 	}
 
-	CONS_Printf("\n========\n");
-	CONS_Printf("* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], lap);
-	CONS_Printf("========\n");
+	//CONS_Printf("\n========\n");
+	//CONS_Printf("* Power Level change for player %s (LAP %d) *\n", player_names[playerNum], lap);
+	//CONS_Printf("========\n");
 
 	yourPower = clientpowerlevels[playerNum][powerType];
 	if (yourPower == 0)
@@ -214,12 +214,12 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		return;
 	}
 
-	CONS_Printf("%s's PWR.LV: %d\n", player_names[playerNum], yourPower);
+	//CONS_Printf("%s's PWR.LV: %d\n", player_names[playerNum], yourPower);
 
 	yourScore = K_PowerLevelPlacementScore(player);
-	CONS_Printf("%s's gametype score: %d\n", player_names[playerNum], yourScore);
+	//CONS_Printf("%s's gametype score: %d\n", player_names[playerNum], yourScore);
 
-	CONS_Printf("========\n");
+	//CONS_Printf("========\n");
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		UINT16 theirScore = 0;
@@ -240,7 +240,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			continue;
 		}
 
-		CONS_Printf("%s VS %s:\n", player_names[playerNum], player_names[i]);
+		//CONS_Printf("%s VS %s:\n", player_names[playerNum], player_names[i]);
 
 		theirPower = clientpowerlevels[i][powerType];
 		if (theirPower == 0)
@@ -249,14 +249,14 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			continue;
 		}
 
-		CONS_Printf("%s's PWR.LV: %d\n", player_names[i], theirPower);
+		//CONS_Printf("%s's PWR.LV: %d\n", player_names[i], theirPower);
 
 		theirScore = K_PowerLevelPlacementScore(&players[i]);
-		CONS_Printf("%s's gametype score: %d\n", player_names[i], theirScore);
+		//CONS_Printf("%s's gametype score: %d\n", player_names[i], theirScore);
 
 		if (yourScore == theirScore && forfeit == false) // Tie -- neither get any points for this match up.
 		{
-			CONS_Printf("TIE, no change.\n");
+			//CONS_Printf("TIE, no change.\n");
 			continue;
 		}
 
@@ -266,13 +266,13 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 		{
 			diff = theirPower - yourPower;
 			inc += K_CalculatePowerLevelInc(diff);
-			CONS_Printf("WON! Diff is %d, increment is %d\n", diff, inc);
+			//CONS_Printf("WON! Diff is %d, increment is %d\n", diff, inc);
 		}
 		else // This player lost...
 		{
 			diff = yourPower - theirPower;
 			inc -= K_CalculatePowerLevelInc(diff);
-			CONS_Printf("LOST... Diff is %d, increment is %d\n", diff, inc);
+			//CONS_Printf("LOST... Diff is %d, increment is %d\n", diff, inc);
 		}
 
 		if (exitBonus == false)
@@ -293,10 +293,10 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 				}
 			}
 
-			CONS_Printf("Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
+			//CONS_Printf("Reduced (%d / %d = %d) because it's not the end of the race\n", prevInc, numlaps, inc);
 		}
 
-		CONS_Printf("========\n");
+		//CONS_Printf("========\n");
 
 		if (inc == 0)
 		{
@@ -304,19 +304,40 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 			continue;
 		}
 
-		CONS_Printf("Total Result:\n");
-		CONS_Printf("Increment: %d\n", inc);
+		//CONS_Printf("Total Result:\n");
+		//CONS_Printf("Increment: %d\n", inc);
 
-		CONS_Printf("%s current: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
+		//CONS_Printf("%s current: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
 		clientPowerAdd[playerNum] += inc;
-		CONS_Printf("%s final: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
+		//CONS_Printf("%s final: %d\n", player_names[playerNum], clientPowerAdd[playerNum]);
 
-		CONS_Printf("%s current: %d\n", player_names[i], clientPowerAdd[i]);
+		//CONS_Printf("%s current: %d\n", player_names[i], clientPowerAdd[i]);
 		clientPowerAdd[i] -= inc;
-		CONS_Printf("%s final: %d\n", player_names[i], clientPowerAdd[i]);
+		//CONS_Printf("%s final: %d\n", player_names[i], clientPowerAdd[i]);
 
-		CONS_Printf("========\n");
+		//CONS_Printf("========\n");
 	}
+}
+
+void K_UpdatePowerLevelsOnFailure(player_t *player)
+{
+	// Update upon spectate / quit / NO CONTEST
+	INT16 lapsLeft = 0;
+	UINT8 i;
+
+	lapsLeft = (numlaps - player->latestlap) + 1;
+
+	if (lapsLeft <= 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < lapsLeft; i++)
+	{
+		K_UpdatePowerLevels(player, player->latestlap + (i + 1), true);
+	}
+
+	player->latestlap = numlaps+1;
 }
 
 INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
@@ -387,9 +408,9 @@ void K_CashInPowerLevels(void)
 	SINT8 powerType = K_UsingPowerLevels();
 	UINT8 i;
 
-	CONS_Printf("\n========\n");
-	CONS_Printf("Cashing in power level changes...\n");
-	CONS_Printf("========\n");
+	//CONS_Printf("\n========\n");
+	//CONS_Printf("Cashing in power level changes...\n");
+	//CONS_Printf("========\n");
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -398,7 +419,7 @@ void K_CashInPowerLevels(void)
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
 			clientpowerlevels[i][powerType] += inc;
 
-			CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
+			//CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
 
 			if (!demo.playback && i == consoleplayer && inc != 0)
 			{
@@ -416,7 +437,7 @@ void K_CashInPowerLevels(void)
 		clientPowerAdd[i] = 0;
 	}
 
-	CONS_Printf("========\n");
+	//CONS_Printf("========\n");
 }
 
 void K_SetPowerLevelScrambles(SINT8 powertype)
@@ -552,7 +573,6 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 	UINT16 yourPower = 0;
 	INT16 inc = 0;
 
-	INT16 lapsLeft = 0;
 	UINT8 i;
 
 	// power level & spectating is netgames only
@@ -608,18 +628,8 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 		return;
 	}
 
-	lapsLeft = (numlaps - players[playerNum].latestlap) + 1;
-	if (lapsLeft <= 0)
-	{
-		return;
-	}
-
-	for (i = 0; i < lapsLeft; i++)
-	{
-		K_UpdatePowerLevels(&players[i], players[playerNum].latestlap + (i + 1), true);
-	}
-
-	inc = K_FinalPowerIncrement(&players[i], yourPower, clientPowerAdd[i]);
+	K_UpdatePowerLevelsOnFailure(&players[playerNum]);
+	inc = K_FinalPowerIncrement(&players[playerNum], yourPower, clientPowerAdd[playerNum]);
 
 	if (inc >= 0)
 	{
