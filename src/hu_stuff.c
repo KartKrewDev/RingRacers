@@ -2421,7 +2421,7 @@ static void HU_DrawRankings(void)
 		if (circuitmap)
 		{
 			V_DrawCenteredString(64, 8, 0, "LAP COUNT");
-			V_DrawCenteredString(64, 16, hilicol, va("%d", cv_numlaps.value));
+			V_DrawCenteredString(64, 16, hilicol, va("%d", numlaps));
 		}
 
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");

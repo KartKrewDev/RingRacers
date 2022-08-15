@@ -537,6 +537,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	UINT8 latestlap;
 	INT32 starpostnum; // The number of the last starpost you hit
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue

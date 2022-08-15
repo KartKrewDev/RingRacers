@@ -700,6 +700,7 @@ extern INT16 scramblecount; //for CTF team scramble
 extern INT32 cheats;
 
 // SRB2kart
+extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;

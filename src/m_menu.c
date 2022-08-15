@@ -1478,17 +1478,17 @@ static menuitem_t OP_GameOptionsMenu[] =
 	{IT_STRING | IT_SUBMENU, NULL, "Random Item Toggles...",	{.submenu = &OP_MonitorToggleDef},	 10},
 
 	{IT_STRING | IT_CVAR, NULL, "Game Speed",					{.cvar = &cv_kartspeed},			 30},
-	{IT_STRING | IT_CVAR, NULL, "Frantic Items",				{.cvar = &cv_kartfrantic},		 40},
+	{IT_STRING | IT_CVAR, NULL, "Frantic Items",				{.cvar = &cv_kartfrantic},			 40},
 	{IT_SECRET,           NULL, "Encore Mode",					{.cvar = &cv_kartencore},			 50},
 
-	{IT_STRING | IT_CVAR, NULL, "Number of Laps",				{.cvar = &cv_basenumlaps},		 70},
+	{IT_STRING | IT_CVAR, NULL, "Number of Laps",				{.cvar = &cv_numlaps},				 70},
 	{IT_STRING | IT_CVAR, NULL, "Exit Countdown Timer",			{.cvar = &cv_countdowntime},		 80},
 
 	{IT_STRING | IT_CVAR, NULL, "Time Limit",					{.cvar = &cv_timelimit},			100},
-	{IT_STRING | IT_CVAR, NULL, "Starting Bumpers",				{.cvar = &cv_kartbumpers},		110},
-	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",				{.cvar = &cv_kartcomeback},		120},
+	{IT_STRING | IT_CVAR, NULL, "Starting Bumpers",				{.cvar = &cv_kartbumpers},			110},
+	{IT_STRING | IT_CVAR, NULL, "Karma Comeback",				{.cvar = &cv_kartcomeback},			120},
 
-	{IT_STRING | IT_CVAR, NULL, "Track Power Levels",			{.cvar = &cv_kartusepwrlv},		140},
+	{IT_STRING | IT_CVAR, NULL, "Track Power Levels",			{.cvar = &cv_kartusepwrlv},			140},
 };
 
 static menuitem_t OP_ServerOptionsMenu[] =
