@@ -2346,8 +2346,8 @@ static void K_drawKartLapsAndRings(void)
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
-			ln[0] = ((abs(numlaps) / 10) % 10);
-			ln[1] = (abs(numlaps) % 10);
+			ln[0] = ((numlaps / 10) % 10);
+			ln[1] = (numlaps % 10);
 
 			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
