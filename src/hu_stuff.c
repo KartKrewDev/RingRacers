@@ -194,7 +194,7 @@ void HU_LoadGraphics(void)
 		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
 
-	HU_UpdatePatch(&pingmeasure[0], "PINGF");
+	HU_UpdatePatch(&pingmeasure[0], "PINGD");
 	HU_UpdatePatch(&pingmeasure[1], "PINGMS");
 
 	// fps stuff
