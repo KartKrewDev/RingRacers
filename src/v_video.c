@@ -2247,7 +2247,7 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a number using the PING font thingy.
 // TODO: Merge number drawing functions into one with "font name" selection.
 
-void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
+INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
 {
 	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
 
@@ -2264,6 +2264,8 @@ void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colorm
 		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
 		num /= 10;
 	} while (num);
+
+	return x;
 }
 
 // Find string width from cred_font chars
