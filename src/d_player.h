@@ -258,6 +258,7 @@ typedef enum
 #define TRICKDELAY (TICRATE/4)
 
 #define TUMBLEBOUNCES 3
+#define TUMBLEGRAVITY (5*FRACUNIT/2)
 
 //}
 
