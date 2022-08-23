@@ -417,6 +417,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			P_SetTarget(&spring->target, object);
 		}
 
+		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
 
 		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;

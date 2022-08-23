@@ -3612,9 +3612,25 @@ static void K_RemoveGrowShrink(player_t *player)
 	P_RestoreMusic(player);
 }
 
+static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
+{
+	// Scales base tumble gravity to FRACUNIT
+	const fixed_t baseGravity = FixedMul(DEFAULT_GRAVITY, TUMBLEGRAVITY);
+
+	// Adapt momz w/ gravity
+	fixed_t gravityAdjust = FixedDiv(P_GetMobjGravity(mo), baseGravity);
+
+	if (mo->eflags & MFE_UNDERWATER)
+	{
+		// Reverse doubled falling speed.
+		gravityAdjust /= 2;
+	}
+
+	return FixedMul(input, -gravityAdjust);
+}
+
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 {
-	fixed_t gravityadjust;
 	(void)source;
 
 	K_DirectorFollowAttack(player, inflictor, source);
@@ -3643,16 +3659,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	S_StartSound(player->mo, sfx_s3k9b);
 
-	// adapt momz w/ gravity?
-	// as far as kart goes normal gravity is 2 (FRACUNIT*2)
-
-	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
-
-	if (player->mo->eflags & MFE_UNDERWATER)
-		gravityadjust /= 2;	// halve "gravity" underwater
-
-	// and then modulate momz like that...
-	player->mo->momz = -gravityadjust * player->tumbleHeight;
+	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
@@ -3667,8 +3674,6 @@ static boolean K_LastTumbleBounceCondition(player_t *player)
 
 static void K_HandleTumbleBounce(player_t *player)
 {
-	fixed_t gravityadjust;
-
 	player->tumbleBounces++;
 	player->tumbleHeight = (player->tumbleHeight * ((player->tumbleHeight > 100) ? 3 : 4)) / 5;
 	player->pflags &= ~PF_TUMBLESOUND;
@@ -3701,7 +3706,7 @@ static void K_HandleTumbleBounce(player_t *player)
 
 	// A bit of damage hitlag.
 	// This gives a window for DI!!
-	K_AddHitLag(player->mo, 6, true);
+	K_AddHitLag(player->mo, 3, true);
 
 	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
 		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
@@ -3711,16 +3716,8 @@ static void K_HandleTumbleBounce(player_t *player)
 	player->mo->momx = player->mo->momx / 2;
 	player->mo->momy = player->mo->momy / 2;
 
-	// adapt momz w/ gravity?
-	// as far as kart goes normal gravity is 2 (FRACUNIT*2)
-
-	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
-
-	if (player->mo->eflags & MFE_UNDERWATER)
-		gravityadjust /= 2;	// halve "gravity" underwater
-
 	// and then modulate momz like that...
-	player->mo->momz = -gravityadjust * player->tumbleHeight;
+	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 }
 
 // Play a falling sound when you start falling while tumbling and you're nowhere near done bouncing
@@ -3734,6 +3731,21 @@ static void K_HandleTumbleSound(player_t *player)
 	{
 		S_StartSound(player->mo, sfx_s3k51);
 		player->pflags |= PF_TUMBLESOUND;
+	}
+}
+
+void K_TumbleInterrupt(player_t *player)
+{
+	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
+	if (player->tumbleBounces > 0)
+	{
+		player->tumbleBounces = 0; // MAXBOUNCES-1;
+		player->pflags &= ~PF_TUMBLELASTBOUNCE;
+		//players->tumbleHeight = 20;
+
+		players->mo->rollangle = 0;
+		player->spinouttype = KSPIN_WIPEOUT;
+		player->spinouttimer = player->wipeoutslow = TICRATE+2;
 	}
 }
 
