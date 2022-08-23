@@ -3745,7 +3745,7 @@ void K_TumbleInterrupt(player_t *player)
 
 		players->mo->rollangle = 0;
 		player->spinouttype = KSPIN_WIPEOUT;
-		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
+		player->spinouttimer = player->wipeoutslow = (2*TICRATE)+2;
 	}
 }
 
