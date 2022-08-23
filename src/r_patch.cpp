@@ -40,7 +40,7 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 		patch->topoffset  = SHORT(source->topoffset);
 		patch->columnofs  = static_cast<INT32*>(Z_Calloc(size, PU_PATCH_DATA, NULL));
 
-		for (col = 0; col < source->width; col++)
+		for (col = 0; col < patch->width; col++)
 		{
 			// This makes the column offsets relative to the column data itself,
 			// instead of the entire patch data
