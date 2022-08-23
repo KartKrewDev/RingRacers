@@ -3067,7 +3067,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->startboost) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT/2, 4*FRACUNIT, 0); // + 50% top speed, + 400% acceleration, +0% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, 0); // + 100% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->driftboost) // Drift Boost
