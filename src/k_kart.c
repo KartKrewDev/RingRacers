@@ -7267,6 +7267,8 @@ static void K_LookForRings(mobj_t *pmo)
 */
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 {
+	const boolean onground = P_IsObjectOnGround(player->mo);
+
 	K_UpdateOffroad(player);
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player); // Thanks, VAda!
@@ -7538,8 +7540,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->strongdriftboost)
 		player->strongdriftboost--;
 
-	if (player->startboost)
+	if (player->startboost > 0 && onground == true)
+	{
 		player->startboost--;
+	}
 
 	if (player->spindashboost)
 	{
