@@ -3706,7 +3706,7 @@ static void K_HandleTumbleBounce(player_t *player)
 
 	// A bit of damage hitlag.
 	// This gives a window for DI!!
-	K_AddHitLag(player->mo, 6, true);
+	K_AddHitLag(player->mo, 3, true);
 
 	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
 		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
