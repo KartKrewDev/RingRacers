@@ -304,10 +304,6 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 add_subdirectory(sdl)
 add_subdirectory(objects)
 
-if(${CMAKE_SYSTEM} MATCHES Windows)
-	add_subdirectory(win32)
-endif()
-
 if(NOT ${SRB2_SDL2_AVAILABLE})
 	message(FATAL_ERROR "There are no targets available to build an SRB2Kart executable. :(")
 endif()
