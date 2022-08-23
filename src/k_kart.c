@@ -3734,6 +3734,21 @@ static void K_HandleTumbleSound(player_t *player)
 	}
 }
 
+void K_TumbleInterrupt(player_t *player)
+{
+	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
+	if (player->tumbleBounces > 0)
+	{
+		player->tumbleBounces = 0; // MAXBOUNCES-1;
+		player->pflags &= ~PF_TUMBLELASTBOUNCE;
+		//players->tumbleHeight = 20;
+
+		players->mo->rollangle = 0;
+		player->spinouttype = KSPIN_WIPEOUT;
+		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
+	}
+}
+
 void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 {
 	if (state == TRIP_PASSED)
