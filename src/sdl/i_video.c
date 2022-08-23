@@ -770,9 +770,10 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 	}
 }
 
-static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
+static void Impl_HandleControllerAxisEvent(SDL_ControllerAxisEvent evt)
 {
 	event_t event;
+	INT32 value;
 
 	event.type = ev_joystick;
 
@@ -782,78 +783,32 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 		return;
 	}
 
-	evt.axis++;
 	event.data1 = event.data2 = event.data3 = INT32_MAX;
 
 	//axis
-	if (evt.axis > JOYAXISSET*2)
+	if (evt.axis > 2 * JOYAXISSETS)
 	{
 		return;
 	}
 
 	//vaule[sic]
-	if (evt.axis % 2)
+	value = SDLJoyAxis(evt.value, evt.which);
+
+	if (evt.axis & 1)
 	{
-		event.data1 = evt.axis / 2;
-		event.data2 = SDLJoyAxis(evt.value, 0); // TODO: replace 0 with pid
+		event.data3 = value;
 	}
 	else
 	{
-		evt.axis--;
-		event.data1 = evt.axis / 2;
-		event.data3 = SDLJoyAxis(evt.value, 0); // TODO: replace 0 with pid
+		event.data2 = value;
 	}
+
+	event.data1 = evt.axis / 2;
 
 	D_PostEvent(&event);
 }
 
-static void Impl_SendHatEvent(SDL_JoyHatEvent evt, UINT64 hatFlag, UINT8 keyOffset)
-{
-	event_t event;
-
-	event.device = 1 + evt.which;
-	if (event.device == INT32_MAX)
-	{
-		return;
-	}
-
-	event.data1 = KEY_HAT1 + keyOffset;
-
-	if (evt.hat < JOYHATS)
-	{
-		event.data1 += (evt.hat * 4);
-	}
-	else
-	{
-		return;
-	}
-
-	if (evt.value & hatFlag)
-	{
-		event.type = ev_keydown;
-	}
-	else
-	{
-		event.type = ev_keyup;
-	}
-
-	SDLJoyRemap(&event);
-
-	if (event.type != ev_console)
-	{
-		D_PostEvent(&event);
-	}
-}
-
-static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
-{
-	Impl_SendHatEvent(evt, SDL_HAT_UP, 0);
-	Impl_SendHatEvent(evt, SDL_HAT_DOWN, 1);
-	Impl_SendHatEvent(evt, SDL_HAT_LEFT, 2);
-	Impl_SendHatEvent(evt, SDL_HAT_RIGHT, 3);
-}
-
-static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
+static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint32 type)
 {
 	event_t event;
 
@@ -866,11 +821,11 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 
 	event.data1 = KEY_JOY1;
 
-	if (type == SDL_JOYBUTTONUP)
+	if (type == SDL_CONTROLLERBUTTONUP)
 	{
 		event.type = ev_keyup;
 	}
-	else if (type == SDL_JOYBUTTONDOWN)
+	else if (type == SDL_CONTROLLERBUTTONDOWN)
 	{
 		event.type = ev_keydown;
 	}
@@ -936,26 +891,23 @@ void I_GetEvent(void)
 			case SDL_MOUSEWHEEL:
 				Impl_HandleMouseWheelEvent(evt.wheel);
 				break;
-			case SDL_JOYAXISMOTION:
-				Impl_HandleJoystickAxisEvent(evt.jaxis);
+			case SDL_CONTROLLERAXISMOTION:
+				Impl_HandleControllerAxisEvent(evt.caxis);
 				break;
-			case SDL_JOYHATMOTION:
-				Impl_HandleJoystickHatEvent(evt.jhat);
-				break;
-			case SDL_JOYBUTTONUP:
-			case SDL_JOYBUTTONDOWN:
-				Impl_HandleJoystickButtonEvent(evt.jbutton, evt.type);
+			case SDL_CONTROLLERBUTTONUP:
+			case SDL_CONTROLLERBUTTONDOWN:
+				Impl_HandleControllerButtonEvent(evt.cbutton, evt.type);
 				break;
 
 			////////////////////////////////////////////////////////////
 
-			case SDL_JOYDEVICEADDED:
+			case SDL_CONTROLLERDEVICEADDED:
 				{
 					// OH BOY are you in for a good time! #abominationstation
 
-					SDL_Joystick *newjoy = SDL_JoystickOpen(evt.jdevice.which);
+					SDL_GameController *newcontroller = SDL_GameControllerOpen(evt.cdevice.which);
 
-					CONS_Debug(DBG_GAMELOGIC, "Joystick device index %d added\n", evt.jdevice.which + 1);
+					CONS_Debug(DBG_GAMELOGIC, "Controller device index %d added\n", evt.cdevice.which + 1);
 
 					////////////////////////////////////////////////////////////
 					// Because SDL's device index is unstable, we're going to cheat here a bit:
@@ -970,7 +922,7 @@ void I_GetEvent(void)
 
 					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 					{
-						if (newjoy && (!JoyInfo[i].dev || !SDL_JoystickGetAttached(JoyInfo[i].dev))) 
+						if (newcontroller && (!JoyInfo[i].dev || !SDL_GameControllerGetAttached(JoyInfo[i].dev))) 
 						{
 							UINT8 j;
 
@@ -979,14 +931,14 @@ void I_GetEvent(void)
 								if (i == j)
 									continue;
 
-								if (JoyInfo[j].dev == newjoy)
+								if (JoyInfo[j].dev == newcontroller)
 									break;
 							}
 
 							if (j == MAXSPLITSCREENPLAYERS)
 							{
 								// ensures we aren't overriding a currently active device
-								cv_usejoystick[i].value = evt.jdevice.which + 1;
+								cv_usejoystick[i].value = evt.cdevice.which + 1;
 								I_UpdateJoystickDeviceIndices(0);
 							}
 						}
@@ -1028,21 +980,21 @@ void I_GetEvent(void)
 
 					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 					{
-						if (JoyInfo[i].dev == newjoy)
+						if (JoyInfo[i].dev == newcontroller)
 							break;
 					}
 
 					if (i == MAXSPLITSCREENPLAYERS)
-						I_StoreExJoystick(newjoy);
+						I_StoreExJoystick(newcontroller);
 				}
 				break;
 
 			////////////////////////////////////////////////////////////
 
-			case SDL_JOYDEVICEREMOVED:
+			case SDL_CONTROLLERDEVICEREMOVED:
 				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 				{
-					if (JoyInfo[i].dev && !SDL_JoystickGetAttached(JoyInfo[i].dev))
+					if (JoyInfo[i].dev && !SDL_GameControllerGetAttached(JoyInfo[i].dev))
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Joystick%d removed, device index: %d\n", i+1, JoyInfo[i].oldjoy);
 						I_ShutdownJoystick(i);
@@ -1146,8 +1098,8 @@ void I_OsPolling(void)
 	if (consolevent)
 		I_GetConsoleEvents();
 
-	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
-		SDL_JoystickUpdate();
+	if (SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == (SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
+		SDL_GameControllerUpdate();
 
 	I_GetEvent();
 

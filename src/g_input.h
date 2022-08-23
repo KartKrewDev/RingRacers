@@ -23,9 +23,12 @@
 #define NUMKEYS 256
 
 #define MOUSEBUTTONS 8
-#define JOYBUTTONS   32 // 32 buttons
-#define JOYHATS      4  // 4 hats
-#define JOYAXISSET   4  // 4 Sets of 2 axises
+
+#define JOYBUTTONS   21 // 21 buttons, to match SDL_GameControllerButton
+#define JOYANALOGS   2 // 2 sets of analog stick axes, with positive and negative each
+#define JOYTRIGGERS  1 // 1 set of trigger axes, positive only
+#define JOYAXISSETS (JOYANALOGS + JOYTRIGGERS)
+#define JOYAXES ((4 * JOYANALOGS) + (2 * JOYTRIGGERS))
 
 #define MAXINPUTMAPPING 4
 
@@ -35,9 +38,9 @@
 typedef enum
 {
 	KEY_JOY1 = NUMKEYS,
-	KEY_HAT1 = KEY_JOY1 + JOYBUTTONS,
-	KEY_AXIS1 = KEY_HAT1 + JOYHATS*4,
-	JOYINPUTEND = KEY_AXIS1 + JOYAXISSET*2*2, // 4 sets of 2 axes, each with positive & negative
+	KEY_HAT1 = KEY_JOY1 + 11, // macro for SDL_CONTROLLER_BUTTON_DPAD_UP
+	KEY_AXIS1 = KEY_JOY1 + JOYBUTTONS,
+	JOYINPUTEND = KEY_AXIS1 + JOYAXES,
 
 	KEY_MOUSE1 = JOYINPUTEND,
 	KEY_MOUSEMOVE = KEY_MOUSE1 + MOUSEBUTTONS,

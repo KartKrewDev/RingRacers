@@ -2418,10 +2418,14 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			// this is to allow them to retain controller usage when they play alone.
 			// Because let's face it, when you test mods, you're often lazy to grab your controller for menuing :)
 			if (!i && !num)
+			{
 				setup_player[num].ponedevice = cv_usejoystick[num].value;
+			}
 			else if (num)
+			{
 				// For any player past player 1, set controls to default profile controls, otherwise it's generally awful to do any menuing...
 				memcpy(&gamecontrol[num], gamecontroldefault, sizeof(gamecontroldefault));
+			}
 
 
 			CV_SetValue(&cv_usejoystick[num], i);
@@ -3132,7 +3136,9 @@ void M_CharacterSelectTick(void)
 
 				// P1 is alone, set their old device just in case.
 				if (setup_numplayers < 2 && setup_player[0].ponedevice)
+				{
 					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
+				}
 
 				M_SetupNextMenu(&PLAY_MainDef, false);
 			}
@@ -5307,7 +5313,7 @@ void M_MapProfileControl(event_t *ev)
 #endif
 			break;
 		case ev_joystick:
-			if (ev->data1 >= JOYAXISSET)
+			if (ev->data1 >= JOYAXES)
 			{
 #ifdef PARANOIA
 				CONS_Debug(DBG_GAMELOGIC, "Bad joystick axis event %d\n", ev->data1);
@@ -5320,65 +5326,58 @@ void M_MapProfileControl(event_t *ev)
 				boolean responsivelr = ((ev->data2 != INT32_MAX) && (abs(ev->data2) >= deadzone));
 				boolean responsiveud = ((ev->data3 != INT32_MAX) && (abs(ev->data3) >= deadzone));
 
-				// Only consider unambiguous assignment.
-				if (responsivelr == responsiveud)
-					return;
+				i = ev->data1;
 
-				i = (ev->data1 * 4);
-
-				if (responsivelr)
+				if (i >= JOYANALOGS)
 				{
-					if (ev->data2 < 0)
+					// The trigger axes are handled specially.
+					i -= JOYANALOGS;
+
+					if (responsivelr)
 					{
-						// Left
-						c = KEY_AXIS1 + i;
+						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2);
 					}
-					else
+					else if (responsiveud)
 					{
-						// Right
-						c = KEY_AXIS1 + i + 1;
+						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1;
 					}
 				}
-				else //if (responsiveud)
+				else
 				{
-					if (ev->data3 < 0)
+					// Actual analog sticks
+
+					// Only consider unambiguous assignment.
+					if (responsivelr == responsiveud)
+						return;
+
+					if (responsivelr)
 					{
-						// Up
-						c = KEY_AXIS1 + i + 2;
+						if (ev->data2 < 0)
+						{
+							// Left
+							c = KEY_AXIS1 + (i * 4);
+						}
+						else
+						{
+							// Right
+							c = KEY_AXIS1 + (i * 4) + 1;
+						}
 					}
-					else
+					else //if (responsiveud)
 					{
-						// Down
-						c = KEY_AXIS1 + i + 3;
+						if (ev->data3 < 0)
+						{
+							// Up
+							c = KEY_AXIS1 + (i * 4) + 2;
+						}
+						else
+						{
+							// Down
+							c = KEY_AXIS1 + (i * 4) + 3;
+						}
 					}
 				}
 			}
-
-			/* 	I hate this.
-				I shouldn't have to do this.
-				But we HAVE to because of some controllers, INCLUDING MINE.
-
-				Triggers on X360 controllers go from -1024 when not held
-				To 1023 when pressed.
-				The result is that pressing the trigger makes the game THINK the input is for a negative value.
-				Which then means that the input is considered pressed when the trigger is released.
-
-				So what we're going to do is make sure that the detected 'c' key is the same for multiple rolls of ev_joystick.
-				NOTE: We need the player to press the key all the way down otherwise this might just not work...
-
-				@TODO: This isn't entirely consistent because we only check for events..... maybe check continuously for gamekeydown[]?
-				but this seems messy...
-			*/
-
-			//CONS_Printf("mapping joystick ... attempt (%d)\n", optionsmenu.keyheldfor);
-
-			if (c != optionsmenu.lastkey)
-			{
-				optionsmenu.lastkey = c;
-				optionsmenu.keyheldfor = 0;
-				return;
-			}
-
 			break;
 		default:
 			return;
@@ -5411,7 +5410,8 @@ void M_MapProfileControl(event_t *ev)
 	// If possible, reapply the profile...
 	// 19/05/22: Actually, no, don't do that, it just fucks everything up in too many cases.
 
-	/*if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
+	/*
+	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
 	{
 		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
 		UINT8 lastp = cv_lastprofile[0].value;
@@ -5430,7 +5430,8 @@ void M_MapProfileControl(event_t *ev)
 				break;
 			}
 		}
-	}*/
+	}
+	*/
 }
 #undef KEYHOLDFOR
 
