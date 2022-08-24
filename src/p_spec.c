@@ -4076,8 +4076,10 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 	msecnode_t *node;
 	ffloor_t *rover;
 
-	if (!mo)
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
 		return NULL;
+	}
 
 	// Check default case first
 	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)
