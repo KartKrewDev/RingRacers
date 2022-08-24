@@ -151,18 +151,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
-	
-	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
-	if (player->tumbleBounces > 0)
-	{
-		player->tumbleBounces = 0; // MAXBOUNCES-1;
-		player->pflags &= ~PF_TUMBLELASTBOUNCE;
-		//players->tumbleHeight = 20;
-		players->mo->rollangle = 0;
-		player->spinouttype = KSPIN_WIPEOUT;
-		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
-	}
 
+	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid

@@ -792,16 +792,11 @@ boolean P_CheckRacers(void)
 	boolean eliminatelast = cv_karteliminatelast.value;
 	boolean everyonedone = true;
 	boolean eliminatebots = false;
-	boolean griefed = false;
+	const boolean griefed = (spectateGriefed > 0);
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (nospectategrief[i] != -1) // prevent spectate griefing
-		{
-			griefed = true;
-		}
-
 		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
 		{
 			// Y'all aren't even playing
@@ -922,7 +917,7 @@ boolean P_CheckRacers(void)
 	// We're still playing, but no one else is, so we need to reset spectator griefing.
 	if (numplayersingame <= 1)
 	{
-		memset(nospectategrief, -1, sizeof (nospectategrief));
+		spectateGriefed = 0;
 	}
 
 	// Turns out we're still having a good time & playing the game, we didn't have to do anything :)
