@@ -1728,7 +1728,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 			if (maxdist == 0)
 			{
 				P_SetMobjState(band, S_KSPARK1 + (leveltime % 8));
-				P_SetScale(band, (band->destscale = player->mo->scale/2));
+				P_SetScale(band, (band->destscale = player->mo->scale));
 			}
 			else
 			{
