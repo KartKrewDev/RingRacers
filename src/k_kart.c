@@ -2975,9 +2975,9 @@ INT16 K_GetSpindashChargeTime(player_t *player)
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
 	// more speed for higher weight & speed
-	// Tails = +15.6%, Fang = +43.75%, Mighty = +43.75%, Metal = +53.13%
+	// Tails = +18.75%, Fang = +46.88%, Mighty = +46.88%, Metal = +56.25%
 	// (can be higher than this value when overcharged)
-	const fixed_t val = ((player->kartspeed + player->kartweight) + 1) * (FRACUNIT/32);
+	const fixed_t val = ((player->kartspeed + player->kartweight) + 2) * (FRACUNIT/32);
 
 	// TODO: gametyperules
 	return (gametype == GT_BATTLE) ? (4 * val) : val;
