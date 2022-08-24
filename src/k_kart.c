@@ -3126,6 +3126,12 @@ static void K_GetKartBoostPower(player_t *player)
 			draftspeed *= 2;
 		}
 
+		if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+		{
+			// infinite tether
+			draftspeed *= 2;
+		}
+
 		speedboost += FixedMul(draftspeed, player->draftpower); // (Drafting suffers no boost stack penalty.)
 		numboosts++;
 	}
