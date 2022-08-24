@@ -301,6 +301,22 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 #	${SRB2_BLUA_HEADERS}
 #)
 
+## strip debug symbols into separate file when using gcc.
+## to be consistent with Makefile, don't generate for OS X.
+if((CMAKE_COMPILER_IS_GNUCC) AND NOT (${CMAKE_SYSTEM} MATCHES Darwin))
+	if((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
+		if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+			set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")
+		endif()
+		message(STATUS "Will make separate debug symbols in *.debug")
+		add_custom_command(TARGET SRB2SDL2 POST_BUILD
+			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
+			COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
+			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
+		)
+	endif()
+endif()
+
 add_subdirectory(sdl)
 add_subdirectory(objects)
 
