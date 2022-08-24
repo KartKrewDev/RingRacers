@@ -675,6 +675,12 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 		return BMIT_ABORT;
 	}
 
+	if (thing == NULL || P_MobjWasRemoved(thing))
+	{
+		// Invalid?
+		return BMIT_ABORT;
+	}
+
 	if (thing == lightningSource)
 	{
 		// Don't explode yourself!!
