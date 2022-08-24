@@ -1700,9 +1700,13 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 	UINT8 c;
 
 	if (maxdist == 0)
-		c = 0;
+	{
+		c = leveltime % CHAOTIXBANDCOLORS;
+	}
 	else
+	{
 		c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+	}
 
 	stepx = (victim->mo->x - player->mo->x) / CHAOTIXBANDLEN;
 	stepy = (victim->mo->y - player->mo->y) / CHAOTIXBANDLEN;
@@ -1721,8 +1725,16 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 				curz + (P_RandomRange(24,48)*mapobjectscale),
 				MT_SIGNSPARKLE);
 
-			P_SetMobjState(band, S_SIGNSPARK1 + (leveltime % 11));
-			P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
+			if (maxdist == 0)
+			{
+				P_SetMobjState(band, S_KSPARK1 + (leveltime % 8));
+				P_SetScale(band, (band->destscale = player->mo->scale));
+			}
+			else
+			{
+				P_SetMobjState(band, S_SIGNSPARK1 + (leveltime % 11));
+				P_SetScale(band, (band->destscale = (3*player->mo->scale)/2));
+			}
 
 			band->color = colors[c];
 			band->colorized = true;
@@ -1892,9 +1904,14 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// No one to draft off of? Then you can knock that off.
-	if (player->draftleeway) // Prevent small disruptions from stopping your draft.
+	if (player->draftleeway > 0) // Prevent small disruptions from stopping your draft.
 	{
-		player->draftleeway--;
+		if (P_IsObjectOnGround(player->mo) == true)
+		{
+			// Allow maintaining tether in air setpieces.
+			player->draftleeway--;
+		}
+
 		if (player->lastdraft >= 0
 			&& player->lastdraft < MAXPLAYERS
 			&& playeringame[player->lastdraft]
@@ -3106,6 +3123,12 @@ static void K_GetKartBoostPower(player_t *player)
 		if (gametype == GT_BATTLE)
 		{
 			// TODO: gametyperules
+			draftspeed *= 2;
+		}
+
+		if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+		{
+			// infinite tether
 			draftspeed *= 2;
 		}
 
