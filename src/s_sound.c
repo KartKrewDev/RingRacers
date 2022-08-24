@@ -2501,7 +2501,7 @@ static void Command_PlaySound(void)
 	}
 	else
 	{
-		for (sfx = 0; sfx < NUMSFX; sfx++)
+		for (sfx = 0; sfx < sfxfree; sfx++)
 		{
 			if (S_sfx[sfx].name && fasticmp(sound, S_sfx[sfx].name))
 				break;
