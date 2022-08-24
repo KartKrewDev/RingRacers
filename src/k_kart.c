@@ -1892,9 +1892,14 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// No one to draft off of? Then you can knock that off.
-	if (player->draftleeway) // Prevent small disruptions from stopping your draft.
+	if (player->draftleeway > 0) // Prevent small disruptions from stopping your draft.
 	{
-		player->draftleeway--;
+		if (P_IsObjectOnGround(player->mo) == true)
+		{
+			// Allow maintaining tether in air setpieces.
+			player->draftleeway--;
+		}
+
 		if (player->lastdraft >= 0
 			&& player->lastdraft < MAXPLAYERS
 			&& playeringame[player->lastdraft]
