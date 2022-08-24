@@ -3918,6 +3918,12 @@ void Schedule_Run(void)
 		return;
 	}
 
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
+		return;
+	}
+
 	for (i = 0; i < schedule_len; i++)
 	{
 		scheduleTask_t *task = schedule[i];
@@ -4045,6 +4051,12 @@ void Automate_Run(automateEvents_t type)
 	if (!server)
 	{
 		// Only the server should be doing this.
+		return;
+	}
+
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
 		return;
 	}
 
