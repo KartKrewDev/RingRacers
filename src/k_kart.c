@@ -3089,14 +3089,22 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->driftboost) // Drift Boost
 	{
-		if (player->strongdriftboost) // Purple/Rainbow drift boost
+		// Rebuff Eggman's stat block corner
+		const INT32 heavyAccel = (player->kartweight - 1) + (9 - player->kartspeed);
+		const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 16);
+
+		fixed_t driftSpeed = FRACUNIT/4; // 25% base
+
+		if (player->strongdriftboost > 0)
 		{
-			ADDBOOST(FRACUNIT/3, 4*FRACUNIT, 0); // + 33% top speed, + 400% acceleration, +0% handling
+			// Purple/Rainbow drift boost
+			driftSpeed = FixedMul(driftSpeed, 4*FRACUNIT/3); // 25% -> 33%
 		}
-		else
-		{
-			ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 25% top speed, + 400% acceleration, +0% handling
-		}
+
+		// Bottom-left bonus
+		driftSpeed = FixedMul(driftSpeed, heavyAccelBonus);
+
+		ADDBOOST(driftSpeed, 4*FRACUNIT, 0); // + variable top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->trickboost)	// Trick pannel up-boost
