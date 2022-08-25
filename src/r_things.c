@@ -3186,7 +3186,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 {
 	const size_t maxdrawsegs = ds_p - dsstart;
-	const INT32 cx = BASEVIDWIDTH / 2;
+	const INT32 cx = viewwidth / 2;
 	drawseg_t* ds;
 	INT32 i;
 
