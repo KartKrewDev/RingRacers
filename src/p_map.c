@@ -2850,6 +2850,11 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		thing->terrain = NULL;
 	}
 
+	if (thing->player && K_IsRidingFloatingTop(thing->player))
+	{
+		stairjank = false;
+	}
+
 	/* FIXME: slope step down (even up) has some false
 		positives, so just ignore them entirely. */
 	if (stairjank && !oldslope && !thing->standingslope &&

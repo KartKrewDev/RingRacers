@@ -1133,7 +1133,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
 		}
 
-		if (mo->player->fastfall != 0)
+		if (K_IsHoldingDownTop(mo->player))
+		{
+			gravityadd = (5*gravityadd)/2;
+		}
+		else if (mo->player->fastfall != 0)
 		{
 			// Fast falling
 			gravityadd *= 4;
@@ -3092,13 +3096,26 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
 	fixed_t span = player->mo->watertop - player->mo->waterbottom;
 
-	return
-		clip > -(player->mo->height / 2) &&
-		span > player->mo->height &&
-		player->speed / 5 > abs(player->mo->momz) &&
-		player->speed > K_GetKartSpeed(player, false, false) &&
-		K_WaterRun(player) &&
-		(rover->flags & FF_SWIMMABLE);
+	if (!(rover->flags & FF_SWIMMABLE) ||
+			clip < -(player->mo->height / 2) ||
+			span < player->mo->height)
+	{
+		return false;
+	}
+
+	if (player->curshield == KSHIELD_TOP)
+	{
+		return (K_GetKartButtons(player) & BT_DRIFT) != BT_DRIFT;
+	}
+
+	if (K_WaterRun(player) &&
+			player->speed / 5 > abs(player->mo->momz) &&
+			player->speed > K_GetKartSpeed(player, false, false))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover)

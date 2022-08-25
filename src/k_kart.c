@@ -1374,7 +1374,13 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	if (!mobj->player)
 		return weight;
 
-	if (against && !P_MobjWasRemoved(against) && against->player
+	if (against && (against->type == MT_GARDENTOP || (against->player && against->player->curshield == KSHIELD_TOP)))
+	{
+		/* Players bumping into a Top get zero weight -- the
+			Top rider is immovable. */
+		weight = 0;
+	}
+	else if (against && !P_MobjWasRemoved(against) && against->player
 		&& ((!P_PlayerInPain(against->player) && P_PlayerInPain(mobj->player)) // You're hurt
 		|| (against->player->itemtype == KITEM_BUBBLESHIELD && mobj->player->itemtype != KITEM_BUBBLESHIELD))) // They have a Bubble Shield
 	{
@@ -1962,6 +1968,18 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 #undef CHAOTIXBANDLEN
 }
 
+static boolean K_HasInfiniteTether(player_t *player)
+{
+	switch (player->curshield)
+	{
+		case KSHIELD_LIGHTNING:
+		case KSHIELD_TOP:
+			return true;
+	}
+
+	return false;
+}
+
 /**	\brief	Updates the player's drafting values once per frame
 
 	\param	player	player object passed from K_KartPlayerThink
@@ -1976,7 +1994,7 @@ static void K_UpdateDraft(player_t *player)
 	UINT8 leniency;
 	UINT8 i;
 
-	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	if (K_HasInfiniteTether(player))
 	{
 		// Lightning Shield gets infinite draft distance as its (other) passive effect.
 		draftdistance = 0;
@@ -3267,12 +3285,16 @@ boolean K_ApplyOffroad(player_t *player)
 {
 	if (player->invincibilitytimer || player->hyudorotimer || player->sneakertimer)
 		return false;
+	if (K_IsRidingFloatingTop(player))
+		return false;
 	return true;
 }
 
 boolean K_SlopeResistance(player_t *player)
 {
 	if (player->invincibilitytimer || player->sneakertimer || player->tiregrease || player->flamedash)
+		return true;
+	if (player->curshield == KSHIELD_TOP)
 		return true;
 	return false;
 }
@@ -3320,6 +3342,9 @@ boolean K_WaterRun(player_t *player)
 
 boolean K_WaterSkip(player_t *player)
 {
+	if (player->curshield == KSHIELD_TOP)
+		return false;
+
 	if (player->speed/3 > abs(player->mo->momz)) // Going more forward than horizontal, so you can skip across the water.
 		return true;
 
@@ -3531,7 +3556,7 @@ static void K_GetKartBoostPower(player_t *player)
 			draftspeed *= 2;
 		}
 
-		if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+		if (K_HasInfiniteTether(player))
 		{
 			// infinite tether
 			draftspeed *= 2;
@@ -3653,6 +3678,10 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (gametype == GT_BATTLE && player->bumpers <= 0)
 		k_accel *= 2;
 
+	// Marble Garden Top gets 800% accel
+	if (player->curshield == KSHIELD_TOP)
+		k_accel *= 8;
+
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
 
@@ -3742,16 +3771,34 @@ SINT8 K_GetForwardMove(player_t *player)
 			forwardmove = MAXPLMOVE;
 	}
 
+	if (player->curshield == KSHIELD_TOP)
+	{
+		if (forwardmove < 0 ||
+				(K_GetKartButtons(player) & BT_DRIFT))
+		{
+			forwardmove = 0;
+		}
+		else
+		{
+			forwardmove = MAXPLMOVE;
+		}
+	}
+
 	return forwardmove;
 }
 
 fixed_t K_GetNewSpeed(player_t *player)
 {
 	const fixed_t accelmax = 4000;
-	const fixed_t p_speed = K_GetKartSpeed(player, true, true);
+	fixed_t p_speed = K_GetKartSpeed(player, true, true);
 	fixed_t p_accel = K_GetKartAccel(player);
 
 	fixed_t newspeed, oldspeed, finalspeed;
+
+	if (player->curshield == KSHIELD_TOP)
+	{
+		p_speed = 11 * p_speed / 10;
+	}
 
 	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
 	{
@@ -8964,13 +9011,25 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	if ((currentSpeed <= 0) // Not moving
 	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // Not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE) // Not respawning
+	&& (player->curshield != KSHIELD_TOP) // Not riding a Top
 	&& (P_IsObjectOnGround(player->mo) == true)) // On the ground
 	{
 		return 0;
 	}
 
 	p_maxspeed = K_GetKartSpeed(player, false, true);
-	p_speed = min(currentSpeed, (p_maxspeed * 2));
+
+	if (player->curshield == KSHIELD_TOP)
+	{
+		// Do not downscale turning speed with faster
+		// movement speed; behaves as if turning in place.
+		p_speed = 0;
+	}
+	else
+	{
+		p_speed = min(currentSpeed, (p_maxspeed * 2));
+	}
+
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
@@ -8997,7 +9056,9 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if ((player->mo->eflags & MFE_UNDERWATER) &&
+	if (player->curshield == KSHIELD_TOP)
+		;
+	else if ((player->mo->eflags & MFE_UNDERWATER) &&
 			player->speed > 11 * player->mo->scale)
 	{
 		turnfixed /= 2;
@@ -10011,6 +10072,11 @@ void K_AdjustPlayerFriction(player_t *player)
 	if (player->tiregrease)
 	{
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;
+	}
+
+	if (player->curshield == KSHIELD_TOP)
+	{
+		player->mo->friction += 1024;
 	}
 
 	/*
