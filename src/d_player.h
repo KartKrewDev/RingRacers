@@ -159,7 +159,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
 	FOREACH (KITCHENSINK,   20),\
-	FOREACH (DROPTARGET,    21)
+	FOREACH (DROPTARGET,    21),\
+	FOREACH (GARDENTOP,     22)
 
 typedef enum
 {
@@ -187,6 +188,7 @@ typedef enum
 	KSHIELD_LIGHTNING = 1,
 	KSHIELD_BUBBLE = 2,
 	KSHIELD_FLAME = 3,
+	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
 

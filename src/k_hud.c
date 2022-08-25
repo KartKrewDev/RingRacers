@@ -133,6 +133,7 @@ static patch_t *kp_pogospring[2];
 static patch_t *kp_superring[2];
 static patch_t *kp_kitchensink[2];
 static patch_t *kp_droptarget[2];
+static patch_t *kp_gardentop[2];
 
 static patch_t *kp_check[6];
 
@@ -423,6 +424,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_superring[0], "K_ITRING");
 	HU_UpdatePatch(&kp_kitchensink[0], "K_ITSINK");
 	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
+	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -474,6 +476,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_superring[1], "K_ISRING");
 	HU_UpdatePatch(&kp_kitchensink[1], "K_ISSINK");
 	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
+	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -686,6 +689,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISSINK" : "K_ITSINK");
 		case KITEM_DROPTARGET:
 			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
+		case KITEM_GARDENTOP:
+			return (tiny ? "K_ISGTOP" : "K_ITGTOP");
 		case KRITEM_TRIPLEORBINAUT:
 			return (tiny ? "K_ISORBN" : "K_ITORB3");
 		case KRITEM_QUADORBINAUT:
@@ -721,6 +726,7 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_superring,
 		kp_kitchensink,
 		kp_droptarget,
+		kp_gardentop,
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
@@ -4456,6 +4462,7 @@ static void K_drawDistributionDebugger(void)
 		kp_superring[1],
 		kp_kitchensink[1],
 		kp_droptarget[1],
+		kp_gardentop[1],
 
 		kp_sneaker[1],
 		kp_sneaker[1],

@@ -230,6 +230,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_kitchensink);
 	CV_RegisterVar(&cv_droptarget);
+	CV_RegisterVar(&cv_gardentop);
 
 	CV_RegisterVar(&cv_dualsneaker);
 	CV_RegisterVar(&cv_triplesneaker);
@@ -336,6 +337,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_superring,
 	&cv_kitchensink,
 	&cv_droptarget,
+	&cv_gardentop,
 	&cv_dualsneaker,
 	&cv_triplesneaker,
 	&cv_triplebanana,
@@ -372,6 +374,7 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Garden Top
 	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 1, 6, 9, 5, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -405,6 +408,7 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 0, 0 }, // Super Ring
 	{ 0, 0 }, // Kitchen Sink
 	{ 2, 0 }, // Drop Target
+	{ 0, 0 }, // Garden Top
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
@@ -442,6 +446,7 @@ INT32 K_GetShieldFromItem(INT32 item)
 		case KITEM_LIGHTNINGSHIELD: return KSHIELD_LIGHTNING;
 		case KITEM_BUBBLESHIELD: return KSHIELD_BUBBLE;
 		case KITEM_FLAMESHIELD: return KSHIELD_FLAME;
+		case KITEM_GARDENTOP: return KSHIELD_TOP;
 		default: return KSHIELD_NONE;
 	}
 }
@@ -715,10 +720,20 @@ INT32 K_KartGetItemOdds(
 		if (players[i].exiting)
 			pexiting++;
 
-		if (shieldtype != KSHIELD_NONE && shieldtype == K_GetShieldFromItem(players[i].itemtype))
+		switch (shieldtype)
 		{
-			// Don't allow more than one of each shield type at a time
-			return 0;
+			case KSHIELD_NONE:
+				/* Marble Garden Top is not REALLY
+					a Sonic 3 shield */
+			case KSHIELD_TOP:
+				break;
+
+			default:
+				if (shieldtype == K_GetShieldFromItem(players[i].itemtype))
+				{
+					// Don't allow more than one of each shield type at a time
+					return 0;
+				}
 		}
 
 		if (players[i].position == 1)

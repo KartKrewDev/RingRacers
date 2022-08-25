@@ -93,7 +93,8 @@ extern consvar_t
 	cv_pogospring,
 	cv_superring,
 	cv_kitchensink,
-	cv_droptarget;
+	cv_droptarget,
+	cv_gardentop;
 
 extern consvar_t
 	cv_dualsneaker,

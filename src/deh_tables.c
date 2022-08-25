@@ -3740,6 +3740,14 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAMESHIELDLINE3",
 	"S_FLAMESHIELDFLASH",
 
+	// Marble Garden Zone Spinning Top
+	"S_GARDENTOP_FLOATING",
+	"S_GARDENTOP_SINKING1",
+	"S_GARDENTOP_SINKING2",
+	"S_GARDENTOP_SINKING3",
+	"S_GARDENTOP_DEAD",
+	"S_GARDENTOPSPARK",
+
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
 
@@ -5346,6 +5354,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",
 	"MT_BUBBLESHIELDTRAP",
+	"MT_GARDENTOP",
+	"MT_GARDENTOPSPARK",
 
 	"MT_HYUDORO",
 	"MT_HYUDORO_CENTER",
@@ -6668,6 +6678,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KSHIELD_LIGHTNING",KSHIELD_LIGHTNING},
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
+	{"KSHIELD_TOP",KSHIELD_TOP},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 	// kartspinoutflags_t
