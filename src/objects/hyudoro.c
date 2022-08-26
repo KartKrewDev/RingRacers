@@ -179,6 +179,7 @@ move_to_player (mobj_t *hyu)
 	mobj_t *target = hyudoro_target(hyu);
 
 	angle_t angle;
+	fixed_t speed;
 
 	if (!target)
 		return;
@@ -186,8 +187,20 @@ move_to_player (mobj_t *hyu)
 	angle = R_PointToAngle2(
 			hyu->x, hyu->y, target->x, target->y);
 
-	P_InstaThrust(hyu, angle, (hyu->radius / 2) +
-			max(hyu->radius, K_GetSpeed(target)));
+	speed = (hyu->radius / 2) +
+		max(hyu->radius, K_GetSpeed(target));
+
+	// For first place only: cap hyudoro speed at 50%
+	// target player's kart speed
+	if (target->player && target->player->position == 1)
+	{
+		const fixed_t normalspeed =
+			K_GetKartSpeed(target->player, false, false) / 2;
+
+		speed = min(speed, normalspeed);
+	}
+
+	P_InstaThrust(hyu, angle, speed);
 
 	hyu->z = target->z; // stay level with target
 	hyu->angle = angle;

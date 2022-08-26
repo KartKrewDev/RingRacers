@@ -390,7 +390,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->muspostbossfadein = 0;
 	mapheaderinfo[num]->musforcereset = -1;
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
-	mapheaderinfo[num]->weather = 0;
+	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
@@ -4063,24 +4063,36 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	spectateGriefed = 0;
+	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
+
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if ((gametyperules & GTR_CIRCUIT) && server)
+	numlaps = 0;
+	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_basenumlaps.value
+		if ((netgame || multiplayer) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value)))
+		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
-			CV_StealthSetValue(&cv_numlaps, cv_basenumlaps.value);
+			numlaps = cv_numlaps.value;
 		}
 		else
 		{
-			CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
 	}
+
+	wantedcalcdelay = wantedfrequency*2;
+	indirectitemcooldown = 0;
+	mapreset = 0;
+
+	thwompsactive = false;
+	lastLowestLap = 0;
+	spbplace = -1;
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
@@ -4117,6 +4129,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -4369,8 +4382,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_SpawnSlopes(fromnetsave);
 
-	P_SpawnSpecialsAfterSlopes();
-
 	P_SpawnMapThings(!fromnetsave);
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
@@ -4431,17 +4442,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		memset(localaiming, 0, sizeof(localaiming));
 		K_InitDirector();
 	}
-
-	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
-	mapreset = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = -1;
-
-	thwompsactive = false;
-	lastLowestLap = 0;
-	spbplace = -1;
 
 	// clear special respawning que
 	iquehead = iquetail = 0;

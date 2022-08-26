@@ -1234,6 +1234,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
+	if (player->exiting && player->nextwaypoint == K_GetFinishLineWaypoint() && ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+	{
+		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
+		return;
+	}
+
 	botController = K_FindBotController(player->mo);
 	if (botController == NULL)
 	{

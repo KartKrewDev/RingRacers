@@ -1166,6 +1166,7 @@ typedef enum
 	sfx_kstart,
 	sfx_typri1,
 	sfx_typri2,
+	sfx_eggspr,
 
 	// SRB2Kart - Drop target sounds
 	sfx_kdtrg1,

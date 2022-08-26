@@ -576,6 +576,18 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 					readcupheader(f, cup);
 				}
+				else if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
+				{
+					if (i == 0 && word2[0] != '0') // If word2 isn't a number
+						i = get_precip(word2); // find a weather type by name
+					if (i < MAXPRECIP && i > 0)
+						readweather(f, i);
+					else
+					{
+						deh_warning("Weather number %d out of range (1 - %d)", i, MAXPRECIP-1);
+						ignorelines(f);
+					}
+				}
 				else if (fastcmp(word, "RINGRACERS"))
 				{
 					if (isdigit(word2[0]))

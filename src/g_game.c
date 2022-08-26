@@ -93,19 +93,21 @@ UINT32 mapmusresume;
 INT16 gamemap = 1;
 UINT32 maptol;
 
-UINT8 globalweather = PRECIP_NONE;
-UINT8 curWeather = PRECIP_NONE;
+preciptype_t globalweather = PRECIP_NONE;
+preciptype_t curWeather = PRECIP_NONE;
 
 precipprops_t precipprops[MAXPRECIP] =
 {
-	{MT_NULL, 0}, // PRECIP_NONE
-	{MT_RAIN, 0}, // PRECIP_RAIN
-	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
-	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
-	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
-	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
-	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+	{"NONE",				MT_NULL, 			0}, // PRECIP_NONE
+	{"RAIN",				MT_RAIN, 			0}, // PRECIP_RAIN
+	{"SNOW",				MT_SNOWFLAKE,		0}, // PRECIP_SNOW
+	{"BLIZZARD",			MT_BLIZZARDSNOW,	0}, // PRECIP_BLIZZARD
+	{"STORM",				MT_RAIN,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{"STORM_NORAIN",		MT_NULL,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{"STORM_NOSTRIKES",		MT_RAIN,			PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
 };
+
+preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
 //INT16 lastmapsaved = 0; // Last map we auto-saved at
@@ -301,6 +303,7 @@ INT32 cheats; //for multiplayer cheat commands
 
 // SRB2Kart
 // Cvars that we don't want changed mid-game
+UINT8 numlaps; // Removed from Cvar hell
 UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for easy, 1 for normal, 2 for hard
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
@@ -2196,6 +2199,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
+	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
@@ -2282,6 +2286,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfault = 0;
 		nocontrol = 0;
 		laps = 0;
+		latestlap = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
@@ -2322,6 +2327,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
+		latestlap = players[player].latestlap;
+
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
 
@@ -2378,6 +2385,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
+	p->latestlap = latestlap;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -3608,11 +3616,14 @@ static void G_DoCompleted(void)
 	wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
+				clientPowerAdd[i] = 0;
+
 				if (players[i].bot)
 				{
 					K_FakeBotResults(&players[i]);
@@ -3630,6 +3641,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
+	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))

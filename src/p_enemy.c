@@ -13607,6 +13607,12 @@ void A_SPBChase(mobj_t *actor)
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
 				actor->tracer->player->pflags |= PF_RINGLOCK; // set ring lock
 
+				if (actor->tracer->hitlag)
+				{
+					// If the player is frozen through no fault of their own, the SPB should be too.
+					actor->hitlag = actor->tracer->hitlag;
+				}
+
 				if (!P_IsObjectOnGround(actor->tracer))
 				{
 					// In the air you have no control; basically don't hit unless you make a near complete stop
@@ -14026,21 +14032,21 @@ void A_LightningFollowPlayer(mobj_t *actor)
 	if (!actor->target)
 		return;
 
+	if (actor->extravalue1)	// Make the radius also follow the player somewhat accuratly
 	{
-		if (actor->extravalue1)	// Make the radius also follow the player somewhat accuratly
-		{
-			sx = actor->target->x + FixedMul((actor->target->scale*actor->extravalue1), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
-			sy = actor->target->y + FixedMul((actor->target->scale*actor->extravalue1), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
-			P_MoveOrigin(actor, sx, sy, actor->target->z);
-		}
-		else	// else just teleport to player directly
-			P_MoveOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
-
-		K_MatchGenericExtraFlags(actor, actor->target);	// copy our target for graviflip
-		actor->momx = actor->target->momx;
-		actor->momy = actor->target->momy;
-		actor->momz = actor->target->momz;	// Give momentum since we don't teleport to our player literally every frame.
+		sx = actor->target->x + FixedMul((actor->target->scale*actor->extravalue1), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
+		sy = actor->target->y + FixedMul((actor->target->scale*actor->extravalue1), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
+		P_MoveOrigin(actor, sx, sy, actor->target->z);
 	}
+	else	// else just teleport to player directly
+	{
+		P_MoveOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
+	}
+
+	K_MatchGenericExtraFlags(actor, actor->target);	// copy our target for graviflip
+	actor->momx = actor->target->momx;
+	actor->momy = actor->target->momy;
+	actor->momz = actor->target->momz;	// Give momentum since we don't teleport to our player literally every frame.
 }
 
 // A_FZBoomFlash:

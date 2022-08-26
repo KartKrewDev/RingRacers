@@ -106,6 +106,7 @@ static void P_NetArchivePlayers(void)
 		{
 			WRITEINT16(save_p, clientpowerlevels[i][j]);
 		}
+		WRITEINT16(save_p, clientPowerAdd[i]);
 
 		if (!playeringame[i])
 			continue;
@@ -167,6 +168,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].totalring);
 		WRITEUINT32(save_p, players[i].realtime);
 		WRITEUINT8(save_p, players[i].laps);
+		WRITEUINT8(save_p, players[i].latestlap);
 		WRITEINT32(save_p, players[i].starpostnum);
 
 		WRITEUINT8(save_p, players[i].ctfteam);
@@ -373,6 +375,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].respawn.airtimer);
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
+		WRITEUINT8(save_p, players[i].respawn.truedeath);
 
 		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
@@ -403,6 +406,7 @@ static void P_NetUnArchivePlayers(void)
 		{
 			clientpowerlevels[i][j] = READINT16(save_p);
 		}
+		clientPowerAdd[i] = READINT16(save_p);
 
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
@@ -465,6 +469,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].totalring = READINT16(save_p); // Total number of rings obtained for GP
 		players[i].realtime = READUINT32(save_p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save_p); // Number of laps (optional)
+		players[i].latestlap = READUINT8(save_p);
 		players[i].starpostnum = READINT32(save_p);
 
 		players[i].ctfteam = READUINT8(save_p); // 1 == Red, 2 == Blue
@@ -654,6 +659,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.airtimer = READUINT32(save_p);
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
+		players[i].respawn.truedeath = READUINT8(save_p);
 
 		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
@@ -4493,6 +4499,7 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, battlecapsules);
 
 	WRITEUINT8(save_p, gamespeed);
+	WRITEUINT8(save_p, numlaps);
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
@@ -4513,8 +4520,7 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT32(save_p, indirectitemcooldown);
 	WRITEUINT32(save_p, mapreset);
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		WRITEINT16(save_p, nospectategrief[i]);
+	WRITEUINT8(save_p, spectateGriefed);
 
 	WRITEUINT8(save_p, thwompsactive);
 	WRITEUINT8(save_p, lastLowestLap);
@@ -4642,6 +4648,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battlecapsules = (boolean)READUINT8(save_p);
 
 	gamespeed = READUINT8(save_p);
+	numlaps = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
 
@@ -4662,8 +4669,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	indirectitemcooldown = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = READINT16(save_p);
+	spectateGriefed = READUINT8(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
 	lastLowestLap = READUINT8(save_p);

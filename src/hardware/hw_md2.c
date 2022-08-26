@@ -1381,10 +1381,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 		}
 
-		fixed_t interpx = R_InterpolateFixed(spr->mobj->old_x, spr->mobj->x);
-		fixed_t interpy = R_InterpolateFixed(spr->mobj->old_y, spr->mobj->y);
-		fixed_t interpz = R_InterpolateFixed(spr->mobj->old_z, spr->mobj->z);
-
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
@@ -1395,15 +1391,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				mul = -mul;
 			}
 
-			interpx += FixedMul(spr->mobj->momx, mul);
-			interpy += FixedMul(spr->mobj->momy, mul);
-			interpy += FixedMul(spr->mobj->momz, mul);
+			interp.x += FixedMul(spr->mobj->momx, mul);
+			interp.y += FixedMul(spr->mobj->momy, mul);
+			interp.z += FixedMul(spr->mobj->momz, mul);
 		}
 
 		// sprite offset
-		interpx += spr->mobj->sprxoff;
-		interpy += spr->mobj->spryoff;
-		interpz += spr->mobj->sprzoff;
+		interp.x += spr->mobj->sprxoff;
+		interp.y += spr->mobj->spryoff;
+		interp.z += spr->mobj->sprzoff;
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
