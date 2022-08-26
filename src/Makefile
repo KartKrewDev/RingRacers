@@ -242,7 +242,7 @@ endif
 ifndef EXENAME
 base:=ringracers
 branch:=$(shell git symbolic-ref -q --short HEAD)
-EXENAME:=$(base)$(call _,$(branch))$(exesuffix)
+EXENAME:=$(base)$(call _,$(filter-out master,$(branch)))$(exesuffix)
 endif
 
 DBGNAME?=$(EXENAME).debug
