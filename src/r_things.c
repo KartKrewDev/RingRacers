@@ -3001,12 +3001,6 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 
 			ds = curr->user;
 
-			if (!ds->silhouette && !ds->maskedtexturecol)
-			{
-				// does not cover sprite
-				continue;
-			}
-
 			if (ds->portalpass != 66) // unused?
 			{
 				if (ds->portalpass > 0 && ds->portalpass <= portalrender)
