@@ -657,6 +657,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	angle_t angletonext = ANGLE_MAX;
 	INT32 disttonext = INT32_MAX;
 
+	waypoint_t *finishLine = K_GetFinishLineWaypoint();
 	waypoint_t *wp = player->nextwaypoint;
 	mobj_t *prevwpmobj = player->mo;
 
@@ -673,7 +674,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
 
 	pathfindsuccess = K_PathfindToWaypoint(
-		player->nextwaypoint, K_GetFinishLineWaypoint(),
+		player->nextwaypoint, finishLine,
 		&pathtofinish,
 		useshortcuts, huntbackwards
 	);
@@ -694,16 +695,15 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 				prevwpmobj = ((waypoint_t *)pathtofinish.array[ i - 1 ].nodedata)->mobj;
 			}
 
-			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
-			{
-				// If we can't get a direct path to this waypoint, stop predicting.
-				distanceleft = 0;
-				radreduce = FRACUNIT >> 1;
-				break;
-			}
-
 			angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
 			disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
+
+			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
+			{
+				// If we can't get a direct path to this waypoint, predict less.
+				distanceleft -= disttonext;
+				radreduce = FRACUNIT >> 1;
+			}
 
 			if (wp->mobj->radius < smallestradius)
 			{
@@ -717,12 +717,35 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 				// We're done!!
 				break;
 			}
-		}
 
-		if (i == pathtofinish.numnodes)
-		{
-			// Reached the finish!!
-			distanceleft = 0;
+			if (i == pathtofinish.numnodes-1 && disttonext > 0)
+			{
+				// We were pathfinding to the finish, but we want to go past it.
+				// Set up a new pathfind.
+
+				waypoint_t *next = NULL;
+
+				if (finishLine->numnextwaypoints == 0)
+				{
+					distanceleft = 0;
+					break;
+				}
+
+				// default to first one
+				next = wp->nextwaypoints[0];
+
+				pathfindsuccess = K_PathfindToWaypoint(
+					next, finishLine,
+					&pathtofinish,
+					useshortcuts, huntbackwards
+				);
+
+				if (pathfindsuccess == false)
+				{
+					distanceleft = 0;
+					break;
+				}
+			}
 		}
 
 		Z_Free(pathtofinish.array);
