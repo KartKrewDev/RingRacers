@@ -3090,8 +3090,8 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->driftboost) // Drift Boost
 	{
 		// Rebuff Eggman's stat block corner
-		const INT32 heavyAccel = (player->kartweight - 1) + (9 - player->kartspeed);
-		const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 16);
+		const INT32 heavyAccel = ((9 - player->kartspeed) * 2) + (player->kartweight - 1);
+		const fixed_t heavyAccelBonus = FRACUNIT + ((heavyAccel * maxmetabolismincrease * 2) / 24);
 
 		fixed_t driftSpeed = FRACUNIT/4; // 25% base
 
