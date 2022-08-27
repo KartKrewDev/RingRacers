@@ -193,6 +193,9 @@ nasm_format:=
 # also defines the name as a macro to the compiler.
 passthru_opts:=
 
+# separate suffix with an underscore
+exesuffix:=$(call _,$(EXESUFFIX))
+
 include Makefile.d/platform.mk
 include Makefile.d/features.mk
 include Makefile.d/versions.mk
@@ -230,17 +233,22 @@ endif
 objects:=$(addprefix $(objdir)/,$(objects))
 
 ifdef DEBUGMODE
-bin:=../bin/debug
+EXEDIR?=../bin/debug
 else
-bin:=../bin
+EXEDIR?=../bin
 endif
 
-# default EXENAME (usually set by platform)
-EXENAME?=ringracers
+# append branch name by default
+ifndef EXENAME
+base:=ringracers
+branch:=$(shell git symbolic-ref -q --short HEAD)
+EXENAME:=$(base)$(call _,$(filter-out master,$(branch)))$(exesuffix)
+endif
+
 DBGNAME?=$(EXENAME).debug
 
-exe:=$(bin)/$(EXENAME)
-dbg:=$(bin)/$(DBGNAME)
+exe:=$(EXEDIR)/$(EXENAME)
+dbg:=$(EXEDIR)/$(DBGNAME)
 
 build_done==== Build is done, look for \
            $(<F) at $(abspath $(<D)) ===
