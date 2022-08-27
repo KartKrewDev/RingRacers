@@ -28,6 +28,7 @@
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
 #include "k_boss.h"
+#include "m_perfstats.h"
 
 
 /*--------------------------------------------------
@@ -638,6 +639,8 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 --------------------------------------------------*/
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
+	const precise_t time = I_GetPreciseTime();
+
 	// Stair janking makes it harder to steer, so attempt to steer harder.
 	const UINT8 jankDiv = (player->stairjank > 0) ? 2 : 1;
 
@@ -765,6 +768,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		predict->y += P_ReturnThrustY(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
 	}
 
+	ps_bots[player - players].prediction += I_GetPreciseTime() - time;
 	return predict;
 }
 
@@ -1219,6 +1223,7 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 --------------------------------------------------*/
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
+	precise_t t = 0;
 	botprediction_t *predict = NULL;
 	boolean trySpindash = true;
 	angle_t destangle = 0;
@@ -1439,7 +1444,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	{
 		// Don't pointlessly try to use rings/sneakers while charging a spindash.
 		// TODO: Allowing projectile items like orbinaut while e-braking would be nice, maybe just pass in the spindash variable?
+		t = I_GetPreciseTime();
 		K_BotItemUsage(player, cmd, turnamt);
+		ps_bots[player - players].item = I_GetPreciseTime() - t;
 	}
 
 	if (turnamt != 0)

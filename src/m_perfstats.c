@@ -18,6 +18,7 @@
 #include "i_time.h"
 #include "z_zone.h"
 #include "p_local.h"
+#include "g_game.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -62,6 +63,8 @@ ps_hookinfo_t *thinkframe_hooks = NULL;
 int thinkframe_hooks_length = 0;
 int thinkframe_hooks_capacity = 16;
 
+ps_botinfo_t ps_bots[MAXPLAYERS];
+
 static INT32 draw_row;
 
 void PS_SetThinkFrameHookInfo(int index, precise_t time_taken, char* short_src)
@@ -83,6 +86,12 @@ void PS_SetThinkFrameHookInfo(int index, precise_t time_taken, char* short_src)
 	// since the values are set sequentially from begin to end, the last call should leave
 	// the correct value to this variable
 	thinkframe_hooks_length = index + 1;
+}
+
+void PS_ResetBotInfo(void)
+{
+	memset(ps_bots, 0, sizeof(ps_bots));
+	ps_botticcmd_time = 0;
 }
 
 static void PS_SetFrameTime(void)
@@ -486,15 +495,126 @@ void M_DrawPerfStats(void)
 
 	PS_SetFrameTime();
 
-	if (cv_perfstats.value == 1) // rendering
+	if (cv_perfstats.value == PS_RENDER) // rendering
 	{
 		M_DrawRenderStats();
 	}
-	else if (cv_perfstats.value == 2) // logic
+	else if (cv_perfstats.value == PS_LOGIC) // logic
 	{
 		M_DrawTickStats();
 	}
-	else if (cv_perfstats.value == 3) // lua thinkframe
+	else if (cv_perfstats.value == PS_BOT) // bot ticcmd
+	{
+		if (vid.width < 640 || vid.height < 400) // low resolution
+		{
+			// it's not gonna fit very well..
+			V_DrawThinString(30, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Not available for resolutions below 640x400");
+		}
+		else // high resolution
+		{
+			precise_t otherTime = 0;
+			int i;
+
+			// text writing position
+			int x = 2;
+			int y = 4;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (ps_bots[i].isBot == false)
+				{
+					continue;
+				}
+
+				snprintf(s, sizeof s - 1, "Bot %d (%s):", i + 1, player_names[i]);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+
+				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].total) / (I_GetPrecisePrecision() / 1000000)));
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+
+				snprintf(s, sizeof s - 1, "Prediction:");
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+
+				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].prediction) / (I_GetPrecisePrecision() / 1000000)));
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+
+				snprintf(s, sizeof s - 1, "Nudge:");
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+
+				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].nudge) / (I_GetPrecisePrecision() / 1000000)));
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+
+				snprintf(s, sizeof s - 1, "Item:");
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+
+				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].item) / (I_GetPrecisePrecision() / 1000000)));
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+
+				snprintf(s, sizeof s - 1, "Other:");
+				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+
+				otherTime = ps_bots[i].total - ps_bots[i].prediction - ps_bots[i].nudge - ps_bots[i].item;
+				snprintf(s, sizeof s - 1, "%ld", (long)(otherTime / (I_GetPrecisePrecision() / 1000000)));
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+
+				// add an extra space
+				y += 4; // repeated code!
+				if (y > 192)
+				{
+					y = 4;
+					x += 106;
+					if (x > 214)
+						break;
+				}
+			}
+		}
+	}
+	else if (cv_perfstats.value == PS_THINKFRAME) // lua thinkframe
 	{
 		if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
 			return;

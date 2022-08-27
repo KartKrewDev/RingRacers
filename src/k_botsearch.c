@@ -27,6 +27,7 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "p_slopes.h" // P_GetZAt
+#include "m_perfstats.h"
 
 struct globalsmuggle
 {
@@ -613,6 +614,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 --------------------------------------------------*/
 void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
+	const precise_t time = I_GetPreciseTime();
+
 	INT32 xl, xh, yl, yh, bx, by;
 
 	fixed_t distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
@@ -727,7 +730,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	// Check if our side is invalid, if so, don't do the code below.
 	if (gotoSide != -1 && globalsmuggle.gotoObjs[gotoSide] == 0)
 	{
-		// Do not use a side 
+		// Do not use a side
 		gotoSide = -1;
 	}
 
@@ -769,6 +772,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 	}
+
+	ps_bots[player - players].nudge += I_GetPreciseTime() - time;
 }
 
 /*--------------------------------------------------
