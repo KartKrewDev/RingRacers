@@ -931,35 +931,44 @@ void M_StartControlPanel(void)
 
 	menuactive = true;
 
-	if (demo.playback)
+	if (!Playing())
 	{
-		currentMenu = &PAUSE_PlaybackMenuDef;
-	}
-	else if (!Playing())
-	{
-		// we need to do this before setting ApplyProfile otherwise funky things are going to happen.
-		currentMenu = &MAIN_ProfilesDef;
-		optionsmenu.profilen = cv_ttlprofilen.value;
+		if (cv_currprofile.value == -1) // Only ask once per session.
+		{
+			// we need to do this before setting ApplyProfile otherwise funky things are going to happen.
+			currentMenu = &MAIN_ProfilesDef;
+			optionsmenu.profilen = cv_ttlprofilen.value;
 
-		// options don't need initializing here.
-		PR_ApplyProfile(0, 0);	// apply guest profile to player 0 by default.
-		// this is to garantee that the controls aren't fucked up.
+			// options don't need initializing here.
+			PR_ApplyProfile(0, 0); // apply guest profile to player 0 by default.
+			// this is to garantee that the controls aren't fucked up.
 
-		// make sure we don't overstep that.
-		if (optionsmenu.profilen > PR_GetNumProfiles())
-			optionsmenu.profilen = PR_GetNumProfiles();
-		else if (optionsmenu.profilen < 0)
-			optionsmenu.profilen = 0;
+			// make sure we don't overstep that.
+			if (optionsmenu.profilen > PR_GetNumProfiles())
+				optionsmenu.profilen = PR_GetNumProfiles();
+			else if (optionsmenu.profilen < 0)
+				optionsmenu.profilen = 0;
 
-		itemOn = 0;
+			itemOn = 0;
 
-		CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
-		CV_StealthSetValue(&cv_splitdevice, 0);		// Disable this option by default.
+			CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
+			CV_StealthSetValue(&cv_splitdevice, 0);		// Disable this option by default.
+		}
+		else
+		{
+			currentMenu = &MainDef;
+		}
 	}
 	else
 	{
-		// For now let's just always open the same pause menu.
-		M_OpenPauseMenu();
+		if (demo.playback)
+		{
+			currentMenu = &PAUSE_PlaybackMenuDef;
+		}
+		else
+		{
+			M_OpenPauseMenu();
+		}
 	}
 
 	CON_ToggleOff(); // move away console
