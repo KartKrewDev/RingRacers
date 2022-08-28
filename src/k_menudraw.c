@@ -655,8 +655,22 @@ void M_DrawGenericMenu(void)
 //
 void M_DrawKartGamemodeMenu(void)
 {
-	UINT8 n = currentMenu->numitems-1;
-	INT32 i, x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1)), y = GM_STARTY - ((GM_YOFFSET / 2) * (n-1));
+	UINT8 n = 0;
+	INT32 i, x, y;
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		if (currentMenu->menuitems[i].status == IT_DISABLED)
+		{
+			continue;
+		}
+
+		n++;
+	}
+
+	n--;
+	x = GM_STARTX - ((GM_XOFFSET / 2) * (n-1));
+	y = GM_STARTY - ((GM_YOFFSET / 2) * (n-1));
 
 	M_DrawMenuTooltips();
 
@@ -667,7 +681,12 @@ void M_DrawKartGamemodeMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		if (i >= n)
+		if (currentMenu->menuitems[i].status == IT_DISABLED)
+		{
+			continue;
+		}
+
+		if (i >= currentMenu->numitems-1)
 		{
 			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
 			y = GM_STARTY + (GM_YOFFSET * 5 / 2);

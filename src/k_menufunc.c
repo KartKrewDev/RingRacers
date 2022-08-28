@@ -3156,6 +3156,47 @@ boolean M_CharacterSelectQuit(void)
 	return true;
 }
 
+void M_SetupGametypeMenu(INT32 choice)
+{
+	(void)choice;
+
+	PLAY_GamemodesDef.prevMenu = currentMenu;
+
+	if (cv_splitplayers.value <= 1)
+	{
+		// Remove Battle, add Capsules
+		PLAY_GamemodesMenu[1].status = IT_DISABLED;
+		PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
+	}
+	else
+	{
+		// Add Battle, remove Capsules
+		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
+		PLAY_GamemodesMenu[2].status = IT_DISABLED;
+	}
+
+	M_SetupNextMenu(&PLAY_GamemodesDef, false);
+}
+
+void M_SetupRaceMenu(INT32 choice)
+{
+	(void)choice;
+
+	PLAY_RaceGamemodesDef.prevMenu = currentMenu;
+
+	// Time Attack is 1P only
+	if (cv_splitplayers.value <= 1)
+	{
+		PLAY_RaceGamemodesMenu[2].status = IT_STRING | IT_CALL;
+	}
+	else
+	{
+		PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
+	}
+
+	M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
+}
+
 // DIFFICULTY SELECT
 
 void M_SetupDifficultySelect(INT32 choice)

@@ -187,7 +187,7 @@ extern menu_t PLAY_CharSelectDef;
 extern menuitem_t PLAY_MainMenu[];
 extern menu_t PLAY_MainDef;
 
-extern menuitem_t PLAY_Gamemodes[];
+extern menuitem_t PLAY_GamemodesMenu[];
 extern menu_t PLAY_GamemodesDef;
 
 extern menuitem_t PLAY_RaceGamemodesMenu[];
@@ -616,6 +616,9 @@ void M_CharacterSelect(INT32 choice);
 boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
+
+void M_SetupGametypeMenu(INT32 choice);
+void M_SetupRaceMenu(INT32 choice);
 
 #define CUPMENU_COLUMNS 7
 #define CUPMENU_ROWS 2
