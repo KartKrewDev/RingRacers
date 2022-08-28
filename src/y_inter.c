@@ -575,49 +575,46 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false && bossinfo.boss == false)
+	if (timer && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking)
 	{
-		if (timer && grandprixinfo.gp == false)
-		{
-			char *string;
-			INT32 tickdown = (timer+1)/TICRATE;
+		char *string;
+		INT32 tickdown = (timer+1)/TICRATE;
 
-			if (multiplayer && demo.playback)
-				string = va("Replay ends in %d", tickdown);
-			else
-				string = va("%s starts in %d", cv_advancemap.string, tickdown);
+		if (multiplayer && demo.playback)
+			string = va("Replay ends in %d", tickdown);
+		else
+			string = va("%s starts in %d", cv_advancemap.string, tickdown);
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
-				string);
-		}
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol, string);
 
 		if ((demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
+		{
 			switch (demo.savemode)
 			{
-			case DSM_NOTSAVING:
-				V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Look Backward: Save replay");
-				break;
+				case DSM_NOTSAVING:
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B): Save replay");
+					break;
 
-			case DSM_SAVED:
-				V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Replay saved!");
-				break;
+				case DSM_SAVED:
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Replay saved!");
+					break;
 
-			case DSM_TITLEENTRY:
-				ST_DrawDemoTitleEntry();
-				break;
+				case DSM_TITLEENTRY:
+					ST_DrawDemoTitleEntry();
+					break;
 
-			default: // Don't render any text here
-				break;
+				default: // Don't render any text here
+					break;
 			}
+		}
 
 		//if ((intertic/TICRATE) & 1) // Make it obvious that scrambling is happening next round. (OR NOT, I GUESS)
 		//{
-			/*if (cv_scrambleonchange.value && cv_teamscramble.value)
-				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
-
 			if (speedscramble != -1 && speedscramble != gamespeed)
+			{
 				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
 					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
+			}
 		//}
 	}
 

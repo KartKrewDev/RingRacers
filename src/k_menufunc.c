@@ -140,15 +140,6 @@ static void Dummystaff_OnChange(void);
 
 consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-#if 0
-static CV_PossibleValue_t map_cons_t[] = {
-	{0,"MIN"},
-	{NUMMAPS, "MAX"},
-	{0, NULL}
-};
-consvar_t cv_nextmap = CVAR_INIT ("nextmap", "1", CV_HIDEN|CV_CALL, map_cons_t, Nextmap_OnChange);
-#endif
-
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
 
@@ -215,7 +206,7 @@ consvar_t cv_dummyprofilekickstart = CVAR_INIT ("dummyprofilekickstart", "Off", 
 
 consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, dummygpdifficulty_cons_t, NULL);
 consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
-consvar_t cv_dummygpencore = CVAR_INIT ("dummygpdifficulty", "No", CV_HIDDEN, CV_YesNo, NULL);
+consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "No", CV_HIDDEN, CV_YesNo, NULL);
 
 static CV_PossibleValue_t dummymatchbots_cons_t[] = {
 	{0, "Off"},
@@ -228,10 +219,13 @@ static CV_PossibleValue_t dummymatchbots_cons_t[] = {
 	{7, "Lv.7"},
 	{8, "Lv.8"},
 	{9, "Lv.9"},
+	{10, "Lv.10"},
+	{11, "Lv.11"},
+	{12, "Lv.12"},
+	{13, "Lv.MAX"},
 	{0, NULL}
 };
-
-consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN|CV_SAVE, dummymatchbots_cons_t, NULL);	// Save this one if you wanna test your stuff without bots for instance
+consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN, dummymatchbots_cons_t, NULL);
 
 // for server fetch threads...
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
@@ -240,101 +234,6 @@ M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
 // CVAR ONCHANGE EVENTS GO HERE
 // ==========================================================================
 // (there's only a couple anyway)
-
-#if 0
-// Nextmap.  Used for Time Attack.
-static void Nextmap_OnChange(void)
-{
-	char *leveltitle;
-
-	// Update the string in the consvar.
-	Z_Free(cv_nextmap.zstring);
-	leveltitle = G_BuildMapTitle(cv_nextmap.value);
-	cv_nextmap.string = cv_nextmap.zstring = leveltitle ? leveltitle : Z_StrDup(G_BuildMapName(cv_nextmap.value));
-
-	if (currentMenu == &SP_TimeAttackDef)
-	{
-		// see also p_setup.c's P_LoadRecordGhosts
-		const size_t glen = strlen(srb2home)+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
-		char *gpath = malloc(glen);
-		INT32 i;
-		UINT8 active;
-
-		if (!gpath)
-			return;
-
-		sprintf(gpath,"%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
-
-		CV_StealthSetValue(&cv_dummystaff, 0);
-
-		active = false;
-		SP_TimeAttackMenu[taguest].status = IT_DISABLED;
-		SP_TimeAttackMenu[tareplay].status = IT_DISABLED;
-		//SP_TimeAttackMenu[taghost].status = IT_DISABLED;
-
-		// Check if file exists, if not, disable REPLAY option
-		for (i = 0; i < 4; i++)
-		{
-			SP_ReplayMenu[i].status = IT_DISABLED;
-			SP_GuestReplayMenu[i].status = IT_DISABLED;
-		}
-		SP_ReplayMenu[4].status = IT_DISABLED;
-
-		SP_GhostMenu[3].status = IT_DISABLED;
-		SP_GhostMenu[4].status = IT_DISABLED;
-
-		if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, cv_chooseskin.string))) {
-			SP_ReplayMenu[0].status = IT_WHITESTRING|IT_CALL;
-			SP_GuestReplayMenu[0].status = IT_WHITESTRING|IT_CALL;
-			active |= 3;
-		}
-		if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_chooseskin.string))) {
-			SP_ReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
-			SP_GuestReplayMenu[1].status = IT_WHITESTRING|IT_CALL;
-			active |= 3;
-		}
-		if (FIL_FileExists(va("%s-%s-last.lmp", gpath, cv_chooseskin.string))) {
-			SP_ReplayMenu[2].status = IT_WHITESTRING|IT_CALL;
-			SP_GuestReplayMenu[2].status = IT_WHITESTRING|IT_CALL;
-			active |= 3;
-		}
-
-		if (FIL_FileExists(va("%s-guest.lmp", gpath)))
-		{
-			SP_ReplayMenu[3].status = IT_WHITESTRING|IT_CALL;
-			SP_GuestReplayMenu[3].status = IT_WHITESTRING|IT_CALL;
-			SP_GhostMenu[3].status = IT_STRING|IT_CVAR;
-			active |= 3;
-		}
-
-		CV_SetValue(&cv_dummystaff, 1);
-		if (cv_dummystaff.value)
-		{
-			SP_ReplayMenu[4].status = IT_WHITESTRING|IT_KEYHANDLER;
-			SP_GhostMenu[4].status = IT_STRING|IT_CVAR;
-			CV_StealthSetValue(&cv_dummystaff, 1);
-			active |= 1;
-		}
-
-		if (active) {
-			if (active & 1)
-				SP_TimeAttackMenu[tareplay].status = IT_WHITESTRING|IT_SUBMENU;
-			if (active & 2)
-				SP_TimeAttackMenu[taguest].status = IT_WHITESTRING|IT_SUBMENU;
-		}
-		else if (itemOn == tareplay) // Reset lastOn so replay isn't still selected when not available.
-		{
-			currentMenu->lastOn = itemOn;
-			itemOn = tastart;
-		}
-
-		if (mapheaderinfo[cv_nextmap.value-1] && mapheaderinfo[cv_nextmap.value-1]->forcecharacter[0] != '\0')
-			CV_Set(&cv_chooseskin, mapheaderinfo[cv_nextmap.value-1]->forcecharacter);
-
-		free(gpath);
-	}
-}
-#endif
 
 static void Dummymenuplayer_OnChange(void)
 {
@@ -3207,7 +3106,7 @@ void M_SetupDifficultySelect(INT32 choice)
 	// setup the difficulty menu and then remove choices depending on choice
 	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
 
-	PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR;
+	PLAY_RaceDifficulty[0].status = IT_DISABLED;
 	PLAY_RaceDifficulty[1].status = IT_DISABLED;
 	PLAY_RaceDifficulty[2].status = IT_DISABLED;
 	PLAY_RaceDifficulty[3].status = IT_DISABLED;
@@ -3217,6 +3116,7 @@ void M_SetupDifficultySelect(INT32 choice)
 
 	if (choice)		// Match Race
 	{
+		PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR; // Kart Speed
 		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
@@ -3225,6 +3125,7 @@ void M_SetupDifficultySelect(INT32 choice)
 	}
 	else			// GP
 	{
+		PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR; // Difficulty
 		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
 		PLAY_RaceDifficulty[4].status = IT_STRING|IT_CALL;	// Level Select (GP)
 		PLAY_RaceDifficultyDef.lastOn = 4;	// Select cup select by default.
@@ -3699,17 +3600,16 @@ void M_LevelSelectHandler(INT32 choice)
 				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
 				netgame = levellist.netgame;	// ^ ditto.
 
-				// this is considered to be CV_CHEAT however...
-				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);	// Match the kartbot value to the dummy match bots value.
-
-				if (netgame)	// check for the dummy kartspeed value
-					CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
-
+				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+				CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
 
 				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
 			}
-			else	// directly do the map change
+			else
+			{
+				// directly do the map change
 				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+			}
 
 			M_ClearMenus(true);
 		}
@@ -3761,13 +3661,22 @@ void M_StartTimeAttack(INT32 choice)
 	char *gpath;
 	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char nameofdemo[256];
-	(void)choice;
-	emeralds = 0;
 
-	modeattacking = ATTACKING_TIME;
+	(void)choice;
+
+	switch (levellist.newgametype)
+	{
+		case GT_BATTLE:
+			modeattacking = ATTACKING_CAPSULES;
+			break;
+		default:
+			modeattacking = ATTACKING_TIME;
+			break;
+	}
 
 	// Still need to reset devmode
 	cv_debug = 0;
+	emeralds = 0;
 
 	if (demo.playback)
 		G_StopDemo();
@@ -5782,9 +5691,17 @@ boolean M_ExtrasInputs(INT32 ch)
 // =====================
 void M_EndModeAttackRun(void)
 {
-#if 0
-	M_ModeAttackEndGame(0);
-#endif
+	G_CheckDemoStatus(); // Cancel recording
+
+	if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION)
+		Command_ExitGame_f();
+
+	M_StartControlPanel();
+	currentMenu = &PLAY_TimeAttackDef;
+	itemOn = currentMenu->lastOn;
+	G_SetGamestate(GS_MENU);
+	S_ChangeMusicInternal("menu", true);
+	modeattacking = ATTACKING_NONE;
 }
 
 struct pausemenu_s pausemenu;
@@ -5930,10 +5847,18 @@ void M_ConfirmEnterGame(INT32 choice)
 
 static void M_ExitGameResponse(INT32 ch)
 {
-	if (ch == MA_YES)
-		G_SetExitGameFlag();
+	if (ch != MA_YES)
+		return;
 
-	M_ClearMenus(true);
+	if (modeattacking)
+	{
+		M_EndModeAttackRun();
+	}
+	else
+	{
+		G_SetExitGameFlag();
+		M_ClearMenus(true);
+	}
 }
 
 void M_EndGame(INT32 choice)
