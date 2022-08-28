@@ -579,15 +579,7 @@ or NULL if we want to allocate it now.
 static INT32
 Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 {
-#ifndef NO_PNG_LUMPS
-	UINT8         buffer[8];
-#endif
-
-	lumpnum_t    flatnum;
 	int       texturenum;
-	UINT8     *flatpatch;
-	size_t    lumplength;
-
 	size_t i;
 
 	// Scan through the already found flats, return if it matches.
