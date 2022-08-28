@@ -786,73 +786,76 @@ void P_CheckPointLimit(void)
 // Checks whether or not to end a race netgame.
 boolean P_CheckRacers(void)
 {
-	UINT8 i;
-	UINT8 numplayersingame = 0;
-	UINT8 numexiting = 0;
-	boolean eliminatelast = cv_karteliminatelast.value;
-	boolean everyonedone = true;
-	boolean eliminatebots = false;
 	const boolean griefed = (spectateGriefed > 0);
+
+	boolean eliminateLast = cv_karteliminatelast.value;
+	boolean allHumansDone = true;
+	//boolean allBotsDone = true;
+
+	UINT8 numPlaying = 0;
+	UINT8 numExiting = 0;
+	UINT8 numHumans = 0;
+	UINT8 numBots = 0;
+
+	UINT8 i;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0)
 		{
 			// Y'all aren't even playing
 			continue;
 		}
 
-		numplayersingame++;
+		numPlaying++;
+
+		if (players[i].bot)
+		{
+			numBots++;
+		}
+		else
+		{
+			numHumans++;
+		}
 
 		if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
 		{
-			numexiting++;
+			numExiting++;
 		}
 		else
 		{
 			if (players[i].bot)
 			{
-				// Isn't a human, thus doesn't matter. (Sorry, robots.)
-				// Set this so that we can check for bots that need to get eliminated, though!
-				eliminatebots = true;
-				continue;
+				//allBotsDone = false;
 			}
-
-			everyonedone = false;
+			else
+			{
+				allHumansDone = false;
+			}
 		}
 	}
 
-	// If we returned here with bots left, then the last place bot may have a chance to finish the map and NOT get time over.
-	// Not that it affects anything, they didn't make the map take longer or even get any points from it. But... it's a bit inconsistent!
-	// So if there's any bots, we'll let the game skip this, continue onto calculating eliminatelast, THEN we return true anyway.
-	if (everyonedone && !eliminatebots)
-	{
-		// Everyone's finished, we're done here!
-		racecountdown = exitcountdown = 0;
-		return true;
-	}
-
-	if (numplayersingame <= 1)
+	if (numPlaying <= 1)
 	{
 		// Never do this without enough players.
-		eliminatelast = false;
+		eliminateLast = false;
 	}
 	else
 	{
-		if (grandprixinfo.gp == true)
-		{
-			// Always do this in GP
-			eliminatelast = true;
-		}
-		else if (griefed)
+		if (griefed == true)
 		{
 			// Don't do this if someone spectated
-			eliminatelast = false;
+			eliminateLast = false;
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			// Always do this in GP
+			eliminateLast = true;
 		}
 	}
 
-	if (eliminatelast == true && (numexiting >= numplayersingame-1))
+	if (eliminateLast == true && (numExiting >= numPlaying-1))
 	{
 		// Everyone's done playing but one guy apparently.
 		// Just kill everyone who is still playing.
@@ -879,9 +882,10 @@ boolean P_CheckRacers(void)
 		return true;
 	}
 
-	if (everyonedone)
+	if (numHumans > 0 && allHumansDone == true)
 	{
-		// See above: there might be bots that are still going, but all players are done, so we can exit now.
+		// There might be bots that are still going,
+		// but all of the humans are done, so we can exit now.
 		racecountdown = exitcountdown = 0;
 		return true;
 	}
@@ -889,22 +893,21 @@ boolean P_CheckRacers(void)
 	// SO, we're not done playing.
 	// Let's see if it's time to start the death counter!
 
-	if (!racecountdown)
+	if (racecountdown == 0)
 	{
 		// If the winners are all done, then start the death timer.
-		UINT8 winningpos = 1;
+		UINT8 winningPos = max(1, numPlaying / 2);
 
-		winningpos = max(1, numplayersingame/2);
-		if (numplayersingame % 2) // any remainder?
+		if (numPlaying % 2) // Any remainder? Then round up.
 		{
-			winningpos++;
+			winningPos++;
 		}
 
-		if (numexiting >= winningpos)
+		if (numExiting >= winningPos)
 		{
 			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
 
-			if (netgame)
+			if (K_CanChangeRules() == true)
 			{
 				// Custom timer
 				countdown = cv_countdowntime.value * TICRATE;
@@ -914,13 +917,14 @@ boolean P_CheckRacers(void)
 		}
 	}
 
-	// We're still playing, but no one else is, so we need to reset spectator griefing.
-	if (numplayersingame <= 1)
+	// We're still playing, but no one else is,
+	// so we need to reset spectator griefing.
+	if (numPlaying <= 1)
 	{
 		spectateGriefed = 0;
 	}
 
-	// Turns out we're still having a good time & playing the game, we didn't have to do anything :)
+	// We are still having fun and playing the game :)
 	return false;
 }
 
