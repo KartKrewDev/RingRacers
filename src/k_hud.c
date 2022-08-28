@@ -1708,7 +1708,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		{
 			localpatch = kp_winnernum[(leveltime % (NUMWINFRAMES*3)) / 3];
 		}
-		else if (stplyr->laps >= cv_numlaps.value || stplyr->exiting) // Check for the final lap, or won
+		else if (stplyr->laps >= numlaps || stplyr->exiting) // Check for the final lap, or won
 		{
 			boolean useRedNums = K_IsPlayerLosing(stplyr);
 
@@ -2339,7 +2339,7 @@ static void K_drawKartLapsAndRings(void)
 		V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_splitlapflag);
 		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 
-		if (cv_numlaps.value >= 10)
+		if (numlaps >= 10)
 		{
 			UINT8 ln[2];
 			ln[0] = ((stplyr->laps / 10) % 10);
@@ -2348,8 +2348,8 @@ static void K_drawKartLapsAndRings(void)
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
-			ln[0] = ((abs(cv_numlaps.value) / 10) % 10);
-			ln[1] = (abs(cv_numlaps.value) % 10);
+			ln[0] = ((numlaps / 10) % 10);
+			ln[1] = (numlaps % 10);
 
 			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
@@ -2357,7 +2357,7 @@ static void K_drawKartLapsAndRings(void)
 		else
 		{
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->laps) % 10]);
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(cv_numlaps.value) % 10]);
+			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(numlaps) % 10]);
 		}
 
 		// Rings
@@ -2395,7 +2395,7 @@ static void K_drawKartLapsAndRings(void)
 	{
 		// Laps
 		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, cv_numlaps.value), cv_numlaps.value));
+		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
 
 		// Rings
 		if (!uselives)
@@ -2507,19 +2507,19 @@ static void K_drawKartSpeedometer(void)
 		{
 			case 1: // Sonic Drift 2 style percentage
 			default:
-				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed!
+				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false, true); // Based on top speed!
 				labeln = 0;
 				break;
 			case 2: // Kilometers
-				convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale)/FRACUNIT; // 2.172409058
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale) / FRACUNIT; // 2.172409058
 				labeln = 1;
 				break;
 			case 3: // Miles
-				convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale)/FRACUNIT; // 1.349868774
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale) / FRACUNIT; // 1.349868774
 				labeln = 2;
 				break;
 			case 4: // Fracunits
-				convSpeed = FixedDiv(stplyr->speed, mapobjectscale)/FRACUNIT; // 1.0. duh.
+				convSpeed = FixedDiv(stplyr->speed, mapobjectscale) / FRACUNIT; // 1.0. duh.
 				labeln = 3;
 				break;
 		}
@@ -4369,7 +4369,7 @@ static void K_drawLapStartAnim(void)
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
-	if (stplyr->laps == (UINT8)(cv_numlaps.value))
+	if (stplyr->laps == (UINT8)(numlaps))
 	{
 		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
 		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;

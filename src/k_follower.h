@@ -28,6 +28,18 @@ typedef enum
 	FOLLOWERMODE__MAX
 } followermode_t;
 
+typedef enum
+{
+	FOLLOWERSTATE_RESET, // Set to this to reset the state entirely.
+	FOLLOWERSTATE_IDLE,
+	FOLLOWERSTATE_FOLLOW,
+	FOLLOWERSTATE_HURT,
+	FOLLOWERSTATE_WIN,
+	FOLLOWERSTATE_LOSE,
+	FOLLOWERSTATE_HITCONFIRM, // Uses movecount as a timer for how long to play this state.
+	FOLLOWERSTATE__MAX
+} followerstate_t;
+
 //
 // We'll define these here because they're really just a mobj that'll follow some rules behind a player
 //

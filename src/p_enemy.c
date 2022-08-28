@@ -4980,7 +4980,7 @@ void A_DetonChase(mobj_t *actor)
 		fixed_t xyspeed, speed;
 
 		if (actor->target->player)
-			speed = K_GetKartSpeed(actor->tracer->player, false);
+			speed = K_GetKartSpeed(actor->tracer->player, false, false);
 		else
 			speed = actor->target->info->speed;
 
@@ -13285,7 +13285,7 @@ void A_JawzChase(mobj_t *actor)
 				{
 					if (actor->tracer->player)
 					{
-						fixed_t speeddifference = abs(topspeed - min(actor->tracer->player->speed, K_GetKartSpeed(actor->tracer->player, false)));
+						fixed_t speeddifference = abs(topspeed - min(actor->tracer->player->speed, K_GetKartSpeed(actor->tracer->player, false, false)));
 						topspeed = topspeed - FixedMul(speeddifference, FRACUNIT-FixedDiv(distaway, distbarrier));
 					}
 				}
@@ -13607,6 +13607,12 @@ void A_SPBChase(mobj_t *actor)
 				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
 				actor->tracer->player->pflags |= PF_RINGLOCK; // set ring lock
 
+				if (actor->tracer->hitlag)
+				{
+					// If the player is frozen through no fault of their own, the SPB should be too.
+					actor->hitlag = actor->tracer->hitlag;
+				}
+
 				if (!P_IsObjectOnGround(actor->tracer))
 				{
 					// In the air you have no control; basically don't hit unless you make a near complete stop
@@ -13615,7 +13621,7 @@ void A_SPBChase(mobj_t *actor)
 				else
 				{
 					// 7/8ths max speed for Knuckles, 3/4ths max speed for min accel, exactly max speed for max accel
-					defspeed = FixedMul(((fracmax+1)<<FRACBITS) - easiness, K_GetKartSpeed(actor->tracer->player, false)) / fracmax;
+					defspeed = FixedMul(((fracmax+1)<<FRACBITS) - easiness, K_GetKartSpeed(actor->tracer->player, false, false)) / fracmax;
 				}
 
 				// Be fairer on conveyors
@@ -13695,7 +13701,7 @@ void A_SPBChase(mobj_t *actor)
 			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
 				: (16*R_PointToDist2(0, 0, actor->tracer->momx, actor->tracer->momy))/15) // Going faster than the target
-				&& xyspeed > K_GetKartSpeed(actor->tracer->player, false)/4) // Don't display speedup lines at pitifully low speeds
+				&& xyspeed > K_GetKartSpeed(actor->tracer->player, false, false) / 4) // Don't display speedup lines at pitifully low speeds
 					SpawnSPBSpeedLines(actor);
 
 			return;
@@ -14026,21 +14032,21 @@ void A_LightningFollowPlayer(mobj_t *actor)
 	if (!actor->target)
 		return;
 
+	if (actor->extravalue1)	// Make the radius also follow the player somewhat accuratly
 	{
-		if (actor->extravalue1)	// Make the radius also follow the player somewhat accuratly
-		{
-			sx = actor->target->x + FixedMul((actor->target->scale*actor->extravalue1), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
-			sy = actor->target->y + FixedMul((actor->target->scale*actor->extravalue1), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
-			P_MoveOrigin(actor, sx, sy, actor->target->z);
-		}
-		else	// else just teleport to player directly
-			P_MoveOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
-
-		K_MatchGenericExtraFlags(actor, actor->target);	// copy our target for graviflip
-		actor->momx = actor->target->momx;
-		actor->momy = actor->target->momy;
-		actor->momz = actor->target->momz;	// Give momentum since we don't teleport to our player literally every frame.
+		sx = actor->target->x + FixedMul((actor->target->scale*actor->extravalue1), FINECOSINE((actor->angle)>>ANGLETOFINESHIFT));
+		sy = actor->target->y + FixedMul((actor->target->scale*actor->extravalue1), FINESINE((actor->angle)>>ANGLETOFINESHIFT));
+		P_MoveOrigin(actor, sx, sy, actor->target->z);
 	}
+	else	// else just teleport to player directly
+	{
+		P_MoveOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
+	}
+
+	K_MatchGenericExtraFlags(actor, actor->target);	// copy our target for graviflip
+	actor->momx = actor->target->momx;
+	actor->momy = actor->target->momy;
+	actor->momz = actor->target->momz;	// Give momentum since we don't teleport to our player literally every frame.
 }
 
 // A_FZBoomFlash:

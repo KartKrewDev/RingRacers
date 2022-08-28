@@ -678,6 +678,14 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		if (!sfx->data)
 		{
 			sfx->data = I_GetSfx(sfx);
+
+			if (!sfx->data)
+			{
+				CONS_Alert(CONS_WARNING,
+						"Tried to load invalid sfx_%s\n",
+						sfx->name);
+				return;/* don't play it */
+			}
 		}
 
 		// increase the usefulness

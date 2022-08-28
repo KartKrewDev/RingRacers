@@ -489,7 +489,6 @@ fixed_t K_BotRubberband(player_t *player)
 	fixed_t rubberband = FRACUNIT;
 	fixed_t rubbermax, rubbermin;
 	player_t *firstplace = NULL;
-	line_t *botController = NULL;
 	UINT8 i;
 
 	if (player->exiting)
@@ -498,14 +497,17 @@ fixed_t K_BotRubberband(player_t *player)
 		return FRACUNIT;
 	}
 
-	botController = K_FindBotController(player->mo);
-
-	if (botController != NULL)
+	if (player->botvars.controller != UINT16_MAX)
 	{
-		// No Climb Flag: Disable rubberbanding
-		if (botController->flags & ML_NOCLIMB)
+		const line_t *botController = &lines[player->botvars.controller];
+
+		if (botController != NULL)
 		{
-			return FRACUNIT;
+			// No Climb Flag: Disable rubberbanding
+			if (botController->flags & ML_NOCLIMB)
+			{
+				return FRACUNIT;
+			}
 		}
 	}
 
@@ -556,8 +558,8 @@ fixed_t K_BotRubberband(player_t *player)
 	// Lv.   1: x0.75 min
 	// Lv.   5: x0.875 min
 	// Lv.   9: x1.0 min
-	// Lv. MAX: x1.0 min
-	rubbermin = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty))) / (DIFFICULTBOT - 1));
+	// Lv. MAX: x1.125 min
+	rubbermin = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - player->botvars.difficulty)) / (DIFFICULTBOT - 1));
 
 	if (rubberband > rubbermax)
 	{
@@ -572,94 +574,19 @@ fixed_t K_BotRubberband(player_t *player)
 }
 
 /*--------------------------------------------------
-	fixed_t K_BotTopSpeedRubberband(player_t *player)
+	fixed_t K_UpdateRubberband(player_t *player)
 
 		See header file for description.
 --------------------------------------------------*/
-fixed_t K_BotTopSpeedRubberband(player_t *player)
+fixed_t K_UpdateRubberband(player_t *player)
 {
-	fixed_t rubberband = K_BotRubberband(player);
+	fixed_t dest = K_BotRubberband(player);
+	fixed_t ret = player->botvars.rubberband;
 
-	if (rubberband <= FRACUNIT)
-	{
-		// Never go below your regular top speed
-		rubberband = FRACUNIT;
-	}
-	else
-	{
-		// Max at +20% for level 9 bots
-		rubberband = FRACUNIT + ((rubberband - FRACUNIT) / 5);
-	}
+	// Ease into the new value.
+	ret += (dest - player->botvars.rubberband) >> 3;
 
-	// Only allow you to go faster than your regular top speed if you're facing the right direction
-	if (rubberband > FRACUNIT && player->mo != NULL && player->nextwaypoint != NULL)
-	{
-		const INT16 mindiff = 30;
-		const INT16 maxdiff = 60;
-		INT16 anglediff = 0;
-		fixed_t amt = rubberband - FRACUNIT;
-		angle_t destangle = R_PointToAngle2(
-			player->mo->x, player->mo->y,
-			player->nextwaypoint->mobj->x, player->nextwaypoint->mobj->y
-		);
-		angle_t angle = player->mo->angle - destangle;
-
-		if (angle < ANGLE_180)
-		{
-			anglediff = AngleFixed(angle) >> FRACBITS;
-		}
-		else 
-		{
-			anglediff = 360 - (AngleFixed(angle) >> FRACBITS);
-		}
-
-		anglediff = abs(anglediff);
-
-		if (anglediff >= maxdiff)
-		{
-			rubberband = FRACUNIT;
-		}
-		else if (anglediff > mindiff)
-		{
-			amt = (amt * (maxdiff - anglediff)) / mindiff;
-			rubberband = FRACUNIT + amt;
-		}
-	}
-
-	return rubberband;
-}
-
-/*--------------------------------------------------
-	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
-
-		See header file for description.
---------------------------------------------------*/
-fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict)
-{
-	const fixed_t value = 20776;
-	fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
-	fixed_t newFrict = frict;
-
-	if (rubberband <= 0)
-	{
-		// Never get weaker than normal friction
-		return frict;
-	}
-
-	if (player->tiregrease > 0)
-	{
-		// Bots will lose all of their momentum without this.
-		return frict;
-	}
-
-	newFrict = frict - FixedMul(value, rubberband);
-
-	if (newFrict < 0)
-		newFrict = 0;
-	if (newFrict > FRACUNIT)
-		newFrict = FRACUNIT;
-
-	return newFrict;
+	return ret;
 }
 
 /*--------------------------------------------------
@@ -1148,7 +1075,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 
 		if (dirdist <= rad)
 		{
-			fixed_t speedmul = FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false));
+			fixed_t speedmul = FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false, false));
 			fixed_t speedrad = rad/4;
 
 			if (speedmul > FRACUNIT)
@@ -1343,13 +1270,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL
-		|| player->mo->scale <= 1
-		|| player->playerstate == PST_DEAD
-		|| leveltime <= introtime
-		|| !(gametyperules & GTR_BOTS))
+	if (gamestate != GS_LEVEL)
 	{
-		// No need to do anything else.
+		// Not in a level.
 		return;
 	}
 
@@ -1359,13 +1282,45 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
+	if (!(gametyperules & GTR_BOTS) // No bot behaviors
+		|| K_GetNumWaypoints() == 0 // No waypoints
+		|| leveltime <= introtime // During intro camera
+		|| player->playerstate == PST_DEAD // Dead, respawning.
+		|| player->mo->scale <= 1) // Post-finish "death" animation
+	{
+		// No need to do anything else.
+		return;
+	}
+
+	if (player->exiting && player->nextwaypoint == K_GetFinishLineWaypoint() && ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
+	{
+		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
+		return;
+	}
+
 	botController = K_FindBotController(player->mo);
+	if (botController == NULL)
+	{
+		player->botvars.controller = UINT16_MAX;
+	}
+	else
+	{
+		player->botvars.controller = botController - lines;
+	}
+
+	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	if (player->trickpanel != 0)
 	{
 		K_BotTrick(player, cmd, botController);
 
 		// Don't do anything else.
+		return;
+	}
+
+	if (botController != NULL && (botController->flags & ML_EFFECT2))
+	{
+		// Disable bot controls entirely.
 		return;
 	}
 

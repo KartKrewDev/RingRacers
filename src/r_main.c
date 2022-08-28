@@ -1322,6 +1322,8 @@ void R_SkyboxFrame(int s)
 
 	R_SetupAimingFrame(s);
 
+	newview->angle += r_viewmobj->angle;
+
 	newview->x = r_viewmobj->x;
 	newview->y = r_viewmobj->y;
 	newview->z = r_viewmobj->z; // 26/04/17: use actual Z position instead of spawnpoint angle!

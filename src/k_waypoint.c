@@ -361,6 +361,12 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			// remember: huge radius
 			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
 			{
+				if (!P_TraceBlockingLines(mobj, checkwaypoint->mobj))
+				{
+					// Save sight checks when all of the other checks pass, so we only do it if we have to
+					continue;
+				}
+
 				// If the mobj is touching multiple waypoints at once,
 				// then solve ties by taking the one closest to the finish line.
 				// Prevents position from flickering wildly when taking turns.
@@ -375,7 +381,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			{
 				if (!P_TraceBlockingLines(mobj, checkwaypoint->mobj))
 				{
-					// Save sight checks for the end, so we only do it if we have to
+					// Save sight checks when all of the other checks pass, so we only do it if we have to
 					continue;
 				}
 

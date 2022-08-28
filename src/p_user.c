@@ -198,7 +198,7 @@ void P_CalcHeight(player_t *player)
 	fixed_t bob = 0;
 	fixed_t pviewheight;
 	mobj_t *mo = player->mo;
-	fixed_t bobmul = FRACUNIT - FixedDiv(FixedHypot(player->rmomx, player->rmomy), K_GetKartSpeed(player, false));
+	fixed_t bobmul = FRACUNIT - FixedDiv(FixedHypot(player->rmomx, player->rmomy), K_GetKartSpeed(player, false, false));
 
 	// Regular movement bobbing.
 	// Should not be calculated when not on ground (FIXTHIS?)
@@ -873,7 +873,7 @@ void P_RestoreMusic(player_t *player)
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
-			if ((gametyperules & GTR_CIRCUIT) && player->laps >= (UINT8)(cv_numlaps.value))
+			if ((gametyperules & GTR_CIRCUIT) && player->laps >= numlaps)
 				S_SpeedMusic(1.2f);
 #endif
 			if (mapmusresume && cv_resume.value)
@@ -1939,7 +1939,7 @@ static void P_3dMovement(player_t *player)
 			// Make rubberbanding bots slow down faster
 			if (K_PlayerUsesBotMovement(player))
 			{
-				fixed_t rubberband = K_BotRubberband(player) - FRACUNIT;
+				fixed_t rubberband = player->botvars.rubberband - FRACUNIT;
 
 				if (rubberband > 0)
 				{
@@ -1969,11 +1969,12 @@ static void P_3dMovement(player_t *player)
 	// allow for being able to change direction on spring jumps without being accelerated into the void - Sryder
 	if (!P_IsObjectOnGround(player->mo))
 	{
+		fixed_t topspeed = K_GetKartSpeed(player, true, true);
 		newMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
-		if (newMagnitude > K_GetKartSpeed(player, true)) //topspeed)
+		if (newMagnitude > topspeed)
 		{
 			fixed_t tempmomx, tempmomy;
-			if (oldMagnitude > K_GetKartSpeed(player, true))
+			if (oldMagnitude > topspeed)
 			{
 				if (newMagnitude > oldMagnitude)
 				{
@@ -1986,8 +1987,8 @@ static void P_3dMovement(player_t *player)
 			}
 			else
 			{
-				tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
-				tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), K_GetKartSpeed(player, true)); //topspeed)
+				tempmomx = FixedMul(FixedDiv(player->mo->momx - player->cmomx, newMagnitude), topspeed);
+				tempmomy = FixedMul(FixedDiv(player->mo->momy - player->cmomy, newMagnitude), topspeed);
 				player->mo->momx = tempmomx + player->cmomx;
 				player->mo->momy = tempmomy + player->cmomy;
 			}
@@ -2256,8 +2257,8 @@ void P_MovePlayer(player_t *player)
 	&& (player->speed > runspd)
 	&& player->mo->momz == 0 && player->carry != CR_SLIDING && !player->spectator)
 	{
-		fixed_t trailScale = FixedMul(FixedDiv(player->speed - runspd, K_GetKartSpeed(player, false) - runspd), mapobjectscale);
-		fixed_t playerTopSpeed = K_GetKartSpeed(player, false);
+		fixed_t playerTopSpeed = K_GetKartSpeed(player, false, false);
+		fixed_t trailScale = FixedMul(FixedDiv(player->speed - runspd, playerTopSpeed - runspd), mapobjectscale);
 
 		if (playerTopSpeed > runspd)
 			trailScale = FixedMul(FixedDiv(player->speed - runspd, playerTopSpeed - runspd), mapobjectscale);
@@ -3852,6 +3853,7 @@ void P_DoTimeOver(player_t *player)
 	}
 
 	player->pflags |= PF_NOCONTEST;
+	K_UpdatePowerLevelsOnFailure(player);
 
 	if (G_GametypeUsesLives())
 	{

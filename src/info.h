@@ -937,6 +937,7 @@ typedef enum sprite
 	SPR_SPHR, // Red Horizontal Spring
 	SPR_SPHB, // Blue Horizontal Spring
 	SPR_SPHG, // Grey Horizontal Spring
+	SPR_POGS, // Pogo Spring
 	SPR_BSTY, // Yellow Booster
 	SPR_BSTR, // Red Booster
 
@@ -3529,6 +3530,13 @@ typedef enum state
 	S_GREYSPRING3,
 	S_GREYSPRING4,
 
+	// Orange Spring (Pogo)
+	S_POGOSPRING1,
+	S_POGOSPRING2,
+	S_POGOSPRING2B,
+	S_POGOSPRING3,
+	S_POGOSPRING4,
+
 	// Yellow Diagonal Spring
 	S_YDIAG1,
 	S_YDIAG2,
@@ -5656,6 +5664,7 @@ typedef enum mobj_type
 	MT_REDSPRING,
 	MT_BLUESPRING,
 	MT_GREYSPRING,
+	MT_POGOSPRING,
 	MT_YELLOWDIAG, // Yellow Diagonal Spring
 	MT_REDDIAG, // Red Diagonal Spring
 	MT_BLUEDIAG, // Blue Diagonal Spring

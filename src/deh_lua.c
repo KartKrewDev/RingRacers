@@ -186,6 +186,27 @@ static inline int lib_freeslot(lua_State *L)
 				}
 			}
 		}
+		else if (fastcmp(type, "PRECIP"))
+		{
+			// Search if we already have a PRECIP by that name...
+			preciptype_t i;
+			for (i = PRECIP_FIRSTFREESLOT; i < precip_freeslot; i++)
+				if (fastcmp(word, precipprops[i].name))
+					break;
+
+			// We don't, so allocate a new one.
+			if (i >= precip_freeslot) {
+				if (precip_freeslot < MAXPRECIP)
+				{
+					CONS_Printf("Weather PRECIP_%s allocated.\n",word);
+					precipprops[i].name = Z_StrDup(word);
+					lua_pushinteger(L, precip_freeslot);
+					r++;
+					precip_freeslot++;
+				} else
+					CONS_Alert(CONS_WARNING, "Ran out of free PRECIP slots!\n");
+			}
+		}
 		Z_Free(s);
 		lua_remove(L, 1);
 		continue;
@@ -464,6 +485,21 @@ static inline int lib_getenum(lua_State *L)
 			}
 		if (mathlib) return luaL_error(L, "NiGHTS grade '%s' could not be found.\n", word);
 		return 0;
+	}
+	else if (fastncmp("PRECIP_",word,7)) {
+		p = word+7;
+		for (i = 0; i < MAXPRECIP; i++)
+		{
+			if (precipprops[i].name == NULL)
+				break;
+
+			if (fastcmp(p, precipprops[i].name))
+			{
+				lua_pushinteger(L, PRECIP_NONE + i);
+				return 1;
+			}
+		}
+		return luaL_error(L, "weather type '%s' does not exist.\n", word);
 	}
 	else if (!mathlib && fastncmp("A_",word,2)) {
 		char *caps;

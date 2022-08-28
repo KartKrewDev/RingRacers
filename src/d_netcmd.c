@@ -102,7 +102,6 @@ static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
 static void NumLaps_OnChange(void);
-static void BaseNumLaps_OnChange(void);
 static void Mute_OnChange(void);
 
 static void AutoBalance_OnChange(void);
@@ -141,7 +140,6 @@ static void Color4_OnChange(void);
 static void DummyConsvar_OnChange(void);
 static void SoundTest_OnChange(void);
 
-static void BaseNumLaps_OnChange(void);
 static void KartFrantic_OnChange(void);
 static void KartSpeed_OnChange(void);
 static void KartEncore_OnChange(void);
@@ -489,10 +487,9 @@ static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, 
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
 consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
-static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
-consvar_t cv_numlaps = CVAR_INIT ("numlaps", "3", CV_NETVAR|CV_CALL|CV_NOINIT, numlaps_cons_t, NumLaps_OnChange);
-static CV_PossibleValue_t basenumlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, "Map default"}, {0, NULL}};
-consvar_t cv_basenumlaps = CVAR_INIT ("basenumlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, basenumlaps_cons_t, BaseNumLaps_OnChange);
+
+static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
+consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
 // Point and time limits for every gametype
 INT32 pointlimits[NUMGAMETYPES];
@@ -707,7 +704,6 @@ void D_RegisterServerCommands(void)
 	// misc
 	CV_RegisterVar(&cv_pointlimit);
 	CV_RegisterVar(&cv_numlaps);
-	CV_RegisterVar(&cv_basenumlaps);
 
 	CV_RegisterVar(&cv_autobalance);
 	CV_RegisterVar(&cv_teamscramble);
@@ -3570,6 +3566,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 		if (players[playernum].mo)
 			players[playernum].mo->health = 1;
+
+		K_StripItems(&players[playernum]);
 	}
 
 	K_CheckBumpers(); // SRB2Kart
@@ -4505,24 +4503,6 @@ static void PointLimit_OnChange(void)
 		CONS_Printf(M_GetText("Point limit disabled\n"));
 }
 
-static void NumLaps_OnChange(void)
-{
-	if (K_CanChangeRules() == false)
-	{
-		return;
-	}
-
-	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-	&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
-	{
-		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
-	}
-
-	// Just don't be verbose
-	if (gametyperules & GTR_CIRCUIT)
-		CONS_Printf(M_GetText("Number of laps set to %d\n"), cv_numlaps.value);
-}
-
 static void NetTimeout_OnChange(void)
 {
 	connectiontimeout = (tic_t)cv_nettimeout.value;
@@ -5330,7 +5310,6 @@ static void Follower_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5355,8 +5334,8 @@ static void Follower_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[0], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[0], str);
+		cv_follower[0].value = num;
 	}
 
 	if (!Playing())
@@ -5384,7 +5363,6 @@ static void Follower2_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5409,8 +5387,8 @@ static void Follower2_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[1], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[1], str);
+		cv_follower[1].value = num;
 	}
 
 	if (!Playing())
@@ -5435,7 +5413,6 @@ static void Follower3_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5460,8 +5437,8 @@ static void Follower3_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[2], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[2], str);
+		cv_follower[2].value = num;
 	}
 
 	if (!Playing())
@@ -5486,7 +5463,6 @@ static void Follower4_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5511,8 +5487,8 @@ static void Follower4_OnChange(void)
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[3], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[3], str);
+		cv_follower[3].value = num;
 	}
 
 	if (!Playing())
@@ -5789,21 +5765,23 @@ static void Command_ShowTime_f(void)
 }
 
 // SRB2Kart: On change messages
-static void BaseNumLaps_OnChange(void)
+static void NumLaps_OnChange(void)
 {
-	if (K_CanChangeRules() == true)
+	if (K_CanChangeRules() == false)
 	{
-		const char *str = va("%d", cv_basenumlaps.value);
+		return;
+	}
 
-		if (cv_basenumlaps.value == 0)
-		{
-			str = "map defaults";
-		}
-
-		CONS_Printf(M_GetText("Number of laps will be changed to %s next round.\n"), str);
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), cv_numlaps.value);
+		numlaps = (UINT8)cv_numlaps.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Number of laps will be set to %d next round.\n"), cv_numlaps.value);
 	}
 }
-
 
 static void KartFrantic_OnChange(void)
 {

@@ -287,6 +287,25 @@ void readfreeslots(MYFILE *f)
 					lastcustomtol <<= 1;
 				}
 			}
+			else if (fastcmp(type, "PRECIP"))
+			{
+				// Search if we already have a PRECIP by that name...
+				for (i = PRECIP_FIRSTFREESLOT; i < (int)precip_freeslot; i++)
+					if (fastcmp(word, precipprops[i].name))
+						break;
+
+				// We found it? Then don't allocate another one.
+				if (i < (int)precip_freeslot)
+					continue;
+
+				// We don't, so allocate a new one.
+				if (precip_freeslot < MAXPRECIP)
+				{
+					precipprops[i].name = Z_StrDup(word);
+					precip_freeslot++;
+				} else
+					deh_warning("Ran out of free PRECIP slots!\n");
+			}
 			else
 				deh_warning("Freeslots: unknown enum class '%s' for '%s_%s'", type, type, word);
 		}
@@ -1333,7 +1352,7 @@ void readlevelheader(MYFILE *f, INT32 num)
 				strlwr(mapheaderinfo[num-1]->forcecharacter); // skin names are lowercase
 			}
 			else if (fastcmp(word, "WEATHER"))
-				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
+				mapheaderinfo[num-1]->weather = get_precip(word2);
 			else if (fastcmp(word, "SKYTEXTURE"))
 				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
 					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
@@ -1371,6 +1390,23 @@ void readlevelheader(MYFILE *f, INT32 num)
 				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
 			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
 				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
+			else if (fastcmp(word, "LIGHTCONTRAST"))
+			{
+				mapheaderinfo[num-1]->light_contrast = (UINT8)i;
+			}
+			else if (fastcmp(word, "LIGHTANGLE"))
+			{
+				if (fastcmp(word2, "EVEN"))
+				{
+					mapheaderinfo[num-1]->use_light_angle = false;
+					mapheaderinfo[num-1]->light_angle = 0;
+				}
+				else
+				{
+					mapheaderinfo[num-1]->use_light_angle = true;
+					mapheaderinfo[num-1]->light_angle = FixedAngle(FloatToFixed(atof(word2)));
+				}
+			}
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
 			{
@@ -3692,6 +3728,61 @@ if (!followers[numfollowers].field) \
 	Z_Free(s);
 }
 
+void readweather(MYFILE *f, INT32 num)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	char *word;
+	char *word2;
+	char *tmp;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			// Set / reset word
+			word = s;
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
+			else
+				break;
+			strupr(word);
+
+			// Now get the part after
+			word2 = tmp += 2;
+
+			if (fastcmp(word, "TYPE"))
+			{
+				precipprops[num].type = get_mobjtype(word2);
+			}
+			else if (fastcmp(word, "EFFECTS"))
+			{
+				precipprops[num].effects = get_number(word2);
+			}
+			else
+				deh_warning("Weather %d : unknown word '%s'", num, word);
+		}
+	} while (!myfeof(f));
+
+	Z_Free(s);
+}
+
 //
 //
 //
@@ -3813,6 +3904,24 @@ sfxenum_t get_sfx(const char *word)
 	deh_warning("Couldn't find gametype named 'GT_%s'",word);
 	return GT_COOP;
 }*/
+
+preciptype_t get_precip(const char *word)
+{ // Returns the value of PRECIP_ enumerations
+	preciptype_t i;
+	if (*word >= '0' && *word <= '9')
+		return atoi(word);
+	if (fastncmp("PRECIP_",word,4))
+		word += 7; // take off the PRECIP_
+	for (i = 0; i < MAXPRECIP; i++)
+	{
+		if (precipprops[i].name == NULL)
+			break;
+		if (fasticmp(word, precipprops[i].name))
+			return i;
+	}
+	deh_warning("Couldn't find weather type named 'PRECIP_%s'",word);
+	return PRECIP_RAIN;
+}
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.
 static fixed_t op_mul(fixed_t a, fixed_t b) { return a*b; }

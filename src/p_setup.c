@@ -391,7 +391,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->muspostbossfadein = 0;
 	mapheaderinfo[num]->musforcereset = -1;
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
-	mapheaderinfo[num]->weather = 0;
+	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
@@ -414,6 +414,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
+	mapheaderinfo[num]->light_contrast = 16;
+	mapheaderinfo[num]->use_light_angle = false;
+	mapheaderinfo[num]->light_angle = 0;
 #if 1 // equivalent to "FlickyList = DEMO"
 	P_SetDemoFlickies(num);
 #else // equivalent to "FlickyList = NONE"
@@ -2323,19 +2326,45 @@ static inline float P_SegLengthFloat(seg_t *seg)
   */
 void P_UpdateSegLightOffset(seg_t *li)
 {
-	const UINT8 contrast = 16;
+	const UINT8 contrast = maplighting.contrast;
+	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t light = FRACUNIT;
 	fixed_t extralight = 0;
 
-	extralight = -((fixed_t)contrast*FRACUNIT) +
-		FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
-		abs(li->v1->x - li->v2->x),
-		abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * ((fixed_t)contrast * 2);
+	if (maplighting.directional == true)
+	{
+		angle_t liAngle = R_PointToAngle2(0, 0, (li->v1->x - li->v2->x), (li->v1->y - li->v2->y)) - ANGLE_90;
+
+		light = FixedMul(FINECOSINE(liAngle >> ANGLETOFINESHIFT), FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(FINESINE(liAngle >> ANGLETOFINESHIFT), FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(li->v1->x - li->v2->x), abs(li->v1->y - li->v2->y)), ANGLE_90);
+	}
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
 
 	// Between -2 and 2 for software, -16 and 16 for hardware
 	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
 #ifdef HWRENDER
 	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
 #endif
+}
+
+boolean P_ApplyLightOffset(UINT8 baselightnum)
+{
+	// Don't apply light offsets at full bright or full dark.
+	// Is in steps of light num .
+	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
+}
+
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel)
+{
+	// Don't apply light offsets at full bright or full dark.
+	// Uses exact light levels for more smoothness.
+	return (baselightlevel < 255 && baselightlevel > 0);
 }
 
 static void P_InitializeSeg(seg_t *seg)
@@ -4035,24 +4064,36 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	spectateGriefed = 0;
+	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
+
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if ((gametyperules & GTR_CIRCUIT) && server)
+	numlaps = 0;
+	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_basenumlaps.value
+		if ((netgame || multiplayer) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value)))
+		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
-			CV_StealthSetValue(&cv_numlaps, cv_basenumlaps.value);
+			numlaps = cv_numlaps.value;
 		}
 		else
 		{
-			CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
 	}
+
+	wantedcalcdelay = wantedfrequency*2;
+	indirectitemcooldown = 0;
+	mapreset = 0;
+
+	thwompsactive = false;
+	lastLowestLap = 0;
+	spbplace = -1;
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
@@ -4089,6 +4130,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -4341,8 +4383,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_SpawnSlopes(fromnetsave);
 
-	P_SpawnSpecialsAfterSlopes();
-
 	P_SpawnMapThings(!fromnetsave);
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
@@ -4403,17 +4443,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		memset(localaiming, 0, sizeof(localaiming));
 		K_InitDirector();
 	}
-
-	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
-	mapreset = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = -1;
-
-	thwompsactive = false;
-	lastLowestLap = 0;
-	spbplace = -1;
 
 	// clear special respawning que
 	iquehead = iquetail = 0;

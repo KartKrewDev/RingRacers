@@ -391,7 +391,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, mapobjectscale);
 		return 1;
 	} else if (fastcmp(word,"numlaps")) {
-		lua_pushinteger(L, cv_numlaps.value);
+		lua_pushinteger(L, numlaps);
 		return 1;
 	} else if (fastcmp(word,"racecountdown")) {
 		lua_pushinteger(L, racecountdown);

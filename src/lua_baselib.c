@@ -162,6 +162,7 @@ static const struct {
 	{META_SPRITEINFO,   "spriteinfo_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
+	{META_PRECIPPROPS,  "precipprops_t"},
 
 	{META_TAGLIST,      "taglist"},
 
@@ -3704,10 +3705,11 @@ static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	boolean doboostpower = lua_optboolean(L, 2);
+	boolean dorubberbanding = lua_optboolean(L, 3);
 	//HUDSAFE
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower));
+	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower, dorubberbanding));
 	return 1;
 }
 

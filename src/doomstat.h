@@ -41,8 +41,7 @@ extern UINT32 mapmusresume;
 // Use other bits if necessary.
 
 extern UINT32 maptol;
-extern UINT8 globalweather;
-extern UINT8 curWeather;
+
 extern INT32 cursaveslot;
 //extern INT16 lastmapsaved;
 extern INT16 lastmaploaded;
@@ -64,31 +63,44 @@ extern tic_t marathontime;
 extern UINT8 numgameovers;
 extern SINT8 startinglivesbalance[maxgameovers+1];
 
+#define NUMPRECIPFREESLOTS 64
+
 typedef enum
 {
 	PRECIP_NONE = 0,
+
 	PRECIP_RAIN,
 	PRECIP_SNOW,
 	PRECIP_BLIZZARD,
 	PRECIP_STORM,
 	PRECIP_STORM_NORAIN,
 	PRECIP_STORM_NOSTRIKES,
+
+	PRECIP_FIRSTFREESLOT,
+	PRECIP_LASTFREESLOT = PRECIP_FIRSTFREESLOT + NUMPRECIPFREESLOTS - 1,
+
 	MAXPRECIP
 } preciptype_t;
 
 typedef enum
 {
 	PRECIPFX_THUNDER = 1,
-	PRECIPFX_LIGHTNING = 1<<1
+	PRECIPFX_LIGHTNING = 1<<1,
+	PRECIPFX_WATERPARTICLES = 1<<2
 } precipeffect_t;
 
 typedef struct
 {
+	const char *name;
 	mobjtype_t type;
 	precipeffect_t effects;
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];
+extern preciptype_t precip_freeslot;
+
+extern preciptype_t globalweather;
+extern preciptype_t curWeather;
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -385,6 +397,10 @@ typedef struct
 	fixed_t mobj_scale; ///< Replacement for TOL_ERZ3
 	fixed_t default_waypoint_radius; ///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
+	UINT8 light_contrast; ///< Range of wall lighting. 0 is no lighting.
+	boolean use_light_angle; ///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	angle_t light_angle; ///< Angle of directional wall lighting.
+
 	// Music stuff.
 	UINT32 musinterfadeout;  ///< Fade out level music on intermission screen in milliseconds
 	char musintername[7];    ///< Intermission screen music.
@@ -665,6 +681,13 @@ extern tic_t racecountdown, exitcountdown;
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
 
+extern struct maplighting
+{
+	UINT8 contrast;
+	boolean directional;
+	angle_t angle;
+} maplighting;
+
 //for CTF balancing
 extern INT16 autobalance;
 extern INT16 teamscramble;
@@ -676,6 +699,7 @@ extern INT16 scramblecount; //for CTF team scramble
 extern INT32 cheats;
 
 // SRB2kart
+extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;

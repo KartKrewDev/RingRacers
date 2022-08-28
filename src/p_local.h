@@ -28,6 +28,9 @@
 
 //#define VIEWHEIGHTS "41"
 
+// Maximum laps per map.
+#define MAX_LAPS 99
+
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 
@@ -277,6 +280,7 @@ void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
+void P_CalculatePrecipFloor(precipmobj_t *mobj);
 void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 

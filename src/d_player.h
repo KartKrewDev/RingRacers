@@ -258,6 +258,7 @@ typedef enum
 #define TRICKDELAY (TICRATE/4)
 
 #define TUMBLEBOUNCES 3
+#define TUMBLEGRAVITY (4*FRACUNIT)
 
 //}
 
@@ -281,6 +282,7 @@ typedef struct respawnvars_s
 	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
+	boolean truedeath; // Your soul has left your body
 } respawnvars_t;
 
 // player_t struct for all bot variables
@@ -289,6 +291,9 @@ typedef struct botvars_s
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
+
+	fixed_t rubberband; // Bot rubberband value
+	UINT16 controller; // Special bot controller linedef ID
 
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
@@ -533,6 +538,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	UINT8 latestlap;
 	INT32 starpostnum; // The number of the last starpost you hit
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue

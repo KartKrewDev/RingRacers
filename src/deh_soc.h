@@ -83,5 +83,7 @@ void clear_conditionsets(void);
 
 void readcupheader(MYFILE *f, cupheader_t *cup);
 void readfollower(MYFILE *f);
+preciptype_t get_precip(const char *word);
+void readweather(MYFILE *f, INT32 num);
 
 #endif

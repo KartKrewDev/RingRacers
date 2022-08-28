@@ -1769,10 +1769,18 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(UINT8 newWeather)
+void P_SwitchWeather(preciptype_t newWeather)
 {
 	boolean purge = false;
 	mobjtype_t swap = MT_NULL;
+	INT32 oldEffects = precipprops[curWeather].effects;
+
+	if (newWeather >= precip_freeslot)
+	{
+		// Weather type invalid, set to no weather.
+		CONS_Debug(DBG_SETUP, "Weather ID %d out of bounds\n", newWeather);
+		newWeather = PRECIP_NONE;
+	}
 
 	if (precipprops[newWeather].type == MT_NULL)
 	{
@@ -1789,6 +1797,8 @@ void P_SwitchWeather(UINT8 newWeather)
 			swap = precipprops[newWeather].type;
 		}
 	}
+
+	curWeather = newWeather;
 
 	if (purge == true)
 	{
@@ -1844,14 +1854,22 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->sprite = precipmobj->state->sprite;
 			precipmobj->frame = precipmobj->state->frame;
 
-			precipmobj->momz = mobjinfo[swap].speed;
-			precipmobj->precipflags &= ~PCF_INVISIBLE;
+			precipmobj->momz = FixedMul(-mobjinfo[swap].speed, mapobjectscale);
+			precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_FLIP);
+
+			if (precipmobj->momz > 0)
+			{
+				precipmobj->precipflags |= PCF_FLIP;
+			}
+
+			if ((oldEffects & PRECIPFX_WATERPARTICLES) != (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES))
+			{
+				P_CalculatePrecipFloor(precipmobj);
+			}
 		}
 	}
 
-	curWeather = newWeather;
-
-	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+	if (swap == MT_NULL && precipprops[curWeather].type != MT_NULL)
 		P_SpawnPrecipitation();
 }
 
@@ -1899,14 +1917,6 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
-
-				// save best lap for record attack
-				if (player == &players[consoleplayer])
-				{
-					if (curlap < bestlap || bestlap == 0)
-						bestlap = curlap;
-					curlap = 0;
-				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -1920,18 +1930,18 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
+			if (netgame && player->laps >= numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 			player->starpostnum = 0;
 
 			if (P_IsDisplayPlayer(player))
 			{
-				if (player->laps == (UINT8)(cv_numlaps.value)) // final lap
+				if (player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
-				else if ((player->laps > 1) && (player->laps < (UINT8)(cv_numlaps.value))) // non-final lap
+				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
-				else if (player->laps > (UINT8)(cv_numlaps.value))
+				else if (player->laps > numlaps)
 				{
 					// finished
 					S_StartSound(NULL, sfx_s3k6a);
@@ -1940,7 +1950,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->position == 1))
+				if ((player->laps > numlaps) && (player->position == 1))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -1948,10 +1958,32 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			// finished race exit setup
-			if (player->laps > (unsigned)cv_numlaps.value)
+			if (player->laps > numlaps)
 			{
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
+			}
+
+			if (player->laps > player->latestlap)
+			{
+				if (player->laps > 1)
+				{
+					// save best lap for record attack
+					if (modeattacking && player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+						{
+							bestlap = curlap;
+						}
+
+						curlap = 0;
+					}
+
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player, player->laps, false);
+				}
+
+				player->latestlap = player->laps;
 			}
 
 			thwompsactive = true; // Lap 2 effects
@@ -3641,7 +3673,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (delay <= 0 || !(leveltime % delay))
-						P_GivePlayerRings(mo->player, rings);
+					{
+						// No Climb: don't cap rings to 20
+						K_AwardPlayerRings(mo->player, rings,
+								(line->flags & ML_NOCLIMB) == ML_NOCLIMB);
+					}
 				}
 			}
 			break;
@@ -4040,8 +4076,10 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 	msecnode_t *node;
 	ffloor_t *rover;
 
-	if (!mo)
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
 		return NULL;
+	}
 
 	// Check default case first
 	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)
@@ -5884,6 +5922,11 @@ void P_InitSpecials(void)
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = mapheaderinfo[gamemap-1]->gravity;
 
+	// Set map lighting settings.
+	maplighting.contrast = mapheaderinfo[gamemap-1]->light_contrast;
+	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
+	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
+
 	// Defaults in case levels don't have them set.
 	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
 	ssspheres = mapheaderinfo[gamemap-1]->ssspheres;
@@ -6950,6 +6993,12 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 
 	for (i = 0; i < numlines; i++)
 	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
 		switch (lines[i].special)
 		{
 			case 30: // Polyobj_Flag
@@ -6963,29 +7012,7 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 			case 32: // Polyobj_RotDisplace
 				PolyRotDisplace(&lines[i]);
 				break;
-		}
-	}
 
-	if (!fromnetsave)
-		P_RunLevelLoadExecutors();
-}
-
-/** Fuck ML_NONET
-  */
-void P_SpawnSpecialsAfterSlopes(void)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; ++i)
-	{
-		if (P_IsLineDisabled(&lines[i]))
-		{
-			/* remove the special so it can't even be found during the level */
-			lines[i].special = 0;
-		}
-
-		switch (lines[i].special)
-		{
 			case 80: // Raise tagged things by type to this FOF
 				{
 					mtag_t tag = Tag_FGet(&lines[i].tags);
@@ -6998,6 +7025,9 @@ void P_SpawnSpecialsAfterSlopes(void)
 				break;
 		}
 	}
+
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.

@@ -471,7 +471,7 @@ static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 {
 	if ((player->offroad && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 		|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
-		|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+		|| player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
@@ -830,7 +830,7 @@ static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 {
-	const fixed_t topspeed = K_GetKartSpeed(player, false);
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
 	boolean tryLookback = false;
@@ -888,7 +888,7 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
 {
-	const fixed_t topspeed = K_GetKartSpeed(player, false);
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
 	boolean tryLookback = false;
@@ -946,7 +946,7 @@ static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 {
-	const fixed_t topspeed = K_GetKartSpeed(player, false);
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 1;
 	boolean tryLookback = false;
@@ -1165,7 +1165,7 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 {
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
-	if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+	if (player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/5)) // Have another type of boost (tethering)
 	{
 		saferingsval -= 5;
