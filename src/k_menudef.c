@@ -825,9 +825,6 @@ menuitem_t OPTIONS_VideoOGL[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Wall Contrast Style", "Allows faking or not Software wall colour contrast.",
-		NULL, {.cvar = &cv_glfakecontrast}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Sprite Billboarding", "Adjusts sprites when viewed from above or below to not make them appear flat.",
 		NULL, {.cvar = &cv_glspritebillboarding}, 0, 0},
 
@@ -1028,7 +1025,7 @@ menuitem_t OPTIONS_Gameplay[] =
 		NULL, {.cvar = &cv_kartspeed}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Base Lap Count", "Change how many laps must be completed per race.",
-		NULL, {.cvar = &cv_basenumlaps}, 0, 0},
+		NULL, {.cvar = &cv_numlaps}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Frantic Items", "Make item odds crazier with more powerful items!",
 		NULL, {.cvar = &cv_kartfrantic}, 0, 0},
