@@ -5697,10 +5697,13 @@ void M_EndModeAttackRun(void)
 		Command_ExitGame_f();
 
 	M_StartControlPanel();
+
 	currentMenu = &PLAY_TimeAttackDef;
 	itemOn = currentMenu->lastOn;
+
 	G_SetGamestate(GS_MENU);
 	S_ChangeMusicInternal("menu", true);
+
 	modeattacking = ATTACKING_NONE;
 }
 
