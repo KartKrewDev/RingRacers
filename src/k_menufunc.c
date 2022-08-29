@@ -2433,7 +2433,17 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 		M_SetupProfileGridPos(p);
 
 		p->changeselect = 0;
-		p->mdepth = CSSTEP_ASKCHANGES;
+
+		if (p->profilen == 0)
+		{
+			// Guest profile, always ask for options.
+			p->mdepth = CSSTEP_CHARS;
+		}
+		else
+		{
+			p->mdepth = CSSTEP_ASKCHANGES;
+		}
+
 		S_StartSound(NULL, sfx_s3k63);
 	}
 
@@ -2874,7 +2884,6 @@ boolean M_CharacterSelectHandler(INT32 choice)
 				case CSSTEP_NONE: // Enter Game
 					if (gamestate == GS_MENU)	// do NOT handle that outside of GS_MENU.
 						playersChanged = M_HandlePressStart(p, i);
-
 					break;
 				case CSSTEP_PROFILE:
 					playersChanged = M_HandleCSelectProfile(p, i);
