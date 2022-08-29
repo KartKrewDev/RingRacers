@@ -653,7 +653,7 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Do we even have team gamemodes?",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
-	{IT_CONTROL, "OPEN CONSOLE", "Also usable with ` on Keyboard.",
+	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
 		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
 
 	{IT_CONTROL, "LUA/A", "May be used by add-ons.",
@@ -674,8 +674,11 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "EXTRA", "",
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Only display the controller for testing.",
+	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
+
+	{IT_STRING | IT_CALL, "BACK...", "Go back to profile setup.",
+		NULL, {.routine = M_GoBack}, 0, 0},
 };
 
 

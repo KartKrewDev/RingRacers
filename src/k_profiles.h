@@ -33,8 +33,8 @@
 
 #define PROFILEDEFAULTNAME "guest"
 #define PROFILEDEFAULTPNAME "Player"
-#define PROFILEDEFAULTSKIN "sonic"
-#define PROFILEDEFAULTCOLOR SKINCOLOR_SAPPHIRE
+#define PROFILEDEFAULTSKIN "eggman"
+#define PROFILEDEFAULTCOLOR SKINCOLOR_NONE
 #define PROFILEDEFAULTFOLLOWER "none"
 #define PROFILEDEFAULTFOLLOWERCOLOR FOLLOWERCOLOR_MATCH
 
@@ -111,6 +111,10 @@ void PR_SaveProfiles(void);
 // Loads all the profiles saved in profiles.cfg.
 // This also loads
 void PR_LoadProfiles(void);
+
+// PR_GetProfileColor(profile_t *p)
+// Returns the profile's color, or the skin's prefcolor if set to none.
+skincolornum_t PR_GetProfileColor(profile_t *p);
 
 // PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 // Applies the given profile's settings to the given player.

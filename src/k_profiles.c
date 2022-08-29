@@ -13,6 +13,7 @@
 #include "d_main.h" // pandf
 #include "k_profiles.h"
 #include "z_zone.h"
+#include "r_skins.h"
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1];		// +1 because we're gonna add a default "GUEST' profile.
@@ -201,19 +202,23 @@ void PR_LoadProfiles(void)
 			fread(profilesList[i], sizeof(profile_t), 1, f);
 
 			// Attempt to correct numerical footguns
-			if (profilesList[i]->color >= numskincolors
-				|| profilesList[i]->color == 0
+			if (profilesList[i]->color == SKINCOLOR_NONE)
+			{
+				; // Valid, even outside the bounds
+			}
+			else if (profilesList[i]->color >= numskincolors
 				|| skincolors[profilesList[i]->color].accessible == false)
 			{
 				profilesList[i]->color = PROFILEDEFAULTCOLOR;
 			}
+
 			if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
 				|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
 			{
 				; // Valid, even outside the bounds
 			}
 			else if (profilesList[i]->followercolor >= numskincolors
-				|| profilesList[i]->followercolor == 0
+				|| profilesList[i]->followercolor == SKINCOLOR_NONE
 				|| skincolors[profilesList[i]->followercolor].accessible == false)
 			{
 				profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
@@ -232,6 +237,25 @@ void PR_LoadProfiles(void)
 	}
 }
 
+skincolornum_t PR_GetProfileColor(profile_t *p)
+{
+	if (p->color == SKINCOLOR_NONE)
+	{
+		// Get skin's prefcolor.
+		INT32 foundskin = R_SkinAvailable(p->skinname);
+		if (foundskin == -1)
+		{
+			// Return random default value
+			return SKINCOLOR_RED;
+		}
+
+		return skins[foundskin].prefcolor;
+	}
+
+	// Get exact color.
+	return p->color;
+}
+
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
@@ -245,7 +269,7 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	}
 
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
-	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
+	CV_StealthSetValue(&cv_playercolor[playernum], PR_GetProfileColor(p));
 	CV_StealthSet(&cv_playername[playernum], p->playername);
 
 	// Followers

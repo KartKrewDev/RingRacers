@@ -2057,7 +2057,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 				alt++;
 
 			p->clonenum = alt;
-			p->color = pr->color;
+			p->color = PR_GetProfileColor(pr);
 			return;	// we're done here
 		}
 	}
@@ -3759,18 +3759,8 @@ void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
-	const UINT8 pid = 0;
 
 	(void)choice;
-
-	// Don't allow guest profile online
-	if (cv_currprofile.value == 0)
-	{
-		M_StartMessage(M_GetText("Cannot play online with\nGuest Profile.\nMake a custom Profile and try again.\n\n(Press any key)"), NULL, MM_NOTHING);
-		S_StartSound(NULL, sfx_s3k7b);
-		M_SetMenuDelay(pid);
-		return;
-	}
 
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;
@@ -4778,40 +4768,41 @@ void M_HandleProfileSelect(INT32 ch)
 			if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
+				M_StartMessage(M_GetText("The Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING);
 				M_SetMenuDelay(pid);
 				return;
 			}
 			else if (optionsmenu.profilen == maxp && gamestate != GS_MENU)
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("Cannot create a New Profile\nmid-game. Return to the\nTitle Screen first."), NULL, MM_NOTHING);
+				M_StartMessage(M_GetText("Cannot create a new profile\nmid-game. Return to the\ntitle screen first."), NULL, MM_NOTHING);
 				M_SetMenuDelay(pid);
 				return;
 			}
 
 			S_StartSound(NULL, sfx_s3k5b);
-
 			M_StartEditProfile(MA_YES);
 		}
 		else
 		{
 			// We're on the profile selection screen.
-			if (optionsmenu.profilen == 0)
+			if (optionsmenu.profilen == maxp)
 			{
-				M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
-				M_SetMenuDelay(pid);
-				return;
-			}
-			else if (optionsmenu.profilen == maxp)
-			{
-				M_StartMessage(M_GetText("Create a new Profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_StartEditProfile), MM_YESNO);
+				M_StartEditProfile(MA_YES);
 				M_SetMenuDelay(pid);
 				return;
 			}
 			else
 			{
-				M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+#if 0
+				if (optionsmenu.profilen == 0)
+				{
+					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+					return;
+				}
+#endif
+
+				M_FirstPickProfile(MA_YES);
 				M_SetMenuDelay(pid);
 				return;
 			}
@@ -4836,6 +4827,15 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 {
 	UINT8 i;
 
+	// Guest profile, you can't edit that one!
+	if (optionsmenu.profilen == 0)
+	{
+		S_StartSound(NULL, sfx_s3k7b);
+		M_StartMessage(M_GetText("Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING);
+		M_SetMenuDelay(pid);
+		return false;
+	}
+
 	// check if some profiles have the same name
 	for (i = 0; i < PR_GetNumProfiles(); i++)
 	{
@@ -4847,19 +4847,11 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 			if (!(strcmp(optionsmenu.profile->profilename, check->profilename)))
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("Another Profile uses the same\nname identifier.\nPlease change the name\nof the Profile to save it."), NULL, MM_NOTHING);
+				M_StartMessage(M_GetText("Another profile uses the same name.\nThis must be changed to be able to save."), NULL, MM_NOTHING);
 				M_SetMenuDelay(pid);
 				return false;
 			}
 		}
-	}
-
-	if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
-	{
-		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage(M_GetText("Guest Profile cannot be edited.\nTo change parameters,\ncreate a new Profile."), NULL, MM_NOTHING);
-		M_SetMenuDelay(pid);
-		return false;
 	}
 
 	return true;
@@ -5113,37 +5105,18 @@ void M_HandleProfileControls(void)
 	}
 }
 
-static void M_ProfileTryControllerResponse(INT32 choice)
-{
-	if (choice == MA_YES)
-	{
-		optionsmenu.trycontroller = TICRATE*3;
-		// Apply these controls right now on P1's end.
-		memcpy(&gamecontrol[0], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
-	}
-}
-
 void M_ProfileTryController(INT32 choice)
 {
-	(void) choice;
+	(void)choice;
 
-	// I managed to softlock myself during testing lol.
-	if (!optionsmenu.tempcontrols[gc_x][0])
-	{
-		M_StartMessage(M_GetText("You need to bind a key to [X]\nto use this feature.\n"), NULL, MM_NOTHING);
-		return;
-	}
-	else
-	{
-		M_StartMessage(M_GetText("Your inputs will temporarily be\nremapped to match this Profile's settings.\nThe controller graphic will animate\nto show you what buttons are being pressed.\nIs this okay?\n\n(Press A to continue)"),
-		FUNCPTRCAST(M_ProfileTryControllerResponse), MM_YESNO);
-		return;
-	}
+	optionsmenu.trycontroller = TICRATE*5;
+
+	// Apply these controls right now on P1's end.
+	memcpy(&gamecontrol[0], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 }
 
 static void M_ProfileControlSaveResponse(INT32 choice)
 {
-
 	if (choice == MA_YES)
 	{
 		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
@@ -5171,21 +5144,24 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	// By default, accept all inputs.
 	if (optionsmenu.trycontroller)
 	{
-		if (M_MenuButtonHeld(pid, MBT_X))
-			optionsmenu.trycontroller--;
+		if (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr || menucmd[pid].buttons)
+		{
+			optionsmenu.trycontroller = 5*TICRATE;
+		}
 		else
-			optionsmenu.trycontroller = TICRATE*3;
+		{
+			optionsmenu.trycontroller--;
+		}
 
-		if (!optionsmenu.trycontroller)
+		if (optionsmenu.trycontroller == 0)
 		{
 			// Reset controls to that of the current profile.
 			profile_t *cpr = PR_GetProfile(cv_currprofile.value);
 			if (cpr == NULL)
 				cpr = PR_GetProfile(0); // Creating a profile at boot, revert to guest profile
 			memcpy(&gamecontrol[0], cpr->controls, sizeof(gamecontroldefault));
-
-			M_StartMessage(M_GetText("Your controls have been\nreverted to their previous state.\n\n(Press any key)"), NULL, MM_NOTHING);
 		}
+
 		return true;
 	}
 
@@ -5212,13 +5188,9 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
-
-		SINT8 usedby = PR_ProfileUsedBy(optionsmenu.profile);
-
-		if (usedby > -1 && cv_currprofile.value)
-			M_StartMessage(M_GetText(va("As this is Player %d's active Profile,\ncontrol changes will be applied \nimmediately upon exiting this menu.\nIs this okay?\n\n(Press A to confirm)", usedby+1)), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
-		else
-			M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+		//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+		// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
+		M_ProfileControlSaveResponse(MA_YES);
 
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
 
@@ -5535,7 +5507,7 @@ void M_CheckProfileData(INT32 choice)
 	if (np < 2)
 	{
 		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage("There are no custom Profiles.\n\n(Press any button)", NULL, MM_NOTHING);
+		M_StartMessage("There are no custom profiles.\n\n(Press any button)", NULL, MM_NOTHING);
 		return;
 	}
 
@@ -5598,9 +5570,9 @@ void M_HandleProfileErase(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
-			M_StartMessage("This profile and all of\nits data will be erased.\nAre you sure you want to proceed?\nAs this is your currently loaded Profile,\ndeleting this Profile would also\nreturn you to the Title Screen\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 		else
-			M_StartMessage("This profile and all of\nits data will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 
 		M_SetMenuDelay(pid);
 	}

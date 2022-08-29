@@ -1227,7 +1227,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			}
 			else if (dist == 2)
 			{
-				V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "EMPTY");
+				V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "NEW");
 				V_DrawScaledPatch(px, py, V_TRANSLUCENT, W_CachePatchName("FILEBACK", PU_CACHE));
 			}
 			else
@@ -1235,7 +1235,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				V_DrawScaledPatch(px, py, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 
 				if (i != p->profilen || ((setup_animcounter/10) & 1))
-					V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "EMPTY");
+					V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "NEW");
 			}
 			py += 12;
 		}
@@ -1366,11 +1366,11 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	INT32 skinnum = -1;
 	INT32 powerlevel = -1;
 
-	char pname[PROFILENAMELEN+1] = "empty";
+	char pname[PROFILENAMELEN+1] = "NEW";
 
 	if (p != NULL && p->version)
 	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, p->color, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, PR_GetProfileColor(p), GTC_CACHE);
 		strcpy(pname, p->profilename);
 		skinnum = R_SkinAvailable(p->skinname);
 		powerlevel = p->powerlevels[0];	// Only display race power level.
@@ -2904,6 +2904,7 @@ void M_DrawProfileControls(void)
 
 			case IT_STRING:
 				V_DrawString(x, y+1, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+				y += spacing;
 				break;
 
 			case IT_STRING2:
