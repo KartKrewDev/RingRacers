@@ -2603,7 +2603,6 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	return false;
 }
 
-
 static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
@@ -2713,37 +2712,43 @@ static void M_AnimateFollower(setup_player_t *p)
 	p->follower_timer++;
 }
 
-static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 {
+	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
+
 	if (cv_splitdevice.value)
 		num = 0;
 
-	M_AnimateFollower(p);
-
-	if (menucmd[num].dpad_lr > 0 && numfollowers)
+	if (menucmd[num].dpad_lr > 0)
 	{
 		p->followern++;
 		if (p->followern >= numfollowers)
 			p->followern = -1;
 
-		M_SetMenuDelay(num);
-		S_StartSound(NULL, sfx_s3k5b);
 		M_GetFollowerState(p);
+
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
 	}
-	else if (menucmd[num].dpad_lr < 0 && numfollowers)
+	else if (menucmd[num].dpad_lr < 0)
 	{
 		p->followern--;
 		if (p->followern < -1)
 			p->followern = numfollowers-1;
 
-		M_SetMenuDelay(num);
-		S_StartSound(NULL, sfx_s3k5b);
-		M_GetFollowerState(p);
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
 	}
-	else if (M_MenuConfirmPressed(num))
+
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		if (p->followern > -1)
+		{
 			p->mdepth = CSSTEP_FOLLOWERCOLORS;
+			S_StartSound(NULL, sfx_s3k63);
+		}
 		else
 		{
 			p->mdepth = CSSTEP_READY;
@@ -2752,7 +2757,6 @@ static void M_HandleChooseFollower(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3k4e);
 		}
 
-		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
 	else if (M_MenuBackPressed(num))
@@ -2888,7 +2892,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					M_HandleColorRotate(p, i);
 					break;
 				case CSSTEP_FOLLOWER:
-					M_HandleChooseFollower(p, i);
+					M_HandleFollowerRotate(p, i);
 					break;
 				case CSSTEP_FOLLOWERCOLORS:
 					M_HandleFollowerColorRotate(p, i);
