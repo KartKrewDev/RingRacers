@@ -223,8 +223,133 @@ void M_DrawMenuBackground(void)
 	}
 }
 
+static void M_DrawMenuParty(void)
+{
+	const INT32 PLATTER_WIDTH = 19;
+	const INT32 PLATTER_STAGGER = 6;
+	const INT32 PLATTER_OFFSET = (PLATTER_WIDTH - PLATTER_STAGGER);
+
+	patch_t *small = W_CachePatchName("MENUPLRA", PU_CACHE);
+	patch_t *large = W_CachePatchName("MENUPLRB", PU_CACHE);
+
+	INT32 x, y;
+	INT32 skin;
+	UINT16 color;
+	UINT8 *colormap;
+
+	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef)
+	{
+		return;
+	}
+
+	x = 2;
+	y = BASEVIDHEIGHT - small->height - 2;
+
+	switch (setup_numplayers)
+	{
+		case 1:
+		{
+			x -= 8;
+			V_DrawScaledPatch(x, y, 0, small);
+
+			skin = R_SkinAvailable(cv_skin[0].string);
+			color = cv_playercolor[0].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+			break;
+		}
+		case 2:
+		{
+			x -= 8;
+			V_DrawScaledPatch(x, y, 0, small);
+			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
+
+			skin = R_SkinAvailable(cv_skin[1].string);
+			color = cv_playercolor[1].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[0].string);
+			color = cv_playercolor[0].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+			break;
+		}
+		case 3:
+		{
+			V_DrawScaledPatch(x, y, 0, large);
+			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
+
+			skin = R_SkinAvailable(cv_skin[1].string);
+			color = cv_playercolor[1].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[0].string);
+			color = cv_playercolor[0].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[2].string);
+			color = cv_playercolor[2].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+			break;
+		}
+		case 4:
+		{
+			V_DrawScaledPatch(x, y, 0, large);
+			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, large);
+
+			skin = R_SkinAvailable(cv_skin[1].string);
+			color = cv_playercolor[1].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + PLATTER_OFFSET + 12, y - PLATTER_STAGGER - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[0].string);
+			color = cv_playercolor[0].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[3].string);
+			color = cv_playercolor[3].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+
+			skin = R_SkinAvailable(cv_skin[2].string);
+			color = cv_playercolor[2].value;
+			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+
+			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
+			break;
+		}
+		default:
+		{
+			return;
+		}
+	}
+
+	x += PLATTER_WIDTH;
+	y += small->height;
+	V_DrawScaledPatch(x + 16, y - 12, 0, W_CachePatchName(va("OPPRNK0%d", setup_numplayers % 10), PU_CACHE));
+}
+
 void M_DrawMenuForeground(void)
 {
+	if (gamestate == GS_MENU)
+	{
+		M_DrawMenuParty();
+	}
+
 	// draw non-green resolution border
 	if ((vid.width % BASEVIDWIDTH != 0) || (vid.height % BASEVIDHEIGHT != 0))
 	{
