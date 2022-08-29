@@ -7207,23 +7207,23 @@ static void K_LookForRings(mobj_t *pmo)
 
 static void K_UpdateTripwire(player_t *player)
 {
-	fixed_t speedThreshold = K_GetKartSpeed(player, false) *3/4;
+	fixed_t speedThreshold = (3*K_GetKartSpeed(player, false, true))/4;
 	boolean goodSpeed = (player->speed >= speedThreshold);
+	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
 
-	if (player->tripwireLeniency > 0)
+	if (boostExists)
 	{
 		player->tripwireLeniency--;
-	}
-
-	if (goodSpeed == false && player->tripwireLeniency > 0)
-	{
-		// Decrease at double speed when your speed is bad.
-		player->tripwireLeniency--;
+		if (goodSpeed == false && player->tripwireLeniency > 0)
+		{
+			// Decrease at double speed when your speed is bad.
+			player->tripwireLeniency--;
+		}
 	}
 
 	if (K_TripwirePassConditions(player) == true)
 	{
-		if (player->tripwireLeniency == 0)
+		if (!boostExists)
 		{
 			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
 			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
@@ -7232,10 +7232,10 @@ static void K_UpdateTripwire(player_t *player)
 			P_SetTarget(&back->target, player->mo);
 
 			front->dispoffset = 1;
-
+			front->old_angle = back->old_angle = K_MomentumAngle(player->mo);
 			back->dispoffset = -1;
 			back->extravalue1 = 1;
-			P_SetMobjState(back, S_TRIPWIREBOOST_BOTTOM1);
+			P_SetMobjState(back, S_TRIPWIREBOOST_BOTTOM);
 		}
 
 		player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
