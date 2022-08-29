@@ -1054,7 +1054,7 @@ static void ST_overlayDrawer(void)
 			else if (G_GametypeHasTeams())
 				itemtxt = M_GetText("Item - Join Team");
 
-			if (cv_ingamecap.value)
+			if (cv_maxplayers.value)
 			{
 				UINT8 numingame = 0;
 				UINT8 i;
@@ -1063,7 +1063,7 @@ static void ST_overlayDrawer(void)
 					if (playeringame[i] && !players[i].spectator)
 						numingame++;
 
-				itemtxt = va("%s (%s: %d)", itemtxt, M_GetText("Slots left"), max(0, cv_ingamecap.value - numingame));
+				itemtxt = va("%s (%s: %d)", itemtxt, M_GetText("Slots left"), max(0, cv_maxplayers.value - numingame));
 			}
 
 			// SRB2kart: changed positions & text

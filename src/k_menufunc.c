@@ -3135,21 +3135,23 @@ void M_SetupDifficultySelect(INT32 choice)
 	PLAY_RaceDifficulty[4].status = IT_DISABLED;
 	PLAY_RaceDifficulty[5].status = IT_DISABLED;
 	PLAY_RaceDifficulty[6].status = IT_DISABLED;
+	PLAY_RaceDifficulty[7].status = IT_DISABLED;
 
 	if (choice)		// Match Race
 	{
 		PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR; // Kart Speed
-		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
-		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
-		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
+		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off
+		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// CPU amount
+		PLAY_RaceDifficulty[4].status = IT_STRING2|IT_CVAR;	// Encore on/off
+		PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
 		PLAY_RaceDifficultyDef.lastOn = 5;	// Select cup select by default.
 
 	}
 	else			// GP
 	{
 		PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR; // Difficulty
-		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
-		PLAY_RaceDifficulty[4].status = IT_STRING|IT_CALL;	// Level Select (GP)
+		PLAY_RaceDifficulty[4].status = IT_STRING2|IT_CVAR;	// Encore on/off
+		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (GP)
 		PLAY_RaceDifficultyDef.lastOn = 4;	// Select cup select by default.
 	}
 
@@ -3437,8 +3439,8 @@ void M_CupSelectHandler(INT32 choice)
 
 			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
-			if (cv_maxplayers.value < ssplayers+1)
-				CV_SetValue(&cv_maxplayers, ssplayers+1);
+			if (cv_maxconnections.value < ssplayers+1)
+				CV_SetValue(&cv_maxconnections, ssplayers+1);
 
 			if (splitscreen != ssplayers)
 			{
@@ -3599,8 +3601,8 @@ void M_LevelSelectHandler(INT32 choice)
 				/*if (levellist.choosemap == 0)
 					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
 
-				if (cv_maxplayers.value < ssplayers+1)
-					CV_SetValue(&cv_maxplayers, ssplayers+1);
+				if (cv_maxconnections.value < ssplayers+1)
+					CV_SetValue(&cv_maxconnections, ssplayers+1);
 
 				if (splitscreen != ssplayers)
 				{

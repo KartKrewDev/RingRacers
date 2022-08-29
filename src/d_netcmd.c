@@ -251,8 +251,8 @@ static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_
 consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
-static CV_PossibleValue_t ingamecap_cons_t[] = {{0, "MIN"}, {MAXPLAYERS-1, "MAX"}, {0, NULL}};
-consvar_t cv_ingamecap = CVAR_INIT ("ingamecap", "0", CV_NETVAR, ingamecap_cons_t, NULL);
+static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
 
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
 
@@ -730,11 +730,11 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_allowexitlevel);
 	CV_RegisterVar(&cv_restrictskinchange);
 	CV_RegisterVar(&cv_allowteamchange);
-	CV_RegisterVar(&cv_ingamecap);
+	CV_RegisterVar(&cv_maxplayers);
 	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
-	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_maxconnections);
 	CV_RegisterVar(&cv_joindelay);
 	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_maxsend);

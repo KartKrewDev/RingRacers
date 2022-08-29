@@ -69,7 +69,7 @@ extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;

@@ -128,23 +128,26 @@ menuitem_t PLAY_RaceDifficulty[] =
 
 	// netgames
 	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed",
-	NULL, {.cvar = &cv_dummykartspeed}, 0, 0},
+		NULL, {.cvar = &cv_dummykartspeed}, 0, 0},
 
 	// DISABLE THAT OPTION OUTSIDE OF MATCH RACE
-	{IT_STRING2 | IT_CVAR, "CPU Players", "Enable or disable CPU players.",	// 2	whitestring is used by the drawer to know to draw shitstring
+	{IT_STRING2 | IT_CVAR, "CPU", "Set the difficulty of CPU players.",
 		NULL, {.cvar = &cv_dummymatchbots}, 0, 0},
 
-	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",	// 3
+	{IT_STRING2 | IT_CVAR, "Racers", "Sets the number of racers, including players and CPU.",
+		NULL, {.cvar = &cv_maxplayers}, 0, 0},
+
+	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",
 		NULL, {.cvar = &cv_dummygpencore}, 0, 0},
 
 	// For GP:
-	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", NULL, {.routine = M_LevelSelectInit}, 2, GT_RACE},	// 4
+	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", NULL, {.routine = M_LevelSelectInit}, 2, GT_RACE},
 
 	// For Match Race:
-	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine = M_LevelSelectInit}, 0, GT_RACE},	// 5
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine = M_LevelSelectInit}, 0, GT_RACE},
 
 	// For Match Race in NETGAMES:
-	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine =M_MPSetupNetgameMapSelect}, 0, GT_RACE},	// 6
+	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
@@ -357,7 +360,7 @@ menuitem_t PLAY_MP_Host[] =
 		NULL, {.cvar = &cv_advertise}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Max. Players", "Set how many players can play at once. Others will spectate.",
-		NULL, {.cvar = &cv_ingamecap}, 0, 0},
+		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Gamemode", "Are we racing? Or perhaps battling?",
 	NULL, {.cvar = &cv_dummygametype}, 0, 0},
@@ -1144,11 +1147,11 @@ menuitem_t OPTIONS_Server[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Ingame Max. Players", "How many players can play at once. 0 Allows everyone who joins.",
-		NULL, {.cvar = &cv_ingamecap}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Server Max. Players", "How many players can connect to the server.",
+	{IT_STRING | IT_CVAR, "Maximum Players", "How many players can play at once.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Maximum Connections", "How many players & spectators can connect to the server.",
+		NULL, {.cvar = &cv_maxconnections}, 0, 0},
 
 	{IT_STRING | IT_CVAR, "Allow Joining", "Sets whether players can connect to your server.",
 		NULL, {.cvar = &cv_allownewplayer}, 0, 0},

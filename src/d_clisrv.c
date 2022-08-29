@@ -887,13 +887,13 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo.leveltime = (tic_t)LONG(leveltime);
 
 	netbuffer->u.serverinfo.numberofplayer = (UINT8)D_NumPlayers();
-	netbuffer->u.serverinfo.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.serverinfo.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value));
 
 	if (!node)
 		netbuffer->u.serverinfo.refusereason = 0;
 	else if (!cv_allownewplayer.value)
 		netbuffer->u.serverinfo.refusereason = 1;
-	else if (D_NumPlayers() >= cv_maxplayers.value)
+	else if (D_NumPlayers() >= cv_maxconnections.value)
 		netbuffer->u.serverinfo.refusereason = 2;
 	else
 		netbuffer->u.serverinfo.refusereason = 0;
@@ -1057,7 +1057,7 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value));
 	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
 	netbuffer->u.servercfg.discordinvites = (boolean)cv_discordinvites.value;
 
@@ -3072,7 +3072,7 @@ consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_NETVAR, CV_On
 #endif
 
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_CALL, maxplayers_cons_t, Joinable_OnChange);
+consvar_t cv_maxconnections = CVAR_INIT ("maxconnections", "16", CV_SAVE|CV_CALL, maxplayers_cons_t, Joinable_OnChange);
 
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
@@ -3108,7 +3108,7 @@ static void Joinable_OnChange(void)
 	if (!server)
 		return;
 
-	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value));
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
@@ -3760,7 +3760,7 @@ static void HandleConnect(SINT8 node)
 	// Sal: Dedicated mode is INCREDIBLY hacked together.
 	// If a server filled out, then it'd overwrite the host and turn everyone into weird husks.....
 	// It's too much effort to legimately fix right now. Just prevent it from reaching that state.
-	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value);
+	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 
 	if (bannednode && bannednode[node])
 		SV_SendRefuse(node, M_GetText("You have been banned\nfrom the server."));

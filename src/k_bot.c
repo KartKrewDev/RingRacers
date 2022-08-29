@@ -109,7 +109,7 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 void K_UpdateMatchRaceBots(void)
 {
 	const UINT8 difficulty = cv_kartbot.value;
-	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value);
+	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
@@ -135,9 +135,9 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (cv_ingamecap.value > 0)
+	if (cv_maxplayers.value > 0)
 	{
-		pmax = min(pmax, cv_ingamecap.value);
+		pmax = min(pmax, cv_maxplayers.value);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)

@@ -1627,7 +1627,7 @@ void M_DrawRaceDifficulty(void)
 					}
 				}
 
-				y += 12;
+				y += 10;
 
 				break;
 			}
