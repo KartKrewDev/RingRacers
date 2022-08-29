@@ -2466,9 +2466,9 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuConfirmPressed(num))
 	{
-		// no changes
 		if (!p->changeselect)
 		{
+			// no changes
 			M_GetFollowerState(p);
 			p->mdepth = CSSTEP_READY;
 			p->delay = TICRATE;
@@ -2476,13 +2476,14 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 			S_StartSound(NULL, sfx_s3k4e);
 			M_SetupReadyExplosions(p);
 		}
-
-		// changes
 		else
+		{
+			// changes
 			p->mdepth = CSSTEP_CHARS;
+			S_StartSound(NULL, sfx_s3k63);
+		}
 
 		M_SetMenuDelay(num);
-		S_StartSound(NULL, sfx_s3k63);
 	}
 }
 
@@ -2667,18 +2668,19 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 	{
 		p->mdepth = CSSTEP_FOLLOWER;
 		M_GetFollowerState(p);
-
-		//p->delay = TICRATE;
-		//M_SetupReadyExplosions(p);
-		//S_StartSound(NULL, sfx_s3k4e);
+		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
 	else if (M_MenuBackPressed(num))
 	{
 		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+		{
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu
+		}
 		else
+		{
 			p->mdepth = CSSTEP_ALTS;
+		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -2714,8 +2716,6 @@ static void M_AnimateFollower(setup_player_t *p)
 
 static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 {
-	UINT8 numclones = setup_chargrid[p->gridx][p->gridy].numskins;
-
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -2789,7 +2789,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 
-	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
