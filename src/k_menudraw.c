@@ -841,15 +841,31 @@ void M_DrawImageDef(void)
 static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 {
 	angle_t angamt = ANGLE_MAX;
-	UINT16 i, numoptions;
+	UINT16 i, numoptions = 0;
 	UINT16 l = 0, r = 0;
 
-	if (p->mdepth == CSSTEP_ALTS)
-		numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
-	else if (p->mdepth == CSSTEP_FOLLOWERCOLORS)
-		numoptions = nummenucolors+2;
-	else
-		numoptions = nummenucolors;
+	switch (p->mdepth)
+	{
+		case CSSTEP_ALTS:
+			numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
+			break;
+		case CSSTEP_COLORS:
+			numoptions = nummenucolors;
+			break;
+		case CSSTEP_FOLLOWER:
+			numoptions = numfollowers+1;
+			break;
+		case CSSTEP_FOLLOWERCOLORS:
+			numoptions = nummenucolors+2;
+			break;
+		default:
+			return;
+	}
+
+	if (numoptions == 0)
+	{
+		return;
+	}
 
 	angamt /= numoptions;
 
@@ -863,88 +879,131 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		fixed_t radius = 28<<FRACBITS;
 		UINT16 n = 0;
 
-		if (p->mdepth == CSSTEP_ALTS)
+		switch (p->mdepth)
 		{
-			INT16 skin;
-
-			n = (p->clonenum) + numoptions/2;
-			if (subtract)
-				n -= ((i+1)/2);
-			else
-				n += ((i+1)/2);
-			n %= numoptions;
-
-			skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
-			patch = faceprefix[skin][FACE_RANK];
-			colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-			radius = 24<<FRACBITS;
-
-			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-			cy -= (SHORT(patch->height) << FRACBITS) >> 1;
-		}
-
-		else if (p->mdepth == CSSTEP_FOLLOWERCOLORS)
-		{
-			INT16 diff;
-			UINT16 col;
-
-			if (i == 0)
+			case CSSTEP_ALTS:
 			{
-				n = l = r = M_GetColorBefore(p->followercolor, numoptions/2, true);
-			}
-			else if (subtract)
-			{
-				n = l = M_GetColorBefore(l, 1, true);
-			}
-			else
-			{
-				n = r = M_GetColorAfter(r, 1, true);
+				INT16 skin;
+
+				n = (p->clonenum) + numoptions/2;
+				if (subtract)
+					n -= ((i+1)/2);
+				else
+					n += ((i+1)/2);
+				n %= numoptions;
+
+				skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
+				patch = faceprefix[skin][FACE_RANK];
+				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+				radius = 24<<FRACBITS;
+
+				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				break;
 			}
 
-			col = K_GetEffectiveFollowerColor(n, p->color);
-
-			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-
-			diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
-
-			if (diff == 0)
-				patch = W_CachePatchName("COLORSP2", PU_CACHE);
-			else if (abs(diff) < 25)
-				patch = W_CachePatchName("COLORSP1", PU_CACHE);
-			else
-				patch = W_CachePatchName("COLORSP0", PU_CACHE);
-
-			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
-		}
-		else
-		{
-			INT16 diff;
-
-			if (i == 0)
+			case CSSTEP_COLORS:
 			{
-				n = l = r = M_GetColorBefore(p->color, numoptions/2, false);
+				INT16 diff;
+
+				if (i == 0)
+				{
+					n = l = r = M_GetColorBefore(p->color, numoptions/2, false);
+				}
+				else if (subtract)
+				{
+					n = l = M_GetColorBefore(l, 1, false);
+				}
+				else
+				{
+					n = r = M_GetColorAfter(r, 1, false);
+				}
+
+				colormap = R_GetTranslationColormap(TC_DEFAULT, n, GTC_MENUCACHE);
+
+				diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
+
+				if (diff == 0)
+					patch = W_CachePatchName("COLORSP2", PU_CACHE);
+				else if (abs(diff) < 25)
+					patch = W_CachePatchName("COLORSP1", PU_CACHE);
+				else
+					patch = W_CachePatchName("COLORSP0", PU_CACHE);
+
+				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				break;
 			}
-			else if (subtract)
+
+			case CSSTEP_FOLLOWER:
 			{
-				n = l = M_GetColorBefore(l, 1, false);
+				follower_t *fl = NULL;
+
+				n = (p->followern + 1) + numoptions/2;
+				if (subtract)
+					n -= ((i+1)/2);
+				else
+					n += ((i+1)/2);
+				n %= numoptions;
+
+				if (n == 0)
+				{
+					patch = W_CachePatchName("K_NOBLNS", PU_CACHE);
+				}
+				else
+				{
+					fl = &followers[n - 1];
+					patch = W_CachePatchName(fl->icon, PU_CACHE);
+
+					colormap = R_GetTranslationColormap(TC_DEFAULT,
+						K_GetEffectiveFollowerColor(p->followercolor, p->color),
+						GTC_MENUCACHE
+					);
+				}
+
+				radius = 24<<FRACBITS;
+
+				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				break;
 			}
-			else
+
+			case CSSTEP_FOLLOWERCOLORS:
 			{
-				n = r = M_GetColorAfter(r, 1, false);
+				INT16 diff;
+				UINT16 col;
+
+				if (i == 0)
+				{
+					n = l = r = M_GetColorBefore(p->followercolor, numoptions/2, true);
+				}
+				else if (subtract)
+				{
+					n = l = M_GetColorBefore(l, 1, true);
+				}
+				else
+				{
+					n = r = M_GetColorAfter(r, 1, true);
+				}
+
+				col = K_GetEffectiveFollowerColor(n, p->color);
+
+				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+
+				diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
+
+				if (diff == 0)
+					patch = W_CachePatchName("COLORSP2", PU_CACHE);
+				else if (abs(diff) < 25)
+					patch = W_CachePatchName("COLORSP1", PU_CACHE);
+				else
+					patch = W_CachePatchName("COLORSP0", PU_CACHE);
+
+				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				break;
 			}
 
-			colormap = R_GetTranslationColormap(TC_DEFAULT, n, GTC_MENUCACHE);
-
-			diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
-
-			if (diff == 0)
-				patch = W_CachePatchName("COLORSP2", PU_CACHE);
-			else if (abs(diff) < 25)
-				patch = W_CachePatchName("COLORSP1", PU_CACHE);
-			else
-				patch = W_CachePatchName("COLORSP0", PU_CACHE);
-
-			cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+			default:
+				break;
 		}
 
 		if (subtract)
@@ -1005,72 +1064,6 @@ static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, INT32 addflag
 		V_DrawMappedPatch(x, y, addflags|flags, sprpatch, colormap);
 
 	return true;
-}
-
-// Draws the follower list.
-static void M_DrawFollowerList(setup_player_t *p, UINT8 num)
-{
-	INT16 x = 82;
-	INT16 y = 3;
-	INT32 cf = p->followern;
-	UINT8 i;
-	UINT8 *colormap = NULL;
-
-	if (num & 1)
-		x = 172;
-
-	if (num >= 2)
-		y = 176;
-
-	// this places it at the bottom of the card!
-	if (optionsmenu.profile)
-	{
-		x = 35;
-		y = 143;
-	}
-
-	// Start 1 follower below.
-	cf--;
-	if (cf < -1)
-		cf = numfollowers-1;
-
-	for (i = 0; i < 3; i++)
-	{
-		patch_t *pp = NULL;
-		follower_t fl = followers[cf];
-
-		if (W_LumpExists(fl.icon) && cf >= 0)
-		{
-			UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);
-			pp = W_CachePatchName(fl.icon, PU_CACHE);
-
-			colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-			V_DrawMappedPatch(x, y, 0, pp, colormap);
-			if (i == 1)
-				V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("K_CHILI%d", p->follower_timer%16 /2 +1), PU_CACHE), NULL);
-
-		}
-		// No patch....
-		else
-		{
-			V_DrawFill(x, y, 16, 16, 0);
-
-			if (i == 1)
-				V_DrawMappedPatch(x, y, 0, W_CachePatchName(va("K_CHILI%d", p->follower_timer%16 /2 +1), PU_CACHE), NULL);
-
-			if (cf >= 0)
-				V_DrawString(x, y, 0, va("%d\n", cf));
-			else
-				V_DrawMappedPatch(x-4, y-3, 0, W_CachePatchName("K_NOBLNS", PU_CACHE), NULL);
-
-		}
-
-		cf++;
-		if (cf >= numfollowers)
-			cf = -1;
-
-		x += 23;
-	}
 }
 
 // Returns false is the follower shouldn't be rendered.
@@ -1185,15 +1178,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		if (p->mdepth >= CSSTEP_FOLLOWER)
 		{
 			M_DrawFollowerSprite(x+16, y+75, -1, !(num & 1) ? V_FLIP : 0, 0, p);
-
-			if (p->mdepth == CSSTEP_FOLLOWER)
-				M_DrawFollowerList(p, num);
 		}
 
-		if (p->mdepth == CSSTEP_ALTS || p->mdepth == CSSTEP_COLORS || p->mdepth == CSSTEP_FOLLOWERCOLORS)
-		{
-			M_DrawCharSelectCircle(p, x+32, y+64);
-		}
+		M_DrawCharSelectCircle(p, x+32, y+64);
 	}
 
 	if ((setup_animcounter/10) & 1 && gamestate == GS_MENU)	// Not drawn outside of GS_MENU.
@@ -1432,14 +1419,10 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 			}
 		}
 
-		if (sp->mdepth == CSSTEP_ALTS || sp->mdepth == CSSTEP_COLORS || sp->mdepth == CSSTEP_FOLLOWERCOLORS)
-		{
-			M_DrawCharSelectCircle(sp, x-22, y+104);
-		}
+		M_DrawCharSelectCircle(sp, x-22, y+104);
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
-
 		UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);;
 		UINT8 fln = K_FollowerAvailable(p->follower);
 
@@ -1475,11 +1458,6 @@ void M_DrawCharacterSelect(void)
 	INT16 quadx, quady;
 	INT16 skin;
 	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
-
-	// Draw page num.
-	// @TODO: make it fancier than the default string lol.
-	if (setup_numplayers < 2)
-		V_DrawCenteredString(160, 1, 0, va("%d/%d", setup_page+1, setup_maxpage+1));
 
 	if (setup_numplayers > 0)
 	{
@@ -1553,13 +1531,12 @@ void M_DrawCharacterSelect(void)
 	{
 		// Draw a preview for each player
 		if (optionsmenu.profile == NULL)
+		{
 			M_DrawCharSelectPreview(i);
+		}
 		else if (i == 0)
 		{
 			M_DrawProfileCard(optionsmenu.optx, optionsmenu.opty, false, optionsmenu.profile);
-
-			if (setup_player[0].mdepth == CSSTEP_FOLLOWER)
-				M_DrawFollowerList(&setup_player[0], 0);
 		}
 
 		if (i >= setup_numplayers)
