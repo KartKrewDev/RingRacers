@@ -951,8 +951,7 @@ void M_StartControlPanel(void)
 
 			itemOn = 0;
 
-			CV_StealthSetValue(&cv_currprofile, -1);	// Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
-			CV_StealthSetValue(&cv_splitdevice, 0);		// Disable this option by default.
+			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
 		}
 		else
 		{
@@ -2108,9 +2107,6 @@ void M_CharacterSelectInit(void)
 
 			//CONS_Printf("Device for %d set to %d\n", i, -1);
 		}
-
-		// On main menu, reset that!
-		CV_StealthSetValue(&cv_splitdevice, 0);
 	}
 	//CONS_Printf("========\n");
 
@@ -2815,42 +2811,6 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 }
 
-//
-static void M_HandleSplitDevice(void)
-{
-	const UINT8 pid = 0;
-	setup_player_t *p = &setup_player[setup_numplayers];
-
-	if ((menucmd[pid].buttons & (MBT_L|MBT_R)) != (MBT_L|MBT_R))
-		return;
-
-	if (!(menucmd[pid].buttonsHeld & MBT_L) == !(menucmd[pid].buttonsHeld & MBT_R))
-		return;
-
-	if (setup_numplayers > 1 && !cv_splitdevice.value)
-		return;
-
-	if (setup_numplayers == 4)
-	{
-		S_StartSound(NULL, sfx_s3k85);
-		while (setup_numplayers > 1)
-		{
-			setup_numplayers--;
-			setup_player[setup_numplayers].mdepth = CSSTEP_NONE;
-			CV_StealthSetValue(&cv_usejoystick[setup_numplayers], -1);
-		}
-		CV_StealthSetValue(&cv_splitdevice, 0);
-		return;
-	}
-
-	if (!cv_splitdevice.value)
-		M_StartMessage(M_GetText("Split device enabled.\nP1 can add extra players with [L]+[R].\nP1 must set all Players' parameters.\n\nIntended for use for multiplayer games\non the same device (Keyboard...)\nand testing purposes.\n\nPress any key"), NULL, MM_NOTHING);
-
-	CV_StealthSetValue(&cv_splitdevice, 1);
-	S_StartSound(NULL, sfx_s3k65);
-	p->mdepth = CSSTEP_PROFILE;	// Ready the player setup.
-}
-
 boolean M_CharacterSelectHandler(INT32 choice)
 {
 	INT32 i;
@@ -2866,9 +2826,6 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		{
 			if (!optionsmenu.profile)
 			{
-				if (p->mdepth > CSSTEP_NONE && i == 0)
-					M_HandleSplitDevice();
-
 				// If splitdevice is true, only do the last non-ready setups.
 				if (cv_splitdevice.value)
 				{

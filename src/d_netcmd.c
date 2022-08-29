@@ -320,7 +320,7 @@ consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofil
 consvar_t cv_ttlprofilen = CVAR_INIT ("ttlprofilen", "0", CV_SAVE, lastprofile_cons_t, NULL);
 
 // Cvar for using splitscreen with 1 device.
-consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_HIDDEN, CV_OnOff, NULL);
+consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
