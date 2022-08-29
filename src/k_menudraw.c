@@ -193,29 +193,29 @@ void M_DrawMenuBackground(void)
 	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName("MENUBG1", PU_CACHE), NULL);
 	V_DrawFixedPatch(-bgImageScroll, 0, FRACUNIT, 0, W_CachePatchName(bgImageName, PU_CACHE), NULL);
 
-	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_TRANSLUCENT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
-
-	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
-		FRACUNIT, V_TRANSLUCENT, text2, NULL);
-	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
-		FRACUNIT, V_TRANSLUCENT, text2, NULL);
+	V_DrawFixedPatch(0, (BASEVIDHEIGHT + 16) * FRACUNIT, FRACUNIT, V_SUBTRACT, W_CachePatchName("MENUBG2", PU_CACHE), NULL);
 
 	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll,
-		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+		FRACUNIT, V_SUBTRACT, text1, NULL);
 	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll + text1loop,
-		FRACUNIT, V_TRANSLUCENT, text1, NULL);
+		FRACUNIT, V_SUBTRACT, text1, NULL);
 
-	bgText1Scroll += (MENUBG_TEXTSCROLL*rendertimefrac);
+	bgText1Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
 	while (bgText1Scroll > text1loop)
 		bgText1Scroll -= text1loop;
 
-	bgText2Scroll += (MENUBG_TEXTSCROLL*rendertimefrac);
+	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_ADD, text2, NULL);
+	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
+		FRACUNIT, V_ADD, text2, NULL);
+
+	bgText2Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
 	while (bgText2Scroll > text2loop)
 		bgText2Scroll -= text2loop;
 
 	if (bgImageScroll > 0)
 	{
-		bgImageScroll -= (MENUBG_IMAGESCROLL*rendertimefrac);
+		bgImageScroll -= (MENUBG_IMAGESCROLL*renderdeltatics);
 		if (bgImageScroll < 0)
 		{
 			bgImageScroll = 0;
