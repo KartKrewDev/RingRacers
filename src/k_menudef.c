@@ -681,7 +681,7 @@ menuitem_t OPTIONS_ProfileControls[] = {
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
 
 	{IT_STRING | IT_CALL, "CONFIRM", "Go back to profile setup.",
-		NULL, {.routine = M_ProfileConfirm}, 0, 0},
+		NULL, {.routine = M_ProfileControlsConfirm}, 0, 0},
 };
 
 
