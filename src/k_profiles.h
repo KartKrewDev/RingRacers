@@ -29,7 +29,7 @@
 #define PROFILENAMELEN 6
 #define PROFILEVER 1
 #define MAXPROFILES 16
-#define PROFILESFILE "ringprofiles.cfg"
+#define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
 
 #define PROFILEDEFAULTNAME "guest"
