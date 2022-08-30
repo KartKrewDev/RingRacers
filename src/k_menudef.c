@@ -680,8 +680,8 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_STRING | IT_CALL, "TRY MAPPINGS", "Test your controls.",
 		NULL, {.routine = M_ProfileTryController}, 0, 0},
 
-	{IT_STRING | IT_CALL, "BACK...", "Go back to profile setup.",
-		NULL, {.routine = M_GoBack}, 0, 0},
+	{IT_STRING | IT_CALL, "CONFIRM", "Go back to profile setup.",
+		NULL, {.routine = M_ProfileConfirm}, 0, 0},
 };
 
 

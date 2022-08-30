@@ -5113,6 +5113,24 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 	}
 }
 
+void M_ProfileConfirm(INT32 choice)
+{
+	(void)choice;
+
+	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
+
+	M_ProfileControlSaveResponse(MA_YES);
+
+	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+
+	// Reapply player 1's real profile.
+	if (cv_currprofile.value > -1)
+	{
+		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+	}
+}
+
 boolean M_ProfileControlsInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
@@ -5165,16 +5183,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
-		//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
-		// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
-		M_ProfileControlSaveResponse(MA_YES);
-
-		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
-
-		// Reapply player 1's real profile.
-		if (cv_currprofile.value > -1)
-			PR_ApplyProfile(cv_lastprofile[0].value, 0);
-
+		M_ProfileControlsConfirm();
 		return true;
 	}
 
