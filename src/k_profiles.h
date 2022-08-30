@@ -32,8 +32,8 @@
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
 
-#define PROFILEDEFAULTNAME "guest"
-#define PROFILEDEFAULTPNAME "Player"
+#define PROFILEDEFAULTNAME "GUEST"
+#define PROFILEDEFAULTPNAME "Guest"
 #define PROFILEDEFAULTSKIN "eggman"
 #define PROFILEDEFAULTCOLOR SKINCOLOR_NONE
 #define PROFILEDEFAULTFOLLOWER "none"
@@ -78,7 +78,14 @@ INT32 PR_GetNumProfiles(void);
 // PR_MakeProfile
 // Makes a profile from the supplied profile name, player name, colour, follower, followercolour and controls.
 // The consvar values are left untouched.
-profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING]);
+profile_t* PR_MakeProfile(
+	const char *prname,
+	const char *pname,
+	const char *sname, const UINT16 col,
+	const char *fname, const UINT16 fcol,
+	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
+	boolean guest
+);
 
 // PR_MakeProfileFromPlayer
 // Makes a profile_t from the supplied profile name, player name, colour, follower and followercolour.

@@ -24,7 +24,13 @@ INT32 PR_GetNumProfiles(void)
 	return numprofiles;
 }
 
-profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING])
+profile_t* PR_MakeProfile(
+	const char *prname,
+	const char *pname,
+	const char *sname, const UINT16 col,
+	const char *fname, const UINT16 fcol,
+	INT32 controlarray[num_gamecontrols][MAXINPUTMAPPING],
+	boolean guest)
 {
 	profile_t *new = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
 	UINT8 i;
@@ -48,7 +54,7 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 	// Init both power levels
 	for (i = 0; i < PWRLV_NUMTYPES; i++)
 	{
-		new->powerlevels[i] = PWRLVRECORD_START;
+		new->powerlevels[i] = (guest ? 0 : PWRLVRECORD_START);
 	}
 
 	return new;
@@ -57,7 +63,7 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const char *sname, const UINT16 col, const char *fname, UINT16 fcol, UINT8 pnum)
 {
 	// Generate profile using the player's gamecontrol, as we set them directly when making profiles from menus.
-	profile_t *new = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum]);
+	profile_t *new = PR_MakeProfile(prname, pname, sname, col, fname, fcol, gamecontrol[pnum], false);
 
 	// Player bound cvars:
 	new->kickstartaccel = cv_kickstartaccel[pnum].value;
@@ -160,7 +166,14 @@ void PR_InitNewProfile(void)
 		}
 	}
 
-	dprofile = PR_MakeProfile(pname, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
+	dprofile = PR_MakeProfile(
+		pname,
+		PROFILEDEFAULTPNAME,
+		PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR,
+		PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR,
+		gamecontroldefault,
+		false
+	);
 	PR_AddProfile(dprofile);
 }
 
@@ -189,7 +202,15 @@ void PR_SaveProfiles(void)
 void PR_LoadProfiles(void)
 {
 	FILE *f = NULL;
-	profile_t *dprofile = PR_MakeProfile(PROFILEDEFAULTNAME, PROFILEDEFAULTPNAME, PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR, PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR, gamecontroldefault);
+	profile_t *dprofile = PR_MakeProfile(
+		PROFILEDEFAULTNAME,
+		PROFILEDEFAULTPNAME,
+		PROFILEDEFAULTSKIN, PROFILEDEFAULTCOLOR,
+		PROFILEDEFAULTFOLLOWER, PROFILEDEFAULTFOLLOWERCOLOR,
+		gamecontroldefault,
+		true
+	);
+
 	f = fopen(va(pandf, srb2home, PROFILESFILE), "r");
 
 	if (f != NULL)

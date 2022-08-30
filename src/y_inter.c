@@ -504,7 +504,7 @@ void Y_IntermissionDrawer(void)
 				{
 					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
 					{
-						// No power level (splitscreen guests)
+						// No power level (guests)
 						STRBUFCPY(strtime, "----");
 					}
 					else
