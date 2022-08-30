@@ -7184,6 +7184,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			fixed_t convSpeed = (mobj->target->player->speed * 100) / K_GetKartSpeed(mobj->target->player, false, true);
 			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
+			UINT8 triplevel = K_TripwirePassConditions(mobj->target->player);
 
 			if (trans > NUMTRANSMAPS)
 				trans = NUMTRANSMAPS;
@@ -7192,13 +7193,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if ((trans >= NUMTRANSMAPS) // not a valid visibility
 				|| (convSpeed < 150 && !(mobj->target->player->tripwireLeniency & 1)) // < 150% flickering
-				|| (mobj->target->player->curshield == KSHIELD_FLAME && mobj->target->player->flamedash <= 0)) // flame shield but NOT boosting
+				|| (triplevel < TRIPWIRE_BOOST)) // Not strong enough to make an aura
 			{
 				mobj->renderflags |= RF_DONTDRAW;
 			}
 			else
 			{
-				boolean blastermode = (convSpeed >= 180);
+				boolean blastermode = (convSpeed >= 180) && (triplevel >= TRIPWIRE_BLASTER);
 
 				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
 				if (trans != 0)

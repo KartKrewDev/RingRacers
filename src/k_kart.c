@@ -2944,23 +2944,32 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
-boolean K_TripwirePassConditions(player_t *player)
+UINT8 K_TripwirePassConditions(player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->growshrinktimer > 0 ||
+			player->sneakertimer
+		)
+		return TRIPWIRE_BLASTER;
+
+	if (
 			player->flamedash ||
-			player->hyudorotimer ||
 			player->speed > 2 * K_GetKartSpeed(player, false, true)
 	)
-		return true;
-	return false;
+		return TRIPWIRE_BOOST;
+
+	if (
+			player->growshrinktimer > 0 ||
+			player->hyudorotimer
+		)
+		return TRIPWIRE_IGNORE;
+
+	return TRIPWIRE_NONE;
 }
 
 boolean K_TripwirePass(player_t *player)
 {
-	return (K_TripwirePassConditions(player) || (player->tripwireLeniency > 0));
+	return ((K_TripwirePassConditions(player) != TRIPWIRE_NONE) || (player->tripwireLeniency > 0));
 }
 
 boolean K_WaterRun(player_t *player)
@@ -7221,7 +7230,7 @@ static void K_UpdateTripwire(player_t *player)
 		}
 	}
 
-	if (K_TripwirePassConditions(player) == true)
+	if (K_TripwirePassConditions(player) != TRIPWIRE_NONE)
 	{
 		if (!boostExists)
 		{
