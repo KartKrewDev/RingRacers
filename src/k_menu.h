@@ -856,7 +856,7 @@ void M_ProfileSetControl(INT32 ch);
 
 void M_MapProfileControl(event_t *ev);
 void M_ProfileTryController(INT32 choice);
-void M_ProfileConfirm(INT32 choice);
+void M_ProfileControlsConfirm(INT32 choice);
 
 // video modes menu (resolution)
 void M_VideoModeMenu(INT32 choice);

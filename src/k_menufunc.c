@@ -3013,6 +3013,7 @@ void M_CharacterSelectTick(void)
 
 				// reset setup_player
 				memset(setup_player, 0, sizeof(setup_player));
+				setup_numplayers = 0;
 
 				M_GoBack(0);
 				return;
@@ -5113,7 +5114,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 	}
 }
 
-void M_ProfileConfirm(INT32 choice)
+void M_ProfileControlsConfirm(INT32 choice)
 {
 	(void)choice;
 
