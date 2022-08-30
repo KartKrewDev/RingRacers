@@ -7192,14 +7192,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			trans = NUMTRANSMAPS - trans;
 
 			if ((trans >= NUMTRANSMAPS) // not a valid visibility
-				|| (convSpeed < 150 && !(mobj->target->player->tripwireLeniency & 1)) // < 150% flickering
-				|| (triplevel < TRIPWIRE_BOOST)) // Not strong enough to make an aura
+				|| (convSpeed < 150 && (leveltime & 1)) // < 150% flickering
+				|| (triplevel < TRIPWIRE_BOOST) // Not strong enough to make an aura
+				|| mobj->target->player->flamedash) // Flameshield dash
 			{
 				mobj->renderflags |= RF_DONTDRAW;
 			}
 			else
 			{
-				boolean blastermode = (convSpeed >= 180) && (triplevel >= TRIPWIRE_BLASTER);
+				boolean blastermode = (convSpeed >= 200) && (triplevel >= TRIPWIRE_BLASTER);
 
 				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
 				if (trans != 0)
@@ -7220,7 +7221,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					}
 					mobj->colorized = true;
 				}
-				else if (mobj->target->player->curshield == KSHIELD_FLAME && mobj->target->player->flamedash > 0)
+				else if (mobj->target->player->curshield == KSHIELD_FLAME)
 				{
 					mobj->color = SKINCOLOR_KETCHUP;
 					mobj->colorized = true;
