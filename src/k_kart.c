@@ -2944,7 +2944,7 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
-UINT8 K_TripwirePassConditions(player_t *player)
+tripwirepass_t K_TripwirePassConditions(player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
@@ -2969,7 +2969,7 @@ UINT8 K_TripwirePassConditions(player_t *player)
 
 boolean K_TripwirePass(player_t *player)
 {
-	return ((K_TripwirePassConditions(player) != TRIPWIRE_NONE) || (player->tripwireLeniency > 0));
+	return (player->tripwirePass != TRIPWIRE_NONE);
 }
 
 boolean K_WaterRun(player_t *player)
@@ -3676,7 +3676,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	if (player->tripWireState == TRIP_PASSED)
+	if (player->tripwireState == TRIPSTATE_PASSED)
 	{
 		player->tumbleHeight = 50;
 	}
@@ -3790,15 +3790,15 @@ void K_TumbleInterrupt(player_t *player)
 
 void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 {
-	if (state == TRIP_PASSED)
+	if (state == TRIPSTATE_PASSED)
 		S_StartSound(player->mo, sfx_ssa015);
-	else if (state == TRIP_BLOCKED)
+	else if (state == TRIPSTATE_BLOCKED)
 		S_StartSound(player->mo, sfx_kc40);
 
-	player->tripWireState = state;
+	player->tripwireState = state;
 	K_AddHitLag(player->mo, 10, false);
 
-	if (state == TRIP_PASSED && player->spinouttimer &&
+	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
 			player->speed > 2 * K_GetKartSpeed(player, false, true))
 	{
 		K_TumblePlayer(player, NULL, NULL);
@@ -7219,18 +7219,9 @@ static void K_UpdateTripwire(player_t *player)
 	fixed_t speedThreshold = (3*K_GetKartSpeed(player, false, true))/4;
 	boolean goodSpeed = (player->speed >= speedThreshold);
 	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
+	tripwirepass_t triplevel = K_TripwirePassConditions(player);
 
-	if (boostExists)
-	{
-		player->tripwireLeniency--;
-		if (goodSpeed == false && player->tripwireLeniency > 0)
-		{
-			// Decrease at double speed when your speed is bad.
-			player->tripwireLeniency--;
-		}
-	}
-
-	if (K_TripwirePassConditions(player) != TRIPWIRE_NONE)
+	if (triplevel != TRIPWIRE_NONE)
 	{
 		if (!boostExists)
 		{
@@ -7247,7 +7238,25 @@ static void K_UpdateTripwire(player_t *player)
 			P_SetMobjState(back, S_TRIPWIREBOOST_BOTTOM);
 		}
 
+		player->tripwirePass = triplevel;
 		player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+	}
+	else
+	{
+		if (boostExists)
+		{
+			player->tripwireLeniency--;
+			if (goodSpeed == false && player->tripwireLeniency > 0)
+			{
+				// Decrease at double speed when your speed is bad.
+				player->tripwireLeniency--;
+			}
+		}
+
+		if (player->tripwireLeniency <= 0)
+		{
+			player->tripwirePass = TRIPWIRE_NONE;
+		}
 	}
 }
 
@@ -7718,14 +7727,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
 
-	if (player->tripWireState != TRIP_NONE)
+	if (player->tripwireState != TRIPSTATE_NONE)
 	{
-		if (player->tripWireState == TRIP_PASSED)
+		if (player->tripwireState == TRIPSTATE_PASSED)
 			S_StartSound(player->mo, sfx_cdfm63);
-		else if (player->tripWireState == TRIP_BLOCKED)
+		else if (player->tripwireState == TRIPSTATE_BLOCKED)
 			S_StartSound(player->mo, sfx_kc4c);
 
-		player->tripWireState = TRIP_NONE;
+		player->tripwireState = TRIPSTATE_NONE;
 	}
 
 	K_KartEbrakeVisuals(player);

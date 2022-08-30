@@ -291,6 +291,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
 
+		WRITEUINT8(save_p, players[i].tripwireState);
+		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
 		WRITEUINT16(save_p, players[i].itemroulette);
@@ -355,7 +357,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
-		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
@@ -575,6 +576,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
 
+		players[i].tripwireState = READUINT8(save_p);
+		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
@@ -639,7 +642,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
-		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);

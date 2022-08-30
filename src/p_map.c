@@ -3801,7 +3801,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	if (P_IsLineTripWire(bestslideline))
 	{
 		// TRIPWIRE CANNOT BE MADE NONBOUNCY
-		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
+		K_ApplyTripWire(mo->player, TRIPSTATE_BLOCKED);
 	}
 	else
 	{
