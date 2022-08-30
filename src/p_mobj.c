@@ -7173,7 +7173,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		mobj->angle = K_MomentumAngle(mobj->target);
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
-		mobj->target->destscale = mobj->target->scale;
+		mobj->destscale = mobj->target->scale;
 		P_SetScale(mobj, mobj->target->scale);
 
 		if (mobj->extravalue1)
