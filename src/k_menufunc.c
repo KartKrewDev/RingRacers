@@ -5184,7 +5184,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	}
 	else if (M_MenuBackPressed(pid))
 	{
-		M_ProfileControlsConfirm();
+		M_ProfileControlsConfirm(0);
 		return true;
 	}
 
