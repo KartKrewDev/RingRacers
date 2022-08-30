@@ -1013,6 +1013,7 @@ void I_UpdateJoystickDeviceIndex(UINT8 player)
 	if (JoyInfo[player].dev)
 	{
 		cv_usejoystick[player].value = I_GetJoystickDeviceIndex(JoyInfo[player].dev) + 1;
+		CONS_Printf("I_UpdateJoystickDeviceIndex: Device for %d set to %d\n", player, cv_usejoystick[player].value);
 	}
 	else
 	{
@@ -1036,6 +1037,7 @@ void I_UpdateJoystickDeviceIndex(UINT8 player)
 			{
 				// We DID make it through the whole loop, so we can use this one!
 				cv_usejoystick[player].value = value;
+				CONS_Printf("I_UpdateJoystickDeviceIndex: Device for %d set to %d\n", player, cv_usejoystick[player].value);
 				break;
 			}
 		}
@@ -1045,6 +1047,7 @@ void I_UpdateJoystickDeviceIndex(UINT8 player)
 			// We DID NOT make it through the whole loop, so we can't assign this joystick to anything.
 			// When you try your best, but you don't succeed...
 			cv_usejoystick[player].value = 0;
+			CONS_Printf("I_UpdateJoystickDeviceIndex: Device for %d set to %d\n", player, 0);
 		}
 	}
 }
@@ -1235,6 +1238,7 @@ void I_InitJoystick(UINT8 index)
 	if (newcontroller && i < MAXSPLITSCREENPLAYERS) // don't override an active device
 	{
 		cv_usejoystick[index].value = I_GetJoystickDeviceIndex(JoyInfo[index].dev) + 1;
+		CONS_Printf("I_InitJoystick: Device for %d set to %d\n", index, cv_usejoystick[index].value);
 	}
 	else if (newcontroller && joy_open(index, cv_usejoystick[index].value) != -1)
 	{
@@ -1248,6 +1252,7 @@ void I_InitJoystick(UINT8 index)
 		if (JoyInfo[index].oldjoy)
 			I_ShutdownJoystick(index);
 		cv_usejoystick[index].value = 0;
+		CONS_Printf("I_InitJoystick: Device for %d set to %d\n", index, cv_usejoystick[index].value);
 		joystick_started[index] = 0;
 	}
 

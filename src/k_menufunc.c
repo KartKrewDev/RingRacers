@@ -2099,12 +2099,12 @@ void M_CharacterSelectInit(void)
 		{
 			// Un-set devices for other players.
 			if (i != 0 || optionsmenu.profile)
+			{
 				CV_SetValue(&cv_usejoystick[i], -1);
-
-			//CONS_Printf("Device for %d set to %d\n", i, -1);
+				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
+			}
 		}
 	}
-	//CONS_Printf("========\n");
 
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
@@ -2329,16 +2329,14 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 
 
 			CV_SetValue(&cv_usejoystick[num], i);
-			//CONS_Printf("Device for %d set to %d\n", num, i);
-			//CONS_Printf("========\n");
+			CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", num, i);
 
 			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				// Un-set devices for other players.
 				CV_SetValue(&cv_usejoystick[j], -1);
-				//CONS_Printf("Device for %d set to %d\n", j, -1);
+				CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", j, -1);
 			}
-			//CONS_Printf("========\n");
 
 			//setup_numplayers++;
 			p->mdepth = CSSTEP_PROFILE;
@@ -2407,6 +2405,7 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 			if (num > 0)
 			{
 				CV_StealthSetValue(&cv_usejoystick[num], -1);
+				CONS_Printf("M_HandleCSelectProfile: Device for %d set to %d\n", num, -1);
 			}
 
 			return true;
@@ -5015,7 +5014,8 @@ void M_HandleVideoModes(INT32 ch)
 
 // sets whatever device has had its key pressed to the active device.
 // 20/05/22: Commented out for now but not deleted as it might still find some use in the future?
-/*static void SetDeviceOnPress(void)
+/*
+static void SetDeviceOnPress(void)
 {
 	UINT8 i;
 
@@ -5024,11 +5024,12 @@ void M_HandleVideoModes(INT32 ch)
 		if (deviceResponding[i])
 		{
 			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
-			//CONS_Printf("Using device %d for mappings\n", i);
+			CONS_Printf("SetDeviceOnPress: Device for %d set to %d\n", 0, i);
 			return;
 		}
 	}
-}*/
+}
+*/
 
 
 // Prompt a device selection window (just tap any button on the device you want)
