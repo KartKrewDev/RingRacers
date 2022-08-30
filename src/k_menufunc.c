@@ -2420,13 +2420,35 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuConfirmPressed(num))
 	{
+		SINT8 belongsTo = -1;
+
+		if (p->profilen != PROFILE_GUEST)
+		{
+			for (i = 0; i < setup_numplayers; i++)
+			{
+				if (setup_player[i].mdepth > CSSTEP_PROFILE
+					&& setup_player[i].profilen == p->profilen)
+				{
+					belongsTo = i;
+					break;
+				}
+			}
+		}
+
+		if (belongsTo != -1 && belongsTo != num)
+		{
+			S_StartSound(NULL, sfx_s3k7b);
+			M_SetMenuDelay(num);
+			return false;
+		}
+
 		// Apply the profile.
 		PR_ApplyProfile(p->profilen, realnum);	// Otherwise P1 would inherit the last player's profile in splitdevice and that's not what we want...
 		M_SetupProfileGridPos(p);
 
 		p->changeselect = 0;
 
-		if (p->profilen == 0)
+		if (p->profilen == PROFILE_GUEST)
 		{
 			// Guest profile, always ask for options.
 			p->mdepth = CSSTEP_CHARS;

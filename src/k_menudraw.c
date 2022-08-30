@@ -1335,24 +1335,47 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	// Profile selection
 	if (p->mdepth == CSSTEP_PROFILE)
 	{
-		UINT8 i = 0;
 		INT16 px = x+12;
 		INT16 py = y+48 - p->profilen*12;
 		UINT8 maxp = PR_GetNumProfiles();
+
+		UINT8 i = 0;
+		UINT8 j;
 
 		for (i = 0; i < maxp; i++)
 		{
 			profile_t *pr = PR_GetProfile(i);
 			INT16 dist = abs(p->profilen - i);
+			INT32 notSelectable = 0;
+			SINT8 belongsTo = -1;
+
+			if (i != PROFILE_GUEST)
+			{
+				for (j = 0; j < setup_numplayers; j++)
+				{
+					if (setup_player[j].mdepth > CSSTEP_PROFILE
+						&& setup_player[j].profilen == i)
+					{
+						belongsTo = j;
+						break;
+					}
+				}
+			}
+
+			if (belongsTo != -1 && belongsTo != num)
+			{
+				notSelectable |= V_TRANSLUCENT;
+			}
 
 			if (dist > 2)
 			{
 				py += 12;
 				continue;
 			}
-			else if (dist == 2)
+
+			if (dist == 2)
 			{
-				V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "NEW");
+				V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
 				V_DrawScaledPatch(px, py, V_TRANSLUCENT, W_CachePatchName("FILEBACK", PU_CACHE));
 			}
 			else
@@ -1360,7 +1383,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				V_DrawScaledPatch(px, py, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 
 				if (i != p->profilen || ((setup_animcounter/10) & 1))
-					V_DrawCenteredFileString(px+26, py, 0, pr->version ? pr->profilename : "NEW");
+				{
+					V_DrawCenteredFileString(px+26, py, notSelectable, pr->version ? pr->profilename : "NEW");
+				}
 			}
 			py += 12;
 		}
