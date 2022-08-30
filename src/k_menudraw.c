@@ -3017,7 +3017,7 @@ void M_DrawProfileControls(void)
 		optionsmenu.tcontx = BASEVIDWIDTH*2/3 - 10;
 		optionsmenu.tconty = BASEVIDHEIGHT/2 +70;
 
-		V_DrawCenteredString(160, 180, highlightflags, va("HOLD [X] FOR %d SECONDS TO BACK OUT", optionsmenu.trycontroller/TICRATE));
+		V_DrawCenteredString(160, 180, highlightflags, va("PRESS NOTHING FOR %d SEC TO GO BACK", optionsmenu.trycontroller/TICRATE));
 		return;	// Don't draw the rest if we're trying the controller.
 	}
 
