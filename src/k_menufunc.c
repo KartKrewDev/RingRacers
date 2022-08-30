@@ -330,8 +330,6 @@ void Addons_option_Onchange(void)
 
 static void M_EraseDataResponse(INT32 ch)
 {
-	UINT8 i;
-
 	if (ch == MA_NO)
 		return;
 
@@ -343,8 +341,6 @@ static void M_EraseDataResponse(INT32 ch)
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
 		totalplaytime = 0;
 		matchesplayed = 0;
-		for (i = 0; i < PWRLV_NUMTYPES; i++)
-			vspowerlevel[i] = PWRLVRECORD_START;
 	}
 	if (optionsmenu.erasecontext != 1)
 		G_ClearRecords();

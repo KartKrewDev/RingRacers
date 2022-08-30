@@ -1340,7 +1340,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		INT16 py = y+48 - p->profilen*12;
 		UINT8 maxp = PR_GetNumProfiles();
 
-		for (i=0; i < maxp; i++)
+		for (i = 0; i < maxp; i++)
 		{
 			profile_t *pr = PR_GetProfile(i);
 			INT16 dist = abs(p->profilen - i);

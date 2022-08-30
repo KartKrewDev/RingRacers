@@ -3984,9 +3984,6 @@ void G_LoadGameData(void)
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
 
-	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
-		vspowerlevel[i] = PWRLVRECORD_START;
-
 	if (M_CheckParm("-nodata"))
 		return; // Don't load.
 
@@ -4021,13 +4018,6 @@ void G_LoadGameData(void)
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
-
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-	{
-		vspowerlevel[i] = READUINT16(save_p);
-		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
-			goto datacorrupt;
-	}
 
 	modded = READUINT8(save_p);
 
@@ -4144,9 +4134,6 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
-
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-		WRITEUINT16(save_p, vspowerlevel[i]);
 
 	WRITEUINT8(save_p, (UINT8)savemoddata);
 

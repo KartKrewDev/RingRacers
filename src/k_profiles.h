@@ -30,6 +30,7 @@
 #define PROFILEVER 1
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.cfg"
+#define PROFILE_GUEST 0
 
 #define PROFILEDEFAULTNAME "guest"
 #define PROFILEDEFAULTPNAME "Player"
@@ -58,7 +59,7 @@ typedef struct profile_s
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
 
-	UINT16 powerlevels[PWRLV_NUMTYPES];	// PWRLV for race & battle.
+	UINT16 powerlevels[PWRLV_NUMTYPES];	// PWRLV for each gametype.
 
 	// Player-specific consvars.
 	// @TODO: List all of those
@@ -133,5 +134,7 @@ UINT8 PR_GetProfileNum(profile_t *p);
 // Returns the player # this profile is used by (if any)
 // If the profile belongs to no player, then this returns -1
 SINT8 PR_ProfileUsedBy(profile_t *p);
+
+profile_t *PR_GetPlayerProfile(player_t *player);
 
 #endif

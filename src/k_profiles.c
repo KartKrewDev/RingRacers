@@ -16,8 +16,8 @@
 #include "r_skins.h"
 
 // List of all the profiles.
-static profile_t *profilesList[MAXPROFILES+1];		// +1 because we're gonna add a default "GUEST' profile.
-static UINT8 numprofiles = 0;	// # of loaded profiles
+static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
+static UINT8 numprofiles = 0; // # of loaded profiles
 
 INT32 PR_GetNumProfiles(void)
 {
@@ -47,7 +47,9 @@ profile_t* PR_MakeProfile(const char *prname, const char *pname, const char *sna
 
 	// Init both power levels
 	for (i = 0; i < PWRLV_NUMTYPES; i++)
+	{
 		new->powerlevels[i] = PWRLVRECORD_START;
+	}
 
 	return new;
 }
@@ -89,8 +91,11 @@ profile_t* PR_GetProfile(INT32 num)
 boolean PR_DeleteProfile(INT32 num)
 {
 	UINT8 i, j;
+
 	if (num <= 0 || num > numprofiles)
+	{
 		return false;
+	}
 
 	// If we're deleting inbetween profiles, move everything.
 	if (num < numprofiles)
@@ -103,10 +108,15 @@ boolean PR_DeleteProfile(INT32 num)
 			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				if (cv_lastprofile[j].value == num)
-					CV_StealthSetValue(&cv_lastprofile[j], 0);	// If we were on the deleted profile, default back to guest.
-
-				else if (cv_lastprofile[j].value == i+1)				// Otherwise, shift our lastprofile number down to match the new order.
+				{
+					// If we were on the deleted profile, default back to guest.
+					CV_StealthSetValue(&cv_lastprofile[j], PROFILE_GUEST);
+				}
+				else if (cv_lastprofile[j].value == i+1)
+				{
+					// Otherwise, shift our lastprofile number down to match the new order.
 					CV_StealthSetValue(&cv_lastprofile[j], cv_lastprofile[j].value-1);
+				}
 			}
 		}
 	}
@@ -158,14 +168,6 @@ void PR_SaveProfiles(void)
 {
 	FILE *f = NULL;
 
-	// save powerlevel in the current profile.
-	// granted we're using a profile that isn't guest, that is.
-	if (cv_currprofile.value > 0)
-	{
-		profile_t *pr = PR_GetProfile(cv_currprofile.value);
-		memcpy(&pr->powerlevels, vspowerlevel, sizeof(vspowerlevel));
-	}
-
 	f = fopen(va(pandf, srb2home, PROFILESFILE), "w");
 	if (f != NULL)
 	{
@@ -192,11 +194,11 @@ void PR_LoadProfiles(void)
 
 	if (f != NULL)
 	{
-		INT32 i;
+		INT32 i, j;
 
 		fread(&numprofiles, sizeof numprofiles, 1, f);
 
-		for (i = 1; i < numprofiles; ++i)
+		for (i = PROFILE_GUEST+1; i < numprofiles; ++i)
 		{
 			profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
 			fread(profilesList[i], sizeof(profile_t), 1, f);
@@ -223,12 +225,22 @@ void PR_LoadProfiles(void)
 			{
 				profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 			}
+
+			for (j = 0; j < PWRLV_NUMTYPES; j++)
+			{
+				if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
+					|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
+				{
+					// invalid, reset
+					profilesList[i]->powerlevels[j] = PWRLVRECORD_START;
+				}
+			}
 		}
 
 		fclose(f);
 
 		// Overwrite the first profile for the default profile to avoid letting anyone tamper with it.
-		profilesList[0] = dprofile;
+		profilesList[PROFILE_GUEST] = dprofile;
 	}
 	else
 	{
@@ -286,12 +298,9 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 
 	// If we're doing this on P1, also change current profile.
-	// and update the powerlevel local array.
-
-	if (!playernum)
+	if (playernum == 0)
 	{
 		CV_StealthSetValue(&cv_currprofile, profilenum);
-		memcpy(&vspowerlevel, p->powerlevels, sizeof(p->powerlevels));
 	}
 }
 
@@ -325,11 +334,32 @@ SINT8 PR_ProfileUsedBy(profile_t *p)
 	UINT8 i;
 	UINT8 prn = PR_GetProfileNum(p);
 
-	for (i=0; i < MAXSPLITSCREENPLAYERS; i++)
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		if (prn == cv_lastprofile[i].value)
 			return i;
 	}
 
 	return -1;
+}
+
+profile_t *PR_GetPlayerProfile(player_t *player)
+{
+	const UINT8 playerNum = (player - players);
+	UINT8 i;
+
+	if (demo.playback)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (playerNum == g_localplayers[i])
+		{
+			return PR_GetProfile(cv_lastprofile[i].value);
+		}
+	}
+
+	return NULL;
 }

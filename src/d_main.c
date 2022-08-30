@@ -1538,7 +1538,6 @@ void D_SRB2Main(void)
 
 	// Load Profiles now that default controls have been defined
 	PR_LoadProfiles();	// load control profiles
-	PR_SaveProfiles();	// Test @TODO: remove this lol
 
 	M_Init();
 

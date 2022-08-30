@@ -1886,21 +1886,23 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 
 void D_SendPlayerConfig(UINT8 n)
 {
+	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
+
 	UINT8 buf[4];
 	UINT8 *p = buf;
 
 	SendNameAndColor(n);
 	SendWeaponPref(n);
 
-	if (n == 0)
+	if (pr != NULL)
 	{
 		// Send it over
-		WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
-		WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
+		WRITEUINT16(p, pr->powerlevels[PWRLV_RACE]);
+		WRITEUINT16(p, pr->powerlevels[PWRLV_BATTLE]);
 	}
 	else
 	{
-		// Splitscreen players have invalid powerlevel
+		// Guest players have no power level
 		WRITEUINT16(p, 0);
 		WRITEUINT16(p, 0);
 	}

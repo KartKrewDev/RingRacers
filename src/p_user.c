@@ -1099,7 +1099,7 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 		return false;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
 			return true;
