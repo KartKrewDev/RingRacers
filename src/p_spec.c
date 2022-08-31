@@ -2070,7 +2070,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 
 		if (P_IsLineTripWire(line))
 		{
-			K_ApplyTripWire(player, TRIP_PASSED);
+			K_ApplyTripWire(player, TRIPSTATE_PASSED);
 		}
 
 		switch (line->special)

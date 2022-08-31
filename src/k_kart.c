@@ -2944,23 +2944,32 @@ boolean K_SlopeResistance(player_t *player)
 	return false;
 }
 
-boolean K_TripwirePassConditions(player_t *player)
+tripwirepass_t K_TripwirePassConditions(player_t *player)
 {
 	if (
 			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->growshrinktimer > 0 ||
+			player->sneakertimer
+		)
+		return TRIPWIRE_BLASTER;
+
+	if (
 			player->flamedash ||
-			player->hyudorotimer ||
 			player->speed > 2 * K_GetKartSpeed(player, false, true)
 	)
-		return true;
-	return false;
+		return TRIPWIRE_BOOST;
+
+	if (
+			player->growshrinktimer > 0 ||
+			player->hyudorotimer
+		)
+		return TRIPWIRE_IGNORE;
+
+	return TRIPWIRE_NONE;
 }
 
 boolean K_TripwirePass(player_t *player)
 {
-	return (K_TripwirePassConditions(player) || (player->tripwireLeniency > 0));
+	return (player->tripwirePass != TRIPWIRE_NONE);
 }
 
 boolean K_WaterRun(player_t *player)
@@ -3667,7 +3676,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 
 	player->tumbleBounces = 1;
 
-	if (player->tripWireState == TRIP_PASSED)
+	if (player->tripwireState == TRIPSTATE_PASSED)
 	{
 		player->tumbleHeight = 50;
 	}
@@ -3781,15 +3790,15 @@ void K_TumbleInterrupt(player_t *player)
 
 void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 {
-	if (state == TRIP_PASSED)
+	if (state == TRIPSTATE_PASSED)
 		S_StartSound(player->mo, sfx_ssa015);
-	else if (state == TRIP_BLOCKED)
+	else if (state == TRIPSTATE_BLOCKED)
 		S_StartSound(player->mo, sfx_kc40);
 
-	player->tripWireState = state;
+	player->tripwireState = state;
 	K_AddHitLag(player->mo, 10, false);
 
-	if (state == TRIP_PASSED && player->spinouttimer &&
+	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
 			player->speed > 2 * K_GetKartSpeed(player, false, true))
 	{
 		K_TumblePlayer(player, NULL, NULL);
@@ -4937,90 +4946,6 @@ void K_DriftDustHandling(mobj_t *spawner)
 			}
 		}
 	}
-}
-
-static void K_SpawnTripwireVFX(mobj_t *mo)
-{
-	tic_t t = leveltime;
-	angle_t ang, aoff;
-	SINT8 sign = 1;
-	boolean altColor = false;
-	mobj_t *dust;
-	boolean drifting = false;
-	UINT8 i;
-
-	I_Assert(mo != NULL);
-	I_Assert(!P_MobjWasRemoved(mo));
-
-	if (!P_IsObjectOnGround(mo))
-		return;
-
-	if (mo->player)
-	{
-		ang = mo->player->drawangle;
-
-		if (mo->player->drift != 0)
-		{
-			drifting = true;
-			ang += (mo->player->drift * ((ANGLE_270 + ANGLE_22h) / 5)); // -112.5 doesn't work. I fucking HATE SRB2 angles
-			if (mo->player->drift < 0)
-				sign = 1;
-			else
-				sign = -1;
-		}
-	}
-	else
-		ang = mo->angle;
-
-	if (drifting == false)
-	{
-		i = (t & 1);
-
-		if (i & 1)
-			sign = -1;
-		else
-			sign = 1;
-	}
-	else
-	{
-		if (t & 1)
-		{
-			return;
-		}
-
-		t /= 2;
-		i = (t & 1);
-	}
-
-	aoff = (ang + ANGLE_180) + (ANGLE_45 * sign);
-
-	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)),
-		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)),
-		mo->z, MT_DRIFTDUST);
-
-	P_SetTarget(&dust->target, mo);
-	P_InitAngle(dust, ang - (ANGLE_90 * sign)); // point completely perpendicular from the player
-	P_SetScale(dust, mo->scale);
-	dust->destscale = mo->scale * 6;
-	dust->scalespeed = mo->scale/12;
-	K_FlipFromObject(dust, mo);
-
-	altColor = (sign > 0);
-
-	if ((t / 2) & 1)
-	{
-		dust->tics++; // "randomize" animation
-		altColor = !altColor;
-	}
-
-	dust->colorized = true;
-	dust->color = altColor ? SKINCOLOR_BLOSSOM : SKINCOLOR_JAWZ;
-
-	dust->momx = (4*mo->momx)/5;
-	dust->momy = (4*mo->momy)/5;
-	dust->momz = (4*P_GetMobjZMovement(mo))/5;
-
-	P_Thrust(dust, dust->angle, 4*mo->scale);
 }
 
 void K_Squish(mobj_t *mo)
@@ -7289,6 +7214,52 @@ static void K_LookForRings(mobj_t *pmo)
 			P_BlockThingsIterator(bx, by, PIT_AttractingRings);
 }
 
+static void K_UpdateTripwire(player_t *player)
+{
+	fixed_t speedThreshold = (3*K_GetKartSpeed(player, false, true))/4;
+	boolean goodSpeed = (player->speed >= speedThreshold);
+	boolean boostExists = (player->tripwireLeniency > 0); // can't be checked later because of subtractions...
+	tripwirepass_t triplevel = K_TripwirePassConditions(player);
+
+	if (triplevel != TRIPWIRE_NONE)
+	{
+		if (!boostExists)
+		{
+			mobj_t *front = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+			mobj_t *back = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_TRIPWIREBOOST);
+
+			P_SetTarget(&front->target, player->mo);
+			P_SetTarget(&back->target, player->mo);
+
+			front->dispoffset = 1;
+			front->old_angle = back->old_angle = K_MomentumAngle(player->mo);
+			back->dispoffset = -1;
+			back->extravalue1 = 1;
+			P_SetMobjState(back, S_TRIPWIREBOOST_BOTTOM);
+		}
+
+		player->tripwirePass = triplevel;
+		player->tripwireLeniency = max(player->tripwireLeniency, TRIPWIRETIME);
+	}
+	else
+	{
+		if (boostExists)
+		{
+			player->tripwireLeniency--;
+			if (goodSpeed == false && player->tripwireLeniency > 0)
+			{
+				// Decrease at double speed when your speed is bad.
+				player->tripwireLeniency--;
+			}
+		}
+
+		if (player->tripwireLeniency <= 0)
+		{
+			player->tripwirePass = TRIPWIRE_NONE;
+		}
+	}
+}
+
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
 	\param	player	player object passed from P_PlayerThink
@@ -7644,16 +7615,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_HandleTumbleBounce(player);
 	}
 
-	if (player->tripwireLeniency > 0)
-	{
-		player->tripwireLeniency--;
-		K_SpawnTripwireVFX(player->mo);
-	}
-
-	if (K_TripwirePassConditions(player) == true)
-	{
-		player->tripwireLeniency = max(player->tripwireLeniency, TICRATE);
-	}
+	K_UpdateTripwire(player);
 
 	K_KartPlayerHUDUpdate(player);
 
@@ -7765,14 +7727,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// Handle invincibility sfx
 	K_UpdateInvincibilitySounds(player); // Also thanks, VAda!
 
-	if (player->tripWireState != TRIP_NONE)
+	if (player->tripwireState != TRIPSTATE_NONE)
 	{
-		if (player->tripWireState == TRIP_PASSED)
+		if (player->tripwireState == TRIPSTATE_PASSED)
 			S_StartSound(player->mo, sfx_cdfm63);
-		else if (player->tripWireState == TRIP_BLOCKED)
+		else if (player->tripwireState == TRIPSTATE_BLOCKED)
 			S_StartSound(player->mo, sfx_kc4c);
 
-		player->tripWireState = TRIP_NONE;
+		player->tripwireState = TRIPSTATE_NONE;
 	}
 
 	K_KartEbrakeVisuals(player);

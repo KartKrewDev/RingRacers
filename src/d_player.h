@@ -204,10 +204,18 @@ typedef enum
 
 typedef enum
 {
-	TRIP_NONE,
-	TRIP_PASSED,
-	TRIP_BLOCKED,
+	TRIPSTATE_NONE,
+	TRIPSTATE_PASSED,
+	TRIPSTATE_BLOCKED,
 } tripwirestate_t;
+
+typedef enum
+{
+	TRIPWIRE_NONE,
+	TRIPWIRE_IGNORE,
+	TRIPWIRE_BOOST,
+	TRIPWIRE_BLASTER,
+} tripwirepass_t;
 
 typedef enum
 {
@@ -259,6 +267,8 @@ typedef enum
 
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
+
+#define TRIPWIRETIME (TICRATE)
 
 //}
 
@@ -444,6 +454,8 @@ typedef struct player_s
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
+	UINT8 tripwireState; // see tripwirestate_t
+	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
@@ -512,8 +524,6 @@ typedef struct player_s
 	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
-
-	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 
