@@ -96,12 +96,15 @@ profile_t* PR_GetProfile(INT32 num)
 
 boolean PR_DeleteProfile(INT32 num)
 {
-	UINT8 i, j;
+	UINT8 i;
+	profile_t* sacrifice;
 
 	if (num <= 0 || num > numprofiles)
 	{
 		return false;
 	}
+
+	sacrifice = profilesList[num];
 
 	// If we're deleting inbetween profiles, move everything.
 	if (num < numprofiles)
@@ -109,21 +112,31 @@ boolean PR_DeleteProfile(INT32 num)
 		for (i = num; i < numprofiles-1; i++)
 		{
 			profilesList[i] = profilesList[i+1];
+		}
 
-			// Make sure to move cv_lastprofile values as well
-			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+		// Make sure to move cv_lastprofile values as well!
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			INT32 profileset = cv_lastprofile[i].value;
+
+			if (profileset < num)
 			{
-				if (cv_lastprofile[j].value == num)
-				{
-					// If we were on the deleted profile, default back to guest.
-					CV_StealthSetValue(&cv_lastprofile[j], PROFILE_GUEST);
-				}
-				else if (cv_lastprofile[j].value == i+1)
-				{
-					// Otherwise, shift our lastprofile number down to match the new order.
-					CV_StealthSetValue(&cv_lastprofile[j], cv_lastprofile[j].value-1);
-				}
+				// Not affected.
+				continue;
 			}
+
+			if (profileset > num)
+			{
+				// Shift our lastprofile number down to match the new order.
+				profileset--;
+			}
+			else
+			{
+				// There's no hope for it. If we were on the deleted profile, default back to guest.
+				profileset = PROFILE_GUEST;
+			}
+
+			CV_StealthSetValue(&cv_lastprofile[i], profileset);
 		}
 	}
 
@@ -132,6 +145,10 @@ boolean PR_DeleteProfile(INT32 num)
 	numprofiles--;
 
 	PR_SaveProfiles();
+
+	// Finally, clear up our memory!
+	Z_Free(sacrifice);
+
 	return true;
 }
 

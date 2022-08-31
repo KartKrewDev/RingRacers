@@ -5518,8 +5518,8 @@ static void M_EraseProfileResponse(INT32 choice)
 			F_StartIntro();
 			M_ClearMenus(true);
 		}
-		else
-			optionsmenu.eraseprofilen = 1;
+		else if (optionsmenu.eraseprofilen > PR_GetNumProfiles()-1)
+			optionsmenu.eraseprofilen--;
 	}
 }
 
