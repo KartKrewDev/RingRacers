@@ -1759,6 +1759,10 @@ void D_SRB2Main(void)
 
 		CV_ClearChangedFlags();
 
+		// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+		// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+		PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
 		M_PushSpecialParameters(); // push all "+" parameter at the command buffer
