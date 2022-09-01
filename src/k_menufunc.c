@@ -5507,19 +5507,21 @@ static void M_EraseProfileResponse(INT32 choice)
 {
 	if (choice == MA_YES)
 	{
+		const boolean current = (optionsmenu.eraseprofilen == cv_currprofile.value); // has to be grabbed before deletion
 		S_StartSound(NULL, sfx_itrole); // bweh heh heh
 
 		PR_DeleteProfile(optionsmenu.eraseprofilen);
 
-		if (optionsmenu.eraseprofilen == cv_currprofile.value)
+		if (current)
 		{
 			CV_StealthSetValue(&cv_currprofile, -1);
-			CV_StealthSetValue(&cv_ttlprofilen, 0);
 			F_StartIntro();
 			M_ClearMenus(true);
 		}
 		else if (optionsmenu.eraseprofilen > PR_GetNumProfiles()-1)
+		{
 			optionsmenu.eraseprofilen--;
+		}
 	}
 }
 

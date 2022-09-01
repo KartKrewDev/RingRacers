@@ -114,10 +114,11 @@ boolean PR_DeleteProfile(INT32 num)
 			profilesList[i] = profilesList[i+1];
 		}
 
-		// Make sure to move cv_lastprofile values as well!
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		// Make sure to move cv_lastprofile (and title profile) values as well!
+		for (i = 0; i < MAXSPLITSCREENPLAYERS+1; i++)
 		{
-			INT32 profileset = cv_lastprofile[i].value;
+			consvar_t *cv = (i == MAXSPLITSCREENPLAYERS) ? &cv_ttlprofilen : &cv_lastprofile[i];
+			INT32 profileset = cv->value;
 
 			if (profileset < num)
 			{
@@ -136,7 +137,7 @@ boolean PR_DeleteProfile(INT32 num)
 				profileset = PROFILE_GUEST;
 			}
 
-			CV_StealthSetValue(&cv_lastprofile[i], profileset);
+			CV_StealthSetValue(cv, profileset);
 		}
 	}
 
