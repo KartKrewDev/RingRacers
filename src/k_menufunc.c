@@ -1213,7 +1213,7 @@ static void M_UpdateKeyboardX(void)
 static boolean M_IsTypingKey(INT32 key)
 {
 	return key == KEY_BACKSPACE || key == KEY_ENTER ||
-		key == KEY_DEL || isprint(key);
+		key == KEY_ESCAPE || key == KEY_DEL || isprint(key);
 }
 
 static void M_MenuTypingInput(INT32 key)
@@ -1274,7 +1274,7 @@ static void M_MenuTypingInput(INT32 key)
 		}
 
 		// OTHERWISE, process keyboard inputs for typing!
-		if (key == KEY_ENTER)
+		if (key == KEY_ENTER || key == KEY_ESCAPE)
 		{
 			menutyping.menutypingclose = true;	// close menu.
 			return;
