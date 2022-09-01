@@ -161,10 +161,13 @@ void PR_InitNewProfile(void)
 	UINT8 i;
 	boolean nameok = false;
 
+	pname[4] = '\0';
+
 	// When deleting profile, it's possible to do some pretty wacko stuff that would lead a new fresh profile to share the same name as another profile we have never changed the name of.
+	// This could become an infinite loop if MAXPROFILES >= 26.
 	while (!nameok)
 	{
-		strcpy(pname, va("PRF%c", 'A'+usenum-1));
+		pname[3] = 'A'+usenum;
 
 		for (i = 0; i < numprofiles; i++)
 		{
@@ -172,8 +175,8 @@ void PR_InitNewProfile(void)
 			if (!strcmp(pr->profilename, pname))
 			{
 				usenum++;
-				if (usenum > 'Z' -1)
-					usenum = 'A';
+				if (pname[3] == 'Z')
+					usenum = 0;
 
 				break;
 			}
@@ -236,6 +239,9 @@ void PR_LoadProfiles(void)
 		INT32 i, j;
 
 		fread(&numprofiles, sizeof numprofiles, 1, f);
+
+		if (numprofiles > MAXPROFILES)
+			numprofiles = MAXPROFILES;
 
 		for (i = PROFILE_GUEST+1; i < numprofiles; ++i)
 		{

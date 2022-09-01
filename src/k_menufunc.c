@@ -4702,8 +4702,14 @@ static void M_StartEditProfile(INT32 c)
 void M_HandleProfileSelect(INT32 ch)
 {
 	const UINT8 pid = 0;
-	const INT32 maxp = PR_GetNumProfiles();
+	INT32 maxp = PR_GetNumProfiles();
+	boolean creatable = (maxp < MAXPROFILES);
 	(void) ch;
+
+	if (!creatable)
+	{
+		maxp = MAXPROFILES;
+	}
 
 	if (menucmd[pid].dpad_lr > 0)
 	{
@@ -4749,7 +4755,7 @@ void M_HandleProfileSelect(INT32 ch)
 				M_SetMenuDelay(pid);
 				return;
 			}
-			else if (optionsmenu.profilen == maxp && gamestate != GS_MENU)
+			else if (creatable && optionsmenu.profilen == maxp && gamestate != GS_MENU)
 			{
 				S_StartSound(NULL, sfx_s3k7b);
 				M_StartMessage(M_GetText("Cannot create a new profile\nmid-game. Return to the\ntitle screen first."), NULL, MM_NOTHING);
@@ -4763,7 +4769,7 @@ void M_HandleProfileSelect(INT32 ch)
 		else
 		{
 			// We're on the profile selection screen.
-			if (optionsmenu.profilen == maxp)
+			if (creatable && optionsmenu.profilen == maxp)
 			{
 				M_StartEditProfile(MA_YES);
 				M_SetMenuDelay(pid);
@@ -4790,6 +4796,7 @@ void M_HandleProfileSelect(INT32 ch)
 	{
 		optionsmenu.resetprofilemenu = true;
 		M_GoBack(0);
+		M_SetMenuDelay(pid);
 	}
 
 	if (menutransition.tics == 0 && optionsmenu.resetprofile)
@@ -4859,6 +4866,7 @@ boolean M_ProfileEditInputs(INT32 ch)
 				M_SetupNextMenu(&MAIN_ProfilesDef, false);
 			else
 				M_GoBack(0);
+			M_SetMenuDelay(pid);
 		}
 		return true;
 	}
@@ -4910,6 +4918,7 @@ void M_ConfirmProfile(INT32 choice)
 		{
 			M_ProfileEditExit();
 			M_GoBack(0);
+			M_SetMenuDelay(pid);
 		}
 		else
 		{
@@ -5186,6 +5195,7 @@ boolean M_ProfileControlsInputs(INT32 ch)
 	else if (M_MenuBackPressed(pid))
 	{
 		M_ProfileControlsConfirm(0);
+		M_SetMenuDelay(pid);
 		return true;
 	}
 
