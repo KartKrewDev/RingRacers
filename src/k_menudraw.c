@@ -1395,20 +1395,20 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	else if (p->mdepth == CSSTEP_ASKCHANGES)
 	{
 		UINT8 i;
-		char choices[][4] = {"NO", "YES"};
+		char choices[2][9] = {"All good", "Change"};
 		INT32 xpos = x+8;
 		INT32 ypos = y+38;
 
-		V_DrawFileString(xpos, ypos, 0, "CHANGES?");
+		V_DrawFileString(xpos, ypos, 0, "READY?");
 
 		for (i = 0; i < 2; i++)
 		{
 			UINT8 cy = ypos+16 + (i*10);
 
 			if (p->changeselect == i)
-				V_DrawScaledPatch(xpos+4, cy, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
+				V_DrawScaledPatch(xpos, cy, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 
-			V_DrawString(xpos+20, cy, p->changeselect == i ? highlightflags : 0, choices[i]);
+			V_DrawThinString(xpos+16, cy, (p->changeselect == i ? highlightflags : 0)|V_6WIDTHSPACE, choices[i]);
 		}
 	}
 }
