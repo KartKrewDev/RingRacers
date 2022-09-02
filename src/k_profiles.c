@@ -11,6 +11,9 @@
 /// \brief implements methods for profiles etc.
 
 #include "d_main.h" // pandf
+#include "byteptr.h" // READ/WRITE macros
+#include "p_saveg.h" // save_p
+#include "m_misc.h" //FIL_WriteFile()
 #include "k_profiles.h"
 #include "z_zone.h"
 #include "r_skins.h"
@@ -198,31 +201,75 @@ void PR_InitNewProfile(void)
 	PR_AddProfile(dprofile);
 }
 
+static UINT8 *savebuffer;
+
 void PR_SaveProfiles(void)
 {
-	FILE *f = NULL;
+	size_t length = 0;
+	const size_t headerlen = strlen(PROFILEHEADER);
+	UINT8 i, j, k;
 
-	f = fopen(va(pandf, srb2home, PROFILESFILE), "w");
-	if (f != NULL)
+	save_p = savebuffer = (UINT8 *)malloc(sizeof(UINT32) + (numprofiles * sizeof(profile_t)));
+	if (!save_p)
 	{
-		UINT8 i;
+		I_Error("No more free memory for saving profiles\n");
+		return;
+	}
 
-		fwrite(&numprofiles, sizeof numprofiles, 1, f);
+	// Add header.
+	WRITESTRINGN(save_p, PROFILEHEADER, headerlen);
+	WRITEUINT8(save_p, PROFILEVER);
+	WRITEUINT8(save_p, numprofiles);
 
-		for (i = 1; i < numprofiles; ++i)
+	for (i = 1; i < numprofiles; i++)
+	{
+		// Names.
+		WRITESTRINGN(save_p, profilesList[i]->profilename, PROFILENAMELEN);
+		WRITESTRINGN(save_p, profilesList[i]->playername, MAXPLAYERNAME);
+
+		// Character and colour.
+		WRITESTRINGN(save_p, profilesList[i]->skinname, SKINNAMESIZE);
+		WRITEUINT16(save_p, profilesList[i]->color);
+
+		// Follower and colour.
+		WRITESTRINGN(save_p, profilesList[i]->follower, SKINNAMESIZE);
+		WRITEUINT16(save_p, profilesList[i]->followercolor);
+
+		// PWR.
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
 		{
-			fwrite(profilesList[i], sizeof(profile_t), 1, f);
+			WRITEUINT16(save_p, profilesList[i]->powerlevels[j]);
 		}
 
-		fclose(f);
+		// Consvars.
+		WRITEUINT8(save_p, profilesList[i]->kickstartaccel);
+
+		// Controls.
+		for (j = 0; j < num_gamecontrols; j++)
+		{
+			for (k = 0; k < MAXINPUTMAPPING; k++)
+			{
+				WRITEINT32(save_p, profilesList[i]->controls[j][k]);
+			}
+		}
 	}
-	else
+
+	length = save_p - savebuffer;
+
+	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), savebuffer, length))
+	{
+		free(savebuffer);
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
+	}
+	free(savebuffer);
+	save_p = savebuffer = NULL;
 }
 
 void PR_LoadProfiles(void)
 {
-	FILE *f = NULL;
+	size_t length = 0;
+	const size_t headerlen = strlen(PROFILEHEADER);
+	UINT8 i, j, k, version;
 	profile_t *dprofile = PR_MakeProfile(
 		PROFILEDEFAULTNAME,
 		PROFILEDEFAULTPNAME,
@@ -232,66 +279,108 @@ void PR_LoadProfiles(void)
 		true
 	);
 
-	f = fopen(va(pandf, srb2home, PROFILESFILE), "r");
-
-	if (f != NULL)
-	{
-		INT32 i, j;
-
-		fread(&numprofiles, sizeof numprofiles, 1, f);
-
-		if (numprofiles > MAXPROFILES)
-			numprofiles = MAXPROFILES;
-
-		for (i = PROFILE_GUEST+1; i < numprofiles; ++i)
-		{
-			profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
-			fread(profilesList[i], sizeof(profile_t), 1, f);
-
-			// Attempt to correct numerical footguns
-			if (profilesList[i]->color == SKINCOLOR_NONE)
-			{
-				; // Valid, even outside the bounds
-			}
-			else if (profilesList[i]->color >= numskincolors
-				|| skincolors[profilesList[i]->color].accessible == false)
-			{
-				profilesList[i]->color = PROFILEDEFAULTCOLOR;
-			}
-
-			if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
-				|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
-			{
-				; // Valid, even outside the bounds
-			}
-			else if (profilesList[i]->followercolor >= numskincolors
-				|| profilesList[i]->followercolor == SKINCOLOR_NONE
-				|| skincolors[profilesList[i]->followercolor].accessible == false)
-			{
-				profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
-			}
-
-			for (j = 0; j < PWRLV_NUMTYPES; j++)
-			{
-				if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
-					|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
-				{
-					// invalid, reset
-					profilesList[i]->powerlevels[j] = PWRLVRECORD_START;
-				}
-			}
-		}
-
-		fclose(f);
-
-		// Overwrite the first profile for the default profile to avoid letting anyone tamper with it.
-		profilesList[PROFILE_GUEST] = dprofile;
-	}
-	else
+	length = FIL_ReadFile(va(pandf, srb2home, PROFILESFILE), &savebuffer);
+	if (!length)
 	{
 		// No profiles. Add the default one.
 		PR_AddProfile(dprofile);
+		return;
 	}
+
+	save_p = savebuffer;
+
+	if (strncmp(PROFILEHEADER, (const char *)savebuffer, headerlen))
+	{
+		const char *gdfolder = "the Ring Racers folder";
+		if (strcmp(srb2home,"."))
+			gdfolder = srb2home;
+
+		Z_Free(savebuffer);
+		save_p = NULL;
+		I_Error("Not a valid Profile file.\nDelete %s (maybe in %s) and try again.", PROFILESFILE, gdfolder);
+	}
+	save_p += headerlen;
+
+	version = READUINT8(save_p);
+	if (version > PROFILEVER)
+	{
+		Z_Free(savebuffer);
+		save_p = NULL;
+		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
+	}
+
+	numprofiles = READUINT8(save_p);
+	if (numprofiles > MAXPROFILES)
+		numprofiles = MAXPROFILES;
+
+	for (i = 1; i < numprofiles; i++)
+	{
+		profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
+
+		// Version.
+		profilesList[i]->version = version;
+
+		// Names.
+		READSTRINGN(save_p, profilesList[i]->profilename, PROFILENAMELEN);
+		READSTRINGN(save_p, profilesList[i]->playername, MAXPLAYERNAME);
+
+		// Character and colour.
+		READSTRINGN(save_p, profilesList[i]->skinname, SKINNAMESIZE);
+		profilesList[i]->color = READUINT16(save_p);
+
+		if (profilesList[i]->color == SKINCOLOR_NONE)
+		{
+			; // Valid, even outside the bounds
+		}
+		else if (profilesList[i]->color >= numskincolors
+			|| skincolors[profilesList[i]->color].accessible == false)
+		{
+			profilesList[i]->color = PROFILEDEFAULTCOLOR;
+		}
+
+		// Follower and colour.
+		READSTRINGN(save_p, profilesList[i]->follower, SKINNAMESIZE);
+		profilesList[i]->followercolor = READUINT16(save_p);
+
+		if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
+			|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
+		{
+			; // Valid, even outside the bounds
+		}
+		else if (profilesList[i]->followercolor >= numskincolors
+			|| profilesList[i]->followercolor == SKINCOLOR_NONE
+			|| skincolors[profilesList[i]->followercolor].accessible == false)
+		{
+			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
+		}
+
+		// PWR.
+		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			profilesList[i]->powerlevels[j] = READUINT16(save_p);
+			if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
+				|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
+			{
+				// invalid, reset
+				profilesList[i]->powerlevels[j] = PWRLVRECORD_START;
+			}
+		}
+
+		// Consvars.
+		profilesList[i]->kickstartaccel = (boolean)READUINT8(save_p);
+
+		// Controls.
+		for (j = 0; j < num_gamecontrols; j++)
+		{
+			for (k = 0; k < MAXINPUTMAPPING; k++)
+			{
+				profilesList[i]->controls[j][k] = READINT32(save_p);
+			}
+		}
+	}
+
+	// Add the the default profile directly to avoid letting anyone tamper with it.
+	profilesList[PROFILE_GUEST] = dprofile;
 }
 
 skincolornum_t PR_GetProfileColor(profile_t *p)

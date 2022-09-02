@@ -4013,7 +4013,7 @@ void G_LoadGameData(void)
 
 		Z_Free(savebuffer);
 		save_p = NULL;
-		I_Error("Game data is from another version of SRB2.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
+		I_Error("Game data is from another version of SRB2.\nDelete %s (maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
 	totalplaytime = READUINT32(save_p);

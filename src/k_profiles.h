@@ -39,9 +39,12 @@
 #define PROFILEDEFAULTFOLLOWER "none"
 #define PROFILEDEFAULTFOLLOWERCOLOR FOLLOWERCOLOR_MATCH
 
+#define PROFILEHEADER "Doctor Robotnik's Ring Racers Profiles"
+
 // Man I wish I had more than 16 friends!!
 
 // profile_t definition (WIP)
+// If you edit, see PR_SaveProfiles and PR_LoadProfiles
 typedef struct profile_s
 {
 
