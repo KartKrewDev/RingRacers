@@ -474,7 +474,7 @@ menu_t PLAY_MP_ServerBrowserDef = {
 	M_ServerBrowserInputs
 };
 
-// options menu
+// options menu --  see mopt_e
 menuitem_t OPTIONS_Main[] =
 {
 
@@ -1249,6 +1249,7 @@ menu_t OPTIONS_ServerAdvancedDef = {
 };
 #endif
 
+// data options menu -- see dopt_e
 menuitem_t OPTIONS_Data[] =
 {
 
@@ -1269,8 +1270,7 @@ menuitem_t OPTIONS_Data[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	// escape sequences don't like any letter from A to E following them... So let's also put E as an escape sequence lol. E is 69 (nice) which is 45 in hex.
-	{IT_STRING | IT_SUBMENU, "\x85\x45rase Data...", "Erase specific data. Be careful, what's deleted is gone forever!",
+	{IT_STRING | IT_SUBMENU, "\x85""Erase Data...", "Erase specific data. Be careful, what's deleted is gone forever!",
 		NULL, {.submenu = &OPTIONS_DataEraseDef}, 0, 0},
 
 };

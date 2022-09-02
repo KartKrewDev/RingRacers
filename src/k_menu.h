@@ -258,6 +258,18 @@ typedef enum
 	mopt_manual,
 } mopt_e;
 
+typedef enum
+{
+	dopt_screenshot = 0,
+	dopt_addon,
+	dopt_replay,
+#ifdef HAVE_DISCORDRPC
+	dopt_discord,
+#endif
+	dopt_spacer,
+	dopt_erase,
+} dopt_e;
+
 extern menuitem_t OPTIONS_Profiles[];
 extern menu_t OPTIONS_ProfilesDef;
 

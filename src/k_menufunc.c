@@ -4391,16 +4391,20 @@ void M_InitOptions(INT32 choice)
 {
 	(void)choice;
 
-	OPTIONS_MainDef.menuitems[mopt_profiles].status = IT_STRING | IT_CALL;
-	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
-	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
+	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
 
-	// disable gameplay & server options if you aren't an admin in netgames. (GS_MENU check maybe unecessary but let's not take any chances)
-	if (netgame && gamestate != GS_MENU && !IsPlayerAdmin(consoleplayer))
+	// enable gameplay & server options under the right circumstances.
+	if (gamestate == GS_MENU
+		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules()))
 	{
-		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
-		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
+		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
+		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
 	}
+
+	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU
+		? (IT_STRING | IT_SUBMENU)
+		: (IT_TRANSTEXT2 | IT_SPACE));
 
 	M_ResetOptions();
 
@@ -5706,7 +5710,6 @@ struct pausemenu_s pausemenu;
 // Pause menu!
 void M_OpenPauseMenu(void)
 {
-	boolean singleplayermode = (modeattacking || grandprixinfo.gp);
 	currentMenu = &PAUSE_MainDef;
 
 	// Ready the variables
@@ -5736,18 +5739,19 @@ void M_OpenPauseMenu(void)
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
-	if (!singleplayermode && (server || IsPlayerAdmin(consoleplayer)))
+	if (K_CanChangeRules())
 	{
-		PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
-		PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
-	}
-
-	if (!singleplayermode)
 		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
+
+		if (server || IsPlayerAdmin(consoleplayer))
+		{
+			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
+			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
+		}
+	}
 
 	if (G_GametypeHasSpectators())
 	{
-
 		if (splitscreen)
 			PAUSE_Main[mpause_spectatemenu].status = IT_STRING|IT_SUBMENU;
 		else
