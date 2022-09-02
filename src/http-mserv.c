@@ -55,6 +55,8 @@ consvar_t cv_masterserver_token = CVAR_INIT
 		NULL
 );
 
+#define HMS_QUERY_VERSION "?v=2.2"
+
 #ifdef MASTERSERVER
 
 static int hms_started;
@@ -174,7 +176,7 @@ HMS_connect (const char *format, ...)
 
 	va_start (ap, format);
 	url = malloc(seek + vsnprintf(0, 0, format, ap) +
-			sizeof "?v=2" - 1 +
+			sizeof HMS_QUERY_VERSION - 1 +
 			token_length + 1);
 	va_end (ap);
 
@@ -188,8 +190,8 @@ HMS_connect (const char *format, ...)
 	seek += vsprintf(&url[seek], format, ap);
 	va_end (ap);
 
-	strcpy(&url[seek], "?v=2");
-	seek += sizeof "?v=2" - 1;
+	strcpy(&url[seek], HMS_QUERY_VERSION);
+	seek += sizeof HMS_QUERY_VERSION - 1;
 
 	if (quack_token)
 		sprintf(&url[seek], "&token=%s", quack_token);
