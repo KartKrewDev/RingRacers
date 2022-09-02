@@ -4638,12 +4638,10 @@ static void M_FirstPickProfile(INT32 c)
 		M_ResetOptions();			// Reset all options variables otherwise things are gonna go reaaal bad lol.
 		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
 
-		CV_StealthSetValue(&cv_currprofile, optionsmenu.profilen);
 		PR_ApplyProfile(optionsmenu.profilen, 0);
 		M_SetupNextMenu(&MainDef, false);
 
 		// Tell the game this is the last profile we picked.
-		CV_StealthSetValue(&cv_lastprofile[0], optionsmenu.profilen);
 		CV_StealthSetValue(&cv_ttlprofilen, optionsmenu.profilen);
 
 		// Save em!
