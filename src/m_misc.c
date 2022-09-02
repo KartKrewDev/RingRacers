@@ -542,11 +542,11 @@ void M_LoadJoinedIPs(void)
 {
 	FILE *f = NULL;
 	UINT8 i = 0;
-	char filepath[255];
+	char *filepath;
 	char *s;
 	char content[255];	// 255 is more than long enough!
 
-	strcpy(filepath, IPLOGFILE);
+	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
 	f = fopen(filepath, "r");
 
 	if (f == NULL)
