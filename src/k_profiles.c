@@ -402,18 +402,8 @@ skincolornum_t PR_GetProfileColor(profile_t *p)
 	return p->color;
 }
 
-void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+static void PR_ApplyProfile_Appearance(profile_t *p, UINT8 playernum)
 {
-	profile_t *p = PR_GetProfile(profilenum);
-
-	// this CAN happen!!
-	if (p == NULL)
-	{
-		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
-		profilenum = 0;			// make sure to set this so that the cvar is set properly.
-		p = PR_GetProfile(0);	// Use guest profile instead if things went south somehow.
-	}
-
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
 	CV_StealthSetValue(&cv_playercolor[playernum], PR_GetProfileColor(p));
 	CV_StealthSet(&cv_playername[playernum], p->playername);
@@ -421,13 +411,19 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	// Followers
 	CV_StealthSet(&cv_follower[playernum], p->follower);
 	CV_StealthSetValue(&cv_followercolor[playernum], p->followercolor);
+}
 
+static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
+{
 	// toggles
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
 
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));
+}
 
+static void PR_ApplyProfile_Memory(UINT8 profilenum, UINT8 playernum)
+{
 	// set memory cvar
 	CV_StealthSetValue(&cv_lastprofile[playernum], profilenum);
 
@@ -438,17 +434,51 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	}
 }
 
+void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
+{
+	profile_t *p = PR_GetProfile(profilenum);
+
+	// this CAN happen!!
+	if (p == NULL)
+	{
+		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		profilenum = 0; // make sure to set this so that the cvar is set properly.
+		p = PR_GetProfile(profilenum);
+	}
+
+	PR_ApplyProfile_Appearance(p, playernum);
+	PR_ApplyProfile_Settings(p, playernum);
+	PR_ApplyProfile_Memory(profilenum, playernum);
+}
+
 void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum)
 {
 	profile_t *p = PR_GetProfile(profilenum);
 
-	CV_StealthSet(&cv_skin[playernum], p->skinname);
-	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
-	CV_StealthSet(&cv_playername[playernum], p->playername);
+	// this CAN happen!!
+	if (p == NULL)
+	{
+		// no need to be as loud...
+		profilenum = 0; // make sure to set this so that the cvar is set properly.
+		p = PR_GetProfile(profilenum);
+	}
 
-	// Followers
-	CV_StealthSet(&cv_follower[playernum], p->follower);
-	CV_StealthSetValue(&cv_followercolor[playernum], p->followercolor);
+	PR_ApplyProfile_Appearance(p, playernum);
+}
+
+void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
+{
+	profile_t *p = PR_GetProfile(profilenum);
+
+	// this CAN happen!!
+	if (p == NULL)
+	{
+		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		profilenum = 0; // make sure to set this so that the cvar is set properly.
+		p = PR_GetProfile(profilenum);
+	}
+
+	PR_ApplyProfile_Memory(profilenum, playernum);
 }
 
 UINT8 PR_GetProfileNum(profile_t *p)

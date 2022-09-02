@@ -136,6 +136,11 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);
 // Controls, kickstartaccel and "current profile" data is *not* modified.
 void PR_ApplyProfileLight(UINT8 profilenum, UINT8 playernum);
 
+// PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
+// ONLY modifies "current profile" data.
+// Exists because any other option inteferes with rapid testing.
+void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum);
+
 // PR_GetProfileNum(profile_t *p)
 // Gets the profile's index # in profilesList
 UINT8 PR_GetProfileNum(profile_t *p);
