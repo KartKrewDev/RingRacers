@@ -945,7 +945,7 @@ void M_StartControlPanel(void)
 			else if (optionsmenu.profilen < 0)
 				optionsmenu.profilen = 0;
 
-			itemOn = 0;
+			currentMenu->lastOn = 0;
 
 			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
 		}
@@ -965,6 +965,8 @@ void M_StartControlPanel(void)
 			M_OpenPauseMenu();
 		}
 	}
+
+	itemOn = currentMenu->lastOn;
 
 	CON_ToggleOff(); // move away console
 }
@@ -5719,8 +5721,7 @@ void M_OpenPauseMenu(void)
 	pausemenu.openoffset = 256;
 	pausemenu.closing = false;
 
-	itemOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
-
+	currentMenu->lastOn = mpause_continue;	// Make sure we select "RESUME GAME" by default
 
 	// Now the hilarious balancing act of deciding what options should be enabled and which ones shouldn't be!
 	// By default, disable anything sensitive:
