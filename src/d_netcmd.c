@@ -5051,7 +5051,7 @@ void Command_Retry_f(void)
 	}
 	else if (grandprixinfo.gp == false && bossinfo.boss == false)
 	{
-		CONS_Printf(M_GetText("This only works in Grand Prix or Mission Mode.\n"));
+		CONS_Printf(M_GetText("This only works in singleplayer games.\n"));
 	}
 	else
 	{
