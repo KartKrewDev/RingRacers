@@ -1286,6 +1286,8 @@ void G_DoLoadLevel(boolean resetplayer)
 		titlemapinaction = TITLEMAP_OFF;
 
 	G_SetGamestate(GS_LEVEL);
+	if (wipegamestate == GS_MENU)
+		M_ClearMenus(true);
 	I_UpdateMouseGrab();
 
 	for (i = 0; i < MAXPLAYERS; i++)
