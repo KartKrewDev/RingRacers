@@ -1265,6 +1265,8 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
+	if (cv_currprofile.value == -1)
+		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)

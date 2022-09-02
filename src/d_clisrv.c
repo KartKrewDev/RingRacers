@@ -1992,6 +1992,8 @@ static void CL_ConnectToServer(void)
 			CONS_Printf(M_GetText("Contacting the server...\n"));
 	}
 
+	if (cv_currprofile.value == -1)
+		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission(); // clean up intermission graphics etc
 	if (gamestate == GS_VOTING)
