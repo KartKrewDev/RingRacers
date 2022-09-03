@@ -1742,7 +1742,7 @@ menu_t MISC_AddonsDef = {
 	0, 0,
 	0, 0,
 	M_DrawAddons,
-	NULL,
+	M_AddonsRefresh,
 	NULL,
 	NULL,
 	NULL

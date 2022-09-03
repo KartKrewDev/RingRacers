@@ -4284,13 +4284,6 @@ void M_DrawAddons(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
-	// hack - need to refresh at end of frame to handle addfile...
-	if (refreshdirmenu & M_AddonsRefresh())
-	{
-		M_DrawMessageMenu();
-		return;
-	}
-
 	if (Playing())
 		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
 	else

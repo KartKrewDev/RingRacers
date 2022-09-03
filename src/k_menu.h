@@ -963,7 +963,7 @@ void M_ReplayHut(INT32 choice);
 // Misc menus:
 #define numaddonsshown 4
 void M_Addons(INT32 choice);
-boolean M_AddonsRefresh(void);
+void M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
 

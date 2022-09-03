@@ -6321,8 +6321,8 @@ static void M_AddonsClearName(INT32 choice)
 	M_StopMessage(choice);
 }
 
-// returns whether to do message draw
-boolean M_AddonsRefresh(void)
+// Handles messages for addon errors.
+void M_AddonsRefresh(void)
 {
 	if ((refreshdirmenu & REFRESHDIR_NORMAL) && !preparefilemenu(true, false))
 	{
@@ -6331,7 +6331,7 @@ boolean M_AddonsRefresh(void)
 		{
 			CLEARNAME;
 		}
-		return true;
+		return;// true;
 	}
 
 #ifdef DEVELOP
@@ -6368,23 +6368,23 @@ boolean M_AddonsRefresh(void)
 		if (message)
 		{
 			M_StartMessage(message,FUNCPTRCAST(M_AddonsClearName),MM_YESNO);
-			return true;
+			return;// true;
 		}
 
 		S_StartSound(NULL, sfx_s221);
 		CLEARNAME;
 	}
 
-	return false;
+	return;// false;
 }
 
 static void M_AddonExec(INT32 ch)
 {
-	if (ch == MA_NO)
-		return;
-
-	S_StartSound(NULL, sfx_zoom);
-	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+	if (ch == MA_YES)
+	{
+		S_StartSound(NULL, sfx_zoom);
+		COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+	}
 }
 
 #define len menusearch[0]
