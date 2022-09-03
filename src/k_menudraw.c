@@ -4266,6 +4266,7 @@ static void M_CacheAddonPatches(void)
 	addonsp[NUM_EXT+4] = W_CachePatchName("M_FSAVE", PU_STATIC);
 }
 
+#define addonsseperation 16
 
 void M_DrawAddons(void)
 {
@@ -4308,11 +4309,25 @@ void M_DrawAddons(void)
 
 	hilicol = V_GetStringColormap(highlightflags)[0];
 
-	V_DrawString(x-21, (y - 16) + (lsheadingheight - 12), highlightflags|V_ALLOWLOWERCASE, M_AddonsHeaderPath());
-	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 3), MAXSTRINGLENGTH*8+6, 1, hilicol);
-	V_DrawFill(x-21, (y - 16) + (lsheadingheight - 2), MAXSTRINGLENGTH*8+6, 1, 30);
+	y -= 16;
 
-	m = (BASEVIDHEIGHT - currentMenu->y + 2) - (y - 1);
+	V_DrawString(x-21, y + (lsheadingheight - 12), highlightflags|V_ALLOWLOWERCASE, M_AddonsHeaderPath());
+	V_DrawFill(x-21, y + (lsheadingheight - 3), MAXSTRINGLENGTH*8+6, 1, hilicol);
+	//V_DrawFill(x-21, y + (lsheadingheight - 2), MAXSTRINGLENGTH*8+6, 1, 30);
+
+	y += 10;
+
+	M_DrawTextBox(x - (21 + 5), y, MAXSTRINGLENGTH, 1);
+	if (menusearch[0])
+		V_DrawString(x - 18, y+8, V_ALLOWLOWERCASE, menusearch+1);
+	else
+		V_DrawString(x - 18, y+8, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Type to search...");
+
+	V_DrawSmallScaledPatch(x - (21 + 5 + 16), y+4, (menusearch[0] ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+3]);
+
+	y += 21;
+
+	m = (addonsseperation*(2*numaddonsshown + 1)) + 2*(16-addonsseperation);
 	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 159);
 
 	// scrollbar!
@@ -4352,6 +4367,8 @@ void M_DrawAddons(void)
 	if (skullAnimCounter < 4)
 		flashcol = V_GetStringColormap(highlightflags);
 
+	y -= (16-addonsseperation);
+
 	for (; i < m; i++)
 	{
 		UINT32 flags = V_ALLOWLOWERCASE;
@@ -4382,7 +4399,7 @@ void M_DrawAddons(void)
 				V_DrawString(x, y+4, flags, dirmenu[i]+DIR_STRING);
 		}
 #undef type
-		y += 16;
+		y += addonsseperation;
 	}
 
 	if (m != (ssize_t)sizedirmenu)
@@ -4390,21 +4407,11 @@ void M_DrawAddons(void)
 
 	y = BASEVIDHEIGHT - currentMenu->y + 1;
 
-	M_DrawTextBox(x - (21 + 5), y, MAXSTRINGLENGTH, 1);
-	if (menusearch[0])
-		V_DrawString(x - 18, y + 8, V_ALLOWLOWERCASE, menusearch+1);
-	else
-		V_DrawString(x - 18, y + 8, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Type to search...");
-	if (skullAnimCounter < 4)
-		V_DrawCharacter(x - 18 + V_StringWidth(menusearch+1, 0), y + 8,
-			'_' | 0x80, false);
-
-	x -= (21 + 5 + 16);
-	V_DrawSmallScaledPatch(x, y + 4, (menusearch[0] ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+3]);
-
-	x = BASEVIDWIDTH - x - 16;
+	x = BASEVIDWIDTH - (x - (21 + 5 + 16)) - 16;
 	V_DrawSmallScaledPatch(x, y + 4, ((!majormods) ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+4]);
 
 	if (modifiedgame)
 		V_DrawSmallScaledPatch(x, y + 4, 0, addonsp[NUM_EXT+2]);
 }
+
+#undef addonsseperation
