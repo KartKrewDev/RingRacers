@@ -4195,55 +4195,6 @@ void M_DrawReplayStartMenu(void)
 
 #define lsheadingheight 16
 
-#define width 4
-#define vpadding 27
-#define h (BASEVIDHEIGHT-(2*vpadding))
-#define NUMCOLOURS 8 // when toast's coding it's british english hacker fucker
-static void M_DrawTemperature(INT32 x, fixed_t t)
-{
-	INT32 y;
-
-	// bounds check
-	if (t > FRACUNIT)
-		t = FRACUNIT;
-	/*else if (t < 0) -- not needed
-		t = 0;*/
-
-	// scale
-	if (t > 1)
-		t = (FixedMul(h<<FRACBITS, t)>>FRACBITS);
-
-	// border
-	V_DrawFill(x - 1, vpadding, 1, h, 0);
-	V_DrawFill(x + width, vpadding, 1, h, 0);
-	V_DrawFill(x - 1, vpadding-1, width+2, 1, 0);
-	V_DrawFill(x - 1, vpadding+h, width+2, 1, 0);
-
-	// bar itself
-	y = h;
-	if (t)
-		for (t = h - t; y > 0; y--)
-		{
-			UINT8 colours[NUMCOLOURS] = {135, 133, 92, 77, 114, 178, 161, 162};
-			UINT8 c;
-			if (y <= t) break;
-			if (y+vpadding >= BASEVIDHEIGHT/2)
-				c = 185;
-			else
-				c = colours[(NUMCOLOURS*(y-1))/(h/2)];
-			V_DrawFill(x, y-1 + vpadding, width, 1, c);
-		}
-
-	// fill the rest of the backing
-	if (y)
-		V_DrawFill(x, vpadding, width, y, 30);
-}
-#undef width
-#undef vpadding
-#undef h
-#undef NUMCOLOURS
-
-
 // Just do this here instead.
 static void M_CacheAddonPatches(void)
 {
@@ -4289,19 +4240,6 @@ void M_DrawAddons(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
 	else
 		V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1));
-
-	if (numwadfiles <= mainwads+1)
-		y = 0;
-	else if (numwadfiles >= MAX_WADFILES)
-		y = FRACUNIT;
-	else
-	{
-		y = FixedDiv(((ssize_t)(numwadfiles) - (ssize_t)(mainwads+1))<<FRACBITS, ((ssize_t)MAX_WADFILES - (ssize_t)(mainwads+1))<<FRACBITS);
-		if (y > FRACUNIT) // happens because of how we're shrinkin' it a little
-			y = FRACUNIT;
-	}
-
-	M_DrawTemperature(BASEVIDWIDTH - 19 - 5, y);
 
 	// DRAW MENU
 	x = currentMenu->x;
@@ -4412,13 +4350,15 @@ void M_DrawAddons(void)
 	if (m != (ssize_t)sizedirmenu)
 		V_DrawString(19, y-12 + (skullAnimCounter/5), highlightflags, "\x1B");
 
-	y = BASEVIDHEIGHT - currentMenu->y + 1;
+	y -= 2;
 
-	x = BASEVIDWIDTH - (x - (21 + 5 + 16)) - 16;
-	V_DrawSmallScaledPatch(x, y + 4, ((!majormods) ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+4]);
-
+	V_DrawSmallScaledPatch(x, y, ((!majormods) ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+4]);
 	if (modifiedgame)
-		V_DrawSmallScaledPatch(x, y + 4, 0, addonsp[NUM_EXT+2]);
+		V_DrawSmallScaledPatch(x, y, 0, addonsp[NUM_EXT+2]);
+
+	m = numwadfiles-(mainwads+2+1);
+
+	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%d ADD-ON%s LOADED", m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for main.kart
 }
 
 #undef addonsseperation
