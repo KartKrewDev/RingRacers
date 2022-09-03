@@ -966,6 +966,7 @@ void M_Addons(INT32 choice);
 void M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
+extern consvar_t cv_dummyaddonsearch;
 
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);

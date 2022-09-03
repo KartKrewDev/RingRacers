@@ -1726,9 +1726,11 @@ menuitem_t MISC_Manual[] = {
 
 menu_t MISC_ManualDef = IMAGEDEF(MISC_Manual);
 
-// Addons menu! (Just a straight port for now)
+// Addons menu!
 menuitem_t MISC_AddonsMenu[] =
 {
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, NULL,
+		NULL, {.cvar = &cv_dummyaddonsearch}, 0, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL,
 		NULL, {.routine = M_HandleAddons}, 0, 0},     // dummy menuitem for the control func
 };

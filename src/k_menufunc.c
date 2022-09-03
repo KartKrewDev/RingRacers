@@ -208,6 +208,9 @@ consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HI
 consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, dummykartspeed_cons_t, NULL);
 consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "No", CV_HIDDEN, CV_YesNo, NULL);
 
+static void M_UpdateAddonsSearch(void);
+consvar_t cv_dummyaddonsearch = CVAR_INIT ("dummyaddonsearch", "", CV_HIDDEN|CV_CALL|CV_NOINIT, NULL, M_UpdateAddonsSearch);
+
 static CV_PossibleValue_t dummymatchbots_cons_t[] = {
 	{0, "Off"},
 	{1, "Lv.1"},
@@ -719,7 +722,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 	return false;
 }
 
-static void M_NextOpt(void)
+static boolean M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
@@ -729,15 +732,24 @@ static void M_NextOpt(void)
 	do
 	{
 		if (itemOn + 1 > currentMenu->numitems - 1)
+		{
+			// Prevent looparound here
+			// If you're going to add any extra exceptions, DON'T.
+			// Add a "don't loop" flag to the menu_t struct instead.
+			if (currentMenu == &MISC_AddonsDef)
+				return false;
 			itemOn = 0;
+		}
 		else
 			itemOn++;
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
 
 	M_UpdateMenuBGImage(false);
+
+	return true;
 }
 
-static void M_PrevOpt(void)
+static boolean M_PrevOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 
@@ -747,12 +759,21 @@ static void M_PrevOpt(void)
 	do
 	{
 		if (!itemOn)
+		{
+			// Prevent looparound here
+			// If you're going to add any extra exceptions, DON'T.
+			// Add a "don't loop" flag to the menu_t struct instead.
+			if (currentMenu == &MISC_AddonsDef)
+				return false;
 			itemOn = currentMenu->numitems - 1;
+		}
 		else
 			itemOn--;
 	} while (oldItemOn != itemOn && (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SPACE);
 
 	M_UpdateMenuBGImage(false);
+
+	return true;
 }
 
 //
@@ -1436,15 +1457,15 @@ static void M_HandleMenuInput(void)
 	// Keys usable within menu
 	if (ud > 0)
 	{
-		M_NextOpt();
-		S_StartSound(NULL, sfx_s3k5b);
+		if (M_NextOpt())
+			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
 	}
 	else if (ud < 0)
 	{
-		M_PrevOpt();
-		S_StartSound(NULL, sfx_s3k5b);
+		if (M_PrevOpt())
+			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
 	}
@@ -1682,6 +1703,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummykartspeed);
 	CV_RegisterVar(&cv_dummygpencore);
 	CV_RegisterVar(&cv_dummymatchbots);
+
+	CV_RegisterVar(&cv_dummyaddonsearch);
 
 	M_UpdateMenuBGImage(true);
 
@@ -6280,6 +6303,8 @@ void M_Addons(INT32 choice)
 	else
 		dir_on[menudepthleft] = 0;
 
+	MISC_AddonsDef.lastOn = 0; // Always start on search
+
 	MISC_AddonsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_AddonsDef, false);
 }
@@ -6387,43 +6412,23 @@ static void M_AddonExec(INT32 ch)
 	}
 }
 
-#define len menusearch[0]
-static boolean M_ChangeStringAddons(INT32 choice)
+static void M_UpdateAddonsSearch(void)
 {
-	if (shiftdown && choice >= 32 && choice <= 127)
-		choice = shiftxform[choice];
+	menusearch[0] = strlen(cv_dummyaddonsearch.string);
+	strlcpy(menusearch+1, cv_dummyaddonsearch.string, MAXSTRINGLENGTH);
+	if (!cv_addons_search_case.value)
+		strupr(menusearch+1);
 
-	switch (choice)
+#if 0 // much slower
+	if (!preparefilemenu(true, false))
 	{
-		case KEY_DEL:
-			if (len)
-			{
-				len = menusearch[1] = 0;
-				return true;
-			}
-			break;
-		case KEY_BACKSPACE:
-			if (len)
-			{
-				menusearch[1+--len] = 0;
-				return true;
-			}
-			break;
-		default:
-			if (choice >= 32 && choice <= 127)
-			{
-				if (len < MAXSTRINGLENGTH - 1)
-				{
-					menusearch[1+len++] = (char)choice;
-					menusearch[1+len] = 0;
-					return true;
-				}
-			}
-			break;
+		UNEXIST;
+		return;
 	}
-	return false;
+#else // streamlined
+	searchfilemenu(NULL);
+#endif
 }
-#undef len
 
 void M_HandleAddons(INT32 choice)
 {
@@ -6432,34 +6437,30 @@ void M_HandleAddons(INT32 choice)
 
 	(void) choice;
 
-	if (M_ChangeStringAddons(choice))
-	{
-		char *tempname = NULL;
-		if (dirmenu && dirmenu[dir_on[menudepthleft]])
-			tempname = Z_StrDup(dirmenu[dir_on[menudepthleft]]+DIR_STRING); // don't need to I_Error if can't make - not important, just QoL
-#if 0 // much slower
-		if (!preparefilemenu(true, false))
-		{
-			UNEXIST;
-			return;
-		}
-#else // streamlined
-		searchfilemenu(tempname);
-#endif
-	}
-
 	if (menucmd[pid].dpad_ud > 0)
 	{
 		if (dir_on[menudepthleft] < sizedirmenu-1)
+		{
 			dir_on[menudepthleft]++;
-		S_StartSound(NULL, sfx_s3k5b);
+			S_StartSound(NULL, sfx_s3k5b);
+		}
+		else if (M_NextOpt())
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+		}
 		M_SetMenuDelay(pid);
 	}
 	else if (menucmd[pid].dpad_ud < 0)
 	{
 		if (dir_on[menudepthleft])
+		{
 			dir_on[menudepthleft]--;
-		S_StartSound(NULL, sfx_s3k5b);
+			S_StartSound(NULL, sfx_s3k5b);
+		}
+		else if (M_PrevOpt())
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+		}
 		M_SetMenuDelay(pid);
 	}
 

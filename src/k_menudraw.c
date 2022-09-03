@@ -4191,7 +4191,7 @@ void M_DrawReplayStartMenu(void)
 
 // Draw misc menus:
 
-// Addons (this is merely copypasted, original code by toaster)
+// Addons
 
 #define lsheadingheight 16
 
@@ -4318,16 +4318,23 @@ void M_DrawAddons(void)
 	y += 10;
 
 	M_DrawTextBox(x - (21 + 5), y, MAXSTRINGLENGTH, 1);
-	if (menusearch[0])
-		V_DrawString(x - 18, y+8, V_ALLOWLOWERCASE, menusearch+1);
-	else
-		V_DrawString(x - 18, y+8, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Type to search...");
+	{
+		const char *str = (menusearch[0] ? cv_dummyaddonsearch.string : "Search...");
+		INT32 tflag = (menusearch[0] ? 0 : V_TRANSLUCENT);
+		INT32 xoffs = 0;
+		if (itemOn == 0)
+		{
+			xoffs += 8;
+			V_DrawString(x + (skullAnimCounter/5) - 20, y+8, highlightflags, "\x1D");
+		}
+		V_DrawString(x + xoffs - 18, y+8, V_ALLOWLOWERCASE|tflag, str);
+	}
 
 	V_DrawSmallScaledPatch(x - (21 + 5 + 16), y+4, (menusearch[0] ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+3]);
 
 	y += 21;
 
-	m = (addonsseperation*(2*numaddonsshown + 1)) + 2*(16-addonsseperation);
+	m = (addonsseperation*(2*numaddonsshown + 1)) + 1 + 2*(16-addonsseperation);
 	V_DrawFill(x - 21, y - 1, MAXSTRINGLENGTH*8+6, m, 159);
 
 	// scrollbar!
@@ -4385,7 +4392,7 @@ void M_DrawAddons(void)
 			else
 				V_DrawSmallScaledPatch(x-(16+4), y, 0, addonsp[(type & ~EXT_LOADED)]);
 
-			if ((size_t)i == dir_on[menudepthleft])
+			if (itemOn == 1 && (size_t)i == dir_on[menudepthleft])
 			{
 				V_DrawFixedPatch((x-(16+4))<<FRACBITS, (y)<<FRACBITS, FRACUNIT/2, 0, addonsp[NUM_EXT+1], flashcol);
 				flags = V_ALLOWLOWERCASE|highlightflags;
