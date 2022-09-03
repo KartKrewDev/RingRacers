@@ -6701,7 +6701,7 @@ static void K_MoveHeldObjects(player_t *player)
 							targz += (player->mo->height/2 - 32*player->mo->scale)*6;
 					}
 
-					if (cur->tracer)
+					if (cur->tracer && !P_MobjWasRemoved(cur->tracer))
 					{
 						fixed_t diffx, diffy, diffz;
 
