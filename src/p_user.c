@@ -2727,17 +2727,17 @@ static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, 
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
 
 consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL)
+	CVAR_INIT ("cam_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL)
+	CVAR_INIT ("cam_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_still[MAXSPLITSCREENPLAYERS] = {

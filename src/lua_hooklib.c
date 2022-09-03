@@ -482,7 +482,7 @@ void LUAh_ThinkFrame(void)
 		if (hookp->type != hook_ThinkFrame)
 			continue;
 
-		if (cv_perfstats.value == 3)
+		if (cv_perfstats.value == PS_THINKFRAME)
 			time_taken = I_GetPreciseTime();
 		PushHook(gL, hookp);
 		if (lua_pcall(gL, 0, 0, 1)) {
@@ -491,7 +491,7 @@ void LUAh_ThinkFrame(void)
 			lua_pop(gL, 1);
 			hookp->error = true;
 		}
-		if (cv_perfstats.value == 3)
+		if (cv_perfstats.value == PS_THINKFRAME)
 		{
 			lua_Debug ar;
 			time_taken = I_GetPreciseTime() - time_taken;

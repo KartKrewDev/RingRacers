@@ -7156,6 +7156,89 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_TRIPWIREBOOST:
+		if (!mobj->target || !mobj->target->health
+			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->angle = K_MomentumAngle(mobj->target);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
+		mobj->destscale = mobj->target->scale;
+		P_SetScale(mobj, mobj->target->scale);
+
+		if (mobj->extravalue1)
+		{
+			mobj->angle += ANGLE_180;
+		}
+
+		{
+			fixed_t convSpeed = (mobj->target->player->speed * 100) / K_GetKartSpeed(mobj->target->player, false, true);
+			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
+
+			if (trans > NUMTRANSMAPS)
+				trans = NUMTRANSMAPS;
+
+			trans = NUMTRANSMAPS - trans;
+
+			if ((trans >= NUMTRANSMAPS) // not a valid visibility
+				|| (convSpeed < 150 && (leveltime & 1)) // < 150% flickering
+				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
+				|| mobj->target->player->flamedash) // Flameshield dash
+			{
+				mobj->renderflags |= RF_DONTDRAW;
+			}
+			else
+			{
+				boolean blastermode = (convSpeed >= 200) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
+
+				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+				if (trans != 0)
+				{
+					mobj->renderflags |= (trans << RF_TRANSSHIFT);
+				}
+				mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+
+				if (mobj->target->player->invincibilitytimer > 0)
+				{
+					if (mobj->target->player->invincibilitytimer > itemtime+(2*TICRATE))
+					{
+						mobj->color = K_RainbowColor(leveltime / 2);
+					}
+					else
+					{
+						mobj->color = SKINCOLOR_INVINCFLASH;
+					}
+					mobj->colorized = true;
+				}
+				else if (mobj->target->player->curshield == KSHIELD_FLAME)
+				{
+					mobj->color = SKINCOLOR_KETCHUP;
+					mobj->colorized = true;
+				}
+				else
+				{
+					mobj->color = SKINCOLOR_NONE;
+					mobj->colorized = false;
+				}
+
+				if (blastermode == !(mobj->flags2 & MF2_AMBUSH))
+				{
+					mobj->flags2 ^= MF2_AMBUSH;
+					if (blastermode)
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BLAST_BOTTOM : S_TRIPWIREBOOST_BLAST_TOP);
+					}
+					else
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BOTTOM : S_TRIPWIREBOOST_TOP);
+					}
+				}
+			}
+		}
+		break;
 	case MT_BOOSTFLAME:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -9834,6 +9917,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Sprite rendering
 	mobj->spritexscale = mobj->spriteyscale = mobj->scale;
 	mobj->spritexoffset = mobj->spriteyoffset = 0;
+	mobj->dispoffset = info->dispoffset;
 	mobj->floorspriteslope = NULL;
 
 	// set subsector and/or block links

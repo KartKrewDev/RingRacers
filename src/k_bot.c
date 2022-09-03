@@ -28,6 +28,7 @@
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
 #include "k_boss.h"
+#include "m_perfstats.h"
 
 
 /*--------------------------------------------------
@@ -279,7 +280,7 @@ boolean K_BotCanTakeCut(player_t *player)
 {
 	if (
 #if 1
-		K_TripwirePassConditions(player) == true
+		K_TripwirePassConditions(player) != TRIPWIRE_NONE
 #else
 		K_ApplyOffroad(player) == false
 #endif
@@ -347,8 +348,8 @@ static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 			// Going downhill: FRACUNIT*2
 			slopeMul = FRACUNIT + FINECOSINE(angle >> ANGLETOFINESHIFT);
 
-			// Range: 0.9 to 1.1
-			result = FixedMul(result, (FRACUNIT*9/10) + (slopeMul/10));
+			// Range: 0.5 to 1.5
+			result = FixedMul(result, (FRACUNIT>>1) + (slopeMul >> 1));
 		}
 	}
 
@@ -638,133 +639,119 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 --------------------------------------------------*/
 static botprediction_t *K_CreateBotPrediction(player_t *player)
 {
+	const precise_t time = I_GetPreciseTime();
+
 	// Stair janking makes it harder to steer, so attempt to steer harder.
-	const UINT8 jankDiv = (player->stairjank > 0 ? 2 : 1);
+	const UINT8 jankDiv = (player->stairjank > 0) ? 2 : 1;
 
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN) / jankDiv; // Reduce prediction based on how fast you can turn
-	const INT16 normal = KART_FULLTURN; // "Standard" handling to compare to
 
-	const tic_t futuresight = (TICRATE * normal) / max(1, handling); // How far ahead into the future to try and predict
+	const tic_t futuresight = (TICRATE * KART_FULLTURN) / max(1, handling); // How far ahead into the future to try and predict
 	const fixed_t speed = K_BotSpeedScaled(player, P_AproxDistance(player->mo->momx, player->mo->momy));
 
-	const INT32 startDist = (768 * mapobjectscale) / FRACUNIT;
+	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
 	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
-
-	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
-	waypoint_t *wp = player->nextwaypoint;
-
-	INT32 distanceleft = distance;
-	fixed_t smallestradius = INT32_MAX;
-	angle_t angletonext = ANGLE_MAX;
 
 	// Halves radius when encountering a wall on your way to your destination.
 	fixed_t radreduce = FRACUNIT;
 
-	size_t nwp;
+	INT32 distanceleft = distance;
+	fixed_t smallestradius = INT32_MAX;
+	angle_t angletonext = ANGLE_MAX;
+	INT32 disttonext = INT32_MAX;
+
+	waypoint_t *finishLine = K_GetFinishLineWaypoint();
+	waypoint_t *wp = player->nextwaypoint;
+	mobj_t *prevwpmobj = player->mo;
+
+	const boolean useshortcuts = K_BotCanTakeCut(player);
+	const boolean huntbackwards = false;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {0};
+
+	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 	size_t i;
 
-	// Reduce distance left by your distance to the starting waypoint.
-	// This prevents looking too far ahead if the closest waypoint is really far away.
-	distanceleft -= P_AproxDistance(player->mo->x - wp->mobj->x, player->mo->y - wp->mobj->y) / FRACUNIT;
+	// Init defaults in case of pathfind failure
+	angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
+	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
 
-	// We don't want to look ahead at all, just go to the first waypoint.
-	if (distanceleft <= 0)
-	{
-		predict->x = wp->mobj->x;
-		predict->y = wp->mobj->y;
-		predict->radius = wp->mobj->radius;
-		return predict;
-	}
-
-	angletonext = R_PointToAngle2(
-		player->mo->x, player->mo->y,
-		wp->mobj->x, wp->mobj->y
+	pathfindsuccess = K_PathfindToWaypoint(
+		player->nextwaypoint, finishLine,
+		&pathtofinish,
+		useshortcuts, huntbackwards
 	);
 
-	// Go through waypoints until we've traveled the distance we wanted to predict ahead!
-	while (distanceleft > 0)
+	// Go through the waypoints until we've traveled the distance we wanted to predict ahead!
+	if (pathfindsuccess == true)
 	{
-		INT32 disttonext = INT32_MAX;
-
-		if (wp->mobj->radius < smallestradius)
+		for (i = 0; i < pathtofinish.numnodes; i++)
 		{
-			smallestradius = wp->mobj->radius;
-		}
+			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
-		if (wp->numnextwaypoints == 0)
-		{
-			// Well, this is where I get off.
-			distanceleft = 0;
-			break;
-		}
-
-		// Calculate nextwaypoints index to use
-		// nextwaypoints[0] by default
-		nwp = 0;
-
-		// There are multiple nextwaypoints,
-		// so we need to find the most convenient one to us.
-		// Let's compare the angle to the player's!
-		if (wp->numnextwaypoints > 1)
-		{
-			angle_t delta = ANGLE_MAX;
-			angle_t a     = ANGLE_MAX;
-
-			for (i = 0; i < wp->numnextwaypoints; i++)
+			if (i == 0)
 			{
-				if (K_GetWaypointIsEnabled(wp->nextwaypoints[i]) == false)
+				prevwpmobj = player->mo;
+			}
+			else
+			{
+				prevwpmobj = ((waypoint_t *)pathtofinish.array[ i - 1 ].nodedata)->mobj;
+			}
+
+			angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
+			disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
+
+			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
+			{
+				// If we can't get a direct path to this waypoint, predict less.
+				distanceleft -= disttonext;
+				radreduce = FRACUNIT >> 1;
+			}
+
+			if (wp->mobj->radius < smallestradius)
+			{
+				smallestradius = wp->mobj->radius;
+			}
+
+			distanceleft -= disttonext;
+
+			if (distanceleft <= 0)
+			{
+				// We're done!!
+				break;
+			}
+
+			if (i == pathtofinish.numnodes-1 && disttonext > 0)
+			{
+				// We were pathfinding to the finish, but we want to go past it.
+				// Set up a new pathfind.
+
+				waypoint_t *next = NULL;
+
+				if (finishLine->numnextwaypoints == 0)
 				{
-					continue;
+					distanceleft = 0;
+					break;
 				}
 
-				if (K_GetWaypointIsShortcut(wp->nextwaypoints[i]) == true && K_BotCanTakeCut(player) == false)
-				{
-					continue;
-				}
+				// default to first one
+				next = wp->nextwaypoints[0];
 
-				// Unlike the other parts of this function, we're comparing the player's physical position, NOT the position of the waypoint!!
-				// This should roughly correspond with how players will think about path splits.
-				a = R_PointToAngle2(
-					player->mo->x, player->mo->y,
-					wp->nextwaypoints[i]->mobj->x, wp->nextwaypoints[i]->mobj->y
+				pathfindsuccess = K_PathfindToWaypoint(
+					next, finishLine,
+					&pathtofinish,
+					useshortcuts, huntbackwards
 				);
-				if (a > ANGLE_180)
-				{
-					a = InvAngle(a);
-				}
 
-				a = player->mo->angle - a;
-
-				if (a < delta)
+				if (pathfindsuccess == false)
 				{
-					nwp = i;
-					delta = a;
+					distanceleft = 0;
+					break;
 				}
 			}
 		}
- 
-		angletonext = R_PointToAngle2(
-			wp->mobj->x, wp->mobj->y,
-			wp->nextwaypoints[nwp]->mobj->x, wp->nextwaypoints[nwp]->mobj->y
-		);
 
-		disttonext = (INT32)wp->nextwaypointdistances[nwp];
-
-		if (P_TraceBotTraversal(player->mo, wp->nextwaypoints[nwp]->mobj) == false)
-		{
-			// If we can't get a direct path to this waypoint, we don't want to check much further...
-			disttonext *= 2;
-			radreduce = FRACUNIT/2;
-		}
-
-		if (disttonext > distanceleft)
-		{
-			break;
-		}
-
-		distanceleft -= disttonext;
-
-		wp = wp->nextwaypoints[nwp];
+		Z_Free(pathtofinish.array);
 	}
 
 	// Set our predicted point's coordinates,
@@ -777,10 +764,11 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	if (distanceleft > 0)
 	{
 		// Scaled with the leftover anglemul!
-		predict->x += P_ReturnThrustX(NULL, angletonext, distanceleft * FRACUNIT);
-		predict->y += P_ReturnThrustY(NULL, angletonext, distanceleft * FRACUNIT);
+		predict->x += P_ReturnThrustX(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
+		predict->y += P_ReturnThrustY(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
 	}
 
+	ps_bots[player - players].prediction += I_GetPreciseTime() - time;
 	return predict;
 }
 
@@ -804,9 +792,11 @@ static UINT8 K_TrySpindash(player_t *player)
 	const fixed_t baseAccel = K_GetNewSpeed(player) - oldSpeed;
 	const fixed_t speedDiff = player->speed - player->lastspeed;
 
-	if (player->spindashboost || player->tiregrease)
+	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngle(player->mo));
+
+	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
+		|| P_PlayerInPain(player) || !P_IsObjectOnGround(player->mo)) // Not in a state where we want 'em to spindash.
 	{
-		// You just released a spindash, you don't need to try again yet, jeez.
 		player->botvars.spindashconfirm = 0;
 		return 0;
 	}
@@ -837,36 +827,13 @@ static UINT8 K_TrySpindash(player_t *player)
 		}
 	}
 
-	// Logic for normal racing.
-	if (player->flashing > 0)
-	{
-		// Don't bother trying to spindash.
-		// Trying to spindash while flashing is fine during POSITION, but not during the actual race.
-		return 0;
-	}
-
-	if (speedDiff < (baseAccel / 4))
-	{
-		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
-		{
-			player->botvars.spindashconfirm++;
-		}
-	}
-	else
-	{
-		if (player->botvars.spindashconfirm > 0)
-		{
-			player->botvars.spindashconfirm--;
-		}
-	}
-
 	if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
 	{
 		INT32 chargingPoint = (K_GetSpindashChargeTime(player) + difficultyModifier);
 
 		// Release quicker the higher the difficulty is.
 		// Sounds counter-productive, but that's actually the best strategy after the race has started.
-		chargingPoint -= player->botvars.difficulty * difficultyModifier;
+		chargingPoint -= min(DIFFICULTBOT, player->botvars.difficulty) * difficultyModifier;
 
 		if (player->spindash > chargingPoint)
 		{
@@ -875,6 +842,25 @@ static UINT8 K_TrySpindash(player_t *player)
 		}
 
 		return 2;
+	}
+	else
+	{
+		// Logic for normal racing.
+		if (speedDiff < (baseAccel / 8) // Moving too slowly
+			|| angleDiff > ANG60) // Being pushed backwards
+		{
+			if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
+			{
+				player->botvars.spindashconfirm++;
+			}
+		}
+		else if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
+		{
+			if (player->botvars.spindashconfirm > 0)
+			{
+				player->botvars.spindashconfirm--;
+			}
+		}
 	}
 
 	// We're doing just fine, we don't need to spindash, thanks.
@@ -1007,29 +993,27 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	// Handle steering towards waypoints!
 	INT32 turnamt = 0;
 	SINT8 turnsign = 0;
-	angle_t moveangle, angle;
-	INT16 anglediff;
+	angle_t moveangle;
+	INT32 anglediff;
 
 	I_Assert(predict != NULL);
 
 	moveangle = player->mo->angle;
-	angle = (moveangle - destangle);
+	anglediff = AngleDeltaSigned(moveangle, destangle);
 
-	if (angle < ANGLE_180)
+	if (anglediff < 0)
 	{
-		turnsign = -1; // Turn right
-		anglediff = AngleFixed(angle)>>FRACBITS;
+		turnsign = 1;
 	}
 	else 
 	{
-		turnsign = 1; // Turn left
-		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+		turnsign = -1;
 	}
 
 	anglediff = abs(anglediff);
 	turnamt = KART_FULLTURN * turnsign;
 
-	if (anglediff > 90)
+	if (anglediff > ANGLE_90)
 	{
 		// Wrong way!
 		cmd->forwardmove = -MAXPLMOVE;
@@ -1038,7 +1022,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	else
 	{
 		const fixed_t playerwidth = (player->mo->radius * 2);
-		fixed_t realrad = predict->radius - (playerwidth * 4); // Remove a "safe" distance away from the edges of the road
+		fixed_t realrad = predict->radius*3/4; // Remove a "safe" distance away from the edges of the road
 		fixed_t rad = realrad;
 		fixed_t dirdist = K_DistanceOfLineFromPoint(
 			player->mo->x, player->mo->y,
@@ -1046,19 +1030,26 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 			predict->x, predict->y
 		);
 
-		if (realrad < player->mo->radius)
+		if (realrad < playerwidth)
 		{
-			realrad = player->mo->radius;
+			realrad = playerwidth;
 		}
 
-		if (anglediff > 0)
-		{
-			// Become more precise based on how hard you need to turn
-			// This makes predictions into turns a little nicer
-			// Facing 90 degrees away from the predicted point gives you a 1/3 radius
-			rad = FixedMul(rad, ((135 - anglediff) * FRACUNIT) / 135);
-		}
+		// Become more precise based on how hard you need to turn
+		// This makes predictions into turns a little nicer
+		// Facing 90 degrees away from the predicted point gives you 0 radius
+		rad = FixedMul(rad,
+			FixedDiv(max(0, ANGLE_90 - anglediff), ANGLE_90)
+		);
 
+		// Become more precise the slower you're moving
+		// Also helps with turns
+		// Full speed uses full radius
+		rad = FixedMul(rad,
+			FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false, false))
+		);
+
+		// Cap the radius to reasonable bounds
 		if (rad > realrad)
 		{
 			rad = realrad;
@@ -1068,36 +1059,14 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 			rad = playerwidth;
 		}
 
-		cmd->buttons |= BT_ACCELERATE;
-
 		// Full speed ahead!
+		cmd->buttons |= BT_ACCELERATE;
 		cmd->forwardmove = MAXPLMOVE;
 
 		if (dirdist <= rad)
 		{
-			fixed_t speedmul = FixedDiv(K_BotSpeedScaled(player, player->speed), K_GetKartSpeed(player, false, false));
-			fixed_t speedrad = rad/4;
-
-			if (speedmul > FRACUNIT)
-			{
-				speedmul = FRACUNIT;
-			}
-
-			// Increase radius with speed
-			// At low speed, the CPU will try to be more accurate
-			// At high speed, they're more likely to lawnmower
-			speedrad += FixedMul(speedmul, rad - speedrad);
-
-			if (speedrad < playerwidth)
-			{
-				speedrad = playerwidth;
-			}
-
-			if (dirdist <= speedrad)
-			{
-				// Don't turn at all
-				turnamt = 0;
-			}
+			// Going the right way, don't turn at all.
+			turnamt = 0;
 		}
 	}
 
@@ -1254,6 +1223,7 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 --------------------------------------------------*/
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
+	precise_t t = 0;
 	botprediction_t *predict = NULL;
 	boolean trySpindash = true;
 	angle_t destangle = 0;
@@ -1328,7 +1298,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	if (botController != NULL && (botController->flags & ML_EFFECT1))
 	{
-		const fixed_t dist = (player->mo->radius * 4);
+		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
 
 		// X Offset: Movement direction
 		destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
@@ -1474,7 +1444,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	{
 		// Don't pointlessly try to use rings/sneakers while charging a spindash.
 		// TODO: Allowing projectile items like orbinaut while e-braking would be nice, maybe just pass in the spindash variable?
+		t = I_GetPreciseTime();
 		K_BotItemUsage(player, cmd, turnamt);
+		ps_bots[player - players].item = I_GetPreciseTime() - t;
 	}
 
 	if (turnamt != 0)

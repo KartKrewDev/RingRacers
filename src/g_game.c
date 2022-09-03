@@ -2354,7 +2354,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
-	p->tripWireState = TRIP_NONE;
 
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
