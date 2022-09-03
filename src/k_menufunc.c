@@ -1845,7 +1845,11 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		}
 
 		if (i == strlen(message+start))
+		{
 			start += i;
+			if (i > max)
+				max = i;
+		}
 	}
 
 	menumessage.x = (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
@@ -6376,12 +6380,12 @@ void M_AddonsRefresh(void)
 			if (refreshdirmenu & REFRESHDIR_MAX)
 				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
-				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
 			S_StartSound(NULL, sfx_s224);
-			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
+			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 		else if (majormods && !prevmajormods)
 		{
@@ -6544,7 +6548,7 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_CFG:
-					M_AddonExec(MA_YES);
+					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_LUA:
