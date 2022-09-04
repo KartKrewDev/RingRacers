@@ -4361,6 +4361,11 @@ void M_DrawAddons(void)
 	if (m != (ssize_t)sizedirmenu)
 		V_DrawString(19, y-12 + (skullAnimCounter/5), highlightflags, "\x1B");
 
+	if (m < (2*numaddonsshown + 1))
+	{
+		y += ((2*numaddonsshown + 1)-m)*addonsseperation;
+	}
+
 	y -= 2;
 
 	V_DrawSmallScaledPatch(x, y, ((!majormods) ? 0 : V_TRANSLUCENT), addonsp[NUM_EXT+4]);
