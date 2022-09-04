@@ -325,6 +325,21 @@ extern menu_t OPTIONS_HUDDef;
 extern menuitem_t OPTIONS_HUDOnline[];
 extern menu_t OPTIONS_HUDOnlineDef;
 
+typedef enum
+{
+	gopt_gamespeed = 0,
+	gopt_baselapcount,
+	gopt_frantic,
+	gopt_encore,
+	gopt_exitcountdown,
+	gopt_spacer1,
+	gopt_timelimit,
+	gopt_startingbumpers,
+	gopt_karmacomeback,
+	gopt_spacer2,
+	gopt_itemtoggles
+} gopt_e;
+
 extern menuitem_t OPTIONS_Gameplay[];
 extern menu_t OPTIONS_GameplayDef;
 

@@ -4417,6 +4417,8 @@ void M_InitOptions(INT32 choice)
 	{
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+		OPTIONS_GameplayDef.menuitems[gopt_encore].status =
+			(M_SecretUnlocked(SECRET_ENCORE) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
 	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU

@@ -1007,7 +1007,7 @@ menu_t OPTIONS_HUDOnlineDef = {
 	NULL,
 };
 
-
+// Gameplay options -- see gopt_e
 menuitem_t OPTIONS_Gameplay[] =
 {
 
