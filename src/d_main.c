@@ -1003,9 +1003,6 @@ void D_StartTitle(void)
 	advancedemo = false;
 	F_StartTitleScreen();
 
-	M_InitOptions(0);		// Make sure the option menu is ready to go since we need to select a profile.
-	currentMenu = &MAIN_ProfilesDef; // reset the current menu ID
-
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");

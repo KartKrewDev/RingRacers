@@ -87,7 +87,7 @@ boolean menuactive = false;
 boolean fromlevelselect = false;
 
 // current menudef
-menu_t *currentMenu = &OPTIONS_ProfilesDef;
+menu_t *currentMenu = &MAIN_ProfilesDef;
 
 char dummystaffname[22];
 
@@ -925,6 +925,11 @@ void M_StartControlPanel(void)
 		menucmd[i].delay = MENUDELAYTIME;
 	}
 
+	// No instantly skipping the titlescreen.
+	// (We can change this timer later when extra animation is added.)
+	if (gamestate == GS_TITLESCREEN && finalecount < 1)
+		return;
+
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -949,6 +954,9 @@ void M_StartControlPanel(void)
 	{
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
+			// Make sure the profile data is ready now since we need to select a profile.
+			M_ResetOptions();
+
 			// we need to do this before setting ApplyProfile otherwise funky things are going to happen.
 			currentMenu = &MAIN_ProfilesDef;
 			optionsmenu.profilen = cv_ttlprofilen.value;
