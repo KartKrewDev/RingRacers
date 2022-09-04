@@ -193,6 +193,19 @@ extern menu_t PLAY_GamemodesDef;
 extern menuitem_t PLAY_RaceGamemodesMenu[];
 extern menu_t PLAY_RaceGamemodesDef;
 
+typedef enum
+{
+	drace_gpdifficulty = 0,
+	drace_mrkartspeed,
+	drace_mrcpu,
+	drace_mrracers,
+	drace_encore,
+	drace_boxend,
+	drace_cupselect = drace_boxend,
+	drace_mapselect,
+	drace_back
+} drace_e;
+
 extern menuitem_t PLAY_RaceDifficulty[];
 extern menu_t PLAY_RaceDifficultyDef;
 
@@ -673,7 +686,6 @@ extern consvar_t cv_dummygpencore;
 extern consvar_t cv_dummymatchbots;
 
 void M_SetupDifficultySelect(INT32 choice);
-void M_SetupDifficultySelectMP(INT32 choice);
 void M_DifficultySelectInputs(INT32 choice);
 
 // Multiplayer menu stuff

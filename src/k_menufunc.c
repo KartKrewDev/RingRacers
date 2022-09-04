@@ -202,8 +202,8 @@ consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", C
 consvar_t cv_dummyprofilekickstart = CVAR_INIT ("dummyprofilekickstart", "Off", CV_HIDDEN, CV_OnOff, NULL);
 
 consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, gpdifficulty_cons_t, NULL);
-consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Auto", CV_HIDDEN, kartspeed_cons_t, NULL);
-consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "No", CV_HIDDEN, CV_YesNo, NULL);
+consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Normal", CV_HIDDEN, dummykartspeed_cons_t, NULL);
+consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "Off", CV_HIDDEN, CV_OnOff, NULL);
 
 static void M_UpdateAddonsSearch(void);
 consvar_t cv_dummyaddonsearch = CVAR_INIT ("dummyaddonsearch", "", CV_HIDDEN|CV_CALL|CV_NOINIT, NULL, M_UpdateAddonsSearch);
@@ -3129,56 +3129,35 @@ void M_SetupDifficultySelect(INT32 choice)
 	// setup the difficulty menu and then remove choices depending on choice
 	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
 
-	PLAY_RaceDifficulty[0].status = IT_DISABLED;
-	PLAY_RaceDifficulty[1].status = IT_DISABLED;
-	PLAY_RaceDifficulty[2].status = IT_DISABLED;
-	PLAY_RaceDifficulty[3].status = IT_DISABLED;
-	PLAY_RaceDifficulty[4].status = IT_DISABLED;
-	PLAY_RaceDifficulty[5].status = IT_DISABLED;
-	PLAY_RaceDifficulty[6].status = IT_DISABLED;
-	PLAY_RaceDifficulty[7].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_mrcpu].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_mrracers].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_encore].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_cupselect].status = IT_DISABLED;
+	PLAY_RaceDifficulty[drace_mapselect].status = IT_DISABLED;
 
 	if (choice)		// Match Race
 	{
-		PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR; // Kart Speed
-		PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off
-		PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// CPU amount
-		PLAY_RaceDifficulty[4].status = IT_STRING2|IT_CVAR;	// Encore on/off
-		PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
-		PLAY_RaceDifficultyDef.lastOn = 5;	// Select cup select by default.
-
+		PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_STRING|IT_CVAR; // Kart Speed
+		PLAY_RaceDifficulty[drace_mrcpu].status = IT_STRING2|IT_CVAR;	// CPUs on/off
+		PLAY_RaceDifficulty[drace_mrracers].status = IT_STRING2|IT_CVAR;	// CPU amount
+		PLAY_RaceDifficulty[drace_mapselect].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
+		PLAY_RaceDifficultyDef.lastOn = drace_mapselect;	// Select map select by default.
 	}
 	else			// GP
 	{
-		PLAY_RaceDifficulty[0].status = IT_STRING|IT_CVAR; // Difficulty
-		PLAY_RaceDifficulty[4].status = IT_STRING2|IT_CVAR;	// Encore on/off
-		PLAY_RaceDifficulty[5].status = IT_STRING|IT_CALL;	// Level Select (GP)
-		PLAY_RaceDifficultyDef.lastOn = 4;	// Select cup select by default.
+		PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_STRING|IT_CVAR; // Difficulty
+		PLAY_RaceDifficulty[drace_cupselect].status = IT_STRING|IT_CALL;	// Level Select (GP)
+		PLAY_RaceDifficultyDef.lastOn = drace_cupselect;	// Select cup select by default.
+	}
+
+	if (M_SecretUnlocked(SECRET_ENCORE))
+	{
+		PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 	}
 
 	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
-}
-
-// calls the above but changes the cvar we set
-void M_SetupDifficultySelectMP(INT32 choice)
-{
-	(void) choice;
-
-	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
-	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
-
-	PLAY_RaceDifficulty[0].status = IT_DISABLED;
-	PLAY_RaceDifficulty[1].status = IT_STRING|IT_CVAR;
-	PLAY_RaceDifficulty[2].status = IT_STRING2|IT_CVAR;	// CPUs on/off		use string2 to signify not to use the normal gm font drawer
-	PLAY_RaceDifficulty[3].status = IT_STRING2|IT_CVAR;	// Encore on/off	use string2 to signify not to use the normal gm font drawer
-	PLAY_RaceDifficulty[4].status = IT_DISABLED;
-	PLAY_RaceDifficulty[5].status = IT_DISABLED;
-	PLAY_RaceDifficulty[6].status = IT_STRING|IT_CALL;
-
-	itemOn = 6; // Select cup select by default.
-
-	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
-	mpmenu.modewinextend[0][0] = 1;
 }
 
 // LEVEL SELECT
@@ -3626,9 +3605,10 @@ void M_LevelSelectHandler(INT32 choice)
 				netgame = levellist.netgame;	// ^ ditto.
 
 				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
-				CV_StealthSet(&cv_kartspeed, cv_dummykartspeed.string);
+				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
+				CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
 
-				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 			}
 			else
 			{
@@ -3829,6 +3809,9 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 			break;
 		}
 	}
+
+	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
+	mpmenu.modewinextend[0][0] = 1;
 
 	M_LevelListFromGametype(gt); // Setup the level select.
 	// (This will also automatically send us to the apropriate menu)

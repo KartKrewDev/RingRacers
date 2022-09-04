@@ -1710,7 +1710,6 @@ void M_DrawCharacterSelect(void)
 
 void M_DrawRaceDifficulty(void)
 {
-	UINT8 n = currentMenu->numitems-4;
 	patch_t *box = W_CachePatchName("M_DBOX", PU_CACHE);
 
 	INT32 i;
@@ -1729,9 +1728,8 @@ void M_DrawRaceDifficulty(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		if (i >= n)
+		if (i >= drace_boxend)
 		{
-
 			x = GM_STARTX + (GM_XOFFSET * 5 / 2);
 			y = GM_STARTY + (GM_YOFFSET * 5 / 2);
 
@@ -2276,7 +2274,7 @@ static void M_DrawEggaChannel(void)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
-	V_DrawFill(0, 0, 999, 999, 25);
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 25);
 	V_DrawFixedPatch(160<<FRACBITS, 104<<FRACBITS, FRACUNIT, 0, background, NULL);
 	V_DrawVhsEffect(false);	// VHS the background! (...sorry OGL my love)
 }
@@ -2296,30 +2294,39 @@ void M_DrawMPHost(void)
 
 	patch_t *gobutt = W_CachePatchName("M_BUTTGO", PU_CACHE);	// I'm very mature
 	INT32 xp = 40, yp = 64, i = 0, w = 0;	// Starting position for the text drawing.
+
 	M_DrawMPOptSelect();	// Draw the Multiplayer option select menu first
 
 	// Now draw our host options...
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-
 		if (i == currentMenu->numitems-1)
 		{
+			xp = 202;
+			yp = 100;
 
 			UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
 			if (i == itemOn)
 				colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 			// Ideally we'd calculate this but it's not worth it for a 1-off menu probably.....
-			V_DrawFixedPatch(202<<FRACBITS, 100<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
-			V_DrawCenteredGamemodeString(202 + (gobutt->width/2), 100 -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+			V_DrawFixedPatch(xp<<FRACBITS, yp<<FRACBITS, FRACUNIT, 0, gobutt, colormap);
+			V_DrawCenteredGamemodeString(xp + (gobutt->width/2), yp -3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
 		}
 		else
 		{
 			switch (currentMenu->menuitems[i].status & IT_DISPLAY)
 			{
+				case IT_TRANSTEXT2:
+				{
+					V_DrawThinString(xp, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_TRANSLUCENT, currentMenu->menuitems[i].text);
+					xp += 5;
+					yp += 11;
+					break;
+				}
 				case IT_STRING:
 				{
-					V_DrawString(xp, yp, V_ALLOWLOWERCASE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+					V_DrawThinString(xp, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 					// Cvar specific handling
 					switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -2330,15 +2337,15 @@ void M_DrawMPHost(void)
 							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 							{
 								case IT_CV_STRING:
-									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE, cv->string);
+									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
 									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawCharacter(xp + 93 + V_ThinStringWidth(cv->string, 0), yp +1, '_' | 0x80, false);
+										V_DrawString(xp + 94 + V_ThinStringWidth(cv->string, V_6WIDTHSPACE), yp+1, 0, "_");
 
 									break;
 
 								default:
-									w = V_StringWidth(cv->string, 0);
-									V_DrawString(xp + 138 - w, yp, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
+									w = V_ThinStringWidth(cv->string, V_6WIDTHSPACE);
+									V_DrawThinString(xp + 138 - w, yp, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags)|V_6WIDTHSPACE, cv->string);
 									if (i == itemOn)
 									{
 										V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow

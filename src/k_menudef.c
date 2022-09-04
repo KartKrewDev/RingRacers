@@ -119,35 +119,31 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
 
 
-// difficulty selection:
+// difficulty selection -- see drace_e
 menuitem_t PLAY_RaceDifficulty[] =
 {
-	// local play
+	// For GP
 	{IT_STRING | IT_CVAR, "Difficulty", "Select the game difficulty",
 		NULL, {.cvar = &cv_dummygpdifficulty}, 0, 0},
 
-	// netgames
+	// Match Race
 	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed",
 		NULL, {.cvar = &cv_dummykartspeed}, 0, 0},
 
 	// DISABLE THAT OPTION OUTSIDE OF MATCH RACE
 	{IT_STRING2 | IT_CVAR, "CPU", "Set the difficulty of CPU players.",
 		NULL, {.cvar = &cv_dummymatchbots}, 0, 0},
-
 	{IT_STRING2 | IT_CVAR, "Racers", "Sets the number of racers, including players and CPU.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
 	{IT_STRING2 | IT_CVAR, "Encore", "Enable or disable Encore mode",
 		NULL, {.cvar = &cv_dummygpencore}, 0, 0},
 
-	// For GP:
+	// For GP
 	{IT_STRING | IT_CALL, "Cup Select", "Go on and select a cup!", NULL, {.routine = M_LevelSelectInit}, 2, GT_RACE},
 
-	// For Match Race:
+	// Match Race
 	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine = M_LevelSelectInit}, 0, GT_RACE},
-
-	// For Match Race in NETGAMES:
-	{IT_STRING | IT_CALL, "Map Select", "Go on and select a race track!", NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
@@ -348,7 +344,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	NULL
 };
 
-// MULTIPLAYER HOST SCREEN
+// MULTIPLAYER HOST SCREEN -- see mhost_e
 menuitem_t PLAY_MP_Host[] =
 {
 	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
@@ -366,7 +362,7 @@ menuitem_t PLAY_MP_Host[] =
 	NULL, {.cvar = &cv_dummygametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
-		NULL, {.routine = M_SetupDifficultySelectMP}, 0, 0},
+		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
 
 };
 

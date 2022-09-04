@@ -82,6 +82,12 @@ CV_PossibleValue_t kartspeed_cons_t[] = {
 	{KARTSPEED_HARD, "Hard"},
 	{0, NULL}
 };
+CV_PossibleValue_t dummykartspeed_cons_t[] = {
+	{KARTSPEED_EASY, "Easy"},
+	{KARTSPEED_NORMAL, "Normal"},
+	{KARTSPEED_HARD, "Hard"},
+	{0, NULL}
+};
 CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{KARTSPEED_EASY, "Easy"},
 	{KARTSPEED_NORMAL, "Normal"},
@@ -2098,7 +2104,9 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					return;
 				}
 			}
-			else if (var->PossibleValue == kartspeed_cons_t || var->PossibleValue == gpdifficulty_cons_t)
+			else if (var->PossibleValue == kartspeed_cons_t
+				|| var->PossibleValue == dummykartspeed_cons_t
+				|| var->PossibleValue == gpdifficulty_cons_t)
 			{
 				if (!M_SecretUnlocked(SECRET_HARDSPEED))
 				{
