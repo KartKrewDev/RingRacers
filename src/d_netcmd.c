@@ -5812,13 +5812,6 @@ static void KartFrantic_OnChange(void)
 
 static void KartSpeed_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == KARTSPEED_HARD)
-	{
-		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
-		return;
-	}
-
 	if (K_CanChangeRules() == false)
 	{
 		return;

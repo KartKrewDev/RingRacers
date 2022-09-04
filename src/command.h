@@ -175,7 +175,7 @@ extern CV_PossibleValue_t CV_Natural[];
 #define KARTSPEED_NORMAL 1
 #define KARTSPEED_HARD 2
 #define KARTGP_MASTER 3 // Not a speed setting, gives the hardest speed with maxed out bots
-extern CV_PossibleValue_t kartspeed_cons_t[];
+extern CV_PossibleValue_t kartspeed_cons_t[], gpdifficulty_cons_t[];
 
 extern consvar_t cv_execversion;
 
