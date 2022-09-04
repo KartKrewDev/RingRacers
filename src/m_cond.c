@@ -374,10 +374,14 @@ UINT8 M_SecretUnlocked(INT32 type)
 {
 	INT32 i;
 
-#if 1
 	if (dedicated)
 		return true;
-#endif
+
+#if 0
+	(void)type;
+	(void)i;
+	return false; // for quick testing
+#else
 
 #ifdef DEVELOP
 #define CHADYES true
@@ -393,6 +397,7 @@ UINT8 M_SecretUnlocked(INT32 type)
 	return CHADYES;
 
 #undef CHADYES
+#endif //if 0
 }
 
 UINT8 M_MapLocked(INT32 mapnum)
