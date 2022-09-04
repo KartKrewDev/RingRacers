@@ -5536,14 +5536,13 @@ static void M_EraseProfileResponse(INT32 choice)
 {
 	if (choice == MA_YES)
 	{
-		const boolean current = (optionsmenu.eraseprofilen == cv_currprofile.value); // has to be grabbed before deletion
 		S_StartSound(NULL, sfx_itrole); // bweh heh heh
 
 		PR_DeleteProfile(optionsmenu.eraseprofilen);
 
-		if (current)
+		// Did we bust our current profile..!?
+		if (cv_currprofile.value == -1)
 		{
-			CV_StealthSetValue(&cv_currprofile, -1);
 			F_StartIntro();
 			M_ClearMenus(true);
 		}
@@ -5589,7 +5588,7 @@ void M_HandleProfileErase(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
-			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 		else
 			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 

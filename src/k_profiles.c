@@ -117,30 +117,40 @@ boolean PR_DeleteProfile(INT32 num)
 			profilesList[i] = profilesList[i+1];
 		}
 
-		// Make sure to move cv_lastprofile (and title profile) values as well!
-		for (i = 0; i < MAXSPLITSCREENPLAYERS+1; i++)
+		// Make sure to move cv_lastprofile (and title/current profile) values as well!
+		for (i = 0; i < MAXSPLITSCREENPLAYERS+2; i++)
 		{
-			consvar_t *cv = (i == MAXSPLITSCREENPLAYERS) ? &cv_ttlprofilen : &cv_lastprofile[i];
-			INT32 profileset = cv->value;
+			consvar_t *cv;
 
-			if (profileset < num)
+			if (i < MAXSPLITSCREENPLAYERS)
+				cv = &cv_lastprofile[i];
+			else if (i == MAXSPLITSCREENPLAYERS)
+				cv = &cv_ttlprofilen;
+			else
+				cv = &cv_currprofile;
+
+			if (cv->value < num)
 			{
 				// Not affected.
 				continue;
 			}
 
-			if (profileset > num)
+			if (cv->value > num)
 			{
 				// Shift our lastprofile number down to match the new order.
-				profileset--;
-			}
-			else
-			{
-				// There's no hope for it. If we were on the deleted profile, default back to guest.
-				profileset = PROFILE_GUEST;
+				CV_StealthSetValue(cv, cv->value-1);
+				continue;
 			}
 
-			CV_StealthSetValue(cv, profileset);
+			if (cv != &cv_currprofile)
+			{
+				// There's no hope for it. If we were on the deleted profile, default back to guest.
+				CV_StealthSetValue(cv, PROFILE_GUEST);
+				continue;
+			}
+
+			// Oh boy, now we're really in for it.
+			CV_StealthSetValue(cv, -1);
 		}
 	}
 

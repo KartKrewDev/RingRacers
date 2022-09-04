@@ -2852,7 +2852,11 @@ void M_DrawProfileErase(void)
 			V_DrawScaledPatch(x - 24, cursory, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 		}
 
-		V_DrawString(x, y, i == optionsmenu.eraseprofilen ? highlightflags : 0, va("PRF%03d - %s (%s)", i, pr->profilename, pr->playername));
+		V_DrawString(x, y,
+			(i == optionsmenu.eraseprofilen ? highlightflags : 0)|V_ALLOWLOWERCASE,
+			va("%sPRF%03d - %s (%s)",
+			(cv_currprofile.value == i) ? "[In use] " : "",
+			i, pr->profilename, pr->playername));
 		y += SMALLLINEHEIGHT;
 	}
 }
