@@ -2824,91 +2824,101 @@ void K_PlayOvertakeSound(mobj_t *source)
 	K_RegularVoiceTimers(source->player);
 }
 
-void K_PlayPainSound(mobj_t *source)
+void K_PlayPainSound(mobj_t *source, mobj_t *other)
 {
 	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
 
+	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
+	boolean alwaysHear = false;
+
+	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
+	{
+		alwaysHear = P_IsDisplayPlayer(other->player);
+	}
+
 	if (cv_kartvoices.value)
-		S_StartSound(source, sfx_khurt1 + pick);
+	{
+		S_StartSound(alwaysHear ? NULL : source, sfx_id);
+	}
 
 	K_RegularVoiceTimers(source->player);
 }
 
-void K_PlayHitEmSound(mobj_t *source, mobj_t *victim)
+void K_PlayHitEmSound(mobj_t *source, mobj_t *other)
 {
-	const boolean victimIsLocal = (victim != NULL && P_IsDisplayPlayer(victim->player) == true);
+	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khitem].skinsound];
+	boolean alwaysHear = false;
 
-	if (source->player->follower)
+	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
 	{
-		follower_t fl = followers[source->player->followerskin];
-		source->player->follower->movecount = fl.hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
+		alwaysHear = P_IsDisplayPlayer(other->player);
 	}
 
 	if (cv_kartvoices.value)
 	{
-		if (victimIsLocal == false)
-		{
-			S_StartSound(source, sfx_khitem);
-		}
-	}
-	else
-	{
-		S_StartSound(source, sfx_s1c9); // The only lost gameplay functionality with voices disabled
+		S_StartSound(alwaysHear ? NULL : source, sfx_id);
 	}
 
 	K_RegularVoiceTimers(source->player);
+}
 
-	if (victim != NULL && victim->player != NULL)
+void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
+{
+	if (victim == NULL || P_MobjWasRemoved(victim) == true || victim->player == NULL)
 	{
-		victim->player->confirmInflictor = source->player - players;
-		victim->player->confirmInflictorDelay = TICRATE/2;
+		return;
 	}
+
+	// In a perfect world we could move this here, but there's 
+	// a few niche situations where we want a pain sound from
+	// the victim, but no confirm sound from the attacker.
+	// (ex: DMG_STING)
+
+	//K_PlayPainSound(victim, attacker);
+
+	if (attacker == NULL || P_MobjWasRemoved(attacker) == true || attacker->player == NULL)
+	{
+		return;
+	}
+
+	attacker->player->confirmVictim = (victim->player - players);
+	attacker->player->confirmVictimDelay = TICRATE/2;
 }
 
 void K_PlayPowerGloatSound(mobj_t *source)
 {
 	if (cv_kartvoices.value)
+	{
 		S_StartSound(source, sfx_kgloat);
+	}
 
 	K_RegularVoiceTimers(source->player);
 }
 
 static void K_HandleDelayedHitByEm(player_t *player)
 {
-	if (player->confirmInflictorDelay == 0)
+	if (player->confirmVictimDelay == 0)
 	{
 		return;
 	}
 
-	player->confirmInflictorDelay--;
+	player->confirmVictimDelay--;
 
-	if (player->confirmInflictorDelay == 0
-		&& P_IsDisplayPlayer(player) == true
-		&& cv_kartvoices.value)
+	if (player->confirmVictimDelay == 0)
 	{
-		player_t *inflictor = NULL;
+		mobj_t *victim = NULL;
 
-		if (player->confirmInflictor >= MAXPLAYERS)
+		if (player->confirmVictim < MAXPLAYERS && playeringame[player->confirmVictim])
 		{
-			return;
+			player_t *victimPlayer = &players[player->confirmVictim];
+
+			if (victimPlayer != NULL && victimPlayer->spectator == false)
+			{
+				victim = victimPlayer->mo;
+			}
 		}
 
-		if (!playeringame[player->confirmInflictor])
-		{
-			return;
-		}
-
-		inflictor = &players[player->confirmInflictor];
-		if (inflictor == NULL || inflictor->spectator)
-		{
-			return;
-		}
-
-		if (inflictor->mo != NULL && P_MobjWasRemoved(inflictor->mo) == false)
-		{
-			sfxenum_t sfx_id = ((skin_t *)inflictor->mo->skin)->soundsid[S_sfx[sfx_khitem].skinsound];
-			S_StartSound(NULL, sfx_id);
-		}
+		K_PlayHitEmSound(player->mo, victim);
 	}
 }
 
