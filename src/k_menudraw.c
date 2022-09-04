@@ -3467,9 +3467,6 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
 		}
 	}
-
-	if (shitsfree)
-		shitsfree--;
 }
 
 

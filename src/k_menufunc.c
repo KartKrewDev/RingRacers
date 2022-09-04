@@ -4510,6 +4510,9 @@ void M_OptionsTick(void)
 	if (optionsmenu.currcolour != currentMenu->extra1)
 		M_OptionsChangeBGColour(currentMenu->extra1);
 
+	// And one last giggle...
+	if (shitsfree)
+		shitsfree--;
 }
 
 boolean M_OptionsInputs(INT32 ch)
