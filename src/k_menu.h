@@ -1001,7 +1001,7 @@ void M_HandleImageDef(INT32 choice);
 // K_MENUDRAW.C
 
 // flags for text highlights
-#define highlightflags V_ORANGEMAP
+#define highlightflags V_AQUAMAP
 #define recommendedflags V_GREENMAP
 #define warningflags V_GRAYMAP
 
