@@ -1317,6 +1317,31 @@ void D_SRB2Main(void)
 		configfile[sizeof configfile - 1] = '\0';
 	}
 
+	// If config isn't writable, tons of behavior will be broken.
+	// Fail loudly before things get confusing!
+	{
+		FILE *tmpfile;
+		char testfile[MAX_WADPATH];
+
+		snprintf(testfile, sizeof testfile, "%s" PATHSEP "file.tmp", srb2home);
+		testfile[sizeof testfile - 1] = '\0';
+
+		tmpfile = fopen(testfile, "w");
+		if (tmpfile == NULL)
+		{
+#if defined (_WIN32)
+			I_Error("Couldn't write game config.\nMake sure the game is installed somewhere it has write permissions.\n\n(Don't use the Downloads folder, Program Files, or your desktop!\nIf unsure, we recommend making a subfolder in your Documents folder.)");
+#else
+			I_Error("Couldn't write game config.\nMake sure you've installed the game somewhere it has write permissions.");
+#endif
+		}
+		else
+		{
+			fclose(tmpfile);
+			remove(testfile);
+		}
+	}
+
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
