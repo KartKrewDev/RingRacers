@@ -600,7 +600,7 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "A", "Accelerate / Confirm",
 		"PR_BTA", {.routine = M_ProfileSetControl}, gc_a, 0},
 
-	{IT_CONTROL, "B", "Look backwards",
+	{IT_CONTROL, "B", "Look backwards / Back",
 		"PR_BTB", {.routine = M_ProfileSetControl}, gc_b, 0},
 
 	{IT_CONTROL, "C", "Spindash / Extra",
