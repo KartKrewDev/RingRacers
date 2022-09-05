@@ -2883,6 +2883,12 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 
 	attacker->player->confirmVictim = (victim->player - players);
 	attacker->player->confirmVictimDelay = TICRATE/2;
+
+	if (attacker->player->follower != NULL)
+	{
+		const follower_t *fl = &followers[attacker->player->followerskin];
+		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
+	}
 }
 
 void K_PlayPowerGloatSound(mobj_t *source)
