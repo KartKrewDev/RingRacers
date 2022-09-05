@@ -80,6 +80,7 @@ patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
 
 static player_t *plr;
+boolean hu_keystrokes; // :)
 boolean chat_on; // entering a chat message?
 static char w_chat[HU_MAXMSGLEN + 1];
 static size_t c_input = 0; // let's try to make the chat input less shitty.
@@ -1222,7 +1223,7 @@ boolean HU_Responder(event_t *ev)
 			else
 				c_input++;
 		}
-		else if ((c >= HU_FONTSTART && c <= HU_FONTEND && hu_font[c-HU_FONTSTART])
+		else if ((c >= HU_FONTSTART && c <= HU_FONTEND && fontv[HU_FONT].font[c-HU_FONTSTART])
 			|| c == ' ') // Allow spaces, of course
 		{
 			if (CHAT_MUTE || strlen(w_chat) >= HU_MAXMSGLEN)
@@ -1796,8 +1797,8 @@ static void HU_DrawChat_Old(void)
 	size_t i = 0;
 	const char *ntalk = "Say: ", *ttalk = "Say-Team: ";
 	const char *talk = ntalk;
-	INT32 charwidth = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->width) * con_scalefactor;
-	INT32 charheight = 8 * con_scalefactor; //(hu_font['A'-HU_FONTSTART]->height) * con_scalefactor;
+	INT32 charwidth = 8 * con_scalefactor; //(fontv[HU_FONT].font['A'-HU_FONTSTART]->width) * con_scalefactor;
+	INT32 charheight = 8 * con_scalefactor; //(fontv[HU_FONT].font['A'-HU_FONTSTART]->height) * con_scalefactor;
 	if (teamtalk)
 	{
 		talk = ttalk;
@@ -1818,7 +1819,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = (hu_font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (fontv[HU_FONT].font[talk[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, talk[i++] | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 		c += charwidth;
@@ -1846,7 +1847,7 @@ static void HU_DrawChat_Old(void)
 		}
 		else
 		{
-			//charwidth = (hu_font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
+			//charwidth = (fontv[HU_FONT].font[w_chat[i]-HU_FONTSTART]->width) * con_scalefactor;
 			V_DrawCharacter(HU_INPUTX + c, y, w_chat[i++] | cv_constextsize.value | V_NOSCALESTART | t, true);
 		}
 
