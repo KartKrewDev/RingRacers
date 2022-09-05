@@ -2463,9 +2463,8 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
 
-	if (thing->type == MT_SKIM)
+	if (thing->player && thing->player->fastfall != 0)
 	{
-		// Skim special (not needed for kart?)
 		return 0;
 	}
 

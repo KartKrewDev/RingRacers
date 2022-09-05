@@ -9025,13 +9025,17 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 boolean K_PlayerEBrake(player_t *player)
 {
+	if (player->fastfall != 0)
+	{
+		return true;
+	}
+
 	return (K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
-	&& P_IsObjectOnGround(player->mo) == true
-	&& player->drift == 0
-	&& player->spinouttimer == 0
-	&& player->justbumped == 0
-	&& player->spindashboost == 0
-	&& player->nocontrol == 0;
+		&& player->drift == 0
+		&& player->spinouttimer == 0
+		&& player->justbumped == 0
+		&& player->spindashboost == 0
+		&& player->nocontrol == 0;
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -9053,9 +9057,8 @@ void K_KartEbrakeVisuals(player_t *p)
 	mobj_t *spdl;
 	fixed_t sx, sy;
 
-	if (K_PlayerEBrake(p))
+	if (K_PlayerEBrake(p) == true)
 	{
-
 		if (p->ebrakefor % 20 == 0)
 		{
 			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
@@ -9091,7 +9094,6 @@ void K_KartEbrakeVisuals(player_t *p)
 			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
 			K_FlipFromObject(p->mo->hprev, p->mo);
 		}
-
 
 		if (!p->spindash)
 		{
@@ -9233,6 +9235,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 static void K_KartSpindash(player_t *player)
 {
+	const boolean onGround = P_IsObjectOnGround(player->mo);
 	const INT16 MAXCHARGETIME = K_GetSpindashChargeTime(player);
 	UINT16 buttons = K_GetKartButtons(player);
 	boolean spawnWind = (leveltime % 2 == 0);
@@ -9293,6 +9296,36 @@ static void K_KartSpindash(player_t *player)
 	if (K_PlayerEBrake(player) == false)
 	{
 		player->spindash = 0;
+		return;
+	}
+
+	// Handle fast falling behaviors first.
+	if (onGround == false)
+	{
+		// Update fastfall.
+		player->fastfall = player->mo->momz;
+		player->spindash = 0;
+		return;
+	}
+	else if (player->fastfall != 0)
+	{
+		// Handle fastfall bounce.
+		const fixed_t maxBounce = player->mo->scale * 10;
+		const fixed_t minBounce = player->mo->scale * 2;
+		fixed_t bounce = abs(player->fastfall) / 4;
+
+		if (bounce > maxBounce)
+		{
+			bounce = maxBounce;
+		}
+
+		if (bounce > minBounce)
+		{
+			S_StartSound(player->mo, sfx_ffbonc);
+			player->mo->momz = bounce * P_MobjFlip(player->mo);
+		}
+
+		player->fastfall = 0;
 		return;
 	}
 

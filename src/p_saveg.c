@@ -280,6 +280,8 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].spindashspeed);
 		WRITEUINT8(save_p, players[i].spindashboost);
 
+		WRITEFIXED(save_p, players[i].fastfall);
+
 		WRITEUINT8(save_p, players[i].numboosts);
 		WRITEFIXED(save_p, players[i].boostpower);
 		WRITEFIXED(save_p, players[i].speedboost);
@@ -564,6 +566,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spindash = READUINT16(save_p);
 		players[i].spindashspeed = READFIXED(save_p);
 		players[i].spindashboost = READUINT8(save_p);
+
+		players[i].fastfall = READFIXED(save_p);
 
 		players[i].numboosts = READUINT8(save_p);
 		players[i].boostpower = READFIXED(save_p);
