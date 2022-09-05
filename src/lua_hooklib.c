@@ -630,6 +630,7 @@ int LUA_HookTiccmd(player_t *player, ticcmd_t *cmd, int hook_type)
 	return hook.status;
 }
 
+<<<<<<< Updated upstream
 int LUA_HookKey(event_t *event, int hook_type)
 {
 	Hook_State hook;
@@ -641,7 +642,10 @@ int LUA_HookKey(event_t *event, int hook_type)
 	return hook.status;
 }
 
-void LUA_HookHUD(int hook_type)
+void LUA_HookHUD(int hook_type, huddrawlist_h list)
+=======
+void LUA_HookHUD(huddrawlist_h list, int hook_type)
+>>>>>>> Stashed changes
 {
 	const hook_t * map = &hudHookIds[hook_type];
 	Hook_State hook;
@@ -650,7 +654,7 @@ void LUA_HookHUD(int hook_type)
 		start_hook_stack();
 		begin_hook_values(&hook);
 
-		LUA_SetHudHook(hook_type);
+		LUA_SetHudHook(hook_type, list);
 
 		hud_running = true; // local hook
 		init_hook_call(&hook, 0, res_none);
