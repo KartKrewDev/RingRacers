@@ -291,6 +291,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
 
+		WRITEUINT8(save_p, players[i].tripwireState);
+		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
 		WRITEUINT16(save_p, players[i].itemroulette);
@@ -355,7 +357,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
-		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
@@ -575,6 +576,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
 
+		players[i].tripwireState = READUINT8(save_p);
+		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
@@ -639,7 +642,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
-		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);
@@ -1600,7 +1602,7 @@ typedef enum
 	MD2_SPRITEXOFFSET = 1<<20,
 	MD2_SPRITEYOFFSET = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
-	// 1<<23 was taken out, maybe reuse later
+	MD2_DISPOFFSET   = 1<<23,
 	MD2_HITLAG       = 1<<24,
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
@@ -1841,6 +1843,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
+	if (mobj->dispoffset)
+		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -2048,6 +2052,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_HITLAG)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		WRITEINT32(save_p, mobj->dispoffset);
 	}
 	if (diff2 & MD2_LASTMOMZ)
 	{
@@ -3153,6 +3161,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_HITLAG)
 	{
 		mobj->hitlag = READINT32(save_p);
+	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		mobj->dispoffset = READINT32(save_p);
 	}
 	if (diff2 & MD2_LASTMOMZ)
 	{

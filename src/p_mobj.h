@@ -408,6 +408,8 @@ typedef struct mobj_s
 	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
+	INT32 dispoffset;
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
 

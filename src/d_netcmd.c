@@ -61,6 +61,7 @@
 #include "k_follower.h"
 #include "doomstat.h"
 #include "deh_tables.h"
+#include "m_perfstats.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -513,7 +514,13 @@ consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
-	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};
+	{PS_OFF, "Off"},
+	{PS_RENDER, "Rendering"},
+	{PS_LOGIC, "Logic"},
+	{PS_BOT, "Bots"},
+	{PS_THINKFRAME, "ThinkFrame"},
+	{0, NULL}
+};
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NULL);
 
 consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
