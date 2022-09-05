@@ -4666,7 +4666,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{
-		LUA_HookInt(HOOK(MapChange), gamemap);
+		LUA_HookInt(gamemap, HOOK(MapChange));
 		G_DoLoadLevel(resetplayer);
 	}
 
