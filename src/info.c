@@ -580,7 +580,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BEXS", // Battle Bumper Explosion: Shell
 	"BDEB", // Battle Bumper Explosion: Debris
 	"BEXB", // Battle Bumper Explosion: Blast
-
+	"TWBS", // Tripwire Boost
+	"TWBT", // Tripwire BLASTER
 	"DEZL", // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4360,6 +4361,12 @@ state_t states[NUMSTATES] =
 	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS70, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST9}, // S_BATTLEBUMPER_EXBLAST8
 	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS80, 2, {NULL}, 0, 0, S_BATTLEBUMPER_EXBLAST10}, // S_BATTLEBUMPER_EXBLAST9
 	{SPR_BEXB, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_TRANS90, 2, {NULL}, 0, 0, S_NULL}, // S_BATTLEBUMPER_EXBLAST10
+
+	{SPR_TWBS, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE,                                   -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_TOP
+	{SPR_TWBS, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BOTTOM
+
+	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE,                                   -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_TOP
+	{SPR_TWBT, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE|FF_VERTICALFLIP|FF_HORIZONTALFLIP, -1, {NULL}, 6, 2, S_NULL}, // S_TRIPWIREBOOST_BLAST_BOTTOM
 
 	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE, 8, {NULL}, 0, 0, S_NULL}, // S_DEZLASER
 	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL2}, // S_DEZLASER_TRAIL1
@@ -24161,6 +24168,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,               // damage
 		sfx_None,        // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL           // raisestate
+	},
+
+	{           // MT_TRIPWIREBOOST
+		-1,              // doomednum
+		S_TRIPWIREBOOST_TOP, // spawnstate
+		1000,            // spawnhealth
+		S_TRIPWIREBOOST_BOTTOM, // seestate
+		sfx_None,        // seesound
+		8,               // reactiontime
+		sfx_None,        // attacksound
+		S_NULL,          // painstate
+		0,               // painchance
+		sfx_None,        // painsound
+		S_TRIPWIREBOOST_BLAST_TOP,    // meleestate
+		S_TRIPWIREBOOST_BLAST_BOTTOM, // missilestate
+		S_NULL,          // deathstate
+		S_NULL,          // xdeathstate
+		sfx_None,        // deathsound
+		0,               // speed
+		8*FRACUNIT,      // radius
+		16*FRACUNIT,     // height
+		1,               // display offset
+		100,             // mass
+		0,               // damage
+		sfx_None,        // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
 		S_NULL           // raisestate
 	},
 
