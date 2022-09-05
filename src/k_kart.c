@@ -9311,19 +9311,27 @@ static void K_KartSpindash(player_t *player)
 	{
 		// Handle fastfall bounce.
 		const fixed_t maxBounce = player->mo->scale * 10;
-		const fixed_t minBounce = player->mo->scale * 2;
-		fixed_t bounce = abs(player->fastfall) / 4;
+		const fixed_t minBounce = player->mo->scale;
+		fixed_t bounce = 2 * abs(player->fastfall) / 3;
 
 		if (bounce > maxBounce)
 		{
 			bounce = maxBounce;
 		}
-
-		if (bounce > minBounce)
+		else
 		{
-			S_StartSound(player->mo, sfx_ffbonc);
-			player->mo->momz = bounce * P_MobjFlip(player->mo);
+			// Lose speed on bad bounce.
+			player->mo->momx /= 2;
+			player->mo->momy /= 2;
+
+			if (bounce < minBounce)
+			{
+				bounce = minBounce;
+			}
 		}
+
+		S_StartSound(player->mo, sfx_ffbonc);
+		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
 		return;
