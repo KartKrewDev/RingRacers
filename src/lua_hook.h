@@ -69,15 +69,11 @@ automatically.
 	X (SeenPlayer),/* MT_NAMECHECK */\
 	X (PlayerThink),/* P_PlayerThink */\
 	X (GameQuit),\
-	X (PlayerCmd),/* building the player's ticcmd struct (Ported from SRB2Kart) */\
+	X (PlayerCmd),/* building the player's ticcmd struct */\
 	X (MusicChange),\
-	X (PlayerHeight),/* override player height */\
-	X (PlayerCanEnterSpinGaps),\
-	X (KeyDown),\
-	X (KeyUp),\
+	X (VoteThinker),/* Y_VoteTicker */\
 
 #define STRING_HOOK_LIST(X) \
-	X (BotAI),/* B_BuildTailsTiccmd by skin name */\
 	X (LinedefExecute),\
 	X (ShouldJingleContinue),/* should jingle of the given music continue playing */\
 
@@ -115,6 +111,7 @@ ENUM (STRING_HOOK);
 //#define LUA_HUDHOOK(type) LUA_HookHUD(HUD_HOOK(type))
 
 extern boolean hook_cmd_running;
+extern int hook_defrosting;
 
 void LUA_HookVoid(int hook);
 void LUA_HookHUD(huddrawlist_h, int hook);
@@ -134,9 +131,8 @@ int  LUA_HookShouldDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT
 int  LUA_HookMobjDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 int  LUA_HookMobjDeath(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
 int  LUA_HookMobjMoveBlocked(mobj_t *, mobj_t *, line_t *);
-int  LUA_HookBotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd);
 void LUA_HookLinedefExecute(line_t *, mobj_t *, sector_t *);
-int  LUA_HookPlayerMsg(int source, int target, int flags, char *msg);
+int  LUA_HookPlayerMsg(int source, int target, int flags, char *msg, int mute);
 int  LUA_HookHurtMsg(player_t *, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
 int  LUA_HookMapThingSpawn(mobj_t *, mapthing_t *);
 int  LUA_HookFollowMobj(player_t *, mobj_t *);
@@ -146,7 +142,4 @@ int  LUA_HookTeamSwitch(player_t *, int newteam, boolean fromspectators, boolean
 int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced);
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
 int  LUA_HookShouldJingleContinue(player_t *, const char *musname);
-int  LUA_HookPlayerCmd(player_t *, ticcmd_t *);
 int  LUA_HookMusicChange(const char *oldname, struct MusicChange *);
-fixed_t LUA_HookPlayerHeight(player_t *player);
-int  LUA_HookPlayerCanEnterSpinGaps(player_t *player);

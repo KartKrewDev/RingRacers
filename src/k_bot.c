@@ -1247,7 +1247,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Complete override of all ticcmd functionality
-	if (LUAh_BotTiccmd(player, cmd) == true)
+	if (LUA_HookTiccmd(player, cmd, HOOK(BotTiccmd)) == true)
 	{
 		return;
 	}

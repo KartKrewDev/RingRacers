@@ -47,6 +47,7 @@
 
 #include "lua_hudlib_drawlist.h"
 #include "lua_hud.h"
+#include "lua_hook.h"
 
 // SRB2Kart
 #include "k_hud.h" // SRB2kart
@@ -962,7 +963,7 @@ luahook:
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
-		LUAh_TitleCardHUD(stplyr, luahuddrawlist_titlecard);
+		LUA_HookHUD(luahuddrawlist_titlecard, HUD_HOOK(titlecard));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
@@ -1009,7 +1010,7 @@ static void ST_overlayDrawer(void)
 		if (renderisnewtic)
 		{
 			LUA_HUD_ClearDrawList(luahuddrawlist_game);
-			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+			LUA_HookHUD(luahuddrawlist_game, HUD_HOOK(game));
 		}
 		LUA_HUD_DrawList(luahuddrawlist_game);
 	}

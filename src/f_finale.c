@@ -41,6 +41,7 @@
 #include "fastcmp.h"
 
 #include "lua_hud.h"
+#include "lua_hook.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -2118,7 +2119,7 @@ luahook:
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_title);
-		LUAh_TitleHUD(luahuddrawlist_title);
+		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
 }

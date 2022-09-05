@@ -123,7 +123,6 @@ static void add_string_hook(lua_State *L, int type)
 
 	switch (type)
 	{
-		case STRING_HOOK(BotAI):
 		case STRING_HOOK(ShouldJingleContinue):
 			if (lua_isstring(L, 3))
 			{ // lowercase copy
@@ -630,22 +629,7 @@ int LUA_HookTiccmd(player_t *player, ticcmd_t *cmd, int hook_type)
 	return hook.status;
 }
 
-<<<<<<< Updated upstream
-int LUA_HookKey(event_t *event, int hook_type)
-{
-	Hook_State hook;
-	if (prepare_hook(&hook, false, hook_type))
-	{
-		LUA_PushUserdata(gL, event, META_KEYEVENT);
-		call_hooks(&hook, 1, res_true);
-	}
-	return hook.status;
-}
-
-void LUA_HookHUD(int hook_type, huddrawlist_h list)
-=======
 void LUA_HookHUD(huddrawlist_h list, int hook_type)
->>>>>>> Stashed changes
 {
 	const hook_t * map = &hudHookIds[hook_type];
 	Hook_State hook;
@@ -789,82 +773,6 @@ int LUA_HookMobjMoveBlocked(mobj_t *t1, mobj_t *t2, line_t *line)
 	return hook.status;
 }
 
-typedef struct {
-	mobj_t   * tails;
-	ticcmd_t * cmd;
-} BotAI_State;
-
-static boolean checkbotkey(const char *field)
-{
-	return lua_toboolean(gL, -1) && strcmp(lua_tostring(gL, -2), field) == 0;
-}
-
-static void res_botai(Hook_State *hook)
-{
-	BotAI_State *botai = hook->userdata;
-
-	int k[8];
-
-	int fields = 0;
-
-	// This turns forward, backward, left, right, jump, and spin into a proper ticcmd for tails.
-	if (lua_istable(gL, -8)) {
-		lua_pushnil(gL); // key
-		while (lua_next(gL, -9)) {
-#define CHECK(n, f) (checkbotkey(f) ? (k[(n)-1] = 1) : 0)
-			if (
-					CHECK(1,    "forward") || CHECK(2,    "backward") ||
-					CHECK(3,       "left") || CHECK(4,       "right") ||
-					CHECK(5, "strafeleft") || CHECK(6, "straferight") ||
-					CHECK(7,       "jump") || CHECK(8,        "spin")
-			){
-				if (8 <= ++fields)
-				{
-					lua_pop(gL, 2); // pop key and value
-					break;
-				}
-			}
-
-			lua_pop(gL, 1); // pop value
-#undef CHECK
-		}
-	} else {
-		while (fields < 8)
-		{
-			k[fields] = lua_toboolean(gL, -8 + fields);
-			fields++;
-		}
-	}
-
-	B_KeysToTiccmd(botai->tails, botai->cmd,
-			k[0],k[1],k[2],k[3],k[4],k[5],k[6],k[7]);
-
-	hook->status = true;
-}
-
-int LUA_HookBotAI(mobj_t *sonic, mobj_t *tails, ticcmd_t *cmd)
-{
-	const char *skin = ((skin_t *)tails->skin)->name;
-
-	Hook_State hook;
-	BotAI_State botai;
-
-	if (prepare_string_hook(&hook, false, STRING_HOOK(BotAI), skin))
-	{
-		LUA_PushUserdata(gL, sonic, META_MOBJ);
-		LUA_PushUserdata(gL, tails, META_MOBJ);
-
-		botai.tails = tails;
-		botai.cmd   = cmd;
-
-		hook.userdata = &botai;
-
-		call_hooks(&hook, 8, res_botai);
-	}
-
-	return hook.status;
-}
-
 void LUA_HookLinedefExecute(line_t *line, mobj_t *mo, sector_t *sector)
 {
 	Hook_State hook;
@@ -878,7 +786,7 @@ void LUA_HookLinedefExecute(line_t *line, mobj_t *mo, sector_t *sector)
 	}
 }
 
-int LUA_HookPlayerMsg(int source, int target, int flags, char *msg)
+int LUA_HookPlayerMsg(int source, int target, int flags, char *msg, int mute)
 {
 	Hook_State hook;
 	if (prepare_hook(&hook, false, HOOK(PlayerMsg)))
@@ -898,6 +806,8 @@ int LUA_HookPlayerMsg(int source, int target, int flags, char *msg)
 			LUA_PushUserdata(gL, &players[target-1], META_PLAYER); // target
 		}
 		lua_pushstring(gL, msg); // msg
+		lua_pushboolean(gL, mute); // the message was supposed to be eaten by spamprotecc.
+
 		call_hooks(&hook, 1, res_true);
 	}
 	return hook.status;
@@ -1141,40 +1051,5 @@ int LUA_HookMusicChange(const char *oldname, struct MusicChange *param)
 		lua_settop(gL, 0);
 	}
 
-	return hook.status;
-}
-
-static void res_playerheight(Hook_State *hook)
-{
-	if (!lua_isnil(gL, -1))
-	{
-		fixed_t returnedheight = lua_tonumber(gL, -1);
-		// 0 height has... strange results, but it's not problematic like negative heights are.
-		// when an object's height is set to a negative number directly with lua, it's forced to 0 instead.
-		// here, I think it's better to ignore negatives so that they don't replace any results of previous hooks!
-		if (returnedheight >= 0)
-			hook->status = returnedheight;
-	}
-}
-
-fixed_t LUA_HookPlayerHeight(player_t *player)
-{
-	Hook_State hook;
-	if (prepare_hook(&hook, -1, HOOK(PlayerHeight)))
-	{
-		LUA_PushUserdata(gL, player, META_PLAYER);
-		call_hooks(&hook, 1, res_playerheight);
-	}
-	return hook.status;
-}
-
-int LUA_HookPlayerCanEnterSpinGaps(player_t *player)
-{
-	Hook_State hook;
-	if (prepare_hook(&hook, 0, HOOK(PlayerCanEnterSpinGaps)))
-	{
-		LUA_PushUserdata(gL, player, META_PLAYER);
-		call_hooks(&hook, 1, res_force);
-	}
 	return hook.status;
 }
