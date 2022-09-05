@@ -9032,7 +9032,7 @@ boolean K_PlayerEBrake(player_t *player)
 
 	return (K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
 		&& player->drift == 0
-		&& player->spinouttimer == 0
+		&& P_PlayerInPain(player) == false
 		&& player->justbumped == 0
 		&& player->spindashboost == 0
 		&& player->nocontrol == 0;
