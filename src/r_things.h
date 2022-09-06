@@ -66,7 +66,13 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 
+boolean R_ThingBoundingBoxVisible(mobj_t *thing);
+void R_DrawThingBoundingBox(mobj_t *thing);
+
 boolean R_ThingVisible (mobj_t *thing);
+
+boolean R_ThingWithinDist (mobj_t *thing,
+		fixed_t        draw_dist);
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
 		fixed_t        draw_dist);
