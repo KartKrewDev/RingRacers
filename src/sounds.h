@@ -1163,6 +1163,18 @@ typedef enum
 	sfx_dbgsal,
 	sfx_cock,
 	sfx_itcaps,
+	sfx_kstart,
+	sfx_typri1,
+	sfx_typri2,
+	sfx_eggspr,
+
+	// SRB2Kart - Drop target sounds
+	sfx_kdtrg1,
+	sfx_kdtrg2,
+	sfx_kdtrg3,
+
+	// SRB2Kart - Powerup clash SFX
+	sfx_parry,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

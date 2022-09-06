@@ -22,6 +22,7 @@
 #include "p_setup.h"
 #include "p_saveg.h"
 #include "r_data.h"
+#include "r_fps.h"
 #include "r_textures.h"
 #include "r_things.h"
 #include "r_skins.h"
@@ -38,6 +39,7 @@
 // SRB2Kart
 #include "k_battle.h"
 #include "k_pwrlv.h"
+#include "k_terrain.h"
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -59,6 +61,9 @@ typedef enum
 	AWAYVIEW   = 0x01,
 	FOLLOWITEM = 0x02,
 	FOLLOWER   = 0x04,
+	SKYBOXVIEW = 0x08,
+	SKYBOXCENTER = 0x10,
+	HOVERHYUDORO = 0x20,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -101,6 +106,7 @@ static void P_NetArchivePlayers(void)
 		{
 			WRITEINT16(save_p, clientpowerlevels[i][j]);
 		}
+		WRITEINT16(save_p, clientPowerAdd[i]);
 
 		if (!playeringame[i])
 			continue;
@@ -162,11 +168,21 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].totalring);
 		WRITEUINT32(save_p, players[i].realtime);
 		WRITEUINT8(save_p, players[i].laps);
+		WRITEUINT8(save_p, players[i].latestlap);
 		WRITEINT32(save_p, players[i].starpostnum);
 
 		WRITEUINT8(save_p, players[i].ctfteam);
 
 		WRITEUINT8(save_p, players[i].checkskip);
+
+		WRITEINT16(save_p, players[i].lastsidehit);
+		WRITEINT16(save_p, players[i].lastlinehit);
+
+		WRITEINT32(save_p, players[i].onconveyor);
+
+		WRITEUINT32(save_p, players[i].jointime);
+
+		WRITEUINT8(save_p, players[i].splitscreenindex);
 
 		if (players[i].awayviewmobj)
 			flags |= AWAYVIEW;
@@ -177,23 +193,31 @@ static void P_NetArchivePlayers(void)
 		if (players[i].follower)
 			flags |= FOLLOWER;
 
-		WRITEINT16(save_p, players[i].lastsidehit);
-		WRITEINT16(save_p, players[i].lastlinehit);
+		if (players[i].skybox.viewpoint)
+			flags |= SKYBOXVIEW;
 
-		WRITEINT32(save_p, players[i].onconveyor);
+		if (players[i].skybox.centerpoint)
+			flags |= SKYBOXCENTER;
 
-		WRITEUINT32(save_p, players[i].jointime);
-		WRITEUINT32(save_p, players[i].quittime);
-
-		WRITEUINT8(save_p, players[i].splitscreenindex);
+		if (players[i].hoverhyudoro)
+			flags |= HOVERHYUDORO;
 
 		WRITEUINT16(save_p, flags);
+
+		if (flags & SKYBOXVIEW)
+			WRITEUINT32(save_p, players[i].skybox.viewpoint->mobjnum);
+
+		if (flags & SKYBOXCENTER)
+			WRITEUINT32(save_p, players[i].skybox.centerpoint->mobjnum);
 
 		if (flags & AWAYVIEW)
 			WRITEUINT32(save_p, players[i].awayviewmobj->mobjnum);
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save_p, players[i].followmobj->mobjnum);
+
+		if (flags & HOVERHYUDORO)
+			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -230,6 +254,9 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tumbleBounces);
 		WRITEUINT16(save_p, players[i].tumbleHeight);
 
+		WRITEUINT8(save_p, players[i].justDI);
+		WRITEUINT8(save_p, players[i].flipDI);
+
 		WRITESINT8(save_p, players[i].drift);
 		WRITEFIXED(save_p, players[i].driftcharge);
 		WRITEUINT8(save_p, players[i].driftboost);
@@ -263,6 +290,10 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].draftpower);
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
+
+		WRITEUINT8(save_p, players[i].tripwireState);
+		WRITEUINT8(save_p, players[i].tripwirePass);
+		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
 		WRITEUINT16(save_p, players[i].itemroulette);
 		WRITEUINT8(save_p, players[i].roulettetype);
@@ -306,11 +337,16 @@ static void P_NetArchivePlayers(void)
 		WRITESINT8(save_p, players[i].lastjawztarget);
 		WRITEUINT8(save_p, players[i].jawztargetdelay);
 
+		WRITEUINT8(save_p, players[i].confirmInflictor);
+		WRITEUINT8(save_p, players[i].confirmInflictorDelay);
+
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
 		WRITEUINT32(save_p, players[i].trickboostpower);
 		WRITEUINT8(save_p, players[i].trickboostdecay);
 		WRITEUINT8(save_p, players[i].trickboost);
+
+		WRITEUINT32(save_p, players[i].ebrakefor);
 
 		WRITEUINT32(save_p, players[i].roundscore);
 		WRITEUINT8(save_p, players[i].emeralds);
@@ -318,14 +354,16 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].karmadelay);
 		WRITEUINT32(save_p, players[i].overtimekarma);
 		WRITEINT16(save_p, players[i].spheres);
+		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
-		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
 
 		WRITEUINT8(save_p, players[i].kickstartaccel);
+
+		WRITEUINT8(save_p, players[i].stairjank);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -338,11 +376,14 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].respawn.airtimer);
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
+		WRITEUINT8(save_p, players[i].respawn.truedeath);
 
 		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
 		WRITEUINT8(save_p, players[i].botvars.diffincrease);
 		WRITEUINT8(save_p, players[i].botvars.rival);
+		WRITEFIXED(save_p, players[i].botvars.rubberband);
+		WRITEUINT16(save_p, players[i].botvars.controller);
 		WRITEUINT32(save_p, players[i].botvars.itemdelay);
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
@@ -366,6 +407,7 @@ static void P_NetUnArchivePlayers(void)
 		{
 			clientpowerlevels[i][j] = READINT16(save_p);
 		}
+		clientPowerAdd[i] = READINT16(save_p);
 
 		// Do NOT memset player struct to 0
 		// other areas may initialize data elsewhere
@@ -391,7 +433,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].steering = READINT16(save_p);
 		players[i].angleturn = READANGLE(save_p);
 		players[i].aiming = READANGLE(save_p);
-		players[i].drawangle = READANGLE(save_p);
+		players[i].drawangle = players[i].old_drawangle = READANGLE(save_p);
 		players[i].viewrollangle = READANGLE(save_p);
 		players[i].tilt = READANGLE(save_p);
 		players[i].awayviewaiming = READANGLE(save_p);
@@ -428,6 +470,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].totalring = READINT16(save_p); // Total number of rings obtained for GP
 		players[i].realtime = READUINT32(save_p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save_p); // Number of laps (optional)
+		players[i].latestlap = READUINT8(save_p);
 		players[i].starpostnum = READINT32(save_p);
 
 		players[i].ctfteam = READUINT8(save_p); // 1 == Red, 2 == Blue
@@ -440,17 +483,25 @@ static void P_NetUnArchivePlayers(void)
 		players[i].onconveyor = READINT32(save_p);
 
 		players[i].jointime = READUINT32(save_p);
-		players[i].quittime = READUINT32(save_p);
 
 		players[i].splitscreenindex = READUINT8(save_p);
 
 		flags = READUINT16(save_p);
+
+		if (flags & SKYBOXVIEW)
+			players[i].skybox.viewpoint = (mobj_t *)(size_t)READUINT32(save_p);
+
+		if (flags & SKYBOXCENTER)
+			players[i].skybox.centerpoint = (mobj_t *)(size_t)READUINT32(save_p);
 
 		if (flags & AWAYVIEW)
 			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save_p);
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save_p);
+
+		if (flags & HOVERHYUDORO)
+			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
@@ -488,6 +539,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tumbleBounces = READUINT8(save_p);
 		players[i].tumbleHeight = READUINT16(save_p);
 
+		players[i].justDI = READUINT8(save_p);
+		players[i].flipDI = (boolean)READUINT8(save_p);
+
 		players[i].drift = READSINT8(save_p);
 		players[i].driftcharge = READFIXED(save_p);
 		players[i].driftboost = READUINT8(save_p);
@@ -521,6 +575,10 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftpower = READFIXED(save_p);
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
+
+		players[i].tripwireState = READUINT8(save_p);
+		players[i].tripwirePass = READUINT8(save_p);
+		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
 		players[i].roulettetype = READUINT8(save_p);
@@ -564,11 +622,16 @@ static void P_NetUnArchivePlayers(void)
 		players[i].lastjawztarget = READSINT8(save_p);
 		players[i].jawztargetdelay = READUINT8(save_p);
 
+		players[i].confirmInflictor = READUINT8(save_p);
+		players[i].confirmInflictorDelay = READUINT8(save_p);
+
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
 		players[i].trickboostpower = READUINT32(save_p);
 		players[i].trickboostdecay = READUINT8(save_p);
 		players[i].trickboost = READUINT8(save_p);
+
+		players[i].ebrakefor = READUINT32(save_p);
 
 		players[i].roundscore = READUINT32(save_p);
 		players[i].emeralds = READUINT8(save_p);
@@ -576,14 +639,16 @@ static void P_NetUnArchivePlayers(void)
 		players[i].karmadelay = READINT16(save_p);
 		players[i].overtimekarma = READUINT32(save_p);
 		players[i].spheres = READINT16(save_p);
+		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
-		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);
 
 		players[i].kickstartaccel = READUINT8(save_p);
+
+		players[i].stairjank = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -596,11 +661,14 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.airtimer = READUINT32(save_p);
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
+		players[i].respawn.truedeath = READUINT8(save_p);
 
 		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
 		players[i].botvars.diffincrease = READUINT8(save_p);
 		players[i].botvars.rival = (boolean)READUINT8(save_p);
+		players[i].botvars.rubberband = READFIXED(save_p);
+		players[i].botvars.controller = READUINT16(save_p);
 		players[i].botvars.itemdelay = READUINT32(save_p);
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
@@ -1506,7 +1574,7 @@ typedef enum
 	MD_DSCALE      = 1<<28,
 	MD_BLUEFLAG    = 1<<29,
 	MD_REDFLAG     = 1<<30,
-	MD_MORE        = 1<<31
+	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
 typedef enum
@@ -1534,12 +1602,13 @@ typedef enum
 	MD2_SPRITEXOFFSET = 1<<20,
 	MD2_SPRITEYOFFSET = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
-	// 1<<23 was taken out, maybe reuse later
+	MD2_DISPOFFSET   = 1<<23,
 	MD2_HITLAG       = 1<<24,
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
 	MD2_ITNEXT       = 1<<27,
 	MD2_LASTMOMZ     = 1<<28,
+	MD2_TERRAIN      = 1<<29,
 } mobj_diff2_t;
 
 typedef enum
@@ -1636,7 +1705,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
 		return;
 
-	if (mobj->spawnpoint && mobj->info->doomednum != -1)
+	if (mobj->spawnpoint)
 	{
 		// spawnpoint is not modified but we must save it since it is an identifier
 		diff = MD_SPAWNPOINT;
@@ -1657,7 +1726,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	diff2 = 0;
 
 	// not the default but the most probable
-	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0)
+	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0)
 		diff |= MD_MOM;
 	if (mobj->radius != mobj->info->radius)
 		diff |= MD_RADIUS;
@@ -1774,6 +1843,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
+	if (mobj->dispoffset)
+		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -1782,6 +1853,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ITNEXT;
 	if (mobj->lastmomz)
 		diff2 |= MD2_LASTMOMZ;
+	if (mobj->terrain != NULL)
+		diff2 |= MD2_TERRAIN;
 
 	if (diff2 != 0)
 		diff |= MD_MORE;
@@ -1819,8 +1892,12 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		size_t z;
 
 		for (z = 0; z < nummapthings; z++)
-			if (&mapthings[z] == mobj->spawnpoint)
-				WRITEUINT16(save_p, z);
+		{
+			if (&mapthings[z] != mobj->spawnpoint)
+				continue;
+			WRITEUINT16(save_p, z);
+			break;
+		}
 		if (mobj->type == MT_HOOPCENTER)
 			return;
 	}
@@ -1840,6 +1917,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->momx);
 		WRITEFIXED(save_p, mobj->momy);
 		WRITEFIXED(save_p, mobj->momz);
+		WRITEFIXED(save_p, mobj->pmomz);
 	}
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save_p, mobj->radius);
@@ -1975,9 +2053,17 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
 	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		WRITEINT32(save_p, mobj->dispoffset);
+	}
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		WRITEINT32(save_p, mobj->lastmomz);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		WRITEUINT32(save_p, K_GetTerrainHeapIndex(mobj->terrain));
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
@@ -2885,25 +2971,26 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	mobj->info = &mobjinfo[mobj->type];
 	if (diff & MD_POS)
 	{
-		mobj->x = READFIXED(save_p);
-		mobj->y = READFIXED(save_p);
-		mobj->angle = READANGLE(save_p);
-		mobj->pitch = READANGLE(save_p);
-		mobj->roll = READANGLE(save_p);
+		mobj->x = mobj->old_x = READFIXED(save_p);
+		mobj->y = mobj->old_y = READFIXED(save_p);
+		mobj->angle = mobj->old_angle = READANGLE(save_p);
+		mobj->pitch = mobj->old_pitch = READANGLE(save_p);
+		mobj->roll = mobj->old_roll = READANGLE(save_p);
 	}
 	else
 	{
-		mobj->x = mobj->spawnpoint->x << FRACBITS;
-		mobj->y = mobj->spawnpoint->y << FRACBITS;
-		mobj->angle = FixedAngle(mobj->spawnpoint->angle*FRACUNIT);
-		mobj->pitch = FixedAngle(mobj->spawnpoint->pitch*FRACUNIT);
-		mobj->roll = FixedAngle(mobj->spawnpoint->roll*FRACUNIT);
+		mobj->x = mobj->old_x = mobj->spawnpoint->x << FRACBITS;
+		mobj->y = mobj->old_y = mobj->spawnpoint->y << FRACBITS;
+		mobj->angle = mobj->old_angle = FixedAngle(mobj->spawnpoint->angle*FRACUNIT);
+		mobj->pitch = mobj->old_pitch = FixedAngle(mobj->spawnpoint->pitch*FRACUNIT);
+		mobj->roll = mobj->old_roll = FixedAngle(mobj->spawnpoint->roll*FRACUNIT);
 	}
 	if (diff & MD_MOM)
 	{
 		mobj->momx = READFIXED(save_p);
 		mobj->momy = READFIXED(save_p);
 		mobj->momz = READFIXED(save_p);
+		mobj->pmomz = READFIXED(save_p);
 	} // otherwise they're zero, and the memset took care of it
 
 	if (diff & MD_RADIUS)
@@ -3068,14 +3155,28 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		slope->normal.x = READFIXED(save_p);
 		slope->normal.y = READFIXED(save_p);
 		slope->normal.z = READFIXED(save_p);
+
+		P_UpdateSlopeLightOffset(slope);
 	}
 	if (diff2 & MD2_HITLAG)
 	{
 		mobj->hitlag = READINT32(save_p);
 	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		mobj->dispoffset = READINT32(save_p);
+	}
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		mobj->lastmomz = READINT32(save_p);
+	}
+	if (diff2 & MD2_TERRAIN)
+	{
+		mobj->terrain = (terrain_t *)(size_t)READUINT32(save_p);
+	}
+	else
+	{
+		mobj->terrain = NULL;
 	}
 
 	if (diff & MD_REDFLAG)
@@ -3109,6 +3210,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		P_SetTarget(&kitemcap, mobj);
 
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
+
+	R_AddMobjInterpolator(mobj);
 
 	return &mobj->thinker;
 }
@@ -4103,8 +4206,31 @@ static void P_RelinkPointers(void)
 			if (!(mobj->itnext = P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
+		if (mobj->terrain)
+		{
+			temp = (UINT32)(size_t)mobj->terrain;
+			mobj->terrain = K_GetTerrainByIndex(temp);
+			if (mobj->terrain == NULL)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
+			}
+		}
 		if (mobj->player)
 		{
+			if ( mobj->player->skybox.viewpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.viewpoint;
+				mobj->player->skybox.viewpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.viewpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on %d\n", mobj->type);
+			}
+			if ( mobj->player->skybox.centerpoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->skybox.centerpoint;
+				mobj->player->skybox.centerpoint = NULL;
+				if (!P_SetTarget(&mobj->player->skybox.centerpoint, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on %d\n", mobj->type);
+			}
 			if ( mobj->player->awayviewmobj)
 			{
 				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
@@ -4143,6 +4269,13 @@ static void P_RelinkPointers(void)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
 				}
+			}
+			if (mobj->player->hoverhyudoro)
+			{
+				temp = (UINT32)(size_t)mobj->player->hoverhyudoro;
+				mobj->player->hoverhyudoro = NULL;
+				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
 			}
 		}
 	}
@@ -4378,6 +4511,7 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, battlecapsules);
 
 	WRITEUINT8(save_p, gamespeed);
+	WRITEUINT8(save_p, numlaps);
 	WRITEUINT8(save_p, franticitems);
 	WRITEUINT8(save_p, comeback);
 
@@ -4396,11 +4530,9 @@ static void P_NetArchiveMisc(boolean resending)
 
 	WRITEUINT32(save_p, wantedcalcdelay);
 	WRITEUINT32(save_p, indirectitemcooldown);
-	WRITEUINT32(save_p, hyubgone);
 	WRITEUINT32(save_p, mapreset);
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		WRITEINT16(save_p, nospectategrief[i]);
+	WRITEUINT8(save_p, spectateGriefed);
 
 	WRITEUINT8(save_p, thwompsactive);
 	WRITEUINT8(save_p, lastLowestLap);
@@ -4437,7 +4569,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
-	mapmusflags |= MUSIC_RELOADRESET;
+	if (!reloading)
+		mapmusflags |= MUSIC_RELOADRESET;
 
 	G_SetGamestate(READINT16(save_p));
 
@@ -4459,7 +4592,10 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	encoremode = (boolean)READUINT8(save_p);
 
 	if (!P_LoadLevel(true, reloading))
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
+	}
 
 	// get the time
 	leveltime = READUINT32(save_p);
@@ -4524,6 +4660,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battlecapsules = (boolean)READUINT8(save_p);
 
 	gamespeed = READUINT8(save_p);
+	numlaps = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
 	comeback = (boolean)READUINT8(save_p);
 
@@ -4542,11 +4679,9 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	wantedcalcdelay = READUINT32(save_p);
 	indirectitemcooldown = READUINT32(save_p);
-	hyubgone = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = READINT16(save_p);
+	spectateGriefed = READUINT8(save_p);
 
 	thwompsactive = (boolean)READUINT8(save_p);
 	lastLowestLap = READUINT8(save_p);
@@ -4586,19 +4721,26 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 {
 	switch (READUINT8(save_p))
 	{
-		case 0xb7:
+		case 0xb7: // luabanks marker
 			{
 				UINT8 i, banksinuse = READUINT8(save_p);
 				if (banksinuse > NUM_LUABANKS)
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Too many banks in use)\n"));
 					return false;
+				}
 				for (i = 0; i < banksinuse; i++)
 					luabanks[i] = READINT32(save_p);
-				if (READUINT8(save_p) != 0x1d)
+				if (READUINT8(save_p) != 0x1d) // consistency marker
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Failed consistency check)\n"));
 					return false;
+				}
 			}
-		case 0x1d:
+		case 0x1d: // consistency marker
 			break;
-		default:
+		default: // anything else is nonsense
+			CONS_Alert(CONS_ERROR, M_GetText("Failed consistency check (???)\n"));
 			return false;
 	}
 

@@ -342,6 +342,7 @@ fixed_t openceilingstep;
 fixed_t openceilingdrop;
 fixed_t openfloorstep;
 fixed_t openfloordrop;
+INT32 opentoppic, openbottompic;
 
 // P_CameraLineOpening
 // P_LineOpening, but for camera
@@ -484,6 +485,83 @@ void P_CameraLineOpening(line_t *linedef)
 	}
 }
 
+boolean
+P_GetMidtextureTopBottom
+(		line_t * linedef,
+		fixed_t x,
+		fixed_t y,
+		fixed_t * return_top,
+		fixed_t * return_bottom)
+{
+	side_t *side = &sides[linedef->sidenum[0]];
+	fixed_t textop, texbottom, texheight;
+	INT32 texnum = R_GetTextureNum(side->midtexture); // make sure the texture is actually valid
+
+	sector_t *front = linedef->frontsector;
+	sector_t *back = linedef->backsector;
+	fixed_t z;
+
+	if (!texnum)
+		return false;
+
+	textop = P_GetSectorCeilingZAt(front, x, y);
+	texbottom = P_GetSectorFloorZAt(front, x, y);
+
+	if (back)
+	{
+		z = P_GetSectorCeilingZAt(back, x, y);
+
+		if (z < textop)
+			textop = z;
+
+		z = P_GetSectorFloorZAt(back, x, y);
+
+		if (z > texbottom)
+			texbottom = z;
+	}
+
+	// Get the midtexture's height
+	texheight = textures[texnum]->height << FRACBITS;
+
+	// Set texbottom and textop to the Z coordinates of the texture's boundaries
+#if 0
+	// don't remove this code unless solid midtextures
+	// on non-solid polyobjects should NEVER happen in the future
+	if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT)) {
+		if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
+			texbottom = back->floorheight + side->rowoffset;
+			textop = back->ceilingheight + side->rowoffset;
+		} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
+			texbottom = back->floorheight + side->rowoffset;
+			textop = texbottom + texheight*(side->repeatcnt+1);
+		} else {
+			textop = back->ceilingheight + side->rowoffset;
+			texbottom = textop - texheight*(side->repeatcnt+1);
+		}
+	} else
+#endif
+	{
+		if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
+			texbottom += side->rowoffset;
+			textop += side->rowoffset;
+		} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
+			texbottom += side->rowoffset;
+			textop = texbottom + texheight*(side->repeatcnt+1);
+		} else {
+			textop += side->rowoffset;
+			texbottom = textop - texheight*(side->repeatcnt+1);
+		}
+	}
+
+	if (return_top)
+		*return_top = textop;
+
+	if (return_bottom)
+		*return_bottom = texbottom;
+
+	return true;
+}
+
 void P_LineOpening(line_t *linedef, mobj_t *mobj)
 {
 	enum { FRONT, BACK };
@@ -537,6 +615,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		highceiling = INT32_MIN;
 		lowfloor = INT32_MAX;
 		opentopslope = openbottomslope = NULL;
+		opentoppic = openbottompic = -1;
 		openceilingstep = 0;
 		openceilingdrop = 0;
 		openfloorstep = 0;
@@ -556,6 +635,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		opentop      = height[lo];
 		highceiling  = height[hi];
 		opentopslope = sector[lo]->c_slope;
+		opentoppic = sector[lo]->ceilingpic;
 
 		if (mobj)
 		{
@@ -575,6 +655,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		openbottom      = height[hi];
 		lowfloor        = height[lo];
 		openbottomslope = sector[hi]->f_slope;
+		openbottompic = sector[hi]->floorpic;
 
 		if (mobj)
 		{
@@ -592,45 +673,11 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 		if ((linedef->flags & ML_EFFECT4 || (mobj->player && P_IsLineTripWire(linedef) && !K_TripwirePass(mobj->player)))
 			&& !linedef->polyobj // don't do anything for polyobjects! ...for now
 			) {
-			side_t *side = &sides[linedef->sidenum[0]];
-			fixed_t textop, texbottom, texheight;
+			fixed_t textop, texbottom;
 			fixed_t texmid, delta1, delta2;
-			INT32 texnum = R_GetTextureNum(side->midtexture); // make sure the texture is actually valid
 
-			if (texnum) {
-				// Get the midtexture's height
-				texheight = textures[texnum]->height << FRACBITS;
-
-				// Set texbottom and textop to the Z coordinates of the texture's boundaries
-#if 0
-				// don't remove this code unless solid midtextures
-				// on non-solid polyobjects should NEVER happen in the future
-				if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT)) {
-					if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
-						texbottom = back->floorheight + side->rowoffset;
-						textop = back->ceilingheight + side->rowoffset;
-					} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
-						texbottom = back->floorheight + side->rowoffset;
-						textop = texbottom + texheight*(side->repeatcnt+1);
-					} else {
-						textop = back->ceilingheight + side->rowoffset;
-						texbottom = textop - texheight*(side->repeatcnt+1);
-					}
-				} else
-#endif
-				{
-					if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
-						texbottom = openbottom + side->rowoffset;
-						textop = opentop + side->rowoffset;
-					} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
-						texbottom = openbottom + side->rowoffset;
-						textop = texbottom + texheight*(side->repeatcnt+1);
-					} else {
-						textop = opentop + side->rowoffset;
-						texbottom = textop - texheight*(side->repeatcnt+1);
-					}
-				}
-
+			if (P_GetMidtextureTopBottom(linedef, cross.x, cross.y, &textop, &texbottom))
+			{
 				texmid = texbottom+(textop-texbottom)/2;
 
 				delta1 = abs(mobj->z - texmid);
@@ -747,6 +794,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (bottomheight < open[FRONT].top) {
 							open[FRONT].top = bottomheight;
 							opentopslope = *rover->b_slope;
+							opentoppic = *rover->bottompic;
 							open[FRONT].ceilingrover = rover;
 						}
 						else if (bottomheight < highceiling)
@@ -758,6 +806,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (topheight > open[FRONT].bottom) {
 							open[FRONT].bottom = topheight;
 							openbottomslope = *rover->t_slope;
+							openbottompic = *rover->toppic;
 							open[FRONT].floorrover = rover;
 						}
 						else if (topheight > lowfloor)
@@ -789,6 +838,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (bottomheight < open[BACK].top) {
 							open[BACK].top = bottomheight;
 							opentopslope = *rover->b_slope;
+							opentoppic = *rover->bottompic;
 							open[BACK].ceilingrover = rover;
 						}
 						else if (bottomheight < highceiling)
@@ -800,6 +850,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						if (topheight > open[BACK].bottom) {
 							open[BACK].bottom = topheight;
 							openbottomslope = *rover->t_slope;
+							openbottompic = *rover->toppic;
 							open[BACK].floorrover = rover;
 						}
 						else if (topheight > lowfloor)
@@ -1088,7 +1139,7 @@ void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 // to P_BlockLinesIterator, then make one or more calls
 // to it.
 //
-boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
+boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(line_t *))
 {
 	INT32 offset;
 	const INT32 *list; // Big blockmap
@@ -1114,11 +1165,22 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 
 			for (i = 0; i < po->numLines; ++i)
 			{
+				BlockItReturn_t ret = BMIT_CONTINUE;
+
 				if (po->lines[i]->validcount == validcount) // line has been checked
 					continue;
+
 				po->lines[i]->validcount = validcount;
-				if (!func(po->lines[i]))
+				ret = func(po->lines[i]);
+
+				if (ret == BMIT_ABORT)
+				{
 					return false;
+				}
+				else if (ret == BMIT_STOP)
+				{
+					return true;
+				}
 			}
 		}
 		plink = (polymaplink_t *)(plink->link.next);
@@ -1129,15 +1191,24 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 	// First index is really empty, so +1 it.
 	for (list = blockmaplump + offset + 1; *list != -1; list++)
 	{
+		BlockItReturn_t ret = BMIT_CONTINUE;
+
 		ld = &lines[*list];
 
 		if (ld->validcount == validcount)
 			continue; // Line has already been checked.
 
 		ld->validcount = validcount;
+		ret = func(ld);
 
-		if (!func(ld))
+		if (ret == BMIT_ABORT)
+		{
 			return false;
+		}
+		else if (ret == BMIT_STOP)
+		{
+			return true;
+		}
 	}
 	return true; // Everything was checked.
 }
@@ -1146,7 +1217,7 @@ boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean (*func)(line_t *))
 //
 // P_BlockThingsIterator
 //
-boolean P_BlockThingsIterator(INT32 x, INT32 y, boolean (*func)(mobj_t *))
+boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t (*func)(mobj_t *))
 {
 	mobj_t *mobj, *bnext = NULL;
 
@@ -1156,19 +1227,25 @@ boolean P_BlockThingsIterator(INT32 x, INT32 y, boolean (*func)(mobj_t *))
 	// Check interaction with the objects in the blockmap.
 	for (mobj = blocklinks[y*bmapwidth + x]; mobj; mobj = bnext)
 	{
+		BlockItReturn_t ret = BMIT_CONTINUE;
+
 		P_SetTarget(&bnext, mobj->bnext); // We want to note our reference to bnext here incase it is MF_NOTHINK and gets removed!
-		if (!func(mobj))
+		ret = func(mobj);
+
+		if (ret == BMIT_ABORT)
 		{
 			P_SetTarget(&bnext, NULL);
-			return false;
+			return false; // failure
 		}
-		if (P_MobjWasRemoved(tmthing) // func just popped our tmthing, cannot continue.
-		|| (bnext && P_MobjWasRemoved(bnext))) // func just broke blockmap chain, cannot continue.
+
+		if ((ret == BMIT_STOP)
+			|| (bnext && P_MobjWasRemoved(bnext))) // func just broke blockmap chain, cannot continue.
 		{
 			P_SetTarget(&bnext, NULL);
-			return true;
+			return true; // success
 		}
 	}
+
 	return true;
 }
 
@@ -1212,7 +1289,7 @@ static void P_CheckIntercepts(void)
 // are on opposite sides of the trace.
 // Returns true if earlyout and a solid line hit.
 //
-static boolean PIT_AddLineIntercepts(line_t *ld)
+static BlockItReturn_t PIT_AddLineIntercepts(line_t *ld)
 {
 	INT32 s1, s2;
 	fixed_t frac;
@@ -1235,18 +1312,18 @@ static boolean PIT_AddLineIntercepts(line_t *ld)
 	}
 
 	if (s1 == s2)
-		return true; // Line isn't crossed.
+		return BMIT_CONTINUE; // Line isn't crossed.
 
 	// Hit the line.
 	P_MakeDivline(ld, &dl);
 	frac = P_InterceptVector(&trace, &dl);
 
 	if (frac < 0)
-		return true; // Behind source.
+		return BMIT_CONTINUE; // Behind source.
 
 	// Try to take an early out of the check.
 	if (earlyout && frac < FRACUNIT && !ld->backsector)
-		return false; // stop checking
+		return BMIT_ABORT; // stop checking
 
 	P_CheckIntercepts();
 
@@ -1255,13 +1332,13 @@ static boolean PIT_AddLineIntercepts(line_t *ld)
 	intercept_p->d.line = ld;
 	intercept_p++;
 
-	return true; // continue
+	return BMIT_CONTINUE; // continue
 }
 
 //
 // PIT_AddThingIntercepts
 //
-static boolean PIT_AddThingIntercepts(mobj_t *thing)
+static BlockItReturn_t PIT_AddThingIntercepts(mobj_t *thing)
 {
 	fixed_t px1, py1, px2, py2, frac;
 	INT32 s1, s2;
@@ -1292,7 +1369,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	s2 = P_PointOnDivlineSide(px2, py2, &trace);
 
 	if (s1 == s2)
-		return true; // Line isn't crossed.
+		return BMIT_CONTINUE; // Line isn't crossed.
 
 	dl.x = px1;
 	dl.y = py1;
@@ -1302,7 +1379,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	frac = P_InterceptVector(&trace, &dl);
 
 	if (frac < 0)
-		return true; // Behind source.
+		return BMIT_CONTINUE; // Behind source.
 
 	P_CheckIntercepts();
 
@@ -1311,7 +1388,7 @@ static boolean PIT_AddThingIntercepts(mobj_t *thing)
 	intercept_p->d.thing = thing;
 	intercept_p++;
 
-	return true; // Keep going.
+	return BMIT_CONTINUE; // Keep going.
 }
 
 //

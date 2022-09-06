@@ -18,6 +18,7 @@
 
 #include "doomdef.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -618,7 +619,10 @@ void Net_WaitAllAckReceived(UINT32 timeout)
 	while (timeout > I_GetTime() && !Net_AllAcksReceived())
 	{
 		while (tictac == I_GetTime())
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		tictac = I_GetTime();
 		HGetPacket();
 		Net_AckTicker();
@@ -913,11 +917,13 @@ static void DebugPrintpacket(const char *header)
 		case PT_SERVERREFUSE:
 			fprintf(debugfile, "    reason %s\n", netbuffer->u.serverrefuse.reason);
 			break;
-		case PT_FILEFRAGMENT:
+		case PT_FILEFRAGMENT: {
+			filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
 			fprintf(debugfile, "    fileid %d datasize %d position %u\n",
-				netbuffer->u.filetxpak.fileid, (UINT16)SHORT(netbuffer->u.filetxpak.size),
-				(UINT32)LONG(netbuffer->u.filetxpak.position));
+				pak->fileid, (UINT16)SHORT(pak->size),
+				(UINT32)LONG(pak->position));
 			break;
+		}
 		case PT_REQUESTFILE:
 		default: // write as a raw packet
 			fprintfstringnewline((char *)netbuffer->u.textcmd,
@@ -1165,8 +1171,9 @@ boolean HGetPacket(void)
 		if (netbuffer->checksum != NetbufferChecksum())
 		{
 			DEBFILE("Bad packet checksum\n");
-			//Net_CloseConnection(nodejustjoined ? (doomcom->remotenode | FORCECLOSE) : doomcom->remotenode);
-			Net_CloseConnection(doomcom->remotenode);
+			// Do not disconnect or anything, just ignore the packet.
+			// Bad checksums with UDP tend to happen very scarcely
+			// so they are not normally an issue.
 			continue;
 		}
 

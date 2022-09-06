@@ -30,13 +30,11 @@ typedef enum
 	BT_DRIFT		  = 1<<2,	// Drift (direction is cmd->turning)
 	BT_BRAKE		  = 1<<3,	// Brake
 	BT_ATTACK		  = 1<<4,	// Use Item
-	BT_FORWARD		  = 1<<5,	// Aim Item Forward
-	BT_BACKWARD		  = 1<<6,	// Aim Item Backward
-	BT_LOOKBACK		  = 1<<7,	// Look Backward
+	BT_LOOKBACK		  = 1<<5,	// Look Backward
 
 	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
 
-	// free: 1<<9 to 1<<12
+	// free: 1<<6 to 1<<12
 
 	// Lua garbage
 	BT_CUSTOM1		= 1<<13,
@@ -52,6 +50,9 @@ typedef enum
 // ticcmd turning bits
 #define TICCMD_REDUCE 16
 
+// ticcmd latency mask
+#define TICCMD_LATENCYMASK 0xFF
+
 // ticcmd flags
 #define TICCMD_RECEIVED 1
 #define TICCMD_TYPING 2/* chat window or console open */
@@ -65,6 +66,7 @@ typedef struct
 {
 	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
 	INT16 turning; // Turn speed
+	INT16 throwdir; // Aiming direction
 	INT16 aiming; // vertical aiming, see G_BuildTicCmd
 	UINT16 buttons;
 	UINT8 latency; // Netgames: how many tics ago was this ticcmd generated from this player's end?

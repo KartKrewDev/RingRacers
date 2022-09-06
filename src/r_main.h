@@ -36,7 +36,9 @@ extern size_t validcount, linecount, loopcount, framecount;
 // The fraction of a tic being drawn (for interpolation between two tics)
 extern fixed_t rendertimefrac;
 // Evaluated delta tics for this frame (how many tics since the last frame)
-extern fixed_t renderdeltatics;;
+extern fixed_t renderdeltatics;
+// The current render is a new logical tic
+extern boolean renderisnewtic;
 
 //
 // Lighting LUT.
@@ -116,10 +118,6 @@ extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup;
 
-// Frame interpolation (uncapped framerate)
-extern tic_t prev_tics;
-extern consvar_t cv_frameinterpolation;
-
 // Called by startup code.
 void R_Init(void);
 
@@ -134,8 +132,8 @@ void R_SetViewSize(void);
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
 
-void R_SetupFrame(player_t *player);
-void R_SkyboxFrame(player_t *player);
+void R_SetupFrame(int split);
+void R_SkyboxFrame(int split);
 
 boolean R_ViewpointHasChasecam(player_t *player);
 boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox);

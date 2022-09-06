@@ -1258,11 +1258,14 @@ void I_UpdateNoBlit(void)
 // from PrBoom's src/SDL/i_video.c
 static inline boolean I_SkipFrame(void)
 {
-#if 0
+#if 1
+	// While I fixed the FPS counter bugging out with this,
+	// I actually really like being able to pause and
+	// use perfstats to measure rendering performance
+	// without game logic changes.
+	return false;
+#else
 	static boolean skip = false;
-
-	if (rendermode != render_soft)
-		return false;
 
 	skip = !skip;
 
@@ -1278,12 +1281,13 @@ static inline boolean I_SkipFrame(void)
 			return false;
 	}
 #endif
-	return false;
 }
 
 //
 // I_FinishUpdate
 //
+static SDL_Rect src_rect = { 0, 0, 0, 0 };
+
 void I_FinishUpdate(void)
 {
 	int player;
@@ -1291,10 +1295,10 @@ void I_FinishUpdate(void)
 	if (rendermode == render_none)
 		return; //Alam: No software or OpenGl surface
 
+	SCR_CalculateFPS();
+
 	if (I_SkipFrame())
 		return;
-
-	SCR_CalcAproxFps();
 
 	if (st_overlay)
 	{
@@ -1340,27 +1344,22 @@ void I_FinishUpdate(void)
 
 	if (rendermode == render_soft && screens[0])
 	{
-		SDL_Rect rect;
-
-		rect.x = 0;
-		rect.y = 0;
-		rect.w = vid.width;
-		rect.h = vid.height;
-
 		if (!bufSurface) //Double-Check
 		{
 			Impl_VideoSetupSDLBuffer();
 		}
+
 		if (bufSurface)
 		{
-			SDL_BlitSurface(bufSurface, NULL, vidSurface, &rect);
+			SDL_BlitSurface(bufSurface, &src_rect, vidSurface, &src_rect);
 			// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
 			SDL_LockSurface(vidSurface);
-			SDL_UpdateTexture(texture, &rect, vidSurface->pixels, vidSurface->pitch);
+			SDL_UpdateTexture(texture, &src_rect, vidSurface->pixels, vidSurface->pitch);
 			SDL_UnlockSurface(vidSurface);
 		}
+
 		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
 	}
 #ifdef HWRENDER
@@ -1369,6 +1368,7 @@ void I_FinishUpdate(void)
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
+
 	exposevideo = SDL_FALSE;
 }
 
@@ -1588,6 +1588,13 @@ static SDL_bool Impl_CreateContext(void)
 		else if (cv_vidwait.value)
 			flags |= SDL_RENDERER_PRESENTVSYNC;
 
+		// 3 August 2022
+		// Possibly a Windows 11 issue; the default
+		// "direct3d" driver (D3D9) causes Drmingw exchndl
+		// to not write RPT files. Every other driver
+		// seems fine.
+		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
+
 		if (!renderer)
 			renderer = SDL_CreateRenderer(window, -1, flags);
 		if (renderer == NULL)
@@ -1705,6 +1712,27 @@ boolean VID_CheckRenderer(void)
 	return rendererchanged;
 }
 
+static UINT32 refresh_rate;
+static UINT32 VID_GetRefreshRate(void)
+{
+	int index = SDL_GetWindowDisplayIndex(window);
+	SDL_DisplayMode m;
+
+	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
+	{
+		// Video not init yet.
+		return 0;
+	}
+
+	if (SDL_GetCurrentDisplayMode(index, &m) != 0)
+	{
+		// Error has occurred.
+		return 0;
+	}
+
+	return m.refresh_rate;
+}
+
 INT32 VID_SetMode(INT32 modeNum)
 {
 	SDLdoUngrabMouse();
@@ -1721,7 +1749,12 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.height = windowedModes[modeNum][1];
 	vid.modenum = modeNum;
 
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	src_rect.w = vid.width;
+	src_rect.h = vid.height;
+
+	refresh_rate = VID_GetRefreshRate();
+
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_CheckRenderer();
 	return SDL_TRUE;
 }
@@ -1748,7 +1781,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	window = SDL_CreateWindow("SRB2Kart "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	window = SDL_CreateWindow("Dr. Robotnik's Ring Racers "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 
 
@@ -1924,7 +1957,7 @@ void I_StartupGraphics(void)
 
 	// Create window
 	//Impl_CreateWindow(USE_FULLSCREEN);
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
 
 	vid.width = BASEVIDWIDTH; // Default size for startup
@@ -1973,43 +2006,43 @@ void VID_StartupOpenGL(void)
 	if (!glstartup)
 	{
 		CONS_Printf("VID_StartupOpenGL()...\n");
-		HWD.pfnInit             = hwSym("Init",NULL);
-		HWD.pfnFinishUpdate     = NULL;
-		HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
-		HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
-		HWD.pfnDrawIndexedTriangles = hwSym("DrawIndexedTriangles",NULL);
-		HWD.pfnRenderSkyDome    = hwSym("RenderSkyDome",NULL);
-		HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
-		HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
-		HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
-		HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
-		HWD.pfnDeleteTexture    = hwSym("DeleteTexture",NULL);
-		HWD.pfnReadRect         = hwSym("ReadRect",NULL);
-		HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
-		HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
-		HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
-		HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
-		HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
-		HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
-		HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
-		HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
-		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
-		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
-		HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
-		HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
-		HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
-		HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
-		HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
-		HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
-		HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
+		*(void**)&HWD.pfnInit             = hwSym("Init",NULL);
+		*(void**)&HWD.pfnFinishUpdate     = NULL;
+		*(void**)&HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
+		*(void**)&HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
+		*(void**)&HWD.pfnDrawIndexedTriangles = hwSym("DrawIndexedTriangles",NULL);
+		*(void**)&HWD.pfnRenderSkyDome    = hwSym("RenderSkyDome",NULL);
+		*(void**)&HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
+		*(void**)&HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
+		*(void**)&HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
+		*(void**)&HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
+		*(void**)&HWD.pfnDeleteTexture    = hwSym("DeleteTexture",NULL);
+		*(void**)&HWD.pfnReadRect         = hwSym("ReadRect",NULL);
+		*(void**)&HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
+		*(void**)&HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
+		*(void**)&HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
+		*(void**)&HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
+		*(void**)&HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
+		*(void**)&HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
+		*(void**)&HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
+		*(void**)&HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
+		*(void**)&HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
+		*(void**)&HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
+		*(void**)&HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
+		*(void**)&HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
+		*(void**)&HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
+		*(void**)&HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
+		*(void**)&HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
+		*(void**)&HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
+		*(void**)&HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
 
-		HWD.pfnCompileShaders   = hwSym("CompileShaders",NULL);
-		HWD.pfnCleanShaders     = hwSym("CleanShaders",NULL);
-		HWD.pfnSetShader        = hwSym("SetShader",NULL);
-		HWD.pfnUnSetShader      = hwSym("UnSetShader",NULL);
+		*(void**)&HWD.pfnCompileShaders   = hwSym("CompileShaders",NULL);
+		*(void**)&HWD.pfnCleanShaders     = hwSym("CleanShaders",NULL);
+		*(void**)&HWD.pfnSetShader        = hwSym("SetShader",NULL);
+		*(void**)&HWD.pfnUnSetShader      = hwSym("UnSetShader",NULL);
 
-		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
-		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
+		*(void**)&HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
+		*(void**)&HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
 
 		vid.glstate = HWD.pfnInit() ? VID_GL_LIBRARY_LOADED : VID_GL_LIBRARY_ERROR; // let load the OpenGL library
 
@@ -2063,6 +2096,16 @@ void I_ShutdownGraphics(void)
 	framebuffer = SDL_FALSE;
 }
 #endif
+
+UINT32 I_GetRefreshRate(void)
+{
+	// Moved to VID_GetRefreshRate.
+	// Precalculating it like that won't work as
+	// well for windowed mode since you can drag
+	// the window around, but very slow PCs might have
+	// trouble querying mode over and over again.
+	return refresh_rate;
+}
 
 static void Impl_SetVsync(void)
 {

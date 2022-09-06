@@ -30,6 +30,9 @@
 #include "byteptr.h"
 #include "dehacked.h"
 
+// DRRR
+#include "k_brightmap.h"
+
 //
 // Graphics.
 // SRB2 graphics for walls and sprites
@@ -1175,6 +1178,9 @@ void R_InitTextureData(void)
 
 	CONS_Printf("P_InitPicAnims()...\n");
 	P_InitPicAnims();
+
+	CONS_Printf("K_InitBrightmaps()...\n");
+	K_InitBrightmaps();
 }
 
 //

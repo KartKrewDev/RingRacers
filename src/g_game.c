@@ -21,6 +21,7 @@
 #include "filesrch.h" // for refreshdirmenu
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -56,6 +57,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_bot.h"
 #include "doomstat.h"
 
@@ -91,19 +93,21 @@ UINT32 mapmusresume;
 INT16 gamemap = 1;
 UINT32 maptol;
 
-UINT8 globalweather = PRECIP_NONE;
-UINT8 curWeather = PRECIP_NONE;
+preciptype_t globalweather = PRECIP_NONE;
+preciptype_t curWeather = PRECIP_NONE;
 
 precipprops_t precipprops[MAXPRECIP] =
 {
-	{MT_NULL, 0}, // PRECIP_NONE
-	{MT_RAIN, 0}, // PRECIP_RAIN
-	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
-	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
-	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
-	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
-	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+	{"NONE",				MT_NULL, 			0}, // PRECIP_NONE
+	{"RAIN",				MT_RAIN, 			0}, // PRECIP_RAIN
+	{"SNOW",				MT_SNOWFLAKE,		0}, // PRECIP_SNOW
+	{"BLIZZARD",			MT_BLIZZARDSNOW,	0}, // PRECIP_BLIZZARD
+	{"STORM",				MT_RAIN,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{"STORM_NORAIN",		MT_NULL,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{"STORM_NOSTRIKES",		MT_RAIN,			PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
 };
+
+preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
 //INT16 lastmapsaved = 0; // Last map we auto-saved at
@@ -261,7 +265,7 @@ INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
 INT32 bubbletime = TICRATE/2;
-INT32 comebacktime = 10*TICRATE;
+INT32 comebacktime = 3*TICRATE;
 INT32 bumptime = 6;
 INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
@@ -286,6 +290,8 @@ tic_t racecountdown, exitcountdown; // for racing
 fixed_t gravity;
 fixed_t mapobjectscale;
 
+struct maplighting maplighting;
+
 INT16 autobalance; //for CTF team balance
 INT16 teamscramble; //for CTF team scramble
 INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
@@ -297,6 +303,7 @@ INT32 cheats; //for multiplayer cheat commands
 
 // SRB2Kart
 // Cvars that we don't want changed mid-game
+UINT8 numlaps; // Removed from Cvar hell
 UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for easy, 1 for normal, 2 for hard
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
@@ -304,7 +311,7 @@ boolean franticitems; // Frantic items currently enabled?
 boolean comeback; // Battle Mode's karma comeback is on/off
 
 // Voting system
-INT16 votelevels[5][2]; // Levels that were rolled by the host
+INT16 votelevels[4][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
@@ -312,7 +319,6 @@ SINT8 pickedvote; // What vote the host rolls
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
-tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
@@ -342,11 +348,10 @@ INT16 prevmap, nextmap;
 
 static UINT8 *savebuffer;
 
-static void kickstartaccel_OnChange(void);
-static void kickstartaccel2_OnChange(void);
-static void kickstartaccel3_OnChange(void);
-static void kickstartaccel4_OnChange(void);
-void SendWeaponPref(UINT8 n);
+static void weaponPrefChange(void);
+static void weaponPrefChange2(void);
+static void weaponPrefChange3(void);
+static void weaponPrefChange4(void);
 
 static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
 {1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
@@ -407,10 +412,17 @@ consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE,
 consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel_OnChange),
-	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel2_OnChange),
-	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel3_OnChange),
-	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
+	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
+};
+
+consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("shrinkme", "Off", CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("shrinkme2", "Off", CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("shrinkme3", "Off", CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("shrinkme4", "Off", CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
 consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
@@ -671,7 +683,7 @@ const char *G_BuildMapName(INT32 map)
 			map = gamemap-1;
 		else
 			map = prevmap;
-		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, false, 0, false, NULL)+1;
+		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, 0, 0, false, NULL)+1;
 	}
 
 	if (map < 100)
@@ -863,6 +875,78 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
+INT32 localsteering[MAXSPLITSCREENPLAYERS];
+INT32 localdelta[MAXSPLITSCREENPLAYERS];
+INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+UINT8 localtic;
+
+void G_ResetAnglePrediction(player_t *player)
+{
+	UINT16 i, j;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (&players[displayplayers[i]] == player)
+		{
+			localdelta[i] = 0;
+			for (j = 0; j < TICCMD_LATENCYMASK; j++)
+			{
+				localstoredeltas[i][j] = 0;
+			}
+			break;
+		}
+	}
+}
+
+// Turning was removed from G_BuildTiccmd to prevent easy client hacking.
+// This brings back the camera prediction that was lost.
+static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
+{
+	angle_t angleChange = 0;
+	angle_t destAngle = player->angleturn;
+	angle_t diff = 0;
+
+	localtic = cmd->latency;
+
+	if (player->pflags & PF_DRIFTEND)
+	{
+		// Otherwise, your angle slingshots off to the side violently...
+		G_ResetAnglePrediction(player);
+	}
+	else
+	{
+		while (realtics > 0)
+		{
+			localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+			angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+
+			// Store the angle we applied to this tic, so we can revert it later.
+			// If we trust the camera to do all of the work, then it can get out of sync fast.
+			localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
+			localdelta[ssplayer - 1] += angleChange;
+
+			realtics--;
+		}
+	}
+
+	// We COULD set it to destAngle directly...
+	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
+	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
+	destAngle = player->angleturn + localdelta[ssplayer - 1];
+	diff = destAngle - localangle[ssplayer - 1];
+
+	if (diff > ANGLE_180)
+	{
+		diff = InvAngle(InvAngle(diff) / 2);
+	}
+	else
+	{
+		diff /= 2;
+	}
+
+	localangle[ssplayer - 1] += diff;
+}
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
@@ -887,8 +971,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	boolean *kbl = &keyboard_look[forplayer];
 	boolean *rd = &resetdown[forplayer];
 	const boolean mouseaiming = player->spectator;
-
-	(void)realtics;
 
 	if (demo.playback) return;
 
@@ -1020,10 +1102,15 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 
 		// But forward/backward IS used for aiming.
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (joystickvector.yaxis < 0))
-			cmd->buttons |= BT_FORWARD;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (joystickvector.yaxis > 0))
-			cmd->buttons |= BT_BACKWARD;
+		if (PlayerInputDown(ssplayer, gc_aimforward))
+			cmd->throwdir += KART_FULLTURN;
+		if (PlayerInputDown(ssplayer, gc_aimbackward))
+			cmd->throwdir -= KART_FULLTURN;
+
+		if (analogjoystickmove && joystickvector.yaxis != 0)
+		{
+			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) >> 10;
+		}
 	}
 
 	// fire with any button/key
@@ -1140,7 +1227,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
-		cmd->latency = (leveltime & 0xFF);
+		cmd->latency = (leveltime & TICCMD_LATENCYMASK);
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1152,6 +1239,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		cmd->turning = KART_FULLTURN;
 	else if (cmd->turning < -KART_FULLTURN)
 		cmd->turning = -KART_FULLTURN;
+
+	if (cmd->throwdir > KART_FULLTURN)
+		cmd->throwdir = KART_FULLTURN;
+	else if (cmd->throwdir < -KART_FULLTURN)
+		cmd->throwdir = -KART_FULLTURN;
+
+	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
 
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
@@ -1176,6 +1270,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
 		dest[i].turning = (INT16)SHORT(src[i].turning);
+		dest[i].throwdir = (INT16)SHORT(src[i].throwdir);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
 		dest[i].latency = src[i].latency;
@@ -1184,22 +1279,22 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	return dest;
 }
 
-static void kickstartaccel_OnChange(void)
+static void weaponPrefChange(void)
 {
 	SendWeaponPref(0);
 }
 
-static void kickstartaccel2_OnChange(void)
+static void weaponPrefChange2(void)
 {
 	SendWeaponPref(1);
 }
 
-static void kickstartaccel3_OnChange(void)
+static void weaponPrefChange3(void)
 {
 	SendWeaponPref(2);
 }
 
-static void kickstartaccel4_OnChange(void)
+static void weaponPrefChange4(void)
 {
 	SendWeaponPref(3);
 }
@@ -1301,6 +1396,16 @@ void G_StartTitleCard(void)
 	// prepare status bar
 	ST_startTitleCard();
 
+	// play the sound
+	{
+		sfxenum_t kstart = sfx_kstart;
+		if (bossinfo.boss)
+			kstart = sfx_ssa021;
+		else if (encoremode)
+			kstart = sfx_ruby2;
+		S_StartSound(NULL, kstart);
+	}
+
 	// start the title card
 	WipeStageTitle = (!titlemapinaction);
 }
@@ -1329,7 +1434,10 @@ void G_PreLevelTitleCard(void)
             M_DoScreenShot();
 
         while (!((nowtime = I_GetTime()) - lasttime))
-            I_Sleep();
+        {
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
         lasttime = nowtime;
     }
 #endif
@@ -1883,7 +1991,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % TICQUEUE;
+	buf = gametic % BACKUPTICS;
 
 	if (!demo.playback)
 	{
@@ -1904,7 +2012,7 @@ void G_Ticker(boolean run)
 				else
 				{
 					//@TODO add a cvar to allow setting this max
-					cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
+					cmd->latency = min(((leveltime & TICCMD_LATENCYMASK) - cmd->latency) & TICCMD_LATENCYMASK, MAXPREDICTTICS-1);
 				}
 			}
 		}
@@ -1921,7 +2029,6 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
-			R_UpdateViewInterpolation();
 
 			break;
 
@@ -1980,10 +2087,7 @@ void G_Ticker(boolean run)
 
 		case GS_TITLESCREEN:
 			if (titlemapinaction)
-			{
 				P_Ticker(run);
-				R_UpdateViewInterpolation();
-			}
 
 			F_TitleScreenTicker(run);
 			break;
@@ -2092,14 +2196,15 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
+	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
 
 	tic_t jointime;
-	tic_t quittime;
 
 	UINT8 splitscreenindex;
 	boolean spectator;
@@ -2134,7 +2239,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	ctfteam = players[player].ctfteam;
 
 	jointime = players[player].jointime;
-	quittime = players[player].quittime;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2165,7 +2269,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
 	if (betweenmaps || leveltime < introtime)
@@ -2179,11 +2283,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
 		spheres = 0;
 		kickstartaccel = 0;
-		khudfault = nocontrol = 0;
+		khudfault = 0;
+		nocontrol = 0;
 		laps = 0;
+		latestlap = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudcardanimation = 0;
 		starpostnum = 0;
 		xtralife = 0;
 
@@ -2220,9 +2327,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
+		latestlap = players[player].latestlap;
+
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
+
 		exiting = players[player].exiting;
+		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+
 		starpostnum = players[player].starpostnum;
 
 		xtralife = players[player].xtralife;
@@ -2236,9 +2348,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (!(netgame || multiplayer))
 		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
 
-
-	// Obliterate follower from existence
-	P_SetTarget(&players[player].follower, NULL);
+	if (!betweenmaps)
+	{
+		// Obliterate follower from existence (if valid memory)
+		P_SetTarget(&players[player].follower, NULL);
+	}
 
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
@@ -2251,7 +2365,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->pflags = pflags;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
-	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
 	p->steering = steering;
@@ -2269,8 +2382,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
+	p->latestlap = latestlap;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -2295,7 +2410,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
-	p->tripWireState = TRIP_NONE;
+
+	p->botvars.rubberband = FRACUNIT;
+	p->botvars.controller = UINT16_MAX;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
@@ -2352,23 +2469,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (leveltime < starttime)
 		return;
 
-	if (p-players == consoleplayer)
-	{
-		if (mapmusflags & MUSIC_RELOADRESET)
-		{
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-			mapmusresume = 0;
-			songcredit = true;
-		}
-
-		// This is in S_Start, but this was not here previously.
-		// if (RESETMUSIC)
-		// 	S_StopMusic();
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-	}
+	if (exiting)
+		return;
 
 	P_RestoreMusic(p);
 
@@ -2663,7 +2765,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		// In platform gametypes, spawn in Co-op starts first
 		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS)
+		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
 			spawnpoint = G_FindBattleStartOrFallback(playernum);
 		else
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
@@ -2770,10 +2872,30 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
+		UINT8 i;
+		boolean youlost = false;
+		if (bossinfo.boss == true)
 		{
-			UINT8 i;
+			youlost = true;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].bumpers > 0)
+					{
+						youlost = false;
+						break;
+					}
+				}
+			}
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			youlost = (grandprixinfo.wonround != true);
+		}
 
+		if (youlost)
+		{
 			// You didn't win...
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3002,6 +3124,7 @@ UINT32 gametypetol[NUMGAMETYPES] =
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
+	{"BOSS",TOL_BOSS},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -3079,10 +3202,17 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
+	if (modeattacking || metalrecording) // NOT in Record Attack
+		return false;
+
+	if (bossinfo.boss == true) // Fighting a boss?
+	{
+		return true;
+	}
+
 	if ((grandprixinfo.gp == true) // In Grand Prix
 		&& (gametype == GT_RACE) // NOT in bonus round
-		&& !G_IsSpecialStage(gamemap) // NOT in special stage
-		&& !(modeattacking || metalrecording)) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
 	{
 		return true;
 	}
@@ -3248,20 +3378,24 @@ static UINT32 TOLMaps(UINT32 tolflags)
   * \author Graue <graue@oceanbase.org>
   */
 static INT16 *okmaps = NULL;
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
 {
-	INT32 numokmaps = 0;
+	UINT32 numokmaps = 0;
 	INT16 ix, bufx;
 	UINT16 extbufsize = 0;
 	boolean usehellmaps; // Only consider Hell maps in this pick
 
 	if (!okmaps)
+	{
+		//CONS_Printf("(making okmaps)\n");
 		okmaps = Z_Malloc(NUMMAPS * sizeof(INT16), PU_STATIC, NULL);
+	}
 
 	if (extbuffer != NULL)
 	{
 		bufx = 0;
-		while (extbuffer[bufx]) {
+		while (extbuffer[bufx])
+		{
 			extbufsize++; bufx++;
 		}
 	}
@@ -3334,30 +3468,42 @@ tryagain:
 		{
 			if (randmapbuffer[3] == -1) // Is the buffer basically empty?
 			{
-				ignorebuffer = true; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
 			for (bufx = 3; bufx < NUMMAPS; bufx++) // Let's clear all but the three most recent maps...
 				randmapbuffer[bufx] = -1;
+			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
 
 		if (maphell) // Any wiggle room to loosen our restrictions here?
 		{
+			//CONS_Printf("RANDMAP -maphell decrement\n");
 			maphell--;
 			goto tryagain;
 		}
 
+		//CONS_Printf("RANDMAP - defaulting to map01\n");
 		ix = 0; // Sorry, none match. You get MAP01.
-		for (bufx = 0; bufx < NUMMAPS+1; bufx++)
-			randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		if (ignorebuffer == 1)
+		{
+			//CONS_Printf("(emptying randmapbuffer entirely)\n");
+			for (bufx = 0; bufx < NUMMAPS; bufx++)
+				randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		}
 	}
 	else
+	{
+		//CONS_Printf("RANDMAP - %d maps available to grab\n", numokmaps);
 		ix = okmaps[M_RandomKey(numokmaps)];
+	}
 
 	if (!callagainsoon)
 	{
+		//CONS_Printf("(freeing okmaps)\n");
 		Z_Free(okmaps);
 		okmaps = NULL;
 	}
@@ -3367,7 +3513,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, (INT32)TOLMaps(G_TOLFlag(gametype))-3);
+	INT16 bufx, refreshnum = max(0, ((INT32)TOLMaps(G_TOLFlag(gametype)))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3465,12 +3611,18 @@ static void G_DoCompleted(void)
 	if (metalrecording)
 		G_StopMetalRecording(false);
 
+	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
+
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
+				clientPowerAdd[i] = 0;
+
 				if (players[i].bot)
 				{
 					K_FakeBotResults(&players[i]);
@@ -3488,6 +3640,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
+	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
@@ -3547,7 +3700,7 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!modeattacking && grandprixinfo.gp == false)
+	if (!modeattacking && grandprixinfo.gp == false && bossinfo.boss == false)
 	{
 		if (nextmap >= 0 && nextmap < NUMMAPS)
 		{
@@ -3613,7 +3766,7 @@ static void G_DoCompleted(void)
 		}
 		else if (cv_advancemap.value == 2) // Go to random map.
 		{
-			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
+			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
 		}
 	}
 
@@ -3704,7 +3857,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3917,7 +4070,7 @@ void G_LoadGameData(void)
 	// Version check
 	if (READUINT32(save_p) != 0xFCAFE211)
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
@@ -4007,7 +4160,7 @@ void G_LoadGameData(void)
 	// Landing point for corrupt gamedata
 	datacorrupt:
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 

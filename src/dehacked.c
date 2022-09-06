@@ -51,7 +51,14 @@ void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext)
 	strlcpy(dst, src, size);
 }
 
-ATTRINLINE static FUNCINLINE char myfget_color(MYFILE *f)
+int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
+void DEH_UpdateMaxFreeslots(void)
+{
+	freeslotusage[0][1] = freeslotusage[0][0];
+	freeslotusage[1][1] = freeslotusage[1][0];
+}
+
+ATTRINLINE static FUNCINLINE unsigned char myfget_color(MYFILE *f)
 {
 	char c = *f->curpos++;
 	if (c == '^') // oh, nevermind then.
@@ -188,25 +195,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	dbg_line = -1; // start at -1 so the first line is 0.
 	while (!myfeof(f))
 	{
-		char origpos[128];
-		INT32 size = 0;
-		char *traverse;
-
 		myfgets(s, MAXLINELEN, f);
 		memcpy(textline, s, MAXLINELEN);
 		if (s[0] == '\n' || s[0] == '#')
 			continue;
-
-		traverse = s;
-
-		while (traverse[0] != '\n')
-		{
-			traverse++;
-			size++;
-		}
-
-		strncpy(origpos, s, size);
-		origpos[size] = '\0';
 
 		if (NULL != (word = strtok(s, " "))) {
 			strupr(word);
@@ -503,18 +495,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "HUDITEM"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_huditem(word2); // find a huditem by name
-					if (i >= 0 && i < NUMHUDITEMS)
-						readhuditem(f, i);
-					else
-					{
-						deh_warning("HUD item number %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "MENU"))
 				{
 					if (i == 0 && word2[0] != '0') // If word2 isn't a number
@@ -596,7 +576,19 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 					readcupheader(f, cup);
 				}
-				else if (fastcmp(word, "SRB2KART"))
+				else if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
+				{
+					if (i == 0 && word2[0] != '0') // If word2 isn't a number
+						i = get_precip(word2); // find a weather type by name
+					if (i < MAXPRECIP && i > 0)
+						readweather(f, i);
+					else
+					{
+						deh_warning("Weather number %d out of range (1 - %d)", i, MAXPRECIP-1);
+						ignorelines(f);
+					}
+				}
+				else if (fastcmp(word, "RINGRACERS"))
 				{
 					if (isdigit(word2[0]))
 					{
@@ -604,7 +596,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						if (i != PATCHVERSION)
 						{
 							deh_warning(
-									"Patch is for SRB2Kart version %d, "
+									"Patch is for Ring Racers version %d, "
 									"only version %d is supported",
 									i,
 									PATCHVERSION
@@ -614,11 +606,15 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning(
-								"SRB2Kart version definition has incorrect format, "
-								"use \"SRB2KART %d\"",
+								"Ring Racers version definition has incorrect format, "
+								"use \"RINGRACERS %d\"",
 								PATCHVERSION
 						);
 					}
+				}
+				else if (fastcmp(word, "SRB2KART"))
+				{
+					deh_warning("Patch is only compatible with SRB2Kart.");
 				}
 				else if (fastcmp(word, "SRB2"))
 				{

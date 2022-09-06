@@ -40,6 +40,7 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
@@ -71,6 +72,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 
 #ifdef CMAKECONFIG
@@ -293,6 +295,8 @@ static void D_Display(void)
 		{
 			for (i = 0; i <= r_splitscreen; ++i)
 			{
+				R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
+				R_InterpolateViewRollAngle(rendertimefrac);
 				R_CheckViewMorph(i);
 			}
 		}
@@ -452,6 +456,8 @@ static void D_Display(void)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
+				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+
 				viewwindowy = 0;
 				viewwindowx = 0;
 
@@ -527,6 +533,7 @@ static void D_Display(void)
 				}
 
 				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
+				R_RestoreLevelInterpolators();
 			}
 
 			if (lastdraw)
@@ -684,7 +691,12 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
+
+	boolean interp = false;
+	boolean doDisplay = false;
 
 	if (dedicated)
 		server = true;
@@ -696,6 +708,7 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -737,6 +750,19 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
+		I_UpdateTime(cv_timescale.value);
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -750,77 +776,95 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+		if (demo.playback && gamestate == GS_LEVEL)
+		{
+			// Nicer place to put this.
+			realtics = realtics * cv_playbackspeed.value;
+		}
+
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics && cv_frameinterpolation.value != 1)
-		{
-			I_Sleep();
-			continue;
-		}
+		interp = R_UsingFrameInterpolation() && !dedicated;
+		doDisplay = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
 #endif
 
-		// don't skip more than 10 frames at a time
-		// (fadein / fadeout cause massive frame skip!)
-		if (realtics > 8)
-			realtics = 1;
-
-		// process tics (but maybe not if realtic == 0)
-		TryRunTics(realtics);
-
-		if (cv_frameinterpolation.value == 1 && !(paused || P_AutoPause() || hu_stopped))
+		if (realtics > 0 || singletics)
 		{
-			fixed_t entertimefrac = I_GetTimeFrac();
-			// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-			renderdeltatics = realtics * FRACUNIT;
-			if (entertimefrac > rendertimefrac)
-				renderdeltatics += entertimefrac - rendertimefrac;
-			else
-				renderdeltatics -= rendertimefrac - entertimefrac;
+			// don't skip more than 10 frames at a time
+			// (fadein / fadeout cause massive frame skip!)
+			if (realtics > 8)
+				realtics = 1;
 
-			rendertimefrac = entertimefrac;
+			// process tics (but maybe not if realtic == 0)
+			TryRunTics(realtics);
+
+			if (lastdraw || singletics || gametic > rendergametic)
+			{
+				rendergametic = gametic;
+				rendertimeout = entertic + TICRATE/17;
+
+				doDisplay = true;
+			}
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						P_RunChaseCameras();
+					}
+					R_UpdateViewInterpolation();
+				}
+
+				doDisplay = true;
+			}
+
+			renderisnewtic = true;
 		}
 		else
 		{
-			rendertimefrac = FRACUNIT;
-			renderdeltatics = realtics * FRACUNIT;
+			renderisnewtic = false;
 		}
 
-		if (cv_frameinterpolation.value == 1)
+		if (interp)
+		{
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
+
+			if (!(paused || P_AutoPause()) && !hu_stopped)
+			{
+				rendertimefrac = g_time.timefrac;
+			}
+			else
+			{
+				rendertimefrac = FRACUNIT;
+			}
+		}
+		else
+		{
+			renderdeltatics = realtics * FRACUNIT;
+			rendertimefrac = FRACUNIT;
+		}
+
+		if (interp || doDisplay)
 		{
 			D_Display();
 		}
 
-		if (lastdraw || singletics || gametic > rendergametic)
-		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
-
-			// Update display, next frame, with current state.
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
-		{
-			// (Only display if not already done for frame interp)
-			cv_frameinterpolation.value == 0 ? D_Display() : 0;
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
-		}
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -838,6 +882,25 @@ void D_SRB2Loop(void)
 			Discord_RunCallbacks();
 		}
 #endif
+
+		// Fully completed frame made.
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+
+			// in the case of "match refresh rate" + vsync, don't sleep at all
+			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
+
+			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
 }
 
@@ -912,6 +975,9 @@ void D_StartTitle(void)
 
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+	// Reset boss info
+	K_ResetBossInfo();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
@@ -1065,13 +1131,36 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
-#ifdef USE_PATCH_FILE
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
+#if defined (TESTERS) || defined (HOSTTESTERS)
+////
+#define TEXTURESNAME "MISC_TEXTURES.pk3"
+#define MAPSNAME "MISC_MAPS.pk3"
+#define PATCHNAME "MISC_PATCH.pk3"
+#define MUSICNAME "MISC_MUSIC.PK3"
+////
+#else
+////
+#define TEXTURESNAME "textures.pk3"
+#define MAPSNAME "maps.pk3"
+#define PATCHNAME "patch.pk3"
+#define MUSICNAME "music.pk3"
+////
 #endif
+////
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
+#endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,TEXTURESNAME));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
+#ifdef USE_PATCH_FILE
+	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+#endif
+////
+#undef TEXTURESNAME
+#undef MAPSNAME
+#undef PATCHNAME
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1086,8 +1175,9 @@ static void IdentifyVersion(void)
 	}
 
 	MUSICTEST("sounds.pk3")
-	MUSICTEST("music.pk3")
+	MUSICTEST(MUSICNAME)
 
+#undef MUSICNAME
 #undef MUSICTEST
 
 #endif
@@ -1122,8 +1212,8 @@ void D_SRB2Main(void)
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
-	"\n\nSonic Robo Blast 2 Kart\n"
-	"Copyright (C) 1998-2020 by Kart Krew & STJr\n\n"
+	"\n\nDr. Robotnik's Ring Racers\n"
+	"Copyright (C) 1998-2022 by Kart Krew & STJr\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1227,6 +1317,31 @@ void D_SRB2Main(void)
 		configfile[sizeof configfile - 1] = '\0';
 	}
 
+	// If config isn't writable, tons of behavior will be broken.
+	// Fail loudly before things get confusing!
+	{
+		FILE *tmpfile;
+		char testfile[MAX_WADPATH];
+
+		snprintf(testfile, sizeof testfile, "%s" PATHSEP "file.tmp", srb2home);
+		testfile[sizeof testfile - 1] = '\0';
+
+		tmpfile = fopen(testfile, "w");
+		if (tmpfile == NULL)
+		{
+#if defined (_WIN32)
+			I_Error("Couldn't write game config.\nMake sure the game is installed somewhere it has write permissions.\n\n(Don't use the Downloads folder, Program Files, or your desktop!\nIf unsure, we recommend making a subfolder in your Documents folder.)");
+#else
+			I_Error("Couldn't write game config.\nMake sure you've installed the game somewhere it has write permissions.");
+#endif
+		}
+		else
+		{
+			fclose(tmpfile);
+			remove(testfile);
+		}
+	}
+
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
@@ -1255,6 +1370,7 @@ void D_SRB2Main(void)
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 
+#ifndef TESTERS
 	// add any files specified on the command line with -file wadfile
 	// to the wad list
 	if (!((M_GetUrlProtocolArg() || M_CheckParm("-connect")) && !M_CheckParm("-server")))
@@ -1272,6 +1388,7 @@ void D_SRB2Main(void)
 			}
 		}
 	}
+#endif
 
 	// get map from parms
 
@@ -1291,8 +1408,8 @@ void D_SRB2Main(void)
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
@@ -1317,14 +1434,18 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
 	mainwads++;	// gfx.pk3
+#endif
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
+	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
@@ -1334,7 +1455,7 @@ void D_SRB2Main(void)
 	//
 	// search for maps
 	//
-	for (wadnum = 4; wadnum < 6; wadnum++) // fucking arbitrary numbers
+	for (wadnum = 0; wadnum <= mainwads; wadnum++)
 	{
 		lumpinfo = wadfiles[wadnum]->lumpinfo;
 		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
@@ -1416,6 +1537,9 @@ void D_SRB2Main(void)
 	//--------------------------------------------------------- CONSOLE
 	// setup loading screen
 	SCR_Startup();
+
+	// Do this in background; lots of number crunching
+	R_InitTranslucencyTables();
 
 	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 

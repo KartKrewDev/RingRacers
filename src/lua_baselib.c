@@ -28,13 +28,15 @@
 #include "console.h"
 #include "k_kart.h" // SRB2Kart
 #include "k_battle.h"
+#include "k_boss.h"
+#include "k_collide.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "m_menu.h" // Player Setup menu color stuff
-
-// SRB2Kart
+#include "m_misc.h" // M_MapNumber
 #include "p_spec.h" // P_StartQuake
+#include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -161,6 +163,7 @@ static const struct {
 	{META_SPRITEINFO,   "spriteinfo_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
+	{META_PRECIPPROPS,  "precipprops_t"},
 
 	{META_TAGLIST,      "taglist"},
 
@@ -190,6 +193,8 @@ static const struct {
 	{META_MAPHEADER,    "mapheader_t"},
 
 	{META_POLYOBJ,      "polyobj_t"},
+	{META_POLYOBJVERTICES, "polyobj_t.vertices"},
+	{META_POLYOBJLINES, "polyobj_t.lines"},
 
 	{META_CVAR,         "consvar_t"},
 
@@ -210,7 +215,6 @@ static const struct {
 
 	{META_BBOX,         "bbox"},
 
-	{META_HUDINFO,      "hudinfo_t"},
 	{META_PATCH,        "patch_t"},
 	{META_COLORMAP,     "colormap"},
 	{META_CAMERA,       "camera_t"},
@@ -248,16 +252,10 @@ static const char *GetUserdataUType(lua_State *L)
 //   or players[0].powers -> "player_t.powers"
 static int lib_userdataType(lua_State *L)
 {
-	int type;
 	lua_settop(L, 1); // pop everything except arg 1 (in case somebody decided to add more)
-	type = lua_type(L, 1);
-	if (type == LUA_TLIGHTUSERDATA || type == LUA_TUSERDATA)
-	{
-		lua_pushstring(L, GetUserdataUType(L));
-		return 1;
-	}
-	else
-		return luaL_typerror(L, 1, "userdata");
+	luaL_checktype(L, 1, LUA_TUSERDATA);
+	lua_pushstring(L, GetUserdataUType(L));
+	return 1;
 }
 
 // Takes a metatable as first and only argument
@@ -369,6 +367,23 @@ static int lib_pGetColorAfter(lua_State *L)
 	return 1;
 }
 
+// M_MISC
+//////////////
+
+static int lib_mMapNumber(lua_State *L)
+{
+	const char *arg = luaL_checkstring(L, 1);
+	size_t len = strlen(arg);
+	if (len == 2 || len == 5) {
+		char first = arg[len-2];
+		char second = arg[len-1];
+		lua_pushinteger(L, M_MapNumber(first, second));
+	} else {
+		lua_pushinteger(L, 0);
+	}
+	return 1;
+}
+
 // M_RANDOM
 //////////////
 
@@ -444,8 +459,7 @@ static int lib_pAproxDistance(lua_State *L)
 	fixed_t dx = luaL_checkfixed(L, 1);
 	fixed_t dy = luaL_checkfixed(L, 2);
 	//HUDSAFE
-	LUA_Deprecated(L, "P_AproxDistance", "FixedHypot");
-	lua_pushfixed(L, FixedHypot(dx, dy));
+	lua_pushfixed(L, P_AproxDistance(dx, dy));
 	return 1;
 }
 
@@ -682,6 +696,7 @@ static int lib_pSpawnLockOn(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	if (state >= NUMSTATES)
 		return luaL_error(L, "state %d out of range (0 - %d)", state, NUMSTATES-1);
+#if 0
 	if (P_IsLocalPlayer(player)) // Only display it on your own view.
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
@@ -689,6 +704,9 @@ static int lib_pSpawnLockOn(lua_State *L)
 		visual->renderflags |= RF_DONTDRAW;
 		P_SetMobjStateNF(visual, state);
 	}
+#else
+	CONS_Alert(CONS_WARNING, "TODO: P_SpawnLockOn is deprecated\n");
+#endif
 	return 0;
 }
 
@@ -1039,48 +1057,56 @@ static int lib_pSceneryXYMovement(lua_State *L)
 static int lib_pZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *ptmthing = tmthing;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_ZMovement(actor));
 	P_CheckPosition(actor, actor->x, actor->y);
+	P_SetTarget(&tmthing, ptmthing);
 	return 1;
 }
 
 static int lib_pRingZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *ptmthing = tmthing;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_RingZMovement(actor);
 	P_CheckPosition(actor, actor->x, actor->y);
+	P_SetTarget(&tmthing, ptmthing);
 	return 0;
 }
 
 static int lib_pSceneryZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *ptmthing = tmthing;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_SceneryZMovement(actor));
 	P_CheckPosition(actor, actor->x, actor->y);
+	P_SetTarget(&tmthing, ptmthing);
 	return 1;
 }
 
 static int lib_pPlayerZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *ptmthing = tmthing;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_PlayerZMovement(actor);
 	P_CheckPosition(actor, actor->x, actor->y);
+	P_SetTarget(&tmthing, ptmthing);
 	return 0;
 }
 
@@ -1282,11 +1308,13 @@ static int lib_pGivePlayerLives(lua_State *L)
 static int lib_pMovePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	mobj_t *ptmthing = tmthing;
 	NOHUD
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_MovePlayer(player);
+	P_SetTarget(&tmthing, ptmthing);
 	return 0;
 }
 
@@ -1415,8 +1443,8 @@ static int lib_pTeleportMove(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin or P_MoveOrigin");
-	lua_pushboolean(L, P_SetOrigin(thing, x, y, z));
+	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin\" or \"P_MoveOrigin");
+	lua_pushboolean(L, P_MoveOrigin(thing, x, y, z));
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
 	return 2;
@@ -1979,8 +2007,12 @@ static int lib_pSetSkyboxMobj(lua_State *L)
 	if (w > 1 || w < 0)
 		return luaL_error(L, "skybox mobj index %d is out of range for P_SetSkyboxMobj argument #2 (expected 0 or 1)", w);
 
+#if 0
 	if (!user || P_IsLocalPlayer(user))
 		skyboxmo[w] = mo;
+#else
+	CONS_Alert(CONS_WARNING, "TODO: P_SetSkyboxMobj is unimplemented\n");
+#endif
 	return 0;
 }
 
@@ -2119,6 +2151,17 @@ static int lib_pGetZAt(lua_State *L)
 	}
 
 	return 1;
+}
+
+static int lib_pButteredSlope(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	P_ButteredSlope(mobj);
+	return 0;
 }
 
 // R_DEFS
@@ -2445,46 +2488,13 @@ static int lib_sStopSoundByID(lua_State *L)
 
 static int lib_sChangeMusic(lua_State *L)
 {
-#ifdef MUSICSLOT_COMPATIBILITY
-	const char *music_name;
-	UINT32 music_num, position, prefadems, fadeinms;
-	char music_compat_name[7];
+	UINT32 position, prefadems, fadeinms;
 
-	boolean looping;
-	player_t *player = NULL;
-	UINT16 music_flags = 0;
-	//NOHUD
-
-	if (lua_isnumber(L, 1))
-	{
-		music_num = (UINT32)luaL_checkinteger(L, 1);
-		music_flags = (UINT16)(music_num & 0x0000FFFF);
-		if (music_flags && music_flags <= 1035)
-			snprintf(music_compat_name, 7, "%sM", G_BuildMapName((INT32)music_flags));
-		else if (music_flags && music_flags <= 1050)
-			strncpy(music_compat_name, compat_special_music_slots[music_flags - 1036], 7);
-		else
-			music_compat_name[0] = 0; // becomes empty string
-		music_compat_name[6] = 0;
-		music_name = (const char *)&music_compat_name;
-		music_flags = 0;
-	}
-	else
-	{
-		music_num = 0;
-		music_name = luaL_checkstring(L, 1);
-	}
-
-	looping = (boolean)lua_opttrueboolean(L, 2);
-
-#else
 	const char *music_name = luaL_checkstring(L, 1);
 	boolean looping = (boolean)lua_opttrueboolean(L, 2);
 	player_t *player = NULL;
 	UINT16 music_flags = 0;
-	//NOHUD
 
-#endif
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 	{
 		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
@@ -2492,13 +2502,7 @@ static int lib_sChangeMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 
-#ifdef MUSICSLOT_COMPATIBILITY
-	if (music_num)
-		music_flags = (UINT16)((music_num & 0x7FFF0000) >> 16);
-	else
-#endif
 	music_flags = (UINT16)luaL_optinteger(L, 4, 0);
-
 	position = (UINT32)luaL_optinteger(L, 5, 0);
 	prefadems = (UINT32)luaL_optinteger(L, 6, 0);
 	fadeinms = (UINT32)luaL_optinteger(L, 7, 0);
@@ -2597,40 +2601,6 @@ static int lib_sMusicName(lua_State *L)
 		lua_pushstring(L, S_MusicName());
 	else
 		lua_pushnil(L);
-	return 1;
-}
-
-static int lib_sMusicExists(lua_State *L)
-{
-#ifdef MUSICSLOT_COMPATIBILITY
-	const char *music_name;
-	UINT32 music_num;
-	char music_compat_name[7];
-	UINT16 music_flags = 0;
-	NOHUD
-	if (lua_isnumber(L, 1))
-	{
-		music_num = (UINT32)luaL_checkinteger(L, 1);
-		music_flags = (UINT16)(music_num & 0x0000FFFF);
-		if (music_flags && music_flags <= 1035)
-			snprintf(music_compat_name, 7, "%sM", G_BuildMapName((INT32)music_flags));
-		else if (music_flags && music_flags <= 1050)
-			strncpy(music_compat_name, compat_special_music_slots[music_flags - 1036], 7);
-		else
-			music_compat_name[0] = 0; // becomes empty string
-		music_compat_name[6] = 0;
-		music_name = (const char *)&music_compat_name;
-	}
-	else
-	{
-		music_num = 0;
-		music_name = luaL_checkstring(L, 1);
-	}
-#else
-	const char *music_name = luaL_checkstring(L, 1);
-#endif
-	NOHUD
-	lua_pushboolean(L, S_MusicExists(music_name));
 	return 1;
 }
 
@@ -2745,6 +2715,14 @@ static int lib_sResumeMusic(lua_State *L)
 	}
 	else
 		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sMusicExists(lua_State *L)
+{
+	const char *music_name = luaL_checkstring(L, 1);
+	NOHUD
+	lua_pushboolean(L, S_MusicExists(music_name));
 	return 1;
 }
 
@@ -2881,8 +2859,9 @@ static int lib_sSoundPlaying(lua_State *L)
 	INLEVEL
 	if (id >= NUMSFX)
 		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
-	if (!GetValidSoundOrigin(L, &origin))
-		return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnil(L, 1))
+		if (!GetValidSoundOrigin(L, &origin))
+			return LUA_ErrInvalid(L, "mobj_t/sector_t");
 	lua_pushboolean(L, S_SoundPlaying(origin, id));
 	return 1;
 }
@@ -3370,10 +3349,13 @@ static int lib_kPainSound(lua_State *L)
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *victim = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayHitEmSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		victim = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayHitEmSound(mobj, victim);
 	return 0;
 }
 
@@ -3535,25 +3517,6 @@ static int lib_kTakeBumpersFromPlayer(lua_State *L)
 	return 0;
 }
 
-static int lib_kSpawnKartExplosion(lua_State *L)
-{
-	fixed_t x = luaL_checkfixed(L, 1);
-	fixed_t y = luaL_checkfixed(L, 2);
-	fixed_t z = luaL_checkfixed(L, 3);
-	fixed_t radius = (fixed_t)luaL_optinteger(L, 4, 32*FRACUNIT);
-	INT32 number = (INT32)luaL_optinteger(L, 5, 32);
-	mobjtype_t type = luaL_optinteger(L, 6, MT_MINEEXPLOSION);
-	angle_t rotangle = luaL_optinteger(L, 7, 0);
-	boolean spawncenter = lua_opttrueboolean(L, 8);
-	boolean ghostit = lua_optboolean(L, 9);
-	mobj_t *source = NULL;
-	NOHUD
-	if (!lua_isnone(L, 10) && lua_isuserdata(L, 10))
-		source = *((mobj_t **)luaL_checkudata(L, 10, META_MOBJ));
-	K_SpawnKartExplosion(x, y, z, radius, number, type, rotangle, spawncenter, ghostit, source);
-	return 0;
-}
-
 static int lib_kSpawnMineExplosion(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3588,11 +3551,10 @@ static int lib_kSpawnSparkleTrail(lua_State *L)
 static int lib_kSpawnWipeoutTrail(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	boolean offroad = lua_optboolean(L, 2);
 	NOHUD
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_SpawnWipeoutTrail(mo, offroad);
+	K_SpawnWipeoutTrail(mo);
 	return 0;
 }
 
@@ -3732,10 +3694,11 @@ static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	boolean doboostpower = lua_optboolean(L, 2);
+	boolean dorubberbanding = lua_optboolean(L, 3);
 	//HUDSAFE
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower));
+	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower, dorubberbanding));
 	return 1;
 }
 
@@ -3768,6 +3731,72 @@ static int lib_kGetItemPatch(lua_State *L)
 	return 1;
 }
 
+static int lib_kGetCollideAngle(lua_State *L)
+{
+	mobj_t *t1 = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *t2 = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	//HUDSAFE
+	if (!t1)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (!t2)
+		return LUA_ErrInvalid(L, "mobj_t");
+	lua_pushinteger(L, K_GetCollideAngle(t1, t2));
+	return 1;
+}
+
+static int lib_kAddHitLag(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	tic_t tics = (tic_t)luaL_checkinteger(L, 2);
+	boolean fromdamage = lua_opttrueboolean(L, 3);
+	NOHUD
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_AddHitLag(mo, tics, fromdamage);
+	return 0;
+}
+
+
+static int lib_kInitBossHealthBar(lua_State *L)
+{
+	const char *enemyname = luaL_checkstring(L, 1);
+	const char *subtitle = luaL_checkstring(L, 2);
+	sfxenum_t titlesound = luaL_checkinteger(L, 3);
+	fixed_t pinchmagnitude = luaL_checkfixed(L, 4);
+	UINT8 divisions = (UINT8)luaL_checkinteger(L, 5);
+	NOHUD
+	K_InitBossHealthBar(enemyname, subtitle, titlesound, pinchmagnitude, divisions);
+	return 0;
+}
+
+static int lib_kUpdateBossHealthBar(lua_State *L)
+{
+	fixed_t magnitude = luaL_checkfixed(L, 1);
+	tic_t jitterlen = (tic_t)luaL_checkinteger(L, 2);
+	NOHUD
+	K_UpdateBossHealthBar(magnitude, jitterlen);
+	return 0;
+}
+
+static int lib_kDeclareWeakspot(lua_State *L)
+{
+	mobj_t *spot = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	spottype_t spottype = luaL_checkinteger(L, 2);
+	UINT16 color = luaL_checkinteger(L, 3);
+	boolean minimap = lua_optboolean(L, 4);
+	NOHUD
+	if (!spot)
+		return LUA_ErrInvalid(L, "mobj_t");
+	K_DeclareWeakspot(spot, spottype, color, minimap);
+	return 0;
+}
+
+static int lib_getTimeMicros(lua_State *L)
+{
+	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -3783,6 +3812,9 @@ static luaL_Reg lib[] = {
 	{"M_MoveColorBefore",lib_pMoveColorBefore},
 	{"M_GetColorAfter",lib_pGetColorAfter},
 	{"M_GetColorBefore",lib_pGetColorBefore},
+
+	// m_misc
+	{"M_MapNumber",lib_mMapNumber},
 
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},
@@ -3918,6 +3950,7 @@ static luaL_Reg lib[] = {
 
 	// p_slopes
 	{"P_GetZAt",lib_pGetZAt},
+	{"P_ButteredSlope",lib_pButteredSlope},
 
 	// r_defs
 	{"R_PointToAngle",lib_rPointToAngle},
@@ -3994,6 +4027,7 @@ static luaL_Reg lib[] = {
 	{"G_TicsToSeconds",lib_gTicsToSeconds},
 	{"G_TicsToCentiseconds",lib_gTicsToCentiseconds},
 	{"G_TicsToMilliseconds",lib_gTicsToMilliseconds},
+	{"getTimeMicros",lib_getTimeMicros},
 
 	// k_kart
 	{"K_PlayAttackTaunt", lib_kAttackSound},
@@ -4013,7 +4047,6 @@ static luaL_Reg lib[] = {
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
-	{"K_SpawnKartExplosion",lib_kSpawnKartExplosion},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},
 	{"K_SpawnSparkleTrail",lib_kSpawnSparkleTrail},
@@ -4034,6 +4067,14 @@ static luaL_Reg lib[] = {
 	{"K_GetKartAccel",lib_kGetKartAccel},
 	{"K_GetKartFlashing",lib_kGetKartFlashing},
 	{"K_GetItemPatch",lib_kGetItemPatch},
+
+	{"K_GetCollideAngle",lib_kGetCollideAngle},
+	{"K_AddHitLag",lib_kAddHitLag},
+
+	// k_boss
+	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
+	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
+	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
 
 	{NULL, NULL}
 };

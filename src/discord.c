@@ -32,7 +32,7 @@
 #include "doomdef.h"
 
 // Feel free to provide your own, if you care enough to create another Discord app for this :P
-#define DISCORD_APPID "503531144395096085"
+#define DISCORD_APPID "977470696852684833"
 
 // length of IP strings
 #define IP_SIZE 21
@@ -156,6 +156,9 @@ static void DRPC_HandleJoin(const char *secret)
 {
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
+	M_ClearMenus(true); //Don't have menus open during connection screen
+	if (demo.playback && demo.title)
+		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
 }
@@ -362,8 +365,7 @@ static const char *DRPC_GetServerIP(void)
 		{
 			// We're not the server, so we could successfully get the IP!
 			// No need to do anything else :)
-			sprintf(self_ip, "%s:%u", address, current_port);
-			return self_ip;
+			return address;
 		}
 	}
 
@@ -449,10 +451,7 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-				char *xorjoin = DRPC_XORIPString(join);
-				discordPresence.joinSecret = xorjoin;
-				free(xorjoin);
-
+				discordPresence.joinSecret = DRPC_XORIPString(join);
 				joinSecretSet = true;
 			}
 			else

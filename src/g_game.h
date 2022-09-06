@@ -55,6 +55,8 @@ extern consvar_t cv_pauseifunfocused;
 extern consvar_t cv_invertmouse;
 
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
+
 extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
@@ -82,6 +84,7 @@ extern consvar_t cv_resume;
 // build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
 
+void G_ResetAnglePrediction(player_t *player);
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -115,6 +118,10 @@ INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
+extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
+extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
+extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+extern UINT8 localtic;
 
 //
 // GAME
@@ -254,7 +261,7 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 // Don't split up TOL handling
 UINT32 G_TOLFlag(INT32 pgametype);
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
 void G_AddMapToBuffer(INT16 map);
 
 #endif

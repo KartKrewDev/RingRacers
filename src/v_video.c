@@ -45,7 +45,7 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", 0, CV_YesNo, NULL);
+consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, CV_YesNo, NULL);
 
 static void CV_palette_OnChange(void);
 
@@ -461,7 +461,8 @@ void VID_BlitLinearScreen_ASM(const UINT8 *srcptr, UINT8 *destptr, INT32 width, 
 
 static void CV_constextsize_OnChange(void)
 {
-	con_recalc = true;
+	if (!con_startup)
+		con_recalc = true;
 }
 
 
@@ -997,7 +998,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		w *= dupx;
 		h *= dupy;
 
-		// adjustxy
+		// Center it if necessary
+		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -1341,8 +1343,8 @@ void V_DrawVhsEffect(boolean rewind)
 	if (rewind)
 		V_DrawVhsEffect(false); // experimentation
 
-	upbary -= vid.dupy * (rewind ? 3 : 1.8f);
-	downbary += vid.dupy * (rewind ? 2 : 1);
+	upbary -= FixedMul(vid.dupy * (rewind ? 3 : 1.8f), renderdeltatics);
+	downbary += FixedMul(vid.dupy * (rewind ? 2 : 1), renderdeltatics);
 	if (upbary < -barsize) upbary = vid.height;
 	if (downbary > vid.height) downbary = -barsize;
 
@@ -1701,13 +1703,13 @@ INT32 V_TitleCardStringWidth(const char *str)
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !tc_font[0][(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTOL_FONT].font[(INT32)c])
 		{
 			xoffs += 10;
 			continue;
 		}
 
-		pp = tc_font[1][(INT32)c];
+		pp = fontv[GTFN_FONT].font[(INT32)c];
 
 		xoffs += pp->width-5;
 	}
@@ -1718,7 +1720,7 @@ INT32 V_TitleCardStringWidth(const char *str)
 // V_DrawTitleCardScreen.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean alignright, INT32 timer, INT32 threshold)
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold)
 {
 
 	INT32 xoffs = 0;
@@ -1739,7 +1741,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 
 	x -= 2;	// Account for patch width...
 
-	if (alignright)
+	if (flags & V_SNAPTORIGHT)
 		x -= V_TitleCardStringWidth(str);
 
 
@@ -1768,20 +1770,34 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !tc_font[1][(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c])
 		{
 			xoffs += 10;
 			continue;
 		}
 
-		ol = tc_font[0][(INT32)c];
-		pp = tc_font[1][(INT32)c];
+		ol = fontv[GTOL_FONT].font[(INT32)c];
+		pp = fontv[GTFN_FONT].font[(INT32)c];
 
-		if (timer)
+		if (bossmode)
 		{
-
+			if (let_time <= 0)
+				return;
+			if (threshold > 0)
+			{
+				if (threshold > 3)
+					return;
+				fakeang = (threshold*ANGLE_45)/2;
+				scalex = FINECOSINE(fakeang>>ANGLETOFINESHIFT);
+			}
+			offs = ((FRACUNIT-scalex)*pp->width)/2;
+		}
+		else if (timer)
+		{
 			// make letters appear
-			if (!threshold || let_time < threshold)
+			if (!threshold)
+				;
+			else if (let_time < threshold)
 			{
 				if (let_time <= 0)
 					return;	// No reason to continue drawing, none of the next letters will be drawn either.
@@ -1791,7 +1807,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 				fakeang = min(360 + 90, let_time*41) * ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
-			else if (let_time > threshold)
+			else if (!bossmode && let_time > threshold)
 			{
 				// Make letters disappear...
 				let_time -= threshold;
@@ -2216,6 +2232,18 @@ void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *st
 	V_DrawThinString(x, y, option, string);
 }
 
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+{
+	x -= (V_ThinStringWidth(string, option) / 2) * FRACUNIT;
+	V_DrawThinStringAtFixed(x, y, option, string);
+}
+
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string)
+{
+	x -= V_ThinStringWidth(string, option) * FRACUNIT;
+	V_DrawThinStringAtFixed(x, y, option, string);
+}
+
 // Draws a number using the PING font thingy.
 // TODO: Merge number drawing functions into one with "font name" selection.
 
@@ -2282,8 +2310,8 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	} while (num);
 
 	// draw a minus sign if necessary
-	if (neg)
-		V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
+	//if (neg)
+		//V_DrawScaledPatch(x - w, y, flags, tallminus); // Tails
 }
 
 // Draws a number with a set number of digits.

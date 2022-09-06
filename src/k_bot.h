@@ -15,16 +15,20 @@
 
 #include "k_waypoint.h"
 #include "d_player.h"
+#include "r_defs.h"
 
 // Maximum value of botvars.difficulty
-#define MAXBOTDIFFICULTY 9
+#define MAXBOTDIFFICULTY 13
+
+// Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
+#define DIFFICULTBOT 9
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
 #define BOTTURNCONFIRM 4
 
 // How many tics without being able to accelerate before we'll let you spindash.
-#define BOTSPINDASHCONFIRM (TICRATE/4)
+#define BOTSPINDASHCONFIRM (2*TICRATE)
 
 // Point for bots to aim for
 typedef struct botprediction_s {
@@ -84,36 +88,19 @@ fixed_t K_BotRubberband(player_t *player);
 
 
 /*--------------------------------------------------
-	fixed_t K_BotTopSpeedRubberband(player_t *player);
+	fixed_t K_UpdateRubberband(player_t *player);
 
-		Gives a multiplier for a bot's rubberbanding.
-		Adjusted from K_BotRubberband to be used for top speed.
-
-	Input Arguments:-
-		player - Player to check.
-
-	Return:-
-		A multiplier in fixed point scale.
---------------------------------------------------*/
-
-fixed_t K_BotTopSpeedRubberband(player_t *player);
-
-
-/*--------------------------------------------------
-	fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
-
-		Gives a multiplier for a bot's rubberbanding.
-		Adjusted from K_BotRubberband to be used for friction.
+		Eases the current rubberbanding value to the
+		new one, calculated by K_BotRubberband.
 
 	Input Arguments:-
-		player - Player to check.
-		frict - Friction value to adjust.
+		player - Player to update.
 
 	Return:-
-		The new friction value.
+		The new rubberband multiplier, in fixed point scale.
 --------------------------------------------------*/
 
-fixed_t K_BotFrictionRubberband(player_t *player, fixed_t frict);
+fixed_t K_UpdateRubberband(player_t *player);
 
 
 /*--------------------------------------------------
@@ -185,19 +172,22 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
-	fixed_t K_BotReducePrediction(player_t *player);
+	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
-		Finds walls nearby the specified player, to create a multiplier
-		to pull bot predictions back by.
+		Tells us if a bot will play more careful around
+		this sector. Checks FOFs in the sector, as well.
 
 	Input Arguments:-
-		player - Player to compare.
+		player - Player to check against.
+		sec - Sector to check against.
+		x - Linedef cross X position, for slopes
+		y - Linedef cross Y position, for slopes
 
 	Return:-
-		Multiplier in fixed point scale.
+		true if avoiding this sector, false otherwise.
 --------------------------------------------------*/
 
-fixed_t K_BotReducePrediction(player_t *player);
+boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y);
 
 
 /*--------------------------------------------------
@@ -217,10 +207,25 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 
 /*--------------------------------------------------
+	INT32 K_PositionBully(player_t *player)
+
+		Calculates a turn value to reach a player that can be bullied.
+
+	Input Arguments:-
+		player - Bot to run this for.
+
+	Return:-
+		INT32_MAX if couldn't find anything, otherwise a steering value.
+--------------------------------------------------*/
+
+INT32 K_PositionBully(player_t *player);
+
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 
-		Gives a multiplier for a bot's rubberbanding. Meant to be used for top speed,
-		acceleration, and handling.
+		Creates a bot's ticcmd, looking at its surroundings to
+		try and figure out what it should do.
 
 	Input Arguments:-
 		player - Player to generate the ticcmd for.

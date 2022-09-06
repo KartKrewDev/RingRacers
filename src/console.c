@@ -1576,7 +1576,7 @@ void CONS_Error(const char *msg)
 #if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
 	if (!graphics_started)
 	{
-		MessageBoxA(vid.WndParent, msg, "SRB2Kart Warning", MB_OK);
+		MessageBoxA(vid.WndParent, msg, "Dr. Robotnik's Ring Racers Warning", MB_OK);
 		return;
 	}
 #endif
@@ -1717,7 +1717,10 @@ static void CON_DrawHudlines(void)
 			{
 				charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
 				p++;
+				c++;
 			}
+			if (c >= con_width)
+				break;
 			if (*p < HU_FONTSTART)
 				;//charwidth = 4 * con_scalefactor;
 			else
@@ -1838,7 +1841,10 @@ static void CON_DrawConsole(void)
 			{
 				charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
 				p++;
+				c++;
 			}
+			if (c >= con_width)
+				break;
 			V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 	}

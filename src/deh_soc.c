@@ -49,13 +49,7 @@
 
 // SRB2Kart
 #include "filesrch.h" // refreshdirmenu
-
-int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
-void DEH_UpdateMaxFreeslots(void)
-{
-	freeslotusage[0][1] = freeslotusage[0][0];
-	freeslotusage[1][1] = freeslotusage[1][0];
-}
+#include "k_follower.h"
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -486,6 +480,25 @@ void readfreeslots(MYFILE *f)
 					G_AddTOL(lastcustomtol, word);
 					lastcustomtol <<= 1;
 				}
+			}
+			else if (fastcmp(type, "PRECIP"))
+			{
+				// Search if we already have a PRECIP by that name...
+				for (i = PRECIP_FIRSTFREESLOT; i < (int)precip_freeslot; i++)
+					if (fastcmp(word, precipprops[i].name))
+						break;
+
+				// We found it? Then don't allocate another one.
+				if (i < (int)precip_freeslot)
+					continue;
+
+				// We don't, so allocate a new one.
+				if (precip_freeslot < MAXPRECIP)
+				{
+					precipprops[i].name = Z_StrDup(word);
+					precip_freeslot++;
+				} else
+					deh_warning("Ran out of free PRECIP slots!\n");
 			}
 			else
 				deh_warning("Freeslots: unknown enum class '%s' for '%s_%s'", type, type, word);
@@ -1522,19 +1535,8 @@ void readlevelheader(MYFILE *f, INT32 num)
 						sizeof(mapheaderinfo[num-1]->musname), va("Level header %d: music", num));
 				}
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
 			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(mapheaderinfo[num-1]->musname, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(mapheaderinfo[num-1]->musname, compat_special_music_slots[i - 1036], 7);
-				else
-					mapheaderinfo[num-1]->musname[0] = 0; // becomes empty string
-				mapheaderinfo[num-1]->musname[6] = 0;
-			}
-#endif
+				deh_warning("Level header %d: MusicSlot parameter is deprecated and will be removed.\nUse \"Music\" instead.", num);
 			else if (fastcmp(word, "MUSICTRACK"))
 				mapheaderinfo[num-1]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))
@@ -1545,7 +1547,7 @@ void readlevelheader(MYFILE *f, INT32 num)
 				strlwr(mapheaderinfo[num-1]->forcecharacter); // skin names are lowercase
 			}
 			else if (fastcmp(word, "WEATHER"))
-				mapheaderinfo[num-1]->weather = (UINT8)get_number(word2);
+				mapheaderinfo[num-1]->weather = get_precip(word2);
 			else if (fastcmp(word, "SKYTEXTURE"))
 				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
 					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
@@ -1583,6 +1585,23 @@ void readlevelheader(MYFILE *f, INT32 num)
 				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
 			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
 				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
+			else if (fastcmp(word, "LIGHTCONTRAST"))
+			{
+				mapheaderinfo[num-1]->light_contrast = (UINT8)i;
+			}
+			else if (fastcmp(word, "LIGHTANGLE"))
+			{
+				if (fastcmp(word2, "EVEN"))
+				{
+					mapheaderinfo[num-1]->use_light_angle = false;
+					mapheaderinfo[num-1]->light_angle = 0;
+				}
+				else
+				{
+					mapheaderinfo[num-1]->use_light_angle = true;
+					mapheaderinfo[num-1]->light_angle = FixedAngle(FloatToFixed(atof(word2)));
+				}
+			}
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
 			{
@@ -1631,9 +1650,9 @@ void readlevelheader(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "TIMEATTACK") || fastcmp(word, "RECORDATTACK"))
 			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_TIMEATTACK;
+					mapheaderinfo[num-1]->menuflags &= ~LF2_NOTIMEATTACK;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_TIMEATTACK;
+					mapheaderinfo[num-1]->menuflags |= LF2_NOTIMEATTACK;
 			}
 			else if (fastcmp(word, "VISITNEEDED"))
 			{
@@ -1777,19 +1796,6 @@ static void readcutscenescene(MYFILE *f, INT32 num, INT32 scenenum)
 				strncpy(cutscenes[num]->scene[scenenum].musswitch, word2, 7);
 				cutscenes[num]->scene[scenenum].musswitch[6] = 0;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(cutscenes[num]->scene[scenenum].musswitch, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(cutscenes[num]->scene[scenenum].musswitch, compat_special_music_slots[i - 1036], 7);
-				else
-					cutscenes[num]->scene[scenenum].musswitch[0] = 0; // becomes empty string
-				cutscenes[num]->scene[scenenum].musswitch[6] = 0;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				cutscenes[num]->scene[scenenum].musswitchflags = ((UINT16)i) & MUSIC_TRACKMASK;
@@ -2052,19 +2058,6 @@ static void readtextpromptpage(MYFILE *f, INT32 num, INT32 pagenum)
 				strncpy(textprompts[num]->page[pagenum].musswitch, word2, 7);
 				textprompts[num]->page[pagenum].musswitch[6] = 0;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				i = get_mus(word2, true);
-				if (i && i <= 1035)
-					snprintf(textprompts[num]->page[pagenum].musswitch, 7, "%sM", G_BuildMapName(i));
-				else if (i && i <= 1050)
-					strncpy(textprompts[num]->page[pagenum].musswitch, compat_special_music_slots[i - 1036], 7);
-				else
-					textprompts[num]->page[pagenum].musswitch[0] = 0; // becomes empty string
-				textprompts[num]->page[pagenum].musswitch[6] = 0;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				textprompts[num]->page[pagenum].musswitchflags = ((UINT16)i) & MUSIC_TRACKMASK;
@@ -2336,7 +2329,9 @@ void readmenu(MYFILE *f, INT32 num)
 					menupres[num].ttname[0] = 0;
 					menupres[num].hidetitlepics = true;
 				}
-				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
+				else if (fastcmp(word2, "RINGRACERS"))
+					menupres[num].ttmode = TTMODE_RINGRACERS;
+				else if (fastcmp(word2, "OLD"))
 					menupres[num].ttmode = TTMODE_OLD;
 				titlechanged = true;
 			}
@@ -2388,20 +2383,6 @@ void readmenu(MYFILE *f, INT32 num)
 				menupres[num].musname[6] = 0;
 				titlechanged = true;
 			}
-#ifdef MUSICSLOT_COMPATIBILITY
-			else if (fastcmp(word, "MUSICSLOT"))
-			{
-				value = get_mus(word2, true);
-				if (value && value <= 1035)
-					snprintf(menupres[num].musname, 7, "%sM", G_BuildMapName(value));
-				else if (value && value <= 1050)
-					strncpy(menupres[num].musname, compat_special_music_slots[value - 1036], 7);
-				else
-					menupres[num].musname[0] = 0; // becomes empty string
-				menupres[num].musname[6] = 0;
-				titlechanged = true;
-			}
-#endif
 			else if (fastcmp(word, "MUSICTRACK"))
 			{
 				menupres[num].mustrack = ((UINT16)value - 1);
@@ -2459,66 +2440,6 @@ void readmenu(MYFILE *f, INT32 num)
 				menupres[num].exitwipe = get_number(word2);
 				titlechanged = true;
 			}
-		}
-	} while (!myfeof(f)); // finish when the line is empty
-
-	Z_Free(s);
-}
-
-void readhuditem(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word = s;
-	char *word2;
-	char *tmp;
-	INT32 i;
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			// First remove trailing newline, if there is one
-			tmp = strchr(s, '\n');
-			if (tmp)
-				*tmp = '\0';
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			// Get the part before the " = "
-			tmp = strchr(s, '=');
-			if (tmp)
-				*(tmp-1) = '\0';
-			else
-				break;
-			strupr(word);
-
-			// Now get the part after
-			word2 = tmp += 2;
-			strupr(word2);
-
-			i = atoi(word2); // used for numerical settings
-
-			if (fastcmp(word, "X"))
-			{
-				hudinfo[num].x = i;
-			}
-			else if (fastcmp(word, "Y"))
-			{
-				hudinfo[num].y = i;
-			}
-			else if (fastcmp(word, "F"))
-			{
-				hudinfo[num].f = i;
-			}
-			else
-				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}
 	} while (!myfeof(f)); // finish when the line is empty
 
@@ -2650,26 +2571,31 @@ void readsound(MYFILE *f, INT32 num)
 			if (s[0] == '\n')
 				break;
 
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
 			tmp = strchr(s, '#');
 			if (tmp)
 				*tmp = '\0';
 			if (s == tmp)
 				continue; // Skip comment lines, but don't break.
 
-			word = strtok(s, " ");
-			if (word)
-				strupr(word);
+			// Set / reset word
+			word = s;
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
 			else
 				break;
+			strupr(word);
 
-			word2 = strtok(NULL, " ");
-			if (word2)
-				value = atoi(word2);
-			else
-			{
-				deh_warning("No value for token %s", word);
-				continue;
-			}
+			// Now get the part after
+			word2 = tmp += 2;
+			value = atoi(word2); // used for numerical settings
 
 			if (fastcmp(word, "SINGULAR"))
 			{
@@ -3498,7 +3424,9 @@ void readmaincfg(MYFILE *f)
 					ttname[0] = 0;
 					hidetitlepics = true;
 				}
-				else // if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
+				else if (fastcmp(word2, "RINGRACERS"))
+					ttmode = TTMODE_RINGRACERS;
+				else if (fastcmp(word2, "OLD") || fastcmp(word2, "SSNTAILS"))
 					ttmode = TTMODE_OLD;
 				titlechanged = true;
 			}
@@ -3927,16 +3855,18 @@ void readfollower(MYFILE *f)
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 
 	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
 	followers[numfollowers].scale = FRACUNIT;
-	followers[numfollowers].bubblescale = 0;	// No bubble by default
-	followers[numfollowers].atangle = 230;
-	followers[numfollowers].dist = 32;		// changed from 16 to 32 to better account for ogl models
-	followers[numfollowers].height = 16;
-	followers[numfollowers].zoffs = 32;
-	followers[numfollowers].horzlag = 2;
-	followers[numfollowers].vertlag = 6;
+	followers[numfollowers].bubblescale = 0; // No bubble by default
+	followers[numfollowers].atangle = FixedAngle(230 * FRACUNIT);
+	followers[numfollowers].dist = 32*FRACUNIT; // changed from 16 to 32 to better account for ogl models
+	followers[numfollowers].height = 16*FRACUNIT;
+	followers[numfollowers].zoffs = 32*FRACUNIT;
+	followers[numfollowers].horzlag = 3*FRACUNIT;
+	followers[numfollowers].vertlag = 6*FRACUNIT;
+	followers[numfollowers].anglelag = 8*FRACUNIT;
 	followers[numfollowers].bobspeed = TICRATE*2;
-	followers[numfollowers].bobamp = 4;
+	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 
@@ -3972,50 +3902,65 @@ void readfollower(MYFILE *f)
 				strcpy(followers[numfollowers].name, word2);
 				nameset = true;
 			}
+			else if (fastcmp(word, "MODE"))
+			{
+				if (word2)
+					strupr(word2);
+
+				if (fastcmp(word2, "FLOAT") || fastcmp(word2, "DEFAULT"))
+					followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+				else if (fastcmp(word2, "GROUND"))
+					followers[numfollowers].mode = FOLLOWERMODE_GROUND;
+				else
+					deh_warning("Follower %d: unknown follower mode '%s'", numfollowers, word2);
+			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				followers[numfollowers].defaultcolor = (UINT16)get_number(word2);
+				followers[numfollowers].defaultcolor = get_number(word2);
 			}
-
 			else if (fastcmp(word, "SCALE"))
 			{
-				followers[numfollowers].scale = get_number(word2);
+				followers[numfollowers].scale = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BUBBLESCALE"))
 			{
-				followers[numfollowers].bubblescale = get_number(word2);
+				followers[numfollowers].bubblescale = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "ATANGLE"))
 			{
-				followers[numfollowers].atangle = (INT32)atoi(word2);
+				followers[numfollowers].atangle = (angle_t)(get_number(word2) * ANG1);
 			}
 			else if (fastcmp(word, "HORZLAG"))
 			{
-				followers[numfollowers].horzlag = (INT32)atoi(word2);
+				followers[numfollowers].horzlag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "VERTLAG"))
 			{
-				followers[numfollowers].vertlag = (INT32)atoi(word2);
+				followers[numfollowers].vertlag = (fixed_t)get_number(word2);
+			}
+			else if (fastcmp(word, "ANGLELAG"))
+			{
+				followers[numfollowers].anglelag = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BOBSPEED"))
 			{
-				followers[numfollowers].bobspeed = (INT32)atoi(word2);
+				followers[numfollowers].bobspeed = (tic_t)get_number(word2);
 			}
 			else if (fastcmp(word, "BOBAMP"))
 			{
-				followers[numfollowers].bobamp = (INT32)atoi(word2);
+				followers[numfollowers].bobamp = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "ZOFFSET") || (fastcmp(word, "ZOFFS")))
 			{
-				followers[numfollowers].zoffs = (INT32)atoi(word2);
+				followers[numfollowers].zoffs = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "DISTANCE") || (fastcmp(word, "DIST")))
 			{
-				followers[numfollowers].dist = (INT32)atoi(word2);
+				followers[numfollowers].dist = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "HEIGHT"))
 			{
-				followers[numfollowers].height = (INT32)atoi(word2);
+				followers[numfollowers].height = (fixed_t)get_number(word2);
 			}
 			else if (fastcmp(word, "IDLESTATE"))
 			{
@@ -4056,16 +4001,19 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "HITTIME") || (fastcmp(word, "HITCONFIRMTIME")))
 			{
-				followers[numfollowers].hitconfirmtime = (INT32)atoi(word2);
+				followers[numfollowers].hitconfirmtime = (tic_t)get_number(word2);
 			}
 			else
+			{
 				deh_warning("Follower %d: unknown word '%s'", numfollowers, word);
+			}
 		}
 	} while (!myfeof(f)); // finish when the line is empty
 
-	if (!nameset)	// well this is problematic.
+	if (!nameset)
 	{
-		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers));	// this is lazy, so what
+		// well this is problematic.
+		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers)); // this is lazy, so what
 	}
 
 	// set skin name (this is just the follower's name in lowercases):
@@ -4075,7 +4023,7 @@ void readfollower(MYFILE *f)
 
 	// lower testname for skin checks...
 	strlwr(testname);
-	res = R_FollowerAvailable(testname);
+	res = K_FollowerAvailable(testname);
 	if (res > -1)	// yikes, someone else has stolen our name already
 	{
 		INT32 startlen = strlen(testname);
@@ -4098,32 +4046,40 @@ void readfollower(MYFILE *f)
 
 	// fallbacks for variables
 	// Print a warning if the variable is on a weird value and set it back to the minimum available if that's the case.
+
+	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
+	{
+		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+	}
+
 #define FALLBACK(field, field2, threshold, set) \
-if (followers[numfollowers].field < threshold) \
+if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, set, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
 	FALLBACK(height, "HEIGHT", 1, 1);
 	FALLBACK(zoffs, "ZOFFS", 0, 0);
-	FALLBACK(horzlag, "HORZLAG", 1, 1);
-	FALLBACK(vertlag, "VERTLAG", 1, 1);
+	FALLBACK(horzlag, "HORZLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(vertlag, "VERTLAG", FRACUNIT, FRACUNIT);
+	FALLBACK(anglelag, "ANGLELAG", FRACUNIT, FRACUNIT);
 	FALLBACK(bobamp, "BOBAMP", 0, 0);
 	FALLBACK(bobspeed, "BOBSPEED", 0, 0);
 	FALLBACK(hitconfirmtime, "HITCONFIRMTIME", 1, 1);
 	FALLBACK(scale, "SCALE", 1, 1);				// No null/negative scale
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
+#undef FALLBACK
+
 	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > numskincolors-1)
+	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
 	{
 		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
 		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
 	}
-
-#undef FALLBACK
 
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
@@ -4145,7 +4101,62 @@ if (!followers[numfollowers].field) \
 #undef NOSTATE
 
 	CONS_Printf("Added follower '%s'\n", dname);
-	numfollowers++;	// add 1 follower
+	numfollowers++; // add 1 follower
+	Z_Free(s);
+}
+
+void readweather(MYFILE *f, INT32 num)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	char *word;
+	char *word2;
+	char *tmp;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			// First remove trailing newline, if there is one
+			tmp = strchr(s, '\n');
+			if (tmp)
+				*tmp = '\0';
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			// Set / reset word
+			word = s;
+
+			// Get the part before the " = "
+			tmp = strchr(s, '=');
+			if (tmp)
+				*(tmp-1) = '\0';
+			else
+				break;
+			strupr(word);
+
+			// Now get the part after
+			word2 = tmp += 2;
+
+			if (fastcmp(word, "TYPE"))
+			{
+				precipprops[num].type = get_mobjtype(word2);
+			}
+			else if (fastcmp(word, "EFFECTS"))
+			{
+				precipprops[num].effects = get_number(word2);
+			}
+			else
+				deh_warning("Weather %d : unknown word '%s'", num, word);
+		}
+	} while (!myfeof(f));
+
 	Z_Free(s);
 }
 
@@ -4257,60 +4268,6 @@ sfxenum_t get_sfx(const char *word)
 	return sfx_None;
 }
 
-#ifdef MUSICSLOT_COMPATIBILITY
-UINT16 get_mus(const char *word, UINT8 dehacked_mode)
-{ // Returns the value of MUS_ enumerations
-	UINT16 i;
-	char lumptmp[4];
-
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (!word[2] && toupper(word[0]) >= 'A' && toupper(word[0]) <= 'Z')
-		return (UINT16)M_MapNumber(word[0], word[1]);
-
-	if (fastncmp("MUS_",word,4))
-		word += 4; // take off the MUS_
-	else if (fastncmp("O_",word,2) || fastncmp("D_",word,2))
-		word += 2; // take off the O_ or D_
-
-	strncpy(lumptmp, word, 4);
-	lumptmp[3] = 0;
-	if (fasticmp("MAP",lumptmp))
-	{
-		word += 3;
-		if (toupper(word[0]) >= 'A' && toupper(word[0]) <= 'Z')
-			return (UINT16)M_MapNumber(word[0], word[1]);
-		else if ((i = atoi(word)))
-			return i;
-
-		word -= 3;
-		if (dehacked_mode)
-			deh_warning("Couldn't find music named 'MUS_%s'",word);
-		return 0;
-	}
-	for (i = 0; compat_special_music_slots[i][0]; ++i)
-		if (fasticmp(word, compat_special_music_slots[i]))
-			return i + 1036;
-	if (dehacked_mode)
-		deh_warning("Couldn't find music named 'MUS_%s'",word);
-	return 0;
-}
-#endif
-
-hudnum_t get_huditem(const char *word)
-{ // Returns the value of HUD_ enumerations
-	hudnum_t i;
-	if (*word >= '0' && *word <= '9')
-		return atoi(word);
-	if (fastncmp("HUD_",word,4))
-		word += 4; // take off the HUD_
-	for (i = 0; i < NUMHUDITEMS; i++)
-		if (fastcmp(word, HUDITEMS_LIST[i]))
-			return i;
-	deh_warning("Couldn't find huditem named 'HUD_%s'",word);
-	return HUD_LIVES;
-}
-
 menutype_t get_menutype(const char *word)
 { // Returns the value of MN_ enumerations
 	menutype_t i;
@@ -4338,6 +4295,24 @@ menutype_t get_menutype(const char *word)
 	deh_warning("Couldn't find gametype named 'GT_%s'",word);
 	return GT_COOP;
 }*/
+
+preciptype_t get_precip(const char *word)
+{ // Returns the value of PRECIP_ enumerations
+	preciptype_t i;
+	if (*word >= '0' && *word <= '9')
+		return atoi(word);
+	if (fastncmp("PRECIP_",word,4))
+		word += 7; // take off the PRECIP_
+	for (i = 0; i < MAXPRECIP; i++)
+	{
+		if (precipprops[i].name == NULL)
+			break;
+		if (fasticmp(word, precipprops[i].name))
+			return i;
+	}
+	deh_warning("Couldn't find weather type named 'PRECIP_%s'",word);
+	return PRECIP_RAIN;
+}
 
 /// \todo Make ANY of this completely over-the-top math craziness obey the order of operations.
 static fixed_t op_mul(fixed_t a, fixed_t b) { return a*b; }
@@ -4513,13 +4488,6 @@ static fixed_t find_const(const char **rword)
 		free(word);
 		return r;
 	}
-#ifdef MUSICSLOT_COMPATIBILITY
-	else if (fastncmp("MUS_",word,4) || fastncmp("O_",word,2)) {
-		r = get_mus(word, true);
-		free(word);
-		return r;
-	}
-#endif
 	else if (fastncmp("PW_",word,3)) {
 		r = get_power(word);
 		free(word);
@@ -4560,11 +4528,6 @@ static fixed_t find_const(const char **rword)
 		const_warning("typeoflevel",word);
 		free(word);
 		return 0;
-	}
-	else if (fastncmp("HUD_",word,4)) {
-		r = get_huditem(word);
-		free(word);
-		return r;
 	}
 	else if (fastncmp("GRADE_",word,6))
 	{

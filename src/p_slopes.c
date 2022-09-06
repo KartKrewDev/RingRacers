@@ -22,6 +22,7 @@
 #include "r_main.h"
 #include "p_maputl.h"
 #include "w_wad.h"
+#include "r_fps.h"
 #include "k_kart.h" // K_PlayerEBrake
 
 pslope_t *slopelist = NULL;
@@ -30,11 +31,74 @@ UINT16 slopecount = 0;
 static void P_BuildSlopeAnchorList (void);
 static void P_SetupAnchoredSlopes  (void);
 
+// Calculate light
+void P_UpdateSlopeLightOffset(pslope_t *slope)
+{
+	const UINT8 contrast = maplighting.contrast;
+
+	fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t zMul = FRACUNIT;
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	if (slope->normal.z == 0)
+	{
+		slope->lightOffset = slope->hwLightOffset = 0;
+		return;
+	}
+
+	if (maplighting.directional == true)
+	{
+		fixed_t nX = -slope->normal.x;
+		fixed_t nY = -slope->normal.y;
+		fixed_t nLen = FixedHypot(nX, nY);
+
+		if (nLen == 0)
+		{
+			slope->lightOffset = slope->hwLightOffset = 0;
+			return;
+		}
+
+		nX = FixedDiv(nX, nLen);
+		nY = FixedDiv(nY, nLen);
+
+		/*
+		if (slope is ceiling)
+		{
+			// There is no good way to calculate this condition here.
+			// We reverse it in R_FindPlane now.
+			nX = -nX;
+			nY = -nY;
+		}
+		*/
+
+		light = FixedMul(nX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(nY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->normal.y), abs(slope->normal.x)), ANGLE_90);
+	}
+
+	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.
+	contrastFixed = FixedMul(contrastFixed, zMul);
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 // Calculate slope's high & low z
@@ -127,8 +191,42 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 
 		// Get angles
 		slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-		slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+		slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
 	}
+
+	P_UpdateSlopeLightOffset(slope);
+}
+
+/// Setup slope via constants.
+static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	fixed_t m;
+	vector3_t *normal = &slope->normal;
+
+	// Set origin.
+	FV3_Load(&slope->o, 0, 0, c ? -FixedDiv(d, c) : 0);
+
+	// Get slope's normal.
+	FV3_Load(normal, a, b, c);
+	FV3_Normalize(normal);
+
+	// Invert normal if it's facing down.
+	if (normal->z < 0)
+		FV3_Negate(normal);
+
+	// Get direction vector
+	m = FixedHypot(normal->x, normal->y);
+	slope->d.x = -FixedDiv(normal->x, m);
+	slope->d.y = -FixedDiv(normal->y, m);
+
+	// Z delta
+	slope->zdelta = FixedDiv(m, normal->z);
+
+	// Get angles
+	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
+	slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Recalculate dynamic slopes.
@@ -211,6 +309,9 @@ static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, l
 	th->type = type;
 
 	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+
+	// interpolation
+	R_CreateInterpolator_DynSlope(&th->thinker, slope);
 }
 
 
@@ -510,6 +611,7 @@ static void line_SpawnViaMapthingVertexes(const int linenum, const boolean spawn
 	UINT16 tag2 = line->args[2];
 	UINT16 tag3 = line->args[3];
 	UINT8 flags = 0; // Slope flags
+
 	if (line->args[4] & TMSL_NOPHYSICS)
 		flags |= SL_NOPHYSICS;
 	if (line->args[4] & TMSL_DYNAMIC)
@@ -595,11 +697,10 @@ static boolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, boolean ceiling)
 {
 	INT32 i;
 	pslope_t **secslope = ceiling ? &sec->c_slope : &sec->f_slope;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	if (!tag || *secslope)
 		return false;
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		pslope_t *srcslope = ceiling ? sectors[i].c_slope : sectors[i].f_slope;
 		if (srcslope)
@@ -681,12 +782,19 @@ pslope_t *P_SlopeById(UINT16 id)
 	return ret;
 }
 
+/// Creates a new slope from equation constants.
+pslope_t *MakeViaEquationConstants(const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	pslope_t* ret = Slope_Add(0);
+
+	ReconfigureViaConstants(ret, a, b, c, d);
+
+	return ret;
+}
+
 /// Initializes and reads the slopes from the map data.
 void P_SpawnSlopes(const boolean fromsave) {
 	size_t i;
-
-	slopelist = NULL;
-	slopecount = 0;
 
 	/// Generates vertex slopes.
 	SpawnVertexSlopes();
@@ -727,6 +835,13 @@ void P_SpawnSlopes(const boolean fromsave) {
 			default:
 				break;
 		}
+}
+
+/// Initializes slopes.
+void P_InitSlopes(void)
+{
+	slopelist = NULL;
+	slopecount = 0;
 }
 
 // ============================================================================
@@ -850,6 +965,7 @@ void P_SlopeLaunch(mobj_t *mo)
 
 	//CONS_Printf("Launched off of slope.\n");
 	mo->standingslope = NULL;
+	mo->terrain = NULL;
 
 	if (mo->player)
 	{
@@ -879,7 +995,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	slopemom.x = mo->momx;
 	slopemom.y = mo->momy;
-	slopemom.z = 3*(mo->momz/2);
+	slopemom.z = mo->momz;
 
 	axis.x = -slope->d.y;
 	axis.y = slope->d.x;
@@ -887,7 +1003,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	FV3_Rotate(&slopemom, &axis, ang >> ANGLETOFINESHIFT);
 
-	return 2*(slopemom.z/3);
+	return slopemom.z;
 }
 
 // Function to help handle landing on slopes

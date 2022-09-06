@@ -1099,6 +1099,18 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Debug notification
   {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hammer cocks, bang bang
   {"itcaps", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, "Item capsule"},
+  {"kstart", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Sonic Adventure shwing!
+  {"typri1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 boss typewriting 1
+  {"typri2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 final boss-type typewriting
+  {"eggspr", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Sonic Unleashed Trap Spring
+
+  // SRB2Kart - Drop target sounds
+  {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
+  {"kdtrg2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Medium energy, SF_X8AWAYSOUND
+  {"kdtrg3", false,  64, 80, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // High energy, SF_X2AWAYSOUND|SF_X8AWAYSOUND
+
+    // SRB2kart - Grow/invinc clash
+  {"parry", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
   // SRB2Kart - Engine sounds
   // Engine class A

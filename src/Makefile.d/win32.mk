@@ -2,10 +2,11 @@
 # Mingw, if you don't know, that's Win32/Win64
 #
 
-ifndef MINGW64
-EXENAME?=srb2kart.exe
-else
-EXENAME?=srb2kart64.exe
+exesuffix:=$(exesuffix)$(if $(MINGW64),64).exe
+
+# disable dynamicbase if under msys2
+ifdef MSYSTEM
+libs+=-Wl,--disable-dynamicbase
 endif
 
 sources+=win32/Srb2win.rc

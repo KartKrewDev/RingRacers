@@ -43,7 +43,7 @@
 
 #include "info.h"
 #include "dehacked.h"
-#include "doomdef.h" // MUSICSLOT_COMPATIBILITY, HWRENDER
+#include "doomdef.h" // HWRENDER
 
 // Crazy word-reading stuff
 /// \todo Put these in a seperate file or something.
@@ -52,10 +52,6 @@ statenum_t get_state(const char *word);
 spritenum_t get_sprite(const char *word);
 playersprite_t get_sprite2(const char *word);
 sfxenum_t get_sfx(const char *word);
-#ifdef MUSICSLOT_COMPATIBILITY
-UINT16 get_mus(const char *word, UINT8 dehacked_mode);
-#endif
-hudnum_t get_huditem(const char *word);
 menutype_t get_menutype(const char *word);
 //INT16 get_gametype(const char *word);
 //powertype_t get_power(const char *word);
@@ -87,11 +83,9 @@ void readPlayer(MYFILE *f, INT32 num);
 void clear_levels(void);
 void clear_conditionsets(void);
 
-// SRB2Kart
-extern int freeslotusage[2][2];
-void DEH_UpdateMaxFreeslots(void);
-
 void readcupheader(MYFILE *f, cupheader_t *cup);
 void readfollower(MYFILE *f);
+preciptype_t get_precip(const char *word);
+void readweather(MYFILE *f, INT32 num);
 
 #endif

@@ -32,6 +32,8 @@
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
 #include "k_grandprix.h"	// we need to know grandprix status for titlecards
+#include "k_boss.h"
+#include "r_fps.h"
 
 //random index
 #include "m_random.h"
@@ -43,12 +45,15 @@
 #include "hardware/hw_main.h"
 #endif
 
+#include "lua_hudlib_drawlist.h"
 #include "lua_hud.h"
 
 // SRB2Kart
 #include "k_hud.h" // SRB2kart
 #include "v_video.h"
 #include "r_skins.h" // NUMFACES
+
+#include "r_fps.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -62,77 +67,6 @@ patch_t *faceprefix[MAXSKINS][NUMFACES];
 //             status bar overlay
 // ------------------------------------------
 
-// icons for overlay
-patch_t *sboscore; // Score logo
-patch_t *sbotime; // Time logo
-patch_t *sbocolon; // Colon for time
-patch_t *sboperiod; // Period for time centiseconds
-patch_t *livesback; // Lives icon background
-patch_t *stlivex;
-static patch_t *nrec_timer; // Timer for NiGHTS records
-static patch_t *sborings;
-static patch_t *slidgame;
-static patch_t *slidtime;
-static patch_t *slidover;
-static patch_t *sboredrings;
-static patch_t *sboredtime;
-static patch_t *getall; // Special Stage HUD
-static patch_t *timeup; // Special Stage HUD
-static patch_t *hunthoming[6];
-static patch_t *itemhoming[6];
-static patch_t *race1;
-static patch_t *race2;
-static patch_t *race3;
-static patch_t *racego;
-static patch_t *nightslink;
-static patch_t *curweapon;
-static patch_t *normring;
-static patch_t *bouncering;
-static patch_t *infinityring;
-static patch_t *autoring;
-static patch_t *explosionring;
-static patch_t *scatterring;
-static patch_t *grenadering;
-static patch_t *railring;
-static patch_t *jumpshield;
-static patch_t *forceshield;
-static patch_t *ringshield;
-static patch_t *watershield;
-static patch_t *bombshield;
-static patch_t *pityshield;
-static patch_t *pinkshield;
-static patch_t *flameshield;
-static patch_t *bubbleshield;
-static patch_t *thundershield;
-static patch_t *invincibility;
-static patch_t *sneakers;
-static patch_t *gravboots;
-static patch_t *nonicon;
-static patch_t *nonicon2;
-static patch_t *bluestat;
-static patch_t *byelstat;
-static patch_t *orngstat;
-static patch_t *redstat;
-static patch_t *yelstat;
-static patch_t *nbracket;
-static patch_t *nring;
-static patch_t *nhud[12];
-static patch_t *nsshud;
-static patch_t *nbon[12];
-static patch_t *nssbon;
-static patch_t *narrow[9];
-static patch_t *nredar[8]; // Red arrow
-static patch_t *drillbar;
-static patch_t *drillfill[3];
-static patch_t *capsulebar;
-static patch_t *capsulefill;
-patch_t *ngradeletters[7];
-static patch_t *minus5sec;
-static patch_t *minicaps;
-static patch_t *gotrflag;
-static patch_t *gotbflag;
-static patch_t *fnshico;
-
 // Midnight Channel:
 static patch_t *hud_tv1;
 static patch_t *hud_tv2;
@@ -142,37 +76,8 @@ static patch_t *hud_tv2;
 static patch_t *envelope;
 #endif
 
-// SRB2kart
-
-hudinfo_t hudinfo[NUMHUDITEMS] =
-{
-	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVES
-
-	{  16,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGS
-	{  96,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUM
-	{ 120,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUMTICS
-
-	{  16,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORE
-	{ 120,  10, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SCORENUM
-
-	{  16,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIME
-	{  72,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_MINUTES
-	{  72,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMECOLON
-	{  96,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SECONDS
-	{  96,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TIMETICCOLON
-	{ 120,  26, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_TICS
-
-	{   0,  56, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_SS_TOTALRINGS
-
-	{ 110,  93, 0}, // HUD_GETRINGS
-	{ 160,  93, 0}, // HUD_GETRINGSNUM
-	{ 124, 160, 0}, // HUD_TIMELEFT
-	{ 168, 176, 0}, // HUD_TIMELEFTNUM
-	{ 130,  93, 0}, // HUD_TIMEUP
-	{ 152, 168, 0}, // HUD_HUNTPICS
-
-	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
-};
+static huddrawlist_h luahuddrawlist_game;
+static huddrawlist_h luahuddrawlist_titlecard;
 
 //
 // STATUS BAR CODE
@@ -232,7 +137,7 @@ void ST_doPaletteStuff(void)
 	{
 		st_palette = palette;
 
-		if (rendermode != render_none)
+		if (rendermode == render_soft)
 		{
 			//V_SetPaletteLump(GetPalette()); // Reset the palette -- is this needed?
 			if (!r_splitscreen)
@@ -248,8 +153,6 @@ void ST_UnloadGraphics(void)
 
 void ST_LoadGraphics(void)
 {
-	int i;
-
 	// SRB2 border patch
 	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
 	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
@@ -259,116 +162,15 @@ void ST_LoadGraphics(void)
 	//                   but load them in R_AddSkins, that gets called
 	//                   first anyway
 	// cache the status bar overlay icons (fullscreen mode)
-
-	// Prefix "STT" is whitelisted (doesn't trigger ISGAMEMODIFIED), btw
-	sborings = W_CachePatchName("STTRINGS", PU_HUDGFX);
-	sboredrings = W_CachePatchName("STTRRING", PU_HUDGFX);
-	sboscore = W_CachePatchName("STTSCORE", PU_HUDGFX);
-	sbotime = W_CachePatchName("STTTIME", PU_HUDGFX); // Time logo
-	sboredtime = W_CachePatchName("STTRTIME", PU_HUDGFX);
-	sbocolon = W_CachePatchName("STTCOLON", PU_HUDGFX); // Colon for time
-	sboperiod = W_CachePatchName("STTPERIO", PU_HUDGFX); // Period for time centiseconds
-
-	slidgame = W_CachePatchName("SLIDGAME", PU_HUDGFX);
-	slidtime = W_CachePatchName("SLIDTIME", PU_HUDGFX);
-	slidover = W_CachePatchName("SLIDOVER", PU_HUDGFX);
-
-	stlivex = W_CachePatchName("STLIVEX", PU_HUDGFX);
-	livesback = W_CachePatchName("STLIVEBK", PU_HUDGFX);
-	nrec_timer = W_CachePatchName("NGRTIMER", PU_HUDGFX); // Timer for NiGHTS
-	getall = W_CachePatchName("GETALL", PU_HUDGFX); // Special Stage HUD
-	timeup = W_CachePatchName("TIMEUP", PU_HUDGFX); // Special Stage HUD
-	race1 = W_CachePatchName("RACE1", PU_HUDGFX);
-	race2 = W_CachePatchName("RACE2", PU_HUDGFX);
-	race3 = W_CachePatchName("RACE3", PU_HUDGFX);
-	racego = W_CachePatchName("RACEGO", PU_HUDGFX);
-	nightslink = W_CachePatchName("NGHTLINK", PU_HUDGFX);
-
-	for (i = 0; i < 6; ++i)
-	{
-		hunthoming[i] = W_CachePatchName(va("HOMING%d", i+1), PU_HUDGFX);
-		itemhoming[i] = W_CachePatchName(va("HOMITM%d", i+1), PU_HUDGFX);
-	}
-
-	curweapon = W_CachePatchName("CURWEAP", PU_HUDGFX);
-	normring = W_CachePatchName("RINGIND", PU_HUDGFX);
-	bouncering = W_CachePatchName("BNCEIND", PU_HUDGFX);
-	infinityring = W_CachePatchName("INFNIND", PU_HUDGFX);
-	autoring = W_CachePatchName("AUTOIND", PU_HUDGFX);
-	explosionring = W_CachePatchName("BOMBIND", PU_HUDGFX);
-	scatterring = W_CachePatchName("SCATIND", PU_HUDGFX);
-	grenadering = W_CachePatchName("GRENIND", PU_HUDGFX);
-	railring = W_CachePatchName("RAILIND", PU_HUDGFX);
-	jumpshield = W_CachePatchName("TVWWICON", PU_HUDGFX);
-	forceshield = W_CachePatchName("TVFOICON", PU_HUDGFX);
-	ringshield = W_CachePatchName("TVATICON", PU_HUDGFX);
-	watershield = W_CachePatchName("TVELICON", PU_HUDGFX);
-	bombshield = W_CachePatchName("TVARICON", PU_HUDGFX);
-	pityshield = W_CachePatchName("TVPIICON", PU_HUDGFX);
-	pinkshield = W_CachePatchName("TVPPICON", PU_HUDGFX);
-	flameshield = W_CachePatchName("TVFLICON", PU_HUDGFX);
-	bubbleshield = W_CachePatchName("TVBBICON", PU_HUDGFX);
-	thundershield = W_CachePatchName("TVZPICON", PU_HUDGFX);
-	invincibility = W_CachePatchName("TVIVICON", PU_HUDGFX);
-	sneakers = W_CachePatchName("TVSSICON", PU_HUDGFX);
-	gravboots = W_CachePatchName("TVGVICON", PU_HUDGFX);
-
-	tagico = W_CachePatchName("TAGICO", PU_HUDGFX);
-	rflagico = W_CachePatchName("RFLAGICO", PU_HUDGFX);
-	bflagico = W_CachePatchName("BFLAGICO", PU_HUDGFX);
-	rmatcico = W_CachePatchName("RMATCICO", PU_HUDGFX);
-	bmatcico = W_CachePatchName("BMATCICO", PU_HUDGFX);
-	gotrflag = W_CachePatchName("GOTRFLAG", PU_HUDGFX);
-	gotbflag = W_CachePatchName("GOTBFLAG", PU_HUDGFX);
-	fnshico = W_CachePatchName("FNSHICO", PU_HUDGFX);
-	nonicon = W_CachePatchName("NONICON", PU_HUDGFX);
-	nonicon2 = W_CachePatchName("NONICON2", PU_HUDGFX);
-
-	// NiGHTS HUD things
-	bluestat = W_CachePatchName("BLUESTAT", PU_HUDGFX);
-	byelstat = W_CachePatchName("BYELSTAT", PU_HUDGFX);
-	orngstat = W_CachePatchName("ORNGSTAT", PU_HUDGFX);
-	redstat = W_CachePatchName("REDSTAT", PU_HUDGFX);
-	yelstat = W_CachePatchName("YELSTAT", PU_HUDGFX);
-	nbracket = W_CachePatchName("NBRACKET", PU_HUDGFX);
-	nring = W_CachePatchName("NRNG1", PU_HUDGFX);
-	for (i = 0; i < 12; ++i)
-	{
-		nhud[i] = W_CachePatchName(va("NHUD%d", i+1), PU_HUDGFX);
-		nbon[i] = W_CachePatchName(va("NBON%d", i+1), PU_HUDGFX);
-	}
-	nsshud = W_CachePatchName("NSSHUD", PU_HUDGFX);
-	nssbon = W_CachePatchName("NSSBON", PU_HUDGFX);
-	minicaps = W_CachePatchName("MINICAPS", PU_HUDGFX);
-
-	for (i = 0; i < 8; ++i)
-	{
-		narrow[i] = W_CachePatchName(va("NARROW%d", i+1), PU_HUDGFX);
-		nredar[i] = W_CachePatchName(va("NREDAR%d", i+1), PU_HUDGFX);
-	}
-
-	// non-animated version
-	narrow[8] = W_CachePatchName("NARROW9", PU_HUDGFX);
-
-	drillbar = W_CachePatchName("DRILLBAR", PU_HUDGFX);
-	for (i = 0; i < 3; ++i)
-		drillfill[i] = W_CachePatchName(va("DRILLFI%d", i+1), PU_HUDGFX);
-	capsulebar = W_CachePatchName("CAPSBAR", PU_HUDGFX);
-	capsulefill = W_CachePatchName("CAPSFILL", PU_HUDGFX);
-	minus5sec = W_CachePatchName("MINUS5", PU_HUDGFX);
-
-	for (i = 0; i < 7; ++i)
-		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
-
 	K_LoadKartHUDGraphics();
 
 	// Midnight Channel:
-	hud_tv1 = W_CachePatchName("HUD_TV1", PU_HUDGFX);
-	hud_tv2 = W_CachePatchName("HUD_TV2", PU_HUDGFX);
+	HU_UpdatePatch(&hud_tv1, "HUD_TV1");
+	HU_UpdatePatch(&hud_tv2, "HUD_TV2");
 
 #ifdef HAVE_DISCORDRPC
 	// Discord Rich Presence
-	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
+	HU_UpdatePatch(&envelope, "K_REQUES");
 #endif
 }
 
@@ -420,7 +222,10 @@ static inline void ST_Stop(void)
 	if (st_stopped)
 		return;
 
-	V_SetPalette(0);
+#ifdef HWRENDER
+	if (rendermode != render_opengl)
+#endif
+		V_SetPalette(0);
 
 	st_stopped = true;
 }
@@ -447,6 +252,9 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
+
+	luahuddrawlist_game = LUA_HUD_CreateDrawList();
+	luahuddrawlist_titlecard = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -546,17 +354,6 @@ static INT32 SCR(INT32 r)
 // =========================================================================
 //                          INTERNAL DRAWING
 // =========================================================================
-#define ST_DrawTopLeftOverlayPatch(x,y,p)         V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_SNAPTOTOP|V_SNAPTOLEFT|V_HUDTRANS, p)
-#define ST_DrawOverlayNum(x,y,n)           V_DrawTallNum(x, y, V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPaddedOverlayNum(x,y,n,d)   V_DrawPaddedTallNum(x, y, V_NOSCALESTART|V_HUDTRANS, n, d)
-#define ST_DrawOverlayPatch(x,y,p)         V_DrawScaledPatch(x, y, V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawMappedOverlayPatch(x,y,p,c) V_DrawMappedScaledPatch(x, y, V_NOSCALESTART|V_HUDTRANS, p, c)
-#define ST_DrawNumFromHud(h,n)        V_DrawTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHud(h,n,q)   V_DrawPaddedTallNum(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHud(h,p)      V_DrawScaledPatch(SCX(hudinfo[h].x), SCY(hudinfo[h].y), V_NOSCALESTART|V_HUDTRANS, p)
-#define ST_DrawNumFromHudWS(h,n)      V_DrawTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n)
-#define ST_DrawPadNumFromHudWS(h,n,q) V_DrawPaddedTallNum(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, n, q)
-#define ST_DrawPatchFromHudWS(h,p)    V_DrawScaledPatch(SCX(hudinfo[h+!!r_splitscreen].x), SCY(hudinfo[h+!!r_splitscreen].y), V_NOSCALESTART|V_HUDTRANS, p)
 
 // Devmode information
 static void ST_drawDebugInfo(void)
@@ -647,6 +444,9 @@ static patch_t *tcroundnum[10];
 static patch_t *tcactnum[10];
 static patch_t *tcact;
 
+static patch_t *twarn;
+static patch_t *twarn2;
+
 // some coordinates define to make my life easier....
 #define FINAL_ROUNDX (24)
 #define FINAL_EGGY (160)
@@ -699,6 +499,9 @@ static void ST_cacheLevelTitle(void)
 	tcbanner2 = 	(patch_t *)W_CachePatchName("TCBC0", PU_HUDGFX);
 
 	tcact =			(patch_t *)W_CachePatchName("TT_ACT", PU_HUDGFX);
+
+	twarn = 		(patch_t *)W_CachePatchName("K_BOSW01", PU_HUDGFX);
+	twarn2 = 		(patch_t *)W_CachePatchName("K_BOSW02", PU_HUDGFX);
 
 	// Cache round #
 	for (i=1; i < 11; i++)
@@ -786,7 +589,36 @@ void ST_runTitleCard(void)
 
 		// SRB2KART
 		// side Zig-Zag positions...
-
+		if (bossinfo.boss == true)
+		{
+			// Handle name info...
+			if (bossinfo.enemyname)
+			{
+				UINT32 len = strlen(bossinfo.enemyname)+1;
+				if (len > 1 && bossinfo.titleshow < len)
+				{
+					len = (lt_endtime-(TICRATE/2))/len;
+					if (lt_ticker % len == 0)
+					{
+						char c = toupper(bossinfo.enemyname[bossinfo.titleshow]);
+						bossinfo.titleshow++;
+						c -= LT_FONTSTART;
+						if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c] || !bossinfo.titlesound)
+						{
+							;
+						}
+						else
+						{
+							S_StartSound(NULL, bossinfo.titlesound);
+						}
+					}
+				}
+			}
+			// No matter the circumstances, scroll the WARN...
+			bannerx = -((lt_ticker*2)%((encoremode ? twarn2 : twarn)->width));
+		}
+		else
+		{
 			// TITLECARD START
 			if (lt_ticker < TTANIMSTART)
 			{
@@ -908,7 +740,8 @@ void ST_runTitleCard(void)
 			}
 
 			// No matter the circumstances, scroll the banner...
-			bannerx = -(lt_ticker%(tcbanner->width));
+			bannerx = -((lt_ticker*2)%(tcbanner->width));
+		}
 
 
 		// used for hud slidein
@@ -932,9 +765,8 @@ void ST_drawTitleCard(void)
 	fixed_t actscale;
 	angle_t fakeangle;
 
+	INT32 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
 	INT32 bx = bannerx;	// We need to make a copy of that otherwise pausing will cause problems.
-
-	UINT8 i;
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -952,6 +784,103 @@ void ST_drawTitleCard(void)
 	if (lt_ticker < TTANIMSTART)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
+	if (bossinfo.boss == true)
+	{
+		// WARNING!
+		// https://twitter.com/matthewseiji/status/1485003284196716544
+		// the above tweet is directly responsible for the existence of bosses in this game at all
+		{
+#define LOTIME 5
+#define HITIME 15
+			patch_t *localwarn = (encoremode ? twarn2 : twarn);
+			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
+			boolean encorehack = (encoremode && lt_ticker <= PRELEVELTIME+4);
+
+			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
+			{
+				if (transp > HITIME-1)
+				{
+					transp = HITIME-1;
+				}
+
+				transp = (((10*transp)/HITIME)<<V_ALPHASHIFT) | (encorehack ? V_SUBTRACT : V_ADD);
+
+				while (bx > -pad)
+					bx -= localwarn->width;
+				while (bx < BASEVIDWIDTH+pad)
+				{
+					V_DrawFixedPatch(bx*FRACUNIT, 55*FRACUNIT, FRACUNIT, V_SNAPTOLEFT|transp, localwarn, NULL);
+					bx += localwarn->width;
+				}
+			}
+#undef LOTIME
+#undef HITIME
+		}
+
+		// Everything else...
+		if (bossinfo.enemyname)
+		{
+			bx = V_TitleCardStringWidth(bossinfo.enemyname);
+
+			// Name.
+			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 75, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker);
+
+			// Under-bar.
+			{
+				angle_t fakeang = 0;
+				fixed_t scalex = FRACUNIT;
+
+				// Handle scaling.
+				if (lt_ticker <= 3)
+				{
+					fakeang = (lt_ticker*ANGLE_45)/2;
+					scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
+				}
+				else if (lt_exitticker > 1)
+				{
+					if (lt_exitticker <= 4)
+					{
+						fakeang = ((lt_exitticker-1)*ANGLE_45)/2;
+						scalex = FINECOSINE(fakeang>>ANGLETOFINESHIFT);
+					}
+					else
+					{
+						scalex = 0;
+					}
+				}
+				// Handle subtitle.
+				else if (bossinfo.subtitle && lt_ticker >= TICRATE/2)
+				{
+					INT32 by = 75+32;
+					if (lt_ticker == TICRATE/2 || lt_exitticker == 1)
+					{
+						;
+					}
+					else if (lt_ticker == (TICRATE/2)+1 || lt_ticker == lt_endtime)
+					{
+						by += 3;
+					}
+					else
+					{
+						by += 5;
+					}
+
+					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, V_6WIDTHSPACE, bossinfo.subtitle);
+				}
+
+				// Now draw the under-bar itself.
+				if (scalex > 0)
+				{
+					bx = FixedMul(bx, scalex);
+					V_DrawFill((BASEVIDWIDTH-(bx+2))/2, 75+32, bx+2, 3, 31);
+					V_DrawFill((BASEVIDWIDTH-(bx))/2, 75+32+1, bx, 1, 0);
+				}
+			}
+		}
+		lt_lasttic = lt_ticker;
+		goto luahook;
+	}
+
 	// Background zig-zags
 	V_DrawFixedPatch((chev1x)*FRACUNIT, (chev1y)*FRACUNIT, FRACUNIT, chevtflag, tcchev1, NULL);
 	V_DrawFixedPatch((chev2x)*FRACUNIT, (chev2y)*FRACUNIT, FRACUNIT, chevtflag, tcchev2, NULL);
@@ -966,11 +895,16 @@ void ST_drawTitleCard(void)
 	// round num background
 	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
 
-	// Scrolling banner, we'll draw 3 of those back to back.
-	for (i=0; i < 3; i++)
+	// Scrolling banner
+	if (tcbanner->width > 0)
 	{
-		V_DrawFixedPatch((bannerx + bx)*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
-		bx += tcbanner->width;
+		while (bx > -pad)
+			bx -= tcbanner->width;
+		while (bx < BASEVIDWIDTH+pad)
+		{
+			V_DrawFixedPatch(bx*FRACUNIT, (bannery)*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcbanner, NULL);
+			bx += tcbanner->width;
+		}
 	}
 
 	// If possible, draw round number
@@ -982,10 +916,10 @@ void ST_drawTitleCard(void)
 	V_DrawFixedPatch(eggx2*FRACUNIT, eggy2*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebottom, NULL);
 
 	// Now the level name.
-	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, true, lt_ticker, TTANIMENDTHRESHOLD);
+	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, false, lt_ticker, TTANIMENDTHRESHOLD);
 
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, true, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
+		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
 
 	// the act has a similar graphic animation, but we'll handle it here since it's only like 2 graphics lmfao.
 	if (actnum && actnum < 10)
@@ -1028,8 +962,12 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	LUAh_TitleCardHUD(stplyr);
-
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
+		LUAh_TitleCardHUD(stplyr, luahuddrawlist_titlecard);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
 
 // Clear defined coordinates, we don't need them anymore
@@ -1068,26 +1006,22 @@ static void ST_overlayDrawer(void)
 {
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
+	{
 		K_drawKartHUD();
+
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+			LUAh_GameHUD(stplyr, luahuddrawlist_game);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game);
+	}
 
 	if (!hu_showscores) // hide the following if TAB is held
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!(multiplayer && demo.playback))
-			{
-				if(!P_IsLocalPlayer(stplyr))
-				{
-					/*char name[MAXPLAYERNAME+1];
-					// shorten the name if its more than twelve characters.
-					strlcpy(name, player_names[stplyr-players], 13);*/
-
-					// Show name of player being displayed
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, 0, M_GetText("VIEWPOINT:"));
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_ALLOWLOWERCASE, player_names[stplyr-players]);
-				}
-			}
-			else if (!demo.title)
+			if (!demo.title && !P_IsLocalPlayer(stplyr))
 			{
 				if (!r_splitscreen)
 				{
@@ -1109,9 +1043,6 @@ static void ST_overlayDrawer(void)
 			}
 		}
 	}
-
-	if (!(netgame || multiplayer) || !hu_showscores)
-		LUAh_GameHUD(stplyr);
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
@@ -1141,42 +1072,16 @@ static void ST_overlayDrawer(void)
 			// SRB2kart: changed positions & text
 			if (r_splitscreen)
 			{
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("- SPECTATING -"));
-				V_DrawThinString(2, (BASEVIDHEIGHT/2)-10, V_HUDTRANSHALF|V_SPLITSCREEN, itemtxt);
+				V_DrawThinString(2, (BASEVIDHEIGHT/2)-20, V_YELLOWMAP|V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("- SPECTATING -"));
+				V_DrawThinString(2, (BASEVIDHEIGHT/2)-10, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, itemtxt);
 			}
 			else
 			{
-				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_SPLITSCREEN|V_YELLOWMAP, M_GetText("- SPECTATING -"));
-				V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF|V_SPLITSCREEN, itemtxt);
-				V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Accelerate - Float"));
-				V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN, M_GetText("Brake - Sink"));
+				V_DrawString(2, BASEVIDHEIGHT-40, V_HUDTRANSHALF|V_SPLITSCREEN|V_YELLOWMAP|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("- SPECTATING -"));
+				V_DrawString(2, BASEVIDHEIGHT-30, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, itemtxt);
+				V_DrawString(2, BASEVIDHEIGHT-20, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Accelerate - Float"));
+				V_DrawString(2, BASEVIDHEIGHT-10, V_HUDTRANSHALF|V_SPLITSCREEN|V_SNAPTOLEFT|V_SNAPTOBOTTOM, M_GetText("Brake - Sink"));
 			}
-		}
-	}
-
-	// Replay manual-save stuff
-	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
-	{
-		switch (demo.savemode)
-		{
-		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
-			break;
-
-		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
-			break;
-
-		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
-			break;
-
-		case DSM_TITLEENTRY:
-			ST_DrawDemoTitleEntry();
-			break;
-
-		default: // Don't render anything
-			break;
 		}
 	}
 }
@@ -1289,6 +1194,8 @@ void ST_Drawer(void)
 		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
+			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
+			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();
 		}
 
@@ -1303,6 +1210,32 @@ void ST_Drawer(void)
 
 	if (stagetitle)
 		ST_drawTitleCard();
+
+	// Replay manual-save stuff
+	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
+	{
+		switch (demo.savemode)
+		{
+		case DSM_NOTSAVING:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Look Backward: Save replay");
+			break;
+
+		case DSM_WILLAUTOSAVE:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
+			break;
+
+		case DSM_WILLSAVE:
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
+			break;
+
+		case DSM_TITLEENTRY:
+			ST_DrawDemoTitleEntry();
+			break;
+
+		default: // Don't render anything
+			break;
+		}
+	}
 
 	ST_drawDebugInfo();
 }

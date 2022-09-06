@@ -36,6 +36,7 @@
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "d_main.h"
 #include "m_argv.h"
@@ -63,7 +64,14 @@ typedef off_t off64_t;
 #if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
 #define PRIdS "u"
 #elif defined (_WIN32)
-#define PRIdS "Iu"
+// pedantic: %I is nonstandard, is it ok to assume
+// unsigned int?
+//#define PRIdS "Iu"
+#ifdef _WIN64
+#define PRIdS "lu"
+#else
+#define PRIdS "u"
+#endif
 #elif defined (DJGPP)
 #define PRIdS "u"
 #else
@@ -643,7 +651,7 @@ void M_SaveConfig(const char *filename)
 	}
 
 	// header message
-	fprintf(f, "// SRB2Kart configuration file.\n");
+	fprintf(f, "// Dr. Robotnik's Ring Racers configuration file.\n");
 
 	// print execversion FIRST, because subsequent consvars need to be filtered
 	// always print current EXECVERSION
@@ -690,20 +698,20 @@ static void M_CreateScreenShotPalette(void)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[13] = "kartXXXX.ext";
+	static char freename[19] = "ringracersXXXX.ext";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
 
 	// find a file name to save it to
-	strcpy(freename+9,ext);
+	strcpy(freename+15,ext);
 
 	for (;;)
 	{
-		freename[4] = (char)('0' + (char)(i/1000));
-		freename[5] = (char)('0' + (char)((i/100)%10));
-		freename[6] = (char)('0' + (char)((i/10)%10));
-		freename[7] = (char)('0' + (char)(i%10));
+		freename[10] = (char)('0' + (char)(i/1000));
+		freename[11] = (char)('0' + (char)((i/100)%10));
+		freename[12] = (char)('0' + (char)((i/10)%10));
+		freename[13] = (char)('0' + (char)(i%10));
 
 		if (FIL_WriteFileOK(va(pandf,pathname,freename))) // access succeeds
 			result = 1; // too low
@@ -712,10 +720,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			if (!i)
 				break; // not too high, so it must be equal! YAY!
 
-			freename[4] = (char)('0' + (char)((i-1)/1000));
-			freename[5] = (char)('0' + (char)(((i-1)/100)%10));
-			freename[6] = (char)('0' + (char)(((i-1)/10)%10));
-			freename[7] = (char)('0' + (char)((i-1)%10));
+			freename[10] = (char)('0' + (char)((i-1)/1000));
+			freename[11] = (char)('0' + (char)(((i-1)/100)%10));
+			freename[12] = (char)('0' + (char)(((i-1)/10)%10));
+			freename[13] = (char)('0' + (char)((i-1)%10));
 			if (!FIL_WriteFileOK(va(pandf,pathname,freename))) // access fails
 				result = -1; // too high
 			else
@@ -733,10 +741,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			return NULL;
 	}
 
-	freename[4] = (char)('0' + (char)(i/1000));
-	freename[5] = (char)('0' + (char)((i/100)%10));
-	freename[6] = (char)('0' + (char)((i/10)%10));
-	freename[7] = (char)('0' + (char)(i%10));
+	freename[10] = (char)('0' + (char)(i/1000));
+	freename[11] = (char)('0' + (char)((i/100)%10));
+	freename[12] = (char)('0' + (char)((i/10)%10));
+	freename[13] = (char)('0' + (char)(i%10));
 
 	return freename;
 }
@@ -746,12 +754,12 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 FUNCNORETURN static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
 	//CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
-	I_Error("libpng error at %p: %s", PNG, pngtext);
+	I_Error("libpng error at %p: %s", (void*)PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)
@@ -796,10 +804,10 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "SRB2Kart " VERSIONSTRING;
+	char titletxt[] = "Dr. Robotnik's Ring Racers " VERSIONSTRING;
 	png_charp playertxt =  cv_playername[0].zstring;
-	char desctxt[] = "SRB2Kart Screenshot";
-	char Movietxt[] = "SRB2Kart Movie";
+	char desctxt[] = "Ring Racers Screenshot";
+	char Movietxt[] = "Ring Racers Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL
@@ -844,7 +852,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
-	if (gamestate == GS_LEVEL && &players[g_localplayers[0]] && players[g_localplayers[0]].mo)
+	if (gamestate == GS_LEVEL && players[g_localplayers[0]].mo)
 		snprintf(locationtxt, 40, "X:%d Y:%d Z:%d A:%d",
 			players[g_localplayers[0]].mo->x>>FRACBITS,
 			players[g_localplayers[0]].mo->y>>FRACBITS,
@@ -2555,26 +2563,25 @@ const char *M_FileError(FILE *fp)
 
 /** Return the number of parts of this path.
 */
-int M_PathParts(const char *path)
+int M_PathParts(const char *p)
 {
-	int n;
-	const char *p;
-	const char *t;
-	if (path == NULL)
+	int parts = 0;
+
+	if (p == NULL)
 		return 0;
-	for (n = 0, p = path ;; ++n)
+
+#ifdef _WIN32
+	if (!strncmp(&p[1], ":\\", 2))
+		p += 3;
+#endif
+
+	while (*(p += strspn(p, PATHSEP)))
 	{
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-			p += strspn(p, PATHSEP);
-		else
-		{
-			if (*t)/* there is something after the final delimiter */
-				n++;
-			break;
-		}
+		parts++;
+		p += strcspn(p, PATHSEP);
 	}
-	return n;
+
+	return parts;
 }
 
 /** Check whether a path is an absolute path.
@@ -2592,50 +2599,43 @@ boolean M_IsPathAbsolute(const char *path)
 */
 void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
 {
-	char path[MAX_WADPATH];
+	char path[256];
 	char *p;
-	char *t;
+	int n;
+	int c;
 
 	if (end > 0 && end <= start)
 		return;
 
 	strlcpy(path, cpath, sizeof path);
+
 #ifdef _WIN32
-	if (strncmp(&path[1], ":\\", 2) == 0)
+	if (!strncmp(&path[1], ":\\", 2))
 		p = &path[3];
 	else
 #endif
 		p = path;
 
-	if (end > 0)
-		end -= start;
-
-	for (; start > 0; --start)
+	while (end != 0 && *(p += strspn(p, PATHSEP)))
 	{
-		p += strspn(p, PATHSEP);
-		if (!( p = strchr(p, PATHSEP[0]) ))
-			return;
-	}
-	p += strspn(p, PATHSEP);
-	for (;;)
-	{
-		if (end > 0 && !--end)
-			break;
+		n = strcspn(p, PATHSEP);
 
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-		{
-			*p = '\0';
-			I_mkdir(path, mode);
-			*p = PATHSEP[0];
-			p += strspn(p, PATHSEP);
-		}
+		if (start > 0)
+			start--;
 		else
 		{
-			if (*t)
-				I_mkdir(path, mode);
-			break;
+			c = p[n];
+			p[n] = '\0';
+
+			I_mkdir(path, mode);
+
+			p[n] = c;
 		}
+
+		p += n;
+
+		if (end > 0)
+			end--;
 	}
 }
 

@@ -12,6 +12,7 @@
 
 #include "r_defs.h"
 #include "d_player.h"
+#include "lua_hudlib_drawlist.h"
 
 enum hook {
 	hook_NetVars=0,

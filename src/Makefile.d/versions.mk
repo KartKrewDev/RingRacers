@@ -22,7 +22,7 @@ ifndef GCC295
 #WFLAGS+=-Wno-packed
 endif
 ifndef RELAXWARNINGS
- WFLAGS+=-W
+ WFLAGS+=-W -pedantic
 #WFLAGS+=-Wno-sign-compare
 ifndef GCC295
  WFLAGS+=-Wno-div-by-zero
@@ -38,14 +38,16 @@ ifdef GCC40
  WFLAGS+=-std=gnu89
 endif
 ifdef GCC41
- WFLAGS+=-Wdeclaration-after-statement
- WFLAGS+=-Wno-error=declaration-after-statement
  WFLAGS+=-Wshadow
 endif
 #WFLAGS+=-Wlarger-than-%len%
  WFLAGS+=-Wpointer-arith -Wbad-function-cast
 ifdef GCC45
 #WFLAGS+=-Wc++-compat
+ WFLAGS+=-std=gnu99
+endif
+ifdef GCC47
+ WFLAGS+=-std=gnu11
 endif
  WFLAGS+=-Wcast-qual
 ifndef NOCASTALIGNWARN

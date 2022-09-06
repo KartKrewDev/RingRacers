@@ -145,10 +145,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 // Locations for searching for main.kart
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2Kart"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2Kart"
+#define DEFAULTWADLOCATION1 "/usr/local/share/games/RingRacers"
+#define DEFAULTWADLOCATION2 "/usr/local/games/RingRacers"
+#define DEFAULTWADLOCATION3 "/usr/share/games/RingRacers"
+#define DEFAULTWADLOCATION4 "/usr/games/RingRacers"
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
@@ -165,6 +165,7 @@ static char returnWadPath[256];
 
 #include "../doomdef.h"
 #include "../m_misc.h"
+#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -173,7 +174,6 @@ static char returnWadPath[256];
 #include "../d_net.h"
 #include "../g_game.h"
 #include "../filesrch.h"
-#include "../k_pwrlv.h"
 #include "endtxt.h"
 #include "sdlmain.h"
 
@@ -181,7 +181,10 @@ static char returnWadPath[256];
 
 #include "../m_argv.h"
 
+// SRB2Kart
+#include "../k_pwrlv.h"
 #include "../r_main.h" // Frame interpolation/uncapped
+#include "../r_fps.h"
 
 #ifdef MAC_ALERT
 #include "macosx/mac_alert.h"
@@ -245,8 +248,8 @@ static void write_backtrace(INT32 signal)
 	void *array[BT_SIZE];
 	char timestr[STR_SIZE];
 
-	const char *error = "An error occurred within SRB2! Send this stack trace to someone who can help!\n";
-	const char *error2 = "(Or find crash-log.txt in your SRB2 directory.)\n"; // Shown only to stderr.
+	const char *error = "An error occurred within Dr. Robotnik's Ring Racers! Send this stack trace to someone who can help!\n";
+	const char *error2 = "(Or find crash-log.txt in your Ring Racers directory.)\n"; // Shown only to stderr.
 
 	fd = open(va("%s" PATHSEP "%s", srb2home, "crash-log.txt"), O_CREAT|O_APPEND|O_RDWR, S_IRUSR|S_IWUSR);
 
@@ -340,9 +343,10 @@ static void I_ReportSignal(int num, int coredumped)
 
 	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Process killed by signal",
-		sigmsg, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Process killed by signal",
+			sigmsg, NULL);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -679,7 +683,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2Kart Console");
+		SetConsoleTitleA("Dr. Robotnik's Ring Racers Console");
 		consolevent = SDL_TRUE;
 	}
 
@@ -1510,8 +1514,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2Kart "VERSIONSTRINGW, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 Kart with integrated Mumble Link support.", 2048);
+		wcsncpy(mumble->name, L"Dr. Robotnik's Ring Racers "VERSIONSTRINGW, 256);
+		wcsncpy(mumble->description, L"Dr. Robotnik's Ring Racers with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;
@@ -1638,59 +1642,78 @@ ticcmd_t *I_BaseTiccmd4(void)
 
 static Uint64 timer_frequency;
 
-static double tic_frequency;
-static Uint64 tic_epoch;
-static double elapsed_tics;
-
-static void UpdateElapsedTics(void)
-{
-	const Uint64 now = SDL_GetPerformanceCounter();
-
-	elapsed_tics += (now - tic_epoch) / tic_frequency;
-	tic_epoch = now; // moving epoch
-}
-
-tic_t I_GetTime(void)
-{
-	double f = 0.0;
-	UpdateElapsedTics();
-	f = floor(elapsed_tics);
-	return (tic_t)f;
-}
-
-fixed_t I_GetTimeFrac(void)
-{
-	UpdateElapsedTics();
-	
-	return FLOAT_TO_FIXED((float) (elapsed_tics - floor(elapsed_tics)));
-}
-
 precise_t I_GetPreciseTime(void)
 {
 	return SDL_GetPerformanceCounter();
 }
 
-int I_PreciseToMicros(precise_t d)
+UINT64 I_GetPrecisePrecision(void)
 {
-	return (int)(d / (timer_frequency / 1000000.0));
+	return SDL_GetPerformanceFrequency();
+}
+
+static UINT32 frame_rate;
+
+static double frame_frequency;
+static UINT64 frame_epoch;
+static double elapsed_frames;
+
+static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
+{
+	frame_rate = cap;
+	frame_epoch = now;
+
+	//elapsed_frames = 0.0;
+
+	if (frame_rate == 0)
+	{
+		// Shouldn't be used, but just in case...?
+		frame_frequency = 1.0;
+		return;
+	}
+
+	frame_frequency = timer_frequency / (double)frame_rate;
+}
+
+double I_GetFrameTime(void)
+{
+	const UINT64 now = SDL_GetPerformanceCounter();
+	const UINT32 cap = R_GetFramerateCap();
+
+	if (cap != frame_rate)
+	{
+		// Maybe do this in a OnChange function for cv_fpscap?
+		I_InitFrameTime(now, cap);
+	}
+
+	if (frame_rate == 0)
+	{
+		// Always advance a frame.
+		elapsed_frames += 1.0;
+	}
+	else
+	{
+		elapsed_frames += (now - frame_epoch) / frame_frequency;
+	}
+
+	frame_epoch = now; // moving epoch
+	return elapsed_frames;
 }
 
 //
-//I_StartupTimer
+// I_StartupTimer
 //
 void I_StartupTimer(void)
 {
 	timer_frequency = SDL_GetPerformanceFrequency();
-	tic_epoch       = SDL_GetPerformanceCounter();
 
-	tic_frequency   = timer_frequency / (double)NEWTICRATE;
-	elapsed_tics    = 0.0;
+	I_InitFrameTime(0, R_GetFramerateCap());
+	elapsed_frames  = 0.0;
 }
 
-void I_Sleep(void)
+void I_Sleep(UINT32 ms)
 {
-	if (cv_sleep.value > 0)
-		SDL_Delay(cv_sleep.value);
+	SDL_Delay(ms);
 }
 
 #ifdef NEWSIGNALHANDLER
@@ -1706,9 +1729,10 @@ static void newsignalhandler_Warn(const char *pr)
 
 	I_OutputMsg("%s\n", text);
 
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"Startup error",
-		text, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Startup error",
+			text, NULL);
 
 	I_ShutdownConsole();
 	exit(-1);
@@ -1793,7 +1817,7 @@ INT32 I_StartupSystem(void)
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
 	if (SDL_Init(0) < 0)
-		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
+		I_Error("Dr. Robotnik's Ring Racers: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
 	I_SetupMumble();
 #endif
@@ -1914,9 +1938,10 @@ void I_Error(const char *error, ...)
 			// Implement message box with SDL_ShowSimpleMessageBox,
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-				"SRB2Kart "VERSIONSTRING" Recursive Error",
-				buffer, NULL);
+			if (!M_CheckParm("-dedicated"))
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+					"Dr. Robotnik's Ring Racers "VERSIONSTRING" Recursive Error",
+					buffer, NULL);
 
 			W_Shutdown();
 			exit(-1); // recursive errors detected
@@ -1962,9 +1987,11 @@ void I_Error(const char *error, ...)
 	// Implement message box with SDL_ShowSimpleMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-		"SRB2Kart "VERSIONSTRING" Error",
-		buffer, NULL);
+	if (!M_CheckParm("-dedicated"))
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+			"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
+			buffer, NULL);
+
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is
 	// perfectly okay! In addition, we do this on purpose so the
@@ -2121,7 +2148,7 @@ void I_GetDiskFreeSpace(INT64 *freespace)
 
 	if (!testwin95)
 	{
-		pfnGetDiskFreeSpaceEx = (p_GetDiskFreeSpaceExA)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA");
+		*(void**)&pfnGetDiskFreeSpaceEx = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetDiskFreeSpaceExA"));
 		testwin95 = true;
 	}
 	if (pfnGetDiskFreeSpaceEx)
@@ -2629,7 +2656,8 @@ const CPUInfoFlags *I_CPUInfo(void)
 #if defined (_WIN32)
 	static CPUInfoFlags WIN_CPUInfo;
 	SYSTEM_INFO SI;
-	p_IsProcessorFeaturePresent pfnCPUID = (p_IsProcessorFeaturePresent)(LPVOID)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent");
+	p_IsProcessorFeaturePresent pfnCPUID;
+	*(void**)&pfnCPUID = FUNCPTRCAST(GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsProcessorFeaturePresent"));
 
 	ZeroMemory(&WIN_CPUInfo,sizeof (WIN_CPUInfo));
 	if (pfnCPUID)

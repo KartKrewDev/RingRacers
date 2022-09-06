@@ -25,10 +25,6 @@
 #include "deh_lua.h"
 #include "deh_tables.h"
 
-#ifdef MUSICSLOT_COMPATIBILITY
-#include "deh_soc.h" // for get_mus
-#endif
-
 // freeslot takes a name (string only!)
 // and allocates it to the appropriate free slot.
 // Returns the slot number allocated for it or nil if failed.
@@ -188,6 +184,27 @@ static inline int lib_freeslot(lua_State *L)
 					lastcustomtol <<= 1;
 					r++;
 				}
+			}
+		}
+		else if (fastcmp(type, "PRECIP"))
+		{
+			// Search if we already have a PRECIP by that name...
+			preciptype_t i;
+			for (i = PRECIP_FIRSTFREESLOT; i < precip_freeslot; i++)
+				if (fastcmp(word, precipprops[i].name))
+					break;
+
+			// We don't, so allocate a new one.
+			if (i >= precip_freeslot) {
+				if (precip_freeslot < MAXPRECIP)
+				{
+					CONS_Printf("Weather PRECIP_%s allocated.\n",word);
+					precipprops[i].name = Z_StrDup(word);
+					lua_pushinteger(L, precip_freeslot);
+					r++;
+					precip_freeslot++;
+				} else
+					CONS_Alert(CONS_WARNING, "Ran out of free PRECIP slots!\n");
 			}
 		}
 		Z_Free(s);
@@ -422,29 +439,6 @@ static inline int lib_getenum(lua_State *L)
 		if (mathlib) return luaL_error(L, "sfx '%s' could not be found.\n", word);
 		return 0;
 	}
-#ifdef MUSICSLOT_COMPATIBILITY
-	else if (!mathlib && fastncmp("mus_",word,4)) {
-		p = word+4;
-		if ((i = get_mus(p, false)) == 0)
-			return 0;
-		lua_pushinteger(L, i);
-		return 1;
-	}
-	else if (mathlib && fastncmp("MUS_",word,4)) { // SOCs are ALL CAPS!
-		p = word+4;
-		if ((i = get_mus(p, false)) == 0)
-			return luaL_error(L, "music '%s' could not be found.\n", word);
-		lua_pushinteger(L, i);
-		return 1;
-	}
-	else if (mathlib && (fastncmp("O_",word,2) || fastncmp("D_",word,2))) {
-		p = word+2;
-		if ((i = get_mus(p, false)) == 0)
-			return luaL_error(L, "music '%s' could not be found.\n", word);
-		lua_pushinteger(L, i);
-		return 1;
-	}
-#endif
 	else if (!mathlib && fastncmp("khud_",word,5)) {
 		p = word+5;
 		for (i = 0; i < NUMKARTHUD; i++)
@@ -462,16 +456,6 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		return luaL_error(L, "karthud '%s' could not be found.\n", word);
-	}
-	else if (fastncmp("HUD_",word,4)) {
-		p = word+4;
-		for (i = 0; i < NUMHUDITEMS; i++)
-			if (fastcmp(p, HUDITEMS_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "huditem '%s' could not be found.\n", word);
-		return 0;
 	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
@@ -511,6 +495,21 @@ static inline int lib_getenum(lua_State *L)
 			}
 		if (mathlib) return luaL_error(L, "menutype '%s' could not be found.\n", word);
 		return 0;
+	}
+	else if (fastncmp("PRECIP_",word,7)) {
+		p = word+7;
+		for (i = 0; i < MAXPRECIP; i++)
+		{
+			if (precipprops[i].name == NULL)
+				break;
+
+			if (fastcmp(p, precipprops[i].name))
+			{
+				lua_pushinteger(L, PRECIP_NONE + i);
+				return 1;
+			}
+		}
+		return luaL_error(L, "weather type '%s' does not exist.\n", word);
 	}
 	else if (!mathlib && fastncmp("A_",word,2)) {
 		char *caps;
@@ -673,7 +672,7 @@ void LUA_SetActionByName(void *state, const char *actiontocompare)
 	}
 }
 
-enum actionnum LUA_GetActionNumByName(const char *actiontocompare)
+size_t LUA_GetActionNumByName(const char *actiontocompare)
 {
 	size_t z;
 	for (z = 0; actionpointers[z].name; z++)

@@ -30,6 +30,7 @@
 #include "hw_md2.h"
 #include "../d_main.h"
 #include "../r_bsp.h"
+#include "../r_fps.h"
 #include "../r_main.h"
 #include "../m_misc.h"
 #include "../w_wad.h"
@@ -46,6 +47,7 @@
 // SRB2Kart
 #include "../k_color.h"
 #include "../k_kart.h" // HITLAGJITTERS
+#include "../r_fps.h"
 
 #ifdef HAVE_PNG
 
@@ -143,13 +145,13 @@ static inline void md2_printModelInfo (model_t *model)
 #ifdef HAVE_PNG
 static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng error at %p: %s", (void*)PNG, pngtext);
 	//I_Error("libpng error at %p: %s", PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static GLTextureFormat_t PNG_Load(const char *filename, int *w, int *h, GLPatch_t *grpatch)
@@ -1323,7 +1325,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
+		INT32 lightlevel = 255;
+		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
 		if (sector->numlights)
@@ -1332,22 +1335,22 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!R_ThingIsFullBright(spr->mobj))
+			if (!lightset)
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
-			if (*sector->lightlist[light].extra_colormap)
+			if (!R_ThingIsFullBright(spr->mobj) && *sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
 		}
-		else
+		else if (!lightset)
 		{
-			if (!R_ThingIsFullBright(spr->mobj))
-				lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
+			lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		//lightlevel = 128 + (lightlevel>>1);
+		if (R_ThingIsSemiBright(spr->mobj))
+			lightlevel = 128 + (lightlevel>>1);
 
 		HWR_Lighting(&Surf, lightlevel, colormap);
 	}
@@ -1358,8 +1361,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	{
 		patch_t *gpatch, *blendgpatch;
 		GLPatch_t *hwrPatch = NULL, *hwrBlendPatch = NULL;
-		INT32 durs = spr->mobj->state->tics;
-		INT32 tics = spr->mobj->tics;
+		float durs = (float)spr->mobj->state->tics;
+		float tics = (float)spr->mobj->tics;
 		const boolean papersprite = (R_ThingIsPaperSprite(spr->mobj) && !R_ThingIsFloorSprite(spr->mobj));
 		const UINT8 flip = (UINT8)(!(spr->mobj->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(spr->mobj));
 		const UINT8 hflip = (UINT8)(!(spr->mobj->mirrored) != !R_ThingHorizontallyFlipped(spr->mobj));
@@ -1367,17 +1370,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		spriteframe_t *sprframe;
 		INT32 mod;
 		float finalscale;
+		interpmobjstate_t interp;
 
-		fixed_t interpx = spr->mobj->x;
-		fixed_t interpy = spr->mobj->y;
-		fixed_t interpz = spr->mobj->z;
-
-		// do interpolation
-		if (cv_frameinterpolation.value == 1)
+		if (R_UsingFrameInterpolation() && !paused)
 		{
-			interpx = spr->mobj->old_x + FixedMul(rendertimefrac, spr->mobj->x - spr->mobj->old_x);
-			interpy = spr->mobj->old_y + FixedMul(rendertimefrac, spr->mobj->y - spr->mobj->old_y);
-			interpz = spr->mobj->old_z + FixedMul(rendertimefrac, spr->mobj->z - spr->mobj->old_z);
+			R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+		}
+		else
+		{
+			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 		}
 
 		// hitlag vibrating
@@ -1390,15 +1391,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				mul = -mul;
 			}
 
-			interpx += FixedMul(spr->mobj->momx, mul);
-			interpy += FixedMul(spr->mobj->momy, mul);
-			interpy += FixedMul(spr->mobj->momz, mul);
+			interp.x += FixedMul(spr->mobj->momx, mul);
+			interp.y += FixedMul(spr->mobj->momy, mul);
+			interp.z += FixedMul(spr->mobj->momz, mul);
 		}
 
 		// sprite offset
-		interpx += spr->mobj->sprxoff;
-		interpy += spr->mobj->spryoff;
-		interpz += spr->mobj->sprzoff;
+		interp.x += spr->mobj->sprxoff;
+		interp.y += spr->mobj->spryoff;
+		interp.z += spr->mobj->sprzoff;
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
@@ -1505,10 +1506,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		{
 			INT32 skinnum = TC_DEFAULT;
 
-			if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
+			if (R_ThingIsFlashing(spr->mobj))
 			{
 				skinnum = TC_HITLAG;
 			}
+			/*
 			else if ((spr->mobj->flags & (MF_ENEMY|MF_BOSS)) && (spr->mobj->flags2 & MF2_FRET) && !(spr->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
 			{
 				if (spr->mobj->type == MT_CYBRAKDEMON || spr->mobj->colorized)
@@ -1518,6 +1520,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				else
 					skinnum = TC_BOSS;
 			}
+			*/
 			else if ((skincolornum_t)spr->mobj->color != SKINCOLOR_NONE)
 			{
 				if (spr->mobj->colorized)
@@ -1547,8 +1550,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		if (spr->mobj->frame & FF_ANIMATE)
 		{
 			// set duration and tics to be the correct values for FF_ANIMATE states
-			durs = spr->mobj->state->var2;
-			tics = spr->mobj->anim_duration;
+			durs = (float)spr->mobj->state->var2;
+			tics = (float)spr->mobj->anim_duration;
 		}
 
 		frame = (spr->mobj->frame & FF_FRAMEMASK);
@@ -1572,6 +1575,9 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 
 #ifdef USE_MODEL_NEXTFRAME
+		// Interpolate the model interpolation. (lol)
+		tics -= FixedToFloat(rendertimefrac);
+
 #define INTERPOLERATION_LIMIT TICRATE/4
 		if (
 #ifdef BAD_MODEL_OPTIONS
@@ -1592,7 +1598,12 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				{
 					nextFrame = (spr->mobj->frame & FF_FRAMEMASK) + 1;
 					if (nextFrame >= mod)
-						nextFrame = 0;
+					{
+						if (spr->mobj->state->frame & FF_SPR2ENDSTATE)
+							nextFrame--;
+						else
+							nextFrame = 0;
+					}
 					if (frame || !(spr->mobj->state->frame & FF_SPR2ENDSTATE))
 						nextFrame = md2->model->spr2frames[spr2].frames[nextFrame];
 					else
@@ -1619,13 +1630,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
-		p.x = FIXED_TO_FLOAT(interpx);
-		p.y = FIXED_TO_FLOAT(interpy) + md2->offset;
+		p.x = FIXED_TO_FLOAT(interp.x);
+		p.y = FIXED_TO_FLOAT(interp.y) + md2->offset;
 
 		if (flip)
-			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
+			p.z = FIXED_TO_FLOAT(interp.z + spr->mobj->height);
 		else
-			p.z = FIXED_TO_FLOAT(interpz);
+			p.z = FIXED_TO_FLOAT(interp.z);
 
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			sprdef = &((skin_t *)spr->mobj->skin)->sprites[spr->mobj->sprite2];
@@ -1636,40 +1647,40 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		if (sprframe->rotate || papersprite)
 		{
-			fixed_t anglef = AngleFixed(spr->mobj->angle);
-
-			if (spr->mobj->player)
-				anglef = AngleFixed(spr->mobj->player->drawangle);
+			fixed_t anglef = AngleFixed(interp.angle);
 
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		else
 		{
-			const fixed_t anglef = AngleFixed((R_PointToAngle(interpx, interpy))-ANGLE_180);
+			const fixed_t anglef = AngleFixed((R_PointToAngle(interp.x, interp.y))-ANGLE_180);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 
-		p.rollangle = 0.0f;
-
-		if (spr->mobj->rollangle)
 		{
-			fixed_t camAngleDiff = AngleFixed(viewangle) - FLOAT_TO_FIXED(p.angley); // dumb reconversion back, I know
-			fixed_t anglef = AngleFixed(spr->mobj->rollangle);
+			fixed_t anglef = AngleFixed(R_ModelRotationAngle(spr->mobj, NULL));
 
-			p.rollangle = FIXED_TO_FLOAT(anglef);
-			p.roll = true;
+			p.rollangle = 0.0f;
 
-			// rotation pivot
-			p.centerx = FIXED_TO_FLOAT(spr->mobj->radius / 2);
-			p.centery = FIXED_TO_FLOAT(spr->mobj->height / 2);
+			if (anglef)
+			{
+				fixed_t camAngleDiff = AngleFixed(viewangle) - FLOAT_TO_FIXED(p.angley); // dumb reconversion back, I know
 
-			// rotation axes relative to camera
-			p.rollx = FIXED_TO_FLOAT(FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
-			p.rollz = FIXED_TO_FLOAT(FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+				p.rollangle = FIXED_TO_FLOAT(anglef);
+				p.roll = true;
+
+				// rotation pivot
+				p.centerx = FIXED_TO_FLOAT(spr->mobj->radius / 2);
+				p.centery = FIXED_TO_FLOAT(spr->mobj->height / 2);
+
+				// rotation axes relative to camera
+				p.rollx = FIXED_TO_FLOAT(FINECOSINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+				p.rollz = FIXED_TO_FLOAT(FINESINE(FixedAngle(camAngleDiff) >> ANGLETOFINESHIFT));
+			}
 		}
 
-		p.anglez = FIXED_TO_FLOAT(AngleFixed(spr->mobj->pitch));
-		p.anglex = FIXED_TO_FLOAT(AngleFixed(spr->mobj->roll));
+		p.anglez = FIXED_TO_FLOAT(AngleFixed(R_InterpolateAngle(spr->mobj->old_pitch, spr->mobj->pitch)));
+		p.anglex = FIXED_TO_FLOAT(AngleFixed(R_InterpolateAngle(spr->mobj->old_roll, spr->mobj->roll)));
 
 		// SRB2CBTODO: MD2 scaling support
 		finalscale *= FIXED_TO_FLOAT(spr->mobj->scale);
@@ -1678,7 +1689,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		p.mirror = atransform.mirror;
 
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
+		{
+			float xs = finalscale * FIXED_TO_FLOAT(spr->mobj->spritexscale);
+			float ys = finalscale * FIXED_TO_FLOAT(spr->mobj->spriteyscale);
+			HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, xs, ys, flip, hflip, &Surf);
+		}
 	}
 
 	return true;

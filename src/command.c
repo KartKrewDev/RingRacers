@@ -1385,12 +1385,17 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 						if (var->revert.allocated)
 						{
 							Z_Free(var->revert.v.string);
+							var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 						}
 
 						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
 
 						return;
 					}
+
+					// free the old value string
+					Z_Free(var->zstring);
+					var->zstring = NULL;
 
 					var->value = var->PossibleValue[i].value;
 					var->string = var->PossibleValue[i].strvalue;
@@ -1453,13 +1458,7 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 found:
 			if (client && execversion_enabled)
 			{
-				if (var->revert.allocated)
-				{
-					Z_Free(var->revert.v.string);
-				}
-
 				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-
 				return;
 			}
 
@@ -1474,6 +1473,7 @@ found:
 		if (var->revert.allocated)
 		{
 			Z_Free(var->revert.v.string);
+			// Z_StrDup creates a new zone memory block, so we can keep the allocated flag on
 		}
 
 		var->revert.v.string = Z_StrDup(valstr);
@@ -1528,7 +1528,7 @@ finish:
 	}
 	var->flags |= CV_MODIFIED;
 	// raise 'on change' code
-	LUA_CVarChanged(var->name); // let consolelib know what cvar this is.
+	LUA_CVarChanged(var); // let consolelib know what cvar this is.
 	if (var->flags & CV_CALL && !stealth)
 		var->func();
 
@@ -1621,7 +1621,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		// not from server or remote admin, must be hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -1641,34 +1641,14 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 	// the client will reset all netvars to default before loading
 	WRITEUINT16(*p, 0x0000);
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (in_demo && cvar->netid == cv_numlaps.netid))
+		if ((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar))
 		{
 			if (in_demo)
 				WRITESTRING(*p, cvar->name);
 			else
 				WRITEUINT16(*p, cvar->netid);
 
-			// UGLY HACK: Save proper lap count in net replays
-			if (in_demo && cvar->netid == cv_numlaps.netid)
-			{
-				if (cv_basenumlaps.value &&
-					(!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-					|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value))
-				)
-				{
-					WRITESTRING(*p, cv_basenumlaps.string);
-				}
-				else
-				{
-					char buf[9];
-					sprintf(buf, "%d", mapheaderinfo[gamemap - 1]->numlaps);
-					WRITESTRING(*p, buf);
-				}
-			}
-			else
-			{
-				WRITESTRING(*p, cvar->string);
-			}
+			WRITESTRING(*p, cvar->string);
 
 			WRITEUINT8(*p, false);
 			++count;
@@ -1679,6 +1659,8 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 static void CV_LoadVars(UINT8 **p,
 		consvar_t *(*got)(UINT8 **p, char **ret_value, boolean *ret_stealth))
 {
+	const boolean store = (client || demo.playback);
+
 	consvar_t *cvar;
 	UINT16 count;
 
@@ -1692,7 +1674,7 @@ static void CV_LoadVars(UINT8 **p,
 	{
 		if (cvar->flags & CV_NETVAR)
 		{
-			if (client && cvar->revert.v.string == NULL)
+			if (store && cvar->revert.v.string == NULL)
 			{
 				cvar->revert.v.const_munge = cvar->string;
 				cvar->revert.allocated = ( cvar->zstring != NULL );
@@ -1728,6 +1710,7 @@ void CV_RevertNetVars(void)
 			if (cvar->revert.allocated)
 			{
 				Z_Free(cvar->revert.v.string);
+				cvar->revert.allocated = false; // no value being held now
 			}
 
 			cvar->revert.v.string = NULL;
@@ -2007,9 +1990,10 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					{
 						increment = 0;
 						currentindice = max;
+						break; // The value we definitely want, stop here.
 					}
 					else if (var->PossibleValue[max].value == var->value)
-						currentindice = max;
+						currentindice = max; // The value we maybe want.
 				}
 
 				if (increment)
@@ -2045,6 +2029,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				if (var->PossibleValue[max].value == var->value)
 					currentindice = max;
 
+			// The following options will NOT handle netsyncing.
 			if (var == &cv_chooseskin)
 			{
 				// Special case for the chooseskin variable, used only directly from the menu
@@ -2096,28 +2081,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			}
 			else if (var == &cv_kartspeed)
 			{
-				INT32 maxspeed = (M_SecretUnlocked(SECRET_HARDSPEED) ? 2 : 1);
-				// Special case for the kartspeed variable, used only directly from the menu to prevent selecting hard mode
-				if (increment > 0) // Going up!
-				{
-					newvalue = var->value + 1;
-					if (newvalue > maxspeed)
-						newvalue = -1;
-					var->value = newvalue;
-					var->string = var->PossibleValue[var->value].strvalue;
-					var->func();
-					return;
-				}
-				else if (increment < 0) // Going down!
-				{
-					newvalue = var->value - 1;
-					if (newvalue < -1)
-						newvalue = maxspeed;
-					var->value = newvalue;
-					var->string = var->PossibleValue[var->value].strvalue;
-					var->func();
-					return;
-				}
+				max = (M_SecretUnlocked(SECRET_HARDSPEED) ? 3 : 2);
 			}
 #ifdef PARANOIA
 			if (currentindice == -1)
