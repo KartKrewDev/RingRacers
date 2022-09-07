@@ -2438,12 +2438,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
 
-	if (thing->type == MT_SKIM)
-	{
-		// Skim special (not needed for kart?)
-		return 0;
-	}
-
 	if (P_WaterStepUp(thing) == true)
 	{
 		// Add some extra stepmove when waterskipping
@@ -2500,16 +2494,20 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 #endif
 
 	do {
-		if (thing->flags & MF_NOCLIP) {
+		if (thing->flags & MF_NOCLIP)
+		{
 			tryx = x;
 			tryy = y;
-		} else {
+		}
+		else
+		{
 			if (x-tryx > radius)
 				tryx += radius;
 			else if (x-tryx < -radius)
 				tryx -= radius;
 			else
 				tryx = x;
+
 			if (y-tryy > radius)
 				tryy += radius;
 			else if (y-tryy < -radius)
@@ -3776,7 +3774,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	if (P_IsLineTripWire(bestslideline))
 	{
 		// TRIPWIRE CANNOT BE MADE NONBOUNCY
-		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
+		K_ApplyTripWire(mo->player, TRIPSTATE_BLOCKED);
 	}
 	else
 	{

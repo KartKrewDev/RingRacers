@@ -91,3 +91,6 @@ endif
 endif
 
 .=$(call Ifndef,ECHO,@)
+
+# prepends an underscore if not empty
+_=$(if $(1),_$(1))

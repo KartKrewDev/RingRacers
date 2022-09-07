@@ -1503,7 +1503,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t paperoffset = 0, paperdistance = 0;
 	angle_t centerangle = 0;
 
-	INT32 dispoffset = thing->info->dispoffset;
+	INT32 dispoffset = thing->dispoffset;
 
 	//SoM: 3/17/2000
 	fixed_t gz = 0, gzt = 0;
@@ -3000,12 +3000,6 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 			}
 
 			ds = curr->user;
-
-			if (!ds->silhouette && !ds->maskedtexturecol)
-			{
-				// does not cover sprite
-				continue;
-			}
 
 			if (ds->portalpass != 66) // unused?
 			{

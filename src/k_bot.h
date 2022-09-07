@@ -28,7 +28,7 @@
 #define BOTTURNCONFIRM 4
 
 // How many tics without being able to accelerate before we'll let you spindash.
-#define BOTSPINDASHCONFIRM (TICRATE/4)
+#define BOTSPINDASHCONFIRM (2*TICRATE)
 
 // Point for bots to aim for
 typedef struct botprediction_s {
