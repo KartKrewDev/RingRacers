@@ -24017,7 +24017,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_tossed,     // seesound
 		8,              // reactiontime
 		sfx_None,       // attacksound
-		256*FRACUNIT,   // painstate
+		S_NULL,   		// painstate
 		100,            // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
