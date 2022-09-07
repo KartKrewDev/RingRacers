@@ -4646,7 +4646,10 @@ static void GetPackets(void)
 
 		if (netbuffer->packettype == PT_CLIENTJOIN && server)
 		{
-			HandleConnect(node);
+			if (!levelloading) // Otherwise just ignore
+			{
+				HandleConnect(node);
+			}
 			continue;
 		}
 		if (node == servernode && client && cl_mode != CL_SEARCHING)
