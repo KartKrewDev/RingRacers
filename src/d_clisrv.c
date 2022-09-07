@@ -3053,17 +3053,17 @@ consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|C
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 
-consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
+consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "2", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // max file size to send to a player (in kilobytes)
 static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {51200, "MAX"}, {0, NULL}};
-consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", CV_SAVE|CV_NETVAR, maxsend_cons_t, NULL);
+consvar_t cv_maxsend = CVAR_INIT ("maxsend", "51200", CV_SAVE|CV_NETVAR, maxsend_cons_t, NULL);
 consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // Speed of file downloading (in packets per tic)
-static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
+static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
+consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "32", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
