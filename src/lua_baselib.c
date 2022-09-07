@@ -3339,23 +3339,37 @@ static int lib_kOvertakeSound(lua_State *L)
 static int lib_kPainSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayPainSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayPainSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayPainSound(mobj, other);
 	return 0;
 }
 
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *victim = NULL;
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-		victim = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	K_PlayHitEmSound(mobj, victim);
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayHitEmSound(mobj, other);
+	return 0;
+}
+
+static int lib_kTryHurtSoundExchange(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *attacker = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!victim->player)
+		return luaL_error(L, "K_TryHurtSoundExchange: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_TryHurtSoundExchange(victim, attacker);
 	return 0;
 }
 
@@ -4037,6 +4051,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayLossSound", lib_kLossSound},
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
+	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},

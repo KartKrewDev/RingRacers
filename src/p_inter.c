@@ -2012,7 +2012,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->invincibilitytimer += kinvextend;
 					}
 
-					K_PlayHitEmSound(source, target);
+					K_TryHurtSoundExchange(target, source);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
 					K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
@@ -2085,14 +2085,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->flashing = K_GetKartFlashing(player);
 			}
 
-			P_PlayRinglossSound(player->mo);
+			P_PlayRinglossSound(target);
 
 			if (ringburst > 0)
 			{
 				P_PlayerRingBurst(player, ringburst);
 			}
 
-			K_PlayPainSound(player->mo);
+			K_PlayPainSound(target, source);
 
 			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{
