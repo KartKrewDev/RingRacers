@@ -7125,17 +7125,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->fuse <= 16)
 		{
-			mobj->color = SKINCOLOR_KETCHUP;
+			mobj->color = SKINCOLOR_GOLD;
 			/* don't draw papersprite frames after blue boost */
 			mobj->renderflags ^= RF_DONTDRAW;
 		}
 		else if (mobj->fuse <= 32)
-			mobj->color = SKINCOLOR_SAPPHIRE;
+			mobj->color = SKINCOLOR_KETCHUP;
 		else if (mobj->fuse <= 48)
-			mobj->color = SKINCOLOR_PURPLE;
+			mobj->color = SKINCOLOR_SAPPHIRE;
 		else if (mobj->fuse > 48)
 			mobj->color = K_RainbowColor(
-				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
+				(SKINCOLOR_SAPPHIRE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
 			);
 
@@ -7150,14 +7150,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				break;
 
-			case 3:/* purple boost */
-				if ((mobj->fuse == 32)/* to blue*/
-				|| (mobj->fuse == 16))/* to red*/
+			case 3:/* blue boost */
+				if ((mobj->fuse == 32)/* to red*/
+				|| (mobj->fuse == 16))/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 
-			case 2:/* blue boost */
-				if (mobj->fuse == 16)/* to red*/
+			case 2:/* red boost */
+				if (mobj->fuse == 16)/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 

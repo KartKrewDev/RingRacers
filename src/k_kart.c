@@ -4297,8 +4297,8 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 
 	if (charge < 0)
 	{
-		// Stage 0: Yellow
-		color = SKINCOLOR_GOLD;
+		// Stage 0: Grey
+		color = SKINCOLOR_SILVER;
 	}
 	else if (charge >= dsfour)
 	{
@@ -4315,7 +4315,7 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 	}
 	else if (charge >= dsthree)
 	{
-		// Stage 3: Purple
+		// Stage 3: Blue
 		if (charge <= dsthree+(16*3))
 		{
 			// transition 1
@@ -4324,19 +4324,6 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		else if (charge <= dsthree+(32*3))
 		{
 			// transition 2
-			color = SKINCOLOR_MOONSET;
-		}
-		else
-		{
-			color = SKINCOLOR_PURPLE;
-		}
-	}
-	else if (charge >= dstwo)
-	{
-		// Stage 2: Blue
-		if (charge <= dstwo+(32*3))
-		{
-			// transition
 			color = SKINCOLOR_NOVA;
 		}
 		else
@@ -4344,10 +4331,10 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 			color = SKINCOLOR_SAPPHIRE;
 		}
 	}
-	else if (charge >= dsone)
+	else if (charge >= dstwo)
 	{
-		// Stage 1: Red
-		if (charge <= dsone+(32*3))
+		// Stage 2: Red
+		if (charge <= dstwo+(32*3))
 		{
 			// transition
 			color = SKINCOLOR_TANGERINE;
@@ -4355,6 +4342,19 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		else
 		{
 			color = SKINCOLOR_KETCHUP;
+		}
+	}
+	else if (charge >= dsone)
+	{
+		// Stage 1: Yellow
+		if (charge <= dsone+(32*3))
+		{
+			// transition
+			color = SKINCOLOR_TAN;
+		}
+		else
+		{
+			color = SKINCOLOR_GOLD;
 		}
 	}
 
@@ -8543,9 +8543,9 @@ INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage)
 }
 
 /*
-Stage 1: red sparks
-Stage 2: blue sparks
-Stage 3: purple sparks
+Stage 1: yellow sparks
+Stage 2: red sparks
+Stage 3: blue sparks
 Stage 4: big large rainbow sparks
 Stage 0: air failsafe
 */
@@ -8561,26 +8561,22 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 	switch (stage)
 	{
 		case 1:
-			overlay->color = SKINCOLOR_KETCHUP;
 			overlay->fuse = 16;
 			break;
 
 		case 2:
-			overlay->color = SKINCOLOR_SAPPHIRE;
+			
 			overlay->fuse = 32;
-
 			S_StartSound(player->mo, sfx_kc5b);
 			break;
 
 		case 3:
-			overlay->color = SKINCOLOR_PURPLE;
 			overlay->fuse = 48;
 
 			S_StartSound(player->mo, sfx_kc5b);
 			break;
 
 		case 4:
-			overlay->color = SKINCOLOR_SILVER;
 			overlay->fuse = 120;
 
 			S_StartSound(player->mo, sfx_kc5b);
@@ -8588,7 +8584,6 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			break;
 
 		case 0:
-			overlay->color = SKINCOLOR_SILVER;
 			overlay->fuse = 16;
 			break;
 	}
@@ -8623,7 +8618,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->driftcharge < 0)
 			{
-				// Stage 0: Yellow sparks
+				// Stage 0: Grey sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 8);
 
@@ -8632,7 +8627,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 			else if (player->driftcharge >= dsone && player->driftcharge < dstwo)
 			{
-				// Stage 1: Red sparks
+				// Stage 1: Yellow sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 4);
 
@@ -8643,7 +8638,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 			else if (player->driftcharge < dsthree)
 			{
-				// Stage 2: Blue sparks
+				// Stage 2: Red sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, player->speed / 3);
 
@@ -8654,7 +8649,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			}
 			else if (player->driftcharge < dsfour)
 			{
-				// Stage 3: Purple sparks
+				// Stage 3: Blue sparks
 				if (!onground)
 					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
 
