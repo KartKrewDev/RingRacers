@@ -543,7 +543,7 @@ static INT32 SDLJoyAxis(const Sint16 axis, UINT8 pid)
 	}
 	else
 	{
-		raxis = (JoyInfo[pid].scale != 1) ? ((raxis / JoyInfo[pid].scale) * JoyInfo[pid].scale) : raxis;
+		raxis = (abs(JoyInfo[pid].scale) > 1) ? ((raxis / JoyInfo[pid].scale) * JoyInfo[pid].scale) : raxis;
 
 #ifdef SDL_JDEADZONE
 		if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
