@@ -24,7 +24,7 @@
 #include "p_local.h"
 #include "keys.h"
 #include "i_video.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "am_map.h"
 #include "d_main.h"
 #include "v_video.h"

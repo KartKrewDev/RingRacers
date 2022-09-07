@@ -21,7 +21,7 @@
 #include "g_game.h"
 #include "hu_stuff.h"
 #include "g_input.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "r_local.h"
 #include "r_skins.h"
 #include "p_local.h"
@@ -231,7 +231,7 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 	{4, "/dev/js3"}, {0, NULL}};
 #else
 // accept whatever value - it is in fact the joystick device number
-#define usejoystick_cons_t NULL
+static CV_PossibleValue_t usejoystick_cons_t[] = {{-1, "MIN"}, {MAXGAMEPADS, "MAX"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
@@ -249,11 +249,11 @@ static consvar_t cv_fishcake = CVAR_INIT ("fishcake", "Off", CV_CALL|CV_NOSHOWHE
 #endif
 static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
 
-consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "No", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
+consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
-static CV_PossibleValue_t ingamecap_cons_t[] = {{0, "MIN"}, {MAXPLAYERS-1, "MAX"}, {0, NULL}};
-consvar_t cv_ingamecap = CVAR_INIT ("ingamecap", "0", CV_NETVAR, ingamecap_cons_t, NULL);
+static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
 
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
 
@@ -301,6 +301,28 @@ consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
 };
 
+// last selected profile, unaccessible cvar only set internally but is saved.
+// It's used to know what profile to autoload you to when you get into the character setup.
+
+static CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
+
+consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("lastprofile", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile2", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile3", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile4", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+};
+
+// currently loaded profile for P1 menuing.
+// You choose this profile when starting the game, this will also set lastprofile[0]
+consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofile_cons_t, NULL);
+
+// This one is used exclusively for the titlescreen
+consvar_t cv_ttlprofilen = CVAR_INIT ("ttlprofilen", "0", CV_SAVE, lastprofile_cons_t, NULL);
+
+// Cvar for using splitscreen with 1 device.
+consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, NULL);
+
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
 INT32 cv_debug;
@@ -308,10 +330,10 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
-	CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
-	CVAR_INIT ("use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
-	CVAR_INIT ("use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
+	CVAR_INIT ("use_device", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
+	CVAR_INIT ("use_device2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
+	CVAR_INIT ("use_device3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
+	CVAR_INIT ("use_device4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
 };
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
@@ -590,16 +612,9 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 void D_RegisterServerCommands(void)
 {
 	INT32 i;
+
 	Forceskin_cons_t[0].value = -1;
 	Forceskin_cons_t[0].strvalue = "Off";
-
-	for (i = 0; i < NUMGAMETYPES; i++)
-	{
-		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = Gametype_Names[i];
-	}
-	gametype_cons_t[NUMGAMETYPES].value = 0;
-	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
 
 	// Set the values to 0/NULL, it will be overwritten later when a skin is assigned to the slot.
 	for (i = 1; i < MAXSKINS; i++)
@@ -607,6 +622,7 @@ void D_RegisterServerCommands(void)
 		Forceskin_cons_t[i].value = 0;
 		Forceskin_cons_t[i].strvalue = NULL;
 	}
+
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
@@ -721,11 +737,11 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_allowexitlevel);
 	CV_RegisterVar(&cv_restrictskinchange);
 	CV_RegisterVar(&cv_allowteamchange);
-	CV_RegisterVar(&cv_ingamecap);
+	CV_RegisterVar(&cv_maxplayers);
 	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
-	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_maxconnections);
 	CV_RegisterVar(&cv_joindelay);
 	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_maxsend);
@@ -876,7 +892,12 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_skin[i]);
 		CV_RegisterVar(&cv_follower[i]);
 		CV_RegisterVar(&cv_followercolor[i]);
+		CV_RegisterVar(&cv_lastprofile[i]);
 	}
+
+	CV_RegisterVar(&cv_currprofile);
+	CV_RegisterVar(&cv_ttlprofilen);
+	CV_RegisterVar(&cv_splitdevice);
 
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
@@ -931,7 +952,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_bsaturation);
 	CV_RegisterVar(&cv_msaturation);
 
-	// m_menu.c
+	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
 	CV_RegisterVar(&cv_chatheight);
 	CV_RegisterVar(&cv_chatwidth);
@@ -950,15 +971,7 @@ void D_RegisterClientCommands(void)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
-		CV_RegisterVar(&cv_turnaxis[i]);
-		CV_RegisterVar(&cv_moveaxis[i]);
-		CV_RegisterVar(&cv_brakeaxis[i]);
-		CV_RegisterVar(&cv_aimaxis[i]);
-		CV_RegisterVar(&cv_lookaxis[i]);
-		CV_RegisterVar(&cv_fireaxis[i]);
-		CV_RegisterVar(&cv_driftaxis[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
-		CV_RegisterVar(&cv_digitaldeadzone[i]);
 	}
 
 	// filesrch.c
@@ -1310,6 +1323,8 @@ UINT8 CanChangeSkin(INT32 playernum)
 	// Server has skin change restrictions.
 	if (cv_restrictskinchange.value)
 	{
+		UINT8 i;
+
 		// Can change skin during initial countdown.
 		if (leveltime < starttime)
 			return true;
@@ -1318,8 +1333,22 @@ UINT8 CanChangeSkin(INT32 playernum)
 		if (players[playernum].spectator || players[playernum].playerstate == PST_DEAD || players[playernum].playerstate == PST_REBORN)
 			return true;
 
-		return false;
+		// Check for freeeplay
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (i == consoleplayer)
+				continue;
+			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
+				return false;	// Not freeplay!
+		}
+
+		// if we've gotten here, then it's freeplay, and switching anytime is fair game.
+		return true;
 	}
+	// if restrictskinchange is off and we're trying to change skins, don't allow changing skins while moving after the race has started.
+	else if (gamestate == GS_LEVEL && leveltime >= starttime)
+		return (!P_PlayerMoving(playernum));
+
 
 	return true;
 }
@@ -1864,21 +1893,23 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 
 void D_SendPlayerConfig(UINT8 n)
 {
+	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
+
 	UINT8 buf[4];
 	UINT8 *p = buf;
 
 	SendNameAndColor(n);
 	SendWeaponPref(n);
 
-	if (n == 0)
+	if (pr != NULL)
 	{
 		// Send it over
-		WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
-		WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
+		WRITEUINT16(p, pr->powerlevels[PWRLV_RACE]);
+		WRITEUINT16(p, pr->powerlevels[PWRLV_BATTLE]);
 	}
 	else
 	{
-		// Splitscreen players have invalid powerlevel
+		// Guest players have no power level
 		WRITEUINT16(p, 0);
 		WRITEUINT16(p, 0);
 	}
@@ -2372,10 +2403,12 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	// The supplied data are assumed to be good.
 	I_Assert(delay >= 0 && delay <= 2);
 
+	/*
 	if (mapnum != -1)
 	{
 		CV_SetValue(&cv_nextmap, mapnum);
 	}
+	*/
 
 	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
 	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
@@ -2838,10 +2871,6 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-	}
 	tutorialmode = false; // warping takes us out of tutorial mode
 
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);
@@ -2964,7 +2993,7 @@ static void Command_Pause(void)
 		}
 		else if (modeattacking)	// in time attack, pausing restarts the map
 		{
-			M_ModeAttackRetry(0);	// directly call from m_menu;
+			//M_ModeAttackRetry(0);	// directly call from m_menu;
 			return;
 		}
 
@@ -4550,6 +4579,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (oldgt && newgt)
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
 	}
+
 	// Only do the following as the server, not as remote admin.
 	// There will always be a server, and this only needs to be done once.
 	if (server && (multiplayer || netgame))
@@ -5022,7 +5052,7 @@ void Command_Retry_f(void)
 	}
 	else if (grandprixinfo.gp == false && bossinfo.boss == false)
 	{
-		CONS_Printf(M_GetText("This only works in Grand Prix or Mission Mode.\n"));
+		CONS_Printf(M_GetText("This only works in singleplayer games.\n"));
 	}
 	else
 	{
@@ -5482,7 +5512,7 @@ static void Followercolor4_OnChange(void)
 	}
 }
 
-/** Sends a skin change for the console player, unless that player is moving.
+/** Sends a skin change for the console player, unless that player is moving. Also forces them to spectate if the change is done during gameplay
   * \sa cv_skin, Skin2_OnChange, Color_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5498,7 +5528,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
+	if (CanChangeSkin(consoleplayer))
 		SendNameAndColor(0);
 	else
 	{
@@ -5508,7 +5538,7 @@ static void Skin_OnChange(void)
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
-  * player is moving.
+  * player is moving. Forces spectate the player if the change is done during gameplay.
   * \sa cv_skin2, Skin_OnChange, Color2_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5517,7 +5547,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[1]) && !P_PlayerMoving(g_localplayers[1]))
+	if (CanChangeSkin(g_localplayers[1]))
 		SendNameAndColor(1);
 	else
 	{
@@ -5531,7 +5561,7 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[2]) && !P_PlayerMoving(g_localplayers[2]))
+	if (CanChangeSkin(g_localplayers[2]))
 		SendNameAndColor(2);
 	else
 	{
@@ -5545,7 +5575,7 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[3]) && !P_PlayerMoving(g_localplayers[3]))
+	if (CanChangeSkin(g_localplayers[3]))
 		SendNameAndColor(3);
 	else
 	{
@@ -5776,13 +5806,6 @@ static void KartFrantic_OnChange(void)
 
 static void KartSpeed_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == KARTSPEED_HARD)
-	{
-		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
-		return;
-	}
-
 	if (K_CanChangeRules() == false)
 	{
 		return;

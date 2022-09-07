@@ -16,7 +16,7 @@
 #include "hu_stuff.h"
 #include "font.h"
 
-#include "m_menu.h" // gametype_cons_t
+#include "k_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
 #include "m_misc.h" // word jumping
 
@@ -237,15 +237,13 @@ void HU_Init(void)
 		DIG  (3);
 
 		ADIM (HU);
-
 		PR   ("STCFN");
 		REG;
 
 		PR   ("TNYFN");
 		REG;
 
-		ADIM (KART);
-		PR   ("MKFNT");
+		PR   ("FILEF");
 		REG;
 
 		ADIM (LT);
@@ -277,6 +275,26 @@ void HU_Init(void)
 		REG;
 
 		PR   ("PINGN");
+		REG;
+
+		PR   ("PRFN");
+		REG;
+
+		DIG  (3);
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("GAMEM");
+		REG;
+
+		ADIM (LT);
+		PR   ("THIFN");
+		REG;
+
+		PR   ("TLWFN");
 		REG;
 
 #undef  REG
@@ -976,10 +994,12 @@ void HU_Ticker(void)
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
+	/*
 	if (PlayerInputDown(1, gc_scores))
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
+	*/
 
 	hu_keystrokes = false;
 
@@ -1195,16 +1215,24 @@ boolean HU_Responder(event_t *ev)
 	// (Unless if you're sharing a keyboard, since you probably establish when you start chatting that you have dibs on it...)
 	// (Ahhh, the good ol days when I was a kid who couldn't afford an extra USB controller...)
 
-	if (ev->data1 >= KEY_MOUSE1)
+	if (ev->data1 >= NUMKEYS)
 	{
-		INT32 i;
+		INT32 i, j;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
-			if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1)
+			for (j = 0; j < MAXINPUTMAPPING; j++)
+			{
+				if (gamecontrol[0][i][j] == ev->data1)
+					break;
+			}
+
+			if (j < MAXINPUTMAPPING)
+			{
 				break;
+			}
 		}
 
-		if (i == num_gamecontrols)
+		if (i == num_gamecontrols && j == MAXINPUTMAPPING)
 			return false;
 	}
 
@@ -1212,7 +1240,7 @@ boolean HU_Responder(event_t *ev)
 	if (!chat_on)
 	{
 		// enter chat mode
-		if ((ev->data1 == gamecontrol[0][gc_talkkey][0] || ev->data1 == gamecontrol[0][gc_talkkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_talk][0] || ev->data1 == gamecontrol[0][gc_talk][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
 			chat_on = true;
@@ -1222,7 +1250,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-		if ((ev->data1 == gamecontrol[0][gc_teamkey][0] || ev->data1 == gamecontrol[0][gc_teamkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_teamtalk][0] || ev->data1 == gamecontrol[0][gc_teamtalk][1])
 			&& netgame && !OLD_MUTE)
 		{
 			chat_on = true;
@@ -1246,9 +1274,9 @@ boolean HU_Responder(event_t *ev)
 			return true;
 
 		// Ignore non-keyboard keys, except when the talk key is bound
-		if (ev->data1 >= KEY_MOUSE1
-		&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
-		&& ev->data1 != gamecontrol[0][gc_talkkey][1]))
+		if (ev->data1 >= NUMKEYS
+		/*&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
+		&& ev->data1 != gamecontrol[0][gc_talkkey][1])*/)
 			return false;
 
 		c = CON_ShiftChar(c);
@@ -1310,9 +1338,9 @@ boolean HU_Responder(event_t *ev)
 			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
-			|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
+			/*|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
 			|| c == gamecontrol[0][gc_teamkey][0] || c == gamecontrol[0][gc_teamkey][1])
-			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
+			&& c >= NUMKEYS)*/) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			chat_on = false;
 			c_input = 0; // reset input cursor
@@ -1579,7 +1607,7 @@ static void HU_drawChatLog(INT32 offset)
 	INT32 x = chatx+2, y, dx = 0, dy = 0;
 	UINT32 i = 0;
 	INT32 chat_topy, chat_bottomy;
-	INT32 highlight = HU_GetHighlightColor();
+	INT32 highlight = V_YELLOWMAP;
 	boolean atbottom = false;
 
 	// make sure that our scroll position isn't "illegal";
@@ -2374,9 +2402,7 @@ static void HU_DrawRankings(void)
 
 	V_DrawFadeScreen(0xFF00, 16); // A little more readable, and prevents cheating the fades under other circumstances.
 
-	if (cons_menuhighlight.value)
-		hilicol = cons_menuhighlight.value;
-	else if (modeattacking)
+	if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((gametype == GT_RACE) ? V_SKYMAP : V_REDMAP);
@@ -2385,7 +2411,7 @@ static void HU_DrawRankings(void)
 	if (modeattacking)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Record Attack");
 	else
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, Gametype_Names[gametype]);
 
 	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
 	{

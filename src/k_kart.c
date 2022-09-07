@@ -10529,7 +10529,7 @@ void K_CheckSpectateStatus(void)
 		if (!players[i].spectator)
 		{
 			numingame++;
-			if (cv_ingamecap.value && numingame >= cv_ingamecap.value) // DON'T allow if you've hit the in-game player cap
+			if (cv_maxplayers.value && numingame >= cv_maxplayers.value) // DON'T allow if you've hit the in-game player cap
 				return;
 			if (gamestate != GS_LEVEL) // Allow if you're not in a level
 				continue;
@@ -10554,7 +10554,7 @@ void K_CheckSpectateStatus(void)
 		return;
 
 	// Organize by spectate wait timer
-	if (cv_ingamecap.value)
+	if (cv_maxplayers.value)
 	{
 		UINT8 oldrespawnlist[MAXPLAYERS];
 		memcpy(oldrespawnlist, respawnlist, numjoiners);
@@ -10581,7 +10581,7 @@ void K_CheckSpectateStatus(void)
 	// Finally, we can de-spectate everyone!
 	for (i = 0; i < numjoiners; i++)
 	{
-		if (cv_ingamecap.value && numingame+i >= cv_ingamecap.value) // Hit the in-game player cap while adding people?
+		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value) // Hit the in-game player cap while adding people?
 			break;
 		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
 		P_SpectatorJoinGame(&players[respawnlist[i]]);

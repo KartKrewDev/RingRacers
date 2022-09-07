@@ -11,6 +11,7 @@
 /// \brief Load dehacked file and change tables and text
 
 #include "doomdef.h"
+
 #include "m_cond.h"
 #include "deh_soc.h"
 #include "deh_tables.h"
@@ -245,18 +246,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else
 				i = 0;
 
-			if (fastcmp(word, "CHARACTER"))
-			{
-				if (i >= 0 && i < 32)
-					readPlayer(f, i);
-				else
-				{
-					deh_warning("Character %d out of range (0 - 31)", i);
-					ignorelines(f);
-				}
-				continue;
-			}
-			else if (fastcmp(word, "EMBLEM"))
+			if (fastcmp(word, "EMBLEM"))
 			{
 				if (!mainfile && !gamedataadded)
 				{
@@ -495,19 +485,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "MENU"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_menutype(word2); // find a huditem by name
-					if (i >= 1 && i < NUMMENUTYPES)
-						readmenu(f, i);
-					else
-					{
-						// zero-based, but let's start at 1
-						deh_warning("Menu number %d out of range (1 - %d)", i, NUMMENUTYPES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "UNLOCKABLE"))
 				{
 					if (!mainfile && !gamedataadded)
@@ -564,6 +541,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					{
 						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
 						cup->id = numkartcupheaders;
+						cup->unlockrequired = -1;
 						deh_strlcpy(cup->name, word2,
 							sizeof(cup->name), va("Cup header %s: name", word2));
 						if (prev != NULL)

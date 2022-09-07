@@ -2505,9 +2505,9 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("_title"))
+		else if (S_MusicExists("menu"))
 		{
-			S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("menu", looptitle);
 		}
 	}
 	else
