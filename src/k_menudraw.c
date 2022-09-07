@@ -4371,7 +4371,7 @@ void M_DrawAddons(void)
 
 	m = numwadfiles-(mainwads+2+1);
 
-	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%d ADD-ON%s LOADED", m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for main.kart
+	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for main.kart
 }
 
 #undef addonsseperation
