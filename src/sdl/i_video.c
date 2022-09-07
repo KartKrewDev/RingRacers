@@ -1583,8 +1583,15 @@ static SDL_bool Impl_CreateContext(void)
 		int flags = 0; // Use this to set SDL_RENDERER_* flags now
 		if (usesdl2soft)
 			flags |= SDL_RENDERER_SOFTWARE;
+#if 0
+		// This shit is BROKEN.
+		// - The version of SDL we're using cannot toggle VSync at runtime. We'll need a new SDL version implemented to have this work properly.
+		// - cv_vidwait is initialized before config is loaded, so it's forced to default value at runtime, and forced off when switching. The config loading code would need restructured.
+		// - With both this & frame interpolation on, I_FinishUpdate takes x10 longer. At this point, it is simpler to use a standard FPS cap.
+		// So you can probably guess why I'm kinda over this, I'm just disabling it.
 		else if (cv_vidwait.value)
 			flags |= SDL_RENDERER_PRESENTVSYNC;
+#endif
 
 		// 3 August 2022
 		// Possibly a Windows 11 issue; the default
