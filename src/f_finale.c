@@ -378,10 +378,31 @@ static void F_IntroDrawScene(void)
 //
 void F_IntroDrawer(void)
 {
-	if (timetonext <= 0)
+	// Used to be this whole thing, but now...
+	F_IntroDrawScene();
+}
+
+//
+// F_IntroTicker
+//
+void F_IntroTicker(void)
+{
+	// advance animation
+	finalecount++;
+
+	timetonext--;
+
+	if (intro_scenenum == 0)
 	{
-		if (intro_scenenum == 0)
+		if (timetonext <= 0)
 		{
+#if 0 // The necessary apparatus for constructing more elaborate intros...
+			intro_scenenum++;
+			F_NewCutscene(introtext[intro_scenenum]);
+			timetonext = introscenetime[intro_scenenum];
+			wipegamestate = -1;
+			animtimer = stoptimer = 0;
+#endif
 			if (rendermode != render_none)
 			{
 				F_WipeStartScreen();
@@ -421,39 +442,8 @@ void F_IntroDrawer(void)
 			}
 
 			D_StartTitle();
-			// Yes, this is a weird hack, we need to force a wipe for this because the game state has changed in the middle of where it would normally wipe
-			// Need to set the wipe start and then draw the first frame of the title screen to get it working
-			F_WipeStartScreen();
-			F_TitleScreenDrawer();
-			wipegamestate = -1; // force a wipe
 			return;
 		}
-
-		F_NewCutscene(introtext[++intro_scenenum]);
-		timetonext = introscenetime[intro_scenenum];
-
-		F_WipeStartScreen();
-		wipegamestate = -1;
-		animtimer = stoptimer = 0;
-	}
-
-	intro_curtime = introscenetime[intro_scenenum] - timetonext;
-
-	F_IntroDrawScene();
-}
-
-//
-// F_IntroTicker
-//
-void F_IntroTicker(void)
-{
-	// advance animation
-	finalecount++;
-
-	timetonext--;
-
-	if (intro_scenenum == 0)
-	{
 		if (finalecount == 8)
 			S_StartSound(NULL, sfx_vroom);
 		else if (finalecount == 47)
@@ -465,6 +455,8 @@ void F_IntroTicker(void)
 			S_StartSound(NULL, rsound);
 		}
 	}
+
+	intro_curtime = introscenetime[intro_scenenum] - timetonext;
 
 	F_WriteText();
 
