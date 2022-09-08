@@ -405,12 +405,6 @@ void SCR_Recalc(void)
 	// vid.recalc lasts only for the next refresh...
 	con_recalc = true;
 	am_recalc = true;
-
-#ifdef HWRENDER
-	// Shoot! The screen texture was flushed!
-	if ((rendermode == render_opengl) && (gamestate == GS_INTERMISSION))
-		usebuffer = false;
-#endif
 }
 
 // Check for screen cmd-line parms: to force a resolution.

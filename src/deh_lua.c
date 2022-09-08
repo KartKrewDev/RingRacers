@@ -13,7 +13,7 @@
 #include "g_game.h"
 #include "s_sound.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_local.h"
 #include "st_stuff.h"
@@ -484,16 +484,6 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		if (mathlib) return luaL_error(L, "NiGHTS grade '%s' could not be found.\n", word);
-		return 0;
-	}
-	else if (fastncmp("MN_",word,3)) {
-		p = word+3;
-		for (i = 0; i < NUMMENUTYPES; i++)
-			if (fastcmp(p, MENUTYPES_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "menutype '%s' could not be found.\n", word);
 		return 0;
 	}
 	else if (fastncmp("PRECIP_",word,7)) {

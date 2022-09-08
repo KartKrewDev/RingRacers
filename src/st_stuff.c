@@ -26,7 +26,7 @@
 #include "console.h"
 #include "s_sound.h"
 #include "i_system.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_cheat.h"
 #include "m_misc.h" // moviemode
 #include "m_anigif.h" // cv_gif_downscale
@@ -1057,7 +1057,7 @@ static void ST_overlayDrawer(void)
 			else if (G_GametypeHasTeams())
 				itemtxt = M_GetText("Item - Join Team");
 
-			if (cv_ingamecap.value)
+			if (cv_maxplayers.value)
 			{
 				UINT8 numingame = 0;
 				UINT8 i;
@@ -1066,7 +1066,7 @@ static void ST_overlayDrawer(void)
 					if (playeringame[i] && !players[i].spectator)
 						numingame++;
 
-				itemtxt = va("%s (%s: %d)", itemtxt, M_GetText("Slots left"), max(0, cv_ingamecap.value - numingame));
+				itemtxt = va("%s (%s: %d)", itemtxt, M_GetText("Slots left"), max(0, cv_maxplayers.value - numingame));
 			}
 
 			// SRB2kart: changed positions & text
@@ -1088,11 +1088,11 @@ static void ST_overlayDrawer(void)
 
 void ST_DrawDemoTitleEntry(void)
 {
-	static UINT8 skullAnimCounter = 0;
+	static UINT8 anim = 0;
 	char *nametodraw;
 
-	skullAnimCounter++;
-	skullAnimCounter %= 8;
+	anim++;
+	anim %= 8;
 
 	nametodraw = demo.titlename;
 	while (V_StringWidth(nametodraw, 0) > MAXSTRINGLENGTH*8 - 8)
@@ -1102,7 +1102,7 @@ void ST_DrawDemoTitleEntry(void)
 #define y (BASEVIDHEIGHT/2)
 	M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, nametodraw);
-	if (skullAnimCounter < 4)
+	if (anim < 4)
 		V_DrawCharacter(x + 8 + V_StringWidth(nametodraw, 0), y + 12,
 			'_' | 0x80, false);
 
