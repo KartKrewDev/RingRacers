@@ -1489,7 +1489,7 @@ static SDL_bool Impl_CreateContext(void)
 		// "direct3d" driver (D3D9) causes Drmingw exchndl
 		// to not write RPT files. Every other driver
 		// seems fine.
-		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
+		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
 		if (!renderer)
 			renderer = SDL_CreateRenderer(window, -1, flags);
