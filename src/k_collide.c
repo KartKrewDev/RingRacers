@@ -44,7 +44,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && ((t1->threshold > 0 && t2->type == MT_PLAYER) || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
