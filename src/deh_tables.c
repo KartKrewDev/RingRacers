@@ -13,7 +13,7 @@
 #include "doomdef.h" // Constants
 #include "s_sound.h" // Sound constants
 #include "info.h" // Mobj, state, sprite, etc constants
-#include "m_menu.h" // Menu constants
+#include "k_menu.h" // Menu constants
 #include "y_inter.h" // Intermission constants
 #include "p_local.h" // some more constants
 #include "r_draw.h" // Colormap constants
@@ -23,6 +23,7 @@
 #include "i_sound.h" // musictype_t (for lua)
 #include "g_state.h" // gamestate_t (for lua)
 #include "r_data.h" // patchalphastyle_t
+#include "k_boss.h" // spottype_t (for lua)
 
 #include "deh_tables.h"
 
@@ -85,18 +86,13 @@ actionpointer_t actionpointers[] =
 	{{A_FaceTracer},             "A_FACETRACER"},
 	{{A_Scream},                 "A_SCREAM"},
 	{{A_BossDeath},              "A_BOSSDEATH"},
-	{{A_CustomPower},            "A_CUSTOMPOWER"},
 	{{A_RingBox},                "A_RINGBOX"},
-	{{A_Invincibility},          "A_INVINCIBILITY"},
-	{{A_SuperSneakers},          "A_SUPERSNEAKERS"},
 	{{A_BunnyHop},               "A_BUNNYHOP"},
 	{{A_BubbleSpawn},            "A_BUBBLESPAWN"},
 	{{A_FanBubbleSpawn},         "A_FANBUBBLESPAWN"},
 	{{A_BubbleRise},             "A_BUBBLERISE"},
 	{{A_BubbleCheck},            "A_BUBBLECHECK"},
 	{{A_AwardScore},             "A_AWARDSCORE"},
-	{{A_GiveShield},             "A_GIVESHIELD"},
-	{{A_GravityBox},             "A_GRAVITYBOX"},
 	{{A_ScoreRise},              "A_SCORERISE"},
 	{{A_AttractChase},           "A_ATTRACTCHASE"},
 	{{A_DropMine},               "A_DROPMINE"},
@@ -133,7 +129,6 @@ actionpointer_t actionpointers[] =
 	{{A_BossZoom},               "A_BOSSZOOM"},
 	{{A_BossScream},             "A_BOSSSCREAM"},
 	{{A_Boss2TakeDamage},        "A_BOSS2TAKEDAMAGE"},
-	{{A_Boss7Chase},             "A_BOSS7CHASE"},
 	{{A_GoopSplat},              "A_GOOPSPLAT"},
 	{{A_Boss2PogoSFX},           "A_BOSS2POGOSFX"},
 	{{A_Boss2PogoTarget},        "A_BOSS2POGOTARGET"},
@@ -211,6 +206,8 @@ actionpointer_t actionpointers[] =
 	{{A_SetObjectFlags2},        "A_SETOBJECTFLAGS2"},
 	{{A_RandomState},            "A_RANDOMSTATE"},
 	{{A_RandomStateRange},       "A_RANDOMSTATERANGE"},
+	{{A_StateRangeByAngle},      "A_STATERANGEBYANGLE"},
+	{{A_StateRangeByParameter},  "A_STATERANGEBYPARAMETER"},
 	{{A_DualAction},             "A_DUALACTION"},
 	{{A_RemoteAction},           "A_REMOTEACTION"},
 	{{A_ToggleFlameJet},         "A_TOGGLEFLAMEJET"},
@@ -328,6 +325,7 @@ actionpointer_t actionpointers[] =
 	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
 	{{A_FZBoomFlash},            "A_FZBOOMFLASH"},
@@ -370,8 +368,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_XDEATHSTATE",
 	"S_RAISESTATE",
 
-	// Thok
 	"S_THOK",
+	"S_SHADOW",
 
 	// SRB2kart Frames
 	"S_KART_STILL",
@@ -1094,236 +1092,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FSGNB",
 	"S_FSGNC",
 	"S_FSGND",
-
-	// Black Eggman (Boss 7)
-	"S_BLACKEGG_STND",
-	"S_BLACKEGG_STND2",
-	"S_BLACKEGG_WALK1",
-	"S_BLACKEGG_WALK2",
-	"S_BLACKEGG_WALK3",
-	"S_BLACKEGG_WALK4",
-	"S_BLACKEGG_WALK5",
-	"S_BLACKEGG_WALK6",
-	"S_BLACKEGG_SHOOT1",
-	"S_BLACKEGG_SHOOT2",
-	"S_BLACKEGG_PAIN1",
-	"S_BLACKEGG_PAIN2",
-	"S_BLACKEGG_PAIN3",
-	"S_BLACKEGG_PAIN4",
-	"S_BLACKEGG_PAIN5",
-	"S_BLACKEGG_PAIN6",
-	"S_BLACKEGG_PAIN7",
-	"S_BLACKEGG_PAIN8",
-	"S_BLACKEGG_PAIN9",
-	"S_BLACKEGG_PAIN10",
-	"S_BLACKEGG_PAIN11",
-	"S_BLACKEGG_PAIN12",
-	"S_BLACKEGG_PAIN13",
-	"S_BLACKEGG_PAIN14",
-	"S_BLACKEGG_PAIN15",
-	"S_BLACKEGG_PAIN16",
-	"S_BLACKEGG_PAIN17",
-	"S_BLACKEGG_PAIN18",
-	"S_BLACKEGG_PAIN19",
-	"S_BLACKEGG_PAIN20",
-	"S_BLACKEGG_PAIN21",
-	"S_BLACKEGG_PAIN22",
-	"S_BLACKEGG_PAIN23",
-	"S_BLACKEGG_PAIN24",
-	"S_BLACKEGG_PAIN25",
-	"S_BLACKEGG_PAIN26",
-	"S_BLACKEGG_PAIN27",
-	"S_BLACKEGG_PAIN28",
-	"S_BLACKEGG_PAIN29",
-	"S_BLACKEGG_PAIN30",
-	"S_BLACKEGG_PAIN31",
-	"S_BLACKEGG_PAIN32",
-	"S_BLACKEGG_PAIN33",
-	"S_BLACKEGG_PAIN34",
-	"S_BLACKEGG_PAIN35",
-	"S_BLACKEGG_HITFACE1",
-	"S_BLACKEGG_HITFACE2",
-	"S_BLACKEGG_HITFACE3",
-	"S_BLACKEGG_HITFACE4",
-	"S_BLACKEGG_DIE1",
-	"S_BLACKEGG_DIE2",
-	"S_BLACKEGG_DIE3",
-	"S_BLACKEGG_DIE4",
-	"S_BLACKEGG_DIE5",
-	"S_BLACKEGG_MISSILE1",
-	"S_BLACKEGG_MISSILE2",
-	"S_BLACKEGG_MISSILE3",
-	"S_BLACKEGG_GOOP",
-	"S_BLACKEGG_JUMP1",
-	"S_BLACKEGG_JUMP2",
-	"S_BLACKEGG_DESTROYPLAT1",
-	"S_BLACKEGG_DESTROYPLAT2",
-	"S_BLACKEGG_DESTROYPLAT3",
-
-	"S_BLACKEGG_HELPER", // Collision helper
-
-	"S_BLACKEGG_GOOP1",
-	"S_BLACKEGG_GOOP2",
-	"S_BLACKEGG_GOOP3",
-	"S_BLACKEGG_GOOP4",
-	"S_BLACKEGG_GOOP5",
-	"S_BLACKEGG_GOOP6",
-	"S_BLACKEGG_GOOP7",
-
-	"S_BLACKEGG_MISSILE",
-
-	// New Very-Last-Minute 2.1 Brak Eggman (Cy-Brak-demon)
-	"S_CYBRAKDEMON_IDLE",
-	"S_CYBRAKDEMON_WALK1",
-	"S_CYBRAKDEMON_WALK2",
-	"S_CYBRAKDEMON_WALK3",
-	"S_CYBRAKDEMON_WALK4",
-	"S_CYBRAKDEMON_WALK5",
-	"S_CYBRAKDEMON_WALK6",
-	"S_CYBRAKDEMON_CHOOSE_ATTACK1",
-	"S_CYBRAKDEMON_MISSILE_ATTACK1", // Aim
-	"S_CYBRAKDEMON_MISSILE_ATTACK2", // Fire
-	"S_CYBRAKDEMON_MISSILE_ATTACK3", // Aim
-	"S_CYBRAKDEMON_MISSILE_ATTACK4", // Fire
-	"S_CYBRAKDEMON_MISSILE_ATTACK5", // Aim
-	"S_CYBRAKDEMON_MISSILE_ATTACK6", // Fire
-	"S_CYBRAKDEMON_FLAME_ATTACK1", // Reset
-	"S_CYBRAKDEMON_FLAME_ATTACK2", // Aim
-	"S_CYBRAKDEMON_FLAME_ATTACK3", // Fire
-	"S_CYBRAKDEMON_FLAME_ATTACK4", // Loop
-	"S_CYBRAKDEMON_CHOOSE_ATTACK2",
-	"S_CYBRAKDEMON_VILE_ATTACK1",
-	"S_CYBRAKDEMON_VILE_ATTACK2",
-	"S_CYBRAKDEMON_VILE_ATTACK3",
-	"S_CYBRAKDEMON_VILE_ATTACK4",
-	"S_CYBRAKDEMON_VILE_ATTACK5",
-	"S_CYBRAKDEMON_VILE_ATTACK6",
-	"S_CYBRAKDEMON_NAPALM_ATTACK1",
-	"S_CYBRAKDEMON_NAPALM_ATTACK2",
-	"S_CYBRAKDEMON_NAPALM_ATTACK3",
-	"S_CYBRAKDEMON_FINISH_ATTACK1", // If just attacked, remove MF2_FRET w/out going back to spawnstate
-	"S_CYBRAKDEMON_FINISH_ATTACK2", // Force a delay between attacks so you don't get bombarded with them back-to-back
-	"S_CYBRAKDEMON_PAIN1",
-	"S_CYBRAKDEMON_PAIN2",
-	"S_CYBRAKDEMON_PAIN3",
-	"S_CYBRAKDEMON_DIE1",
-	"S_CYBRAKDEMON_DIE2",
-	"S_CYBRAKDEMON_DIE3",
-	"S_CYBRAKDEMON_DIE4",
-	"S_CYBRAKDEMON_DIE5",
-	"S_CYBRAKDEMON_DIE6",
-	"S_CYBRAKDEMON_DIE7",
-	"S_CYBRAKDEMON_DIE8",
-	"S_CYBRAKDEMON_DEINVINCIBLERIZE",
-	"S_CYBRAKDEMON_INVINCIBLERIZE",
-
-	"S_CYBRAKDEMONMISSILE",
-	"S_CYBRAKDEMONMISSILE_EXPLODE1",
-	"S_CYBRAKDEMONMISSILE_EXPLODE2",
-	"S_CYBRAKDEMONMISSILE_EXPLODE3",
-
-	"S_CYBRAKDEMONFLAMESHOT_FLY1",
-	"S_CYBRAKDEMONFLAMESHOT_FLY2",
-	"S_CYBRAKDEMONFLAMESHOT_FLY3",
-	"S_CYBRAKDEMONFLAMESHOT_DIE",
-
-	"S_CYBRAKDEMONFLAMEREST",
-
-	"S_CYBRAKDEMONELECTRICBARRIER_INIT1",
-	"S_CYBRAKDEMONELECTRICBARRIER_INIT2",
-	"S_CYBRAKDEMONELECTRICBARRIER_PLAYSOUND",
-	"S_CYBRAKDEMONELECTRICBARRIER1",
-	"S_CYBRAKDEMONELECTRICBARRIER2",
-	"S_CYBRAKDEMONELECTRICBARRIER3",
-	"S_CYBRAKDEMONELECTRICBARRIER4",
-	"S_CYBRAKDEMONELECTRICBARRIER5",
-	"S_CYBRAKDEMONELECTRICBARRIER6",
-	"S_CYBRAKDEMONELECTRICBARRIER7",
-	"S_CYBRAKDEMONELECTRICBARRIER8",
-	"S_CYBRAKDEMONELECTRICBARRIER9",
-	"S_CYBRAKDEMONELECTRICBARRIER10",
-	"S_CYBRAKDEMONELECTRICBARRIER11",
-	"S_CYBRAKDEMONELECTRICBARRIER12",
-	"S_CYBRAKDEMONELECTRICBARRIER13",
-	"S_CYBRAKDEMONELECTRICBARRIER14",
-	"S_CYBRAKDEMONELECTRICBARRIER15",
-	"S_CYBRAKDEMONELECTRICBARRIER16",
-	"S_CYBRAKDEMONELECTRICBARRIER17",
-	"S_CYBRAKDEMONELECTRICBARRIER18",
-	"S_CYBRAKDEMONELECTRICBARRIER19",
-	"S_CYBRAKDEMONELECTRICBARRIER20",
-	"S_CYBRAKDEMONELECTRICBARRIER21",
-	"S_CYBRAKDEMONELECTRICBARRIER22",
-	"S_CYBRAKDEMONELECTRICBARRIER23",
-	"S_CYBRAKDEMONELECTRICBARRIER24",
-	"S_CYBRAKDEMONELECTRICBARRIER_DIE1",
-	"S_CYBRAKDEMONELECTRICBARRIER_DIE2",
-	"S_CYBRAKDEMONELECTRICBARRIER_DIE3",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOMCHECK",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOMSUCCESS",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOMCHOOSE",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM1",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM2",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM3",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM4",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM5",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM6",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM7",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM8",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM9",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM10",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM11",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOM12",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOMFAIL",
-	"S_CYBRAKDEMONELECTRICBARRIER_SPARK_RANDOMLOOP",
-	"S_CYBRAKDEMONELECTRICBARRIER_REVIVE1",
-	"S_CYBRAKDEMONELECTRICBARRIER_REVIVE2",
-	"S_CYBRAKDEMONELECTRICBARRIER_REVIVE3",
-
-	"S_CYBRAKDEMONTARGETRETICULE1",
-	"S_CYBRAKDEMONTARGETRETICULE2",
-	"S_CYBRAKDEMONTARGETRETICULE3",
-	"S_CYBRAKDEMONTARGETRETICULE4",
-	"S_CYBRAKDEMONTARGETRETICULE5",
-	"S_CYBRAKDEMONTARGETRETICULE6",
-	"S_CYBRAKDEMONTARGETRETICULE7",
-	"S_CYBRAKDEMONTARGETRETICULE8",
-	"S_CYBRAKDEMONTARGETRETICULE9",
-	"S_CYBRAKDEMONTARGETRETICULE10",
-	"S_CYBRAKDEMONTARGETRETICULE11",
-	"S_CYBRAKDEMONTARGETRETICULE12",
-	"S_CYBRAKDEMONTARGETRETICULE13",
-	"S_CYBRAKDEMONTARGETRETICULE14",
-
-	"S_CYBRAKDEMONTARGETDOT",
-
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_FLY1",
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_FLY2",
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_FLY3",
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_FLY4",
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_DIE1", // Explode
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_DIE2", // Outer ring
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_DIE3", // Center
-	"S_CYBRAKDEMONNAPALMBOMBLARGE_DIE4", // Sound
-
-	"S_CYBRAKDEMONNAPALMBOMBSMALL",
-	"S_CYBRAKDEMONNAPALMBOMBSMALL_DIE1", // Explode
-	"S_CYBRAKDEMONNAPALMBOMBSMALL_DIE2", // Outer ring
-	"S_CYBRAKDEMONNAPALMBOMBSMALL_DIE3", // Inner ring
-	"S_CYBRAKDEMONNAPALMBOMBSMALL_DIE4", // Center
-	"S_CYBRAKDEMONNAPALMBOMBSMALL_DIE5", // Sound
-
-	"S_CYBRAKDEMONNAPALMFLAME_FLY1",
-	"S_CYBRAKDEMONNAPALMFLAME_FLY2",
-	"S_CYBRAKDEMONNAPALMFLAME_FLY3",
-	"S_CYBRAKDEMONNAPALMFLAME_FLY4",
-	"S_CYBRAKDEMONNAPALMFLAME_FLY5",
-	"S_CYBRAKDEMONNAPALMFLAME_FLY6",
-	"S_CYBRAKDEMONNAPALMFLAME_DIE",
-
-	"S_CYBRAKDEMONVILEEXPLOSION1",
-	"S_CYBRAKDEMONVILEEXPLOSION2",
-	"S_CYBRAKDEMONVILEEXPLOSION3",
 
 	// Metal Sonic (Race)
 	"S_METALSONIC_RACE",
@@ -2773,6 +2541,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GREYSPRING3",
 	"S_GREYSPRING4",
 
+	// Orange Spring (Pogo)
+	"S_POGOSPRING1",
+	"S_POGOSPRING2",
+	"S_POGOSPRING2B",
+	"S_POGOSPRING3",
+	"S_POGOSPRING4",
+
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
@@ -3480,6 +3255,21 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM12",
 	"S_DEADRANDOMITEM",
 
+	// Sphere Box (for Battle)
+	"S_SPHEREBOX1",
+	"S_SPHEREBOX2",
+	"S_SPHEREBOX3",
+	"S_SPHEREBOX4",
+	"S_SPHEREBOX5",
+	"S_SPHEREBOX6",
+	"S_SPHEREBOX7",
+	"S_SPHEREBOX8",
+	"S_SPHEREBOX9",
+	"S_SPHEREBOX10",
+	"S_SPHEREBOX11",
+	"S_SPHEREBOX12",
+	"S_DEADSPHEREBOX",
+
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
 	"S_RANDOMITEMPOP2",
@@ -3488,6 +3278,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	//}
 
 	"S_ITEMICON",
+
+	// Item capsules
+	"S_ITEMCAPSULE",
+	"S_ITEMCAPSULE_TOP_SIDE",
+	"S_ITEMCAPSULE_BOTTOM_SIDE_AIR",
+	"S_ITEMCAPSULE_BOTTOM_SIDE_GROUND",
+	//"S_ITEMCAPSULE_TOP",
+	//"S_ITEMCAPSULE_BOTTOM",
+	//"S_ITEMCAPSULE_INSIDE",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",
@@ -3515,6 +3314,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Brake drift sparks
 	"S_BRAKEDRIFT",
 
+	// Brake dust
+	"S_BRAKEDUST1",
+	"S_BRAKEDUST2",
+
 	// Drift Smoke
 	"S_DRIFTDUST1",
 	"S_DRIFTDUST2",
@@ -3526,6 +3329,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DRIFTWARNSPARK2",
 	"S_DRIFTWARNSPARK3",
 	"S_DRIFTWARNSPARK4",
+
+	// Drift electricity
+	"S_DRIFTELECTRICITY",
+	"S_DRIFTELECTRICSPARK",
 
 	// Fast lines
 	"S_FASTLINE1",
@@ -3757,8 +3564,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SSMINE_DEPLOY12",
 	"S_SSMINE_DEPLOY13",
 	"S_SSMINE_EXPLODE",
-	"S_MINEEXPLOSION1",
-	"S_MINEEXPLOSION2",
+	"S_SSMINE_EXPLODE2",
 
 	// New explosion
 	"S_QUICKBOOM1",
@@ -3786,6 +3592,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Land Mine
 	"S_LANDMINE",
 	"S_LANDMINE_EXPLODE",
+
+	// Drop Target
+	"S_DROPTARGET",
+	"S_DROPTARGET_SPIN",
 
 	// Ballhog
 	"S_BALLHOG1",
@@ -3837,31 +3647,31 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPB20",
 	"S_SPB_DEAD",
 
-	// Thunder Shield
-	"S_THUNDERSHIELD1",
-	"S_THUNDERSHIELD2",
-	"S_THUNDERSHIELD3",
-	"S_THUNDERSHIELD4",
-	"S_THUNDERSHIELD5",
-	"S_THUNDERSHIELD6",
-	"S_THUNDERSHIELD7",
-	"S_THUNDERSHIELD8",
-	"S_THUNDERSHIELD9",
-	"S_THUNDERSHIELD10",
-	"S_THUNDERSHIELD11",
-	"S_THUNDERSHIELD12",
-	"S_THUNDERSHIELD13",
-	"S_THUNDERSHIELD14",
-	"S_THUNDERSHIELD15",
-	"S_THUNDERSHIELD16",
-	"S_THUNDERSHIELD17",
-	"S_THUNDERSHIELD18",
-	"S_THUNDERSHIELD19",
-	"S_THUNDERSHIELD20",
-	"S_THUNDERSHIELD21",
-	"S_THUNDERSHIELD22",
-	"S_THUNDERSHIELD23",
-	"S_THUNDERSHIELD24",
+	// Lightning Shield
+	"S_LIGHTNINGSHIELD1",
+	"S_LIGHTNINGSHIELD2",
+	"S_LIGHTNINGSHIELD3",
+	"S_LIGHTNINGSHIELD4",
+	"S_LIGHTNINGSHIELD5",
+	"S_LIGHTNINGSHIELD6",
+	"S_LIGHTNINGSHIELD7",
+	"S_LIGHTNINGSHIELD8",
+	"S_LIGHTNINGSHIELD9",
+	"S_LIGHTNINGSHIELD10",
+	"S_LIGHTNINGSHIELD11",
+	"S_LIGHTNINGSHIELD12",
+	"S_LIGHTNINGSHIELD13",
+	"S_LIGHTNINGSHIELD14",
+	"S_LIGHTNINGSHIELD15",
+	"S_LIGHTNINGSHIELD16",
+	"S_LIGHTNINGSHIELD17",
+	"S_LIGHTNINGSHIELD18",
+	"S_LIGHTNINGSHIELD19",
+	"S_LIGHTNINGSHIELD20",
+	"S_LIGHTNINGSHIELD21",
+	"S_LIGHTNINGSHIELD22",
+	"S_LIGHTNINGSHIELD23",
+	"S_LIGHTNINGSHIELD24",
 
 	// Bubble Shield
 	"S_BUBBLESHIELD1",
@@ -3942,6 +3752,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAMESHIELDLINE3",
 	"S_FLAMESHIELDFLASH",
 
+	// Caked-Up Booty-Sheet Ghost
+	"S_HYUDORO",
+
 	// The legend
 	"S_SINK",
 	"S_SINK_SHIELD",
@@ -3991,6 +3804,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLEBUMPER_EXBLAST8",
 	"S_BATTLEBUMPER_EXBLAST9",
 	"S_BATTLEBUMPER_EXBLAST10",
+
+	// Tripwire
+	"S_TRIPWIREBOOST_TOP",
+	"S_TRIPWIREBOOST_BOTTOM",
+	"S_TRIPWIREBOOST_BLAST_TOP",
+	"S_TRIPWIREBOOST_BLAST_BOTTOM",
 
 	// DEZ respawn laser
 	"S_DEZLASER",
@@ -4152,6 +3971,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTASHIELDB6",
 	"S_INSTASHIELDB7",
 
+	"S_POWERCLASH", // Invinc/Grow no damage collide VFX
+
 	"S_PLAYERARROW", // Above player arrow
 	"S_PLAYERARROW_BOX",
 	"S_PLAYERARROW_ITEM",
@@ -4244,7 +4065,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLEPOINT3H",
 	"S_BATTLEPOINT3I",
 
-	// Thunder shield use stuff;
+	// Lightning shield use stuff;
 	"S_KSPARK1",	// Sparkling Radius
 	"S_KSPARK2",
 	"S_KSPARK3",
@@ -4509,6 +4330,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_EBARREL16",
 	"S_EBARREL17",
 	"S_EBARREL18",
+	"S_EBARREL19",
 	"S_MERRYHORSE",
 	"S_BLUEFRUIT",
 	"S_ORANGEFRUIT",
@@ -4584,6 +4406,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RINGSPARKS14",
 	"S_RINGSPARKS15",
 
+	"S_GAINAX_TINY",
+	"S_GAINAX_HUGE",
+	"S_GAINAX_MID1",
+	"S_GAINAX_MID2",
+
 	"S_DRAFTDUST1",
 	"S_DRAFTDUST2",
 	"S_DRAFTDUST3",
@@ -4604,6 +4431,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLECAPSULE_SUPPORT",
 	"S_BATTLECAPSULE_SUPPORTFLY",
 
+	"S_WAYPOINTORB",
+	"S_WAYPOINTSPLAT",
 	"S_EGOORB",
 
 	"S_WATERTRAIL1",
@@ -4625,6 +4454,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SPINDASHDUST",
 	"S_SPINDASHWIND",
+
+	"S_SOFTLANDING1",
+	"S_SOFTLANDING2",
+	"S_SOFTLANDING3",
+	"S_SOFTLANDING4",
+	"S_SOFTLANDING5",
+
+	"S_DOWNLINE1",
+	"S_DOWNLINE2",
+	"S_DOWNLINE3",
+	"S_DOWNLINE4",
+	"S_DOWNLINE5",
+
+	"S_HOLDBUBBLE",
 
 	// Finish line beam
 	"S_FINISHBEAM1",
@@ -4650,6 +4493,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DEBTSPIKEC",
 	"S_DEBTSPIKED",
 	"S_DEBTSPIKEE",
+
+	// Sparks when driving on stairs
+	"S_JANKSPARK1",
+	"S_JANKSPARK2",
+	"S_JANKSPARK3",
+	"S_JANKSPARK4",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -4660,6 +4509,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_UNKNOWN",
 
 	"MT_THOK", // Thok! mobj
+	"MT_SHADOW", // Linkdraw Shadow (for invisible objects)
 	"MT_PLAYER",
 	"MT_KART_LEFTOVER",
 	"MT_KART_TIRE",
@@ -4760,25 +4610,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FSGNB",
 	"MT_FANGWAYPOINT",
 
-	// Black Eggman (Boss 7)
-	"MT_BLACKEGGMAN",
-	"MT_BLACKEGGMAN_HELPER",
-	"MT_BLACKEGGMAN_GOOPFIRE",
-	"MT_BLACKEGGMAN_MISSILE",
-
-	// New Very-Last-Minute 2.1 Brak Eggman (Cy-Brak-demon)
-	"MT_CYBRAKDEMON",
-	"MT_CYBRAKDEMON_ELECTRIC_BARRIER",
-	"MT_CYBRAKDEMON_MISSILE",
-	"MT_CYBRAKDEMON_FLAMESHOT",
-	"MT_CYBRAKDEMON_FLAMEREST",
-	"MT_CYBRAKDEMON_TARGET_RETICULE",
-	"MT_CYBRAKDEMON_TARGET_DOT",
-	"MT_CYBRAKDEMON_NAPALM_BOMB_LARGE",
-	"MT_CYBRAKDEMON_NAPALM_BOMB_SMALL",
-	"MT_CYBRAKDEMON_NAPALM_FLAMES",
-	"MT_CYBRAKDEMON_VILE_EXPLOSION",
-
 	// Metal Sonic (Boss 9)
 	"MT_METALSONIC_RACE",
 	"MT_METALSONIC_BATTLE",
@@ -4813,6 +4644,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_REDSPRING",
 	"MT_BLUESPRING",
 	"MT_GREYSPRING",
+	"MT_POGOSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
 	"MT_BLUEDIAG", // Blue Diagonal Spring
@@ -5431,8 +5263,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	// SRB2kart
 	"MT_RANDOMITEM",
+	"MT_SPHEREBOX",
 	"MT_RANDOMITEMPOP",
 	"MT_FLOATINGITEM",
+	"MT_ITEMCAPSULE",
+	"MT_ITEMCAPSULE_PART",
 
 	"MT_SIGNSPARKLE",
 
@@ -5450,7 +5285,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_WIPEOUTTRAIL",
 	"MT_DRIFTSPARK",
 	"MT_BRAKEDRIFT",
+	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_DRIFTELECTRICITY",
+	"MT_DRIFTELECTRICSPARK",
+	"MT_JANKSPARK",
 
 	"MT_ROCKETSNEAKER", // Rocket sneakers
 
@@ -5471,8 +5310,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SSMINE_SHIELD", // Special Stage Mine stuff
 	"MT_SSMINE",
-	"MT_MINEEXPLOSION",
-	"MT_MINEEXPLOSIONSOUND",
 
 	"MT_SMOLDERING", // New explosion
 	"MT_BOOMEXPLODE",
@@ -5480,18 +5317,24 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LANDMINE", // Land Mine
 
+	"MT_DROPTARGET", // Drop Target
+	"MT_DROPTARGET_SHIELD",
+
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
 
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
 
-	"MT_THUNDERSHIELD", // Shields
+	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_BUBBLESHIELD",
 	"MT_FLAMESHIELD",
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",
 	"MT_BUBBLESHIELDTRAP",
+
+	"MT_HYUDORO",
+	"MT_HYUDORO_CENTER",
 
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
@@ -5500,6 +5343,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER", // Battle Mode bumper
 	"MT_BATTLEBUMPER_DEBRIS",
 	"MT_BATTLEBUMPER_BLAST",
+
+	"MT_TRIPWIREBOOST",
 
 	"MT_DEZLASER",
 
@@ -5565,6 +5410,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_INSTASHIELDA",
 	"MT_INSTASHIELDB",
+
+	"MT_POWERCLASH", // Invinc/Grow no damage clash VFX
 
 	"MT_PLAYERARROW",
 	"MT_PLAYERWANTED",
@@ -5710,6 +5557,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_KARMAFIREWORK",
 	"MT_RINGSPARKS",
+	"MT_GAINAX",
 	"MT_DRAFTDUST",
 	"MT_SPBDUST",
 	"MT_TIREGREASE",
@@ -5729,6 +5577,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SPINDASHDUST",
 	"MT_SPINDASHWIND",
+	"MT_SOFTLANDING",
+	"MT_DOWNLINE",
+	"MT_HOLDBUBBLE",
 
 	"MT_PAPERITEMSPOT",
 
@@ -5765,6 +5616,9 @@ const char *const MOBJFLAG_LIST[] = {
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
 	"DONTENCOREMAP",
+	"PICKUPFROMBELOW",
+	"NOSQUISH",
+	"NOHITLAGFORME",
 	NULL
 };
 
@@ -5817,6 +5671,8 @@ const char *const MOBJEFLAG_LIST[] = {
 	"APPLYPMOMZ", // Platform movement
 	"TRACERANGLE", // Compute and trigger on mobj angle relative to tracer
 	"JUSTBOUNCEDWALL",
+	"DAMAGEHITLAG",
+	"SLOPELAUNCHED",
 	NULL
 };
 
@@ -5828,55 +5684,49 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	"FAULT",
-	"ANALOGMODE", // Analog mode?
-	"DIRECTIONCHAR", // Directional character sprites?
-	"AUTOBRAKE", // Autobrake?
-
-	// Cheats
-	"GODMODE",
-	"NOCLIP",
-	"INVIS",
-
 	// True if button down last tic.
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"WPNDOWN",
+	"LOOKDOWN",
 
-	// Unmoving states
+	// Accessibility and cheats
+	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
+	"GODMODE",
+	"NOCLIP",
+
+	"WANTSTOJOIN", // Spectator that wants to join
+
 	"STASIS", // Player is not allowed to move
-	"JUMPSTASIS", // and that includes jumping.
+	"FAULT", // F A U L T
+	"ELIMINATED", // Battle-style elimination, no extra penalty
+	"NOCONTEST", // Did not finish (last place explosion)
+	"LOSTLIFE", // Do not lose life more than once
 
-	// SRB2Kart: spectator that wants to join
-	"WANTSTOJOIN",
+	"RINGLOCK", // Prevent picking up rings while SPB is locked on
 
-	// Character action status
-	"STARTJUMP",
-	"JUMPED",
-	"NOJUMPDAMAGE",
-	"SPINNING",
-	"STARTDASH",
-	"THOKKED",
-	"SHIELDABILITY",
-	"GLIDING",
-	"BOUNCING",
+	// The following four flags are mutually exclusive, although they can also all be off at the same time. If we ever run out of pflags, eventually turn them into a seperate five(+) mode UINT8..?
+	"USERINGS", // Have to be not holding the item button to change from using rings to using items (or vice versa) - prevents weirdness
+	"ITEMOUT", // Are you holding an item out?
+	"EGGMANOUT", // Eggman mark held, separate from PF_ITEMOUT so it doesn't stop you from getting items
+	"HOLDREADY", // Hold button-style item is ready to activate
 
-	// Sliding (usually in water) like Labyrinth/Oil Ocean
-	"SLIDING",
+	"DRIFTINPUT", // Drifting!
+	"GETSPARKS", // Can get sparks
+	"DRIFTEND", // Drift has ended, used to adjust character angle after drift
+	"BRAKEDRIFT", // Helper for brake-drift spark spawning
 
-	// NiGHTS stuff
-	"TRANSFERTOCLOSEST",
-	"DRILLING",
+	"AIRFAILSAFE", // Whenever or not try the air boost
+	"TRICKDELAY", // Prevent tricks until control stick is neutral
 
-	// Gametype-specific stuff
-	"GAMETYPEOVER", // Race time over
-	"TAGIT",
+	"TUMBLELASTBOUNCE", // One more time for the funny
+	"TUMBLESOUND", // Don't play more than once
 
-	/*** misc ***/
-	"FORCESTRAFE", // Accessibility feature - is accelerate in kickstart mode?
-	"CANCARRY",
 	"HITFINISHLINE", // Already hit the finish line this tic
+	"WRONGWAY", // Moving the wrong way with respect to waypoints?
+
+	"SHRINKME",
+	"SHRINKACTIVE",
 
 	NULL // stop loop here.
 };
@@ -6102,146 +5952,9 @@ const char *COLOR_ENUMS[] = {
 	"CHAOSEMERALD4",
 	"CHAOSEMERALD5",
 	"CHAOSEMERALD6",
-	"CHAOSEMERALD7"
-};
+	"CHAOSEMERALD7",
 
-const char *const POWERS_LIST[] = {
-	"INVULNERABILITY",
-	"SNEAKERS",
-	"FLASHING",
-	"SHIELD",
-	"CARRY",
-	"TAILSFLY", // tails flying
-	"UNDERWATER", // underwater timer
-	"SPACETIME", // In space, no one can hear you spin!
-	"EXTRALIFE", // Extra Life timer
-	"PUSHING",
-	"JUSTSPRUNG",
-	"NOAUTOBRAKE",
-
-	"SUPER", // Are you super?
-	"GRAVITYBOOTS", // gravity boots
-
-	// Weapon ammunition
-	"INFINITYRING",
-	"AUTOMATICRING",
-	"BOUNCERING",
-	"SCATTERRING",
-	"GRENADERING",
-	"EXPLOSIONRING",
-	"RAILRING",
-
-	// Power Stones
-	"EMERALDS", // stored like global 'emeralds' variable
-
-	// NiGHTS powerups
-	"NIGHTS_SUPERLOOP",
-	"NIGHTS_HELPER",
-	"NIGHTS_LINKFREEZE",
-
-	//for linedef exec 427
-	"NOCONTROL",
-
-	//for dyes
-	"DYE",
-
-	"JUSTLAUNCHED",
-
-	"IGNORELATCH"
-};
-
-const char *const KARTSTUFF_LIST[] = {
-	"POSITION",
-	"OLDPOSITION",
-	"POSITIONDELAY",
-
-	"THROWDIR",
-	"INSTASHIELD",
-
-	"FLOORBOOST",
-	"SPINOUTTYPE",
-
-	"DRIFT",
-	"DRIFTEND",
-	"DRIFTCHARGE",
-	"DRIFTBOOST",
-	"BOOSTCHARGE",
-	"STARTBOOST",
-	"RINGS",
-	"PICKUPRINGS",
-	"USERINGS",
-	"RINGDELAY",
-	"RINGBOOST",
-	"RINGLOCK",
-	"SPARKLEANIM",
-	"JMP",
-	"OFFROAD",
-	"BRAKESTOP",
-	"SPINDASH",
-	"SPINDASHSPEED",
-	"SPINDASHBOOST",
-	"WATERSKIP",
-	"DASHPADCOOLDOWN",
-	"NUMBOOSTS",
-	"BOOSTPOWER",
-	"SPEEDBOOST",
-	"ACCELBOOST",
-	"HANDLEBOOST",
-	"DRAFTPOWER",
-	"DRAFTLEEWAY",
-	"LASTDRAFT",
-	"BOOSTANGLE",
-	"AIZDRIFTSTRAT",
-	"BRAKEDRIFT",
-
-	"ITEMROULETTE",
-	"ROULETTETYPE",
-
-	"ITEMTYPE",
-	"ITEMAMOUNT",
-	"ITEMHELD",
-	"HOLDREADY",
-
-	"CURSHIELD",
-	"HYUDOROTIMER",
-	"STEALINGTIMER",
-	"STOLENTIMER",
-	"SUPERRING",
-	"SNEAKERTIMER",
-	"NUMSNEAKERS",
-	"GROWSHRINKTIMER",
-	"SQUISHEDTIMER",
-	"ROCKETSNEAKERTIMER",
-	"INVINCIBILITYTIMER",
-	"BUBBLECOOL",
-	"BUBBLEBLOWUP",
-	"FLAMEDASH",
-	"FLAMEMETER",
-	"FLAMELENGTH",
-	"EGGMANHELD",
-	"EGGMANEXPLODE",
-	"EGGMANBLAME",
-	"LASTJAWZTARGET",
-	"BANANADRAG",
-	"SPINOUTTIMER",
-	"WIPEOUTSLOW",
-	"JUSTBUMPED",
-	"COMEBACKTIMER",
-	"SADTIMER",
-
-	"BUMPER",
-	"COMEBACKPOINTS",
-	"COMEBACKMODE",
-	"WANTED",
-
-	"GETSPARKS",
-	"JAWZTARGETDELAY",
-	"SPECTATEWAIT",
-	"TIREGREASE",
-	"SPRINGSTARS",
-	"SPRINGCOLOR",
-	"KILLFIELD",
-	"WRONGWAY"
+	"INVINCFLASH"
 };
 
 const char *const KARTHUD_LIST[] = {
@@ -6298,101 +6011,6 @@ const char *const HUDITEMS_LIST[] = {
 	"POWERUPS"
 };
 
-const char *const MENUTYPES_LIST[] = {
-	"NONE",
-
-	"MAIN",
-
-	// Single Player
-	"SP_MAIN",
-
-	"SP_LOAD",
-	"SP_PLAYER",
-
-	"SP_LEVELSELECT",
-	"SP_LEVELSTATS",
-
-	"SP_TIMEATTACK",
-	"SP_TIMEATTACK_LEVELSELECT",
-	"SP_GUESTREPLAY",
-	"SP_REPLAY",
-	"SP_GHOST",
-
-	"SP_NIGHTSATTACK",
-	"SP_NIGHTS_LEVELSELECT",
-	"SP_NIGHTS_GUESTREPLAY",
-	"SP_NIGHTS_REPLAY",
-	"SP_NIGHTS_GHOST",
-
-	// Multiplayer
-	"MP_MAIN",
-	"MP_SPLITSCREEN", // SplitServer
-	"MP_SERVER",
-	"MP_CONNECT",
-	"MP_ROOM",
-	"MP_PLAYERSETUP", // MP_PlayerSetupDef shared with SPLITSCREEN if #defined NONET
-	"MP_SERVER_OPTIONS",
-
-	// Options
-	"OP_MAIN",
-
-	"OP_P1CONTROLS",
-	"OP_CHANGECONTROLS", // OP_ChangeControlsDef shared with P2
-	"OP_P1MOUSE",
-	"OP_P1JOYSTICK",
-	"OP_JOYSTICKSET", // OP_JoystickSetDef shared with P2
-	"OP_P1CAMERA",
-
-	"OP_P2CONTROLS",
-	"OP_P2MOUSE",
-	"OP_P2JOYSTICK",
-	"OP_P2CAMERA",
-
-	"OP_PLAYSTYLE",
-
-	"OP_VIDEO",
-	"OP_VIDEOMODE",
-	"OP_COLOR",
-	"OP_OPENGL",
-	"OP_OPENGL_LIGHTING",
-
-	"OP_SOUND",
-
-	"OP_SERVER",
-	"OP_MONITORTOGGLE",
-
-	"OP_DATA",
-	"OP_ADDONS",
-	"OP_SCREENSHOTS",
-	"OP_ERASEDATA",
-
-	// Extras
-	"SR_MAIN",
-	"SR_PANDORA",
-	"SR_LEVELSELECT",
-	"SR_UNLOCKCHECKLIST",
-	"SR_EMBLEMHINT",
-	"SR_PLAYER",
-	"SR_SOUNDTEST",
-
-	// Addons (Part of MISC, but let's make it our own)
-	"AD_MAIN",
-
-	// MISC
-	// "MESSAGE",
-	// "SPAUSE",
-
-	// "MPAUSE",
-	// "SCRAMBLETEAM",
-	// "CHANGETEAM",
-	// "CHANGELEVEL",
-
-	// "MAPAUSE",
-	// "HELP",
-
-	"SPECIAL"
-};
-
 struct int_const_s const INT_CONST[] = {
 	// If a mod removes some variables here,
 	// please leave the names in-tact and just set
@@ -6416,6 +6034,7 @@ struct int_const_s const INT_CONST[] = {
 	{"FRACUNIT",FRACUNIT},
 	{"FU"      ,FRACUNIT},
 	{"FRACBITS",FRACBITS},
+	{"M_TAU_FIXED",M_TAU_FIXED},
 
 	// doomdef.h constants
 	{"TICRATE",TICRATE},
@@ -6569,7 +6188,7 @@ struct int_const_s const INT_CONST[] = {
 	// And map flags
 	{"LF2_HIDEINMENU",LF2_HIDEINMENU},
 	{"LF2_HIDEINSTATS",LF2_HIDEINSTATS},
-	{"LF2_TIMEATTACK",LF2_TIMEATTACK},
+	{"LF2_NOTIMEATTACK",LF2_NOTIMEATTACK},
 	{"LF2_VISITNEEDED",LF2_VISITNEEDED},
 
 	// Emeralds
@@ -6605,33 +6224,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PRECIP_STORM_NORAIN",PRECIP_STORM_NORAIN},
 	{"PRECIP_STORM_NOSTRIKES",PRECIP_STORM_NOSTRIKES},
 
-	// Shields
-	{"SH_NONE",SH_NONE},
-	// Shield flags
-	{"SH_PROTECTFIRE",SH_PROTECTFIRE},
-	{"SH_PROTECTWATER",SH_PROTECTWATER},
-	{"SH_PROTECTELECTRIC",SH_PROTECTELECTRIC},
-	{"SH_PROTECTSPIKE",SH_PROTECTSPIKE},
-	// Indivisible shields
-	{"SH_PITY",SH_PITY},
-	{"SH_WHIRLWIND",SH_WHIRLWIND},
-	{"SH_ARMAGEDDON",SH_ARMAGEDDON},
-	{"SH_PINK",SH_PINK},
-	// normal shields that use flags
-	{"SH_ATTRACT",SH_ATTRACT},
-	{"SH_ELEMENTAL",SH_ELEMENTAL},
-	// Sonic 3 shields
-	{"SH_FLAMEAURA",SH_FLAMEAURA},
-	{"SH_BUBBLEWRAP",SH_BUBBLEWRAP},
-	{"SH_THUNDERCOIN",SH_THUNDERCOIN},
-	// The force shield uses the lower 8 bits to count how many extra hits are left.
-	{"SH_FORCE",SH_FORCE},
-	{"SH_FORCEHP",SH_FORCEHP}, // to be used as a bitmask only
-	// Mostly for use with Mario mode.
-	{"SH_FIREFLOWER",SH_FIREFLOWER},
-	{"SH_STACK",SH_STACK},
-	{"SH_NOSTACK",SH_NOSTACK},
-
 	// Carrying
 	{"CR_NONE",CR_NONE},
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
@@ -6639,10 +6231,6 @@ struct int_const_s const INT_CONST[] = {
 	// Character flags (skinflags_t)
 	{"SF_HIRES",SF_HIRES},
 	{"SF_MACHINE",SF_MACHINE},
-
-	// Dashmode constants
-	{"DASHMODE_THRESHOLD",DASHMODE_THRESHOLD},
-	{"DASHMODE_MAX",DASHMODE_MAX},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -6689,8 +6277,9 @@ struct int_const_s const INT_CONST[] = {
 	{"DMG_SPECTATOR",DMG_SPECTATOR},
 	{"DMG_TIMEOVER",DMG_TIMEOVER},
 	//// Masks
-	{"DMG_STEAL",DMG_CANTHURTSELF},
+	{"DMG_STEAL",DMG_STEAL},
 	{"DMG_CANTHURTSELF",DMG_CANTHURTSELF},
+	{"DMG_WOMBO", DMG_WOMBO},
 	{"DMG_DEATHMASK",DMG_DEATHMASK},
 	{"DMG_TYPEMASK",DMG_TYPEMASK},
 
@@ -6698,7 +6287,7 @@ struct int_const_s const INT_CONST[] = {
 	{"int_none",int_none},
 	{"int_race",int_race},
 	{"int_battle",int_battle},
-	{"int_timeattack",int_timeattack},
+	{"int_battletime", int_battletime},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},
@@ -6890,11 +6479,9 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_DRIFT",BT_DRIFT},
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
-	{"BT_FORWARD",BT_FORWARD},
-	{"BT_BACKWARD",BT_BACKWARD},
-	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
-	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
-	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
+	{"BT_LUAA",BT_LUAA}, // Lua customizable
+	{"BT_LUAB",BT_LUAB}, // Lua customizable
+	{"BT_LUAC",BT_LUAC}, // Lua customizable
 
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},
@@ -6916,8 +6503,7 @@ struct int_const_s const INT_CONST[] = {
 	{"CV_SHOWMODIF",CV_SHOWMODIF},
 	{"CV_SHOWMODIFONETIME",CV_SHOWMODIFONETIME},
 	{"CV_NOSHOWHELP",CV_NOSHOWHELP},
-	{"CV_HIDEN",CV_HIDEN},
-	{"CV_HIDDEN",CV_HIDEN},
+	{"CV_HIDDEN",CV_HIDDEN},
 	{"CV_CHEAT",CV_CHEAT},
 	{"CV_NOLUA",CV_NOLUA},
 
@@ -6999,6 +6585,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_RAINBOW",TC_RAINBOW},
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
+	{"TC_HITLAG",TC_HITLAG},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},
@@ -7024,7 +6611,7 @@ struct int_const_s const INT_CONST[] = {
 	{"GS_INTERMISSION",GS_INTERMISSION},
 	{"GS_CONTINUING",GS_CONTINUING},
 	{"GS_TITLESCREEN",GS_TITLESCREEN},
-	{"GS_TIMEATTACK",GS_TIMEATTACK},
+	{"GS_MENU",GS_MENU},
 	{"GS_CREDITS",GS_CREDITS},
 	{"GS_EVALUATION",GS_EVALUATION},
 	{"GS_GAMEEND",GS_GAMEEND},
@@ -7051,7 +6638,7 @@ struct int_const_s const INT_CONST[] = {
 
 	// kartshields_t
 	{"KSHIELD_NONE",KSHIELD_NONE},
-	{"KSHIELD_THUNDER",KSHIELD_THUNDER},
+	{"KSHIELD_LIGHTNING",KSHIELD_LIGHTNING},
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
@@ -7069,6 +6656,16 @@ struct int_const_s const INT_CONST[] = {
 	{"KSPIN_STUNG",KSPIN_STUNG},
 	{"KSPIN_EXPLOSION",KSPIN_EXPLOSION},
 
+	// spottype_t
+	{"SPOT_NONE",SPOT_NONE},
+	{"SPOT_WEAK",SPOT_WEAK},
+	{"SPOT_BUMP",SPOT_BUMP},
+
+	// precipeffect_t
+	{"PRECIPFX_THUNDER",PRECIPFX_THUNDER},
+	{"PRECIPFX_LIGHTNING",PRECIPFX_LIGHTNING},
+	{"PRECIPFX_WATERPARTICLES",PRECIPFX_WATERPARTICLES},
+
 	{NULL,0}
 };
 
@@ -7079,7 +6676,6 @@ void DEH_TableCheck(void)
 #if defined(_DEBUG) || defined(PARANOIA)
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
-	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 
 	if (dehstates != S_FIRSTFREESLOT)
@@ -7087,9 +6683,6 @@ void DEH_TableCheck(void)
 
 	if (dehmobjs != MT_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked mobjtype list, you dolt!\n(%d mobj types defined, versus %s in the Dehacked list)\n", MT_FIRSTFREESLOT, sizeu1(dehmobjs));
-
-	if (dehpowers != NUMPOWERS)
-		I_Error("You forgot to update the Dehacked powers list, you dolt!\n(%d powers defined, versus %s in the Dehacked list)\n", NUMPOWERS, sizeu1(dehpowers));
 
 	if (dehcolors != SKINCOLOR_FIRSTFREESLOT)
 		I_Error("You forgot to update the Dehacked colors list, you dolt!\n(%d colors defined, versus %s in the Dehacked list)\n", SKINCOLOR_FIRSTFREESLOT, sizeu1(dehcolors));

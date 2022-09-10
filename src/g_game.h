@@ -55,6 +55,8 @@ extern consvar_t cv_pauseifunfocused;
 extern consvar_t cv_invertmouse;
 
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
+
 extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
@@ -63,7 +65,6 @@ extern consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
@@ -82,6 +83,7 @@ extern consvar_t cv_resume;
 const char *G_BuildMapName(INT32 map);
 INT32 G_MapNumber(const char *mapname);
 
+void G_ResetAnglePrediction(player_t *player);
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -93,28 +95,15 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 INT32 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 
-typedef enum
-{
-	AXISNONE = 0,
-
-	AXISTURN,
-	AXISMOVE,
-	AXISBRAKE,
-	AXISLOOK,
-
-	AXISDIGITAL, // axes below this use digital deadzone
-
-	AXISFIRE = AXISDIGITAL,
-	AXISDRIFT,
-	AXISSPINDASH,
-	AXISLOOKBACK,
-	AXISAIM,
-} axis_input_e;
-
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
-
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
+extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
+extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
+extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+extern UINT8 localtic;
+
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);
 
 //
 // GAME
@@ -254,7 +243,7 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 // Don't split up TOL handling
 UINT32 G_TOLFlag(INT32 pgametype);
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
 void G_AddMapToBuffer(INT16 map);
 
 #endif

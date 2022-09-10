@@ -24,11 +24,11 @@
 #include "p_local.h"
 #include "keys.h"
 #include "i_video.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "am_map.h"
 #include "d_main.h"
 #include "v_video.h"
-#include "p_spec.h" // skyboxmo
+//#include "p_spec.h"
 #include "p_setup.h"
 #include "z_zone.h"
 #include "m_random.h" // quake camera shake
@@ -36,6 +36,7 @@
 #include "r_main.h"
 #include "i_system.h" // I_GetPreciseTime
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
+#include "r_fps.h" // Frame interpolation/uncapped
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -70,7 +71,7 @@ size_t framecount;
 size_t loopcount;
 
 fixed_t viewx, viewy, viewz;
-angle_t viewangle, aimingangle;
+angle_t viewangle, aimingangle, viewroll;
 UINT8 viewssnum;
 fixed_t viewcos, viewsin;
 sector_t *viewsector;
@@ -78,6 +79,10 @@ player_t *viewplayer;
 mobj_t *r_viewmobj;
 
 int r_splitscreen;
+
+fixed_t rendertimefrac;
+fixed_t renderdeltatics;
+boolean renderisnewtic;
 
 //
 // precalculated math tables
@@ -142,10 +147,6 @@ static void ChaseCam_OnChange(void);
 static void ChaseCam2_OnChange(void);
 static void ChaseCam3_OnChange(void);
 static void ChaseCam4_OnChange(void);
-void SendWeaponPref(void);
-void SendWeaponPref2(void);
-void SendWeaponPref3(void);
-void SendWeaponPref4(void);
 
 consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_chasecam[MAXSPLITSCREENPLAYERS] = {
@@ -318,18 +319,35 @@ INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
 
 angle_t R_PointToAngle(fixed_t x, fixed_t y)
 {
-	return (y -= viewy, (x -= viewx) || y) ?
-	x >= 0 ?
-	y >= 0 ?
-		(x > y) ? tantoangle[SlopeDiv(y,x)] :                          // octant 0
-		ANGLE_90-tantoangle[SlopeDiv(x,y)] :                           // octant 1
-		x > (y = -y) ? 0-tantoangle[SlopeDiv(y,x)] :                   // octant 8
-		ANGLE_270+tantoangle[SlopeDiv(x,y)] :                          // octant 7
-		y >= 0 ? (x = -x) > y ? ANGLE_180-tantoangle[SlopeDiv(y,x)] :  // octant 3
-		ANGLE_90 + tantoangle[SlopeDiv(x,y)] :                         // octant 2
-		(x = -x) > (y = -y) ? ANGLE_180+tantoangle[SlopeDiv(y,x)] :    // octant 4
-		ANGLE_270-tantoangle[SlopeDiv(x,y)] :                          // octant 5
-		0;
+	return R_PointToAngle2(viewx, viewy, x, y);
+}
+
+// Similar to R_PointToAngle, but requires an additional player_t argument.
+// If this player is a local displayplayer, this will base off the calculations off of their camera instead, otherwise use viewx/viewy as usual.
+// Yes this is kinda ghetto.
+angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
+{
+	fixed_t refx = viewx, refy = viewy;
+	camera_t *cam = NULL;
+	UINT8 i;
+
+	for (i = 0; i < r_splitscreen; i++)
+	{
+		if (player == &players[displayplayers[i]])
+		{
+			cam = &camera[i];
+			break;
+		}
+	}
+
+	// use whatever cam we found's coordinates.
+	if (cam != NULL)
+	{
+		refx = cam->x;
+		refy = cam->y;
+	}
+
+	return R_PointToAngle2(refx, refy, x, y);
 }
 
 // This version uses 64-bit variables to avoid overflows with large values.
@@ -629,7 +647,7 @@ void R_CheckViewMorph(int s)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = R_ViewRollAngle(&players[displayplayers[s]]);
+	angle_t rollangle = viewroll;
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -936,17 +954,16 @@ void R_ApplyViewMorph(int s)
 			width*vid.bpp, height, width*vid.bpp, vid.width);
 }
 
-static inline int intsign(int n) {
-	return n < 0 ? -1 : n > 0 ? 1 : 0;
-}
-
 angle_t R_ViewRollAngle(const player_t *player)
 {
 	angle_t roll = player->viewrollangle;
 
 	if (cv_tilting.value)
 	{
-		roll += player->tilt;
+		if (!player->spectator)
+		{
+			roll += player->tilt;
+		}
 
 		if (cv_actionmovie.value)
 		{
@@ -1032,7 +1049,7 @@ void R_ExecuteSetViewSize(void)
 			j = viewheight*16;
 			for (i = 0; i < j; i++)
 			{
-				dy = ((i - viewheight*8)<<FRACBITS) + FRACUNIT/2;
+				dy = ((i - viewheight*8)<<FRACBITS);
 				dy = FixedMul(abs(dy), fovtan[s]);
 				yslopetab[s][i] = FixedDiv(centerx*FRACUNIT, dy);
 			}
@@ -1115,7 +1132,7 @@ void R_Init(void)
 	R_InitLightTables();
 
 	//I_OutputMsg("\nR_InitTranslucencyTables\n");
-	R_InitTranslucencyTables();
+	//R_InitTranslucencyTables();
 
 	R_InitDrawNodes();
 
@@ -1177,63 +1194,66 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // R_SetupFrame
 //
 
-// recalc necessary stuff for mouseaiming
-// slopes are already calculated for the full possible view (which is 4*viewheight).
-// 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
-static void R_SetupFreelook(player_t *player, boolean skybox)
+static void
+R_SetupCommonFrame
+(		player_t * player,
+		subsector_t * subsector)
 {
-#ifndef HWRENDER
-	(void)player;
-	(void)skybox;
-#endif
+	newview->player = player;
 
-	// clip it in the case we are looking a hardware 90 degrees full aiming
-	// (lmps, network and use F12...)
-	if (rendermode == render_soft
-#ifdef HWRENDER
-		|| (rendermode == render_opengl
-			&& (cv_glshearing.value == 1
-			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
-#endif
-		)
-	{
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-	}
+	newview->x += quake.x;
+	newview->y += quake.y;
+	newview->z += quake.z;
 
-	centeryfrac = (viewheight/2)<<FRACBITS;
+	newview->roll = R_ViewRollAngle(player);
 
-	if (rendermode == render_soft)
-		centeryfrac += FixedMul(AIMINGTODY(aimingangle), FixedDiv(viewwidth<<FRACBITS, BASEVIDWIDTH<<FRACBITS));
+	if (subsector)
+		newview->sector = subsector->sector;
+	else
+		newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
 
-	centery = FixedInt(FixedRound(centeryfrac));
-
-	if (rendermode == render_soft)
-		yslope = &yslopetab[viewssnum][viewheight*8 - centery];
+	R_InterpolateView(rendertimefrac);
 }
 
-void R_SetupFrame(player_t *player)
+static void R_SetupAimingFrame(int s)
 {
-	camera_t *thiscam = &camera[0];
-	boolean chasecam = false;
-	UINT8 i;
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
 
-	for (i = 0; i <= r_splitscreen; i++)
+	if (player->awayviewtics)
 	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			chasecam = (cv_chasecam[i].value != 0);
-			break;
-		}
+		newview->aim = player->awayviewaiming;
+		newview->angle = player->awayviewmobj->angle;
 	}
+	else if (thiscam && thiscam->chase)
+	{
+		newview->aim = thiscam->aiming;
+		newview->angle = thiscam->angle;
+	}
+	else if (!demo.playback && player->playerstate != PST_DEAD)
+	{
+		newview->aim = localaiming[s];
+		newview->angle = localangle[s];
+	}
+	else
+	{
+		newview->aim = player->aiming;
+		newview->angle = player->mo->angle;
+	}
+}
 
-	if (i > r_splitscreen)
-		return; // shouldn't be possible, but just in case
+void R_SetupFrame(int s)
+{
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
+	boolean chasecam = (cv_chasecam[s].value != 0);
+
+	R_SetViewContext(VIEWCONTEXT_PLAYER1 + s);
 
 	if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off
 
-	if (chasecam && !thiscam->chase)
+	if (chasecam && (thiscam && !thiscam->chase))
 	{
 		P_ResetCamera(player, thiscam);
 		thiscam->chase = true;
@@ -1241,99 +1261,57 @@ void R_SetupFrame(player_t *player)
 	else if (!chasecam)
 		thiscam->chase = false;
 
+	newview->sky = false;
+
+	R_SetupAimingFrame(s);
+
 	if (player->awayviewtics)
 	{
 		// cut-away view stuff
 		r_viewmobj = player->awayviewmobj; // should be a MT_ALTVIEWMAN
 		I_Assert(r_viewmobj != NULL);
-		viewz = r_viewmobj->z + 20*FRACUNIT;
-		aimingangle = player->awayviewaiming;
-		viewangle = r_viewmobj->angle;
+
+		newview->x = r_viewmobj->x;
+		newview->y = r_viewmobj->y;
+		newview->z = r_viewmobj->z + 20*FRACUNIT;
+
+		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
 	else if (!player->spectator && chasecam)
 	// use outside cam view
 	{
 		r_viewmobj = NULL;
-		viewz = thiscam->z + (thiscam->height>>1);
-		aimingangle = thiscam->aiming;
-		viewangle = thiscam->angle;
+
+		newview->x = thiscam->x;
+		newview->y = thiscam->y;
+		newview->z = thiscam->z + (thiscam->height>>1);
+
+		R_SetupCommonFrame(player, thiscam->subsector);
 	}
 	else
 	// use the player's eyes view
 	{
-		viewz = player->viewz;
-
 		r_viewmobj = player->mo;
 		I_Assert(r_viewmobj != NULL);
 
-		aimingangle = player->aiming;
-		viewangle = r_viewmobj->angle;
+		newview->x = r_viewmobj->x;
+		newview->y = r_viewmobj->y;
+		newview->z = player->viewz;
 
-		if (!demo.playback && player->playerstate != PST_DEAD)
-		{
-			viewangle = localangle[i]; // WARNING: camera uses this
-			aimingangle = localaiming[i];
-		}
+		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
-	viewz += quake.z;
-
-	viewplayer = player;
-
-	if (chasecam && !player->awayviewtics && !player->spectator)
-	{
-		viewx = thiscam->x;
-		viewy = thiscam->y;
-		viewx += quake.x;
-		viewy += quake.y;
-
-		if (thiscam->subsector)
-			viewsector = thiscam->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
-	else
-	{
-		viewx = r_viewmobj->x;
-		viewy = r_viewmobj->y;
-		viewx += quake.x;
-		viewy += quake.y;
-
-		if (r_viewmobj->subsector)
-			viewsector = r_viewmobj->subsector->sector;
-		else
-			viewsector = R_PointInSubsector(viewx, viewy)->sector;
-	}
-
-	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
-
-	R_SetupFreelook(player, false);
 }
 
-void R_SkyboxFrame(player_t *player)
+void R_SkyboxFrame(int s)
 {
-	camera_t *thiscam = &camera[0];
-	UINT8 i = 0;
+	player_t *player = &players[displayplayers[s]];
+	camera_t *thiscam = &camera[s];
 
-	if (r_splitscreen)
-	{
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (player == &players[displayplayers[i]])
-			{
-				thiscam = &camera[i];
-				break;
-			}
-		}
-
-		if (i > r_splitscreen)
-		{
-			i = 0;
-		}
-	}
+	R_SetViewContext(VIEWCONTEXT_SKY1 + s);
 
 	// cut-away view stuff
-	r_viewmobj = skyboxmo[0];
+	newview->sky = true;
+	r_viewmobj = player->skybox.viewpoint;
 #ifdef PARANOIA
 	if (!r_viewmobj)
 	{
@@ -1341,38 +1319,20 @@ void R_SkyboxFrame(player_t *player)
 		I_Error("R_SkyboxFrame: r_viewmobj null (player %s)", sizeu1(playeri));
 	}
 #endif
-	if (player->awayviewtics)
-	{
-		aimingangle = player->awayviewaiming;
-		viewangle = player->awayviewmobj->angle;
-	}
-	else if (thiscam->chase)
-	{
-		aimingangle = thiscam->aiming;
-		viewangle = thiscam->angle;
-	}
-	else
-	{
-		aimingangle = player->aiming;
-		viewangle = player->mo->angle;
-		if (/*!demo.playback && */player->playerstate != PST_DEAD)
-		{
-			viewangle = localangle[i];
-			aimingangle = localaiming[i];
-		}
-	}
-	viewangle += r_viewmobj->angle;
 
-	viewplayer = player;
+	R_SetupAimingFrame(s);
 
-	viewx = r_viewmobj->x;
-	viewy = r_viewmobj->y;
-	viewz = r_viewmobj->z; // 26/04/17: use actual Z position instead of spawnpoint angle!
+	newview->angle += r_viewmobj->angle;
+
+	newview->x = r_viewmobj->x;
+	newview->y = r_viewmobj->y;
+	newview->z = r_viewmobj->z; // 26/04/17: use actual Z position instead of spawnpoint angle!
 
 	if (mapheaderinfo[gamemap-1])
 	{
 		mapheader_t *mh = mapheaderinfo[gamemap-1];
 		vector3_t campos = {0,0,0}; // Position of player's actual view point
+		mobj_t *center = player->skybox.centerpoint;
 
 		if (player->awayviewtics) {
 			campos.x = player->awayviewmobj->x;
@@ -1394,61 +1354,54 @@ void R_SkyboxFrame(player_t *player)
 		campos.y += quake.y;
 		campos.z += quake.z;
 
-		if (skyboxmo[1]) // Is there a viewpoint?
+		if (center) // Is there a viewpoint?
 		{
 			fixed_t x = 0, y = 0;
 			if (mh->skybox_scalex > 0)
-				x = (campos.x - skyboxmo[1]->x) / mh->skybox_scalex;
+				x = (campos.x - center->x) / mh->skybox_scalex;
 			else if (mh->skybox_scalex < 0)
-				x = (campos.x - skyboxmo[1]->x) * -mh->skybox_scalex;
+				x = (campos.x - center->x) * -mh->skybox_scalex;
 
 			if (mh->skybox_scaley > 0)
-				y = (campos.y - skyboxmo[1]->y) / mh->skybox_scaley;
+				y = (campos.y - center->y) / mh->skybox_scaley;
 			else if (mh->skybox_scaley < 0)
-				y = (campos.y - skyboxmo[1]->y) * -mh->skybox_scaley;
+				y = (campos.y - center->y) * -mh->skybox_scaley;
 
 			if (r_viewmobj->angle == 0)
 			{
-				viewx += x;
-				viewy += y;
+				newview->x += x;
+				newview->y += y;
 			}
 			else if (r_viewmobj->angle == ANGLE_90)
 			{
-				viewx -= y;
-				viewy += x;
+				newview->x -= y;
+				newview->y += x;
 			}
 			else if (r_viewmobj->angle == ANGLE_180)
 			{
-				viewx -= x;
-				viewy -= y;
+				newview->x -= x;
+				newview->y -= y;
 			}
 			else if (r_viewmobj->angle == ANGLE_270)
 			{
-				viewx += y;
-				viewy -= x;
+				newview->x += y;
+				newview->y -= x;
 			}
 			else
 			{
 				angle_t ang = r_viewmobj->angle>>ANGLETOFINESHIFT;
-				viewx += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
-				viewy += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
+				newview->x += FixedMul(x,FINECOSINE(ang)) - FixedMul(y,  FINESINE(ang));
+				newview->y += FixedMul(x,  FINESINE(ang)) + FixedMul(y,FINECOSINE(ang));
 			}
 		}
 		if (mh->skybox_scalez > 0)
-			viewz += campos.z / mh->skybox_scalez;
+			newview->z += campos.z / mh->skybox_scalez;
 		else if (mh->skybox_scalez < 0)
-			viewz += campos.z * -mh->skybox_scalez;
+			newview->z += campos.z * -mh->skybox_scalez;
 	}
 
-	if (r_viewmobj->subsector)
-		viewsector = r_viewmobj->subsector->sector;
-	else
-		viewsector = R_PointInSubsector(viewx, viewy)->sector;
 
-	viewsin = FINESINE(viewangle>>ANGLETOFINESHIFT);
-	viewcos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
-
-	R_SetupFreelook(player, true);
+	R_SetupCommonFrame(player, r_viewmobj->subsector);
 }
 
 boolean R_ViewpointHasChasecam(player_t *player)
@@ -1544,8 +1497,7 @@ static void Mask_Post (maskcount_t* m)
 void R_RenderPlayerView(void)
 {
 	player_t * player = &players[displayplayers[viewssnum]];
-
-	UINT8			nummasks	= 1;
+	INT32			nummasks	= 1;
 	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
 
 	// if this is display player 1
@@ -1562,7 +1514,7 @@ void R_RenderPlayerView(void)
 		V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
 	}
 
-	R_SetupFrame(player);
+	R_SetupFrame(viewssnum);
 	framecount++;
 	validcount++;
 
@@ -1618,8 +1570,8 @@ void R_RenderPlayerView(void)
 
 
 	// Add skybox portals caused by sky visplanes.
-	if (cv_skybox.value && skyboxmo[0])
-		Portal_AddSkyboxPortals();
+	if (cv_skybox.value && player->skybox.viewpoint)
+		Portal_AddSkyboxPortals(player);
 
 	// Portal rendering. Hijacks the BSP traversal.
 	ps_sw_portaltime = I_GetPreciseTime();
@@ -1721,4 +1673,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_maxportals);
 
 	CV_RegisterVar(&cv_movebob);
+
+	// Frame interpolation/uncapped
+	CV_RegisterVar(&cv_fpscap);
 }

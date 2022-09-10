@@ -99,7 +99,8 @@ enum mobj_e {
 	mobj_sprxoff,
 	mobj_spryoff,
 	mobj_sprzoff,
-	mobj_hitlag
+	mobj_hitlag,
+	mobj_dispoffset
 };
 
 static const char *const mobj_opt[] = {
@@ -180,6 +181,7 @@ static const char *const mobj_opt[] = {
 	"spryoff",
 	"sprzoff",
 	"hitlag",
+	"dispoffset",
 	NULL};
 
 #define UNIMPLEMENTED luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " is not implemented for Lua and cannot be accessed.", mobj_opt[field])
@@ -458,6 +460,9 @@ static int mobj_get(lua_State *L)
 	case mobj_hitlag:
 		lua_pushinteger(L, mo->hitlag);
 		break;
+	case mobj_dispoffset:
+		lua_pushinteger(L, mo->dispoffset);
+		break;
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -477,7 +482,7 @@ static int mobj_get(lua_State *L)
 }
 
 #define NOSET luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " should not be set directly.", mobj_opt[field])
-#define NOSETPOS luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " should not be set directly. Use " LUA_QL("P_Move") ", " LUA_QL("P_TryMove") ", or " LUA_QL("P_TeleportMove") " instead.", mobj_opt[field])
+#define NOSETPOS luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " should not be set directly. Use " LUA_QL("P_Move") ", " LUA_QL("P_TryMove") ", or " LUA_QL("P_SetOrigin") ", or " LUA_QL("P_MoveOrigin") " instead.", mobj_opt[field])
 static int mobj_set(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -493,9 +498,6 @@ static int mobj_set(lua_State *L)
 		return luaL_error(L, "Do not alter mobj_t in HUD rendering code!");
 	if (hook_cmd_running)
 		return luaL_error(L, "Do not alter mobj_t in CMD building code!");
-
-	if (hook_cmd_running)
-		return luaL_error(L, "Do not alter mobj_t in BuildCMD code!");
 
 	switch(field)
 	{
@@ -781,6 +783,7 @@ static int mobj_set(lua_State *L)
 			scale = FRACUNIT/100;
 		mo->destscale = scale;
 		P_SetScale(mo, scale);
+		mo->old_scale = scale;
 		break;
 	}
 	case mobj_destscale:
@@ -831,6 +834,9 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_hitlag:
 		mo->hitlag = luaL_checkinteger(L, 3);
+		break;
+	case mobj_dispoffset:
+		mo->dispoffset = luaL_checkinteger(L, 3);
 		break;
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);

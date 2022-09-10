@@ -33,6 +33,12 @@
 	unit used as fixed_t
 */
 
+#if (FRACBITS == 16)
+#define M_TAU_FIXED 411769
+#endif
+
+#define M_PI_FIXED (M_TAU_FIXED >> 1)
+
 typedef INT32 fixed_t;
 
 /*!

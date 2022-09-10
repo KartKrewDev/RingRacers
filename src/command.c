@@ -21,7 +21,7 @@
 #include "command.h"
 #include "console.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "m_fixed.h"
 #include "m_argv.h"
@@ -35,6 +35,7 @@
 #include "lua_script.h"
 #include "d_netfil.h" // findfile
 #include "r_data.h" // Color_cons_t
+#include "r_skins.h"
 
 //========
 // protos.
@@ -81,10 +82,23 @@ CV_PossibleValue_t kartspeed_cons_t[] = {
 	{KARTSPEED_HARD, "Hard"},
 	{0, NULL}
 };
+CV_PossibleValue_t dummykartspeed_cons_t[] = {
+	{KARTSPEED_EASY, "Easy"},
+	{KARTSPEED_NORMAL, "Normal"},
+	{KARTSPEED_HARD, "Hard"},
+	{0, NULL}
+};
+CV_PossibleValue_t gpdifficulty_cons_t[] = {
+	{KARTSPEED_EASY, "Easy"},
+	{KARTSPEED_NORMAL, "Normal"},
+	{KARTSPEED_HARD, "Hard"},
+	{KARTGP_MASTER, "Master"},
+	{0, NULL}
+};
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
-// Also set CV_HIDEN during runtime, after config is loaded
+// Also set CV_HIDDEN during runtime, after config is loaded
 
 static boolean execversion_enabled = false;
 consvar_t cv_execversion = CVAR_INIT ("execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion);
@@ -1255,7 +1269,7 @@ void CV_RegisterVar(consvar_t *variable)
 	}
 
 	// link the variable in
-	if (!(variable->flags & CV_HIDEN))
+	if (!(variable->flags & CV_HIDDEN))
 	{
 		variable->next = consvar_vars;
 		consvar_vars = variable;
@@ -1385,12 +1399,17 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 						if (var->revert.allocated)
 						{
 							Z_Free(var->revert.v.string);
+							var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 						}
 
 						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
 
 						return;
 					}
+
+					// free the old value string
+					Z_Free(var->zstring);
+					var->zstring = NULL;
 
 					var->value = var->PossibleValue[i].value;
 					var->string = var->PossibleValue[i].strvalue;
@@ -1453,13 +1472,7 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 found:
 			if (client && execversion_enabled)
 			{
-				if (var->revert.allocated)
-				{
-					Z_Free(var->revert.v.string);
-				}
-
 				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-
 				return;
 			}
 
@@ -1474,6 +1487,7 @@ found:
 		if (var->revert.allocated)
 		{
 			Z_Free(var->revert.v.string);
+			// Z_StrDup creates a new zone memory block, so we can keep the allocated flag on
 		}
 
 		var->revert.v.string = Z_StrDup(valstr);
@@ -1528,7 +1542,7 @@ finish:
 	}
 	var->flags |= CV_MODIFIED;
 	// raise 'on change' code
-	LUA_CVarChanged(var->name); // let consolelib know what cvar this is.
+	LUA_CVarChanged(var); // let consolelib know what cvar this is.
 	if (var->flags & CV_CALL && !stealth)
 		var->func();
 
@@ -1537,8 +1551,7 @@ finish:
 // landing point for possiblevalue failures
 badinput:
 
-	if (var != &cv_nextmap) // Suppress errors for cv_nextmap
-		CONS_Printf(M_GetText("\"%s\" is not a possible value for \"%s\"\n"), valstr, var->name);
+	CONS_Printf(M_GetText("\"%s\" is not a possible value for \"%s\"\n"), valstr, var->name);
 
 	// default value not valid... ?!
 	if (var->defaultvalue == valstr)
@@ -1621,7 +1634,7 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 		// not from server or remote admin, must be hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal netvar command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -1641,34 +1654,14 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 	// the client will reset all netvars to default before loading
 	WRITEUINT16(*p, 0x0000);
 	for (cvar = consvar_vars; cvar; cvar = cvar->next)
-		if (((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar)) || (in_demo && cvar->netid == cv_numlaps.netid))
+		if ((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar))
 		{
 			if (in_demo)
 				WRITESTRING(*p, cvar->name);
 			else
 				WRITEUINT16(*p, cvar->netid);
 
-			// UGLY HACK: Save proper lap count in net replays
-			if (in_demo && cvar->netid == cv_numlaps.netid)
-			{
-				if (cv_basenumlaps.value &&
-					(!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-					|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value))
-				)
-				{
-					WRITESTRING(*p, cv_basenumlaps.string);
-				}
-				else
-				{
-					char buf[9];
-					sprintf(buf, "%d", mapheaderinfo[gamemap - 1]->numlaps);
-					WRITESTRING(*p, buf);
-				}
-			}
-			else
-			{
-				WRITESTRING(*p, cvar->string);
-			}
+			WRITESTRING(*p, cvar->string);
 
 			WRITEUINT8(*p, false);
 			++count;
@@ -1679,6 +1672,8 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 static void CV_LoadVars(UINT8 **p,
 		consvar_t *(*got)(UINT8 **p, char **ret_value, boolean *ret_stealth))
 {
+	const boolean store = (client || demo.playback);
+
 	consvar_t *cvar;
 	UINT16 count;
 
@@ -1692,7 +1687,7 @@ static void CV_LoadVars(UINT8 **p,
 	{
 		if (cvar->flags & CV_NETVAR)
 		{
-			if (client && cvar->revert.v.string == NULL)
+			if (store && cvar->revert.v.string == NULL)
 			{
 				cvar->revert.v.const_munge = cvar->string;
 				cvar->revert.allocated = ( cvar->zstring != NULL );
@@ -1728,6 +1723,7 @@ void CV_RevertNetVars(void)
 			if (cvar->revert.allocated)
 			{
 				Z_Free(cvar->revert.v.string);
+				cvar->revert.allocated = false; // no value being held now
 			}
 
 			cvar->revert.v.string = NULL;
@@ -1819,6 +1815,15 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
+		}
+
+		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED))
+		{
+			if (!stricmp(value, "Hard") || atoi(value) >= KARTSPEED_HARD)
+			{
+				CONS_Printf(M_GetText("You haven't unlocked this yet!\n"));
+				return;
+			}
 		}
 
 		if (var == &cv_forceskin)
@@ -1956,6 +1961,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
+		/*
 		if (var == &cv_nextmap)
 		{
 			// Special case for the nextmap variable, used only directly from the menu
@@ -1989,9 +1995,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				return;
 			}
 		}
+		else
+		*/
 #define MINVAL 0
 #define MAXVAL 1
-		else if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
+		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))
 		{
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
@@ -2007,9 +2015,10 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					{
 						increment = 0;
 						currentindice = max;
+						break; // The value we definitely want, stop here.
 					}
 					else if (var->PossibleValue[max].value == var->value)
-						currentindice = max;
+						currentindice = max; // The value we maybe want.
 				}
 
 				if (increment)
@@ -2045,6 +2054,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				if (var->PossibleValue[max].value == var->value)
 					currentindice = max;
 
+			// The following options will NOT handle netsyncing.
 			if (var == &cv_chooseskin)
 			{
 				// Special case for the chooseskin variable, used only directly from the menu
@@ -2094,29 +2104,15 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					return;
 				}
 			}
-			else if (var == &cv_kartspeed)
+			else if (var->PossibleValue == kartspeed_cons_t
+				|| var->PossibleValue == dummykartspeed_cons_t
+				|| var->PossibleValue == gpdifficulty_cons_t)
 			{
-				INT32 maxspeed = (M_SecretUnlocked(SECRET_HARDSPEED) ? 2 : 1);
-				// Special case for the kartspeed variable, used only directly from the menu to prevent selecting hard mode
-				if (increment > 0) // Going up!
+				if (!M_SecretUnlocked(SECRET_HARDSPEED))
 				{
-					newvalue = var->value + 1;
-					if (newvalue > maxspeed)
-						newvalue = -1;
-					var->value = newvalue;
-					var->string = var->PossibleValue[var->value].strvalue;
-					var->func();
-					return;
-				}
-				else if (increment < 0) // Going down!
-				{
-					newvalue = var->value - 1;
-					if (newvalue < -1)
-						newvalue = maxspeed;
-					var->value = newvalue;
-					var->string = var->PossibleValue[var->value].strvalue;
-					var->func();
-					return;
+					max = KARTSPEED_NORMAL+1;
+					if (var->PossibleValue == kartspeed_cons_t)
+						max++; // Accommodate KARTSPEED_AUTO
 				}
 			}
 #ifdef PARANOIA
@@ -2158,58 +2154,10 @@ static void CV_EnforceExecVersion(void)
 		CV_StealthSetValue(&cv_execversion, EXECVERSION);
 }
 
-static boolean CV_FilterJoyAxisVars(consvar_t *v, const char *valstr)
-{
-#if 1
-	// We don't have changed axis defaults yet
-	(void)v;
-	(void)valstr;
-#else
-	UINT8 i;
-
-	// If ALL axis settings are previous defaults, set them to the new defaults
-	// EXECVERSION < 26 (2.1.21)
-
-	for (i = 0; i < 4; i++)
-	{
-		if (joyaxis_default[i])
-		{
-			if (!stricmp(v->name, "joyaxis_fire"))
-			{
-				if (joyaxis_count[i] > 7) return false;
-				else if (joyaxis_count[i] == 7) return true;
-
-				if (!stricmp(valstr, "None")) joyaxis_count[i]++;
-				else joyaxis_default[i] = false;
-			}
-			// reset all axis settings to defaults
-			if (joyaxis_count[i] == 7)
-			{
-				switch (i)
-				{
-					default:
-						COM_BufInsertText(va("%s \"%s\"\n", cv_turnaxis[0].name, cv_turnaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_moveaxis[0].name, cv_moveaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_brakeaxis[0].name, cv_brakeaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_aimaxis[0].name, cv_aimaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_lookaxis[0].name, cv_lookaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_fireaxis[0].name, cv_fireaxis[0].defaultvalue));
-						COM_BufInsertText(va("%s \"%s\"\n", cv_driftaxis[0].name, cv_driftaxis[0].defaultvalue));
-						break;
-				}
-				joyaxis_count[i]++;
-				return false;
-			}
-		}
-	}
-#endif
-
-	// we haven't reached our counts yet, or we're not default
-	return true;
-}
-
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 {
+	(void)valstr;
+
 	// True means allow the CV change, False means block it
 
 	// We only care about CV_SAVE because this filters the user's config files
@@ -2227,11 +2175,6 @@ static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr)
 			|| !stricmp(v->name, "mousemove2"))
 			return false;
 #endif
-
-		// axis defaults were changed to be friendly to 360 controllers
-		// if ALL axis settings are defaults, then change them to new values
-		if (!CV_FilterJoyAxisVars(v, valstr))
-			return false;
 	}
 
 	return true;

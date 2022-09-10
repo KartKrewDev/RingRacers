@@ -33,6 +33,13 @@ extern fixed_t fovtan[MAXSPLITSCREENPLAYERS];
 
 extern size_t validcount, linecount, loopcount, framecount;
 
+// The fraction of a tic being drawn (for interpolation between two tics)
+extern fixed_t rendertimefrac;
+// Evaluated delta tics for this frame (how many tics since the last frame)
+extern fixed_t renderdeltatics;
+// The current render is a new logical tic
+extern boolean renderisnewtic;
+
 //
 // Lighting LUT.
 // Used for z-depth cuing per column/row,
@@ -63,6 +70,7 @@ extern lighttable_t *zlight[LIGHTLEVELS][MAXLIGHTZ];
 INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node);
 INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line);
 angle_t R_PointToAngle(fixed_t x, fixed_t y);
+angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y);
 angle_t R_PointToAngle64(INT64 x, INT64 y);
 angle_t R_PointToAngle2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
 angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1);
@@ -124,8 +132,8 @@ void R_SetViewSize(void);
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
 
-void R_SetupFrame(player_t *player);
-void R_SkyboxFrame(player_t *player);
+void R_SetupFrame(int split);
+void R_SkyboxFrame(int split);
 
 boolean R_ViewpointHasChasecam(player_t *player);
 boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox);

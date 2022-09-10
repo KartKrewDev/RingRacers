@@ -41,8 +41,7 @@ extern UINT32 mapmusresume;
 // Use other bits if necessary.
 
 extern UINT32 maptol;
-extern UINT8 globalweather;
-extern UINT8 curWeather;
+
 extern INT32 cursaveslot;
 //extern INT16 lastmapsaved;
 extern INT16 lastmaploaded;
@@ -64,31 +63,44 @@ extern tic_t marathontime;
 extern UINT8 numgameovers;
 extern SINT8 startinglivesbalance[maxgameovers+1];
 
+#define NUMPRECIPFREESLOTS 64
+
 typedef enum
 {
 	PRECIP_NONE = 0,
+
 	PRECIP_RAIN,
 	PRECIP_SNOW,
 	PRECIP_BLIZZARD,
 	PRECIP_STORM,
 	PRECIP_STORM_NORAIN,
 	PRECIP_STORM_NOSTRIKES,
+
+	PRECIP_FIRSTFREESLOT,
+	PRECIP_LASTFREESLOT = PRECIP_FIRSTFREESLOT + NUMPRECIPFREESLOTS - 1,
+
 	MAXPRECIP
 } preciptype_t;
 
 typedef enum
 {
 	PRECIPFX_THUNDER = 1,
-	PRECIPFX_LIGHTNING = 1<<1
+	PRECIPFX_LIGHTNING = 1<<1,
+	PRECIPFX_WATERPARTICLES = 1<<2
 } precipeffect_t;
 
 typedef struct
 {
+	const char *name;
 	mobjtype_t type;
 	precipeffect_t effects;
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];
+extern preciptype_t precip_freeslot;
+
+extern preciptype_t globalweather;
+extern preciptype_t curWeather;
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -183,7 +195,6 @@ extern char * bootmap; //bootmap for loading a map on startup
 
 extern char * tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
-extern INT32 tutorialgcs; // which control scheme is loaded?
 
 extern boolean looptitle;
 
@@ -401,6 +412,10 @@ typedef struct
 	UINT8 numGradedMares;				///< Internal. For grade support.
 	nightsgrades_t *grades;				///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
 
+	UINT8 light_contrast; ///< Range of wall lighting. 0 is no lighting.
+	boolean use_light_angle; ///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	angle_t light_angle; ///< Angle of directional wall lighting.
+
 	// Music stuff.
 	UINT32 musinterfadeout;				///< Fade out level music on intermission screen in milliseconds
 	char musintername[7];				///< Intermission screen music.
@@ -430,14 +445,14 @@ typedef struct
 
 #define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
 #define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
-#define LF2_TIMEATTACK    (1<<2) ///< Show this map in Time Attack modes
+#define LF2_NOTIMEATTACK  (1<<2) ///< Hide this map in Time Attack modes
 #define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
 
 extern mapheader_t* mapheaderinfo[NUMMAPS];
 extern INT32 nummapheaders;
 
 // This could support more, but is that a good idea?
-// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory. 
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
 #define MAXLEVELLIST 5
 
 typedef struct cupheader_s
@@ -482,7 +497,7 @@ enum GameTypeRules
 	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
 	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
 	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
-	GTR_WANTED				= 1<<6,  // Enables the wanted anti-camping system
+	GTR_WANTED				= 1<<6,  // unused
 	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
 	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
 	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
@@ -517,15 +532,16 @@ extern INT32 timelimits[NUMGAMETYPES];
 enum TypeOfLevel
 {
 	// Gametypes
-	TOL_RACE   = 0x0001, ///< Race
-	TOL_BATTLE = 0x0002, ///< Battle
+	TOL_RACE	= 0x0001, ///< Race
+	TOL_BATTLE	= 0x0002, ///< Battle
+	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
 
 	// Modifiers
-	TOL_TV     = 0x0100, ///< Midnight Channel specific: draw TV like overlay on HUD
+	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
 };
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (3)
+#define NUMBASETOLNAMES    (4)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
 typedef struct
@@ -672,8 +688,6 @@ extern UINT8 useBlackRock;
 
 extern UINT8 use1upSound;
 extern UINT8 maxXtraLife; // Max extra lives from rings
-extern UINT8 useContinues;
-#define continuesInSession (!multiplayer && (ultimatemode || (useContinues && !marathonmode) || (!modeattacking && !(cursaveslot > 0))))
 
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
@@ -683,6 +697,13 @@ extern tic_t racecountdown, exitcountdown;
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;
+
+extern struct maplighting
+{
+	UINT8 contrast;
+	boolean directional;
+	angle_t angle;
+} maplighting;
 
 //for CTF balancing
 extern INT16 autobalance;
@@ -695,6 +716,7 @@ extern INT16 scramblecount; //for CTF team scramble
 extern INT32 cheats;
 
 // SRB2kart
+extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
@@ -703,7 +725,6 @@ extern boolean comeback;
 extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;
 extern tic_t indirectitemcooldown;
-extern tic_t hyubgone;
 extern tic_t mapreset;
 extern boolean thwompsactive;
 extern UINT8 lastLowestLap;
@@ -715,7 +736,7 @@ extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
-extern INT16 votelevels[5][2];
+extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 
@@ -793,7 +814,7 @@ extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
 extern consvar_t cv_maxping;
-extern ticcmd_t netcmds[TICQUEUE][MAXPLAYERS];
+extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 

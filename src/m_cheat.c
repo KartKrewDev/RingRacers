@@ -22,7 +22,7 @@
 #include "d_net.h"
 
 #include "m_cheat.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_random.h"
 #include "m_misc.h"
 
@@ -50,7 +50,7 @@ typedef struct
 {
 	UINT8 *p;
 	UINT8 (*func)(void); // called when cheat confirmed.
-	UINT8 sequence[];
+	UINT8 *sequence;
 } cheatseq_t;
 
 // ==========================================================================
@@ -58,20 +58,6 @@ typedef struct
 // ==========================================================================
 
 // Cheat responders
-/*static UINT8 cheatf_ultimate(void)
-{
-	if (menuactive && (currentMenu != &MainDef && currentMenu != &SP_LoadDef))
-		return 0; // Only on the main menu, or the save select!
-
-	BwehHehHe();
-	ultimate_selectable = (!ultimate_selectable);
-
-	// If on the save select, move to what is now Ultimate Mode!
-	if (currentMenu == &SP_LoadDef)
-		M_ForceSaveSlotSelected(NOSAVESLOT);
-	return 1;
-}*/
-
 static UINT8 cheatf_warp(void)
 {
 	UINT8 i;
@@ -83,7 +69,7 @@ static UINT8 cheatf_warp(void)
 	if (menuactive && currentMenu != &MainDef)
 		return 0; // Only on the main menu!
 
-	// Temporarily unlock EVERYTHING.
+	// Unlock EVERYTHING.
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		if (!unlockables[i].conditionset)
@@ -134,22 +120,10 @@ static UINT8 cheatf_devmode(void)
 }
 #endif
 
-/*static cheatseq_t cheat_ultimate = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE('u'), SCRAMBLE('l'), SCRAMBLE('t'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('t'), SCRAMBLE('e'), 0xff }
-};*/
-
-/*static cheatseq_t cheat_ultimate_joy = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }
-};*/
-
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
 	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
-	{ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
+	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
 static cheatseq_t cheat_warp_joy = {
@@ -158,7 +132,7 @@ static cheatseq_t cheat_warp_joy = {
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }*/
-	  { SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
+	  (UINT8[]){ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
 	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }
@@ -167,7 +141,7 @@ static cheatseq_t cheat_warp_joy = {
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	0, cheatf_devmode,
-	{ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
+	(UINT8[]){ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
 };
 #endif
 
@@ -253,8 +227,6 @@ boolean cht_Responder(event_t *ev)
 	else
 		ch = (UINT8)ev->data1;
 
-	//ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
-	//ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
 #ifdef DEVELOP
@@ -313,20 +285,6 @@ void Command_CheatGod_f(void)
 	plyr = &players[consoleplayer];
 	plyr->pflags ^= PF_GODMODE;
 	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->pflags & PF_GODMODE ? M_GetText("On") : M_GetText("Off"));
-
-	G_SetGameModified(multiplayer, true);
-}
-
-void Command_CheatNoTarget_f(void)
-{
-	player_t *plyr;
-
-	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-
-	plyr = &players[consoleplayer];
-	plyr->pflags ^= PF_INVIS;
-	CONS_Printf(M_GetText("SEP Field %s\n"), plyr->pflags & PF_INVIS ? M_GetText("On") : M_GetText("Off"));
 
 	G_SetGameModified(multiplayer, true);
 }
@@ -434,7 +392,7 @@ void Command_RTeleport_f(void)
 	CONS_Printf(M_GetText("Teleporting by %d, %d, %d...\n"), intx, inty, FixedInt((intz-p->mo->z)));
 
 	P_MapStart();
-	if (!P_TeleportMove(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
+	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
 		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
 	else
 		S_StartSound(p->mo, sfx_mixup);
@@ -655,7 +613,7 @@ void Command_Teleport_f(void)
 	}
 
 	P_MapStart();
-	if (!P_TeleportMove(p->mo, intx, inty, intz))
+	if (!P_SetOrigin(p->mo, intx, inty, intz))
 		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
 	else
 		S_StartSound(p->mo, sfx_mixup);
@@ -1053,7 +1011,7 @@ void OP_ObjectplaceMovement(player_t *player)
 	if (cmd->forwardmove != 0)
 	{
 		P_Thrust(player->mo, player->mo->angle, (cmd->forwardmove*player->mo->scale/MAXPLMOVE)*cv_speed.value);
-		P_TeleportMove(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
+		P_MoveOrigin(player->mo, player->mo->x+player->mo->momx, player->mo->y+player->mo->momy, player->mo->z);
 		player->mo->momx = player->mo->momy = 0;
 	}
 
@@ -1147,7 +1105,7 @@ void OP_ObjectplaceMovement(player_t *player)
 
 		mt = OP_CreateNewMapThing(player, (UINT16)spawnthing, ceiling);
 		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
-			P_SpawnItemPattern(mt, false);
+			P_SpawnItemPattern(mt);
 		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
 			P_SpawnHoop(mt);
 		else
@@ -1291,6 +1249,6 @@ void Command_ObjectPlace_f(void)
 		players[0].mo->color = op_oldcolor;
 
 		// This is necessary for recovery of dying players.
-		players[0].powers[pw_flashing] = K_GetKartFlashing(&players[0]);
+		players[0].flashing = K_GetKartFlashing(&players[0]);
 	}
 }

@@ -15,14 +15,15 @@
 #include "w_wad.h"
 #include "r_main.h" // R_PointToAngle
 #include "k_kart.h" // K_Sliptiding
+#include "p_tick.h"
 
 #ifdef ROTSPRITE
 fixed_t rollcosang[ROTANGLES];
 fixed_t rollsinang[ROTANGLES];
 
-angle_t R_GetPitchRollAngle(mobj_t *mobj)
+angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer)
 {
-	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
+	angle_t viewingAngle = R_PointToAnglePlayer(viewPlayer, mobj->x, mobj->y);
 
 	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
 	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
@@ -32,18 +33,20 @@ angle_t R_GetPitchRollAngle(mobj_t *mobj)
 	return rollOrPitch;
 }
 
-angle_t R_SpriteRotationAngle(mobj_t *mobj)
+static angle_t R_PlayerSpriteRotation(player_t *player, player_t *viewPlayer)
 {
-	angle_t viewingAngle = R_PointToAngle(mobj->x, mobj->y);
-	angle_t angleDelta = (viewingAngle - mobj->angle);
+	angle_t viewingAngle = R_PointToAnglePlayer(viewPlayer, player->mo->x, player->mo->y);
+	angle_t angleDelta = (viewingAngle - player->mo->angle);
 
-	angle_t sliptideLift = mobj->player
-		? mobj->player->aizDriftTilt : 0;
+	angle_t sliptideLift = player->aizdrifttilt;
 
-	angle_t rollOrPitch = R_GetPitchRollAngle(mobj);
-	angle_t rollAngle = (rollOrPitch + mobj->rollangle);
+	angle_t rollAngle = 0;
 
-	if (sliptideLift)
+	if (player->mo->eflags & MFE_UNDERWATER)
+	{
+		rollAngle -= player->underwatertilt;
+	}
+	else if (sliptideLift)
 	{
 		/* (from side) tilt downward if turning
 		   toward camera, upward if away. */
@@ -52,7 +55,31 @@ angle_t R_SpriteRotationAngle(mobj_t *mobj)
 			FixedMul(sliptideLift, FINECOSINE(angleDelta >> ANGLETOFINESHIFT));
 	}
 
+	if (player->stairjank)
+	{
+		rollAngle += K_StairJankFlip(ANGLE_11hh / 2 /
+				(17 / player->stairjank));
+	}
+
 	return rollAngle;
+}
+
+angle_t R_ModelRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+{
+	angle_t rollAngle = mobj->rollangle;
+
+	if (mobj->player)
+	{
+		rollAngle += R_PlayerSpriteRotation(mobj->player, viewPlayer);
+	}
+
+	return rollAngle;
+}
+
+angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+{
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj, viewPlayer);
+	return (rollOrPitch + R_ModelRotationAngle(mobj, viewPlayer));
 }
 
 INT32 R_GetRollAngle(angle_t rollangle)
@@ -267,7 +294,7 @@ void RotatedPatch_DoRotation(rotsprite_t *rotsprite, patch_t *patch, INT32 angle
 	width = (maxx - minx);
 	height = (maxy - miny);
 
-	if ((unsigned)(width * height) != size)
+	if ((unsigned)(width * height) > size)
 	{
 		UINT16 *src, *dest;
 

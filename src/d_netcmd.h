@@ -23,6 +23,19 @@ extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS];
+
+// current profile loaded.
+// Used to know how to make the options menu behave among other things.
+extern consvar_t cv_currprofile;
+
+// This is used to save the last profile you used on the title screen.
+// that way you can mash n all...
+extern consvar_t cv_ttlprofilen;
+
+// CVar that allows starting as many splitscreens as you want with one device
+// Intended for use with testing
+extern consvar_t cv_splitdevice;
 
 // preferred number of players
 extern consvar_t cv_splitplayers;
@@ -42,7 +55,6 @@ extern consvar_t cv_itemrespawn;
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
-extern consvar_t cv_basenumlaps;
 extern UINT32 timelimitintics;
 extern consvar_t cv_allowexitlevel;
 
@@ -57,13 +69,13 @@ extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
-extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine, cv_landmine;
+extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine, cv_landmine, cv_droptarget;
 extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_thundershield, cv_bubbleshield, cv_flameshield;
+extern consvar_t cv_lightningshield, cv_bubbleshield, cv_flameshield;
 extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
 
 extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
@@ -87,7 +99,7 @@ extern consvar_t cv_kartusepwrlv;
 extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
-extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize;
+extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
 extern consvar_t cv_itemfinder;
@@ -112,6 +124,8 @@ extern consvar_t cv_skipmapcheck;
 extern consvar_t cv_sleep;
 
 extern consvar_t cv_perfstats;
+
+extern consvar_t cv_director;
 
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
@@ -207,7 +221,8 @@ void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void CleanupPlayerName(INT32 playernum, const char *newname);
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
-void D_SendPlayerConfig(void);
+void SendWeaponPref(UINT8 n);
+void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore

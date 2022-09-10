@@ -23,9 +23,9 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "i_time.h"
 #include "i_system.h"
 #include "i_threads.h"
-#include "m_menu.h"
 #include "console.h"
 #include "d_main.h"
 #include "m_misc.h" // movie mode
@@ -42,6 +42,9 @@
 #define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
 #endif
 
+// SRB2Kart
+#include "k_menu.h"
+
 typedef struct fademask_s {
 	UINT8* mask;
 	UINT16 width, height;
@@ -57,7 +60,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_toblack,
 	0,  // wipe_continuing_toblack
 	0,  // wipe_titlescreen_toblack
-	0,  // wipe_timeattack_toblack
+	1,  // wipe_menu_toblack
 	99, // wipe_credits_toblack
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
@@ -73,7 +76,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_final
 	0,  // wipe_continuing_final
 	0,  // wipe_titlescreen_final
-	0,  // wipe_timeattack_final
+	1,  // wipe_menu_final
 	99, // wipe_credits_final
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
@@ -299,16 +302,23 @@ static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean r
 					e = e_base + relativepos;
 					draw_rowstogo = draw_rowend - draw_rowstart;
 
-					while (draw_rowstogo--)
+					if (fadecolormap)
 					{
-						if (fadecolormap != NULL)
+						if (reverse)
+							s = e;
+						while (draw_rowstogo--)
+							*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
+					}
+					else while (draw_rowstogo--)
+					{
+						/*if (fadecolormap != NULL)
 						{
 							if (reverse)
 								*w++ = fadecolormap[ ( m << 8 ) + *e++ ];
 							else
 								*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
 						}
-						else
+						else*/
 							*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
 					}
 
@@ -415,7 +425,7 @@ void F_WipeStageTitle(void)
 	if ((WipeStageTitle) && G_IsTitleCardAvailable())
 	{
 		ST_runTitleCard();
-		ST_drawWipeTitleCard();
+		ST_drawTitleCard();
 	}
 }
 
@@ -470,7 +480,10 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 		// wait loop
 		while (!((nowtime = I_GetTime()) - lastwipetic))
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		lastwipetic = nowtime;
 
 #ifdef HWRENDER
@@ -498,11 +511,11 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		if (drawMenu)
 		{
 #ifdef HAVE_THREADS
-			I_lock_mutex(&m_menu_mutex);
+			I_lock_mutex(&k_menu_mutex);
 #endif
 			M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-			I_unlock_mutex(m_menu_mutex);
+			I_unlock_mutex(k_menu_mutex);
 #endif
 		}
 

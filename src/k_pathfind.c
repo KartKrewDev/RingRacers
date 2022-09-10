@@ -298,7 +298,7 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 	else if (pathfindsetup->startnodedata == pathfindsetup->endnodedata)
 	{
 		// At the destination, return a simple 1 node path
-		pathfindnode_t singlenode = {};
+		pathfindnode_t singlenode = {0};
 		singlenode.camefrom  = NULL;
 		singlenode.nodedata = pathfindsetup->endnodedata;
 		singlenode.heapindex = SIZE_MAX;
@@ -311,8 +311,8 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 	}
 	else
 	{
-		bheap_t        openset                 = {};
-		bheapitem_t    poppedbheapitem         = {};
+		bheap_t        openset                 = {0};
+		bheapitem_t    poppedbheapitem         = {0};
 		pathfindnode_t *nodesarray             = NULL;
 		pathfindnode_t **closedset             = NULL;
 		pathfindnode_t *newnode                = NULL;
@@ -427,7 +427,7 @@ boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup
 					else
 					{
 						// skip this node if it isn't traversable
-						if (pathfindsetup->gettraversable(checknodedata) == false)
+						if (pathfindsetup->gettraversable(checknodedata, currentnode->nodedata) == false)
 						{
 							continue;
 						}

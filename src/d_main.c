@@ -40,10 +40,11 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_setup.h"
 #include "p_saveg.h"
@@ -63,6 +64,7 @@
 #include "deh_tables.h" // Dehacked list test
 #include "m_cond.h" // condition initialization
 #include "fastcmp.h"
+#include "r_fps.h" // Frame interpolation/uncapped
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
@@ -70,6 +72,7 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomstat.h"
 
 #ifdef CMAKECONFIG
@@ -181,7 +184,9 @@ void D_ProcessEvents(void)
 	event_t *ev;
 
 	boolean eaten;
+	boolean menuresponse = false;
 
+	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
@@ -202,25 +207,6 @@ void D_ProcessEvents(void)
 				continue;
 		}
 
-		// Menu input
-#ifdef HAVE_THREADS
-		I_lock_mutex(&m_menu_mutex);
-#endif
-		{
-			eaten = M_Responder(ev);
-		}
-#ifdef HAVE_THREADS
-		I_unlock_mutex(m_menu_mutex);
-#endif
-
-		if (eaten)
-			continue; // menu ate the event
-
-		// Demo input:
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
-
 		// console input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&con_mutex);
@@ -238,7 +224,36 @@ void D_ProcessEvents(void)
 			continue; // ate the event
 		}
 
+		// Menu input
+		menuresponse = true;
+#ifdef HAVE_THREADS
+		I_lock_mutex(&k_menu_mutex);
+#endif
+		{
+			eaten = M_Responder(ev);
+		}
+#ifdef HAVE_THREADS
+		I_unlock_mutex(k_menu_mutex);
+#endif
+
+		if (eaten)
+			continue; // menu ate the event
+
+		// Demo input:
+		/*
+		if (demo.playback)
+			if (M_DemoResponder(ev))
+				continue;	// demo ate the event
+		*/
+
+
 		G_Responder(ev);
+	}
+
+	// Reset menu controls when no event is processed
+	if (!menuresponse)
+	{
+		M_MapMenuControls(NULL);
 	}
 }
 
@@ -292,6 +307,8 @@ static void D_Display(void)
 		{
 			for (i = 0; i <= r_splitscreen; ++i)
 			{
+				R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
+				R_InterpolateViewRollAngle(rendertimefrac);
 				R_CheckViewMorph(i);
 			}
 		}
@@ -316,7 +333,7 @@ static void D_Display(void)
 		// set for all later
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
-			wipedefindex = wipe_timeattack_toblack;
+			wipedefindex = wipe_titlescreen_toblack;
 
 		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
 			wipetypepre = wipedefs[wipedefindex];
@@ -330,7 +347,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+				F_RunWipe(wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -343,7 +360,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 
@@ -383,7 +400,7 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-		case GS_TIMEATTACK:
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -451,6 +468,8 @@ static void D_Display(void)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
+				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+
 				viewwindowy = 0;
 				viewwindowx = 0;
 
@@ -526,6 +545,7 @@ static void D_Display(void)
 				}
 
 				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
+				R_RestoreLevelInterpolators();
 			}
 
 			if (lastdraw)
@@ -533,9 +553,8 @@ static void D_Display(void)
 				if (rendermode == render_soft)
 				{
 					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
 				}
+
 				lastdraw = false;
 			}
 
@@ -587,11 +606,11 @@ static void D_Display(void)
 	vid.recalc = 0;
 
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_Drawer(); // menu is drawn even on top of everything
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 	// focus lost moved to M_Drawer
 
@@ -615,17 +634,7 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			// Funny.
-			if (WipeStageTitle && st_overlay)
-			{
-				lt_ticker--;
-				lt_lasttic = lt_ticker;
-				ST_preLevelTitleCardDrawer();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-				F_WipeStartScreen();
-			}
-
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
@@ -693,7 +702,12 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
+
+	boolean interp = false;
+	boolean doDisplay = false;
 
 	if (dedicated)
 		server = true;
@@ -705,6 +719,7 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -746,6 +761,19 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
+		I_UpdateTime(cv_timescale.value);
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -759,52 +787,95 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+		if (demo.playback && gamestate == GS_LEVEL)
+		{
+			// Nicer place to put this.
+			realtics = realtics * cv_playbackspeed.value;
+		}
+
 #ifdef DEBUGFILE
 		if (!realtics)
 			if (debugload)
 				debugload--;
 #endif
 
-		if (!realtics && !singletics)
-		{
-			I_Sleep();
-			continue;
-		}
+		interp = R_UsingFrameInterpolation() && !dedicated;
+		doDisplay = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
 #endif
 
-		// don't skip more than 10 frames at a time
-		// (fadein / fadeout cause massive frame skip!)
-		if (realtics > 8)
-			realtics = 1;
-
-		// process tics (but maybe not if realtic == 0)
-		TryRunTics(realtics);
-
-		if (lastdraw || singletics || gametic > rendergametic)
+		if (realtics > 0 || singletics)
 		{
-			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
+			// don't skip more than 10 frames at a time
+			// (fadein / fadeout cause massive frame skip!)
+			if (realtics > 8)
+				realtics = 1;
 
-			// Update display, next frame, with current state.
-			D_Display();
+			// process tics (but maybe not if realtic == 0)
+			TryRunTics(realtics);
 
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
+			if (lastdraw || singletics || gametic > rendergametic)
+			{
+				rendergametic = gametic;
+				rendertimeout = entertic + TICRATE/17;
+
+				doDisplay = true;
+			}
+			else if (rendertimeout < entertic) // in case the server hang or netsplit
+			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						P_RunChaseCameras();
+					}
+					R_UpdateViewInterpolation();
+				}
+
+				doDisplay = true;
+			}
+
+			renderisnewtic = true;
 		}
-		else if (rendertimeout < entertic) // in case the server hang or netsplit
+		else
+		{
+			renderisnewtic = false;
+		}
+
+		if (interp)
+		{
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
+
+			if (!(paused || P_AutoPause()) && !hu_stopped)
+			{
+				rendertimefrac = g_time.timefrac;
+			}
+			else
+			{
+				rendertimefrac = FRACUNIT;
+			}
+		}
+		else
+		{
+			renderdeltatics = realtics * FRACUNIT;
+			rendertimefrac = FRACUNIT;
+		}
+
+		if (interp || doDisplay)
 		{
 			D_Display();
-
-			if (moviemode)
-				M_SaveFrame();
-			if (takescreenshot) // Only take screenshots after drawing.
-				M_DoScreenShot();
 		}
+
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -822,6 +893,25 @@ void D_SRB2Loop(void)
 			Discord_RunCallbacks();
 		}
 #endif
+
+		// Fully completed frame made.
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+
+			// in the case of "match refresh rate" + vsync, don't sleep at all
+			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
+
+			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
 }
 
@@ -891,6 +981,9 @@ void D_StartTitle(void)
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
+	// Reset boss info
+	K_ResetBossInfo();
+
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
@@ -902,25 +995,13 @@ void D_StartTitle(void)
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
-	F_InitMenuPresValues();
 	F_StartTitleScreen();
-
-	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
-	/*
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
-			M_TutorialSaveControlResponse, MM_YESNO);
-	}
-	*/
-
 	tutorialmode = false;
 }
 
@@ -1043,22 +1124,36 @@ static void IdentifyVersion(void)
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
 
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
-#ifdef USE_PATCH_FILE
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"patch.pk3"));
-#endif
-
-#if 0
-	// TODO: pk3 doesn't support music replacement IIRC
-	// music barely benefits from the compression anyway
-	// would be nice for the folders, though
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"sounds.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"music.pk3"));
-
+#if defined (TESTERS) || defined (HOSTTESTERS)
+////
+#define TEXTURESNAME "MISC_TEXTURES.pk3"
+#define MAPSNAME "MISC_MAPS.pk3"
+#define PATCHNAME "MISC_PATCH.pk3"
+#define MUSICNAME "MISC_MUSIC.PK3"
+////
 #else
+////
+#define TEXTURESNAME "textures.pk3"
+#define MAPSNAME "maps.pk3"
+#define PATCHNAME "patch.pk3"
+#define MUSICNAME "music.pk3"
+////
+#endif
+////
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
+#endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,TEXTURESNAME));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
+#ifdef USE_PATCH_FILE
+	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+#endif
+////
+#undef TEXTURESNAME
+#undef MAPSNAME
+#undef PATCHNAME
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 
@@ -1072,12 +1167,12 @@ static void IdentifyVersion(void)
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
 
-	MUSICTEST("sounds.wad")
-	MUSICTEST("music.pk3")
+	MUSICTEST("sounds.pk3")
+	MUSICTEST(MUSICNAME)
 
+#undef MUSICNAME
 #undef MUSICTEST
 
-#endif
 #endif
 }
 
@@ -1110,8 +1205,8 @@ void D_SRB2Main(void)
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
-	"\n\nSonic Robo Blast 2 Kart\n"
-	"Copyright (C) 1998-2020 by Kart Krew & STJr\n\n"
+	"\n\nDr. Robotnik's Ring Racers\n"
+	"Copyright (C) 1998-2022 by Kart Krew & STJr\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1168,6 +1263,9 @@ void D_SRB2Main(void)
 	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
 	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
 
+	// Init the joined IP table for quick rejoining of past games.
+	M_InitJoinedIPArray();
+
 	{
 		const char *userhome = D_Home(); //Alam: path to home
 
@@ -1215,6 +1313,33 @@ void D_SRB2Main(void)
 		configfile[sizeof configfile - 1] = '\0';
 	}
 
+	// If config isn't writable, tons of behavior will be broken.
+	// Fail loudly before things get confusing!
+	{
+		FILE *tmpfile;
+		char testfile[MAX_WADPATH];
+
+		snprintf(testfile, sizeof testfile, "%s" PATHSEP "file.tmp", srb2home);
+		testfile[sizeof testfile - 1] = '\0';
+
+		tmpfile = fopen(testfile, "w");
+		if (tmpfile == NULL)
+		{
+#if defined (_WIN32)
+			I_Error("Couldn't write game config.\nMake sure the game is installed somewhere it has write permissions.\n\n(Don't use the Downloads folder, Program Files, or your desktop!\nIf unsure, we recommend making a subfolder in your Documents folder.)");
+#else
+			I_Error("Couldn't write game config.\nMake sure you've installed the game somewhere it has write permissions.");
+#endif
+		}
+		else
+		{
+			fclose(tmpfile);
+			remove(testfile);
+		}
+	}
+
+	M_LoadJoinedIPs();	// load joined ips
+
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
@@ -1243,6 +1368,7 @@ void D_SRB2Main(void)
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 
+#ifndef TESTERS
 	// add any files specified on the command line with -file wadfile
 	// to the wad list
 	if (!((M_GetUrlProtocolArg() || M_CheckParm("-connect")) && !M_CheckParm("-server")))
@@ -1260,6 +1386,7 @@ void D_SRB2Main(void)
 			}
 		}
 	}
+#endif
 
 	// get map from parms
 
@@ -1269,26 +1396,15 @@ void D_SRB2Main(void)
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
-	// initiate menu metadata before SOCcing them
-	M_InitMenuPresTables();
-
-	// init title screen display params
-	if (M_GetUrlProtocolArg() || M_CheckParm("-connect"))
-		F_InitMenuPresValues();
-
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
-
-	// Setup character tables
-	// Have to be done here before files are loaded
-	M_InitCharacterTables();
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1305,14 +1421,18 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_PK3);		// textures.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
+	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else
+#if !defined (TESTERS) && !defined (HOSTTESTERS)
 	mainwads++;	// gfx.pk3
+#endif
 	mainwads++;	// textures.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
+	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
 #endif
@@ -1366,6 +1486,9 @@ void D_SRB2Main(void)
 	// setup loading screen
 	SCR_Startup();
 
+	// Do this in background; lots of number crunching
+	R_InitTranslucencyTables();
+
 	CON_SetLoadingProgress(LOADED_ISTARTUPGRAPHICS);
 
 	CONS_Printf("HU_Init()...\n");
@@ -1389,6 +1512,9 @@ void D_SRB2Main(void)
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
+
+	// Load Profiles now that default controls have been defined
+	PR_LoadProfiles();	// load control profiles
 
 	M_Init();
 
@@ -1542,9 +1668,9 @@ void D_SRB2Main(void)
 
 	// user settings come before "+" parameters.
 	if (dedicated)
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartserv.cfg\"\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringserv.cfg\"\n", srb2home));
 	else
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartexec.cfg\" -noerror\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringexec.cfg\" -noerror\n", srb2home));
 
 	if (!autostart)
 		M_PushSpecialParameters(); // push all "+" parameters at the command buffer
@@ -1615,9 +1741,15 @@ void D_SRB2Main(void)
 
 		CV_ClearChangedFlags();
 
+		// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+		// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+		PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
 		M_PushSpecialParameters(); // push all "+" parameter at the command buffer
+
+		COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
 
 		strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
@@ -1711,7 +1843,6 @@ void D_SRB2Main(void)
 	}
 	else if (M_CheckParm("-skipintro"))
 	{
-		F_InitMenuPresValues();
 		F_StartTitleScreen();
 	}
 	else

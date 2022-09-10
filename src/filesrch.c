@@ -32,7 +32,7 @@
 #include "d_netfil.h"
 #include "m_misc.h"
 #include "z_zone.h"
-#include "m_menu.h" // Addons_option_Onchange
+#include "k_menu.h" // Addons_option_Onchange
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
@@ -312,7 +312,7 @@ closedir (DIR * dirp)
 
 static CV_PossibleValue_t addons_cons_t[] = {{0, "Default"},
 #if 1
-												{1, "HOME"}, {2, "SRB2"},
+												{1, "HOME"}, {2, "RINGRACERS"},
 #endif
 													{3, "CUSTOM"}, {0, NULL}};
 
@@ -561,15 +561,15 @@ char exttable[NUM_EXT_TABLE][7] = { // maximum extension length (currently 4) pl
 char filenamebuf[MAX_WADFILES][MAX_WADPATH];
 
 
-static boolean filemenucmp(char *haystack, char *needle)
+static boolean filemenucmp(char *haystack)
 {
 	static char localhaystack[128];
 	strlcpy(localhaystack, haystack, 128);
 	if (!cv_addons_search_case.value)
 		strupr(localhaystack);
 	if (cv_addons_search_type.value)
-		return (strstr(localhaystack, needle) != 0);
-	return (!strncmp(localhaystack, needle, menusearch[0]));
+		return (strstr(localhaystack, menusearch+1) != 0);
+	return (!strncmp(localhaystack, menusearch+1, menusearch[0]));
 }
 
 void closefilemenu(boolean validsize)
@@ -616,7 +616,6 @@ void closefilemenu(boolean validsize)
 void searchfilemenu(char *tempname)
 {
 	size_t i, first;
-	char localmenusearch[MAXSTRINGLENGTH] = "";
 
 	if (dirmenu)
 	{
@@ -662,14 +661,10 @@ void searchfilemenu(char *tempname)
 		return;
 	}
 
-	strcpy(localmenusearch, menusearch+1);
-	if (!cv_addons_search_case.value)
-		strupr(localmenusearch);
-
 	sizedirmenu = 0;
 	for (i = first; i < sizecoredirmenu; i++)
 	{
-		if (filemenucmp(coredirmenu[i]+DIR_STRING, localmenusearch))
+		if (filemenucmp(coredirmenu[i]+DIR_STRING))
 			sizedirmenu++;
 	}
 
@@ -691,7 +686,7 @@ void searchfilemenu(char *tempname)
 	sizedirmenu = 0;
 	for (i = first; i < sizecoredirmenu; i++)
 	{
-		if (filemenucmp(coredirmenu[i]+DIR_STRING, localmenusearch))
+		if (filemenucmp(coredirmenu[i]+DIR_STRING))
 		{
 			if (tempname && !strcmp(coredirmenu[i]+DIR_STRING, tempname))
 			{
@@ -724,7 +719,10 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 			tempname = Z_StrDup(dirmenu[dir_on[menudepthleft]]+DIR_STRING); // don't need to I_Error if can't make - not important, just QoL
 	}
 	else
+	{
 		menusearch[0] = menusearch[1] = 0; // clear search
+		CV_StealthSet(&cv_dummyaddonsearch, "");
+	}
 
 	if (!(dirhandle = opendir(menupath))) // get directory
 	{

@@ -141,6 +141,7 @@
 #define MAXBANS 100
 
 #include "i_system.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "d_net.h"
 #include "d_netfil.h"
@@ -595,13 +596,13 @@ static boolean SOCK_Get(void)
 #ifdef USE_STUN
 			if (STUN_got_response(doomcom->data, c))
 			{
-				return false;
+				break;
 			}
 #endif
 
 			if (hole_punch(c))
 			{
-				return false;
+				break;
 			}
 
 			// find remote node number
@@ -1354,17 +1355,28 @@ static void rendezvous(int size)
 	char *host = strtok(addrs, ":");
 	char *port = strtok(NULL,  ":");
 
-	mysockaddr_t rzv;
+	static mysockaddr_t rzv;
+	static tic_t refreshtic = (tic_t)-1;
 
-	if (SOCK_GetAddr(&rzv.ip4, host, (port ? port : "7777"), false))
+	tic_t tic = I_GetTime();
+
+	if (tic != refreshtic)
+	{
+		if (SOCK_GetAddr(&rzv.ip4, host, (port ? port : "7777"), false))
+		{
+			refreshtic = tic;
+		}
+		else
+		{
+			CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
+					cv_rendezvousserver.string);
+		}
+	}
+
+	if (tic == refreshtic)
 	{
 		holepunchpacket->magic = hole_punch_magic;
 		sendto(mysockets[0], doomcom->data, size, 0, &rzv.any, sizeof rzv.ip4);
-	}
-	else
-	{
-		CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
-				cv_rendezvousserver.string);
 	}
 
 	free(addrs);

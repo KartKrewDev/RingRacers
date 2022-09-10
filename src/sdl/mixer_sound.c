@@ -9,7 +9,7 @@
 /// \file
 /// \brief SDL Mixer interface for sound
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #ifdef HAVE_ZLIB
 #ifndef _MSC_VER
 #ifndef _LARGEFILE64_SOURCE
@@ -27,7 +27,7 @@
 
 #include <zlib.h>
 #endif // HAVE_ZLIB
-#endif // HAVE_LIBGME
+#endif // HAVE_GME
 
 #include "../doomdef.h"
 #include "../doomstat.h" // menuactive
@@ -79,11 +79,11 @@ write netcode into the sound code, OKAY?
 #define MUS_MODPLUG MUS_MODPLUG_UNUSED
 #endif
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 #include "gme/gme.h"
 #define GME_TREBLE 5.0f
 #define GME_BASS 1.0f
-#endif // HAVE_LIBGME
+#endif // HAVE_GME
 
 static UINT16 BUFFERSIZE = 2048;
 static UINT16 SAMPLERATE = 44100;
@@ -123,7 +123,7 @@ static INT32 fading_id;
 static void (*fading_callback)(void);
 static boolean fading_nocleanup;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static Music_Emu *gme;
 static UINT16 current_track;
 #endif
@@ -157,7 +157,7 @@ static void var_cleanup(void)
 	internal_volume = 100;
 }
 
-#if defined (HAVE_LIBGME) && defined (HAVE_ZLIB)
+#if defined (HAVE_GME) && defined (HAVE_ZLIB)
 static const char* get_zlib_error(int zErr)
 {
 	switch (zErr)
@@ -250,7 +250,7 @@ void I_ShutdownSound(void)
 
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 		gme_delete(gme);
 #endif
@@ -394,7 +394,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 	void *lump;
 	Mix_Chunk *chunk;
 	SDL_RWops *rw;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	Music_Emu *emu;
 	gme_info_t *info;
 #endif
@@ -414,7 +414,7 @@ void *I_GetSfx(sfxinfo_t *sfx)
 	}
 
 	// Not a doom sound? Try something else.
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	// VGZ format
 	if (((UINT8 *)lump)[0] == 0x1F
 		&& ((UINT8 *)lump)[1] == 0x8B)
@@ -700,7 +700,7 @@ static UINT32 music_fade(UINT32 interval, void *param)
 	}
 }
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 static void mix_gme(void *udata, Uint8 *stream, int len)
 {
 	int i;
@@ -760,7 +760,7 @@ void I_ShutdownMusic(void)
 
 musictype_t I_SongType(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 		return MU_GME;
 	else
@@ -791,7 +791,7 @@ musictype_t I_SongType(void)
 boolean I_SongPlaying(void)
 {
 	return (
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 		(I_SongType() == MU_GME && gme) ||
 #endif
 #ifdef HAVE_OPENMPT
@@ -814,7 +814,7 @@ boolean I_SetSongSpeed(float speed)
 {
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		SDL_LockAudio();
@@ -856,7 +856,7 @@ UINT32 I_GetSongLength(void)
 {
 	INT32 length;
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		gme_info_t *info;
@@ -926,7 +926,7 @@ boolean I_SetSongLoopPoint(UINT32 looppoint)
 
 UINT32 I_GetSongLoopPoint(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		INT32 looppoint;
@@ -955,7 +955,7 @@ UINT32 I_GetSongLoopPoint(void)
 boolean I_SetSongPosition(UINT32 position)
 {
 	UINT32 length;
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		// this is unstable, so fail silently
@@ -1020,7 +1020,7 @@ boolean I_SetSongPosition(UINT32 position)
 
 UINT32 I_GetSongPosition(void)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		INT32 position = gme_tell(gme);
@@ -1105,7 +1105,7 @@ boolean I_LoadSong(char *data, size_t len)
 	SDL_RWops *rw;
 
 	if (music
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 		|| gme
 #endif
 #ifdef HAVE_OPENMPT
@@ -1117,7 +1117,7 @@ boolean I_LoadSong(char *data, size_t len)
 	// always do this whether or not a music already exists
 	var_cleanup();
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if ((UINT8)data[0] == 0x1F
 		&& (UINT8)data[1] == 0x8B)
 	{
@@ -1227,7 +1227,7 @@ boolean I_LoadSong(char *data, size_t len)
 			else if (!strncmp(p, key3, key3len)) // is it LOOPMS=?
 			{
 				p += key3len; // skip MS=
-				loop_point = (float)(atoi(p) / 1000.0L); // LOOPMS works by real time, as miliseconds.
+				loop_point = atof(p) / 1000.f; // LOOPMS works by real time, as miliseconds.
 				// Everything that uses LOOPMS will work perfectly with SDL_Mixer.
 			}
 		}
@@ -1244,7 +1244,7 @@ void I_UnloadSong(void)
 {
 	I_StopSong();
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		gme_delete(gme);
@@ -1267,7 +1267,7 @@ void I_UnloadSong(void)
 
 boolean I_PlaySong(boolean looping)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		gme_equalizer_t eq = {GME_TREBLE, GME_BASS, 0,0,0,0,0,0,0,0};
@@ -1333,7 +1333,7 @@ void I_StopSong(void)
 	if (!fading_nocleanup)
 		I_StopFadingSong();
 
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	if (gme)
 	{
 		Mix_HookMusic(NULL, NULL);
@@ -1395,7 +1395,7 @@ void I_SetMusicVolume(int volume)
 
 boolean I_SetSongTrack(int track)
 {
-#ifdef HAVE_LIBGME
+#ifdef HAVE_GME
 	// If the specified track is within the number of tracks playing, then change it
 	if (gme)
 	{

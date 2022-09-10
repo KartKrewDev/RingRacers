@@ -402,8 +402,17 @@ unset_bit_array (bitarray_t * const array, const int value)
 	array[value >> 3] &= ~(1<<(value & 7));
 }
 
-#ifdef HAVE_SDL
 typedef UINT64 precise_t;
-#endif
+
+#define intsign(n) \
+	((n) < 0 ? -1 : (n) > 0 ? 1 : 0)
+
+// ISO C forbids function pointer -> void pointer cast but
+// if it's wrapped in a struct, we can take a pointer to
+// that struct and it's fine...
+
+// Cast function pointer to (void*)
+#define FUNCPTRCAST(p) ((union{void(*f)(void);void*v;})\
+		{(void(*)(void))p}).v
 
 #endif //__DOOMTYPE__

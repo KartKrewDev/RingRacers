@@ -17,7 +17,6 @@
 #ifndef __P_SPEC__
 #define __P_SPEC__
 
-extern mobj_t *skyboxmo[2]; // current skybox mobjs: 0 = viewpoint, 1 = centerpoint
 extern mobj_t *skyboxviewpnts[16]; // array of MT_SKYBOX viewpoint mobjs
 extern mobj_t *skyboxcenterpnts[16]; // array of MT_SKYBOX centerpoint mobjs
 
@@ -43,8 +42,7 @@ void P_SetupLevelFlatAnims(void);
 // at map load
 void P_InitSpecials(void);
 void P_SpawnSpecials(boolean fromnetsave);
-void P_SpawnSpecialsAfterSlopes(void);
-void P_SpawnSpecialsThatRequireObjects(void);
+void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave);
 
 // every tic
 void P_UpdateSpecials(void);
@@ -68,7 +66,7 @@ void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
 void P_SetupSignExit(player_t *player);
 boolean P_IsFlagAtBase(mobjtype_t flag);
 
-void P_SwitchWeather(UINT8 newWeather);
+void P_SwitchWeather(preciptype_t newWeather);
 
 boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
 void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller);

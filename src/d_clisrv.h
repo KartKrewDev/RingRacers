@@ -37,8 +37,18 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-#define TICQUEUE 512 // more than enough for most timeouts....
+#define BACKUPTICS 512 // more than enough for most timeouts....
+#define CLIENTBACKUPTICS 32
 #define MAXTEXTCMD 256
+
+// No. of tics your controls can be delayed by.
+
+// TODO: Instead of storing a ton of extra cmds for gentlemens' delay,
+// keep them in a linked-list, with timestamps to discard everything that's older than already sent.
+// That will support any amount of lag, and be less wasteful for clients who don't use it.
+// This just works as a quick implementation.
+#define MAXGENTLEMENDELAY TICRATE
+
 //
 // Packet structure
 //
@@ -203,7 +213,7 @@ typedef struct
 	UINT8 iteration;
 	UINT32 position;
 	UINT16 size;
-	UINT8 data[0]; // Size is variable using hardware_MAXPACKETLENGTH
+	UINT8 data[]; // Size is variable using hardware_MAXPACKETLENGTH
 } ATTRPACK filetx_pak;
 
 typedef struct
@@ -217,7 +227,7 @@ typedef struct
 	UINT8 fileid;
 	UINT8 iteration;
 	UINT8 numsegments;
-	fileacksegment_t segments[0];
+	fileacksegment_t segments[];
 } ATTRPACK fileack_pak;
 
 #ifdef _MSC_VER
@@ -275,11 +285,8 @@ typedef struct
 	UINT8 actnum;
 	UINT8 iszone;
 	char httpsource[MAX_MIRROR_LENGTH]; // HTTP URL to download from, always defined for compatibility
-	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
-	// Anything beyond this point won't be read by the normal SRB2 Master Server display.
-	// The MS uses a simple unpack, so the size of the packet above shouldn't be changed, either.
-	// As long as those two conditions are met, we can add as much information as we want to the end.
 	INT16 avgpwrlv; // Kart avg power level
+	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
 } ATTRPACK serverinfo_pak;
 
 typedef struct
@@ -351,8 +358,8 @@ typedef struct
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
-		filetx_pak filetxpak;               //         139 bytes
-		fileack_pak fileack;
+		char filetxpak[sizeof (filetx_pak)];//         139 bytes
+		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
 		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
@@ -403,7 +410,6 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PING_HIGH   6
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
-#define KICK_MSG_KEEP_BODY   0x80
 
 typedef enum
 {
@@ -439,7 +445,7 @@ extern tic_t servermaxping;
 
 extern boolean server_lagless;
 
-extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
@@ -482,7 +488,7 @@ boolean Playing(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-void TryRunTics(tic_t realtic);
+boolean TryRunTics(tic_t realtic);
 
 // extra data for lmps
 // these functions scare me. they contain magic.
@@ -514,11 +520,11 @@ extern UINT8 hu_redownloadinggamestate;
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
 
+extern boolean hu_stopped;
+
 //
 // SRB2Kart
 //
-
-extern boolean hu_stopped;
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];

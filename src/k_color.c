@@ -39,7 +39,7 @@ UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 
 UINT16 K_RainbowColor(tic_t time)
 {
-	return (UINT16)(SKINCOLOR_PINK + (time % (SKINCOLOR_TAFFY - SKINCOLOR_PINK)));
+	return (UINT16)(FIRSTRAINBOWCOLOR + (time % (FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR)));
 }
 
 /*--------------------------------------------------
@@ -91,6 +91,59 @@ void K_RainbowColormap(UINT8 *dest_colormap, UINT8 skincolor)
 }
 
 /*--------------------------------------------------
+	UINT8 K_HitlagColorValue(RGBA_t color)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT8 K_HitlagColorValue(RGBA_t color)
+{
+	// Outputs a raw brightness value (makes OGL support easier)
+	INT32 output = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
+
+	// Invert the color
+	output = 255 - output;
+
+	// Increase the contrast
+	output = ((output-128) * 2) + 128;
+
+	// Make sure to cap it.
+	if (output > 255)
+	{
+		output = 255;
+	}
+	else if (output < 0)
+	{
+		output = 0;
+	}
+
+	return output;
+}
+
+/*--------------------------------------------------
+	void K_HitlagColormap(UINT8 *dest_colormap)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_HitlagColormap(UINT8 *dest_colormap)
+{
+	RGBA_t color;
+	UINT8 v, offset;
+	INT32 i;
+
+	// for every colour in the palette, invert, greyscale, and increase the contrast.
+	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
+	{
+		color = V_GetColor(i);
+		v = K_HitlagColorValue(color);
+
+		// Convert raw brightness value to an offset from the greyscale palette line
+		offset = (255 - v) / 8; 
+
+		dest_colormap[i] = offset; // Starts from 0, add it if greyscale moves.
+	}
+}
+
+/*--------------------------------------------------
 	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 
 		See header file for description.
@@ -100,13 +153,18 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 	INT32 i;
 	INT32 starttranscolor;
 
-	// Handle a couple of simple special cases
-	if (skinnum == TC_BOSS
+	if (skinnum == TC_HITLAG)
+	{
+		K_HitlagColormap(dest_colormap);
+		return;
+	}
+	else if (skinnum == TC_BOSS
 		|| skinnum == TC_ALLWHITE
 		|| skinnum == TC_METALSONIC
 		|| skinnum == TC_BLINK
 		|| color == SKINCOLOR_NONE)
 	{
+		// Handle a couple of simple special cases
 		for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
 		{
 			if (skinnum == TC_ALLWHITE)

@@ -56,6 +56,8 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing, fixed_t x,fixed_t y);
 boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y);
 void P_HitSpecialLines(mobj_t *thing, fixed_t x, fixed_t y, fixed_t momx, fixed_t momy);
 
+boolean P_GetMidtextureTopBottom(line_t *linedef, fixed_t x, fixed_t y, fixed_t *return_top, fixed_t *return_bottom);
+
 extern fixed_t opentop, openbottom, openrange, lowfloor, highceiling;
 extern pslope_t *opentopslope, *openbottomslope;
 extern ffloor_t *openfloorrover, *openceilingrover;
@@ -63,11 +65,19 @@ extern fixed_t openceilingstep;
 extern fixed_t openceilingdrop;
 extern fixed_t openfloorstep;
 extern fixed_t openfloordrop;
+extern INT32 opentoppic, openbottompic;
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj);
 
-boolean P_BlockLinesIterator(INT32 x, INT32 y, boolean(*func)(line_t *));
-boolean P_BlockThingsIterator(INT32 x, INT32 y, boolean(*func)(mobj_t *));
+typedef enum
+{
+	BMIT_CONTINUE, // Continue blockmap search
+	BMIT_STOP, // End blockmap search with success
+	BMIT_ABORT // End blockmap search with failure
+} BlockItReturn_t;
+
+boolean P_BlockLinesIterator(INT32 x, INT32 y, BlockItReturn_t(*func)(line_t *));
+boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t(*func)(mobj_t *));
 
 #define PT_ADDLINES     1
 #define PT_ADDTHINGS    2

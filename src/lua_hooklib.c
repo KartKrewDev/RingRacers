@@ -471,7 +471,7 @@ void LUAh_ThinkFrame(void)
 	hook_p hookp;
 	// variables used by perf stats
 	int hook_index = 0;
-	int time_taken = 0;
+	precise_t time_taken = 0;
 	if (!gL || !(hooksAvailable[hook_ThinkFrame/8] & (1<<(hook_ThinkFrame%8))))
 		return;
 
@@ -482,7 +482,7 @@ void LUAh_ThinkFrame(void)
 		if (hookp->type != hook_ThinkFrame)
 			continue;
 
-		if (cv_perfstats.value == 3)
+		if (cv_perfstats.value == PS_THINKFRAME)
 			time_taken = I_GetPreciseTime();
 		PushHook(gL, hookp);
 		if (lua_pcall(gL, 0, 0, 1)) {
@@ -491,7 +491,7 @@ void LUAh_ThinkFrame(void)
 			lua_pop(gL, 1);
 			hookp->error = true;
 		}
-		if (cv_perfstats.value == 3)
+		if (cv_perfstats.value == PS_THINKFRAME)
 		{
 			lua_Debug ar;
 			time_taken = I_GetPreciseTime() - time_taken;
@@ -1858,13 +1858,13 @@ boolean LUAh_MusicChange(const char *oldname, char *newname, UINT16 *mflags, boo
 			if (lua_isboolean(gL, -4))
 				*looping = lua_toboolean(gL, -4);
 			// output 4: position override
-			if (lua_isboolean(gL, -3))
+			if (lua_isnumber(gL, -3))
 				*position = lua_tonumber(gL, -3);
 			// output 5: prefadems override
-			if (lua_isboolean(gL, -2))
+			if (lua_isnumber(gL, -2))
 				*prefadems = lua_tonumber(gL, -2);
 			// output 6: fadeinms override
-			if (lua_isboolean(gL, -1))
+			if (lua_isnumber(gL, -1))
 				*fadeinms = lua_tonumber(gL, -1);
 
 			lua_pop(gL, 7);  // Pop returned values and error handler

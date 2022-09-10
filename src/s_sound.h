@@ -179,8 +179,9 @@ extern struct cursongcredit
 {
 	musicdef_t *def;
 	UINT16 anim;
-	INT32 x;
 	UINT8 trans;
+	fixed_t x;
+	fixed_t old_x;
 } cursongcredit;
 
 extern musicdef_t *musicdefstart;
@@ -294,6 +295,8 @@ void S_UpdateSounds(void);
 void S_UpdateClosedCaptions(void);
 
 FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1, fixed_t px2, fixed_t py2, fixed_t pz2);
+
+INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume);
 
 void S_SetSfxVolume(INT32 volume);
 void S_SetMusicVolume(INT32 digvolume);

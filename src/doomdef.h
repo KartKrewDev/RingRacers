@@ -127,6 +127,7 @@ extern char logfilename[1024];
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSIONSTRING "Development EXE"
+#define VERSIONSTRING_RC "Development EXE" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
@@ -161,13 +162,13 @@ extern char logfilename[1024];
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #ifndef BETAVERSION
-#define UPDATE_ALERT
+//#define UPDATE_ALERT
 #endif
 
 // The string used in the alert that pops up in the event of an update being available.
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
-"A new update is available for SRB2Kart.\n"\
+"A new update is available for Ring Racers.\n"\
 "Please visit kartkrew.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
@@ -204,8 +205,10 @@ extern char logfilename[1024];
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
+#define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
-#define MAXSKINS 128
+#define MAXSKINS UINT8_MAX
+#define SKINNAMESIZE 16	// Moved from r_skins.h as including that particular header causes issues later down the line.
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32
@@ -223,6 +226,10 @@ typedef struct skincolor_s
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
 } skincolor_t;
+
+#define FOLLOWERCOLOR_MATCH UINT16_MAX
+#define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 
 typedef enum
 {
@@ -244,7 +251,10 @@ typedef enum
 	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_PINK,
+
+	FIRSTRAINBOWCOLOR,
+
+	SKINCOLOR_PINK = FIRSTRAINBOWCOLOR,
 	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
@@ -394,6 +404,8 @@ typedef enum
 	SKINCOLOR_CHAOSEMERALD6,
 	SKINCOLOR_CHAOSEMERALD7,
 
+	SKINCOLOR_INVINCFLASH,
+
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
 
@@ -437,9 +449,9 @@ enum {
 
 // Name of local directory for config files and savegames
 #if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
-#define DEFAULTDIR ".srb2kart"
+#define DEFAULTDIR ".ringracers"
 #else
-#define DEFAULTDIR "srb2kart"
+#define DEFAULTDIR "ringracers"
 #endif
 
 #include "g_state.h"
@@ -549,6 +561,22 @@ extern boolean capslock;
 
 // i_system.c, replace getchar() once the keyboard has been appropriated
 INT32 I_GetKey(void);
+
+/* http://www.cse.yorku.ca/~oz/hash.html */
+static inline
+UINT32 quickncasehash (const char *p, size_t n)
+{
+	size_t i = 0;
+	UINT32 x = 5381;
+
+	while (i < n && p[i])
+	{
+		x = (x * 33) ^ tolower(p[i]);
+		i++;
+	}
+
+	return x;
+}
 
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))

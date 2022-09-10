@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
 
 # Enable CCache early
 set(SRB2_USE_CCACHE OFF CACHE BOOL "Use CCache")
@@ -34,12 +34,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 ### Useful functions
 
-# Prepend sources with current source directory
-function(prepend_sources SOURCE_FILES)
-	foreach(SOURCE_FILE ${${SOURCE_FILES}})
-		set(MODIFIED ${MODIFIED} ${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_FILE})
-	endforeach()
-	set(${SOURCE_FILES} ${MODIFIED} PARENT_SCOPE)
+# Add sources from Sourcefile
+function(target_sourcefile type)
+	file(STRINGS Sourcefile list
+		REGEX "[-0-9A-Za-z_]+\.${type}")
+	target_sources(SRB2SDL2 PRIVATE ${list})
 endfunction()
 
 # Macro to add OSX framework
@@ -114,13 +113,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Set EXE names so the assets CMakeLists can refer to its target
-set(SRB2_SDL2_EXE_NAME srb2kart CACHE STRING "Executable binary output name")
+set(SRB2_SDL2_EXE_NAME ringracers CACHE STRING "Executable binary output name")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_subdirectory(src)
-add_subdirectory(assets)
-
+if(NOT ${SRB2_CONFIG_DEV_BUILD})
+	add_subdirectory(assets)
+endif()
 
 ## config.h generation
 set(GIT_EXECUTABLE "git" CACHE FILEPATH "Path to git binary")
@@ -146,7 +146,7 @@ if("${SRB2_CPACK_GENERATOR}" STREQUAL "")
 endif()
 
 set(CPACK_GENERATOR ${SRB2_CPACK_GENERATOR})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonic Robo Blast 2 Kart" CACHE STRING "Program name for display purposes")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Dr. Robotnik's Ring Racers" CACHE STRING "Program name for display purposes")
 set(CPACK_PACKAGE_VENDOR "Kart Krew" CACHE STRING "Vendor name for display purposes")
 #set(CPACK_PACKAGE_DESCRIPTION_FILE )
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")

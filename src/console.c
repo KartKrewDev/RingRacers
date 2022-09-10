@@ -31,7 +31,7 @@
 #include "i_system.h"
 #include "i_threads.h"
 #include "d_main.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "filesrch.h"
 #include "m_misc.h"
 
@@ -153,28 +153,6 @@ static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{
 												{18,"Rose"},
 												{0, NULL}};
 consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
-
-static CV_PossibleValue_t menuhighlight_cons_t[] =
-{
-	{0, "Game type"},
-	{V_YELLOWMAP, "Always yellow"},
-	{V_PURPLEMAP, "Always purple"},
-	{V_GREENMAP, "Always green"},
-	{V_BLUEMAP, "Always blue"},
-	{V_REDMAP, "Always red"},
-	{V_GRAYMAP, "Always gray"},
-	{V_ORANGEMAP, "Always orange"},
-	{V_SKYMAP, "Always sky-blue"},
-	{V_GOLDMAP, "Always gold"},
-	{V_LAVENDERMAP, "Always lavender"},
-	{V_AQUAMAP, "Always aqua-green"},
-	{V_MAGENTAMAP, "Always magenta"},
-	{V_PINKMAP, "Always pink"},
-	{V_BROWNMAP, "Always brown"},
-	{V_TANMAP, "Always tan"},
-	{0, NULL}
-};
-consvar_t cons_menuhighlight = CVAR_INIT ("menuhighlight", "Game type", CV_SAVE, menuhighlight_cons_t, NULL);
 
 static void CON_Print(char *msg);
 
@@ -466,7 +444,6 @@ void CON_Init(void)
 		CV_RegisterVar(&cons_height);
 		CV_RegisterVar(&cons_backpic);
 		CV_RegisterVar(&cons_backcolor);
-		CV_RegisterVar(&cons_menuhighlight);
 		COM_AddCommand("bind", CONS_Bind_f);
 	}
 	else
@@ -938,7 +915,7 @@ boolean CON_Responder(event_t *ev)
 		if (modeattacking || metalrecording || marathonmode)
 			return false;
 
-		if (ev->data1 >= KEY_MOUSE1) // See also: HUD_Responder
+		if (ev->data1 >= NUMKEYS) // See also: HUD_Responder
 		{
 			INT32 i;
 			for (i = 0; i < num_gamecontrols; i++)
@@ -1576,7 +1553,7 @@ void CONS_Error(const char *msg)
 #if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
 	if (!graphics_started)
 	{
-		MessageBoxA(vid.WndParent, msg, "SRB2Kart Warning", MB_OK);
+		MessageBoxA(vid.WndParent, msg, "Dr. Robotnik's Ring Racers Warning", MB_OK);
 		return;
 	}
 #endif
@@ -1717,7 +1694,10 @@ static void CON_DrawHudlines(void)
 			{
 				charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
 				p++;
+				c++;
 			}
+			if (c >= con_width)
+				break;
 			if (*p < HU_FONTSTART)
 				;//charwidth = 4 * con_scalefactor;
 			else
@@ -1838,7 +1818,10 @@ static void CON_DrawConsole(void)
 			{
 				charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
 				p++;
+				c++;
 			}
+			if (c >= con_width)
+				break;
 			V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 	}
@@ -1916,6 +1899,8 @@ void CON_SetLoadingProgress(con_loadprogress_t newStep)
 	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
 		return;
 	CON_DrawLoadBar(); // here we display the console text
+	I_OsPolling();
+	I_UpdateNoBlit();
 	I_FinishUpdate(); // page flip or blit buffer
 }
 

@@ -41,6 +41,7 @@ struct demovars_s {
 	boolean inreplayhut; // Go back to replayhut after demos
 	boolean quitafterplaying; // quit after playing a demo from cmdline
 	boolean deferstart; // don't start playing demo right away
+	boolean netgame; // multiplayer netgame
 
 	tic_t savebutton; // Used to determine when the local player can choose to save the replay while the race is still going
 	enum {

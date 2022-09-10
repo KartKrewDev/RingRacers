@@ -30,12 +30,13 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
+#include "k_boss.h" // bossinfo
 
 #ifdef HW3SOUND
 // 3D Sound Interface
 #include "hardware/hw3sound.h"
 #else
-static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
+static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 #endif
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {MAX_VOLUME, "MAX"}, {0, NULL}};
@@ -183,8 +184,6 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 	// channel number to use
 	INT32 cnum;
 
-	channel_t *c;
-
 	// Find an open channel
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
@@ -196,7 +195,6 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 		else if (sfxinfo == channels[cnum].sfxinfo && (sfxinfo->pitch & SF_NOMULTIPLESOUND))
 		{
 			return -1;
-			break;
 		}
 		else if (sfxinfo == channels[cnum].sfxinfo && sfxinfo->singularity == true)
 		{
@@ -239,12 +237,6 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 			S_StopChannel(cnum);
 		}
 	}
-
-	c = &channels[cnum];
-
-	// channel is decided to be cnum.
-	c->sfxinfo = sfxinfo;
-	c->origin = origin;
 
 	return cnum;
 }
@@ -501,24 +493,38 @@ void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan)
 	closedcaptions[set].b = 2; // bob
 }
 
+static INT32 S_ScaleVolumeWithSplitscreen(INT32 volume)
+{
+	fixed_t root = INT32_MAX;
+
+	if (r_splitscreen == 0)
+	{
+		return volume;
+	}
+
+	root = FixedSqrt((r_splitscreen + 1) * (FRACUNIT/3));
+
+	return FixedDiv(
+		volume * FRACUNIT,
+		root
+	) / FRACUNIT;
+}
+
 void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 {
-	const INT32 initial_volume = volume;
-	INT32 sep, pitch, priority, cnum;
-	const sfxenum_t actual_id = sfx_id;
-	sfxinfo_t *sfx;
-	const boolean reverse = (stereoreverse.value ^ encoremode);
 	const mobj_t *origin = (const mobj_t *)origin_p;
+	const sfxenum_t actual_id = sfx_id;
+	const boolean reverse = (stereoreverse.value ^ encoremode);
+	const INT32 initial_volume = (origin ? S_ScaleVolumeWithSplitscreen(volume) : volume);
 
-	listener_t listener  = {0,0,0,0};
-	listener_t listener2 = {0,0,0,0};
-	listener_t listener3 = {0,0,0,0};
-	listener_t listener4 = {0,0,0,0};
+	sfxinfo_t *sfx;
+	INT32 sep, pitch, priority, cnum;
+	boolean anyListeners = false;
+	boolean itsUs = false;
+	INT32 i;
 
-	mobj_t *listenmobj = democam.soundmobj ? : players[displayplayers[0]].mo;
-	mobj_t *listenmobj2 = NULL;
-	mobj_t *listenmobj3 = NULL;
-	mobj_t *listenmobj4 = NULL;
+	listener_t listener[MAXSPLITSCREENPLAYERS];
+	mobj_t *listenmobj[MAXSPLITSCREENPLAYERS];
 
 	if (S_SoundDisabled() || !sound_started)
 		return;
@@ -527,27 +533,35 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	if (sfx_id == sfx_None)
 		return;
 
-	if (players[displayplayers[0]].awayviewtics)
-		listenmobj = players[displayplayers[0]].awayviewmobj;
-
-	if (r_splitscreen)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		listenmobj2 = players[displayplayers[1]].mo;
-		if (players[displayplayers[1]].awayviewtics)
-			listenmobj2 = players[displayplayers[1]].awayviewmobj;
+		player_t *player = &players[displayplayers[i]];
 
-		if (r_splitscreen > 1)
+		memset(&listener[i], 0, sizeof (listener[i]));
+		listenmobj[i] = NULL;
+
+		if (!player)
 		{
-			listenmobj3 = players[displayplayers[2]].mo;
-			if (players[displayplayers[2]].awayviewtics)
-				listenmobj3 = players[displayplayers[2]].awayviewmobj;
+			continue;
+		}
 
-			if (r_splitscreen > 2)
-			{
-				listenmobj4 = players[displayplayers[3]].mo;
-				if (players[displayplayers[3]].awayviewtics)
-					listenmobj4 = players[displayplayers[3]].awayviewmobj;
-			}
+		if (i == 0 && democam.soundmobj)
+		{
+			continue;
+		}
+
+		if (player->awayviewtics)
+		{
+			listenmobj[i] = player->awayviewmobj;
+		}
+		else
+		{
+			listenmobj[i] = player->mo;
+		}
+
+		if (origin && origin == listenmobj[i])
+		{
+			itsUs = true;
 		}
 	}
 
@@ -559,75 +573,37 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	};
 #endif
 
-	if (camera[0].chase && !players[displayplayers[0]].awayviewtics)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		listener.x = camera[0].x;
-		listener.y = camera[0].y;
-		listener.z = camera[0].z;
-		listener.angle = camera[0].angle;
+		player_t *player = &players[displayplayers[i]];
+
+		if (!player)
+		{
+			continue;
+		}
+
+		if (camera[i].chase && !player->awayviewtics)
+		{
+			listener[i].x = camera[i].x;
+			listener[i].y = camera[i].y;
+			listener[i].z = camera[i].z;
+			listener[i].angle = camera[i].angle;
+			anyListeners = true;
+		}
+		else if (listenmobj[i])
+		{
+			listener[i].x = listenmobj[i]->x;
+			listener[i].y = listenmobj[i]->y;
+			listener[i].z = listenmobj[i]->z;
+			listener[i].angle = listenmobj[i]->angle;
+			anyListeners = true;
+		}
 	}
-	else if (listenmobj)
+
+	if (origin && anyListeners == false)
 	{
-		listener.x = listenmobj->x;
-		listener.y = listenmobj->y;
-		listener.z = listenmobj->z;
-		listener.angle = listenmobj->angle;
-	}
-	else if (origin)
+		// If a mobj is trying to make a noise, and no one is around to hear it, does it make a sound?
 		return;
-
-	if (listenmobj2)
-	{
-		if (camera[1].chase && !players[displayplayers[1]].awayviewtics)
-		{
-			listener2.x = camera[1].x;
-			listener2.y = camera[1].y;
-			listener2.z = camera[1].z;
-			listener2.angle = camera[1].angle;
-		}
-		else
-		{
-			listener2.x = listenmobj2->x;
-			listener2.y = listenmobj2->y;
-			listener2.z = listenmobj2->z;
-			listener2.angle = listenmobj2->angle;
-		}
-	}
-
-	if (listenmobj3)
-	{
-		if (camera[2].chase && !players[displayplayers[2]].awayviewtics)
-		{
-			listener3.x = camera[2].x;
-			listener3.y = camera[2].y;
-			listener3.z = camera[2].z;
-			listener3.angle = camera[2].angle;
-		}
-		else
-		{
-			listener3.x = listenmobj3->x;
-			listener3.y = listenmobj3->y;
-			listener3.z = listenmobj3->z;
-			listener3.angle = listenmobj3->angle;
-		}
-	}
-
-	if (listenmobj4)
-	{
-		if (camera[3].chase && !players[displayplayers[3]].awayviewtics)
-		{
-			listener4.x = camera[3].x;
-			listener4.y = camera[3].y;
-			listener4.z = camera[3].z;
-			listener4.angle = camera[3].angle;
-		}
-		else
-		{
-			listener4.x = listenmobj4->x;
-			listener4.y = listenmobj4->y;
-			listener4.z = listenmobj4->z;
-			listener4.angle = listenmobj4->angle;
-		}
 	}
 
 	// check for bogus sound #
@@ -646,37 +622,52 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	// Initialize sound parameters
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
+	sep = NORM_SEP;
 
-	if (r_splitscreen && origin)
-		volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
+	i = 0; // sensible default
 
-	if (r_splitscreen && listenmobj2) // Copy the sound for the split player
 	{
 		// Check to see if it is audible, and if not, modify the params
-		if (origin && origin != listenmobj2)
+		if (origin && !itsUs)
 		{
-			INT32 rc;
-			rc = S_AdjustSoundParams(listenmobj2, origin, &volume, &sep, &pitch, sfx);
+			boolean audible = false;
 
-			if (!rc)
-				goto dontplay; // Maybe the other player can hear it...
+			if (r_splitscreen > 0)
+			{
+				fixed_t recdist = INT32_MAX;
+				UINT8 j = 0;
 
-			if (origin->x == listener2.x && origin->y == listener2.y)
-				sep = NORM_SEP;
+				for (; j <= r_splitscreen; j++)
+				{
+					fixed_t thisdist = INT32_MAX;
+
+					if (!listenmobj[j])
+					{
+						continue;
+					}
+
+					thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+					if (thisdist >= recdist)
+					{
+						continue;
+					}
+				
+					recdist = thisdist;
+					i = j;
+				}
+			}
+
+			if (listenmobj[i])
+			{
+				audible = S_AdjustSoundParams(listenmobj[i], origin, &volume, &sep, &pitch, sfx);
+			}
+
+			if (!audible)
+			{
+				return;
+			}
 		}
-		else if (!origin)
-			// Do not play origin-less sounds for the second player.
-			// The first player will be able to hear it just fine,
-			// we really don't want it playing twice.
-			goto dontplay;
-		else
-			sep = NORM_SEP;
-
-		// try to find a channel
-		cnum = S_getChannel(origin, sfx);
-
-		if (cnum < 0)
-			return; // If there's no free channels, it's not gonna be free for player 1, either.
 
 		// This is supposed to handle the loading/caching.
 		// For some odd reason, the caching is done nearly
@@ -685,191 +676,51 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		// cache data if necessary
 		// NOTE: set sfx->data NULL sfx->lump -1 to force a reload
 		if (!sfx->data)
+		{
 			sfx->data = I_GetSfx(sfx);
+
+			if (!sfx->data)
+			{
+				CONS_Alert(CONS_WARNING,
+						"Tried to load invalid sfx_%s\n",
+						sfx->name);
+				return;/* don't play it */
+			}
+		}
 
 		// increase the usefulness
 		if (sfx->usefulness++ < 0)
+		{
 			sfx->usefulness = -1;
+		}
 
 		// Avoid channel reverse if surround
 		if (reverse
 #ifdef SURROUND
 			&& sep != SURROUND_SEP
 #endif
-		)
-			sep = (~sep) & 255;
-
-		// Assigns the handle to one of the channels in the
-		// mix/output buffer.
-		channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
-	}
-
-dontplay:
-
-	if (r_splitscreen > 1 && listenmobj3) // Copy the sound for the third player
-	{
-		// Check to see if it is audible, and if not, modify the params
-		if (origin && origin != listenmobj3)
+			)
 		{
-			INT32 rc;
-			rc = S_AdjustSoundParams(listenmobj3, origin, &volume, &sep, &pitch, sfx);
-
-			if (!rc)
-				goto dontplay3; // Maybe the other player can hear it...
-
-			if (origin->x == listener3.x && origin->y == listener3.y)
-				sep = NORM_SEP;
+			sep = (~sep) & 255;
 		}
-		else if (!origin)
-			// Do not play origin-less sounds for the second player.
-			// The first player will be able to hear it just fine,
-			// we really don't want it playing twice.
-			goto dontplay3;
-		else
-			sep = NORM_SEP;
 
-		// try to find a channel
+		// At this point it is determined that a sound can and should be played, so find a free channel to play it on
 		cnum = S_getChannel(origin, sfx);
 
 		if (cnum < 0)
-			return; // If there's no free channels, it's not gonna be free for player 1, either.
-
-		// This is supposed to handle the loading/caching.
-		// For some odd reason, the caching is done nearly
-		// each time the sound is needed?
-
-		// cache data if necessary
-		// NOTE: set sfx->data NULL sfx->lump -1 to force a reload
-		if (!sfx->data)
-			sfx->data = I_GetSfx(sfx);
-
-		// increase the usefulness
-		if (sfx->usefulness++ < 0)
-			sfx->usefulness = -1;
-
-		// Avoid channel reverse if surround
-		if (reverse
-#ifdef SURROUND
-			&& sep != SURROUND_SEP
-#endif
-		)
-			sep = (~sep) & 255;
-
-		// Assigns the handle to one of the channels in the
-		// mix/output buffer.
-		channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
-	}
-
-dontplay3:
-
-	if (r_splitscreen > 2 && listenmobj4) // Copy the sound for the split player
-	{
-		// Check to see if it is audible, and if not, modify the params
-		if (origin && origin != listenmobj4)
 		{
-			INT32 rc;
-			rc = S_AdjustSoundParams(listenmobj4, origin, &volume, &sep, &pitch, sfx);
-
-			if (!rc)
-				goto dontplay4; // Maybe the other player can hear it...
-
-			if (origin->x == listener4.x && origin->y == listener4.y)
-				sep = NORM_SEP;
+			return; // If there's no free channels, there won't be any for anymore players either
 		}
-		else if (!origin)
-			// Do not play origin-less sounds for the second player.
-			// The first player will be able to hear it just fine,
-			// we really don't want it playing twice.
-			goto dontplay4;
-		else
-			sep = NORM_SEP;
-
-		// try to find a channel
-		cnum = S_getChannel(origin, sfx);
-
-		if (cnum < 0)
-			return; // If there's no free channels, it's not gonna be free for player 1, either.
-
-		// This is supposed to handle the loading/caching.
-		// For some odd reason, the caching is done nearly
-		// each time the sound is needed?
-
-		// cache data if necessary
-		// NOTE: set sfx->data NULL sfx->lump -1 to force a reload
-		if (!sfx->data)
-			sfx->data = I_GetSfx(sfx);
-
-		// increase the usefulness
-		if (sfx->usefulness++ < 0)
-			sfx->usefulness = -1;
-
-		// Avoid channel reverse if surround
-		if (reverse
-#ifdef SURROUND
-			&& sep != SURROUND_SEP
-#endif
-		)
-			sep = (~sep) & 255;
 
 		// Handle closed caption input.
 		S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
 
-		// Assigns the handle to one of the channels in the
-		// mix/output buffer.
-		channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
+		// Now that we know we are going to play a sound, fill out this info
+		channels[cnum].sfxinfo = sfx;
+		channels[cnum].origin = origin;
+		channels[cnum].volume = initial_volume;
+		channels[cnum].handle = I_StartSound(sfx_id, S_GetSoundVolume(sfx, volume), sep, pitch, priority, cnum);
 	}
-
-dontplay4:
-
-	// Check to see if it is audible, and if not, modify the params
-	if (origin && origin != listenmobj)
-	{
-		INT32 rc;
-		rc = S_AdjustSoundParams(listenmobj, origin, &volume, &sep, &pitch, sfx);
-
-		if (!rc)
-			return;
-
-		if (origin->x == listener.x && origin->y == listener.y)
-			sep = NORM_SEP;
-	}
-	else
-		sep = NORM_SEP;
-
-	// try to find a channel
-	cnum = S_getChannel(origin, sfx);
-
-	if (cnum < 0)
-		return;
-
-	// This is supposed to handle the loading/caching.
-	// For some odd reason, the caching is done nearly
-	// each time the sound is needed?
-
-	// cache data if necessary
-	// NOTE: set sfx->data NULL sfx->lump -1 to force a reload
-	if (!sfx->data)
-		sfx->data = I_GetSfx(sfx);
-
-	// increase the usefulness
-	if (sfx->usefulness++ < 0)
-		sfx->usefulness = -1;
-
-	// Avoid channel reverse if surround
-	if (reverse
-#ifdef SURROUND
-		&& sep != SURROUND_SEP
-#endif
-	)
-		sep = (~sep) & 255;
-
-	// Handle closed caption input.
-	S_StartCaption(actual_id, cnum, MAXCAPTIONTICS);
-
-	// Assigns the handle to one of the channels in the
-	// mix/output buffer.
-	channels[cnum].volume = initial_volume;
-	channels[cnum].handle = I_StartSound(sfx_id, volume, sep, pitch, priority, cnum);
 }
 
 void S_StartSound(const void *origin, sfxenum_t sfx_id)
@@ -920,23 +771,13 @@ static INT32 actualdigmusicvolume;
 
 void S_UpdateSounds(void)
 {
-	INT32 audible, cnum, volume, sep, pitch;
+	INT32 cnum, volume, sep, pitch;
+	boolean audible = false;
 	channel_t *c;
+	INT32 i;
 
-	listener_t listener;
-	listener_t listener2;
-	listener_t listener3;
-	listener_t listener4;
-
-	mobj_t *listenmobj = democam.soundmobj ? : players[displayplayers[0]].mo;
-	mobj_t *listenmobj2 = NULL;
-	mobj_t *listenmobj3 = NULL;
-	mobj_t *listenmobj4 = NULL;
-
-	memset(&listener, 0, sizeof(listener_t));
-	memset(&listener2, 0, sizeof(listener_t));
-	memset(&listener3, 0, sizeof(listener_t));
-	memset(&listener4, 0, sizeof(listener_t));
+	listener_t listener[MAXSPLITSCREENPLAYERS];
+	mobj_t *listenmobj[MAXSPLITSCREENPLAYERS];
 
 	// Update sound/music volumes, if changed manually at console
 	if (actualsfxvolume != cv_soundvolume.value * USER_VOLUME_SCALE)
@@ -949,7 +790,7 @@ void S_UpdateSounds(void)
 	{
 #ifndef NOMUMBLE
 		// Stop Mumble cutting out. I'm sick of it.
-		I_UpdateMumble(NULL, listener);
+		I_UpdateMumble(NULL, listener[0]);
 #endif
 
 		goto notinlevel;
@@ -958,47 +799,35 @@ void S_UpdateSounds(void)
 	if (dedicated || sound_disabled)
 		return;
 
-	if (players[displayplayers[0]].awayviewtics)
-		listenmobj = players[displayplayers[0]].awayviewmobj;
-
-	if (r_splitscreen)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		listenmobj2 = players[displayplayers[1]].mo;
-		if (players[displayplayers[1]].awayviewtics)
-			listenmobj2 = players[displayplayers[1]].awayviewmobj;
+		player_t *player = &players[displayplayers[i]];
 
-		if (r_splitscreen > 1)
+		memset(&listener[i], 0, sizeof (listener[i]));
+		listenmobj[i] = NULL;
+
+		if (!player)
 		{
-			listenmobj3 = players[displayplayers[2]].mo;
-			if (players[displayplayers[2]].awayviewtics)
-				listenmobj3 = players[displayplayers[2]].awayviewmobj;
+			continue;
+		}
 
-			if (r_splitscreen > 2)
-			{
-				listenmobj4 = players[displayplayers[3]].mo;
-				if (players[displayplayers[3]].awayviewtics)
-					listenmobj4 = players[displayplayers[3]].awayviewmobj;
-			}
+		if (i == 0 && democam.soundmobj)
+		{
+			continue;
+		}
+
+		if (player->awayviewtics)
+		{
+			listenmobj[i] = player->awayviewmobj;
+		}
+		else
+		{
+			listenmobj[i] = player->mo;
 		}
 	}
 
-	if (camera[0].chase && !players[displayplayers[0]].awayviewtics)
-	{
-		listener.x = camera[0].x;
-		listener.y = camera[0].y;
-		listener.z = camera[0].z;
-		listener.angle = camera[0].angle;
-	}
-	else if (listenmobj)
-	{
-		listener.x = listenmobj->x;
-		listener.y = listenmobj->y;
-		listener.z = listenmobj->z;
-		listener.angle = listenmobj->angle;
-	}
-
 #ifndef NOMUMBLE
-	I_UpdateMumble(players[consoleplayer].mo, listener);
+	I_UpdateMumble(players[consoleplayer].mo, listener[0]);
 #endif
 
 #ifdef HW3SOUND
@@ -1009,57 +838,28 @@ void S_UpdateSounds(void)
 	}
 #endif
 
-	if (listenmobj2)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		if (camera[1].chase && !players[displayplayers[1]].awayviewtics)
-		{
-			listener2.x = camera[1].x;
-			listener2.y = camera[1].y;
-			listener2.z = camera[1].z;
-			listener2.angle = camera[1].angle;
-		}
-		else
-		{
-			listener2.x = listenmobj2->x;
-			listener2.y = listenmobj2->y;
-			listener2.z = listenmobj2->z;
-			listener2.angle = listenmobj2->angle;
-		}
-	}
+		player_t *player = &players[displayplayers[i]];
 
-	if (listenmobj3)
-	{
-		if (camera[2].chase && !players[displayplayers[2]].awayviewtics)
+		if (!player)
 		{
-			listener3.x = camera[2].x;
-			listener3.y = camera[2].y;
-			listener3.z = camera[2].z;
-			listener3.angle = camera[2].angle;
+			continue;
 		}
-		else
-		{
-			listener3.x = listenmobj3->x;
-			listener3.y = listenmobj3->y;
-			listener3.z = listenmobj3->z;
-			listener3.angle = listenmobj3->angle;
-		}
-	}
 
-	if (listenmobj4)
-	{
-		if (camera[3].chase && !players[displayplayers[3]].awayviewtics)
+		if (camera[i].chase && !player->awayviewtics)
 		{
-			listener4.x = camera[3].x;
-			listener4.y = camera[3].y;
-			listener4.z = camera[3].z;
-			listener4.angle = camera[3].angle;
+			listener[i].x = camera[i].x;
+			listener[i].y = camera[i].y;
+			listener[i].z = camera[i].z;
+			listener[i].angle = camera[i].angle;
 		}
-		else
+		else if (listenmobj[i])
 		{
-			listener4.x = listenmobj4->x;
-			listener4.y = listenmobj4->y;
-			listener4.z = listenmobj4->z;
-			listener4.angle = listenmobj4->angle;
+			listener[i].x = listenmobj[i]->x;
+			listener[i].y = listenmobj[i]->y;
+			listener[i].z = listenmobj[i]->z;
+			listener[i].angle = listenmobj[i]->angle;
 		}
 	}
 
@@ -1076,86 +876,63 @@ void S_UpdateSounds(void)
 				pitch = NORM_PITCH;
 				sep = NORM_SEP;
 
-				if (r_splitscreen && c->origin)
-					volume = FixedDiv(volume<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
-
 				// check non-local sounds for distance clipping
 				//  or modify their params
-				if (c->origin && ((c->origin != players[displayplayers[0]].mo)
-					|| (r_splitscreen && c->origin != players[displayplayers[1]].mo)
-					|| (r_splitscreen > 1 && c->origin != players[displayplayers[2]].mo)
-					|| (r_splitscreen > 2 && c->origin != players[displayplayers[3]].mo)))
+				if (c->origin)
 				{
-					// Whomever is closer gets the sound, but only in splitscreen.
-					if (r_splitscreen)
+					boolean itsUs = false;
+
+					for (i = r_splitscreen; i >= 0; i--)
 					{
-						const mobj_t *soundmobj = c->origin;
-						fixed_t recdist = -1;
-						INT32 i, p = -1;
+						if (c->origin != listenmobj[i])
+							continue;
 
-						for (i = 0; i <= r_splitscreen; i++)
-						{
-							fixed_t thisdist = -1;
-
-							if (i == 0 && listenmobj)
-								thisdist = P_AproxDistance(listener.x-soundmobj->x, listener.y-soundmobj->y);
-							else if (i == 1 && listenmobj2)
-								thisdist = P_AproxDistance(listener2.x-soundmobj->x, listener2.y-soundmobj->y);
-							else if (i == 2 && listenmobj3)
-								thisdist = P_AproxDistance(listener3.x-soundmobj->x, listener3.y-soundmobj->y);
-							else if (i == 3 && listenmobj4)
-								thisdist = P_AproxDistance(listener4.x-soundmobj->x, listener4.y-soundmobj->y);
-							else
-								continue;
-
-							if (recdist == -1 || (thisdist != -1 && thisdist < recdist))
-							{
-								recdist = thisdist;
-								p = i;
-							}
-						}
-
-						if (p != -1)
-						{
-							if (p == 1)
-							{
-								// Player 2 gets the sound
-								audible = S_AdjustSoundParams(listenmobj2, c->origin, &volume, &sep, &pitch,
-									c->sfxinfo);
-							}
-							else if (p == 2)
-							{
-								// Player 3 gets the sound
-								audible = S_AdjustSoundParams(listenmobj3, c->origin, &volume, &sep, &pitch,
-								c->sfxinfo);
-							}
-							else if (p == 3)
-							{
-								// Player 4 gets the sound
-								audible = S_AdjustSoundParams(listenmobj4, c->origin, &volume, &sep, &pitch,
-									c->sfxinfo);
-							}
-							else
-							{
-								// Player 1 gets the sound
-								audible = S_AdjustSoundParams(listenmobj, c->origin, &volume, &sep, &pitch,
-									c->sfxinfo);
-							}
-
-							if (audible)
-								I_UpdateSoundParams(c->handle, volume, sep, pitch);
-							else
-								S_StopChannel(cnum);
-						}
+						itsUs = true;
 					}
-					else if (listenmobj && !r_splitscreen)
+
+					if (itsUs == false)
 					{
-						// In the case of a single player, he or she always should get updated sound.
-						audible = S_AdjustSoundParams(listenmobj, c->origin, &volume, &sep, &pitch,
-							c->sfxinfo);
+						const mobj_t *origin = c->origin;
+
+						i = 0;
+
+						if (r_splitscreen > 0)
+						{
+							fixed_t recdist = INT32_MAX;
+							UINT8 j = 0;
+
+							for (; j <= r_splitscreen; j++)
+							{
+								fixed_t thisdist = INT32_MAX;
+
+								if (!listenmobj[j])
+								{
+									continue;
+								}
+
+								thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+								if (thisdist >= recdist)
+								{
+									continue;
+								}
+
+								recdist = thisdist;
+								i = j;
+							}
+						}
+
+						if (listenmobj[i])
+						{
+							audible = S_AdjustSoundParams(
+								listenmobj[i], c->origin,
+								&volume, &sep, &pitch,
+								c->sfxinfo
+							);
+						}
 
 						if (audible)
-							I_UpdateSoundParams(c->handle, volume, sep, pitch);
+							I_UpdateSoundParams(c->handle, S_GetSoundVolume(c->sfxinfo, volume), sep, pitch);
 						else
 							S_StopChannel(cnum);
 					}
@@ -1267,60 +1044,52 @@ fixed_t S_CalculateSoundDistance(fixed_t sx1, fixed_t sy1, fixed_t sz1, fixed_t 
 	return FixedDiv(approx_dist, mapobjectscale); // approx_dist
 }
 
+INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume)
+{
+	if (sfx->volume > 0)
+		return (volume * sfx->volume) / 100;
+
+	return volume;
+}
+
 //
 // Changes volume, stereo-separation, and pitch variables
 // from the norm of a sound effect to be played.
 // If the sound is not audible, returns a 0.
 // Otherwise, modifies parameters and returns 1.
 //
-INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch,
+boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch,
 	sfxinfo_t *sfxinfo)
 {
-	fixed_t approx_dist;
-	angle_t angle;
-
-	listener_t listensource;
-
 	const boolean reverse = (stereoreverse.value ^ encoremode);
 
+	fixed_t approx_dist;
+
+	listener_t listensource;
+	INT32 i;
+
 	(void)pitch;
+
 	if (!listener)
 		return false;
 
-	if (listener == players[displayplayers[0]].mo && camera[0].chase)
+	// Init listensource with default listener
+	listensource.x = listener->x;
+	listensource.y = listener->y;
+	listensource.z = listener->z;
+	listensource.angle = listener->angle;
+
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		listensource.x = camera[0].x;
-		listensource.y = camera[0].y;
-		listensource.z = camera[0].z;
-		listensource.angle = camera[0].angle;
-	}
-	else if (r_splitscreen && listener == players[displayplayers[1]].mo && camera[1].chase)
-	{
-		listensource.x = camera[1].x;
-		listensource.y = camera[1].y;
-		listensource.z = camera[1].z;
-		listensource.angle = camera[1].angle;
-	}
-	else if (r_splitscreen > 1 && listener == players[displayplayers[2]].mo && camera[2].chase)
-	{
-		listensource.x = camera[2].x;
-		listensource.y = camera[2].y;
-		listensource.z = camera[2].z;
-		listensource.angle = camera[2].angle;
-	}
-	else if (r_splitscreen > 2 && listener == players[displayplayers[3]].mo && camera[3].chase)
-	{
-		listensource.x = camera[3].x;
-		listensource.y = camera[3].y;
-		listensource.z = camera[3].z;
-		listensource.angle = camera[3].angle;
-	}
-	else
-	{
-		listensource.x = listener->x;
-		listensource.y = listener->y;
-		listensource.z = listener->z;
-		listensource.angle = listener->angle;
+		// If listener is a chasecam player, use the camera instead
+		if (listener == players[displayplayers[i]].mo && camera[i].chase)
+		{
+			listensource.x = camera[i].x;
+			listensource.y = camera[i].y;
+			listensource.z = camera[i].z;
+			listensource.angle = camera[i].angle;
+			break;
+		}
 	}
 
 	if (sfxinfo->pitch & SF_OUTSIDESOUND) // Rain special case
@@ -1370,30 +1139,37 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		approx_dist = FixedDiv(approx_dist,2*FRACUNIT);
 
 	if (approx_dist > S_CLIPPING_DIST)
-		return 0;
+		return false;
 
-	// angle of source to listener
-	angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
-
-	if (angle > listensource.angle)
-		angle = angle - listensource.angle;
+	if (source->x == listensource.x && source->y == listensource.y)
+	{
+		*sep = NORM_SEP;
+	}
 	else
-		angle = angle + InvAngle(listensource.angle);
+	{
+		// angle of source to listener
+		angle_t angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
 
-	if (reverse)
-		angle = InvAngle(angle);
+		if (angle > listensource.angle)
+			angle = angle - listensource.angle;
+		else
+			angle = angle + InvAngle(listensource.angle);
+
+		if (reverse)
+			angle = InvAngle(angle);
 
 #ifdef SURROUND
-	// Produce a surround sound for angle from 105 till 255
-	if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
-		*sep = SURROUND_SEP;
-	else
+		// Produce a surround sound for angle from 105 till 255
+		if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
+			*sep = SURROUND_SEP;
+		else
 #endif
-	{
-		angle >>= ANGLETOFINESHIFT;
+		{
+			angle >>= ANGLETOFINESHIFT;
 
-		// stereo separation
-		*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+			// stereo separation
+			*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+		}
 	}
 
 	// volume calculation
@@ -1404,9 +1180,6 @@ INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *v
 		INT32 n = (15 * ((S_CLIPPING_DIST - approx_dist)>>FRACBITS));
 		*vol = FixedMul(*vol * FRACUNIT / 255, n) / S_ATTENUATOR;
 	}
-
-	if (r_splitscreen)
-		*vol = FixedDiv((*vol)<<FRACBITS, FixedSqrt((r_splitscreen+1)<<FRACBITS))>>FRACBITS;
 
 	return (*vol > 0);
 }
@@ -1824,7 +1597,7 @@ void S_ShowMusicCredit(void)
 		{
 			cursongcredit.def = def;
 			cursongcredit.anim = 5*TICRATE;
-			cursongcredit.x = 0;
+			cursongcredit.x = cursongcredit.old_x =0;
 			cursongcredit.trans = NUMTRANSMAPS;
 			return;
 		}
@@ -2595,7 +2368,9 @@ void S_StartEx(boolean reset)
 	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-		S_ChangeMusicEx((encoremode ? "estart" : "kstart"), 0, false, mapmusposition, 0, 0);
+	{
+		;
+	}
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 
@@ -2609,7 +2384,7 @@ void S_StartEx(boolean reset)
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;
-	UINT16 tunenum, track = 0;
+	UINT16 track = 0;
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
 
@@ -2625,7 +2400,6 @@ static void Command_Tunes_f(void)
 	}
 
 	tunearg = COM_Argv(1);
-	tunenum = (UINT16)atoi(tunearg);
 	track = 0;
 
 	if (!strcasecmp(tunearg, "-show"))
@@ -2644,24 +2418,14 @@ static void Command_Tunes_f(void)
 		tunearg = mapheaderinfo[gamemap-1]->musname;
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
-	else if (isalpha(tunearg[0]))
-		tunenum = (UINT16)G_MapNumber(tunearg);
 
-	if (tunenum && tunenum >= 1036)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Valid music slots are 1 to 1035.\n"));
-		return;
-	}
-	if (!tunenum && strlen(tunearg) > 6) // This is automatic -- just show the error just in case
+	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
 		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
 
 	if (argc > 2)
 		track = (UINT16)atoi(COM_Argv(2))-1;
 
-	if (tunenum)
-		snprintf(mapmusname, 7, "%sM", G_BuildMapName(tunenum));
-	else
-		strncpy(mapmusname, tunearg, 7);
+	strncpy(mapmusname, tunearg, 7);
 
 	if (argc > 4)
 		position = (UINT32)atoi(COM_Argv(4));
@@ -2742,9 +2506,9 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("_title"))
+		else if (S_MusicExists("menu"))
 		{
-			S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("menu", looptitle);
 		}
 	}
 	else
