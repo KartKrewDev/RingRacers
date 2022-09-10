@@ -1846,10 +1846,15 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
 		while (x < BASEVIDWIDTH + pad)
 		{
-			lumpnum_t lumpnum;
+			INT32 cupLevelNum = G_MapNumber(cup->levellist[i]);
+			lumpnum_t lumpnum = LUMPERROR;
 			patch_t *PictureOfLevel;
 
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[i]+1)));
+			if (mapheaderinfo[cupLevelNum])
+			{
+				lumpnum = W_CheckNumForLongName(mapheaderinfo[cupLevelNum]->thumbnailLump);
+			}
+
 			if (lumpnum != LUMPERROR)
 				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 			else
@@ -2073,14 +2078,18 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
 {
-	lumpnum_t lumpnum;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *PictureOfLevel;
 	UINT8 *colormap = NULL;
 
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map+1)));
+	if (mapheaderinfo[map])
+	{
+		lumpnum = W_CheckNumForLongName(mapheaderinfo[map]->thumbnailLump);
+	}
+
 	if (lumpnum != LUMPERROR)
 		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
 	else
@@ -2146,7 +2155,7 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	lumpnum_t lumpnum;
+	lumpnum_t lumpnum = LUMPERROR;
 	UINT8 i;
 	consvar_t *cv;
 
@@ -2158,7 +2167,11 @@ void M_DrawTimeAttack(void)
 
 	if (currentMenu == &PLAY_TimeAttackDef)
 	{
-		lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
+		if (mapheaderinfo[map])
+		{
+			lumpnum = W_CheckNumForName(mapheaderinfo[map]->minimapLump);
+		}
+
 		if (lumpnum != LUMPERROR)
 			V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
 
@@ -3825,7 +3838,7 @@ void M_DrawPlaybackMenu(void)
 #define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
 void M_DrawReplayHutReplayInfo(void)
 {
-	lumpnum_t lumpnum;
+	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *patch;
 	UINT8 *colormap;
 	INT32 x, y, w, h;
@@ -3852,7 +3865,12 @@ void M_DrawReplayHutReplayInfo(void)
 
 		//  A 160x100 image of the level as entry MAPxxP
 		//CONS_Printf("%d %s\n", extrasmenu.demolist[dir_on[menudepthleft]].map, G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map));
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map)));
+
+		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map])
+		{
+			lumpnum = W_CheckNumForName(mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map]->thumbnailLump);
+		}
+
 		if (lumpnum != LUMPERROR)
 			patch = W_CachePatchNum(lumpnum, PU_CACHE);
 		else

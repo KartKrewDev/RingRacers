@@ -460,10 +460,10 @@ typedef struct cupheader_s
 	UINT16 id;                     ///< Cup ID
 	char name[15];                 ///< Cup title (14 chars)
 	char icon[9];                  ///< Name of the icon patch
-	char * levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
+	char *levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
 	UINT8 numlevels;               ///< Number of levels defined in levellist
-	char * bonusgame;               ///< Map number to use for bonus game
-	char * specialstage;            ///< Map number to use for special stage
+	char *bonusgame;               ///< Map name to use for bonus game
+	char *specialstage;            ///< Map name to use for special stage
 	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
 	struct cupheader_s *next;      ///< Next cup in linked list

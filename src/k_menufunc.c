@@ -3208,7 +3208,9 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 
 			for (i = 0; i < levellist.selectedcup->numlevels; i++)
 			{
-				if (mapnum == levellist.selectedcup->levellist[i])
+				const INT32 cupLevelNum = G_MapNumber(levellist.selectedcup->levellist[i]);
+
+				if (mapnum == cupLevelNum)
 					break;
 			}
 
@@ -3414,7 +3416,7 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-
+			INT32 levelNum;
 			UINT8 ssplayers = cv_splitplayers.value-1;
 
 			S_StartSound(NULL, sfx_s3k63);
@@ -3458,8 +3460,10 @@ void M_CupSelectHandler(INT32 choice)
 				netgame = levellist.netgame;	// ^ ditto.
 			}
 
+			levelNum = G_MapNumber(grandprixinfo.cup->levellist[0]);
+
 			D_MapChange(
-				grandprixinfo.cup->levellist[0] + 1,
+				levelNum + 1,
 				GT_RACE,
 				grandprixinfo.encore,
 				true,
