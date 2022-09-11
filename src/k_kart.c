@@ -5581,46 +5581,12 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 static void K_DoShrink(player_t *user)
 {
-	INT32 i;
 	mobj_t *mobj, *next;
 
 	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
 	user->pflags |= PF_ATTACKDOWN;
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || !players[i].mo)
-			continue;
-		if (&players[i] == user)
-			continue;
-		if (players[i].position < user->position)
-		{
-			//P_FlashPal(&players[i], PAL_NUKE, 10);
-
-			// Grow should get taken away.
-			if (players[i].growshrinktimer > 0)
-				K_RemoveGrowShrink(&players[i]);
-			else
-			{
-				// Start shrinking!
-				K_DropItems(&players[i]);
-				players[i].growshrinktimer = -(15*TICRATE);
-
-				if (players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				{
-					players[i].mo->scalespeed = mapobjectscale/TICRATE;
-					players[i].mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
-
-					if (K_PlayerShrinkCheat(&players[i]) == true)
-					{
-						players[i].mo->destscale = FixedMul(players[i].mo->destscale, SHRINK_SCALE);
-					}
-
-					S_StartSound(players[i].mo, sfx_kc59);
-				}
-			}
-		}
-	}
+	Obj_CreateShrinkPohbees(user);
 
 	// kill everything in the kitem list while we're at it:
 	for (mobj = kitemcap; mobj; mobj = next)

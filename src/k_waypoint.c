@@ -2044,6 +2044,7 @@ boolean K_SetupWaypointList(void)
 			// Loop through the waypointcap here so that all waypoints are added to the heap, and allow easier debugging
 			for (waypointmobj = waypointcap; waypointmobj; waypointmobj = waypointmobj->tracer)
 			{
+				waypointmobj->cusval = (INT32)numwaypoints;
 				K_SetupWaypoint(waypointmobj);
 			}
 

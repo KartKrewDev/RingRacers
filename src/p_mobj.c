@@ -7841,6 +7841,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_HyudoroCenterThink(mobj);
 		break;
 	}
+	case MT_SHRINK_POHBEE:
+	{
+		Obj_PohbeeThinker(mobj);
+		break;
+	}
 	case MT_ROCKETSNEAKER:
 		if (!mobj->target || !mobj->target->health)
 		{
