@@ -181,7 +181,8 @@ boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
-INT16 G_SometimesGetDifferentGametype(void);
+#define VOTEMODIFIER_ENCORE 0x80
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype);
 UINT8 G_GetGametypeColor(INT16 gt);
 void G_ExitLevel(void);
 void G_NextLevel(void);
