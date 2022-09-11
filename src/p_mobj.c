@@ -1132,6 +1132,12 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
 		}
+
+		if (mo->player->fastfall != 0)
+		{
+			// Fast falling
+			gravityadd *= 4;
+		}
 	}
 	else
 	{
@@ -1761,7 +1767,9 @@ void P_XYMovement(mobj_t *mo)
 
 	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT)) { // Check to see if we ran off
 
-		if (oldslope != mo->standingslope) { // First, compare different slopes
+		if (oldslope != mo->standingslope)
+		{
+			// First, compare different slopes
 			angle_t oldangle, newangle;
 			angle_t moveangle = K_MomentumAngle(mo);
 
@@ -1773,7 +1781,9 @@ void P_XYMovement(mobj_t *mo)
 				newangle = 0;
 
 			// Now compare the Zs of the different quantizations
-			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
+			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180)
+			{
+				// Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
 				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
@@ -1781,26 +1791,36 @@ void P_XYMovement(mobj_t *mo)
 				//CONS_Printf("launched off of slope - ");
 			}
 
-			/*CONS_Printf("old angle %f - new angle %f = %f\n",
-						FIXED_TO_FLOAT(AngleFixed(oldangle)),
-						FIXED_TO_FLOAT(AngleFixed(newangle)),
-						FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
-						);*/
-		// Sryder 2018-11-26: Don't launch here if it's a slope without physics, we stick to those like glue anyway
-		} else if (predictedz-mo->z > abs(slopemom.z/2)
-			&& !(mo->standingslope->flags & SL_NOPHYSICS)) { // Now check if we were supposed to stick to this slope
+			/*
+			CONS_Printf("old angle %f - new angle %f = %f\n",
+				FIXED_TO_FLOAT(AngleFixed(oldangle)),
+				FIXED_TO_FLOAT(AngleFixed(newangle)),
+				FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
+			);
+			*/
+		
+		}
+		else if (predictedz - mo->z > abs(slopemom.z / 2))
+		{
+			// Now check if we were supposed to stick to this slope
 			//CONS_Printf("%d-%d > %d\n", (predictedz), (mo->z), (slopemom.z/2));
 			P_SlopeLaunch(mo);
 		}
-	} else if (moved && mo->standingslope && predictedz) {
+	}
+	else if (moved && mo->standingslope && predictedz)
+	{
 		angle_t moveangle = K_MomentumAngle(mo);
 		angle_t newangle = FixedMul((signed)mo->standingslope->zangle, FINECOSINE((moveangle - mo->standingslope->xydirection) >> ANGLETOFINESHIFT));
 
-			/*CONS_Printf("flat to angle %f - predicted z of %f\n",
-						FIXED_TO_FLOAT(AngleFixed(ANGLE_MAX-newangle)),
-						FIXED_TO_FLOAT(predictedz)
-						);*/
-		if (ANGLE_MAX-newangle > ANG30 && newangle > ANGLE_180) {
+		/*
+		CONS_Printf("flat to angle %f - predicted z of %f\n",
+			FIXED_TO_FLOAT(AngleFixed(ANGLE_MAX-newangle)),
+			FIXED_TO_FLOAT(predictedz)
+		);
+		*/
+
+		if (ANGLE_MAX-newangle > ANG30 && newangle > ANGLE_180)
+		{
 			mo->momz = P_MobjFlip(mo)*FRACUNIT/2;
 			mo->z = predictedz + P_MobjFlip(mo);
 			mo->standingslope = NULL;
@@ -3120,12 +3140,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 	}
 
-	if (mobj->watertop > top2)
-		mobj->watertop = top2;
-
-	if (mobj->waterbottom < bot2)
-		mobj->waterbottom = bot2;
-
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
 	{
@@ -3133,8 +3147,10 @@ void P_MobjCheckWater(mobj_t *mobj)
 	}
 
 	// The rest of this code only executes on a water state change.
-	if (!!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	if (waterwasnotset || !!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	{
 		return;
+	}
 
 	if (p && !p->waterskip &&
 			p->curshield != KSHIELD_BUBBLE && wasinwater)
@@ -3170,62 +3186,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			diff = -diff;
 		}
-
-		// Time to spawn the bubbles!
-		{
-			INT32 i;
-			INT32 bubblecount;
-			UINT8 prandom[4];
-			mobj_t *bubble;
-			mobjtype_t bubbletype;
-
-			if (mobj->eflags & MFE_GOOWATER || wasingoo)
-				S_StartSound(mobj, sfx_ghit);
-			else if (mobj->eflags & MFE_TOUCHLAVA)
-				S_StartSound(mobj, sfx_splash);
-			else
-				S_StartSound(mobj, sfx_splish); // And make a sound!
-
-			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale)>>(FRACBITS-1);
-			// Max bubble count
-			if (bubblecount > 128)
-				bubblecount = 128;
-
-			// Create tons of bubbles
-			for (i = 0; i < bubblecount; i++)
-			{
-				// P_RandomByte()s are called individually to allow consistency
-				// across various compilers, since the order of function calls
-				// in C is not part of the ANSI specification.
-				prandom[0] = P_RandomByte();
-				prandom[1] = P_RandomByte();
-				prandom[2] = P_RandomByte();
-				prandom[3] = P_RandomByte();
-
-				bubbletype = MT_SMALLBUBBLE;
-				if (!(prandom[0] & 0x3)) // medium bubble chance up to 64 from 32
-					bubbletype = MT_MEDIUMBUBBLE;
-
-				bubble = P_SpawnMobj(
-					mobj->x + FixedMul((prandom[1]<<(FRACBITS-3)) * (prandom[0]&0x80 ? 1 : -1), mobj->scale),
-					mobj->y + FixedMul((prandom[2]<<(FRACBITS-3)) * (prandom[0]&0x40 ? 1 : -1), mobj->scale),
-					mobj->z + FixedMul((prandom[3]<<(FRACBITS-2)), mobj->scale), bubbletype);
-
-				if (bubble)
-				{
-					if (P_MobjFlip(mobj)*mobj->momz < 0)
-						bubble->momz = mobj->momz >> 4;
-					else
-						bubble->momz = 0;
-
-					bubble->destscale = mobj->scale;
-					P_SetScale(bubble, mobj->scale);
-				}
-			}
-		}
-
-		if (waterwasnotset)
-			return;
 
 		// Check to make sure you didn't just cross into a sector to jump out of
 		// that has shallower water than the block you were originally in.
@@ -3326,6 +3286,59 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
+			}
+		}
+
+		// Time to spawn the bubbles!
+		{
+			INT32 i;
+			INT32 bubblecount;
+			UINT8 prandom[4];
+			mobj_t *bubble;
+			mobjtype_t bubbletype;
+
+			if (mobj->eflags & MFE_GOOWATER || wasingoo)
+				S_StartSound(mobj, sfx_ghit);
+			else if (mobj->eflags & MFE_TOUCHLAVA)
+				S_StartSound(mobj, sfx_splash);
+			else
+				S_StartSound(mobj, sfx_splish); // And make a sound!
+
+			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale) >> (FRACBITS-1);
+			// Max bubble count
+			if (bubblecount > 128)
+				bubblecount = 128;
+
+			// Create tons of bubbles
+			for (i = 0; i < bubblecount; i++)
+			{
+				// P_RandomByte()s are called individually to allow consistency
+				// across various compilers, since the order of function calls
+				// in C is not part of the ANSI specification.
+				prandom[0] = P_RandomByte();
+				prandom[1] = P_RandomByte();
+				prandom[2] = P_RandomByte();
+				prandom[3] = P_RandomByte();
+
+				bubbletype = MT_SMALLBUBBLE;
+				if (!(prandom[0] & 0x3)) // medium bubble chance up to 64 from 32
+					bubbletype = MT_MEDIUMBUBBLE;
+
+				bubble = P_SpawnMobj(
+					mobj->x + FixedMul((prandom[1]<<(FRACBITS-3)) * (prandom[0]&0x80 ? 1 : -1), mobj->scale),
+					mobj->y + FixedMul((prandom[2]<<(FRACBITS-3)) * (prandom[0]&0x40 ? 1 : -1), mobj->scale),
+					mobj->z + FixedMul((prandom[3]<<(FRACBITS-2)), mobj->scale), bubbletype);
+
+				if (bubble)
+				{
+					if (P_MobjFlip(mobj)*mobj->momz < 0)
+						bubble->momz = mobj->momz >> 4;
+					else
+						bubble->momz = 0;
+
+					bubble->destscale = mobj->scale;
+					P_SetScale(bubble, mobj->scale);
+				}
 			}
 		}
 	}
@@ -7104,17 +7117,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->fuse <= 16)
 		{
-			mobj->color = SKINCOLOR_KETCHUP;
+			mobj->color = SKINCOLOR_GOLD;
 			/* don't draw papersprite frames after blue boost */
 			mobj->renderflags ^= RF_DONTDRAW;
 		}
 		else if (mobj->fuse <= 32)
-			mobj->color = SKINCOLOR_SAPPHIRE;
+			mobj->color = SKINCOLOR_KETCHUP;
 		else if (mobj->fuse <= 48)
-			mobj->color = SKINCOLOR_PURPLE;
+			mobj->color = SKINCOLOR_SAPPHIRE;
 		else if (mobj->fuse > 48)
 			mobj->color = K_RainbowColor(
-				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
+				(SKINCOLOR_SAPPHIRE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
 			);
 
@@ -7129,14 +7142,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				break;
 
-			case 3:/* purple boost */
-				if ((mobj->fuse == 32)/* to blue*/
-				|| (mobj->fuse == 16))/* to red*/
+			case 3:/* blue boost */
+				if ((mobj->fuse == 32)/* to red*/
+				|| (mobj->fuse == 16))/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 
-			case 2:/* blue boost */
-				if (mobj->fuse == 16)/* to red*/
+			case 2:/* red boost */
+				if (mobj->fuse == 16)/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 

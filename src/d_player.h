@@ -443,6 +443,8 @@ typedef struct player_s
 	fixed_t spindashspeed;	// Spindash release speed
 	UINT8 spindashboost;	// Spindash release boost timer
 
+	fixed_t fastfall;		// Fast fall momentum
+
 	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
 	fixed_t boostpower;		// Base boost value, for offroad
 	fixed_t speedboost;		// Boost value smoothing for max speed
@@ -504,8 +506,8 @@ typedef struct player_s
 	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
 	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
-	UINT8 confirmInflictor;			// Player ID that dealt damage to you
-	UINT8 confirmInflictorDelay;	// Delay before playing the sound
+	UINT8 confirmVictim;		// Player ID that you dealt damage to
+	UINT8 confirmVictimDelay;	// Delay before playing the sound
 
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold

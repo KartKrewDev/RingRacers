@@ -894,6 +894,61 @@ fixed_t P_GetLightZAt(const lightlist_t *light, fixed_t x, fixed_t y)
 	return light->slope ? P_GetSlopeZAt(light->slope, x, y) : light->height;
 }
 
+// Returns true if we should run slope physics code on an object.
+boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
+{
+	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid input.
+		return false;
+	}
+
+	if (slope->flags & SL_NOPHYSICS)
+	{
+		// Physics are turned off.
+		return false;
+	}
+
+	if (slope->normal.x == 0 && slope->normal.y == 0)
+	{
+		// Flat slope? No such thing, man. No such thing.
+		return false;
+	}
+
+	if (mo->player != NULL)
+	{
+		if (K_PlayerEBrake(mo->player) == true)
+		{
+			// Spindash negates slopes.
+			return false;
+		}
+	}
+
+	// We can do slope physics.
+	return true;
+}
+
+// Returns true if we should run slope launch code on an object.
+boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
+{
+	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid input.
+		return false;
+	}
+
+	// No physics slopes are fine to launch off of.
+
+	if (slope->normal.x == 0 && slope->normal.y == 0)
+	{
+		// Flat slope? No such thing, man. No such thing.
+		return false;
+	}
+
+	// We can do slope launching.
+	return true;
+}
+
 //
 // P_QuantizeMomentumToSlope
 //
@@ -923,42 +978,23 @@ void P_ReverseQuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope)
 	slope->zangle = InvAngle(slope->zangle);
 }
 
-// SRB2Kart: This fixes all slope-based jumps for different scales in Kart automatically without map tweaking.
-// However, they will always feel off every single time... see for yourself: https://cdn.discordapp.com/attachments/270211093761097728/484924392128774165/kart0181.gif
-//#define GROWNEVERMISSES
-
 //
 // P_SlopeLaunch
 //
 // Handles slope ejection for objects
 void P_SlopeLaunch(mobj_t *mo)
 {
-	if (!(mo->standingslope->flags & SL_NOPHYSICS) // If there's physics, time for launching.
-		&& (mo->standingslope->normal.x != 0
-		||  mo->standingslope->normal.y != 0))
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == true) // If there's physics, time for launching.
 	{
-		// Double the pre-rotation Z, then halve the post-rotation Z. This reduces the
-		// vertical launch given from slopes while increasing the horizontal launch
-		// given. Good for SRB2's gravity and horizontal speeds.
 		vector3_t slopemom;
 		slopemom.x = mo->momx;
 		slopemom.y = mo->momy;
 		slopemom.z = mo->momz;
 		P_QuantizeMomentumToSlope(&slopemom, mo->standingslope);
 
-#ifdef GROWNEVERMISSES
-		{
-			const fixed_t xyscale = mapobjectscale + (mapobjectscale - mo->scale);
-			const fixed_t zscale = mapobjectscale + (mapobjectscale - mo->scale);
-			mo->momx = FixedMul(slopemom.x, xyscale);
-			mo->momy = FixedMul(slopemom.y, xyscale);
-			mo->momz = FixedMul(slopemom.z, zscale);
-		}
-#else
 		mo->momx = slopemom.x;
 		mo->momy = slopemom.y;
 		mo->momz = slopemom.z;
-#endif
 
 		mo->eflags |= MFE_SLOPELAUNCHED;
 	}
@@ -984,14 +1020,19 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 	vector3_t slopemom, axis;
 	angle_t ang;
 
-	if (mo->standingslope->flags & SL_NOPHYSICS)
-		return 0;
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == false)
+	{
+		return false;
+	}
 
 	// If there's physics, time for launching.
 	// Doesn't kill the vertical momentum as much as P_SlopeLaunch does.
 	ang = slope->zangle + ANG15*((slope->zangle > 0) ? 1 : -1);
 	if (ang > ANGLE_90 && ang < ANGLE_180)
-		ang = ((slope->zangle > 0) ? ANGLE_90 : InvAngle(ANGLE_90)); // hard cap of directly upwards
+	{
+		// hard cap of directly upwards
+		ang = ((slope->zangle > 0) ? ANGLE_90 : InvAngle(ANGLE_90));
+	}
 
 	slopemom.x = mo->momx;
 	slopemom.y = mo->momy;
@@ -1010,13 +1051,16 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 {
 	vector3_t mom; // Ditto.
-	if (slope->flags & SL_NOPHYSICS || (slope->normal.x == 0 && slope->normal.y == 0)) { // No physics, no need to make anything complicated.
+
+	if (P_CanApplySlopePhysics(thing, slope) == false) // No physics, no need to make anything complicated.
+	{ 
 		if (P_MobjFlip(thing)*(thing->momz) < 0) // falling, land on slope
 		{
 			thing->standingslope = slope;
 			P_SetPitchRollFromSlope(thing, slope);
 			thing->momz = -P_MobjFlip(thing);
 		}
+
 		return;
 	}
 
@@ -1026,7 +1070,9 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 
 	P_ReverseQuantizeMomentumToSlope(&mom, slope);
 
-	if (P_MobjFlip(thing)*mom.z < 0) { // falling, land on slope
+	if (P_MobjFlip(thing)*mom.z < 0)
+	{
+		// falling, land on slope
 		thing->momx = mom.x;
 		thing->momy = mom.y;
 		thing->standingslope = slope;
@@ -1041,27 +1087,29 @@ void P_ButteredSlope(mobj_t *mo)
 {
 	fixed_t thrust;
 
-	if (!mo->standingslope)
-		return;
-
-	if (mo->standingslope->flags & SL_NOPHYSICS)
-		return; // No physics, no butter.
-
 	if (mo->flags & (MF_NOCLIPHEIGHT|MF_NOGRAVITY))
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
-	if (mo->player) {
-		// SRB2Kart - spindash negates slopes
-		if (K_PlayerEBrake(mo->player))
-			return;
+	if (P_CanApplySlopePhysics(mo, mo->standingslope) == false)
+		return; // No physics, no butter.
 
-		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
+	if (mo->player != NULL)
+	{
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/21)
-			return; // Don't slide on non-steep slopes
+		{
+			// Don't slide on non-steep slopes.
+			// Changed in Ring Racers to only not apply physics on very slight slopes.
+			// (I think about 4 degree angles.)
+			return;
+		}
 
-		// This only means you can be stopped on slopes that aren't steeper than 45 degrees
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))
-			return; // Allow the player to stand still on slopes below a certain steepness
+		if (abs(mo->standingslope->zdelta) < FRACUNIT/2
+			&& !(mo->player->rmomx || mo->player->rmomy))
+		{
+			// Allow the player to stand still on slopes below a certain steepness.
+			// 45 degree angle steep, to be exact.
+			return; 
+		}
 	}
 
 	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5 / 4 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);

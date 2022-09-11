@@ -2463,12 +2463,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
 
-	if (thing->type == MT_SKIM)
-	{
-		// Skim special (not needed for kart?)
-		return 0;
-	}
-
 	if (P_WaterStepUp(thing) == true)
 	{
 		// Add some extra stepmove when waterskipping
@@ -2525,16 +2519,20 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 #endif
 
 	do {
-		if (thing->flags & MF_NOCLIP) {
+		if (thing->flags & MF_NOCLIP)
+		{
 			tryx = x;
 			tryy = y;
-		} else {
+		}
+		else
+		{
 			if (x-tryx > radius)
 				tryx += radius;
 			else if (x-tryx < -radius)
 				tryx -= radius;
 			else
 				tryx = x;
+
 			if (y-tryy > radius)
 				tryy += radius;
 			else if (y-tryy < -radius)
@@ -2603,7 +2601,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						return false; // mobj must lower itself to fit
 					}
 				}
-				else if (!(P_MobjTouchingSectorSpecial(thing, 1, 14, false))) // Step down
+				else if (thing->momz * P_MobjFlip(thing) <= 0 // Step down requires moving down.
+					&& !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.

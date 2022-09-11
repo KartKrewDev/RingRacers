@@ -96,6 +96,7 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time
@@ -3882,7 +3883,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also m_menu.c's Nextmap_OnChange
+	// see also k_menu.c's Nextmap_OnChange
 	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;

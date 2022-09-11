@@ -20,7 +20,7 @@
 #include "i_net.h"
 #include "g_game.h"
 #include "p_tick.h"
-#include "m_menu.h" // gametype_cons_t
+#include "k_menu.h" // gametype_cons_t
 #include "r_things.h" // skins
 #include "mserv.h" // cv_advertise
 #include "z_zone.h"
@@ -267,7 +267,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	else
 	{
 		discordRequestList = newRequest;
-		M_RefreshPauseMenu();
+		//M_RefreshPauseMenu();
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
