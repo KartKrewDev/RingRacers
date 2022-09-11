@@ -1836,8 +1836,6 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
-	const INT32 titleMapNum = G_MapNumber(titlemap);
-
 	setup_numplayers = 0;
 
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -1849,10 +1847,11 @@ void F_StartTitleScreen(void)
 	else
 		wipegamestate = GS_TITLESCREEN;
 
-	if (mapheaderinfo[titleMapNum])
+	if (titlemap)
 	{
 		mapthing_t *startpos;
 
+		const INT32 titleMapNum = G_MapNumber(titlemap);
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
