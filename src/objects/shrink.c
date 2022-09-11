@@ -23,13 +23,15 @@
 #include "../z_zone.h"
 #include "../k_waypoint.h"
 
-#define POHBEE_HOVER (300 << FRACBITS)
+#define POHBEE_HOVER (384 << FRACBITS)
 #define POHBEE_SPEED (128 << FRACBITS)
 #define POHBEE_TIME (15 * TICRATE)
-#define POHBEE_DIST (2048 << FRACBITS)
-#define POHBEE_CHAIN (16)
+#define POHBEE_DIST (4096 << FRACBITS)
 
 #define LASER_SPEED (20 << FRACBITS)
+#define LASER_SWINGTIME (3 * TICRATE)
+
+#define CHAIN_SIZE (16)
 
 enum
 {
@@ -39,16 +41,20 @@ enum
 };
 
 #define pohbee_mode(o) ((o)->cusval)
-
+#define pohbee_timer(o) ((o)->reactiontime)
 #define pohbee_waypoint_cur(o) ((o)->extravalue1)
 #define pohbee_waypoint_dest(o) ((o)->extravalue2)
 
 #define pohbee_owner(o) ((o)->target)
-#define pohbee_laser(o) ((o)->tracer)
-#define pohbee_chain(o) ((o)->hnext)
+#define pohbee_lasers(o) ((o)->hnext)
 
-#define laser_owner(o) ((o)->target)
-#define laser_pohbee(o) ((o)->tracer)
+#define laser_offset(o) ((o)->movecount)
+#define laser_swing(o) ((o)->movedir)
+#define laser_numsegs(o) ((o)->extravalue1)
+
+#define laser_pohbee(o) ((o)->target)
+#define laser_collider(o) ((o)->tracer)
+#define laser_chains(o) ((o)->hprev)
 
 static void PohbeeMoveTo(mobj_t *pohbee, fixed_t destx, fixed_t desty, fixed_t destz)
 {
@@ -173,9 +179,11 @@ static void PohbeeSpawn(mobj_t *pohbee)
 	}
 
 	PohbeeMoveTo(pohbee, newX, newY, newZ);
+	pohbee->angle = K_MomentumAngle(pohbee);
 
 	if (finalize == true)
 	{
+		// Move to next state
 		pohbee_mode(pohbee) = POHBEE_MODE_ACT;
 	}
 
@@ -185,11 +193,77 @@ static void PohbeeSpawn(mobj_t *pohbee)
 	}
 }
 
+static void PohbeeAct(mobj_t *pohbee)
+{
+	pohbee_timer(pohbee)--;
+
+	if (pohbee_timer(pohbee) <= 0)
+	{
+		// Move to next state
+		pohbee_mode(pohbee) = POHBEE_MODE_DESPAWN;
+		pohbee->fuse = 5*TICRATE;
+	}
+}
+
+static void PohbeeDespawn(mobj_t *pohbee)
+{
+	pohbee->momz = 16 * pohbee->scale * P_MobjFlip(pohbee);
+}
+
+static void DoLaserSwing(mobj_t *laser, mobj_t *pohbee)
+{
+	const angle_t angle = laser->angle + ANGLE_90;
+	const tic_t swingTimer = leveltime + laser_offset(laser);
+
+	const angle_t swingAmt = swingTimer * (ANGLE_MAX / LASER_SWINGTIME);
+	const fixed_t swingCos = FINECOSINE(swingAmt >> ANGLETOFINESHIFT);
+	const fixed_t swing = FixedMul(laser_swing(laser), 9 * swingCos);
+
+	const angle_t pitch = -ANGLE_90 + swing;
+	const fixed_t dist = laser_numsegs(laser) * CHAIN_SIZE * laser->scale;
+
+	fixed_t offsetX = FixedMul(
+		dist, FixedMul(
+			FINECOSINE(angle >> ANGLETOFINESHIFT),
+			FINECOSINE(pitch >> ANGLETOFINESHIFT)
+		)
+	);
+
+	fixed_t offsetY = FixedMul(
+		dist, FixedMul(
+			FINESINE(angle >> ANGLETOFINESHIFT),
+			FINECOSINE(pitch >> ANGLETOFINESHIFT)
+		)
+	);
+
+	fixed_t offsetZ = FixedMul(
+		dist, FINESINE(pitch >> ANGLETOFINESHIFT)
+	);
+
+	PohbeeMoveTo(laser, pohbee->x + offsetX, pohbee->y + offsetY, pohbee->z + offsetZ);
+}
+
+static void ShrinkLaserThinker(mobj_t *laser)
+{
+	mobj_t *pohbee = laser_pohbee(laser);
+
+	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
+	{
+		P_RemoveMobj(laser);
+		return;
+	}
+
+	laser->angle = pohbee->angle;
+	DoLaserSwing(laser, pohbee);
+
+	//PohbeeMoveTo(laser_collider(laser), laser->x, laser->y, laser->z);
+}
+
 void Obj_PohbeeThinker(mobj_t *pohbee)
 {
-	pohbee->momx = 0;
-	pohbee->momy = 0;
-	pohbee->momz = 0;
+	mobj_t *laser = NULL;
+
+	pohbee->momx = pohbee->momy = pohbee->momz = 0;
 
 	switch (pohbee_mode(pohbee))
 	{
@@ -198,11 +272,11 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 			break;
 
 		case POHBEE_MODE_ACT:
-			//PohbeeSpawn(pohbee);
+			PohbeeAct(pohbee);
 			break;
 
 		case POHBEE_MODE_DESPAWN:
-			//PohbeeSpawn(pohbee);
+			PohbeeDespawn(pohbee);
 			break;
 
 		default:
@@ -210,117 +284,188 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 			pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
 			break;
 	}
+
+	laser = pohbee_lasers(pohbee);
+	while (laser != NULL && P_MobjWasRemoved(laser) == false)
+	{
+		ShrinkLaserThinker(laser);
+		laser = pohbee_lasers(laser);
+	}
 }
 
-static void CreatePohbeeForPlayer(player_t *target, player_t *owner)
+/*
+void Obj_PohbeeRemoved(mobj_t *pohbee)
+{
+	mobj_t *chain = NULL;
+
+	if (pohbee_laser(pohbee) != NULL)
+	{
+		P_RemoveMobj(pohbee_laser(pohbee));
+	}
+
+	chain = pohbee_chain(pohbee);
+	while (chain != NULL)
+	{
+		mobj_t *temp = chain;
+		chain = pohbee_chain(temp);
+		P_RemoveMobj(temp);
+	}
+}
+*/
+
+static waypoint_t *GetPohbeeStart(waypoint_t *anchor)
+{
+	const UINT32 traveldist = FixedMul(POHBEE_DIST >> 1, mapobjectscale) / FRACUNIT;
+	const boolean useshortcuts = false;
+	const boolean huntbackwards = true;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {0};
+	waypoint_t *ret = NULL;
+
+	pathfindsuccess = K_PathfindThruCircuit(
+		anchor, traveldist,
+		&pathtofinish,
+		useshortcuts, huntbackwards
+	);
+
+	if (pathfindsuccess == true)
+	{
+		ret = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
+		Z_Free(pathtofinish.array);
+	}
+	else
+	{
+		ret = anchor;
+	}
+
+	return ret;
+}
+
+static waypoint_t *GetPohbeeEnd(waypoint_t *anchor)
 {
 	const UINT32 traveldist = FixedMul(POHBEE_DIST, mapobjectscale) / FRACUNIT;
+	const boolean useshortcuts = false;
+	const boolean huntbackwards = false;
+	boolean pathfindsuccess = false;
+	path_t pathtofinish = {0};
+	waypoint_t *ret = NULL;
 
+	pathfindsuccess = K_PathfindThruCircuit(
+		anchor, traveldist,
+		&pathtofinish,
+		useshortcuts, huntbackwards
+	);
+
+	if (pathfindsuccess == true)
+	{
+		ret = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
+		Z_Free(pathtofinish.array);
+	}
+	else
+	{
+		ret = anchor;
+	}
+
+	return ret;
+}
+
+static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UINT8 numLasers)
+{
 	mobj_t *pohbee = NULL;
-	//mobj_t *laser = NULL;
 
-	waypoint_t *startWaypoint = NULL;
-	waypoint_t *endWaypoint = NULL;
+	fixed_t size = INT32_MAX;
+	INT32 baseSegs = INT32_MAX;
+	INT32 segVal = INT32_MAX;
+	mobj_t *prevLaser = NULL;
 
-	I_Assert(target != NULL);
-	I_Assert(owner != NULL);
+	size_t i, j;
 
-	if (target->mo == NULL || P_MobjWasRemoved(target->mo) == true)
+	if (owner == NULL || owner->mo == NULL || P_MobjWasRemoved(owner->mo) == true
+		|| start == NULL || end == NULL
+		|| numLasers == 0)
 	{
-		// No object for the target.
+		// Invalid inputs
 		return;
 	}
 
-	// First, go backwards to find our starting point.
+	// Calculate number of chain segments added per laser.
+	size = end->mobj->radius / mapobjectscale;
+	baseSegs = 1 + (size / CHAIN_SIZE);
+
+	if (baseSegs < MAXPLAYERS)
 	{
-		const boolean useshortcuts = false;
-		const boolean huntbackwards = true;
-		boolean pathfindsuccess = false;
-		path_t pathtofinish = {0};
-
-		pathfindsuccess = K_PathfindThruCircuit(
-			target->nextwaypoint, traveldist,
-			&pathtofinish,
-			useshortcuts, huntbackwards
-		);
-
-		if (pathfindsuccess == true)
-		{
-			startWaypoint = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
-			Z_Free(pathtofinish.array);
-		}
-		else
-		{
-			startWaypoint = target->nextwaypoint;
-		}
+		baseSegs = MAXPLAYERS;
 	}
 
-	// Now, go forwards to get our ending point.
-	{
-		const boolean useshortcuts = false;
-		const boolean huntbackwards = false;
-		boolean pathfindsuccess = false;
-		path_t pathtofinish = {0};
-
-		pathfindsuccess = K_PathfindThruCircuit(
-			target->nextwaypoint, traveldist * 2,
-			&pathtofinish,
-			useshortcuts, huntbackwards
-		);
-
-		if (pathfindsuccess == true)
-		{
-			endWaypoint = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
-			Z_Free(pathtofinish.array);
-		}
-		else
-		{
-			endWaypoint = target->nextwaypoint;
-		}
-	}
-
-	// Try to repair an incomplete pair, just in case.
-	if (startWaypoint == NULL && endWaypoint != NULL)
-	{
-		startWaypoint = endWaypoint;
-	}
-
-	if (endWaypoint == NULL && startWaypoint != NULL)
-	{
-		endWaypoint = startWaypoint;
-	}
-
-	if (startWaypoint == NULL || endWaypoint == NULL)
-	{
-		// Unable to create shrink lasers
-		// due to invalid waypoint structure...
-		return;
-	}
+	segVal = baseSegs / numLasers;
 
 	// Valid spawning conditions,
 	// we can start creating each individual part.
-	pohbee = P_SpawnMobjFromMobj(startWaypoint->mobj, 0, 0, POHBEE_HOVER, MT_SHRINK_POHBEE);
-
+	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
 	P_SetTarget(&pohbee_owner(pohbee), owner->mo);
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
+	pohbee_timer(pohbee) = POHBEE_TIME;
 
-	pohbee_waypoint_cur(pohbee) = (INT32)K_GetWaypointHeapIndex(startWaypoint);
-	pohbee_waypoint_dest(pohbee) = (INT32)K_GetWaypointHeapIndex(endWaypoint);
+	pohbee_waypoint_cur(pohbee) = (INT32)K_GetWaypointHeapIndex(start);
+	pohbee_waypoint_dest(pohbee) = (INT32)K_GetWaypointHeapIndex(end);
+
+	prevLaser = pohbee;
+
+	for (i = 0; i < numLasers; i++)
+	{
+		const UINT8 numSegs = segVal * (i + 1);
+
+		mobj_t *laser = P_SpawnMobjFromMobj(pohbee, 0, 0, 0, MT_SHRINK_LASER);
+		//mobj_t *collider = NULL;
+		//mobj_t *prevChain = NULL;
+
+		P_SetTarget(&laser_pohbee(laser), pohbee);
+		P_SetTarget(&pohbee_lasers(prevLaser), laser);
+
+		laser_numsegs(laser) = numSegs;
+		laser_swing(laser) = (ANGLE_45 * baseSeg) / numSegs;
+		laser_offset(laser) = P_RandomKey(LASER_SWINGTIME);
+
+		/*
+		prevChain = laser;
+		for (j = 0; j < numSegs; j++)
+		{
+			mobj_t *chain = P_SpawnMobjFromMobj(laser, 0, 0, 0, MT_SHRINK_LASER);
+			P_SetTarget(&laser_chains(prevChain), chain);
+			prevChain = chain;
+		}
+		*/
+		(void)j;
+
+		prevLaser = laser;
+	}
 }
 
 void Obj_CreateShrinkPohbees(player_t *owner)
 {
 	UINT8 ownerPos = 1;
-	UINT8 i;
 
-	I_Assert(owner != NULL);
+	struct {
+		waypoint_t *start;
+		waypoint_t *end;
+		UINT8 lasers;
+	} pohbees[MAXPLAYERS];
+	size_t numPohbees = 0;
+
+	size_t i, j;
+
+	if (owner == NULL || owner->mo == NULL || P_MobjWasRemoved(owner->mo) == true)
+	{
+		return;
+	}
 
 	ownerPos = owner->position;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *player = NULL;
+		waypoint_t *endWaypoint = NULL;
 
 		if (playeringame[i] == false)
 		{
@@ -342,6 +487,37 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 			continue;
 		}
 
-		CreatePohbeeForPlayer(player, owner);
+		if (player->nextwaypoint == NULL)
+		{
+			// No waypoint?
+			continue;
+		}
+
+		endWaypoint = GetPohbeeEnd(player->nextwaypoint);
+
+		for (j = 0; j < numPohbees; j++)
+		{
+			if (pohbees[j].end == endWaypoint)
+			{
+				// Increment laser count for the already existing poh-bee,
+				// if another one would occupy the same space.
+				pohbees[j].lasers++;
+				break;
+			}
+		}
+
+		if (j == numPohbees)
+		{
+			// Push a new poh-bee
+			pohbees[j].start = GetPohbeeStart(player->nextwaypoint);
+			pohbees[j].end = endWaypoint;
+			pohbees[j].lasers = 4;
+			numPohbees++;
+		}
+	}
+
+	for (i = 0; i < numPohbees; i++)
+	{
+		CreatePohbee(owner, pohbees[i].start, pohbees[i].end, pohbees[i].lasers);
 	}
 }

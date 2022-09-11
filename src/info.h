@@ -6363,6 +6363,7 @@ typedef enum mobj_type
 	MT_HYUDORO_CENTER,
 
 	MT_SHRINK_POHBEE,
+	MT_SHRINK_LASER,
 
 	MT_SINK, // Kitchen Sink Stuff
 	MT_SINK_SHIELD,
