@@ -3425,16 +3425,6 @@ boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 	return true;
 }
 
-// For OpenGL, TODO: REMOVE!!
-boolean R_ThingVisibleWithinDist (mobj_t *thing,
-		fixed_t limit_dist)
-{
-	if (! R_ThingVisible(thing))
-		return false;
-
-	return R_ThingWithinDist(thing, limit_dist);
-}
-
 /* Check if precipitation may be drawn from our current view. */
 boolean R_PrecipThingVisible (precipmobj_t *precipthing,
 		fixed_t limit_dist)
