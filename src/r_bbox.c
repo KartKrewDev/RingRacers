@@ -82,8 +82,13 @@ draw_bbox_col
 {
 	struct bbox_col *col = &bb->col[p];
 
-	fixed_t xscale = FixedDiv(projection[viewssnum], ty);
-	fixed_t yscale = FixedDiv(projectiony[viewssnum], ty);
+	fixed_t xscale, yscale;
+
+	if (ty < FRACUNIT) // projection breaks down here
+		ty = FRACUNIT;
+
+	xscale = FixedDiv(projection[viewssnum], ty);
+	yscale = FixedDiv(projectiony[viewssnum], ty);
 
 	col->x = (centerxfrac + FixedMul(tx, xscale)) / FRACUNIT;
 	col->y = (centeryfrac - FixedMul(bb->tz, yscale));
