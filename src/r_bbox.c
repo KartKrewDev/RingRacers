@@ -252,6 +252,18 @@ boolean R_ThingBoundingBoxVisible(mobj_t *thing)
 {
 	INT32 cvmode = cv_renderhitbox.value;
 
+	if (thing->type == MT_WAYPOINT)
+	{
+		// Waypoints debugger serves this purpose
+		return false;
+	}
+
+	if (thing == r_viewmobj)
+	{
+		// Rendering bbox right on top causes anomalies
+		return false;
+	}
+
 	switch (cvmode)
 	{
 		case RENDERHITBOX_OFF:
