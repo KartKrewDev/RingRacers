@@ -3435,7 +3435,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	}
 
 	// Don't switch team, just go away, please, go awaayyyy, aaauuauugghhhghgh
-	if (!LUAh_TeamSwitch(&players[playernum], NetPacket.packet.newteam, players[playernum].spectator, NetPacket.packet.autobalance, NetPacket.packet.scrambled))
+	if (!LUA_HookTeamSwitch(&players[playernum], NetPacket.packet.newteam, players[playernum].spectator, NetPacket.packet.autobalance, NetPacket.packet.scrambled))
 		return;
 
 	//Make sure that the right team number is sent. Keep in mind that normal clients cannot change to certain teams in certain gametypes.
@@ -3531,7 +3531,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		{
 			if (localplayertable[i] == playernum)
 			{
-				LUAh_ViewpointSwitch(players+playernum, players+playernum, true);
+				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
 				displayplayers[i] = playernum;
 				break;
 			}
@@ -4451,7 +4451,7 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
-	LUAh_GameQuit(true);
+	LUA_HookBool(true, HOOK(GameQuit));
 	I_Quit();
 }
 
@@ -5016,7 +5016,7 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
-	LUAh_GameQuit(false);
+	LUA_HookBool(false, HOOK(GameQuit));
 
 	D_QuitNetGame();
 	CL_Reset();

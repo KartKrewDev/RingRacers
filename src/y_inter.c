@@ -348,7 +348,7 @@ void Y_IntermissionDrawer(void)
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUAh_IntermissionHUD(luahuddrawlist_intermission);
+		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
@@ -644,7 +644,7 @@ void Y_Ticker(void)
 	if (paused || P_AutoPause())
 		return;
 
-	LUAh_IntermissionThinker();
+	LUA_HOOK(IntermissionThinker);
 
 	intertic++;
 
@@ -1234,7 +1234,7 @@ void Y_VoteTicker(void)
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
 
-	LUAh_VoteThinker();
+	LUA_HOOK(VoteThinker);
 
 	votetic++;
 

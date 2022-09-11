@@ -40,6 +40,7 @@
 #include "fastcmp.h"
 
 #include "lua_hud.h"
+#include "lua_hook.h"
 
 // SRB2Kart
 #include "k_menu.h"
@@ -2105,7 +2106,7 @@ luahook:
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_title);
-		LUAh_TitleHUD(luahuddrawlist_title);
+		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
 }

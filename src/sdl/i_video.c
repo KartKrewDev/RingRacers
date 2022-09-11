@@ -1041,7 +1041,7 @@ void I_GetEvent(void)
 #endif
 				break;
 			case SDL_QUIT:
-				LUAh_GameQuit(true);
+				LUA_HookBool(true, HOOK(GameQuit));
 				I_Quit();
 				break;
 		}
