@@ -14,7 +14,6 @@
 
 #include "doomdef.h"
 #include "command.h"
-#include "r_fps.h"
 #include "r_local.h"
 #include "screen.h" // cv_renderhitbox
 #include "v_video.h" // V_DrawFill
@@ -166,11 +165,11 @@ draw_bbox_row
 }
 
 static UINT8
-get_bbox_color (mobj_t *thing)
+get_bbox_color (vissprite_t *vis)
 {
-	UINT32 flags = thing->flags;
+	UINT32 flags = vis->mobjflags;
 
-	if (thing->player)
+	if (vis->mobj->player)
 		return 255; // 0FF
 
 	if (flags & (MF_NOCLIPTHING))
@@ -188,39 +187,21 @@ get_bbox_color (mobj_t *thing)
 	return 0; // FFF
 }
 
-void R_DrawThingBoundingBox(mobj_t *thing)
+void R_DrawThingBoundingBox(vissprite_t *vis)
 {
-	fixed_t rs, rc; // radius offsets
-	fixed_t gx, gy; // origin
-	fixed_t tx, ty; // translated coordinates
+	// radius offsets
+	fixed_t rs = vis->scale;
+	fixed_t rc = vis->xscale;
 
-	// uncapped/interpolation
-	interpmobjstate_t interp = {0};
+	// translated coordinates
+	fixed_t tx = vis->gx;
+	fixed_t ty = vis->gy;
 
-	struct bbox_config bb = {0};
-
-	// do interpolation
-	if (R_UsingFrameInterpolation() && !paused)
-	{
-		R_InterpolateMobjState(thing, rendertimefrac, &interp);
-	}
-	else
-	{
-		R_InterpolateMobjState(thing, FRACUNIT, &interp);
-	}
-
-	rs = FixedMul(thing->radius, viewsin);
-	rc = FixedMul(thing->radius, viewcos);
-
-	gx = interp.x - viewx;
-	gy = interp.y - viewy;
-
-	tx = FixedMul(gx, viewsin) - FixedMul(gy, viewcos);
-	ty = FixedMul(gx, viewcos) + FixedMul(gy, viewsin);
-
-	bb.height = thing->height;
-	bb.tz = (interp.z + bb.height) - viewz;
-	bb.color = get_bbox_color(thing);
+	struct bbox_config bb = {
+		.height = vis->thingheight,
+		.tz = vis->texturemid,
+		.color = get_bbox_color(vis),
+	};
 
 	// 1--3
 	// |  |
@@ -228,18 +209,15 @@ void R_DrawThingBoundingBox(mobj_t *thing)
 
 	// left
 
-	tx -= rs;
-	ty -= rc;
-
-	draw_bbox_col(&bb, 0, tx + rc, ty - rs); // bottom
+	draw_bbox_col(&bb, 0, tx, ty); // bottom
 	draw_bbox_col(&bb, 1, tx - rc, ty + rs); // top
 
 	// right
 
-	tx += rs + rs;
-	ty += rc + rc;
+	tx += rs;
+	ty += rc;
 
-	draw_bbox_col(&bb, 2, tx + rc, ty - rs); // bottom
+	draw_bbox_col(&bb, 2, tx, ty); // bottom
 	draw_bbox_col(&bb, 3, tx - rc, ty + rs); // top
 
 	// connect all four columns
