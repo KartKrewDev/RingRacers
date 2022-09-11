@@ -928,6 +928,27 @@ boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
 	return true;
 }
 
+// Returns true if we should run slope launch code on an object.
+boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
+{
+	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid input.
+		return false;
+	}
+
+	// No physics slopes are fine to launch off of.
+
+	if (slope->normal.x == 0 && slope->normal.y == 0)
+	{
+		// Flat slope? No such thing, man. No such thing.
+		return false;
+	}
+
+	// We can do slope launching.
+	return true;
+}
+
 //
 // P_QuantizeMomentumToSlope
 //
@@ -963,11 +984,8 @@ void P_ReverseQuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope)
 // Handles slope ejection for objects
 void P_SlopeLaunch(mobj_t *mo)
 {
-	if (P_CanApplySlopePhysics(mo, mo->standingslope) == true) // If there's physics, time for launching.
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == true) // If there's physics, time for launching.
 	{
-		// Double the pre-rotation Z, then halve the post-rotation Z. This reduces the
-		// vertical launch given from slopes while increasing the horizontal launch
-		// given. Good for SRB2's gravity and horizontal speeds.
 		vector3_t slopemom;
 		slopemom.x = mo->momx;
 		slopemom.y = mo->momy;
@@ -1002,7 +1020,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 	vector3_t slopemom, axis;
 	angle_t ang;
 
-	if (P_CanApplySlopePhysics(mo, mo->standingslope) == false)
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == false)
 	{
 		return false;
 	}
