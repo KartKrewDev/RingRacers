@@ -1174,7 +1174,7 @@ aftercmdinput:
 	*/
 	if (addedtogame && gamestate == GS_LEVEL)
 	{
-		LUAh_PlayerCmd(player, cmd);
+		LUA_HookTiccmd(player, cmd, HOOK(PlayerCmd));
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
@@ -1204,7 +1204,7 @@ aftercmdinput:
 	{
 		// Call ViewpointSwitch hooks here.
 		// The viewpoint was forcibly changed.
-		LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
+		LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
 		displayplayers[0] = consoleplayer;
 	}
 }
@@ -2476,7 +2476,7 @@ void G_SpawnPlayer(INT32 playernum)
 
 	P_SpawnPlayer(playernum);
 	G_MovePlayerToSpawnOrStarpost(playernum);
-	LUAh_PlayerSpawn(&players[playernum]); // Lua hook for player spawning :)
+	LUA_HookPlayer(&players[playernum], HOOK(PlayerSpawn)); // Lua hook for player spawning :)
 }
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
@@ -3203,51 +3203,53 @@ boolean G_GametypeHasSpectators(void)
 //
 // Oh, yeah, and we sometimes flip encore mode on here too.
 //
-INT16 G_SometimesGetDifferentGametype(void)
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 {
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && (gametyperules & GTR_CIRCUIT));
+	// Most of the gametype references in this condition are intentionally not prefgametype.
+	// This is so a server CAN continue playing a gametype if they like the taste of it.
+	// The encore check needs prefgametype so can't use G_RaceGametype...
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1)
+		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
+	UINT8 encoremodifier = 0;
 
-	if (!cv_kartvoterulechanges.value // never
-		&& encorescramble != 1) // destroying the code for this one instance
-		return gametype;
-
-	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
+	if (encorepossible)
 	{
-		randmapbuffer[NUMMAPS]--;
-		if (encorepossible)
+		if (encorescramble != -1)
 		{
-			if (encorescramble != -1)
-				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
-			else
-			{
-				switch (cv_kartvoterulechanges.value)
-				{
-					case 3: // always
-						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-						break;
-					case 2: // frequent
-						encorepossible = M_RandomChance(FRACUNIT>>1);
-						break;
-					case 1: // sometimes
-					default:
-						encorepossible = M_RandomChance(FRACUNIT>>2);
-						break;
-				}
-			}
-			if (encorepossible != (cv_kartencore.value == 1))
-				return (gametype|0x80);
+			encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
 		}
-		return gametype;
+		else
+		{
+			switch (cv_kartvoterulechanges.value)
+			{
+				case 3: // always
+					encorepossible = true;
+					break;
+				case 2: // frequent
+					encorepossible = M_RandomChance(FRACUNIT>>1);
+					break;
+				case 1: // sometimes
+					encorepossible = M_RandomChance(FRACUNIT>>2);
+					break;
+				default:
+					break;
+			}
+		}
+		if (encorepossible != (cv_kartencore.value == 1))
+			encoremodifier = VOTEMODIFIER_ENCORE;
 	}
 
-	if (!cv_kartvoterulechanges.value) // never (again)
-		return gametype;
+	if (!cv_kartvoterulechanges.value) // never
+		return (gametype|encoremodifier);
+
+	if (randmapbuffer[NUMMAPS] > 0 && (cv_kartvoterulechanges.value != 3))
+	{
+		randmapbuffer[NUMMAPS]--;
+		return (gametype|encoremodifier);
+	}
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
-		case 3: // always
-			randmapbuffer[NUMMAPS] = 1; // every other vote (or always if !encorepossible)
-			break;
 		case 1: // sometimes
 			randmapbuffer[NUMMAPS] = 5; // per "cup"
 			break;
@@ -3258,9 +3260,17 @@ INT16 G_SometimesGetDifferentGametype(void)
 			break;
 	}
 
-	if (gametype == GT_BATTLE)
-		return GT_RACE;
-	return GT_BATTLE;
+	// Only this response is prefgametype-based.
+	// todo custom gametypes
+	if (prefgametype == GT_BATTLE)
+	{
+		// Intentionally does not use encoremodifier!
+		if (cv_kartencore.value == 1)
+			return (GT_RACE|VOTEMODIFIER_ENCORE);
+		return (GT_RACE);
+	}
+	// This might appear wrong HERE, but the game will display the Encore possibility on the second voting choice instead.
+	return (GT_BATTLE|encoremodifier);
 }
 
 //
@@ -4597,7 +4607,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{
-		LUAh_MapChange(gamemap);
+		LUA_HookInt(gamemap, HOOK(MapChange));
 		G_DoLoadLevel(resetplayer);
 	}
 
