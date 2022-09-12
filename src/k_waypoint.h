@@ -215,6 +215,37 @@ boolean K_PathfindToWaypoint(
 
 
 /*--------------------------------------------------
+	boolean K_PathfindThruCircuit(
+		waypoint_t *const sourcewaypoint,
+		const UINT32      traveldistance,
+		path_t *const     returnpath,
+		const boolean     useshortcuts,
+		const boolean     huntbackwards)
+
+		Tries a pathfind to the finish line waypoint, similar to K_PathfindToWaypoint, but it will continue
+		until it reaches the specified distance. The final path returned will only have the waypoints up to the
+		specified distance.
+
+	Input Arguments:-
+		sourcewaypoint      - The waypoint to start searching from
+		traveldistance      - How far along the circuit it will try to pathfind.
+		returnpath          - The path_t that will contain the final found path
+		useshortcuts        - Whether to use waypoints that are marked as being shortcuts in the search
+		huntbackwards       - Goes through the waypoints backwards if true
+
+	Return:-
+		True if a circuit path could be constructed, false if it couldn't.
+--------------------------------------------------*/
+
+boolean K_PathfindThruCircuit(
+	waypoint_t *const sourcewaypoint,
+	const UINT32      traveldistance,
+	path_t *const     returnpath,
+	const boolean     useshortcuts,
+	const boolean     huntbackwards);
+
+
+/*--------------------------------------------------
 	waypoint_t *K_GetNextWaypointToDestination(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,
