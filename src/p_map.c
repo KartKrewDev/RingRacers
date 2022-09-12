@@ -740,46 +740,76 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
 
-	if (thing->type == MT_SHRINK_GUN)
+	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
 	{
 		if (tmthing->type != MT_PLAYER)
 		{
 			return BMIT_CONTINUE;
 		}
 
-		// Use special collision for the laser gun.
-		// The laser sprite itself is just a visual,
-		// the gun itself does the colliding for us.
-		if (tmthing->z > thing->z)
+		if (thing->type == MT_SHRINK_GUN)
 		{
-			return BMIT_CONTINUE; // overhead
-		}
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (tmthing->z > thing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
 
-		if (tmthing->z + tmthing->height < thing->floorz)
+			if (tmthing->z + tmthing->height < thing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
 		{
-			return BMIT_CONTINUE; // underneath
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
 		}
 
 		return Obj_ShrinkLaserCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (tmthing->type == MT_SHRINK_GUN)
+	else if (tmthing->type == MT_SHRINK_GUN || tmthing->type == MT_SHRINK_PARTICLE)
 	{
 		if (thing->type != MT_PLAYER)
 		{
 			return BMIT_CONTINUE;
 		}
 
-		// Use special collision for the laser gun.
-		// The laser sprite itself is just a visual,
-		// the gun itself does the colliding for us.
-		if (thing->z > tmthing->z)
+		if (thing->type == MT_SHRINK_GUN)
 		{
-			return BMIT_CONTINUE; // overhead
-		}
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (thing->z > tmthing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
 
-		if (thing->z + thing->height < tmthing->floorz)
+			if (thing->z + thing->height < tmthing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
 		{
-			return BMIT_CONTINUE; // underneath
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
 		}
 
 		return Obj_ShrinkLaserCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;

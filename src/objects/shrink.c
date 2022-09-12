@@ -25,13 +25,15 @@
 
 #define POHBEE_HOVER (256 << FRACBITS)
 #define POHBEE_SPEED (128 << FRACBITS)
-#define POHBEE_TIME (15 * TICRATE)
+#define POHBEE_TIME (30 * TICRATE)
 #define POHBEE_DIST (4096 << FRACBITS)
 
 #define GUN_SWING (ANGLE_90 - ANG10)
-#define GUN_SWINGTIME (3 * TICRATE)
+#define GUN_SWINGTIME (4 * TICRATE)
 
 #define CHAIN_SIZE (16)
+
+#define EXTRA_FOR_FIRST (7)
 
 enum
 {
@@ -321,7 +323,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 		P_SetScale(particle, particle->scale * 2);
 		particle->destscale = 0;
 
-		particle->momz = 2 * particle->scale * P_MobjFlip(particle);
+		//particle->momz = 2 * particle->scale * P_MobjFlip(particle);
 	}
 	else
 	{
@@ -570,7 +572,7 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 
 	// Valid spawning conditions,
 	// we can start creating each individual part.
-	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
+	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, FixedDiv(size, mapobjectscale) + POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
 	P_SetTarget(&pohbee_owner(pohbee), owner->mo);
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
@@ -622,6 +624,7 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 		waypoint_t *start;
 		waypoint_t *end;
 		UINT8 lasers;
+		boolean first;
 	} pohbees[MAXPLAYERS];
 	size_t numPohbees = 0;
 
@@ -684,6 +687,12 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 			pohbees[j].start = GetPohbeeStart(player->nextwaypoint);
 			pohbees[j].end = endWaypoint;
 			pohbees[j].lasers = 1;
+
+			if (player->position == 1)
+			{
+				pohbees[j].first = true;
+			}
+
 			numPohbees++;
 		}
 	}
@@ -691,5 +700,18 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 	for (i = 0; i < numPohbees; i++)
 	{
 		CreatePohbee(owner, pohbees[i].start, pohbees[i].end, pohbees[i].lasers);
+
+		if (pohbees[i].first == true)
+		{
+			// Add a chain of extra ones for 1st place.
+			waypoint_t *prev = pohbees[i].end;
+
+			for (j = 0; j < EXTRA_FOR_FIRST; j++)
+			{
+				waypoint_t *new = GetPohbeeEnd(pohbees[i].end);
+				CreatePohbee(owner, prev, new, 1);
+				prev = new;
+			}
+		}
 	}
 }
