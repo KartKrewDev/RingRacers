@@ -1771,6 +1771,26 @@ void *W_CacheLumpName(const char *name, INT32 tag)
 // Cache a patch into heap memory, convert the patch format as necessary
 //
 
+static void MakePatch(void *lumpdata, size_t size, INT32 tag, void *cache)
+{
+	void *ptr, *dest;
+	size_t len = size;
+
+	ptr = lumpdata;
+
+#ifndef NO_PNG_LUMPS
+	if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
+	{
+		ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, 0);
+	}
+#endif
+
+	dest = Z_Calloc(sizeof(patch_t), tag, cache);
+	Patch_Create(ptr, len, dest);
+
+	Z_Free(ptr);
+}
+
 void *W_CacheSoftwarePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 {
 	lumpcache_t *lumpcache = NULL;
@@ -1783,21 +1803,12 @@ void *W_CacheSoftwarePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 	if (!lumpcache[lump])
 	{
 		size_t len = W_LumpLengthPwad(wad, lump);
-		void *ptr, *dest, *lumpdata = Z_Malloc(len, PU_STATIC, NULL);
+		void *lumpdata = Z_Malloc(len, PU_STATIC, NULL);
 
 		// read the lump in full
 		W_ReadLumpHeaderPwad(wad, lump, lumpdata, 0, 0);
-		ptr = lumpdata;
 
-#ifndef NO_PNG_LUMPS
-		if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
-			ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, 0);
-#endif
-
-		dest = Z_Calloc(sizeof(patch_t), tag, &lumpcache[lump]);
-		Patch_Create(ptr, len, dest);
-
-		Z_Free(ptr);
+		MakePatch(lumpdata, len, tag, &lumpcache[lump]);
 	}
 	else
 		Z_ChangeTag(lumpcache[lump], tag);
@@ -2278,6 +2289,7 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 			vlumps[i].name[8] = '\0';
 			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
 			memcpy(vlumps[i].data, wadData + (fileinfo + i)->filepos, vlumps[i].size);
+			vlumps[i].cache = NULL;
 		}
 
 		Z_Free(wadData);
@@ -2298,6 +2310,7 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 			memcpy(vlumps[i].name, W_CheckNameForNum(lumpnum), 8);
 			vlumps[i].name[8] = '\0';
 			vlumps[i].data = W_CacheLumpNum(lumpnum, PU_LEVEL);
+			vlumps[i].cache = NULL;
 		}
 	}
 	vres = Z_Malloc(sizeof(virtres_t), PU_LEVEL, NULL);
@@ -2344,4 +2357,38 @@ virtlump_t* vres_Find(const virtres_t* vres, const char* name)
 		if (fastcmp(name, vres->vlumps[i].name))
 			return &vres->vlumps[i];
 	return NULL;
+}
+
+/** \brief Gets patch from given virtual lump
+ *
+ * \param Virtual lump
+ * \return Patch data
+ *
+ */
+void *vres_GetPatch(virtlump_t *vlump, INT32 tag)
+{
+	patch_t *patch;
+
+	if (!vlump)
+		return NULL;
+
+	if (!vlump->cache)
+	{
+		MakePatch(vlump->data, vlump->size, tag, &vlump->cache);
+	}
+	else
+		Z_ChangeTag(vlump->cache, tag);
+
+	patch = vlump->cache;
+
+#ifdef HWRENDER
+	// Software-only compile cache the data without conversion
+	if (rendermode == render_soft || rendermode == render_none)
+#endif
+		return (void *)patch;
+
+#ifdef HWRENDER
+	Patch_CreateGL(patch);
+	return (void *)patch;
+#endif
 }
