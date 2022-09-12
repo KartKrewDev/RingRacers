@@ -318,6 +318,8 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 			MT_SHRINK_PARTICLE
 		);
 
+		P_SetTarget(&gun_pohbee(particle), pohbee);
+
 		particle->color = laser->color;
 
 		P_SetScale(particle, particle->scale * 2);
