@@ -4358,6 +4358,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		INT32 encoreLump = LUMPERROR;
 
+#if 0
 		if (mapheaderinfo[gamemap-1])
 		{
 			if (encoremode)
@@ -4371,6 +4372,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump);
+#endif
 	}
 	CON_SetupBackColormap();
 

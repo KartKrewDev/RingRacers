@@ -3418,11 +3418,12 @@ static void K_drawKartMinimap(void)
 	// Maybe move this somewhere else where this won't be a concern?
 	if (stplyr != &players[displayplayers[0]])
 		return;
-
+#if 0
 	if (mapheaderinfo[gamemap-1])
 	{
 		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
 	}
+#endif
 
 	if (lumpnum == LUMPERROR)
 	{
