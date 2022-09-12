@@ -708,7 +708,7 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 
 			for (j = 0; j < EXTRA_FOR_FIRST; j++)
 			{
-				waypoint_t *new = GetPohbeeEnd(pohbees[i].end);
+				waypoint_t *new = GetPohbeeEnd(prev);
 				CreatePohbee(owner, prev, new, 1);
 				prev = new;
 			}
