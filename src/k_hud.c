@@ -3395,7 +3395,6 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
@@ -3418,19 +3417,13 @@ static void K_drawKartMinimap(void)
 	// Maybe move this somewhere else where this won't be a concern?
 	if (stplyr != &players[displayplayers[0]])
 		return;
-#if 0
-	if (mapheaderinfo[gamemap-1])
-	{
-		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
-	}
-#endif
 
-	if (lumpnum == LUMPERROR)
+	AutomapPic = mapheaderinfo[gamemap-1]->minimapPic;
+
+	if (!AutomapPic)
 	{
 		return; // no pic, just get outta here
 	}
-
-	AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
 
 	if (r_splitscreen < 2) // 1/2P right aligned
 	{

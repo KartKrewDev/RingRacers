@@ -353,7 +353,7 @@ static void D_Display(void)
 			if (gamestate != GS_LEVEL && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
-				R_ReInitColormaps(0, LUMPERROR);
+				R_ReInitColormaps(0, NULL, 0);
 			}
 
 			F_WipeStartScreen();
@@ -1194,6 +1194,8 @@ void D_SRB2Main(void)
 	INT32 i;
 	UINT16 wadnum;
 	char *name;
+	virtres_t *virtmap;
+	virtlump_t *minimap, *thumbnailPic;
 
 	INT32 p;
 
@@ -1455,6 +1457,24 @@ void D_SRB2Main(void)
 		for (i = 0; i < numbasemapheaders; ++i)
 		{
 			name = mapheaderinfo[i]->lumpname;
+			mapheaderinfo[i]->lumpnum = W_CheckNumForMap(name);
+
+			// Get map thumbnail and minimap
+			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
+			thumbnailPic = vres_Find(virtmap, "PICTURE");
+			minimap = vres_Find(virtmap, "MINIMAP");
+
+			if (thumbnailPic)
+			{
+				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_CACHE);
+			}
+
+			if (minimap)
+			{
+				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_HUDGFX);
+			}
+
+			vres_Free(virtmap);
 
 			if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
 			{

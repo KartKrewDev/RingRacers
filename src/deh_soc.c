@@ -1275,22 +1275,6 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 
 			// Strings that can be truncated
-			else if (fastcmp(word, "THUMBNAIL"))
-			{
-				mapheaderinfo[num-1]->thumbnailLump = Z_StrDup(word2);
-			}
-			else if (fastcmp(word, "MINIMAP"))
-			{
-				mapheaderinfo[num-1]->minimapLump = Z_StrDup(word2);
-			}
-			else if (fastcmp(word, "ENCOREMAP"))
-			{
-				mapheaderinfo[num-1]->encoreLump = Z_StrDup(word2);
-			}
-			else if (fastcmp(word, "TWEAKMAP"))
-			{
-				mapheaderinfo[num-1]->tweakLump = Z_StrDup(word2);
-			}
 			else if (fastcmp(word, "NEXTLEVEL"))
 			{
 				mapheaderinfo[num-1]->nextlevel = Z_StrDup(word2);

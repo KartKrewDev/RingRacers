@@ -82,7 +82,6 @@ typedef struct {
 	char name[9];
 	UINT8* data;
 	size_t size;
-	void *cache;
 } virtlump_t;
 
 typedef struct {
@@ -93,7 +92,7 @@ typedef struct {
 virtres_t* vres_GetMap(lumpnum_t);
 void vres_Free(virtres_t*);
 virtlump_t* vres_Find(const virtres_t*, const char*);
-void* vres_GetPatch(virtlump_t *vlump, INT32 tag);
+void* vres_GetPatch(virtlump_t *vlump, INT32);
 
 // =========================================================================
 //                         DYNAMIC WAD LOADING

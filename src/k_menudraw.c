@@ -1847,17 +1847,14 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 		while (x < BASEVIDWIDTH + pad)
 		{
 			INT32 cupLevelNum = G_MapNumber(cup->levellist[i]);
-			lumpnum_t lumpnum = LUMPERROR;
-			patch_t *PictureOfLevel;
+			patch_t *PictureOfLevel = NULL;
 
 			if (mapheaderinfo[cupLevelNum])
 			{
-				lumpnum = W_CheckNumForLongName(mapheaderinfo[cupLevelNum]->thumbnailLump);
+				PictureOfLevel = mapheaderinfo[cupLevelNum]->thumbnailPic;
 			}
 
-			if (lumpnum != LUMPERROR)
-				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-			else
+			if (!PictureOfLevel)
 				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
 
 			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
@@ -2078,8 +2075,7 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
 {
-	lumpnum_t lumpnum = LUMPERROR;
-	patch_t *PictureOfLevel;
+	patch_t *PictureOfLevel = NULL;
 	UINT8 *colormap = NULL;
 
 	if (greyscale)
@@ -2087,12 +2083,10 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 
 	if (mapheaderinfo[map])
 	{
-		lumpnum = W_CheckNumForLongName(mapheaderinfo[map]->thumbnailLump);
+		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
 	}
 
-	if (lumpnum != LUMPERROR)
-		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-	else
+	if (!PictureOfLevel)
 		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
 
 	if (redblink)
@@ -2155,7 +2149,7 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	lumpnum_t lumpnum = LUMPERROR;
+	patch_t *minimap = NULL;
 	UINT8 i;
 	consvar_t *cv;
 
@@ -2169,11 +2163,11 @@ void M_DrawTimeAttack(void)
 	{
 		if (mapheaderinfo[map])
 		{
-			lumpnum = W_CheckNumForName(mapheaderinfo[map]->minimapLump);
+			minimap = mapheaderinfo[map]->minimapPic;
 		}
 
-		if (lumpnum != LUMPERROR)
-			V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
+		if (!minimap)
+			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
 		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
 		K_drawKartTimestamp(0, 162+t, 88, 0, 2);
@@ -3838,8 +3832,7 @@ void M_DrawPlaybackMenu(void)
 #define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
 void M_DrawReplayHutReplayInfo(void)
 {
-	lumpnum_t lumpnum = LUMPERROR;
-	patch_t *patch;
+	patch_t *patch = NULL;
 	UINT8 *colormap;
 	INT32 x, y, w, h;
 
@@ -3868,12 +3861,10 @@ void M_DrawReplayHutReplayInfo(void)
 
 		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map])
 		{
-			lumpnum = W_CheckNumForName(mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map]->thumbnailLump);
+			patch = mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map]->thumbnailPic;
 		}
 
-		if (lumpnum != LUMPERROR)
-			patch = W_CachePatchNum(lumpnum, PU_CACHE);
-		else
+		if (!patch)
 			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
 
 		if (!(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & DF_ENCORE))

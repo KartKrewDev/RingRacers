@@ -600,7 +600,6 @@ static int libd_drawOnMinimap(lua_State *L)
 	huddrawlist_h list;
 
 	// variables used to replicate k_kart's mmap drawer:
-	lumpnum_t lumpnum = LUMPERROR;
 	patch_t *AutomapPic;
 	INT32 mx, my;
 	INT32 splitflags, minimaptrans;
@@ -686,17 +685,12 @@ static int libd_drawOnMinimap(lua_State *L)
 	if (stplyr != &players[displayplayers[0]])
 		return 0;
 
-	if (mapheaderinfo[gamemap-1])
-	{
-		lumpnum = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->minimapLump);
-	}
+	AutomapPic = mapheaderinfo[gamemap-1]->minimapPic;
 
-	if (lumpnum == LUMPERROR)
+	if (!AutomapPic)
 	{
 		return 0; // no pic, just get outta here
 	}
-
-	AutomapPic = W_CachePatchNum(lumpnum, PU_HUDGFX);
 
 	mx = MM_X - (AutomapPic->width/2);
 	my = MM_Y - (AutomapPic->height/2);

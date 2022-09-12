@@ -25,6 +25,9 @@
 // We need the player data structure as well.
 #include "d_player.h"
 
+// For lumpnum_t.
+#include "w_wad.h"
+
 // =============================
 // Selected map etc.
 // =============================
@@ -338,11 +341,12 @@ typedef struct
 typedef struct
 {
 	char * lumpname;					///< Lump name can be really long
+	lumpnum_t lumpnum;        ///< Lump number for the map, used by vres_GetMap
 
-	char * thumbnailLump;				///< Lump name for the level select thumbnail.
-	char * minimapLump;					///< Lump name for the minimap graphic.
-	char * encoreLump;					///< Lump name for the Encore Mode remap.
-	char * tweakLump;					///< Lump name for the palette tweak remap.
+	void * thumbnailPic;				///< Lump data for the level select thumbnail.
+	void * minimapPic;					///< Lump data for the minimap graphic.
+	void * encoreLump;					///< Lump data for the Encore Mode remap.
+	void * tweakLump;					///< Lump data for the palette tweak remap.
 
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];					///< Subtitle for level

@@ -134,6 +134,8 @@ boolean stoppedclock;
 boolean levelloading;
 UINT8 levelfadecol;
 
+virtres_t *curmapvirt;
+
 // BLOCKMAP
 // Created from axis aligned bounding box
 // of the map, a rectangular array of
@@ -361,28 +363,16 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
 
-	if (mapheaderinfo[num]->thumbnailLump)
+	if (mapheaderinfo[num]->thumbnailPic)
 	{
-		Z_Free(mapheaderinfo[num]->thumbnailLump);
-		mapheaderinfo[num]->thumbnailLump = NULL;
+		Z_Free(mapheaderinfo[num]->thumbnailPic);
+		mapheaderinfo[num]->thumbnailPic = NULL;
 	}
 
-	if (mapheaderinfo[num]->minimapLump)
+	if (mapheaderinfo[num]->minimapPic)
 	{
-		Z_Free(mapheaderinfo[num]->minimapLump);
-		mapheaderinfo[num]->minimapLump = NULL;
-	}
-
-	if (mapheaderinfo[num]->encoreLump)
-	{
-		Z_Free(mapheaderinfo[num]->encoreLump);
-		mapheaderinfo[num]->encoreLump = NULL;
-	}
-
-	if (mapheaderinfo[num]->tweakLump)
-	{
-		Z_Free(mapheaderinfo[num]->tweakLump);
-		mapheaderinfo[num]->tweakLump = NULL;
+		Z_Free(mapheaderinfo[num]->minimapPic);
+		mapheaderinfo[num]->minimapPic = NULL;
 	}
 
 	if (mapheaderinfo[num]->nextlevel)
@@ -469,11 +459,10 @@ void P_AllocMapHeader(INT16 i)
 	if (!mapheaderinfo[i])
 	{
 		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
+		mapheaderinfo[i]->lumpnum = LUMPERROR;
 		mapheaderinfo[i]->lumpname = NULL;
-		mapheaderinfo[i]->thumbnailLump = NULL;
-		mapheaderinfo[i]->minimapLump = NULL;
-		mapheaderinfo[i]->encoreLump = NULL;
-		mapheaderinfo[i]->tweakLump = NULL;
+		mapheaderinfo[i]->thumbnailPic = NULL;
+		mapheaderinfo[i]->minimapPic = NULL;
 		mapheaderinfo[i]->nextlevel = NULL;
 		mapheaderinfo[i]->marathonnext = NULL;
 		mapheaderinfo[i]->flickies = NULL;
@@ -3600,15 +3589,14 @@ static void P_MakeMapMD5(virtres_t *virt, void *dest)
 
 static boolean P_LoadMapFromFile(void)
 {
-	virtres_t *virt = vres_GetMap(lastloadedmaplumpnum);
-	virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
+	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
 	size_t i;
 	udmf = textmap != NULL;
 
-	if (!P_LoadMapData(virt))
+	if (!P_LoadMapData(curmapvirt))
 		return false;
-	P_LoadMapBSP(virt);
-	P_LoadMapLUT(virt);
+	P_LoadMapBSP(curmapvirt);
+	P_LoadMapLUT(curmapvirt);
 
 	P_LinkMapData();
 
@@ -3633,9 +3621,9 @@ static boolean P_LoadMapFromFile(void)
 		if (sectors[i].tags.count)
 			spawnsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
 
-	P_MakeMapMD5(virt, &mapmd5);
+	P_MakeMapMD5(curmapvirt, &mapmd5);
 
-	vres_Free(virt);
+	vres_Free(curmapvirt);
 	return true;
 }
 
@@ -4129,6 +4117,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+	virtlump_t *encoreLump = NULL;
 
 	levelloading = true;
 
@@ -4355,24 +4344,27 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
+	curmapvirt = vres_GetMap(lastloadedmaplumpnum);
+
+	if (mapheaderinfo[gamemap-1])
 	{
-		INT32 encoreLump = LUMPERROR;
-
-#if 0
-		if (mapheaderinfo[gamemap-1])
+		if (encoremode)
 		{
-			if (encoremode)
-			{
-				encoreLump = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->encoreLump);
-			}
-			else
-			{
-				encoreLump = W_CheckNumForLongName(mapheaderinfo[gamemap-1]->tweakLump);
-			}
+			encoreLump = vres_Find(curmapvirt, "ENCORE");
 		}
+		else
+		{
+			encoreLump = vres_Find(curmapvirt, "TWEAKMAP");
+		}
+	}
 
-		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump);
-#endif
+	if (encoreLump)
+	{
+		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump->data, encoreLump->size);
+	}
+	else
+	{
+		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, NULL, 0);
 	}
 	CON_SetupBackColormap();
 
@@ -4677,6 +4669,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	UINT16 numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
+	virtres_t *virtmap;
+	virtlump_t *minimap, *thumbnailPic;
 
 	//boolean texturechange = false; ///\todo Useless; broken when back-frontporting PK3 changes?
 	boolean mapsadded = false;
@@ -4833,6 +4827,28 @@ boolean P_AddWadFile(const char *wadfilename)
 	for (map = 0; map < numexistingmapheaders; ++map)
 	{
 		name = mapheaderinfo[map]->lumpname;
+
+		if (mapheaderinfo[i]->lumpnum != W_CheckNumForMap(name))
+		{
+			mapheaderinfo[i]->lumpnum = W_CheckNumForMap(name);
+
+			// Get map thumbnail and minimap
+			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
+			thumbnailPic = vres_Find(virtmap, "PICTURE");
+			minimap = vres_Find(virtmap, "MINIMAP");
+
+			if (thumbnailPic)
+			{
+				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_CACHE);
+			}
+
+			if (minimap)
+			{
+				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_HUDGFX);
+			}
+
+			vres_Free(virtmap);
+		}
 
 		if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
 		{
