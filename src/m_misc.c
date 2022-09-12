@@ -190,8 +190,7 @@ void M_InitJoinedIPArray(void)
 	UINT8 i;
 	for (i=0; i < NUMLOGIP; i++)
 	{
-		strcpy(joinedIPlist[i][0], "");
-		strcpy(joinedIPlist[i][1], "");
+		joinedIPlist[i][0][0] = joinedIPlist[i][1][0] = '\0';
 	}
 }
 
@@ -564,10 +563,18 @@ void M_LoadJoinedIPs(void)
 
 		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
 
-		if (strlen(s))
-			s[strlen(s)-1] = '\0';	// Remove the \n
-
-		strcpy(joinedIPlist[i][1], s);
+		if (s)
+		{
+			//strcpy(joinedIPlist[i][1], s); -- get rid of \n too...
+			char *c = joinedIPlist[i][1];
+			while (*s && *s != '\n')
+			{
+				*c = *s;
+				s++;
+				c++;
+			}
+			*c = '\0';
+		}
 
 		i++;
 	}
