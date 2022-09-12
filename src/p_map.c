@@ -32,6 +32,7 @@
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart
 #include "k_terrain.h"
+#include "k_objects.h"
 
 #include "r_splats.h"
 
@@ -738,6 +739,51 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
+
+	if (thing->type == MT_SHRINK_GUN)
+	{
+		if (tmthing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		// Use special collision for the laser gun.
+		// The laser sprite itself is just a visual,
+		// the gun itself does the colliding for us.
+		if (tmthing->z > thing->z)
+		{
+			return BMIT_CONTINUE; // overhead
+		}
+
+		if (tmthing->z + tmthing->height < thing->floorz)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
+		return Obj_ShrinkLaserCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (tmthing->type == MT_SHRINK_GUN)
+	{
+		if (thing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		// Use special collision for the laser gun.
+		// The laser sprite itself is just a visual,
+		// the gun itself does the colliding for us.
+		if (thing->z > tmthing->z)
+		{
+			return BMIT_CONTINUE; // overhead
+		}
+
+		if (thing->z + thing->height < tmthing->floorz)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
+		return Obj_ShrinkLaserCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
 
 	if (tmthing->type == MT_SMK_ICEBLOCK)
 	{

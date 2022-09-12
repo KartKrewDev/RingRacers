@@ -23,13 +23,13 @@
 #include "../z_zone.h"
 #include "../k_waypoint.h"
 
-#define POHBEE_HOVER (384 << FRACBITS)
+#define POHBEE_HOVER (256 << FRACBITS)
 #define POHBEE_SPEED (128 << FRACBITS)
 #define POHBEE_TIME (15 * TICRATE)
 #define POHBEE_DIST (4096 << FRACBITS)
 
-#define LASER_SPEED (20 << FRACBITS)
-#define LASER_SWINGTIME (3 * TICRATE)
+#define GUN_SWING (ANGLE_90 - ANG10)
+#define GUN_SWINGTIME (3 * TICRATE)
 
 #define CHAIN_SIZE (16)
 
@@ -44,17 +44,61 @@ enum
 #define pohbee_timer(o) ((o)->reactiontime)
 #define pohbee_waypoint_cur(o) ((o)->extravalue1)
 #define pohbee_waypoint_dest(o) ((o)->extravalue2)
+#define pohbee_height(o) ((o)->movefactor)
 
 #define pohbee_owner(o) ((o)->target)
-#define pohbee_lasers(o) ((o)->hnext)
+#define pohbee_guns(o) ((o)->hnext)
 
-#define laser_offset(o) ((o)->movecount)
-#define laser_swing(o) ((o)->movedir)
-#define laser_numsegs(o) ((o)->extravalue1)
+#define gun_offset(o) ((o)->movecount)
+#define gun_numsegs(o) ((o)->extravalue1)
 
-#define laser_pohbee(o) ((o)->target)
-#define laser_collider(o) ((o)->tracer)
-#define laser_chains(o) ((o)->hprev)
+#define gun_pohbee(o) ((o)->target)
+#define gun_laser(o) ((o)->tracer)
+#define gun_chains(o) ((o)->hprev)
+
+enum
+{
+	LASER_SHRINK,
+	LASER_GROW,
+};
+
+static skincolornum_t ShrinkLaserColor(mobj_t *pohbee)
+{
+	UINT8 laserState = LASER_SHRINK;
+	player_t *owner = NULL;
+
+	if (pohbee_owner(pohbee) != NULL && P_MobjWasRemoved(pohbee_owner(pohbee)) == false)
+	{
+		owner = pohbee_owner(pohbee)->player;
+	}
+
+	if (owner != NULL && P_IsDisplayPlayer(owner) == true)
+	{
+		laserState = LASER_GROW;
+
+		if (r_splitscreen > 0 && (leveltime & 1))
+		{
+			// TODO: make this properly screen dependent,
+			// instead of flashing.
+			laserState = LASER_SHRINK;
+		}
+	}
+
+	switch (laserState)
+	{
+		default:
+		case LASER_SHRINK:
+			return SKINCOLOR_KETCHUP;
+
+		case LASER_GROW:
+			return SKINCOLOR_SAPPHIRE;
+	}
+}
+
+static boolean ShrinkLaserActive(mobj_t *pohbee)
+{
+	return (pohbee_mode(pohbee) == POHBEE_MODE_ACT);
+}
 
 static void PohbeeMoveTo(mobj_t *pohbee, fixed_t destx, fixed_t desty, fixed_t destz)
 {
@@ -70,9 +114,9 @@ static fixed_t GenericDistance(
 	return P_AproxDistance(P_AproxDistance(destx - curx, desty - cury), destz - curz);
 }
 
-static fixed_t PohbeeWaypointZ(mobj_t *dest)
+static fixed_t PohbeeWaypointZ(mobj_t *pohbee, mobj_t *dest)
 {
-	return dest->z + (FixedMul(POHBEE_HOVER, mapobjectscale) * P_MobjFlip(dest));
+	return dest->z + (pohbee_height(pohbee) + FixedMul(POHBEE_HOVER, mapobjectscale) * P_MobjFlip(dest));
 }
 
 static void PohbeeSpawn(mobj_t *pohbee)
@@ -110,7 +154,7 @@ static void PohbeeSpawn(mobj_t *pohbee)
 	{
 		fixed_t wpX = curWaypoint->mobj->x;
 		fixed_t wpY = curWaypoint->mobj->y;
-		fixed_t wpZ = PohbeeWaypointZ(curWaypoint->mobj);
+		fixed_t wpZ = PohbeeWaypointZ(pohbee, curWaypoint->mobj);
 
 		fixed_t distToNext = GenericDistance(
 			newX, newY, newZ,
@@ -210,17 +254,16 @@ static void PohbeeDespawn(mobj_t *pohbee)
 	pohbee->momz = 16 * pohbee->scale * P_MobjFlip(pohbee);
 }
 
-static void DoLaserSwing(mobj_t *laser, mobj_t *pohbee)
+static void DoGunSwing(mobj_t *gun, mobj_t *pohbee)
 {
-	const angle_t angle = laser->angle + ANGLE_90;
-	const tic_t swingTimer = leveltime + laser_offset(laser);
+	const angle_t angle = gun->angle + ANGLE_90;
+	const tic_t swingTimer = leveltime + gun_offset(gun);
 
-	const angle_t swingAmt = swingTimer * (ANGLE_MAX / LASER_SWINGTIME);
+	const angle_t swingAmt = swingTimer * (ANGLE_MAX / GUN_SWINGTIME);
 	const fixed_t swingCos = FINECOSINE(swingAmt >> ANGLETOFINESHIFT);
-	const fixed_t swing = FixedMul(laser_swing(laser), 9 * swingCos);
 
-	const angle_t pitch = -ANGLE_90 + swing;
-	const fixed_t dist = laser_numsegs(laser) * CHAIN_SIZE * laser->scale;
+	const angle_t pitch = -ANGLE_90 + FixedMul(swingCos, GUN_SWING);
+	const fixed_t dist = gun_numsegs(gun) * CHAIN_SIZE * gun->scale;
 
 	fixed_t offsetX = FixedMul(
 		dist, FixedMul(
@@ -240,28 +283,76 @@ static void DoLaserSwing(mobj_t *laser, mobj_t *pohbee)
 		dist, FINESINE(pitch >> ANGLETOFINESHIFT)
 	);
 
-	PohbeeMoveTo(laser, pohbee->x + offsetX, pohbee->y + offsetY, pohbee->z + offsetZ);
+	PohbeeMoveTo(gun, pohbee->x + offsetX, pohbee->y + offsetY, pohbee->z + offsetZ);
 }
 
-static void ShrinkLaserThinker(mobj_t *laser)
+static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 {
-	mobj_t *pohbee = laser_pohbee(laser);
+	PohbeeMoveTo(laser, gun->x, gun->y, gun->floorz);
+
+	if (ShrinkLaserActive(pohbee) == true)
+	{
+		mobj_t *particle = NULL;
+
+		laser->renderflags &= ~RF_DONTDRAW;
+		laser->color = gun->color;
+
+		if (leveltime & 1)
+		{
+			laser->spritexscale = 3*FRACUNIT/2;
+		}
+		else
+		{
+			laser->spritexscale = FRACUNIT;
+		}
+
+		laser->spriteyscale = FixedDiv(FixedDiv(gun->z - gun->floorz, mapobjectscale), laser->info->height);
+
+		particle = P_SpawnMobjFromMobj(
+			laser,
+			P_RandomRange(-16, 16) * FRACUNIT,
+			P_RandomRange(-16, 16) * FRACUNIT,
+			0,
+			MT_SHRINK_PARTICLE
+		);
+
+		particle->color = laser->color;
+
+		P_SetScale(particle, particle->scale * 2);
+		particle->destscale = 0;
+
+		particle->momz = 2 * particle->scale * P_MobjFlip(particle);
+	}
+	else
+	{
+		laser->renderflags |= RF_DONTDRAW;
+	}
+}
+
+static void ShrinkGunThinker(mobj_t *gun)
+{
+	mobj_t *pohbee = gun_pohbee(gun);
 
 	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
 	{
-		P_RemoveMobj(laser);
+		P_RemoveMobj(gun);
 		return;
 	}
 
-	laser->angle = pohbee->angle;
-	DoLaserSwing(laser, pohbee);
+	gun->angle = pohbee->angle;
+	gun->color = ShrinkLaserColor(pohbee);
 
-	//PohbeeMoveTo(laser_collider(laser), laser->x, laser->y, laser->z);
+	DoGunSwing(gun, pohbee);
+
+	if (gun_laser(gun) != NULL && P_MobjWasRemoved(gun_laser(gun)) == false)
+	{
+		ShrinkLaserThinker(pohbee, gun, gun_laser(gun));
+	}
 }
 
 void Obj_PohbeeThinker(mobj_t *pohbee)
 {
-	mobj_t *laser = NULL;
+	mobj_t *gun = NULL;
 
 	pohbee->momx = pohbee->momy = pohbee->momz = 0;
 
@@ -285,11 +376,11 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 			break;
 	}
 
-	laser = pohbee_lasers(pohbee);
-	while (laser != NULL && P_MobjWasRemoved(laser) == false)
+	gun = pohbee_guns(pohbee);
+	while (gun != NULL && P_MobjWasRemoved(gun) == false)
 	{
-		ShrinkLaserThinker(laser);
-		laser = pohbee_lasers(laser);
+		ShrinkGunThinker(gun);
+		gun = pohbee_guns(gun);
 	}
 }
 
@@ -298,7 +389,7 @@ void Obj_PohbeeRemoved(mobj_t *pohbee)
 {
 	mobj_t *chain = NULL;
 
-	if (pohbee_laser(pohbee) != NULL)
+	if (pohbee_guns(pohbee) != NULL)
 	{
 		P_RemoveMobj(pohbee_laser(pohbee));
 	}
@@ -312,6 +403,84 @@ void Obj_PohbeeRemoved(mobj_t *pohbee)
 	}
 }
 */
+
+boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
+{
+	mobj_t *pohbee = gun_pohbee(gun);
+	mobj_t *owner = NULL;
+
+	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
+	{
+		return true;
+	}
+
+	if (ShrinkLaserActive(pohbee) == false)
+	{
+		return true;
+	}
+
+	owner = pohbee_owner(pohbee);
+
+	if (owner != NULL && victim == owner)
+	{
+		// Belongs to us. Give us Grow!
+		if (victim->player->growshrinktimer <= 0)
+		{
+			victim->scalespeed = mapobjectscale/TICRATE;
+			victim->destscale = FixedMul(mapobjectscale, GROW_SCALE);
+
+			if (K_PlayerShrinkCheat(victim->player) == true)
+			{
+				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
+			}
+
+			// TODO: gametyperules
+			victim->player->growshrinktimer = (gametype == GT_BATTLE ? 8 : 12) * TICRATE;
+
+			if (victim->player->invincibilitytimer > 0)
+			{
+				; // invincibility has priority in P_RestoreMusic, no point in starting here
+			}
+			else if (P_IsLocalPlayer(victim->player) == true)
+			{
+				S_ChangeMusicSpecial("kgrow");
+			}
+			else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
+			{
+				S_StartSound(victim, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+			}
+
+			P_RestoreMusic(victim->player);
+			S_StartSound(victim, sfx_kc5a);
+		}
+	}
+	else
+	{
+		if (victim->player->growshrinktimer > 0)
+		{
+			// Take away Grow.
+			K_RemoveGrowShrink(victim->player);
+		}
+		else
+		{
+			// Start shrinking!
+			K_DropItems(victim->player);
+			victim->player->growshrinktimer = -(15*TICRATE);
+
+			victim->scalespeed = mapobjectscale/TICRATE;
+			victim->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
+
+			if (K_PlayerShrinkCheat(victim->player) == true)
+			{
+				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
+			}
+
+			S_StartSound(victim, sfx_kc59);
+		}
+	}
+
+	return true;
+}
 
 static waypoint_t *GetPohbeeStart(waypoint_t *anchor)
 {
@@ -373,10 +542,10 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 {
 	mobj_t *pohbee = NULL;
 
-	fixed_t size = INT32_MAX;
+	fixed_t size = 0;
 	INT32 baseSegs = INT32_MAX;
 	INT32 segVal = INT32_MAX;
-	mobj_t *prevLaser = NULL;
+	mobj_t *prevGun = NULL;
 
 	size_t i, j;
 
@@ -389,8 +558,8 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 	}
 
 	// Calculate number of chain segments added per laser.
-	size = end->mobj->radius / mapobjectscale;
-	baseSegs = 1 + (size / CHAIN_SIZE);
+	size = FixedMul(end->mobj->radius, 3*FRACUNIT/2);
+	baseSegs = 1 + ((size / start->mobj->scale) / CHAIN_SIZE);
 
 	if (baseSegs < MAXPLAYERS)
 	{
@@ -406,39 +575,42 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
 	pohbee_timer(pohbee) = POHBEE_TIME;
+	pohbee_height(pohbee) = size;
 
 	pohbee_waypoint_cur(pohbee) = (INT32)K_GetWaypointHeapIndex(start);
 	pohbee_waypoint_dest(pohbee) = (INT32)K_GetWaypointHeapIndex(end);
 
-	prevLaser = pohbee;
+	prevGun = pohbee;
 
 	for (i = 0; i < numLasers; i++)
 	{
 		const UINT8 numSegs = segVal * (i + 1);
 
-		mobj_t *laser = P_SpawnMobjFromMobj(pohbee, 0, 0, 0, MT_SHRINK_LASER);
-		//mobj_t *collider = NULL;
+		mobj_t *gun = P_SpawnMobjFromMobj(pohbee, 0, 0, 0, MT_SHRINK_GUN);
+		mobj_t *laser = NULL;
 		//mobj_t *prevChain = NULL;
 
-		P_SetTarget(&laser_pohbee(laser), pohbee);
-		P_SetTarget(&pohbee_lasers(prevLaser), laser);
+		P_SetTarget(&gun_pohbee(gun), pohbee);
+		P_SetTarget(&pohbee_guns(prevGun), gun);
 
-		laser_numsegs(laser) = numSegs;
-		laser_swing(laser) = (ANGLE_45 * baseSeg) / numSegs;
-		laser_offset(laser) = P_RandomKey(LASER_SWINGTIME);
+		gun_numsegs(gun) = numSegs;
+		gun_offset(gun) = P_RandomKey(GUN_SWINGTIME);
+
+		laser = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_SHRINK_LASER);
+		P_SetTarget(&gun_laser(gun), laser);
 
 		/*
-		prevChain = laser;
+		prevChain = gun;
 		for (j = 0; j < numSegs; j++)
 		{
-			mobj_t *chain = P_SpawnMobjFromMobj(laser, 0, 0, 0, MT_SHRINK_LASER);
-			P_SetTarget(&laser_chains(prevChain), chain);
+			mobj_t *chain = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_SHRINK_CHAIN);
+			P_SetTarget(&gun_chains(prevChain), chain);
 			prevChain = chain;
 		}
 		*/
 		(void)j;
 
-		prevLaser = laser;
+		prevGun = gun;
 	}
 }
 
@@ -511,7 +683,7 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 			// Push a new poh-bee
 			pohbees[j].start = GetPohbeeStart(player->nextwaypoint);
 			pohbees[j].end = endWaypoint;
-			pohbees[j].lasers = 4;
+			pohbees[j].lasers = 1;
 			numPohbees++;
 		}
 	}

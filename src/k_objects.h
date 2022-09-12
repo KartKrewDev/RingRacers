@@ -10,6 +10,7 @@ void Obj_HyudoroCollide(mobj_t *special, mobj_t *toucher);
 
 /* Shrink */
 void Obj_PohbeeThinker(mobj_t *pohbee);
+boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim);
 void Obj_CreateShrinkPohbees(player_t *owner);
 
 #endif/*k_objects_H*/
