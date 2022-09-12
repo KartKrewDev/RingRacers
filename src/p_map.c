@@ -784,7 +784,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			return BMIT_CONTINUE;
 		}
 
-		if (thing->type == MT_SHRINK_GUN)
+		if (tmthing->type == MT_SHRINK_GUN)
 		{
 			// Use special collision for the laser gun.
 			// The laser sprite itself is just a visual,
