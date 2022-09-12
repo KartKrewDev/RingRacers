@@ -66,7 +66,12 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 
+boolean R_ThingBoundingBoxVisible(mobj_t *thing);
+
 boolean R_ThingVisible (mobj_t *thing);
+
+boolean R_ThingWithinDist (mobj_t *thing,
+		fixed_t        draw_dist);
 
 boolean R_ThingVisibleWithinDist (mobj_t *thing,
 		fixed_t        draw_dist);
@@ -134,6 +139,7 @@ typedef enum
 	SC_SPLAT      = 1<<11,
 	// srb2kart
 	SC_SEMIBRIGHT = 1<<12,
+	SC_BBOX       = 1<<13,
 	// masks
 	SC_CUTMASK    = SC_TOP|SC_BOTTOM,
 	SC_FLAGMASK   = ~SC_CUTMASK
@@ -219,6 +225,8 @@ extern UINT32 visspritecount;
 
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
 void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal);
+
+void R_DrawThingBoundingBox(vissprite_t *spr);
 
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
 
