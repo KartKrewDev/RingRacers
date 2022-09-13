@@ -1001,6 +1001,11 @@ void D_StartTitle(void)
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
+
+	// clear cmd building stuff
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	memset(deviceResponding, false, sizeof (deviceResponding));
+
 	F_StartTitleScreen();
 
 	// Reset the palette
