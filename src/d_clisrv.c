@@ -1913,6 +1913,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
+		// Needs to be updated here for M_DrawEggaChannel
+		renderdeltatics = FRACUNIT;
+		rendertimefrac = FRACUNIT;
+
 		memset(deviceResponding, false, sizeof (deviceResponding));
 
 		if (cl_mode == CL_CONFIRMCONNECT)
