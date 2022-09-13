@@ -1040,6 +1040,68 @@ static boolean K_WaypointPathfindTraversableNoShortcuts(void *data, void *prevda
 }
 
 /*--------------------------------------------------
+	static boolean K_WaypointPathfindReachedEnd(void *data, void *setupData)
+
+		Returns if the current waypoint data is our end point of our pathfinding.
+
+	Input Arguments:-
+		data - Should point to a pathfindnode_t to compare
+		setupData - Should point to the pathfindsetup_t to compare
+
+	Return:-
+		True if the waypoint is the pathfind end point, false otherwise.
+--------------------------------------------------*/
+static boolean K_WaypointPathfindReachedEnd(void *data, void *setupData)
+{
+	boolean isEnd = false;
+
+	if (data == NULL || setupData == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindReachedEnd received NULL data.\n");
+	}
+	else
+	{
+		pathfindnode_t *node = (pathfindnode_t *)data;
+		pathfindsetup_t *setup = (pathfindsetup_t *)setupData;
+
+		isEnd = (node->nodedata == setup->endnodedata);
+	}
+
+	return isEnd;
+}
+
+/*--------------------------------------------------
+	static boolean K_WaypointPathfindReachedGScore(void *data, void *setupData)
+
+		Returns if the current waypoint data reaches our end G score.
+
+	Input Arguments:-
+		data - Should point to a pathfindnode_t to compare
+		setupData - Should point to the pathfindsetup_t to compare
+
+	Return:-
+		True if the waypoint reached the G score, false otherwise.
+--------------------------------------------------*/
+static boolean K_WaypointPathfindReachedGScore(void *data, void *setupData)
+{
+	boolean scoreReached = false;
+
+	if (data == NULL || setupData == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindReachedGScore received NULL data.\n");
+	}
+	else
+	{
+		pathfindnode_t *node = (pathfindnode_t *)data;
+		pathfindsetup_t *setup = (pathfindsetup_t *)setupData;
+
+		scoreReached = (node->gscore >= setup->endgscore);
+	}
+
+	return scoreReached;
+}
+
+/*--------------------------------------------------
 	boolean K_PathfindToWaypoint(
 		waypoint_t *const sourcewaypoint,
 		waypoint_t *const destinationwaypoint,
@@ -1087,17 +1149,18 @@ boolean K_PathfindToWaypoint(
 		getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
 		getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
 		getnodetraversablefunc     traversablefunc = K_WaypointPathfindTraversableNoShortcuts;
+		getpathfindfinishedfunc    finishedfunc    = K_WaypointPathfindReachedEnd;
 
 		if (huntbackwards)
 		{
 			nextnodesfunc = K_WaypointPathfindGetPrev;
 			nodecostsfunc = K_WaypointPathfindGetPrevCosts;
 		}
+
 		if (useshortcuts)
 		{
 			traversablefunc = K_WaypointPathfindTraversableAllEnabled;
 		}
-
 
 		pathfindsetup.opensetcapacity    = K_GetOpensetBaseSize();
 		pathfindsetup.closedsetcapacity  = K_GetClosedsetBaseSize();
@@ -1108,6 +1171,90 @@ boolean K_PathfindToWaypoint(
 		pathfindsetup.getconnectioncosts = nodecostsfunc;
 		pathfindsetup.getheuristic       = heuristicfunc;
 		pathfindsetup.gettraversable     = traversablefunc;
+		pathfindsetup.getfinished        = finishedfunc;
+
+		pathfound = K_PathfindAStar(returnpath, &pathfindsetup);
+
+		K_UpdateOpensetBaseSize(pathfindsetup.opensetcapacity);
+		K_UpdateClosedsetBaseSize(pathfindsetup.closedsetcapacity);
+		K_UpdateNodesArrayBaseSize(pathfindsetup.nodesarraycapacity);
+	}
+
+	return pathfound;
+}
+
+/*--------------------------------------------------
+	boolean K_PathfindThruCircuit(
+		waypoint_t *const sourcewaypoint,
+		const UINT32      traveldistance,
+		path_t *const     returnpath,
+		const boolean     useshortcuts,
+		const boolean     huntbackwards)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PathfindThruCircuit(
+	waypoint_t *const sourcewaypoint,
+	const UINT32      traveldistance,
+	path_t *const     returnpath,
+	const boolean     useshortcuts,
+	const boolean     huntbackwards)
+{
+	boolean pathfound = false;
+
+	if (sourcewaypoint == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL sourcewaypoint in K_PathfindThruCircuit.\n");
+	}
+	else if (finishline == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "NULL finishline in K_PathfindThruCircuit.\n");
+	}
+	else if (((huntbackwards == false) && (sourcewaypoint->numnextwaypoints == 0))
+		|| ((huntbackwards == true) && (sourcewaypoint->numprevwaypoints == 0)))
+	{
+		CONS_Debug(DBG_GAMELOGIC,
+			"K_PathfindThruCircuit: sourcewaypoint with ID %d has no next waypoint\n",
+			K_GetWaypointID(sourcewaypoint));
+	}
+	else if (((huntbackwards == false) && (finishline->numprevwaypoints == 0))
+		|| ((huntbackwards == true) && (finishline->numnextwaypoints == 0)))
+	{
+		CONS_Debug(DBG_GAMELOGIC,
+			"K_PathfindThruCircuit: finishline with ID %d has no previous waypoint\n",
+			K_GetWaypointID(finishline));
+	}
+	else
+	{
+		pathfindsetup_t            pathfindsetup   = {0};
+		getconnectednodesfunc      nextnodesfunc   = K_WaypointPathfindGetNext;
+		getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
+		getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
+		getnodetraversablefunc     traversablefunc = K_WaypointPathfindTraversableNoShortcuts;
+		getpathfindfinishedfunc    finishedfunc    = K_WaypointPathfindReachedGScore;
+
+		if (huntbackwards)
+		{
+			nextnodesfunc = K_WaypointPathfindGetPrev;
+			nodecostsfunc = K_WaypointPathfindGetPrevCosts;
+		}
+
+		if (useshortcuts)
+		{
+			traversablefunc = K_WaypointPathfindTraversableAllEnabled;
+		}
+
+		pathfindsetup.opensetcapacity    = K_GetOpensetBaseSize();
+		pathfindsetup.closedsetcapacity  = K_GetClosedsetBaseSize();
+		pathfindsetup.nodesarraycapacity = K_GetNodesArrayBaseSize();
+		pathfindsetup.startnodedata      = sourcewaypoint;
+		pathfindsetup.endnodedata        = finishline;
+		pathfindsetup.endgscore          = traveldistance;
+		pathfindsetup.getconnectednodes  = nextnodesfunc;
+		pathfindsetup.getconnectioncosts = nodecostsfunc;
+		pathfindsetup.getheuristic       = heuristicfunc;
+		pathfindsetup.gettraversable     = traversablefunc;
+		pathfindsetup.getfinished        = finishedfunc;
 
 		pathfound = K_PathfindAStar(returnpath, &pathfindsetup);
 
@@ -1183,17 +1330,18 @@ waypoint_t *K_GetNextWaypointToDestination(
 			getnodeconnectioncostsfunc nodecostsfunc   = K_WaypointPathfindGetNextCosts;
 			getnodeheuristicfunc       heuristicfunc   = K_WaypointPathfindGetHeuristic;
 			getnodetraversablefunc     traversablefunc = K_WaypointPathfindTraversableNoShortcuts;
+			getpathfindfinishedfunc    finishedfunc    = K_WaypointPathfindReachedEnd;
 
 			if (huntbackwards)
 			{
 				nextnodesfunc = K_WaypointPathfindGetPrev;
 				nodecostsfunc = K_WaypointPathfindGetPrevCosts;
 			}
+
 			if (useshortcuts)
 			{
 				traversablefunc = K_WaypointPathfindTraversableAllEnabled;
 			}
-
 
 			pathfindsetup.opensetcapacity    = K_GetOpensetBaseSize();
 			pathfindsetup.closedsetcapacity  = K_GetClosedsetBaseSize();
@@ -1204,6 +1352,7 @@ waypoint_t *K_GetNextWaypointToDestination(
 			pathfindsetup.getconnectioncosts = nodecostsfunc;
 			pathfindsetup.getheuristic       = heuristicfunc;
 			pathfindsetup.gettraversable     = traversablefunc;
+			pathfindsetup.getfinished        = finishedfunc;
 
 			pathfindsuccess = K_PathfindAStar(&pathtowaypoint, &pathfindsetup);
 

@@ -2126,6 +2126,15 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 {
 	char newmusic[7];
 
+	struct MusicChange hook_param = {
+		newmusic,
+		&mflags,
+		&looping,
+		&position,
+		&prefadems,
+		&fadeinms
+	};
+
 	if (S_MusicDisabled()
 		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
@@ -2133,7 +2142,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	strncpy(newmusic, mmusic, 7);
 
-	if (LUAh_MusicChange(music_name, newmusic, &mflags, &looping, &position, &prefadems, &fadeinms))
+	if (LUA_HookMusicChange(music_name, &hook_param))
 		return;
 
 	newmusic[6] = 0;
@@ -2575,9 +2584,9 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("_title"))
+		else if (S_MusicExists("menu"))
 		{
-			S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("menu", looptitle);
 		}
 	}
 	else

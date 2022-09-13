@@ -274,6 +274,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spindashspeed);
 	else if (fastcmp(field,"spindashboost"))
 		lua_pushinteger(L, plr->spindashboost);
+	else if (fastcmp(field,"fastfall"))
+		lua_pushfixed(L, plr->fastfall);
 	else if (fastcmp(field,"numboosts"))
 		lua_pushinteger(L, plr->numboosts);
 	else if (fastcmp(field,"boostpower"))
@@ -292,6 +294,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->draftleeway);
 	else if (fastcmp(field,"lastdraft"))
 		lua_pushinteger(L, plr->lastdraft);
+	else if (fastcmp(field,"tripwireState"))
+		lua_pushinteger(L, plr->tripwireState);
+	else if (fastcmp(field,"tripwirePass"))
+		lua_pushinteger(L, plr->tripwirePass);
 	else if (fastcmp(field,"tripwireLeniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"itemroulette"))
@@ -356,10 +362,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastjawztarget);
 	else if (fastcmp(field,"jawztargetdelay"))
 		lua_pushinteger(L, plr->jawztargetdelay);
-	else if (fastcmp(field,"confirmInflictor"))
-		lua_pushinteger(L, plr->confirmInflictor);
-	else if (fastcmp(field,"confirmInflictorDelay"))
-		lua_pushinteger(L, plr->confirmInflictorDelay);
+	else if (fastcmp(field,"confirmVictim"))
+		lua_pushinteger(L, plr->confirmVictim);
+	else if (fastcmp(field,"confirmVictimDelay"))
+		lua_pushinteger(L, plr->confirmVictimDelay);
 	else if (fastcmp(field,"glanceDir"))
 		lua_pushinteger(L, plr->glanceDir);
 	else if (fastcmp(field,"trickpanel"))
@@ -628,6 +634,8 @@ static int player_set(lua_State *L)
 		plr->spindashspeed = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spindashboost"))
 		plr->spindashboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"fastfall"))
+		plr->fastfall = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"numboosts"))
 		plr->numboosts = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"boostpower"))
@@ -646,6 +654,10 @@ static int player_set(lua_State *L)
 		plr->draftleeway = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastdraft"))
 		plr->lastdraft = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwireState"))
+		plr->tripwireState = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"tripwirePass"))
+		plr->tripwirePass = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireLeniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemroulette"))
@@ -710,10 +722,10 @@ static int player_set(lua_State *L)
 		plr->lastjawztarget = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"jawztargetdelay"))
 		plr->jawztargetdelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmInflictor"))
-		plr->confirmInflictor = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmInflictorDelay"))
-		plr->confirmInflictorDelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmVictim"))
+		plr->confirmVictim = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmVictimDelay"))
+		plr->confirmVictimDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"glanceDir"))
 		plr->glanceDir = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickpanel"))

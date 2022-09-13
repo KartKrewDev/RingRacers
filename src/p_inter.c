@@ -219,7 +219,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	if (special->flags & (MF_ENEMY|MF_BOSS) && special->flags2 & MF2_FRET)
 		return;
 
-	if (LUAh_TouchSpecial(special, toucher) || P_MobjWasRemoved(special))
+	if (LUA_HookTouchSpecial(special, toucher) || P_MobjWasRemoved(special))
 		return;
 
 	if ((special->flags & (MF_ENEMY|MF_BOSS)) && !(special->flags & MF_MISSILE))
@@ -786,73 +786,76 @@ void P_CheckPointLimit(void)
 // Checks whether or not to end a race netgame.
 boolean P_CheckRacers(void)
 {
-	UINT8 i;
-	UINT8 numplayersingame = 0;
-	UINT8 numexiting = 0;
-	boolean eliminatelast = cv_karteliminatelast.value;
-	boolean everyonedone = true;
-	boolean eliminatebots = false;
 	const boolean griefed = (spectateGriefed > 0);
+
+	boolean eliminateLast = cv_karteliminatelast.value;
+	boolean allHumansDone = true;
+	//boolean allBotsDone = true;
+
+	UINT8 numPlaying = 0;
+	UINT8 numExiting = 0;
+	UINT8 numHumans = 0;
+	UINT8 numBots = 0;
+
+	UINT8 i;
 
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0) // Not playing
+		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0)
 		{
 			// Y'all aren't even playing
 			continue;
 		}
 
-		numplayersingame++;
+		numPlaying++;
+
+		if (players[i].bot)
+		{
+			numBots++;
+		}
+		else
+		{
+			numHumans++;
+		}
 
 		if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
 		{
-			numexiting++;
+			numExiting++;
 		}
 		else
 		{
 			if (players[i].bot)
 			{
-				// Isn't a human, thus doesn't matter. (Sorry, robots.)
-				// Set this so that we can check for bots that need to get eliminated, though!
-				eliminatebots = true;
-				continue;
+				//allBotsDone = false;
 			}
-
-			everyonedone = false;
+			else
+			{
+				allHumansDone = false;
+			}
 		}
 	}
 
-	// If we returned here with bots left, then the last place bot may have a chance to finish the map and NOT get time over.
-	// Not that it affects anything, they didn't make the map take longer or even get any points from it. But... it's a bit inconsistent!
-	// So if there's any bots, we'll let the game skip this, continue onto calculating eliminatelast, THEN we return true anyway.
-	if (everyonedone && !eliminatebots)
-	{
-		// Everyone's finished, we're done here!
-		racecountdown = exitcountdown = 0;
-		return true;
-	}
-
-	if (numplayersingame <= 1)
+	if (numPlaying <= 1)
 	{
 		// Never do this without enough players.
-		eliminatelast = false;
+		eliminateLast = false;
 	}
 	else
 	{
-		if (grandprixinfo.gp == true)
-		{
-			// Always do this in GP
-			eliminatelast = true;
-		}
-		else if (griefed)
+		if (griefed == true)
 		{
 			// Don't do this if someone spectated
-			eliminatelast = false;
+			eliminateLast = false;
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			// Always do this in GP
+			eliminateLast = true;
 		}
 	}
 
-	if (eliminatelast == true && (numexiting >= numplayersingame-1))
+	if (eliminateLast == true && (numExiting >= numPlaying-1))
 	{
 		// Everyone's done playing but one guy apparently.
 		// Just kill everyone who is still playing.
@@ -879,9 +882,10 @@ boolean P_CheckRacers(void)
 		return true;
 	}
 
-	if (everyonedone)
+	if (numHumans > 0 && allHumansDone == true)
 	{
-		// See above: there might be bots that are still going, but all players are done, so we can exit now.
+		// There might be bots that are still going,
+		// but all of the humans are done, so we can exit now.
 		racecountdown = exitcountdown = 0;
 		return true;
 	}
@@ -889,22 +893,21 @@ boolean P_CheckRacers(void)
 	// SO, we're not done playing.
 	// Let's see if it's time to start the death counter!
 
-	if (!racecountdown)
+	if (racecountdown == 0)
 	{
 		// If the winners are all done, then start the death timer.
-		UINT8 winningpos = 1;
+		UINT8 winningPos = max(1, numPlaying / 2);
 
-		winningpos = max(1, numplayersingame/2);
-		if (numplayersingame % 2) // any remainder?
+		if (numPlaying % 2) // Any remainder? Then round up.
 		{
-			winningpos++;
+			winningPos++;
 		}
 
-		if (numexiting >= winningpos)
+		if (numExiting >= winningPos)
 		{
 			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
 
-			if (netgame)
+			if (K_CanChangeRules() == true)
 			{
 				// Custom timer
 				countdown = cv_countdowntime.value * TICRATE;
@@ -914,13 +917,14 @@ boolean P_CheckRacers(void)
 		}
 	}
 
-	// We're still playing, but no one else is, so we need to reset spectator griefing.
-	if (numplayersingame <= 1)
+	// We're still playing, but no one else is,
+	// so we need to reset spectator griefing.
+	if (numPlaying <= 1)
 	{
 		spectateGriefed = 0;
 	}
 
-	// Turns out we're still having a good time & playing the game, we didn't have to do anything :)
+	// We are still having fun and playing the game :)
 	return false;
 }
 
@@ -969,7 +973,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->shadowscale = 0;
 	}
 
-	if (LUAh_MobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
+	if (LUA_HookMobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
 	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
@@ -1015,7 +1019,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_SetTarget(&target->target->hnext, NULL);
 		}
 	}
-	//
+	// Above block does not clean up rocket sneakers when a player dies, so we need to do it here target->target is null when using rocket sneakers
+	if (target->player)
+		K_DropRocketSneaker(target->player);
 
 	// Let EVERYONE know what happened to a player! 01-29-2002 Tails
 	if (target->player && !target->player->spectator)
@@ -1855,7 +1861,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	// Everything above here can't be forced.
 	if (!metalrecording)
 	{
-		UINT8 shouldForce = LUAh_ShouldDamage(target, inflictor, source, damage, damagetype);
+		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
 		if (P_MobjWasRemoved(target))
 			return (shouldForce == 1); // mobj was removed
 		if (shouldForce == 1)
@@ -1881,7 +1887,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!force && target->flags2 & MF2_FRET) // Currently flashing from being hit
 			return false;
 
-		if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype) || P_MobjWasRemoved(target))
+		if (LUA_HookMobjDamage(target, inflictor, source, damage, damagetype) || P_MobjWasRemoved(target))
 			return true;
 
 		if (target->health > 1)
@@ -1911,7 +1917,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!P_KillPlayer(player, inflictor, source, damagetype))
 				return false;
 		}
-		else if (LUAh_MobjDamage(target, inflictor, source, damage, damagetype))
+		else if (LUA_HookMobjDamage(target, inflictor, source, damage, damagetype))
 		{
 			return true;
 		}
@@ -2010,7 +2016,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->invincibilitytimer += kinvextend;
 					}
 
-					K_PlayHitEmSound(source, target);
+					K_TryHurtSoundExchange(target, source);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
 					K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
@@ -2083,14 +2089,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->flashing = K_GetKartFlashing(player);
 			}
 
-			P_PlayRinglossSound(player->mo);
+			P_PlayRinglossSound(target);
 
 			if (ringburst > 0)
 			{
 				P_PlayerRingBurst(player, ringburst);
 			}
 
-			K_PlayPainSound(player->mo);
+			K_PlayPainSound(target, source);
 
 			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
 			{

@@ -567,7 +567,7 @@ void A_InvincSparkleRotate();
 extern boolean actionsoverridden[NUMACTIONS];
 
 // ratio of states to sprites to mobj types is roughly 6 : 1 : 1
-#define NUMMOBJFREESLOTS 512
+#define NUMMOBJFREESLOTS 1024
 #define NUMSPRITEFREESLOTS NUMMOBJFREESLOTS
 #define NUMSTATEFREESLOTS (NUMMOBJFREESLOTS*8)
 
@@ -1126,7 +1126,8 @@ typedef enum sprite
 	SPR_BEXS, // Battle Bumper Explosion: Shell
 	SPR_BDEB, // Battle Bumper Explosion: Debris
 	SPR_BEXB, // Battle Bumper Explosion: Blast
-
+	SPR_TWBS, // Tripwire Boost
+	SPR_TWBT, // Tripwire BLASTER
 	SPR_DEZL, // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4794,6 +4795,11 @@ typedef enum state
 	S_BATTLEBUMPER_EXBLAST9,
 	S_BATTLEBUMPER_EXBLAST10,
 
+	S_TRIPWIREBOOST_TOP,
+	S_TRIPWIREBOOST_BOTTOM,
+	S_TRIPWIREBOOST_BLAST_TOP,
+	S_TRIPWIREBOOST_BLAST_BOTTOM,
+
 	// DEZ Laser respawn
 	S_DEZLASER,
 	S_DEZLASER_TRAIL1,
@@ -5526,6 +5532,7 @@ extern playersprite_t free_spr2;
 typedef enum mobj_type
 {
 	MT_NULL,
+	MT_RAY, // General purpose mobj
 	MT_UNKNOWN,
 
 	MT_THOK, // Thok! mobj
@@ -6363,6 +6370,8 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER, // Battle Mode bumpers
 	MT_BATTLEBUMPER_DEBRIS,
 	MT_BATTLEBUMPER_BLAST,
+
+	MT_TRIPWIREBOOST,
 
 	MT_DEZLASER,
 

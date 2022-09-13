@@ -195,7 +195,6 @@ extern INT16 bootmap; //bootmap for loading a map on startup
 
 extern INT16 tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
-extern INT32 tutorialgcs; // which control scheme is loaded?
 
 extern boolean looptitle;
 
@@ -720,7 +719,7 @@ extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
-extern INT16 votelevels[5][2];
+extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 

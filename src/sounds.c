@@ -1110,7 +1110,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kdtrg3", false,  64, 80, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // High energy, SF_X2AWAYSOUND|SF_X8AWAYSOUND
 
     // SRB2kart - Grow/invinc clash
-  {"parry", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+  {"parry",  false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+
+  {"ffbonc", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // Shout message sound effect
   {"sysmsg", false,  60,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},

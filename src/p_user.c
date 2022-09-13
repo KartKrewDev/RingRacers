@@ -183,7 +183,7 @@ fixed_t P_ReturnThrustY(mobj_t *mo, angle_t angle, fixed_t move)
 boolean P_AutoPause(void)
 {
 	// Don't pause even on menu-up or focus-lost in netgames or record attack
-	if (netgame || modeattacking || gamestate == GS_TITLESCREEN)
+	if (netgame || modeattacking || gamestate == GS_TITLESCREEN || gamestate == GS_MENU || con_startup)
 		return false;
 
 	return ((menuactive && !demo.playback) || ( window_notinfocus && cv_pauseifunfocused.value ));
@@ -473,6 +473,7 @@ void P_ResetPlayer(player_t *player)
 	//player->drift = player->driftcharge = 0;
 	player->trickpanel = 0;
 	player->glanceDir = 0;
+	player->fastfall = 0;
 }
 
 //
@@ -664,7 +665,7 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 				break;
 
 			case JT_OTHER:  // Other state
-				result = LUAh_ShouldJingleContinue(&players[i], musname);
+				result = LUA_HookShouldJingleContinue(&players[i], musname);
 				break;
 
 			case JT_NONE:   // Null state
@@ -1099,7 +1100,7 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 		return false;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	for (i = 0; i <= splitscreen; i++)
 	{
 		if (player == &players[g_localplayers[i]])
 			return true;
@@ -1905,17 +1906,27 @@ static void P_3dMovement(player_t *player)
 	}
 
 	if ((totalthrust.x || totalthrust.y)
-		&& player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && abs(player->mo->standingslope->zdelta) > FRACUNIT/2) {
+		&& player->mo->standingslope != NULL
+		&& (!(player->mo->standingslope->flags & SL_NOPHYSICS))
+		&& abs(player->mo->standingslope->zdelta) > FRACUNIT/2)
+	{
 		// Factor thrust to slope, but only for the part pushing up it!
 		// The rest is unaffected.
-		angle_t thrustangle = R_PointToAngle2(0, 0, totalthrust.x, totalthrust.y)-player->mo->standingslope->xydirection;
+		angle_t thrustangle = R_PointToAngle2(0, 0, totalthrust.x, totalthrust.y) - player->mo->standingslope->xydirection;
 
-		if (player->mo->standingslope->zdelta < 0) { // Direction goes down, so thrustangle needs to face toward
-			if (thrustangle < ANGLE_90 || thrustangle > ANGLE_270) {
+		if (player->mo->standingslope->zdelta < 0)
+		{
+			// Direction goes down, so thrustangle needs to face toward
+			if (thrustangle < ANGLE_90 || thrustangle > ANGLE_270)
+			{
 				P_QuantizeMomentumToSlope(&totalthrust, player->mo->standingslope);
 			}
-		} else { // Direction goes up, so thrustangle needs to face away
-			if (thrustangle > ANGLE_90 && thrustangle < ANGLE_270) {
+		}
+		else
+		{
+			// Direction goes up, so thrustangle needs to face away
+			if (thrustangle > ANGLE_90 && thrustangle < ANGLE_270)
+			{
 				P_QuantizeMomentumToSlope(&totalthrust, player->mo->standingslope);
 			}
 		}
@@ -2727,17 +2738,17 @@ static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, 
 static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
 
 consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_dist", "160", CV_FLOAT|CV_SAVE, NULL, NULL)
+	CVAR_INIT ("cam_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_height", "50", CV_FLOAT|CV_SAVE, NULL, NULL)
+	CVAR_INIT ("cam_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_still[MAXSPLITSCREENPLAYERS] = {
@@ -2786,12 +2797,14 @@ void P_InitCameraCmd(void)
 
 static ticcmd_t *P_CameraCmd(camera_t *cam)
 {
+	/*
 	INT32 forward, axis; //i
 	// these ones used for multiple conditions
 	boolean turnleft, turnright, mouseaiming;
 	boolean invertmouse, lookaxis, usejoystick, kbl;
 	INT32 player_invert;
 	INT32 screen_invert;
+	*/
 	ticcmd_t *cmd = &cameracmd;
 
 	(void)cam;
@@ -2799,6 +2812,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (!demo.playback)
 		return cmd;	// empty cmd, no.
 
+	/*
 	kbl = democam.keyboardlook;
 
 	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
@@ -2843,7 +2857,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
 
 	axis = PlayerJoyAxis(1, AXISMOVE);
-	if (PlayerInputDown(1, gc_accelerate) || (usejoystick && axis > 0))
+	if (PlayerInputDown(1, gc_a) || (usejoystick && axis > 0))
 		cmd->buttons |= BT_ACCELERATE;
 	axis = PlayerJoyAxis(1, AXISBRAKE);
 	if (PlayerInputDown(1, gc_brake) || (usejoystick && axis > 0))
@@ -2889,8 +2903,6 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 	if (PlayerInputDown(1, gc_centerview)) // No need to put a spectator limit on this one though :V
 		cmd->aiming = 0;
 
-	mousex = mousey = mlooky = 0;
-
 	cmd->forwardmove += (SINT8)forward;
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -2904,6 +2916,7 @@ static ticcmd_t *P_CameraCmd(camera_t *cam)
 		cmd->turning = -KART_FULLTURN;
 
 	democam.keyboardlook = kbl;
+	*/
 
 	return cmd;
 }
@@ -3671,7 +3684,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else
 			changeto = (P_RandomFixed() & 1) + 1;
 
-		if (!LUAh_TeamSwitch(player, changeto, true, false, false))
+		if (!LUA_HookTeamSwitch(player, changeto, true, false, false))
 			return false;
 	}
 
@@ -3697,7 +3710,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		{
 			if (localplayertable[i] == (player-players))
 			{
-				LUAh_ViewpointSwitch(player, player, true);
+				LUA_HookViewpointSwitch(player, player, true);
 				displayplayers[i] = (player-players);
 				break;
 			}
@@ -4207,7 +4220,7 @@ void P_PlayerThink(player_t *player)
 
 				if (player->playerstate == PST_DEAD)
 				{
-					LUAh_PlayerThink(player);
+					LUA_HookPlayer(player, HOOK(PlayerThink));
 					return;
 				}
 			}
@@ -4256,7 +4269,7 @@ void P_PlayerThink(player_t *player)
 		else
 			player->mo->renderflags &= ~RF_GHOSTLYMASK;
 		P_DeathThink(player);
-		LUAh_PlayerThink(player);
+		LUA_HookPlayer(player, HOOK(PlayerThink));
 		return;
 	}
 
@@ -4461,7 +4474,7 @@ void P_PlayerThink(player_t *player)
 	if (player->carry == CR_SLIDING)
 		player->carry = CR_NONE;
 
-	LUAh_PlayerThink(player);
+	LUA_HookPlayer(player, HOOK(PlayerThink));
 }
 
 //
@@ -4568,7 +4581,7 @@ void P_PlayerAfterThink(player_t *player)
 
 		if (player->followmobj)
 		{
-			if (LUAh_FollowMobj(player, player->followmobj) || P_MobjWasRemoved(player->followmobj))
+			if (LUA_HookFollowMobj(player, player->followmobj) || P_MobjWasRemoved(player->followmobj))
 				{;}
 			else
 			{

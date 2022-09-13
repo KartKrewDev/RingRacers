@@ -23,6 +23,19 @@ extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS];
+
+// current profile loaded.
+// Used to know how to make the options menu behave among other things.
+extern consvar_t cv_currprofile;
+
+// This is used to save the last profile you used on the title screen.
+// that way you can mash n all...
+extern consvar_t cv_ttlprofilen;
+
+// CVar that allows starting as many splitscreens as you want with one device
+// Intended for use with testing
+extern consvar_t cv_splitdevice;
 
 // preferred number of players
 extern consvar_t cv_splitplayers;
@@ -56,7 +69,7 @@ extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
@@ -77,6 +90,7 @@ extern consvar_t cv_kartfrantic;
 extern consvar_t cv_kartcomeback;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
+extern consvar_t cv_kartgametypepreference;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
 extern consvar_t cv_kartbot;
@@ -85,7 +99,7 @@ extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 

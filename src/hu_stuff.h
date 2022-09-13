@@ -32,6 +32,11 @@
 #define KART_FONTEND 'Z'
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
+
+#define AZ_FONTSTART 'A' // the first font character
+#define AZ_FONTEND 'Z'
+
+#define AZ_FONTSIZE (AZ_FONTEND - AZ_FONTSTART + 1)
 //
 
 // Level title font
@@ -49,7 +54,7 @@ enum
 {
 	X        (HU),
 	X      (TINY),
-	X      (KART),
+	X      (FILE),
 
 	X        (LT),
 	X      (CRED),
@@ -60,6 +65,12 @@ enum
 	X   (TALLNUM),
 	X (NIGHTSNUM),
 	X   (PINGNUM),
+	X	(PROFNUM),
+
+	X      (KART),
+	X        (GM),
+	X      (LSHI),
+	X     (LSLOW),
 };
 #undef  X
 

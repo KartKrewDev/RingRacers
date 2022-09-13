@@ -82,6 +82,8 @@ fixed_t P_GetFFloorBottomZAt(const ffloor_t *ffloor, fixed_t x, fixed_t y);
 fixed_t P_GetLightZAt(const lightlist_t *light, fixed_t x, fixed_t y);
 
 // Lots of physics-based bullshit
+boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope);
+boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope);
 void P_QuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope);
 void P_ReverseQuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope);
 void P_SlopeLaunch(mobj_t *mo);
