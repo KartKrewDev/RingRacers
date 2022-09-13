@@ -2582,6 +2582,8 @@ INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *color
 	} while (num);
 
 	return x;
+}
+
 void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
 {
 	x -= V_KartStringWidth(string, option)/2;
@@ -2703,28 +2705,6 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num)
 		V_DrawScaledPatch(x, y, flags, fontv[PROFNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (--digits);
-}
-
-// Draws a number using the PING font thingy.
-// TODO: Merge number drawing functions into one with "font name" selection.
-
-void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
-{
-	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
-
-	if (flags & V_NOSCALESTART)
-		w *= vid.dupx;
-
-	if (num < 0)
-		num = -num;
-
-	// draw the number
-	do
-	{
-		x -= (w-1);	// Oni wanted their outline to intersect.
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
-		num /= 10;
-	} while (num);
 }
 
 // Find max height of the string

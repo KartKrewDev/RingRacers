@@ -884,13 +884,6 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
-	//if (intertype == int_race || intertype == int_battle)
-	{
-		//bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
-		usetile = useinterpic = false;
-		usebuffer = true;
-	}
-
 	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);

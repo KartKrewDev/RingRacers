@@ -3076,7 +3076,7 @@ static void Command_RandomMap(void)
 	}
 	else
 	{
-		newgametype = cv_newgametype.value;
+		newgametype = cv_dummygametype.value; // Changed from cv_newgametype to match newmenus
 		newencoremode = false;
 		newresetplayers = true;
 		oldmapnum = -1;

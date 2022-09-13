@@ -1285,7 +1285,6 @@ static void weaponPrefChange4(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i, j;
 	boolean doAutomate = false;
 	INT32 i;
 
