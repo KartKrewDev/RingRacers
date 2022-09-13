@@ -1813,7 +1813,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);
 	menumessage.flags = itemtype;
 	*(void**)&menumessage.routine = routine;
-	menumessage.fadetimer = 1;
+	menumessage.fadetimer = (gamestate == GS_WAITINGPLAYERS) ? 9 : 1;
 	menumessage.active = true;
 
 	start = 0;

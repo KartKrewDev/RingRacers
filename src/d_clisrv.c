@@ -1484,39 +1484,36 @@ void CL_UpdateServerList (void)
 
 #endif // ifndef NONET
 
-static void M_ConfirmConnect(event_t *ev)
+static void M_ConfirmConnect(void)
 {
 #ifndef NONET
-	if (ev->type == ev_keydown)
+	if (G_PlayerInputDown(0, gc_a, 1) || gamekeydown[0][KEY_ENTER])
 	{
-		if (G_PlayerInputDown(0, gc_a, 1) || gamekeydown[0][KEY_ENTER])
+		if (totalfilesrequestednum > 0)
 		{
-			if (totalfilesrequestednum > 0)
+#ifdef HAVE_CURL
+			if (http_source[0] == '\0' || curl_failedwebdownload)
+#endif
 			{
-#ifdef HAVE_CURL
-				if (http_source[0] == '\0' || curl_failedwebdownload)
-#endif
+				if (CL_SendFileRequest())
 				{
-					if (CL_SendFileRequest())
-					{
-						cl_mode = CL_DOWNLOADFILES;
-					}
+					cl_mode = CL_DOWNLOADFILES;
 				}
-#ifdef HAVE_CURL
-				else
-					cl_mode = CL_PREPAREHTTPFILES;
-#endif
 			}
+#ifdef HAVE_CURL
 			else
-				cl_mode = CL_LOADFILES;
+				cl_mode = CL_PREPAREHTTPFILES;
+#endif
+		}
+		else
+			cl_mode = CL_LOADFILES;
 
-			M_ClearMenus(true);
-		}
-		else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || gamekeydown[0][KEY_ESCAPE])
-		{
-			cl_mode = CL_ABORTED;
-			M_ClearMenus(true);
-		}
+		M_ClearMenus(true);
+	}
+	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || gamekeydown[0][KEY_ESCAPE])
+	{
+		cl_mode = CL_ABORTED;
+		M_ClearMenus(true);
 	}
 #else
 	(void)ev;
@@ -1570,8 +1567,8 @@ static boolean CL_FinishedFileList(void)
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
 				"\n"
-				"Press (A) to continue or (B) to cancel.\n\n"
-			), FUNCPTRCAST (M_ConfirmConnect), MM_EVENTHANDLER);
+				"Press (A) to continue or (B) to cancel\n"
+			), NULL, MM_NOTHING);
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1633,18 +1630,21 @@ static boolean CL_FinishedFileList(void)
 			if (serverisfull)
 				M_StartMessage(va(M_GetText(
 					"This server is full!\n"
-					"Download of %s additional content is required to join.\n"
+					"Download of %s additional content\n"
+					"is required to join.\n"
 					"\n"
-					"You may download, load server addons, and wait for a slot.\n"
+					"You may download, load server addons,\n"
+					"and wait for a slot.\n"
 					"\n"
-					"Press (A) to continue or (B) to cancel.\n\n"
-				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
+					"Press (A) to continue or (B) to cancel\n"
+				), downloadsize), NULL, MM_NOTHING);
 			else
 				M_StartMessage(va(M_GetText(
-					"Download of %s additional content is required to join.\n"
+					"Download of %s additional content\n"
+					"is required to join.\n"
 					"\n"
-					"Press (A) to continue or (B) to cancel.\n\n"
-				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
+					"Press (A) to continue or (B) to cancel\n"
+				), downloadsize), NULL, MM_NOTHING);
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1919,19 +1919,24 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 		memset(deviceResponding, false, sizeof (deviceResponding));
 
-		if (cl_mode == CL_CONFIRMCONNECT)
-		{
-			D_ProcessEvents(); //needed for menu system to receive inputs
-		}
-		else if (netgame)
+		if (netgame)
 		{
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+			{
 				G_MapEventsToControls(&events[eventtail]);
+			}
 
-			if (G_PlayerInputDown(0, gc_b, 1)
-				|| G_PlayerInputDown(0, gc_x, 1)
-				|| gamekeydown[0][KEY_ESCAPE])
-				cl_mode = CL_ABORTED;
+			if (cl_mode == CL_CONFIRMCONNECT)
+			{
+				M_ConfirmConnect();
+			}
+			else
+			{
+				if (G_PlayerInputDown(0, gc_b, 1)
+					|| G_PlayerInputDown(0, gc_x, 1)
+					|| gamekeydown[0][KEY_ESCAPE])
+					cl_mode = CL_ABORTED;
+			}
 		}
 
 		if (cl_mode == CL_ABORTED)
@@ -1962,13 +1967,17 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				M_DrawEggaChannel();
 			}
 			CL_DrawConnectionStatus();
+
+			if (cl_mode == CL_CONFIRMCONNECT)
+			{
 #ifdef HAVE_THREADS
-			I_lock_mutex(&k_menu_mutex);
+				I_lock_mutex(&k_menu_mutex);
 #endif
-			M_Drawer(); //Needed for drawing messageboxes on the connection screen
+				M_DrawMenuMessage();
 #ifdef HAVE_THREADS
-			I_unlock_mutex(k_menu_mutex);
+				I_unlock_mutex(k_menu_mutex);
 #endif
+			}
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)
 				M_SaveFrame();

@@ -561,6 +561,7 @@ void M_Init(void);
 extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
+void M_DrawMenuMessage(void);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
