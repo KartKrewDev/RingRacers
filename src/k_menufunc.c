@@ -925,11 +925,6 @@ void M_StartControlPanel(void)
 		menucmd[i].delay = MENUDELAYTIME;
 	}
 
-	// No instantly skipping the titlescreen.
-	// (We can change this timer later when extra animation is added.)
-	if (gamestate == GS_TITLESCREEN && finalecount < 1)
-		return;
-
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -939,6 +934,11 @@ void M_StartControlPanel(void)
 
 	if (gamestate == GS_TITLESCREEN) // Set up menu state
 	{
+		// No instantly skipping the titlescreen.
+		// (We can change this timer later when extra animation is added.)
+		if (finalecount < 1)
+			return;
+
 		G_SetGamestate(GS_MENU);
 
 		gameaction = ga_nothing;
