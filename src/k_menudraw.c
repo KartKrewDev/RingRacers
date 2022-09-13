@@ -2270,7 +2270,7 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-static void M_DrawEggaChannel(void)
+void M_DrawEggaChannel(void)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 

@@ -904,6 +904,8 @@ void M_HandleVideoModes(INT32 ch);
 // data stuff
 void M_HandleProfileErase(INT32 choice);
 
+// Draws the EGGA CHANNEL background.
+void M_DrawEggaChannel(void);
 
 // Extras menu:
 #define DF_ENCORE       0x40
