@@ -2031,9 +2031,8 @@ static void CL_ConnectToServer(void)
 		Y_EndVote();
 
 	DEBFILE(va("waiting %d nodes\n", doomcom->numnodes));
+	M_ClearMenus(true);
 	G_SetGamestate(GS_WAITINGPLAYERS);
-	if (wipegamestate == GS_MENU)
-		M_ClearMenus(true);
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
@@ -2347,7 +2346,6 @@ static void Command_connect(void)
 		SplitScreen_OnChange();
 	}
 
-	M_ClearMenus(true);
 	CL_ConnectToServer();
 }
 #endif

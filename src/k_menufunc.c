@@ -3844,7 +3844,6 @@ void M_JoinIP(const char *ipa)
 	}
 
 	COM_BufAddText(va("connect \"%s\"\n", ipa));
-	M_ClearMenus(true);
 
 	// A little "please wait" message.
 	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
