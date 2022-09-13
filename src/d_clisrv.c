@@ -1351,7 +1351,7 @@ static void SendAskInfo(INT32 node)
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
 	{
-		I_NetRequestHolePunch();
+		I_NetRequestHolePunch(node);
 	}
 
 	asktime = I_GetTime();
