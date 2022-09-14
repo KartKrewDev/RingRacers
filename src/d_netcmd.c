@@ -604,7 +604,7 @@ const char *automate_names[AEV__MAX] =
 	"VoteStart" // AEV_VOTESTART
 };
 
-static UINT32 livestudioaudience_timer = 90;
+UINT32 livestudioaudience_timer = 90;
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =

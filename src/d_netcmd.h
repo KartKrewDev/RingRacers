@@ -276,6 +276,7 @@ void Automate_Run(automateEvents_t type);
 void Automate_Set(automateEvents_t type, const char *command);
 void Automate_Clear(void);
 
+extern UINT32 livestudioaudience_timer;
 void LiveStudioAudience(void);
 
 // used for the player setup menu
