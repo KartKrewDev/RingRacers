@@ -5531,7 +5531,7 @@ boolean TryRunTics(tic_t realtics)
 				ps_tictime = I_GetPreciseTime();
 
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
-				if (gametic % TICRATE == 0)
+				if (Playing() && (gametic % TICRATE == 0))
 				{
 					Schedule_Run();
 
