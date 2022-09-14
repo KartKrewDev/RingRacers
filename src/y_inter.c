@@ -884,6 +884,7 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
+	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
 
@@ -1543,6 +1544,7 @@ void Y_StartVote(void)
 	}
 
 	voteclient.loaded = true;
+	Automate_Run(AEV_VOTESTART);
 }
 
 //

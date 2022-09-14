@@ -1114,6 +1114,9 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"ffbonc", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Shout message sound effect
+  {"sysmsg", false,  60,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
