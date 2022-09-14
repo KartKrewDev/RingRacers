@@ -1176,10 +1176,11 @@ typedef enum
 	// SRB2Kart - Powerup clash SFX
 	sfx_parry,
 
-	// Shout message sound effect
-	sfx_sysmsg,
 	// Fast fall bounce
 	sfx_ffbonc,
+
+	// Shout message sound effect
+	sfx_sysmsg,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
