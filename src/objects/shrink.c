@@ -445,7 +445,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		}
 		else
 		{
-			victim->player->growshrinktimer += 5*TICRATE;
+			victim->player->growshrinktimer += 3*TICRATE;
 			S_StartSound(victim, sfx_kc5a);
 
 			if (prevTimer <= 0)
