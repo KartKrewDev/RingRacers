@@ -2284,6 +2284,57 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
 
+static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
+{
+	const boolean shrink = (timer < 0);
+	const INT32 maxTime = (10*TICRATE);
+	INT32 spawnFreq = 1;
+
+	mobj_t *particle = NULL;
+	fixed_t particleSpeed = 0;
+
+	spawnFreq = (maxTime - min(maxTime, abs(timer))) / TICRATE / 2;
+	if (spawnFreq == 0)
+	{
+		spawnFreq++;
+	}
+
+	if (leveltime % spawnFreq != 0)
+	{
+		return;
+	}
+
+	particle = P_SpawnMobjFromMobj(
+		mo,
+		P_RandomRange(-32, 32) * FRACUNIT,
+		P_RandomRange(-32, 32) * FRACUNIT,
+		(shrink ? P_RandomRange(24, 48) : P_RandomRange(0, 24)) * FRACUNIT,
+		MT_GROW_PARTICLE
+	);
+
+	P_SetTarget(&particle->target, mo);
+
+	particle->momx = mo->momx;
+	particle->momy = mo->momy;
+	particle->momz = P_GetMobjZMovement(mo);
+
+	K_MatchGenericExtraFlags(particle, mo);
+
+	particleSpeed = particle->scale * 4 * P_MobjFlip(mo);
+
+	if (shrink == true)
+	{
+		particle->color = SKINCOLOR_KETCHUP;
+		particle->momz -= particleSpeed;
+		particle->renderflags |= RF_VERTICALFLIP;
+	}
+	else
+	{
+		particle->color = SKINCOLOR_SAPPHIRE;
+		particle->momz += particleSpeed;
+	}
+}
+
 void K_SpawnBumpEffect(mobj_t *mo)
 {
 	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -7323,6 +7374,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 						S_StartSound(player->mo, sfx_s265);*/
 				}
 			}
+		}
+
+		if (player->growshrinktimer != 0)
+		{
+			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
 		}
 
 		if (gametype == GT_RACE && player->rings <= 0) // spawn ring debt indicator
