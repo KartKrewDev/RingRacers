@@ -1107,6 +1107,10 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	{
 		terrain->trickPanel = (UINT8)get_number(val); // trick panel strength enum?
 	}
+	else if (stricmp(param, "floorClip") == 0)
+	{
+		terrain->floorClip = FLOAT_TO_FIXED(atof(val));
+	}
 	else if (stricmp(param, "liquid") == 0)
 	{
 		K_FlagBoolean(&terrain->flags, TRF_LIQUID, val);

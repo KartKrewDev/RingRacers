@@ -90,6 +90,7 @@ typedef struct terrain_s
 	UINT8 offroad;			// The default offroad level of this texture.
 	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
 	UINT8 trickPanel;		// Trick panel strength
+	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;
 
