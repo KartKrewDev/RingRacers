@@ -5534,6 +5534,11 @@ boolean TryRunTics(tic_t realtics)
 				if (gametic % TICRATE == 0)
 				{
 					Schedule_Run();
+
+					if (cv_livestudioaudience.value)
+					{
+						LiveStudioAudience();
+					}
 				}
 
 				ExtraDataTicker();

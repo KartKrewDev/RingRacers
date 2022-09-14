@@ -131,6 +131,8 @@ extern consvar_t cv_director;
 
 extern consvar_t cv_schedule;
 
+extern consvar_t cv_livestudioaudience;
+
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
 extern char timedemo_csv_id[256];
@@ -273,6 +275,8 @@ typedef enum
 void Automate_Run(automateEvents_t type);
 void Automate_Set(automateEvents_t type, const char *command);
 void Automate_Clear(void);
+
+void LiveStudioAudience(void);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

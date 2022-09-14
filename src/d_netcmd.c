@@ -151,6 +151,7 @@ static void KartComeback_OnChange(void);
 static void KartEliminateLast_OnChange(void);
 
 static void Schedule_OnChange(void);
+static void LiveStudioAudience_OnChange(void);
 
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
@@ -567,6 +568,12 @@ consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff
 
 consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
 
+#ifdef DEVELOP
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "On", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#else
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "Off", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#endif
+
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -596,6 +603,8 @@ const char *automate_names[AEV__MAX] =
 	"IntermissionStart", // AEV_INTERMISSIONSTART
 	"VoteStart" // AEV_VOTESTART
 };
+
+static UINT32 livestudioaudience_timer = 90;
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -828,6 +837,7 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_schedule);
 	CV_RegisterVar(&cv_automate);
+	CV_RegisterVar(&cv_livestudioaudience);
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -4135,6 +4145,19 @@ void Automate_Clear(void)
 	}
 }
 
+void LiveStudioAudience(void)
+{
+	if (livestudioaudience_timer == 0)
+	{
+		S_StartSound(NULL, sfx_mbv91);
+		livestudioaudience_timer = 90;
+	}
+	else
+	{
+		livestudioaudience_timer--;
+	}
+}
+
 static void Command_MotD_f(void)
 {
 	size_t i, j;
@@ -6455,6 +6478,11 @@ static void Schedule_OnChange(void)
 		scheduleTask_t *task = schedule[i];
 		task->timer = task->basetime;
 	}
+}
+
+static void LiveStudioAudience_OnChange(void)
+{
+	livestudioaudience_timer = 90;
 }
 
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
