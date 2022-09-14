@@ -64,8 +64,11 @@
 #define HU_INPUTX 0
 #define HU_INPUTY 0
 
-#define HU_SERVER_SAY 1 // Server message (dedicated).
-#define HU_CSAY       2 // Server CECHOes to everyone.
+typedef enum
+{
+	HU_SHOUT		= 1,		// Shout message
+	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+} sayflags_t;
 
 //-------------------------------------------
 //              heads up font
@@ -75,6 +78,7 @@
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
+patch_t *pingmeasure[2]; // ping measurement graphic
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -168,6 +172,7 @@ static void Command_Say_f(void);
 static void Command_Sayto_f(void);
 static void Command_Sayteam_f(void);
 static void Command_CSay_f(void);
+static void Command_Shout(void);
 static void Got_Saycmd(UINT8 **p, INT32 playernum);
 #endif
 
@@ -189,6 +194,9 @@ void HU_LoadGraphics(void)
 		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
 
+	HU_UpdatePatch(&pingmeasure[0], "PINGD");
+	HU_UpdatePatch(&pingmeasure[1], "PINGMS");
+
 	// fps stuff
 	HU_UpdatePatch(&framecounter, "FRAMER");
 	HU_UpdatePatch(&frameslash, "FRAMESL");
@@ -206,6 +214,7 @@ void HU_Init(void)
 	COM_AddCommand("sayto", Command_Sayto_f);
 	COM_AddCommand("sayteam", Command_Sayteam_f);
 	COM_AddCommand("csay", Command_CSay_f);
+	COM_AddCommand("shout", Command_Shout);
 	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 #endif
 
@@ -470,7 +479,7 @@ void HU_AddChatText(const char *text, boolean playsound)
   * to -32 to say to everyone on that player's team. Note: This means you
   * have to add 1 to the player number, since they are 0 to 31 internally.
   *
-  * The flag HU_SERVER_SAY will be set if it is the dedicated server speaking.
+  * The flag HU_SHOUT will be set if it is the dedicated server speaking.
   *
   * This function obtains the message using COM_Argc() and COM_Argv().
   *
@@ -497,14 +506,17 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 		return;
 	}
 
-	// Only servers/admins can CSAY.
-	if(!server && !(IsPlayerAdmin(consoleplayer)))
-		flags &= ~HU_CSAY;
+	// Only servers/admins can shout or CSAY.
+	if (!server && !IsPlayerAdmin(consoleplayer))
+	{
+		flags &= ~(HU_SHOUT|HU_CSAY);
+	}
 
-	// We handle HU_SERVER_SAY, not the caller.
-	flags &= ~HU_SERVER_SAY;
-	if(dedicated && !(flags & HU_CSAY))
-		flags |= HU_SERVER_SAY;
+	// Enforce shout for the dedicated server.
+	if (dedicated && !(flags & HU_CSAY))
+	{
+		flags |= HU_SHOUT;
+	}
 
 	buf[0] = target;
 	buf[1] = flags;
@@ -578,6 +590,8 @@ static void Command_Say_f(void)
 		return;
 	}
 
+	// Autoshout is handled by HU_queueChatChar.
+	// If you're using the say command, you can use the shout command, lol.
 	DoSayCommand(0, 1, 0);
 }
 
@@ -641,7 +655,7 @@ static void Command_CSay_f(void)
 		return;
 	}
 
-	if(!server && !IsPlayerAdmin(consoleplayer))
+	if (!server && !IsPlayerAdmin(consoleplayer))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Only servers and admins can use csay.\n"));
 		return;
@@ -649,6 +663,24 @@ static void Command_CSay_f(void)
 
 	DoSayCommand(0, 1, HU_CSAY);
 }
+
+static void Command_Shout(void)
+{
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(M_GetText("shout <message>: send a message with special alert sound, name, and color\n"));
+		return;
+	}
+
+	if (!server && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Only servers and admins can use shout.\n"));
+		return;
+	}
+
+	DoSayCommand(0, 1, HU_SHOUT);
+}
+
 static tic_t stop_spamming[MAXPLAYERS];
 
 /** Receives a message, processing an ::XD_SAY command.
@@ -672,7 +704,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	msg = (char *)*p;
 	SKIPSTRING(*p);
 
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
+	if ((cv_mute.value || flags & (HU_CSAY|HU_SHOUT)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
 	{
 		CONS_Alert(CONS_WARNING, cv_mute.value ?
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
@@ -701,7 +733,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
 
 	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
-	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & HU_CSAY))
+	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & (HU_CSAY|HU_SHOUT)))
 	{
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
 		stop_spamming[playernum] = 4;
@@ -734,8 +766,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		action = true;
 	}
 
-	if (flags & HU_SERVER_SAY)
-		dispname = "SERVER";
+	if (flags & HU_SHOUT)
+		dispname = cv_shoutname.zstring;
 	else
 		dispname = player_names[playernum];
 
@@ -761,7 +793,30 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		char *tempchar = NULL;
 		char color_prefix[2];
 
-		if (players[playernum].spectator)
+		if (flags & HU_SHOUT)
+		{
+			if (cv_shoutcolor.value == -1)
+			{
+				UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
+
+				if (chatcolor > V_TANMAP)
+				{
+					sprintf(color_prefix, "%c", '\x80');
+				}
+				else
+				{
+					sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+				}
+			}
+			else
+			{
+				sprintf(color_prefix, "%c", '\x80' + cv_shoutcolor.value);
+			}
+
+			// Colorize full text
+			cstart = textcolor = color_prefix;
+		}
+		else if (players[playernum].spectator)
 		{
 			// grey text
 			cstart = textcolor = "\x86";
@@ -848,7 +903,10 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			fmt2 = "%s<%s%s>\x80%s %s%s";
 		}*/
 
-		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), cv_chatnotifications.value); // add to chat
+		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), (cv_chatnotifications.value) && !(flags & HU_SHOUT)); // add to chat
+
+		if ((cv_chatnotifications.value) && (flags & HU_SHOUT))
+			S_StartSound(NULL, sfx_sysmsg);
 
 		if (tempchar)
 			Z_Free(tempchar);
@@ -1172,7 +1230,7 @@ static void HU_queueChatChar(INT32 c)
 			else
 				buf[0] = target;
 
-			buf[1] = 0; // flags
+			buf[1] = ((server || IsPlayerAdmin(consoleplayer)) && cv_autoshout.value) ? HU_SHOUT : 0; // flags
 			SendNetXCmd(XD_SAY, buf, 2 + strlen(&buf[2]) + 1);
 		}
 		return;
@@ -2274,15 +2332,15 @@ void HU_Erase(void)
 //======================================================================
 
 static int
-Ping_gfx_num (int ping)
+Ping_gfx_num (int lag)
 {
-	if (ping < 76)
+	if (lag < 2)
 		return 0;
-	else if (ping < 137)
+	else if (lag < 4)
 		return 1;
-	else if (ping < 256)
+	else if (lag < 7)
 		return 2;
-	else if (ping < 500)
+	else if (lag < 10)
 		return 3;
 	else
 		return 4;
@@ -2291,22 +2349,37 @@ Ping_gfx_num (int ping)
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
+void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags)
 {
-	INT32 gfxnum;	// gfx to draw
-	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+	UINT8 *colormap = NULL;
+	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
+	INT32 gfxnum; // gfx to draw
 
-	gfxnum = Ping_gfx_num(ping);
+	gfxnum = Ping_gfx_num(lag);
 
-	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
-	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
-		V_DrawPingNum(x, y+9, flags, ping, colormap);
-	else
-		V_DrawPingNum(x, y+9, flags, ping, NULL);
+	if (measureid == 1)
+		V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+
+	if (servermaxping && lag > servermaxping && hu_tick < 4)
+	{
+		// flash ping red if too high
+		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+	}
+
+	if (cv_pingmeasurement.value)
+	{
+		lag = (INT32)(lag * (1000.00f / TICRATE));
+	}
+
+	x = V_DrawPingNum(x + (measureid == 1 ? 11 - pingmeasure[measureid]->width : 10), y+9, flags, lag, colormap);
+
+	if (measureid == 0)
+		V_DrawScaledPatch(x+1 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
 }
 
 void
-HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 {
 	patch_t *patch;
 	INT32 w = BASEVIDWIDTH;
@@ -2316,7 +2389,7 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 		w /= 2;
 	}
 
-	patch = mping[Ping_gfx_num(ping)];
+	patch = mping[Ping_gfx_num(lag)];
 
 	if (( flags & V_SNAPTORIGHT ))
 		x += ( w - SHORT (patch->width) );

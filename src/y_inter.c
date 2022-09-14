@@ -592,7 +592,7 @@ skiptallydrawer:
 			switch (demo.savemode)
 			{
 				case DSM_NOTSAVING:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B): Save replay");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B) or (X): Save replay");
 					break;
 
 				case DSM_SAVED:
@@ -633,7 +633,7 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && G_PlayerInputDown(0, gc_y, 0))
+		if (demo.savemode == DSM_NOTSAVING && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
 			demo.savemode = DSM_TITLEENTRY;
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
@@ -884,6 +884,7 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
+	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
 
@@ -1543,6 +1544,7 @@ void Y_StartVote(void)
 	}
 
 	voteclient.loaded = true;
+	Automate_Run(AEV_VOTESTART);
 }
 
 //
