@@ -490,7 +490,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 
 			if (prevTimer >= 0)
 			{
-				K_DropItems(victim->player);
+				//K_DropItems(victim->player);
 
 				victim->scalespeed = mapobjectscale/TICRATE;
 				victim->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
