@@ -527,14 +527,22 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 {
 	const UINT8 numParticles = s->numParticles;
 	const angle_t particleSpread = ANGLE_MAX / numParticles;
+
+	fixed_t momH = INT32_MAX;
+	fixed_t momV = INT32_MAX;
+
 	size_t i;
+
+	momH = FixedMul(impact, s->pushH);
+	momV = FixedMul(impact, s->pushV);
 
 	for (i = 0; i < numParticles; i++)
 	{
 		mobj_t *dust = NULL;
 		angle_t pushAngle = (particleSpread * i);
-		fixed_t momH = INT32_MAX;
-		fixed_t momV = INT32_MAX;
+		
+		fixed_t xOff = 0;
+		fixed_t yOff = 0;
 
 		if (numParticles == 1)
 		{
@@ -542,11 +550,23 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 			pushAngle = P_RandomRange(0, ANGLE_MAX);
 		}
 
+		if (s->spread > 0)
+		{
+			xOff = P_RandomRange(-s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
+			yOff = P_RandomRange(-s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
+		}
+
+		if (s->cone > 0)
+		{
+			pushAngle += P_RandomRange(-s->cone / ANG1, s->cone / ANG1) * ANG1;
+		}
+
 		dust = P_SpawnMobjFromMobj(
 			mo,
-			(12 * FINECOSINE(pushAngle >> ANGLETOFINESHIFT)),
-			(12 * FINESINE(pushAngle >> ANGLETOFINESHIFT)),
-			0, s->mobjType
+			xOff + (12 * FINECOSINE(pushAngle >> ANGLETOFINESHIFT)),
+			yOff + (12 * FINESINE(pushAngle >> ANGLETOFINESHIFT)),
+			0, //P_RandomRange(0, s->spread / FRACUNIT) * FRACUNIT,
+			s->mobjType
 		);
 
 		P_SetTarget(&dust->target, mo);
@@ -559,12 +579,9 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 		dust->momy = mo->momy / 2;
 		dust->momz = 0;
 
-		momH = FixedMul(impact, s->pushH);
-		momV = FixedMul(impact, s->pushV);
-
 		dust->momx += FixedMul(momH, FINECOSINE(pushAngle >> ANGLETOFINESHIFT));
 		dust->momy += FixedMul(momH, FINESINE(pushAngle >> ANGLETOFINESHIFT));
-		dust->momz += momV * P_MobjFlip(mo);
+		dust->momz += (momV / 16) * P_MobjFlip(mo);
 
 		if (s->color != SKINCOLOR_NONE)
 		{
@@ -585,7 +602,7 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 --------------------------------------------------*/
 void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 {
-	const fixed_t minImpact = 4 * mo->scale;
+	const fixed_t minImpact = mo->scale;
 	t_splash_t *s = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
@@ -609,6 +626,8 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 		// No particles to spawn.
 		return;
 	}
+
+	impact /= 4;
 
 	if (impact < minImpact)
 	{
@@ -699,7 +718,7 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 
 	dust->momx = mo->momx;
 	dust->momy = mo->momy;
-	dust->momz = P_GetMobjZMovement(mo) / 2;
+	dust->momz = P_GetMobjZMovement(mo);
 
 	momH = FixedMul(momentum, fs->pushH);
 	momV = FixedMul(momentum, fs->pushV);
