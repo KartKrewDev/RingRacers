@@ -7545,6 +7545,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			comebackshowninfo = true; // client has already seen the message
 	}
 
+	if (player->shrinkLaserDelay)
+		player->shrinkLaserDelay--;
+
 	if (player->ringdelay)
 		player->ringdelay--;
 
@@ -10041,7 +10044,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									}
 
 									// TODO: gametyperules
-									player->growshrinktimer = (gametype == GT_BATTLE ? 8 : 12) * TICRATE;
+									player->growshrinktimer = max(player->growshrinktimer, (gametype == GT_BATTLE ? 8 : 12) * TICRATE);
 
 									if (player->invincibilitytimer > 0)
 									{

@@ -412,6 +412,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 {
 	mobj_t *pohbee = gun_pohbee(gun);
 	mobj_t *owner = NULL;
+	INT32 prevTimer = 0;
 
 	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
 	{
@@ -423,44 +424,60 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		return true;
 	}
 
+	if (victim->player->shrinkLaserDelay > 0)
+	{
+		victim->player->shrinkLaserDelay = TICRATE;
+		return true;
+	}
+
+	victim->player->shrinkLaserDelay = TICRATE;
+
 	owner = pohbee_owner(pohbee);
+	prevTimer = victim->player->growshrinktimer;
 
 	if (owner != NULL && victim == owner)
 	{
 		// Belongs to us. Give us Grow!
-		if (victim->player->growshrinktimer <= 0)
+		if (prevTimer < 0)
 		{
-			victim->scalespeed = mapobjectscale/TICRATE;
-			victim->destscale = FixedMul(mapobjectscale, GROW_SCALE);
-
-			if (K_PlayerShrinkCheat(victim->player) == true)
-			{
-				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
-			}
-
-			// TODO: gametyperules
-			victim->player->growshrinktimer = (gametype == GT_BATTLE ? 8 : 12) * TICRATE;
-
-			if (victim->player->invincibilitytimer > 0)
-			{
-				; // invincibility has priority in P_RestoreMusic, no point in starting here
-			}
-			else if (P_IsLocalPlayer(victim->player) == true)
-			{
-				S_ChangeMusicSpecial("kgrow");
-			}
-			else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
-			{
-				S_StartSound(victim, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
-			}
-
-			P_RestoreMusic(victim->player);
+			// Take away Shrink.
+			K_RemoveGrowShrink(victim->player);
+		}
+		else
+		{
+			victim->player->growshrinktimer += 5*TICRATE;
 			S_StartSound(victim, sfx_kc5a);
+
+			if (prevTimer <= 0)
+			{
+				victim->scalespeed = mapobjectscale/TICRATE;
+				victim->destscale = FixedMul(mapobjectscale, GROW_SCALE);
+
+				if (K_PlayerShrinkCheat(victim->player) == true)
+				{
+					victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
+				}
+
+				if (victim->player->invincibilitytimer > 0)
+				{
+					; // invincibility has priority in P_RestoreMusic, no point in starting here
+				}
+				else if (P_IsLocalPlayer(victim->player) == true)
+				{
+					S_ChangeMusicSpecial("kgrow");
+				}
+				else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
+				{
+					S_StartSound(victim, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+				}
+
+				P_RestoreMusic(victim->player);
+			}
 		}
 	}
 	else
 	{
-		if (victim->player->growshrinktimer > 0)
+		if (prevTimer > 0)
 		{
 			// Take away Grow.
 			K_RemoveGrowShrink(victim->player);
@@ -468,18 +485,21 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 		else
 		{
 			// Start shrinking!
-			K_DropItems(victim->player);
-			victim->player->growshrinktimer = -(15*TICRATE);
-
-			victim->scalespeed = mapobjectscale/TICRATE;
-			victim->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
-
-			if (K_PlayerShrinkCheat(victim->player) == true)
-			{
-				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
-			}
-
+			victim->player->growshrinktimer -= 5*TICRATE;
 			S_StartSound(victim, sfx_kc59);
+
+			if (prevTimer >= 0)
+			{
+				K_DropItems(victim->player);
+
+				victim->scalespeed = mapobjectscale/TICRATE;
+				victim->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
+
+				if (K_PlayerShrinkCheat(victim->player) == true)
+				{
+					victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
+				}
+			}
 		}
 	}
 

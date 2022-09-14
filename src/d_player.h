@@ -584,6 +584,8 @@ typedef struct player_s
 
 	UINT8 stairjank;
 
+	UINT8 shrinkLaserDelay;
+
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
