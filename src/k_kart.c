@@ -2323,7 +2323,7 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 		mo,
 		P_RandomRange(-32, 32) * FRACUNIT,
 		P_RandomRange(-32, 32) * FRACUNIT,
-		(shrink ? P_RandomRange(24, 48) : P_RandomRange(0, 24)) * FRACUNIT,
+		P_RandomRange(0, 24) + (shrink ? 24 : 0) * FRACUNIT,
 		MT_GROW_PARTICLE
 	);
 
