@@ -657,7 +657,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
 	const INT32 maxDist = startDist * 4; // This function gets very laggy when it goes far distances, and going too far isn't very helpful anyway.
-	const INT32 distance = min(((speed / FRACUNIT) * futuresight) + startDist, maxDist);
+	const INT32 distance = min(((speed / FRACUNIT) * (INT32)futuresight) + startDist, maxDist);
 
 	// Halves radius when encountering a wall on your way to your destination.
 	fixed_t radreduce = FRACUNIT;
