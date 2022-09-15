@@ -479,7 +479,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		const fixed_t hscale = mapobjectscale + (mapobjectscale - mo->scale);
 		const fixed_t minspeed = 24*hscale;
 		fixed_t speed = FixedHypot(mo->momx, mo->momy);
-		fixed_t upwards = 16 * FRACUNIT * terrain->trickPanel;
+		fixed_t upwards = 16 * terrain->trickPanel;
 
 		player->trickpanel = 1;
 		player->pflags |= PF_TRICKDELAY;
@@ -1482,7 +1482,7 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	}
 	else if (stricmp(param, "trickPanel") == 0)
 	{
-		terrain->trickPanel = (UINT8)get_number(val); // trick panel strength enum?
+		terrain->trickPanel = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (stricmp(param, "floorClip") == 0)
 	{
