@@ -547,11 +547,9 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 	return true;
 }
 
-static waypoint_t *GetPohbeeStart(waypoint_t *anchor)
+static waypoint_t *GetPohbeeWaypoint(waypoint_t *anchor, const UINT32 traveldist, const boolean huntbackwards)
 {
-	const UINT32 traveldist = FixedMul(POHBEE_DIST >> 1, mapobjectscale) / FRACUNIT;
 	const boolean useshortcuts = false;
-	const boolean huntbackwards = true;
 	boolean pathfindsuccess = false;
 	path_t pathtofinish = {0};
 	waypoint_t *ret = NULL;
@@ -573,34 +571,23 @@ static waypoint_t *GetPohbeeStart(waypoint_t *anchor)
 	}
 
 	return ret;
+
+}
+
+static waypoint_t *GetPohbeeStart(waypoint_t *anchor)
+{
+	const UINT32 traveldist = FixedMul(POHBEE_DIST >> 1, mapobjectscale) / FRACUNIT;
+	const boolean huntbackwards = true;
+
+	return GetPohbeeWaypoint(anchor, traveldist, huntbackwards);
 }
 
 static waypoint_t *GetPohbeeEnd(waypoint_t *anchor)
 {
 	const UINT32 traveldist = FixedMul(POHBEE_DIST, mapobjectscale) / FRACUNIT;
-	const boolean useshortcuts = false;
 	const boolean huntbackwards = false;
-	boolean pathfindsuccess = false;
-	path_t pathtofinish = {0};
-	waypoint_t *ret = NULL;
 
-	pathfindsuccess = K_PathfindThruCircuit(
-		anchor, traveldist,
-		&pathtofinish,
-		useshortcuts, huntbackwards
-	);
-
-	if (pathfindsuccess == true)
-	{
-		ret = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
-		Z_Free(pathtofinish.array);
-	}
-	else
-	{
-		ret = anchor;
-	}
-
-	return ret;
+	return GetPohbeeWaypoint(anchor, traveldist, huntbackwards);
 }
 
 static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UINT8 numLasers)
