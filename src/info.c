@@ -4316,7 +4316,7 @@ state_t states[NUMSTATES] =
 
 	{SPR_HYUU, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO
 
-	{SPR_GRWP, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
+	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
 
 	{SPR_SHRG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_GUN
 	{SPR_SHRG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_LASER
@@ -24121,7 +24121,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24202,7 +24202,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

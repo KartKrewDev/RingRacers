@@ -2288,12 +2288,27 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 {
 	const boolean shrink = (timer < 0);
 	const INT32 maxTime = (10*TICRATE);
+	const INT32 noTime = (2*TICRATE);
 	INT32 spawnFreq = 1;
 
 	mobj_t *particle = NULL;
 	fixed_t particleSpeed = 0;
 
-	spawnFreq = (maxTime - min(maxTime, abs(timer))) / TICRATE / 2;
+	spawnFreq = abs(timer);
+
+	if (spawnFreq < noTime)
+	{
+		return;
+	}
+
+	spawnFreq -= noTime;
+
+	if (spawnFreq > maxTime)
+	{
+		spawnFreq = maxTime;
+	}
+
+	spawnFreq = (maxTime - spawnFreq) / TICRATE / 4;
 	if (spawnFreq == 0)
 	{
 		spawnFreq++;
