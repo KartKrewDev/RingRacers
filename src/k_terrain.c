@@ -611,6 +611,12 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 		return;
 	}
 
+	if (!(mo->flags & MF_APPLYTERRAIN))
+	{
+		// No TERRAIN effects for this object.
+		return;
+	}
+
 	if (mo->terrain == NULL || mo->terrain->splashID == SIZE_MAX)
 	{
 		// No impact for this terrain type.
@@ -751,6 +757,12 @@ void K_HandleFootstepParticles(mobj_t *mo)
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
 		// Invalid object.
+		return;
+	}
+
+	if (!(mo->flags & MF_APPLYTERRAIN))
+	{
+		// No TERRAIN effects for this object.
 		return;
 	}
 

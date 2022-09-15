@@ -7344,9 +7344,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					ghost->renderflags |= RF_DONTDRAW;
 			}
 
-			// Could probably be moved somewhere else.
-			K_HandleFootstepParticles(player->mo);
-
 			if (P_IsObjectOnGround(player->mo))
 			{
 				// Draft dust

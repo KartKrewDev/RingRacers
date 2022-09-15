@@ -1765,6 +1765,12 @@ void P_XYMovement(mobj_t *mo)
 	if (P_MobjWasRemoved(mo)) // MF_SPECIAL touched a player! O_o;;
 		return;
 
+	if (moved == true)
+	{
+		// TERRAIN footstep effects.
+		K_HandleFootstepParticles(mo);
+	}
+
 	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT)) { // Check to see if we ran off
 
 		if (oldslope != mo->standingslope)
@@ -2303,7 +2309,7 @@ boolean P_ZMovement(mobj_t *mo)
 	// clip movement
 	if (((mo->z <= mo->floorz && !(mo->eflags & MFE_VERTICALFLIP))
 		|| (mo->z + mo->height >= mo->ceilingz && mo->eflags & MFE_VERTICALFLIP))
-	&& !(mo->flags & MF_NOCLIPHEIGHT))
+		&& !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		vector3_t mom;
 		mom.x = mo->momx;
@@ -2402,6 +2408,7 @@ boolean P_ZMovement(mobj_t *mo)
 		if (P_MobjFlip(mo)*mom.z < 0) // falling
 		{
 			mo->eflags |= MFE_JUSTHITFLOOR;
+			K_SpawnSplashForMobj(mo, abs(mom.z));
 
 			if (mo->flags2 & MF2_SKULLFLY) // the skull slammed into something
 				mom.z = -mom.z;
@@ -12876,15 +12883,10 @@ static void P_SetAmbush(mobj_t *mobj)
 		mobj->flags ^= MF_NOGRAVITY;
 	}
 
-	if (mobj->flags & MF_NIGHTSITEM)
-	{
-		// Spawn already displayed
-		mobj->flags |= MF_SPECIAL;
-		mobj->flags &= ~MF_NIGHTSITEM;
-	}
-
 	if (mobj->flags & MF_PUSHABLE)
+	{
 		mobj->flags &= ~MF_PUSHABLE;
+	}
 
 	if ((mobj->flags & MF_MONITOR) && mobj->info->speed != 0)
 	{
@@ -12909,10 +12911,6 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 		// any monitor with nonzero speed is allowed to respawn like this
 		mobj->flags2 |= MF2_STRONGBOX;
 	}
-
-	// Requires you to be in bonus time to activate
-	if (mobj->flags & MF_NIGHTSITEM)
-		mobj->flags2 |= MF2_STRONGBOX;
 
 	// Pushables bounce and slide coolly with object special flag set
 	if (mobj->flags & MF_PUSHABLE)
@@ -12991,10 +12989,6 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 			mobj->lastlook = (mthing->angle & 16383);
 		}
 	}
-
-	// Final set of not being able to draw nightsitems.
-	if (mobj->flags & MF_NIGHTSITEM)
-		mobj->renderflags |= RF_DONTDRAW;
 
 	return mobj;
 }
