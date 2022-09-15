@@ -379,6 +379,36 @@ consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, 
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
 consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
 
+// Shout settings
+// The relevant ones are CV_NETVAR because too lazy to send them any other way
+consvar_t cv_shoutname = CVAR_INIT ("shout_name", "SERVER", CV_NETVAR, NULL, NULL);
+
+static CV_PossibleValue_t shoutcolor_cons_t[] =
+{
+	{-1, "Player color"},
+	{0, "White"},
+	{1, "Yellow"},
+	{2, "Purple"},
+	{3, "Green"},
+	{4, "Blue"},
+	{5, "Red"},
+	{6, "Gray"},
+	{7, "Orange"},
+	{8, "Sky-blue"},
+	{9, "Gold"},
+	{10, "Lavender"},
+	{11, "Aqua-green"},
+	{12, "Magenta"},
+	{13, "Pink"},
+	{14, "Brown"},
+	{15, "Tan"},
+	{0, NULL}
+};
+consvar_t cv_shoutcolor = CVAR_INIT ("shout_color", "Red", CV_NETVAR, shoutcolor_cons_t, NULL);
+
+// If on and you're an admin, your messages will automatically become shouts.
+consvar_t cv_autoshout = CVAR_INIT ("autoshout", "Off", CV_NETVAR, CV_OnOff, NULL);
+
 // Pause game upon window losing focus
 consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL);
 
@@ -1255,6 +1285,7 @@ static void weaponPrefChange4(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
+	boolean doAutomate = false;
 	INT32 i;
 
 	// Make sure objectplace is OFF when you first start the level!
@@ -1286,6 +1317,10 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 	else
 		titlemapinaction = TITLEMAP_OFF;
+
+	// Doing this matches HOSTMOD behavior.
+	// Is that desired? IDK
+	doAutomate = (gamestate != GS_LEVEL);
 
 	G_SetGamestate(GS_LEVEL);
 	if (wipegamestate == GS_MENU)
@@ -1325,6 +1360,11 @@ void G_DoLoadLevel(boolean resetplayer)
 	CON_ClearHUD();
 
 	server_lagless = cv_lagless.value;
+
+	if (doAutomate == true)
+	{
+		Automate_Run(AEV_ROUNDSTART);
+	}
 }
 
 //

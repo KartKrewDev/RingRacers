@@ -99,6 +99,9 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -147,6 +150,9 @@ static void KartEncore_OnChange(void);
 static void KartComeback_OnChange(void);
 static void KartEliminateLast_OnChange(void);
 
+static void Schedule_OnChange(void);
+static void LiveStudioAudience_OnChange(void);
+
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
 #endif
@@ -157,6 +163,8 @@ static void Command_Stopdemo_f(void);
 static void Command_StartMovie_f(void);
 static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
+static void Command_RandomMap(void);
+static void Command_RestartLevel(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
@@ -219,6 +227,12 @@ static void Command_Archivetest_f(void);
 #endif
 
 static void Command_KartGiveItem_f(void);
+
+static void Command_Schedule_Add(void);
+static void Command_Schedule_Clear(void);
+static void Command_Schedule_List(void);
+
+static void Command_Automate_Set(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -508,16 +522,19 @@ static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE
 consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
 //static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
 consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
-consvar_t cv_maxping = CVAR_INIT ("maxping", "800", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_maxping = CVAR_INIT ("maxdelay", "20", CV_SAVE, CV_Unsigned, NULL);
 
 consvar_t cv_lagless = CVAR_INIT ("lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange);
 
 static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
-consvar_t cv_pingtimeout = CVAR_INIT ("pingtimeout", "10", CV_SAVE|CV_NETVAR, pingtimeout_cons_t, NULL);
+consvar_t cv_pingtimeout = CVAR_INIT ("maxdelaytimeout", "10", CV_SAVE|CV_NETVAR, pingtimeout_cons_t, NULL);
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
 consvar_t cv_showping = CVAR_INIT ("showping", "Always", CV_SAVE, showping_cons_t, NULL);
+
+static CV_PossibleValue_t pingmeasurement_cons_t[] = {{0, "Frames"}, {1, "Milliseconds"}, {0, NULL}};
+consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Frames", CV_SAVE, pingmeasurement_cons_t, NULL);
 
 consvar_t cv_showviewpointtext = CVAR_INIT ("showviewpointtext", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -547,6 +564,16 @@ consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NUL
 
 consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
 
+consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
+
+consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
+
+#ifdef DEVELOP
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "On", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#else
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "Off", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#endif
+
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -562,44 +589,66 @@ UINT8 splitscreen = 0;
 boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 
+// Scheduled commands.
+scheduleTask_t **schedule = NULL;
+size_t schedule_size = 0;
+size_t schedule_len = 0;
+
+// Automation commands
+char *automate_commands[AEV__MAX];
+
+const char *automate_names[AEV__MAX] =
+{
+	"RoundStart", // AEV_ROUNDSTART
+	"IntermissionStart", // AEV_INTERMISSIONSTART
+	"VoteStart" // AEV_VOTESTART
+};
+
+UINT32 livestudioaudience_timer = 90;
+
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
 {
-	"NAMEANDCOLOR",
-	"WEAPONPREF",
-	"KICK",
-	"NETVAR",
-	"SAY",
-	"MAP",
-	"EXITLEVEL",
-	"ADDFILE",
-	"PAUSE",
-	"ADDPLAYER",
-	"TEAMCHANGE",
-	"CLEARSCORES",
-	"VERIFIED",
-	"RANDOMSEED",
-	"RUNSOC",
-	"REQADDFILE",
-	"SETMOTD",
-	"RESPAWN",
-	"DEMOTED",
-	"LUACMD",
-	"LUAVAR",
-	"LUAFILE",
+	"NAMEANDCOLOR", // XD_NAMEANDCOLOR
+	"WEAPONPREF", // XD_WEAPONPREF
+	"KICK", // XD_KICK
+	"NETVAR", // XD_NETVAR
+	"SAY", // XD_SAY
+	"MAP", // XD_MAP
+	"EXITLEVEL", // XD_EXITLEVEL
+	"ADDFILE", // XD_ADDFILE
+	"PAUSE", // XD_PAUSE
+	"ADDPLAYER", // XD_ADDPLAYER
+	"TEAMCHANGE", // XD_TEAMCHANGE
+	"CLEARSCORES", // XD_CLEARSCORES
+	"VERIFIED", // XD_VERIFIED
+	"RANDOMSEED", // XD_RANDOMSEED
+	"RUNSOC", // XD_RUNSOC
+	"REQADDFILE", // XD_REQADDFILE
+	"SETMOTD", // XD_SETMOTD
+	"RESPAWN", // XD_RESPAWN
+	"DEMOTED", // XD_DEMOTED
+	"LUACMD", // XD_LUACMD
+	"LUAVAR", // XD_LUAVAR
+	"LUAFILE", // XD_LUAFILE
 
 	// SRB2Kart
-	"SETUPVOTE",
-	"MODIFYVOTE",
-	"PICKVOTE",
-	"REMOVEPLAYER",
-	"POWERLEVEL",
-	"PARTYINVITE",
-	"ACCEPTPARTYINVITE",
-	"LEAVEPARTY",
-	"CANCELPARTYINVITE",
-	"GIVEITEM",
-	"ADDBOT"
+	"SETUPVOTE", // XD_SETUPVOTE
+	"MODIFYVOTE", // XD_MODIFYVOTE
+	"PICKVOTE", // XD_PICKVOTE
+	"REMOVEPLAYER", // XD_REMOVEPLAYER
+	"POWERLEVEL", // XD_POWERLEVEL
+	"PARTYINVITE", // XD_PARTYINVITE
+	"ACCEPTPARTYINVITE", // XD_ACCEPTPARTYINVITE
+	"LEAVEPARTY", // XD_LEAVEPARTY
+	"CANCELPARTYINVITE", // XD_CANCELPARTYINVITE
+	"GIVEITEM", // XD_GIVEITEM
+	"ADDBOT", // XD_ADDBOT
+	"DISCORD", // XD_DISCORD
+	"PLAYSOUND", // XD_PLAYSOUND
+	"SCHEDULETASK", // XD_SCHEDULETASK
+	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
+	"AUTOMATE" // XD_AUTOMATE
 };
 
 // =========================================================================
@@ -648,6 +697,10 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
 
+	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
+	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
+	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
+
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
 	COM_AddCommand("login", Command_Login_f); // useful in dedicated to kick off remote admin
@@ -665,6 +718,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
 	COM_AddCommand("clearscores", Command_Clearscores_f);
 	COM_AddCommand("map", Command_Map_f);
+	COM_AddCommand("randommap", Command_RandomMap);
+	COM_AddCommand("restartlevel", Command_RestartLevel);
 
 	COM_AddCommand("exitgame", Command_ExitGame_f);
 	COM_AddCommand("retry", Command_Retry_f);
@@ -702,6 +757,12 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("downloads", Command_Downloads_f);
 
 	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
+
+	COM_AddCommand("schedule_add", Command_Schedule_Add);
+	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
+	COM_AddCommand("schedule_list", Command_Schedule_List);
+
+	COM_AddCommand("automate_set", Command_Automate_Set);
 
 	// for master server connection
 	AddMServCommands();
@@ -762,16 +823,21 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("ping", Command_Ping_f);
 	CV_RegisterVar(&cv_nettimeout);
 	CV_RegisterVar(&cv_jointimeout);
-
+	CV_RegisterVar(&cv_kicktime);
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
 	CV_RegisterVar(&cv_maxping);
 	CV_RegisterVar(&cv_lagless);
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
+	CV_RegisterVar(&cv_pingmeasurement);
 	CV_RegisterVar(&cv_showviewpointtext);
 
 	CV_RegisterVar(&cv_director);
+
+	CV_RegisterVar(&cv_schedule);
+	CV_RegisterVar(&cv_automate);
+	CV_RegisterVar(&cv_livestudioaudience);
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -963,6 +1029,11 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
+
+	CV_RegisterVar(&cv_shoutname);
+	CV_RegisterVar(&cv_shoutcolor);
+	CV_RegisterVar(&cv_autoshout);
+
 	CV_RegisterVar(&cv_songcredits);
 	CV_RegisterVar(&cv_tutorialprompt);
 	CV_RegisterVar(&cv_showfocuslost);
@@ -1079,6 +1150,15 @@ void D_RegisterClientCommands(void)
   * \sa CleanupPlayerName, SetPlayerName, Got_NameAndColor
   * \author Graue <graue@oceanbase.org>
   */
+
+static boolean AllowedPlayerNameChar(char ch)
+{
+	if (!isprint(ch) || ch == ';' || ch == '"' || (UINT8)(ch) >= 0x80)
+		return false;
+
+	return true;
+}
+
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 {
 	INT32 ix;
@@ -1100,7 +1180,7 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 	// Also, anything over 0x80 is disallowed too, since compilers love to
 	// differ on whether they're printable characters or not.
 	for (ix = 0; name[ix] != '\0'; ix++)
-		if (!isprint(name[ix]) || name[ix] == ';' || (UINT8)(name[ix]) >= 0x80)
+		if (!AllowedPlayerNameChar(name[ix]))
 			return false;
 
 	// Check if a player is currently using the name, case-insensitively.
@@ -1191,8 +1271,7 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 
 		do
 		{
-			/* from EnsurePlayerNameIsGood */
-			if (!isprint(*p) || *p == ';' || (UINT8)*p >= 0x80)
+			if (!AllowedPlayerNameChar(*p))
 				break;
 		}
 		while (*++p) ;
@@ -2973,6 +3052,67 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 #endif
 }
 
+static void Command_RandomMap(void)
+{
+	INT32 oldmapnum;
+	INT32 newmapnum;
+	INT32 newgametype;
+	boolean newencoremode;
+	boolean newresetplayers;
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	// TODO: Handle singleplayer conditions.
+	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
+
+	if (Playing())
+	{
+		newgametype = gametype;
+		newencoremode = encoremode;
+		newresetplayers = false;
+
+		if (gamestate == GS_LEVEL)
+		{
+			oldmapnum = gamemap-1;
+		}
+		else
+		{
+			oldmapnum = prevmap;
+		}
+	}
+	else
+	{
+		newgametype = cv_dummygametype.value; // Changed from cv_newgametype to match newmenus
+		newencoremode = false;
+		newresetplayers = true;
+		oldmapnum = -1;
+	}
+
+	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
+	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, false);
+}
+
+static void Command_RestartLevel(void)
+{
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("You must be in a game to use this.\n"));
+		return;
+	}
+
+	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
+}
+
 static void Command_Pause(void)
 {
 	UINT8 buf[2];
@@ -3689,9 +3829,7 @@ void SetAdminPlayer(INT32 playernum)
 
 void ClearAdminPlayers(void)
 {
-	INT32 i;
-	for (i = 0; i < MAXPLAYERS; i++)
-		adminplayers[i] = -1;
+	memset(adminplayers, -1, sizeof(adminplayers));
 }
 
 void RemoveAdminPlayer(INT32 playernum)
@@ -3806,6 +3944,218 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 		return;
 
 	CONS_Printf(M_GetText("You are no longer a server administrator.\n"));
+}
+
+void Schedule_Run(void)
+{
+	size_t i;
+
+	if (schedule_len == 0)
+	{
+		// No scheduled tasks to run.
+		return;
+	}
+
+	if (!cv_schedule.value)
+	{
+		// We don't WANT to run tasks.
+		return;
+	}
+
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task == NULL)
+		{
+			// Shouldn't happen.
+			break;
+		}
+
+		if (task->timer > 0)
+		{
+			task->timer--;
+		}
+
+		if (task->timer == 0)
+		{
+			// Reset timer
+			task->timer = task->basetime;
+
+			// Run command for server
+			if (server)
+			{
+				CONS_Printf(
+					"%d seconds elapsed, running \"" "\x82" "%s" "\x80" "\".\n",
+					task->basetime,
+					task->command
+				);
+
+				COM_BufAddText(task->command);
+				COM_BufAddText("\n");
+			}
+		}
+	}
+}
+
+void Schedule_Insert(scheduleTask_t *addTask)
+{
+	if (schedule_len >= schedule_size)
+	{
+		if (schedule_size == 0)
+		{
+			schedule_size = 8;
+		}
+		else
+		{
+			schedule_size *= 2;
+		}
+		
+		schedule = Z_ReallocAlign(
+			(void*) schedule,
+			sizeof(scheduleTask_t*) * schedule_size,
+			PU_STATIC,
+			NULL,
+			sizeof(scheduleTask_t*) * 8
+		);
+	}
+
+	schedule[schedule_len] = addTask;
+	schedule_len++;
+}
+
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command)
+{
+	scheduleTask_t *task = (scheduleTask_t*) Z_CallocAlign(
+		sizeof(scheduleTask_t),
+		PU_STATIC,
+		NULL,
+		sizeof(scheduleTask_t) * 8
+	);
+
+	task->basetime = basetime;
+	task->timer = timeleft;
+	task->command = Z_StrDup(command);
+
+	Schedule_Insert(task);
+}
+
+void Schedule_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task->command)
+			Z_Free(task->command);
+	}
+
+	schedule_len = 0;
+	schedule_size = 0;
+	schedule = NULL;
+}
+
+void Automate_Set(automateEvents_t type, const char *command)
+{
+	if (!server)
+	{
+		// Since there's no list command or anything for this,
+		// we don't need this code to run for anyone but the server.
+		return;
+	}
+
+	if (automate_commands[type] != NULL)
+	{
+		// Free the old command.
+		Z_Free(automate_commands[type]);
+	}
+
+	if (command == NULL || strlen(command) == 0)
+	{
+		// Remove the command.
+		automate_commands[type] = NULL;
+	}
+	else
+	{
+		// New command.
+		automate_commands[type] = Z_StrDup(command);
+	}
+}
+
+void Automate_Run(automateEvents_t type)
+{
+	if (!server)
+	{
+		// Only the server should be doing this.
+		return;
+	}
+
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
+		return;
+	}
+
+#ifdef PARANOIA
+	if (type >= AEV__MAX)
+	{
+		// Shouldn't happen.
+		I_Error("Attempted to run invalid automation type.");
+		return;
+	}
+#endif
+
+	if (!cv_automate.value)
+	{
+		// We don't want to run automation.
+		return;
+	}
+
+	if (automate_commands[type] == NULL)
+	{
+		// No command to run.
+		return;
+	}
+
+	CONS_Printf(
+		"Running %s automate command \"" "\x82" "%s" "\x80" "\"...\n",
+		automate_names[type],
+		automate_commands[type]
+	);
+
+	COM_BufAddText(automate_commands[type]);
+	COM_BufAddText("\n");
+}
+
+void Automate_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < AEV__MAX; i++)
+	{
+		Automate_Set(i, NULL);
+	}
+}
+
+void LiveStudioAudience(void)
+{
+	if (livestudioaudience_timer == 0)
+	{
+		S_StartSound(NULL, sfx_mbv91);
+		livestudioaudience_timer = 90;
+	}
+	else
+	{
+		livestudioaudience_timer--;
+	}
 }
 
 static void Command_MotD_f(void)
@@ -5002,6 +5352,101 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	players[playernum].itemamount = amt;
 }
 
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
+{
+	char command[MAXTEXTCMD];
+	INT16 seconds;
+
+	seconds = READINT16(*cp);
+	READSTRING(*cp, command);
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule task received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Add(seconds, seconds, (const char *)command);
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf(
+			"OK! Running \"" "\x82" "%s" "\x80" "\" every " "\x82" "%d" "\x80" " seconds.\n",
+			command,
+			seconds
+		);
+	}
+}
+
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
+{
+	(void)cp;
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule clear received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Clear();
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf("All scheduled tasks have been cleared.\n");
+	}
+}
+
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
+{
+	UINT8 eventID;
+	char command[MAXTEXTCMD];
+
+	eventID = READUINT8(*cp);
+	READSTRING(*cp, command);
+
+	if (
+		(playernum != serverplayer && !IsPlayerAdmin(playernum))
+		|| (eventID >= AEV__MAX)
+	)
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal automate received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Automate_Set(eventID, command);
+
+	if (server || consoleplayer == playernum)
+	{
+		if (command[0] == '\0')
+		{
+			CONS_Printf(
+				"Removed the %s automate command.\n",
+				automate_names[eventID]
+			);
+		}
+		else
+		{
+			CONS_Printf(
+				"Set the %s automate command to \"" "\x82" "%s" "\x80" "\".\n",
+				automate_names[eventID],
+				command
+			);
+		}
+	}
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
@@ -5264,6 +5709,135 @@ static void Command_KartGiveItem_f(void)
 		CONS_Alert(CONS_NOTICE,
 				"The server does not allow this.\n");
 	}
+}
+
+static void Command_Schedule_Add(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+	INT16 seconds;
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("schedule <seconds> <...>: runs the specified commands on a recurring timer\n");
+		return;
+	}
+
+	seconds = atoi(COM_Argv(1));
+
+	if (seconds <= 0)
+	{
+		CONS_Printf("Timer must be at least 1 second.\n");
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEINT16(buf_p, seconds);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_SCHEDULETASK, buf, buf_p - buf);
+}
+
+static void Command_Schedule_Clear(void)
+{
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	SendNetXCmd(XD_SCHEDULECLEAR, NULL, 0);
+}
+
+static void Command_Schedule_List(void)
+{
+	size_t i;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		// I set it up in a way that this information could be available
+		// to everyone, but HOSTMOD has it server/admin-only too, so eh?
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		CONS_Printf("No tasks are scheduled.\n");
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		CONS_Printf(
+			"In " "\x82" "%d" "\x80" " second%s: " "\x82" "%s" "\x80" "\n",
+			task->timer,
+			(task->timer > 1) ? "s" : "",
+			task->command
+		);
+	}
+}
+
+static void Command_Automate_Set(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+
+	const char *event;
+	size_t eventID;
+
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("automate_set <event> <command>: sets the command to run each time a event triggers\n");
+		return;
+	}
+
+	event = COM_Argv(1);
+
+	for (eventID = 0; eventID < AEV__MAX; eventID++)
+	{
+		if (strcasecmp(event, automate_names[eventID]) == 0)
+		{
+			break;
+		}
+	}
+
+	if (eventID == AEV__MAX)
+	{
+		CONS_Printf("Unknown event type \"%s\".\n", event);
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEUINT8(buf_p, eventID);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_AUTOMATE, buf, buf_p - buf);
 }
 
 /** Makes a change to ::cv_forceskin take effect immediately.
@@ -5882,6 +6456,33 @@ static void KartEliminateLast_OnChange(void)
 	}
 
 	P_CheckRacers();
+}
+
+static void Schedule_OnChange(void)
+{
+	size_t i;
+
+	if (cv_schedule.value)
+	{
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		return;
+	}
+
+	// Reset timers when turning off.
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		task->timer = task->basetime;
+	}
+}
+
+static void LiveStudioAudience_OnChange(void)
+{
+	livestudioaudience_timer = 90;
 }
 
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
