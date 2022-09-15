@@ -615,18 +615,12 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 
 	// Calculate number of chain segments added per laser.
 	size = FixedMul(end->mobj->radius, 3*FRACUNIT/2);
-	baseSegs = 1 + ((size / start->mobj->scale) / CHAIN_SIZE);
-
-	if (baseSegs < MAXPLAYERS)
-	{
-		baseSegs = MAXPLAYERS;
-	}
-
-	segVal = baseSegs / numLasers;
+	segVal = max(1, 1 + ((size / start->mobj->scale) / CHAIN_SIZE) / numLasers);
+	baseSegs = segVal * numLasers;
 
 	// Valid spawning conditions,
 	// we can start creating each individual part.
-	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, FixedDiv(size, mapobjectscale) + POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
+	pohbee = P_SpawnMobjFromMobj(start->mobj, 0, 0, (baseSegs * CHAIN_SIZE * FRACUNIT) + POHBEE_HOVER * 3, MT_SHRINK_POHBEE);
 	P_SetTarget(&pohbee_owner(pohbee), owner->mo);
 
 	pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
