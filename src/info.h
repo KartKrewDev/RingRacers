@@ -1120,6 +1120,7 @@ typedef enum sprite
 	SPR_FLMF, // Flame Shield flash
 	SPR_HYUU, // Hyudoro
 	SPR_GRWP, // Grow
+	SPR_POHB, // Shrink Poh-Bee
 	SPR_SHRG, // Shrink gun / laser
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
@@ -4752,6 +4753,7 @@ typedef enum state
 
 	// Shrink
 	S_SHRINK_GUN,
+	S_SHRINK_CHAIN,
 	S_SHRINK_LASER,
 	S_SHRINK_PARTICLE,
 

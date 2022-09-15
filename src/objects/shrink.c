@@ -31,7 +31,7 @@
 #define GUN_SWING (ANGLE_90 - ANG10)
 #define GUN_SWINGTIME (4 * TICRATE)
 
-#define CHAIN_SIZE (16)
+#define CHAIN_SIZE (52)
 
 #define EXTRA_FOR_FIRST (7)
 
@@ -57,6 +57,8 @@ enum
 #define gun_pohbee(o) ((o)->target)
 #define gun_laser(o) ((o)->tracer)
 #define gun_chains(o) ((o)->hprev)
+
+#define chain_index(o) ((o)->extravalue1)
 
 enum
 {
@@ -333,6 +335,34 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 	}
 }
 
+static void DoGunChains(mobj_t *gun, mobj_t *pohbee)
+{
+	const fixed_t gunZ = P_GetMobjHead(gun);
+	const fixed_t beeZ = P_GetMobjFeet(pohbee);
+
+	const fixed_t offsetX = (pohbee->x - gun->x) / gun_numsegs(gun);
+	const fixed_t offsetY = (pohbee->y - gun->y) / gun_numsegs(gun);
+	const fixed_t offsetZ = (beeZ - gunZ) / gun_numsegs(gun);
+
+	mobj_t *chain = NULL;
+
+	fixed_t curX = gun->x + (offsetX / 2);
+	fixed_t curY = gun->y + (offsetY / 2);
+	fixed_t curZ = gunZ + (offsetZ / 2);
+
+	chain = gun_chains(gun);
+	while (chain != NULL && P_MobjWasRemoved(chain) == false)
+	{
+		PohbeeMoveTo(chain, curX, curY, curZ);
+
+		curX += offsetX;
+		curY += offsetY;
+		curZ += offsetZ;
+
+		chain = gun_chains(chain);
+	}
+}
+
 static void ShrinkGunThinker(mobj_t *gun)
 {
 	mobj_t *pohbee = gun_pohbee(gun);
@@ -352,6 +382,8 @@ static void ShrinkGunThinker(mobj_t *gun)
 	{
 		ShrinkLaserThinker(pohbee, gun, gun_laser(gun));
 	}
+
+	DoGunChains(gun, pohbee);
 }
 
 void Obj_PohbeeThinker(mobj_t *pohbee)
@@ -612,7 +644,7 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 
 		mobj_t *gun = P_SpawnMobjFromMobj(pohbee, 0, 0, 0, MT_SHRINK_GUN);
 		mobj_t *laser = NULL;
-		//mobj_t *prevChain = NULL;
+		mobj_t *prevChain = NULL;
 
 		P_SetTarget(&gun_pohbee(gun), pohbee);
 		P_SetTarget(&pohbee_guns(prevGun), gun);
@@ -623,16 +655,16 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 		laser = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_SHRINK_LASER);
 		P_SetTarget(&gun_laser(gun), laser);
 
-		/*
 		prevChain = gun;
 		for (j = 0; j < numSegs; j++)
 		{
 			mobj_t *chain = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_SHRINK_CHAIN);
+
 			P_SetTarget(&gun_chains(prevChain), chain);
+			chain_index(chain) = j;
+
 			prevChain = chain;
 		}
-		*/
-		(void)j;
 
 		prevGun = gun;
 	}

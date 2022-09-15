@@ -574,6 +574,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FLMF", // Flame Shield flash
 	"HYUU", // Hyudoro
 	"GRWP", // Grow
+	"POHB", // Shrink Poh-Bee
 	"SHRG", // Shrink gun / laser
 	"SINK", // Kitchen Sink
 	"SITR", // Kitchen Sink Trail
@@ -4319,6 +4320,7 @@ state_t states[NUMSTATES] =
 	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
 
 	{SPR_SHRG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_GUN
+	{SPR_POHB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_CHAIN
 	{SPR_SHRG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_LASER
 	{SPR_SHRG, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_PARTICLE
 
@@ -24127,7 +24129,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SHRINK_CHAIN
 		-1,             // doomednum
-		S_SHRINK_GUN,   // spawnstate
+		S_SHRINK_CHAIN, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -24142,13 +24144,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		16*FRACUNIT,    // radius
-		120*FRACUNIT,   // height
+		26*FRACUNIT,    // radius
+		26*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOTHINK|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		MF_SCENERY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

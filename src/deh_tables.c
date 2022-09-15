@@ -3760,6 +3760,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Shrink
 	"S_SHRINK_GUN",
+	"S_SHRINK_CHAIN",
 	"S_SHRINK_LASER",
 	"S_SHRINK_PARTICLE",
 
