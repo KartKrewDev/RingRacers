@@ -406,6 +406,8 @@ typedef struct mobj_s
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
 	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
+	struct mobj_s *terrainOverlay; // Overlay sprite object for terrain
+
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
 	INT32 dispoffset;

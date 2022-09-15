@@ -35,6 +35,9 @@ static size_t numSplashDefs = 0;
 static t_footstep_t *footstepDefs = NULL;
 static size_t numFootstepDefs = 0;
 
+static t_overlay_t *overlayDefs = NULL;
+static size_t numOverlayDefs = 0;
+
 static terrain_t *terrainDefs = NULL;
 static size_t numTerrainDefs = 0;
 
@@ -176,6 +179,75 @@ t_footstep_t *K_GetFootstepByName(const char *checkName)
 		{
 			// Name matches.
 			return fs;
+		}
+	}
+
+	return NULL;
+}
+
+/*--------------------------------------------------
+	size_t K_GetOverlayHeapIndex(t_overlay_t *overlay)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetOverlayHeapIndex(t_overlay_t *overlay)
+{
+	if (overlay == NULL)
+	{
+		return SIZE_MAX;
+	}
+
+	return (overlay - overlayDefs);
+}
+
+/*--------------------------------------------------
+	size_t K_GetNumOverlayDefs(void)
+
+		See header file for description.
+--------------------------------------------------*/
+size_t K_GetNumOverlayDefs(void)
+{
+	return numOverlayDefs;
+}
+
+/*--------------------------------------------------
+	t_overlay_t *K_GetOverlayByIndex(size_t checkIndex)
+
+		See header file for description.
+--------------------------------------------------*/
+t_overlay_t *K_GetOverlayByIndex(size_t checkIndex)
+{
+	if (checkIndex >= numOverlayDefs)
+	{
+		return NULL;
+	}
+
+	return &overlayDefs[checkIndex];
+}
+
+/*--------------------------------------------------
+	t_overlay_t *K_GetOverlayByName(const char *checkName)
+
+		See header file for description.
+--------------------------------------------------*/
+t_overlay_t *K_GetOverlayByName(const char *checkName)
+{
+	UINT32 checkHash = quickncasehash(checkName, TERRAIN_NAME_LEN);
+	size_t i;
+
+	if (numOverlayDefs == 0)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < numOverlayDefs; i++)
+	{
+		t_overlay_t *o = &overlayDefs[i];
+
+		if (checkHash == o->hash && !strncmp(checkName, o->name, TERRAIN_NAME_LEN))
+		{
+			// Name matches.
+			return o;
 		}
 	}
 
@@ -521,7 +593,16 @@ void K_SetDefaultFriction(mobj_t *mo)
 /*--------------------------------------------------
 	static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 
-		See header file for description.
+		Creates all of the splash particles for an object
+		from a splash definition.
+
+	Input Arguments:-
+		mo - The object to spawn the splash particles for.
+		s - The splash definition to use.
+		impact - How hard the object hit the surface.
+
+	Return:-
+		N/A
 --------------------------------------------------*/
 static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 {
@@ -648,7 +729,16 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact)
 /*--------------------------------------------------
 	static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs)
 
-		See header file for description.
+		Creates a new footstep particle for an object
+		from a footstep definition.
+
+	Input Arguments:-
+		mo - The object to spawn the footstep particle for.
+		fs - The footstep definition to use.
+		timer - Spawning frequency timer.
+
+	Return:-
+		N/A
 --------------------------------------------------*/
 static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 {
@@ -796,6 +886,192 @@ void K_HandleFootstepParticles(mobj_t *mo)
 	// Idea for later: if different spawning styles are desired,
 	// we can put a switch case here!
 	K_SpawnFootstepParticle(mo, fs, timer);
+}
+
+/*--------------------------------------------------
+	static void K_CleanupTerrainOverlay(mobj_t *mo)
+
+		Removes an object's terrain overlay.
+
+	Input Arguments:-
+		mo - The object to remove the overlay from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_CleanupTerrainOverlay(mobj_t *mo)
+{
+	if (mo->terrainOverlay != NULL && P_MobjWasRemoved(mo->terrainOverlay) == false)
+	{
+		P_RemoveMobj(mo->terrainOverlay);
+	}
+}
+
+/*--------------------------------------------------
+	static boolean K_InitTerrainOverlay(mobj_t *mo)
+
+		Creates a new terrain overlay for an object.
+
+	Input Arguments:-
+		mo - The object to give an overlay to.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static boolean K_InitTerrainOverlay(mobj_t *mo)
+{
+	mobj_t *new = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_OVERLAY);
+
+	// Tells the overlay that we haven't set up a state yet.
+	new->extravalue1 = TOV_UNDEFINED;
+
+	// Set up our pointers.
+	P_SetTarget(&new->target, mo);
+	P_SetTarget(&mo->terrainOverlay, new);
+
+	return true;
+}
+
+/*--------------------------------------------------
+	static t_overlay_state_t K_DesiredTerrainOverlayAction(mobj_t *mo)
+
+		Figures out the overlay action to use for an object.
+
+	Input Arguments:-
+		mo - The object
+		st - The terrain overlay state.
+
+	Return:-
+		The overlay action enum to use for the object.
+--------------------------------------------------*/
+static t_overlay_action_t K_DesiredTerrainOverlayAction(mobj_t *mo)
+{
+	const boolean moving = (P_AproxDistance(mo->momx, mo->momy) >= (mo->scale >> 1));
+
+	if (moving == true)
+	{
+		return TOV_MOVING;
+	}
+
+	return TOV_STILL;
+}
+
+/*--------------------------------------------------
+	static statenum_t K_GetTerrainOverlayState(t_overlay_t *o, t_overlay_action_t act)
+
+		Converts our overlay's action enum into an actual state ID.
+
+	Input Arguments:-
+		o - The overlay properties.
+		act - The terrain overlay action.
+
+	Return:-
+		The actual state ID, for use with P_SetMobjState.
+--------------------------------------------------*/
+static statenum_t K_GetTerrainOverlayState(t_overlay_t *o, t_overlay_action_t act)
+{
+	if (act >= 0 && act < TOV__MAX)
+	{
+		return o->states[act];
+	}
+
+	return S_NULL;
+}
+
+/*--------------------------------------------------
+	static void K_SetTerrainOverlayState(mobj_t *mo, t_overlay_action_t act, statenum_t st)
+
+		Updates our overlay's current state.
+
+	Input Arguments:-
+		o - The overlay properties.
+		act - The terrain overlay action.
+		st - The new object's state.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_SetTerrainOverlayState(mobj_t *mo, t_overlay_action_t act, statenum_t st)
+{
+	if (act == mo->terrainOverlay->extravalue1)
+	{
+		// Already set the state, so leave it alone.
+		return;
+	}
+
+	P_SetMobjState(mo->terrainOverlay, st);
+	mo->terrainOverlay->extravalue1 = act;
+}
+
+/*--------------------------------------------------
+	static void K_UpdateTerrainOverlay(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdateTerrainOverlay(mobj_t *mo)
+{
+	t_overlay_t *o = NULL;
+	t_overlay_action_t act = TOV_UNDEFINED;
+	statenum_t st = S_NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid object.
+		return;
+	}
+
+	if (!(mo->flags & MF_APPLYTERRAIN))
+	{
+		// No TERRAIN effects for this object.
+		K_CleanupTerrainOverlay(mo);
+		return;
+	}
+
+	if (mo->terrain == NULL || mo->terrain->overlayID == SIZE_MAX)
+	{
+		// No overlay for this terrain type.
+		K_CleanupTerrainOverlay(mo);
+		return;
+	}
+	else
+	{
+		o = K_GetOverlayByIndex(mo->terrain->overlayID);
+	}
+
+	if (o == NULL)
+	{
+		// No overlay to use.
+		K_CleanupTerrainOverlay(mo);
+		return;
+	}
+
+	// Determine the state to use. We want to do this before creating
+	// the overlay, so that we keep it despawned if the state is S_NULL.
+	act = K_DesiredTerrainOverlayAction(mo);
+	st = K_GetTerrainOverlayState(o, act);
+
+	if (st == S_NULL)
+	{
+		// No state to use for this action.
+		K_CleanupTerrainOverlay(mo);
+		return;
+	}
+
+	if (mo->terrainOverlay == NULL || P_MobjWasRemoved(mo->terrainOverlay) == true)
+	{
+		// Doesn't exist currently, so try to create
+		// a new terrain overlay.
+
+		if (K_InitTerrainOverlay(mo) == false)
+		{
+			// We were unsuccessful, get out of here.
+			return;
+		}
+	}
+
+	mo->terrainOverlay->color = o->color;
+
+	K_SetTerrainOverlayState(mo, act, st);
 }
 
 /*--------------------------------------------------
@@ -1035,6 +1311,89 @@ static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 }
 
 /*--------------------------------------------------
+	static void K_OverlayDefaults(t_overlay_t *overlay)
+
+		Sets the defaults for a new Overlay block.
+
+	Input Arguments:-
+		overlay - Terrain Overlay structure to default.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_OverlayDefaults(t_overlay_t *overlay)
+{
+	size_t i;
+
+	for (i = 0; i < TOV__MAX; i++)
+	{
+		overlay->states[i] = S_NULL;
+	}
+
+	overlay->scale = FRACUNIT;
+	overlay->color = SKINCOLOR_NONE;
+	overlay->speed = 0;
+}
+
+/*--------------------------------------------------
+	static void K_NewOverlayDefs(void)
+
+		Increases the size of overlayDefs by 1, and
+		sets the new struct's values to their defaults.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_NewOverlayDefs(void)
+{
+	numOverlayDefs++;
+	overlayDefs = (t_overlay_t *)Z_Realloc(overlayDefs, sizeof(t_overlay_t) * (numOverlayDefs + 1), PU_STATIC, NULL);
+	K_OverlayDefaults( &overlayDefs[numOverlayDefs - 1] );
+}
+
+/*--------------------------------------------------
+	static void K_ParseOverlayParameter(size_t i, char *param, char *val)
+
+		Parser function for Overlay blocks.
+
+	Input Arguments:-
+		i - Struct ID
+		param - Parameter string
+		val - Value string
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_ParseOverlayParameter(size_t i, char *param, char *val)
+{
+	t_overlay_t *overlay = &overlayDefs[i];
+
+	if (stricmp(param, "stillState") == 0)
+	{
+		overlay->states[TOV_STILL] = get_number(val);
+	}
+	else if (stricmp(param, "movingState") == 0)
+	{
+		overlay->states[TOV_MOVING] = get_number(val);
+	}
+	else if (stricmp(param, "scale") == 0)
+	{
+		overlay->scale = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "color") == 0)
+	{
+		overlay->color = get_number(val);
+	}
+	else if (stricmp(param, "speed") == 0)
+	{
+		overlay->speed = FLOAT_TO_FIXED(atof(val));
+	}
+}
+
+/*--------------------------------------------------
 	static void K_TerrainDefaults(terrain_t *terrain)
 
 		Sets the defaults for a new Terrain block.
@@ -1049,6 +1408,7 @@ static void K_TerrainDefaults(terrain_t *terrain)
 {
 	terrain->splashID = SIZE_MAX;
 	terrain->footstepID = SIZE_MAX;
+	terrain->overlayID = SIZE_MAX;
 
 	terrain->friction = 0;
 	terrain->offroad = 0;
@@ -1102,6 +1462,11 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	{
 		t_footstep_t *footstep = K_GetFootstepByName(val);
 		terrain->footstepID = K_GetFootstepHeapIndex(footstep);
+	}
+	else if (stricmp(param, "overlay") == 0)
+	{
+		t_overlay_t *overlay = K_GetOverlayByName(val);
+		terrain->overlayID = K_GetOverlayHeapIndex(overlay);
 	}
 	else if (stricmp(param, "friction") == 0)
 	{
@@ -1316,6 +1681,47 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			else
 			{
 				CONS_Alert(CONS_ERROR, "No Footstep type name.\n");
+				valid = false;
+			}
+		}
+		else if (stricmp(tkn, "overlay") == 0)
+		{
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
+
+			if (tkn && pos < size)
+			{
+				t_overlay_t *o = NULL;
+
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
+				for (i = 0; i < numOverlayDefs; i++)
+				{
+					o = &overlayDefs[i];
+
+					if (tknHash == o->hash && !strncmp(tkn, o->name, TERRAIN_NAME_LEN))
+					{
+						break;
+					}
+				}
+
+				if (i == numOverlayDefs)
+				{
+					K_NewOverlayDefs();
+					o = &overlayDefs[i];
+
+					strncpy(o->name, tkn, TERRAIN_NAME_LEN);
+					o->hash = tknHash;
+
+					CONS_Printf("Created new Overlay type '%s'\n", o->name);
+				}
+
+				valid = K_DoTERRAINLumpParse(i, K_ParseOverlayParameter);
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR, "No Overlay type name.\n");
 				valid = false;
 			}
 		}

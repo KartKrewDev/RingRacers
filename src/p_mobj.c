@@ -3784,6 +3784,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	}
 
 	P_SquishThink(mobj);
+	K_UpdateTerrainOverlay(mobj);
 
 animonly:
 	P_CyclePlayerMobjState(mobj);
@@ -9539,6 +9540,7 @@ void P_MobjThinker(mobj_t *mobj)
 	}
 
 	P_SquishThink(mobj);
+	K_UpdateTerrainOverlay(mobj);
 
 	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
 		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
