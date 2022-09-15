@@ -292,7 +292,11 @@ static void DoGunSwing(mobj_t *gun, mobj_t *pohbee)
 
 static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 {
-	PohbeeMoveTo(laser, gun->x, gun->y, gun->floorz);
+	const fixed_t gunX = gun->x + gun->momx;
+	const fixed_t gunY = gun->y + gun->momy;
+	const fixed_t gunZ = P_GetMobjFeet(gun) + gun->momz;
+
+	PohbeeMoveTo(laser, gunX, gunY, gun->floorz);
 
 	if (ShrinkLaserActive(pohbee) == true)
 	{
@@ -310,7 +314,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 			laser->spritexscale = FRACUNIT;
 		}
 
-		laser->spriteyscale = FixedDiv(FixedDiv(gun->z - gun->floorz, mapobjectscale), laser->info->height);
+		laser->spriteyscale = FixedDiv(FixedDiv(gunZ - gun->floorz, mapobjectscale), laser->info->height);
 
 		particle = P_SpawnMobjFromMobj(
 			laser,
@@ -337,17 +341,22 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 
 static void DoGunChains(mobj_t *gun, mobj_t *pohbee)
 {
-	const fixed_t gunZ = P_GetMobjHead(gun);
-	const fixed_t beeZ = P_GetMobjFeet(pohbee);
+	const fixed_t gunX = gun->x + gun->momx;
+	const fixed_t gunY = gun->y + gun->momy;
+	const fixed_t gunZ = P_GetMobjHead(gun) + gun->momz;
 
-	const fixed_t offsetX = (pohbee->x - gun->x) / gun_numsegs(gun);
-	const fixed_t offsetY = (pohbee->y - gun->y) / gun_numsegs(gun);
+	const fixed_t beeX = pohbee->x + pohbee->momx;
+	const fixed_t beeY = pohbee->y + pohbee->momy;
+	const fixed_t beeZ = P_GetMobjFeet(pohbee) + pohbee->momz;
+
+	const fixed_t offsetX = (beeX - gunX) / gun_numsegs(gun);
+	const fixed_t offsetY = (beeY - gunY) / gun_numsegs(gun);
 	const fixed_t offsetZ = (beeZ - gunZ) / gun_numsegs(gun);
 
 	mobj_t *chain = NULL;
 
-	fixed_t curX = gun->x + (offsetX / 2);
-	fixed_t curY = gun->y + (offsetY / 2);
+	fixed_t curX = gunX + (offsetX / 2);
+	fixed_t curY = gunY + (offsetY / 2);
 	fixed_t curZ = gunZ + (offsetZ / 2);
 
 	chain = gun_chains(gun);
