@@ -303,7 +303,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 
 		if (leveltime & 1)
 		{
-			laser->spritexscale = 3*FRACUNIT/2;
+			laser->spritexscale = 5*FRACUNIT/2;
 		}
 		else
 		{
