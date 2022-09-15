@@ -7759,6 +7759,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		K_SpawnBrakeVisuals(player);
 	}
+	else
+	{
+		player->mo->spriteyoffset = 0;
+	}
 
 	K_HandleDelayedHitByEm(player);
 }

@@ -1069,6 +1069,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo)
 		}
 	}
 
+	mo->terrainOverlay->spriteyoffset = -mo->terrain->floorClip;
 	mo->terrainOverlay->color = o->color;
 
 	K_SetTerrainOverlayState(mo, act, st);
