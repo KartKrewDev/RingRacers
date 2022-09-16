@@ -3698,9 +3698,9 @@ static void G_DoCompleted(void)
 					cm = nextmap; //Start the loop again so that the error checking below is executed.
 
 					//Make sure the map actually exists before you try to go to it!
-					if (cm < 0 || cm >= nummapheaders)
+					if (cm < 0 || cm >= nummapheaders || mapheaderinfo[cm]->lumpnum == LUMPERROR)
 					{
-						CONS_Alert(CONS_ERROR, M_GetText("Next map given (MAP %d) doesn't exist! Reverting to MAP01.\n"), cm+1);
+						CONS_Alert(CONS_ERROR, M_GetText("Next map given (id %d) doesn't exist! Reverting to id 0.\n"), cm+1);
 						cm = 0;
 						break;
 					}
