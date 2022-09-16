@@ -4599,6 +4599,12 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	// internal game map
 	// well this check is useless because it is done before (d_netcmd.c::command_map_f)
 	// but in case of for demos....
+	if (!mapname)
+	{
+		I_Error("Internal game map with ID %d not found\n", map);
+		Command_ExitGame_f();
+		return;
+	}
 	if (mapheaderinfo[map-1]->lumpnum == LUMPERROR)
 	{
 		I_Error("Internal game map '%s' not found\n", mapname);
