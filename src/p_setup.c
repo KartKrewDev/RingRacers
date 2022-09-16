@@ -365,13 +365,13 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 
 	if (mapheaderinfo[num]->thumbnailPic)
 	{
-		Z_Free(mapheaderinfo[num]->thumbnailPic);
+		Patch_Free(mapheaderinfo[num]->thumbnailPic);
 		mapheaderinfo[num]->thumbnailPic = NULL;
 	}
 
 	if (mapheaderinfo[num]->minimapPic)
 	{
-		Z_Free(mapheaderinfo[num]->minimapPic);
+		Patch_Free(mapheaderinfo[num]->minimapPic);
 		mapheaderinfo[num]->minimapPic = NULL;
 	}
 
@@ -4339,8 +4339,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	// internal game map
-	maplumpname = G_BuildMapName(gamemap);
-	lastloadedmaplumpnum = W_CheckNumForMap(maplumpname);
+	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
+	lastloadedmaplumpnum = mapheaderinfo[gamemap-1]->lumpnum;
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
@@ -4655,6 +4655,87 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+// Initialising map data (and catching replacements)...
+UINT8 P_InitMapData(INT32 numexistingmapheaders)
+{
+	UINT8 ret = 0;
+	INT32 i;
+	lumpnum_t maplump;
+	virtres_t *virtmap;
+	virtlump_t *minimap, *thumbnailPic;
+	char *name;
+
+	for (i = 0; i < nummapheaders; ++i)
+	{
+		name = mapheaderinfo[i]->lumpname;
+		maplump = W_CheckNumForMap(name);
+
+		// Doesn't exist?
+		if (maplump == INT16_MAX)
+		{
+#ifndef DEVELOP
+			if (!numexistingmapheaders)
+			{
+				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
+			}
+#endif
+			continue;
+		}
+
+		// No change?
+		if (mapheaderinfo[i]->lumpnum == maplump)
+			continue;
+
+		// Okay, it does...
+		{
+			ret |= MAPRET_ADDED;
+			CONS_Printf("%s\n", name);
+
+			if (numexistingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			{
+				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
+
+				//If you replaced the map you're on, end the level when done.
+				if (i == gamemap - 1)
+					ret |= MAPRET_CURRENTREPLACED;
+			}
+
+			mapheaderinfo[i]->lumpnum = maplump;
+
+			// Get map thumbnail and minimap
+			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
+			thumbnailPic = vres_Find(virtmap, "PICTURE");
+			minimap = vres_Find(virtmap, "MINIMAP");
+
+			// Clear out existing graphics...
+			if (mapheaderinfo[i]->thumbnailPic)
+			{
+				Patch_Free(mapheaderinfo[i]->thumbnailPic);
+			}
+
+			if (mapheaderinfo[i]->minimapPic)
+			{
+				Patch_Free(mapheaderinfo[i]->minimapPic);
+			}
+
+			// Now apply the new ones!
+			if (thumbnailPic)
+			{
+				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_STATIC);
+			}
+
+			if (minimap)
+			{
+				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_STATIC);
+			}
+
+			vres_Free(virtmap);
+		}
+	}
+
+	return ret;
+}
+
 UINT16 p_adding_file = INT16_MAX;
 
 //
@@ -4665,16 +4746,12 @@ boolean P_AddWadFile(const char *wadfilename)
 {
 	size_t i, j, sreplaces = 0, mreplaces = 0, digmreplaces = 0;
 	INT32 numexistingmapheaders = nummapheaders;
-	INT32 map;
 	UINT16 numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
-	virtres_t *virtmap;
-	virtlump_t *minimap, *thumbnailPic;
 
 	//boolean texturechange = false; ///\todo Useless; broken when back-frontporting PK3 changes?
-	boolean mapsadded = false;
-	boolean replacedcurrentmap = false;
+	UINT8 mapsadded = 0;
 
 	// Vars to help us with the position start and amount of each resource type.
 	// Useful for PK3s since they use folders.
@@ -4824,44 +4901,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	//
 	// search for maps
 	//
-	for (map = 0; map < numexistingmapheaders; ++map)
-	{
-		name = mapheaderinfo[map]->lumpname;
-
-		if (mapheaderinfo[i]->lumpnum != W_CheckNumForMap(name))
-		{
-			mapheaderinfo[i]->lumpnum = W_CheckNumForMap(name);
-
-			// Get map thumbnail and minimap
-			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
-			thumbnailPic = vres_Find(virtmap, "PICTURE");
-			minimap = vres_Find(virtmap, "MINIMAP");
-
-			if (thumbnailPic)
-			{
-				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_CACHE);
-			}
-
-			if (minimap)
-			{
-				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_HUDGFX);
-			}
-
-			vres_Free(virtmap);
-		}
-
-		if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
-		{
-			G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-
-			//If you replaced the map you're on, end the level when done.
-			if (map == gamemap - 1)
-				replacedcurrentmap = true;
-
-			CONS_Printf("%s\n", name);
-			mapsadded = true;
-		}
-	}
+	mapsadded = P_InitMapData(numexistingmapheaders);
 
 	if (!mapsadded)
 		CONS_Printf(M_GetText("No maps added\n"));
@@ -4880,7 +4920,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	if (cursaveslot > 0)
 		cursaveslot = 0;
 
-	if (replacedcurrentmap && gamestate == GS_LEVEL && (netgame || multiplayer))
+	if ((mapsadded & MAPRET_CURRENTREPLACED) && gamestate == GS_LEVEL && (netgame || multiplayer))
 	{
 		CONS_Printf(M_GetText("Current map %d replaced by added file, ending the level to ensure consistency.\n"), gamemap);
 		if (server)

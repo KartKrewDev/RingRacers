@@ -1855,7 +1855,7 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 			}
 
 			if (!PictureOfLevel)
-				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+				PictureOfLevel = blanklvl;
 
 			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
 			i = (i+1) % cup->numlevels;
@@ -2087,7 +2087,7 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 	}
 
 	if (!PictureOfLevel)
-		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+		PictureOfLevel = blanklvl;
 
 	if (redblink)
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
@@ -2163,11 +2163,9 @@ void M_DrawTimeAttack(void)
 	{
 		if (mapheaderinfo[map])
 		{
-			minimap = mapheaderinfo[map]->minimapPic;
+			if ((minimap = mapheaderinfo[map]->minimapPic))
+				V_DrawScaledPatch(24-t, 82, 0, minimap);
 		}
-
-		if (!minimap)
-			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
 		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
 		K_drawKartTimestamp(0, 162+t, 88, 0, 2);

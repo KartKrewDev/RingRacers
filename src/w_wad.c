@@ -1274,7 +1274,7 @@ lumpnum_t W_CheckNumForMap(const char *name)
 		}
 	}
 
-	for (i = numwadfiles - 1; i < numwadfiles; i--)
+	for (i = numwadfiles - 1; i >= 0; i--)
 	{
 		check = W_CheckNumForMapPwad(name, (UINT16)i, 0);
 

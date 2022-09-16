@@ -597,20 +597,7 @@ void G_SetGameModified(boolean silent, boolean major)
   */
 const char *G_BuildMapName(INT32 map)
 {
-#if 0
-	if (map == 0) // hack???
-	{
-		if (gamestate == GS_TITLESCREEN)
-			map = -1;
-		else if (gamestate == GS_LEVEL)
-			map = gamemap-1;
-		else
-			map = prevmap;
-		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, 0, 0, false, NULL)+1;
-	}
-#endif
-
-	if (map > 0 && map <= NUMMAPS && mapheaderinfo[map - 1] != NULL)
+	if (map > 0 && map <= nummapheaders && mapheaderinfo[map - 1] != NULL)
 	{
 		return mapheaderinfo[map - 1]->lumpname;
 	}
@@ -4612,7 +4599,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	// internal game map
 	// well this check is useless because it is done before (d_netcmd.c::command_map_f)
 	// but in case of for demos....
-	if (W_CheckNumForName(mapname) == LUMPERROR)
+	if (mapheaderinfo[map-1]->lumpnum == LUMPERROR)
 	{
 		I_Error("Internal game map '%s' not found\n", mapname);
 		Command_ExitGame_f();

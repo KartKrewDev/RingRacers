@@ -1190,14 +1190,9 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 numbasemapheaders;
-	INT32 i;
-	UINT16 wadnum;
-	char *name;
-	virtres_t *virtmap;
-	virtlump_t *minimap, *thumbnailPic;
-
 	INT32 p;
+
+	INT32 numbasemapheaders;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
@@ -1441,6 +1436,11 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
+	//
+	// search for mainwad maps
+	//
+	P_InitMapData(0);
+
 	numbasemapheaders = nummapheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
@@ -1450,40 +1450,9 @@ void D_SRB2Main(void)
 	D_CleanFile(startuppwads);
 
 	//
-	// search for maps
+	// search for pwad maps
 	//
-	for (wadnum = mainwads+1; wadnum < numwadfiles; wadnum++)
-	{
-		for (i = 0; i < numbasemapheaders; ++i)
-		{
-			name = mapheaderinfo[i]->lumpname;
-			mapheaderinfo[i]->lumpnum = W_CheckNumForMap(name);
-
-			// Get map thumbnail and minimap
-			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
-			thumbnailPic = vres_Find(virtmap, "PICTURE");
-			minimap = vres_Find(virtmap, "MINIMAP");
-
-			if (thumbnailPic)
-			{
-				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_CACHE);
-			}
-
-			if (minimap)
-			{
-				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_HUDGFX);
-			}
-
-			vres_Free(virtmap);
-
-			if (W_CheckNumForMapPwad(name, wadnum, 0) != INT16_MAX)
-			{
-				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-
-				CONS_Printf("%s\n", name);
-			}
-		}
-	}
+	P_InitMapData(numbasemapheaders);
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
