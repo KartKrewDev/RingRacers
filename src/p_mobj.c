@@ -1132,6 +1132,12 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
 		}
+
+		if (mo->player->fastfall != 0)
+		{
+			// Fast falling
+			gravityadd *= 4;
+		}
 	}
 	else
 	{
@@ -1571,7 +1577,7 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (LUAh_MobjMoveBlocked(mo))
+		if (LUA_HookMobjMoveBlocked(mo, tmhitthing, blockingline))
 		{
 			if (P_MobjWasRemoved(mo))
 				return;
@@ -1764,7 +1770,9 @@ void P_XYMovement(mobj_t *mo)
 
 	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT)) { // Check to see if we ran off
 
-		if (oldslope != mo->standingslope) { // First, compare different slopes
+		if (oldslope != mo->standingslope)
+		{
+			// First, compare different slopes
 			angle_t oldangle, newangle;
 			angle_t moveangle = K_MomentumAngle(mo);
 
@@ -1776,7 +1784,9 @@ void P_XYMovement(mobj_t *mo)
 				newangle = 0;
 
 			// Now compare the Zs of the different quantizations
-			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180) { // Allow for a bit of sticking - this value can be adjusted later
+			if (oldangle-newangle > ANG30 && oldangle-newangle < ANGLE_180)
+			{
+				// Allow for a bit of sticking - this value can be adjusted later
 				mo->standingslope = oldslope;
 				P_SetPitchRollFromSlope(mo, mo->standingslope);
 				P_SlopeLaunch(mo);
@@ -1784,26 +1794,36 @@ void P_XYMovement(mobj_t *mo)
 				//CONS_Printf("launched off of slope - ");
 			}
 
-			/*CONS_Printf("old angle %f - new angle %f = %f\n",
-						FIXED_TO_FLOAT(AngleFixed(oldangle)),
-						FIXED_TO_FLOAT(AngleFixed(newangle)),
-						FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
-						);*/
-		// Sryder 2018-11-26: Don't launch here if it's a slope without physics, we stick to those like glue anyway
-		} else if (predictedz-mo->z > abs(slopemom.z/2)
-			&& !(mo->standingslope->flags & SL_NOPHYSICS)) { // Now check if we were supposed to stick to this slope
+			/*
+			CONS_Printf("old angle %f - new angle %f = %f\n",
+				FIXED_TO_FLOAT(AngleFixed(oldangle)),
+				FIXED_TO_FLOAT(AngleFixed(newangle)),
+				FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
+			);
+			*/
+		
+		}
+		else if (predictedz - mo->z > abs(slopemom.z / 2))
+		{
+			// Now check if we were supposed to stick to this slope
 			//CONS_Printf("%d-%d > %d\n", (predictedz), (mo->z), (slopemom.z/2));
 			P_SlopeLaunch(mo);
 		}
-	} else if (moved && mo->standingslope && predictedz) {
+	}
+	else if (moved && mo->standingslope && predictedz)
+	{
 		angle_t moveangle = K_MomentumAngle(mo);
 		angle_t newangle = FixedMul((signed)mo->standingslope->zangle, FINECOSINE((moveangle - mo->standingslope->xydirection) >> ANGLETOFINESHIFT));
 
-			/*CONS_Printf("flat to angle %f - predicted z of %f\n",
-						FIXED_TO_FLOAT(AngleFixed(ANGLE_MAX-newangle)),
-						FIXED_TO_FLOAT(predictedz)
-						);*/
-		if (ANGLE_MAX-newangle > ANG30 && newangle > ANGLE_180) {
+		/*
+		CONS_Printf("flat to angle %f - predicted z of %f\n",
+			FIXED_TO_FLOAT(AngleFixed(ANGLE_MAX-newangle)),
+			FIXED_TO_FLOAT(predictedz)
+		);
+		*/
+
+		if (ANGLE_MAX-newangle > ANG30 && newangle > ANGLE_180)
+		{
 			mo->momz = P_MobjFlip(mo)*FRACUNIT/2;
 			mo->z = predictedz + P_MobjFlip(mo);
 			mo->standingslope = NULL;
@@ -3123,12 +3143,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 	}
 
-	if (mobj->watertop > top2)
-		mobj->watertop = top2;
-
-	if (mobj->waterbottom < bot2)
-		mobj->waterbottom = bot2;
-
 	// Spectators and dead players don't get to do any of the things after this.
 	if (p && (p->spectator || p->playerstate != PST_LIVE))
 	{
@@ -3136,8 +3150,10 @@ void P_MobjCheckWater(mobj_t *mobj)
 	}
 
 	// The rest of this code only executes on a water state change.
-	if (!!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	if (waterwasnotset || !!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
+	{
 		return;
+	}
 
 	if (p && !p->waterskip &&
 			p->curshield != KSHIELD_BUBBLE && wasinwater)
@@ -3173,62 +3189,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			diff = -diff;
 		}
-
-		// Time to spawn the bubbles!
-		{
-			INT32 i;
-			INT32 bubblecount;
-			UINT8 prandom[4];
-			mobj_t *bubble;
-			mobjtype_t bubbletype;
-
-			if (mobj->eflags & MFE_GOOWATER || wasingoo)
-				S_StartSound(mobj, sfx_ghit);
-			else if (mobj->eflags & MFE_TOUCHLAVA)
-				S_StartSound(mobj, sfx_splash);
-			else
-				S_StartSound(mobj, sfx_splish); // And make a sound!
-
-			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale)>>(FRACBITS-1);
-			// Max bubble count
-			if (bubblecount > 128)
-				bubblecount = 128;
-
-			// Create tons of bubbles
-			for (i = 0; i < bubblecount; i++)
-			{
-				// P_RandomByte()s are called individually to allow consistency
-				// across various compilers, since the order of function calls
-				// in C is not part of the ANSI specification.
-				prandom[0] = P_RandomByte();
-				prandom[1] = P_RandomByte();
-				prandom[2] = P_RandomByte();
-				prandom[3] = P_RandomByte();
-
-				bubbletype = MT_SMALLBUBBLE;
-				if (!(prandom[0] & 0x3)) // medium bubble chance up to 64 from 32
-					bubbletype = MT_MEDIUMBUBBLE;
-
-				bubble = P_SpawnMobj(
-					mobj->x + FixedMul((prandom[1]<<(FRACBITS-3)) * (prandom[0]&0x80 ? 1 : -1), mobj->scale),
-					mobj->y + FixedMul((prandom[2]<<(FRACBITS-3)) * (prandom[0]&0x40 ? 1 : -1), mobj->scale),
-					mobj->z + FixedMul((prandom[3]<<(FRACBITS-2)), mobj->scale), bubbletype);
-
-				if (bubble)
-				{
-					if (P_MobjFlip(mobj)*mobj->momz < 0)
-						bubble->momz = mobj->momz >> 4;
-					else
-						bubble->momz = 0;
-
-					bubble->destscale = mobj->scale;
-					P_SetScale(bubble, mobj->scale);
-				}
-			}
-		}
-
-		if (waterwasnotset)
-			return;
 
 		// Check to make sure you didn't just cross into a sector to jump out of
 		// that has shallower water than the block you were originally in.
@@ -3329,6 +3289,59 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
+			}
+		}
+
+		// Time to spawn the bubbles!
+		{
+			INT32 i;
+			INT32 bubblecount;
+			UINT8 prandom[4];
+			mobj_t *bubble;
+			mobjtype_t bubbletype;
+
+			if (mobj->eflags & MFE_GOOWATER || wasingoo)
+				S_StartSound(mobj, sfx_ghit);
+			else if (mobj->eflags & MFE_TOUCHLAVA)
+				S_StartSound(mobj, sfx_splash);
+			else
+				S_StartSound(mobj, sfx_splish); // And make a sound!
+
+			bubblecount = FixedDiv(abs(mobj->momz), mobj->scale) >> (FRACBITS-1);
+			// Max bubble count
+			if (bubblecount > 128)
+				bubblecount = 128;
+
+			// Create tons of bubbles
+			for (i = 0; i < bubblecount; i++)
+			{
+				// P_RandomByte()s are called individually to allow consistency
+				// across various compilers, since the order of function calls
+				// in C is not part of the ANSI specification.
+				prandom[0] = P_RandomByte();
+				prandom[1] = P_RandomByte();
+				prandom[2] = P_RandomByte();
+				prandom[3] = P_RandomByte();
+
+				bubbletype = MT_SMALLBUBBLE;
+				if (!(prandom[0] & 0x3)) // medium bubble chance up to 64 from 32
+					bubbletype = MT_MEDIUMBUBBLE;
+
+				bubble = P_SpawnMobj(
+					mobj->x + FixedMul((prandom[1]<<(FRACBITS-3)) * (prandom[0]&0x80 ? 1 : -1), mobj->scale),
+					mobj->y + FixedMul((prandom[2]<<(FRACBITS-3)) * (prandom[0]&0x40 ? 1 : -1), mobj->scale),
+					mobj->z + FixedMul((prandom[3]<<(FRACBITS-2)), mobj->scale), bubbletype);
+
+				if (bubble)
+				{
+					if (P_MobjFlip(mobj)*mobj->momz < 0)
+						bubble->momz = mobj->momz >> 4;
+					else
+						bubble->momz = 0;
+
+					bubble->destscale = mobj->scale;
+					P_SetScale(bubble, mobj->scale);
+				}
 			}
 		}
 	}
@@ -3966,7 +3979,7 @@ static void P_RingThinker(mobj_t *mobj)
 
 		if (!mobj->fuse)
 		{
-			if (!LUAh_MobjFuse(mobj))
+			if (!LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)))
 			{
 				mobj->renderflags &= ~RF_DONTDRAW;
 				spark = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SIGNSPARKLE);	// Spawn a fancy sparkle
@@ -5346,7 +5359,7 @@ static boolean P_ParticleGenSceneryThink(mobj_t *mobj)
 
 static void P_MobjSceneryThink(mobj_t *mobj)
 {
-	if (LUAh_MobjThinker(mobj))
+	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjThinker)))
 		return;
 	if (P_MobjWasRemoved(mobj))
 		return;
@@ -6208,7 +6221,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->fuse--;
 			if (!mobj->fuse)
 			{
-				if (!LUAh_MobjFuse(mobj))
+				if (!LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)))
 					P_RemoveMobj(mobj);
 				return;
 			}
@@ -6228,7 +6241,7 @@ static boolean P_MobjPushableThink(mobj_t *mobj)
 
 static boolean P_MobjBossThink(mobj_t *mobj)
 {
-	if (LUAh_BossThinker(mobj))
+	if (LUA_HookMobj(mobj, MOBJ_HOOK(BossThinker)))
 	{
 		if (P_MobjWasRemoved(mobj))
 			return false;
@@ -7107,17 +7120,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->fuse <= 16)
 		{
-			mobj->color = SKINCOLOR_KETCHUP;
+			mobj->color = SKINCOLOR_GOLD;
 			/* don't draw papersprite frames after blue boost */
 			mobj->renderflags ^= RF_DONTDRAW;
 		}
 		else if (mobj->fuse <= 32)
-			mobj->color = SKINCOLOR_SAPPHIRE;
+			mobj->color = SKINCOLOR_KETCHUP;
 		else if (mobj->fuse <= 48)
-			mobj->color = SKINCOLOR_PURPLE;
+			mobj->color = SKINCOLOR_SAPPHIRE;
 		else if (mobj->fuse > 48)
 			mobj->color = K_RainbowColor(
-				(SKINCOLOR_PURPLE - SKINCOLOR_PINK) // Smoothly transition into the other state
+				(SKINCOLOR_SAPPHIRE - SKINCOLOR_PINK) // Smoothly transition into the other state
 				+ ((mobj->fuse - 32) * 2) // Make the color flashing slow down while it runs out
 			);
 
@@ -7132,14 +7145,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				break;
 
-			case 3:/* purple boost */
-				if ((mobj->fuse == 32)/* to blue*/
-				|| (mobj->fuse == 16))/* to red*/
+			case 3:/* blue boost */
+				if ((mobj->fuse == 32)/* to red*/
+				|| (mobj->fuse == 16))/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 
-			case 2:/* blue boost */
-				if (mobj->fuse == 16)/* to red*/
+			case 2:/* red boost */
+				if (mobj->fuse == 16)/* to yellow*/
 					K_SpawnDriftBoostClip(mobj->target->player);
 				break;
 
@@ -7163,6 +7176,89 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 
 				mobj->movecount = p->driftboost;
+			}
+		}
+		break;
+	case MT_TRIPWIREBOOST:
+		if (!mobj->target || !mobj->target->health
+			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->angle = K_MomentumAngle(mobj->target);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
+		mobj->destscale = mobj->target->scale;
+		P_SetScale(mobj, mobj->target->scale);
+
+		if (mobj->extravalue1)
+		{
+			mobj->angle += ANGLE_180;
+		}
+
+		{
+			fixed_t convSpeed = (mobj->target->player->speed * 100) / K_GetKartSpeed(mobj->target->player, false, true);
+			UINT8 trans = ((mobj->target->player->tripwireLeniency + 1) * (NUMTRANSMAPS+1)) / TRIPWIRETIME;
+
+			if (trans > NUMTRANSMAPS)
+				trans = NUMTRANSMAPS;
+
+			trans = NUMTRANSMAPS - trans;
+
+			if ((trans >= NUMTRANSMAPS) // not a valid visibility
+				|| (convSpeed < 150 && (leveltime & 1)) // < 150% flickering
+				|| (mobj->target->player->tripwirePass < TRIPWIRE_BOOST) // Not strong enough to make an aura
+				|| mobj->target->player->flamedash) // Flameshield dash
+			{
+				mobj->renderflags |= RF_DONTDRAW;
+			}
+			else
+			{
+				boolean blastermode = (convSpeed >= 200) && (mobj->target->player->tripwirePass >= TRIPWIRE_BLASTER);
+
+				mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+				if (trans != 0)
+				{
+					mobj->renderflags |= (trans << RF_TRANSSHIFT);
+				}
+				mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+
+				if (mobj->target->player->invincibilitytimer > 0)
+				{
+					if (mobj->target->player->invincibilitytimer > itemtime+(2*TICRATE))
+					{
+						mobj->color = K_RainbowColor(leveltime / 2);
+					}
+					else
+					{
+						mobj->color = SKINCOLOR_INVINCFLASH;
+					}
+					mobj->colorized = true;
+				}
+				else if (mobj->target->player->curshield == KSHIELD_FLAME)
+				{
+					mobj->color = SKINCOLOR_KETCHUP;
+					mobj->colorized = true;
+				}
+				else
+				{
+					mobj->color = SKINCOLOR_NONE;
+					mobj->colorized = false;
+				}
+
+				if (blastermode == !(mobj->flags2 & MF2_AMBUSH))
+				{
+					mobj->flags2 ^= MF2_AMBUSH;
+					if (blastermode)
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BLAST_BOTTOM : S_TRIPWIREBOOST_BLAST_TOP);
+					}
+					else
+					{
+						P_SetMobjState(mobj, (mobj->extravalue1) ? S_TRIPWIREBOOST_BOTTOM : S_TRIPWIREBOOST_TOP);
+					}
+				}
 			}
 		}
 		break;
@@ -7287,10 +7383,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_INSTASHIELDB:
 		mobj->renderflags ^= RF_DONTDRAW;
-		K_MatchGenericExtraFlags(mobj, mobj->target);
 		/* FALLTHRU */
 	case MT_INSTASHIELDA:
-		if (!mobj->target || !mobj->target->health || (mobj->target->player && !mobj->target->player->instashield))
+		if (!mobj->target || P_MobjWasRemoved(mobj->target) || !mobj->target->health || (mobj->target->player && !mobj->target->player->instashield))
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -7746,6 +7841,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_HYUDORO_CENTER:
 	{
 		Obj_HyudoroCenterThink(mobj);
+		break;
+	}
+	case MT_SHRINK_POHBEE:
+	{
+		Obj_PohbeeThinker(mobj);
 		break;
 	}
 	case MT_ROCKETSNEAKER:
@@ -9067,7 +9167,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	if (mobj->fuse)
 		return true;
 
-	if (LUAh_MobjFuse(mobj) || P_MobjWasRemoved(mobj))
+	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjFuse)) || P_MobjWasRemoved(mobj))
 		;
 	else if (mobj->info->flags & MF_MONITOR)
 	{
@@ -9299,13 +9399,13 @@ void P_MobjThinker(mobj_t *mobj)
 	// Check for a Lua thinker first
 	if (!mobj->player)
 	{
-		if (LUAh_MobjThinker(mobj) || P_MobjWasRemoved(mobj))
+		if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjThinker)) || P_MobjWasRemoved(mobj))
 			return;
 	}
 	else if (!mobj->player->spectator)
 	{
 		// You cannot short-circuit the player thinker like you can other thinkers.
-		LUAh_MobjThinker(mobj);
+		LUA_HookMobj(mobj, MOBJ_HOOK(MobjThinker));
 		if (P_MobjWasRemoved(mobj))
 			return;
 	}
@@ -9796,7 +9896,24 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	const mobjinfo_t *info = &mobjinfo[type];
 	SINT8 sc = -1;
 	state_t *st;
-	mobj_t *mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
+	mobj_t *mobj;
+
+	if (type == MT_NULL)
+	{
+#if 0		
+#ifdef PARANOIA
+		I_Error("Tried to spawn MT_NULL\n");
+#endif
+		return NULL;
+#endif
+		// Hack: Some code assumes that P_SpawnMobj can never return NULL
+		// So replace MT_NULL with MT_RAY in the meantime
+		// Remove when dealt properly
+		CONS_Debug(DBG_GAMELOGIC, "Tried to spawn MT_NULL, using MT_RAY\n");
+		type = MT_RAY;
+	}
+
+	mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
 
 	// this is officially a mobj, declared as soon as possible.
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
@@ -9844,6 +9961,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Sprite rendering
 	mobj->spritexscale = mobj->spriteyscale = mobj->scale;
 	mobj->spritexoffset = mobj->spriteyoffset = 0;
+	mobj->dispoffset = info->dispoffset;
 	mobj->floorspriteslope = NULL;
 
 	// set subsector and/or block links
@@ -9896,7 +10014,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	// DANGER! This can cause P_SpawnMobj to return NULL!
 	// Avoid using P_RemoveMobj on the newly created mobj in "MobjSpawn" Lua hooks!
-	if (LUAh_MobjSpawn(mobj))
+	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn)))
 	{
 		if (P_MobjWasRemoved(mobj))
 			return NULL;
@@ -10235,7 +10353,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				mobj_t *side = P_SpawnMobj(mobj->x + FINECOSINE((ang>>ANGLETOFINESHIFT) & FINEMASK),
 					mobj->y + FINESINE((ang>>ANGLETOFINESHIFT) & FINEMASK), mobj->z, MT_DAYTONAPINETREE_SIDE);
 				P_InitAngle(side, ang);
-				side->target = mobj;
+				P_SetTarget(&side->target, mobj);
 				side->threshold = i;
 			}
 			break;
@@ -10496,7 +10614,7 @@ void P_RemoveMobj(mobj_t *mobj)
 		return; // something already removing this mobj.
 
 	mobj->thinker.function.acp1 = (actionf_p1)P_RemoveThinkerDelayed; // shh. no recursing.
-	LUAh_MobjRemoved(mobj);
+	LUA_HookMobj(mobj, MOBJ_HOOK(MobjRemoved));
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker; // needed for P_UnsetThingPosition, etc. to work.
 
 	// Rings only, please!
@@ -10539,6 +10657,16 @@ void P_RemoveMobj(mobj_t *mobj)
 	{
 		P_RemoveMobj(mobj->player->followmobj);
 		P_SetTarget(&mobj->player->followmobj, NULL);
+	}
+
+	if (mobj->type == MT_SHRINK_POHBEE)
+	{
+		Obj_PohbeeRemoved(mobj);
+	}
+
+	if (mobj->type == MT_SHRINK_GUN)
+	{
+		Obj_ShrinkGunRemoved(mobj);
 	}
 
 	mobj->health = 0; // Just because
@@ -10652,6 +10780,7 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 
 	// free block
 	P_RemoveThinker((thinker_t *)mobj);
+	R_RemoveMobjInterpolator(mobj);
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
@@ -12093,7 +12222,7 @@ static void P_SnapToFinishLine(mobj_t *mobj)
 
 static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 {
-	boolean override = LUAh_MapThingSpawn(mobj, mthing);
+	boolean override = LUA_HookMapThingSpawn(mobj, mthing);
 
 	if (P_MobjWasRemoved(mobj))
 		return false;

@@ -122,7 +122,7 @@ typedef enum
 	MF_AMBIENT          = 1<<10,
 	// Slide this object when it hits a wall.
 	MF_SLIDEME          = 1<<11,
-	// Player cheat.
+	// Don't collide with walls or solid objects. Two MF_NOCLIP objects can't touch each other at all!
 	MF_NOCLIP           = 1<<12,
 	// Allow moves to any height, no gravity. For active floaters.
 	MF_FLOAT            = 1<<13,
@@ -407,6 +407,8 @@ typedef struct mobj_s
 
 	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
+
+	INT32 dispoffset;
 
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;

@@ -66,7 +66,7 @@
 
 #include "md5.h" // map MD5
 
-// for LUAh_MapLoad
+// for MapLoad hook
 #include "lua_script.h"
 #include "lua_hook.h"
 
@@ -96,6 +96,7 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time
@@ -579,15 +580,7 @@ or NULL if we want to allocate it now.
 static INT32
 Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 {
-#ifndef NO_PNG_LUMPS
-	UINT8         buffer[8];
-#endif
-
-	lumpnum_t    flatnum;
 	int       texturenum;
-	UINT8     *flatpatch;
-	size_t    lumplength;
-
 	size_t i;
 
 	// Scan through the already found flats, return if it matches.
@@ -615,57 +608,23 @@ Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 	strlcpy(levelflat->name, flatname, sizeof (levelflat->name));
 	strupr(levelflat->name);
 
-	/* If we can't find a flat, try looking for a texture! */
-	if (( flatnum = R_GetFlatNumForName(levelflat->name) ) == LUMPERROR)
+	if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
 	{
-		if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
-		{
-			// check for REDWALL
-			if (( texturenum = R_CheckTextureNumForName("REDWALL") ) != -1)
-				goto texturefound;
-			// check for REDFLR
-			else if (( flatnum = R_GetFlatNumForName("REDFLR") ) != LUMPERROR)
-				goto flatfound;
-			// nevermind
-			levelflat->type = LEVELFLAT_NONE;
-		}
-		else
-		{
-texturefound:
-			levelflat->type = LEVELFLAT_TEXTURE;
-			levelflat->u.texture.    num = texturenum;
-			levelflat->u.texture.lastnum = texturenum;
-			/* start out unanimated */
-			levelflat->u.texture.basenum = -1;
-		}
+		// check for missing texture
+		if (( texturenum = R_CheckTextureNumForName(MISSING_TEXTURE) ) != -1)
+			goto texturefound;
+
+		// nevermind
+		levelflat->type = LEVELFLAT_NONE;
 	}
 	else
 	{
-flatfound:
-		/* This could be a flat, patch, or PNG. */
-		flatpatch = W_CacheLumpNum(flatnum, PU_CACHE);
-		lumplength = W_LumpLength(flatnum);
-		if (Picture_CheckIfDoomPatch((softwarepatch_t *)flatpatch, lumplength))
-			levelflat->type = LEVELFLAT_PATCH;
-		else
-		{
-#ifndef NO_PNG_LUMPS
-			/*
-			Only need eight bytes for PNG headers.
-			FIXME: Put this elsewhere.
-			*/
-			W_ReadLumpHeader(flatnum, buffer, 8, 0);
-			if (Picture_IsLumpPNG(buffer, lumplength))
-				levelflat->type = LEVELFLAT_PNG;
-			else
-#endif/*NO_PNG_LUMPS*/
-				levelflat->type = LEVELFLAT_FLAT;/* phew */
-		}
-		if (flatpatch)
-			Z_Free(flatpatch);
-
-		levelflat->u.flat.    lumpnum = flatnum;
-		levelflat->u.flat.baselumpnum = LUMPERROR;
+texturefound:
+		levelflat->type = LEVELFLAT_TEXTURE;
+		levelflat->u.texture.    num = texturenum;
+		levelflat->u.texture.lastnum = texturenum;
+		/* start out unanimated */
+		levelflat->u.texture.basenum = -1;
 	}
 
 	levelflat->terrain =
@@ -3924,7 +3883,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also m_menu.c's Nextmap_OnChange
+	// see also k_menu.c's Nextmap_OnChange
 	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
@@ -4527,7 +4486,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		P_PreTicker(2);
 		P_MapStart(); // just in case MapLoad modifies tmthing
-		LUAh_MapLoad();
+		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tmthing
 	}
 

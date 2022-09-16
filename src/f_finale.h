@@ -129,9 +129,6 @@ extern UINT16 curtttics;
 
 #define TITLEBACKGROUNDACTIVE (curfadevalue >= 0 || curbgname[0])
 
-void F_InitMenuPresValues(void);
-void F_MenuPresTicker(boolean run);
-
 //
 // WIPE
 //
@@ -163,7 +160,7 @@ enum
 	wipe_voting_toblack,
 	wipe_continuing_toblack,
 	wipe_titlescreen_toblack,
-	wipe_timeattack_toblack,
+	wipe_menu_toblack,
 	wipe_credits_toblack,
 	wipe_evaluation_toblack,
 	wipe_gameend_toblack,
@@ -181,7 +178,7 @@ enum
 	wipe_voting_final,
 	wipe_continuing_final,
 	wipe_titlescreen_final,
-	wipe_timeattack_final,
+	wipe_menu_final,
 	wipe_credits_final,
 	wipe_evaluation_final,
 	wipe_gameend_final,

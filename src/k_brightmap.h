@@ -23,11 +23,11 @@ typedef struct brightmapStorage_s
 	// Stores data for brightmap definitions,
 	// before putting them into texturebrightmaps.
 
-	char textureName[9]; // The texture's name.
-	UINT32 textureHash; // The texture name's hash.
+	char textureName[8];	// The texture's name.
+	UINT32 textureHash;		// The texture name's hash.
 
-	char brightmapName[9]; // The brightmap's name.
-	UINT32 brightmapHash; // The brightmap name's hash.
+	char brightmapName[8];	// The brightmap's name.
+	UINT32 brightmapHash;	// The brightmap name's hash.
 } brightmapStorage_t;
 
 /*--------------------------------------------------

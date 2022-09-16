@@ -99,7 +99,8 @@ enum mobj_e {
 	mobj_sprxoff,
 	mobj_spryoff,
 	mobj_sprzoff,
-	mobj_hitlag
+	mobj_hitlag,
+	mobj_dispoffset
 };
 
 static const char *const mobj_opt[] = {
@@ -180,6 +181,7 @@ static const char *const mobj_opt[] = {
 	"spryoff",
 	"sprzoff",
 	"hitlag",
+	"dispoffset",
 	NULL};
 
 #define UNIMPLEMENTED luaL_error(L, LUA_QL("mobj_t") " field " LUA_QS " is not implemented for Lua and cannot be accessed.", mobj_opt[field])
@@ -457,6 +459,9 @@ static int mobj_get(lua_State *L)
 		break;
 	case mobj_hitlag:
 		lua_pushinteger(L, mo->hitlag);
+		break;
+	case mobj_dispoffset:
+		lua_pushinteger(L, mo->dispoffset);
 		break;
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
@@ -829,6 +834,9 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_hitlag:
 		mo->hitlag = luaL_checkinteger(L, 3);
+		break;
+	case mobj_dispoffset:
+		mo->dispoffset = luaL_checkinteger(L, 3);
 		break;
 	default:
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);

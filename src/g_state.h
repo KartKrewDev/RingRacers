@@ -27,7 +27,7 @@ typedef enum
 	GS_CONTINUING,      // continue screen
 
 	GS_TITLESCREEN,     // title screen
-	GS_TIMEATTACK,      // time attack menu
+	GS_MENU,            // SRB2Kart: menu-only (previously was GS_TIMEATTACK)
 
 	GS_CREDITS,         // credit sequence
 	GS_EVALUATION,      // Evaluation at the end of a game.

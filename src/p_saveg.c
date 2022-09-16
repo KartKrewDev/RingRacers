@@ -280,6 +280,8 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].spindashspeed);
 		WRITEUINT8(save_p, players[i].spindashboost);
 
+		WRITEFIXED(save_p, players[i].fastfall);
+
 		WRITEUINT8(save_p, players[i].numboosts);
 		WRITEFIXED(save_p, players[i].boostpower);
 		WRITEFIXED(save_p, players[i].speedboost);
@@ -291,6 +293,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].draftleeway);
 		WRITESINT8(save_p, players[i].lastdraft);
 
+		WRITEUINT8(save_p, players[i].tripwireState);
+		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
 		WRITEUINT16(save_p, players[i].itemroulette);
@@ -337,8 +341,8 @@ static void P_NetArchivePlayers(void)
 		WRITESINT8(save_p, players[i].lastjawztarget);
 		WRITEUINT8(save_p, players[i].jawztargetdelay);
 
-		WRITEUINT8(save_p, players[i].confirmInflictor);
-		WRITEUINT8(save_p, players[i].confirmInflictorDelay);
+		WRITEUINT8(save_p, players[i].confirmVictim);
+		WRITEUINT8(save_p, players[i].confirmVictimDelay);
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
@@ -357,7 +361,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].spheredigestion);
 
 		WRITESINT8(save_p, players[i].glanceDir);
-		WRITEUINT8(save_p, players[i].tripWireState);
 
 		WRITEUINT8(save_p, players[i].typing_timer);
 		WRITEUINT8(save_p, players[i].typing_duration);
@@ -365,6 +368,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].kickstartaccel);
 
 		WRITEUINT8(save_p, players[i].stairjank);
+
+		WRITEUINT8(save_p, players[i].shrinkLaserDelay);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -566,6 +571,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spindashspeed = READFIXED(save_p);
 		players[i].spindashboost = READUINT8(save_p);
 
+		players[i].fastfall = READFIXED(save_p);
+
 		players[i].numboosts = READUINT8(save_p);
 		players[i].boostpower = READFIXED(save_p);
 		players[i].speedboost = READFIXED(save_p);
@@ -577,6 +584,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].draftleeway = READUINT16(save_p);
 		players[i].lastdraft = READSINT8(save_p);
 
+		players[i].tripwireState = READUINT8(save_p);
+		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
 
 		players[i].itemroulette = READUINT16(save_p);
@@ -623,8 +632,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].lastjawztarget = READSINT8(save_p);
 		players[i].jawztargetdelay = READUINT8(save_p);
 
-		players[i].confirmInflictor = READUINT8(save_p);
-		players[i].confirmInflictorDelay = READUINT8(save_p);
+		players[i].confirmVictim = READUINT8(save_p);
+		players[i].confirmVictimDelay = READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
@@ -643,7 +652,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spheredigestion = READUINT32(save_p);
 
 		players[i].glanceDir = READSINT8(save_p);
-		players[i].tripWireState = READUINT8(save_p);
 
 		players[i].typing_timer = READUINT8(save_p);
 		players[i].typing_duration = READUINT8(save_p);
@@ -651,6 +659,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kickstartaccel = READUINT8(save_p);
 
 		players[i].stairjank = READUINT8(save_p);
+
+		players[i].shrinkLaserDelay = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -1604,7 +1614,7 @@ typedef enum
 	MD2_SPRITEXOFFSET = 1<<20,
 	MD2_SPRITEYOFFSET = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
-	// 1<<23 was taken out, maybe reuse later
+	MD2_DISPOFFSET   = 1<<23,
 	MD2_HITLAG       = 1<<24,
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
@@ -1845,6 +1855,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
+	if (mobj->dispoffset)
+		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
 	if (mobj == kitemcap)
@@ -2052,6 +2064,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_HITLAG)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		WRITEINT32(save_p, mobj->dispoffset);
 	}
 	if (diff2 & MD2_LASTMOMZ)
 	{
@@ -3158,6 +3174,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	{
 		mobj->hitlag = READINT32(save_p);
 	}
+	if (diff2 & MD2_DISPOFFSET)
+	{
+		mobj->dispoffset = READINT32(save_p);
+	}
 	if (diff2 & MD2_LASTMOMZ)
 	{
 		mobj->lastmomz = READINT32(save_p);
@@ -4181,21 +4201,21 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hprev, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->itnext)
 		{
 			temp = (UINT32)(size_t)mobj->itnext;
 			mobj->itnext = NULL;
-			if (!(mobj->itnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->itnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
 		if (mobj->terrain)
@@ -4411,7 +4431,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	INT32 i;
+	size_t i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4540,11 +4560,25 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, 0x2f);
 	else
 		WRITEUINT8(save_p, 0x2e);
+
+	WRITEUINT32(save_p, livestudioaudience_timer);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	WRITEUINT32(save_p, schedule_len);
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		WRITEINT16(save_p, task->basetime);
+		WRITEINT16(save_p, task->timer);
+		WRITESTRING(save_p, task->command);
+	}
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	INT32 i;
+	size_t i;
+	size_t numTasks;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4687,6 +4721,26 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
 		paused = true;
+
+	livestudioaudience_timer = READUINT32(save_p);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	Schedule_Clear();
+
+	numTasks = READUINT32(save_p);
+	for (i = 0; i < numTasks; i++)
+	{
+		INT16 basetime;
+		INT16 timer;
+		char command[MAXTEXTCMD];
+
+		basetime = READINT16(save_p);
+		timer = READINT16(save_p);
+		READSTRING(save_p, command);
+
+		Schedule_Add(basetime, timer, command);
+	}
 
 	return true;
 }

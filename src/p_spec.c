@@ -36,7 +36,7 @@
 #include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
-#include "lua_hook.h" // LUAh_LinedefExecute
+#include "lua_hook.h" // LUA_HookLinedefExecute
 #include "f_finale.h" // control text prompt
 #include "r_skins.h" // skins
 
@@ -2070,7 +2070,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 
 		if (P_IsLineTripWire(line))
 		{
-			K_ApplyTripWire(player, TRIP_PASSED);
+			K_ApplyTripWire(player, TRIPSTATE_PASSED);
 		}
 
 		switch (line->special)
@@ -3028,7 +3028,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 443: // Calls a named Lua function
 			if (line->stringargs[0])
-				LUAh_LinedefExecute(line, mo, callsec);
+				LUA_HookLinedefExecute(line, mo, callsec);
 			else
 				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in arg0str)\n", sizeu1(line-lines));
 			break;
@@ -4076,8 +4076,10 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 	msecnode_t *node;
 	ffloor_t *rover;
 
-	if (!mo)
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
 		return NULL;
+	}
 
 	// Check default case first
 	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)

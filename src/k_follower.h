@@ -15,7 +15,6 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
-#include "r_skins.h"
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
@@ -48,6 +47,7 @@ typedef struct follower_s
 {
 	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
 
 	skincolornum_t defaultcolor;	// default color for menus.
 	followermode_t mode;			// Follower behavior modifier.
@@ -134,6 +134,23 @@ boolean K_SetFollowerByName(INT32 playernum, const char *skinname);
 --------------------------------------------------*/
 
 void K_SetFollowerByNum(INT32 playernum, INT32 skinnum);
+
+
+/*--------------------------------------------------
+	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+
+		Updates a player's follower pointer, and does
+		its positioning and animations.
+
+	Input Arguments:-
+		followercolor - The raw color setting for the follower
+		playercolor - The player's associated colour, for reference
+
+	Return:-
+		The resultant skincolor enum for the follower
+--------------------------------------------------*/
+
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 
 
 /*--------------------------------------------------
