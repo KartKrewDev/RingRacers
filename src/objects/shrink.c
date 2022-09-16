@@ -429,25 +429,35 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 	}
 }
 
-/*
 void Obj_PohbeeRemoved(mobj_t *pohbee)
+{
+	mobj_t *gun = pohbee_guns(pohbee);
+
+	while (gun != NULL && P_MobjWasRemoved(gun) == false)
+	{
+		mobj_t *nextGun = pohbee_guns(gun);
+		P_RemoveMobj(gun);
+		gun = nextGun;
+	}
+}
+
+void Obj_ShrinkGunRemoved(mobj_t *gun)
 {
 	mobj_t *chain = NULL;
 
-	if (pohbee_guns(pohbee) != NULL)
+	if (gun_laser(gun) != NULL && P_MobjWasRemoved(gun_laser(gun)) == false)
 	{
-		P_RemoveMobj(pohbee_laser(pohbee));
+		P_RemoveMobj(gun_laser(gun));
 	}
 
-	chain = pohbee_chain(pohbee);
-	while (chain != NULL)
+	chain = gun_chains(gun);
+	while (chain != NULL && P_MobjWasRemoved(chain) == false)
 	{
-		mobj_t *temp = chain;
-		chain = pohbee_chain(temp);
-		P_RemoveMobj(temp);
+		mobj_t *nextChain = gun_chains(chain);
+		P_RemoveMobj(chain);
+		chain = nextChain;
 	}
 }
-*/
 
 boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 {

@@ -10656,6 +10656,16 @@ void P_RemoveMobj(mobj_t *mobj)
 		P_SetTarget(&mobj->player->followmobj, NULL);
 	}
 
+	if (mobj->type == MT_SHRINK_POHBEE)
+	{
+		Obj_PohbeeRemoved(mobj);
+	}
+
+	if (mobj->type == MT_SHRINK_GUN)
+	{
+		Obj_ShrinkGunRemoved(mobj);
+	}
+
 	mobj->health = 0; // Just because
 
 	// unlink from sector and block lists
