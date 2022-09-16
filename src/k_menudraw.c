@@ -3860,10 +3860,15 @@ void M_DrawReplayHutReplayInfo(void)
 		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map])
 		{
 			patch = mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map]->thumbnailPic;
+			if (!patch)
+			{
+				patch = blanklvl;
+			}
 		}
-
-		if (!patch)
+		else if (!patch)
+		{
 			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
+		}
 
 		if (!(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & DF_ENCORE))
 			V_DrawSmallScaledPatch(x, y, V_SNAPTOTOP, patch);
