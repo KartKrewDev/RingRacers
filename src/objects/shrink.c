@@ -564,7 +564,7 @@ static waypoint_t *GetPohbeeWaypoint(waypoint_t *anchor, const UINT32 traveldist
 	path_t pathtofinish = {0};
 	waypoint_t *ret = NULL;
 
-	pathfindsuccess = K_PathfindThruCircuit(
+	pathfindsuccess = K_PathfindThruCircuitSpawnable(
 		anchor, traveldist,
 		&pathtofinish,
 		useshortcuts, huntbackwards
