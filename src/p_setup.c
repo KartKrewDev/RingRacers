@@ -363,12 +363,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
 
-	Patch_Free(mapheaderinfo[num]->thumbnailPic);
-	mapheaderinfo[num]->thumbnailPic = NULL;
-
-	Patch_Free(mapheaderinfo[num]->minimapPic);
-	mapheaderinfo[num]->minimapPic = NULL;
-
 	Z_Free(mapheaderinfo[num]->nextlevel);
 	mapheaderinfo[num]->nextlevel = NULL;
 
