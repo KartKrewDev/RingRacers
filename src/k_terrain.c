@@ -1074,6 +1074,16 @@ void K_UpdateTerrainOverlay(mobj_t *mo)
 	mo->terrainOverlay->movefactor = o->scale;
 
 	K_SetTerrainOverlayState(mo, act, st);
+
+	if (mo->state->tics > 1 && o->speed > 0)
+	{
+		const fixed_t maxSpeed = 60 * mapobjectscale;
+		fixed_t speed = P_AproxDistance(mo->momx, mo->momy);
+		fixed_t speedDiv = FRACUNIT + FixedMul(FixedDiv(speed, maxSpeed), o->speed);
+		tic_t animSpeed = max(FixedDiv(mo->state->tics, speedDiv), 1);
+
+		mo->tics = min(mo->tics, animSpeed);
+	}
 }
 
 /*--------------------------------------------------
