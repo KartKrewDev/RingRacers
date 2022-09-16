@@ -1344,7 +1344,7 @@ static void K_OverlayDefaults(t_overlay_t *overlay)
 
 	overlay->scale = FRACUNIT;
 	overlay->color = SKINCOLOR_NONE;
-	overlay->speed = 0;
+	overlay->speed = FRACUNIT;
 }
 
 /*--------------------------------------------------
