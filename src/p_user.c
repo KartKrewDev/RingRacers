@@ -3044,6 +3044,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	subsector_t *newsubsec;
 #endif
 
+	fixed_t playerScale = FixedDiv(player->mo->scale, mapobjectscale);
+	fixed_t scaleDiff = playerScale - FRACUNIT;
+	fixed_t cameraScale = mapobjectscale;
+
 	thiscam->old_x = thiscam->x;
 	thiscam->old_y = thiscam->y;
 	thiscam->old_z = thiscam->z;
@@ -3132,8 +3136,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		return true;
 	}
 
-	thiscam->radius = 20*mapobjectscale;
-	thiscam->height = 16*mapobjectscale;
+	// Adjust camera to match Grow/Shrink
+	cameraScale = FixedMul(cameraScale, FRACUNIT + (scaleDiff / 3));
+
+	thiscam->radius = 20*cameraScale;
+	thiscam->height = 16*cameraScale;
 
 	// Don't run while respawning from a starpost
 	// Inu 4/8/13 Why not?!
@@ -3159,8 +3166,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camspeed = cv_cam_speed[num].value;
 	camstill = cv_cam_still[num].value;
 	camrotate = cv_cam_rotate[num].value;
-	camdist = FixedMul(cv_cam_dist[num].value, mapobjectscale);
-	camheight = FixedMul(cv_cam_height[num].value, mapobjectscale);
+	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
+	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
 
 	if (timeover)
 	{
@@ -3171,8 +3178,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		const INT32 introcam = (introtime - leveltime);
 		camrotate += introcam*5;
-		camdist += (introcam * mapobjectscale)*3;
-		camheight += (introcam * mapobjectscale)*2;
+		camdist += (introcam * cameraScale)*3;
+		camheight += (introcam * cameraScale)*2;
 	}
 	else if (player->exiting) // SRB2Kart: Leave the camera behind while exiting, for dramatic effect!
 		camstill = true;
@@ -3236,7 +3243,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	// sets ideal cam pos
 	{
-		const fixed_t speedthreshold = 48*mapobjectscale;
+		const fixed_t speedthreshold = 48*cameraScale;
 		const fixed_t olddist = P_AproxDistance(mo->x - thiscam->x, mo->y - thiscam->y);
 
 		fixed_t lag, distoffset;
@@ -3541,7 +3548,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	// point viewed by the camera
 	// this point is just 64 unit forward the player
-	dist = 64*mapobjectscale;
+	dist = 64*cameraScale;
 	viewpointx = mo->x + FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist) + xpan;
 	viewpointy = mo->y + FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist) + ypan;
 

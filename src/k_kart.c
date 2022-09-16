@@ -355,7 +355,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
 		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
-		 /*Invincibility*/ { 0, 0, 0, 0, 3, 4, 6, 9 }, // Invincibility
+		 /*Invincibility*/ { 0, 0, 0, 0, 3, 4, 5, 7 }, // Invincibility
 				/*Banana*/ { 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
 		/*Eggman Monitor*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 			  /*Orbinaut*/ { 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
@@ -365,7 +365,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Ballhog*/ { 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
    /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
-				/*Shrink*/ { 0, 0, 0, 0, 0, 0, 2, 0 }, // Shrink
+				/*Shrink*/ { 0, 0, 0, 0, 0, 1, 3, 2 }, // Shrink
 	  /*Lightning Shield*/ { 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
 		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
 		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
@@ -375,7 +375,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 		   /*Drop Target*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 			/*Sneaker x2*/ { 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 0, 0, 0, 1, 6,10, 5, 0 }, // Sneaker x3
+			/*Sneaker x3*/ { 0, 0, 0, 1, 6, 9, 5, 0 }, // Sneaker x3
 			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 			/*Banana x10*/ { 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
 		   /*Orbinaut x3*/ { 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
@@ -2284,6 +2284,77 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 		fast->destscale = 6*((mo->player->invincibilitytimer/TICRATE)*FRACUNIT)/8;
 }
 
+static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
+{
+	const boolean shrink = (timer < 0);
+	const INT32 maxTime = (10*TICRATE);
+	const INT32 noTime = (2*TICRATE);
+	INT32 spawnFreq = 1;
+
+	mobj_t *particle = NULL;
+	fixed_t particleScale = FRACUNIT;
+	fixed_t particleSpeed = 0;
+
+	spawnFreq = abs(timer);
+
+	if (spawnFreq < noTime)
+	{
+		return;
+	}
+
+	spawnFreq -= noTime;
+
+	if (spawnFreq > maxTime)
+	{
+		spawnFreq = maxTime;
+	}
+
+	spawnFreq = (maxTime - spawnFreq) / TICRATE / 4;
+	if (spawnFreq == 0)
+	{
+		spawnFreq++;
+	}
+
+	if (leveltime % spawnFreq != 0)
+	{
+		return;
+	}
+
+	particle = P_SpawnMobjFromMobj(
+		mo,
+		P_RandomRange(-32, 32) * FRACUNIT,
+		P_RandomRange(-32, 32) * FRACUNIT,
+		(P_RandomRange(0, 24) + (shrink ? 48 : 0)) * FRACUNIT,
+		MT_GROW_PARTICLE
+	);
+
+	P_SetTarget(&particle->target, mo);
+
+	particle->momx = mo->momx;
+	particle->momy = mo->momy;
+	particle->momz = P_GetMobjZMovement(mo);
+
+	K_MatchGenericExtraFlags(particle, mo);
+
+	particleScale = FixedMul((shrink ? SHRINK_PHYSICS_SCALE : GROW_PHYSICS_SCALE), mapobjectscale);
+	particleSpeed = mo->scale * 4 * P_MobjFlip(mo); // NOT particleScale
+
+	particle->destscale = particleScale;
+	P_SetScale(particle, particle->destscale);
+
+	if (shrink == true)
+	{
+		particle->color = SKINCOLOR_KETCHUP;
+		particle->momz -= particleSpeed;
+		particle->renderflags |= RF_VERTICALFLIP;
+	}
+	else
+	{
+		particle->color = SKINCOLOR_SAPPHIRE;
+		particle->momz += particleSpeed;
+	}
+}
+
 void K_SpawnBumpEffect(mobj_t *mo)
 {
 	mobj_t *fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -3643,7 +3714,7 @@ void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 typ
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-static void K_RemoveGrowShrink(player_t *player)
+void K_RemoveGrowShrink(player_t *player)
 {
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
@@ -5582,46 +5653,12 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 static void K_DoShrink(player_t *user)
 {
-	INT32 i;
 	mobj_t *mobj, *next;
 
 	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
 	user->pflags |= PF_ATTACKDOWN;
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || !players[i].mo)
-			continue;
-		if (&players[i] == user)
-			continue;
-		if (players[i].position < user->position)
-		{
-			//P_FlashPal(&players[i], PAL_NUKE, 10);
-
-			// Grow should get taken away.
-			if (players[i].growshrinktimer > 0)
-				K_RemoveGrowShrink(&players[i]);
-			else
-			{
-				// Start shrinking!
-				K_DropItems(&players[i]);
-				players[i].growshrinktimer = -(15*TICRATE);
-
-				if (players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				{
-					players[i].mo->scalespeed = mapobjectscale/TICRATE;
-					players[i].mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
-
-					if (K_PlayerShrinkCheat(&players[i]) == true)
-					{
-						players[i].mo->destscale = FixedMul(players[i].mo->destscale, SHRINK_SCALE);
-					}
-
-					S_StartSound(players[i].mo, sfx_kc59);
-				}
-			}
-		}
-	}
+	Obj_CreateShrinkPohbees(user);
 
 	// kill everything in the kitem list while we're at it:
 	for (mobj = kitemcap; mobj; mobj = next)
@@ -7359,6 +7396,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			}
 		}
 
+		if (player->growshrinktimer != 0)
+		{
+			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
+		}
+
 		if (gametype == GT_RACE && player->rings <= 0) // spawn ring debt indicator
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
@@ -7522,6 +7564,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (P_IsDisplayPlayer(player) && player->bumpers <= 0 && player->karmadelay <= 0)
 			comebackshowninfo = true; // client has already seen the message
 	}
+
+	if (player->shrinkLaserDelay)
+		player->shrinkLaserDelay--;
 
 	if (player->ringdelay)
 		player->ringdelay--;
@@ -10019,7 +10064,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									}
 
 									// TODO: gametyperules
-									player->growshrinktimer = (gametype == GT_BATTLE ? 8 : 12) * TICRATE;
+									player->growshrinktimer = max(player->growshrinktimer, (gametype == GT_BATTLE ? 8 : 12) * TICRATE);
 
 									if (player->invincibilitytimer > 0)
 									{
