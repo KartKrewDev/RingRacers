@@ -2292,6 +2292,7 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 	INT32 spawnFreq = 1;
 
 	mobj_t *particle = NULL;
+	fixed_t particleScale = FRACUNIT;
 	fixed_t particleSpeed = 0;
 
 	spawnFreq = abs(timer);
@@ -2323,7 +2324,7 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 		mo,
 		P_RandomRange(-32, 32) * FRACUNIT,
 		P_RandomRange(-32, 32) * FRACUNIT,
-		P_RandomRange(0, 24) + (shrink ? 24 : 0) * FRACUNIT,
+		(P_RandomRange(0, 24) + (shrink ? 48 : 0)) * FRACUNIT,
 		MT_GROW_PARTICLE
 	);
 
@@ -2335,7 +2336,11 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 
 	K_MatchGenericExtraFlags(particle, mo);
 
-	particleSpeed = particle->scale * 4 * P_MobjFlip(mo);
+	particleScale = FixedMul((shrink ? SHRINK_PHYSICS_SCALE : GROW_PHYSICS_SCALE), mapobjectscale);
+	particleSpeed = mo->scale * 4 * P_MobjFlip(mo); // NOT particleScale
+
+	particle->destscale = particleScale;
+	P_SetScale(particle, particle->destscale);
 
 	if (shrink == true)
 	{
