@@ -3331,7 +3331,6 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 
 					cup->levellist[cup->numlevels] = Z_StrDup(tmp);
 					cup->numlevels++;
-					CONS_Printf("tmp = %s\n", tmp);
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "BONUSGAME"))
