@@ -1119,6 +1119,9 @@ typedef enum sprite
 	SPR_FLML, // Flame Shield speed lines
 	SPR_FLMF, // Flame Shield flash
 	SPR_HYUU, // Hyudoro
+	SPR_GRWP, // Grow
+	SPR_POHB, // Shrink Poh-Bee
+	SPR_SHRG, // Shrink gun / laser
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -4745,6 +4748,15 @@ typedef enum state
 	// Caked-Up Booty-Sheet Ghost
 	S_HYUDORO,
 
+	// Grow
+	S_GROW_PARTICLE,
+
+	// Shrink
+	S_SHRINK_GUN,
+	S_SHRINK_CHAIN,
+	S_SHRINK_LASER,
+	S_SHRINK_PARTICLE,
+
 	// The legend
 	S_SINK,
 	S_SINK_SHIELD,
@@ -6362,6 +6374,14 @@ typedef enum mobj_type
 
 	MT_HYUDORO,
 	MT_HYUDORO_CENTER,
+
+	MT_GROW_PARTICLE,
+
+	MT_SHRINK_POHBEE,
+	MT_SHRINK_GUN,
+	MT_SHRINK_CHAIN,
+	MT_SHRINK_LASER,
+	MT_SHRINK_PARTICLE,
 
 	MT_SINK, // Kitchen Sink Stuff
 	MT_SINK_SHIELD,

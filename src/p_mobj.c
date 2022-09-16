@@ -7848,6 +7848,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_HyudoroCenterThink(mobj);
 		break;
 	}
+	case MT_SHRINK_POHBEE:
+	{
+		Obj_PohbeeThinker(mobj);
+		break;
+	}
 	case MT_ROCKETSNEAKER:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -10658,6 +10663,16 @@ void P_RemoveMobj(mobj_t *mobj)
 	{
 		P_RemoveMobj(mobj->player->followmobj);
 		P_SetTarget(&mobj->player->followmobj, NULL);
+	}
+
+	if (mobj->type == MT_SHRINK_POHBEE)
+	{
+		Obj_PohbeeRemoved(mobj);
+	}
+
+	if (mobj->type == MT_SHRINK_GUN)
+	{
+		Obj_ShrinkGunRemoved(mobj);
 	}
 
 	mobj->health = 0; // Just because
