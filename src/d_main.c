@@ -1709,19 +1709,14 @@ void D_SRB2Main(void)
 	// rei/miru: bootmap (Idea: starts the game on a predefined map)
 	if (bootmap && !(M_CheckParm("-warp") && M_IsNextParm()))
 	{
-		const INT32 bootMapNum = G_MapNumber(bootmap)+1;
+		pstartmap = G_MapNumber(bootmap)+1;
 
-		if (mapheaderinfo[bootMapNum])
+		if (pstartmap == nummapheaders)
 		{
-			pstartmap = bootMapNum;
-
-			if (pstartmap < 1 || pstartmap > NUMMAPS)
-				I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-			else
-			{
-				autostart = true;
-			}
+			I_Error("Cannot warp to map %s (not found)\n", bootmap);
 		}
+
+		autostart = true;
 	}
 
 	if (autostart || netgame)
