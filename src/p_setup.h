@@ -99,9 +99,6 @@ extern mapthing_t *mapthings;
 extern UINT16 p_adding_file;
 
 void P_SetupLevelSky(const char *skytexname, boolean global);
-#ifdef SCANTHINGS
-void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
-#endif
 void P_RespawnThings(void);
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
 #ifdef HWRENDER

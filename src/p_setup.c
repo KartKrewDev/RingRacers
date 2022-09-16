@@ -363,29 +363,17 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 {
 	const INT16 num = (INT16)(i-1);
 
-	if (mapheaderinfo[num]->thumbnailPic)
-	{
-		Patch_Free(mapheaderinfo[num]->thumbnailPic);
-		mapheaderinfo[num]->thumbnailPic = NULL;
-	}
+	Patch_Free(mapheaderinfo[num]->thumbnailPic);
+	mapheaderinfo[num]->thumbnailPic = NULL;
 
-	if (mapheaderinfo[num]->minimapPic)
-	{
-		Patch_Free(mapheaderinfo[num]->minimapPic);
-		mapheaderinfo[num]->minimapPic = NULL;
-	}
+	Patch_Free(mapheaderinfo[num]->minimapPic);
+	mapheaderinfo[num]->minimapPic = NULL;
 
-	if (mapheaderinfo[num]->nextlevel)
-	{
-		Z_Free(mapheaderinfo[num]->nextlevel);
-		mapheaderinfo[num]->nextlevel = NULL;
-	}
+	Z_Free(mapheaderinfo[num]->nextlevel);
+	mapheaderinfo[num]->nextlevel = NULL;
 
-	if (mapheaderinfo[num]->marathonnext)
-	{
-		Z_Free(mapheaderinfo[num]->marathonnext);
-		mapheaderinfo[num]->marathonnext = NULL;
-	}
+	Z_Free(mapheaderinfo[num]->marathonnext);
+	mapheaderinfo[num]->marathonnext = NULL;
 
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->selectheading[0] = '\0';
@@ -761,69 +749,6 @@ void P_ReloadRings(void)
 		P_SpawnHoop(hoopsToRespawn[i]);
 	}
 }
-
-#ifdef SCANTHINGS
-void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
-{
-	size_t i, n;
-	UINT8 *data, *datastart;
-	UINT16 type, maprings;
-	INT16 tol;
-	UINT32 flags;
-
-	tol = mapheaderinfo[mapnum-1]->typeoflevel;
-	flags = mapheaderinfo[mapnum-1]->levelflags;
-
-	n = W_LumpLengthPwad(wadnum, lumpnum) / (5 * sizeof (INT16));
-	//CONS_Printf("%u map things found!\n", n);
-
-	maprings = 0;
-	data = datastart = W_CacheLumpNumPwad(wadnum, lumpnum, PU_STATIC);
-	for (i = 0; i < n; i++)
-	{
-		data += 3 * sizeof (INT16); // skip x y position, angle
-		type = READUINT16(data) & 4095;
-		data += sizeof (INT16); // skip options
-
-		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
-		{
-			nummapboxes++;
-		}
-		else if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-		{
-			maptargets++;
-		}
-		else if (mt->type == mobjinfo[MT_RING].doomednum)
-		{
-			maprings++;
-		}
-		else
-		{
-			switch (type)
-			{
-			case 603: // 10 diagonal rings
-				maprings += 10;
-				break;
-			case 600: // 5 vertical rings
-			case 601: // 5 vertical rings
-			case 602: // 5 diagonal rings
-				maprings += 5;
-				break;
-			case 604: // 8 circle rings
-				maprings += 8;
-				break;
-			case 605: // 16 circle rings
-				maprings += 16;
-				break;
-			}
-		}
-	}
-	Z_Free(datastart);
-
-	if (maprings)
-		CONS_Printf("%s has %u rings\n", G_BuildMapName(mapnum), maprings);
-}
-#endif
 
 static void P_SpawnMapThings(boolean spawnemblems)
 {

@@ -1851,7 +1851,7 @@ void F_StartTitleScreen(void)
 	{
 		mapthing_t *startpos;
 
-		const INT32 titleMapNum = G_MapNumber(titlemap);
+		const INT32 titleMapNum = G_MapNumber(titlemap)+1;
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;

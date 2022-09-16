@@ -1709,7 +1709,7 @@ void D_SRB2Main(void)
 	// rei/miru: bootmap (Idea: starts the game on a predefined map)
 	if (bootmap && !(M_CheckParm("-warp") && M_IsNextParm()))
 	{
-		const INT32 bootMapNum = G_MapNumber(bootmap);
+		const INT32 bootMapNum = G_MapNumber(bootmap)+1;
 
 		if (mapheaderinfo[bootMapNum])
 		{

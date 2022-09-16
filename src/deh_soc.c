@@ -159,12 +159,22 @@ void clear_levels(void)
 		P_DeleteFlickies(i);
 		P_DeleteGrades(i);
 
+		Patch_Free(mapheaderinfo[i]->thumbnailPic);
+		Patch_Free(mapheaderinfo[i]->minimapPic);
+		Z_Free(mapheaderinfo[i]->nextlevel);
+		Z_Free(mapheaderinfo[i]->marathonnext);
+
+		Z_Free(mapheaderinfo[i]->lumpname);
+
 		Z_Free(mapheaderinfo[i]);
 		mapheaderinfo[i] = NULL;
 	}
 
-	// Realloc the one for the current gamemap as a safeguard
-	P_AllocMapHeader(gamemap-1);
+	nummapheaders = 0;
+
+	// Realloc the one for the current gamemap as a safeguard -- TODO: BAD
+	if (Playing())
+		P_AllocMapHeader(gamemap-1);
 }
 
 // TODO: Figure out how to do undolines for this....
@@ -1090,23 +1100,23 @@ void readlevelheader(MYFILE *f, char * name)
 
 	const INT32 num = G_MapNumber(name);
 
-	if (num > NUMMAPS)
+	if (num >= NUMMAPS)
 	{
 		I_Error("Too many maps!");
 	}
 
-	if (f->wad > mainwads && num <= nummapheaders)
+	if (f->wad > mainwads && num < nummapheaders)
 	{
 		// only mark as a major mod if it replaces an already-existing mapheaderinfo
 		G_SetGameModified(multiplayer, true);
 	}
 
 	// Reset all previous map header information
-	P_AllocMapHeader((INT16)(num-1));
+	P_AllocMapHeader((INT16)(num));
 
-	if (mapheaderinfo[num-1]->lumpname == NULL)
+	if (mapheaderinfo[num]->lumpname == NULL)
 	{
-		mapheaderinfo[num-1]->lumpname = Z_StrDup(name);
+		mapheaderinfo[num]->lumpname = Z_StrDup(name);
 	}
 
 	do
@@ -1145,16 +1155,16 @@ void readlevelheader(MYFILE *f, char * name)
 
 			if (fastcmp(word, "LEVELNAME"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->lvlttl, word2,
-					sizeof(mapheaderinfo[num-1]->lvlttl), va("Level header %d: levelname", num));
-				strlcpy(mapheaderinfo[num-1]->selectheading, word2, sizeof(mapheaderinfo[num-1]->selectheading)); // not deh_ so only complains once
+				deh_strlcpy(mapheaderinfo[num]->lvlttl, word2,
+					sizeof(mapheaderinfo[num]->lvlttl), va("Level header %d: levelname", num));
+				strlcpy(mapheaderinfo[num]->selectheading, word2, sizeof(mapheaderinfo[num]->selectheading)); // not deh_ so only complains once
 				continue;
 			}
 			// CHEAP HACK: move this over here for lowercase subtitles
 			if (fastcmp(word, "SUBTITLE"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->subttl, word2,
-					sizeof(mapheaderinfo[num-1]->subttl), va("Level header %d: subtitle", num));
+				deh_strlcpy(mapheaderinfo[num]->subttl, word2,
+					sizeof(mapheaderinfo[num]->subttl), va("Level header %d: subtitle", num));
 				continue;
 			}
 
@@ -1176,19 +1186,19 @@ void readlevelheader(MYFILE *f, char * name)
 				}
 
 				// Sanity limit of 128 params
-				if (mapheaderinfo[num-1]->numCustomOptions == 128)
+				if (mapheaderinfo[num]->numCustomOptions == 128)
 				{
 					deh_warning("Level header %d: too many custom parameters", num);
 					continue;
 				}
-				j = mapheaderinfo[num-1]->numCustomOptions++;
+				j = mapheaderinfo[num]->numCustomOptions++;
 
-				mapheaderinfo[num-1]->customopts =
-					Z_Realloc(mapheaderinfo[num-1]->customopts,
-						sizeof(customoption_t) * mapheaderinfo[num-1]->numCustomOptions, PU_STATIC, NULL);
+				mapheaderinfo[num]->customopts =
+					Z_Realloc(mapheaderinfo[num]->customopts,
+						sizeof(customoption_t) * mapheaderinfo[num]->numCustomOptions, PU_STATIC, NULL);
 
 				// Newly allocated
-				modoption = &mapheaderinfo[num-1]->customopts[j];
+				modoption = &mapheaderinfo[num]->customopts[j];
 
 				strncpy(modoption->option, word,  31);
 				modoption->option[31] = '\0';
@@ -1204,33 +1214,33 @@ void readlevelheader(MYFILE *f, char * name)
 			if (fastcmp(word, "FLICKYLIST") || fastcmp(word, "ANIMALLIST"))
 			{
 				if (fastcmp(word2, "NONE"))
-					P_DeleteFlickies(num-1);
+					P_DeleteFlickies(num);
 				else if (fastcmp(word2, "DEMO"))
-					P_SetDemoFlickies(num-1);
+					P_SetDemoFlickies(num);
 				else if (fastcmp(word2, "ALL"))
 				{
 					mobjtype_t tmpflickies[MAXFLICKIES];
 
-					for (mapheaderinfo[num-1]->numFlickies = 0;
-					((mapheaderinfo[num-1]->numFlickies < MAXFLICKIES) && FLICKYTYPES[mapheaderinfo[num-1]->numFlickies].type);
-					mapheaderinfo[num-1]->numFlickies++)
-						tmpflickies[mapheaderinfo[num-1]->numFlickies] = FLICKYTYPES[mapheaderinfo[num-1]->numFlickies].type;
+					for (mapheaderinfo[num]->numFlickies = 0;
+					((mapheaderinfo[num]->numFlickies < MAXFLICKIES) && FLICKYTYPES[mapheaderinfo[num]->numFlickies].type);
+					mapheaderinfo[num]->numFlickies++)
+						tmpflickies[mapheaderinfo[num]->numFlickies] = FLICKYTYPES[mapheaderinfo[num]->numFlickies].type;
 
-					if (mapheaderinfo[num-1]->numFlickies) // just in case...
+					if (mapheaderinfo[num]->numFlickies) // just in case...
 					{
-						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num-1]->numFlickies;
-						mapheaderinfo[num-1]->flickies = Z_Realloc(mapheaderinfo[num-1]->flickies, newsize, PU_STATIC, NULL);
-						M_Memcpy(mapheaderinfo[num-1]->flickies, tmpflickies, newsize);
+						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num]->numFlickies;
+						mapheaderinfo[num]->flickies = Z_Realloc(mapheaderinfo[num]->flickies, newsize, PU_STATIC, NULL);
+						M_Memcpy(mapheaderinfo[num]->flickies, tmpflickies, newsize);
 					}
 				}
 				else
 				{
 					mobjtype_t tmpflickies[MAXFLICKIES];
-					mapheaderinfo[num-1]->numFlickies = 0;
+					mapheaderinfo[num]->numFlickies = 0;
 					tmp = strtok(word2,",");
 					// get up to the first MAXFLICKIES flickies
 					do {
-						if (mapheaderinfo[num-1]->numFlickies == MAXFLICKIES) // never going to get above that number
+						if (mapheaderinfo[num]->numFlickies == MAXFLICKIES) // never going to get above that number
 						{
 							deh_warning("Level header %d: too many flickies\n", num);
 							break;
@@ -1244,7 +1254,7 @@ void readlevelheader(MYFILE *f, char * name)
 								//deh_warning("Level header %d: unknown flicky mobj type %s\n", num, tmp); -- no need for this line as get_mobjtype complains too
 								continue;
 							}
-							tmpflickies[mapheaderinfo[num-1]->numFlickies] = i;
+							tmpflickies[mapheaderinfo[num]->numFlickies] = i;
 						}
 						else // ...or a quick, limited selection of default flickies!
 						{
@@ -1257,17 +1267,17 @@ void readlevelheader(MYFILE *f, char * name)
 								deh_warning("Level header %d: unknown flicky selection %s\n", num, tmp);
 								continue;
 							}
-							tmpflickies[mapheaderinfo[num-1]->numFlickies] = FLICKYTYPES[i].type;
+							tmpflickies[mapheaderinfo[num]->numFlickies] = FLICKYTYPES[i].type;
 						}
-						mapheaderinfo[num-1]->numFlickies++;
+						mapheaderinfo[num]->numFlickies++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
-					if (mapheaderinfo[num-1]->numFlickies)
+					if (mapheaderinfo[num]->numFlickies)
 					{
-						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num-1]->numFlickies;
-						mapheaderinfo[num-1]->flickies = Z_Realloc(mapheaderinfo[num-1]->flickies, newsize, PU_STATIC, NULL);
+						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num]->numFlickies;
+						mapheaderinfo[num]->flickies = Z_Realloc(mapheaderinfo[num]->flickies, newsize, PU_STATIC, NULL);
 						// now we add them to the list!
-						M_Memcpy(mapheaderinfo[num-1]->flickies, tmpflickies, newsize);
+						M_Memcpy(mapheaderinfo[num]->flickies, tmpflickies, newsize);
 					}
 					else
 						deh_warning("Level header %d: no valid flicky types found\n", num);
@@ -1277,38 +1287,38 @@ void readlevelheader(MYFILE *f, char * name)
 			// Strings that can be truncated
 			else if (fastcmp(word, "NEXTLEVEL"))
 			{
-				mapheaderinfo[num-1]->nextlevel = Z_StrDup(word2);
+				mapheaderinfo[num]->nextlevel = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "MARATHONNEXT"))
 			{
-				mapheaderinfo[num-1]->marathonnext = Z_StrDup(word2);
+				mapheaderinfo[num]->marathonnext = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "ZONETITLE"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->zonttl, word2,
-					sizeof(mapheaderinfo[num-1]->zonttl), va("Level header %d: zonetitle", num));
+				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
+					sizeof(mapheaderinfo[num]->zonttl), va("Level header %d: zonetitle", num));
 			}
 			else if (fastcmp(word, "SCRIPTNAME"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->scriptname, word2,
-					sizeof(mapheaderinfo[num-1]->scriptname), va("Level header %d: scriptname", num));
+				deh_strlcpy(mapheaderinfo[num]->scriptname, word2,
+					sizeof(mapheaderinfo[num]->scriptname), va("Level header %d: scriptname", num));
 			}
 			else if (fastcmp(word, "RUNSOC"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->runsoc, word2,
-					sizeof(mapheaderinfo[num-1]->runsoc), va("Level header %d: runsoc", num));
+				deh_strlcpy(mapheaderinfo[num]->runsoc, word2,
+					sizeof(mapheaderinfo[num]->runsoc), va("Level header %d: runsoc", num));
 			}
 			else if (fastcmp(word, "ACT"))
 			{
 				if (i >= 0 && i <= 99) // 0 for no act number
-					mapheaderinfo[num-1]->actnum = (UINT8)i;
+					mapheaderinfo[num]->actnum = (UINT8)i;
 				else
 					deh_warning("Level header %d: invalid act number %d", num, i);
 			}
 			else if (fastcmp(word, "TYPEOFLEVEL"))
 			{
 				if (i) // it's just a number
-					mapheaderinfo[num-1]->typeoflevel = (UINT32)i;
+					mapheaderinfo[num]->typeoflevel = (UINT32)i;
 				else
 				{
 					UINT32 tol = 0;
@@ -1321,152 +1331,152 @@ void readlevelheader(MYFILE *f, char * name)
 							deh_warning("Level header %d: unknown typeoflevel flag %s\n", num, tmp);
 						tol |= TYPEOFLEVEL[i].flag;
 					} while((tmp = strtok(NULL,",")) != NULL);
-					mapheaderinfo[num-1]->typeoflevel = tol;
+					mapheaderinfo[num]->typeoflevel = tol;
 				}
 			}
 			else if (fastcmp(word, "KEYWORDS"))
 			{
-				deh_strlcpy(mapheaderinfo[num-1]->keywords, word2,
-						sizeof(mapheaderinfo[num-1]->keywords), va("Level header %d: keywords", num));
+				deh_strlcpy(mapheaderinfo[num]->keywords, word2,
+						sizeof(mapheaderinfo[num]->keywords), va("Level header %d: keywords", num));
 			}
 			else if (fastcmp(word, "MUSIC"))
 			{
 				if (fastcmp(word2, "NONE"))
-					mapheaderinfo[num-1]->musname[0] = 0; // becomes empty string
+					mapheaderinfo[num]->musname[0] = 0; // becomes empty string
 				else
 				{
-					deh_strlcpy(mapheaderinfo[num-1]->musname, word2,
-						sizeof(mapheaderinfo[num-1]->musname), va("Level header %d: music", num));
+					deh_strlcpy(mapheaderinfo[num]->musname, word2,
+						sizeof(mapheaderinfo[num]->musname), va("Level header %d: music", num));
 				}
 			}
 			else if (fastcmp(word, "MUSICSLOT"))
 				deh_warning("Level header %d: MusicSlot parameter is deprecated and will be removed.\nUse \"Music\" instead.", num);
 			else if (fastcmp(word, "MUSICTRACK"))
-				mapheaderinfo[num-1]->mustrack = ((UINT16)i - 1);
+				mapheaderinfo[num]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))
-				mapheaderinfo[num-1]->muspos = (UINT32)get_number(word2);
+				mapheaderinfo[num]->muspos = (UINT32)get_number(word2);
 			else if (fastcmp(word, "FORCECHARACTER"))
 			{
-				strlcpy(mapheaderinfo[num-1]->forcecharacter, word2, SKINNAMESIZE+1);
-				strlwr(mapheaderinfo[num-1]->forcecharacter); // skin names are lowercase
+				strlcpy(mapheaderinfo[num]->forcecharacter, word2, SKINNAMESIZE+1);
+				strlwr(mapheaderinfo[num]->forcecharacter); // skin names are lowercase
 			}
 			else if (fastcmp(word, "WEATHER"))
-				mapheaderinfo[num-1]->weather = get_precip(word2);
+				mapheaderinfo[num]->weather = get_precip(word2);
 			else if (fastcmp(word, "SKYTEXTURE"))
-				deh_strlcpy(mapheaderinfo[num-1]->skytexture, word2,
-					sizeof(mapheaderinfo[num-1]->skytexture), va("Level header %d: sky texture", num));
+				deh_strlcpy(mapheaderinfo[num]->skytexture, word2,
+					sizeof(mapheaderinfo[num]->skytexture), va("Level header %d: sky texture", num));
 			else if (fastcmp(word, "PRECUTSCENENUM"))
-				mapheaderinfo[num-1]->precutscenenum = (UINT8)i;
+				mapheaderinfo[num]->precutscenenum = (UINT8)i;
 			else if (fastcmp(word, "CUTSCENENUM"))
-				mapheaderinfo[num-1]->cutscenenum = (UINT8)i;
+				mapheaderinfo[num]->cutscenenum = (UINT8)i;
 			else if (fastcmp(word, "PALETTE"))
-				mapheaderinfo[num-1]->palette = (UINT16)i;
+				mapheaderinfo[num]->palette = (UINT16)i;
 			else if (fastcmp(word, "ENCOREPAL"))
-				mapheaderinfo[num-1]->encorepal = (UINT16)i;
+				mapheaderinfo[num]->encorepal = (UINT16)i;
 			else if (fastcmp(word, "NUMLAPS"))
-				mapheaderinfo[num-1]->numlaps = (UINT8)i;
+				mapheaderinfo[num]->numlaps = (UINT8)i;
 			else if (fastcmp(word, "UNLOCKABLE"))
 			{
 				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					mapheaderinfo[num-1]->unlockrequired = (SINT8)i - 1;
+					mapheaderinfo[num]->unlockrequired = (SINT8)i - 1;
 				else
 					deh_warning("Level header %d: invalid unlockable number %d", num, i);
 			}
 			else if (fastcmp(word, "SKYBOXSCALE"))
-				mapheaderinfo[num-1]->skybox_scalex = mapheaderinfo[num-1]->skybox_scaley = mapheaderinfo[num-1]->skybox_scalez = (INT16)i;
+				mapheaderinfo[num]->skybox_scalex = mapheaderinfo[num]->skybox_scaley = mapheaderinfo[num]->skybox_scalez = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEX"))
-				mapheaderinfo[num-1]->skybox_scalex = (INT16)i;
+				mapheaderinfo[num]->skybox_scalex = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEY"))
-				mapheaderinfo[num-1]->skybox_scaley = (INT16)i;
+				mapheaderinfo[num]->skybox_scaley = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEZ"))
-				mapheaderinfo[num-1]->skybox_scalez = (INT16)i;
+				mapheaderinfo[num]->skybox_scalez = (INT16)i;
 			else if (fastcmp(word, "LEVELFLAGS"))
-				mapheaderinfo[num-1]->levelflags = get_number(word2);
+				mapheaderinfo[num]->levelflags = get_number(word2);
 			else if (fastcmp(word, "MENUFLAGS"))
-				mapheaderinfo[num-1]->menuflags = get_number(word2);
+				mapheaderinfo[num]->menuflags = get_number(word2);
 			// SRB2Kart
 			else if (fastcmp(word, "MOBJSCALE"))
-				mapheaderinfo[num-1]->mobj_scale = get_number(word2);
+				mapheaderinfo[num]->mobj_scale = get_number(word2);
 			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
-				mapheaderinfo[num-1]->default_waypoint_radius = get_number(word2);
+				mapheaderinfo[num]->default_waypoint_radius = get_number(word2);
 			else if (fastcmp(word, "LIGHTCONTRAST"))
 			{
-				mapheaderinfo[num-1]->light_contrast = (UINT8)i;
+				mapheaderinfo[num]->light_contrast = (UINT8)i;
 			}
 			else if (fastcmp(word, "LIGHTANGLE"))
 			{
 				if (fastcmp(word2, "EVEN"))
 				{
-					mapheaderinfo[num-1]->use_light_angle = false;
-					mapheaderinfo[num-1]->light_angle = 0;
+					mapheaderinfo[num]->use_light_angle = false;
+					mapheaderinfo[num]->light_angle = 0;
 				}
 				else
 				{
-					mapheaderinfo[num-1]->use_light_angle = true;
-					mapheaderinfo[num-1]->light_angle = FixedAngle(FloatToFixed(atof(word2)));
+					mapheaderinfo[num]->use_light_angle = true;
+					mapheaderinfo[num]->light_angle = FixedAngle(FloatToFixed(atof(word2)));
 				}
 			}
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_SCRIPTISFILE;
+					mapheaderinfo[num]->levelflags |= LF_SCRIPTISFILE;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_SCRIPTISFILE;
+					mapheaderinfo[num]->levelflags &= ~LF_SCRIPTISFILE;
 			}
 			else if (fastcmp(word, "NOZONE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_NOZONE;
+					mapheaderinfo[num]->levelflags |= LF_NOZONE;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_NOZONE;
+					mapheaderinfo[num]->levelflags &= ~LF_NOZONE;
 			}
 			else if (fastcmp(word, "SECTIONRACE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_SECTIONRACE;
+					mapheaderinfo[num]->levelflags |= LF_SECTIONRACE;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_SECTIONRACE;
+					mapheaderinfo[num]->levelflags &= ~LF_SECTIONRACE;
 			}
 			else if (fastcmp(word, "SUBTRACTNUM"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->levelflags |= LF_SUBTRACTNUM;
+					mapheaderinfo[num]->levelflags |= LF_SUBTRACTNUM;
 				else
-					mapheaderinfo[num-1]->levelflags &= ~LF_SUBTRACTNUM;
+					mapheaderinfo[num]->levelflags &= ~LF_SUBTRACTNUM;
 			}
 
 			// Individual triggers for menu flags
 			else if (fastcmp(word, "HIDDEN"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_HIDEINMENU;
+					mapheaderinfo[num]->menuflags |= LF2_HIDEINMENU;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_HIDEINMENU;
+					mapheaderinfo[num]->menuflags &= ~LF2_HIDEINMENU;
 			}
 			else if (fastcmp(word, "HIDEINSTATS"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_HIDEINSTATS;
+					mapheaderinfo[num]->menuflags |= LF2_HIDEINSTATS;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_HIDEINSTATS;
+					mapheaderinfo[num]->menuflags &= ~LF2_HIDEINSTATS;
 			}
 			else if (fastcmp(word, "TIMEATTACK") || fastcmp(word, "RECORDATTACK"))
 			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags &= ~LF2_NOTIMEATTACK;
+					mapheaderinfo[num]->menuflags &= ~LF2_NOTIMEATTACK;
 				else
-					mapheaderinfo[num-1]->menuflags |= LF2_NOTIMEATTACK;
+					mapheaderinfo[num]->menuflags |= LF2_NOTIMEATTACK;
 			}
 			else if (fastcmp(word, "VISITNEEDED"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num-1]->menuflags |= LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags |= LF2_VISITNEEDED;
 				else
-					mapheaderinfo[num-1]->menuflags &= ~LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags &= ~LF2_VISITNEEDED;
 			}
 			else if (fastcmp(word, "GRAVITY"))
-				mapheaderinfo[num-1]->gravity = FLOAT_TO_FIXED(atof(word2));
+				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));
 			else
 				deh_warning("Level header %d: unknown word '%s'", num, word);
 		}
@@ -3319,8 +3329,9 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 						break;
 					}
 
-					cup->levellist[cup->numlevels] = Z_StrDup(word2);
+					cup->levellist[cup->numlevels] = Z_StrDup(tmp);
 					cup->numlevels++;
+					CONS_Printf("tmp = %s\n", tmp);
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "BONUSGAME"))
