@@ -331,7 +331,25 @@ boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
 tic_t curlap; // Current lap time
 tic_t bestlap; // Best lap time
-static INT16 randmapbuffer[NUMMAPS+1]; // Buffer for maps RandMap is allowed to roll
+
+typedef struct
+{
+	INT16 *mapbuffer;			// Pointer to zone memory
+	INT32 lastnummapheaders;	// Reset if nummapheaders != this
+	UINT8 counttogametype;		// Time to gametype change event
+} randmaps_t;
+static randmaps_t randmaps = {NULL, 0, 0};
+
+static void G_ResetRandMapBuffer(void)
+{
+	INT32 i;
+	Z_Free(randmaps.mapbuffer);
+	randmaps.lastnummapheaders = nummapheaders;
+	randmaps.mapbuffer = Z_Malloc(randmaps.lastnummapheaders * sizeof(INT16), PU_STATIC, NULL);
+	for (i = 0; i < randmaps.lastnummapheaders; i++)
+		randmaps.mapbuffer[i] = -1;
+	//intentionally not resetting randmaps.counttogametype here
+}
 
 // Grading
 UINT32 timesBeaten;
@@ -3251,6 +3269,10 @@ INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
 	UINT8 encoremodifier = 0;
 
+	// -- the below is only necessary if you want to use randmaps.mapbuffer here
+	//if (randmaps.lastnummapheaders != nummapheaders)
+		//G_ResetRandMapBuffer();
+
 	if (encorepossible)
 	{
 		if (encorescramble != -1)
@@ -3281,21 +3303,21 @@ INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 	if (!cv_kartvoterulechanges.value) // never
 		return (gametype|encoremodifier);
 
-	if (randmapbuffer[NUMMAPS] > 0 && (cv_kartvoterulechanges.value != 3))
+	if (randmaps.counttogametype > 0 && (cv_kartvoterulechanges.value != 3))
 	{
-		randmapbuffer[NUMMAPS]--;
+		randmaps.counttogametype--;
 		return (gametype|encoremodifier);
 	}
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
 		case 1: // sometimes
-			randmapbuffer[NUMMAPS] = 5; // per "cup"
+			randmaps.counttogametype = 5; // per "cup"
 			break;
 		default:
 			// fallthrough - happens when clearing buffer, but needs a reasonable countdown if cvar is modified
 		case 2: // frequent
-			randmapbuffer[NUMMAPS] = 2; // ...every 1/2th-ish cup?
+			randmaps.counttogametype = 2; // ...every 1/2th-ish cup?
 			break;
 	}
 
@@ -3377,6 +3399,9 @@ INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphe
 	UINT16 extbufsize = 0;
 	boolean usehellmaps; // Only consider Hell maps in this pick
 
+	if (randmaps.lastnummapheaders != nummapheaders)
+		G_ResetRandMapBuffer();
+
 	if (!okmaps)
 	{
 		//CONS_Printf("(making okmaps)\n");
@@ -3429,11 +3454,11 @@ tryagain:
 					continue;
 			}
 
-			for (bufx = 0; bufx < (maphell ? 3 : NUMMAPS); bufx++)
+			for (bufx = 0; bufx < (maphell ? 3 : randmaps.lastnummapheaders); bufx++)
 			{
-				if (randmapbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
+				if (randmaps.mapbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
 					break;
-				if (ix == randmapbuffer[bufx])
+				if (ix == randmaps.mapbuffer[bufx])
 				{
 					isokmap = false;
 					break;
@@ -3459,15 +3484,15 @@ tryagain:
 	{
 		if (!ignorebuffer)
 		{
-			if (randmapbuffer[3] == -1) // Is the buffer basically empty?
+			if (randmaps.mapbuffer[3] == -1) // Is the buffer basically empty?
 			{
 				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
 				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
-			for (bufx = 3; bufx < NUMMAPS; bufx++) // Let's clear all but the three most recent maps...
-				randmapbuffer[bufx] = -1;
+			for (bufx = 3; bufx < randmaps.lastnummapheaders; bufx++) // Let's clear all but the three most recent maps...
+				randmaps.mapbuffer[bufx] = -1;
 			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
@@ -3484,8 +3509,8 @@ tryagain:
 		if (ignorebuffer == 1)
 		{
 			//CONS_Printf("(emptying randmapbuffer entirely)\n");
-			for (bufx = 0; bufx < NUMMAPS; bufx++)
-				randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+			for (bufx = 0; bufx < randmaps.lastnummapheaders; bufx++)
+				randmaps.mapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
 		}
 	}
 	else
@@ -3506,19 +3531,30 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, (TOLMaps(G_TOLFlag(gametype)))-3);
+	INT16 bufx;
+	INT16 refreshnum = (TOLMaps(G_TOLFlag(gametype)))-3;
 
-	// Add the map to the buffer.
-	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
-		randmapbuffer[bufx] = randmapbuffer[bufx-1];
-	randmapbuffer[0] = map;
+	if (refreshnum < 0)
+		refreshnum = 3;
+
+	if (nummapheaders != randmaps.lastnummapheaders)
+	{
+		G_ResetRandMapBuffer();
+	}
+	else
+	{
+		for (bufx = randmaps.lastnummapheaders-1; bufx > 0; bufx--)
+			randmaps.mapbuffer[bufx] = randmaps.mapbuffer[bufx-1];
+	}
+
+	randmaps.mapbuffer[0] = map;
 
 	// We're getting pretty full, so lets flush this for future usage.
-	if (randmapbuffer[refreshnum] != -1)
+	if (randmaps.mapbuffer[refreshnum] != -1)
 	{
 		// Clear all but the five most recent maps.
-		for (bufx = 5; bufx < NUMMAPS; bufx++) // bufx < refreshnum? Might not handle everything for gametype switches, though.
-			randmapbuffer[bufx] = -1;
+		for (bufx = 5; bufx < randmaps.lastnummapheaders; bufx++)
+			randmaps.mapbuffer[bufx] = -1;
 		//CONS_Printf("Random map buffer has been flushed.\n");
 	}
 }
@@ -4556,7 +4592,6 @@ cleanup:
 //
 void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
-	INT32 i;
 	UINT16 color = SKINCOLOR_NONE;
 
 	paused = false;
@@ -4566,8 +4601,7 @@ void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ss
 
 	G_FreeGhosts(); // TODO: do we actually need to do this?
 
-	for (i = 0; i < NUMMAPS+1; i++)
-		randmapbuffer[i] = -1;
+	G_ResetRandMapBuffer();
 
 	// this leave the actual game if needed
 	SV_StartSinglePlayerServer();
@@ -4607,7 +4641,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		S_ResumeAudio();
 	}
 
-	prevencoremode = ((gamestate == GS_TITLESCREEN) ? false : encoremode);
+	prevencoremode = ((!Playing()) ? false : encoremode);
 	encoremode = pencoremode;
 
 	legitimateexit = false; // SRB2Kart
