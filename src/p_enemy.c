@@ -32,6 +32,7 @@
 #include "k_battle.h"
 #include "k_respawn.h"
 #include "k_collide.h"
+#include "k_objects.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -326,6 +327,7 @@ void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
+void A_SpawnItemDebrisCloud(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13166,9 +13168,6 @@ void A_ItemPop(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 
-	mobj_t *remains;
-	mobjtype_t explode;
-
 	if (LUA_CallAction(A_ITEMPOP, actor))
 		return;
 
@@ -13185,57 +13184,12 @@ void A_ItemPop(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 	P_SetThingPosition(actor);
 
-	// item explosion
-	explode = mobjinfo[actor->info->damage].mass;
-	remains = P_SpawnMobj(actor->x, actor->y,
-		((actor->eflags & MFE_VERTICALFLIP) ? (actor->z + 3*(actor->height/4) - FixedMul(mobjinfo[explode].height, actor->scale)) : (actor->z + actor->height/4)), explode);
-	if (actor->eflags & MFE_VERTICALFLIP)
-	{
-		remains->eflags |= MFE_VERTICALFLIP;
-		remains->flags2 |= MF2_OBJECTFLIP;
-	}
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
-
-	remains = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->damage);
-	remains->type = actor->type; // Transfer type information
-	P_UnsetThingPosition(remains);
-	if (sector_list)
-	{
-		P_DelSeclist(sector_list);
-		sector_list = NULL;
-	}
-	P_SetThingPosition(remains);
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
-	remains->flags = actor->flags; // Transfer flags
-	remains->flags2 = actor->flags2; // Transfer flags2
-	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->cvmem = leveltime;
-	remains->threshold = actor->threshold;
-	if (remains->threshold != 69 && remains->threshold != 70)
-	{
-		remains->threshold = 68;
-	}
-	// To insure this information doesn't have to be rediscovered every time you look at this function...
-	// A threshold of 0 is for a "living", ordinary random item.
-	// 68 means regular popped random item debris.
-	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
-	// 70 is a powered up Overtime item.
-	remains->skin = NULL;
-	remains->spawnpoint = actor->spawnpoint;
-
-	P_SetTarget(&tmthing, remains);
-
-	if (actor->info->deathsound)
-		S_StartSound(remains, actor->info->deathsound);
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
 		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
 	else if (locvar1 == 0)
 		actor->target->player->itemroulette = 1;
-
-	remains->flags2 &= ~MF2_AMBUSH;
 
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
@@ -14523,5 +14477,84 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	{
 		ghost->frame |= FF_ADD;
 		ghost->fuse = 4;
+	}
+}
+
+// Function: A_SpawnItemDebrisCloud
+//
+// Description: Spawns a particle effect relative to the location of the actor
+//
+// var1 = If 1, scale size and momentum by extravalue2 / frame.
+// var2 = Number of particles to spawn.
+//
+void
+A_SpawnItemDebrisCloud (mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+
+	const fixed_t min_speed = 90 * actor->scale;
+	const INT16 spacing = (actor->radius / 2) / actor->scale;
+
+	fixed_t fade = FRACUNIT;
+	fixed_t scale_fade = FRACUNIT;
+
+	mobj_t *target = actor->target;
+
+	fixed_t speed;
+	fixed_t scale;
+
+	INT32 i;
+
+	if (target == NULL)
+	{
+		return;
+	}
+
+	if (locvar1)
+	{
+		const UINT8 frame = (actor->frame & FF_FRAMEMASK);
+		fixed_t frac;
+
+		if (frame == 0)
+		{
+			return; // div by zero
+		}
+
+		// extravalue2 from A_Repeat
+		frac = fade / frame;
+		fade = actor->extravalue2 * frac;
+		scale_fade = fade + frac;
+	}
+
+	speed = Obj_GetItemDebrisSpeed(target, min_speed);
+	scale = 2 * FixedMul(FixedDiv(speed, min_speed), scale_fade);
+
+	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
+
+	// dust effects
+	for (i = 0; i < locvar2; i++)
+	{
+		mobj_t *puff = P_SpawnMobjFromMobj(
+				target,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				MT_SPINDASHDUST
+		);
+
+		puff->color = target->color;
+		puff->colorized = true;
+
+		puff->destscale = FixedMul(puff->destscale, scale);
+		P_SetScale(puff, puff->destscale);
+
+		puff->momz = puff->scale * P_MobjFlip(puff);
+
+		P_Thrust(puff, R_PointToAngle2(target->x, target->y, puff->x, puff->y), 3 * puff->scale);
+
+		puff->momx += FixedMul(target->momx, fade);
+		puff->momy += FixedMul(target->momy, fade);
+		puff->momz += FixedMul(target->momz, fade);
 	}
 }

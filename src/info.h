@@ -290,6 +290,7 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
+	A_SPAWNITEMDEBRISCLOUD,
 	NUMACTIONS
 };
 
@@ -563,6 +564,7 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
+void A_SpawnItemDebrisCloud();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1076,6 +1078,7 @@ typedef enum sprite
 	SPR_RNDM, // Random Item Box
 	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
+	SPR_ITRI, // Item Box Debris
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
 	SPR_DSHR, // Speed boost dust release
@@ -4270,6 +4273,12 @@ typedef enum state
 	S_RANDOMITEMPOP4,
 	//}
 
+	S_ITEM_DEBRIS,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER_INIT,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER1,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER2,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER3,
+
 	S_ITEMICON,
 
 	// Item capsules
@@ -6326,6 +6335,8 @@ typedef enum mobj_type
 	MT_BRAKEDRIFT,
 	MT_BRAKEDUST,
 	MT_DRIFTDUST,
+	MT_ITEM_DEBRIS,
+	MT_ITEM_DEBRIS_CLOUD_SPAWNER,
 	MT_DRIFTELECTRICITY,
 	MT_DRIFTELECTRICSPARK,
 	MT_JANKSPARK,

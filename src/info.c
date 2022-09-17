@@ -530,6 +530,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"RNDM", // Random Item Box
 	"SBOX", // Sphere Box (for Battle)
 	"RPOP", // Random Item Box Pop
+	"ITRI", // Item Box Debris
 	"SGNS", // Signpost sparkle
 	"FAST", // Speed boost trail
 	"DSHR", // Speed boost dust release
@@ -3866,6 +3867,12 @@ state_t states[NUMSTATES] =
 	{SPR_RPOP, FF_FULLBRIGHT|1, 5, {NULL}, 0, 0, S_RANDOMITEMPOP3}, // S_RANDOMITEMPOP2
 	{SPR_RPOP, FF_FULLBRIGHT|2, 5, {NULL}, 0, 0, S_RANDOMITEMPOP4}, // S_RANDOMITEMPOP3
 	{SPR_RPOP, FF_FULLBRIGHT|3, 5, {NULL}, 0, 0, S_NULL},           // S_RANDOMITEMPOP4
+
+	{SPR_ITRI, FF_FULLBRIGHT, -1, {NULL}, 19, 1, S_NULL}, // S_ITEM_DEBRIS
+	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_ITEM_DEBRIS_CLOUD_SPAWNER1}, // S_ITEM_DEBRIS_CLOUD_SPAWNER_INIT
+	{SPR_NULL, 0, 1, {A_Repeat}, 4, S_ITEM_DEBRIS_CLOUD_SPAWNER2, S_NULL}, // S_ITEM_DEBRIS_CLOUD_SPAWNER1
+	{SPR_NULL, 4, 2, {A_SpawnItemDebrisCloud}, 1, 10, S_ITEM_DEBRIS_CLOUD_SPAWNER3}, // S_ITEM_DEBRIS_CLOUD_SPAWNER2
+	{SPR_NULL, 4, 5, {A_SpawnItemDebrisCloud}, 0, 2, S_ITEM_DEBRIS_CLOUD_SPAWNER1}, // S_ITEM_DEBRIS_CLOUD_SPAWNER3
 
 	{SPR_NULL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMICON
 
@@ -23125,6 +23132,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_FLOAT|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_ITEM_DEBRIS
+		-1,             // doomednum
+		S_ITEM_DEBRIS,  // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_ITEM_DEBRIS_CLOUD_SPAWNER
+		-1,             // doomednum
+		S_ITEM_DEBRIS_CLOUD_SPAWNER_INIT, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOSECTOR|MF_NOBLOCKMAP, // flags
 		S_NULL          // raisestate
 	},
 
