@@ -4396,8 +4396,8 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
@@ -4568,8 +4568,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag

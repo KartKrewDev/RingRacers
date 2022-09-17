@@ -4905,8 +4905,9 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
 	INT32 i;
 	UINT8 gt, secondgt;
+	INT16 tempvotelevels[4][2];
 
-	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
@@ -4919,13 +4920,20 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	for (i = 0; i < 4; i++)
 	{
-		votelevels[i][0] = (UINT16)READUINT16(*cp);
-		votelevels[i][1] = gt;
-		if (!mapheaderinfo[votelevels[i][0]])
-			P_AllocMapHeader(votelevels[i][0]);
+		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
+		tempvotelevels[i][1] = gt;
+		if (tempvotelevels[i][0] < nummapheaders && mapheaderinfo[tempvotelevels[i][0]])
+			continue;
+
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempvotelevels[i][0], nummapheaders);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempvotelevels[i][0], player_names[playernum]);
+		return;
 	}
 
-	votelevels[2][1] = secondgt;
+	tempvotelevels[2][1] = secondgt;
+
+	memcpy(votelevels, tempvotelevels, sizeof(votelevels));
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();

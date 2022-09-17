@@ -3292,13 +3292,13 @@ UINT32 G_TOLFlag(INT32 pgametype)
 	return gametypetol[pgametype];
 }
 
-static UINT32 TOLMaps(UINT32 tolflags)
+static INT32 TOLMaps(UINT32 tolflags)
 {
-	UINT32 num = 0;
-	UINT32 i;
+	INT32 num = 0;
+	INT32 i;
 
 	// Find all the maps that are ok and and put them in an array.
-	for (i = 0; i < NUMMAPS; i++)
+	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
@@ -3330,7 +3330,7 @@ INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphe
 	if (!okmaps)
 	{
 		//CONS_Printf("(making okmaps)\n");
-		okmaps = Z_Malloc(NUMMAPS * sizeof(INT16), PU_STATIC, NULL);
+		okmaps = Z_Malloc(nummapheaders * sizeof(INT16), PU_STATIC, NULL);
 	}
 
 	if (extbuffer != NULL)
@@ -3347,7 +3347,7 @@ tryagain:
 	usehellmaps = (maphell == 0 ? false : (maphell == 2 || M_RandomChance(FRACUNIT/100))); // 1% chance of Hell
 
 	// Find all the maps that are ok and and put them in an array.
-	for (ix = 0; ix < NUMMAPS; ix++)
+	for (ix = 0; ix < nummapheaders; ix++)
 	{
 		boolean isokmap = true;
 
@@ -3456,7 +3456,7 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, ((INT32)TOLMaps(G_TOLFlag(gametype)))-3);
+	INT16 bufx, refreshnum = max(0, (TOLMaps(G_TOLFlag(gametype)))-3);
 
 	// Add the map to the buffer.
 	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
@@ -3665,7 +3665,7 @@ static void G_DoCompleted(void)
 		{
 			register INT16 cm = nextmap;
 			UINT32 tolflag = G_TOLFlag(gametype);
-			UINT8 visitedmap[(NUMMAPS+7)/8];
+			UINT8 visitedmap[(nummapheaders+7)/8];
 
 			memset(visitedmap, 0, sizeof (visitedmap));
 
@@ -3693,7 +3693,7 @@ static void G_DoCompleted(void)
 						cm = (INT16)nextNum;
 				}
 
-				if (cm >= NUMMAPS || cm < 0) // out of range (either 1100ish or error)
+				if (cm >= nummapheaders || cm < 0) // out of range (either 1100ish or error)
 				{
 					cm = nextmap; //Start the loop again so that the error checking below is executed.
 
@@ -3722,7 +3722,7 @@ static void G_DoCompleted(void)
 		if (nextmap >= 1100-1 && nextmap <= 1102-1 && !(gametyperules & GTR_CAMPAIGN))
 			nextmap = (INT16)(spstage_start-1);
 
-		if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1103-1)
+		if (nextmap < 0 || (nextmap >= nummapheaders && nextmap < 1100-1) || nextmap > 1103-1)
 			I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
 
 		if (!spec)
@@ -3747,7 +3747,7 @@ static void G_DoCompleted(void)
 	// We may as well allocate its header if it doesn't exist
 	// (That is, if it's a real map)
 	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
-		P_AllocMapHeader(nextmap);
+		I_Error("G_DoCompleted: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 
 	// Set up power level gametype scrambles
 	K_SetPowerLevelScrambles(powertype);
@@ -4614,11 +4614,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 
 	gamemap = map;
 
-	// gamemap changed; we assume that its map header is always valid,
-	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
-
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 
@@ -4655,11 +4650,8 @@ char *G_BuildMapTitle(INT32 mapnum)
 {
 	char *title = NULL;
 
-	if (mapnum == 0)
-		return Z_StrDup("Random");
-
-	if (!mapheaderinfo[mapnum-1])
-		P_AllocMapHeader(mapnum-1);
+	if (!mapnum || mapnum > nummapheaders || !mapheaderinfo[mapnum-1])
+		I_Error("G_BuildMapTitle: Internal map ID %d not found (nummapheaders = %d)", mapnum-1, nummapheaders);
 
 	if (strcmp(mapheaderinfo[mapnum-1]->lvlttl, ""))
 	{
@@ -4755,19 +4747,12 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 
 	mapnamelen = strlen(mapname);
 
-	/* Count available maps; how ugly. */
-	for (i = 0, freqc = 0; i < NUMMAPS; ++i)
-	{
-		if (mapheaderinfo[i])
-			freqc++;
-	}
-
-	freq = ZZ_Calloc(freqc * sizeof (mapsearchfreq_t));
+	freq = ZZ_Calloc(nummapheaders * sizeof (mapsearchfreq_t));
 
 	wanttable = !!( freqp );
 
 	freqc = 0;
-	for (i = 0, mapnum = 1; i < NUMMAPS; ++i, ++mapnum)
+	for (i = 0, mapnum = 1; i < nummapheaders; ++i, ++mapnum)
 		if (mapheaderinfo[i])
 	{
 		if (!( realmapname = G_BuildMapTitle(mapnum) ))

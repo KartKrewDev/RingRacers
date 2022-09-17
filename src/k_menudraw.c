@@ -2117,10 +2117,10 @@ void M_DrawLevelSelect(void)
 	{
 		INT16 lvlx = t, lvly = y;
 
-		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 			map++;
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 			break;
 
 		if (i == levellist.cursor && tatransition)

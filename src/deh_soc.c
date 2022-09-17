@@ -140,41 +140,39 @@ void clear_conditionsets(void)
 
 void clear_levels(void)
 {
-	INT16 i;
-
 	// This is potentially dangerous but if we're resetting these headers,
 	// we may as well try to save some memory, right?
-	for (i = 0; i < NUMMAPS; ++i)
+	while (nummapheaders > 0)
 	{
-		if (!mapheaderinfo[i])
+		nummapheaders--;
+
+		if (!mapheaderinfo[nummapheaders])
 			continue;
 
-		if (strcmp(mapheaderinfo[i]->lumpname, tutorialmap) == 0) // Sal: Is this needed...?
+		if (strcmp(mapheaderinfo[nummapheaders]->lumpname, tutorialmap) == 0) // Sal: Is this needed...?
 			continue;
 
 		// Custom map header info
 		// (no need to set num to 0, we're freeing the entire header shortly)
-		Z_Free(mapheaderinfo[i]->customopts);
+		Z_Free(mapheaderinfo[nummapheaders]->customopts);
 
-		P_DeleteFlickies(i);
-		P_DeleteGrades(i);
+		P_DeleteFlickies(nummapheaders);
+		P_DeleteGrades(nummapheaders);
 
-		Patch_Free(mapheaderinfo[i]->thumbnailPic);
-		Patch_Free(mapheaderinfo[i]->minimapPic);
-		Z_Free(mapheaderinfo[i]->nextlevel);
-		Z_Free(mapheaderinfo[i]->marathonnext);
+		Patch_Free(mapheaderinfo[nummapheaders]->thumbnailPic);
+		Patch_Free(mapheaderinfo[nummapheaders]->minimapPic);
+		Z_Free(mapheaderinfo[nummapheaders]->nextlevel);
+		Z_Free(mapheaderinfo[nummapheaders]->marathonnext);
 
-		Z_Free(mapheaderinfo[i]->lumpname);
+		Z_Free(mapheaderinfo[nummapheaders]->lumpname);
 
-		Z_Free(mapheaderinfo[i]);
-		mapheaderinfo[i] = NULL;
+		Z_Free(mapheaderinfo[nummapheaders]);
+		mapheaderinfo[nummapheaders] = NULL;
 	}
 
-	nummapheaders = 0;
-
-	// Realloc the one for the current gamemap as a safeguard -- TODO: BAD
+	// Realloc the one for the current gamemap as a safeguard
 	if (Playing())
-		P_AllocMapHeader(gamemap-1);
+		COM_BufAddText("exitgame"); // Command_ExitGame_f() but delayed
 }
 
 // TODO: Figure out how to do undolines for this....
@@ -2610,7 +2608,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 	if (!params[0])
 	{
-		deh_warning("condition line is empty");
+		deh_warning("condition line is empty for condition ID %d", id);
 		return;
 	}
 
@@ -2630,7 +2628,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
 		{
-			deh_warning("Power level type %d out of range (0 - %d)", x1, PWRLV_NUMTYPES-1);
+			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id);
 			return;
 		}
 	}
@@ -2652,9 +2650,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_MAPVISITED + offset;
 		re = G_MapNumber(params[1]);
 
-		if (re < 0 || re >= NUMMAPS)
+		if (re == nummapheaders)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", re, NUMMAPS);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id);
 			return;
 		}
 	}
@@ -2665,9 +2663,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[2]);
 		x1 = G_MapNumber(params[1]);
 
-		if (x1 < 0 || x1 >= NUMMAPS)
+		if (x1 == nummapheaders)
 		{
-			deh_warning("Level number %d out of range (1 - %d)", x1, NUMMAPS);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id);
 			return;
 		}
 	}
@@ -2680,7 +2678,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		// constrained by 32 bits
 		if (re < 0 || re > 31)
 		{
-			deh_warning("Trigger ID %d out of range (0 - 31)", re);
+			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id);
 			return;
 		}
 	}
@@ -2698,7 +2696,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXEMBLEMS)
 		{
-			deh_warning("Emblem %d out of range (1 - %d)", re, MAXEMBLEMS);
+			deh_warning("Emblem %d out of range (1 - %d) for condition ID %d", re, MAXEMBLEMS, id);
 			return;
 		}
 	}
@@ -2710,7 +2708,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXEXTRAEMBLEMS)
 		{
-			deh_warning("Extra emblem %d out of range (1 - %d)", re, MAXEXTRAEMBLEMS);
+			deh_warning("Extra emblem %d out of range (1 - %d) for condition ID %d", re, MAXEXTRAEMBLEMS, id);
 			return;
 		}
 	}
@@ -2722,13 +2720,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXCONDITIONSETS)
 		{
-			deh_warning("Condition set %d out of range (1 - %d)", re, MAXCONDITIONSETS);
+			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id);
 			return;
 		}
 	}
 	else
 	{
-		deh_warning("Invalid condition name %s", params[0]);
+		deh_warning("Invalid condition name %s for condition ID %d", params[0], id);
 		return;
 	}
 

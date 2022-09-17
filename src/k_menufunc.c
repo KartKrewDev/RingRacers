@@ -3229,7 +3229,7 @@ INT16 M_CountLevelsToShowInList(UINT8 gt)
 {
 	INT16 mapnum, count = 0;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			count++;
 
@@ -3240,7 +3240,7 @@ INT16 M_GetFirstLevelInList(UINT8 gt)
 {
 	INT16 mapnum;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			return mapnum;
 
@@ -3549,16 +3549,16 @@ void M_LevelSelectHandler(INT32 choice)
 		{
 			map++;
 
-			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 				map++;
 
-			if (map >= NUMMAPS)
+			if (map >= nummapheaders)
 				break;
 
 			add--;
 		}
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 		{
 			// This shouldn't happen
 			return;

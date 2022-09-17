@@ -3046,12 +3046,12 @@ static int lib_gBuildMapTitle(lua_State *L)
 {
 	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
 	char *name;
-	if (map < 1 || map > NUMMAPS)
+	if (map < 1 || map > nummapheaders)
 	{
 		return luaL_error(L,
-				"map number %d out of range (1 - %d)",
+				"map ID %d out of range (1 - %d)",
 				map,
-				NUMMAPS
+				nummapheaders
 		);
 	}
 	name = G_BuildMapTitle(map);

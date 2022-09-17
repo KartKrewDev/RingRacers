@@ -833,8 +833,8 @@ void Y_StartIntermission(void)
 	//if (dedicated) return;
 
 	// This should always exist, but just in case...
-	if (!mapheaderinfo[prevmap])
-		P_AllocMapHeader(prevmap);
+	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
+		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
 	switch (intertype)
 	{
