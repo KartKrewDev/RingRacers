@@ -9529,7 +9529,7 @@ void K_AdjustPlayerFriction(player_t *player)
 	}
 
 	// Wipeout slowdown
-	if (player->spinouttimer && player->wipeoutslow)
+	if (player->speed > 0 && player->spinouttimer && player->wipeoutslow)
 	{
 		if (player->offroad)
 			player->mo->friction -= 4912;
