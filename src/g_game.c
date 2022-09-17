@@ -659,21 +659,35 @@ const char *G_BuildMapName(INT32 map)
   *
   * \param name Map name;
   * \return Map number.
-  * \sa G_BuildMapName
+  * \sa G_BuildMapName, nextmapspecial_t
   */
 INT32 G_MapNumber(const char * name)
 {
-	INT32 map;
-
-	for (map = 0; map < nummapheaders; ++map)
+	if (strncasecmp("NEXTMAP_", name, 8) != 0)
 	{
-		if (strcasecmp(mapheaderinfo[map]->lumpname, name) == 0)
+		INT32 map;
+
+		for (map = 0; map < nummapheaders; ++map)
 		{
-			break;
+			if (strcasecmp(mapheaderinfo[map]->lumpname, name) == 0)
+			{
+				break;
+			}
 		}
+
+		return map;
 	}
 
-	return map;
+	name += 8;
+
+	if (strcasecmp("EVALUATION", name) == 0)
+		return NEXTMAP_EVALUATION;
+	if (strcasecmp("CREDITS", name) == 0)
+		return NEXTMAP_CREDITS;
+	if (strcasecmp("CEREMONY", name) == 0)
+		return NEXTMAP_CEREMONY;
+	//if (strcasecmp("TITLE", name) == 0)
+		return NEXTMAP_TITLE;
 }
 
 /** Clips the console player's mouse aiming to the current view.
@@ -3709,16 +3723,20 @@ static void G_DoCompleted(void)
 		{
 			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
 			{
-				nextmap = 1101; // ceremonymap
+				nextmap = NEXTMAP_CEREMONY; // ceremonymap
 			}
 			else
 			{
 				// Proceed to next map
 				const INT32 cupLevelNum = G_MapNumber(grandprixinfo.cup->levellist[grandprixinfo.roundnum]);
 
-				if (mapheaderinfo[cupLevelNum])
+				if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 				{
 					nextmap = cupLevelNum;
+				}
+				else
+				{
+					nextmap = prevmap; // Prevent uninitialised use
 				}
 
 				grandprixinfo.roundnum++;
@@ -3733,7 +3751,7 @@ static void G_DoCompleted(void)
 		{
 			nextmap = (INT16)nextNum;
 			if (marathonmode && nextmap == spmarathon_start-1)
-				nextmap = 1100-1; // No infinite loop for you
+				nextmap = NEXTMAP_TITLE; // No infinite loop for you
 		}
 	}
 
@@ -3745,48 +3763,46 @@ static void G_DoCompleted(void)
 	// a map of the proper gametype -- skip levels that don't support
 	// the current gametype. (Helps avoid playing boss levels in Race,
 	// for instance).
-	if (!modeattacking && grandprixinfo.gp == false && bossinfo.boss == false)
+	if (K_CanChangeRules())
 	{
-		if (nextmap >= 0 && nextmap < NUMMAPS)
+		if (cv_advancemap.value == 0) // Stay on same map.
+		{
+			nextmap = prevmap;
+		}
+		else if (cv_advancemap.value == 2) // Go to random map.
+		{
+			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
+		}
+		else if (nextmap < NEXTMAP_SPECIAL)
 		{
 			register INT16 cm = nextmap;
 			UINT32 tolflag = G_TOLFlag(gametype);
-			UINT8 visitedmap[(nummapheaders+7)/8];
+			UINT8* visitedmap;
 
-			memset(visitedmap, 0, sizeof (visitedmap));
+			visitedmap = Z_Calloc(((nummapheaders+7)/8)*sizeof(UINT8), PU_STATIC, NULL);
 
-			while (!mapheaderinfo[cm] || !(mapheaderinfo[cm]->typeoflevel & tolflag))
+			while (!mapheaderinfo[cm] || mapheaderinfo[cm]->lumpnum == LUMPERROR || !(mapheaderinfo[cm]->typeoflevel & tolflag))
 			{
 				visitedmap[cm/8] |= (1<<(cm&7));
 				if (!mapheaderinfo[cm])
 					cm = -1; // guarantee error execution
 				else if (marathonmode && mapheaderinfo[cm]->marathonnext)
 				{
-					const INT32 mNextNum = G_MapNumber(mapheaderinfo[gamemap-1]->marathonnext);
-
-					if (!mapheaderinfo[mNextNum])
-						cm = -1; // guarantee error execution
-					else
-						cm = (INT16)mNextNum;
+					cm = G_MapNumber(mapheaderinfo[cm]->marathonnext);
 				}
 				else
 				{
-					const INT32 nextNum = G_MapNumber(mapheaderinfo[gamemap-1]->nextlevel);
-
-					if (!mapheaderinfo[nextNum])
-						cm = -1; // guarantee error execution
-					else
-						cm = (INT16)nextNum;
+					cm = G_MapNumber(mapheaderinfo[cm]->nextlevel);
 				}
 
-				if (cm >= nummapheaders || cm < 0) // out of range (either 1100ish or error)
+				if (cm >= nummapheaders) // out of range (either NEXTMAP_SPECIAL or error)
 				{
 					cm = nextmap; //Start the loop again so that the error checking below is executed.
 
 					//Make sure the map actually exists before you try to go to it!
-					if (cm < 0 || cm >= nummapheaders || mapheaderinfo[cm]->lumpnum == LUMPERROR)
+					if (cm >= nummapheaders || mapheaderinfo[cm]->lumpnum == LUMPERROR)
 					{
-						CONS_Alert(CONS_ERROR, M_GetText("Next map given (id %d) doesn't exist! Reverting to id 0.\n"), cm+1);
+						CONS_Alert(CONS_ERROR, M_GetText("Next map given (ID %d) doesn't exist! Reverting to id 0.\n"), cm+1);
 						cm = 0;
 						break;
 					}
@@ -3797,28 +3813,17 @@ static void G_DoCompleted(void)
 					// We got stuck in a loop, came back to the map we started on
 					// without finding one supporting the current gametype.
 					// Thus, print a warning, and just use this map anyways.
-					CONS_Alert(CONS_WARNING, M_GetText("Can't find a compatible map after map %d; using map %d anyway\n"), prevmap+1, cm+1);
+					CONS_Alert(CONS_WARNING, M_GetText("Can't find a compatible map after ID %d; using ID %d anyway\n"), prevmap, cm);
 					break;
 				}
 			}
+			Z_Free(visitedmap);
 			nextmap = cm;
 		}
-
-		// wrap around in race
-		if (nextmap >= 1100-1 && nextmap <= 1102-1 && !(gametyperules & GTR_CAMPAIGN))
+		// wrap around
+		else if (!(gametyperules & GTR_CAMPAIGN))
 			nextmap = (INT16)(spstage_start-1);
 
-		if (nextmap < 0 || (nextmap >= nummapheaders && nextmap < 1100-1) || nextmap > 1103-1)
-			I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
-
-		if (!spec)
-			lastmap = nextmap; // Remember last map for when you come out of the special stage.
-	}
-
-	automapactive = false;
-
-	if (!(gametyperules & GTR_CAMPAIGN))
-	{
 		if (cv_advancemap.value == 0) // Stay on same map.
 		{
 			nextmap = prevmap;
@@ -3832,7 +3837,7 @@ static void G_DoCompleted(void)
 	// We are committed to this map now.
 	// We may as well allocate its header if it doesn't exist
 	// (That is, if it's a real map)
-	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
+	if (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR))
 		I_Error("G_DoCompleted: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 
 	// Set up power level gametype scrambles
@@ -3899,7 +3904,7 @@ void G_AfterIntermission(void)
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->cutscenenum-1, false, false);
 	else
 	{
-		if (nextmap < 1100-1)
+		if (nextmap < NEXTMAP_SPECIAL)
 			G_NextLevel();
 		else
 			G_EndGame();
@@ -4043,17 +4048,17 @@ void G_EndGame(void)
 	// Only do evaluation and credits in coop games.
 	if (gametyperules & GTR_CAMPAIGN)
 	{
-		if (nextmap == 1103-1) // end game with ending
+		if (nextmap == NEXTMAP_CEREMONY) // end game with ending
 		{
 			F_StartEnding();
 			return;
 		}
-		if (nextmap == 1102-1) // end game with credits
+		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{
 			F_StartCredits();
 			return;
 		}
-		if (nextmap == 1101-1) // end game with evaluation
+		if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
 		{
 			F_StartGameEvaluation();
 			return;

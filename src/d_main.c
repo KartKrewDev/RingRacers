@@ -1711,7 +1711,7 @@ void D_SRB2Main(void)
 	{
 		pstartmap = G_MapNumber(bootmap)+1;
 
-		if (pstartmap == nummapheaders)
+		if (pstartmap > nummapheaders)
 		{
 			I_Error("Cannot warp to map %s (not found)\n", bootmap);
 		}

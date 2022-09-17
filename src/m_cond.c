@@ -305,7 +305,7 @@ UINT8 M_CheckLevelEmblems(void)
 
 		checkLevel = G_MapNumber(emblemlocations[i].level);
 
-		if (!mapheaderinfo[checkLevel])
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
 		levelnum = checkLevel;
@@ -345,7 +345,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 		checkLevel = G_MapNumber(emblemlocations[i].level);
 
-		if (!mapheaderinfo[checkLevel])
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
 		levelnum = checkLevel;
@@ -472,7 +472,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	INT32 curtics = 0;
 	INT32 i;
 
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
@@ -508,7 +508,7 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 	{
 		INT32 checkLevel = G_MapNumber(emblemlocations[i].level);
 
-		if (!mapheaderinfo[checkLevel])
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
 		if (checkLevel == map)

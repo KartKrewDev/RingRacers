@@ -1849,7 +1849,7 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 			INT32 cupLevelNum = G_MapNumber(cup->levellist[i]);
 			patch_t *PictureOfLevel = NULL;
 
-			if (mapheaderinfo[cupLevelNum])
+			if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 			{
 				PictureOfLevel = mapheaderinfo[cupLevelNum]->thumbnailPic;
 			}

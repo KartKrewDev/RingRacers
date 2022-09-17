@@ -2650,7 +2650,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_MAPVISITED + offset;
 		re = G_MapNumber(params[1]);
 
-		if (re == nummapheaders)
+		if (re >= nummapheaders)
 		{
 			deh_warning("Invalid level %s for condition ID %d", params[1], id);
 			return;
@@ -2663,7 +2663,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[2]);
 		x1 = G_MapNumber(params[1]);
 
-		if (x1 == nummapheaders)
+		if (x1 >= nummapheaders)
 		{
 			deh_warning("Invalid level %s for condition ID %d", params[1], id);
 			return;
@@ -2867,21 +2867,33 @@ void readmaincfg(MYFILE *f)
 				// TODO: Use map name string
 				// Haven't done it because of how special stage ends are handled
 				// Though, we likely won't be using these for Kart anyhow
-				spstage_start = spmarathon_start = (INT16)G_MapNumber(word2);
+				INT16 maptmp = G_MapNumber(word2)+1;
+				if (maptmp <= nummapheaders)
+					spstage_start = spmarathon_start = maptmp;
 			}
 			else if (fastcmp(word, "SPMARATHON_START"))
 			{
-				spmarathon_start = (INT16)G_MapNumber(word2);
+				INT16 maptmp = G_MapNumber(word2)+1;
+				if (maptmp <= nummapheaders)
+					spmarathon_start = maptmp;
 			}
 			else if (fastcmp(word, "SSTAGE_START"))
 			{
-				sstage_start = (INT16)G_MapNumber(word2);
-				sstage_end = (INT16)(sstage_start+7); // 7 special stages total plus one weirdo
+				INT16 maptmp = G_MapNumber(word2)+1;
+				if (maptmp <= nummapheaders)
+				{
+					sstage_start = maptmp;
+					sstage_end = (sstage_start+13); // 14 special stages
+				}
 			}
 			else if (fastcmp(word, "SMPSTAGE_START"))
 			{
-				smpstage_start = (INT16)G_MapNumber(word2);
-				smpstage_end = (INT16)(smpstage_start+6); // 7 special stages total
+				INT16 maptmp = G_MapNumber(word2)+1;
+				if (maptmp <= nummapheaders)
+				{
+					smpstage_start = maptmp;
+					smpstage_end = (smpstage_start+13); // 14 special stages
+				}
 			}
 			else if (fastcmp(word, "REDTEAM"))
 			{

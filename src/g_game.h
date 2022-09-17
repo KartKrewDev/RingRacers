@@ -36,6 +36,18 @@ extern tic_t levelstarttic;
 
 // for modding?
 extern INT16 prevmap, nextmap;
+
+// see also G_MapNumber
+typedef enum
+{
+	NEXTMAP_RESERVED = INT16_MAX, // so nextmap+1 doesn't roll over -- remove when gamemap is made 0-indexed
+	NEXTMAP_TITLE = INT16_MAX-1,
+	NEXTMAP_EVALUATION = INT16_MAX-2,
+	NEXTMAP_CREDITS = INT16_MAX-3,
+	NEXTMAP_CEREMONY = INT16_MAX-4,
+	NEXTMAP_SPECIAL = NEXTMAP_CEREMONY
+} nextmapspecial_t;
+
 extern INT32 gameovertics;
 extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
