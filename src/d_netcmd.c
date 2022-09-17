@@ -519,9 +519,9 @@ consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_Y
 
 consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
+consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
 //static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
+consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
 consvar_t cv_maxping = CVAR_INIT ("maxdelay", "20", CV_SAVE, CV_Unsigned, NULL);
 
 consvar_t cv_lagless = CVAR_INIT ("lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange);
