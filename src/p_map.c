@@ -32,6 +32,7 @@
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart
 #include "k_terrain.h"
+#include "k_objects.h"
 
 #include "r_splats.h"
 
@@ -656,7 +657,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	{
-		UINT8 shouldCollide = LUAh_MobjCollide(thing, tmthing); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_Hook2Mobj(thing, tmthing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -664,7 +665,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 
-		shouldCollide = LUAh_MobjMoveCollide(tmthing, thing); // checks hook for tmthing's type
+		shouldCollide = LUA_Hook2Mobj(tmthing, thing, MOBJ_HOOK(MobjMoveCollide)); // checks hook for tmthing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -738,6 +739,81 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
+
+	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
+	{
+		if (tmthing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (thing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (tmthing->z > thing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (tmthing->type == MT_SHRINK_GUN || tmthing->type == MT_SHRINK_PARTICLE)
+	{
+		if (thing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (tmthing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (thing->z > tmthing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (thing->z + thing->height < tmthing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
 
 	if (tmthing->type == MT_SMK_ICEBLOCK)
 	{
@@ -1640,7 +1716,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	blockingline = ld;
 
 	{
-		UINT8 shouldCollide = LUAh_MobjLineCollide(tmthing, blockingline); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_HookMobjLineCollide(tmthing, blockingline); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -2483,21 +2559,19 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	return maxstep;
 }
 
-//
-// P_TryMove
-// Attempt to move to a new position.
-//
-boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+static boolean
+increment_move
+(		mobj_t * thing,
+		fixed_t x,
+		fixed_t y,
+		boolean allowdropoff,
+		fixed_t * return_stairjank)
 {
 	fixed_t tryx = thing->x;
 	fixed_t tryy = thing->y;
-	fixed_t oldx = tryx;
-	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
-	fixed_t startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
-	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
@@ -2643,7 +2717,45 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		}
 	} while (tryx != x || tryy != y);
 
+	if (return_stairjank)
+		*return_stairjank = stairjank;
+
+	return true;
+}
+
+//
+// P_CheckMove
+// Check if a P_TryMove would be successful.
+//
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	boolean moveok;
+	mobj_t *hack = P_SpawnMobjFromMobj(thing, 0, 0, 0, MT_RAY);
+
+	hack->radius = thing->radius;
+	hack->height = thing->height;
+
+	moveok = increment_move(hack, x, y, allowdropoff, NULL);
+	P_RemoveMobj(hack);
+
+	return moveok;
+}
+
+//
+// P_TryMove
+// Attempt to move to a new position.
+//
+boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	fixed_t oldx = thing->x;
+	fixed_t oldy = thing->y;
+	fixed_t startingonground = P_IsObjectOnGround(thing);
+	fixed_t stairjank = 0;
+	pslope_t *oldslope = thing->standingslope;
+
 	// The move is ok!
+	if (!increment_move(thing, x, y, allowdropoff, &stairjank))
+		return false;
 
 	// If it's a pushable object, check if anything is
 	// standing on top and move it, too.

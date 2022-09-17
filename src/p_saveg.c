@@ -367,6 +367,8 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].stairjank);
 
+		WRITEUINT8(save_p, players[i].shrinkLaserDelay);
+
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -653,6 +655,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kickstartaccel = READUINT8(save_p);
 
 		players[i].stairjank = READUINT8(save_p);
+
+		players[i].shrinkLaserDelay = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -4193,21 +4197,21 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hprev, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->itnext)
 		{
 			temp = (UINT32)(size_t)mobj->itnext;
 			mobj->itnext = NULL;
-			if (!(mobj->itnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->itnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
 		if (mobj->terrain)
@@ -4423,7 +4427,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	INT32 i;
+	size_t i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4552,11 +4556,25 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, 0x2f);
 	else
 		WRITEUINT8(save_p, 0x2e);
+
+	WRITEUINT32(save_p, livestudioaudience_timer);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	WRITEUINT32(save_p, schedule_len);
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		WRITEINT16(save_p, task->basetime);
+		WRITEINT16(save_p, task->timer);
+		WRITESTRING(save_p, task->command);
+	}
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	INT32 i;
+	size_t i;
+	size_t numTasks;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4699,6 +4717,26 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
 		paused = true;
+
+	livestudioaudience_timer = READUINT32(save_p);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	Schedule_Clear();
+
+	numTasks = READUINT32(save_p);
+	for (i = 0; i < numTasks; i++)
+	{
+		INT16 basetime;
+		INT16 timer;
+		char command[MAXTEXTCMD];
+
+		basetime = READINT16(save_p);
+		timer = READINT16(save_p);
+		READSTRING(save_p, command);
+
+		Schedule_Add(basetime, timer, command);
+	}
 
 	return true;
 }

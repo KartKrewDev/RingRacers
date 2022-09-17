@@ -347,7 +347,7 @@ void Y_IntermissionDrawer(void)
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUAh_IntermissionHUD(luahuddrawlist_intermission);
+		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
@@ -591,7 +591,7 @@ skiptallydrawer:
 			switch (demo.savemode)
 			{
 				case DSM_NOTSAVING:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B): Save replay");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B) or (X): Save replay");
 					break;
 
 				case DSM_SAVED:
@@ -632,7 +632,7 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && G_PlayerInputDown(0, gc_y, 0))
+		if (demo.savemode == DSM_NOTSAVING && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
 			demo.savemode = DSM_TITLEENTRY;
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
@@ -643,7 +643,7 @@ void Y_Ticker(void)
 	if (paused || P_AutoPause())
 		return;
 
-	LUAh_IntermissionThinker();
+	LUA_HOOK(IntermissionThinker);
 
 	intertic++;
 
@@ -883,6 +883,7 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
+	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
 
@@ -1258,7 +1259,7 @@ void Y_VoteTicker(void)
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
 
-	LUAh_VoteThinker();
+	LUA_HOOK(VoteThinker);
 
 	votetic++;
 
@@ -1474,6 +1475,7 @@ void Y_VoteTicker(void)
 void Y_StartVote(void)
 {
 	INT32 i = 0;
+	boolean battlemode = ((votelevels[0][1] & ~VOTEMODIFIER_ENCORE) == GT_BATTLE); // todo gametyperules
 
 	votetic = -1;
 
@@ -1482,8 +1484,8 @@ void Y_StartVote(void)
 		I_Error("voteendtic is dirty");
 #endif
 
-	widebgpatch = W_CachePatchName(((gametype == GT_BATTLE) ? "BATTLSCW" : "INTERSCW"), PU_STATIC);
-	bgpatch = W_CachePatchName(((gametype == GT_BATTLE) ? "BATTLSCR" : "INTERSCR"), PU_STATIC);
+	widebgpatch = W_CachePatchName((battlemode ? "BATTLSCW" : "INTERSCW"), PU_STATIC);
+	bgpatch = W_CachePatchName((battlemode ? "BATTLSCR" : "INTERSCR"), PU_STATIC);
 	cursor = W_CachePatchName("M_CURSOR", PU_STATIC);
 	cursor1 = W_CachePatchName("P1CURSOR", PU_STATIC);
 	cursor2 = W_CachePatchName("P2CURSOR", PU_STATIC);
@@ -1515,8 +1517,8 @@ void Y_StartVote(void)
 	for (i = 0; i < 4; i++)
 	{
 		// set up the encore
-		levelinfo[i].encore = (votelevels[i][1] & 0x80);
-		votelevels[i][1] &= ~0x80;
+		levelinfo[i].encore = (votelevels[i][1] & VOTEMODIFIER_ENCORE);
+		votelevels[i][1] &= ~VOTEMODIFIER_ENCORE;
 
 		// set up the levelstring
 		if (mapheaderinfo[votelevels[i][0]]->levelflags & LF_NOZONE || !mapheaderinfo[votelevels[i][0]]->zonttl[0])
@@ -1557,6 +1559,7 @@ void Y_StartVote(void)
 	}
 
 	voteclient.loaded = true;
+	Automate_Run(AEV_VOTESTART);
 }
 
 //

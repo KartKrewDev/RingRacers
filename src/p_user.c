@@ -665,7 +665,7 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 				break;
 
 			case JT_OTHER:  // Other state
-				result = LUAh_ShouldJingleContinue(&players[i], musname);
+				result = LUA_HookShouldJingleContinue(&players[i], musname);
 				break;
 
 			case JT_NONE:   // Null state
@@ -1197,7 +1197,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->renderflags |= tr_trans50 << RF_TRANSSHIFT;
+	ghost->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|RF_TRANS50;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -1206,6 +1206,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
 	ghost->rollangle = mobj->rollangle;
+
+	ghost->spritexscale = mobj->spritexscale;
+	ghost->spriteyscale = mobj->spriteyscale;
+	ghost->spritexoffset = mobj->spritexoffset;
+	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
@@ -3044,6 +3049,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	subsector_t *newsubsec;
 #endif
 
+	fixed_t playerScale = FixedDiv(player->mo->scale, mapobjectscale);
+	fixed_t scaleDiff = playerScale - FRACUNIT;
+	fixed_t cameraScale = mapobjectscale;
+
 	thiscam->old_x = thiscam->x;
 	thiscam->old_y = thiscam->y;
 	thiscam->old_z = thiscam->z;
@@ -3132,8 +3141,11 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		return true;
 	}
 
-	thiscam->radius = 20*mapobjectscale;
-	thiscam->height = 16*mapobjectscale;
+	// Adjust camera to match Grow/Shrink
+	cameraScale = FixedMul(cameraScale, FRACUNIT + (scaleDiff / 3));
+
+	thiscam->radius = 20*cameraScale;
+	thiscam->height = 16*cameraScale;
 
 	// Don't run while respawning from a starpost
 	// Inu 4/8/13 Why not?!
@@ -3159,8 +3171,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	camspeed = cv_cam_speed[num].value;
 	camstill = cv_cam_still[num].value;
 	camrotate = cv_cam_rotate[num].value;
-	camdist = FixedMul(cv_cam_dist[num].value, mapobjectscale);
-	camheight = FixedMul(cv_cam_height[num].value, mapobjectscale);
+	camdist = FixedMul(cv_cam_dist[num].value, cameraScale);
+	camheight = FixedMul(cv_cam_height[num].value, cameraScale);
 
 	if (timeover)
 	{
@@ -3171,8 +3183,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		const INT32 introcam = (introtime - leveltime);
 		camrotate += introcam*5;
-		camdist += (introcam * mapobjectscale)*3;
-		camheight += (introcam * mapobjectscale)*2;
+		camdist += (introcam * cameraScale)*3;
+		camheight += (introcam * cameraScale)*2;
 	}
 	else if (player->exiting) // SRB2Kart: Leave the camera behind while exiting, for dramatic effect!
 		camstill = true;
@@ -3236,7 +3248,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	// sets ideal cam pos
 	{
-		const fixed_t speedthreshold = 48*mapobjectscale;
+		const fixed_t speedthreshold = 48*cameraScale;
 		const fixed_t olddist = P_AproxDistance(mo->x - thiscam->x, mo->y - thiscam->y);
 
 		fixed_t lag, distoffset;
@@ -3541,7 +3553,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	// point viewed by the camera
 	// this point is just 64 unit forward the player
-	dist = 64*mapobjectscale;
+	dist = 64*cameraScale;
 	viewpointx = mo->x + FixedMul(FINECOSINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist) + xpan;
 	viewpointy = mo->y + FixedMul(FINESINE((angle>>ANGLETOFINESHIFT) & FINEMASK), dist) + ypan;
 
@@ -3684,7 +3696,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else
 			changeto = (P_RandomFixed() & 1) + 1;
 
-		if (!LUAh_TeamSwitch(player, changeto, true, false, false))
+		if (!LUA_HookTeamSwitch(player, changeto, true, false, false))
 			return false;
 	}
 
@@ -3710,7 +3722,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		{
 			if (localplayertable[i] == (player-players))
 			{
-				LUAh_ViewpointSwitch(player, player, true);
+				LUA_HookViewpointSwitch(player, player, true);
 				displayplayers[i] = (player-players);
 				break;
 			}
@@ -4220,7 +4232,7 @@ void P_PlayerThink(player_t *player)
 
 				if (player->playerstate == PST_DEAD)
 				{
-					LUAh_PlayerThink(player);
+					LUA_HookPlayer(player, HOOK(PlayerThink));
 					return;
 				}
 			}
@@ -4269,7 +4281,7 @@ void P_PlayerThink(player_t *player)
 		else
 			player->mo->renderflags &= ~RF_GHOSTLYMASK;
 		P_DeathThink(player);
-		LUAh_PlayerThink(player);
+		LUA_HookPlayer(player, HOOK(PlayerThink));
 		return;
 	}
 
@@ -4474,7 +4486,7 @@ void P_PlayerThink(player_t *player)
 	if (player->carry == CR_SLIDING)
 		player->carry = CR_NONE;
 
-	LUAh_PlayerThink(player);
+	LUA_HookPlayer(player, HOOK(PlayerThink));
 }
 
 //
@@ -4581,7 +4593,7 @@ void P_PlayerAfterThink(player_t *player)
 
 		if (player->followmobj)
 		{
-			if (LUAh_FollowMobj(player, player->followmobj) || P_MobjWasRemoved(player->followmobj))
+			if (LUA_HookFollowMobj(player, player->followmobj) || P_MobjWasRemoved(player->followmobj))
 				{;}
 			else
 			{

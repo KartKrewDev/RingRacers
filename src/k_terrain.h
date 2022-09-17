@@ -28,6 +28,7 @@ typedef struct t_splash_s
 	// These are particles spawned when hitting the floor.
 
 	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	UINT32 hash;					// Lookup name's hash.
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
 	UINT16 sfx;				// Sound to play.
@@ -48,6 +49,7 @@ typedef struct t_footstep_s
 	// These are particles spawned when moving fast enough on a floor.
 
 	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	UINT32 hash;					// Lookup name's hash.
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
 	UINT16 sfx;				// Sound to play.
@@ -79,6 +81,7 @@ typedef struct terrain_s
 	// These are all of the properties that the floor gets.
 
 	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	UINT32 hash;					// Lookup name's hash.
 
 	size_t splashID;		// Splash defintion ID.
 	size_t footstepID;		// Footstep defintion ID.
@@ -93,15 +96,13 @@ typedef struct terrain_s
 typedef struct t_floor_s
 {
 	// Terrain floor definition.
-	// Ties texture names to a .
+	// Ties a texture name to a terrain definition.
 
-	// (Could be optimized by using texture IDs instead of names,
-	// but was concerned because I recall sooomething about those not being netsafe?
-	// Someone confirm if I just hallucinated that. :V)
-
-	char textureName[9];	// Floor texture name.
+	char textureName[8];	// Floor texture name.
+	UINT32 textureHash;		// Floor texture hash.
 	size_t terrainID;		// Terrain definition ID.
 } t_floor_t;
+
 
 /*--------------------------------------------------
 	size_t K_GetSplashHeapIndex(t_splash_t *splash);
@@ -284,6 +285,7 @@ terrain_t *K_GetTerrainByIndex(size_t checkIndex);
 --------------------------------------------------*/
 
 terrain_t *K_GetTerrainByName(const char *checkName);
+
 
 /*--------------------------------------------------
 	terrain_t *K_GetDefaultTerrain(void);

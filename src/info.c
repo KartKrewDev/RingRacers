@@ -573,6 +573,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FLML", // Flame Shield speed lines
 	"FLMF", // Flame Shield flash
 	"HYUU", // Hyudoro
+	"GRWP", // Grow
+	"POHB", // Shrink Poh-Bee
+	"SHRG", // Shrink gun / laser
 	"SINK", // Kitchen Sink
 	"SITR", // Kitchen Sink Trail
 	"KBLN", // Battle Mode Bumper
@@ -4314,6 +4317,13 @@ state_t states[NUMSTATES] =
 
 	{SPR_HYUU, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO
 
+	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
+
+	{SPR_SHRG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_GUN
+	{SPR_POHB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_CHAIN
+	{SPR_SHRG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_LASER
+	{SPR_SHRG, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_PARTICLE
+
 	{SPR_SINK, 0,  1, {A_SmokeTrailer}, MT_SINKTRAIL, 0, S_SINK},	// S_SINK
 	{SPR_SINK, 0|FF_TRANS80|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_SINK_SHIELD}, // S_SINK_SHIELD
 	{SPR_SITR, 0,  1, {NULL}, 0, 0, S_SINKTRAIL2},				// S_SINKTRAIL1
@@ -5117,6 +5127,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RAY
+		-1,             // doomednum
+		S_NULL,         // spawnstate
+		0,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		0,              // radius
+		0,              // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24009,6 +24046,168 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_GROW_PARTICLE
+		-1,             // doomednum
+		S_GROW_PARTICLE, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		4*FRACUNIT,     // radius
+		8*FRACUNIT,     // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHRINK_POHBEE
+		-1,             // doomednum
+		S_HYUDORO,      // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		24*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHRINK_GUN
+		-1,             // doomednum
+		S_SHRINK_GUN,   // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		52*FRACUNIT,    // radius
+		120*FRACUNIT,   // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHRINK_CHAIN
+		-1,             // doomednum
+		S_SHRINK_CHAIN, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		26*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHRINK_LASER
+		-1,             // doomednum
+		S_SHRINK_LASER, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		33*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SHRINK_PARTICLE
+		-1,             // doomednum
+		S_SHRINK_PARTICLE, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		26*FRACUNIT,    // radius
+		26*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_SINK
 		-1,             // doomednum
 		S_SINK,         // spawnstate
@@ -24017,7 +24216,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_tossed,     // seesound
 		8,              // reactiontime
 		sfx_None,       // attacksound
-		256*FRACUNIT,   // painstate
+		S_NULL,   		// painstate
 		100,            // painchance
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
