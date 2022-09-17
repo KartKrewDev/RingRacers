@@ -3401,7 +3401,7 @@ tryagain:
 	{
 		boolean isokmap = true;
 
-		if (!mapheaderinfo[ix])
+		if (!mapheaderinfo[ix] || mapheaderinfo[ix]->lumpnum == LUMPERROR)
 			continue;
 
 		if ((mapheaderinfo[ix]->typeoflevel & tolflags) != tolflags
@@ -4803,8 +4803,10 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 
 	freqc = 0;
 	for (i = 0, mapnum = 1; i < nummapheaders; ++i, ++mapnum)
-		if (mapheaderinfo[i])
 	{
+		if (!mapheaderinfo[i] || mapheaderinfo[i]->lumpnum == LUMPERROR)
+			continue;
+
 		if (!( realmapname = G_BuildMapTitle(mapnum) ))
 			continue;
 
@@ -4923,6 +4925,8 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 	if (*p == '\0')/* we got it */
 	{
 		if (newmapnum < 1 || newmapnum > nummapheaders)
+			return 0;
+		if (!mapheaderinfo[newmapnum-1] || mapheaderinfo[newmapnum-1]->lumpnum == LUMPERROR)
 			return 0;
 	}
 	else
