@@ -1113,7 +1113,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ffbonc", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // Shout message sound effect
-  {"sysmsg", false,  60,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+  {"sysmsg", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+
+  // Shrink laser beam
+  {"beam01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // SRB2Kart - Engine sounds
   // Engine class A

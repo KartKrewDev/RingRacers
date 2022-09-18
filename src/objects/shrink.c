@@ -344,10 +344,20 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 		particle->destscale = 0;
 
 		//particle->momz = 2 * particle->scale * P_MobjFlip(particle);
+
+		if (S_SoundPlaying(laser, sfx_beam01) == false)
+		{
+			S_StartSound(laser, sfx_beam01);
+		}
 	}
 	else
 	{
 		laser->renderflags |= RF_DONTDRAW;
+
+		if (S_SoundPlaying(laser, sfx_beam01) == true)
+		{
+			S_StopSound(laser);
+		}
 	}
 }
 
