@@ -871,9 +871,6 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Character Voices", "Set how often to play character voices in game.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Powerup Warning", "Set how to warn you from other player's powerups such as Invincibility.",
-		NULL, {.cvar = &cv_kartinvinsfx}, 0, 0},
-
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 

@@ -1118,8 +1118,6 @@ typedef enum
 	sfx_kpogos,
 	sfx_alarmi,
 	sfx_alarmg,
-	sfx_kinvnc,
-	sfx_kgrow,
 	sfx_itrol1,
 	sfx_itrol2,
 	sfx_itrol3,
@@ -1181,6 +1179,9 @@ typedef enum
 
 	// Shout message sound effect
 	sfx_sysmsg,
+
+	// Shrink laser
+	sfx_beam01,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
