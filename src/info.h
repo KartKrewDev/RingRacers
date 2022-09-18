@@ -1121,7 +1121,9 @@ typedef enum sprite
 	SPR_HYUU, // Hyudoro
 	SPR_GRWP, // Grow
 	SPR_POHB, // Shrink Poh-Bee
-	SPR_SHRG, // Shrink gun / laser
+	SPR_POHC, // Shrink Poh-Bee chain
+	SPR_SHRG, // Shrink gun
+	SPR_SHRL, // Shrink laser
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -4752,8 +4754,20 @@ typedef enum state
 	S_GROW_PARTICLE,
 
 	// Shrink
-	S_SHRINK_GUN,
+	S_SHRINK_POHBEE,
+	S_SHRINK_POHBEE2,
+	S_SHRINK_POHBEE3,
+	S_SHRINK_POHBEE4,
+	S_SHRINK_POHBEE5,
+	S_SHRINK_POHBEE6,
+	S_SHRINK_POHBEE7,
+	S_SHRINK_POHBEE8,
+
 	S_SHRINK_CHAIN,
+
+	S_SHRINK_GUN,
+	S_SHRINK_GUN_OVERLAY,
+
 	S_SHRINK_LASER,
 	S_SHRINK_PARTICLE,
 

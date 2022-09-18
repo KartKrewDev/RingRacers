@@ -575,7 +575,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"HYUU", // Hyudoro
 	"GRWP", // Grow
 	"POHB", // Shrink Poh-Bee
-	"SHRG", // Shrink gun / laser
+	"POHC", // Shrink Poh-Bee chain
+	"SHRG", // Shrink gun
+	"SHRL", // Shrink laser
 	"SINK", // Kitchen Sink
 	"SITR", // Kitchen Sink Trail
 	"KBLN", // Battle Mode Bumper
@@ -4319,10 +4321,22 @@ state_t states[NUMSTATES] =
 
 	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
 
+	{SPR_POHB, 0, 1, {NULL}, 0, 0, S_SHRINK_POHBEE2}, // S_SHRINK_POHBEE
+	{SPR_POHB, 1, 1, {NULL}, 0, 0, S_SHRINK_POHBEE3}, // S_SHRINK_POHBEE2
+	{SPR_POHB, 0, 1, {NULL}, 0, 0, S_SHRINK_POHBEE4}, // S_SHRINK_POHBEE3
+	{SPR_POHB, 2, 1, {NULL}, 0, 0, S_SHRINK_POHBEE5}, // S_SHRINK_POHBEE4
+	{SPR_POHB, 0, 1, {NULL}, 0, 0, S_SHRINK_POHBEE6}, // S_SHRINK_POHBEE5
+	{SPR_POHB, 3, 1, {NULL}, 0, 0, S_SHRINK_POHBEE7}, // S_SHRINK_POHBEE6
+	{SPR_POHB, 0, 1, {NULL}, 0, 0, S_SHRINK_POHBEE8}, // S_SHRINK_POHBEE7
+	{SPR_POHB, 2, 1, {NULL}, 0, 0, S_SHRINK_POHBEE}, // S_SHRINK_POHBEE8
+
+	{SPR_POHC, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_CHAIN
+
 	{SPR_SHRG, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_GUN
-	{SPR_POHB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_CHAIN
-	{SPR_SHRG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_LASER
-	{SPR_SHRG, FF_FULLBRIGHT|2, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_PARTICLE
+	{SPR_SHRG, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_GUN_OVERLAY
+
+	{SPR_SHRL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_LASER
+	{SPR_SHRL, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRINK_PARTICLE
 
 	{SPR_SINK, 0,  1, {A_SmokeTrailer}, MT_SINKTRAIL, 0, S_SINK},	// S_SINK
 	{SPR_SINK, 0|FF_TRANS80|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_SINK_SHIELD}, // S_SINK_SHIELD
@@ -24075,7 +24089,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SHRINK_POHBEE
 		-1,             // doomednum
-		S_HYUDORO,      // spawnstate
+		S_SHRINK_POHBEE, // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -24096,7 +24110,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 
