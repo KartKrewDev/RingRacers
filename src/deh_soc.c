@@ -157,12 +157,9 @@ void clear_levels(void)
 		Z_Free(mapheaderinfo[nummapheaders]->customopts);
 
 		P_DeleteFlickies(nummapheaders);
-		P_DeleteGrades(nummapheaders);
 
 		Patch_Free(mapheaderinfo[nummapheaders]->thumbnailPic);
 		Patch_Free(mapheaderinfo[nummapheaders]->minimapPic);
-		Z_Free(mapheaderinfo[nummapheaders]->nextlevel);
-		Z_Free(mapheaderinfo[nummapheaders]->marathonnext);
 
 		Z_Free(mapheaderinfo[nummapheaders]->lumpname);
 
@@ -1155,7 +1152,6 @@ void readlevelheader(MYFILE *f, char * name)
 			{
 				deh_strlcpy(mapheaderinfo[num]->lvlttl, word2,
 					sizeof(mapheaderinfo[num]->lvlttl), va("Level header %d: levelname", num));
-				strlcpy(mapheaderinfo[num]->selectheading, word2, sizeof(mapheaderinfo[num]->selectheading)); // not deh_ so only complains once
 				continue;
 			}
 			// CHEAP HACK: move this over here for lowercase subtitles
@@ -1283,14 +1279,6 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 
 			// Strings that can be truncated
-			else if (fastcmp(word, "NEXTLEVEL"))
-			{
-				mapheaderinfo[num]->nextlevel = Z_StrDup(word2);
-			}
-			else if (fastcmp(word, "MARATHONNEXT"))
-			{
-				mapheaderinfo[num]->marathonnext = Z_StrDup(word2);
-			}
 			else if (fastcmp(word, "ZONETITLE"))
 			{
 				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
@@ -1459,12 +1447,12 @@ void readlevelheader(MYFILE *f, char * name)
 				else
 					mapheaderinfo[num]->menuflags &= ~LF2_HIDEINSTATS;
 			}
-			else if (fastcmp(word, "TIMEATTACK") || fastcmp(word, "RECORDATTACK"))
+			else if (fastcmp(word, "NOTIMEATTACK") || fastcmp(word, "NORECORDATTACK"))
 			{ // RECORDATTACK is an accepted alias
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num]->menuflags &= ~LF2_NOTIMEATTACK;
-				else
 					mapheaderinfo[num]->menuflags |= LF2_NOTIMEATTACK;
+				else
+					mapheaderinfo[num]->menuflags &= ~LF2_NOTIMEATTACK;
 			}
 			else if (fastcmp(word, "VISITNEEDED"))
 			{
@@ -4057,19 +4045,6 @@ static fixed_t find_const(const char **rword)
 
 		// Not found error
 		const_warning("typeoflevel",word);
-		free(word);
-		return 0;
-	}
-	else if (fastncmp("GRADE_",word,6))
-	{
-		char *p = word+6;
-		for (i = 0; NIGHTSGRADE_LIST[i]; i++)
-			if (*p == NIGHTSGRADE_LIST[i])
-			{
-				free(word);
-				return i;
-			}
-		const_warning("NiGHTS grade",word);
 		free(word);
 		return 0;
 	}

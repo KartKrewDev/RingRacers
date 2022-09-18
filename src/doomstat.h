@@ -322,12 +322,6 @@ extern struct quake
 	fixed_t radius, intensity;
 } quake;
 
-// NiGHTS grades
-typedef struct
-{
-	UINT32 grade[6]; // D, C, B, A, S, X (F: failed to reach any of these)
-} nightsgrades_t;
-
 // Custom Lua values
 // (This is not ifdeffed so the map header structure can stay identical, just in case.)
 typedef struct
@@ -354,9 +348,6 @@ typedef struct
 	UINT8 actnum;						///< Act number or 0 for none.
 
 	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
-
-	char * nextlevel;					///< Map name of next level.
-	char * marathonnext;				///< See nextlevel, but for Marathon mode.
 
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
@@ -391,45 +382,21 @@ typedef struct
 	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
 	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
 
-	SINT8 bonustype;					///< What type of bonus does this level have? (-1 for null.)
-	SINT8 maxbonuslives;				///< How many bonus lives to award at Intermission? (-1 for unlimited.)
-
 	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
 	UINT16 menuflags;					///< LF2_flags: options that affect record attack / nights mode menus
 
-	char selectheading[22];				///< Level select heading. Allows for controllable grouping.
 	UINT16 startrings;					///< Number of rings players start with.
 	INT32 sstimer;						///< Timer for special stages.
 	UINT32 ssspheres;					///< Sphere requirement in special stages.
 	fixed_t gravity;					///< Map-wide gravity.
 
-	// Title card.
-	char ltzzpatch[8];					///< Zig zag patch.
-	char ltzztext[8];					///< Zig zag text.
-	char ltactdiamond[8];				///< Act diamond.
-
 	// Freed animals stuff.
 	UINT8 numFlickies;					///< Internal. For freed flicky support.
 	mobjtype_t *flickies;				///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
 
-	// NiGHTS stuff.
-	UINT8 numGradedMares;				///< Internal. For grade support.
-	nightsgrades_t *grades;				///< NiGHTS grades. Allocated dynamically for space reasons. Be careful.
-
 	UINT8 light_contrast; ///< Range of wall lighting. 0 is no lighting.
 	boolean use_light_angle; ///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle; ///< Angle of directional wall lighting.
-
-	// Music stuff.
-	UINT32 musinterfadeout;				///< Fade out level music on intermission screen in milliseconds
-	char musintername[7];				///< Intermission screen music.
-
-	char muspostbossname[7];			///< Post-bossdeath music.
-	UINT16 muspostbosstrack;			///< Post-bossdeath track.
-	UINT32 muspostbosspos;				///< Post-bossdeath position
-	UINT32 muspostbossfadein;			///< Post-bossdeath fade-in milliseconds.
-
-	SINT8 musforcereset;				///< Force resetmusic (-1 for default; 0 for force off; 1 for force on)
 
 	// SRB2kart
 	fixed_t mobj_scale;					///< Replacement for TOL_ERZ3
@@ -605,26 +572,6 @@ typedef struct
 	//UINT32 score; ///< Score when the level was finished.
 	//UINT16 rings; ///< Rings when the level was finished.
 } recorddata_t;
-
-/** Setup for one NiGHTS map.
-  * These are dynamically allocated because I am insane
-  */
-#define GRADE_F 0
-#define GRADE_E 1
-#define GRADE_D 2
-#define GRADE_C 3
-#define GRADE_B 4
-#define GRADE_A 5
-#define GRADE_S 6
-
-/*typedef struct
-{
-	// 8 mares, 1 overall (0)
-	UINT8	nummares;
-	UINT32	score[9];
-	UINT8	grade[9];
-	tic_t	time[9];
-} nightsdata_t;*/
 
 //extern nightsdata_t *nightsrecords[NUMMAPS];
 extern recorddata_t *mainrecords[NUMMAPS];

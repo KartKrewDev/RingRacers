@@ -4265,14 +4265,7 @@ void P_PlayerThink(player_t *player)
 
 	if (!player->spectator)
 		P_PlayerInSpecialSector(player);
-	else if (
-#else
-	if (player->spectator &&
 #endif
-		(gametyperules & GTR_LIVES))
-	{
-		/*P_ConsiderAllGone()*/;
-	}
 
 	if (player->playerstate == PST_DEAD)
 	{

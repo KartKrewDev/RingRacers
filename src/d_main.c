@@ -939,14 +939,16 @@ void D_StartTitle(void)
 
 	if (netgame)
 	{
-		if (gametyperules & GTR_CAMPAIGN)
-		{
-			G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
 
-			if (server)
-			{
-				COM_BufAddText(va("map %s\n", G_BuildMapName(spstage_start)));
-			}
+		if (server)
+		{
+			INT16 mapnum = G_GetFirstMapOfGametype(gametype)+1;
+
+			if (i > nummapheaders)
+				I_Error("D_StartTitle: No valid map ID found!?");
+
+			COM_BufAddText(va("map %s\n", G_BuildMapName(mapnum)));
 		}
 
 		return;

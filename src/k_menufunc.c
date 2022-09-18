@@ -3178,6 +3178,8 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 {
+	UINT32 tolflag = G_TOLFlag(gt);
+
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
 		return false;
@@ -3186,21 +3188,26 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (!mapheaderinfo[mapnum]->lvlttl[0])
 		return false;
 
+	// Does the map have a LUMP?
+	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+		return false;
+
 	if (M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
+	// Check for TOL
+	if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+		return false;
+
 	// Should the map be hidden?
-	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 		return false;
 
 	// I don't know why, but some may have exceptions.
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
-		return true;
-
-	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+	if (gametypedefaultrules[gt] & GTR_CAMPAIGN)
 	{
 		if (levellist.selectedcup && levellist.selectedcup->numlevels)
 		{
@@ -3217,12 +3224,10 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 			if (i == levellist.selectedcup->numlevels)
 				return false;
 		}
-
-		return true;
 	}
 
-	// Hmm? Couldn't decide?
-	return false;
+	// Survived our checks.
+	return true;
 }
 
 INT16 M_CountLevelsToShowInList(UINT8 gt)

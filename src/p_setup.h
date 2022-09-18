@@ -125,10 +125,5 @@ void P_DeleteFlickies(INT16 i);
 
 // Needed for NiGHTS
 void P_ReloadRings(void);
-void P_DeleteGrades(INT16 i);
-void P_AddGradesForMare(INT16 i, UINT8 mare, char *gtext);
-UINT8 P_GetGrade(UINT32 pscore, INT16 map, UINT8 mare);
-UINT8 P_HasGrades(INT16 map, UINT8 mare);
-UINT32 P_GetScoreForGrade(INT16 map, UINT8 mare, UINT8 grade);
 
 #endif

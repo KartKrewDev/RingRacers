@@ -2127,10 +2127,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->actnum);
 	else if (fastcmp(field,"typeoflevel"))
 		lua_pushinteger(L, header->typeoflevel);
-	else if (fastcmp(field,"nextlevel"))
-		lua_pushstring(L, header->nextlevel);
-	else if (fastcmp(field,"marathonnext"))
-		lua_pushstring(L, header->marathonnext);
 	else if (fastcmp(field,"keywords"))
 		lua_pushstring(L, header->keywords);
 	else if (fastcmp(field,"musname"))
@@ -2139,20 +2135,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->mustrack);
 	else if (fastcmp(field,"muspos"))
 		lua_pushinteger(L, header->muspos);
-	else if (fastcmp(field,"musinterfadeout"))
-		lua_pushinteger(L, header->musinterfadeout);
-	else if (fastcmp(field,"musintername"))
-		lua_pushstring(L, header->musintername);
-	else if (fastcmp(field,"muspostbossname"))
-		lua_pushstring(L, header->muspostbossname);
-	else if (fastcmp(field,"muspostbosstrack"))
-		lua_pushinteger(L, header->muspostbosstrack);
-	else if (fastcmp(field,"muspostbosspos"))
-		lua_pushinteger(L, header->muspostbosspos);
-	else if (fastcmp(field,"muspostbossfadein"))
-		lua_pushinteger(L, header->muspostbossfadein);
-	else if (fastcmp(field,"musforcereset"))
-		lua_pushinteger(L, header->musforcereset);
 	else if (fastcmp(field,"forcecharacter"))
 		lua_pushstring(L, header->forcecharacter);
 	else if (fastcmp(field,"weather"))
@@ -2188,16 +2170,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->unlockrequired);
 	else if (fastcmp(field,"levelselect"))
 		lua_pushinteger(L, header->levelselect);
-	else if (fastcmp(field,"bonustype"))
-		lua_pushinteger(L, header->bonustype);
-	else if (fastcmp(field,"ltzzpatch"))
-		lua_pushstring(L, header->ltzzpatch);
-	else if (fastcmp(field,"ltzztext"))
-		lua_pushstring(L, header->ltzztext);
-	else if (fastcmp(field,"ltactdiamond"))
-		lua_pushstring(L, header->ltactdiamond);
-	else if (fastcmp(field,"maxbonuslives"))
-		lua_pushinteger(L, header->maxbonuslives);
 	else if (fastcmp(field,"levelflags"))
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))
@@ -2212,7 +2184,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->ssspheres);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
-	// TODO add support for reading numGradedMares and grades
 	else {
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)
