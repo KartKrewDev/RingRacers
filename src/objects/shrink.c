@@ -34,7 +34,7 @@
 // vertical flip
 //
 
-#define POHBEE_HOVER (256 << FRACBITS)
+#define POHBEE_HOVER (128 << FRACBITS)
 #define POHBEE_SPEED (128 << FRACBITS)
 #define POHBEE_TIME (30 * TICRATE)
 #define POHBEE_DIST (4096 << FRACBITS)
@@ -68,6 +68,7 @@ enum
 #define gun_pohbee(o) ((o)->target)
 #define gun_laser(o) ((o)->tracer)
 #define gun_chains(o) ((o)->hprev)
+#define gun_overlay(o) ((o)->itnext)
 
 #define chain_index(o) ((o)->extravalue1)
 
@@ -314,7 +315,7 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 		mobj_t *particle = NULL;
 
 		laser->renderflags &= ~RF_DONTDRAW;
-		laser->color = gun->color;
+		laser->color = ShrinkLaserColor(pohbee);
 
 		if (leveltime & 1)
 		{
@@ -386,6 +387,7 @@ static void DoGunChains(mobj_t *gun, mobj_t *pohbee)
 static void ShrinkGunThinker(mobj_t *gun)
 {
 	mobj_t *pohbee = gun_pohbee(gun);
+	skincolornum_t gunColor = SKINCOLOR_GREY;
 
 	if (pohbee == NULL || P_MobjWasRemoved(pohbee) == true)
 	{
@@ -394,7 +396,19 @@ static void ShrinkGunThinker(mobj_t *gun)
 	}
 
 	gun->angle = pohbee->angle;
-	gun->color = ShrinkLaserColor(pohbee);
+
+	if (pohbee_owner(pohbee) != NULL && P_MobjWasRemoved(pohbee_owner(pohbee)) == false
+		&& pohbee_owner(pohbee)->player != NULL)
+	{
+		gunColor = pohbee_owner(pohbee)->player->skincolor;
+	}
+
+	gun->color = gunColor;
+
+	if (gun_overlay(gun) != NULL && P_MobjWasRemoved(gun_overlay(gun)) == false)
+	{
+		gun_overlay(gun)->color = ShrinkLaserColor(pohbee);
+	}
 
 	DoGunSwing(gun, pohbee);
 
@@ -411,6 +425,7 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 	mobj_t *gun = NULL;
 
 	pohbee->momx = pohbee->momy = pohbee->momz = 0;
+	pohbee->spritexscale = pohbee->spriteyscale = 2*FRACUNIT;
 
 	switch (pohbee_mode(pohbee))
 	{
@@ -654,6 +669,7 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 		const UINT8 numSegs = segVal * (i + 1);
 
 		mobj_t *gun = P_SpawnMobjFromMobj(pohbee, 0, 0, 0, MT_SHRINK_GUN);
+		mobj_t *overlay = NULL;
 		mobj_t *laser = NULL;
 		mobj_t *prevChain = NULL;
 
@@ -662,6 +678,13 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 
 		gun_numsegs(gun) = numSegs;
 		gun_offset(gun) = P_RandomKey(GUN_SWINGTIME);
+
+		overlay = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_OVERLAY);
+
+		P_SetTarget(&overlay->target, gun);
+		P_SetTarget(&gun_overlay(gun), overlay);
+
+		P_SetMobjState(overlay, S_SHRINK_GUN_OVERLAY);
 
 		laser = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_SHRINK_LASER);
 		P_SetTarget(&gun_laser(gun), laser);
