@@ -508,6 +508,7 @@ void DRPC_UpdatePresence(void)
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
 		&& !(demo.playback && demo.title))
 	{
+#if 0
 		if ((gamemap >= 1 && gamemap <= 60) // supported race maps
 			|| (gamemap >= 136 && gamemap <= 164)) // supported battle maps
 		{
@@ -516,7 +517,9 @@ void DRPC_UpdatePresence(void)
 			strlwr(mapimg);
 			discordPresence.largeImageKey = mapimg; // Map image
 		}
-		else if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
+		else
+#endif
+		if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
 		{
 			// Hell map, use the method that got you here :P
 			discordPresence.largeImageKey = "miscdice";
