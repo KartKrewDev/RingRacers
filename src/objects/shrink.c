@@ -545,7 +545,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 				}
 				else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
 				{
-					S_StartSound(victim, (cv_kartinvinsfx.value ? sfx_alarmg : sfx_kgrow));
+					S_StartSound(victim, sfx_alarmg);
 				}
 
 				P_RestoreMusic(victim->player);
