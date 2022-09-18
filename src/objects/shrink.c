@@ -58,6 +58,7 @@ enum
 #define pohbee_waypoint_cur(o) ((o)->extravalue1)
 #define pohbee_waypoint_dest(o) ((o)->extravalue2)
 #define pohbee_height(o) ((o)->movefactor)
+#define pohbee_destangle(o) ((o)->movedir)
 
 #define pohbee_owner(o) ((o)->target)
 #define pohbee_guns(o) ((o)->hnext)
@@ -239,12 +240,13 @@ static void PohbeeSpawn(mobj_t *pohbee)
 	}
 
 	PohbeeMoveTo(pohbee, newX, newY, newZ);
-	pohbee->angle = K_MomentumAngle(pohbee);
+	pohbee_destangle(pohbee) = K_MomentumAngle(pohbee);
 
 	if (finalize == true)
 	{
 		// Move to next state
 		pohbee_mode(pohbee) = POHBEE_MODE_ACT;
+		pohbee_destangle(pohbee) += ANGLE_180;
 	}
 
 	if (pathfindsuccess == true)
@@ -405,7 +407,10 @@ static void ShrinkGunThinker(mobj_t *gun)
 		return;
 	}
 
-	gun->angle = pohbee->angle;
+	if (pohbee_mode(pohbee) == POHBEE_MODE_SPAWN)
+	{
+		gun->angle = pohbee->angle;
+	}
 
 	if (pohbee_owner(pohbee) != NULL && P_MobjWasRemoved(pohbee_owner(pohbee)) == false
 		&& pohbee_owner(pohbee)->player != NULL)
@@ -456,6 +461,8 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 			pohbee_mode(pohbee) = POHBEE_MODE_SPAWN;
 			break;
 	}
+
+	pohbee->angle += AngleDeltaSigned(pohbee_destangle(pohbee), pohbee->angle) / 8;
 
 	gun = pohbee_guns(pohbee);
 	while (gun != NULL && P_MobjWasRemoved(gun) == false)
