@@ -275,7 +275,6 @@ enum actionnum
 	A_ITEMPOP,
 	A_JAWZCHASE,
 	A_JAWZEXPLODE,
-	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
 	A_LANDMINEEXPLODE,
@@ -547,7 +546,6 @@ void A_ChangeHeight();
 void A_ItemPop();
 void A_JawzChase();
 void A_JawzExplode();
-void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
 void A_LandMineExplode();

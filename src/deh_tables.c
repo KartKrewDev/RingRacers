@@ -322,7 +322,6 @@ actionpointer_t actionpointers[] =
 	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
-	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
