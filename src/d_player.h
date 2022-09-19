@@ -268,7 +268,7 @@ typedef enum
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
 
-#define TRIPWIRETIME (TICRATE)
+#define TRIPWIRETIME (15)
 
 #define BALLHOGINCREMENT (7)
 
