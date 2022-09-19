@@ -22,7 +22,30 @@
 
 typedef enum
 {
-	PR_UNDEFINED, // Before release, cases of this RNG class should be removed, only kept as the default for Lua.
+	// Before release, cases of this RNG class should
+	// be removed, only kept as the default for Lua.
+	PR_UNDEFINED,
+
+	// The rule for RNG classes:
+	// Don't mix up gameplay & decorative RNG.
+
+	// Decorative RNG is a lot less important
+	// and can be lumped together. If it's used enough,
+	// it might be nice to give it's own, though.
+
+	// However each instance of RNG being used for
+	// gameplay should be split up as much as possible.
+
+	PR_ITEM_ROULETTE, // Item results
+	PR_ITEM_RINGS, // Flung ring direction
+	PR_ITEM_SHRINK, // Shrink gun offsets
+	PR_PLAYERSTARTS, // Player starts
+	PR_TERRAIN, // TERRAIN particles
+
+	PR_DECORATION, // Generic decoration
+	PR_VOICES, // Player voice sounds
+	PR_EXPLOSION, // Explosion VFX
+
 	PRNUMCLASS
 } pr_class_t;
 
@@ -53,10 +76,10 @@ INT32   P_RandomRange(pr_class_t pr_class, INT32 a, INT32 b);
 #endif
 
 // Macros for other functions
-#define M_SignedRandom()  ((INT32)M_RandomByte() - 128) // [-128, 127] signed byte, originally a
-#define P_SignedRandom(pr)  ((INT32)P_RandomByte(pr) - 128) // function of its own, moved to a macro
+#define M_SignedRandom()   ((INT32)M_RandomByte() - 128)   // [-128, 127] signed byte, originally a
+#define P_SignedRandom(pr) ((INT32)P_RandomByte(pr) - 128) // function of its own, moved to a macro
 
-#define M_RandomChance(p) (M_RandomFixed() < p) // given fixed point probability, p, between 0 (0%)
+#define M_RandomChance(p)     (M_RandomFixed() < p)   // given fixed point probability, p, between 0 (0%)
 #define P_RandomChance(pr, p) (P_RandomFixed(pr) < p) // and FRACUNIT (100%), returns true p% of the time
 
 // Debugging

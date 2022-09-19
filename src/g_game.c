@@ -2546,7 +2546,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 		return NULL;
 	}
 
-	if ((!players[playernum].ctfteam && numredctfstarts && (!numbluectfstarts || P_RandomChance(PR_UNDEFINED, FRACUNIT/2))) || players[playernum].ctfteam == 1) //red
+	if ((!players[playernum].ctfteam && numredctfstarts && (!numbluectfstarts || P_RandomChance(PR_PLAYERSTARTS, FRACUNIT/2))) || players[playernum].ctfteam == 1) //red
 	{
 		if (!numredctfstarts)
 		{
@@ -2557,7 +2557,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 		for (j = 0; j < 32; j++)
 		{
-			i = P_RandomKey(PR_UNDEFINED, numredctfstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numredctfstarts);
 			if (G_CheckSpot(playernum, redctfstarts[i]))
 				return redctfstarts[i];
 		}
@@ -2577,7 +2577,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 		for (j = 0; j < 32; j++)
 		{
-			i = P_RandomKey(PR_UNDEFINED, numbluectfstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numbluectfstarts);
 			if (G_CheckSpot(playernum, bluectfstarts[i]))
 				return bluectfstarts[i];
 		}
@@ -2598,7 +2598,7 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 	{
 		for (j = 0; j < 64; j++)
 		{
-			i = P_RandomKey(PR_UNDEFINED, numdmstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
 			if (G_CheckSpot(playernum, deathmatchstarts[i]))
 				return deathmatchstarts[i];
 		}

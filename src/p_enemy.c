@@ -4106,7 +4106,7 @@ void A_AttractChase(mobj_t *actor)
 #if 0 // old
 				mobj_t *newring;
 				newring = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->reactiontime);
-				P_InstaThrust(newring, P_RandomRange(PR_UNDEFINED,0,7) * ANGLE_45, 2<<FRACBITS);
+				P_InstaThrust(newring, P_RandomRange(PR_ITEM_RINGS, 0, 7) * ANGLE_45, 2<<FRACBITS);
 				newring->momz = 8<<FRACBITS;
 				newring->fuse = 120*TICRATE;
 				P_RemoveMobj(actor);
@@ -4116,7 +4116,7 @@ void A_AttractChase(mobj_t *actor)
 				actor->info = &mobjinfo[actor->type];
 				actor->flags = actor->info->flags;
 
-				P_InstaThrust(actor, P_RandomRange(PR_UNDEFINED,0,7) * ANGLE_45, 2 * actor->scale);
+				P_InstaThrust(actor, P_RandomRange(PR_ITEM_RINGS, 0, 7) * ANGLE_45, 2 * actor->scale);
 				P_SetObjectMomZ(actor, 8<<FRACBITS, false);
 				actor->fuse = 120*TICRATE;
 #endif
