@@ -392,14 +392,18 @@ void G_ReadDemoExtraData(void)
 		switch (p)
 		{
 		case DW_RNG:
-			rng = READUINT32(demo_p);
-			if (P_GetRandSeed() != rng)
+			for (i = 0; i < PRNUMCLASS; i++)
 			{
-				P_SetRandSeed(rng);
+				rng = READUINT32(demo_p);
 
-				if (demosynced)
-					CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
-				demosynced = false;
+				if (P_GetRandSeed(i) != rng)
+				{
+					P_SetRandSeed(i, rng);
+
+					if (demosynced)
+						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
+					demosynced = false;
+				}
 			}
 		}
 
@@ -514,7 +518,11 @@ void G_WriteDemoExtraData(void)
 			demo_writerng = 0;
 			timeout = 16;
 			WRITEUINT8(demo_p, DW_RNG);
-			WRITEUINT32(demo_p, P_GetRandSeed());
+
+			for (i = 0; i < PRNUMCLASS; i++)
+			{
+				WRITEUINT32(demo_p, P_GetRandSeed(i));
+			}
 		}
 	}
 
@@ -2035,7 +2043,10 @@ void G_BeginRecording(void)
 			break;
 	}
 
-	WRITEUINT32(demo_p,P_GetInitSeed());
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(demo_p, P_GetInitSeed(i));
+	}
 
 	// Reserved for extrainfo location from start of file
 	demoinfo_p = demo_p;
@@ -2705,7 +2716,7 @@ void G_DoPlayDemo(char *defdemoname)
 	lumpnum_t l;
 	char skin[17],color[MAXCOLORNAME+1],follower[17],*n,*pdemoname;
 	UINT8 version,subversion;
-	UINT32 randseed;
+	UINT32 randseed[PRNUMCLASS];
 	char msg[1024];
 
 	boolean spectator;
@@ -2913,7 +2924,10 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 
 	// Random seed
-	randseed = READUINT32(demo_p);
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		randseed[i] = READUINT32(demo_p);
+	}
 
 	demo_p += 4; // Extrainfo location
 
@@ -3117,7 +3131,10 @@ void G_DoPlayDemo(char *defdemoname)
 
 	R_ExecuteSetViewSize();
 
-	P_SetRandSeed(randseed);
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		P_SetRandSeed(i, randseed[i]);
+	}
 	G_InitNew(demoflags & DF_ENCORE, G_BuildMapName(gamemap), true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -3622,7 +3639,7 @@ static void WriteDemoChecksum(void)
 #ifdef NOMD5
 	UINT8 i;
 	for (i = 0; i < 16; i++, p++)
-		*p = P_RandomByte(); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
+		*p = P_RandomByte(PR_UNDEFINED); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
 #else
 	md5_buffer((char *)p+16, demo_p - (p+16), p); // make a checksum of everything after the checksum in the file.
 #endif

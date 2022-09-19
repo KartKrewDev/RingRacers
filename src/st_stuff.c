@@ -406,12 +406,16 @@ static void ST_drawDebugInfo(void)
 
 	if (cv_debug & DBG_RANDOMIZER) // randomizer testing
 	{
-		fixed_t peekres = P_RandomPeek();
+		// TODO: this only accounts for the undefined class,
+		// which should be phased out as much as possible anyway.
+		// Figure out some other way to display all of the RNG classes.
+
+		fixed_t peekres = P_RandomPeek(PR_UNDEFINED);
 		peekres *= 10000;     // Change from fixed point
 		peekres >>= FRACBITS; // to displayable decimal
 
-		V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Init: %08x", P_GetInitSeed()));
-		V_DrawRightAlignedString(320, height - 8,  V_MONOSPACE, va("Seed: %08x", P_GetRandSeed()));
+		V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Init: %08x", P_GetInitSeed(PR_UNDEFINED)));
+		V_DrawRightAlignedString(320, height - 8,  V_MONOSPACE, va("Seed: %08x", P_GetRandSeed(PR_UNDEFINED)));
 		V_DrawRightAlignedString(320, height,      V_MONOSPACE, va("==  :    .%04d", peekres));
 
 		height -= 32;

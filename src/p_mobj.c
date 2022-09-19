@@ -92,7 +92,7 @@ static inline INT32 randomframe (mobj_t *mobj, INT32 n)
 {
 	// Only mobj thinkers should use synced RNG
 	if (mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
-		return P_RandomKey(n);
+		return P_RandomKey(PR_UNDEFINED, n);
 	else
 		return M_RandomKey(n);
 }
@@ -316,7 +316,7 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 			}
 			else if (mobj->sprite2 != spr2)
 			{
-				if ((st->frame & FF_SPR2MIDSTART) && numframes && P_RandomChance(FRACUNIT/2))
+				if ((st->frame & FF_SPR2MIDSTART) && numframes && P_RandomChance(PR_UNDEFINED, FRACUNIT/2))
 					frame = numframes/2;
 				else
 					frame = 0;
@@ -442,7 +442,7 @@ boolean P_SetMobjState(mobj_t *mobj, statenum_t state)
 			}
 			else if (mobj->sprite2 != spr2)
 			{
-				if ((st->frame & FF_SPR2MIDSTART) && numframes && P_RandomChance(FRACUNIT/2))
+				if ((st->frame & FF_SPR2MIDSTART) && numframes && P_RandomChance(PR_UNDEFINED, FRACUNIT/2))
 					frame = numframes/2;
 				else
 					frame = 0;
@@ -2485,12 +2485,12 @@ boolean P_ZMovement(mobj_t *mo)
 							// If deafed, give the tumbleweed another random kick if it runs out of steam.
 							mom.z += P_MobjFlip(mo)*FixedMul(6*FRACUNIT, mo->scale);
 
-							if (P_RandomChance(FRACUNIT/2))
+							if (P_RandomChance(PR_UNDEFINED, FRACUNIT/2))
 								mom.x += FixedMul(6*FRACUNIT, mo->scale);
 							else
 								mom.x -= FixedMul(6*FRACUNIT, mo->scale);
 
-							if (P_RandomChance(FRACUNIT/2))
+							if (P_RandomChance(PR_UNDEFINED, FRACUNIT/2))
 								mom.y += FixedMul(6*FRACUNIT, mo->scale);
 							else
 								mom.y -= FixedMul(6*FRACUNIT, mo->scale);
@@ -2513,7 +2513,7 @@ boolean P_ZMovement(mobj_t *mo)
 				else if (mo->type == MT_FALLINGROCK)
 				{
 					if (P_MobjFlip(mo)*mom.z > FixedMul(2*FRACUNIT, mo->scale))
-						S_StartSound(mo, mo->info->activesound + P_RandomKey(mo->info->reactiontime));
+						S_StartSound(mo, mo->info->activesound + P_RandomKey(PR_UNDEFINED, mo->info->reactiontime));
 
 					mom.z /= 2; // Rocks not so bouncy
 
@@ -2920,7 +2920,7 @@ boolean P_SceneryZMovement(mobj_t *mo)
 
 				for (i = 0; i < 4; ++i) // split into four
 				{
-					prandom = P_RandomByte();
+					prandom = P_RandomByte(PR_UNDEFINED);
 					explodemo = P_SpawnMobj(mo->x, mo->y, mo->z, MT_SMALLBUBBLE);
 					explodemo->momx += ((prandom & 0x0F) << (FRACBITS-2)) * (i & 2 ? -1 : 1);
 					explodemo->momy += ((prandom & 0xF0) << (FRACBITS-6)) * (i & 1 ? -1 : 1);
@@ -2929,7 +2929,7 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				}
 
 				if (mo->threshold != 42) // Don't make pop sound if threshold is 42.
-					S_StartSound(explodemo, sfx_bubbl1 + P_RandomKey(5));
+					S_StartSound(explodemo, sfx_bubbl1 + P_RandomKey(PR_UNDEFINED, 5));
 				//note that we assign the bubble sound to one of the new bubbles.
 				// in other words, IT ACTUALLY GETS USED YAAAAAAAY
 
@@ -2952,7 +2952,7 @@ boolean P_SceneryZMovement(mobj_t *mo)
 			if ((!(mo->eflags & MFE_VERTICALFLIP) && mo->z <= mo->floorz)
 			|| (mo->eflags & MFE_VERTICALFLIP && mo->z+mo->height >= mo->ceilingz))
 			{
-				mobjtype_t flowertype = ((P_RandomChance(FRACUNIT/2)) ? MT_GFZFLOWER1 : MT_GFZFLOWER3);
+				mobjtype_t flowertype = ((P_RandomChance(PR_UNDEFINED, FRACUNIT/2)) ? MT_GFZFLOWER1 : MT_GFZFLOWER3);
 				mobj_t *flower = P_SpawnMobjFromMobj(mo, 0, 0, 0, flowertype);
 				if (flower)
 				{
@@ -3315,10 +3315,10 @@ void P_MobjCheckWater(mobj_t *mobj)
 				// P_RandomByte()s are called individually to allow consistency
 				// across various compilers, since the order of function calls
 				// in C is not part of the ANSI specification.
-				prandom[0] = P_RandomByte();
-				prandom[1] = P_RandomByte();
-				prandom[2] = P_RandomByte();
-				prandom[3] = P_RandomByte();
+				prandom[0] = P_RandomByte(PR_UNDEFINED);
+				prandom[1] = P_RandomByte(PR_UNDEFINED);
+				prandom[2] = P_RandomByte(PR_UNDEFINED);
+				prandom[3] = P_RandomByte(PR_UNDEFINED);
 
 				bubbletype = MT_SMALLBUBBLE;
 				if (!(prandom[0] & 0x3)) // medium bubble chance up to 64 from 32
@@ -4249,7 +4249,7 @@ boolean P_BossTargetPlayer(mobj_t *actor, boolean closest)
 
 	// first time init, this allow minimum lastlook changes
 	if (actor->lastlook < 0)
-		actor->lastlook = P_RandomByte();
+		actor->lastlook = P_RandomByte(PR_UNDEFINED);
 	actor->lastlook &= PLAYERSMASK;
 
 	for( ; ; actor->lastlook = (actor->lastlook+1) & PLAYERSMASK)
@@ -4324,7 +4324,7 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 	if (!stop)
 		return false;
 
-	P_SetTarget(&actor->target, playersinthegame[P_RandomKey(stop)]->mo);
+	P_SetTarget(&actor->target, playersinthegame[P_RandomKey(PR_UNDEFINED, stop)]->mo);
 	return true;
 }
 
@@ -5345,7 +5345,7 @@ static boolean P_ParticleGenSceneryThink(mobj_t *mobj)
 			spawn->scalespeed = spawn->scale/mobj->health;
 			spawn->tics = (tic_t)mobj->health;
 			spawn->flags2 |= (mobj->flags2 & MF2_OBJECTFLIP);
-			spawn->angle += P_RandomKey(36)*ANG10; // irrelevant for default objects but might make sense for some custom ones
+			spawn->angle += P_RandomKey(PR_UNDEFINED, 36)*ANG10; // irrelevant for default objects but might make sense for some custom ones
 
 			mobj->angle += mobj->movedir;
 		}
@@ -5456,7 +5456,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		{
 			mobj->health = 0;
 			P_SetMobjState(mobj, mobj->info->deathstate);
-			S_StartSound(mobj, mobj->info->deathsound + P_RandomKey(mobj->info->mass));
+			S_StartSound(mobj, mobj->info->deathsound + P_RandomKey(PR_UNDEFINED, mobj->info->mass));
 			return;
 		}
 		break;
@@ -5609,22 +5609,22 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_SMOLDERING:
 		if (leveltime % 2 == 0)
 		{
-			fixed_t x = P_RandomRange(-35, 35)*mobj->scale;
-			fixed_t y = P_RandomRange(-35, 35)*mobj->scale;
-			fixed_t z = P_RandomRange(0, 70)*mobj->scale;
+			fixed_t x = P_RandomRange(PR_UNDEFINED, -35, 35)*mobj->scale;
+			fixed_t y = P_RandomRange(PR_UNDEFINED, -35, 35)*mobj->scale;
+			fixed_t z = P_RandomRange(PR_UNDEFINED, 0, 70)*mobj->scale;
 			mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_SMOKE);
 			P_SetMobjState(smoke, S_OPAQUESMOKE1);
 			K_MatchGenericExtraFlags(smoke, mobj);
 			smoke->scale = mobj->scale * 2;
 			smoke->destscale = mobj->scale * 6;
-			smoke->momz = P_RandomRange(4, 9)*FRACUNIT*P_MobjFlip(smoke);
+			smoke->momz = P_RandomRange(PR_UNDEFINED, 4, 9)*FRACUNIT*P_MobjFlip(smoke);
 		}
 		break;
 	case MT_BOOMPARTICLE:
 		{
-			fixed_t x = P_RandomRange(-16, 16)*mobj->scale;
-			fixed_t y = P_RandomRange(-16, 16)*mobj->scale;
-			fixed_t z = P_RandomRange(0, 32)*mobj->scale*P_MobjFlip(mobj);
+			fixed_t x = P_RandomRange(PR_UNDEFINED, -16, 16)*mobj->scale;
+			fixed_t y = P_RandomRange(PR_UNDEFINED, -16, 16)*mobj->scale;
+			fixed_t z = P_RandomRange(PR_UNDEFINED, 0, 32)*mobj->scale*P_MobjFlip(mobj);
 			if (leveltime % 2 == 0)
 			{
 				mobj_t *smoke = P_SpawnMobj(mobj->x + x, mobj->y + y, mobj->z + z, MT_BOSSEXPLODE);
@@ -5709,9 +5709,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						mobj_t *debris = P_SpawnMobjFromMobj(
 							mobj,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
 							MT_BATTLEBUMPER_DEBRIS
 						);
 
@@ -5740,9 +5740,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					{
 						mobj_t *puff = P_SpawnMobjFromMobj(
 							mobj,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
-							P_RandomRange(-spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+							P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
 							MT_SPINDASHDUST
 						);
 
@@ -6310,9 +6310,9 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		{
 			fixed_t r = mobj->radius >> FRACBITS;
 			mobj_t *explosion = P_SpawnMobj(
-				mobj->x + (P_RandomRange(r, -r) << FRACBITS),
-				mobj->y + (P_RandomRange(r, -r) << FRACBITS),
-				mobj->z + (P_RandomKey(mobj->height >> FRACBITS) << FRACBITS),
+				mobj->x + (P_RandomRange(PR_UNDEFINED, r, -r) << FRACBITS),
+				mobj->y + (P_RandomRange(PR_UNDEFINED, r, -r) << FRACBITS),
+				mobj->z + (P_RandomKey(PR_UNDEFINED, mobj->height >> FRACBITS) << FRACBITS),
 				MT_SONIC3KBOSSEXPLODE);
 			S_StartSound(explosion, sfx_s3kb4);
 		}
@@ -6405,9 +6405,9 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 
 			for (i = 0; i < 2; i++)
 			{
-				fixed_t xoffset = P_RandomRange(-amt, amt) * mobj->scale;
-				fixed_t yoffset = P_RandomRange(-amt, amt) * mobj->scale;
-				fixed_t zoffset = P_RandomRange(-(amt >> 1), (amt >> 1)) * mobj->scale;
+				fixed_t xoffset = P_RandomRange(PR_UNDEFINED, -amt, amt) * mobj->scale;
+				fixed_t yoffset = P_RandomRange(PR_UNDEFINED, -amt, amt) * mobj->scale;
+				fixed_t zoffset = P_RandomRange(PR_UNDEFINED, -(amt >> 1), (amt >> 1)) * mobj->scale;
 
 				dust = P_SpawnMobj(mobj->x + xoffset, mobj->y + yoffset,
 					mobj->z + (mobj->height >> 1) + zoffset, MT_EXPLODE);
@@ -7063,9 +7063,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			{
 				mobj_t *sparkle = P_SpawnMobjFromMobj(
 					mobj,
-					P_RandomRange(-48, 48) * FRACUNIT,
-					P_RandomRange(-48, 48) * FRACUNIT,
-					P_RandomRange(0, 64) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, -48, 48) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, -48, 48) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, 0, 64) * FRACUNIT,
 					MT_EMERALDSPARK
 				);
 
@@ -7301,7 +7301,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			smoke->momy = mobj->target->momy/2;
 			smoke->momz = mobj->target->momz/2;
 
-			P_Thrust(smoke, mobj->angle+FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * mobj->target->scale);
+			P_Thrust(smoke, mobj->angle+FixedAngle(P_RandomRange(PR_UNDEFINED, 135, 225)<<FRACBITS), P_RandomRange(PR_UNDEFINED, 0, 8) * mobj->target->scale);
 		}
 		break;
 	case MT_INVULNFLASH:
@@ -7758,9 +7758,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 				for (i = 0; i < nl; i++)
 				{
-					mobj_t *fast = P_SpawnMobj(mobj->x + (P_RandomRange(-36,36) * mobj->scale),
-						mobj->y + (P_RandomRange(-36,36) * mobj->scale),
-						mobj->z + (mobj->height/2) + (P_RandomRange(-20,20) * mobj->scale),
+					mobj_t *fast = P_SpawnMobj(mobj->x + (P_RandomRange(PR_UNDEFINED, -36,36) * mobj->scale),
+						mobj->y + (P_RandomRange(PR_UNDEFINED, -36,36) * mobj->scale),
+						mobj->z + (mobj->height/2) + (P_RandomRange(PR_UNDEFINED, -20,20) * mobj->scale),
 						MT_FASTLINE);
 
 					P_InitAngle(fast, mobj->angle);
@@ -8022,7 +8022,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 							else
 							{
 								// Pick another player in the server!
-								player_t *p = &players[plist[P_RandomKey(plistlen)]];
+								player_t *p = &players[plist[P_RandomKey(PR_UNDEFINED, plistlen)]];
 								newskin = ((skin_t*)p->mo->skin) - skins;
 								newcolor = p->skincolor;
 							}
@@ -8094,7 +8094,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->movecount = 3;
 
 		{
-			angle_t facing = P_RandomRange(0, 90);
+			angle_t facing = P_RandomRange(PR_UNDEFINED, 0, 90);
 			if (facing >= 45)
 				facing = InvAngle((facing - 45)*ANG1);
 			else
@@ -8127,23 +8127,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else // fire + smoke pillar
 		{
 			UINT8 i;
-			mobj_t *fire = P_SpawnMobj(mobj->x + (P_RandomRange(-32, 32)*mobj->scale), mobj->y + (P_RandomRange(-32, 32)*mobj->scale), mobj->z, MT_THOK);
+			mobj_t *fire = P_SpawnMobj(mobj->x + (P_RandomRange(PR_UNDEFINED, -32, 32)*mobj->scale), mobj->y + (P_RandomRange(PR_UNDEFINED, -32, 32)*mobj->scale), mobj->z, MT_THOK);
 
 			fire->sprite = SPR_FPRT;
 			fire->frame = FF_FULLBRIGHT|FF_TRANS30;
 			fire->scale = mobj->scale*4;
-			fire->momz = P_RandomRange(2, 3)*mobj->scale;
+			fire->momz = P_RandomRange(PR_UNDEFINED, 2, 3)*mobj->scale;
 			fire->scalespeed = mobj->scale/12;
 			fire->destscale = 1;
 			fire->tics = TICRATE;
 
 			for (i = 0; i < 2; i++)
 			{
-				mobj_t *smoke = P_SpawnMobj(mobj->x + (P_RandomRange(-16, 16)*mobj->scale), mobj->y + (P_RandomRange(-16, 16)*mobj->scale), mobj->z, MT_SMOKE);
+				mobj_t *smoke = P_SpawnMobj(mobj->x + (P_RandomRange(PR_UNDEFINED, -16, 16)*mobj->scale), mobj->y + (P_RandomRange(PR_UNDEFINED, -16, 16)*mobj->scale), mobj->z, MT_SMOKE);
 
 				P_SetMobjState(smoke, S_FZSLOWSMOKE1);
 				smoke->scale = mobj->scale;
-				smoke->momz = P_RandomRange(3, 10)*mobj->scale;
+				smoke->momz = P_RandomRange(PR_UNDEFINED, 3, 10)*mobj->scale;
 				smoke->destscale = mobj->scale*4;
 				smoke->scalespeed = mobj->scale/24;
 			}
@@ -8200,7 +8200,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				{
 					if (mobj->flags2 & MF2_AMBUSH)
 					{
-						mobj->momz = P_RandomRange(12, 16)<<FRACBITS;
+						mobj->momz = P_RandomRange(PR_UNDEFINED, 12, 16)<<FRACBITS;
 						S_StartSound(mobj, sfx_s3kb1);
 						P_SetMobjState(mobj, S_FROGGER_JUMP);
 					}
@@ -8330,7 +8330,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			else
 			{
 				if (!mobj->extravalue2)
-					mobj->extravalue2 = P_RandomRange(64, 192);
+					mobj->extravalue2 = P_RandomRange(PR_UNDEFINED, 64, 192);
 			}
 
 			if (mobj->reactiontime)
@@ -8363,11 +8363,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if ((mobj->tracer && !P_MobjWasRemoved(mobj->tracer)) && !(leveltime % 10))
 			{
-				mobj_t *dust = P_SpawnMobj(mobj->x + (P_RandomRange(-4, 4)<<FRACBITS),
-					mobj->y + (P_RandomRange(-4, 4)<<FRACBITS),
-					mobj->z + (P_RandomRange(0, 2)<<FRACBITS), MT_BBZDUST);
+				mobj_t *dust = P_SpawnMobj(mobj->x + (P_RandomRange(PR_UNDEFINED, -4, 4)<<FRACBITS),
+					mobj->y + (P_RandomRange(PR_UNDEFINED, -4, 4)<<FRACBITS),
+					mobj->z + (P_RandomRange(PR_UNDEFINED, 0, 2)<<FRACBITS), MT_BBZDUST);
 				P_SetScale(dust, mobj->scale/2);
-				P_InstaThrust(dust, FixedAngle(P_RandomRange(0,359)<<FRACBITS), abs(mobj->tracer->momz)/2);
+				P_InstaThrust(dust, FixedAngle(P_RandomRange(PR_UNDEFINED, 0,359)<<FRACBITS), abs(mobj->tracer->momz)/2);
 
 				if (abs(mobj->tracer->momz) >= 2<<FRACBITS)
 					S_StartSound(mobj, sfx_s3k7e);
@@ -8481,7 +8481,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				player->mo->y + P_ReturnThrustY(NULL, player->mo->angle, player->mo->radius)
 					+ P_ReturnThrustY(NULL, player->mo->angle+ANGLE_90, (mobj->threshold)<<FRACBITS),
 				player->mo->z + (player->mo->height/2 * P_MobjFlip(player->mo))
-					+ (P_RandomRange(-abs(mobj->threshold), abs(mobj->threshold))<<FRACBITS));
+					+ (P_RandomRange(PR_UNDEFINED, -abs(mobj->threshold), abs(mobj->threshold))<<FRACBITS));
 
 			mobj->threshold /= 2;
 			mobj->momz = 0;
@@ -8570,7 +8570,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						mobj_t *dust = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_DRIFTDUST);
 						P_InstaThrust(dust, FixedAngle(((360*FRACUNIT)/8) * i), mobj->info->speed/8);
-						dust->momz = P_MobjFlip(mobj) * (P_RandomRange(1,4)<<FRACBITS);
+						dust->momz = P_MobjFlip(mobj) * (P_RandomRange(PR_UNDEFINED, 1,4)<<FRACBITS);
 						dust->scale = mobj->scale/2;
 						dust->destscale = mobj->scale*3;
 					}
@@ -8639,7 +8639,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_MoveOrigin(mobj,
 				mobj->tracer->x + P_ReturnThrustX(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
 				mobj->tracer->y + P_ReturnThrustY(NULL, mobj->tracer->angle+ANGLE_90, (mobj->cvmem)<<FRACBITS),
-				mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(-abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
+				mobj->tracer->z - (4*mobj->tracer->scale) + (P_RandomRange(PR_UNDEFINED, -abs(mobj->cvmem), abs(mobj->cvmem))<<FRACBITS));
 
 			if (mobj->movecount > 4*TICRATE)
 			{
@@ -9140,7 +9140,7 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 
 #undef SETMONITORCHANCES
 
-		i = P_RandomKey(numchoices); // Gotta love those random numbers!
+		i = P_RandomKey(PR_UNDEFINED, numchoices); // Gotta love those random numbers!
 		newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, spawnchance[i]);
 	}
 	else
@@ -9256,9 +9256,9 @@ static boolean P_FuseThink(mobj_t *mobj)
 			for (i = 0; i < 5; i++)
 			{
 				mobj_t *debris = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_SMK_ICEBLOCK_DEBRIS);
-				P_InitAngle(debris, FixedAngle(P_RandomRange(0,360)<<FRACBITS));
-				P_InstaThrust(debris, debris->angle, P_RandomRange(3,18)*(FRACUNIT/4));
-				debris->momz = P_RandomRange(4,8)<<FRACBITS;
+				P_InitAngle(debris, FixedAngle(P_RandomRange(PR_UNDEFINED, 0,360)<<FRACBITS));
+				P_InstaThrust(debris, debris->angle, P_RandomRange(PR_UNDEFINED, 3,18)*(FRACUNIT/4));
+				debris->momz = P_RandomRange(PR_UNDEFINED, 4,8)<<FRACBITS;
 				if (!i) // kinda hacky :V
 					S_StartSound(debris, sfx_s3k82);
 			}
@@ -10126,7 +10126,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->flags2 |= MF2_INVERTAIMABLE;
 			break;
 		case MT_FLICKY_08:
-			mobj->color = (P_RandomChance(FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
+			mobj->color = (P_RandomChance(PR_UNDEFINED, FRACUNIT/2) ? SKINCOLOR_RED : SKINCOLOR_AQUAMARINE);
 			break;
 		case MT_BALLOON:
 			{
@@ -10138,7 +10138,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 					SKINCOLOR_JET
 				};
 
-				mobj->color = BALLOONCOLORS[P_RandomKey(sizeof(BALLOONCOLORS))];
+				mobj->color = BALLOONCOLORS[P_RandomKey(PR_UNDEFINED, sizeof(BALLOONCOLORS))];
 			}
 			break;
 		case MT_POGOSPRING:
@@ -10148,8 +10148,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->color = SKINCOLOR_RED;
 			break;
 		case MT_EGGROBO1:
-			mobj->movecount = P_RandomKey(13);
-			mobj->color = FIRSTRAINBOWCOLOR + P_RandomKey(FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR);
+			mobj->movecount = P_RandomKey(PR_UNDEFINED, 13);
+			mobj->color = FIRSTRAINBOWCOLOR + P_RandomKey(PR_UNDEFINED, FIRSTSUPERCOLOR - FIRSTRAINBOWCOLOR);
 			break;
 		case MT_HIVEELEMENTAL:
 			mobj->extravalue1 = 5;
@@ -10245,15 +10245,15 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		{
 			// set default item & count
 #if 0 // set to 1 to test capsules with random items, e.g. with objectplace
-			if (P_RandomChance(FRACUNIT/3))
+			if (P_RandomChance(PR_UNDEFINED, FRACUNIT/3))
 				mobj->threshold = KITEM_SUPERRING;
-			else if (P_RandomChance(FRACUNIT/3))
+			else if (P_RandomChance(PR_UNDEFINED, FRACUNIT/3))
 				mobj->threshold = KITEM_SPB;
-			else if (P_RandomChance(FRACUNIT/3))
+			else if (P_RandomChance(PR_UNDEFINED, FRACUNIT/3))
 				mobj->threshold = KITEM_ORBINAUT;
 			else
-				mobj->threshold = P_RandomRange(1, NUMKARTITEMS - 1);
-			mobj->movecount = P_RandomChance(FRACUNIT/3) ? 1 : P_RandomKey(32) + 1;
+				mobj->threshold = P_RandomRange(PR_UNDEFINED, 1, NUMKARTITEMS - 1);
+			mobj->movecount = P_RandomChance(PR_UNDEFINED, FRACUNIT/3) ? 1 : P_RandomKey(PR_UNDEFINED, 32) + 1;
 #else
 			mobj->threshold = KITEM_SUPERRING; // default item is super ring
 			mobj->movecount = 1;
@@ -10300,7 +10300,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_RANDOMAUDIENCE:
 		{
-			fixed_t randu = P_RandomFixed();
+			fixed_t randu = P_RandomFixed(PR_UNDEFINED);
 			P_SetScale(mobj, (mobj->destscale <<= 1));
 			if (randu < (FRACUNIT/9)) // a fan of someone?
 			{
@@ -10317,7 +10317,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 				if (pcount)
 				{
-					mobj->threshold = pnum[P_RandomKey(pcount)];
+					mobj->threshold = pnum[P_RandomKey(PR_UNDEFINED, pcount)];
 					mobj->color = players[mobj->threshold].skincolor;
 					mobj->colorized = true;
 					break;
@@ -10326,7 +10326,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 			if (randu > (FRACUNIT/2))
 			{
-				mobj->color = P_RandomKey(numskincolors-1)+1;
+				mobj->color = P_RandomKey(PR_UNDEFINED, numskincolors-1)+1;
 				break;
 			}
 
@@ -10397,8 +10397,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				UINT16 i;
 				for (i = 0; i < mobj->info->mass; i++)
 				{
-					fixed_t newx = mobj->x + (P_RandomRange(-mobj->info->mass, mobj->info->mass)<<FRACBITS);
-					fixed_t newy = mobj->y + (P_RandomRange(-mobj->info->mass, mobj->info->mass)<<FRACBITS);
+					fixed_t newx = mobj->x + (P_RandomRange(PR_UNDEFINED, -mobj->info->mass, mobj->info->mass)<<FRACBITS);
+					fixed_t newy = mobj->y + (P_RandomRange(PR_UNDEFINED, -mobj->info->mass, mobj->info->mass)<<FRACBITS);
 
 					if (P_FloorzAtPos(newx, newy, mobj->z, 8<<FRACBITS) == mobj->z)
 						P_SpawnMobj(newx, newy, mobj->z, MT_EERIEFOG);
@@ -10412,10 +10412,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->renderflags |= RF_FULLBRIGHT;
 			break;
 		case MT_SMK_MOLE:
-			mobj->reactiontime = P_RandomRange(0, 3*mobj->info->reactiontime/2); // Random delay on start of level
+			mobj->reactiontime = P_RandomRange(PR_UNDEFINED, 0, 3*mobj->info->reactiontime/2); // Random delay on start of level
 			break;
 		case MT_SMK_THWOMP:
-			mobj->reactiontime = P_RandomRange(0, 3*mobj->info->reactiontime); // Random delay on start of level
+			mobj->reactiontime = P_RandomRange(PR_UNDEFINED, 0, 3*mobj->info->reactiontime); // Random delay on start of level
 			if (mobj->z == mobj->floorz)
 				mobj->z += (256<<FRACBITS);
 			mobj->movefactor = mobj->z + (256<<FRACBITS);
@@ -10939,7 +10939,7 @@ void P_PrecipitationEffects(void)
 			// with global rain and switched players to anything else ...
 			// If the global weather has lightning strikes,
 			// EVERYONE gets them at the SAME time!
-			thunderchance = (P_RandomKey(8192));
+			thunderchance = (P_RandomKey(PR_UNDEFINED, 8192));
 		}
 		else if (sounds_thunder || effects_lightning)
 		{
@@ -12543,8 +12543,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		if (mthing->options & MTF_AMBUSH)
 		{
 			fixed_t offset = FixedMul(16*FRACUNIT, mobj->scale);
-			mobj->momx += P_RandomChance(FRACUNIT/2) ? offset : -offset;
-			mobj->momy += P_RandomChance(FRACUNIT/2) ? offset : -offset;
+			mobj->momx += P_RandomChance(PR_UNDEFINED, FRACUNIT/2) ? offset : -offset;
+			mobj->momy += P_RandomChance(PR_UNDEFINED, FRACUNIT/2) ? offset : -offset;
 			mobj->momz += offset;
 		}
 		break;

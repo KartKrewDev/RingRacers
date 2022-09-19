@@ -4448,7 +4448,10 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, P_GetRandSeed());
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
 
 	WRITEUINT32(save_p, tokenlist);
 
@@ -4607,7 +4610,10 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	P_SetRandSeed(READUINT32(save_p));
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		P_SetRandSeed(i, READUINT32(save_p));
+	}
 
 	tokenlist = READUINT32(save_p);
 
@@ -4859,10 +4865,15 @@ boolean P_LoadGame(INT16 mapoverride)
 
 boolean P_LoadNetGame(boolean reloading)
 {
+	size_t i;
+
 	CV_LoadNetVars(&save_p);
+
 	if (!P_NetUnArchiveMisc(reloading))
 		return false;
+
 	P_NetUnArchivePlayers();
+
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();
@@ -4875,10 +4886,14 @@ boolean P_LoadNetGame(boolean reloading)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
+
 	LUA_UnArchive(&save_p);
 
 	// This is stupid and hacky, but maybe it'll work!
-	P_SetRandSeed(P_GetInitSeed());
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		P_SetRandSeed(i, P_GetInitSeed(i));
+	}
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,

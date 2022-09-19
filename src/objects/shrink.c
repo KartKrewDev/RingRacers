@@ -332,8 +332,8 @@ static void ShrinkLaserThinker(mobj_t *pohbee, mobj_t *gun, mobj_t *laser)
 
 		particle = P_SpawnMobjFromMobj(
 			laser,
-			P_RandomRange(-16, 16) * FRACUNIT,
-			P_RandomRange(-16, 16) * FRACUNIT,
+			P_RandomRange(PR_UNDEFINED, -16, 16) * FRACUNIT,
+			P_RandomRange(PR_UNDEFINED, -16, 16) * FRACUNIT,
 			0,
 			MT_SHRINK_PARTICLE
 		);
@@ -694,7 +694,7 @@ static void CreatePohbee(player_t *owner, waypoint_t *start, waypoint_t *end, UI
 		P_SetTarget(&pohbee_guns(prevGun), gun);
 
 		gun_numsegs(gun) = numSegs;
-		gun_offset(gun) = P_RandomKey(GUN_SWINGTIME);
+		gun_offset(gun) = P_RandomKey(PR_UNDEFINED, GUN_SWINGTIME);
 
 		overlay = P_SpawnMobjFromMobj(gun, 0, 0, 0, MT_OVERLAY);
 

@@ -1086,7 +1086,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	if (!(gametyperules & GTR_SPHERES) && mashed && player->rings < 0 && cv_superring.value)
 	{
 		INT32 debtamount = min(20, abs(player->rings));
-		if (P_RandomChance((debtamount*FRACUNIT)/20))
+		if (P_RandomChance(PR_UNDEFINED, (debtamount*FRACUNIT)/20))
 		{
 			K_KartGetItemResult(player, KITEM_SUPERRING);
 			player->karthud[khud_itemblink] = TICRATE;
@@ -1136,7 +1136,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	// Award the player whatever power is rolled
 	if (totalspawnchance > 0)
 	{
-		totalspawnchance = P_RandomKey(totalspawnchance);
+		totalspawnchance = P_RandomKey(PR_UNDEFINED, totalspawnchance);
 		for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
 
 		K_KartGetItemResult(player, i);
@@ -1720,9 +1720,9 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 	{
 		if (offset == 0)
 		{
-			mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(-12,12)*mapobjectscale),
-				cury + (P_RandomRange(-12,12)*mapobjectscale),
-				curz + (P_RandomRange(24,48)*mapobjectscale),
+			mobj_t *band = P_SpawnMobj(curx + (P_RandomRange(PR_UNDEFINED, -12, 12)*mapobjectscale),
+				cury + (P_RandomRange(PR_UNDEFINED, -12, 12)*mapobjectscale),
+				curz + (P_RandomRange(PR_UNDEFINED, 24, 48)*mapobjectscale),
 				MT_SIGNSPARKLE);
 
 			if (maxdist == 0)
@@ -2191,7 +2191,7 @@ void K_SpawnDriftBoostClip(player_t *player)
 		clip->momz += momz;
 
 	P_InstaThrust(clip, player->mo->angle +
-			P_RandomFlip(P_RandomRange(FRACUNIT/2, FRACUNIT)),
+			P_RandomFlip(P_RandomRange(PR_UNDEFINED, FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
 }
 
@@ -2211,9 +2211,9 @@ void K_SpawnDriftBoostClipSpark(mobj_t *clip)
 
 void K_SpawnNormalSpeedLines(player_t *player)
 {
-	mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(-36,36) * player->mo->scale),
-		player->mo->y + (P_RandomRange(-36,36) * player->mo->scale),
-		player->mo->z + (player->mo->height/2) + (P_RandomRange(-20,20) * player->mo->scale),
+	mobj_t *fast = P_SpawnMobj(player->mo->x + (P_RandomRange(PR_UNDEFINED,-36,36) * player->mo->scale),
+		player->mo->y + (P_RandomRange(PR_UNDEFINED,-36,36) * player->mo->scale),
+		player->mo->z + (player->mo->height/2) + (P_RandomRange(PR_UNDEFINED,-20,20) * player->mo->scale),
 		MT_FASTLINE);
 
 	P_SetTarget(&fast->target, player->mo);
@@ -2261,9 +2261,9 @@ void K_SpawnNormalSpeedLines(player_t *player)
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 {
 	mobj_t *fast = P_SpawnMobjFromMobj(mo,
-		P_RandomRange(-48, 48) * FRACUNIT,
-		P_RandomRange(-48, 48) * FRACUNIT,
-		P_RandomRange(0, 64) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED, -48, 48) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED, -48, 48) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED, 0, 64) * FRACUNIT,
 		MT_FASTLINE);
 	P_SetMobjState(fast, S_KARTINVLINES1);
 
@@ -2321,9 +2321,9 @@ static void K_SpawnGrowShrinkParticles(mobj_t *mo, INT32 timer)
 
 	particle = P_SpawnMobjFromMobj(
 		mo,
-		P_RandomRange(-32, 32) * FRACUNIT,
-		P_RandomRange(-32, 32) * FRACUNIT,
-		(P_RandomRange(0, 24) + (shrink ? 48 : 0)) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED, -32, 32) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED, -32, 32) * FRACUNIT,
+		(P_RandomRange(PR_UNDEFINED, 0, 24) + (shrink ? 48 : 0)) * FRACUNIT,
 		MT_GROW_PARTICLE
 	);
 
@@ -2849,7 +2849,7 @@ static void K_RegularVoiceTimers(player_t *player)
 
 void K_PlayAttackTaunt(mobj_t *source)
 {
-	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+	sfxenum_t pick = P_RandomKey(PR_UNDEFINED, 2); // Gotta roll the RNG every time this is called for sync reasons
 	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
@@ -2863,7 +2863,7 @@ void K_PlayAttackTaunt(mobj_t *source)
 
 void K_PlayBoostTaunt(mobj_t *source)
 {
-	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+	sfxenum_t pick = P_RandomKey(PR_UNDEFINED, 2); // Gotta roll the RNG every time this is called for sync reasons
 	boolean tasteful = (!source->player || !source->player->karthud[khud_tauntvoices]);
 
 	if (cv_kartvoices.value && (tasteful || cv_kartvoices.value == 2))
@@ -2897,7 +2897,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 
 void K_PlayPainSound(mobj_t *source, mobj_t *other)
 {
-	sfxenum_t pick = P_RandomKey(2); // Gotta roll the RNG every time this is called for sync reasons
+	sfxenum_t pick = P_RandomKey(PR_UNDEFINED, 2); // Gotta roll the RNG every time this is called for sync reasons
 
 	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
 	boolean alwaysHear = false;
@@ -4148,18 +4148,18 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		dust->scalespeed = source->scale/12;
 		P_InstaThrust(dust, dust->angle, FixedMul(20*FRACUNIT, source->scale));
 
-		truc = P_SpawnMobj(source->x + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(0, height)*FRACUNIT, MT_BOOMEXPLODE);
+		truc = P_SpawnMobj(source->x + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->y + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->z + P_RandomRange(PR_UNDEFINED, 0, height)*FRACUNIT, MT_BOOMEXPLODE);
 		K_MatchGenericExtraFlags(truc, source);
 		P_SetScale(truc, source->scale);
 		truc->destscale = source->scale*6;
 		truc->scalespeed = source->scale/12;
 		speed = FixedMul(10*FRACUNIT, source->scale)>>FRACBITS;
-		truc->momx = P_RandomRange(-speed, speed)*FRACUNIT;
-		truc->momy = P_RandomRange(-speed, speed)*FRACUNIT;
+		truc->momx = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
+		truc->momy = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
 		speed = FixedMul(20*FRACUNIT, source->scale)>>FRACBITS;
-		truc->momz = P_RandomRange(-speed, speed)*FRACUNIT*P_MobjFlip(truc);
+		truc->momz = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT*P_MobjFlip(truc);
 		if (truc->eflags & MFE_UNDERWATER)
 			truc->momz = (117 * truc->momz) / 200;
 		truc->color = color;
@@ -4167,30 +4167,30 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 
 	for (i = 0; i < 16; i++)
 	{
-		dust = P_SpawnMobj(source->x + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(0, height)*FRACUNIT, MT_SMOKE);
+		dust = P_SpawnMobj(source->x + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->y + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->z + P_RandomRange(PR_UNDEFINED, 0, height)*FRACUNIT, MT_SMOKE);
 		P_SetMobjState(dust, S_OPAQUESMOKE1);
 		P_SetScale(dust, source->scale);
 		dust->destscale = source->scale*10;
 		dust->scalespeed = source->scale/12;
 		dust->tics = 30;
-		dust->momz = P_RandomRange(FixedMul(3*FRACUNIT, source->scale)>>FRACBITS, FixedMul(7*FRACUNIT, source->scale)>>FRACBITS)*FRACUNIT;
+		dust->momz = P_RandomRange(PR_UNDEFINED, FixedMul(3*FRACUNIT, source->scale)>>FRACBITS, FixedMul(7*FRACUNIT, source->scale)>>FRACBITS)*FRACUNIT;
 
-		truc = P_SpawnMobj(source->x + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->y + P_RandomRange(-radius, radius)*FRACUNIT,
-			source->z + P_RandomRange(0, height)*FRACUNIT, MT_BOOMPARTICLE);
+		truc = P_SpawnMobj(source->x + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->y + P_RandomRange(PR_UNDEFINED, -radius, radius)*FRACUNIT,
+			source->z + P_RandomRange(PR_UNDEFINED, 0, height)*FRACUNIT, MT_BOOMPARTICLE);
 		K_MatchGenericExtraFlags(truc, source);
 		P_SetScale(truc, source->scale);
 		truc->destscale = source->scale*5;
 		truc->scalespeed = source->scale/12;
 		speed = FixedMul(20*FRACUNIT, source->scale)>>FRACBITS;
-		truc->momx = P_RandomRange(-speed, speed)*FRACUNIT;
-		truc->momy = P_RandomRange(-speed, speed)*FRACUNIT;
+		truc->momx = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
+		truc->momy = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
 		speed = FixedMul(15*FRACUNIT, source->scale)>>FRACBITS;
 		speed2 = FixedMul(45*FRACUNIT, source->scale)>>FRACBITS;
-		truc->momz = P_RandomRange(speed, speed2)*FRACUNIT*P_MobjFlip(truc);
-		if (P_RandomChance(FRACUNIT/2))
+		truc->momz = P_RandomRange(PR_UNDEFINED, speed, speed2)*FRACUNIT*P_MobjFlip(truc);
+		if (P_RandomChance(PR_UNDEFINED, FRACUNIT/2))
 			truc->momz = -truc->momz;
 		if (truc->eflags & MFE_UNDERWATER)
 			truc->momz = (117 * truc->momz) / 200;
@@ -4798,9 +4798,9 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 
 	//CONS_Printf("%d\n", index);
 
-	newx = mo->x + (P_RandomRange(-rad, rad)*FRACUNIT);
-	newy = mo->y + (P_RandomRange(-rad, rad)*FRACUNIT);
-	newz = mo->z + (P_RandomRange(0, mo->height>>FRACBITS)*FRACUNIT);
+	newx = mo->x + (P_RandomRange(PR_UNDEFINED, -rad, rad)*FRACUNIT);
+	newy = mo->y + (P_RandomRange(PR_UNDEFINED, -rad, rad)*FRACUNIT);
+	newz = mo->z + (P_RandomRange(PR_UNDEFINED, 0, mo->height>>FRACBITS)*FRACUNIT);
 
 	sparkle = P_SpawnMobj(newx, newy, newz, MT_SPARKLETRAIL);
 
@@ -4810,8 +4810,8 @@ void K_SpawnSparkleTrail(mobj_t *mo)
 	//CONS_Printf("movefactor: %d\n", sparkle->movefactor/FRACUNIT);
 
 	sparkle->extravalue1 = (sparkle->z - mo->z);			// Keep track of our Z position relative to the player's, I suppose.
-	sparkle->extravalue2 = P_RandomRange(0, 1) ? 1 : -1;	// Rotation direction?
-	sparkle->cvmem = P_RandomRange(-25, 25)*mo->scale;		// Vertical "angle"
+	sparkle->extravalue2 = P_RandomRange(PR_UNDEFINED, 0, 1) ? 1 : -1;	// Rotation direction?
+	sparkle->cvmem = P_RandomRange(PR_UNDEFINED, -25, 25)*mo->scale;		// Vertical "angle"
 
 	K_FlipFromObject(sparkle, mo);
 	P_SetTarget(&sparkle->target, mo);
@@ -4849,8 +4849,8 @@ void K_SpawnWipeoutTrail(mobj_t *mo)
 	else
 		aoff += ANGLE_45;
 
-	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(-8,8) << FRACBITS),
-		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(-8,8) << FRACBITS),
+	dust = P_SpawnMobj(mo->x + FixedMul(24*mo->scale, FINECOSINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(PR_UNDEFINED,-8,8) << FRACBITS),
+		mo->y + FixedMul(24*mo->scale, FINESINE(aoff>>ANGLETOFINESHIFT)) + (P_RandomRange(PR_UNDEFINED,-8,8) << FRACBITS),
 		mo->z, MT_WIPEOUTTRAIL);
 
 	P_SetTarget(&dust->target, mo);
@@ -4988,13 +4988,13 @@ void K_DriftDustHandling(mobj_t *spawner)
 
 	if (anglediff > ANG10*4) // Trying to turn further than 40 degrees
 	{
-		fixed_t spawnx = P_RandomRange(-spawnrange, spawnrange) << FRACBITS;
-		fixed_t spawny = P_RandomRange(-spawnrange, spawnrange) << FRACBITS;
+		fixed_t spawnx = P_RandomRange(PR_UNDEFINED, -spawnrange, spawnrange) << FRACBITS;
+		fixed_t spawny = P_RandomRange(PR_UNDEFINED, -spawnrange, spawnrange) << FRACBITS;
 		INT32 speedrange = 2;
 		mobj_t *dust = P_SpawnMobj(spawner->x + spawnx, spawner->y + spawny, spawner->z, MT_DRIFTDUST);
-		dust->momx = FixedMul(spawner->momx + (P_RandomRange(-speedrange, speedrange) * spawner->scale), 3*FRACUNIT/4);
-		dust->momy = FixedMul(spawner->momy + (P_RandomRange(-speedrange, speedrange) * spawner->scale), 3*FRACUNIT/4);
-		dust->momz = P_MobjFlip(spawner) * (P_RandomRange(1, 4) * (spawner->scale));
+		dust->momx = FixedMul(spawner->momx + (P_RandomRange(PR_UNDEFINED, -speedrange, speedrange) * spawner->scale), 3*FRACUNIT/4);
+		dust->momy = FixedMul(spawner->momy + (P_RandomRange(PR_UNDEFINED, -speedrange, speedrange) * spawner->scale), 3*FRACUNIT/4);
+		dust->momz = P_MobjFlip(spawner) * (P_RandomRange(PR_UNDEFINED, 1, 4) * (spawner->scale));
 		P_SetScale(dust, spawner->scale/2);
 		dust->destscale = spawner->scale * 3;
 		dust->scalespeed = spawner->scale/12;
@@ -5456,8 +5456,8 @@ static void K_DoLightningShield(player_t *player)
 	for (i=0; i<7; i++)
 	{
 		mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_THOK);
-		P_InitAngle(mo, P_RandomRange(0, 359)*ANG1);
-		mo->fuse = P_RandomRange(20, 50);
+		P_InitAngle(mo, P_RandomRange(PR_UNDEFINED, 0, 359)*ANG1);
+		mo->fuse = P_RandomRange(PR_UNDEFINED, 20, 50);
 		P_SetTarget(&mo->target, player->mo);
 		P_SetMobjState(mo, S_KLIT1);
 	}
@@ -5496,8 +5496,8 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 		smoke->momy = 3*src->momy/4;
 		smoke->momz = 3*P_GetMobjZMovement(src)/4;
 
-		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(135, 225)<<FRACBITS), P_RandomRange(0, 8) * src->scale);
-		smoke->momz += P_RandomRange(0, 4) * src->scale;
+		P_Thrust(smoke, src->angle + FixedAngle(P_RandomRange(PR_UNDEFINED, 135, 225)<<FRACBITS), P_RandomRange(PR_UNDEFINED, 0, 8) * src->scale);
+		smoke->momz += P_RandomRange(PR_UNDEFINED, 0, 4) * src->scale;
 	}
 }
 
@@ -5508,7 +5508,7 @@ static void K_DoHyudoroSteal(player_t *player)
 	INT32 playerswappable[MAXPLAYERS];
 	INT32 stealplayer = -1; // The player that's getting stolen from
 	INT32 prandom = 0;
-	boolean sink = P_RandomChance(FRACUNIT/64);
+	boolean sink = P_RandomChance(PR_UNDEFINED, FRACUNIT/64);
 	INT32 hyu = hyudorotime;
 
 	if (gametype == GT_RACE)
@@ -5533,7 +5533,7 @@ static void K_DoHyudoroSteal(player_t *player)
 		}
 	}
 
-	prandom = P_RandomFixed();
+	prandom = P_RandomFixed(PR_UNDEFINED);
 	S_StartSound(player->mo, sfx_s3k92);
 
 	if (sink && numplayers > 0 && cv_kitchensink.value) // BEHOLD THE KITCHEN SINK
@@ -6079,7 +6079,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 
 	P_InitAngle(drop, angle);
 	P_Thrust(drop,
-		FixedAngle(P_RandomFixed() * 180) + angle,
+		FixedAngle(P_RandomFixed(PR_UNDEFINED) * 180) + angle,
 		16*mapobjectscale);
 
 	drop->momz = flip * 3 * mapobjectscale;
@@ -6113,7 +6113,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 			UINT8 newType;
 			UINT8 newAmount;
 
-			totalspawnchance = P_RandomKey(totalspawnchance);
+			totalspawnchance = P_RandomKey(PR_UNDEFINED, totalspawnchance);
 			for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
 
 			// TODO: this is bad!
@@ -6635,7 +6635,7 @@ static void K_MoveHeldObjects(player_t *player)
 
 					/*
 					if (P_IsObjectOnGround(player->mo) && player->speed > 0 && player->bananadrag > TICRATE
-						&& P_RandomChance(min(FRACUNIT/2, FixedDiv(player->speed, K_GetKartSpeed(player, false, false))/2)))
+						&& P_RandomChance(PR_UNDEFINED, min(FRACUNIT/2, FixedDiv(player->speed, K_GetKartSpeed(player, false, false))/2)))
 					{
 						if (leveltime & 1)
 							targz += 8*(2*FRACUNIT)/7;
@@ -7213,7 +7213,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 			thing->info = &mobjinfo[thing->type];
 			thing->flags = thing->info->flags;
 
-			P_InstaThrust(thing, P_RandomRange(0,7) * ANGLE_45, 2 * thing->scale);
+			P_InstaThrust(thing, P_RandomRange(PR_UNDEFINED,0,7) * ANGLE_45, 2 * thing->scale);
 			P_SetObjectMomZ(thing, 8<<FRACBITS, false);
 			thing->fuse = 120*TICRATE;
 
@@ -7410,9 +7410,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 		if (player->springstars && (leveltime & 1))
 		{
-			fixed_t randx = P_RandomRange(-40, 40) * player->mo->scale;
-			fixed_t randy = P_RandomRange(-40, 40) * player->mo->scale;
-			fixed_t randz = P_RandomRange(0, player->mo->height >> FRACBITS) << FRACBITS;
+			fixed_t randx = P_RandomRange(PR_UNDEFINED, -40, 40) * player->mo->scale;
+			fixed_t randy = P_RandomRange(PR_UNDEFINED, -40, 40) * player->mo->scale;
+			fixed_t randz = P_RandomRange(PR_UNDEFINED, 0, player->mo->height >> FRACBITS) << FRACBITS;
 			mobj_t *star = P_SpawnMobj(
 				player->mo->x + randx,
 				player->mo->y + randy,
@@ -9142,8 +9142,8 @@ void K_KartEbrakeVisuals(player_t *p)
 		if (!p->spindash)
 		{
 			// Spawn downwards fastline
-			sx = p->mo->x + P_RandomRange(-48, 48)*p->mo->scale;
-			sy = p->mo->y + P_RandomRange(-48, 48)*p->mo->scale;
+			sx = p->mo->x + P_RandomRange(PR_UNDEFINED, -48, 48)*p->mo->scale;
+			sy = p->mo->y + P_RandomRange(PR_UNDEFINED, -48, 48)*p->mo->scale;
 
 			spdl = P_SpawnMobj(sx, sy, p->mo->z, MT_DOWNLINE);
 			spdl->colorized = true;
@@ -9225,8 +9225,8 @@ static void K_KartSpindashDust(mobj_t *parent)
 
 	for (i = 0; i < 2; i++)
 	{
-		fixed_t hmomentum = P_RandomRange(6, 12) * parent->scale;
-		fixed_t vmomentum = P_RandomRange(2, 6) * parent->scale;
+		fixed_t hmomentum = P_RandomRange(PR_UNDEFINED, 6, 12) * parent->scale;
+		fixed_t vmomentum = P_RandomRange(PR_UNDEFINED, 2, 6) * parent->scale;
 
 		angle_t ang = parent->player->drawangle + ANGLE_180;
 		SINT8 flip = 1;
@@ -9254,9 +9254,9 @@ static void K_KartSpindashDust(mobj_t *parent)
 static void K_KartSpindashWind(mobj_t *parent)
 {
 	mobj_t *wind = P_SpawnMobjFromMobj(parent,
-		P_RandomRange(-36,36) * FRACUNIT,
-		P_RandomRange(-36,36) * FRACUNIT,
-		FixedDiv(parent->height / 2, parent->scale) + (P_RandomRange(-20,20) * FRACUNIT),
+		P_RandomRange(PR_UNDEFINED,-36,36) * FRACUNIT,
+		P_RandomRange(PR_UNDEFINED,-36,36) * FRACUNIT,
+		FixedDiv(parent->height / 2, parent->scale) + (P_RandomRange(PR_UNDEFINED,-20,20) * FRACUNIT),
 		MT_SPINDASHWIND
 	);
 
@@ -10386,9 +10386,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					for (n=0; n < maxlines; n++)
 					{
-						sx = player->mo->x + P_RandomRange(-24, 24)*player->mo->scale;
-						sy = player->mo->y + P_RandomRange(-24, 24)*player->mo->scale;
-						sz = player->mo->z + P_RandomRange(0, 48)*player->mo->scale;
+						sx = player->mo->x + P_RandomRange(PR_UNDEFINED, -24, 24)*player->mo->scale;
+						sy = player->mo->y + P_RandomRange(PR_UNDEFINED, -24, 24)*player->mo->scale;
+						sz = player->mo->z + P_RandomRange(PR_UNDEFINED, 0, 48)*player->mo->scale;
 
 						spdl = P_SpawnMobj(sx, sy, sz, MT_FASTLINE);
 						P_SetTarget(&spdl->target, player->mo);

@@ -398,10 +398,13 @@ static int lib_mMapNumber(lua_State *L)
 // M_RANDOM
 //////////////
 
+// TODO: Lua needs a way to set RNG class, which will break compatibility.
+// It will be more desireable to do it when RNG classes can be freeslotted.
+
 static int lib_pRandomFixed(lua_State *L)
 {
 	NOHUD
-	lua_pushfixed(L, P_RandomFixed());
+	lua_pushfixed(L, P_RandomFixed(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -409,7 +412,7 @@ static int lib_pRandomFixed(lua_State *L)
 static int lib_pRandomByte(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_RandomByte());
+	lua_pushinteger(L, P_RandomByte(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -421,7 +424,7 @@ static int lib_pRandomKey(lua_State *L)
 	NOHUD
 	if (a > 65536)
 		LUA_UsageWarning(L, "P_RandomKey: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomKey(a));
+	lua_pushinteger(L, P_RandomKey(PR_UNDEFINED, a));
 	demo_writerng = 2;
 	return 1;
 }
@@ -439,7 +442,7 @@ static int lib_pRandomRange(lua_State *L)
 	}
 	if ((b-a+1) > 65536)
 		LUA_UsageWarning(L, "P_RandomRange: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomRange(a, b));
+	lua_pushinteger(L, P_RandomRange(PR_UNDEFINED, a, b));
 	demo_writerng = 2;
 	return 1;
 }
@@ -448,7 +451,7 @@ static int lib_pRandomRange(lua_State *L)
 static int lib_pSignedRandom(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_SignedRandom());
+	lua_pushinteger(L, P_SignedRandom(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -457,7 +460,7 @@ static int lib_pRandomChance(lua_State *L)
 {
 	fixed_t p = luaL_checkfixed(L, 1);
 	NOHUD
-	lua_pushboolean(L, P_RandomChance(p));
+	lua_pushboolean(L, P_RandomChance(PR_UNDEFINED, p));
 	demo_writerng = 2;
 	return 1;
 }

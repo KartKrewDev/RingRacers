@@ -447,8 +447,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				firework->momx = toucher->momx;
 				firework->momy = toucher->momy;
 				firework->momz = toucher->momz;
-				P_Thrust(firework, FixedAngle((72*i)<<FRACBITS), P_RandomRange(1,8)*special->scale);
-				P_SetObjectMomZ(firework, P_RandomRange(1,8)*special->scale, false);
+				P_Thrust(firework, FixedAngle((72*i)<<FRACBITS), P_RandomRange(PR_UNDEFINED, 1,8)*special->scale);
+				P_SetObjectMomZ(firework, P_RandomRange(PR_UNDEFINED, 1,8)*special->scale, false);
 				firework->color = toucher->color;
 			}
 
@@ -567,7 +567,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				special->momz = 0;
 				special->flags |= MF_NOGRAVITY;
 				P_SetMobjState (special, special->info->deathstate);
-				S_StartSound (special, special->info->deathsound+(P_RandomKey(special->info->mass)));
+				S_StartSound (special, special->info->deathsound+(P_RandomKey(PR_UNDEFINED, special->info->mass)));
 			}
 			return;
 
@@ -1205,7 +1205,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					mo->destscale = mo->scale/8;
 					mo->scalespeed = (mo->scale - mo->destscale)/(2*TICRATE);
 					mo->momz = mo->info->speed;
-					mo->angle = FixedAngle((P_RandomKey(36)*10)<<FRACBITS);
+					mo->angle = FixedAngle((P_RandomKey(PR_UNDEFINED, 36)*10)<<FRACBITS);
 
 					mo2 = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BOSSJUNK);
 					P_InitAngle(mo2, mo->angle);
@@ -1294,7 +1294,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				{
 					flingAngle = target->angle + ANGLE_180;
 
-					if (P_RandomByte() & 1)
+					if (P_RandomByte(PR_UNDEFINED) & 1)
 					{
 						flingAngle -= ANGLE_45;
 					}
@@ -1337,7 +1337,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			UINT8 i;
 			mobj_t *attacker = inflictor ? inflictor : source;
 			mobj_t *part = target->hnext;
-			angle_t angle = FixedAngle(360*P_RandomFixed());
+			angle_t angle = FixedAngle(360*P_RandomFixed(PR_UNDEFINED));
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
@@ -1362,9 +1362,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				mobj_t *puff = P_SpawnMobjFromMobj(
 					target,
-					P_RandomRange(-spacing, spacing) * FRACUNIT,
-					P_RandomRange(-spacing, spacing) * FRACUNIT,
-					P_RandomRange(0, 4*spacing) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+					P_RandomRange(PR_UNDEFINED, 0, 4*spacing) * FRACUNIT,
 					MT_SPINDASHDUST
 				);
 
@@ -1644,7 +1644,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if (target->info->xdeathstate != S_NULL)
 		{
-			sprflip = P_RandomChance(FRACUNIT/2);
+			sprflip = P_RandomChance(PR_UNDEFINED, FRACUNIT/2);
 
 #define makechunk(angtweak, xmov, ymov) \
 			chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_WALLSPIKE);\
@@ -1657,7 +1657,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			chunk->y += ymov - forwardyoffs;\
 			P_SetThingPosition(chunk);\
 			P_InstaThrust(chunk, angtweak, 4*scale);\
-			chunk->momz = P_RandomRange(5, 7)*scale;\
+			chunk->momz = P_RandomRange(PR_UNDEFINED, 5, 7)*scale;\
 			if (flip)\
 				chunk->momz *= -1;\
 			if (sprflip)\
@@ -1670,7 +1670,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 #undef makechunk
 		}
 
-		sprflip = P_RandomChance(FRACUNIT/2);
+		sprflip = P_RandomChance(PR_UNDEFINED, FRACUNIT/2);
 
 		chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_WALLSPIKE);
 
@@ -1683,7 +1683,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		chunk->y += forwardyoffs - yoffs;
 		P_SetThingPosition(chunk);
 		P_InstaThrust(chunk, ang + ANGLE_180, 2*scale);
-		chunk->momz = P_RandomRange(5, 7)*scale;
+		chunk->momz = P_RandomRange(PR_UNDEFINED, 5, 7)*scale;
 		if (flip)
 			chunk->momz *= -1;
 		if (sprflip)
@@ -1697,7 +1697,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		target->y += forwardyoffs + yoffs;
 		P_SetThingPosition(target);
 		P_InstaThrust(target, ang, 2*scale);
-		target->momz = P_RandomRange(5, 7)*scale;
+		target->momz = P_RandomRange(PR_UNDEFINED, 5, 7)*scale;
 		if (flip)
 			target->momz *= -1;
 		if (!sprflip)
@@ -2244,7 +2244,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	num_fling_rings = num_rings+min(0, player->rings);
 
 	// determine first angle
-	fa = player->mo->angle + ((P_RandomByte() & 1) ? -ANGLE_90 : ANGLE_90);
+	fa = player->mo->angle + ((P_RandomByte(PR_UNDEFINED) & 1) ? -ANGLE_90 : ANGLE_90);
 
 	for (i = 0; i < num_fling_rings; i++)
 	{

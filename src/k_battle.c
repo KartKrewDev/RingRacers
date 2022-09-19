@@ -211,7 +211,7 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	mobj_t *overlay;
 
 	P_Thrust(emerald,
-		FixedAngle(P_RandomFixed() * 180) + angle,
+		FixedAngle(P_RandomFixed(PR_UNDEFINED) * 180) + angle,
 		24 * mapobjectscale);
 
 	emerald->momz = flip * 24 * mapobjectscale;
@@ -268,8 +268,8 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 
 	P_InitAngle(drop, angle);
 	P_Thrust(drop,
-		FixedAngle(P_RandomFixed() * 180) + angle,
-		P_RandomRange(4, 12) * mapobjectscale);
+		FixedAngle(P_RandomFixed(PR_UNDEFINED) * 180) + angle,
+		P_RandomRange(PR_UNDEFINED, 4, 12) * mapobjectscale);
 
 	drop->momz = flip * 12 * mapobjectscale;
 	if (drop->eflags & MFE_UNDERWATER)
@@ -412,7 +412,7 @@ void K_RunPaperItemSpawners(void)
 		{
 			K_SpawnChaosEmerald(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 				firstUnspawnedEmerald
 			);
 		}
@@ -420,7 +420,7 @@ void K_RunPaperItemSpawners(void)
 		{
 			K_CreatePaperItem(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-				FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+				FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 				0, 0
 			);
 
@@ -428,7 +428,7 @@ void K_RunPaperItemSpawners(void)
 			{
 				K_SpawnSphereBox(
 					battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
-					FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+					FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 					10
 				);
 			}
@@ -509,7 +509,7 @@ void K_RunPaperItemSpawners(void)
 				}
 				else
 				{
-					key = P_RandomKey(spotCount);
+					key = P_RandomKey(PR_UNDEFINED, spotCount);
 				}
 
 				r = spotMap[key];
@@ -523,7 +523,7 @@ void K_RunPaperItemSpawners(void)
 				{
 					drop = K_SpawnChaosEmerald(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+						FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 						firstUnspawnedEmerald
 					);
 				}
@@ -533,7 +533,7 @@ void K_RunPaperItemSpawners(void)
 					{
 						drop = K_SpawnSphereBox(
 							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-								FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+								FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 								10
 						);
 						K_FlipFromObject(drop, spotList[r]);
@@ -541,7 +541,7 @@ void K_RunPaperItemSpawners(void)
 
 					drop = K_CreatePaperItem(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(0, 359) * FRACUNIT), flip,
+						FixedAngle(P_RandomRange(PR_UNDEFINED, 0, 359) * FRACUNIT), flip,
 						0, 0
 					);
 				}
