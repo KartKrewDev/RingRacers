@@ -4,6 +4,7 @@
 #include "../k_kart.h"
 #include "../k_objects.h"
 #include "../p_local.h"
+#include "../r_main.h"
 #include "../s_sound.h"
 
 // TODO: general function
@@ -80,15 +81,52 @@ spawn_debris
 static void
 spawn_cloud
 (		mobj_t * collectible,
-		mobj_t * collector)
+		mobj_t * collector,
+		fixed_t base_speed)
 {
-	mobj_t *spawner = P_SpawnMobjFromMobj(collectible,
-			0, 0, 0, MT_ITEM_DEBRIS_CLOUD_SPAWNER);
+	const fixed_t min_speed = 90 * collectible->scale;
 
-	P_SetTarget(&spawner->target, collector);
+	const fixed_t scale = FixedDiv(
+			max(base_speed, min_speed), min_speed);
 
-	S_StartSound(spawner, sfx_kc2e);
-	S_StartSound(spawner, sfx_s1c9);
+	const INT16 spacing =
+		(collectible->radius / 2) / collectible->scale;
+
+	INT32 i;
+
+	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
+
+	// dust effects
+	for (i = 0; i < 10; i++)
+	{
+		mobj_t *puff = P_SpawnMobjFromMobj(
+				collectible,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				MT_SPINDASHDUST
+		);
+
+		puff->color = collector->color;
+		puff->colorized = true;
+
+		puff->destscale = FixedMul(puff->destscale, scale);
+		P_SetScale(puff, puff->destscale);
+
+		puff->momz = puff->scale * P_MobjFlip(puff);
+
+		P_InitAngle(puff, R_PointToAngle2(
+					collectible->x,
+					collectible->y,
+					puff->x,
+					puff->y));
+
+		P_Thrust(puff, puff->angle, 3 * puff->scale);
+
+		puff->momx += collector->momx;
+		puff->momy += collector->momy;
+		puff->momz += collector->momz;
+	}
 }
 
 static void
@@ -100,18 +138,6 @@ rotate3d (mobj_t *debris)
 		M_RandomKey(steps) * (ANGLE_MAX / steps);
 }
 
-fixed_t
-Obj_GetItemDebrisSpeed
-(		mobj_t * collector,
-		fixed_t min_speed)
-{
-	const fixed_t base_speed = FixedMul(
-			75 * mapobjectscale,
-			get_speed_ratio(collector));
-
-	return max(base_speed, min_speed);
-}
-
 void
 Obj_SpawnItemDebrisEffects
 (		mobj_t * collectible,
@@ -119,15 +145,22 @@ Obj_SpawnItemDebrisEffects
 {
 	const fixed_t min_speed = 80 * collectible->scale;
 
-	const fixed_t speed =
-		Obj_GetItemDebrisSpeed(collector, min_speed);
+	fixed_t base_speed = FixedMul(75 * mapobjectscale,
+			get_speed_ratio(collector));
 
-	struct debris_config config = {
-		.origin = collectible,
-		.angle = K_MomentumAngle(collector),
-		.speed = speed,
-		.scale = FixedDiv(speed, min_speed),
-	};
+	struct debris_config config;
+
+	// Delayed effect for puffs of smoke that stick to and
+	// glide off of the player
+	mobj_t *spawner = P_SpawnMobjFromMobj(collectible,
+			0, 0, 0, MT_ITEM_DEBRIS_CLOUD_SPAWNER);
+
+	P_SetTarget(&spawner->target, collector);
+
+	config.origin = collectible;
+	config.angle = K_MomentumAngle(collector);
+	config.speed = max(base_speed, min_speed);
+	config.scale = FixedDiv(config.speed, min_speed);
 
 	config.type = DEBRIS_ALPHA;
 
@@ -142,7 +175,10 @@ Obj_SpawnItemDebrisEffects
 	spawn_debris(&config, -(3*ANGLE_22h/4));
 	spawn_debris(&config, -(3*ANGLE_22h/2));
 
-	spawn_cloud(collectible, collector);
+	spawn_cloud(collectible, collector, base_speed);
+
+	S_StartSound(collectible, sfx_kc2e);
+	S_StartSound(collectible, sfx_s1c9);
 }
 
 void

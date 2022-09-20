@@ -14486,59 +14486,55 @@ void A_InvincSparkleRotate(mobj_t *actor)
 
 // Function: A_SpawnItemDebrisCloud
 //
-// Description: Spawns a particle effect relative to the location of the actor
+// Description: Spawns the poofs of an exploded item box. Target is a player to spawn the particles around.
 //
-// var1 = If 1, scale size and momentum by extravalue2 / frame.
-// var2 = Number of particles to spawn.
+// var1 = Copy extravalue2 / var1 fraction of target's momentum.
+// var2 = unused
 //
 void
 A_SpawnItemDebrisCloud (mobj_t *actor)
 {
 	INT32 locvar1 = var1;
-	INT32 locvar2 = var2;
-
-	const fixed_t min_speed = 90 * actor->scale;
-	const INT16 spacing = (actor->radius / 2) / actor->scale;
-
-	fixed_t fade = FRACUNIT;
-	fixed_t scale_fade = FRACUNIT;
 
 	mobj_t *target = actor->target;
+	player_t *player;
 
-	fixed_t speed;
-	fixed_t scale;
+	fixed_t kartspeed;
+	fixed_t fade;
 
-	INT32 i;
-
-	if (target == NULL)
+	if (target == NULL || target->player == NULL)
 	{
 		return;
 	}
 
-	if (locvar1)
+	player = target->player;
+	kartspeed = K_GetKartSpeed(player, false, false);
+
+	// Scale around >50% top speed
+	fade = FixedMul(locvar1, (FixedDiv(player->speed,
+					kartspeed) - FRACUNIT/2) * 2);
+
+	if (fade < 1)
 	{
-		const UINT8 frame = (actor->frame & FF_FRAMEMASK);
-		fixed_t frac;
-
-		if (frame == 0)
-		{
-			return; // div by zero
-		}
-
-		// extravalue2 from A_Repeat
-		frac = fade / frame;
-		fade = actor->extravalue2 * frac;
-		scale_fade = fade + frac;
+		fade = 1;
 	}
 
-	speed = Obj_GetItemDebrisSpeed(target, min_speed);
-	scale = 2 * FixedMul(FixedDiv(speed, min_speed), scale_fade);
+	if (actor->extravalue2 > fade)
+	{
+		actor->extravalue2 = fade;
+	}
+
+	// MT_ITEM_DEBRIS_CLOUD_SPAWNER
+	// extravalue2 from A_Repeat
+	fade = actor->extravalue2 * FRACUNIT / locvar1;
 
 	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
 
 	// dust effects
-	for (i = 0; i < locvar2; i++)
 	{
+		const INT16 spacing =
+			(target->radius / 2) / target->scale;
+
 		mobj_t *puff = P_SpawnMobjFromMobj(
 				target,
 				P_RandomRange(-spacing, spacing) * FRACUNIT,
@@ -14550,12 +14546,15 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 		puff->color = target->color;
 		puff->colorized = true;
 
-		puff->destscale = FixedMul(puff->destscale, scale);
-		P_SetScale(puff, puff->destscale);
-
 		puff->momz = puff->scale * P_MobjFlip(puff);
 
-		P_Thrust(puff, R_PointToAngle2(target->x, target->y, puff->x, puff->y), 3 * puff->scale);
+		P_InitAngle(puff, R_PointToAngle2(
+					target->x,
+					target->y,
+					puff->x,
+					puff->y));
+
+		P_Thrust(puff, puff->angle, 3 * puff->scale);
 
 		puff->momx += FixedMul(target->momx, fade);
 		puff->momy += FixedMul(target->momy, fade);
