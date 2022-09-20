@@ -23753,7 +23753,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_hogbom,     // deathsound
 		80*FRACUNIT,    // speed
-		16*FRACUNIT,    // radius
+		26*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
