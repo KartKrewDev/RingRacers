@@ -22550,7 +22550,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MT_RANDOMITEMPOP, // damage
 		sfx_None,         // activesound
 		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
-		S_NULL            // raisestate
+		S_RANDOMITEM1     // raisestate
 	},
 
 	{           // MT_SPHEREBOX

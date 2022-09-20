@@ -13199,7 +13199,13 @@ void A_ItemPop(mobj_t *actor)
 
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
+	{
 		numgotboxes++;
+
+		// do not flicker back in just yet, handled by
+		// P_RespawnBattleBoxes eventually
+		P_SetMobjState(actor, S_INVISIBLE);
+	}
 }
 
 void A_JawzChase(mobj_t *actor)
