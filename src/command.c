@@ -1024,15 +1024,17 @@ static void COM_Help_f(void)
 
 /** Toggles a console variable. Useful for on/off values.
   *
-  * This works on on/off, yes/no values only
+  * This works on on/off, yes/no values by default. Given
+  * a list of values, cycles between them.
   */
 static void COM_Toggle_f(void)
 {
 	consvar_t *cvar;
 
-	if (COM_Argc() != 2)
+	if (COM_Argc() == 1 || COM_Argc() == 3)
 	{
 		CONS_Printf(M_GetText("Toggle <cvar_name>: Toggle the value of a cvar\n"));
+		CONS_Printf("Toggle <cvar_name> <value1> <value2>...: Cycle along a set of values\n");
 		return;
 	}
 	cvar = CV_FindVar(COM_Argv(1));
@@ -1042,15 +1044,44 @@ static void COM_Toggle_f(void)
 		return;
 	}
 
-	if (!(cvar->PossibleValue == CV_YesNo || cvar->PossibleValue == CV_OnOff))
+	if (COM_Argc() == 2)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("%s is not a boolean value\n"), COM_Argv(1));
-		return;
+		if (!(cvar->PossibleValue == CV_YesNo || cvar->PossibleValue == CV_OnOff))
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("%s is not a boolean value\n"), COM_Argv(1));
+			return;
+		}
 	}
 
 	// netcvar don't change imediately
 	cvar->flags |= CV_SHOWMODIFONETIME;
-	CV_AddValue(cvar, +1);
+
+	if (COM_Argc() == 2)
+	{
+		CV_AddValue(cvar, +1);
+	}
+	else
+	{
+		size_t i;
+
+		for (i = 2; i < COM_Argc() - 1; ++i)
+		{
+			const char *str = COM_Argv(i);
+			INT32 val;
+
+			if (CV_CompleteValue(cvar, &str, &val))
+			{
+				if (str ? !stricmp(cvar->string, str)
+						: cvar->value == val)
+				{
+					CV_Set(cvar, COM_Argv(i + 1));
+					return;
+				}
+			}
+		}
+
+		CV_Set(cvar, COM_Argv(2));
+	}
 }
 
 /** Command variant of CV_AddValue
