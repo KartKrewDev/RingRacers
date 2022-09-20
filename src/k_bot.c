@@ -987,7 +987,7 @@ static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
 		{
 			testDeltas[i] = AngleDelta(testAngles[i], destangle);
 		}
-'
+
 		if (testDeltas[1] < testDeltas[0])
 		{
 			return testAngles[1];

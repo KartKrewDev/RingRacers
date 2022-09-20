@@ -64,6 +64,7 @@ typedef enum
 	SKYBOXVIEW = 0x08,
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
+	STUMBLE = 0x40,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -202,6 +203,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].hoverhyudoro)
 			flags |= HOVERHYUDORO;
 
+		if (players[i].stumbleIndicator)
+			flags |= STUMBLE;
+
 		WRITEUINT16(save_p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -218,6 +222,9 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & HOVERHYUDORO)
 			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
+
+		if (flags & STUMBLE)
+			WRITEUINT32(save_p, players[i].stumbleIndicator->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -508,6 +515,9 @@ static void P_NetUnArchivePlayers(void)
 
 		if (flags & HOVERHYUDORO)
 			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
+
+		if (flags & STUMBLE)
+			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save_p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
@@ -4288,6 +4298,13 @@ static void P_RelinkPointers(void)
 				mobj->player->hoverhyudoro = NULL;
 				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
+			}
+			if (mobj->player->stumbleIndicator)
+			{
+				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
+				mobj->player->stumbleIndicator = NULL;
+				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
 			}
 		}
 	}

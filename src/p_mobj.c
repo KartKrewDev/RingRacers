@@ -2847,19 +2847,13 @@ void P_PlayerZMovement(mobj_t *mo)
 			P_CheckGravity(mo, true);
 		}
 
-		// Even out pitch & roll slowly over time when falling.
-		// Helps give OpenGL models a bit of the tumble tell.
-		if (P_MobjFlip(mo) * mo->momz <= 0)
+		// Even out pitch & roll slowly over time when respawning.
+		if (mo->player->respawn.state != RESPAWNST_NONE)
 		{
 			const angle_t speed = ANG2; //FixedMul(ANG2, abs(mo->momz) / 8);
-			angle_t dest = ANG60 - ANG10;
+			angle_t dest = 0;
 			INT32 pitchDelta = AngleDeltaSigned(mo->pitch, 0);
 			INT32 rollDelta = AngleDeltaSigned(mo->roll, 0);
-
-			if (mo->player->respawn.state != RESPAWNST_NONE)
-			{
-				dest = 0;
-			}
 
 			if (abs(pitchDelta) <= speed && dest == 0)
 			{
@@ -11388,6 +11382,8 @@ void P_SpawnPlayer(INT32 playernum)
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
+
+	K_InitStumbleIndicator(p);
 
 	if (gametyperules & GTR_BUMPERS)
 	{

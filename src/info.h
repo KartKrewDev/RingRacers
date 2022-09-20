@@ -1133,6 +1133,7 @@ typedef enum sprite
 	SPR_BEXB, // Battle Bumper Explosion: Blast
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
+	SPR_SMLD, // Smooth landing
 	SPR_DEZL, // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4826,6 +4827,8 @@ typedef enum state
 	S_TRIPWIREBOOST_BLAST_TOP,
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
 
+	S_SMOOTHLANDING,
+
 	// DEZ Laser respawn
 	S_DEZLASER,
 	S_DEZLASER_TRAIL1,
@@ -6406,6 +6409,8 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER_BLAST,
 
 	MT_TRIPWIREBOOST,
+
+	MT_SMOOTHLANDING,
 
 	MT_DEZLASER,
 

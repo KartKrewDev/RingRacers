@@ -3797,10 +3797,10 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		P_StartQuake(64<<FRACBITS, 10);
 }
 
-angle_t K_StumbleSlope(mobj_t *mobj, angle_t pitch, angle_t roll)
+angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
 {
-	fixed_t pitchMul = -FINESINE(mobj->angle >> ANGLETOFINESHIFT);
-	fixed_t rollMul = FINECOSINE(mobj->angle >> ANGLETOFINESHIFT);
+	fixed_t pitchMul = -FINESINE(angle >> ANGLETOFINESHIFT);
+	fixed_t rollMul = FINECOSINE(angle >> ANGLETOFINESHIFT);
 
 	angle_t slope = FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
 
@@ -3844,7 +3844,7 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 		steepVal = STUMBLE_STEEP_VAL;
 	}
 
-	oldSlope = K_StumbleSlope(player->mo, oldPitch, oldRoll);
+	oldSlope = K_StumbleSlope(player->mo->angle, oldPitch, oldRoll);
 
 	if (oldSlope <= steepVal)
 	{
@@ -3853,7 +3853,7 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 		return false;
 	}
 
-	newSlope = K_StumbleSlope(player->mo, player->mo->pitch, player->mo->roll);
+	newSlope = K_StumbleSlope(player->mo->angle, player->mo->pitch, player->mo->roll);
 	slopeDelta = AngleDelta(oldSlope, newSlope);
 
 	if (slopeDelta <= steepVal)
@@ -3894,6 +3894,134 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 	// Reset slope.
 	player->mo->pitch = player->mo->roll = 0;
 	return true;
+}
+
+void K_InitStumbleIndicator(player_t *player)
+{
+	mobj_t *new = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->stumbleIndicator) == false)
+	{
+		P_RemoveMobj(player->stumbleIndicator);
+	}
+
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SMOOTHLANDING);
+
+	P_SetTarget(&player->stumbleIndicator, new);
+	P_SetTarget(&new->target, player->mo);
+}
+
+void K_UpdateStumbleIndicator(player_t *player)
+{
+	mobj_t *mobj = NULL;
+
+	boolean air = false;
+	angle_t steepVal = STUMBLE_STEEP_VAL;
+	angle_t slopeSteep = 0;
+	angle_t steepRange = ANGLE_90;
+
+	INT32 delta = 0;
+	INT32 trans = 0;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator == NULL || P_MobjWasRemoved(player->stumbleIndicator) == true)
+	{
+		K_InitStumbleIndicator(player);
+		return;
+	}
+
+	mobj = player->stumbleIndicator;
+
+	P_MoveOrigin(mobj, player->mo->x, player->mo->y, player->mo->z + (player->mo->height / 2));
+
+	air = !P_IsObjectOnGround(player->mo);
+	steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
+	slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
+
+	delta = 0;
+
+	if (slopeSteep > steepVal)
+	{
+		angle_t testAngles[2];
+		INT32 testDeltas[2];
+		UINT8 i;
+
+		testAngles[0] = R_PointToAngle2(0, 0, player->mo->pitch, player->mo->roll);
+		testAngles[1] = R_PointToAngle2(0, 0, -player->mo->pitch, -player->mo->roll);
+
+		for (i = 0; i < 2; i++)
+		{
+			testDeltas[i] = AngleDeltaSigned(player->mo->angle, testAngles[i]);
+		}
+
+		if (abs(testDeltas[1]) < abs(testDeltas[0]))
+		{
+			delta = testDeltas[1];
+		}
+		else
+		{
+			delta = testDeltas[0];
+		}
+	}
+
+	if (delta < 0)
+	{
+		mobj->renderflags |= RF_HORIZONTALFLIP;
+	}
+	else
+	{
+		mobj->renderflags &= ~RF_HORIZONTALFLIP;
+	}
+
+	steepRange = ANGLE_90 - steepVal;
+	delta = max(0, abs(delta) - ((signed)steepVal));
+	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS+1)) + (FRACUNIT/2)) / FRACUNIT;
+
+	if (trans < 0)
+	{
+		trans = 0;
+	}
+
+	if (trans > NUMTRANSMAPS)
+	{
+		trans = NUMTRANSMAPS;
+	}
+
+	// invert
+	trans = NUMTRANSMAPS - trans;
+
+	if (trans >= NUMTRANSMAPS)
+	{
+		mobj->renderflags |= RF_DONTDRAW;
+	}
+	else
+	{
+		mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+
+		if (trans != 0)
+		{
+			mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+	}
 }
 
 static boolean K_LastTumbleBounceCondition(player_t *player)
@@ -7998,6 +8126,8 @@ finalise:
 void K_KartPlayerAfterThink(player_t *player)
 {
 	K_KartResetPlayerColor(player);
+
+	K_UpdateStumbleIndicator(player);
 
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
