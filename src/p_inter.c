@@ -275,7 +275,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			break;
+			return;
 		case MT_SPHEREBOX:
 			if (!P_CanPickupItem(player, 0))
 				return;
@@ -283,7 +283,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			break;
+			return;
 		case MT_ITEMCAPSULE:
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;

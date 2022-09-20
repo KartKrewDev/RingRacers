@@ -171,8 +171,8 @@ Obj_SpawnItemDebrisEffects
 
 	spawn_cloud(collectible, collector, base_speed);
 
-	S_StartSound(collectible, sfx_kc2e);
-	S_StartSound(collectible, sfx_s1c9);
+	S_StartSound(spawner, sfx_kc2e);
+	S_StartSound(spawner, sfx_s1c9);
 }
 
 void
