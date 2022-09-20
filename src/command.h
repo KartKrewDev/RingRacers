@@ -194,6 +194,12 @@ void CV_ClearChangedFlags(void);
 // returns the name of the nearest console variable name found
 const char *CV_CompleteVar(char *partial, INT32 skips);
 
+// Returns true if valstrp is within the PossibleValues of
+// var. If an exact string value exists, it is returned in
+// valstrp. An integer value is returned in intval if it
+// is not NULL.
+boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval);
+
 // equivalent to "<varname> <value>" typed at the console
 void CV_Set(consvar_t *var, const char *value);
 

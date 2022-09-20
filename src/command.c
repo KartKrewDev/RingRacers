@@ -1424,26 +1424,27 @@ const char *CV_CompleteVar(char *partial, INT32 skips)
 	return NULL;
 }
 
-/** Sets a value to a variable with less checking. Only for internal use.
-  *
-  * \param var    Variable to set.
-  * \param valstr String value for the variable.
-  */
-static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
+boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 {
-	boolean override = false;
+	const char *valstr = *valstrp;
+
 	INT32 overrideval = 0;
 
-	// If we want messages informing us if cheats have been enabled or disabled,
-	// we need to rework the consvars a little bit.  This call crashes the game
-	// on load because not all variables will be registered at that time.
-/*	boolean prevcheats = false;
-	if (var->flags & CV_CHEAT)
-		prevcheats = CV_CheatsEnabled(); */
+	INT32 v;
+
+	if (var == &cv_forceskin)
+	{
+		v = R_SkinAvailable(valstr);
+
+		if (!R_SkinUsable(-1, v))
+			v = -1;
+
+		goto finish;
+	}
 
 	if (var->PossibleValue)
 	{
-		INT32 v;
+		INT32 i;
 
 		if (var->flags & CV_FLOAT)
 		{
@@ -1464,7 +1465,6 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 		{
 #define MINVAL 0
 #define MAXVAL 1
-			INT32 i;
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1473,52 +1473,26 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			// search for other
 			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
 				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
-				{
-					if (client && execversion_enabled)
-					{
-						if (var->revert.allocated)
-						{
-							Z_Free(var->revert.v.string);
-							var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
-						}
-
-						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-
-						return;
-					}
-
-					// free the old value string
-					Z_Free(var->zstring);
-					var->zstring = NULL;
-
-					var->value = var->PossibleValue[i].value;
-					var->string = var->PossibleValue[i].strvalue;
-					goto finish;
-				}
+					goto found;
 
 			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
-				v = var->PossibleValue[MINVAL].value;
-				valstr = var->PossibleValue[MINVAL].strvalue;
-				override = true;
-				overrideval = v;
+				i = MINVAL;
+				goto found;
 			}
 			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
-				v = var->PossibleValue[MAXVAL].value;
-				valstr = var->PossibleValue[MAXVAL].strvalue;
-				override = true;
-				overrideval = v;
+				i = MAXVAL;
+				goto found;
 			}
 			if (v == INT32_MIN)
 				goto badinput;
+			valstr = NULL; // not a preset value
 #undef MINVAL
 #undef MAXVAL
 		}
 		else
 		{
-			INT32 i;
-
 			// check first strings
 			for (i = 0; var->PossibleValue[i].strvalue; i++)
 				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
@@ -1550,27 +1524,69 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			// ...or not.
 			goto badinput;
 found:
-			if (client && execversion_enabled)
-			{
-				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-				return;
-			}
+			v = var->PossibleValue[i].value;
+			valstr = var->PossibleValue[i].strvalue;
+		}
 
-			var->value = var->PossibleValue[i].value;
-			var->string = var->PossibleValue[i].strvalue;
-			goto finish;
+finish:
+		if (intval)
+			*intval = v;
+
+		*valstrp = valstr;
+
+		return true;
+	}
+
+// landing point for possiblevalue failures
+badinput:
+	return false;
+}
+
+/** Sets a value to a variable with less checking. Only for internal use.
+  *
+  * \param var    Variable to set.
+  * \param valstr String value for the variable.
+  */
+static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
+{
+	boolean override = false;
+	INT32 overrideval = 0;
+
+	// If we want messages informing us if cheats have been enabled or disabled,
+	// we need to rework the consvars a little bit.  This call crashes the game
+	// on load because not all variables will be registered at that time.
+/*	boolean prevcheats = false;
+	if (var->flags & CV_CHEAT)
+		prevcheats = CV_CheatsEnabled(); */
+
+	const char *overridestr = valstr;
+
+	if (CV_CompleteValue(var, &overridestr, &overrideval))
+	{
+		if (overridestr)
+		{
+			valstr = overridestr;
+			override = true;
 		}
 	}
+	else if (var->PossibleValue)
+		goto badinput;
 
 	if (client && execversion_enabled)
 	{
 		if (var->revert.allocated)
 		{
 			Z_Free(var->revert.v.string);
+
 			// Z_StrDup creates a new zone memory block, so we can keep the allocated flag on
+			if (override)
+				var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 		}
 
-		var->revert.v.string = Z_StrDup(valstr);
+		if (override)
+			var->revert.v.const_munge = valstr;
+		else
+			var->revert.v.string = Z_StrDup(valstr);
 
 		return;
 	}
@@ -1578,28 +1594,25 @@ found:
 	// free the old value string
 	Z_Free(var->zstring);
 
-	var->string = var->zstring = Z_StrDup(valstr);
-
 	if (override)
-		var->value = overrideval;
-	else if (var->flags & CV_FLOAT)
 	{
-		double d = atof(var->string);
-		var->value = (INT32)(d * FRACUNIT);
+		var->zstring = NULL;
+		var->value = overrideval;
+		var->string = valstr;
 	}
 	else
 	{
-		if (var == &cv_forceskin)
+		var->string = var->zstring = Z_StrDup(valstr);
+
+		if (var->flags & CV_FLOAT)
 		{
-			var->value = R_SkinAvailable(var->string);
-			if (!R_SkinUsable(-1, var->value))
-				var->value = -1;
+			double d = atof(var->string);
+			var->value = (INT32)(d * FRACUNIT);
 		}
 		else
 			var->value = atoi(var->string);
 	}
 
-finish:
 	// See the note above.
 /* 	if (var->flags & CV_CHEAT)
 	{
