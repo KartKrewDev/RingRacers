@@ -13184,6 +13184,12 @@ void A_ItemPop(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 	P_SetThingPosition(actor);
 
+	// RF_DONTDRAW will flicker as the object's fuse gets
+	// closer to running out (see P_FuseThink)
+	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
+	actor->color = SKINCOLOR_GREY;
+	actor->colorized = true;
+
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
@@ -13194,8 +13200,6 @@ void A_ItemPop(mobj_t *actor)
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
 		numgotboxes++;
-
-	P_RemoveMobj(actor);
 }
 
 void A_JawzChase(mobj_t *actor)
