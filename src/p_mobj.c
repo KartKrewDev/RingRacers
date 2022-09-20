@@ -1878,7 +1878,7 @@ void P_XYMovement(mobj_t *mo)
 				FIXED_TO_FLOAT(AngleFixed(oldangle-newangle))
 			);
 			*/
-		
+
 		}
 		else if (predictedz - mo->z > abs(slopemom.z / 2))
 		{
@@ -4657,11 +4657,8 @@ static void P_RingShooterCountdown(mobj_t *mo)
 	if (mo->reactiontime == -1)
 		return;
 
-	if (mo->reactiontime > 0)
-	{
-		mo->reactiontime--;
+	if (--mo->reactiontime > 0)
 		return;
-	}
 
 	while (!P_MobjWasRemoved(part->tracer))
 	{
@@ -10563,7 +10560,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	if (type == MT_NULL)
 	{
-#if 0		
+#if 0
 #ifdef PARANOIA
 		I_Error("Tried to spawn MT_NULL\n");
 #endif
