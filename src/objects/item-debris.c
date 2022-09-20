@@ -52,14 +52,8 @@ spawn_debris
 	mobj_t *debris = P_SpawnMobjFromMobj(
 			config->origin, 0, 0, 0, MT_ITEM_DEBRIS);
 
-	const state_t *st = debris->state;
-
 	debris_type(debris) = config->type;
 	debris_bouncesleft(debris) = 1;
-
-	// Start at a random frame of animation
-	debris->frame = (debris->frame & ~(FF_FRAMEMASK)) |
-		P_RandomRange((st->frame & FF_FRAMEMASK), st->var1);
 
 	P_InstaThrust(debris,
 			config->angle + angle,
