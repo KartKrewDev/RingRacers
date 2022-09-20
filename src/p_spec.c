@@ -20,6 +20,7 @@
 #include "p_local.h"
 #include "p_setup.h" // levelflats for flat animation
 #include "r_data.h"
+#include "r_fps.h"
 #include "r_textures.h"
 #include "m_random.h"
 #include "p_mobj.h"
@@ -35,7 +36,7 @@
 #include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
-#include "lua_hook.h" // LUAh_LinedefExecute
+#include "lua_hook.h" // LUA_HookLinedefExecute
 #include "f_finale.h" // control text prompt
 #include "r_skins.h" // skins
 
@@ -164,6 +165,9 @@ void P_ParseAnimationDefintion(SINT8 istexture);
   * \sa P_FindAnimatedFlat, P_SetupLevelFlatAnims
   * \author Steven McGranahan (original), Shadow Hog (had to rewrite it to handle multiple WADs), JTE (had to rewrite it to handle multiple WADs _correctly_)
   */
+
+static boolean animdeftempflats = false; // only until ANIMDEFS flats are removed
+
 void P_InitPicAnims(void)
 {
 	// Init animation
@@ -183,6 +187,7 @@ void P_InitPicAnims(void)
 
 		while (animdefsLumpNum != INT16_MAX)
 		{
+			animdeftempflats = ((p_adding_file == INT16_MAX) || p_adding_file == w);
 			P_ParseANIMDEFSLump(w, animdefsLumpNum);
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
 		}
@@ -204,7 +209,7 @@ void P_InitPicAnims(void)
 	lastanim = anims;
 	for (i = 0; animdefs[i].istexture != -1; i++)
 	{
-		if (animdefs[i].istexture)
+		if (animdefs[i].istexture == 1)
 		{
 			if (R_CheckTextureNumForName(animdefs[i].startname) == -1)
 				continue;
@@ -214,12 +219,21 @@ void P_InitPicAnims(void)
 		}
 		else
 		{
+			if (animdefs[i].istexture == 2)
+			{
+				CONS_Alert(CONS_WARNING, "ANIMDEFS flats are disabled; flat support in general will be removed soon! (%s, %s)\n", animdefs[i].startname, animdefs[i].endname);
+			}
+			continue;
+		}
+#if 0
+		{
 			if ((W_CheckNumForName(animdefs[i].startname)) == LUMPERROR)
 				continue;
 
 			lastanim->picnum = R_GetFlatNumForName(animdefs[i].endname);
 			lastanim->basepic = R_GetFlatNumForName(animdefs[i].startname);
 		}
+#endif
 
 		lastanim->istexture = animdefs[i].istexture;
 		lastanim->numpics = lastanim->picnum - lastanim->basepic + 1;
@@ -367,7 +381,10 @@ void P_ParseAnimationDefintion(SINT8 istexture)
 	Z_Free(animdefsToken);
 
 	// set texture type
-	animdefs[i].istexture = istexture;
+	if (istexture)
+		animdefs[i].istexture = 1;
+	else
+		animdefs[i].istexture = (animdeftempflats ? 2 : 0);
 
 	// "RANGE"
 	animdefsToken = M_GetToken(NULL);
@@ -1752,10 +1769,18 @@ void P_LinedefExecute(INT16 tag, mobj_t *actor, sector_t *caller)
 //
 // Switches the weather!
 //
-void P_SwitchWeather(UINT8 newWeather)
+void P_SwitchWeather(preciptype_t newWeather)
 {
 	boolean purge = false;
 	mobjtype_t swap = MT_NULL;
+	INT32 oldEffects = precipprops[curWeather].effects;
+
+	if (newWeather >= precip_freeslot)
+	{
+		// Weather type invalid, set to no weather.
+		CONS_Debug(DBG_SETUP, "Weather ID %d out of bounds\n", newWeather);
+		newWeather = PRECIP_NONE;
+	}
 
 	if (precipprops[newWeather].type == MT_NULL)
 	{
@@ -1772,6 +1797,8 @@ void P_SwitchWeather(UINT8 newWeather)
 			swap = precipprops[newWeather].type;
 		}
 	}
+
+	curWeather = newWeather;
 
 	if (purge == true)
 	{
@@ -1827,14 +1854,22 @@ void P_SwitchWeather(UINT8 newWeather)
 			precipmobj->sprite = precipmobj->state->sprite;
 			precipmobj->frame = precipmobj->state->frame;
 
-			precipmobj->momz = mobjinfo[swap].speed;
-			precipmobj->precipflags &= ~PCF_INVISIBLE;
+			precipmobj->momz = FixedMul(-mobjinfo[swap].speed, mapobjectscale);
+			precipmobj->precipflags &= ~(PCF_INVISIBLE|PCF_FLIP);
+
+			if (precipmobj->momz > 0)
+			{
+				precipmobj->precipflags |= PCF_FLIP;
+			}
+
+			if ((oldEffects & PRECIPFX_WATERPARTICLES) != (precipprops[curWeather].effects & PRECIPFX_WATERPARTICLES))
+			{
+				P_CalculatePrecipFloor(precipmobj);
+			}
 		}
 	}
 
-	curWeather = newWeather;
-
-	if (swap == MT_NULL && precipprops[newWeather].type != MT_NULL)
+	if (swap == MT_NULL && precipprops[curWeather].type != MT_NULL)
 		P_SpawnPrecipitation();
 }
 
@@ -1882,14 +1917,6 @@ static void K_HandleLapIncrement(player_t *player)
 					player->karthud[khud_laphand] = 0; // No hands in FREE PLAY
 
 				player->karthud[khud_lapanimation] = 80;
-
-				// save best lap for record attack
-				if (player == &players[consoleplayer])
-				{
-					if (curlap < bestlap || bestlap == 0)
-						bestlap = curlap;
-					curlap = 0;
-				}
 			}
 
 			if (rainbowstartavailable == true)
@@ -1903,18 +1930,18 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (netgame && player->laps >= (UINT8)cv_numlaps.value)
+			if (netgame && player->laps >= numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 			player->starpostnum = 0;
 
 			if (P_IsDisplayPlayer(player))
 			{
-				if (player->laps == (UINT8)(cv_numlaps.value)) // final lap
+				if (player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
-				else if ((player->laps > 1) && (player->laps < (UINT8)(cv_numlaps.value))) // non-final lap
+				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
-				else if (player->laps > (UINT8)(cv_numlaps.value))
+				else if (player->laps > numlaps)
 				{
 					// finished
 					S_StartSound(NULL, sfx_s3k6a);
@@ -1923,7 +1950,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 			else
 			{
-				if ((player->laps > (UINT8)(cv_numlaps.value)) && (player->position == 1))
+				if ((player->laps > numlaps) && (player->position == 1))
 				{
 					// opponent finished
 					S_StartSound(NULL, sfx_s253);
@@ -1931,10 +1958,32 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			// finished race exit setup
-			if (player->laps > (unsigned)cv_numlaps.value)
+			if (player->laps > numlaps)
 			{
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
+			}
+
+			if (player->laps > player->latestlap)
+			{
+				if (player->laps > 1)
+				{
+					// save best lap for record attack
+					if (modeattacking && player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+						{
+							bestlap = curlap;
+						}
+
+						curlap = 0;
+					}
+
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player, player->laps, false);
+				}
+
+				player->latestlap = player->laps;
 			}
 
 			thwompsactive = true; // Lap 2 effects
@@ -2021,7 +2070,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 
 		if (P_IsLineTripWire(line))
 		{
-			K_ApplyTripWire(player, TRIP_PASSED);
+			K_ApplyTripWire(player, TRIPSTATE_PASSED);
 		}
 
 		switch (line->special)
@@ -2979,7 +3028,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 443: // Calls a named Lua function
 			if (line->stringargs[0])
-				LUAh_LinedefExecute(line, mo, callsec);
+				LUA_HookLinedefExecute(line, mo, callsec);
 			else
 				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in arg0str)\n", sizeu1(line-lines));
 			break;
@@ -3624,7 +3673,11 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 						return;
 
 					if (delay <= 0 || !(leveltime % delay))
-						P_GivePlayerRings(mo->player, rings);
+					{
+						// No Climb: don't cap rings to 20
+						K_AwardPlayerRings(mo->player, rings,
+								(line->flags & ML_NOCLIMB) == ML_NOCLIMB);
+					}
 				}
 			}
 			break;
@@ -4023,8 +4076,10 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number, b
 	msecnode_t *node;
 	ffloor_t *rover;
 
-	if (!mo)
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
 		return NULL;
+	}
 
 	// Check default case first
 	if (GETSECSPECIAL(mo->subsector->sector->special, section) == number)
@@ -5512,6 +5567,10 @@ static void P_AddFloatThinker(sector_t *sec, UINT16 tag, line_t *sourceline)
 	floater->sector = sec;
 	floater->tag = (INT16)tag;
 	floater->sourceline = sourceline;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&floater->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&floater->thinker, sec, true);
 }
 
 /**
@@ -5541,6 +5600,9 @@ static void P_AddPlaneDisplaceThinker(INT32 type, fixed_t speed, INT32 control, 
 	displace->speed = speed;
 	displace->type = type;
 	displace->reverse = reverse;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&displace->thinker, &sectors[affectee], false);
 }
 
 /** Adds a Mario block thinker, which changes the block's texture between blank
@@ -5600,6 +5662,10 @@ static void P_AddRaiseThinker(sector_t *sec, INT16 tag, fixed_t speed, fixed_t c
 		raise->flags |= RF_REVERSE;
 	if (spindash)
 		raise->flags |= RF_SPINDASH;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&raise->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&raise->thinker, sec, true);
 }
 
 static void P_AddAirbob(sector_t *sec, INT16 tag, fixed_t dist, boolean raise, boolean spindash, boolean dynamic)
@@ -5625,6 +5691,10 @@ static void P_AddAirbob(sector_t *sec, INT16 tag, fixed_t dist, boolean raise, b
 		airbob->flags |= RF_SPINDASH;
 	if (dynamic)
 		airbob->flags |= RF_DYNAMIC;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&airbob->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&airbob->thinker, sec, true);
 }
 
 /** Adds a thwomp thinker.
@@ -5665,6 +5735,10 @@ static inline void P_AddThwompThinker(sector_t *sec, line_t *sourceline, fixed_t
 	sec->ceilingdata = thwomp;
 	// Start with 'resting' texture
 	sides[sourceline->sidenum[0]].midtexture = sides[sourceline->sidenum[0]].bottomtexture;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&thwomp->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&thwomp->thinker, sec, true);
 }
 
 /** Adds a thinker which checks if any MF_ENEMY objects with health are in the defined area.
@@ -5847,6 +5921,11 @@ void P_InitSpecials(void)
 
 	// Set the default gravity. Custom gravity overrides this setting.
 	gravity = mapheaderinfo[gamemap-1]->gravity;
+
+	// Set map lighting settings.
+	maplighting.contrast = mapheaderinfo[gamemap-1]->light_contrast;
+	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
+	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
 	// Defaults in case levels don't have them set.
 	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
@@ -6914,6 +6993,12 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 
 	for (i = 0; i < numlines; i++)
 	{
+		if (P_IsLineDisabled(&lines[i]))
+		{
+			/* remove the special so it can't even be found during the level */
+			lines[i].special = 0;
+		}
+
 		switch (lines[i].special)
 		{
 			case 30: // Polyobj_Flag
@@ -6927,29 +7012,7 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 			case 32: // Polyobj_RotDisplace
 				PolyRotDisplace(&lines[i]);
 				break;
-		}
-	}
 
-	if (!fromnetsave)
-		P_RunLevelLoadExecutors();
-}
-
-/** Fuck ML_NONET
-  */
-void P_SpawnSpecialsAfterSlopes(void)
-{
-	size_t i;
-
-	for (i = 0; i < numlines; ++i)
-	{
-		if (P_IsLineDisabled(&lines[i]))
-		{
-			/* remove the special so it can't even be found during the level */
-			lines[i].special = 0;
-		}
-
-		switch (lines[i].special)
-		{
 			case 80: // Raise tagged things by type to this FOF
 				{
 					mtag_t tag = Tag_FGet(&lines[i].tags);
@@ -6962,6 +7025,9 @@ void P_SpawnSpecialsAfterSlopes(void)
 				break;
 		}
 	}
+
+	if (!fromnetsave)
+		P_RunLevelLoadExecutors();
 }
 
 /** Adds 3Dfloors as appropriate based on a common control linedef.
@@ -7285,6 +7351,22 @@ static void Add_Scroller(INT32 type, fixed_t dx, fixed_t dy, INT32 control, INT3
 		s->last_height = sectors[control].floorheight + sectors[control].ceilingheight;
 	s->affectee = affectee;
 	P_AddThinker(THINK_MAIN, &s->thinker);
+
+	// interpolation
+	switch (type)
+	{
+		case sc_side:
+			R_CreateInterpolator_SideScroll(&s->thinker, &sides[affectee]);
+			break;
+		case sc_floor:
+			R_CreateInterpolator_SectorScroll(&s->thinker, &sectors[affectee], false);
+			break;
+		case sc_ceiling:
+			R_CreateInterpolator_SectorScroll(&s->thinker, &sectors[affectee], true);
+			break;
+		default:
+			break;
+	}
 }
 
 /** Initializes the scrollers.
@@ -8338,13 +8420,13 @@ static pusher_t *tmpusher; // pusher structure for blockmap searches
   *       ::tmpusher won't need to be used.
   * \sa T_Pusher
   */
-static inline boolean PIT_PushThing(mobj_t *thing)
+static inline BlockItReturn_t PIT_PushThing(mobj_t *thing)
 {
 	if (thing->eflags & MFE_PUSHED)
-		return false;
+		return BMIT_ABORT;
 
 	if (!tmpusher->source)
-		return false;
+		return BMIT_ABORT;
 
 	// Allow this to affect pushable objects at some point?
 	if (thing->player && !(thing->flags & (MF_NOGRAVITY | MF_NOCLIP)))
@@ -8364,7 +8446,7 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 		{
 			// Make sure the Z is in range
 			if (thing->z < sz - tmpusher->radius || thing->z > sz + tmpusher->radius)
-				return false;
+				return BMIT_ABORT;
 
 			dist = P_AproxDistance(P_AproxDistance(thing->x - sx, thing->y - sy),
 				thing->z - sz);
@@ -8430,7 +8512,7 @@ static inline boolean PIT_PushThing(mobj_t *thing)
 	if (tmpusher->exclusive)
 		thing->eflags |= MFE_PUSHED;
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /** Applies a pusher to all affected objects.

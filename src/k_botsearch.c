@@ -27,6 +27,7 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "p_slopes.h" // P_GetZAt
+#include "m_perfstats.h"
 
 struct globalsmuggle
 {
@@ -51,7 +52,7 @@ struct globalsmuggle
 } globalsmuggle;
 
 /*--------------------------------------------------
-	static boolean K_FindEggboxes(mobj_t *thing)
+	static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 
 		Blockmap search function.
 		Increments the random items and egg boxes counters.
@@ -60,27 +61,27 @@ struct globalsmuggle
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindEggboxes(mobj_t *thing)
+static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 {
 	fixed_t dist;
 
 	if (thing->type != MT_RANDOMITEM && thing->type != MT_EGGMANITEM)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!thing->health)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	dist = P_AproxDistance(thing->x - globalsmuggle.eggboxx, thing->y - globalsmuggle.eggboxy);
 
 	if (dist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_RANDOMITEM)
@@ -92,7 +93,7 @@ static boolean K_FindEggboxes(mobj_t *thing)
 		globalsmuggle.eggboxes++;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -172,26 +173,24 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
-	INT32 specialflag = 0;
 	fixed_t highestfloor = INT32_MAX;
 	sector_t *bestsector = NULL;
 	ffloor_t *rover;
 
+	// TODO: Properly support SF_FLIPSPECIAL_FLOOR / SF_FLIPSPECIAL_CEILING.
+	// An earlier attempt at it caused lots of false positives and other weird
+	// quirks with intangible FOFs.
+
 	if (flip == true)
 	{
-		specialflag = SF_FLIPSPECIAL_CEILING;
 		highestfloor = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight);
 	}
 	else
 	{
-		specialflag = SF_FLIPSPECIAL_FLOOR;
 		highestfloor = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 	}
 
-	if (sec->flags & specialflag)
-	{
-		bestsector = sec;
-	}
+	bestsector = sec;
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
@@ -209,15 +208,13 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		if (!(rover->flags & FF_BLOCKPLAYER))
 		{
 			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
-			&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
+				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
 			{
 				// Bad intangible sector at our height, so we DEFINITELY want to avoid
 				return true;
 			}
-		}
 
-		if ((rover->flags & FF_BLOCKPLAYER) && !(rover->master->frontsector->flags & specialflag))
-		{
+			// Ignore them, we want the one below it.
 			continue;
 		}
 
@@ -225,7 +222,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		if (flip == true)
 		{
 			if (bottom < highestfloor
-			&& bottom >= player->mo->z + player->mo->height)
+				&& bottom >= player->mo->z + player->mo->height)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = bottom;
@@ -234,7 +231,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		else
 		{
 			if (top > highestfloor
-			&& top <= player->mo->z)
+				&& top <= player->mo->z)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = top;
@@ -347,7 +344,7 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 }
 
 /*--------------------------------------------------
-	static boolean K_FindObjectsForNudging(mobj_t *thing)
+	static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 		Blockmap search function.
 		Finds objects around the bot to steer towards/away from.
@@ -356,9 +353,9 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindObjectsForNudging(mobj_t *thing)
+static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
 	INT16 anglediff;
 	fixed_t fulldist;
@@ -367,29 +364,29 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing->health <= 0)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (globalsmuggle.botmo == thing)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	predictangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.predict->x, globalsmuggle.predict->y);
@@ -427,6 +424,16 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
 			K_AddDodgeObject(thing, side, 20);
+			break;
+		case MT_SHRINK_GUN:
+			if (thing->target == globalsmuggle.botmo)
+			{
+				K_AddAttackObject(thing, side, 20);
+			}
+			else
+			{
+				K_AddDodgeObject(thing, side, 20);
+			}
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff >= 45)
@@ -481,7 +488,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			if ((RINGTOTAL(globalsmuggle.botmo->player) < 20 && !(globalsmuggle.botmo->player->pflags & PF_RINGLOCK)
 				&& P_CanPickupItem(globalsmuggle.botmo->player, 0))
 				&& !thing->extravalue1
-				&& (globalsmuggle.botmo->player->itemtype != KITEM_THUNDERSHIELD))
+				&& (globalsmuggle.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
 			{
 				K_AddAttackObject(thing, side, (RINGTOTAL(globalsmuggle.botmo->player) < 3) ? 5 : 1);
 			}
@@ -508,10 +515,10 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				{
 					break;
 				}
-				// Thunder Shield
+				// Lightning Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->itemtype == KITEM_THUNDERSHIELD,
-					thing->player->itemtype == KITEM_THUNDERSHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_LIGHTNINGSHIELD,
+					thing->player->itemtype == KITEM_LIGHTNINGSHIELD
 				))
 				{
 					break;
@@ -607,7 +614,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			break;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -617,6 +624,8 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 --------------------------------------------------*/
 void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
+	const precise_t time = I_GetPreciseTime();
+
 	INT32 xl, xh, yl, yh, bx, by;
 
 	fixed_t distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
@@ -731,7 +740,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	// Check if our side is invalid, if so, don't do the code below.
 	if (gotoSide != -1 && globalsmuggle.gotoObjs[gotoSide] == 0)
 	{
-		// Do not use a side 
+		// Do not use a side
 		gotoSide = -1;
 	}
 
@@ -773,10 +782,12 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 	}
+
+	ps_bots[player - players].nudge += I_GetPreciseTime() - time;
 }
 
 /*--------------------------------------------------
-	static boolean K_FindPlayersToBully(mobj_t *thing)
+	static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 
 		Blockmap search function.
 		Finds players around the bot to bump.
@@ -785,9 +796,9 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindPlayersToBully(mobj_t *thing)
+static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
 {
 	INT16 anglediff;
 	fixed_t fulldist;
@@ -796,34 +807,34 @@ static boolean K_FindPlayersToBully(mobj_t *thing)
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing->health <= 0)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!thing->player)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (globalsmuggle.botmo == thing)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	ourangle = globalsmuggle.botmo->angle;
@@ -860,7 +871,7 @@ static boolean K_FindPlayersToBully(mobj_t *thing)
 		globalsmuggle.annoymo = thing;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------

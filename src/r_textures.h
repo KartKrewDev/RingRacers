@@ -23,6 +23,8 @@
 #pragma interface
 #endif
 
+#define MISSING_TEXTURE "AASMELLY" // Replacement for invalid textures
+
 // A single patch from a texture definition,
 //  basically a rectangular area within
 //  the texture rectangle.
@@ -77,6 +79,7 @@ extern UINT8 **texturecache; // graphics data for each generated full-size textu
 
 // Load TEXTURES definitions, create lookup tables
 void R_LoadTextures(void);
+void R_LoadTexturesPwad(UINT16 wadnum);
 void R_FlushTextureCache(void);
 
 // Texture generation
@@ -94,6 +97,8 @@ void *R_GetFlat(lumpnum_t flatnum);
 
 boolean R_CheckPowersOfTwo(void);
 void R_CheckFlatLength(size_t size);
+
+void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);
 
 // Returns the texture number for the texture name.
 INT32 R_TextureNumForName(const char *name);

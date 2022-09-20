@@ -13,7 +13,7 @@
 #include "g_game.h"
 #include "s_sound.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_local.h"
 #include "st_stuff.h"
@@ -184,6 +184,27 @@ static inline int lib_freeslot(lua_State *L)
 					lastcustomtol <<= 1;
 					r++;
 				}
+			}
+		}
+		else if (fastcmp(type, "PRECIP"))
+		{
+			// Search if we already have a PRECIP by that name...
+			preciptype_t i;
+			for (i = PRECIP_FIRSTFREESLOT; i < precip_freeslot; i++)
+				if (fastcmp(word, precipprops[i].name))
+					break;
+
+			// We don't, so allocate a new one.
+			if (i >= precip_freeslot) {
+				if (precip_freeslot < MAXPRECIP)
+				{
+					CONS_Printf("Weather PRECIP_%s allocated.\n",word);
+					precipprops[i].name = Z_StrDup(word);
+					lua_pushinteger(L, precip_freeslot);
+					r++;
+					precip_freeslot++;
+				} else
+					CONS_Alert(CONS_WARNING, "Ran out of free PRECIP slots!\n");
 			}
 		}
 		Z_Free(s);
@@ -436,16 +457,6 @@ static inline int lib_getenum(lua_State *L)
 			}
 		return luaL_error(L, "karthud '%s' could not be found.\n", word);
 	}
-	else if (fastncmp("HUD_",word,4)) {
-		p = word+4;
-		for (i = 0; i < NUMHUDITEMS; i++)
-			if (fastcmp(p, HUDITEMS_LIST[i])) {
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "huditem '%s' could not be found.\n", word);
-		return 0;
-	}
 	else if (fastncmp("SKINCOLOR_",word,10)) {
 		p = word+10;
 		for (i = 0; i < NUMCOLORFREESLOTS; i++) {
@@ -475,15 +486,20 @@ static inline int lib_getenum(lua_State *L)
 		if (mathlib) return luaL_error(L, "NiGHTS grade '%s' could not be found.\n", word);
 		return 0;
 	}
-	else if (fastncmp("MN_",word,3)) {
-		p = word+3;
-		for (i = 0; i < NUMMENUTYPES; i++)
-			if (fastcmp(p, MENUTYPES_LIST[i])) {
-				lua_pushinteger(L, i);
+	else if (fastncmp("PRECIP_",word,7)) {
+		p = word+7;
+		for (i = 0; i < MAXPRECIP; i++)
+		{
+			if (precipprops[i].name == NULL)
+				break;
+
+			if (fastcmp(p, precipprops[i].name))
+			{
+				lua_pushinteger(L, PRECIP_NONE + i);
 				return 1;
 			}
-		if (mathlib) return luaL_error(L, "menutype '%s' could not be found.\n", word);
-		return 0;
+		}
+		return luaL_error(L, "weather type '%s' does not exist.\n", word);
 	}
 	else if (!mathlib && fastncmp("A_",word,2)) {
 		char *caps;

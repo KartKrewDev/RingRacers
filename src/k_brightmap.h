@@ -23,9 +23,20 @@ typedef struct brightmapStorage_s
 	// Stores data for brightmap definitions,
 	// before putting them into texturebrightmaps.
 
-	char textureName[9]; // The texture's name.
-	char brightmapName[9]; // The brightmap's name.
+	char textureName[8];	// The texture's name.
+	UINT32 textureHash;		// The texture name's hash.
+
+	char brightmapName[8];	// The brightmap's name.
+	UINT32 brightmapHash;	// The brightmap name's hash.
 } brightmapStorage_t;
+
+/*--------------------------------------------------
+	void K_InitBrightmapsPwad(INT32 wadNum);
+
+		Finds all BRIGHT lumps for one WAD/PK3 and processes them.
+--------------------------------------------------*/
+
+void K_InitBrightmapsPwad(INT32 wadNum);
 
 /*--------------------------------------------------
 	void K_InitBrightmaps(void);

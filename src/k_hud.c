@@ -126,7 +126,7 @@ static patch_t *kp_ballhog[2];
 static patch_t *kp_selfpropelledbomb[2];
 static patch_t *kp_grow[2];
 static patch_t *kp_shrink[2];
-static patch_t *kp_thundershield[2];
+static patch_t *kp_lightningshield[2];
 static patch_t *kp_bubbleshield[2];
 static patch_t *kp_flameshield[2];
 static patch_t *kp_hyudoro[2];
@@ -179,24 +179,24 @@ void K_LoadKartHUDGraphics(void)
 	char buffer[9];
 
 	// Null Stuff
-	kp_nodraw = 				W_CachePatchName("K_TRNULL", PU_HUDGFX);
+	HU_UpdatePatch(&kp_nodraw, "K_TRNULL");
 
 	// Stickers
-	kp_timesticker = 			W_CachePatchName("K_STTIME", PU_HUDGFX);
-	kp_timestickerwide = 		W_CachePatchName("K_STTIMW", PU_HUDGFX);
-	kp_lapsticker = 			W_CachePatchName("K_STLAPS", PU_HUDGFX);
-	kp_lapstickerwide = 		W_CachePatchName("K_STLAPW", PU_HUDGFX);
-	kp_lapstickernarrow = 		W_CachePatchName("K_STLAPN", PU_HUDGFX);
-	kp_splitlapflag = 			W_CachePatchName("K_SPTLAP", PU_HUDGFX);
-	kp_bumpersticker = 			W_CachePatchName("K_STBALN", PU_HUDGFX);
-	kp_bumperstickerwide = 		W_CachePatchName("K_STBALW", PU_HUDGFX);
-	kp_capsulesticker = 		W_CachePatchName("K_STCAPN", PU_HUDGFX);
-	kp_capsulestickerwide = 	W_CachePatchName("K_STCAPW", PU_HUDGFX);
-	kp_karmasticker = 			W_CachePatchName("K_STKARM", PU_HUDGFX);
-	kp_spheresticker = 			W_CachePatchName("K_STBSMT", PU_HUDGFX);
-	kp_splitspheresticker =		W_CachePatchName("K_SPBSMT", PU_HUDGFX);
-	kp_splitkarmabomb = 		W_CachePatchName("K_SPTKRM", PU_HUDGFX);
-	kp_timeoutsticker = 		W_CachePatchName("K_STTOUT", PU_HUDGFX);
+	HU_UpdatePatch(&kp_timesticker, "K_STTIME");
+	HU_UpdatePatch(&kp_timestickerwide, "K_STTIMW");
+	HU_UpdatePatch(&kp_lapsticker, "K_STLAPS");
+	HU_UpdatePatch(&kp_lapstickerwide, "K_STLAPW");
+	HU_UpdatePatch(&kp_lapstickernarrow, "K_STLAPN");
+	HU_UpdatePatch(&kp_splitlapflag, "K_SPTLAP");
+	HU_UpdatePatch(&kp_bumpersticker, "K_STBALN");
+	HU_UpdatePatch(&kp_bumperstickerwide, "K_STBALW");
+	HU_UpdatePatch(&kp_capsulesticker, "K_STCAPN");
+	HU_UpdatePatch(&kp_capsulestickerwide, "K_STCAPW");
+	HU_UpdatePatch(&kp_karmasticker, "K_STKARM");
+	HU_UpdatePatch(&kp_spheresticker, "K_STBSMT");
+	HU_UpdatePatch(&kp_splitspheresticker, "K_SPBSMT");
+	HU_UpdatePatch(&kp_splitkarmabomb, "K_SPTKRM");
+	HU_UpdatePatch(&kp_timeoutsticker, "K_STTOUT");
 
 	// Pre-start countdown bulbs
 	sprintf(buffer, "K_BULBxx");
@@ -204,7 +204,7 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_prestartbulb[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_prestartbulb[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_SBLBxx");
@@ -212,68 +212,68 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_prestartbulb_split[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_prestartbulb_split[i], "%s", buffer);
 	}
 
 	// Pre-start position letters
-	kp_prestartletters[0] =		W_CachePatchName("K_PL_P", PU_HUDGFX);
-	kp_prestartletters[1] =		W_CachePatchName("K_PL_O", PU_HUDGFX);
-	kp_prestartletters[2] =		W_CachePatchName("K_PL_S", PU_HUDGFX);
-	kp_prestartletters[3] =		W_CachePatchName("K_PL_I", PU_HUDGFX);
-	kp_prestartletters[4] =		W_CachePatchName("K_PL_T", PU_HUDGFX);
-	kp_prestartletters[5] =		W_CachePatchName("K_PL_N", PU_HUDGFX);
-	kp_prestartletters[6] =		W_CachePatchName("K_PL_EX", PU_HUDGFX);
+	HU_UpdatePatch(&kp_prestartletters[0], "K_PL_P");
+	HU_UpdatePatch(&kp_prestartletters[1], "K_PL_O");
+	HU_UpdatePatch(&kp_prestartletters[2], "K_PL_S");
+	HU_UpdatePatch(&kp_prestartletters[3], "K_PL_I");
+	HU_UpdatePatch(&kp_prestartletters[4], "K_PL_T");
+	HU_UpdatePatch(&kp_prestartletters[5], "K_PL_N");
+	HU_UpdatePatch(&kp_prestartletters[6], "K_PL_EX");
 
-	kp_prestartletters_split[0] =		W_CachePatchName("K_SPL_P", PU_HUDGFX);
-	kp_prestartletters_split[1] =		W_CachePatchName("K_SPL_O", PU_HUDGFX);
-	kp_prestartletters_split[2] =		W_CachePatchName("K_SPL_S", PU_HUDGFX);
-	kp_prestartletters_split[3] =		W_CachePatchName("K_SPL_I", PU_HUDGFX);
-	kp_prestartletters_split[4] =		W_CachePatchName("K_SPL_T", PU_HUDGFX);
-	kp_prestartletters_split[5] =		W_CachePatchName("K_SPL_N", PU_HUDGFX);
-	kp_prestartletters_split[6] =		W_CachePatchName("K_SPL_EX", PU_HUDGFX);
+	HU_UpdatePatch(&kp_prestartletters_split[0], "K_SPL_P");
+	HU_UpdatePatch(&kp_prestartletters_split[1], "K_SPL_O");
+	HU_UpdatePatch(&kp_prestartletters_split[2], "K_SPL_S");
+	HU_UpdatePatch(&kp_prestartletters_split[3], "K_SPL_I");
+	HU_UpdatePatch(&kp_prestartletters_split[4], "K_SPL_T");
+	HU_UpdatePatch(&kp_prestartletters_split[5], "K_SPL_N");
+	HU_UpdatePatch(&kp_prestartletters_split[6], "K_SPL_EX");
 
 	// Starting countdown
-	kp_startcountdown[0] = 		W_CachePatchName("K_CNT3A", PU_HUDGFX);
-	kp_startcountdown[1] = 		W_CachePatchName("K_CNT2A", PU_HUDGFX);
-	kp_startcountdown[2] = 		W_CachePatchName("K_CNT1A", PU_HUDGFX);
-	kp_startcountdown[3] = 		W_CachePatchName("K_CNTGOA", PU_HUDGFX);
-	kp_startcountdown[4] = 		W_CachePatchName("K_DUEL1", PU_HUDGFX);
-	kp_startcountdown[5] = 		W_CachePatchName("K_CNT3B", PU_HUDGFX);
-	kp_startcountdown[6] = 		W_CachePatchName("K_CNT2B", PU_HUDGFX);
-	kp_startcountdown[7] = 		W_CachePatchName("K_CNT1B", PU_HUDGFX);
-	kp_startcountdown[8] = 		W_CachePatchName("K_CNTGOB", PU_HUDGFX);
-	kp_startcountdown[9] = 		W_CachePatchName("K_DUEL2", PU_HUDGFX);
+	HU_UpdatePatch(&kp_startcountdown[0], "K_CNT3A");
+	HU_UpdatePatch(&kp_startcountdown[1], "K_CNT2A");
+	HU_UpdatePatch(&kp_startcountdown[2], "K_CNT1A");
+	HU_UpdatePatch(&kp_startcountdown[3], "K_CNTGOA");
+	HU_UpdatePatch(&kp_startcountdown[4], "K_DUEL1");
+	HU_UpdatePatch(&kp_startcountdown[5], "K_CNT3B");
+	HU_UpdatePatch(&kp_startcountdown[6], "K_CNT2B");
+	HU_UpdatePatch(&kp_startcountdown[7], "K_CNT1B");
+	HU_UpdatePatch(&kp_startcountdown[8], "K_CNTGOB");
+	HU_UpdatePatch(&kp_startcountdown[9], "K_DUEL2");
 	// Splitscreen
-	kp_startcountdown[10] = 	W_CachePatchName("K_SMC3A", PU_HUDGFX);
-	kp_startcountdown[11] = 	W_CachePatchName("K_SMC2A", PU_HUDGFX);
-	kp_startcountdown[12] = 	W_CachePatchName("K_SMC1A", PU_HUDGFX);
-	kp_startcountdown[13] = 	W_CachePatchName("K_SMCGOA", PU_HUDGFX);
-	kp_startcountdown[14] = 	W_CachePatchName("K_SDUEL1", PU_HUDGFX);
-	kp_startcountdown[15] = 	W_CachePatchName("K_SMC3B", PU_HUDGFX);
-	kp_startcountdown[16] = 	W_CachePatchName("K_SMC2B", PU_HUDGFX);
-	kp_startcountdown[17] = 	W_CachePatchName("K_SMC1B", PU_HUDGFX);
-	kp_startcountdown[18] = 	W_CachePatchName("K_SMCGOB", PU_HUDGFX);
-	kp_startcountdown[19] = 	W_CachePatchName("K_SDUEL2", PU_HUDGFX);
+	HU_UpdatePatch(&kp_startcountdown[10], "K_SMC3A");
+	HU_UpdatePatch(&kp_startcountdown[11], "K_SMC2A");
+	HU_UpdatePatch(&kp_startcountdown[12], "K_SMC1A");
+	HU_UpdatePatch(&kp_startcountdown[13], "K_SMCGOA");
+	HU_UpdatePatch(&kp_startcountdown[14], "K_SDUEL1");
+	HU_UpdatePatch(&kp_startcountdown[15], "K_SMC3B");
+	HU_UpdatePatch(&kp_startcountdown[16], "K_SMC2B");
+	HU_UpdatePatch(&kp_startcountdown[17], "K_SMC1B");
+	HU_UpdatePatch(&kp_startcountdown[18], "K_SMCGOB");
+	HU_UpdatePatch(&kp_startcountdown[19], "K_SDUEL2");
 
 	// Fault
-	kp_racefault[0] = 			W_CachePatchName("K_FAULTA", PU_HUDGFX);
-	kp_racefault[1] = 			W_CachePatchName("K_FAULTB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefault[0], "K_FAULTA");
+	HU_UpdatePatch(&kp_racefault[1], "K_FAULTB");
 	// Splitscreen
-	kp_racefault[2] = 			W_CachePatchName("K_SMFLTA", PU_HUDGFX);
-	kp_racefault[3] = 			W_CachePatchName("K_SMFLTB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefault[2], "K_SMFLTA");
+	HU_UpdatePatch(&kp_racefault[3], "K_SMFLTB");
 	// 2P splitscreen
-	kp_racefault[4] = 			W_CachePatchName("K_2PFLTA", PU_HUDGFX);
-	kp_racefault[5] = 			W_CachePatchName("K_2PFLTB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefault[4], "K_2PFLTA");
+	HU_UpdatePatch(&kp_racefault[5], "K_2PFLTB");
 
 	// Finish
-	kp_racefinish[0] = 			W_CachePatchName("K_FINA", PU_HUDGFX);
-	kp_racefinish[1] = 			W_CachePatchName("K_FINB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefinish[0], "K_FINA");
+	HU_UpdatePatch(&kp_racefinish[1], "K_FINB");
 	// Splitscreen
-	kp_racefinish[2] = 			W_CachePatchName("K_SMFINA", PU_HUDGFX);
-	kp_racefinish[3] = 			W_CachePatchName("K_SMFINB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefinish[2], "K_SMFINA");
+	HU_UpdatePatch(&kp_racefinish[3], "K_SMFINB");
 	// 2P splitscreen
-	kp_racefinish[4] = 			W_CachePatchName("K_2PFINA", PU_HUDGFX);
-	kp_racefinish[5] = 			W_CachePatchName("K_2PFINB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_racefinish[4], "K_2PFINA");
+	HU_UpdatePatch(&kp_racefinish[5], "K_2PFINB");
 
 	// Position numbers
 	sprintf(buffer, "K_POSNxx");
@@ -284,7 +284,7 @@ void K_LoadKartHUDGraphics(void)
 		{
 			//sprintf(buffer, "K_POSN%d%d", i, j);
 			buffer[7] = '0'+j;
-			kp_positionnum[i][j] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+			HU_UpdatePatch(&kp_positionnum[i][j], "%s", buffer);
 		}
 	}
 
@@ -292,7 +292,7 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < NUMWINFRAMES; i++)
 	{
 		buffer[7] = '0'+i;
-		kp_winnernum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_winnernum[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "OPPRNKxx");
@@ -300,129 +300,129 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+(i/10);
 		buffer[7] = '0'+(i%10);
-		kp_facenum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_facenum[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_CHILIx");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+(i+1);
-		kp_facehighlight[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_facehighlight[i], "%s", buffer);
 	}
 
-	kp_spbminimap =				W_CachePatchName("SPBMMAP", PU_HUDGFX);
+	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
 
 	// Rings & Lives
-	kp_ringsticker[0] =			W_CachePatchName("RNGBACKA", PU_HUDGFX);
-	kp_ringsticker[1] =			W_CachePatchName("RNGBACKB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
+	HU_UpdatePatch(&kp_ringsticker[1], "RNGBACKB");
 
 	sprintf(buffer, "K_RINGx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[6] = '0'+(i+1);
-		kp_ring[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_ring[i], "%s", buffer);
 	}
 
-	kp_ringdebtminus =			W_CachePatchName("RDEBTMIN", PU_HUDGFX);
+	HU_UpdatePatch(&kp_ringdebtminus, "RDEBTMIN");
 
 	sprintf(buffer, "SPBRNGxx");
 	for (i = 0; i < 16; i++)
 	{
 		buffer[6] = '0'+((i+1) / 10);
 		buffer[7] = '0'+((i+1) % 10);
-		kp_ringspblock[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_ringspblock[i], "%s", buffer);
 	}
 
-	kp_ringstickersplit[0] =	W_CachePatchName("SMRNGBGA", PU_HUDGFX);
-	kp_ringstickersplit[1] =	W_CachePatchName("SMRNGBGB", PU_HUDGFX);
+	HU_UpdatePatch(&kp_ringstickersplit[0], "SMRNGBGA");
+	HU_UpdatePatch(&kp_ringstickersplit[1], "SMRNGBGB");
 
 	sprintf(buffer, "K_SRINGx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '0'+(i+1);
-		kp_smallring[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_smallring[i], "%s", buffer);
 	}
 
-	kp_ringdebtminussmall =		W_CachePatchName("SRDEBTMN", PU_HUDGFX);
+	HU_UpdatePatch(&kp_ringdebtminussmall, "SRDEBTMN");
 
 	sprintf(buffer, "SPBRGSxx");
 	for (i = 0; i < 16; i++)
 	{
 		buffer[6] = '0'+((i+1) / 10);
 		buffer[7] = '0'+((i+1) % 10);
-		kp_ringspblocksmall[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_ringspblocksmall[i], "%s", buffer);
 	}
 
 	// Speedometer
-	kp_speedometersticker =		W_CachePatchName("K_SPDMBG", PU_HUDGFX);
+	HU_UpdatePatch(&kp_speedometersticker, "K_SPDMBG");
 
 	sprintf(buffer, "K_SPDMLx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+(i+1);
-		kp_speedometerlabel[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_speedometerlabel[i], "%s", buffer);
 	}
 
 	// Extra ranking icons
-	kp_rankbumper =				W_CachePatchName("K_BLNICO", PU_HUDGFX);
-	kp_tinybumper[0] =			W_CachePatchName("K_BLNA", PU_HUDGFX);
-	kp_tinybumper[1] =			W_CachePatchName("K_BLNB", PU_HUDGFX);
-	kp_ranknobumpers =			W_CachePatchName("K_NOBLNS", PU_HUDGFX);
-	kp_rankcapsule =			W_CachePatchName("K_CAPICO", PU_HUDGFX);
-	kp_rankemerald =			W_CachePatchName("K_EMERC", PU_HUDGFX);
-	kp_rankemeraldflash =		W_CachePatchName("K_EMERW", PU_HUDGFX);
-	kp_rankemeraldback =		W_CachePatchName("K_EMERBK", PU_HUDGFX);
+	HU_UpdatePatch(&kp_rankbumper, "K_BLNICO");
+	HU_UpdatePatch(&kp_tinybumper[0], "K_BLNA");
+	HU_UpdatePatch(&kp_tinybumper[1], "K_BLNB");
+	HU_UpdatePatch(&kp_ranknobumpers, "K_NOBLNS");
+	HU_UpdatePatch(&kp_rankcapsule, "K_CAPICO");
+	HU_UpdatePatch(&kp_rankemerald, "K_EMERC");
+	HU_UpdatePatch(&kp_rankemeraldflash, "K_EMERW");
+	HU_UpdatePatch(&kp_rankemeraldback, "K_EMERBK");
 
 	// Battle graphics
-	kp_battlewin = 				W_CachePatchName("K_BWIN", PU_HUDGFX);
-	kp_battlecool = 			W_CachePatchName("K_BCOOL", PU_HUDGFX);
-	kp_battlelose = 			W_CachePatchName("K_BLOSE", PU_HUDGFX);
-	kp_battlewait = 			W_CachePatchName("K_BWAIT", PU_HUDGFX);
-	kp_battleinfo = 			W_CachePatchName("K_BINFO", PU_HUDGFX);
-	kp_wanted = 				W_CachePatchName("K_WANTED", PU_HUDGFX);
-	kp_wantedsplit = 			W_CachePatchName("4PWANTED", PU_HUDGFX);
-	kp_wantedreticle =			W_CachePatchName("MMAPWANT", PU_HUDGFX);
+	HU_UpdatePatch(&kp_battlewin, "K_BWIN");
+	HU_UpdatePatch(&kp_battlecool, "K_BCOOL");
+	HU_UpdatePatch(&kp_battlelose, "K_BLOSE");
+	HU_UpdatePatch(&kp_battlewait, "K_BWAIT");
+	HU_UpdatePatch(&kp_battleinfo, "K_BINFO");
+	HU_UpdatePatch(&kp_wanted, "K_WANTED");
+	HU_UpdatePatch(&kp_wantedsplit, "4PWANTED");
+	HU_UpdatePatch(&kp_wantedreticle, "MMAPWANT");
 
 	// Kart Item Windows
-	kp_itembg[0] = 				W_CachePatchName("K_ITBG", PU_HUDGFX);
-	kp_itembg[1] = 				W_CachePatchName("K_ITBGD", PU_HUDGFX);
-	kp_itemtimer[0] = 			W_CachePatchName("K_ITIMER", PU_HUDGFX);
-	kp_itemmulsticker[0] = 		W_CachePatchName("K_ITMUL", PU_HUDGFX);
-	kp_itemx = 					W_CachePatchName("K_ITX", PU_HUDGFX);
+	HU_UpdatePatch(&kp_itembg[0], "K_ITBG");
+	HU_UpdatePatch(&kp_itembg[1], "K_ITBGD");
+	HU_UpdatePatch(&kp_itemtimer[0], "K_ITIMER");
+	HU_UpdatePatch(&kp_itemmulsticker[0], "K_ITMUL");
+	HU_UpdatePatch(&kp_itemx, "K_ITX");
 
-	kp_superring[0] =			W_CachePatchName("K_ITRING", PU_HUDGFX);
-	kp_sneaker[0] =				W_CachePatchName("K_ITSHOE", PU_HUDGFX);
-	kp_rocketsneaker[0] =		W_CachePatchName("K_ITRSHE", PU_HUDGFX);
+	HU_UpdatePatch(&kp_superring[0], "K_ITRING");
+	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
+	HU_UpdatePatch(&kp_rocketsneaker[0], "K_ITRSHE");
 
 	sprintf(buffer, "K_ITINVx");
 	for (i = 0; i < 7; i++)
 	{
 		buffer[7] = '1'+i;
-		kp_invincibility[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_invincibility[i], "%s", buffer);
 	}
-	kp_banana[0] =				W_CachePatchName("K_ITBANA", PU_HUDGFX);
-	kp_eggman[0] =				W_CachePatchName("K_ITEGGM", PU_HUDGFX);
+	HU_UpdatePatch(&kp_banana[0], "K_ITBANA");
+	HU_UpdatePatch(&kp_eggman[0], "K_ITEGGM");
 	sprintf(buffer, "K_ITORBx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '1'+i;
-		kp_orbinaut[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_orbinaut[i], "%s", buffer);
 	}
-	kp_jawz[0] =				W_CachePatchName("K_ITJAWZ", PU_HUDGFX);
-	kp_mine[0] =				W_CachePatchName("K_ITMINE", PU_HUDGFX);
-	kp_landmine[0] =			W_CachePatchName("K_ITLNDM", PU_HUDGFX);
-	kp_droptarget[0] =			W_CachePatchName("K_ITDTRG", PU_HUDGFX);
-	kp_ballhog[0] =				W_CachePatchName("K_ITBHOG", PU_HUDGFX);
-	kp_selfpropelledbomb[0] =	W_CachePatchName("K_ITSPB", PU_HUDGFX);
-	kp_grow[0] =				W_CachePatchName("K_ITGROW", PU_HUDGFX);
-	kp_shrink[0] =				W_CachePatchName("K_ITSHRK", PU_HUDGFX);
-	kp_thundershield[0] =		W_CachePatchName("K_ITTHNS", PU_HUDGFX);
-	kp_bubbleshield[0] =		W_CachePatchName("K_ITBUBS", PU_HUDGFX);
-	kp_flameshield[0] =			W_CachePatchName("K_ITFLMS", PU_HUDGFX);
-	kp_hyudoro[0] = 			W_CachePatchName("K_ITHYUD", PU_HUDGFX);
-	kp_pogospring[0] = 			W_CachePatchName("K_ITPOGO", PU_HUDGFX);
-	kp_kitchensink[0] = 		W_CachePatchName("K_ITSINK", PU_HUDGFX);
-	kp_sadface[0] = 			W_CachePatchName("K_ITSAD", PU_HUDGFX);
+	HU_UpdatePatch(&kp_jawz[0], "K_ITJAWZ");
+	HU_UpdatePatch(&kp_mine[0], "K_ITMINE");
+	HU_UpdatePatch(&kp_landmine[0], "K_ITLNDM");
+	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
+	HU_UpdatePatch(&kp_ballhog[0], "K_ITBHOG");
+	HU_UpdatePatch(&kp_selfpropelledbomb[0], "K_ITSPB");
+	HU_UpdatePatch(&kp_grow[0], "K_ITGROW");
+	HU_UpdatePatch(&kp_shrink[0], "K_ITSHRK");
+	HU_UpdatePatch(&kp_lightningshield[0], "K_ITTHNS");
+	HU_UpdatePatch(&kp_bubbleshield[0], "K_ITBUBS");
+	HU_UpdatePatch(&kp_flameshield[0], "K_ITFLMS");
+	HU_UpdatePatch(&kp_hyudoro[0], "K_ITHYUD");
+	HU_UpdatePatch(&kp_pogospring[0], "K_ITPOGO");
+	HU_UpdatePatch(&kp_kitchensink[0], "K_ITSINK");
+	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -430,7 +430,7 @@ void K_LoadKartHUDGraphics(void)
 		buffer[5] = '0'+((i+1)/100);
 		buffer[6] = '0'+(((i+1)/10)%10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_flameshieldmeter[i][0] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_flameshieldmeter[i][0], "%s", buffer);
 	}
 
 	sprintf(buffer, "FSMBG0xx");
@@ -438,42 +438,42 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_flameshieldmeter_bg[i][0] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][0], "%s", buffer);
 	}
 
 	// Splitscreen
-	kp_itembg[2] = 				W_CachePatchName("K_ISBG", PU_HUDGFX);
-	kp_itembg[3] = 				W_CachePatchName("K_ISBGD", PU_HUDGFX);
-	kp_itemtimer[1] = 			W_CachePatchName("K_ISIMER", PU_HUDGFX);
-	kp_itemmulsticker[1] = 		W_CachePatchName("K_ISMUL", PU_HUDGFX);
+	HU_UpdatePatch(&kp_itembg[2], "K_ISBG");
+	HU_UpdatePatch(&kp_itembg[3], "K_ISBGD");
+	HU_UpdatePatch(&kp_itemtimer[1], "K_ISIMER");
+	HU_UpdatePatch(&kp_itemmulsticker[1], "K_ISMUL");
 
-	kp_superring[1] =			W_CachePatchName("K_ISRING", PU_HUDGFX);
-	kp_sneaker[1] =				W_CachePatchName("K_ISSHOE", PU_HUDGFX);
-	kp_rocketsneaker[1] =		W_CachePatchName("K_ISRSHE", PU_HUDGFX);
+	HU_UpdatePatch(&kp_superring[1], "K_ISRING");
+	HU_UpdatePatch(&kp_sneaker[1], "K_ISSHOE");
+	HU_UpdatePatch(&kp_rocketsneaker[1], "K_ISRSHE");
 	sprintf(buffer, "K_ISINVx");
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
-		kp_invincibility[i+7] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_invincibility[i+7], "%s", buffer);
 	}
-	kp_banana[1] =				W_CachePatchName("K_ISBANA", PU_HUDGFX);
-	kp_eggman[1] =				W_CachePatchName("K_ISEGGM", PU_HUDGFX);
-	kp_orbinaut[4] =			W_CachePatchName("K_ISORBN", PU_HUDGFX);
-	kp_jawz[1] =				W_CachePatchName("K_ISJAWZ", PU_HUDGFX);
-	kp_mine[1] =				W_CachePatchName("K_ISMINE", PU_HUDGFX);
-	kp_landmine[1] =			W_CachePatchName("K_ISLNDM", PU_HUDGFX);
-	kp_droptarget[1] =			W_CachePatchName("K_ISDTRG", PU_HUDGFX);
-	kp_ballhog[1] =				W_CachePatchName("K_ISBHOG", PU_HUDGFX);
-	kp_selfpropelledbomb[1] =	W_CachePatchName("K_ISSPB", PU_HUDGFX);
-	kp_grow[1] =				W_CachePatchName("K_ISGROW", PU_HUDGFX);
-	kp_shrink[1] =				W_CachePatchName("K_ISSHRK", PU_HUDGFX);
-	kp_thundershield[1] =		W_CachePatchName("K_ISTHNS", PU_HUDGFX);
-	kp_bubbleshield[1] =		W_CachePatchName("K_ISBUBS", PU_HUDGFX);
-	kp_flameshield[1] =			W_CachePatchName("K_ISFLMS", PU_HUDGFX);
-	kp_hyudoro[1] = 			W_CachePatchName("K_ISHYUD", PU_HUDGFX);
-	kp_pogospring[1] = 			W_CachePatchName("K_ISPOGO", PU_HUDGFX);
-	kp_kitchensink[1] = 		W_CachePatchName("K_ISSINK", PU_HUDGFX);
-	kp_sadface[1] = 			W_CachePatchName("K_ISSAD", PU_HUDGFX);
+	HU_UpdatePatch(&kp_banana[1], "K_ISBANA");
+	HU_UpdatePatch(&kp_eggman[1], "K_ISEGGM");
+	HU_UpdatePatch(&kp_orbinaut[4], "K_ISORBN");
+	HU_UpdatePatch(&kp_jawz[1], "K_ISJAWZ");
+	HU_UpdatePatch(&kp_mine[1], "K_ISMINE");
+	HU_UpdatePatch(&kp_landmine[1], "K_ISLNDM");
+	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
+	HU_UpdatePatch(&kp_ballhog[1], "K_ISBHOG");
+	HU_UpdatePatch(&kp_selfpropelledbomb[1], "K_ISSPB");
+	HU_UpdatePatch(&kp_grow[1], "K_ISGROW");
+	HU_UpdatePatch(&kp_shrink[1], "K_ISSHRK");
+	HU_UpdatePatch(&kp_lightningshield[1], "K_ISTHNS");
+	HU_UpdatePatch(&kp_bubbleshield[1], "K_ISBUBS");
+	HU_UpdatePatch(&kp_flameshield[1], "K_ISFLMS");
+	HU_UpdatePatch(&kp_hyudoro[1], "K_ISHYUD");
+	HU_UpdatePatch(&kp_pogospring[1], "K_ISPOGO");
+	HU_UpdatePatch(&kp_kitchensink[1], "K_ISSINK");
+	HU_UpdatePatch(&kp_sadface[1], "K_ISSAD");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -481,7 +481,7 @@ void K_LoadKartHUDGraphics(void)
 		buffer[5] = '0'+((i+1)/100);
 		buffer[6] = '0'+(((i+1)/10)%10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_flameshieldmeter[i][1] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_flameshieldmeter[i][1], "%s", buffer);
 	}
 
 	sprintf(buffer, "FSMBS0xx");
@@ -489,7 +489,7 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_flameshieldmeter_bg[i][1] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][1], "%s", buffer);
 	}
 
 	// CHECK indicators
@@ -497,7 +497,7 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < 6; i++)
 	{
 		buffer[7] = '1'+i;
-		kp_check[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_check[i], "%s", buffer);
 	}
 
 	// Rival indicators
@@ -505,7 +505,7 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '1'+i;
-		kp_rival[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_rival[i], "%s", buffer);
 	}
 
 	// Rival indicators
@@ -516,33 +516,33 @@ void K_LoadKartHUDGraphics(void)
 		for (j = 0; j < 2; j++)
 		{
 			buffer[7] = '1'+j;
-			kp_localtag[i][j] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+			HU_UpdatePatch(&kp_localtag[i][j], "%s", buffer);
 		}
 	}
 
 	// Typing indicator
-	kp_talk = W_CachePatchName("K_TALK", PU_HUDGFX);
-	kp_typdot = W_CachePatchName("K_TYPDOT", PU_HUDGFX);
+	HU_UpdatePatch(&kp_talk, "K_TALK");
+	HU_UpdatePatch(&kp_typdot, "K_TYPDOT");
 
 	// Eggman warning numbers
 	sprintf(buffer, "K_EGGNx");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[6] = '0'+i;
-		kp_eggnum[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_eggnum[i], "%s", buffer);
 	}
 
 	// First person mode
-	kp_fpview[0] = 				W_CachePatchName("VIEWA0", PU_HUDGFX);
-	kp_fpview[1] =				W_CachePatchName("VIEWB0D0", PU_HUDGFX);
-	kp_fpview[2] = 				W_CachePatchName("VIEWC0E0", PU_HUDGFX);
+	HU_UpdatePatch(&kp_fpview[0], "VIEWA0");
+	HU_UpdatePatch(&kp_fpview[1], "VIEWB0D0");
+	HU_UpdatePatch(&kp_fpview[2], "VIEWC0E0");
 
 	// Input UI Wheel
 	sprintf(buffer, "K_WHEELx");
 	for (i = 0; i < 5; i++)
 	{
 		buffer[7] = '0'+i;
-		kp_inputwheel[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_inputwheel[i], "%s", buffer);
 	}
 
 	// HERE COMES A NEW CHALLENGER
@@ -551,7 +551,7 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_challenger[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_challenger[i], "%s", buffer);
 	}
 
 	// Lap start animation
@@ -559,7 +559,7 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < 7; i++)
 	{
 		buffer[6] = '0'+(i+1);
-		kp_lapanim_lap[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_lapanim_lap[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_LAPFxx");
@@ -567,7 +567,7 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[6] = '0'+((i+1)/10);
 		buffer[7] = '0'+((i+1)%10);
-		kp_lapanim_final[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_lapanim_final[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_LAPNxx");
@@ -577,7 +577,7 @@ void K_LoadKartHUDGraphics(void)
 		for (j = 0; j < 3; j++)
 		{
 			buffer[7] = '0'+(j+1);
-			kp_lapanim_number[i][j] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+			HU_UpdatePatch(&kp_lapanim_number[i][j], "%s", buffer);
 		}
 	}
 
@@ -585,53 +585,53 @@ void K_LoadKartHUDGraphics(void)
 	for (i = 0; i < 2; i++)
 	{
 		buffer[7] = '0'+(i+1);
-		kp_lapanim_emblem[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_lapanim_emblem[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_LAPH0x");
 	for (i = 0; i < 3; i++)
 	{
 		buffer[7] = '0'+(i+1);
-		kp_lapanim_hand[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_lapanim_hand[i], "%s", buffer);
 	}
 
-	kp_yougotem = (patch_t *) W_CachePatchName("YOUGOTEM", PU_HUDGFX);
-	kp_itemminimap = (patch_t *) W_CachePatchName("MMAPITEM", PU_HUDGFX);
+	HU_UpdatePatch(&kp_yougotem, "YOUGOTEM");
+	HU_UpdatePatch(&kp_itemminimap, "MMAPITEM");
 
 	sprintf(buffer, "ALAGLESx");
 	for (i = 0; i < 10; ++i)
 	{
 		buffer[7] = '0'+i;
-		kp_alagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_alagles[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "BLAGLESx");
 	for (i = 0; i < 6; ++i)
 	{
 		buffer[7] = '0'+i;
-		kp_blagles[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_blagles[i], "%s", buffer);
 	}
 
-	kp_cpu = (patch_t *) W_CachePatchName("K_CPU", PU_HUDGFX);
+	HU_UpdatePatch(&kp_cpu, "K_CPU");
 
-	kp_nametagstem = (patch_t *) W_CachePatchName("K_NAMEST", PU_HUDGFX);
+	HU_UpdatePatch(&kp_nametagstem, "K_NAMEST");
+
+	HU_UpdatePatch(&kp_trickcool[0], "K_COOL1");
+	HU_UpdatePatch(&kp_trickcool[1], "K_COOL2");
 
 	sprintf(buffer, "K_BOSB0x");
 	for (i = 0; i < 8; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
-		kp_bossbar[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_bossbar[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "K_BOSR0x");
 	for (i = 0; i < 4; i++)
 	{
 		buffer[7] = '0'+((i+1)%10);
-		kp_bossret[i] = (patch_t *) W_CachePatchName(buffer, PU_HUDGFX);
+		HU_UpdatePatch(&kp_bossret[i], "%s", buffer);
 	}
-
-	kp_trickcool[0] = W_CachePatchName("K_COOL1", PU_HUDGFX);
-	kp_trickcool[1] = W_CachePatchName("K_COOL2", PU_HUDGFX);
 }
 
 // For the item toggle menu
@@ -662,6 +662,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISMINE" : "K_ITMINE");
 		case KITEM_LANDMINE:
 			return (tiny ? "K_ISLNDM" : "K_ITLNDM");
+		case KITEM_DROPTARGET:
+			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
 		case KITEM_BALLHOG:
 			return (tiny ? "K_ISBHOG" : "K_ITBHOG");
 		case KITEM_SPB:
@@ -670,7 +672,7 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISGROW" : "K_ITGROW");
 		case KITEM_SHRINK:
 			return (tiny ? "K_ISSHRK" : "K_ITSHRK");
-		case KITEM_THUNDERSHIELD:
+		case KITEM_LIGHTNINGSHIELD:
 			return (tiny ? "K_ISTHNS" : "K_ITTHNS");
 		case KITEM_BUBBLESHIELD:
 			return (tiny ? "K_ISBUBS" : "K_ITBUBS");
@@ -825,16 +827,11 @@ void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 }
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
-// TODO: This should probably support view rolling if we're adding that soon...
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNum, angle_t angleOffset)
+void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
 
-	camera_t *cam;
-	player_t *player;
-
-	fixed_t viewpointX, viewpointY, viewpointZ;
 	angle_t viewpointAngle, viewpointAiming, viewpointRoll;
 
 	INT32 screenWidth, screenHeight;
@@ -846,6 +843,8 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	fixed_t h;
 	INT32 da;
 
+	UINT8 cameraNum = R_GetViewNumber();
+
 	I_Assert(result != NULL);
 	I_Assert(point != NULL);
 
@@ -854,49 +853,21 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	result->scale = FRACUNIT;
 	result->onScreen = false;
 
-	if (cameraNum > r_splitscreen)
+	// Take the view's properties as necessary.
+	if (reverse)
 	{
-		// Invalid camera ID.
-		return;
-	}
-
-	cam = &camera[cameraNum];
-	player = &players[displayplayers[cameraNum]];
-
-	if (cam == NULL || player == NULL || player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-	{
-		// Shouldn't be possible?
-		return;
-	}
-
-	// TODO: parts need interp
-	if (cam->chase == true && !player->spectator)
-	{
-		// Use the camera's properties.
-		viewpointX = R_InterpolateFixed(cam->old_x, cam->x);
-		viewpointY = R_InterpolateFixed(cam->old_y, cam->y);
-		viewpointZ = R_InterpolateFixed(cam->old_z, cam->z) - point->z;
-		viewpointAngle = (INT32)R_InterpolateAngle(cam->old_angle, cam->angle);
-		viewpointAiming = (INT32)R_InterpolateAngle(cam->old_aiming, cam->aiming);
-		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
+		viewpointAngle = (INT32)(viewangle + ANGLE_180);
+		viewpointAiming = (INT32)InvAngle(aimingangle);
+		viewpointRoll = (INT32)viewroll;
 	}
 	else
 	{
-		// Use player properties.
-		viewpointX = R_InterpolateFixed(player->mo->old_x, player->mo->x);
-		viewpointY = R_InterpolateFixed(player->mo->old_y, player->mo->y);
-		viewpointZ = R_InterpolateFixed(player->mo->old_z, player->mo->z) - point->z; //player->old_viewz
-		viewpointAngle = (INT32)R_InterpolateAngle(player->mo->old_angle, player->mo->angle);
-		viewpointAiming = (INT32)player->aiming;
-		viewpointRoll = (INT32)R_InterpolateAngle(player->old_viewrollangle, player->viewrollangle);
+		viewpointAngle = (INT32)viewangle;
+		viewpointAiming = (INT32)aimingangle;
+		viewpointRoll = (INT32)InvAngle(viewroll);
 	}
 
-	viewpointAngle += (INT32)angleOffset;
-
-	(void)viewpointRoll; // will be used later...
-
 	// Calculate screen size adjustments.
-	// TODO: Anyone want to make this support non-green resolutions somehow? :V
 	screenWidth = vid.width/vid.dupx;
 	screenHeight = vid.height/vid.dupy;
 
@@ -917,7 +888,7 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 
 	// Calculate FOV adjustments.
 	fovDiff = cv_fov[cameraNum].value - baseFov;
-	fov = ((baseFov - fovDiff) / 2) - (player->fovadd / 2);
+	fov = ((baseFov - fovDiff) / 2) - (stplyr->fovadd / 2);
 	fovTangent = NEWTAN(FixedAngle(fov));
 
 	if (r_splitscreen == 1)
@@ -929,22 +900,35 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, UINT8 cameraNu
 	fg = (screenWidth >> 1) * fovTangent;
 
 	// Determine viewpoint factors.
-	h = R_PointToDist2(point->x, point->y, viewpointX, viewpointY);
-	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewpointX, viewpointY));
+	h = R_PointToDist2(point->x, point->y, viewx, viewy);
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
 
-	// Set results!
-	result->x = screenHalfW + FixedMul(NEWTAN(da), fg);
-	result->y = screenHalfH + FixedMul((NEWTAN(viewpointAiming) - FixedDiv(viewpointZ, 1 + FixedMul(NEWCOS(da), h))), fg);
+	// Set results relative to top left!
+	result->x = FixedMul(NEWTAN(da), fg);
+	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((viewz - point->z), 1 + FixedMul(NEWCOS(da), h))), fg);
+
+	// Rotate for screen roll...
+	if (viewpointRoll)
+	{
+		fixed_t tempx = result->x;
+		viewpointRoll >>= ANGLETOFINESHIFT;
+		result->x = FixedMul(FINECOSINE(viewpointRoll), tempx) - FixedMul(FINESINE(viewpointRoll), result->y);
+		result->y = FixedMul(FINESINE(viewpointRoll), tempx) + FixedMul(FINECOSINE(viewpointRoll), result->y);
+	}
+
+	// Flipped screen?
+	if (encoremode)
+	{
+		result->x = -result->x;
+	}
+
+	// Center results.
+	result->x += screenHalfW;
+	result->y += screenHalfH;
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewpointZ))) > ANGLE_45));
-
-	if (encoremode)
-	{
-		// Flipped screen
-		result->x = (screenWidth << FRACBITS) - result->x;
-	}
+	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
 
 	// Cheap dirty hacks for some split-screen related cases
 	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
@@ -1170,8 +1154,8 @@ static void K_drawKartItem(void)
 				localpatch = kp_ballhog[offset];
 				//localcolor = SKINCOLOR_LILAC;
 				break;
-			case 13: // Thunder Shield
-				localpatch = kp_thundershield[offset];
+			case 13: // Lightning Shield
+				localpatch = kp_lightningshield[offset];
 				//localcolor = SKINCOLOR_CYAN;
 				break;
 			case 14: // Super Ring
@@ -1219,6 +1203,16 @@ static void K_drawKartItem(void)
 		{
 			if (leveltime & 1)
 				localpatch = kp_eggman[offset];
+			else
+				localpatch = kp_nodraw;
+		}
+		else if (stplyr->ballhogcharge > 0)
+		{
+			itembar = stplyr->ballhogcharge;
+			maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
+
+			if (leveltime & 1)
+				localpatch = kp_ballhog[offset];
 			else
 				localpatch = kp_nodraw;
 		}
@@ -1290,8 +1284,8 @@ static void K_drawKartItem(void)
 				case KITEM_SHRINK:
 					localpatch = kp_shrink[offset];
 					break;
-				case KITEM_THUNDERSHIELD:
-					localpatch = kp_thundershield[offset];
+				case KITEM_LIGHTNINGSHIELD:
+					localpatch = kp_lightningshield[offset];
 					localbg = kp_itembg[offset+1];
 					break;
 				case KITEM_BUBBLESHIELD:
@@ -1724,7 +1718,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		{
 			localpatch = kp_winnernum[(leveltime % (NUMWINFRAMES*3)) / 3];
 		}
-		else if (stplyr->laps >= cv_numlaps.value || stplyr->exiting) // Check for the final lap, or won
+		else if (stplyr->laps >= numlaps || stplyr->exiting) // Check for the final lap, or won
 		{
 			boolean useRedNums = K_IsPlayerLosing(stplyr);
 
@@ -2355,7 +2349,7 @@ static void K_drawKartLapsAndRings(void)
 		V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_splitlapflag);
 		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 
-		if (cv_numlaps.value >= 10)
+		if (numlaps >= 10)
 		{
 			UINT8 ln[2];
 			ln[0] = ((stplyr->laps / 10) % 10);
@@ -2364,8 +2358,8 @@ static void K_drawKartLapsAndRings(void)
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
 
-			ln[0] = ((abs(cv_numlaps.value) / 10) % 10);
-			ln[1] = (abs(cv_numlaps.value) % 10);
+			ln[0] = ((numlaps / 10) % 10);
+			ln[1] = (numlaps % 10);
 
 			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 			V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
@@ -2373,7 +2367,7 @@ static void K_drawKartLapsAndRings(void)
 		else
 		{
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->laps) % 10]);
-			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(cv_numlaps.value) % 10]);
+			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(numlaps) % 10]);
 		}
 
 		// Rings
@@ -2411,7 +2405,7 @@ static void K_drawKartLapsAndRings(void)
 	{
 		// Laps
 		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, cv_numlaps.value), cv_numlaps.value));
+		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
 
 		// Rings
 		if (!uselives)
@@ -2523,19 +2517,19 @@ static void K_drawKartSpeedometer(void)
 		{
 			case 1: // Sonic Drift 2 style percentage
 			default:
-				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false); // Based on top speed!
+				convSpeed = (stplyr->speed * 100) / K_GetKartSpeed(stplyr, false, true); // Based on top speed!
 				labeln = 0;
 				break;
 			case 2: // Kilometers
-				convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale)/FRACUNIT; // 2.172409058
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 142371), mapobjectscale) / FRACUNIT; // 2.172409058
 				labeln = 1;
 				break;
 			case 3: // Miles
-				convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale)/FRACUNIT; // 1.349868774
+				convSpeed = FixedDiv(FixedMul(stplyr->speed, 88465), mapobjectscale) / FRACUNIT; // 1.349868774
 				labeln = 2;
 				break;
 			case 4: // Fracunits
-				convSpeed = FixedDiv(stplyr->speed, mapobjectscale)/FRACUNIT; // 1.0. duh.
+				convSpeed = FixedDiv(stplyr->speed, mapobjectscale) / FRACUNIT; // 1.0. duh.
 				labeln = 3;
 				break;
 		}
@@ -2841,7 +2835,6 @@ static void K_drawKartWanted(void)
 static void K_drawKartPlayerCheck(void)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
-	UINT8 cnum = 0;
 	UINT8 i;
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	fixed_t y = CHEK_Y * FRACUNIT;
@@ -2859,20 +2852,6 @@ static void K_drawKartPlayerCheck(void)
 	if (stplyr->cmd.buttons & BT_LOOKBACK)
 	{
 		return;
-	}
-
-	if (r_splitscreen)
-	{
-		y /= 2;
-
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (stplyr == &players[displayplayers[i]])
-			{
-				cnum = i;
-				break;
-			}
-		}
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2933,7 +2912,7 @@ static void K_drawKartPlayerCheck(void)
 			pnum += 2;
 		}
 
-		K_ObjectTracking(&result, &v, cnum, ANGLE_180);
+		K_ObjectTracking(&result, &v, true);
 
 		if (result.onScreen == true)
 		{
@@ -3008,13 +2987,15 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 	}
 }
 
-static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p, UINT8 cnum)
+static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
 	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
+
+	UINT8 cnum = R_GetViewNumber();
 
 	// Since there's no "V_DrawFixedFill", and I don't feel like making it,
 	// fuck it, we're gonna just V_NOSCALESTART hack it
@@ -3100,9 +3081,8 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
-	camera_t *thiscam;
 	vector3_t c;
-	UINT8 cnum = 0;
+	UINT8 cnum = R_GetViewNumber();
 	UINT8 tobesorted[MAXPLAYERS];
 	fixed_t sortdist[MAXPLAYERS];
 	UINT8 sortlen = 0;
@@ -3118,32 +3098,9 @@ static void K_drawKartNameTags(void)
 		return;
 	}
 
-	if (r_splitscreen)
-	{
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (stplyr == &players[displayplayers[i]])
-			{
-				cnum = i;
-				break;
-			}
-		}
-	}
-
-	thiscam = &camera[cnum];
-
-	if (thiscam->chase == true)
-	{
-		c.x = R_InterpolateFixed(thiscam->old_x, thiscam->x);
-		c.y = R_InterpolateFixed(thiscam->old_y, thiscam->y);
-		c.z = R_InterpolateFixed(thiscam->old_z, thiscam->z);
-	}
-	else
-	{
-		c.x = R_InterpolateFixed(stplyr->mo->old_x, stplyr->mo->x);
-		c.y = R_InterpolateFixed(stplyr->mo->old_y, stplyr->mo->y);
-		c.z = R_InterpolateFixed(stplyr->mo->old_z, stplyr->mo->z);
-	}
+	c.x = viewx;
+	c.y = viewy;
+	c.z = viewz;
 
 	// Maybe shouldn't be handling this here... but the camera info is too good.
 	if (bossinfo.boss)
@@ -3175,7 +3132,7 @@ static void K_drawKartNameTags(void)
 
 			v.z += (bossinfo.weakspots[i].spot->height / 2);
 
-			K_ObjectTracking(&result, &v, cnum, 0);
+			K_ObjectTracking(&result, &v, false);
 			if (result.onScreen == false)
 			{
 				continue;
@@ -3328,7 +3285,7 @@ static void K_drawKartNameTags(void)
 				v.z += headOffset;
 			}
 
-			K_ObjectTracking(&result, &v, cnum, 0);
+			K_ObjectTracking(&result, &v, false);
 
 			if (result.onScreen == true)
 			{
@@ -3363,7 +3320,7 @@ static void K_drawKartNameTags(void)
 				{
 					if (K_ShowPlayerNametag(ntplayer) == true)
 					{
-						K_DrawNameTagForPlayer(result.x, result.y, ntplayer, cnum);
+						K_DrawNameTagForPlayer(result.x, result.y, ntplayer);
 						K_DrawTypingNotifier(result.x, result.y, ntplayer);
 					}
 				}
@@ -4422,7 +4379,7 @@ static void K_drawLapStartAnim(void)
 			kp_lapanim_hand[stplyr->karthud[khud_laphand]-1], NULL);
 	}
 
-	if (stplyr->laps == (UINT8)(cv_numlaps.value))
+	if (stplyr->laps == (UINT8)(numlaps))
 	{
 		newval = (62 - (32 * max(0, progress - 76))) * FRACUNIT;
 		oldval = (62 - (32 * max(0, progressOld - 76))) * FRACUNIT;
@@ -4524,7 +4481,7 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - (12*9), // mirror the laps thingy
+	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - 72, // mirror the laps thingy
 		LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, "FREE PLAY");
 }
 
@@ -4578,7 +4535,7 @@ static void K_drawDistributionDebugger(void)
 		kp_selfpropelledbomb[1],
 		kp_grow[1],
 		kp_shrink[1],
-		kp_thundershield[1],
+		kp_lightningshield[1],
 		kp_bubbleshield[1],
 		kp_flameshield[1],
 		kp_hyudoro[1],

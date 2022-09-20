@@ -21,6 +21,7 @@
 #include "p_spec.h"
 #include "p_saveg.h"
 
+#include "i_time.h"
 #include "i_video.h" // for I_FinishUpdate()..
 #include "r_sky.h"
 #include "i_system.h"
@@ -32,6 +33,7 @@
 #include "r_picformats.h"
 #include "r_sky.h"
 #include "r_draw.h"
+#include "r_fps.h" // R_ResetViewInterpolation in level load
 
 #include "s_sound.h"
 #include "st_stuff.h"
@@ -64,7 +66,7 @@
 
 #include "md5.h" // map MD5
 
-// for LUAh_MapLoad
+// for MapLoad hook
 #include "lua_script.h"
 #include "lua_hook.h"
 
@@ -94,6 +96,7 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time
@@ -388,7 +391,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->muspostbossfadein = 0;
 	mapheaderinfo[num]->musforcereset = -1;
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
-	mapheaderinfo[num]->weather = 0;
+	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
@@ -411,6 +414,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
+	mapheaderinfo[num]->light_contrast = 16;
+	mapheaderinfo[num]->use_light_angle = false;
+	mapheaderinfo[num]->light_angle = 0;
 #if 1 // equivalent to "FlickyList = DEMO"
 	P_SetDemoFlickies(num);
 #else // equivalent to "FlickyList = NONE"
@@ -574,15 +580,7 @@ or NULL if we want to allocate it now.
 static INT32
 Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 {
-#ifndef NO_PNG_LUMPS
-	UINT8         buffer[8];
-#endif
-
-	lumpnum_t    flatnum;
 	int       texturenum;
-	UINT8     *flatpatch;
-	size_t    lumplength;
-
 	size_t i;
 
 	// Scan through the already found flats, return if it matches.
@@ -610,57 +608,23 @@ Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 	strlcpy(levelflat->name, flatname, sizeof (levelflat->name));
 	strupr(levelflat->name);
 
-	/* If we can't find a flat, try looking for a texture! */
-	if (( flatnum = R_GetFlatNumForName(levelflat->name) ) == LUMPERROR)
+	if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
 	{
-		if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
-		{
-			// check for REDWALL
-			if (( texturenum = R_CheckTextureNumForName("REDWALL") ) != -1)
-				goto texturefound;
-			// check for REDFLR
-			else if (( flatnum = R_GetFlatNumForName("REDFLR") ) != LUMPERROR)
-				goto flatfound;
-			// nevermind
-			levelflat->type = LEVELFLAT_NONE;
-		}
-		else
-		{
-texturefound:
-			levelflat->type = LEVELFLAT_TEXTURE;
-			levelflat->u.texture.    num = texturenum;
-			levelflat->u.texture.lastnum = texturenum;
-			/* start out unanimated */
-			levelflat->u.texture.basenum = -1;
-		}
+		// check for missing texture
+		if (( texturenum = R_CheckTextureNumForName(MISSING_TEXTURE) ) != -1)
+			goto texturefound;
+
+		// nevermind
+		levelflat->type = LEVELFLAT_NONE;
 	}
 	else
 	{
-flatfound:
-		/* This could be a flat, patch, or PNG. */
-		flatpatch = W_CacheLumpNum(flatnum, PU_CACHE);
-		lumplength = W_LumpLength(flatnum);
-		if (Picture_CheckIfDoomPatch((softwarepatch_t *)flatpatch, lumplength))
-			levelflat->type = LEVELFLAT_PATCH;
-		else
-		{
-#ifndef NO_PNG_LUMPS
-			/*
-			Only need eight bytes for PNG headers.
-			FIXME: Put this elsewhere.
-			*/
-			W_ReadLumpHeader(flatnum, buffer, 8, 0);
-			if (Picture_IsLumpPNG(buffer, lumplength))
-				levelflat->type = LEVELFLAT_PNG;
-			else
-#endif/*NO_PNG_LUMPS*/
-				levelflat->type = LEVELFLAT_FLAT;/* phew */
-		}
-		if (flatpatch)
-			Z_Free(flatpatch);
-
-		levelflat->u.flat.    lumpnum = flatnum;
-		levelflat->u.flat.baselumpnum = LUMPERROR;
+texturefound:
+		levelflat->type = LEVELFLAT_TEXTURE;
+		levelflat->u.texture.    num = texturenum;
+		levelflat->u.texture.lastnum = texturenum;
+		/* start out unanimated */
+		levelflat->u.texture.basenum = -1;
 	}
 
 	levelflat->terrain =
@@ -2320,19 +2284,45 @@ static inline float P_SegLengthFloat(seg_t *seg)
   */
 void P_UpdateSegLightOffset(seg_t *li)
 {
-	const UINT8 contrast = 16;
+	const UINT8 contrast = maplighting.contrast;
+	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t light = FRACUNIT;
 	fixed_t extralight = 0;
 
-	extralight = -((fixed_t)contrast*FRACUNIT) +
-		FixedDiv(AngleFixed(R_PointToAngle2(0, 0,
-		abs(li->v1->x - li->v2->x),
-		abs(li->v1->y - li->v2->y))), 90*FRACUNIT) * ((fixed_t)contrast * 2);
+	if (maplighting.directional == true)
+	{
+		angle_t liAngle = R_PointToAngle2(0, 0, (li->v1->x - li->v2->x), (li->v1->y - li->v2->y)) - ANGLE_90;
+
+		light = FixedMul(FINECOSINE(liAngle >> ANGLETOFINESHIFT), FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(FINESINE(liAngle >> ANGLETOFINESHIFT), FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(li->v1->x - li->v2->x), abs(li->v1->y - li->v2->y)), ANGLE_90);
+	}
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
 
 	// Between -2 and 2 for software, -16 and 16 for hardware
 	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
 #ifdef HWRENDER
 	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
 #endif
+}
+
+boolean P_ApplyLightOffset(UINT8 baselightnum)
+{
+	// Don't apply light offsets at full bright or full dark.
+	// Is in steps of light num .
+	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
+}
+
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel)
+{
+	// Don't apply light offsets at full bright or full dark.
+	// Uses exact light levels for more smoothness.
+	return (baselightlevel < 255 && baselightlevel > 0);
 }
 
 static void P_InitializeSeg(seg_t *seg)
@@ -3893,7 +3883,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also m_menu.c's Nextmap_OnChange
+	// see also k_menu.c's Nextmap_OnChange
 	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
@@ -4032,24 +4022,36 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	spectateGriefed = 0;
+	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
+
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if ((gametyperules & GTR_CIRCUIT) && server)
+	numlaps = 0;
+	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_basenumlaps.value
+		if ((netgame || multiplayer) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value)))
+		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
-			CV_StealthSetValue(&cv_numlaps, cv_basenumlaps.value);
+			numlaps = cv_numlaps.value;
 		}
 		else
 		{
-			CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
 	}
+
+	wantedcalcdelay = wantedfrequency*2;
+	indirectitemcooldown = 0;
+	mapreset = 0;
+
+	thwompsactive = false;
+	lastLowestLap = 0;
+	spbplace = -1;
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
@@ -4086,6 +4088,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -4159,7 +4162,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	while (nowtime < endtime) \
 	{ \
 		while (!((nowtime = I_GetTime()) - lastwipetic)) \
-			I_Sleep(); \
+		{ \
+			I_Sleep(cv_sleep.value); \
+			I_UpdateTime(cv_timescale.value); \
+		} \
 		lastwipetic = nowtime; \
 		if (moviemode) \
 			M_SaveFrame(); \
@@ -4259,15 +4265,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
-
-		{
-			sfxenum_t kstart = sfx_kstart;
-			if (bossinfo.boss)
-				kstart = sfx_ssa021;
-			else if (encoremode)
-				kstart = sfx_ruby2;
-			S_StartSound(NULL, kstart);
-		}
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/
@@ -4296,7 +4293,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
 
+	R_InitializeLevelInterpolators();
+
 	P_InitThinkers();
+	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
 	if (!fromnetsave && savedata.lives > 0)
@@ -4340,8 +4340,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_SpawnSpecials(fromnetsave);
 
 	P_SpawnSlopes(fromnetsave);
-
-	P_SpawnSpecialsAfterSlopes();
 
 	P_SpawnMapThings(!fromnetsave);
 
@@ -4403,18 +4401,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		memset(localaiming, 0, sizeof(localaiming));
 		K_InitDirector();
 	}
-
-	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
-	hyubgone = 0;
-	mapreset = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = -1;
-
-	thwompsactive = false;
-	lastLowestLap = 0;
-	spbplace = -1;
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
@@ -4500,7 +4486,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		P_PreTicker(2);
 		P_MapStart(); // just in case MapLoad modifies tmthing
-		LUAh_MapLoad();
+		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tmthing
 	}
 
@@ -4509,6 +4495,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// No render mode or reloading gamestate, stop here.
 	if (rendermode == render_none || reloadinggamestate)
 		return true;
+
+	R_ResetViewInterpolation(0);
+	R_ResetViewInterpolation(0);
+	R_UpdateMobjInterpolators();
 
 	// Title card!
 	G_StartTitleCard();
@@ -4615,6 +4605,8 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+UINT16 p_adding_file = INT16_MAX;
+
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
@@ -4651,6 +4643,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	}
 	else
 		wadnum = (UINT16)(numwadfiles-1);
+
+	p_adding_file = wadnum;
 
 	switch(wadfiles[wadnum]->type)
 	{
@@ -4748,16 +4742,16 @@ boolean P_AddWadFile(const char *wadfilename)
 	// Reload it all anyway, just in case they
 	// added some textures but didn't insert a
 	// TEXTURES/etc. list.
-	R_LoadTextures(); // numtexture changes
+	R_LoadTexturesPwad(wadnum); // numtexture changes
 
 	// Reload ANIMDEFS
 	P_InitPicAnims();
 
 	// Reload BRIGHT
-	K_InitBrightmaps();
+	K_InitBrightmapsPwad(wadnum);
 
 	// Flush and reload HUD graphics
-	ST_UnloadGraphics();
+	//ST_UnloadGraphics();
 	HU_LoadGraphics();
 	ST_LoadGraphics();
 
@@ -4767,11 +4761,6 @@ boolean P_AddWadFile(const char *wadfilename)
 	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
 	R_PatchSkins(wadnum); // toast: PATCH PATCH
 	ST_ReloadSkinFaceGraphics();
-
-	//
-	// edit music defs
-	//
-	S_LoadMusicDefs(wadnum);
 
 	//
 	// edit music defs
@@ -4836,6 +4825,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	}
 
 	refreshdirmenu &= ~REFRESHDIR_GAMEDATA; // Under usual circumstances we'd wait for REFRESHDIR_GAMEDATA to disappear the next frame, but it's a bit too dangerous for that...
+
+	p_adding_file = INT16_MAX;
 
 	return true;
 }

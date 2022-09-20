@@ -40,10 +40,11 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_setup.h"
 #include "p_saveg.h"
@@ -183,7 +184,9 @@ void D_ProcessEvents(void)
 	event_t *ev;
 
 	boolean eaten;
+	boolean menuresponse = false;
 
+	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
@@ -204,25 +207,6 @@ void D_ProcessEvents(void)
 				continue;
 		}
 
-		// Menu input
-#ifdef HAVE_THREADS
-		I_lock_mutex(&m_menu_mutex);
-#endif
-		{
-			eaten = M_Responder(ev);
-		}
-#ifdef HAVE_THREADS
-		I_unlock_mutex(m_menu_mutex);
-#endif
-
-		if (eaten)
-			continue; // menu ate the event
-
-		// Demo input:
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
-
 		// console input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&con_mutex);
@@ -240,7 +224,36 @@ void D_ProcessEvents(void)
 			continue; // ate the event
 		}
 
+		// Menu input
+		menuresponse = true;
+#ifdef HAVE_THREADS
+		I_lock_mutex(&k_menu_mutex);
+#endif
+		{
+			eaten = M_Responder(ev);
+		}
+#ifdef HAVE_THREADS
+		I_unlock_mutex(k_menu_mutex);
+#endif
+
+		if (eaten)
+			continue; // menu ate the event
+
+		// Demo input:
+		/*
+		if (demo.playback)
+			if (M_DemoResponder(ev))
+				continue;	// demo ate the event
+		*/
+
+
 		G_Responder(ev);
+	}
+
+	// Reset menu controls when no event is processed
+	if (!menuresponse)
+	{
+		M_MapMenuControls(NULL);
 	}
 }
 
@@ -320,7 +333,7 @@ static void D_Display(void)
 		// set for all later
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
-			wipedefindex = wipe_timeattack_toblack;
+			wipedefindex = wipe_titlescreen_toblack;
 
 		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
 			wipetypepre = wipedefs[wipedefindex];
@@ -334,7 +347,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+				F_RunWipe(wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -347,7 +360,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 
@@ -387,7 +400,7 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-		case GS_TIMEATTACK:
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -455,6 +468,8 @@ static void D_Display(void)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
+				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+
 				viewwindowy = 0;
 				viewwindowx = 0;
 
@@ -530,6 +545,7 @@ static void D_Display(void)
 				}
 
 				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
+				R_RestoreLevelInterpolators();
 			}
 
 			if (lastdraw)
@@ -537,9 +553,8 @@ static void D_Display(void)
 				if (rendermode == render_soft)
 				{
 					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
 				}
+
 				lastdraw = false;
 			}
 
@@ -591,11 +606,11 @@ static void D_Display(void)
 	vid.recalc = 0;
 
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_Drawer(); // menu is drawn even on top of everything
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 	// focus lost moved to M_Drawer
 
@@ -619,7 +634,7 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
@@ -679,29 +694,6 @@ static void D_Display(void)
 	}
 }
 
-static boolean D_CheckFrameCap(void)
-{
-	static boolean init = false;
-	static precise_t startCap = 0;
-	precise_t endCap = 0;
-
-	endCap = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		startCap = endCap;
-		init = true;
-	}
-	else if (I_CheckFrameCap(startCap, endCap))
-	{
-		// Framerate should be capped.
-		return true;
-	}
-
-	startCap = endCap;
-	return false;
-}
-
 // =========================================================================
 // D_SRB2Loop
 // =========================================================================
@@ -710,9 +702,11 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	boolean ticked;
-	boolean interp;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
+
+	boolean interp = false;
 	boolean doDisplay = false;
 
 	if (dedicated)
@@ -725,6 +719,7 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -766,6 +761,19 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
+		I_UpdateTime(cv_timescale.value);
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -791,16 +799,8 @@ void D_SRB2Loop(void)
 				debugload--;
 #endif
 
-		interp = R_UsingFrameInterpolation();
+		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
-		ticked = false;
-
-		if (!realtics && !singletics && !interp)
-		{
-			// Non-interp sleep
-			I_Sleep();
-			continue;
-		}
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -814,76 +814,51 @@ void D_SRB2Loop(void)
 				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			ticked = TryRunTics(realtics);
+			TryRunTics(realtics);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
 				rendergametic = gametic;
-				rendertimeout = entertic+TICRATE/17;
+				rendertimeout = entertic + TICRATE/17;
 
 				doDisplay = true;
 			}
 			else if (rendertimeout < entertic) // in case the server hang or netsplit
 			{
+				// Lagless camera! Yay!
+				if (gamestate == GS_LEVEL && netgame)
+				{
+					// Evaluate the chase cam once for every local realtic
+					// This might actually be better suited inside G_Ticker or TryRunTics
+					for (tic_t chasecamtics = 0; chasecamtics < realtics; chasecamtics++)
+					{
+						P_RunChaseCameras();
+					}
+					R_UpdateViewInterpolation();
+				}
+
 				doDisplay = true;
 			}
+
+			renderisnewtic = true;
+		}
+		else
+		{
+			renderisnewtic = false;
 		}
 
 		if (interp)
 		{
-			static float tictime = 0.0f;
-			static float prevtime = 0.0f;
-			float entertime = I_GetTimeFrac();
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			fixed_t entertimefrac = FRACUNIT;
-
-			if (ticked)
+			if (!(paused || P_AutoPause()) && !hu_stopped)
 			{
-				tictime = entertime;
+				rendertimefrac = g_time.timefrac;
 			}
-
-			// Handle interp sleep / framerate cap here.
-			// TryRunTics needs ran if possible to prevent lagged map changes,
-			// (and if that runs, the code above needs to also run)
-			// so this is done here after TryRunTics.
-			if (D_CheckFrameCap())
+			else
 			{
-				continue;
+				rendertimefrac = FRACUNIT;
 			}
-
-			if (!(paused || P_AutoPause()))
-			{
-#if 0
-				CONS_Printf("prevtime = %f\n", prevtime);
-				CONS_Printf("entertime = %f\n", entertime);
-				CONS_Printf("tictime = %f\n", tictime);
-				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
-				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
-				CONS_Printf("========\n");
-#endif
-
-				if (entertime - prevtime >= 1.0f)
-				{
-					// Lagged for more frames than a gametic...
-					// No need for interpolation.
-					entertimefrac = FRACUNIT;
-				}
-				else
-				{
-					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-				}
-
-				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-				renderdeltatics = realtics * FRACUNIT;
-				if (entertimefrac > rendertimefrac)
-					renderdeltatics += entertimefrac - rendertimefrac;
-				else
-					renderdeltatics -= rendertimefrac - entertimefrac;
-
-				rendertimefrac = entertimefrac;
-			}
-
-			prevtime = entertime;
 		}
 		else
 		{
@@ -896,9 +871,10 @@ void D_SRB2Loop(void)
 			D_Display();
 		}
 
+		// Only take screenshots after drawing.
 		if (moviemode)
 			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
+		if (takescreenshot)
 			M_DoScreenShot();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
@@ -918,10 +894,24 @@ void D_SRB2Loop(void)
 		}
 #endif
 
-		// Moved to here from I_FinishUpdate.
-		// It doesn't track fades properly anymore by being here (might be easy fix),
-		// but it's a little more accurate for actual game logic when its here.
-		SCR_CalculateFPS();
+		// Fully completed frame made.
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
+		{
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
+
+			// in the case of "match refresh rate" + vsync, don't sleep at all
+			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
+
+			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
 }
 
@@ -1011,25 +1001,13 @@ void D_StartTitle(void)
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
-	F_InitMenuPresValues();
 	F_StartTitleScreen();
-
-	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
-	/*
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
-			M_TutorialSaveControlResponse, MM_YESNO);
-	}
-	*/
-
 	tutorialmode = false;
 }
 
@@ -1233,8 +1211,8 @@ void D_SRB2Main(void)
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
-	"\n\nSonic Robo Blast 2 Kart\n"
-	"Copyright (C) 1998-2020 by Kart Krew & STJr\n\n"
+	"\n\nDr. Robotnik's Ring Racers\n"
+	"Copyright (C) 1998-2022 by Kart Krew & STJr\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1291,6 +1269,9 @@ void D_SRB2Main(void)
 	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
 	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
 
+	// Init the joined IP table for quick rejoining of past games.
+	M_InitJoinedIPArray();
+
 	{
 		const char *userhome = D_Home(); //Alam: path to home
 
@@ -1337,6 +1318,33 @@ void D_SRB2Main(void)
 
 		configfile[sizeof configfile - 1] = '\0';
 	}
+
+	// If config isn't writable, tons of behavior will be broken.
+	// Fail loudly before things get confusing!
+	{
+		FILE *tmpfile;
+		char testfile[MAX_WADPATH];
+
+		snprintf(testfile, sizeof testfile, "%s" PATHSEP "file.tmp", srb2home);
+		testfile[sizeof testfile - 1] = '\0';
+
+		tmpfile = fopen(testfile, "w");
+		if (tmpfile == NULL)
+		{
+#if defined (_WIN32)
+			I_Error("Couldn't write game config.\nMake sure the game is installed somewhere it has write permissions.\n\n(Don't use the Downloads folder, Program Files, or your desktop!\nIf unsure, we recommend making a subfolder in your Documents folder.)");
+#else
+			I_Error("Couldn't write game config.\nMake sure you've installed the game somewhere it has write permissions.");
+#endif
+		}
+		else
+		{
+			fclose(tmpfile);
+			remove(testfile);
+		}
+	}
+
+	M_LoadJoinedIPs();	// load joined ips
 
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
@@ -1394,26 +1402,15 @@ void D_SRB2Main(void)
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
-	// initiate menu metadata before SOCcing them
-	M_InitMenuPresTables();
-
-	// init title screen display params
-	if (M_GetUrlProtocolArg() || M_CheckParm("-connect"))
-		F_InitMenuPresValues();
-
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 	CON_SetLoadingProgress(LOADED_ISTARTUPTIMER);
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
-
-	// Setup character tables
-	// Have to be done here before files are loaded
-	M_InitCharacterTables();
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1560,6 +1557,9 @@ void D_SRB2Main(void)
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
+
+	// Load Profiles now that default controls have been defined
+	PR_LoadProfiles();	// load control profiles
 
 	M_Init();
 
@@ -1713,9 +1713,9 @@ void D_SRB2Main(void)
 
 	// user settings come before "+" parameters.
 	if (dedicated)
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartserv.cfg\"\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringserv.cfg\"\n", srb2home));
 	else
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartexec.cfg\" -noerror\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringexec.cfg\" -noerror\n", srb2home));
 
 	if (!autostart)
 		M_PushSpecialParameters(); // push all "+" parameters at the command buffer
@@ -1780,6 +1780,10 @@ void D_SRB2Main(void)
 		gameaction = ga_nothing;
 
 		CV_ClearChangedFlags();
+
+		// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+		// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+		PR_ApplyProfile(cv_ttlprofilen.value, 0);
 
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
@@ -1882,7 +1886,6 @@ void D_SRB2Main(void)
 	}
 	else if (M_CheckParm("-skipintro"))
 	{
-		F_InitMenuPresValues();
 		F_StartTitleScreen();
 	}
 	else

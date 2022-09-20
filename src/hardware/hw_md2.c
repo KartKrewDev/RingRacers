@@ -30,6 +30,7 @@
 #include "hw_md2.h"
 #include "../d_main.h"
 #include "../r_bsp.h"
+#include "../r_fps.h"
 #include "../r_main.h"
 #include "../m_misc.h"
 #include "../w_wad.h"
@@ -712,11 +713,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
-	UINT8 translation[16]; // First the color index
-	UINT8 cutoff[16]; // Brightness cutoff before using the next color
+	UINT8 translation[17]; // First the color index
+	UINT8 cutoff[17]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
-	UINT8 colorbrightnesses[16];
+	UINT8 colorbrightnesses[17];
 	UINT8 color_match_lookup[256]; // optimization attempt
 
 	blendcolor = V_GetColor(0); // initialize
@@ -787,6 +788,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		translen++;
 	}
 
+	if (translen > 0)
+		translation[translen] = translation[translen-1]; // extended to accomodate secondi if firsti equal to translen-1
+	if (translen > 1)
+		cutoff[translen] = cutoff[translen-1] = 0; // as above
+
 	if (skinnum == TC_RAINBOW && translen > 0)
 	{
 		UINT16 b;
@@ -802,7 +808,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		{
 			UINT16 brightdif = 256;
 
-			color_match_lookup[i] = 0;
+			color_match_lookup[b] = 0;
 			for (i = 0; i < translen; i++)
 			{
 				if (b > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
@@ -818,6 +824,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 			}
 		}
 	}
+
+	if (translen > 0)
+		colorbrightnesses[translen] = colorbrightnesses[translen-1];
 
 	while (size--)
 	{
@@ -1360,8 +1369,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	{
 		patch_t *gpatch, *blendgpatch;
 		GLPatch_t *hwrPatch = NULL, *hwrBlendPatch = NULL;
-		INT32 durs = spr->mobj->state->tics;
-		INT32 tics = spr->mobj->tics;
+		float durs = (float)spr->mobj->state->tics;
+		float tics = (float)spr->mobj->tics;
 		const boolean papersprite = (R_ThingIsPaperSprite(spr->mobj) && !R_ThingIsFloorSprite(spr->mobj));
 		const UINT8 flip = (UINT8)(!(spr->mobj->eflags & MFE_VERTICALFLIP) != !R_ThingVerticallyFlipped(spr->mobj));
 		const UINT8 hflip = (UINT8)(!(spr->mobj->mirrored) != !R_ThingHorizontallyFlipped(spr->mobj));
@@ -1369,10 +1378,16 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		spriteframe_t *sprframe;
 		INT32 mod;
 		float finalscale;
+		interpmobjstate_t interp;
 
-		fixed_t interpx = R_InterpolateFixed(spr->mobj->old_x, spr->mobj->x);
-		fixed_t interpy = R_InterpolateFixed(spr->mobj->old_y, spr->mobj->y);
-		fixed_t interpz = R_InterpolateFixed(spr->mobj->old_z, spr->mobj->z);
+		if (R_UsingFrameInterpolation() && !paused)
+		{
+			R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+		}
+		else
+		{
+			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+		}
 
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
@@ -1384,15 +1399,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				mul = -mul;
 			}
 
-			interpx += FixedMul(spr->mobj->momx, mul);
-			interpy += FixedMul(spr->mobj->momy, mul);
-			interpy += FixedMul(spr->mobj->momz, mul);
+			interp.x += FixedMul(spr->mobj->momx, mul);
+			interp.y += FixedMul(spr->mobj->momy, mul);
+			interp.z += FixedMul(spr->mobj->momz, mul);
 		}
 
 		// sprite offset
-		interpx += spr->mobj->sprxoff;
-		interpy += spr->mobj->spryoff;
-		interpz += spr->mobj->sprzoff;
+		interp.x += spr->mobj->sprxoff;
+		interp.y += spr->mobj->spryoff;
+		interp.z += spr->mobj->sprzoff;
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
@@ -1543,8 +1558,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		if (spr->mobj->frame & FF_ANIMATE)
 		{
 			// set duration and tics to be the correct values for FF_ANIMATE states
-			durs = spr->mobj->state->var2;
-			tics = spr->mobj->anim_duration;
+			durs = (float)spr->mobj->state->var2;
+			tics = (float)spr->mobj->anim_duration;
 		}
 
 		frame = (spr->mobj->frame & FF_FRAMEMASK);
@@ -1568,6 +1583,9 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 
 #ifdef USE_MODEL_NEXTFRAME
+		// Interpolate the model interpolation. (lol)
+		tics -= FixedToFloat(rendertimefrac);
+
 #define INTERPOLERATION_LIMIT TICRATE/4
 		if (
 #ifdef BAD_MODEL_OPTIONS
@@ -1620,13 +1638,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #endif
 
 		//Hurdler: it seems there is still a small problem with mobj angle
-		p.x = FIXED_TO_FLOAT(interpx);
-		p.y = FIXED_TO_FLOAT(interpy) + md2->offset;
+		p.x = FIXED_TO_FLOAT(interp.x);
+		p.y = FIXED_TO_FLOAT(interp.y) + md2->offset;
 
 		if (flip)
-			p.z = FIXED_TO_FLOAT(spr->mobj->z + spr->mobj->height);
+			p.z = FIXED_TO_FLOAT(interp.z + spr->mobj->height);
 		else
-			p.z = FIXED_TO_FLOAT(interpz);
+			p.z = FIXED_TO_FLOAT(interp.z);
 
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			sprdef = &((skin_t *)spr->mobj->skin)->sprites[spr->mobj->sprite2];
@@ -1637,22 +1655,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 		if (sprframe->rotate || papersprite)
 		{
-			fixed_t anglef = INT32_MAX;
-
-			if (spr->mobj->player)
-			{
-				anglef = AngleFixed(R_InterpolateAngle(spr->mobj->player->old_drawangle, spr->mobj->player->drawangle));
-			}
-			else
-			{
-				anglef = AngleFixed(R_InterpolateAngle(spr->mobj->old_angle, spr->mobj->angle));
-			}
+			fixed_t anglef = AngleFixed(interp.angle);
 
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 		else
 		{
-			const fixed_t anglef = AngleFixed((R_PointToAngle(interpx, interpy))-ANGLE_180);
+			const fixed_t anglef = AngleFixed((R_PointToAngle(interp.x, interp.y))-ANGLE_180);
 			p.angley = FIXED_TO_FLOAT(anglef);
 		}
 

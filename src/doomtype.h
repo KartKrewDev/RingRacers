@@ -368,6 +368,8 @@ typedef UINT32 tic_t;
 #define UINT2RGBA(a) (UINT32)((a&0xff)<<24)|((a&0xff00)<<8)|((a&0xff0000)>>8)|(((UINT32)a&0xff000000)>>24)
 #endif
 
+#define TOSTR(x) #x
+
 /* preprocessor dumb and needs second macro to expand input */
 #define WSTRING2(s) L ## s
 #define WSTRING(s) WSTRING2 (s)
@@ -402,9 +404,7 @@ unset_bit_array (bitarray_t * const array, const int value)
 	array[value >> 3] &= ~(1<<(value & 7));
 }
 
-#ifdef HAVE_SDL
 typedef UINT64 precise_t;
-#endif
 
 #define intsign(n) \
 	((n) < 0 ? -1 : (n) > 0 ? 1 : 0)

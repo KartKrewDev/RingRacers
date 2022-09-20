@@ -394,6 +394,7 @@ extern INT32 mapchangepending;
 extern doomdata_t *netbuffer;
 extern consvar_t cv_stunserver;
 extern consvar_t cv_httpsource;
+extern consvar_t cv_kicktime;
 
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
@@ -445,7 +446,7 @@ extern tic_t servermaxping;
 
 extern boolean server_lagless;
 
-extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_joindelay;
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
@@ -520,11 +521,11 @@ extern UINT8 hu_redownloadinggamestate;
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
 
+extern boolean hu_stopped;
+
 //
 // SRB2Kart
 //
-
-extern boolean hu_stopped;
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];

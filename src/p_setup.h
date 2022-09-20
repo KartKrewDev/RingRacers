@@ -96,6 +96,8 @@ INT32 P_CheckLevelFlat(const char *flatname);
 extern size_t nummapthings;
 extern mapthing_t *mapthings;
 
+extern UINT16 p_adding_file;
+
 void P_SetupLevelSky(const char *skytexname, boolean global);
 #ifdef SCANTHINGS
 void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
@@ -111,6 +113,8 @@ void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
+boolean P_ApplyLightOffset(UINT8 baselightnum);
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);
 

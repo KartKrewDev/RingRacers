@@ -17,6 +17,7 @@
 #include "d_player.h"
 #include "d_clisrv.h"
 #include "p_setup.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "m_random.h"
 #include "p_local.h"
@@ -25,7 +26,7 @@
 #include "g_game.h"
 #include "g_demo.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
 #include "z_zone.h"
@@ -50,9 +51,15 @@
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_color.h"
+#include "k_follower.h"
 
+#ifdef TESTERS
+static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{2, "Auto Save"}, {0, NULL}};
+consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Auto Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
+#else
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
+#endif
 
 static CV_PossibleValue_t netdemosyncquality_cons_t[] = {{1, "MIN"}, {35, "MAX"}, {0, NULL}};
 consvar_t cv_netdemosyncquality = CVAR_INIT ("netdemo_syncquality", "1", CV_SAVE, netdemosyncquality_cons_t, NULL);
@@ -128,13 +135,16 @@ demoghost *ghosts = NULL;
 #define DEMO_SHRINKME	0x04
 
 // For demos
-#define ZT_FWD     0x01
-#define ZT_SIDE    0x02
-#define ZT_TURNING 0x04
-#define ZT_BUTTONS 0x08
-#define ZT_AIMING  0x10
-#define ZT_LATENCY 0x20
-#define ZT_FLAGS   0x40
+#define ZT_FWD		0x01
+#define ZT_SIDE		0x02
+#define ZT_TURNING	0x04
+#define ZT_THROWDIR	0x08
+#define ZT_BUTTONS	0x10
+#define ZT_AIMING	0x20
+#define ZT_LATENCY	0x40
+#define ZT_FLAGS	0x80
+// OUT OF ZIPTICS...
+
 #define DEMOMARKER 0x80 // demoend
 
 UINT8 demo_extradata[MAXPLAYERS];
@@ -296,7 +306,7 @@ void G_ReadDemoExtraData(void)
 			// Set our follower
 			M_Memcpy(name, demo_p, 16);
 			demo_p += 16;
-			SetPlayerFollower(p, name);
+			K_SetFollowerByName(p, name);
 
 			// Follower's color
 			M_Memcpy(name, demo_p, 16);
@@ -524,6 +534,8 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		oldcmd[playernum].forwardmove = READSINT8(demo_p);
 	if (ziptic & ZT_TURNING)
 		oldcmd[playernum].turning = READINT16(demo_p);
+	if (ziptic & ZT_THROWDIR)
+		oldcmd[playernum].throwdir = READINT16(demo_p);
 	if (ziptic & ZT_BUTTONS)
 		oldcmd[playernum].buttons = READUINT16(demo_p);
 	if (ziptic & ZT_AIMING)
@@ -565,6 +577,13 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		WRITEINT16(demo_p,cmd->turning);
 		oldcmd[playernum].turning = cmd->turning;
 		ziptic |= ZT_TURNING;
+	}
+
+	if (cmd->throwdir != oldcmd[playernum].throwdir)
+	{
+		WRITEINT16(demo_p,cmd->throwdir);
+		oldcmd[playernum].throwdir = cmd->throwdir;
+		ziptic |= ZT_THROWDIR;
 	}
 
 	if (cmd->buttons != oldcmd[playernum].buttons)
@@ -1127,6 +1146,8 @@ void G_GhostTicker(void)
 		if (ziptic & ZT_FWD)
 			g->p++;
 		if (ziptic & ZT_TURNING)
+			g->p += 2;
+		if (ziptic & ZT_THROWDIR)
 			g->p += 2;
 		if (ziptic & ZT_BUTTONS)
 			g->p += 2;
@@ -1978,6 +1999,7 @@ void G_BeginRecording(void)
 
 	WRITEUINT8(demo_p, demoflags);
 	WRITEUINT8(demo_p, gametype & 0xFF);
+	WRITEUINT8(demo_p, numlaps);
 
 	// file list
 	m = demo_p;/* file count */
@@ -2408,6 +2430,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 16; // map md5
 	flags = READUINT8(p); // demoflags
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
@@ -2465,6 +2488,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 16; // mapmd5
 	flags = READUINT8(p);
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 	if (!(flags & aflags))
 	{
@@ -2520,7 +2544,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	if (memcmp(info_p, DEMOHEADER, 12))
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("%s is not a SRB2Kart replay file.\n"), pdemo->filepath);
+		CONS_Alert(CONS_ERROR, M_GetText("%s is not a Ring Racers replay file.\n"), pdemo->filepath);
 		pdemo->type = MD_INVALID;
 		sprintf(pdemo->title, "INVALID REPLAY");
 		Z_Free(infobuffer);
@@ -2579,6 +2603,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	}
 
 	pdemo->gametype = READUINT8(info_p);
+	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
 	info_p += 4; // RNG seed
@@ -2605,19 +2630,10 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 				if (!stricmp(kartspeed_cons_t[j].strvalue, svalue))
 					pdemo->kartspeed = kartspeed_cons_t[j].value;
 		}
-		else if (netid == cv_basenumlaps.netid && pdemo->gametype == GT_RACE)
-			pdemo->numlaps = atoi(svalue);
 	}
 
 	if (pdemoflags & DF_ENCORE)
 		pdemo->kartspeed |= DF_ENCORE;
-
-	/*// Temporary info until this is actually present in replays.
-	(void)extrainfo_p;
-	sprintf(pdemo->winnername, "transrights420");
-	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSET;
-	pdemo->winnertime = 6666;*/
 
 	// Read standings!
 	count = 0;
@@ -2760,7 +2776,7 @@ void G_DoPlayDemo(char *defdemoname)
 	demo.playback = true;
 	if (memcmp(demo_p, DEMOHEADER, 12))
 	{
-		snprintf(msg, 1024, M_GetText("%s is not a SRB2Kart replay file.\n"), pdemoname);
+		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
 		M_StartMessage(msg, NULL, MM_NOTHING);
 		Z_Free(pdemoname);
@@ -2814,6 +2830,7 @@ void G_DoPlayDemo(char *defdemoname)
 	demoflags = READUINT8(demo_p);
 	gametype = READUINT8(demo_p);
 	G_SetGametype(gametype);
+	numlaps = READUINT8(demo_p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
 		G_SkipDemoExtraFiles(&demo_p);
@@ -3042,7 +3059,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// Follower
 		M_Memcpy(follower, demo_p, 16);
 		demo_p += 16;
-		SetPlayerFollower(p, follower);
+		K_SetFollowerByName(p, follower);
 
 		// Follower colour
 		M_Memcpy(color, demo_p, 16);
@@ -3237,6 +3254,7 @@ void G_AddGhost(char *defdemoname)
 	}
 
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
@@ -3454,7 +3472,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	}
 
 	p++; // Gametype
-
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
@@ -3870,7 +3888,7 @@ boolean G_DemoTitleResponder(event_t *ev)
 		return true;
 	}
 
-	if (ch == KEY_ENTER || ch >= KEY_MOUSE1)
+	if (ch == KEY_ENTER || ch >= NUMKEYS)
 	{
 		demo.savemode = DSM_WILLSAVE;
 		return true;

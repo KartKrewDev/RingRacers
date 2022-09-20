@@ -36,6 +36,7 @@
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "d_main.h"
 #include "m_argv.h"
@@ -45,7 +46,7 @@
 #include "m_anigif.h"
 
 // So that the screenshot menu auto-updates...
-#include "m_menu.h"
+#include "k_menu.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -179,6 +180,51 @@ static boolean apng_downscale = false; // So nobody can do something dumb like c
 boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
+
+char joinedIPlist[NUMLOGIP][2][255];
+char joinedIP[255];
+
+// This initializes the above array to have NULL evrywhere it should.
+void M_InitJoinedIPArray(void)
+{
+	UINT8 i;
+	for (i=0; i < NUMLOGIP; i++)
+	{
+		strcpy(joinedIPlist[i][0], "");
+		strcpy(joinedIPlist[i][1], "");
+	}
+}
+
+// This adds an entry to the above array
+void M_AddToJoinedIPs(char *address, char *servname)
+{
+
+	UINT8 i = 0;
+	UINT8 dupeindex = 0;
+
+	// Check for dupes...
+	for (; i < NUMLOGIP && !dupeindex; i++)
+	{
+		// I don't care about the server name (this is broken anyway...) but definitely check the addresses
+		if (strcmp(joinedIPlist[i][0], address) == 0)
+			dupeindex = i;
+	}
+
+	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
+
+	// Start by moving every IP up 1 slot (dropping the last IP in the table)
+	// If we found duplicates, start here instead and pull the rest up.
+	i = dupeindex ? dupeindex : NUMLOGIP;
+	for (; i; i--)
+	{
+		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
+		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
+	}
+
+	// and add the new IP at the start of the table!
+	strcpy(joinedIPlist[0][0], address);
+	strcpy(joinedIPlist[0][1], servname);
+}
 
 /** Returns the map number for a map identified by the last two characters in
   * its name.
@@ -448,6 +494,87 @@ boolean FIL_CheckExtension(const char *in)
 	return false;
 }
 
+// LAST IPs JOINED LOG FILE!
+// ...It won't be as overly engineered as the config file because let's be real there's 0 need to...
+
+// Save the file:
+void M_SaveJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i;
+	char *filepath;
+
+	if (!strlen(joinedIPlist[0][0]))
+		return;	// Don't bother, there's nothing to save.
+
+	// append srb2home to beginning of filename
+	// but check if srb2home isn't already there, first
+	if (!strstr(IPLOGFILE, srb2home))
+		filepath = va(pandf,srb2home, IPLOGFILE);
+	else
+		filepath = Z_StrDup(IPLOGFILE);
+
+	f = fopen(filepath, "w");
+
+	if (f == NULL)
+		return;	// Uh I guess you don't have disk space?????????
+
+	for (i=0; i < NUMLOGIP; i++)
+	{
+		if (strlen(joinedIPlist[i][0]))
+		{
+			char savestring[MAXSTRINGLENGTH];
+			strcpy(savestring, joinedIPlist[i][0]);
+			strcat(savestring, IPLOGFILESEP);
+			strcat(savestring, joinedIPlist[i][1]);
+
+			fputs(savestring, f);
+			fputs("\n", f);	// Because this won't do it automatically now will it...
+		}
+	}
+
+	fclose(f);
+}
+
+
+// Load the file:
+void M_LoadJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i = 0;
+	char *filepath;
+	char *s;
+	char content[255];	// 255 is more than long enough!
+
+	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+	f = fopen(filepath, "r");
+
+	if (f == NULL)
+		return;	// File doesn't exist? sure, just do nothing then.
+
+	while (fgets(content, 255, f) && i < NUMLOGIP && content[0] && content[0] != '\n')	// Don't let us write more than we can chew!
+	{
+
+		// Now we have garbage under the form of "address;string"
+		// Now you might ask yourself, but what do we do if the player fucked with their file and now there's a bunch of garbage?
+		// ...Well that's not my problem lol.
+
+		s = strtok(content, IPLOGFILESEP);	// We got the address
+		strcpy(joinedIPlist[i][0], s);
+
+		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
+
+		if (strlen(s))
+			s[strlen(s)-1] = '\0';	// Remove the \n
+
+		strcpy(joinedIPlist[i][1], s);
+
+		i++;
+	}
+	fclose(f);	// We're done here
+}
+
+
 // ==========================================================================
 //                        CONFIGURATION FILE
 // ==========================================================================
@@ -506,7 +633,7 @@ void Command_LoadConfig_f(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// temporarily reset execversion to default
@@ -560,7 +687,7 @@ void M_FirstLoadConfig(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// register execversion here before we load any configs
@@ -650,7 +777,7 @@ void M_SaveConfig(const char *filename)
 	}
 
 	// header message
-	fprintf(f, "// SRB2Kart configuration file.\n");
+	fprintf(f, "// Dr. Robotnik's Ring Racers configuration file.\n");
 
 	// print execversion FIRST, because subsequent consvars need to be filtered
 	// always print current EXECVERSION
@@ -662,15 +789,7 @@ void M_SaveConfig(const char *filename)
 
 	if (!dedicated)
 	{
-		if (tutorialmode && tutorialgcs)
-		{
-			// using gcs_custom as temp storage
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
-		else
-		{
-			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
+		G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
 	}
 
 	fclose(f);
@@ -697,20 +816,20 @@ static void M_CreateScreenShotPalette(void)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[13] = "kartXXXX.ext";
+	static char freename[19] = "ringracersXXXX.ext";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
 
 	// find a file name to save it to
-	strcpy(freename+9,ext);
+	strcpy(freename+15,ext);
 
 	for (;;)
 	{
-		freename[4] = (char)('0' + (char)(i/1000));
-		freename[5] = (char)('0' + (char)((i/100)%10));
-		freename[6] = (char)('0' + (char)((i/10)%10));
-		freename[7] = (char)('0' + (char)(i%10));
+		freename[10] = (char)('0' + (char)(i/1000));
+		freename[11] = (char)('0' + (char)((i/100)%10));
+		freename[12] = (char)('0' + (char)((i/10)%10));
+		freename[13] = (char)('0' + (char)(i%10));
 
 		if (FIL_WriteFileOK(va(pandf,pathname,freename))) // access succeeds
 			result = 1; // too low
@@ -719,10 +838,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			if (!i)
 				break; // not too high, so it must be equal! YAY!
 
-			freename[4] = (char)('0' + (char)((i-1)/1000));
-			freename[5] = (char)('0' + (char)(((i-1)/100)%10));
-			freename[6] = (char)('0' + (char)(((i-1)/10)%10));
-			freename[7] = (char)('0' + (char)((i-1)%10));
+			freename[10] = (char)('0' + (char)((i-1)/1000));
+			freename[11] = (char)('0' + (char)(((i-1)/100)%10));
+			freename[12] = (char)('0' + (char)(((i-1)/10)%10));
+			freename[13] = (char)('0' + (char)((i-1)%10));
 			if (!FIL_WriteFileOK(va(pandf,pathname,freename))) // access fails
 				result = -1; // too high
 			else
@@ -740,10 +859,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			return NULL;
 	}
 
-	freename[4] = (char)('0' + (char)(i/1000));
-	freename[5] = (char)('0' + (char)((i/100)%10));
-	freename[6] = (char)('0' + (char)((i/10)%10));
-	freename[7] = (char)('0' + (char)(i%10));
+	freename[10] = (char)('0' + (char)(i/1000));
+	freename[11] = (char)('0' + (char)((i/100)%10));
+	freename[12] = (char)('0' + (char)((i/10)%10));
+	freename[13] = (char)('0' + (char)(i%10));
 
 	return freename;
 }
@@ -803,10 +922,10 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "SRB2Kart " VERSIONSTRING;
+	char titletxt[] = "Dr. Robotnik's Ring Racers " VERSIONSTRING;
 	png_charp playertxt =  cv_playername[0].zstring;
-	char desctxt[] = "SRB2Kart Screenshot";
-	char Movietxt[] = "SRB2Kart Movie";
+	char desctxt[] = "Ring Racers Screenshot";
+	char Movietxt[] = "Ring Racers Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL
@@ -851,7 +970,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
-	if (gamestate == GS_LEVEL && &players[g_localplayers[0]] && players[g_localplayers[0]].mo)
+	if (gamestate == GS_LEVEL && players[g_localplayers[0]].mo)
 		snprintf(locationtxt, 40, "X:%d Y:%d Z:%d A:%d",
 			players[g_localplayers[0]].mo->x>>FRACBITS,
 			players[g_localplayers[0]].mo->y>>FRACBITS,
@@ -1650,12 +1769,12 @@ boolean M_ScreenshotResponder(event_t *ev)
 
 	ch = ev->data1;
 
-	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
+	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]) // remappable F8
+	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]) // remappable F9
+	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;

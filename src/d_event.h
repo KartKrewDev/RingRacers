@@ -25,9 +25,6 @@ typedef enum
 	ev_console,
 	ev_mouse,
 	ev_joystick,
-	ev_joystick2,
-	ev_joystick3,
-	ev_joystick4,
 } evtype_t;
 
 // Event structure.
@@ -37,6 +34,7 @@ typedef struct
 	INT32 data1; // keys / mouse/joystick buttons
 	INT32 data2; // mouse/joystick x move
 	INT32 data3; // mouse/joystick y move
+	INT32 device; // which player's device it belongs to
 } event_t;
 
 //

@@ -378,9 +378,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"indirectitemcooldown")) {
 		lua_pushinteger(L, indirectitemcooldown);
 		return 1;
-	} else if (fastcmp(word,"hyubgone")) {
-		lua_pushinteger(L, hyubgone);
-		return 1;
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
@@ -394,7 +391,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, mapobjectscale);
 		return 1;
 	} else if (fastcmp(word,"numlaps")) {
-		lua_pushinteger(L, cv_numlaps.value);
+		lua_pushinteger(L, numlaps);
 		return 1;
 	} else if (fastcmp(word,"racecountdown")) {
 		lua_pushinteger(L, racecountdown);
@@ -468,8 +465,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		exitcountdown = (tic_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word,"indirectitemcooldown"))
 		indirectitemcooldown = (tic_t)luaL_checkinteger(L, 2);
-	else if (fastcmp(word,"hyubgone"))
-		hyubgone = (tic_t)luaL_checkinteger(L, 2);
 	else
 		return 0;
 
@@ -1692,7 +1687,7 @@ void LUA_Archive(UINT8 **p)
 		
 		WRITEUINT32(*p, UINT32_MAX); // end of mobjs marker, replaces mobjnum.
 
-		LUAh_NetArchiveHook(NetArchive); // call the NetArchive hook in archive mode
+		LUA_HookNetArchive(NetArchive); // call the NetArchive hook in archive mode
 	}
 
 	ArchiveTables(p);
@@ -1731,7 +1726,7 @@ void LUA_UnArchive(UINT8 **p)
 			}
 		} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.
 
-		LUAh_NetArchiveHook(NetUnArchive); // call the NetArchive hook in unarchive mode
+		LUA_HookNetArchive(NetUnArchive); // call the NetArchive hook in unarchive mode
 	}
 
 	UnArchiveTables(p);

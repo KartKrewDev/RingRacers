@@ -60,6 +60,7 @@
 #include "r_textures.h"
 #include "r_patch.h"
 #include "r_picformats.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"
@@ -637,8 +638,6 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		lump_p->fullname = Z_Calloc(zentry.namelen + 1, PU_STATIC, NULL);
 		strncpy(lump_p->fullname, fullname, zentry.namelen);
 
-		free(fullname);
-
 		switch(zentry.compression)
 		{
 		case 0:
@@ -657,6 +656,8 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			lump_p->compression = CM_UNSUPPORTED;
 			break;
 		}
+
+		free(fullname);
 
 		// skip and ignore comments/extra fields
 		if (fseek(handle, zentry.xtralen + zentry.commlen, SEEK_CUR) != 0)
@@ -737,7 +738,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	else
 		refreshdirname = NULL;
 
-	//CONS_Debug(DBG_SETUP, "Loading %s\n", filename);
+	CONS_Printf("Loading %s\n", filename);
 	//
 	// check if limit of active wadfiles
 	//
@@ -893,6 +894,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 {
 	INT32 rc = 1;
+	INT32 overallrc = 1;
 
 	// will be realloced as lumps are added
 	for (; *filenames; filenames++)
@@ -901,13 +903,16 @@ INT32 W_InitMultipleFiles(char **filenames, boolean addons)
 			G_SetGameModified(true, false);
 
 		//CONS_Debug(DBG_SETUP, "Loading %s\n", *filenames);
-		rc &= (W_InitFile(*filenames, !addons, true) != INT16_MAX) ? 1 : 0;
+		rc = W_InitFile(*filenames, !addons, true);
+		if (rc == INT16_MAX)
+			CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), *filenames);
+		overallrc &= (rc != INT16_MAX) ? 1 : 0;
 	}
 
 	if (!numwadfiles)
 		I_Error("W_InitMultipleFiles: no files found");
 
-	return rc;
+	return overallrc;
 }
 
 /** Make sure a lump number is valid.
@@ -1796,7 +1801,7 @@ void *W_CachePatchName(const char *name, INT32 tag)
 	num = W_CheckNumForName(name);
 
 	if (num == LUMPERROR)
-		return W_CachePatchNum(W_GetNumForName("MISSING"), tag);
+		return missingpat;
 	return W_CachePatchNum(num, tag);
 }
 
@@ -1807,7 +1812,7 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
 	num = W_CheckNumForLongName(name);
 
 	if (num == LUMPERROR)
-		return W_CachePatchNum(W_GetNumForLongName("MISSING"), tag);
+		return missingpat;
 	return W_CachePatchNum(num, tag);
 }
 

@@ -125,7 +125,7 @@ boolean K_GenerateFinishBeamLine(void)
 	mapthing_t *mt;
 
 	INT64 bounds[4];
-	angle_t angle;
+	angle_t angle = 0;
 
 	boolean valid = false;
 	size_t i;

@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -33,10 +32,10 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
-#include "m_menu.h" // Player Setup menu color stuff
+#include "k_menu.h" // Player Setup menu color stuff
 #include "m_misc.h" // M_MapNumber
 #include "p_spec.h" // P_StartQuake
-#include "i_system.h" // I_GetPreciseTime, I_PreciseToMicros
+#include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -163,6 +162,7 @@ static const struct {
 	{META_SPRITEINFO,   "spriteinfo_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
+	{META_PRECIPPROPS,  "precipprops_t"},
 
 	{META_TAGLIST,      "taglist"},
 
@@ -214,7 +214,6 @@ static const struct {
 
 	{META_BBOX,         "bbox"},
 
-	{META_HUDINFO,      "hudinfo_t"},
 	{META_PATCH,        "patch_t"},
 	{META_COLORMAP,     "colormap"},
 	{META_CAMERA,       "camera_t"},
@@ -356,14 +355,26 @@ static int lib_pMoveColorAfter(lua_State *L)
 static int lib_pGetColorBefore(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorBefore(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorBefore(color, amount, follower));
 	return 1;
 }
 
 static int lib_pGetColorAfter(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorAfter(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorAfter(color, amount, follower));
+	return 1;
+}
+
+static int lib_pGetEffectiveFollowerColor(lua_State *L)
+{
+	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
+	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
+	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, playercolor));
 	return 1;
 }
 
@@ -1444,7 +1455,7 @@ static int lib_pTeleportMove(lua_State *L)
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
 	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin\" or \"P_MoveOrigin");
-	lua_pushboolean(L, P_SetOrigin(thing, x, y, z));
+	lua_pushboolean(L, P_MoveOrigin(thing, x, y, z));
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
 	return 2;
@@ -1482,42 +1493,6 @@ static int lib_pMoveOrigin(lua_State *L)
 	LUA_PushUserdata(L, tmthing, META_MOBJ);
 	P_SetTarget(&tmthing, ptmthing);
 	return 2;
-}
-
-static int lib_pInitAngle(lua_State *L)
-{
-	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	angle_t newValue = luaL_checkangle(L, 2);
-	NOHUD
-	INLEVEL
-	if (!thing)
-		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitAngle(thing, newValue);
-	return 0;
-}
-
-static int lib_pInitPitch(lua_State *L)
-{
-	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	angle_t newValue = luaL_checkangle(L, 2);
-	NOHUD
-	INLEVEL
-	if (!thing)
-		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitPitch(thing, newValue);
-	return 0;
-}
-
-static int lib_pInitRoll(lua_State *L)
-{
-	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	angle_t newValue = luaL_checkangle(L, 2);
-	NOHUD
-	INLEVEL
-	if (!thing)
-		return LUA_ErrInvalid(L, "mobj_t");
-	P_InitRoll(thing, newValue);
-	return 0;
 }
 
 static int lib_pSlideMove(lua_State *L)
@@ -3375,20 +3350,37 @@ static int lib_kOvertakeSound(lua_State *L)
 static int lib_kPainSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayPainSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayPainSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayPainSound(mobj, other);
 	return 0;
 }
 
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayHitEmSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayHitEmSound(mobj, other);
+	return 0;
+}
+
+static int lib_kTryHurtSoundExchange(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *attacker = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!victim->player)
+		return luaL_error(L, "K_TryHurtSoundExchange: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_TryHurtSoundExchange(victim, attacker);
 	return 0;
 }
 
@@ -3547,25 +3539,6 @@ static int lib_kTakeBumpersFromPlayer(lua_State *L)
 	if (!victim)
 		return LUA_ErrInvalid(L, "player_t");
 	K_TakeBumpersFromPlayer(player, victim, amount);
-	return 0;
-}
-
-static int lib_kSpawnKartExplosion(lua_State *L)
-{
-	fixed_t x = luaL_checkfixed(L, 1);
-	fixed_t y = luaL_checkfixed(L, 2);
-	fixed_t z = luaL_checkfixed(L, 3);
-	fixed_t radius = (fixed_t)luaL_optinteger(L, 4, 32*FRACUNIT);
-	INT32 number = (INT32)luaL_optinteger(L, 5, 32);
-	mobjtype_t type = luaL_optinteger(L, 6, MT_MINEEXPLOSION);
-	angle_t rotangle = luaL_optinteger(L, 7, 0);
-	boolean spawncenter = lua_opttrueboolean(L, 8);
-	boolean ghostit = lua_optboolean(L, 9);
-	mobj_t *source = NULL;
-	NOHUD
-	if (!lua_isnone(L, 10) && lua_isuserdata(L, 10))
-		source = *((mobj_t **)luaL_checkudata(L, 10, META_MOBJ));
-	K_SpawnKartExplosion(x, y, z, radius, number, type, rotangle, spawncenter, ghostit, source);
 	return 0;
 }
 
@@ -3746,10 +3719,11 @@ static int lib_kGetKartSpeed(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
 	boolean doboostpower = lua_optboolean(L, 2);
+	boolean dorubberbanding = lua_optboolean(L, 3);
 	//HUDSAFE
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower));
+	lua_pushfixed(L, K_GetKartSpeed(player, doboostpower, dorubberbanding));
 	return 1;
 }
 
@@ -3844,7 +3818,7 @@ static int lib_kDeclareWeakspot(lua_State *L)
 
 static int lib_getTimeMicros(lua_State *L)
 {
-	lua_pushinteger(L, I_PreciseToMicros(I_GetPreciseTime()));
+	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
 	return 1;
 }
 
@@ -3947,6 +3921,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"K_GetEffectiveFollowerColor",lib_pGetEffectiveFollowerColor},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
@@ -3955,9 +3930,6 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
-	{"P_InitAngle",lib_pInitAngle},
-	{"P_InitPitch",lib_pInitPitch},
-	{"P_InitRoll",lib_pInitRoll},
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
@@ -4091,6 +4063,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayLossSound", lib_kLossSound},
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
+	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},
@@ -4101,7 +4074,6 @@ static luaL_Reg lib[] = {
 	{"K_TumblePlayer",lib_kTumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
-	{"K_SpawnKartExplosion",lib_kSpawnKartExplosion},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},
 	{"K_SpawnBoostTrail",lib_kSpawnBoostTrail},
 	{"K_SpawnSparkleTrail",lib_kSpawnSparkleTrail},

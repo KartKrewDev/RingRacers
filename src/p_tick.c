@@ -261,6 +261,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 	* thinker->prev->next = thinker->next */
 	(next->prev = currentthinker = thinker->prev)->next = next;
 
+	R_DestroyLevelInterpolators(thinker);
 	Z_Free(thinker);
 }
 
@@ -492,6 +493,19 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+void P_RunChaseCameras(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (camera[i].chase)
+		{
+			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
+		}
+	}
+}
+
 //
 // P_Ticker
 //
@@ -511,8 +525,10 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
+			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera[0], false);
+			R_UpdateViewInterpolation();
 			P_MapEnd();
 			S_SetStackAdjustmentStart();
 			return;
@@ -545,6 +561,8 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		R_UpdateMobjInterpolators();
+
 		if (demo.recording)
 		{
 			G_WriteDemoExtraData();
@@ -563,7 +581,7 @@ void P_Ticker(boolean run)
 		ps_lua_mobjhooks = 0;
 		ps_checkposition_calls = 0;
 
-		LUAh_PreThinkFrame();
+		LUA_HOOK(PreThinkFrame);
 
 		ps_playerthink_time = I_GetPreciseTime();
 
@@ -636,7 +654,7 @@ void P_Ticker(boolean run)
 		}
 
 		ps_lua_thinkframe_time = I_GetPreciseTime();
-		LUAh_ThinkFrame();
+		LUA_HOOK(ThinkFrame);
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
@@ -667,8 +685,6 @@ void P_Ticker(boolean run)
 
 		if (indirectitemcooldown > 0)
 			indirectitemcooldown--;
-		if (hyubgone > 0)
-			hyubgone--;
 
 		K_BossInfoTicker();
 
@@ -705,7 +721,7 @@ void P_Ticker(boolean run)
 			G_WriteAllGhostTics();
 
 			if (cv_recordmultiplayerdemos.value && (demo.savemode == DSM_NOTSAVING || demo.savemode == DSM_WILLAUTOSAVE))
-				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && PlayerInputDown(1, gc_lookback))
+				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
 					demo.savemode = DSM_TITLEENTRY;
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
@@ -730,11 +746,14 @@ void P_Ticker(boolean run)
 	K_UpdateDirector();
 
 	// Always move the camera.
-	for (i = 0; i <= r_splitscreen; i++)
+	P_RunChaseCameras();
+
+	LUA_HOOK(PostThinkFrame);
+
+	if (run)
 	{
-		if (camera[i].chase)
-			P_MoveChaseCamera(&players[displayplayers[i]], &camera[i], false);
-		LUAh_PostThinkFrame();
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
 	}
 
 	P_MapEnd();
@@ -770,6 +789,8 @@ void P_PreTicker(INT32 frames)
 	{
 		P_MapStart();
 
+		R_UpdateMobjInterpolators();
+
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -781,7 +802,7 @@ void P_PreTicker(INT32 frames)
 				K_KartUpdatePosition(&players[i]);
 
 		// OK! Now that we got all of that sorted, players can think!
-		LUAh_PreThinkFrame();
+		LUA_HOOK(PreThinkFrame);
 
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -804,7 +825,7 @@ void P_PreTicker(INT32 frames)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		LUAh_ThinkFrame();
+		LUA_HOOK(ThinkFrame);
 
 		// Run shield positioning
 		P_RunOverlays();
@@ -812,7 +833,11 @@ void P_PreTicker(INT32 frames)
 		P_UpdateSpecials();
 		P_RespawnSpecials();
 
-		LUAh_PostThinkFrame();
+		LUA_HOOK(PostThinkFrame);
+
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 

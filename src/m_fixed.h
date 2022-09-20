@@ -37,6 +37,8 @@
 #define M_TAU_FIXED 411769
 #endif
 
+#define M_PI_FIXED (M_TAU_FIXED >> 1)
+
 typedef INT32 fixed_t;
 
 /*!
@@ -202,7 +204,7 @@ FUNCMATH FUNCINLINE static ATTRINLINE fixed_t FixedInt(fixed_t a)
 */
 FUNCMATH FUNCINLINE static ATTRINLINE fixed_t FixedDiv(fixed_t a, fixed_t b)
 {
-	if ((abs(a) >> (FRACBITS-2)) >= abs(b))
+	if ((abs(a / (FRACUNIT/4))) >= abs(b))
 		return (a^b) < 0 ? INT32_MIN : INT32_MAX;
 
 	return FixedDiv2(a, b);

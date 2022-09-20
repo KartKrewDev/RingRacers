@@ -43,6 +43,7 @@
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -53,7 +54,7 @@
 #include "byteptr.h"
 #include "p_setup.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "md5.h"
 #include "filesrch.h"
 
@@ -193,6 +194,12 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 		}
 
 		filestatus = 1; // Importance - not really used any more, holds 1 by default for backwards compat with MS
+
+		/* don't send mainwads!! */
+#ifdef DEVELOP
+		if (i <= mainwads)
+			filestatus += (2 << 4);
+#endif
 
 		// Store in the upper four bits
 		if (!cv_downloading.value)
@@ -1000,7 +1007,6 @@ static void SV_EndFileSend(INT32 node)
 	filestosend--;
 }
 
-#define PACKETPERTIC net_bandwidth/(TICRATE*software_MAXPACKETLENGTH)
 #define FILEFRAGMENTSIZE (software_MAXPACKETLENGTH - (FILETXHEADER + BASEPACKETSIZE))
 
 /** Handles file transmission
@@ -1033,14 +1039,7 @@ void FileSendTicker(void)
 	if (!filestosend) // No file to send
 		return;
 
-	if (cv_downloadspeed.value) // New behavior
-		packetsent = cv_downloadspeed.value;
-	else // Old behavior
-	{
-		packetsent = PACKETPERTIC;
-		if (!packetsent)
-			packetsent = 1;
-	}
+	packetsent = cv_downloadspeed.value;
 
 	netbuffer->packettype = PT_FILEFRAGMENT;
 
@@ -1719,7 +1718,7 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		// Only allow HTTP and HTTPS
 		curl_easy_setopt(http_handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP|CURLPROTO_HTTPS);
 
-		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, va("SRB2Kart/v%d.%d", VERSION, SUBVERSION)); // Set user agent as some servers won't accept invalid user agents.
+		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, va("Ring Racers/v%d.%d", VERSION, SUBVERSION)); // Set user agent as some servers won't accept invalid user agents.
 
 		// Authenticate if the user so wishes
 		login = CURLGetLogin(url, NULL);
