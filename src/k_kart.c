@@ -4009,13 +4009,11 @@ void K_UpdateStumbleIndicator(player_t *player)
 	// invert
 	trans = NUMTRANSMAPS - trans;
 
-	if (trans >= NUMTRANSMAPS)
+	mobj->renderflags |= RF_DONTDRAW;
+
+	if (trans < NUMTRANSMAPS)
 	{
-		mobj->renderflags |= RF_DONTDRAW;
-	}
-	else
-	{
-		mobj->renderflags &= ~(RF_TRANSMASK|RF_DONTDRAW);
+		mobj->renderflags &= ~(RF_TRANSMASK | K_GetPlayerDontDrawFlag(player));
 
 		if (trans != 0)
 		{
