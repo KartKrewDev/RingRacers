@@ -28,7 +28,8 @@
 
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
-#define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(5) * 2))
+#define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(9) * 2))
+#define SPB_ACTIVEDIST (1024 * FRACUNIT)
 
 enum
 {
@@ -245,6 +246,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	waypoint_t *destWaypoint = NULL;
 
 	fixed_t dist = INT32_MAX;
+	fixed_t activeDist = INT32_MAX;
 
 	fixed_t destX = spb->x;
 	fixed_t destY = spb->y;
@@ -285,12 +287,14 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	spbplace = bestPlayer->position;
 
 	dist = SPBDist(spb, spb_chase(spb));
+	activeDist = FixedMul(SPB_ACTIVEDIST, spb_chase(spb)->scale);
 
 #ifdef SPB_SEEKTEST // Easy debug switch
 	(void)dist;
 #else
-	if (dist <= (1024 * spb_chase(spb)->scale))
+	if (dist <= activeDist)
 	{
+		S_StopSound(spb);
 		S_StartSound(spb, spb->info->attacksound);
 		spb_mode(spb) = SPB_MODE_CHASE; // TARGET ACQUIRED
 		spb_modetimer(spb) = 7*TICRATE;
