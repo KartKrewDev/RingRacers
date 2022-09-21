@@ -7,8 +7,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  shrink.c
-/// \brief Shrink laser item code.
+/// \file  spb.c
+/// \brief Self Propelled Bomb item code.
 
 #include "../doomdef.h"
 #include "../doomstat.h"
