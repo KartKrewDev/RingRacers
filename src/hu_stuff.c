@@ -2421,8 +2421,6 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 		w /= 2;
 	}
 
-	CONS_Printf("mindelay %d / lag %d\n", cv_mindelay.value, lag);
-
 	// This looks kinda dumb, but basically:
 	// Servers with mindelay set modify the ping table.
 	// Clients with mindelay unset don't, because they can't.
