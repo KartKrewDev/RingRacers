@@ -242,6 +242,11 @@ static int lib_spr2namelen(lua_State *L)
 // SPRITE INFO //
 /////////////////
 
+struct PivotFrame {
+	spriteinfo_t *sprinfo;
+	UINT8 frame;
+};
+
 // spriteinfo[]
 static int lib_getSpriteInfo(lua_State *L)
 {
@@ -441,7 +446,7 @@ static int spriteinfo_get(lua_State *L)
 	{
 		// bypass LUA_PushUserdata
 		void **userdata = lua_newuserdata(L, sizeof(void *));
-		*userdata = &sprinfo->pivot;
+		*userdata = sprinfo;
 		luaL_getmetatable(L, META_PIVOTLIST);
 		lua_setmetatable(L, -2);
 
@@ -480,9 +485,8 @@ static int spriteinfo_set(lua_State *L)
 		// pivot[] is userdata
 		else if (lua_isuserdata(L, 1))
 		{
-			spriteframepivot_t *pivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-			memcpy(&sprinfo->pivot, pivot, sizeof(spriteframepivot_t));
-			sprinfo->available = true; // Just in case?
+			spriteinfo_t *copyinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
+			memcpy(sprinfo, copyinfo, sizeof(spriteinfo_t));
 		}
 	}
 	else
@@ -505,8 +509,8 @@ static int spriteinfo_num(lua_State *L)
 // framepivot_t
 static int pivotlist_get(lua_State *L)
 {
-	void **userdata;
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
+	struct PivotFrame *container;
+	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
 	const char *field = luaL_checkstring(L, 2);
 	UINT8 frame;
 
@@ -517,8 +521,9 @@ static int pivotlist_get(lua_State *L)
 		luaL_error(L, "invalid frame %s", field);
 
 	// bypass LUA_PushUserdata
-	userdata = lua_newuserdata(L, sizeof(void *));
-	*userdata = &framepivot[frame];
+	container = lua_newuserdata(L, sizeof *container);
+	container->sprinfo = sprinfo;
+	container->frame = frame;
 	luaL_getmetatable(L, META_FRAMEPIVOT);
 	lua_setmetatable(L, -2);
 
@@ -528,11 +533,10 @@ static int pivotlist_get(lua_State *L)
 
 static int pivotlist_set(lua_State *L)
 {
-	// Because I already know it's a spriteframepivot_t anyway
-	spriteframepivot_t *pivotlist = *((spriteframepivot_t **)lua_touserdata(L, 1));
-	//spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
+	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
 	const char *field = luaL_checkstring(L, 2);
 	UINT8 frame;
+	int okcool = 0;
 
 	if (!lua_lumploading)
 		return luaL_error(L, "Do not alter spriteframepivot_t from within a hook or coroutine!");
@@ -549,13 +553,17 @@ static int pivotlist_set(lua_State *L)
 
 	// pivot[] is a table
 	if (lua_istable(L, 3))
-		return PopPivotSubTable(pivotlist, L, 3, frame);
+		okcool = PopPivotSubTable(sprinfo->pivot, L, 3, frame);
 	// pivot[] is userdata
 	else if (lua_isuserdata(L, 3))
 	{
-		spriteframepivot_t *copypivot = *((spriteframepivot_t **)luaL_checkudata(L, 3, META_FRAMEPIVOT));
-		memcpy(&pivotlist[frame], copypivot, sizeof(spriteframepivot_t));
+		struct PivotFrame *container = luaL_checkudata(L, 3, META_FRAMEPIVOT);
+		memcpy(&sprinfo->pivot[frame], &container->sprinfo->pivot[container->frame], sizeof(spriteframepivot_t));
+		okcool = 1;
 	}
+
+	if (okcool)
+		sprinfo->available = true;
 
 	return 0;
 }
@@ -568,7 +576,8 @@ static int pivotlist_num(lua_State *L)
 
 static int framepivot_get(lua_State *L)
 {
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
+	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
+	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
 	const char *field = luaL_checkstring(L, 2);
 
 	I_Assert(framepivot != NULL);
@@ -585,7 +594,8 @@ static int framepivot_get(lua_State *L)
 
 static int framepivot_set(lua_State *L)
 {
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
+	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
+	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
 	const char *field = luaL_checkstring(L, 2);
 
 	if (!lua_lumploading)
@@ -598,9 +608,15 @@ static int framepivot_set(lua_State *L)
 	I_Assert(framepivot != NULL);
 
 	if (fastcmp("x", field))
+	{
 		framepivot->x = luaL_checkinteger(L, 3);
+		container->sprinfo->available = true;
+	}
 	else if (fastcmp("y", field))
+	{
 		framepivot->y = luaL_checkinteger(L, 3);
+		container->sprinfo->available = true;
+	}
 	else
 		return luaL_error(L, va("Field %s does not exist in spriteframepivot_t", field));
 
