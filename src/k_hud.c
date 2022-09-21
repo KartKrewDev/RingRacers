@@ -4878,7 +4878,7 @@ void K_drawKartHUD(void)
 		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
 	}
 
-	if ((netgame || cv_mindelay.value) && r_splitscreen)
+	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
 	}

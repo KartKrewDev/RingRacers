@@ -1219,7 +1219,7 @@ void I_FinishUpdate(void)
 				}
 			}
 		}
-		if (cv_mindelay.value && consoleplayer == serverplayer)
+		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
 			SCR_DisplayLocalPing();
 	}
 
