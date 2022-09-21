@@ -32,6 +32,7 @@
 #include "k_battle.h"
 #include "k_respawn.h"
 #include "k_collide.h"
+#include "k_objects.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -325,6 +326,7 @@ void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
+void A_SpawnItemDebrisCloud(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13165,9 +13167,6 @@ void A_ItemPop(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 
-	mobj_t *remains;
-	mobjtype_t explode;
-
 	if (LUA_CallAction(A_ITEMPOP, actor))
 		return;
 
@@ -13184,63 +13183,28 @@ void A_ItemPop(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 	P_SetThingPosition(actor);
 
-	// item explosion
-	explode = mobjinfo[actor->info->damage].mass;
-	remains = P_SpawnMobj(actor->x, actor->y,
-		((actor->eflags & MFE_VERTICALFLIP) ? (actor->z + 3*(actor->height/4) - FixedMul(mobjinfo[explode].height, actor->scale)) : (actor->z + actor->height/4)), explode);
-	if (actor->eflags & MFE_VERTICALFLIP)
-	{
-		remains->eflags |= MFE_VERTICALFLIP;
-		remains->flags2 |= MF2_OBJECTFLIP;
-	}
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
+	// RF_DONTDRAW will flicker as the object's fuse gets
+	// closer to running out (see P_FuseThink)
+	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
+	actor->color = SKINCOLOR_GREY;
+	actor->colorized = true;
 
-	remains = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->damage);
-	remains->type = actor->type; // Transfer type information
-	P_UnsetThingPosition(remains);
-	if (sector_list)
-	{
-		P_DelSeclist(sector_list);
-		sector_list = NULL;
-	}
-	P_SetThingPosition(remains);
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
-	remains->flags = actor->flags; // Transfer flags
-	remains->flags2 = actor->flags2; // Transfer flags2
-	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->cvmem = leveltime;
-	remains->threshold = actor->threshold;
-	if (remains->threshold != 69 && remains->threshold != 70)
-	{
-		remains->threshold = 68;
-	}
-	// To insure this information doesn't have to be rediscovered every time you look at this function...
-	// A threshold of 0 is for a "living", ordinary random item.
-	// 68 means regular popped random item debris.
-	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
-	// 70 is a powered up Overtime item.
-	remains->skin = NULL;
-	remains->spawnpoint = actor->spawnpoint;
-
-	P_SetTarget(&tmthing, remains);
-
-	if (actor->info->deathsound)
-		S_StartSound(remains, actor->info->deathsound);
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
 		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
 	else if (locvar1 == 0)
 		actor->target->player->itemroulette = 1;
 
-	remains->flags2 &= ~MF2_AMBUSH;
-
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
+	{
 		numgotboxes++;
 
-	P_RemoveMobj(actor);
+		// do not flicker back in just yet, handled by
+		// P_RespawnBattleBoxes eventually
+		P_SetMobjState(actor, S_INVISIBLE);
+	}
 }
 
 void A_JawzChase(mobj_t *actor)
@@ -14012,5 +13976,83 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	{
 		ghost->frame |= FF_ADD;
 		ghost->fuse = 4;
+	}
+}
+
+// Function: A_SpawnItemDebrisCloud
+//
+// Description: Spawns the poofs of an exploded item box. Target is a player to spawn the particles around.
+//
+// var1 = Copy extravalue2 / var1 fraction of target's momentum.
+// var2 = unused
+//
+void
+A_SpawnItemDebrisCloud (mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+
+	mobj_t *target = actor->target;
+	player_t *player;
+
+	fixed_t kartspeed;
+	fixed_t fade;
+
+	if (target == NULL || target->player == NULL)
+	{
+		return;
+	}
+
+	player = target->player;
+	kartspeed = K_GetKartSpeed(player, false, false);
+
+	// Scale around >50% top speed
+	fade = FixedMul(locvar1, (FixedDiv(player->speed,
+					kartspeed) - FRACUNIT/2) * 2);
+
+	if (fade < 1)
+	{
+		fade = 1;
+	}
+
+	if (actor->extravalue2 > fade)
+	{
+		actor->extravalue2 = fade;
+	}
+
+	// MT_ITEM_DEBRIS_CLOUD_SPAWNER
+	// extravalue2 from A_Repeat
+	fade = actor->extravalue2 * FRACUNIT / locvar1;
+
+	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
+
+	// dust effects
+	{
+		const INT16 spacing =
+			(target->radius / 2) / target->scale;
+
+		mobj_t *puff = P_SpawnMobjFromMobj(
+				target,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				MT_SPINDASHDUST
+		);
+
+		puff->color = target->color;
+		puff->colorized = true;
+
+		puff->momz = puff->scale * P_MobjFlip(puff);
+
+		P_InitAngle(puff, R_PointToAngle2(
+					target->x,
+					target->y,
+					puff->x,
+					puff->y));
+
+		P_Thrust(puff, puff->angle, 3 * puff->scale);
+
+		puff->momx += FixedMul(target->momx, fade);
+		puff->momy += FixedMul(target->momy, fade);
+		puff->momz += FixedMul(target->momz, fade);
 	}
 }

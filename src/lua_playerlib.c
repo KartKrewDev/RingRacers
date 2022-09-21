@@ -336,6 +336,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flamemeter);
 	else if (fastcmp(field,"flamelength"))
 		lua_pushinteger(L, plr->flamelength);
+	else if (fastcmp(field,"ballhogcharge"))
+		lua_pushinteger(L, plr->ballhogcharge);
 	else if (fastcmp(field,"hyudorotimer"))
 		lua_pushinteger(L, plr->hyudorotimer);
 	else if (fastcmp(field,"stealingtimer"))
@@ -696,6 +698,8 @@ static int player_set(lua_State *L)
 		plr->flamemeter = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamelength"))
 		plr->flamelength = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ballhogcharge"))
+		plr->ballhogcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"hyudorotimer"))
 		plr->hyudorotimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stealingtimer"))

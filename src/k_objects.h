@@ -15,6 +15,11 @@ void Obj_ShrinkGunRemoved(mobj_t *gun);
 boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim);
 void Obj_CreateShrinkPohbees(player_t *owner);
 
+/* Item Debris */
+void Obj_SpawnItemDebrisEffects(mobj_t *collectible, mobj_t *collector);
+void Obj_ItemDebrisThink(mobj_t *debris);
+fixed_t Obj_ItemDebrisBounce(mobj_t *debris, fixed_t momz);
+
 /* SPB */
 void Obj_SPBThink(mobj_t *spb);
 

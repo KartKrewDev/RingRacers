@@ -336,6 +336,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 
 	{{NULL},                     "NONE"},
 
@@ -3276,6 +3277,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEMPOP4",
 	//}
 
+	"S_ITEM_DEBRIS",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER1",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
+
 	"S_ITEMICON",
 
 	// Item capsules
@@ -3758,8 +3763,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GROW_PARTICLE",
 
 	// Shrink
-	"S_SHRINK_GUN",
+	"S_SHRINK_POHBEE",
+	"S_SHRINK_POHBEE2",
+	"S_SHRINK_POHBEE3",
+	"S_SHRINK_POHBEE4",
+	"S_SHRINK_POHBEE5",
+	"S_SHRINK_POHBEE6",
+	"S_SHRINK_POHBEE7",
+	"S_SHRINK_POHBEE8",
+
 	"S_SHRINK_CHAIN",
+
+	"S_SHRINK_GUN",
+	"S_SHRINK_GUN_OVERLAY",
+
 	"S_SHRINK_LASER",
 	"S_SHRINK_PARTICLE",
 
@@ -5296,6 +5313,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BRAKEDRIFT",
 	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_ITEM_DEBRIS",
+	"MT_ITEM_DEBRIS_CLOUD_SPAWNER",
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
