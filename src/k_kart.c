@@ -19,6 +19,7 @@
 #include "p_setup.h"
 #include "r_draw.h"
 #include "r_local.h"
+#include "r_things.c"
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "v_video.h"
@@ -3925,7 +3926,7 @@ void K_InitStumbleIndicator(player_t *player)
 
 void K_UpdateStumbleIndicator(player_t *player)
 {
-	const angle_t fudge = ANG10;
+	const angle_t fudge = ANG15;
 	mobj_t *mobj = NULL;
 
 	boolean air = false;
@@ -3997,24 +3998,24 @@ void K_UpdateStumbleIndicator(player_t *player)
 
 	steepRange = ANGLE_90 - steepVal;
 	delta = max(0, abs(delta) - ((signed)steepVal));
-	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * NUMTRANSMAPS) + (FRACUNIT/2)) / FRACUNIT;
+	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS - 2)) + (FRACUNIT/2)) / FRACUNIT;
 
 	if (trans < 0)
 	{
 		trans = 0;
 	}
 
-	if (trans > NUMTRANSMAPS)
+	if (trans > (NUMTRANSMAPS - 2))
 	{
-		trans = NUMTRANSMAPS;
+		trans = (NUMTRANSMAPS - 2);
 	}
 
 	// invert
-	trans = NUMTRANSMAPS - trans;
+	trans = (NUMTRANSMAPS - 2) - trans;
 
 	mobj->renderflags |= RF_DONTDRAW;
 
-	if (trans < NUMTRANSMAPS)
+	if (trans < (NUMTRANSMAPS - 2))
 	{
 		mobj->renderflags &= ~(RF_TRANSMASK | K_GetPlayerDontDrawFlag(player));
 
