@@ -1206,6 +1206,16 @@ static void K_drawKartItem(void)
 			else
 				localpatch = kp_nodraw;
 		}
+		else if (stplyr->ballhogcharge > 0)
+		{
+			itembar = stplyr->ballhogcharge;
+			maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
+
+			if (leveltime & 1)
+				localpatch = kp_ballhog[offset];
+			else
+				localpatch = kp_nodraw;
+		}
 		else if (stplyr->rocketsneakertimer > 1)
 		{
 			itembar = stplyr->rocketsneakertimer;
@@ -2167,7 +2177,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			}
 			else if (tab[i].num != serverplayer || !server_lagless)
 			{
-				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0, false);
 			}
 		}
 
@@ -4867,7 +4877,7 @@ void K_drawKartHUD(void)
 		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
 	}
 
-	if (netgame && r_splitscreen)
+	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
 	}

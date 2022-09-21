@@ -36,6 +36,7 @@
 #include "d_netfil.h" // findfile
 #include "r_data.h" // Color_cons_t
 #include "r_skins.h"
+#include "m_random.h"
 
 //========
 // protos.
@@ -53,6 +54,8 @@ static void COM_Wait_f(void);
 static void COM_Help_f(void);
 static void COM_Toggle_f(void);
 static void COM_Add_f(void);
+static void COM_Choose_f(void);
+static void COM_ChooseWeighted_f(void);
 
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
@@ -361,6 +364,8 @@ void COM_Init(void)
 	COM_AddCommand("help", COM_Help_f);
 	COM_AddCommand("toggle", COM_Toggle_f);
 	COM_AddCommand("add", COM_Add_f);
+	COM_AddCommand("choose", COM_Choose_f);
+	COM_AddCommand("chooseweighted", COM_ChooseWeighted_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
 }
 
@@ -1073,6 +1078,81 @@ static void COM_Add_f(void)
 	}
 	else
 		CV_AddValue(cvar, atoi(COM_Argv(2)));
+}
+
+static void COM_Choose_f(void)
+{
+	size_t na = COM_Argc();
+
+	if (na < 2)
+	{
+		CONS_Printf(M_GetText("choose <option1> [<option2>] [<option3>] [...]: Picks a command at random\n"));
+		return;
+	}
+
+	COM_BufAddText(COM_Argv(M_RandomKey(na - 1) + 1));
+	COM_BufAddText("\n");
+}
+
+static void COM_ChooseWeighted_f(void)
+{
+	size_t na = COM_Argc();
+	size_t i, cmd;
+	const char *commands[40];
+	INT32 weights[40];
+	INT32 totalWeight = 0;
+	INT32 roll;
+
+	if (na < 3)
+	{
+		CONS_Printf(M_GetText("chooseweighted <option1> <weight1> [<option2> <weight2>] [<option3> <weight3>] [...]: Picks a command with weighted randomization\n"));
+		return;
+	}
+
+	memset(weights, 0, sizeof(weights));
+
+	i = 1;
+	cmd = 0;
+	while (i < na)
+	{
+		commands[cmd] = COM_Argv(i);
+
+		i++;
+		if (i >= na)
+		{
+			break;
+		}
+
+		weights[cmd] = atoi(COM_Argv(i));
+		totalWeight += weights[cmd];
+
+		i++;
+		cmd++;
+	}
+
+	if (cmd == 0 || totalWeight <= 0)
+	{
+		return;
+	}
+
+	roll = M_RandomRange(1, totalWeight);
+
+	for (i = 0; i < cmd; i++)
+	{
+		if (roll <= weights[i])
+		{
+			if (commands[i] == NULL)
+			{
+				break;
+			}
+
+			COM_BufAddText(commands[i]);
+			COM_BufAddText("\n");
+			break;
+		}
+
+		roll -= weights[i];
+	}
 }
 
 // =========================================================================

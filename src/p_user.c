@@ -1339,7 +1339,7 @@ void P_DoPlayerExit(player_t *player)
 //
 // Handles player hitting floor surface.
 // Returns whether to clip momz.
-boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll)
 {
 	boolean clipmomz;
 
@@ -1347,9 +1347,32 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
 
-	if (fromAir == true && clipmomz == true)
+	if (clipmomz == true)
 	{
-		K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+		if (fromAir == true)
+		{
+			K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+		}
+
+		if (player->mo->health > 0)
+		{
+			boolean air = fromAir;
+
+			if (P_IsObjectOnGround(player->mo) && (player->mo->eflags & MFE_JUSTHITFLOOR))
+			{
+				air = true;
+			}
+
+			if (K_CheckStumble(player, oldPitch, oldRoll, air) == true)
+			{
+				return false;
+			}
+
+			if (air == false && K_FastFallBounce(player) == true)
+			{
+				return false;
+			}
+		}
 	}
 
 	return clipmomz;
@@ -1662,7 +1685,7 @@ static void P_CheckQuicksand(player_t *player)
 					player->mo->z = ceilingheight - player->mo->height;
 
 				if (player->mo->momz <= 0)
-					P_PlayerHitFloor(player, false);
+					P_PlayerHitFloor(player, false, player->mo->roll, player->mo->pitch);
 			}
 			else
 			{
@@ -1674,7 +1697,7 @@ static void P_CheckQuicksand(player_t *player)
 					player->mo->z = floorheight;
 
 				if (player->mo->momz >= 0)
-					P_PlayerHitFloor(player, false);
+					P_PlayerHitFloor(player, false, player->mo->roll, player->mo->pitch);
 			}
 
 			friction = abs(rover->master->v1->y - rover->master->v2->y)>>6;

@@ -326,6 +326,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 
 	{{NULL},                     "NONE"},
 
@@ -3266,6 +3267,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEMPOP4",
 	//}
 
+	"S_ITEM_DEBRIS",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER1",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
+
 	"S_ITEMICON",
 
 	// Item capsules
@@ -3820,6 +3825,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BOTTOM",
 	"S_TRIPWIREBOOST_BLAST_TOP",
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
+
+	"S_SMOOTHLANDING",
 
 	// DEZ respawn laser
 	"S_DEZLASER",
@@ -5298,6 +5305,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BRAKEDRIFT",
 	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_ITEM_DEBRIS",
+	"MT_ITEM_DEBRIS_CLOUD_SPAWNER",
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
@@ -5364,6 +5373,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER_BLAST",
 
 	"MT_TRIPWIREBOOST",
+
+	"MT_SMOOTHLANDING",
 
 	"MT_DEZLASER",
 
