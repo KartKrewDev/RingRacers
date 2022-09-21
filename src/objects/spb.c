@@ -78,6 +78,9 @@ static void SPBMantaRings(mobj_t *spb)
 	fixed_t spacing = INT32_MAX;
 	fixed_t finalDist = INT32_MAX;
 
+	const fixed_t floatHeight = 24 * spb->scale;
+	fixed_t floorDist = INT32_MAX;
+
 	if (leveltime % SPB_MANTA_VRATE == 0)
 	{
 		spb_manta_vscale(spb) = max(spb_manta_vscale(spb) - 1, SPB_MANTA_VMAX);
@@ -89,9 +92,12 @@ static void SPBMantaRings(mobj_t *spb)
 	vScale = FixedDiv(spb_manta_vscale(spb) * FRACUNIT, 100 * FRACUNIT);
 	finalDist = FixedMul(spacing, vScale);
 
+	floorDist = abs(P_GetMobjFeet(spb) - P_GetMobjGround(spb));
+
 	spb_manta_totaldist(spb) += P_AproxDistance(spb->momx, spb->momy);
 
-	if (spb_manta_totaldist(spb) > finalDist)
+	if (spb_manta_totaldist(spb) > finalDist
+		&& floorDist <= floatHeight)
 	{
 		spb_manta_totaldist(spb) = 0;
 
