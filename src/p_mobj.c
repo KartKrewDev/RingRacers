@@ -6934,6 +6934,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			Obj_SPBThink(mobj);
 			break;
 		}
+	case MT_MANTARING:
+		{
+			Obj_MantaRingThink(mobj);
+			break;
+		}
 	case MT_BALLHOG:
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);

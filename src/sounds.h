@@ -1183,6 +1183,9 @@ typedef enum
 	// Shrink laser
 	sfx_beam01,
 
+	// Juicebox for SPB
+	sfx_gatefx,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

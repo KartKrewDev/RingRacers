@@ -565,6 +565,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
 	"SPBM", // Self-Propelled Bomb
+	"TRIS", // SPB Manta Ring start
+	"TRNQ", // SPB Manta Ring loop
 	"THNS", // Lightning Shield
 	"BUBS", // Bubble Shield (not Bubs)
 	"BWVE", // Bubble Shield waves
@@ -4219,6 +4221,9 @@ state_t states[NUMSTATES] =
 	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB20}, // S_SPB19
 	{SPR_SPBM, 8, 1, {NULL}, 0, 0,  S_SPB1}, // S_SPB20
 	{SPR_SPBM, 8, 175, {NULL}, 0, 0, S_NULL}, // S_SPB_DEAD
+
+	{SPR_TRIS, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_TRANS20|FF_ADD,  9, {NULL},  2, 3, S_MANTA2}, // S_MANTA1
+	{SPR_TRNQ, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_TRANS20|FF_ADD, -1, {NULL}, 11, 3, S_NULL},   // S_MANTA2
 
 	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD2},		// S_LIGHTNINGSHIELD1
 	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD3},		// S_LIGHTNINGSHIELD2
@@ -23900,6 +23905,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1,              // damage
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_MANTARING
+		-1,             // doomednum
+		S_MANTA1,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

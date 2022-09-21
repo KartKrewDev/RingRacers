@@ -3186,7 +3186,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->startboost) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling/2); // + 100% top speed, + 400% acceleration, +25% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling); // + 100% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -3214,9 +3214,14 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(player->trickboostpower, 5*FRACUNIT, 0);	// <trickboostpower>% speed, 500% accel, 0% handling
 	}
 
+	if (player->gateBoost) // SPB Juicebox boost
+	{
+		ADDBOOST(FRACUNIT/2, 4*FRACUNIT, sliptidehandling); // + 50% top speed, + 400% acceleration, +50% handling
+	}
+
 	if (player->ringboost) // Ring Boost
 	{
-		ADDBOOST(FRACUNIT/5, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
+		ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -7329,7 +7334,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			// Speed lines
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
-				|| player->eggmanexplode || player->trickboost)
+				|| player->eggmanexplode || player->trickboost
+				|| player->gateBoost)
 			{
 #if 0
 				if (player->invincibilitytimer)
@@ -7578,6 +7584,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->strongdriftboost)
 		player->strongdriftboost--;
+
+	if (player->gateBoost)
+		player->gateBoost--;
 
 	if (player->startboost > 0 && onground == true)
 	{

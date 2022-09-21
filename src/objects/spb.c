@@ -24,12 +24,18 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 
-//#define SPB_SEEKTEST
+#define SPB_SEEKTEST
 
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
 #define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(9) * 2))
 #define SPB_ACTIVEDIST (1024 * FRACUNIT)
+
+#define SPB_MANTA_SPACING (2750 * FRACUNIT)
+
+#define SPB_MANTA_VSTART (150)
+#define SPB_MANTA_VRATE (60)
+#define SPB_MANTA_VMAX (100)
 
 enum
 {
@@ -48,25 +54,44 @@ enum
 
 #define spb_curwaypoint(o) ((o)->cusval)
 
+#define spb_manta_vscale(o) ((o)->movecount)
+#define spb_manta_totaldist(o) ((o)->reactiontime)
+
 #define spb_owner(o) ((o)->target)
 #define spb_chase(o) ((o)->tracer)
 
-static void SpawnSPBTrailRings(mobj_t *spb)
+static void SPBMantaRings(mobj_t *spb)
 {
-	if (leveltime % (spb_mode(spb) != SPB_MODE_SEEK ? 6 : 3) == 0)
+	fixed_t vScale = INT32_MAX;
+	fixed_t spacing = INT32_MAX;
+	fixed_t finalDist = INT32_MAX;
+
+	if (leveltime % SPB_MANTA_VRATE == 0)
 	{
-		mobj_t *ring = P_SpawnMobjFromMobj(spb,
-			-FixedDiv(spb->momx, spb->scale),
-			-FixedDiv(spb->momy, spb->scale),
-			-FixedDiv(spb->momz, spb->scale) + (24*FRACUNIT),
-			MT_RING
+		spb_manta_vscale(spb) = max(spb_manta_vscale(spb) - 1, SPB_MANTA_VMAX);
+	}
+
+	spacing = FixedMul(SPB_MANTA_SPACING, spb->scale);
+	spacing = FixedMul(spacing, K_GetKartGameSpeedScalar(gamespeed));
+
+	vScale = FixedDiv(spb_manta_vscale(spb) * FRACUNIT, 100 * FRACUNIT);
+	finalDist = FixedMul(spacing, vScale);
+
+	spb_manta_totaldist(spb) += P_AproxDistance(spb->momx, spb->momy);
+
+	if (spb_manta_totaldist(spb) > finalDist)
+	{
+		spb_manta_totaldist(spb) = 0;
+
+		Obj_MantaRingCreate(
+			spb,
+			spb_owner(spb),
+#ifdef SPB_SEEKTEST
+			NULL
+#else
+			spb_chase(spb)
+#endif
 		);
-
-		ring->threshold = 10;
-		ring->fuse = 35*TICRATE;
-
-		ring->colorized = true;
-		ring->color = SKINCOLOR_RED;
 	}
 }
 
@@ -291,6 +316,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 #ifdef SPB_SEEKTEST // Easy debug switch
 	(void)dist;
+	(void)activeDist;
 #else
 	if (dist <= activeDist)
 	{
@@ -322,7 +348,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 		fixed_t waypointDist = INT32_MAX;
 		fixed_t waypointRad = INT32_MAX;
 
-		CONS_Printf("Moving towards waypoint... (%d)\n", K_GetWaypointID(curWaypoint));
 		destX = curWaypoint->mobj->x;
 		destY = curWaypoint->mobj->y;
 		destZ = curWaypoint->mobj->z;
@@ -353,17 +378,14 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 					if (pathtoplayer.numnodes > 1)
 					{
 						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
-						CONS_Printf("NEW: Proper next waypoint (%d)\n", K_GetWaypointID(curWaypoint));
 					}
 					else if (destWaypoint->numnextwaypoints > 0)
 					{
 						curWaypoint = destWaypoint->nextwaypoints[0];
-						CONS_Printf("NEW: Forcing next waypoint (%d)\n", K_GetWaypointID(curWaypoint));
 					}
 					else
 					{
 						curWaypoint = destWaypoint;
-						CONS_Printf("NEW: Forcing destination (%d)\n", K_GetWaypointID(curWaypoint));
 					}
 
 					Z_Free(pathtoplayer.array);
@@ -380,7 +402,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			}
 			else
 			{
-				CONS_Printf("FAILURE, no waypoint (pathfind unsuccessful)\n");
 				spb_curwaypoint(spb) = -1;
 				destX = spb_chase(spb)->x;
 				destY = spb_chase(spb)->y;
@@ -390,7 +411,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	}
 	else
 	{
-		CONS_Printf("FAILURE, no waypoint (no initial waypoint)\n");
 		spb_curwaypoint(spb) = -1;
 		destX = spb_chase(spb)->x;
 		destY = spb_chase(spb)->y;
@@ -462,7 +482,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	SpawnSPBSpeedLines(spb);
 
 	// Spawn a trail of rings behind the SPB!
-	SpawnSPBTrailRings(spb);
+	SPBMantaRings(spb);
 }
 
 static void SPBChase(mobj_t *spb, player_t *bestPlayer)
@@ -613,7 +633,7 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 	spb->momy += cy;
 
 	// Spawn a trail of rings behind the SPB!
-	SpawnSPBTrailRings(spb);
+	SPBMantaRings(spb);
 
 	// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
 	if (R_PointToDist2(0, 0, spb->momx, spb->momy) > (16 * R_PointToDist2(0, 0, chase->momx, chase->momy)) / 15 // Going faster than the target
@@ -695,10 +715,13 @@ void Obj_SPBThink(mobj_t *spb)
 
 	if (spb_nothink(spb) > 0)
 	{
-		// Doesn't think yet, when it initially spawns.
+		// Init values, don't think yet.
 		spb_lastplayer(spb) = -1;
 		spb_curwaypoint(spb) = -1;
 		spbplace = -1;
+
+		spb_manta_totaldist(spb) = 0; // 30000?
+		spb_manta_vscale(spb) = SPB_MANTA_VSTART;
 
 		P_InstaThrust(spb, spb->angle, SPB_DEFAULTSPEED);
 

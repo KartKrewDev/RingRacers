@@ -23,4 +23,8 @@ fixed_t Obj_ItemDebrisBounce(mobj_t *debris, fixed_t momz);
 /* SPB */
 void Obj_SPBThink(mobj_t *spb);
 
+/* SPB Juicebox Rings */
+void Obj_MantaRingThink(mobj_t *manta);
+mobj_t *Obj_MantaRingCreate(mobj_t *spb, mobj_t *owner, mobj_t *chase);
+
 #endif/*k_objects_H*/
