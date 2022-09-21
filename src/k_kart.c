@@ -3865,6 +3865,8 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 	// Oh jeez, you landed on your side.
 	// You get to tumble.
 
+	P_ResetPlayer(player);
+
 #if 0
 	// Single, medium bounce
 	player->tumbleBounces = TUMBLEBOUNCES;
@@ -9568,31 +9570,7 @@ static void K_KartSpindash(player_t *player)
 	}
 	else if (player->fastfall != 0)
 	{
-		// Handle fastfall bounce.
-		const fixed_t maxBounce = player->mo->scale * 10;
-		const fixed_t minBounce = player->mo->scale;
-		fixed_t bounce = 2 * abs(player->fastfall) / 3;
-
-		if (bounce > maxBounce)
-		{
-			bounce = maxBounce;
-		}
-		else
-		{
-			// Lose speed on bad bounce.
-			player->mo->momx /= 2;
-			player->mo->momy /= 2;
-
-			if (bounce < minBounce)
-			{
-				bounce = minBounce;
-			}
-		}
-
-		S_StartSound(player->mo, sfx_ffbonc);
-		player->mo->momz = bounce * P_MobjFlip(player->mo);
-
-		player->fastfall = 0;
+		// Still handling fast-fall bounce.
 		return;
 	}
 
@@ -9658,6 +9636,41 @@ static void K_KartSpindash(player_t *player)
 }
 
 #undef SPINDASHTHRUSTTIME
+
+boolean K_FastFallBounce(player_t *player)
+{
+	// Handle fastfall bounce.
+	if (player->fastfall != 0)
+	{
+		const fixed_t maxBounce = player->mo->scale * 10;
+		const fixed_t minBounce = player->mo->scale;
+		fixed_t bounce = 2 * abs(player->fastfall) / 3;
+
+		if (bounce > maxBounce)
+		{
+			bounce = maxBounce;
+		}
+		else
+		{
+			// Lose speed on bad bounce.
+			player->mo->momx /= 2;
+			player->mo->momy /= 2;
+
+			if (bounce < minBounce)
+			{
+				bounce = minBounce;
+			}
+		}
+
+		S_StartSound(player->mo, sfx_ffbonc);
+		player->mo->momz = bounce * P_MobjFlip(player->mo);
+
+		player->fastfall = 0;
+		return true;
+	}
+
+	return false;
+}
 
 static void K_AirFailsafe(player_t *player)
 {

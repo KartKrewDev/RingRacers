@@ -1354,15 +1354,24 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 			K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
 		}
 
-		if (player->mo->health)
+		if (player->mo->health > 0)
 		{
 			boolean air = fromAir;
 
 			if (P_IsObjectOnGround(player->mo) && (player->mo->eflags & MFE_JUSTHITFLOOR))
+			{
 				air = true;
+			}
 
-			if (K_CheckStumble(player, oldPitch, oldRoll, air))
+			if (K_CheckStumble(player, oldPitch, oldRoll, air) == true)
+			{
 				return false;
+			}
+
+			if (air == false && K_FastFallBounce(player) == true)
+			{
+				return false;
+			}
 		}
 	}
 
