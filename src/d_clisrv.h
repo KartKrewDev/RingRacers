@@ -279,7 +279,6 @@ typedef struct
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
-	char mapname[8];
 	char maptitle[33];
 	unsigned char mapmd5[16];
 	UINT8 actnum;
