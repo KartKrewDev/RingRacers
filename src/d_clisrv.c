@@ -5664,7 +5664,7 @@ static void UpdatePingTable(void)
 
 	if (server)
 	{
-		if (netgame && !(gametime % 35))	// update once per second.
+		if (!(gametime % 35))	// update once per second.
 			PingUpdate();
 
 		fastest = 0;
