@@ -1401,9 +1401,13 @@ struct ParseSpriteInfoState {
 	spriteinfo_t *info;
 	spritenum_t sprnum;
 	playersprite_t spr2num;
+	boolean any;
 	INT32 skinnumbers[MAXSKINS];
 	INT32 foundskins;
 };
+
+#define PARSER_FRAME (false)
+#define PARSER_DEFAULT (true)
 
 static void R_ParseSpriteInfoSkin(struct ParseSpriteInfoState *parser)
 {
@@ -1420,19 +1424,26 @@ static void R_ParseSpriteInfoSkin(struct ParseSpriteInfoState *parser)
 		I_Error("Error parsing SPRTINFO lump: Unexpected end of file where skin frame should be");
 	}
 
-	// copy skin name yada yada
-	sprinfoTokenLength = strlen(sprinfoToken);
-	skinName = (char *)Z_Malloc((sprinfoTokenLength+1)*sizeof(char),PU_STATIC,NULL);
-	M_Memcpy(skinName,sprinfoToken,sprinfoTokenLength*sizeof(char));
-	skinName[sprinfoTokenLength] = '\0';
-	strlwr(skinName);
+	if (strcmp(sprinfoToken, "*")==0) // All skins
+	{
+		parser->foundskins = -1;
+	}
+	else
+	{
+		// copy skin name yada yada
+		sprinfoTokenLength = strlen(sprinfoToken);
+		skinName = (char *)Z_Malloc((sprinfoTokenLength+1)*sizeof(char),PU_STATIC,NULL);
+		M_Memcpy(skinName,sprinfoToken,sprinfoTokenLength*sizeof(char));
+		skinName[sprinfoTokenLength] = '\0';
+		strlwr(skinName);
 
-	skinnum = R_SkinAvailable(skinName);
-	if (skinnum == -1)
-		I_Error("Error parsing SPRTINFO lump: Unknown skin \"%s\"", skinName);
+		skinnum = R_SkinAvailable(skinName);
+		if (skinnum == -1)
+			I_Error("Error parsing SPRTINFO lump: Unknown skin \"%s\"", skinName);
 
-	parser->skinnumbers[parser->foundskins] = skinnum;
-	parser->foundskins++;
+		parser->skinnumbers[parser->foundskins] = skinnum;
+		parser->foundskins++;
+	}
 
 	Z_Free(sprinfoToken);
 }
@@ -1442,10 +1453,22 @@ static void copy_to_skin (struct ParseSpriteInfoState *parser, INT32 skinnum)
 	skin_t *skin = &skins[skinnum];
 	spriteinfo_t *sprinfo = skin->sprinfo;
 
-	M_Memcpy(&sprinfo[parser->spr2num], parser->info, sizeof(spriteinfo_t));
+	if (parser->any)
+	{
+		playersprite_t spr2num;
+
+		for (spr2num = 0; spr2num < NUMPLAYERSPRITES; ++spr2num)
+		{
+			M_Memcpy(&sprinfo[spr2num], parser->info, sizeof(spriteinfo_t));
+		}
+	}
+	else
+	{
+		M_Memcpy(&sprinfo[parser->spr2num], parser->info, sizeof(spriteinfo_t));
+	}
 }
 
-static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser)
+static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean all)
 {
 	char *sprinfoToken;
 	size_t sprinfoTokenLength;
@@ -1455,22 +1478,29 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser)
 	INT16 frameYPivot = 0;
 	rotaxis_t frameRotAxis = 0;
 
-	// Sprite identifier
-	sprinfoToken = M_GetToken(NULL);
-	if (sprinfoToken == NULL)
+	if (all)
 	{
-		I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite frame should be");
-	}
-	sprinfoTokenLength = strlen(sprinfoToken);
-	if (sprinfoTokenLength != 1)
-	{
-		I_Error("Error parsing SPRTINFO lump: Invalid frame \"%s\"",sprinfoToken);
+		frameFrame = SPRINFO_DEFAULT_PIVOT;
 	}
 	else
-		frameChar = sprinfoToken;
+	{
+		// Sprite identifier
+		sprinfoToken = M_GetToken(NULL);
+		if (sprinfoToken == NULL)
+		{
+			I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite frame should be");
+		}
+		sprinfoTokenLength = strlen(sprinfoToken);
+		if (sprinfoTokenLength != 1)
+		{
+			I_Error("Error parsing SPRTINFO lump: Invalid frame \"%s\"",sprinfoToken);
+		}
+		else
+			frameChar = sprinfoToken;
 
-	frameFrame = R_Char2Frame(frameChar[0]);
-	Z_Free(sprinfoToken);
+		frameFrame = R_Char2Frame(frameChar[0]);
+		Z_Free(sprinfoToken);
+	}
 
 	// Left Curly Brace
 	sprinfoToken = M_GetToken(NULL);
@@ -1528,6 +1558,8 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser)
 	parser->info->pivot[frameFrame].y = frameYPivot;
 	parser->info->pivot[frameFrame].rotaxis = frameRotAxis;
 
+	set_bit_array(parser->info->available, frameFrame);
+
 	if (parser->spr2)
 	{
 		INT32 i;
@@ -1535,14 +1567,36 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser)
 		if (!parser->foundskins)
 			I_Error("Error parsing SPRTINFO lump: No skins specified in this sprite2 definition");
 
-		for (i = 0; i < parser->foundskins; i++)
+		if (parser->foundskins < 0)
 		{
-			copy_to_skin(parser, parser->skinnumbers[i]);
+			for (i = 0; i < numskins; i++)
+			{
+				copy_to_skin(parser, i);
+			}
+		}
+		else
+		{
+			for (i = 0; i < parser->foundskins; i++)
+			{
+				copy_to_skin(parser, parser->skinnumbers[i]);
+			}
 		}
 	}
 	else
 	{
-		M_Memcpy(&spriteinfo[parser->sprnum], parser->info, sizeof(spriteinfo_t));
+		if (parser->any)
+		{
+			spritenum_t sprnum;
+
+			for (sprnum = 0; sprnum < NUMSPRITES; ++sprnum)
+			{
+				M_Memcpy(&spriteinfo[sprnum], parser->info, sizeof(spriteinfo_t));
+			}
+		}
+		else
+		{
+			M_Memcpy(&spriteinfo[parser->sprnum], parser->info, sizeof(spriteinfo_t));
+		}
 	}
 }
 
@@ -1561,6 +1615,7 @@ static void R_ParseSpriteInfo(boolean spr2)
 		.spr2 = spr2,
 		.sprnum = NUMSPRITES,
 		.spr2num = NUMPLAYERSPRITES,
+		.any = false,
 		.foundskins = 0,
 	};
 
@@ -1573,22 +1628,31 @@ static void R_ParseSpriteInfo(boolean spr2)
 		I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite name should be");
 	}
 
-	sprinfoTokenLength = strlen(sprinfoToken);
-	if (sprinfoTokenLength != 4)
+	if (!strcmp(sprinfoToken, "*")) // All sprites
 	{
-		I_Error("Error parsing SPRTINFO lump: Sprite name \"%s\" isn't 4 characters long",sprinfoToken);
+		parser.any = true;
 	}
 	else
 	{
-		memset(&newSpriteName, 0, 5);
-		M_Memcpy(newSpriteName, sprinfoToken, sprinfoTokenLength);
-		// ^^ we've confirmed that the token is == 4 characters so it will never overflow a 5 byte char buffer
-		strupr(newSpriteName); // Just do this now so we don't have to worry about it
+		sprinfoTokenLength = strlen(sprinfoToken);
+		if (sprinfoTokenLength != 4)
+		{
+			I_Error("Error parsing SPRTINFO lump: Sprite name \"%s\" isn't 4 characters long",sprinfoToken);
+		}
+		else
+		{
+			memset(&newSpriteName, 0, 5);
+			M_Memcpy(newSpriteName, sprinfoToken, sprinfoTokenLength);
+			// ^^ we've confirmed that the token is == 4 characters so it will never overflow a 5 byte char buffer
+			strupr(newSpriteName); // Just do this now so we don't have to worry about it
+		}
 	}
 
 	Z_Free(sprinfoToken);
 
-	if (!spr2)
+	if (parser.any)
+		;
+	else if (!spr2)
 	{
 		for (i = 0; i <= NUMSPRITES; i++)
 		{
@@ -1617,7 +1681,6 @@ static void R_ParseSpriteInfo(boolean spr2)
 
 	// allocate a spriteinfo
 	parser.info = Z_Calloc(sizeof(spriteinfo_t), PU_STATIC, NULL);
-	parser.info->available = true;
 
 	// Left Curly Brace
 	sprinfoToken = M_GetToken(NULL);
@@ -1646,7 +1709,12 @@ static void R_ParseSpriteInfo(boolean spr2)
 			else if (stricmp(sprinfoToken, "FRAME")==0)
 			{
 				Z_Free(sprinfoToken);
-				R_ParseSpriteInfoFrame(&parser);
+				R_ParseSpriteInfoFrame(&parser, PARSER_FRAME);
+			}
+			else if (stricmp(sprinfoToken, "DEFAULT")==0)
+			{
+				Z_Free(sprinfoToken);
+				R_ParseSpriteInfoFrame(&parser, PARSER_DEFAULT);
 			}
 			else
 			{
