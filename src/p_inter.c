@@ -275,7 +275,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			break;
+			return;
 		case MT_SPHEREBOX:
 			if (!P_CanPickupItem(player, 0))
 				return;
@@ -283,7 +283,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			break;
+			return;
 		case MT_ITEMCAPSULE:
 			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 				return;
@@ -1037,27 +1037,34 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	{
 		if (target->flags & MF_MONITOR || target->type == MT_RANDOMITEM)
 		{
-			UINT8 i;
-
 			P_SetTarget(&target->target, source);
 
-			for (i = 0; i < MAXPLAYERS; i++)
+			if (gametyperules & GTR_BUMPERS)
 			{
-				if (&players[i] == source->player)
-				{
-					continue;
-				}
-
-				if (playeringame[i] && !players[i].spectator && players[i].lives != 0)
-				{
-					break;
-				}
+				target->fuse = 2;
 			}
-
-			if (i < MAXPLAYERS)
+			else
 			{
-				// Respawn items in multiplayer, don't respawn them when alone
-				target->fuse = 2*TICRATE + 2;
+				UINT8 i;
+
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (&players[i] == source->player)
+					{
+						continue;
+					}
+
+					if (playeringame[i] && !players[i].spectator && players[i].lives != 0)
+					{
+						break;
+					}
+				}
+
+				if (i < MAXPLAYERS)
+				{
+					// Respawn items in multiplayer, don't respawn them when alone
+					target->fuse = 2*TICRATE + 2;
+				}
 			}
 		}
 	}
