@@ -247,6 +247,25 @@ struct PivotFrame {
 	UINT8 frame;
 };
 
+static UINT8 GetPivotFrame(lua_State *L, int idx)
+{
+	const char *field = luaL_checkstring(L, idx);
+	UINT8 frame;
+
+	if (fastcmp("default", field))
+	{
+		frame = SPRINFO_DEFAULT_PIVOT;
+	}
+	else
+	{
+		frame = R_Char2Frame(field[0]);
+		if (frame == 255)
+			luaL_error(L, "invalid frame %s", field);
+	}
+
+	return frame;
+}
+
 // spriteinfo[]
 static int lib_getSpriteInfo(lua_State *L)
 {
@@ -354,24 +373,23 @@ static int PopPivotTable(spriteinfo_t *info, lua_State *L, int stk)
 	while (lua_next(L, stk))
 	{
 		int idx = 0;
-		const char *framestr = NULL;
 		switch (lua_type(L, stk+1))
 		{
 			case LUA_TSTRING:
-				framestr = lua_tostring(L, stk+1);
-				idx = R_Char2Frame(framestr[0]);
+				idx = GetPivotFrame(L, stk+1);
 				break;
 			case LUA_TNUMBER:
 				idx = lua_tonumber(L, stk+1);
+
+				if ((idx < 0) || (idx >= 64))
+					return luaL_error(L, "pivot frame %d out of range (0 - %d)", idx, 63);
 				break;
 			default:
 				TYPEERROR("pivot frame", LUA_TNUMBER, lua_type(L, stk+1));
 		}
-		if ((idx < 0) || (idx >= 64))
-			return luaL_error(L, "pivot frame %d out of range (0 - %d)", idx, 63);
 		// the values in pivot[] are also tables
 		if (PopPivotSubTable(info->pivot, L, stk+2, idx))
-			info->available = true;
+			set_bit_array(info->available, idx);
 		lua_pop(L, 1);
 	}
 
@@ -511,14 +529,9 @@ static int pivotlist_get(lua_State *L)
 {
 	struct PivotFrame *container;
 	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-	const char *field = luaL_checkstring(L, 2);
-	UINT8 frame;
+	UINT8 frame = GetPivotFrame(L, 2);
 
 	I_Assert(framepivot != NULL);
-
-	frame = R_Char2Frame(field[0]);
-	if (frame == 255)
-		luaL_error(L, "invalid frame %s", field);
 
 	// bypass LUA_PushUserdata
 	container = lua_newuserdata(L, sizeof *container);
@@ -534,7 +547,6 @@ static int pivotlist_get(lua_State *L)
 static int pivotlist_set(lua_State *L)
 {
 	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-	const char *field = luaL_checkstring(L, 2);
 	UINT8 frame;
 	int okcool = 0;
 
@@ -547,9 +559,7 @@ static int pivotlist_set(lua_State *L)
 
 	I_Assert(pivotlist != NULL);
 
-	frame = R_Char2Frame(field[0]);
-	if (frame == 255)
-		luaL_error(L, "invalid frame %s", field);
+	frame = GetPivotFrame(L, 2);
 
 	// pivot[] is a table
 	if (lua_istable(L, 3))
@@ -563,7 +573,7 @@ static int pivotlist_set(lua_State *L)
 	}
 
 	if (okcool)
-		sprinfo->available = true;
+		set_bit_array(sprinfo->available, frame);
 
 	return 0;
 }
@@ -596,6 +606,7 @@ static int framepivot_set(lua_State *L)
 {
 	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
 	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
+	UINT8 *available = container->sprinfo->available;
 	const char *field = luaL_checkstring(L, 2);
 
 	if (!lua_lumploading)
@@ -610,12 +621,12 @@ static int framepivot_set(lua_State *L)
 	if (fastcmp("x", field))
 	{
 		framepivot->x = luaL_checkinteger(L, 3);
-		container->sprinfo->available = true;
+		set_bit_array(available, container->frame);
 	}
 	else if (fastcmp("y", field))
 	{
 		framepivot->y = luaL_checkinteger(L, 3);
-		container->sprinfo->available = true;
+		set_bit_array(available, container->frame);
 	}
 	else
 		return luaL_error(L, va("Field %s does not exist in spriteframepivot_t", field));
