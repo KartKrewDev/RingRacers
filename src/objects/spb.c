@@ -406,16 +406,17 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 				{
 					if (pathtoplayer.numnodes > 1)
 					{
+						// Go to next.
 						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
 					}
-#if 0
 					else if (spb->fuse > 0 && destWaypoint->numnextwaypoints > 0)
 					{
+						// Run ahead.
 						curWaypoint = destWaypoint->nextwaypoints[0];
 					}
-#endif
 					else
 					{
+						// Sort of wait at the player's dest waypoint.
 						curWaypoint = destWaypoint;
 					}
 
