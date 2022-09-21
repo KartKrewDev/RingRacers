@@ -3925,6 +3925,7 @@ void K_InitStumbleIndicator(player_t *player)
 
 void K_UpdateStumbleIndicator(player_t *player)
 {
+	const angle_t fudge = ANG10;
 	mobj_t *mobj = NULL;
 
 	boolean air = false;
@@ -3956,7 +3957,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	P_MoveOrigin(mobj, player->mo->x, player->mo->y, player->mo->z + (player->mo->height / 2));
 
 	air = !P_IsObjectOnGround(player->mo);
-	steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
+	steepVal = (air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL) - fudge;
 	slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
 
 	delta = 0;
