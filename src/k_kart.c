@@ -457,7 +457,9 @@ INT32 K_GetShieldFromItem(INT32 item)
 static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
 	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
+	{
 		indirectitemcooldown = 20*TICRATE;
+	}
 
 	player->botvars.itemdelay = TICRATE;
 	player->botvars.itemconfirm = 0;
@@ -511,15 +513,13 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 	}
 }
 
-fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
+fixed_t K_ItemOddsScale(UINT8 playerCount)
 {
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
-	UINT8 playerCount = (spbrush ? 2 : numPlayers);
 	fixed_t playerScaling = 0;
 
 	// Then, it multiplies it further if the player count isn't equal to basePlayer.
 	// This is done to make low player count races more interesting and high player count rates more fair.
-	// (If you're in SPB mode and in 2nd place, it acts like it's a 1v1, so the catch-up game is not weakened.)
 	if (playerCount < basePlayer)
 	{
 		// Less than basePlayer: increase odds significantly.
@@ -536,7 +536,7 @@ fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush)
 	return playerScaling;
 }
 
-UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush)
+UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 {
 	if (mapobjectscale != FRACUNIT)
 	{
@@ -555,7 +555,7 @@ UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush)
 		// Items get crazier with the fewer players that you have.
 		distance = FixedMul(
 			distance * FRACUNIT,
-			FRACUNIT + (K_ItemOddsScale(numPlayers, spbrush) / 2)
+			FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
 		) / FRACUNIT;
 	}
 
@@ -573,7 +573,7 @@ INT32 K_KartGetItemOdds(
 	UINT8 pos, SINT8 item,
 	UINT32 ourDist,
 	fixed_t mashed,
-	boolean spbrush, boolean bot, boolean rival)
+	boolean bot, boolean rival)
 {
 	INT32 newodds;
 	INT32 i;
@@ -668,7 +668,7 @@ INT32 K_KartGetItemOdds(
 
 		secondToFirst = K_ScaleItemDistance(
 			players[second].distancetofinish - players[first].distancetofinish,
-			pingame, spbrush
+			pingame
 		);
 	}
 
@@ -787,7 +787,7 @@ INT32 K_KartGetItemOdds(
 			fracOdds *= 2;
 		}
 
-		fracOdds = FixedMul(fracOdds, FRACUNIT + K_ItemOddsScale(pingame, spbrush));
+		fracOdds = FixedMul(fracOdds, FRACUNIT + K_ItemOddsScale(pingame));
 
 		if (mashed > 0)
 		{
@@ -803,7 +803,7 @@ INT32 K_KartGetItemOdds(
 
 //{ SRB2kart Roulette Code - Distance Based, yes waypoints
 
-UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper, boolean spbrush)
+UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper)
 {
 	UINT8 i;
 	UINT8 useodds = 0;
@@ -831,7 +831,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 					i, j,
 					player->distancetofinish,
 					mashed,
-					spbrush, player->bot, (player->bot && player->botvars.rival)
+					player->bot, (player->bot && player->botvars.rival)
 				) > 0)
 			{
 				available = true;
@@ -910,7 +910,6 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	UINT8 bestbumper = 0;
 	fixed_t mashed = 0;
 	boolean dontforcespb = false;
-	boolean spbrush = false;
 
 	// This makes the roulette cycle through items - if this is 0, you shouldn't be here.
 	if (!player->itemroulette)
@@ -983,14 +982,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (spbplace != -1 && player->position == spbplace+1)
-	{
-		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
-		pdis = (3 * pdis) / 2;
-		spbrush = true;
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
+	pdis = K_ScaleItemDistance(pdis, pingame);
 
 	if (player->bot && player->botvars.rival)
 	{
@@ -1125,7 +1117,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		spawnchance[i] = 0;
 
 	// Split into another function for a debug function below
-	useodds = K_FindUseodds(player, mashed, pdis, bestbumper, spbrush);
+	useodds = K_FindUseodds(player, mashed, pdis, bestbumper);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
@@ -1133,7 +1125,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 			useodds, i,
 			player->distancetofinish,
 			mashed,
-			spbrush, player->bot, (player->bot && player->botvars.rival))
+			player->bot, (player->bot && player->botvars.rival))
 		);
 	}
 
@@ -6086,8 +6078,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 				useodds, i,
 				UINT32_MAX,
 				0,
-				false, false, false
-				)
+				false, false)
 			);
 		}
 

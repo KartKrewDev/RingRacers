@@ -4556,7 +4556,6 @@ static void K_drawDistributionDebugger(void)
 	UINT32 pdis = 0;
 	INT32 i;
 	INT32 x = -9, y = -9;
-	boolean spbrush = false;
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
@@ -4583,14 +4582,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	if (spbplace != -1 && stplyr->position == spbplace+1)
-	{
-		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
-		pdis = (3 * pdis) / 2;
-		spbrush = true;
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
+	pdis = K_ScaleItemDistance(pdis, pingame);
 
 	if (stplyr->bot && stplyr->botvars.rival)
 	{
@@ -4598,7 +4590,7 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
+	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
@@ -4606,7 +4598,7 @@ static void K_drawDistributionDebugger(void)
 			useodds, i,
 			stplyr->distancetofinish,
 			0,
-			spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
+			stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
 		);
 
 		if (itemodds <= 0)
