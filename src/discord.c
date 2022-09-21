@@ -405,7 +405,9 @@ void DRPC_UpdatePresence(void)
 {
 	char detailstr[48+1];
 
+#ifdef USEMAPIMG
 	char mapimg[8+1];
+#endif
 	char mapname[5+21+21+2+1];
 
 	char charimg[4+SKINNAMESIZE+1];
@@ -508,7 +510,7 @@ void DRPC_UpdatePresence(void)
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
 		&& !(demo.playback && demo.title))
 	{
-#if 0
+#ifdef USEMAPIMG
 		if ((gamemap >= 1 && gamemap <= 60) // supported race maps
 			|| (gamemap >= 136 && gamemap <= 164)) // supported battle maps
 		{
