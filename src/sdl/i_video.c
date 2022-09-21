@@ -1219,6 +1219,8 @@ void I_FinishUpdate(void)
 				}
 			}
 		}
+		if (cv_mindelay.value && consoleplayer == serverplayer)
+			SCR_DisplayLocalPing();
 	}
 
 	if (marathonmode)
