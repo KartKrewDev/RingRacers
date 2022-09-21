@@ -22,6 +22,8 @@ fixed_t Obj_ItemDebrisBounce(mobj_t *debris, fixed_t momz);
 
 /* SPB */
 void Obj_SPBThink(mobj_t *spb);
+void Obj_SPBExplode(mobj_t *spb);
+void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher);
 
 /* SPB Juicebox Rings */
 void Obj_MantaRingThink(mobj_t *manta);

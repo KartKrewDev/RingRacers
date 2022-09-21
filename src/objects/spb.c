@@ -24,12 +24,19 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 
-//#define SPB_SEEKTEST
+#define SPB_SEEKTEST
 
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
 #define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(9) * 2))
 #define SPB_ACTIVEDIST (1024 * FRACUNIT)
+
+#define SPB_HOTPOTATO (2*TICRATE)
+#define SPB_MAXSWAPS (2)
+#define SPB_FLASHING (TICRATE)
+
+#define SPB_CHASETIMESCALE (60*TICRATE)
+#define SPB_CHASETIMEMUL (3*FRACUNIT)
 
 #define SPB_MANTA_SPACING (2750 * FRACUNIT)
 
@@ -48,9 +55,14 @@ enum
 #define spb_modetimer(o) ((o)->extravalue2)
 
 #define spb_nothink(o) ((o)->threshold)
+#define spb_intangible(o) ((o)->cvmem)
+
 #define spb_lastplayer(o) ((o)->lastlook)
 #define spb_speed(o) ((o)->movefactor)
 #define spb_pitch(o) ((o)->movedir)
+
+#define spb_chasetime(o) ((o)->watertop) // running out of variables here...
+#define spb_swapcount(o) ((o)->health)
 
 #define spb_curwaypoint(o) ((o)->cusval)
 
@@ -318,14 +330,31 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	(void)dist;
 	(void)activeDist;
 #else
-	if (dist <= activeDist)
+	if (spb_swapcount(spb) > SPB_MAXSWAPS + 1)
 	{
-		S_StopSound(spb);
-		S_StartSound(spb, spb->info->attacksound);
-		spb_mode(spb) = SPB_MODE_CHASE; // TARGET ACQUIRED
-		spb_modetimer(spb) = 7*TICRATE;
-		spb_speed(spb) = desiredSpeed;
-		return;
+		// Too much hot potato.
+		// Go past our target and explode instead.
+		if (spb->fuse == 0)
+		{
+			spb->fuse = 2*TICRATE;
+		}
+	}
+	else
+	{
+		if (dist <= activeDist)
+		{
+			S_StopSound(spb);
+			S_StartSound(spb, spb->info->attacksound);
+
+			spb_mode(spb) = SPB_MODE_CHASE; // TARGET ACQUIRED
+			spb_swapcount(spb)++;
+
+			spb_modetimer(spb) = SPB_HOTPOTATO;
+			spb_intangible(spb) = SPB_FLASHING;
+
+			spb_speed(spb) = desiredSpeed;
+			return;
+		}
 	}
 #endif
 
@@ -379,10 +408,12 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 					{
 						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
 					}
-					else if (destWaypoint->numnextwaypoints > 0)
+#if 0
+					else if (spb->fuse > 0 && destWaypoint->numnextwaypoints > 0)
 					{
 						curWaypoint = destWaypoint->nextwaypoints[0];
 					}
+#endif
 					else
 					{
 						curWaypoint = destWaypoint;
@@ -522,6 +553,9 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 		return;
 	}
 
+	// Increment chase time
+	spb_chasetime(spb)++;
+
 	baseSpeed = SPB_DEFAULTSPEED;
 	range = (160 * chase->scale);
 
@@ -570,7 +604,7 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 		// Switch targets if you're no longer 1st for long enough
 		if (bestPlayer != NULL && chasePlayer->position <= bestPlayer->position)
 		{
-			spb_modetimer(spb) = 7*TICRATE;
+			spb_modetimer(spb) = SPB_HOTPOTATO;
 		}
 		else
 		{
@@ -582,6 +616,7 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 			if (spb_modetimer(spb) <= 0)
 			{
 				spb_mode(spb) = SPB_MODE_SEEK; // back to SEEKING
+				spb_intangible(spb) = SPB_FLASHING;
 			}
 		}
 	}
@@ -677,7 +712,8 @@ static void SPBWait(mobj_t *spb)
 			{
 				P_SetTarget(&spb_chase(spb), oldPlayer->mo);
 				spb_mode(spb) = SPB_MODE_CHASE;
-				spb_modetimer(spb) = 7*TICRATE;
+				spb_modetimer(spb) = SPB_HOTPOTATO;
+				spb_intangible(spb) = SPB_FLASHING;
 				spb_speed(spb) = SPB_DEFAULTSPEED;
 			}
 		}
@@ -685,6 +721,7 @@ static void SPBWait(mobj_t *spb)
 		{
 			spb_mode(spb) = SPB_MODE_SEEK;
 			spb_modetimer(spb) = 0;
+			spb_intangible(spb) = SPB_FLASHING;
 			spbplace = -1;
 		}
 	}
@@ -718,6 +755,7 @@ void Obj_SPBThink(mobj_t *spb)
 		// Init values, don't think yet.
 		spb_lastplayer(spb) = -1;
 		spb_curwaypoint(spb) = -1;
+		spb_chasetime(spb) = 0;
 		spbplace = -1;
 
 		spb_manta_totaldist(spb) = 0; // 30000?
@@ -792,6 +830,36 @@ void Obj_SPBThink(mobj_t *spb)
 		}
 	}
 
+	// Flash on/off when intangible.
+	if (spb_intangible(spb) > 0)
+	{
+		spb_intangible(spb)--;
+
+		if (spb_intangible(spb) & 1)
+		{
+			spb->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			spb->renderflags &= ~RF_DONTDRAW;
+		}
+	}
+
+	// Flash white when about to explode!
+	if (spb->fuse > 0)
+	{
+		if (spb->fuse & 1)
+		{
+			spb->color = SKINCOLOR_INVINCFLASH;
+			spb->colorized = true;
+		}
+		else
+		{
+			spb->color = SKINCOLOR_NONE;
+			spb->colorized = false;
+		}
+	}
+
 	// Clamp within level boundaries.
 	if (spb->z < spb->floorz)
 	{
@@ -800,5 +868,73 @@ void Obj_SPBThink(mobj_t *spb)
 	else if (spb->z > spb->ceilingz - spb->height)
 	{
 		spb->z = spb->ceilingz - spb->height;
+	}
+}
+
+void Obj_SPBExplode(mobj_t *spb)
+{
+	mobj_t *spbExplode = NULL;
+
+	// Don't continue playing the gurgle or the siren
+	S_StopSound(spb);
+
+	spbExplode = P_SpawnMobjFromMobj(spb, 0, 0, 0, MT_SPBEXPLOSION);
+
+	if (spb_owner(spb) != NULL && P_MobjWasRemoved(spb_owner(spb)) == false)
+	{
+		P_SetTarget(&spbExplode->target, spb_owner(spb));
+	}
+
+	// Tell the explosion to use alternate knockback.
+	spbExplode->movefactor = ((SPB_CHASETIMESCALE - spb_chasetime(spb)) * SPB_CHASETIMEMUL) / SPB_CHASETIMESCALE;
+
+	P_RemoveMobj(spb);
+}
+
+void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher)
+{
+	player_t *player = toucher->player;
+
+	if (spb_intangible(spb) > 0)
+	{
+		return;
+	}
+
+	if ((spb_owner(spb) == toucher || spb_owner(spb) == toucher->target)
+		&& (spb_nothink(spb) > 0))
+	{
+		return;
+	}
+
+	if (spb->health <= 0 || toucher->health <= 0)
+	{
+		return;
+	}
+
+	if (player->spectator == true)
+	{
+		return;
+	}
+
+	if (player->bubbleblowup > 0)
+	{
+		// Stun the SPB, and remove the shield.
+		K_DropHnextList(player, false);
+		spb_mode(spb) = SPB_MODE_WAIT;
+		spb_modetimer(spb) = 55; // Slightly over the respawn timer length
+		return;
+	}
+
+	if (spb_chase(spb) != NULL && P_MobjWasRemoved(spb_chase(spb)) == false
+		&& toucher == spb_chase(spb))
+	{
+		// Cause the explosion.
+		Obj_SPBExplode(spb);
+		return;
+	}
+	else
+	{
+		// Regular spinout, please.
+		P_DamageMobj(toucher, spb, spb_owner(spb), 1, DMG_NORMAL);
 	}
 }

@@ -6269,6 +6269,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
+	case MT_SPB:
+	{
+		Obj_SPBExplode(mobj);
+		return;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{

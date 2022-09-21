@@ -3820,10 +3820,38 @@ angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
 	return slope;
 }
 
+static void K_StumblePlayer(player_t *player)
+{
+	P_ResetPlayer(player);
+
+#if 0
+	// Single, medium bounce
+	player->tumbleBounces = TUMBLEBOUNCES;
+	player->tumbleHeight = 30;
+#else
+	// Two small bounces
+	player->tumbleBounces = TUMBLEBOUNCES-1;
+	player->tumbleHeight = 20;
+#endif
+
+	player->pflags &= ~PF_TUMBLESOUND;
+	S_StartSound(player->mo, sfx_s3k9b);
+
+	// and then modulate momz like that...
+	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
+
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+
+	if (P_IsDisplayPlayer(player))
+		P_StartQuake(64<<FRACBITS, 10);
+
+	// Reset slope.
+	player->mo->pitch = player->mo->roll = 0;
+}
+
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
 {
 	angle_t steepVal = ANGLE_MAX;
-	fixed_t gravityadjust;
 	angle_t oldSlope, newSlope;
 	angle_t slopeDelta;
 
@@ -3873,36 +3901,7 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 	// Oh jeez, you landed on your side.
 	// You get to tumble.
 
-	P_ResetPlayer(player);
-
-#if 0
-	// Single, medium bounce
-	player->tumbleBounces = TUMBLEBOUNCES;
-	player->tumbleHeight = 30;
-#else
-	// Two small bounces
-	player->tumbleBounces = TUMBLEBOUNCES-1;
-	player->tumbleHeight = 20;
-#endif
-
-	player->pflags &= ~PF_TUMBLESOUND;
-	S_StartSound(player->mo, sfx_s3k9b);
-
-	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
-
-	if (player->mo->eflags & MFE_UNDERWATER)
-		gravityadjust /= 2;	// halve "gravity" underwater
-
-	// and then modulate momz like that...
-	player->mo->momz = -gravityadjust * player->tumbleHeight;
-
-	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-	if (P_IsDisplayPlayer(player))
-		P_StartQuake(64<<FRACBITS, 10);
-
-	// Reset slope.
-	player->mo->pitch = player->mo->roll = 0;
+	K_StumblePlayer(player);
 	return true;
 }
 
@@ -4136,23 +4135,45 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A bit of a hack, we just throw the player up higher here and extend their spinout timer
 {
 	INT32 ringburst = 10;
+	fixed_t spbMultiplier = FRACUNIT;
 
 	(void)source;
 
 	K_DirectorFollowAttack(player, inflictor, source);
 
-	player->mo->momz = 18*mapobjectscale*P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
+	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
+	{
+		if (inflictor->type == MT_SPBEXPLOSION && inflictor->movefactor)
+		{
+			spbMultiplier = inflictor->movefactor;
+
+			if (spbMultiplier <= 0)
+			{
+				// Convert into stumble.
+				K_StumblePlayer(player);
+				return 0;
+			}
+			else if (spbMultiplier < FRACUNIT)
+			{
+				spbMultiplier = FRACUNIT;
+			}
+		}
+	}
+
+	player->mo->momz = 18 * mapobjectscale * P_MobjFlip(player->mo); // please stop forgetting mobjflip checks!!!!
 	player->mo->momx = player->mo->momy = 0;
 
 	player->spinouttype = KSPIN_EXPLOSION;
 	player->spinouttimer = (3*TICRATE/2)+2;
 
-	if (inflictor && !P_MobjWasRemoved(inflictor))
+	if (spbMultiplier != FRACUNIT)
 	{
-		if (inflictor->type == MT_SPBEXPLOSION && inflictor->extravalue1)
+		player->mo->momz = FixedMul(player->mo->momz, spbMultiplier);
+		player->spinouttimer = FixedMul(player->spinouttimer, spbMultiplier + ((spbMultiplier - FRACUNIT) / 2));
+
+		ringburst = FixedMul(ringburst * FRACUNIT, spbMultiplier) / FRACUNIT;
+		if (ringburst > 20)
 		{
-			player->spinouttimer = ((5*player->spinouttimer)/2)+1;
-			player->mo->momz *= 2;
 			ringburst = 20;
 		}
 	}
