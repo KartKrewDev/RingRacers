@@ -362,7 +362,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 				  /*Mine*/ { 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
 			 /*Land Mine*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 			   /*Ballhog*/ { 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
+   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Self-Propelled Bomb
 				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
 				/*Shrink*/ { 0, 0, 0, 0, 0, 1, 3, 2 }, // Shrink
 	  /*Lightning Shield*/ { 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
@@ -416,8 +416,8 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
-#define SPBSTARTDIST (5*DISTVAR) // Distance when SPB is forced onto 2nd place
-#define SPBFORCEDIST (15*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define SPBSTARTDIST (6*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define SPBFORCEDIST (12*DISTVAR) // Distance when SPB is forced onto 2nd place
 #define ENDDIST (12*DISTVAR) // Distance when the game stops giving you bananas
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -456,7 +456,7 @@ INT32 K_GetShieldFromItem(INT32 item)
 */
 static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
-	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK) // Indirect items
+	if (getitem == KITEM_SPB) // Indirect items
 	{
 		indirectitemcooldown = 20*TICRATE;
 	}
@@ -581,8 +581,8 @@ INT32 K_KartGetItemOdds(
 	UINT8 pingame = 0, pexiting = 0;
 
 	SINT8 first = -1, second = -1;
-	UINT32 firstDist = UINT32_MAX;
-	UINT32 secondToFirst = UINT32_MAX;
+	UINT32 firstDist = 0;
+	UINT32 secondToFirst = 0;
 
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
@@ -679,6 +679,7 @@ INT32 K_KartGetItemOdds(
 		case KITEM_SUPERRING:
 			notNearEnd = true;
 			break;
+
 		case KITEM_ROCKETSNEAKER:
 		case KITEM_JAWZ:
 		case KITEM_LANDMINE:
@@ -691,11 +692,13 @@ INT32 K_KartGetItemOdds(
 		case KRITEM_DUALJAWZ:
 			powerItem = true;
 			break;
+
 		case KRITEM_TRIPLEBANANA:
 		case KRITEM_TENFOLDBANANA:
 			powerItem = true;
 			notNearEnd = true;
 			break;
+
 		case KITEM_INVINCIBILITY:
 		case KITEM_MINE:
 		case KITEM_GROW:
@@ -704,40 +707,46 @@ INT32 K_KartGetItemOdds(
 			cooldownOnStart = true;
 			powerItem = true;
 			break;
+
 		case KITEM_SPB:
 			cooldownOnStart = true;
 			indirectItem = true;
 			notNearEnd = true;
 
-			if (firstDist < ENDDIST) // No SPB near the end of the race
+			if (firstDist < ENDDIST*2) // No SPB when 1st is almost done
 			{
 				newodds = 0;
 			}
 			else
 			{
-				const INT32 distFromStart = max(0, (INT32)secondToFirst - SPBSTARTDIST);
+				const INT32 distFromStart = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
 				const INT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-				const INT32 mulMax = 3;
-
-				INT32 multiplier = (distFromStart * mulMax) / distRange;
+				const UINT8 maxOdds = 10;
+				fixed_t multiplier = (distFromStart * FRACUNIT) / distRange;
 
 				if (multiplier < 0)
+				{
 					multiplier = 0;
-				if (multiplier > mulMax)
-					multiplier = mulMax;
+				}
 
-				newodds *= multiplier;
+				if (multiplier > FRACUNIT)
+				{
+					multiplier = FRACUNIT;
+				}
+
+				newodds = FixedMul(maxOdds * 4 * FRACUNIT, multiplier) / FRACUNIT;
 			}
 			break;
+
 		case KITEM_SHRINK:
 			cooldownOnStart = true;
 			powerItem = true;
-			indirectItem = true;
 			notNearEnd = true;
 
 			if (pingame-1 <= pexiting)
 				newodds = 0;
 			break;
+
 		case KITEM_LIGHTNINGSHIELD:
 			cooldownOnStart = true;
 			powerItem = true;
@@ -745,6 +754,7 @@ INT32 K_KartGetItemOdds(
 			if (spbplace != -1)
 				newodds = 0;
 			break;
+
 		default:
 			break;
 	}
@@ -1097,7 +1107,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 5:
 	// Force SPB onto 2nd if they get too far behind
-	if ((gametyperules & GTR_CIRCUIT) && player->position == 2 && pdis > SPBFORCEDIST
+	if ((gametyperules & GTR_CIRCUIT) && pdis > SPBFORCEDIST
 		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
 		&& cv_selfpropelledbomb.value)
 	{
@@ -10342,10 +10352,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (spbplace == -1 || player->position != spbplace)
 			player->pflags &= ~PF_RINGLOCK; // reset ring lock
 
-		if (player->itemtype == KITEM_SPB
-			|| player->itemtype == KITEM_SHRINK
-			|| player->growshrinktimer < 0)
+		if (player->itemtype == KITEM_SPB)
+		{
 			indirectitemcooldown = 20*TICRATE;
+		}
 
 		if (player->hyudorotimer > 0)
 		{
