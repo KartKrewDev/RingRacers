@@ -141,10 +141,15 @@ patch_t *Patch_GetRotatedSprite(
 
 		patch = W_CachePatchNum(lump, PU_SPRITE);
 
-		if (sprinfo->available)
+		if (in_bit_array(sprinfo->available, frame))
 		{
 			xpivot = sprinfo->pivot[frame].x;
 			ypivot = sprinfo->pivot[frame].y;
+		}
+		else if (in_bit_array(sprinfo->available, SPRINFO_DEFAULT_PIVOT))
+		{
+			xpivot = sprinfo->pivot[SPRINFO_DEFAULT_PIVOT].x;
+			ypivot = sprinfo->pivot[SPRINFO_DEFAULT_PIVOT].y;
 		}
 		else
 		{
