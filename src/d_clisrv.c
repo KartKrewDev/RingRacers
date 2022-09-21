@@ -114,6 +114,8 @@ UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 
 static tic_t lowest_lag;
 boolean server_lagless;
+static CV_PossibleValue_t mindelay_cons_t[] = {{0, "MIN"}, {30, "MAX"}, {0, NULL}};
+consvar_t cv_mindelay = CVAR_INIT ("mindelay", "2", CV_SAVE, mindelay_cons_t, NULL);
 
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
@@ -5648,7 +5650,7 @@ static inline void PingUpdate(void)
 		if (nodeingame[i])
 			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
 
-	pingmeasurecount = 1; //Reset count
+	pingmeasurecount = 0; //Reset count
 }
 
 static tic_t gametime = 0;
@@ -5662,7 +5664,7 @@ static void UpdatePingTable(void)
 
 	if (server)
 	{
-		if (netgame && !(gametime % 35))	// update once per second.
+		if (Playing() && !(gametime % 35))	// update once per second.
 			PingUpdate();
 
 		fastest = 0;
@@ -5687,6 +5689,10 @@ static void UpdatePingTable(void)
 				}
 			}
 		}
+
+		// Don't gentleman below your mindelay
+		if (fastest < (tic_t)cv_mindelay.value)
+			fastest = (tic_t)cv_mindelay.value;
 
 		pingmeasurecount++;
 
@@ -5718,6 +5724,11 @@ static void UpdatePingTable(void)
 					realpingtable[nodetoplayer[0]] = lag;
 			}
 		}
+	}
+	else // We're a client, handle mindelay on the way out.
+	{
+		if ((neededtic - gametic) < (tic_t)cv_mindelay.value)
+			lowest_lag = cv_mindelay.value - (neededtic - gametic);
 	}
 }
 

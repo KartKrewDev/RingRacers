@@ -138,7 +138,7 @@ void HU_Drawer(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags); // Lat': Ping drawer for scoreboard.
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags, boolean offline); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);
