@@ -584,6 +584,7 @@ INT32 K_KartGetItemOdds(
 	SINT8 first = -1, second = -1;
 	UINT32 firstDist = 0;
 	UINT32 secondToFirst = 0;
+	boolean isFirst = false;
 
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
@@ -658,19 +659,24 @@ INT32 K_KartGetItemOdds(
 		}
 	}
 
-	if (first != -1 && second != -1) // calculate 2nd's distance from 1st, for SPB
+	if (first != -1) // calculate 2nd's distance from 1st, for SPB
 	{
 		firstDist = players[first].distancetofinish;
+
+		isFirst = (ourDist <= firstDist);
 
 		if (mapobjectscale != FRACUNIT)
 		{
 			firstDist = FixedDiv(firstDist * FRACUNIT, mapobjectscale) / FRACUNIT;
 		}
 
-		secondToFirst = K_ScaleItemDistance(
-			players[second].distancetofinish - players[first].distancetofinish,
-			pingame
-		);
+		if (second != -1)
+		{
+			secondToFirst = K_ScaleItemDistance(
+				players[second].distancetofinish - players[first].distancetofinish,
+				pingame
+			);
+		}
 	}
 
 	switch (item)
@@ -714,7 +720,8 @@ INT32 K_KartGetItemOdds(
 			indirectItem = true;
 			notNearEnd = true;
 
-			if (firstDist < ENDDIST*2) // No SPB when 1st is almost done
+			if (firstDist < ENDDIST*2 // No SPB when 1st is almost done
+				|| isFirst == true) // No SPB for 1st ever
 			{
 				newodds = 0;
 			}
@@ -1108,8 +1115,12 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 5:
 	// Force SPB onto 2nd if they get too far behind
-	if ((gametyperules & GTR_CIRCUIT) && pdis > SPBFORCEDIST
-		&& spbplace == -1 && !indirectitemcooldown && !dontforcespb
+	if ((gametyperules & GTR_CIRCUIT)
+		&& player->position > 1
+		&& pdis > SPBFORCEDIST
+		&& spbplace == -1
+		&& !indirectitemcooldown
+		&& !dontforcespb
 		&& cv_selfpropelledbomb.value)
 	{
 		K_KartGetItemResult(player, KITEM_SPB);
