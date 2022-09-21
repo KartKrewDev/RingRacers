@@ -1534,12 +1534,18 @@ void P_XYMovement(mobj_t *mo)
 	}
 
 	// adjust various things based on slope
-	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8) {
-		if (!P_IsObjectOnGround(mo)) { // We fell off at some point? Do the twisty thing!
+	if (mo->standingslope && abs(mo->standingslope->zdelta) > FRACUNIT>>8)
+	{
+		if (!P_IsObjectOnGround(mo))
+		{
+			// We fell off at some point? Do the twisty thing!
 			P_SlopeLaunch(mo);
 			xmove = mo->momx;
 			ymove = mo->momy;
-		} else { // Still on the ground.
+		}
+		else
+		{
+			// Still on the ground.
 			slopemom.x = xmove;
 			slopemom.y = ymove;
 			slopemom.z = 0;
@@ -1771,7 +1777,9 @@ void P_XYMovement(mobj_t *mo)
 	if (P_MobjWasRemoved(mo)) // MF_SPECIAL touched a player! O_o;;
 		return;
 
-	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT)) { // Check to see if we ran off
+	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT))
+	{
+		// Check to see if we ran off
 
 		if (oldslope != mo->standingslope)
 		{
@@ -2727,12 +2735,16 @@ static boolean P_PlayerPolyObjectZMovement(mobj_t *mo)
 void P_PlayerZMovement(mobj_t *mo)
 {
 	boolean onground;
+	angle_t oldPitch, oldRoll;
 
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
 	if (!mo->player)
 		return;
+
+	oldPitch = mo->pitch;
+	oldRoll = mo->roll;
 
 	// Intercept the stupid 'fall through 3dfloors' bug
 	if (mo->subsector->sector->ffloors)
@@ -2810,7 +2822,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->pmomz = 0; // We're on a new floor, don't keep doing platform movement.
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
-			clipmomz = P_PlayerHitFloor(mo->player, true);
+			clipmomz = P_PlayerHitFloor(mo->player, true, oldPitch, oldRoll);
 			P_PlayerPolyObjectZMovement(mo);
 
 			if (clipmomz)
@@ -2845,6 +2857,47 @@ void P_PlayerZMovement(mobj_t *mo)
 			/// \todo may not be needed (done in P_MobjThinker normally)
 			mo->eflags &= ~MFE_JUSTHITFLOOR;
 			P_CheckGravity(mo, true);
+		}
+
+		// Even out pitch & roll slowly over time when respawning.
+		if (mo->player->respawn.state != RESPAWNST_NONE)
+		{
+			const angle_t speed = ANG2; //FixedMul(ANG2, abs(mo->momz) / 8);
+			angle_t dest = 0;
+			INT32 pitchDelta = AngleDeltaSigned(mo->pitch, 0);
+			INT32 rollDelta = AngleDeltaSigned(mo->roll, 0);
+
+			if (abs(pitchDelta) <= speed && dest == 0)
+			{
+				mo->pitch = 0;
+			}
+			else if (abs(pitchDelta) > dest)
+			{
+				if (pitchDelta > 0)
+				{
+					mo->pitch -= speed;
+				}
+				else
+				{
+					mo->pitch += speed;
+				}
+			}
+
+			if (abs(rollDelta) <= speed && dest == 0)
+			{
+				mo->roll = 0;
+			}
+			else if (abs(rollDelta) > dest)
+			{
+				if (rollDelta > 0)
+				{
+					mo->roll -= speed;
+				}
+				else
+				{
+					mo->roll += speed;
+				}
+			}
 		}
 	}
 
@@ -11332,6 +11385,8 @@ void P_SpawnPlayer(INT32 playernum)
 	// set the scale to the mobj's destscale so settings get correctly set.  if we don't, they sometimes don't.
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
+
+	K_InitStumbleIndicator(p);
 
 	if (gametyperules & GTR_BUMPERS)
 	{
