@@ -1183,6 +1183,11 @@ typedef enum
 	// Shrink laser
 	sfx_beam01,
 
+	// SPB seeking
+	sfx_spbska,
+	sfx_spbskb,
+	sfx_spbskc,
+
 	// Juicebox for SPB
 	sfx_gatefx,
 

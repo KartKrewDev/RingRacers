@@ -1118,6 +1118,11 @@ sfxinfo_t S_sfx[NUMSFX] =
   // Shrink laser beam
   {"beam01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // SPB seeking
+  {"spbska", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskb", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskc", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // Juicebox for SPB
   {"gatefx", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 

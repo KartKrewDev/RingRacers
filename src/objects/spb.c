@@ -281,6 +281,13 @@ static void SetSPBSpeed(mobj_t *spb, fixed_t xySpeed, fixed_t zSpeed)
 	);
 }
 
+static boolean SPBSeekSoundPlaying(mobj_t *spb)
+{
+	return (S_SoundPlaying(spb, sfx_spbska)
+		|| S_SoundPlaying(spb, sfx_spbskb)
+		|| S_SoundPlaying(spb, sfx_spbskc));
+}
+
 static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 {
 	const fixed_t desiredSpeed = SPB_DEFAULTSPEED;
@@ -332,10 +339,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	dist = SPBDist(spb, spb_chase(spb));
 	activeDist = FixedMul(SPB_ACTIVEDIST, spb_chase(spb)->scale);
 
-#ifdef SPB_SEEKTEST // Easy debug switch
-	(void)dist;
-	(void)activeDist;
-#else
 	if (spb_swapcount(spb) > SPB_MAXSWAPS + 1)
 	{
 		// Too much hot potato.
@@ -347,6 +350,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	}
 	else
 	{
+#ifndef SPB_SEEKTEST // Easy debug switch
 		if (dist <= activeDist)
 		{
 			S_StopSound(spb);
@@ -361,8 +365,24 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			spb_speed(spb) = desiredSpeed;
 			return;
 		}
-	}
 #endif
+	}
+
+	if (SPBSeekSoundPlaying(spb) == false)
+	{
+		if (dist <= activeDist * 3)
+		{
+			S_StartSound(spb, sfx_spbskc);
+		}
+		else if (dist <= activeDist * 6)
+		{
+			S_StartSound(spb, sfx_spbskb);
+		}
+		else
+		{
+			S_StartSound(spb, sfx_spbska);
+		}
+	}
 
 	// Move along the waypoints until you get close enough
 	if (spb_curwaypoint(spb) == -1)
