@@ -2375,6 +2375,12 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
 
+	if (!server && lag <= (tic_t)cv_mindelay.value)
+	{
+		lag = cv_mindelay.value;
+		drawlocal = true;
+	}
+
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
@@ -2415,7 +2421,15 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 		w /= 2;
 	}
 
-	if (cv_mindelay.value && (tic_t)cv_mindelay.value <= lag)
+	CONS_Printf("mindelay %d / lag %d\n", cv_mindelay.value, lag);
+
+	// This looks kinda dumb, but basically:
+	// Servers with mindelay set modify the ping table.
+	// Clients with mindelay unset don't, because they can't.
+	// Both are affected by mindelay, but a client's lag value is pre-adjustment.
+	if (server && cv_mindelay.value && (tic_t)cv_mindelay.value <= lag)
+		patch = pinglocal[1];
+	else if (!server && cv_mindelay.value && (tic_t)cv_mindelay.value >= lag)
 		patch = pinglocal[1];
 	else
 		patch = mping[Ping_gfx_num(lag)];

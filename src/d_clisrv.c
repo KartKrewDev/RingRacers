@@ -5725,6 +5725,11 @@ static void UpdatePingTable(void)
 			}
 		}
 	}
+	else // We're a client, handle mindelay on the way out.
+	{
+		if ((neededtic - gametic) < (tic_t)cv_mindelay.value)
+			lowest_lag = cv_mindelay.value - (neededtic - gametic);
+	}
 }
 
 static void RenewHolePunch(void)
