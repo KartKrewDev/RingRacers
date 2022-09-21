@@ -440,8 +440,8 @@ typedef struct
 #define LF2_NOTIMEATTACK  (1<<2) ///< Hide this map in Time Attack modes
 #define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
 
-extern mapheader_t* mapheaderinfo[NUMMAPS];
-extern INT32 nummapheaders;
+extern mapheader_t** mapheaderinfo;
+extern INT32 nummapheaders, mapallocsize;
 
 // This could support more, but is that a good idea?
 // Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.

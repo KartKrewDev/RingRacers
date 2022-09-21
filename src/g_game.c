@@ -192,8 +192,8 @@ mapthing_t *bflagpoint;
 struct quake quake;
 
 // Map Header Information
-mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
-INT32 nummapheaders;
+mapheader_t** mapheaderinfo = {NULL};
+INT32 nummapheaders, mapallocsize = 0;
 
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;

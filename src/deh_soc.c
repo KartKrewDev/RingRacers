@@ -1095,11 +1095,6 @@ void readlevelheader(MYFILE *f, char * name)
 
 	const INT32 num = G_MapNumber(name);
 
-	if (num >= NUMMAPS)
-	{
-		I_Error("Too many maps!");
-	}
-
 	if (f->wad > mainwads && num < nummapheaders)
 	{
 		// only mark as a major mod if it replaces an already-existing mapheaderinfo

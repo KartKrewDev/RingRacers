@@ -422,9 +422,43 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
   */
 void P_AllocMapHeader(INT16 i)
 {
+	if (i > nummapheaders)
+		I_Error("P_AllocMapHeader: Called on %d, should be %d", i, nummapheaders);
+
+	if (i >= NEXTMAP_SPECIAL)
+	{
+		I_Error("P_AllocMapHeader: Too many maps!");
+	}
+
+	if (i >= mapallocsize)
+	{
+		if (!mapallocsize)
+		{
+			mapallocsize = 16;
+		}
+		else
+		{
+			mapallocsize *= 2;
+		}
+
+		mapheaderinfo = Z_ReallocAlign(
+			(void*) mapheaderinfo,
+			sizeof(mapheader_t*) * mapallocsize,
+			PU_STATIC,
+			NULL,
+			sizeof(mapheader_t*) * 8
+		);
+
+		if (!mapheaderinfo)
+			I_Error("P_AllocMapHeader: Not enough memory to realloc mapheaderinfo (size %d)", mapallocsize);
+	}
+
 	if (!mapheaderinfo[i])
 	{
 		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
+		if (!mapheaderinfo[i])
+			I_Error("P_AllocMapHeader: Not enough memory to allocate new mapheader");
+
 		mapheaderinfo[i]->lumpnum = LUMPERROR;
 		mapheaderinfo[i]->lumpname = NULL;
 		mapheaderinfo[i]->thumbnailPic = NULL;
