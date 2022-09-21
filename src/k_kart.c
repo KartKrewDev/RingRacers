@@ -3996,7 +3996,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 
 	steepRange = ANGLE_90 - steepVal;
 	delta = max(0, abs(delta) - ((signed)steepVal));
-	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS+1)) + (FRACUNIT/2)) / FRACUNIT;
+	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * NUMTRANSMAPS) + (FRACUNIT/2)) / FRACUNIT;
 
 	if (trans < 0)
 	{
