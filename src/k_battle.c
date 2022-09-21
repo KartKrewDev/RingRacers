@@ -17,6 +17,7 @@
 #include "s_sound.h"
 #include "m_random.h"
 #include "r_sky.h" // skyflatnum
+#include "k_grandprix.h" // K_CanChangeRules
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -126,7 +127,7 @@ void K_CheckBumpers(void)
 		winnerscoreadd -= players[i].roundscore;
 	}
 
-	if (bossinfo.boss)
+	if (K_CanChangeRules() == false)
 	{
 		if (nobumpers)
 		{

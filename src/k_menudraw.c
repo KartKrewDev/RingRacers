@@ -2159,19 +2159,34 @@ void M_DrawTimeAttack(void)
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	if (currentMenu == &PLAY_TimeAttackDef)
+	if (currentMenu == &PLAY_TimeAttackDef && mapheaderinfo[map])
 	{
-		if (mapheaderinfo[map])
+		tic_t timerec = 0;
+		tic_t laprec = 0;
+		UINT32 timeheight = 82;
+
+		if ((minimap = mapheaderinfo[map]->minimapPic))
+			V_DrawScaledPatch(24-t, 82, 0, minimap);
+
+		if (mapheaderinfo[map]->mainrecord)
 		{
-			if ((minimap = mapheaderinfo[map]->minimapPic))
-				V_DrawScaledPatch(24-t, 82, 0, minimap);
+			timerec = mapheaderinfo[map]->mainrecord->time;
+			laprec = mapheaderinfo[map]->mainrecord->lap;
 		}
 
-		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
-		K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+		if (levellist.newgametype != GT_BATTLE)
+		{
+			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
+			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
+			timeheight += 30;
+		}
+		else
+		{
+			timeheight += 15;
+		}
 
-		V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(0, 162+t, 118, map, 1);
+		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map, 1);
 	}
 	else
 		opty = 80;

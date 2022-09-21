@@ -218,6 +218,15 @@ extern menu_t PLAY_LevelSelectDef;
 extern menuitem_t PLAY_TimeAttack[];
 extern menu_t PLAY_TimeAttackDef;
 
+typedef enum
+{
+	ta_replay = 0,
+	ta_guest,
+	ta_ghosts,
+	ta_spacer,
+	ta_start,
+} ta_e;
+
 extern menuitem_t PLAY_TAReplay[];
 extern menu_t PLAY_TAReplayDef;
 

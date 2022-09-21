@@ -105,6 +105,23 @@ extern preciptype_t precip_freeslot;
 extern preciptype_t globalweather;
 extern preciptype_t curWeather;
 
+/** Time attack information, currently a very small structure.
+  */
+typedef struct
+{
+	tic_t time; ///< Time in which the level was finished.
+	tic_t lap;  ///< Best lap time for this level.
+	//UINT32 score; ///< Score when the level was finished.
+	//UINT16 rings; ///< Rings when the level was finished.
+} recorddata_t;
+
+// mapvisited is now a set of flags that says what we've done in the map.
+#define MV_VISITED (1)
+#define MV_BEATEN  (1<<1)
+#define MV_ENCORE  (1<<2)
+#define MV_MAX     (MV_VISITED|MV_BEATEN|MV_ENCORE)
+#define MV_MP      ((MV_MAX+1)<<1)
+
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
 extern boolean majormods;
@@ -402,6 +419,10 @@ typedef struct
 	fixed_t mobj_scale;					///< Replacement for TOL_ERZ3
 	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
+	// Record data (modified liberally, saved to gamedata)
+	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
+	recorddata_t *mainrecord;			///< Stores best time attack data
+
 	// Lua stuff.
 	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
@@ -562,27 +583,6 @@ extern UINT16 emeralds;
 extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
-
-/** Time attack information, currently a very small structure.
-  */
-typedef struct
-{
-	tic_t time; ///< Time in which the level was finished.
-	tic_t lap;  ///< Best lap time for this level.
-	//UINT32 score; ///< Score when the level was finished.
-	//UINT16 rings; ///< Rings when the level was finished.
-} recorddata_t;
-
-//extern nightsdata_t *nightsrecords[NUMMAPS];
-extern recorddata_t *mainrecords[NUMMAPS];
-
-// mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED (1)
-#define MV_BEATEN  (1<<1)
-#define MV_ENCORE  (1<<2)
-#define MV_MAX     (MV_VISITED|MV_BEATEN|MV_ENCORE)
-#define MV_MP      ((MV_MAX+1)<<1)
-extern UINT8 mapvisited[NUMMAPS];
 
 extern UINT32 token; ///< Number of tokens collected in a level
 extern UINT32 tokenlist; ///< List of tokens collected

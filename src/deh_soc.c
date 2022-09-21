@@ -2334,7 +2334,7 @@ void reademblemdata(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "TAG"))
 				emblemlocations[num-1].tag = (INT16)value;
-			else if (fastcmp(word, "MAPNUM"))
+			else if (fastcmp(word, "MAPNAME"))
 			{
 				emblemlocations[num-1].level = Z_StrDup(word2);
 			}

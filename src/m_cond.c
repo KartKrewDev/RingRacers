@@ -81,7 +81,10 @@ void M_ClearSecrets(void)
 {
 	INT32 i;
 
-	memset(mapvisited, 0, sizeof(mapvisited));
+	for (i = 0; i < nummapheaders; ++i)
+	{
+		mapheaderinfo[i]->mapvisited = 0;
+	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		emblemlocations[i].collected = false;
@@ -129,11 +132,19 @@ UINT8 M_CheckCondition(condition_t *cn)
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return (M_GotLowEnoughTime(cn->requirement));
 		case UC_MAPVISITED: // Requires map x to be visited
-			return ((mapvisited[cn->requirement - 1] & MV_VISITED) == MV_VISITED);
 		case UC_MAPBEATEN: // Requires map x to be beaten
-			return ((mapvisited[cn->requirement - 1] & MV_BEATEN) == MV_BEATEN);
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
-			return ((mapvisited[cn->requirement - 1] & MV_ENCORE) == MV_ENCORE);
+		{
+			UINT8 mvtype = MV_VISITED;
+			if (cn->type == UC_MAPBEATEN)
+				mvtype = MV_BEATEN;
+			else if (cn->type == UC_MAPENCORE)
+				mvtype = MV_ENCORE;
+
+			return ((cn->requirement < nummapheaders)
+				&& (mapheaderinfo[cn->requirement])
+				&& ((mapheaderinfo[cn->requirement]->mapvisited & mvtype) == mvtype));
+		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 		case UC_TRIGGER: // requires map trigger set
@@ -355,7 +366,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (embtype & ME_ENCORE)
 			flags |= MV_ENCORE;
 
-		res = ((mapvisited[levelnum - 1] & flags) == flags);
+		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
 
 		emblemlocations[i].collected = res;
 		if (res)
@@ -477,9 +488,9 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mainrecords[i] || !mainrecords[i]->time)
+		if (!mapheaderinfo[i]->mainrecord || !mapheaderinfo[i]->mainrecord->time)
 			return false;
-		else if ((curtics += mainrecords[i]->time) > tictime)
+		else if ((curtics += mapheaderinfo[i]->mainrecord->time) > tictime)
 			return false;
 	}
 	return true;
