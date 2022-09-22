@@ -3293,7 +3293,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->gateBoost) // SPB Juicebox boost
 	{
-		ADDBOOST(FRACUNIT/2, 4*FRACUNIT, sliptidehandling); // + 50% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling); // + 100% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->ringboost) // Ring Boost
