@@ -389,7 +389,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 					else
 					{
-						deh_warning("Map header's lumpname %s is too long (%d characters VS %d max)", word2, len, (MAXMAPLUMPNAME-1));
+						deh_warning("Map header's lumpname %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXMAPLUMPNAME-1));
 						ignorelines(f);
 					}
 				}
