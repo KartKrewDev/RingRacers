@@ -4560,6 +4560,13 @@ static void K_drawDistributionDebugger(void)
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
 
+	if (K_ForcedSPB(stplyr) == true)
+	{
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[KITEM_SPB]);
+		V_DrawThinString(x+11, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, "EX");
+		return;
+	}
+
 	// The only code duplication from the Kart, just to avoid the actual item function from calculating pingame twice
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4604,8 +4611,8 @@ static void K_drawDistributionDebugger(void)
 		if (itemodds <= 0)
 			continue;
 
-		V_DrawScaledPatch(x, y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, items[i]);
-		V_DrawThinString(x+11, y+31, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("%d", itemodds));
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[i]);
+		V_DrawThinString(x+11, y+31, V_SNAPTOTOP, va("%d", itemodds));
 
 		// Display amount for multi-items
 		if (i >= NUMKARTITEMS)
@@ -4629,7 +4636,7 @@ static void K_drawDistributionDebugger(void)
 					amount = 3;
 					break;
 			}
-			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("x%d", amount));
+			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
 		}
 
 		x += 32;
@@ -4640,7 +4647,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	V_DrawString(0, 0, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("USEODDS %d", useodds));
+	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
 }
 
 static void K_drawCheckpointDebugger(void)

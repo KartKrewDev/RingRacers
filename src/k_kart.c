@@ -417,8 +417,8 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
-#define SPBSTARTDIST (6*DISTVAR) // Distance when SPB is forced onto 2nd place
-#define SPBFORCEDIST (12*DISTVAR) // Distance when SPB is forced onto 2nd place
+#define SPBSTARTDIST (10*DISTVAR) // Distance when SPB can start appearing
+#define SPBFORCEDIST (20*DISTVAR) // Distance when SPB is forced onto the next person who rolls an item
 #define ENDDIST (12*DISTVAR) // Distance when the game stops giving you bananas
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
@@ -542,7 +542,7 @@ UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	if (mapobjectscale != FRACUNIT)
 	{
 		// Bring back to normal scale.
-		distance = FixedDiv(distance * FRACUNIT, mapobjectscale) / FRACUNIT;
+		distance = FixedDiv(distance, mapobjectscale);
 	}
 
 	if (franticitems == true)
@@ -555,9 +555,9 @@ UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	{
 		// Items get crazier with the fewer players that you have.
 		distance = FixedMul(
-			distance * FRACUNIT,
+			distance,
 			FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
-		) / FRACUNIT;
+		);
 	}
 
 	return distance;
@@ -581,8 +581,11 @@ INT32 K_KartGetItemOdds(
 
 	UINT8 pingame = 0, pexiting = 0;
 
-	SINT8 first = -1, second = -1;
-	UINT32 firstDist = 0;
+	player_t *first = NULL;
+	player_t *second = NULL;
+
+	UINT32 firstDist = UINT32_MAX;
+	UINT32 secondDist = UINT32_MAX;
 	UINT32 secondToFirst = 0;
 	boolean isFirst = false;
 
@@ -650,33 +653,32 @@ INT32 K_KartGetItemOdds(
 			return 0;
 		}
 
-		if (players[i].mo && gametype == GT_RACE)
+		if (players[i].position == 1)
 		{
-			if (players[i].position == 1 && first == -1)
-				first = i;
-			if (players[i].position == 2 && second == -1)
-				second = i;
+			first = &players[i];
+		}
+
+		if (players[i].position == 2)
+		{
+			second = &players[i];
 		}
 	}
 
-	if (first != -1) // calculate 2nd's distance from 1st, for SPB
+	if (first != NULL) // calculate 2nd's distance from 1st, for SPB
 	{
-		firstDist = players[first].distancetofinish;
-
+		firstDist = first->distancetofinish;
 		isFirst = (ourDist <= firstDist);
+	}
 
-		if (mapobjectscale != FRACUNIT)
-		{
-			firstDist = FixedDiv(firstDist * FRACUNIT, mapobjectscale) / FRACUNIT;
-		}
+	if (second != NULL)
+	{
+		secondDist = second->distancetofinish;
+	}
 
-		if (second != -1)
-		{
-			secondToFirst = K_ScaleItemDistance(
-				players[second].distancetofinish - players[first].distancetofinish,
-				pingame
-			);
-		}
+	if (first != NULL && second != NULL)
+	{
+		secondToFirst = secondDist - firstDist;
+		secondToFirst = K_ScaleItemDistance(secondToFirst, pingame);
 	}
 
 	switch (item)
@@ -727,10 +729,10 @@ INT32 K_KartGetItemOdds(
 			}
 			else
 			{
-				const INT32 distFromStart = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
-				const INT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-				const UINT8 maxOdds = 10;
-				fixed_t multiplier = (distFromStart * FRACUNIT) / distRange;
+				const UINT32 dist = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
+				const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+				const UINT8 maxOdds = 20;
+				fixed_t multiplier = (dist * FRACUNIT) / distRange;
 
 				if (multiplier < 0)
 				{
@@ -742,7 +744,7 @@ INT32 K_KartGetItemOdds(
 					multiplier = FRACUNIT;
 				}
 
-				newodds = FixedMul(maxOdds * 4 * FRACUNIT, multiplier) / FRACUNIT;
+				newodds = FixedMul(maxOdds * 4, multiplier);
 			}
 			break;
 
@@ -916,6 +918,80 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	return useodds;
 }
 
+boolean K_ForcedSPB(player_t *player)
+{
+	player_t *first = NULL;
+	player_t *second = NULL;
+	UINT32 secondToFirst = UINT32_MAX;
+	UINT8 pingame = 0;
+	UINT8 i;
+
+	if (!cv_selfpropelledbomb.value)
+	{
+		return false;
+	}
+
+	if (!(gametyperules & GTR_CIRCUIT))
+	{
+		return false;
+	}
+
+	if (player->position <= 1)
+	{
+		return false;
+	}
+
+	if (spbplace != -1)
+	{
+		return false;
+	}
+
+	if (indirectitemcooldown > 0)
+	{
+		return false;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+
+		if (players[i].exiting)
+		{
+			return false;
+		}
+
+		pingame++;
+
+		if (players[i].position == 1)
+		{
+			first = &players[i];
+		}
+
+		if (players[i].position == 2)
+		{
+			second = &players[i];
+		}
+	}
+
+#if 0
+	if (pingame <= 2)
+	{
+		return false;
+	}
+#endif
+
+	if (first != NULL && second != NULL)
+	{
+		secondToFirst = second->distancetofinish - first->distancetofinish;
+		secondToFirst = K_ScaleItemDistance(secondToFirst, pingame);
+	}
+
+	return (secondToFirst >= SPBFORCEDIST);
+}
+
 static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 {
 	INT32 i;
@@ -927,7 +1003,6 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	INT32 totalspawnchance = 0;
 	UINT8 bestbumper = 0;
 	fixed_t mashed = 0;
-	boolean dontforcespb = false;
 
 	// This makes the roulette cycle through items - if this is 0, you shouldn't be here.
 	if (!player->itemroulette)
@@ -939,16 +1014,12 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	{
 		if (!playeringame[i] || players[i].spectator)
 			continue;
+
 		pingame++;
-		if (players[i].exiting)
-			dontforcespb = true;
+
 		if (players[i].bumpers > bestbumper)
 			bestbumper = players[i].bumpers;
 	}
-
-	// No forced SPB in 1v1s, it has to be randomly rolled
-	if (pingame <= 2)
-		dontforcespb = true;
 
 	// This makes the roulette produce the random noises.
 	if ((player->itemroulette % 3) == 1 && P_IsDisplayPlayer(player) && !demo.freecam)
@@ -1114,14 +1185,8 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	}
 
 	// SPECIAL CASE No. 5:
-	// Force SPB onto 2nd if they get too far behind
-	if ((gametyperules & GTR_CIRCUIT)
-		&& player->position > 1
-		&& pdis > SPBFORCEDIST
-		&& spbplace == -1
-		&& !indirectitemcooldown
-		&& !dontforcespb
-		&& cv_selfpropelledbomb.value)
+	// Force SPB if 2nd is way too far behind
+	if (K_ForcedSPB(player) == true)
 	{
 		K_KartGetItemResult(player, KITEM_SPB);
 		player->karthud[khud_itemblink] = TICRATE;
@@ -9324,7 +9389,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	}
 
 	disttofinish = player->distancetofinish - disttofinish;
-	distv = FixedMul(distv * FRACUNIT, mapobjectscale) / FRACUNIT;
+	distv = FixedMul(distv, mapobjectscale);
 	return min(16, 1 + (disttofinish / distv));
 }
 

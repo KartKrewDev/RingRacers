@@ -48,6 +48,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 fixed_t K_ItemOddsScale(UINT8 numPlayers);
 UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers);
 INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, fixed_t mashed, boolean bot, boolean rival);
+boolean K_ForcedSPB(player_t *player);
 INT32 K_GetShieldFromItem(INT32 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
