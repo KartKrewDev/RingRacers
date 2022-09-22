@@ -5931,10 +5931,6 @@ void P_InitSpecials(void)
 	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
 	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
-	// Defaults in case levels don't have them set.
-	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
-	ssspheres = mapheaderinfo[gamemap-1]->ssspheres;
-
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
 	// Set weather
@@ -6026,11 +6022,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 		// Process Section 2
 		switch(GETSECSPECIAL(sector->special, 2))
 		{
-			case 10: // Time for special stage
-				sstimer = (sector->floorheight>>FRACBITS) * TICRATE + 6; // Time to finish
-				ssspheres = sector->ceilingheight>>FRACBITS; // Ring count for special stage
-				break;
-
 			case 11: // Custom global gravity!
 				gravity = sector->floorheight/1000;
 				break;

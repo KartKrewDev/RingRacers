@@ -2116,7 +2116,6 @@ static int mapheaderinfo_get(lua_State *L)
 {
 	mapheader_t *header = *((mapheader_t **)luaL_checkudata(L, 1, META_MAPHEADER));
 	const char *field = luaL_checkstring(L, 2);
-	INT16 i;
 	if (fastcmp(field,"lvlttl"))
 		lua_pushstring(L, header->lvlttl);
 	else if (fastcmp(field,"subttl"))
@@ -2135,8 +2134,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->mustrack);
 	else if (fastcmp(field,"muspos"))
 		lua_pushinteger(L, header->muspos);
-	else if (fastcmp(field,"forcecharacter"))
-		lua_pushstring(L, header->forcecharacter);
 	else if (fastcmp(field,"weather"))
 		lua_pushinteger(L, header->weather);
 	else if (fastcmp(field,"skytexture"))
@@ -2147,12 +2144,7 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->skybox_scaley);
 	else if (fastcmp(field,"skybox_scalez"))
 		lua_pushinteger(L, header->skybox_scalez);
-	else if (fastcmp(field,"interscreen")) {
-		for (i = 0; i < 8; i++)
-			if (!header->interscreen[i])
-				break;
-		lua_pushlstring(L, header->interscreen, i);
-	} else if (fastcmp(field,"runsoc"))
+	else if (fastcmp(field,"runsoc"))
 		lua_pushstring(L, header->runsoc);
 	else if (fastcmp(field,"scriptname"))
 		lua_pushstring(L, header->scriptname);
@@ -2160,8 +2152,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->precutscenenum);
 	else if (fastcmp(field,"cutscenenum"))
 		lua_pushinteger(L, header->cutscenenum);
-	else if (fastcmp(field,"countdown"))
-		lua_pushinteger(L, header->countdown);
 	else if (fastcmp(field,"palette"))
 		lua_pushinteger(L, header->palette);
 	else if (fastcmp(field,"numlaps"))
@@ -2176,12 +2166,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->menuflags);
 	else if (fastcmp(field,"mobj_scale"))
 		lua_pushfixed(L, header->mobj_scale);
-	else if (fastcmp(field,"startrings"))
-		lua_pushinteger(L, header->startrings);
-	else if (fastcmp(field, "sstimer"))
-		lua_pushinteger(L, header->sstimer);
-	else if (fastcmp(field, "ssspheres"))
-		lua_pushinteger(L, header->ssspheres);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
 	else {

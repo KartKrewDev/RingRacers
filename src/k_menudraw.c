@@ -1846,7 +1846,7 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
 		while (x < BASEVIDWIDTH + pad)
 		{
-			INT32 cupLevelNum = G_MapNumber(cup->levellist[i]);
+			INT32 cupLevelNum = cup->cachedlevels[i];
 			patch_t *PictureOfLevel = NULL;
 
 			if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])

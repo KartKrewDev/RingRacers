@@ -151,12 +151,10 @@ INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
-UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
 INT16 spstage_start, spmarathon_start;
-INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
 
 char * titlemap = NULL;
 boolean hidetitlepics = false;
@@ -172,8 +170,6 @@ UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
 UINT16 skincolor_redring = SKINCOLOR_RASPBERRY;
 UINT16 skincolor_bluering = SKINCOLOR_PERIWINKLE;
 
-tic_t countdowntimer = 0;
-boolean countdowntimeup = false;
 boolean exitfadestarted = false;
 
 cutscene_t *cutscenes[128];
@@ -211,9 +207,6 @@ UINT32 token; // Number of tokens collected in a level
 UINT32 tokenlist; // List of tokens collected
 boolean gottoken; // Did you get a token? Used for end of act
 INT32 tokenbits; // Used for setting token bits
-
-// Old Special Stage
-INT32 sstimer; // Time allotted in the special stage
 
 tic_t totalplaytime;
 UINT32 matchesplayed; // SRB2Kart
@@ -673,13 +666,13 @@ INT32 G_MapNumber(const char * name)
 
 		for (map = 0; map < nummapheaders; ++map)
 		{
-			if (strcasecmp(mapheaderinfo[map]->lumpname, name) == 0)
-			{
-				break;
-			}
+			if (strcasecmp(mapheaderinfo[map]->lumpname, name) != 0)
+				continue;
+
+			return map;
 		}
 
-		return map;
+		return NEXTMAP_INVALID;
 	}
 
 #ifdef NEXTMAPINSOC
@@ -3201,18 +3194,15 @@ INT32 G_GetGametypeByName(const char *gametypestr)
 //
 boolean G_IsSpecialStage(INT32 mapnum)
 {
-#if 1
-	(void)mapnum;
-#else
-	if (modeattacking == ATTACKING_TIME)
-		return false;
-	if (mapnum >= sstage_start && mapnum <= sstage_end)
-		return true;
-	if (mapnum >= smpstage_start && mapnum <= smpstage_end)
-		return true;
-#endif
+	mapnum--; // gamemap-based to 0 indexed
 
-	return false;
+	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
+		return false;
+
+	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
+		return false;
+
+	return true;
 }
 
 //
@@ -3386,11 +3376,11 @@ UINT32 G_TOLFlag(INT32 pgametype)
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
-	INT16 mapnum = nummapheaders;
+	INT16 mapnum = NEXTMAP_INVALID;
 
 	if ((gametypedefaultrules[pgametype] & GTR_CAMPAIGN) && kartcupheaders)
 	{
-		mapnum = G_MapNumber(kartcupheaders->levellist[0]);
+		mapnum = kartcupheaders->cachedlevels[0];
 	}
 
 	if (mapnum >= nummapheaders)
@@ -3699,7 +3689,7 @@ static void G_GetNextMap(void)
 			else
 			{
 				// Proceed to next map
-				const INT32 cupLevelNum = G_MapNumber(grandprixinfo.cup->levellist[grandprixinfo.roundnum]);
+				const INT32 cupLevelNum =grandprixinfo.cup->cachedlevels[grandprixinfo.roundnum];
 
 				if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 				{
@@ -3725,19 +3715,14 @@ static void G_GetNextMap(void)
 		if (gametyperules & GTR_CAMPAIGN)
 		{
 			register INT16 cm;
-			cupheader_t *cup = kartcupheaders;
+			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
 			UINT8 gettingresult = 0;
 
-			// While this can't produce an infinite loop IN THE ITERATION, it
-			// is technically possible for you to keep cycling inside a lousy
-			// cul-de-sac of the same maps over and over while marathonning
-			// them all, if the same map is present in the cup list multiple
-			// times. There is no good solution. Don't dupe maps between cups!
 			while (cup)
 			{
 				for (i = 0; i < cup->numlevels; i++)
 				{
-					cm = G_MapNumber(cup->levellist[i]);
+					cm = cup->cachedlevels[i];
 
 					// Not valid?
 					if (cm >= nummapheaders
@@ -3829,9 +3814,7 @@ static void G_GetNextMap(void)
 	}
 
 	// We are committed to this map now.
-	// We may as well allocate its header if it doesn't exist
-	// (That is, if it's a real map)
-	if (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR))
+	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
 		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 }
 
@@ -4135,11 +4118,6 @@ void G_LoadGameSettings(void)
 {
 	// defaults
 	spstage_start = spmarathon_start = 1;
-	sstage_start = 50;
-	sstage_end = 56; // 7 special stages in vanilla SRB2
-	sstage_end++; // plus one weirdo
-	smpstage_start = 60;
-	smpstage_end = 66; // 7 multiplayer special stages too
 
 	// initialize free sfx slots for skin sounds
 	S_InitRuntimeSounds();

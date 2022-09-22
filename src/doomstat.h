@@ -207,7 +207,6 @@ extern boolean splitscreen_partied[MAXPLAYERS];
 
 // Maps of special importance
 extern INT16 spstage_start, spmarathon_start;
-extern INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
 
 extern char * titlemap;
 extern boolean hidetitlepics;
@@ -221,8 +220,6 @@ extern boolean looptitle;
 // CTF colors.
 extern UINT16 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolor_bluering;
 
-extern tic_t countdowntimer;
-extern boolean countdowntimeup;
 extern boolean exitfadestarted;
 
 typedef struct
@@ -313,8 +310,6 @@ extern textprompt_t *textprompts[MAX_PROMPTS];
 extern INT16 nextmapoverride;
 extern UINT8 skipstats;
 
-extern UINT32 ssspheres; //  Total # of spheres in a level
-
 // Fun extra stuff
 extern INT16 lastmap; // Last level you were at (returning from special stages).
 extern mobj_t *redflag, *blueflag; // Pointers to physical flags
@@ -340,91 +335,108 @@ extern struct quake
 } quake;
 
 // Custom Lua values
-// (This is not ifdeffed so the map header structure can stay identical, just in case.)
 typedef struct
 {
 	char option[32]; // 31 usable characters
 	char value[256]; // 255 usable characters. If this seriously isn't enough then wtf.
 } customoption_t;
 
+// This could support more, but is that a good idea?
+// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
+#define MAXLEVELLIST 5
+#define CUPCACHE_BONUS MAXLEVELLIST
+#define CUPCACHE_SPECIAL MAXLEVELLIST+1
+#define CUPCACHE_MAX CUPCACHE_SPECIAL+1
+
+typedef struct cupheader_s
+{
+	UINT16 id;								///< Cup ID
+	char name[15];							///< Cup title (14 chars)
+	char icon[9];							///< Name of the icon patch
+	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
+	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
+	UINT8 numlevels;						///< Number of levels defined in levellist
+	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
+	struct cupheader_s *next;				///< Next cup in linked list
+} cupheader_t;
+
+extern cupheader_t *kartcupheaders; // Start of cup linked list
+extern UINT16 numkartcupheaders;
+
 /** Map header information.
   */
 typedef struct
 {
-	char * lumpname;					///< Lump name can be really long
-	lumpnum_t lumpnum;        ///< Lump number for the map, used by vres_GetMap
+	// Core game information, not user-modifiable directly
+	char *lumpname;						///< Lump name can be really long
+	lumpnum_t lumpnum;       			///< Lump number for the map, used by vres_GetMap
 
-	void * thumbnailPic;				///< Lump data for the level select thumbnail.
-	void * minimapPic;					///< Lump data for the minimap graphic.
-	void * encoreLump;					///< Lump data for the Encore Mode remap.
-	void * tweakLump;					///< Lump data for the palette tweak remap.
+	void *thumbnailPic;					///< Lump data for the level select thumbnail.
+	void *minimapPic;					///< Lump data for the minimap graphic.
+	void *encoreLump;					///< Lump data for the Encore Mode remap.
+	void *tweakLump;					///< Lump data for the palette tweak remap.
 
+	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
+	recorddata_t *mainrecord;			///< Stores best time attack data
+
+	cupheader_t *cup;					///< Cached cup
+
+	// Titlecard information
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];					///< Subtitle for level
 	char zonttl[22];					///< "ZONE" replacement name
 	UINT8 actnum;						///< Act number or 0 for none.
 
-	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
-
+	// Selection metadata
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
+	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
+	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
+	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
+
+	// Operational metadata
+	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
+	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
+	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
+	fixed_t gravity;					///< Map-wide gravity.
+
+	// Music information
 	char musname[7];					///< Music track to play. "" for no music.
 	UINT16 mustrack;					///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
 	UINT32 muspos;						///< Music position to jump to.
 
-	char forcecharacter[17];			///< (SKINNAMESIZE+1) Skin to switch to or "" to disable.
-
-	UINT8 weather;						///< 0 = sunny day, 1 = storm, 2 = snow, 3 = rain, 4 = blank, 5 = thunder w/o rain, 6 = rain w/o lightning, 7 = heat wave.
+	// Sky information
+	UINT8 weather;						///< See preciptype_t
 	char skytexture[9];					///< Sky texture to use.
 	INT16 skybox_scalex;				///< Skybox X axis scale. (0 = no movement, 1 = 1:1 movement, 16 = 16:1 slow movement, -4 = 1:4 fast movement, etc.)
 	INT16 skybox_scaley;				///< Skybox Y axis scale.
 	INT16 skybox_scalez;				///< Skybox Z axis scale.
 
-	// Extra information.
-	char interscreen[8];				///< 320x200 patch to display at intermission.
+	// Distance information
+	fixed_t mobj_scale;					///< Defines the size all object calculations are relative to
+	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
 
-	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)
-	char scriptname[33];				///< Script to use when the map is switched to. (32 character limit instead of 191)
-
-	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
-	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
-
-	INT16 countdown;					///< Countdown until level end?
-
+	// Visual information
 	UINT16 palette;						///< PAL lump to use on this map
 	UINT16 encorepal;					///< PAL for encore mode
+	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
+	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	angle_t light_angle;				///< Angle of directional wall lighting.
 
-	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
-
-	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
-	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
-
-	UINT16 levelflags;					///< LF_flags:  merged booleans into one UINT16 for space, see below
-	UINT16 menuflags;					///< LF2_flags: options that affect record attack / nights mode menus
-
-	UINT16 startrings;					///< Number of rings players start with.
-	INT32 sstimer;						///< Timer for special stages.
-	UINT32 ssspheres;					///< Sphere requirement in special stages.
-	fixed_t gravity;					///< Map-wide gravity.
-
-	// Freed animals stuff.
+	// Freed animal information
 	UINT8 numFlickies;					///< Internal. For freed flicky support.
 	mobjtype_t *flickies;				///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
 
-	UINT8 light_contrast; ///< Range of wall lighting. 0 is no lighting.
-	boolean use_light_angle; ///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
-	angle_t light_angle; ///< Angle of directional wall lighting.
+	// Script information
+	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)
+	char scriptname[33];				///< Script to use when the map is switched to. (32 character limit instead of 191)
 
-	// SRB2kart
-	fixed_t mobj_scale;					///< Replacement for TOL_ERZ3
-	fixed_t default_waypoint_radius;	///< 0 is a special value for DEFAULT_WAYPOINT_RADIUS, but scaled with mobjscale
+	// Cutscene information
+	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
+	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
 
-	// Record data (modified liberally, saved to gamedata)
-	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
-	recorddata_t *mainrecord;			///< Stores best time attack data
-
-	// Lua stuff.
-	// (This is not ifdeffed so the map header structure can stay identical, just in case.)
+	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
 	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.
 } mapheader_t;
@@ -442,27 +454,6 @@ typedef struct
 
 extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
-
-// This could support more, but is that a good idea?
-// Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
-#define MAXLEVELLIST 5
-
-typedef struct cupheader_s
-{
-	UINT16 id;                     ///< Cup ID
-	char name[15];                 ///< Cup title (14 chars)
-	char icon[9];                  ///< Name of the icon patch
-	char *levellist[MAXLEVELLIST]; ///< List of levels that belong to this cup
-	UINT8 numlevels;               ///< Number of levels defined in levellist
-	char *bonusgame;               ///< Map name to use for bonus game
-	char *specialstage;            ///< Map name to use for special stage
-	UINT8 emeraldnum;              ///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
-	SINT8 unlockrequired;          ///< An unlockable is required to select this cup. -1 for no unlocking required.
-	struct cupheader_s *next;      ///< Next cup in linked list
-} cupheader_t;
-
-extern cupheader_t *kartcupheaders; // Start of cup linked list
-extern UINT16 numkartcupheaders;
 
 // Gametypes
 #define NUMGAMETYPEFREESLOTS 128
@@ -588,7 +579,6 @@ extern UINT32 token; ///< Number of tokens collected in a level
 extern UINT32 tokenlist; ///< List of tokens collected
 extern boolean gottoken; ///< Did you get a token? Used for end of act
 extern INT32 tokenbits; ///< Used for setting token bits
-extern INT32 sstimer; ///< Time allotted in the special stage
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
 

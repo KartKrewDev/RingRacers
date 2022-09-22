@@ -158,6 +158,8 @@ void clear_levels(void)
 
 		P_DeleteFlickies(nummapheaders);
 
+		Z_Free(mapheaderinfo[nummapheaders]->mainrecord);
+
 		Patch_Free(mapheaderinfo[nummapheaders]->thumbnailPic);
 		Patch_Free(mapheaderinfo[nummapheaders]->minimapPic);
 
@@ -167,7 +169,22 @@ void clear_levels(void)
 		mapheaderinfo[nummapheaders] = NULL;
 	}
 
-	// Realloc the one for the current gamemap as a safeguard
+	// Clear out the cache
+	{
+		cupheader_t *cup = kartcupheaders;
+		UINT8 i;
+
+		while (cup)
+		{
+			for (i = 0; i < CUPCACHE_MAX; i++)
+			{
+				cup->cachedlevels[i] = NEXTMAP_INVALID;
+			}
+			cup = cup->next;
+		}
+	}
+
+	// Exit the current gamemap as a safeguard
 	if (Playing())
 		COM_BufAddText("exitgame"); // Command_ExitGame_f() but delayed
 }
@@ -1093,16 +1110,17 @@ void readlevelheader(MYFILE *f, char * name)
 	char *tmp;
 	INT32 i;
 
-	const INT32 num = G_MapNumber(name);
+	INT32 num = G_MapNumber(name);
 
-	if (f->wad > mainwads && num < nummapheaders)
+	if (num >= nummapheaders)
+	{
+		P_AllocMapHeader((INT16)(num = nummapheaders));
+	}
+	else if (f->wad > mainwads)
 	{
 		// only mark as a major mod if it replaces an already-existing mapheaderinfo
 		G_SetGameModified(multiplayer, true);
 	}
-
-	// Reset all previous map header information
-	P_AllocMapHeader((INT16)(num));
 
 	if (mapheaderinfo[num]->lumpname == NULL)
 	{
@@ -1336,11 +1354,6 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))
 				mapheaderinfo[num]->muspos = (UINT32)get_number(word2);
-			else if (fastcmp(word, "FORCECHARACTER"))
-			{
-				strlcpy(mapheaderinfo[num]->forcecharacter, word2, SKINNAMESIZE+1);
-				strlwr(mapheaderinfo[num]->forcecharacter); // skin names are lowercase
-			}
 			else if (fastcmp(word, "WEATHER"))
 				mapheaderinfo[num]->weather = get_precip(word2);
 			else if (fastcmp(word, "SKYTEXTURE"))
@@ -2860,24 +2873,6 @@ void readmaincfg(MYFILE *f)
 				if (maptmp <= nummapheaders)
 					spmarathon_start = maptmp;
 			}
-			else if (fastcmp(word, "SSTAGE_START"))
-			{
-				INT16 maptmp = G_MapNumber(word2)+1;
-				if (maptmp <= nummapheaders)
-				{
-					sstage_start = maptmp;
-					sstage_end = (sstage_start+13); // 14 special stages
-				}
-			}
-			else if (fastcmp(word, "SMPSTAGE_START"))
-			{
-				INT16 maptmp = G_MapNumber(word2)+1;
-				if (maptmp <= nummapheaders)
-				{
-					smpstage_start = maptmp;
-					smpstage_end = (smpstage_start+13); // 14 special stages
-				}
-			}
 			else if (fastcmp(word, "REDTEAM"))
 			{
 				skincolor_redteam = (UINT16)get_number(word2);
@@ -3323,16 +3318,17 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					}
 
 					cup->levellist[cup->numlevels] = Z_StrDup(tmp);
+					cup->cachedlevels[cup->numlevels] = NEXTMAP_INVALID;
 					cup->numlevels++;
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "BONUSGAME"))
 			{
-				cup->bonusgame = Z_StrDup(word2);
+				cup->levellist[CUPCACHE_BONUS] = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
-				cup->specialstage = Z_StrDup(word2);
+				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{

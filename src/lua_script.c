@@ -217,18 +217,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"spmarathon_start")) {
 		lua_pushinteger(L, spmarathon_start);
 		return 1;
-	} else if (fastcmp(word,"sstage_start")) {
-		lua_pushinteger(L, sstage_start);
-		return 1;
-	} else if (fastcmp(word,"sstage_end")) {
-		lua_pushinteger(L, sstage_end);
-		return 1;
-	} else if (fastcmp(word,"smpstage_start")) {
-		lua_pushinteger(L, smpstage_start);
-		return 1;
-	} else if (fastcmp(word,"smpstage_end")) {
-		lua_pushinteger(L, smpstage_end);
-		return 1;
 	} else if (fastcmp(word,"titlemap")) {
 		lua_pushstring(L, titlemap);
 		return 1;

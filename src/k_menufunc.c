@@ -3207,23 +3207,10 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	if (gametypedefaultrules[gt] & GTR_CAMPAIGN)
+	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
 	{
-		if (levellist.selectedcup && levellist.selectedcup->numlevels)
-		{
-			UINT8 i;
-
-			for (i = 0; i < levellist.selectedcup->numlevels; i++)
-			{
-				const INT32 cupLevelNum = G_MapNumber(levellist.selectedcup->levellist[i]);
-
-				if (mapnum == cupLevelNum)
-					break;
-			}
-
-			if (i == levellist.selectedcup->numlevels)
-				return false;
-		}
+		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
+			return false;
 	}
 
 	// Survived our checks.
@@ -3413,7 +3400,9 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		M_SetMenuDelay(pid);
 
-		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		if ((!newcup)
+			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3465,7 +3454,7 @@ void M_CupSelectHandler(INT32 choice)
 				netgame = levellist.netgame;	// ^ ditto.
 			}
 
-			levelNum = G_MapNumber(grandprixinfo.cup->levellist[0]);
+			levelNum = grandprixinfo.cup->cachedlevels[0];
 
 			D_MapChange(
 				levelNum + 1,
