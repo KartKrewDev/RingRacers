@@ -121,7 +121,7 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 
 	if (other->player != NULL)
 	{
-		other->player->gateBoost += addBoost;
+		other->player->gateBoost += addBoost/2;
 
 		if (P_IsDisplayPlayer(other->player) == true)
 		{
