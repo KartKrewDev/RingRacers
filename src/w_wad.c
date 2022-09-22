@@ -2278,11 +2278,15 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 	}
 	else
 	{
-		// Count number of lumps until the end of resource OR up until next "MAPXX" lump.
+		// Count number of lumps until the end of resource OR up until next 0-length lump.
 		lumpnum_t lumppos = lumpnum + 1;
 		for (i = LUMPNUM(lumppos); i < wadfiles[WADFILENUM(lumpnum)]->numlumps; i++, lumppos++, numlumps++)
-			if (memcmp(W_CheckNameForNum(lumppos), "MAP", 3) == 0)
+		{
+			if (W_LumpLength(lumppos) == 0)
+			{
 				break;
+			}
+		}
 		numlumps++;
 
 		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
