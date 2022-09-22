@@ -5725,10 +5725,10 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// True if button down last tic.
-	"ATTACKDOWN",
-	"ACCELDOWN",
-	"BRAKEDOWN",
+	// free: 1<<0 to 1<<2
+	"",
+	"",
+	"",
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?
