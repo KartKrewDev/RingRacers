@@ -333,6 +333,7 @@ typedef struct player_s
 
 	// Caveat: ticcmd_t is ATTRPACK! Be careful what precedes it.
 	ticcmd_t cmd;
+	ticcmd_t oldcmd; // from the previous tic
 
 	playerstate_t playerstate;
 
