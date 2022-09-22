@@ -1053,11 +1053,11 @@ void OP_ObjectplaceMovement(player_t *player)
 	}
 
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (player->pflags & PF_STASIS)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
 		if (!(cmd->buttons & (BT_ATTACK|BT_DRIFT)))
-			player->pflags &= ~PF_ATTACKDOWN;
+			player->pflags &= ~PF_STASIS;
 
 		// Do nothing.
 		return;
@@ -1066,12 +1066,12 @@ void OP_ObjectplaceMovement(player_t *player)
 	/*if (cmd->buttons & BT_FORWARD)
 	{
 		OP_CycleThings(-1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 	else*/ if (cmd->buttons & BT_DRIFT)
 	{
 		OP_CycleThings(1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 
 	// Place an object and add it to the maplist
@@ -1082,7 +1082,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		mobjtype_t spawnthing = op_currentdoomednum;
 		boolean ceiling;
 
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 
 		if (cv_mapthingnum.value > 0 && cv_mapthingnum.value < 4096)
 		{

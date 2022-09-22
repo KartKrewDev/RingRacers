@@ -58,10 +58,7 @@ typedef enum
 //
 typedef enum
 {
-	// True if button down last tic.
-	PF_ATTACKDOWN		= 1,
-	PF_ACCELDOWN		= 1<<1,
-	PF_BRAKEDOWN		= 1<<2,
+	// free: 1<<0 to 1<<2
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?

@@ -4186,7 +4186,7 @@ void P_PlayerThink(player_t *player)
 	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
-		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		if (!player->exiting && !(player->oldcmd.buttons & BT_ACCELERATE))
 		{
 			player->kickstartaccel = 0;
 		}
@@ -4393,17 +4393,6 @@ void P_PlayerThink(player_t *player)
 
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
-
-	// check for buttons
-	if (cmd->buttons & BT_ACCELERATE)
-		player->pflags |= PF_ACCELDOWN;
-	else
-		player->pflags &= ~PF_ACCELDOWN;
-
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_BRAKEDOWN;
-	else
-		player->pflags &= ~PF_BRAKEDOWN;
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings

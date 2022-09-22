@@ -9883,7 +9883,7 @@ void K_UnsetItemOut(player_t *player)
 void K_MoveKartPlayer(player_t *player, boolean onground)
 {
 	ticcmd_t *cmd = &player->cmd;
-	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->pflags & PF_ATTACKDOWN));
+	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->oldcmd.buttons & BT_ATTACK));
 	boolean HOLDING_ITEM = (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
 
@@ -9917,11 +9917,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else
 			player->pflags &= ~PF_USERINGS;
 	}
-
-	if ((player->pflags & PF_ATTACKDOWN) && !(cmd->buttons & BT_ATTACK))
-		player->pflags &= ~PF_ATTACKDOWN;
-	else if (cmd->buttons & BT_ATTACK)
-		player->pflags |= PF_ATTACKDOWN;
 
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{

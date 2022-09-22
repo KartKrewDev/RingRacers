@@ -2410,11 +2410,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
 
 
-	// Don't do anything immediately
-	p->pflags |= PF_BRAKEDOWN;
-	p->pflags |= PF_ATTACKDOWN;
-	p->pflags |= PF_ACCELDOWN;
-
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation
 
