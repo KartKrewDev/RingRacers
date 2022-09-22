@@ -417,8 +417,8 @@ static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
-#define SPBSTARTDIST (10*DISTVAR) // Distance when SPB can start appearing
-#define SPBFORCEDIST (20*DISTVAR) // Distance when SPB is forced onto the next person who rolls an item
+#define SPBSTARTDIST (6*DISTVAR) // Distance when SPB can start appearing
+#define SPBFORCEDIST (12*DISTVAR) // Distance when SPB is forced onto the next person who rolls an item
 #define ENDDIST (12*DISTVAR) // Distance when the game stops giving you bananas
 
 // Array of states to pick the starting point of the animation, based on the actual time left for invincibility.
