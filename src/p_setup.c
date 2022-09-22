@@ -368,7 +368,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->typeoflevel = 0;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
-	sprintf(mapheaderinfo[num]->musname, "%.5sM", G_BuildMapName(num));
+	sprintf(mapheaderinfo[num]->musname, "%.5sM", G_BuildMapName(num+1));
 	mapheaderinfo[num]->musname[6] = 0;
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
