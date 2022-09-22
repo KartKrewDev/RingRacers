@@ -5854,7 +5854,6 @@ void K_DoSneaker(player_t *player, INT32 type)
 	if (type != 0)
 	{
 		player->pflags |= PF_ATTACKDOWN;
-		K_PlayBoostTaunt(player->mo);
 	}
 
 	player->sneakertimer = sneakertime;
