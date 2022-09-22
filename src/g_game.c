@@ -4227,7 +4227,7 @@ void G_LoadGameData(void)
 
 	for (i = 0; i < numgamedatamapheaders; i++)
 	{
-		char mapname[255];
+		char mapname[MAXMAPLUMPNAME];
 		INT16 mapnum;
 		tic_t rectime;
 		tic_t reclap;
@@ -4297,7 +4297,7 @@ void G_SaveGameData(void)
 		return; // If never loaded (-nodata), don't save
 
 	length = (4+4+4+1+(MAXEMBLEMS)+MAXEXTRAEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS+4+4);
-	length += nummapheaders * (255+1+4+4);
+	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
 	save_p = savebuffer = (UINT8 *)malloc(length);
 	if (!save_p)
@@ -4366,7 +4366,7 @@ void G_SaveGameData(void)
 	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
 		// For figuring out which header to assing it to on load
-		WRITESTRINGN(save_p, mapheaderinfo[i]->lumpname, 255);
+		WRITESTRINGN(save_p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 		WRITEUINT8(save_p, (mapheaderinfo[i]->mapvisited & MV_MAX));
 

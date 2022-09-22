@@ -382,7 +382,16 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				}
 				else if (fastcmp(word, "LEVEL"))
 				{
-					readlevelheader(f, word2);
+					size_t len = strlen(word2);
+					if (len <= MAXMAPLUMPNAME-1)
+					{
+						readlevelheader(f, word2);
+					}
+					else
+					{
+						deh_warning("Map header's lumpname %s is too long (%d characters VS %d max)", word2, len, (MAXMAPLUMPNAME-1));
+						ignorelines(f);
+					}
 				}
 				else if (fastcmp(word, "GAMETYPE"))
 				{

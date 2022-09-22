@@ -1994,7 +1994,7 @@ void G_BeginRecording(void)
 
 	// game data
 	M_Memcpy(demo_p, "PLAY", 4); demo_p += 4;
-	WRITESTRINGN(demo_p, mapheaderinfo[gamemap-1]->lumpname, 255);
+	WRITESTRINGN(demo_p, mapheaderinfo[gamemap-1]->lumpname, MAXMAPLUMPNAME);
 	M_Memcpy(demo_p, mapmd5, 16); demo_p += 16;
 
 	WRITEUINT8(demo_p, demoflags);
@@ -2406,7 +2406,6 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	UINT16 s ATTRUNUSED;
 	UINT8 aflags = 0;
 	boolean uselaps = false;
-	char discard[255];
 
 	// load the new file
 	FIL_DefaultExtension(newname, ".lmp");
@@ -2427,7 +2426,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 16; // demo checksum
 	I_Assert(!memcmp(p, "PLAY", 4));
 	p += 4; // PLAY
-	READSTRINGN(p, discard, sizeof(discard)); // gamemap
+	SKIPSTRING(p); // gamemap
 	p += 16; // map md5
 	flags = READUINT8(p); // demoflags
 	p++; // gametype
@@ -2485,7 +2484,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		Z_Free(buffer);
 		return UINT8_MAX;
 	} p += 4; // "PLAY"
-	READSTRINGN(p, discard, sizeof(discard)); // gamemap
+	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5
 	flags = READUINT8(p);
 	p++; // gametype
@@ -2704,7 +2703,7 @@ void G_DoPlayDemo(char *defdemoname)
 {
 	UINT8 i, p;
 	lumpnum_t l;
-	char skin[17],color[MAXCOLORNAME+1],follower[17],mapname[255],*n,*pdemoname;
+	char skin[17],color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
 	UINT8 version,subversion;
 	UINT32 randseed;
 	char msg[1024];
@@ -3146,7 +3145,7 @@ void G_AddGhost(char *defdemoname)
 {
 	INT32 i;
 	lumpnum_t l;
-	char name[17],skin[17],color[MAXCOLORNAME+1],discard[255],*n,*pdemoname,md5[16];
+	char name[17],skin[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
 	demoghost *gh;
 	UINT8 flags;
 	UINT8 *buffer,*p;
@@ -3235,7 +3234,7 @@ void G_AddGhost(char *defdemoname)
 	} p += 4; // "PLAY"
 
 
-	READSTRINGN(p, discard, sizeof(discard)); // gamemap
+	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
 	flags = READUINT8(p);
@@ -3431,7 +3430,6 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	UINT8 *buffer,*p;
 	UINT16 ghostversion;
 	UINT8 flags;
-	char discard[255];
 
 	buffer = p = W_CacheLumpNum(l, PU_CACHE);
 
@@ -3465,7 +3463,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	}
 
 	p += 4; // "PLAY"
-	READSTRINGN(p, discard, sizeof(discard)); // gamemap
+	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5 (possibly check for consistency?)
 
 	flags = READUINT8(p);

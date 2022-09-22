@@ -364,6 +364,8 @@ typedef struct cupheader_s
 extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
 
+#define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
+
 /** Map header information.
   */
 typedef struct
