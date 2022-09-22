@@ -5725,10 +5725,10 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// free: 1<<0 to 1<<2
-	"",
-	"",
-	"",
+	// free: 1<<0 to 1<<2 (name un-matchable)
+	"\x01",
+	"\x01",
+	"\x01",
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?
