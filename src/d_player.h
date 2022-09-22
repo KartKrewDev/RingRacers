@@ -62,7 +62,10 @@ typedef enum
 	PF_ATTACKDOWN		= 1,
 	PF_ACCELDOWN		= 1<<1,
 	PF_BRAKEDOWN		= 1<<2,
-	PF_LOOKDOWN			= 1<<3,
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	PF_GAINAX			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?

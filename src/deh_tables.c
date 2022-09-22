@@ -5729,7 +5729,10 @@ const char *const PLAYERFLAG_LIST[] = {
 	"ATTACKDOWN",
 	"ACCELDOWN",
 	"BRAKEDOWN",
-	"LOOKDOWN",
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	"GAINAX",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?

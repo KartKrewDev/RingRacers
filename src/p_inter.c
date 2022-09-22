@@ -2062,7 +2062,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->driftboost = player->strongdriftboost = 0;
 			player->ringboost = 0;
 			player->glanceDir = 0;
-			player->pflags &= ~PF_LOOKDOWN;
+			player->pflags &= ~PF_GAINAX;
 
 			switch (type)
 			{

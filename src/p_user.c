@@ -2218,7 +2218,7 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 		player->glanceDir = 0;
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 	}
 	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
@@ -4404,8 +4404,6 @@ void P_PlayerThink(player_t *player)
 		player->pflags |= PF_BRAKEDOWN;
 	else
 		player->pflags &= ~PF_BRAKEDOWN;
-
-	// PF_LOOKDOWN handled in K_KartMoveAnimation
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
