@@ -960,9 +960,6 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	else if (!(player->itemroulette >= (TICRATE*3)))
 		return;
 
-	if (cmd->buttons & BT_ATTACK)
-		player->pflags |= PF_ATTACKDOWN;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] && !players[i].spectator
@@ -5853,7 +5850,6 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 	if (type != 0)
 	{
-		player->pflags |= PF_ATTACKDOWN;
 		K_PlayBoostTaunt(player->mo);
 	}
 
@@ -5868,7 +5864,6 @@ static void K_DoShrink(player_t *user)
 	mobj_t *mobj, *next;
 
 	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
-	user->pflags |= PF_ATTACKDOWN;
 
 	Obj_CreateShrinkPohbees(user);
 
@@ -9935,7 +9930,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
-				if ((player->pflags & PF_ATTACKDOWN) && !player->ringdelay && player->rings > 0)
+				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
