@@ -311,6 +311,8 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	fixed_t steerDist = INT32_MAX;
 	mobj_t *steerMobj = NULL;
 
+	boolean circling = false;
+
 	size_t i;
 
 	spb_lastplayer(spb) = -1; // Just make sure this is reset
@@ -417,9 +419,8 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			if (destWaypoint != NULL)
 			{
 				// Go to next waypoint.
-				const boolean huntbackwards = false;
 				const boolean useshortcuts  = K_GetWaypointIsShortcut(destWaypoint); // If the player is on a shortcut, use shortcuts. No escape.
-
+				boolean huntbackwards = false;
 				path_t pathtoplayer = {0};
 
 				pathfindsuccess = K_PathfindToWaypoint(
@@ -430,9 +431,27 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 				if (pathfindsuccess == true)
 				{
-					if (pathtoplayer.numnodes > 1)
+					path_t reversepath = {0};
+					boolean reversesuccess = false;
+
+					huntbackwards = true;
+					reversesuccess = K_PathfindToWaypoint(
+						curWaypoint, destWaypoint,
+						&reversepath,
+						useshortcuts, huntbackwards
+					);
+
+					if (reversesuccess == true
+						&& reversepath.totaldist < pathtoplayer.totaldist)
 					{
-						// Go to next.
+						// It's faster to go backwards than to chase forward.
+						// Keep curWaypoint the same, so the SPB waits around for them.
+						circling = true;
+						Z_Free(reversepath.array);
+					}
+					else if (pathtoplayer.numnodes > 1)
+					{
+						// Go to the next waypoint.
 						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
 					}
 					else if (spb->fuse > 0 && destWaypoint->numnextwaypoints > 0)
@@ -443,6 +462,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 					else
 					{
 						// Sort of wait at the player's dest waypoint.
+						circling = true;
 						curWaypoint = destWaypoint;
 					}
 
@@ -539,8 +559,12 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	// Always spawn speed lines while seeking
 	SpawnSPBSpeedLines(spb);
 
-	// Spawn a trail of rings behind the SPB!
-	SPBMantaRings(spb);
+	// Don't run this while we're circling around one waypoint intentionally.
+	if (circling == false)
+	{
+		// Spawn a trail of rings behind the SPB!
+		SPBMantaRings(spb);
+	}
 }
 
 static void SPBChase(mobj_t *spb, player_t *bestPlayer)
