@@ -2271,23 +2271,43 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 
 	if (W_IsLumpWad(lumpnum))
 	{
+		UINT32 realentry;
+		size_t *vsizecache;
+
 		// Remember that we're assuming that the WAD will have a specific set of lumps in a specific order.
 		UINT8 *wadData = W_CacheLumpNum(lumpnum, PU_LEVEL);
 		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
-		numlumps = ((wadinfo_t *)wadData)->numlumps;
-		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
 
-		// Build the lumps.
-		for (i = 0; i < numlumps; i++)
+		i = ((wadinfo_t *)wadData)->numlumps;
+		vsizecache = Z_Malloc(sizeof(size_t)*i, PU_LEVEL, NULL);
+
+		for (realentry = 0; realentry < i; realentry++)
 		{
-			vlumps[i].size = (size_t)(((filelump_t *)(fileinfo + i))->size);
-			// Play it safe with the name in this case.
-			memcpy(vlumps[i].name, (fileinfo + i)->name, 8);
-			vlumps[i].name[8] = '\0';
-			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
-			memcpy(vlumps[i].data, wadData + (fileinfo + i)->filepos, vlumps[i].size);
+			vsizecache[realentry] = (size_t)(((filelump_t *)(fileinfo + realentry))->size);
+
+			if (!vsizecache[realentry])
+				continue;
+
+			numlumps++;
 		}
 
+		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
+
+		// Build the lumps, skipping over empty entries.
+		for (i = 0, realentry = 0; i < numlumps; realentry++)
+		{
+			if (vsizecache[realentry] == 0)
+				continue;
+			vlumps[i].size = vsizecache[realentry];
+			// Play it safe with the name in this case.
+			memcpy(vlumps[i].name, (fileinfo + realentry)->name, 8);
+			vlumps[i].name[8] = '\0';
+			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
+			memcpy(vlumps[i].data, wadData + (fileinfo + realentry)->filepos, vlumps[i].size);
+			i++;
+		}
+
+		Z_Free(vsizecache);
 		Z_Free(wadData);
 	}
 	else
@@ -2296,10 +2316,10 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 		lumpnum_t lumppos = lumpnum + 1;
 		for (i = LUMPNUM(lumppos); i < wadfiles[WADFILENUM(lumpnum)]->numlumps; i++, lumppos++, numlumps++)
 		{
-			if (W_LumpLength(lumppos) == 0)
-			{
-				break;
-			}
+			if (W_LumpLength(lumppos) > 0)
+				continue;
+
+			break;
 		}
 		numlumps++;
 
