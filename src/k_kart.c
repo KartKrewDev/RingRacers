@@ -6032,15 +6032,21 @@ static void K_DoShrink(player_t *user)
 {
 	mobj_t *mobj, *next;
 
-	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
+	S_StartSound(NULL, sfx_kc46); // Sound the BANG!
 	user->pflags |= PF_ATTACKDOWN;
 
 	Obj_CreateShrinkPohbees(user);
 
+#if 1
 	// kill everything in the kitem list while we're at it:
 	for (mobj = kitemcap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
+
+		if (mobj->type == MT_SPB)
+		{
+			continue;
+		}
 
 		// check if the item is being held by a player behind us before removing it.
 		// check if the item is a "shield" first, bc i'm p sure thrown items keep the player that threw em as target anyway
@@ -6060,10 +6066,8 @@ static void K_DoShrink(player_t *user)
 		mobj->destscale = 0;
 		mobj->flags &= ~(MF_SOLID|MF_SHOOTABLE|MF_SPECIAL);
 		mobj->flags |= MF_NOCLIPTHING; // Just for safety
-
-		if (mobj->type == MT_SPB)
-			spbplace = -1;
 	}
+#endif
 }
 
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
