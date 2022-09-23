@@ -3317,10 +3317,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 			}
 
 			// skipping stone!
-			if (p && p->waterskip < 2
-				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& (splashValid == true))
+			if (p && p->waterskip < 2 && K_WaterSkip(p) && (splashValid == true))
 			{
 				const fixed_t hop = 5 * mobj->scale;
 

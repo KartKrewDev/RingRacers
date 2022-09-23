@@ -3277,6 +3277,17 @@ boolean K_WaterRun(player_t *player)
 	return false;
 }
 
+boolean K_WaterSkip(player_t *player)
+{
+	if (player->speed/3 > abs(player->mo->momz)) // Going more forward than horizontal, so you can skip across the water.
+		return true;
+
+	if (player->speed > 20*mapobjectscale && player->waterskip) // Already skipped once, so you can skip once more!
+		return true;
+
+	return false;
+}
+
 static fixed_t K_FlameShieldDashVar(INT32 val)
 {
 	// 1 second = 75% + 50% top speed
