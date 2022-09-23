@@ -211,12 +211,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, cv_pointlimit.value);
 		return 1;
 	// begin map vars
-	} else if (fastcmp(word,"spstage_start")) {
-		lua_pushinteger(L, spstage_start);
-		return 1;
-	} else if (fastcmp(word,"spmarathon_start")) {
-		lua_pushinteger(L, spmarathon_start);
-		return 1;
 	} else if (fastcmp(word,"titlemap")) {
 		lua_pushstring(L, titlemap);
 		return 1;

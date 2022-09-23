@@ -205,9 +205,6 @@ extern INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
 /* the only local one */
 extern boolean splitscreen_partied[MAXPLAYERS];
 
-// Maps of special importance
-extern INT16 spstage_start, spmarathon_start;
-
 extern char * titlemap;
 extern boolean hidetitlepics;
 extern char * bootmap; //bootmap for loading a map on startup

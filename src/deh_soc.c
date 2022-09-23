@@ -2857,22 +2857,6 @@ void readmaincfg(MYFILE *f)
 						COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 				}
 			}
-
-			else if (fastcmp(word, "SPSTAGE_START"))
-			{
-				// TODO: Use map name string
-				// Haven't done it because of how special stage ends are handled
-				// Though, we likely won't be using these for Kart anyhow
-				INT16 maptmp = G_MapNumber(word2)+1;
-				if (maptmp <= nummapheaders)
-					spstage_start = spmarathon_start = maptmp;
-			}
-			else if (fastcmp(word, "SPMARATHON_START"))
-			{
-				INT16 maptmp = G_MapNumber(word2)+1;
-				if (maptmp <= nummapheaders)
-					spmarathon_start = maptmp;
-			}
 			else if (fastcmp(word, "REDTEAM"))
 			{
 				skincolor_redteam = (UINT16)get_number(word2);
