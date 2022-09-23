@@ -966,8 +966,15 @@ UINT16 W_CheckNumForMapPwad(const char *name, UINT16 wad, UINT16 startlump)
 	{
 		for (i = startlump; i < wadfiles[wad]->numlumps; i++)
 		{
-			if (!strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->name))
-				return i;
+			// Not the name?
+			if (strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->name))
+				continue;
+
+			// Not a header?
+			if (W_LumpLength(i | (wad << 16)) > 0)
+				continue;
+
+			return i;
 		}
 	}
 	else if (wadfiles[wad]->type == RET_PK3)
@@ -981,8 +988,15 @@ UINT16 W_CheckNumForMapPwad(const char *name, UINT16 wad, UINT16 startlump)
 			// Now look for the specified map.
 			for (; i < end; i++)
 			{
-				if (!strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->longname))
-					return i;
+				// Not the name?
+				if (strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->longname))
+					continue;
+
+				// Not a .wad?
+				if (!W_IsLumpWad(i | (wad << 16)))
+					continue;
+
+				return i;
 			}
 		}
 	}
