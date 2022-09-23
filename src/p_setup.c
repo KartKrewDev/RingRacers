@@ -314,11 +314,19 @@ boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
 FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 {
 	// don't use va() because the calling function probably uses it
-	char mapnum[10];
+	char mapname[MAXMAPLUMPNAME];
 
-	sprintf(mapnum, "%hd", gamemap);
+	if (gamemap > 0 && gamemap <= nummapheaders && mapheaderinfo[gamemap-1])
+	{
+		sprintf(mapname, "%s", mapheaderinfo[gamemap-1]->lumpname);
+	}
+	else
+	{
+		sprintf(mapname, "ID %d", gamemap-1);
+	}
+	
 	CON_LogMessage("Map ");
-	CON_LogMessage(mapnum);
+	CON_LogMessage(mapname);
 	CON_LogMessage(" is corrupt: ");
 	CON_LogMessage(msg);
 	CON_LogMessage("\n");
