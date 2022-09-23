@@ -6269,11 +6269,6 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
-	case MT_SPB:
-	{
-		Obj_SPBExplode(mobj);
-		return;
-	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -9358,6 +9353,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+	case MT_SPB:
+	{
+		Obj_SPBExplode(mobj);
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:
