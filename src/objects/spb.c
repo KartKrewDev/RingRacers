@@ -38,6 +38,9 @@
 #define SPB_CHASETIMESCALE (60*TICRATE)
 #define SPB_CHASETIMEMUL (3*FRACUNIT)
 
+#define SPB_SEEKTURN (FRACUNIT/8)
+#define SPB_CHASETURN (FRACUNIT/4)
+
 #define SPB_MANTA_SPACING (2750 * FRACUNIT)
 
 #define SPB_MANTA_VSTART (150)
@@ -163,7 +166,7 @@ static void SpawnSPBDust(mobj_t *spb)
 
 // dir should be either 1 or -1 to determine where to spawn the dust.
 
-static void SpawnSPBSliptide(mobj_t *spb, INT32 dir)
+static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 {
 	fixed_t newx;
 	fixed_t newy;
@@ -186,11 +189,11 @@ static void SpawnSPBSliptide(mobj_t *spb, INT32 dir)
 		spark = P_SpawnMobjFromMobj(spb, newx, newy, 0, MT_SPBDUST);
 		spark->z = sz;
 
+		P_SetMobjState(spark, S_KARTAIZDRIFTSTRAT);
+		P_SetTarget(&spark->target, spb);
+
 		spark->colorized = true;
 		spark->color = SKINCOLOR_RED;
-
-		spark->flags = MF_NOGRAVITY|MF_PAIN;
-		P_SetTarget(&spark->target, spb);
 
 		spark->angle = travelangle + (dir * ANGLE_90);
 		P_SetScale(spark, (spark->destscale = spb->scale*3/2));
@@ -235,12 +238,11 @@ static void SPBTurn(
 	fixed_t *editSpeed, angle_t *editAngle,
 	fixed_t lerp, SINT8 *returnSliptide)
 {
-	INT32 delta = destAngle - *editAngle;
+	INT32 delta = AngleDeltaSigned(destAngle, *editAngle);
 	fixed_t dampen = FRACUNIT;
 
 	// Slow down when turning; it looks better and makes U-turns not unfair
 	dampen = FixedDiv((180 * FRACUNIT) - AngleFixed(abs(delta)), 180 * FRACUNIT);
-
 	*editSpeed = FixedMul(destSpeed, dampen);
 
 	delta = FixedMul(delta, lerp);
@@ -248,11 +250,19 @@ static void SPBTurn(
 	// Calculate sliptide effect during seeking.
 	if (returnSliptide != NULL)
 	{
-		INT32 sliptide = (abs(delta) > SPB_SLIPTIDEDELTA);
+		const boolean isSliptiding =  (abs(delta) >= SPB_SLIPTIDEDELTA);
+		SINT8 sliptide = 0;
 
-		if (delta < 0)
+		if (isSliptiding == true)
 		{
-			sliptide = -sliptide;
+			if (delta < 0)
+			{
+				sliptide = -1;
+			}
+			else
+			{
+				sliptide = 1;
+			}
 		}
 
 		*returnSliptide = sliptide;
@@ -498,8 +508,8 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	destAngle = R_PointToAngle2(spb->x, spb->y, destX, destY);
 	destPitch = R_PointToAngle2(0, spb->z, P_AproxDistance(spb->x - destX, spb->y - destY), destZ);
 
-	SPBTurn(desiredSpeed, destAngle, &xySpeed, &spb->angle, FRACUNIT/8, &sliptide);
-	SPBTurn(desiredSpeed, destPitch, &zSpeed, &spb_pitch(spb), FRACUNIT/8, NULL);
+	SPBTurn(desiredSpeed, destAngle, &xySpeed, &spb->angle, SPB_SEEKTURN, &sliptide);
+	SPBTurn(desiredSpeed, destPitch, &zSpeed, &spb_pitch(spb), SPB_SEEKTURN, NULL);
 
 	SetSPBSpeed(spb, xySpeed, zSpeed);
 
@@ -711,8 +721,8 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 		spb_speed(spb) = desiredSpeed;
 	}
 
-	SPBTurn(spb_speed(spb), destAngle, &xySpeed, &spb->angle, FRACUNIT, NULL);
-	SPBTurn(spb_speed(spb), destPitch, &zSpeed, &spb_pitch(spb), FRACUNIT, NULL);
+	SPBTurn(spb_speed(spb), destAngle, &xySpeed, &spb->angle, SPB_CHASETURN, NULL);
+	SPBTurn(spb_speed(spb), destPitch, &zSpeed, &spb_pitch(spb), SPB_CHASETURN, NULL);
 
 	SetSPBSpeed(spb, xySpeed, zSpeed);
 	spb->momx += cx;
