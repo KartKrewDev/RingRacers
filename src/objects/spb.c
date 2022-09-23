@@ -360,9 +360,9 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			spb->fuse = 2*TICRATE;
 		}
 	}
+#ifndef SPB_SEEKTEST // Easy debug switch
 	else
 	{
-#ifndef SPB_SEEKTEST // Easy debug switch
 		if (dist <= activeDist)
 		{
 			S_StopSound(spb);
@@ -377,8 +377,8 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			spb_speed(spb) = desiredSpeed;
 			return;
 		}
-#endif
 	}
+#endif
 
 	if (SPBSeekSoundPlaying(spb) == false)
 	{
@@ -441,6 +441,24 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 				if (pathfindsuccess == true)
 				{
+#ifdef SPB_SEEKTEST
+					if (pathtoplayer.numnodes > 1)
+					{
+						// Go to the next waypoint.
+						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
+					}
+					else if (destWaypoint->numnextwaypoints > 0)
+					{
+						// Run ahead.
+						curWaypoint = destWaypoint->nextwaypoints[0];
+					}
+					else
+					{
+						// Sort of wait at the player's dest waypoint.
+						circling = true;
+						curWaypoint = destWaypoint;
+					}
+#else
 					path_t reversepath = {0};
 					boolean reversesuccess = false;
 
@@ -457,7 +475,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 						// It's faster to go backwards than to chase forward.
 						// Keep curWaypoint the same, so the SPB waits around for them.
 						circling = true;
-						Z_Free(reversepath.array);
 					}
 					else if (pathtoplayer.numnodes > 1)
 					{
@@ -475,6 +492,12 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 						circling = true;
 						curWaypoint = destWaypoint;
 					}
+
+					if (reversesuccess == true)
+					{
+						Z_Free(reversepath.array);
+					}
+#endif
 
 					Z_Free(pathtoplayer.array);
 				}

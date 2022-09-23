@@ -1189,7 +1189,11 @@ typedef enum
 	sfx_spbskc,
 
 	// Juicebox for SPB
-	sfx_gatefx,
+	sfx_gate01,
+	sfx_gate02,
+	sfx_gate03,
+	sfx_gate04,
+	sfx_gate05,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

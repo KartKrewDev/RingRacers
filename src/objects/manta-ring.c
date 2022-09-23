@@ -81,6 +81,8 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 	INT32 addBoost = 0;
 	INT32 touchFlag = 0;
 
+	size_t i;
+
 	distance = P_AproxDistance(P_AproxDistance(
 		other->x - manta->x,
 		other->y - manta->y),
@@ -117,10 +119,31 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 		addBoost = max(MANTA_MINPWR, addBoost);
 	}
 
-	S_StartSound(other, sfx_gatefx);
-
 	if (other->player != NULL)
 	{
+		UINT8 snd = 0;
+
+		if (other->player->speedboost > FRACUNIT/4)
+		{
+			snd = other->player->gateSound;
+			other->player->gateSound++;
+
+			if (other->player->gateSound > 4)
+			{
+				other->player->gateSound = 4;
+			}
+		}
+		else
+		{
+			other->player->gateSound = 0;
+		}
+
+		for (i = 0; i < 5; i++)
+		{
+			S_StopSoundByID(other, sfx_gate01 + i);
+		}
+
+		S_StartSound(other, sfx_gate01 + snd);
 		other->player->gateBoost += addBoost/2;
 
 		if (P_IsDisplayPlayer(other->player) == true)

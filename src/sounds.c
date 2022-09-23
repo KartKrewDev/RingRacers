@@ -1124,7 +1124,11 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"spbskc", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // Juicebox for SPB
-  {"gatefx", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate02", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate03", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // SRB2Kart - Engine sounds
   // Engine class A
