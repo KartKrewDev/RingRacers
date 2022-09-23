@@ -111,7 +111,7 @@ static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
 
-static patch_t *kp_superring[2];
+static patch_t *kp_sadface[2];
 static patch_t *kp_sneaker[2];
 static patch_t *kp_rocketsneaker[2];
 static patch_t *kp_invincibility[13];
@@ -121,7 +121,6 @@ static patch_t *kp_orbinaut[5];
 static patch_t *kp_jawz[2];
 static patch_t *kp_mine[2];
 static patch_t *kp_landmine[2];
-static patch_t *kp_droptarget[2];
 static patch_t *kp_ballhog[2];
 static patch_t *kp_selfpropelledbomb[2];
 static patch_t *kp_grow[2];
@@ -131,8 +130,9 @@ static patch_t *kp_bubbleshield[2];
 static patch_t *kp_flameshield[2];
 static patch_t *kp_hyudoro[2];
 static patch_t *kp_pogospring[2];
+static patch_t *kp_superring[2];
 static patch_t *kp_kitchensink[2];
-static patch_t *kp_sadface[2];
+static patch_t *kp_droptarget[2];
 
 static patch_t *kp_check[6];
 
@@ -390,7 +390,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_itemmulsticker[0], "K_ITMUL");
 	HU_UpdatePatch(&kp_itemx, "K_ITX");
 
-	HU_UpdatePatch(&kp_superring[0], "K_ITRING");
+	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
 	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[0], "K_ITRSHE");
 
@@ -411,7 +411,6 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_jawz[0], "K_ITJAWZ");
 	HU_UpdatePatch(&kp_mine[0], "K_ITMINE");
 	HU_UpdatePatch(&kp_landmine[0], "K_ITLNDM");
-	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 	HU_UpdatePatch(&kp_ballhog[0], "K_ITBHOG");
 	HU_UpdatePatch(&kp_selfpropelledbomb[0], "K_ITSPB");
 	HU_UpdatePatch(&kp_grow[0], "K_ITGROW");
@@ -421,8 +420,9 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_flameshield[0], "K_ITFLMS");
 	HU_UpdatePatch(&kp_hyudoro[0], "K_ITHYUD");
 	HU_UpdatePatch(&kp_pogospring[0], "K_ITPOGO");
+	HU_UpdatePatch(&kp_superring[0], "K_ITRING");
 	HU_UpdatePatch(&kp_kitchensink[0], "K_ITSINK");
-	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
+	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -447,7 +447,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_itemtimer[1], "K_ISIMER");
 	HU_UpdatePatch(&kp_itemmulsticker[1], "K_ISMUL");
 
-	HU_UpdatePatch(&kp_superring[1], "K_ISRING");
+	HU_UpdatePatch(&kp_sadface[1], "K_ISSAD");
 	HU_UpdatePatch(&kp_sneaker[1], "K_ISSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[1], "K_ISRSHE");
 	sprintf(buffer, "K_ISINVx");
@@ -462,7 +462,6 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_jawz[1], "K_ISJAWZ");
 	HU_UpdatePatch(&kp_mine[1], "K_ISMINE");
 	HU_UpdatePatch(&kp_landmine[1], "K_ISLNDM");
-	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 	HU_UpdatePatch(&kp_ballhog[1], "K_ISBHOG");
 	HU_UpdatePatch(&kp_selfpropelledbomb[1], "K_ISSPB");
 	HU_UpdatePatch(&kp_grow[1], "K_ISGROW");
@@ -472,8 +471,9 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_flameshield[1], "K_ISFLMS");
 	HU_UpdatePatch(&kp_hyudoro[1], "K_ISHYUD");
 	HU_UpdatePatch(&kp_pogospring[1], "K_ISPOGO");
+	HU_UpdatePatch(&kp_superring[1], "K_ISRING");
 	HU_UpdatePatch(&kp_kitchensink[1], "K_ISSINK");
-	HU_UpdatePatch(&kp_sadface[1], "K_ISSAD");
+	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -662,8 +662,6 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISMINE" : "K_ITMINE");
 		case KITEM_LANDMINE:
 			return (tiny ? "K_ISLNDM" : "K_ITLNDM");
-		case KITEM_DROPTARGET:
-			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
 		case KITEM_BALLHOG:
 			return (tiny ? "K_ISBHOG" : "K_ITBHOG");
 		case KITEM_SPB:
@@ -686,6 +684,8 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISRING" : "K_ITRING");
 		case KITEM_KITCHENSINK:
 			return (tiny ? "K_ISSINK" : "K_ITSINK");
+		case KITEM_DROPTARGET:
+			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
 		case KRITEM_TRIPLEORBINAUT:
 			return (tiny ? "K_ISORBN" : "K_ITORB3");
 		case KRITEM_QUADORBINAUT:

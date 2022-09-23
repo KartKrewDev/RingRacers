@@ -218,7 +218,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_jawz);
 	CV_RegisterVar(&cv_mine);
 	CV_RegisterVar(&cv_landmine);
-	CV_RegisterVar(&cv_droptarget);
 	CV_RegisterVar(&cv_ballhog);
 	CV_RegisterVar(&cv_selfpropelledbomb);
 	CV_RegisterVar(&cv_grow);
@@ -230,6 +229,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_pogospring);
 	CV_RegisterVar(&cv_superring);
 	CV_RegisterVar(&cv_kitchensink);
+	CV_RegisterVar(&cv_droptarget);
 
 	CV_RegisterVar(&cv_dualsneaker);
 	CV_RegisterVar(&cv_triplesneaker);
@@ -350,68 +350,68 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 // Less ugly 2D arrays
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
-				//P-Odds	 0  1  2  3  4  5  6  7
-			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
-		/*Rocket Sneaker*/ { 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
-		 /*Invincibility*/ { 0, 0, 0, 0, 3, 4, 5, 7 }, // Invincibility
-				/*Banana*/ { 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
-		/*Eggman Monitor*/ { 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
-				  /*Jawz*/ { 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
-				  /*Mine*/ { 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
-			 /*Land Mine*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
-			   /*Ballhog*/ { 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Self-Propelled Bomb
-				  /*Grow*/ { 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
-				/*Shrink*/ { 0, 0, 0, 0, 0, 1, 3, 2 }, // Shrink
-	  /*Lightning Shield*/ { 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
-		 /*Bubble Shield*/ { 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
-		  /*Flame Shield*/ { 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
-			   /*Hyudoro*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
-		   /*Pogo Spring*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
-			/*Super Ring*/ { 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
-		  /*Kitchen Sink*/ { 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-		   /*Drop Target*/ { 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
-			/*Sneaker x2*/ { 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 0, 0, 0, 1, 6, 9, 5, 0 }, // Sneaker x3
-			 /*Banana x3*/ { 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
-			/*Banana x10*/ { 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
-		   /*Orbinaut x3*/ { 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
-		   /*Orbinaut x4*/ { 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
-			   /*Jawz x2*/ { 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
+	//B  C  D  E  F  G  H  I
+	{ 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
+	{ 0, 0, 0, 0, 0, 2, 4, 6 }, // Rocket Sneaker
+	{ 0, 0, 0, 0, 3, 4, 5, 7 }, // Invincibility
+	{ 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
+	{ 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
+	{ 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
+	{ 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
+	{ 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
+	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
+	{ 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
+	{ 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
+	{ 0, 0, 0, 1, 2, 3, 0, 0 }, // Grow
+	{ 0, 0, 0, 0, 0, 1, 3, 2 }, // Shrink
+	{ 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
+	{ 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
+	{ 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
+	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
+	{ 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
+	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
+	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
+	{ 0, 0, 0, 1, 6, 9, 5, 0 }, // Sneaker x3
+	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
+	{ 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
+	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
+	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
+	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
 };
 
 static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 {
-				//P-Odds	 0  1
-			   /*Sneaker*/ { 2, 1 }, // Sneaker
-		/*Rocket Sneaker*/ { 0, 0 }, // Rocket Sneaker
-		 /*Invincibility*/ { 4, 1 }, // Invincibility
-				/*Banana*/ { 0, 0 }, // Banana
-		/*Eggman Monitor*/ { 1, 0 }, // Eggman Monitor
-			  /*Orbinaut*/ { 8, 0 }, // Orbinaut
-				  /*Jawz*/ { 8, 1 }, // Jawz
-				  /*Mine*/ { 6, 1 }, // Mine
-			 /*Land Mine*/ { 2, 0 }, // Land Mine
-			   /*Ballhog*/ { 2, 1 }, // Ballhog
-   /*Self-Propelled Bomb*/ { 0, 0 }, // Self-Propelled Bomb
-				  /*Grow*/ { 2, 1 }, // Grow
-				/*Shrink*/ { 0, 0 }, // Shrink
-	  /*Lightning Shield*/ { 4, 0 }, // Lightning Shield
-		 /*Bubble Shield*/ { 1, 0 }, // Bubble Shield
-		  /*Flame Shield*/ { 1, 0 }, // Flame Shield
-			   /*Hyudoro*/ { 2, 0 }, // Hyudoro
-		   /*Pogo Spring*/ { 3, 0 }, // Pogo Spring
-			/*Super Ring*/ { 0, 0 }, // Super Ring
-		  /*Kitchen Sink*/ { 0, 0 }, // Kitchen Sink
-		   /*Drop Target*/ { 2, 0 }, // Drop Target
-			/*Sneaker x2*/ { 0, 0 }, // Sneaker x2
-			/*Sneaker x3*/ { 0, 1 }, // Sneaker x3
-			 /*Banana x3*/ { 0, 0 }, // Banana x3
-			/*Banana x10*/ { 1, 1 }, // Banana x10
-		   /*Orbinaut x3*/ { 2, 0 }, // Orbinaut x3
-		   /*Orbinaut x4*/ { 1, 1 }, // Orbinaut x4
-			   /*Jawz x2*/ { 5, 1 }  // Jawz x2
+	//K  L
+	{ 2, 1 }, // Sneaker
+	{ 0, 0 }, // Rocket Sneaker
+	{ 4, 1 }, // Invincibility
+	{ 0, 0 }, // Banana
+	{ 1, 0 }, // Eggman Monitor
+	{ 8, 0 }, // Orbinaut
+	{ 8, 1 }, // Jawz
+	{ 6, 1 }, // Mine
+	{ 2, 0 }, // Land Mine
+	{ 2, 1 }, // Ballhog
+	{ 0, 0 }, // Self-Propelled Bomb
+	{ 2, 1 }, // Grow
+	{ 0, 0 }, // Shrink
+	{ 4, 0 }, // Lightning Shield
+	{ 1, 0 }, // Bubble Shield
+	{ 1, 0 }, // Flame Shield
+	{ 2, 0 }, // Hyudoro
+	{ 3, 0 }, // Pogo Spring
+	{ 0, 0 }, // Super Ring
+	{ 0, 0 }, // Kitchen Sink
+	{ 2, 0 }, // Drop Target
+	{ 0, 0 }, // Sneaker x2
+	{ 0, 1 }, // Sneaker x3
+	{ 0, 0 }, // Banana x3
+	{ 1, 1 }, // Banana x10
+	{ 2, 0 }, // Orbinaut x3
+	{ 1, 1 }, // Orbinaut x4
+	{ 5, 1 }  // Jawz x2
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers

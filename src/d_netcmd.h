@@ -72,14 +72,37 @@ extern consvar_t cv_pause;
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
-extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
-extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine, cv_landmine, cv_droptarget;
-extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_lightningshield, cv_bubbleshield, cv_flameshield;
-extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t
+	cv_sneaker,
+	cv_rocketsneaker,
+	cv_invincibility,
+	cv_banana,
+	cv_eggmanmonitor,
+	cv_orbinaut,
+	cv_jawz,
+	cv_mine,
+	cv_landmine,
+	cv_ballhog,
+	cv_selfpropelledbomb,
+	cv_grow,
+	cv_shrink,
+	cv_lightningshield,
+	cv_bubbleshield,
+	cv_flameshield,
+	cv_hyudoro,
+	cv_pogospring,
+	cv_superring,
+	cv_kitchensink,
+	cv_droptarget;
 
-extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
-extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
+extern consvar_t
+	cv_dualsneaker,
+	cv_triplesneaker,
+	cv_triplebanana,
+	cv_decabanana,
+	cv_tripleorbinaut,
+	cv_quadorbinaut,
+	cv_dualjawz;
 
 extern consvar_t cv_kartminimap;
 extern consvar_t cv_kartcheck;
