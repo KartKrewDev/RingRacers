@@ -2251,7 +2251,7 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 	num_fling_rings = num_rings+min(0, player->rings);
 
 	// determine first angle
-	fa = player->mo->angle + ((P_RandomByte(PR_UNDEFINED) & 1) ? -ANGLE_90 : ANGLE_90);
+	fa = player->mo->angle + ((P_RandomByte(PR_ITEM_RINGS) & 1) ? -ANGLE_90 : ANGLE_90);
 
 	for (i = 0; i < num_fling_rings; i++)
 	{
