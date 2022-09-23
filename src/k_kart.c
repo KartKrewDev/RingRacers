@@ -350,7 +350,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 #define NUMKARTODDS 	80
 
 // Less ugly 2D arrays
-static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
+static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
@@ -383,7 +383,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
 };
 
-static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
+static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 {
 				//P-Odds	 0  1
 			   /*Sneaker*/ { 2, 1 }, // Sneaker
@@ -897,6 +897,37 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 #undef SETUPDISTTABLE
 
 	return useodds;
+}
+
+INT32 K_GetRollingRouletteItem(player_t *player)
+{
+	static UINT8 translation[NUMKARTITEMS-1];
+	static UINT16 roulette_size;
+
+	static boolean odds_uncached = true;
+
+	const UINT8 EMPTYODDS[sizeof K_KartItemOddsRace[0]] = {0};
+
+	if (odds_uncached)
+	{
+		UINT8 i;
+
+		roulette_size = 0;
+
+		for (i = 1; i < NUMKARTITEMS; ++i)
+		{
+			if (memcmp(K_KartItemOddsRace[i - 1], EMPTYODDS, sizeof EMPTYODDS))
+			{
+				translation[roulette_size] = i;
+				roulette_size++;
+			}
+		}
+
+		roulette_size *= 3;
+		odds_uncached = false;
+	}
+
+	return translation[(player->itemroulette % roulette_size) / 3];
 }
 
 static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
