@@ -3709,15 +3709,23 @@ static void G_GetNextMap(void)
 	else
 	{
 		UINT32 tolflag = G_TOLFlag(gametype);
+		register INT16 cm;
 
 		if (gametyperules & GTR_CAMPAIGN)
 		{
-			register INT16 cm;
 			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
 			UINT8 gettingresult = 0;
 
 			while (cup)
 			{
+				// Not unlocked? Grab the next result afterwards
+				if (!marathonmode && cup->unlockrequired != -1 && !unlockables[cup->unlockrequired].unlocked)
+				{
+					cup = cup->next;
+					gettingresult = 1;
+					continue;
+				}
+
 				for (i = 0; i < cup->numlevels; i++)
 				{
 					cm = cup->cachedlevels[i];
@@ -3726,7 +3734,8 @@ static void G_GetNextMap(void)
 					if (cm >= nummapheaders
 						|| !mapheaderinfo[cm]
 						|| mapheaderinfo[cm]->lumpnum == LUMPERROR
-						|| !(mapheaderinfo[cm]->typeoflevel & tolflag))
+						|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
+						|| (!marathonmode && M_MapLocked(cm+1)))
 						continue;
 
 					// Grab the first valid after the map you're on
@@ -3772,26 +3781,27 @@ static void G_GetNextMap(void)
 		}
 		else
 		{
-			i = prevmap;
-			if (++i >= nummapheaders)
-				i = 0;
+			cm = prevmap;
+			if (++cm >= nummapheaders)
+				cm = 0;
 
-			while (i != prevmap)
+			while (cm != prevmap)
 			{
-				if (!mapheaderinfo[i]
-					|| mapheaderinfo[i]->lumpnum == LUMPERROR
-					|| !(mapheaderinfo[i]->typeoflevel & tolflag)
-					|| (mapheaderinfo[i]->menuflags & LF2_HIDEINMENU))
+				if (!mapheaderinfo[cm]
+					|| mapheaderinfo[cm]->lumpnum == LUMPERROR
+					|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
+					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU)
+					|| M_MapLocked(cm+1))
 				{
-					if (++i >= nummapheaders)
-						i = 0;
+					if (++cm >= nummapheaders)
+						cm = 0;
 					continue;
 				}
 
 				break;
 			}
 
-			nextmap = i;
+			nextmap = cm;
 		}
 
 		if (!marathonmode)

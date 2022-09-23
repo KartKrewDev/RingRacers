@@ -432,7 +432,8 @@ UINT8 M_MapLocked(INT32 mapnum)
 	if (1)
 		return false;
 #endif	
-	
+	if (!mapnum || mapnum > nummapheaders)
+		return false;
 	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
 		return false;
 	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)
