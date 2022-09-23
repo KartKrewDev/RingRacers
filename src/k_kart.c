@@ -578,6 +578,12 @@ fixed_t K_ItemOddsScale(UINT8 playerCount)
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
 	fixed_t playerScaling = 0;
 
+	if (playerCount < 2)
+	{
+		// Cap to 1v1 scaling
+		playerCount = 2;
+	}
+
 	// Then, it multiplies it further if the player count isn't equal to basePlayer.
 	// This is done to make low player count races more interesting and high player count rates more fair.
 	if (playerCount < basePlayer)
@@ -610,14 +616,11 @@ UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 		distance = (15 * distance) / 14;
 	}
 
-	if (numPlayers > 0)
-	{
-		// Items get crazier with the fewer players that you have.
-		distance = FixedMul(
-			distance,
-			FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
-		);
-	}
+	// Items get crazier with the fewer players that you have.
+	distance = FixedMul(
+		distance,
+		FRACUNIT + (K_ItemOddsScale(numPlayers) / 2)
+	);
 
 	return distance;
 }
@@ -744,7 +747,7 @@ INT32 K_KartGetItemOdds(
 	if (first != NULL && second != NULL)
 	{
 		secondToFirst = secondDist - firstDist;
-		secondToFirst = K_ScaleItemDistance(secondToFirst, pingame);
+		secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame); // Reversed scaling, so 16P is like 1v1, and 1v1 is like 16P
 	}
 
 	switch (item)
@@ -1047,7 +1050,7 @@ boolean K_ForcedSPB(player_t *player)
 	if (first != NULL && second != NULL)
 	{
 		secondToFirst = second->distancetofinish - first->distancetofinish;
-		secondToFirst = K_ScaleItemDistance(secondToFirst, pingame);
+		secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame);
 	}
 
 	return (secondToFirst >= SPBFORCEDIST);
