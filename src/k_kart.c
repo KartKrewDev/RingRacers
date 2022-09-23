@@ -6037,7 +6037,7 @@ static void K_DoShrink(player_t *user)
 
 	Obj_CreateShrinkPohbees(user);
 
-#if 1
+#if 0
 	// kill everything in the kitem list while we're at it:
 	for (mobj = kitemcap; mobj; mobj = next)
 	{
