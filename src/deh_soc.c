@@ -149,9 +149,6 @@ void clear_levels(void)
 		if (!mapheaderinfo[nummapheaders])
 			continue;
 
-		if (strcmp(mapheaderinfo[nummapheaders]->lumpname, tutorialmap) == 0) // Sal: Is this needed...?
-			continue;
-
 		// Custom map header info
 		// (no need to set num to 0, we're freeing the entire header shortly)
 		Z_Free(mapheaderinfo[nummapheaders]->customopts);

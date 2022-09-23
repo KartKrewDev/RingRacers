@@ -1865,7 +1865,7 @@ void F_StartTitleScreen(void)
 		globalweather = mapheaderinfo[titleMapNum]->weather;
 
 		G_DoLoadLevel(true);
-		if (!titleMapNum)
+		if (!titlemap)
 			return;
 
 		players[displayplayers[0]].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)

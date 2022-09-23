@@ -1336,7 +1336,8 @@ void G_DoLoadLevel(boolean resetplayer)
 		//if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
 		if (gamemap < 1 || gamemap > nummapheaders)
 		{
-			titlemap = 0; // let's not infinite recursion ok
+			Z_Free(titlemap);
+			titlemap = NULL; // let's not infinite recursion ok
 			Command_ExitGame_f();
 			return;
 		}
