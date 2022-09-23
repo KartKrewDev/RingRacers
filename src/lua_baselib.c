@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -33,7 +32,7 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
-#include "m_menu.h" // Player Setup menu color stuff
+#include "k_menu.h" // Player Setup menu color stuff
 #include "m_misc.h" // M_MapNumber
 #include "p_spec.h" // P_StartQuake
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
@@ -163,6 +162,7 @@ static const struct {
 	{META_SPRITEINFO,   "spriteinfo_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
+	{META_PRECIPPROPS,  "precipprops_t"},
 
 	{META_TAGLIST,      "taglist"},
 
@@ -355,14 +355,26 @@ static int lib_pMoveColorAfter(lua_State *L)
 static int lib_pGetColorBefore(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorBefore(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorBefore(color, amount, follower));
 	return 1;
 }
 
 static int lib_pGetColorAfter(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorAfter(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorAfter(color, amount, follower));
+	return 1;
+}
+
+static int lib_pGetEffectiveFollowerColor(lua_State *L)
+{
+	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
+	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
+	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, playercolor));
 	return 1;
 }
 
@@ -3338,23 +3350,37 @@ static int lib_kOvertakeSound(lua_State *L)
 static int lib_kPainSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayPainSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayPainSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayPainSound(mobj, other);
 	return 0;
 }
 
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *victim = NULL;
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-		victim = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	K_PlayHitEmSound(mobj, victim);
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayHitEmSound(mobj, other);
+	return 0;
+}
+
+static int lib_kTryHurtSoundExchange(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *attacker = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!victim->player)
+		return luaL_error(L, "K_TryHurtSoundExchange: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_TryHurtSoundExchange(victim, attacker);
 	return 0;
 }
 
@@ -3895,6 +3921,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"K_GetEffectiveFollowerColor",lib_pGetEffectiveFollowerColor},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
@@ -4036,6 +4063,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayLossSound", lib_kLossSound},
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
+	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},

@@ -18,7 +18,7 @@
 #include "st_stuff.h"
 #include "w_wad.h"
 #include "z_zone.h"
-#include "m_menu.h" // character select
+#include "k_menu.h" // character select
 #include "m_misc.h"
 #include "info.h" // spr2names
 #include "i_video.h" // rendermode
@@ -85,6 +85,35 @@ size_t numsprites;
 static spriteframe_t sprtemp[64];
 static size_t maxframe;
 static const char *spritename;
+
+//
+// Clipping against drawsegs optimization, from prboom-plus
+//
+// TODO: This should be done with proper subsector pass through
+// sprites which would ideally remove the need to do it at all.
+// Unfortunately, SRB2's drawing loop has lots of annoying
+// changes from Doom for portals, which make it hard to implement.
+
+typedef struct drawseg_xrange_item_s
+{
+	INT16 x1, x2;
+	drawseg_t *user;
+} drawseg_xrange_item_t;
+
+typedef struct drawsegs_xrange_s
+{
+	drawseg_xrange_item_t *items;
+	INT32 count;
+} drawsegs_xrange_t;
+
+#define DS_RANGES_COUNT 3
+static drawsegs_xrange_t drawsegs_xranges[DS_RANGES_COUNT];
+
+static drawseg_xrange_item_t *drawsegs_xrange;
+static size_t drawsegs_xrange_size = 0;
+static INT32 drawsegs_xrange_count = 0;
+
+#define CLIP_UNDEF -2
 
 // ==========================================================================
 //
@@ -1034,6 +1063,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 #endif
 	fixed_t frac;
 	patch_t *patch;
+	fixed_t this_scale = vis->thingscale;
 	INT64 overflow_test;
 
 	//Fab : R_InitSprites now sets a wad lump number
@@ -1061,7 +1091,7 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 	}
 
 	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
-	dc_texturemid = vis->texturemid;
+	dc_texturemid = FixedDiv(vis->texturemid, this_scale);
 	dc_texheight = 0;
 
 	frac = vis->startfrac;
@@ -1419,6 +1449,104 @@ static void R_ProjectDropShadow(
 	objectsdrawn++;
 }
 
+static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
+{
+	fixed_t gx, gy;
+	fixed_t tx, tz;
+
+	vissprite_t *box;
+
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	if (!R_ThingBoundingBoxVisible(thing))
+	{
+		return;
+	}
+
+	// do interpolation
+	if (R_UsingFrameInterpolation() && !paused)
+	{
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
+
+	// 1--3
+	// |  |
+	// 0--2
+
+	// start in the (0) corner
+	gx = interp.x - thing->radius - viewx;
+	gy = interp.y - thing->radius - viewy;
+
+	tz = FixedMul(gx, viewcos) + FixedMul(gy, viewsin);
+
+	// thing is behind view plane?
+	// if parent vis is visible, ignore this
+	if (!vis && (tz < FixedMul(MINZ, interp.scale)))
+	{
+		return;
+	}
+
+	tx = FixedMul(gx, viewsin) - FixedMul(gy, viewcos);
+
+	// too far off the side?
+	if (!vis && abs(tx) > FixedMul(tz, fovtan[viewssnum])<<2)
+	{
+		return;
+	}
+
+	box = R_NewVisSprite();
+	box->mobj = thing;
+	box->mobjflags = thing->flags;
+	box->thingheight = thing->height;
+	box->cut = SC_BBOX;
+
+	box->gx = tx;
+	box->gy = tz;
+
+	box->scale = 2 * FixedMul(thing->radius, viewsin);
+	box->xscale = 2 * FixedMul(thing->radius, viewcos);
+
+	box->pz = interp.z;
+	box->pzt = box->pz + box->thingheight;
+
+	box->gzt = box->pzt;
+	box->gz = box->pz;
+	box->texturemid = box->gzt - viewz;
+
+	if (vis)
+	{
+		box->x1 = vis->x1;
+		box->x2 = vis->x2;
+		box->szt = vis->szt;
+		box->sz = vis->sz;
+
+		box->sortscale = vis->sortscale; // link sorting to sprite
+		box->dispoffset = vis->dispoffset + 5;
+
+		box->cut |= SC_LINKDRAW;
+	}
+	else
+	{
+		fixed_t xscale = FixedDiv(projection[viewssnum], tz);
+		fixed_t yscale = FixedDiv(projectiony[viewssnum], tz);
+		fixed_t top = (centeryfrac - FixedMul(box->texturemid, yscale));
+
+		box->x1 = (centerxfrac + FixedMul(box->gx, xscale)) / FRACUNIT;
+		box->x2 = box->x1;
+
+		box->szt = top / FRACUNIT;
+		box->sz = (top + FixedMul(box->thingheight, yscale)) / FRACUNIT;
+
+		box->sortscale = yscale;
+		box->dispoffset = 0;
+	}
+}
+
 //
 // R_ProjectSprite
 // Generates a vissprite for a thing
@@ -1473,7 +1601,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t paperoffset = 0, paperdistance = 0;
 	angle_t centerangle = 0;
 
-	INT32 dispoffset = thing->info->dispoffset;
+	INT32 dispoffset = thing->dispoffset;
 
 	//SoM: 3/17/2000
 	fixed_t gz = 0, gzt = 0;
@@ -1660,8 +1788,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (spriterotangle
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
-		rollangle = R_GetRollAngle(vflip
-				? InvAngle(spriterotangle) : spriterotangle);
+		if ((papersprite && ang >= ANGLE_180) != vflip)
+		{
+			rollangle = R_GetRollAngle(InvAngle(spriterotangle));
+		}
+		else
+		{
+			rollangle = R_GetRollAngle(spriterotangle);
+		}
 		rotsprite = Patch_GetRotatedSprite(sprframe, (thing->frame & FF_FRAMEMASK), rot, flip, false, sprinfo, rollangle);
 
 		if (rotsprite != NULL)
@@ -2165,6 +2299,8 @@ static void R_ProjectSprite(mobj_t *thing)
 		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
 	}
 
+	R_ProjectBoundingBox(oldthing, vis);
+
 	// Debug
 	++objectsdrawn;
 }
@@ -2187,6 +2323,10 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	//SoM: 3/17/2000
 	fixed_t gz, gzt;
+	fixed_t this_scale;
+
+	UINT32 blendmode;
+	UINT32 trans;
 
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
@@ -2201,6 +2341,8 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 		R_InterpolatePrecipMobjState(thing, FRACUNIT, &interp);
 	}
 
+	this_scale = interp.scale;
+
 	// transform the origin point
 	tr_x = interp.x - viewx;
 	tr_y = interp.y - viewy;
@@ -2208,7 +2350,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	tz = FixedMul(tr_x, viewcos) + FixedMul(tr_y, viewsin); // near/far distance
 
 	// thing is behind view plane?
-	if (tz < MINZ)
+	if (tz < FixedMul(MINZ, this_scale))
 		return;
 
 	tx = FixedMul(tr_x, viewsin) - FixedMul(tr_y, viewcos); // sideways distance
@@ -2247,14 +2389,14 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	lump = sprframe->lumpid[0];     //Fab: see note above
 
 	// calculate edges of the shape
-	tx -= spritecachedinfo[lump].offset;
+	tx -= FixedMul(spritecachedinfo[lump].offset, this_scale);
 	x1 = (centerxfrac + FixedMul (tx,xscale)) >>FRACBITS;
 
 	// off the right side?
 	if (x1 > viewwidth)
 		return;
 
-	tx += spritecachedinfo[lump].width;
+	tx += FixedMul(spritecachedinfo[lump].width, this_scale);
 	x2 = ((centerxfrac + FixedMul (tx,xscale)) >>FRACBITS) - 1;
 
 	// off the left side
@@ -2272,8 +2414,8 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	}
 
 	//SoM: 3/17/2000: Disregard sprites that are out of view..
-	gzt = interp.z + spritecachedinfo[lump].topoffset;
-	gz = gzt - spritecachedinfo[lump].height;
+	gzt = interp.z + FixedMul(spritecachedinfo[lump].topoffset, this_scale);
+	gz = gzt - FixedMul(spritecachedinfo[lump].height, this_scale);
 
 	if (thing->subsector->sector->cullheight)
 	{
@@ -2281,9 +2423,22 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 			goto weatherthink;
 	}
 
+	// Determine the blendmode and translucency value
+	{
+		blendmode = (thing->frame & FF_BLENDMASK) >> FF_BLENDSHIFT;
+		if (blendmode)
+			blendmode++; // realign to constants
+
+		trans = (thing->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
+		if (trans >= NUMTRANSMAPS)
+			goto weatherthink; // cap
+	}
+
 	// store information in a vissprite
 	vis = R_NewVisSprite();
-	vis->scale = vis->sortscale = yscale; //<<detailshift;
+	vis->scale = FixedMul(yscale, this_scale);
+	vis->sortscale = yscale; //<<detailshift;
+	vis->thingscale = interp.scale;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
 	vis->gx = interp.x;
 	vis->gy = interp.y;
@@ -2309,7 +2464,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	iscale = FixedDiv(FRACUNIT, xscale);
 
 	vis->startfrac = 0;
-	vis->xiscale = iscale;
+	vis->xiscale = FixedDiv(iscale, this_scale);
 
 	if (vis->x1 > x1)
 		vis->startfrac += vis->xiscale*(vis->x1-x1);
@@ -2318,12 +2473,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	//     than lumpid for sprites-in-pwad : the graphics are patched
 	vis->patch = W_CachePatchNum(sprframe->lumppat[0], PU_SPRITE);
 
-	// specific translucency
-	// (no draw flags)
-	if (thing->frame & FF_TRANSMASK)
-		vis->transmap = ((thing->frame & FF_TRANSMASK) - FF_TRANS10) + transtables;
-	else
-		vis->transmap = NULL;
+	vis->transmap = R_GetBlendTable(blendmode, trans);
 
 	vis->mobj = (mobj_t *)thing;
 	vis->mobjflags = 0;
@@ -2385,8 +2535,26 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	limit_dist = (fixed_t)(cv_drawdist.value) * mapobjectscale;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		if (R_ThingVisibleWithinDist(thing, limit_dist))
-			R_ProjectSprite(thing);
+		if (R_ThingWithinDist(thing, limit_dist))
+		{
+			const INT32 oldobjectsdrawn = objectsdrawn;
+
+			if (R_ThingVisible(thing))
+			{
+				R_ProjectSprite(thing);
+			}
+
+			// I'm so smart :^)
+			if (objectsdrawn == oldobjectsdrawn)
+			{
+				/*
+				Object is invisible OR is off screen but
+				render its bbox even if the latter because
+				radius could be bigger than sprite.
+				*/
+				R_ProjectBoundingBox(thing, NULL);
+			}
+		}
 	}
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
@@ -2457,6 +2625,10 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 			// don't connect to your shadow!
 			if (dsfirst->cut & SC_SHADOW)
+				continue;
+
+			// don't connect to your bounding box!
+			if (dsfirst->cut & SC_BBOX)
 				continue;
 
 			// don't connect if it's not the tracer
@@ -2902,7 +3074,9 @@ static void R_DrawSprite(vissprite_t *spr)
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
 
-	if (spr->cut & SC_SPLAT)
+	if (spr->cut & SC_BBOX)
+		R_DrawThingBoundingBox(spr);
+	else if (spr->cut & SC_SPLAT)
 		R_DrawFloorSplat(spr);
 	else
 		R_DrawVisSprite(spr);
@@ -2918,7 +3092,7 @@ static void R_DrawPrecipitationSprite(vissprite_t *spr)
 
 // R_ClipVisSprite
 // Clips vissprites without drawing, so that portals can work. -Red
-void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, portal_t* portal)
+void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 {
 	drawseg_t *ds;
 	INT32		x;
@@ -2929,7 +3103,9 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	INT32		silhouette;
 
 	for (x = x1; x <= x2; x++)
-		spr->clipbot[x] = spr->cliptop[x] = -2;
+	{
+		spr->clipbot[x] = spr->cliptop[x] = CLIP_UNDEF;
+	}
 
 	// Scan drawsegs from end to start for obscuring segs.
 	// The first drawseg that has a greater scale
@@ -2938,82 +3114,90 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	// Pointer check was originally nonportable
 	// and buggy, by going past LEFT end of array:
 
-	//    for (ds = ds_p-1; ds >= drawsegs; ds--)    old buggy code
-	for (ds = ds_p; ds-- > dsstart;)
+	// e6y: optimization
+	if (drawsegs_xrange_size)
 	{
-		// determine if the drawseg obscures the sprite
-		if (ds->x1 > x2 ||
-			ds->x2 < x1 ||
-			(!ds->silhouette
-			 && !ds->maskedtexturecol))
+		const drawseg_xrange_item_t *last = &drawsegs_xrange[drawsegs_xrange_count - 1];
+		drawseg_xrange_item_t *curr = &drawsegs_xrange[-1];
+
+		while (++curr <= last)
 		{
-			// does not cover sprite
-			continue;
-		}
-
-		if (ds->portalpass != 66)
-		{
-			if (ds->portalpass > 0 && ds->portalpass <= portalrender)
-				continue; // is a portal
-
-			if (ds->scale1 > ds->scale2)
+			// determine if the drawseg obscures the sprite
+			if (curr->x1 > spr->x2 || curr->x2 < spr->x1)
 			{
-				lowscale = ds->scale2;
-				scale = ds->scale1;
-			}
-			else
-			{
-				lowscale = ds->scale1;
-				scale = ds->scale2;
-			}
-
-			if (scale < spr->sortscale ||
-				(lowscale < spr->sortscale &&
-				 !R_PointOnSegSide (spr->gx, spr->gy, ds->curline)))
-			{
-				// masked mid texture?
-				/*if (ds->maskedtexturecol)
-					R_RenderMaskedSegRange (ds, r1, r2);*/
-				// seg is behind sprite
+				// does not cover sprite
 				continue;
 			}
-		}
 
-		r1 = ds->x1 < x1 ? x1 : ds->x1;
-		r2 = ds->x2 > x2 ? x2 : ds->x2;
+			ds = curr->user;
 
-		// clip this piece of the sprite
-		silhouette = ds->silhouette;
-
-		if (spr->gz >= ds->bsilheight)
-			silhouette &= ~SIL_BOTTOM;
-
-		if (spr->gzt <= ds->tsilheight)
-			silhouette &= ~SIL_TOP;
-
-		if (silhouette == SIL_BOTTOM)
-		{
-			// bottom sil
-			for (x = r1; x <= r2; x++)
-				if (spr->clipbot[x] == -2)
-					spr->clipbot[x] = ds->sprbottomclip[x];
-		}
-		else if (silhouette == SIL_TOP)
-		{
-			// top sil
-			for (x = r1; x <= r2; x++)
-				if (spr->cliptop[x] == -2)
-					spr->cliptop[x] = ds->sprtopclip[x];
-		}
-		else if (silhouette == (SIL_TOP|SIL_BOTTOM))
-		{
-			// both
-			for (x = r1; x <= r2; x++)
+			if (ds->portalpass != 66) // unused?
 			{
-				if (spr->clipbot[x] == -2)
-					spr->clipbot[x] = ds->sprbottomclip[x];
-				if (spr->cliptop[x] == -2)
-					spr->cliptop[x] = ds->sprtopclip[x];
+				if (ds->portalpass > 0 && ds->portalpass <= portalrender)
+					continue; // is a portal
+
+				if (ds->scale1 > ds->scale2)
+				{
+					lowscale = ds->scale2;
+					scale = ds->scale1;
+				}
+				else
+				{
+					lowscale = ds->scale1;
+					scale = ds->scale2;
+				}
+
+				if (scale < spr->sortscale ||
+					(lowscale < spr->sortscale &&
+					 !R_PointOnSegSide (spr->gx, spr->gy, ds->curline)))
+				{
+					// masked mid texture?
+					/*
+					if (ds->maskedtexturecol)
+						R_RenderMaskedSegRange (ds, r1, r2);
+					*/
+
+					// seg is behind sprite
+					continue;
+				}
+			}
+
+			r1 = ds->x1 < x1 ? x1 : ds->x1;
+			r2 = ds->x2 > x2 ? x2 : ds->x2;
+
+			// clip this piece of the sprite
+			silhouette = ds->silhouette;
+
+			if (spr->gz >= ds->bsilheight)
+				silhouette &= ~SIL_BOTTOM;
+
+			if (spr->gzt <= ds->tsilheight)
+				silhouette &= ~SIL_TOP;
+
+			if (silhouette == SIL_BOTTOM)
+			{
+				// bottom sil
+				for (x = r1; x <= r2; x++)
+					if (spr->clipbot[x] == CLIP_UNDEF)
+						spr->clipbot[x] = ds->sprbottomclip[x];
+			}
+			else if (silhouette == SIL_TOP)
+			{
+				// top sil
+				for (x = r1; x <= r2; x++)
+					if (spr->cliptop[x] == CLIP_UNDEF)
+						spr->cliptop[x] = ds->sprtopclip[x];
+			}
+			else if (silhouette == (SIL_TOP|SIL_BOTTOM))
+			{
+				// both
+				for (x = r1; x <= r2; x++)
+				{
+					if (spr->clipbot[x] == CLIP_UNDEF)
+						spr->clipbot[x] = ds->sprbottomclip[x];
+					if (spr->cliptop[x] == CLIP_UNDEF)
+						spr->cliptop[x] = ds->sprtopclip[x];
+				}
 			}
 		}
 	}
@@ -3029,13 +3213,13 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 			if (mh <= 0 || (phs != -1 && viewz > sectors[phs].floorheight))
 			{                          // clip bottom
 				for (x = x1; x <= x2; x++)
-					if (spr->clipbot[x] == -2 || h < spr->clipbot[x])
+					if (spr->clipbot[x] == CLIP_UNDEF || h < spr->clipbot[x])
 						spr->clipbot[x] = (INT16)h;
 			}
 			else						// clip top
 			{
 				for (x = x1; x <= x2; x++)
-					if (spr->cliptop[x] == -2 || h > spr->cliptop[x])
+					if (spr->cliptop[x] == CLIP_UNDEF || h > spr->cliptop[x])
 						spr->cliptop[x] = (INT16)h;
 			}
 		}
@@ -3047,13 +3231,13 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 			if (phs != -1 && viewz >= sectors[phs].ceilingheight)
 			{                         // clip bottom
 				for (x = x1; x <= x2; x++)
-					if (spr->clipbot[x] == -2 || h < spr->clipbot[x])
+					if (spr->clipbot[x] == CLIP_UNDEF || h < spr->clipbot[x])
 						spr->clipbot[x] = (INT16)h;
 			}
 			else                       // clip top
 			{
 				for (x = x1; x <= x2; x++)
-					if (spr->cliptop[x] == -2 || h > spr->cliptop[x])
+					if (spr->cliptop[x] == CLIP_UNDEF || h > spr->cliptop[x])
 						spr->cliptop[x] = (INT16)h;
 			}
 		}
@@ -3062,10 +3246,10 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	{
 		for (x = x1; x <= x2; x++)
 		{
-			if (spr->cliptop[x] == -2 || spr->szt > spr->cliptop[x])
+			if (spr->cliptop[x] == CLIP_UNDEF || spr->szt > spr->cliptop[x])
 				spr->cliptop[x] = spr->szt;
 
-			if (spr->clipbot[x] == -2 || spr->sz < spr->clipbot[x])
+			if (spr->clipbot[x] == CLIP_UNDEF || spr->sz < spr->clipbot[x])
 				spr->clipbot[x] = spr->sz;
 		}
 	}
@@ -3073,7 +3257,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	{
 		for (x = x1; x <= x2; x++)
 		{
-			if (spr->cliptop[x] == -2 || spr->szt > spr->cliptop[x])
+			if (spr->cliptop[x] == CLIP_UNDEF || spr->szt > spr->cliptop[x])
 				spr->cliptop[x] = spr->szt;
 		}
 	}
@@ -3081,7 +3265,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	{
 		for (x = x1; x <= x2; x++)
 		{
-			if (spr->clipbot[x] == -2 || spr->sz < spr->clipbot[x])
+			if (spr->clipbot[x] == CLIP_UNDEF || spr->sz < spr->clipbot[x])
 				spr->clipbot[x] = spr->sz;
 		}
 	}
@@ -3091,10 +3275,10 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	// check for unclipped columns
 	for (x = x1; x <= x2; x++)
 	{
-		if (spr->clipbot[x] == -2)
+		if (spr->clipbot[x] == CLIP_UNDEF)
 			spr->clipbot[x] = (INT16)viewheight;
 
-		if (spr->cliptop[x] == -2)
+		if (spr->cliptop[x] == CLIP_UNDEF)
 			//Fab : 26-04-98: was -1, now clips against console bottom
 			spr->cliptop[x] = (INT16)con_clipviewtop;
 	}
@@ -3125,12 +3309,95 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 {
+	const size_t maxdrawsegs = ds_p - dsstart;
+	const INT32 cx = viewwidth / 2;
+	drawseg_t* ds;
+	INT32 i;
+
+	// e6y
+	// Reducing of cache misses in the following R_DrawSprite()
+	// Makes sense for scenes with huge amount of drawsegs.
+	// ~12% of speed improvement on epic.wad map05
+	for (i = 0; i < DS_RANGES_COUNT; i++)
+	{
+		drawsegs_xranges[i].count = 0;
+	}
+
+	if (visspritecount - clippedvissprites <= 0)
+	{
+		return;
+	}
+
+	if (drawsegs_xrange_size < maxdrawsegs)
+	{
+		drawsegs_xrange_size = 2 * maxdrawsegs;
+
+		for (i = 0; i < DS_RANGES_COUNT; i++)
+		{
+			drawsegs_xranges[i].items = Z_Realloc(
+				drawsegs_xranges[i].items,
+				drawsegs_xrange_size * sizeof(drawsegs_xranges[i].items[0]),
+				PU_STATIC, NULL
+			);
+		}
+	}
+
+	for (ds = ds_p; ds-- > dsstart;)
+	{
+		if (ds->silhouette || ds->maskedtexturecol)
+		{
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x1 = ds->x1;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x2 = ds->x2;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].user = ds;
+
+			// e6y: ~13% of speed improvement on sunder.wad map10
+			if (ds->x1 < cx)
+			{
+				drawsegs_xranges[1].items[drawsegs_xranges[1].count] = 
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[1].count++;
+			}
+
+			if (ds->x2 >= cx)
+			{
+				drawsegs_xranges[2].items[drawsegs_xranges[2].count] = 
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[2].count++;
+			}
+
+			drawsegs_xranges[0].count++;
+		}
+	}
+
 	for (; clippedvissprites < visspritecount; clippedvissprites++)
 	{
 		vissprite_t *spr = R_GetVisSprite(clippedvissprites);
 		INT32 x1 = (spr->cut & SC_SPLAT) ? 0 : spr->x1;
 		INT32 x2 = (spr->cut & SC_SPLAT) ? viewwidth : spr->x2;
-		R_ClipVisSprite(spr, x1, x2, dsstart, portal);
+
+		if (spr->cut & SC_BBOX)
+		{
+			// Do not clip bounding boxes
+			continue;
+		}
+
+		if (x2 < cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[1].items;
+			drawsegs_xrange_count = drawsegs_xranges[1].count;
+		}
+		else if (x1 >= cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[2].items;
+			drawsegs_xrange_count = drawsegs_xranges[2].count;
+		}
+		else
+		{
+			drawsegs_xrange = drawsegs_xranges[0].items;
+			drawsegs_xrange_count = drawsegs_xranges[0].count;
+		}
+
+		R_ClipVisSprite(spr, x1, x2, portal);
 	}
 }
 
@@ -3152,18 +3419,14 @@ boolean R_ThingVisible (mobj_t *thing)
 	return true;
 }
 
-boolean R_ThingVisibleWithinDist (mobj_t *thing,
-		fixed_t limit_dist)
+boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 {
-	fixed_t approx_dist;
+	const fixed_t dist = R_PointToDist(thing->x, thing->y);
 
-	if (! R_ThingVisible(thing))
+	if (limit_dist && dist > limit_dist)
+	{
 		return false;
-
-	approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
-
-	if (limit_dist && approx_dist > limit_dist)
-		return false;
+	}
 
 	return true;
 }

@@ -48,6 +48,7 @@ extern boolean promptactive;
 extern consvar_t cv_tutorialprompt;
 
 extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection;
+extern consvar_t cv_shoutname, cv_shoutcolor, cv_autoshout;
 extern consvar_t cv_songcredits;
 
 extern consvar_t cv_pauseifunfocused;
@@ -65,7 +66,6 @@ extern consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
@@ -96,32 +96,15 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 INT32 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 
-typedef enum
-{
-	AXISNONE = 0,
-
-	AXISTURN,
-	AXISMOVE,
-	AXISBRAKE,
-	AXISLOOK,
-
-	AXISDIGITAL, // axes below this use digital deadzone
-
-	AXISFIRE = AXISDIGITAL,
-	AXISDRIFT,
-	AXISSPINDASH,
-	AXISLOOKBACK,
-	AXISAIM,
-} axis_input_e;
-
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
-
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
 extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
 extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
 extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
 extern UINT8 localtic;
+
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);
 
 //
 // GAME
@@ -199,7 +182,8 @@ boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
-INT16 G_SometimesGetDifferentGametype(void);
+#define VOTEMODIFIER_ENCORE 0x80
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype);
 UINT8 G_GetGametypeColor(INT16 gt);
 void G_ExitLevel(void);
 void G_NextLevel(void);

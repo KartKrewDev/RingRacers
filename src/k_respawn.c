@@ -151,18 +151,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
-	
-	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
-	if (player->tumbleBounces > 0)
-	{
-		player->tumbleBounces = 0; // MAXBOUNCES-1;
-		player->pflags &= ~PF_TUMBLELASTBOUNCE;
-		//players->tumbleHeight = 20;
-		players->mo->rollangle = 0;
-		player->spinouttype = KSPIN_WIPEOUT;
-		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
-	}
 
+	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
@@ -278,6 +268,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.state = RESPAWNST_MOVE;
 
 	player->respawn.airtimer = player->airtime;
+	player->respawn.truedeath = false;
 }
 
 /*--------------------------------------------------
@@ -567,7 +558,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		lasersteps--;
 	}
 
-	if (lasersteps == 0) // Don't spawn them beyond the respawn point.
+	// Respawning after death: everything about the player
+	// is invisible
+	if (!player->respawn.truedeath && lasersteps == 0) // Don't spawn them beyond the respawn point.
 	{
 		mobj_t *lasermo = P_SpawnMobj(laser.x, laser.y, laser.z + (player->mo->height / 2), MT_DEZLASER);
 

@@ -33,7 +33,7 @@
 #include "g_demo.h"
 #include "m_cheat.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
 #include "st_stuff.h"
@@ -75,8 +75,8 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 #define SAVEGAMESIZE (1024)
 
 // SRB2kart
-char gamedatafilename[64] = "kartdata.dat";
-char timeattackfolder[64] = "kart";
+char gamedatafilename[64] = "ringdata.dat";
+char timeattackfolder[64] = "ringracers";
 char customversionstring[32] = "\0";
 
 static void G_DoCompleted(void);
@@ -93,19 +93,21 @@ UINT32 mapmusresume;
 INT16 gamemap = 1;
 UINT32 maptol;
 
-UINT8 globalweather = PRECIP_NONE;
-UINT8 curWeather = PRECIP_NONE;
+preciptype_t globalweather = PRECIP_NONE;
+preciptype_t curWeather = PRECIP_NONE;
 
 precipprops_t precipprops[MAXPRECIP] =
 {
-	{MT_NULL, 0}, // PRECIP_NONE
-	{MT_RAIN, 0}, // PRECIP_RAIN
-	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
-	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
-	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
-	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
-	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+	{"NONE",				MT_NULL, 			0}, // PRECIP_NONE
+	{"RAIN",				MT_RAIN, 			0}, // PRECIP_RAIN
+	{"SNOW",				MT_SNOWFLAKE,		0}, // PRECIP_SNOW
+	{"BLIZZARD",			MT_BLIZZARDSNOW,	0}, // PRECIP_BLIZZARD
+	{"STORM",				MT_RAIN,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{"STORM_NORAIN",		MT_NULL,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{"STORM_NOSTRIKES",		MT_RAIN,			PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
 };
+
+preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
 //INT16 lastmapsaved = 0; // Last map we auto-saved at
@@ -159,7 +161,6 @@ INT16 bootmap; //bootmap for loading a map on startup
 
 INT16 tutorialmap = 0; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
-INT32 tutorialgcs = gcs_custom; // which control scheme is loaded?
 
 boolean looptitle = true;
 
@@ -300,6 +301,7 @@ INT16 scramblecount; //for CTF team scramble
 
 // SRB2Kart
 // Cvars that we don't want changed mid-game
+UINT8 numlaps; // Removed from Cvar hell
 UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for easy, 1 for normal, 2 for hard
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
@@ -307,7 +309,7 @@ boolean franticitems; // Frantic items currently enabled?
 boolean comeback; // Battle Mode's karma comeback is on/off
 
 // Voting system
-INT16 votelevels[5][2]; // Levels that were rolled by the host
+INT16 votelevels[4][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
@@ -349,22 +351,6 @@ static void weaponPrefChange2(void);
 static void weaponPrefChange3(void);
 static void weaponPrefChange4(void);
 
-static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
-{1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
-#if JOYAXISSET > 1
-{3, "Z-Axis"}, {4, "X-Rudder"}, {-3, "Z-Axis-"}, {-4, "X-Rudder-"},
-#endif
-#if JOYAXISSET > 2
-{5, "Y-Rudder"}, {6, "Z-Rudder"}, {-5, "Y-Rudder-"}, {-6, "Z-Rudder-"},
-#endif
-#if JOYAXISSET > 3
-{7, "U-Axis"}, {8, "V-Axis"}, {-7, "U-Axis-"}, {-8, "V-Axis-"},
-#endif
- {0, NULL}};
-#if JOYAXISSET > 4
-"More Axis Sets"
-#endif
-
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // chat timer thingy
@@ -391,6 +377,36 @@ consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, 
 // old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
 consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
+
+// Shout settings
+// The relevant ones are CV_NETVAR because too lazy to send them any other way
+consvar_t cv_shoutname = CVAR_INIT ("shout_name", "SERVER", CV_NETVAR, NULL, NULL);
+
+static CV_PossibleValue_t shoutcolor_cons_t[] =
+{
+	{-1, "Player color"},
+	{0, "White"},
+	{1, "Yellow"},
+	{2, "Purple"},
+	{3, "Green"},
+	{4, "Blue"},
+	{5, "Red"},
+	{6, "Gray"},
+	{7, "Orange"},
+	{8, "Sky-blue"},
+	{9, "Gold"},
+	{10, "Lavender"},
+	{11, "Aqua-green"},
+	{12, "Magenta"},
+	{13, "Pink"},
+	{14, "Brown"},
+	{15, "Tan"},
+	{0, NULL}
+};
+consvar_t cv_shoutcolor = CVAR_INIT ("shout_color", "Red", CV_NETVAR, shoutcolor_cons_t, NULL);
+
+// If on and you're an admin, your messages will automatically become shouts.
+consvar_t cv_autoshout = CVAR_INIT ("autoshout", "Off", CV_NETVAR, CV_OnOff, NULL);
 
 // Pause game upon window losing focus
 consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL);
@@ -421,68 +437,12 @@ consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("shrinkme4", "Off", CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
-consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move2", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move3", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move4", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_aimaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire2", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire3", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire4", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
 static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joy_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy2_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy3_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy4_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
-};
-
-consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joy_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy2_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
+	CVAR_INIT ("deadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone2", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone3", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone4", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
 // now automatically allocated in D_RegisterClientCommands
@@ -684,9 +644,10 @@ const char *G_BuildMapName(INT32 map)
 {
 	static char mapname[10] = "MAPXX"; // internal map name (wad resource name)
 
-	I_Assert(map >= 0);
+	I_Assert(map > 0);
 	I_Assert(map <= NUMMAPS);
 
+#if 0
 	if (map == 0) // hack???
 	{
 		if (gamestate == GS_TITLESCREEN)
@@ -697,6 +658,7 @@ const char *G_BuildMapName(INT32 map)
 			map = prevmap;
 		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, 0, 0, false, NULL)+1;
 	}
+#endif
 
 	if (map < 100)
 		sprintf(&mapname[3], "%.2d", map);
@@ -748,74 +710,161 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
+// Default controls for keyboard. These are hardcoded and cannot be changed.
+static INT32 keyboardMenuDefaults[][2] = {
+	{gc_a, 		KEY_ENTER},
+	{gc_c, 		KEY_BACKSPACE},
+	{gc_x, 		KEY_ESCAPE},
+	{gc_left, 	KEY_LEFTARROW},
+	{gc_right, 	KEY_RIGHTARROW},
+	{gc_up, 	KEY_UPARROW},
+	{gc_down, 	KEY_DOWNARROW},
+
+	// special control
+	{gc_start, 	KEY_ESCAPE},
+	// 8 total controls*
+};
+
+#define KEYBOARDDEFAULTSSPLIT 7
+
+
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-	INT32 retaxis;
-	INT32 axisval;
-	boolean flp = false;
+	INT32 deviceID;
+	INT32 i, j;
+	INT32 deadzone = 0;
+	boolean trydefaults = true;
+	boolean tryingotherID = false;
+	INT32 *controltable = &(gamecontrol[p][gc][0]);
 
-	//find what axis to get
-	switch (axissel)
+	if (p >= MAXSPLITSCREENPLAYERS)
 	{
-		case AXISTURN:
-			axisval = cv_turnaxis[player-1].value;
-			break;
-		case AXISMOVE:
-			axisval = cv_moveaxis[player-1].value;
-			break;
-		case AXISBRAKE:
-			axisval = cv_brakeaxis[player-1].value;
-			break;
-		case AXISAIM:
-			axisval = cv_aimaxis[player-1].value;
-			break;
-		case AXISLOOK:
-			axisval = cv_lookaxis[player-1].value;
-			break;
-		case AXISFIRE:
-			axisval = cv_fireaxis[player-1].value;
-			break;
-		case AXISDRIFT:
-			axisval = cv_driftaxis[player-1].value;
-			break;
-		default:
-			return 0;
-	}
-
-	if (axisval < 0) //odd -axises
-	{
-		axisval = -axisval;
-		flp = true;
-	}
-	if (axisval > JOYAXISSET*2 || axisval == 0) //not there in array or None
+#ifdef PARANOIA
+		CONS_Debug(DBG_GAMELOGIC, "G_PlayerInputAnalog: Invalid player ID %d\n", p);
+#endif
 		return 0;
-
-	if (axisval%2)
-	{
-		axisval /= 2;
-		retaxis = joyxmove[player-1][axisval];
-	}
-	else
-	{
-		axisval--;
-		axisval /= 2;
-		retaxis = joyymove[player-1][axisval];
 	}
 
-	if (retaxis < (-JOYAXISRANGE))
-		retaxis = -JOYAXISRANGE;
-	if (retaxis > (+JOYAXISRANGE))
-		retaxis = +JOYAXISRANGE;
+	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 
-	if (!Joystick[player-1].bGamepadStyle && axissel >= AXISDIGITAL)
+	deviceID = cv_usejoystick[p].value;
+
+retrygetcontrol:
+	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_digitaldeadzone[player-1].value) >> FRACBITS;
-		if (-jdeadzone < retaxis && retaxis < jdeadzone)
-			return 0;
+		INT32 key = controltable[i];
+		INT32 menukey = KEY_NULL;
+		INT32 value = 0;
+		boolean processinput = true;
+
+
+		// for menus, keyboards have defaults!
+		if (deviceID == 0)
+		{
+
+			// In menus, check indexes 0 through 5 (everything besides gc_start)
+			// Outside of menus, only consider the hardcoded input for gc_start at index 6
+
+			INT32 maxj = menuactive ? KEYBOARDDEFAULTSSPLIT : KEYBOARDDEFAULTSSPLIT+1;
+			j = (!menuactive) ? KEYBOARDDEFAULTSSPLIT : 0;
+
+			for (; j < maxj; j++)	// check keyboardMenuDefaults
+			{
+				// the gc we're looking for
+				if (gc == keyboardMenuDefaults[j][0])
+				{
+					menukey = keyboardMenuDefaults[j][1];
+					break;
+				}
+
+				// The key is mapped to *something else*...?
+				// Then don't process that as it would conflict with our hardcoded inputs.
+				else if (key == keyboardMenuDefaults[j][1])
+				{
+					processinput = false;
+					break;
+				}
+			}
+		}
+
+		// Invalid key number.
+		if (!G_KeyIsAvailable(key, deviceID) && !G_KeyIsAvailable(menukey, deviceID))
+		{
+			continue;
+		}
+
+		if (processinput)
+		{
+			// It's possible to access this control right now, so let's disable the default control backup for later.
+			trydefaults = false;
+
+			value = gamekeydown[deviceID][key];
+			if (menukey && gamekeydown[deviceID][menukey])
+				value = gamekeydown[deviceID][menukey];
+
+			if (value >= deadzone)
+			{
+				return value;
+			}
+		}
 	}
 
-	if (flp) retaxis = -retaxis; //flip it around
-	return retaxis;
+	// If you're on controller, try your keyboard-based binds as an immediate backup.
+	// Do not do this if there are more than 1 local player.
+	if (p == 0 && deviceID > 0 && !tryingotherID && menuPlayers < 2 && !splitscreen)
+	{
+		deviceID = 0;
+		goto retrygetcontrol;
+	}
+
+	if (menuPlayers == 0)
+	{
+		return 0;
+	}
+
+	// We don't want menus to become unnavigable if people unbind
+	// all of their controls, so we do several things in this scenario.
+	// First: try other controllers.
+
+	if (!tryingotherID)
+	{
+		deviceID = MAXDEVICES;
+		tryingotherID = true;
+	}
+loweringid:
+	deviceID--;
+	if (deviceID > 0)
+	{
+		for (i = 0; i < menuPlayers; i++)
+		{
+			if (deviceID != cv_usejoystick[i].value)
+				continue;
+			// Controller taken? Try again...
+			goto loweringid;
+		}
+		goto retrygetcontrol;
+	}
+
+	if (trydefaults && G_KeyBindIsNecessary(gc))
+	{
+		// If we still haven't found anything and the keybind is necessary,
+		// try it all again but with default binds.
+		trydefaults = false;
+		controltable = &(gamecontroldefault[gc][0]);
+		tryingotherID = false;
+		deviceID = cv_usejoystick[p].value;
+		goto retrygetcontrol;
+
+	}
+
+	return 0;
+}
+
+#undef KEYBOARDDEFAULTSSPLIT
+
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
+{
+	return (G_PlayerInputAnalog(p, gc, menuPlayers) != 0);
 }
 
 // Take a magnitude of two axes, and adjust it to take out the deadzone
@@ -962,27 +1011,15 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
-
-	const INT32 lookaxis = cv_lookaxis[forplayer].value;
-	const boolean invertmouse = cv_invertmouse.value;
-	const boolean analogjoystickmove = cv_usejoystick[forplayer].value && !Joystick[forplayer].bGamepadStyle;
-	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
-	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
-
-	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
-	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
-
-	INT32 forward, axis;
+	INT32 forward;
 
 	joystickvector2_t joystickvector;
 
-	boolean turnleft, turnright;
-
 	player_t *player = &players[g_localplayers[forplayer]];
-	camera_t *thiscam = &camera[forplayer];
-	boolean *kbl = &keyboard_look[forplayer];
-	boolean *rd = &resetdown[forplayer];
-	const boolean mouseaiming = player->spectator;
+	//camera_t *thiscam = &camera[forplayer];
+	//boolean *kbl = &keyboard_look[forplayer];
+	//boolean *rd = &resetdown[forplayer];
+	//const boolean mouseaiming = player->spectator;
 
 	if (demo.playback) return;
 
@@ -1011,16 +1048,27 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
+	cmd->flags = 0;
+
+	if (menuactive || chat_on || CON_Ready())
+	{
+		cmd->flags |= TICCMD_TYPING;
+
+		if (hu_keystrokes)
+		{
+			cmd->flags |= TICCMD_KEYSTROKE;
+		}
+
+		goto aftercmdinput;
+	}
+
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Bot ticcmd is generated by K_BuildBotTiccmd
 		return;
 	}
 
-	turnright = PlayerInputDown(ssplayer, gc_turnright);
-	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
-
-	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
+	joystickvector.xaxis = G_PlayerInputAnalog(forplayer, gc_right, 0) - G_PlayerInputAnalog(forplayer, gc_left, 0);
 	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
@@ -1028,158 +1076,105 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// use it for aiming to throw items forward/backward and the vote screen
 	// This mean that the turn axis will still be gradient but up/down will be 0
 	// until the stick is pushed far enough
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	joystickvector.yaxis = G_PlayerInputAnalog(forplayer, gc_down, 0) - G_PlayerInputAnalog(forplayer, gc_up, 0);
 
 	if (encoremode)
 	{
-		turnright ^= turnleft; // swap these using three XORs
-		turnleft ^= turnright;
-		turnright ^= turnleft;
 		joystickvector.xaxis = -joystickvector.xaxis;
 	}
 
-	if (gamepadjoystickmove && joystickvector.xaxis != 0)
-	{
-		turnright = turnright || (joystickvector.xaxis > 0);
-		turnleft = turnleft || (joystickvector.xaxis < 0);
-	}
 	forward = 0;
-
 	cmd->turning = 0;
 
-	// let movement keys cancel each other out
-	if (turnright && !(turnleft))
-	{
-		cmd->turning -= KART_FULLTURN;
-	}
-	else if (turnleft && !(turnright))
-	{
-		cmd->turning += KART_FULLTURN;
-	}
-
-	if (analogjoystickmove && joystickvector.xaxis != 0)
+	if (joystickvector.xaxis != 0)
 	{
 		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
 	}
 
-	// Specator mouse turning
-	if (player->spectator)
-	{
-		cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
-	}
-
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (usejoystick && axis > 0))
+		if (G_PlayerInputDown(forplayer, gc_accel, 0))
+		{
 			cmd->buttons |= BT_ACCELERATE;
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (usejoystick && axis > 0))
+		}
+
+		if (G_PlayerInputDown(forplayer, gc_brake, 0))
+		{
 			cmd->buttons |= BT_BRAKE;
-		axis = PlayerJoyAxis(ssplayer, AXISAIM);
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (usejoystick && axis < 0))
+		}
+
+		if (joystickvector.yaxis < 0)
+		{
 			forward += MAXPLMOVE;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (usejoystick && axis > 0))
+		}
+
+		if (joystickvector.yaxis > 0)
+		{
 			forward -= MAXPLMOVE;
+		}
 	}
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
+		INT32 value = G_PlayerInputAnalog(forplayer, gc_accel, 0);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = MAXPLMOVE; // 50
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_ACCELERATE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * MAXPLMOVE) >> 10);
+			forward += ((value * MAXPLMOVE) >> 10);
 		}
 
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (gamepadjoystickmove && axis > 0))
+		value = G_PlayerInputAnalog(forplayer, gc_brake, 0);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= MAXPLMOVE;
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_BRAKE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * MAXPLMOVE) >> 10);
+			forward -= ((value * MAXPLMOVE) >> 10);
 		}
 
 		// But forward/backward IS used for aiming.
-		if (PlayerInputDown(ssplayer, gc_aimforward))
-			cmd->throwdir += KART_FULLTURN;
-		if (PlayerInputDown(ssplayer, gc_aimbackward))
-			cmd->throwdir -= KART_FULLTURN;
-
-		if (analogjoystickmove && joystickvector.yaxis != 0)
+		if (joystickvector.yaxis != 0)
 		{
 			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) >> 10;
 		}
 	}
 
-	// fire with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISFIRE);
-	if (PlayerInputDown(ssplayer, gc_fire) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_ATTACK;
-
-	// drift with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISDRIFT);
-	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_DRIFT;
-
-	// Spindash with any button/key
-	// Simply holds all of the inputs for you.
-	axis = PlayerJoyAxis(ssplayer, AXISSPINDASH);
-	if (PlayerInputDown(ssplayer, gc_spindash) || (usejoystick && axis > 0))
-		cmd->buttons |= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT);
-
-	// rear view with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
-	if (PlayerInputDown(ssplayer, gc_lookback) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_LOOKBACK;
-
-	// Lua scriptable buttons
-	if (PlayerInputDown(ssplayer, gc_custom1))
-		cmd->buttons |= BT_CUSTOM1;
-	if (PlayerInputDown(ssplayer, gc_custom2))
-		cmd->buttons |= BT_CUSTOM2;
-	if (PlayerInputDown(ssplayer, gc_custom3))
-		cmd->buttons |= BT_CUSTOM3;
-
-	// Reset camera
-	if (PlayerInputDown(ssplayer, gc_camreset))
+	// drift
+	if (G_PlayerInputDown(forplayer, gc_drift, 0))
 	{
-		if (thiscam->chase && *rd == false)
-			P_ResetCamera(player, thiscam);
-		*rd = true;
+		cmd->buttons |= BT_DRIFT;
 	}
-	else
-		*rd = false;
+
+	// C
+	if (G_PlayerInputDown(forplayer, gc_spindash, 0))
+	{
+		forward = 0;
+		cmd->buttons |= BT_SPINDASHMASK;
+	}
+
+	// fire
+	if (G_PlayerInputDown(forplayer, gc_item, 0))
+	{
+		cmd->buttons |= BT_ATTACK;
+	}
+
+	// rear view
+	if (G_PlayerInputDown(forplayer, gc_lookback, 0))
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	// lua buttons a thru c
+	if (G_PlayerInputDown(forplayer, gc_luaa, 0)) { cmd->buttons |= BT_LUAA; }
+	if (G_PlayerInputDown(forplayer, gc_luab, 0)) { cmd->buttons |= BT_LUAB; }
+	if (G_PlayerInputDown(forplayer, gc_luac, 0)) { cmd->buttons |= BT_LUAC; }
 
 	// spectator aiming shit, ahhhh...
+	/*
 	{
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
 			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
-
-		// mouse look stuff (mouse look is not the same as mouse aim)
-		if (mouseaiming && player->spectator)
-		{
-			*kbl = false;
-
-			// looking up/down
-			cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
-		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
@@ -1206,22 +1201,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
 			cmd->aiming = 0;
 	}
-
-	mousex = mousey = mlooky = 0;
+	*/
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->flags = 0;
-
-	if (chat_on || CON_Ready())
-	{
-		cmd->flags |= TICCMD_TYPING;
-
-		if (hu_keystrokes)
-		{
-			cmd->flags |= TICCMD_KEYSTROKE;
-		}
-	}
+aftercmdinput:
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
@@ -1235,7 +1219,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	*/
 	if (addedtogame && gamestate == GS_LEVEL)
 	{
-		LUAh_PlayerCmd(player, cmd);
+		LUA_HookTiccmd(player, cmd, HOOK(PlayerCmd));
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
@@ -1265,7 +1249,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		// Call ViewpointSwitch hooks here.
 		// The viewpoint was forcibly changed.
-		LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
+		LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
 		displayplayers[0] = consoleplayer;
 	}
 }
@@ -1316,7 +1300,8 @@ static void weaponPrefChange4(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i, j;
+	boolean doAutomate = false;
+	INT32 i;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1326,6 +1311,8 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
+	if (cv_currprofile.value == -1)
+		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)
@@ -1346,7 +1333,13 @@ void G_DoLoadLevel(boolean resetplayer)
 	else
 		titlemapinaction = TITLEMAP_OFF;
 
+	// Doing this matches HOSTMOD behavior.
+	// Is that desired? IDK
+	doAutomate = (gamestate != GS_LEVEL);
+
 	G_SetGamestate(GS_LEVEL);
+	if (wipegamestate == GS_MENU)
+		M_ClearMenus(true);
 	I_UpdateMouseGrab();
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1376,17 +1369,17 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
-	{
-		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
-			joyxmove[j][i] = joyymove[j][i] = 0;
-	}
-	mousex = mousey = 0;
+	memset(deviceResponding, false, sizeof (deviceResponding));
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
 
 	server_lagless = cv_lagless.value;
+
+	if (doAutomate == true)
+	{
+		Automate_Run(AEV_ROUNDSTART);
+	}
 }
 
 //
@@ -1480,7 +1473,7 @@ static INT32 camtoggledelay[MAXSPLITSCREENPLAYERS];
 //
 boolean G_Responder(event_t *ev)
 {
-	UINT8 i;
+	//INT32 i;
 
 	// any other key pops up menu if in demos
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
@@ -1575,7 +1568,7 @@ boolean G_Responder(event_t *ev)
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]))
+		&& (ev->data1 == KEY_F12 /*|| ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]*/))
 	{
 		if (!demo.playback && (r_splitscreen || !netgame))
 			g_localplayers[0] = consoleplayer;
@@ -1593,6 +1586,7 @@ boolean G_Responder(event_t *ev)
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
+		/*
 		if (ev->data1 == gamecontrol[1][gc_viewpoint][0] || ev->data1 == gamecontrol[1][gc_viewpoint][1])
 		{
 			G_AdjustView(2, 1, true);
@@ -1608,12 +1602,13 @@ boolean G_Responder(event_t *ev)
 			G_AdjustView(4, 1, true);
 			return true;
 		}
+		*/
 
 		// Allow pausing
 		if (
-			ev->data1 == gamecontrol[0][gc_pause][0]
-			|| ev->data1 == gamecontrol[0][gc_pause][1]
-			|| ev->data1 == KEY_PAUSE
+			//ev->data1 == gamecontrol[0][gc_pause][0]
+			//|| ev->data1 == gamecontrol[0][gc_pause][1]
+			ev->data1 == KEY_PAUSE
 		)
 		{
 			paused = !paused;
@@ -1647,9 +1642,9 @@ boolean G_Responder(event_t *ev)
 	switch (ev->type)
 	{
 		case ev_keydown:
-			if (ev->data1 == gamecontrol[0][gc_pause][0]
-				|| ev->data1 == gamecontrol[0][gc_pause][1]
-				|| ev->data1 == KEY_PAUSE)
+			if (//ev->data1 == gamecontrol[0][gc_pause][0]
+				//|| ev->data1 == gamecontrol[0][gc_pause][1]
+				ev->data1 == KEY_PAUSE)
 			{
 				if (modeattacking && !demo.playback && (gamestate == GS_LEVEL))
 				{
@@ -1679,6 +1674,7 @@ boolean G_Responder(event_t *ev)
 				}
 			}
 
+			/*
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 			{
 				if (ev->data1 == gamecontrol[i][gc_camtoggle][0]
@@ -1691,6 +1687,7 @@ boolean G_Responder(event_t *ev)
 					}
 				}
 			}
+			*/
 
 			return true;
 
@@ -1701,15 +1698,6 @@ boolean G_Responder(event_t *ev)
 			return true; // eat events
 
 		case ev_joystick:
-			return true; // eat events
-
-		case ev_joystick2:
-			return true; // eat events
-
-		case ev_joystick3:
-			return true; // eat events
-
-		case ev_joystick4:
 			return true; // eat events
 
 		default:
@@ -2056,8 +2044,7 @@ void G_Ticker(boolean run)
 			HU_Ticker();
 			break;
 
-		case GS_TIMEATTACK:
-			F_MenuPresTicker(run);
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -2212,6 +2199,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
+	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
@@ -2299,6 +2287,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfault = 0;
 		nocontrol = 0;
 		laps = 0;
+		latestlap = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
@@ -2339,6 +2328,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
+		latestlap = players[player].latestlap;
+
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
 
@@ -2396,6 +2387,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
+	p->latestlap = latestlap;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -2420,7 +2412,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
-	p->tripWireState = TRIP_NONE;
 
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
@@ -2543,7 +2534,7 @@ void G_SpawnPlayer(INT32 playernum)
 
 	P_SpawnPlayer(playernum);
 	G_MovePlayerToSpawnOrStarpost(playernum);
-	LUAh_PlayerSpawn(&players[playernum]); // Lua hook for player spawning :)
+	LUA_HookPlayer(&players[playernum], HOOK(PlayerSpawn)); // Lua hook for player spawning :)
 }
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
@@ -3270,51 +3261,53 @@ boolean G_GametypeHasSpectators(void)
 //
 // Oh, yeah, and we sometimes flip encore mode on here too.
 //
-INT16 G_SometimesGetDifferentGametype(void)
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 {
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && (gametyperules & GTR_CIRCUIT));
+	// Most of the gametype references in this condition are intentionally not prefgametype.
+	// This is so a server CAN continue playing a gametype if they like the taste of it.
+	// The encore check needs prefgametype so can't use G_RaceGametype...
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1)
+		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
+	UINT8 encoremodifier = 0;
 
-	if (!cv_kartvoterulechanges.value // never
-		&& encorescramble != 1) // destroying the code for this one instance
-		return gametype;
-
-	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
+	if (encorepossible)
 	{
-		randmapbuffer[NUMMAPS]--;
-		if (encorepossible)
+		if (encorescramble != -1)
 		{
-			if (encorescramble != -1)
-				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
-			else
-			{
-				switch (cv_kartvoterulechanges.value)
-				{
-					case 3: // always
-						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-						break;
-					case 2: // frequent
-						encorepossible = M_RandomChance(FRACUNIT>>1);
-						break;
-					case 1: // sometimes
-					default:
-						encorepossible = M_RandomChance(FRACUNIT>>2);
-						break;
-				}
-			}
-			if (encorepossible != (cv_kartencore.value == 1))
-				return (gametype|0x80);
+			encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
 		}
-		return gametype;
+		else
+		{
+			switch (cv_kartvoterulechanges.value)
+			{
+				case 3: // always
+					encorepossible = true;
+					break;
+				case 2: // frequent
+					encorepossible = M_RandomChance(FRACUNIT>>1);
+					break;
+				case 1: // sometimes
+					encorepossible = M_RandomChance(FRACUNIT>>2);
+					break;
+				default:
+					break;
+			}
+		}
+		if (encorepossible != (cv_kartencore.value == 1))
+			encoremodifier = VOTEMODIFIER_ENCORE;
 	}
 
-	if (!cv_kartvoterulechanges.value) // never (again)
-		return gametype;
+	if (!cv_kartvoterulechanges.value) // never
+		return (gametype|encoremodifier);
+
+	if (randmapbuffer[NUMMAPS] > 0 && (cv_kartvoterulechanges.value != 3))
+	{
+		randmapbuffer[NUMMAPS]--;
+		return (gametype|encoremodifier);
+	}
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
-		case 3: // always
-			randmapbuffer[NUMMAPS] = 1; // every other vote (or always if !encorepossible)
-			break;
 		case 1: // sometimes
 			randmapbuffer[NUMMAPS] = 5; // per "cup"
 			break;
@@ -3325,21 +3318,28 @@ INT16 G_SometimesGetDifferentGametype(void)
 			break;
 	}
 
-	if (gametype == GT_BATTLE)
-		return GT_RACE;
-	return GT_BATTLE;
+	// Only this response is prefgametype-based.
+	// todo custom gametypes
+	if (prefgametype == GT_BATTLE)
+	{
+		// Intentionally does not use encoremodifier!
+		if (cv_kartencore.value == 1)
+			return (GT_RACE|VOTEMODIFIER_ENCORE);
+		return (GT_RACE);
+	}
+	// This might appear wrong HERE, but the game will display the Encore possibility on the second voting choice instead.
+	return (GT_BATTLE|encoremodifier);
 }
 
 //
 // G_GetGametypeColor
 //
 // Pretty and consistent ^u^
-// See also M_GetGametypeColor.
+// See also M_GetGametypeColor (if that still exists).
 //
 UINT8 G_GetGametypeColor(INT16 gt)
 {
-	if (modeattacking // == ATTACKING_TIME
-	|| gamestate == GS_TIMEATTACK)
+	if (modeattacking) // == ATTACKING_RECORD
 		return orangemap[0];
 
 	if (gt == GT_BATTLE)
@@ -3625,11 +3625,14 @@ static void G_DoCompleted(void)
 	wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
+				clientPowerAdd[i] = 0;
+
 				if (players[i].bot)
 				{
 					K_FakeBotResults(&players[i]);
@@ -3647,6 +3650,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
+	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
@@ -3808,8 +3812,6 @@ demointermission:
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions
 void G_AfterIntermission(void)
 {
-	Y_CleanupScreenBuffer();
-
 	if (modeattacking)
 	{
 		M_EndModeAttackRun();
@@ -3826,9 +3828,11 @@ void G_AfterIntermission(void)
 	{
 		G_StopDemo();
 
+#if 0
 		if (demo.inreplayhut)
 			M_ReplayHut(0);
 		else
+#endif
 			D_StartTitle();
 
 		return;
@@ -4056,9 +4060,6 @@ void G_LoadGameData(void)
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
 
-	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
-		vspowerlevel[i] = PWRLVRECORD_START;
-
 	if (M_CheckParm("-nodata"))
 	{
 		// Don't load at all.
@@ -4097,13 +4098,6 @@ void G_LoadGameData(void)
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
-
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-	{
-		vspowerlevel[i] = READUINT16(save_p);
-		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
-			goto datacorrupt;
-	}
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
@@ -4228,9 +4222,6 @@ void G_SaveGameData(void)
 	WRITEUINT32(save_p, totalplaytime);
 	WRITEUINT32(save_p, matchesplayed);
 
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-		WRITEUINT16(save_p, vspowerlevel[i]);
-
 	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
 
 	// TODO put another cipher on these things? meh, I don't care...
@@ -4294,6 +4285,9 @@ void G_SaveGameData(void)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
+
+	// Also save profiles here.
+	PR_SaveProfiles();
 }
 
 #define VERSIONSIZE 16
@@ -4612,8 +4606,6 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 
 	(void)FLS;
 
-	Y_CleanupScreenBuffer();
-
 	if (paused)
 	{
 		paused = false;
@@ -4689,7 +4681,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{
-		LUAh_MapChange(gamemap);
+		LUA_HookInt(gamemap, HOOK(MapChange));
 		G_DoLoadLevel(resetplayer);
 	}
 

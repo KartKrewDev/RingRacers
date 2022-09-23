@@ -32,6 +32,7 @@
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart
 #include "k_terrain.h"
+#include "k_objects.h"
 
 #include "r_splats.h"
 
@@ -263,9 +264,6 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	if (P_IsLineTripWire(ld))
-		return true;
-
 	switch (ld->special)
 	{
 		case 2001: // Finish line
@@ -301,6 +299,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
 	fixed_t savemomx = 0;
 	fixed_t savemomy = 0;
+	statenum_t raisestate = spring->info->raisestate;
 
 	// Object was already sprung this tic
 	if (object->eflags & MFE_SPRUNG)
@@ -412,8 +411,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	// Re-solidify
 	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
 
-	P_SetMobjState(spring, spring->info->raisestate);
-
 	if (object->player)
 	{
 		if (spring->flags & MF_ENEMY) // Spring shells
@@ -421,6 +418,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			P_SetTarget(&spring->target, object);
 		}
 
+		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
 
 		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
@@ -444,7 +442,36 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		{
 			object->player->tiregrease = greasetics;
 		}
+
+		if (spring->type == MT_POGOSPRING)
+		{
+			if (spring->reactiontime == 0)
+			{
+				object->player->tricktime = 0; // Reset post-hitlag timer
+				// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
+				object->player->trickboostpower = max(FixedDiv(object->player->speed, K_GetKartSpeed(object->player, false, false)) - FRACUNIT, 0)*125/100;
+				//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
+				object->player->trickpanel = 1;
+				object->player->pflags |= PF_TRICKDELAY;
+			}
+			else
+			{
+				raisestate = spring->info->seestate;
+
+				object->player->tumbleBounces = 1;
+				object->player->pflags &= ~PF_TUMBLESOUND;
+				object->player->tumbleHeight = 50;
+				P_SetPlayerMobjState(object->player->mo, S_KART_SPINOUT);
+
+				// FIXME: try to compensate tumbling gravity
+				object->momz = 3 * object->momz / 2;
+			}
+
+			spring->reactiontime++;
+		}
 	}
+
+	P_SetMobjState(spring, raisestate);
 
 	return true;
 }
@@ -630,7 +657,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	{
-		UINT8 shouldCollide = LUAh_MobjCollide(thing, tmthing); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_Hook2Mobj(thing, tmthing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -638,7 +665,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 
-		shouldCollide = LUAh_MobjMoveCollide(tmthing, thing); // checks hook for tmthing's type
+		shouldCollide = LUA_Hook2Mobj(tmthing, thing, MOBJ_HOOK(MobjMoveCollide)); // checks hook for tmthing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -712,6 +739,81 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
+
+	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
+	{
+		if (tmthing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (thing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (tmthing->z > thing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (tmthing->type == MT_SHRINK_GUN || tmthing->type == MT_SHRINK_PARTICLE)
+	{
+		if (thing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (tmthing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (thing->z > tmthing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (thing->z + thing->height < tmthing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
 
 	if (tmthing->type == MT_SMK_ICEBLOCK)
 	{
@@ -1614,7 +1716,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	blockingline = ld;
 
 	{
-		UINT8 shouldCollide = LUAh_MobjLineCollide(tmthing, blockingline); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_HookMobjLineCollide(tmthing, blockingline); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -1674,6 +1776,20 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	if (P_SpecialIsLinedefCrossType(ld))
 	{
 		add_spechit(ld);
+	}
+	else if (P_IsLineTripWire(ld))
+	{
+		fixed_t textop, texbottom;
+
+		P_GetMidtextureTopBottom(ld, tmx, tmy,
+				&textop, &texbottom);
+
+		/* The effect handling is done later but it won't
+			know the height values anymore. So don't even add
+			this line to the list unless this thing clips the
+			tripwire's midtexture. */
+		if (tmthing->z <= textop && thingtop >= texbottom)
+			add_spechit(ld);
 	}
 
 	return BMIT_CONTINUE;
@@ -2423,12 +2539,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
 
-	if (thing->type == MT_SKIM)
-	{
-		// Skim special (not needed for kart?)
-		return 0;
-	}
-
 	if (P_WaterStepUp(thing) == true)
 	{
 		// Add some extra stepmove when waterskipping
@@ -2449,21 +2559,19 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	return maxstep;
 }
 
-//
-// P_TryMove
-// Attempt to move to a new position.
-//
-boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+static boolean
+increment_move
+(		mobj_t * thing,
+		fixed_t x,
+		fixed_t y,
+		boolean allowdropoff,
+		fixed_t * return_stairjank)
 {
 	fixed_t tryx = thing->x;
 	fixed_t tryy = thing->y;
-	fixed_t oldx = tryx;
-	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
-	fixed_t startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
-	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
@@ -2485,16 +2593,20 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 #endif
 
 	do {
-		if (thing->flags & MF_NOCLIP) {
+		if (thing->flags & MF_NOCLIP)
+		{
 			tryx = x;
 			tryy = y;
-		} else {
+		}
+		else
+		{
 			if (x-tryx > radius)
 				tryx += radius;
 			else if (x-tryx < -radius)
 				tryx -= radius;
 			else
 				tryx = x;
+
 			if (y-tryy > radius)
 				tryy += radius;
 			else if (y-tryy < -radius)
@@ -2563,7 +2675,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						return false; // mobj must lower itself to fit
 					}
 				}
-				else if (!(P_MobjTouchingSectorSpecial(thing, 1, 14, false))) // Step down
+				else if (thing->momz * P_MobjFlip(thing) <= 0 // Step down requires moving down.
+					&& !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
@@ -2604,7 +2717,45 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		}
 	} while (tryx != x || tryy != y);
 
+	if (return_stairjank)
+		*return_stairjank = stairjank;
+
+	return true;
+}
+
+//
+// P_CheckMove
+// Check if a P_TryMove would be successful.
+//
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	boolean moveok;
+	mobj_t *hack = P_SpawnMobjFromMobj(thing, 0, 0, 0, MT_RAY);
+
+	hack->radius = thing->radius;
+	hack->height = thing->height;
+
+	moveok = increment_move(hack, x, y, allowdropoff, NULL);
+	P_RemoveMobj(hack);
+
+	return moveok;
+}
+
+//
+// P_TryMove
+// Attempt to move to a new position.
+//
+boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	fixed_t oldx = thing->x;
+	fixed_t oldy = thing->y;
+	fixed_t startingonground = P_IsObjectOnGround(thing);
+	fixed_t stairjank = 0;
+	pslope_t *oldslope = thing->standingslope;
+
 	// The move is ok!
+	if (!increment_move(thing, x, y, allowdropoff, &stairjank))
+		return false;
 
 	// If it's a pushable object, check if anything is
 	// standing on top and move it, too.
@@ -2650,12 +2801,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz <= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmfloorslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -2670,12 +2824,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz >= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmceilingslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -2966,7 +3123,7 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	}
 
 	if ((P_MobjFlip(thing)*(thing->z - oldz) > 0 || hitfloor) && thing->player)
-		P_PlayerHitFloor(thing->player, !onfloor);
+		P_PlayerHitFloor(thing->player, !onfloor, thing->pitch, thing->roll);
 
 	// debug: be sure it falls to the floor
 	thing->eflags &= ~MFE_ONGROUND;
@@ -3761,7 +3918,7 @@ void P_BouncePlayerMove(mobj_t *mo)
 	if (P_IsLineTripWire(bestslideline))
 	{
 		// TRIPWIRE CANNOT BE MADE NONBOUNCY
-		K_ApplyTripWire(mo->player, TRIP_BLOCKED);
+		K_ApplyTripWire(mo->player, TRIPSTATE_BLOCKED);
 	}
 	else
 	{

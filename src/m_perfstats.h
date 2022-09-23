@@ -16,6 +16,15 @@
 #include "lua_script.h"
 #include "p_local.h"
 
+typedef enum
+{
+	PS_OFF = 0,
+	PS_RENDER,
+	PS_LOGIC,
+	PS_BOT,
+	PS_THINKFRAME,
+} ps_types_t;
+
 extern precise_t ps_tictime;
 
 extern precise_t ps_playerthink_time;
@@ -36,6 +45,19 @@ typedef struct
 } ps_hookinfo_t;
 
 void PS_SetThinkFrameHookInfo(int index, precise_t time_taken, char* short_src);
+
+typedef struct
+{
+	boolean isBot;
+	precise_t total;
+	precise_t prediction; // K_CreateBotPrediction
+	precise_t nudge; // K_NudgePredictionTowardsObjects
+	precise_t item; // K_BotItemUsage
+} ps_botinfo_t;
+
+extern ps_botinfo_t ps_bots[MAXPLAYERS];
+
+void PS_ResetBotInfo(void);
 
 void M_DrawPerfStats(void);
 

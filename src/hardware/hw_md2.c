@@ -713,11 +713,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 	UINT16 w = gpatch->width, h = gpatch->height;
 	UINT32 size = w*h;
 	RGBA_t *image, *blendimage, *cur, blendcolor;
-	UINT8 translation[16]; // First the color index
-	UINT8 cutoff[16]; // Brightness cutoff before using the next color
+	UINT8 translation[17]; // First the color index
+	UINT8 cutoff[17]; // Brightness cutoff before using the next color
 	UINT8 translen = 0;
 	UINT8 i;
-	UINT8 colorbrightnesses[16];
+	UINT8 colorbrightnesses[17];
 	UINT8 color_match_lookup[256]; // optimization attempt
 
 	blendcolor = V_GetColor(0); // initialize
@@ -788,6 +788,11 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		translen++;
 	}
 
+	if (translen > 0)
+		translation[translen] = translation[translen-1]; // extended to accomodate secondi if firsti equal to translen-1
+	if (translen > 1)
+		cutoff[translen] = cutoff[translen-1] = 0; // as above
+
 	if (skinnum == TC_RAINBOW && translen > 0)
 	{
 		UINT16 b;
@@ -803,7 +808,7 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 		{
 			UINT16 brightdif = 256;
 
-			color_match_lookup[i] = 0;
+			color_match_lookup[b] = 0;
 			for (i = 0; i < translen; i++)
 			{
 				if (b > colorbrightnesses[i]) // don't allow greater matches (because calculating a makeshift gradient for this is already a huge mess as is)
@@ -819,6 +824,9 @@ static void HWR_CreateBlendedTexture(patch_t *gpatch, patch_t *blendgpatch, GLMi
 			}
 		}
 	}
+
+	if (translen > 0)
+		colorbrightnesses[translen] = colorbrightnesses[translen-1];
 
 	while (size--)
 	{
@@ -1381,10 +1389,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
 		}
 
-		fixed_t interpx = R_InterpolateFixed(spr->mobj->old_x, spr->mobj->x);
-		fixed_t interpy = R_InterpolateFixed(spr->mobj->old_y, spr->mobj->y);
-		fixed_t interpz = R_InterpolateFixed(spr->mobj->old_z, spr->mobj->z);
-
 		// hitlag vibrating
 		if (spr->mobj->hitlag > 0 && (spr->mobj->eflags & MFE_DAMAGEHITLAG))
 		{
@@ -1395,15 +1399,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				mul = -mul;
 			}
 
-			interpx += FixedMul(spr->mobj->momx, mul);
-			interpy += FixedMul(spr->mobj->momy, mul);
-			interpy += FixedMul(spr->mobj->momz, mul);
+			interp.x += FixedMul(spr->mobj->momx, mul);
+			interp.y += FixedMul(spr->mobj->momy, mul);
+			interp.z += FixedMul(spr->mobj->momz, mul);
 		}
 
 		// sprite offset
-		interpx += spr->mobj->sprxoff;
-		interpy += spr->mobj->spryoff;
-		interpz += spr->mobj->sprzoff;
+		interp.x += spr->mobj->sprxoff;
+		interp.y += spr->mobj->spryoff;
+		interp.z += spr->mobj->sprzoff;
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)

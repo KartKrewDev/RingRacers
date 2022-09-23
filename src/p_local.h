@@ -28,6 +28,9 @@
 
 //#define VIEWHEIGHTS "41"
 
+// Maximum laps per map.
+#define MAX_LAPS 99
+
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 
@@ -169,7 +172,7 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
-boolean P_PlayerHitFloor(player_t *player, boolean fromAir);
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
@@ -277,6 +280,7 @@ void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
+void P_CalculatePrecipFloor(precipmobj_t *mobj);
 void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
@@ -406,6 +410,7 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 fixed_t P_BaseStepUp(void);
 fixed_t P_GetThingStepUp(mobj_t *thing);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);

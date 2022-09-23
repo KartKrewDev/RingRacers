@@ -26,7 +26,7 @@
 #include "g_game.h"
 #include "g_demo.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
 #include "z_zone.h"
@@ -53,8 +53,13 @@
 #include "k_color.h"
 #include "k_follower.h"
 
+#ifdef TESTERS
+static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{2, "Auto Save"}, {0, NULL}};
+consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Auto Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
+#else
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{0, "Disabled"}, {1, "Manual Save"}, {2, "Auto Save"}, {0, NULL}};
 consvar_t cv_recordmultiplayerdemos = CVAR_INIT ("netdemo_record", "Manual Save", CV_SAVE, recordmultiplayerdemos_cons_t, NULL);
+#endif
 
 static CV_PossibleValue_t netdemosyncquality_cons_t[] = {{1, "MIN"}, {35, "MAX"}, {0, NULL}};
 consvar_t cv_netdemosyncquality = CVAR_INIT ("netdemo_syncquality", "1", CV_SAVE, netdemosyncquality_cons_t, NULL);
@@ -1994,6 +1999,7 @@ void G_BeginRecording(void)
 
 	WRITEUINT8(demo_p, demoflags);
 	WRITEUINT8(demo_p, gametype & 0xFF);
+	WRITEUINT8(demo_p, numlaps);
 
 	// file list
 	m = demo_p;/* file count */
@@ -2424,6 +2430,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 16; // map md5
 	flags = READUINT8(p); // demoflags
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
@@ -2481,6 +2488,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p += 16; // mapmd5
 	flags = READUINT8(p);
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 	if (!(flags & aflags))
 	{
@@ -2595,6 +2603,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	}
 
 	pdemo->gametype = READUINT8(info_p);
+	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
 	info_p += 4; // RNG seed
@@ -2621,19 +2630,10 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 				if (!stricmp(kartspeed_cons_t[j].strvalue, svalue))
 					pdemo->kartspeed = kartspeed_cons_t[j].value;
 		}
-		else if (netid == cv_basenumlaps.netid && pdemo->gametype == GT_RACE)
-			pdemo->numlaps = atoi(svalue);
 	}
 
 	if (pdemoflags & DF_ENCORE)
 		pdemo->kartspeed |= DF_ENCORE;
-
-	/*// Temporary info until this is actually present in replays.
-	(void)extrainfo_p;
-	sprintf(pdemo->winnername, "transrights420");
-	pdemo->winnerskin = 1;
-	pdemo->winnercolor = SKINCOLOR_MOONSET;
-	pdemo->winnertime = 6666;*/
 
 	// Read standings!
 	count = 0;
@@ -2830,6 +2830,7 @@ void G_DoPlayDemo(char *defdemoname)
 	demoflags = READUINT8(demo_p);
 	gametype = READUINT8(demo_p);
 	G_SetGametype(gametype);
+	numlaps = READUINT8(demo_p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
 		G_SkipDemoExtraFiles(&demo_p);
@@ -3253,6 +3254,7 @@ void G_AddGhost(char *defdemoname)
 	}
 
 	p++; // gametype
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
@@ -3470,7 +3472,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	}
 
 	p++; // Gametype
-
+	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
@@ -3886,7 +3888,7 @@ boolean G_DemoTitleResponder(event_t *ev)
 		return true;
 	}
 
-	if (ch == KEY_ENTER || ch >= KEY_MOUSE1)
+	if (ch == KEY_ENTER || ch >= NUMKEYS)
 	{
 		demo.savemode = DSM_WILLSAVE;
 		return true;

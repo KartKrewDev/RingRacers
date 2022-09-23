@@ -41,8 +41,7 @@ extern UINT32 mapmusresume;
 // Use other bits if necessary.
 
 extern UINT32 maptol;
-extern UINT8 globalweather;
-extern UINT8 curWeather;
+
 extern INT32 cursaveslot;
 //extern INT16 lastmapsaved;
 extern INT16 lastmaploaded;
@@ -64,31 +63,44 @@ extern tic_t marathontime;
 extern UINT8 numgameovers;
 extern SINT8 startinglivesbalance[maxgameovers+1];
 
+#define NUMPRECIPFREESLOTS 64
+
 typedef enum
 {
 	PRECIP_NONE = 0,
+
 	PRECIP_RAIN,
 	PRECIP_SNOW,
 	PRECIP_BLIZZARD,
 	PRECIP_STORM,
 	PRECIP_STORM_NORAIN,
 	PRECIP_STORM_NOSTRIKES,
+
+	PRECIP_FIRSTFREESLOT,
+	PRECIP_LASTFREESLOT = PRECIP_FIRSTFREESLOT + NUMPRECIPFREESLOTS - 1,
+
 	MAXPRECIP
 } preciptype_t;
 
 typedef enum
 {
 	PRECIPFX_THUNDER = 1,
-	PRECIPFX_LIGHTNING = 1<<1
+	PRECIPFX_LIGHTNING = 1<<1,
+	PRECIPFX_WATERPARTICLES = 1<<2
 } precipeffect_t;
 
 typedef struct
 {
+	const char *name;
 	mobjtype_t type;
 	precipeffect_t effects;
 } precipprops_t;
 
 extern precipprops_t precipprops[MAXPRECIP];
+extern preciptype_t precip_freeslot;
+
+extern preciptype_t globalweather;
+extern preciptype_t curWeather;
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -184,7 +196,6 @@ extern INT16 bootmap; //bootmap for loading a map on startup
 
 extern INT16 tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
-extern INT32 tutorialgcs; // which control scheme is loaded?
 
 extern boolean looptitle;
 
@@ -687,6 +698,7 @@ extern INT16 scrambletotal; //for CTF team scramble
 extern INT16 scramblecount; //for CTF team scramble
 
 // SRB2kart
+extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
@@ -706,7 +718,7 @@ extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
-extern INT16 votelevels[5][2];
+extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
 
@@ -783,7 +795,6 @@ extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
-extern consvar_t cv_maxping;
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];

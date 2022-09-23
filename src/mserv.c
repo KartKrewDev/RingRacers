@@ -20,8 +20,10 @@
 #include "command.h"
 #include "i_threads.h"
 #include "mserv.h"
-#include "m_menu.h"
 #include "z_zone.h"
+
+// SRB2Kart
+#include "k_menu.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -70,7 +72,7 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ms.kartkrew.org/ms/api", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_rendezvousserver = CVAR_INIT ("rendezvousserver", "relay.kartkrew.org", CV_SAVE|CV_CALL, NULL, RendezvousServer_OnChange);
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "relay.kartkrew.org", CV_SAVE|CV_CALL, NULL, RendezvousServer_OnChange);
 consvar_t cv_servername = CVAR_INIT ("servername", "Ring Racers server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 consvar_t cv_server_contact = CVAR_INIT ("server_contact", "", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
@@ -117,11 +119,11 @@ void AddMServCommands(void)
 static void WarnGUI (void)
 {
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 }
 
@@ -434,7 +436,7 @@ void UnregisterServer(void)
 static boolean
 Online (void)
 {
-	return ( serverrunning && cv_advertise.value );
+	return ( serverrunning && netgame && cv_advertise.value );
 }
 
 static inline void SendPingToMasterServer(void)
@@ -532,7 +534,7 @@ Advertise_OnChange(void)
 
 	if (cv_advertise.value)
 	{
-		if (serverrunning)
+		if (serverrunning && netgame)
 		{
 			Lock_state();
 			{

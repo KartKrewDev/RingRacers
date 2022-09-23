@@ -211,10 +211,18 @@ typedef enum
 
 typedef enum
 {
-	TRIP_NONE,
-	TRIP_PASSED,
-	TRIP_BLOCKED,
+	TRIPSTATE_NONE,
+	TRIPSTATE_PASSED,
+	TRIPSTATE_BLOCKED,
 } tripwirestate_t;
+
+typedef enum
+{
+	TRIPWIRE_NONE,
+	TRIPWIRE_IGNORE,
+	TRIPWIRE_BOOST,
+	TRIPWIRE_BLASTER,
+} tripwirepass_t;
 
 typedef enum
 {
@@ -265,6 +273,11 @@ typedef enum
 #define TRICKDELAY (TICRATE/4)
 
 #define TUMBLEBOUNCES 3
+#define TUMBLEGRAVITY (4*FRACUNIT)
+
+#define TRIPWIRETIME (15)
+
+#define BALLHOGINCREMENT (7)
 
 //}
 
@@ -288,6 +301,7 @@ typedef struct respawnvars_s
 	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
+	boolean truedeath; // Your soul has left your body
 } respawnvars_t;
 
 // player_t struct for all bot variables
@@ -439,6 +453,8 @@ typedef struct player_s
 	fixed_t spindashspeed;	// Spindash release speed
 	UINT8 spindashboost;	// Spindash release boost timer
 
+	fixed_t fastfall;		// Fast fall momentum
+
 	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
 	fixed_t boostpower;		// Base boost value, for offroad
 	fixed_t speedboost;		// Boost value smoothing for max speed
@@ -450,6 +466,8 @@ typedef struct player_s
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
+	UINT8 tripwireState; // see tripwirestate_t
+	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
@@ -478,9 +496,11 @@ typedef struct player_s
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
+	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
-	mobj_t *hoverhyudoro;   // First hyudoro hovering next to player
+	mobj_t *hoverhyudoro;	// First hyudoro hovering next to player
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
@@ -498,8 +518,8 @@ typedef struct player_s
 	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
 	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
-	UINT8 confirmInflictor;			// Player ID that dealt damage to you
-	UINT8 confirmInflictorDelay;	// Delay before playing the sound
+	UINT8 confirmVictim;		// Player ID that you dealt damage to
+	UINT8 confirmVictimDelay;	// Delay before playing the sound
 
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
@@ -518,8 +538,6 @@ typedef struct player_s
 	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
-
-	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 
@@ -544,6 +562,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	UINT8 latestlap;
 	INT32 starpostnum; // The number of the last starpost you hit
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
@@ -576,6 +595,10 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+
+	UINT8 shrinkLaserDelay;
+
+	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

@@ -316,7 +316,7 @@ void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjst
 		out->x = mobj->x;
 		out->y = mobj->y;
 		out->z = mobj->z;
-		out->scale = FRACUNIT;
+		out->scale = mapobjectscale;
 		out->subsector = mobj->subsector;
 		out->angle = mobj->angle;
 		out->spritexscale = mobj->spritexscale;
@@ -329,7 +329,7 @@ void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjst
 	out->x = R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y = R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z = R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->scale = FRACUNIT;
+	out->scale = mapobjectscale;
 	out->spritexscale = R_LerpFixed(mobj->old_spritexscale, mobj->spritexscale, frac);
 	out->spriteyscale = R_LerpFixed(mobj->old_spriteyscale, mobj->spriteyscale, frac);
 	out->spritexoffset = R_LerpFixed(mobj->old_spritexoffset, mobj->spritexoffset, frac);
@@ -709,7 +709,7 @@ void R_RemoveMobjInterpolator(mobj_t *mobj)
 
 	if (interpolated_mobjs_len == 0) return;
 
-	for (i = 0; i < interpolated_mobjs_len - 1; i++)
+	for (i = 0; i < interpolated_mobjs_len; i++)
 	{
 		if (interpolated_mobjs[i] == mobj)
 		{

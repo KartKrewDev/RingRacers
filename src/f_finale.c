@@ -27,7 +27,6 @@
 #include "z_zone.h"
 #include "i_system.h"
 #include "i_threads.h"
-#include "m_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
 #include "console.h"
@@ -41,6 +40,10 @@
 #include "fastcmp.h"
 
 #include "lua_hud.h"
+#include "lua_hook.h"
+
+// SRB2Kart
+#include "k_menu.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -53,7 +56,6 @@ static INT32 timetonext; // Delay between screen changes
 
 static tic_t animtimer; // Used for some animation timings
 static tic_t credbgtimer; // Credits background
-static INT16 skullAnimCounter; // Prompts: Chevron animation
 
 static tic_t stoptimer;
 
@@ -65,7 +67,7 @@ mobj_t *titlemapcameraref = NULL;
 // menu presentation state
 char curbgname[9];
 SINT8 curfadevalue;
-INT32 curbgcolor;
+INT32 curbgcolor = -1;	// Please stop assaulting my eyes.
 INT32 curbgxspeed;
 INT32 curbgyspeed;
 boolean curbghide;
@@ -377,10 +379,31 @@ static void F_IntroDrawScene(void)
 //
 void F_IntroDrawer(void)
 {
-	if (timetonext <= 0)
+	// Used to be this whole thing, but now...
+	F_IntroDrawScene();
+}
+
+//
+// F_IntroTicker
+//
+void F_IntroTicker(void)
+{
+	// advance animation
+	finalecount++;
+
+	timetonext--;
+
+	if (intro_scenenum == 0)
 	{
-		if (intro_scenenum == 0)
+		if (timetonext <= 0)
 		{
+#if 0 // The necessary apparatus for constructing more elaborate intros...
+			intro_scenenum++;
+			F_NewCutscene(introtext[intro_scenenum]);
+			timetonext = introscenetime[intro_scenenum];
+			wipegamestate = -1;
+			animtimer = stoptimer = 0;
+#endif
 			if (rendermode != render_none)
 			{
 				F_WipeStartScreen();
@@ -406,11 +429,11 @@ void F_IntroDrawer(void)
 					I_OsPolling();
 					I_UpdateNoBlit();
 #ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
+					I_lock_mutex(&k_menu_mutex);
 #endif
 					M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
+					I_unlock_mutex(k_menu_mutex);
 #endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
@@ -420,39 +443,8 @@ void F_IntroDrawer(void)
 			}
 
 			D_StartTitle();
-			// Yes, this is a weird hack, we need to force a wipe for this because the game state has changed in the middle of where it would normally wipe
-			// Need to set the wipe start and then draw the first frame of the title screen to get it working
-			F_WipeStartScreen();
-			F_TitleScreenDrawer();
-			wipegamestate = -1; // force a wipe
 			return;
 		}
-
-		F_NewCutscene(introtext[++intro_scenenum]);
-		timetonext = introscenetime[intro_scenenum];
-
-		F_WipeStartScreen();
-		wipegamestate = -1;
-		animtimer = stoptimer = 0;
-	}
-
-	intro_curtime = introscenetime[intro_scenenum] - timetonext;
-
-	F_IntroDrawScene();
-}
-
-//
-// F_IntroTicker
-//
-void F_IntroTicker(void)
-{
-	// advance animation
-	finalecount++;
-
-	timetonext--;
-
-	if (intro_scenenum == 0)
-	{
 		if (finalecount == 8)
 			S_StartSound(NULL, sfx_vroom);
 		else if (finalecount == 47)
@@ -464,6 +456,8 @@ void F_IntroTicker(void)
 			S_StartSound(NULL, rsound);
 		}
 	}
+
+	intro_curtime = introscenetime[intro_scenenum] - timetonext;
 
 	F_WriteText();
 
@@ -1681,11 +1675,9 @@ void F_GameEndTicker(void)
 //  TITLE SCREEN
 // ==============
 
-void F_InitMenuPresValues(void)
+static void F_InitMenuPresValues(void)
 {
 	menuanimtimer = 0;
-	prevMenuId = 0;
-	activeMenuId = MainDef.menuid;
 
 	// Set defaults for presentation values
 	strncpy(curbgname, "TITLESKY", 9);
@@ -1703,11 +1695,6 @@ void F_InitMenuPresValues(void)
 	curtty = tty;
 	curttloop = ttloop;
 	curtttics = tttics;
-
-	// Find current presentation values
-	//M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
-	//M_SetMenuCurFadeValue(16);
-	//M_SetMenuCurTitlePics();
 
 	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
 	luahuddrawlist_title = LUA_HUD_CreateDrawList();
@@ -1841,11 +1828,13 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
+	setup_numplayers = 0;
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;
 		finalecount = 0;
-		wipetypepost = menupres[MN_MAIN].enterwipe;
+		wipetypepost = 0;
 	}
 	else
 		wipegamestate = GS_TITLESCREEN;
@@ -1897,10 +1886,6 @@ void F_StartTitleScreen(void)
 		camera[0].chase = true;
 		camera[0].height = 0;
 
-		// Run enter linedef exec for MN_MAIN, since this is where we start
-		if (menupres[MN_MAIN].entertag)
-			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayers[0]].mo, NULL);
-
 		wipegamestate = prevwipegamestate;
 	}
 	else
@@ -1919,6 +1904,7 @@ void F_StartTitleScreen(void)
 	demoDelayLeft = demoDelayTime;
 	demoIdleLeft = demoIdleTime;
 
+	F_InitMenuPresValues();
 	F_CacheTitleScreen();
 }
 
@@ -1935,6 +1921,8 @@ void F_TitleScreenDrawer(void)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, curbgcolor);
 	else if (!curbghide || !titlemapinaction || gamestate == GS_WAITINGPLAYERS)
 		F_SkyScroll(curbgxspeed, curbgyspeed, curbgname);
+	else
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	// Don't draw outside of the title screen, or if the patch isn't there.
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -2109,23 +2097,15 @@ luahook:
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_title);
-		LUAh_TitleHUD(luahuddrawlist_title);
+		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
-}
-
-// separate animation timer for backgrounds, since we also count
-// during GS_TIMEATTACK
-void F_MenuPresTicker(boolean run)
-{
-	if (run)
-		menuanimtimer++;
 }
 
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
-	F_MenuPresTicker(true); // title sky
+	menuanimtimer++; // title sky
 
 	if (run)
 	{
@@ -2134,10 +2114,7 @@ void F_TitleScreenTicker(boolean run)
 		if (finalecount == 1)
 		{
 			// Now start the music
-			if (menupres[MN_MAIN].musname[0])
-				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
-			else
-				S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("_title", looptitle);
 		}
 	}
 
@@ -2852,12 +2829,13 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 
 static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 {
-	INT32 gcs = gcs_custom;
+	INT32 gcs = 0;
 	boolean suffixed = true;
 
 	if (!tag || !tag[0] || !tutorialmode)
 		return false;
 
+	/*
 	if (!strncmp(tag, "TAA", 3)) // Accelerate
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_accelerate, num_gcl_accelerate);
 	else if (!strncmp(tag, "TAB", 3)) // Brake
@@ -2872,14 +2850,10 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_item, num_gcl_item);
 	else
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_full, num_gcl_full);
+	*/
 
 	switch (gcs)
 	{
-		case gcs_kart:
-			// strncat(tag, "KART", length);
-			suffixed = false;
-			break;
-
 		default:
 			strncat(tag, "CUSTOM", length);
 			break;

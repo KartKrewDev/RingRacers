@@ -13,7 +13,7 @@
 #include "doomdef.h" // Constants
 #include "s_sound.h" // Sound constants
 #include "info.h" // Mobj, state, sprite, etc constants
-#include "m_menu.h" // Menu constants
+#include "k_menu.h" // Menu constants
 #include "y_inter.h" // Intermission constants
 #include "p_local.h" // some more constants
 #include "r_draw.h" // Colormap constants
@@ -337,6 +337,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 
 	{{NULL},                     "NONE"},
 
@@ -2541,6 +2542,13 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GREYSPRING3",
 	"S_GREYSPRING4",
 
+	// Orange Spring (Pogo)
+	"S_POGOSPRING1",
+	"S_POGOSPRING2",
+	"S_POGOSPRING2B",
+	"S_POGOSPRING3",
+	"S_POGOSPRING4",
+
 	// Yellow Diagonal Spring
 	"S_YDIAG1",
 	"S_YDIAG2",
@@ -3270,6 +3278,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEMPOP4",
 	//}
 
+	"S_ITEM_DEBRIS",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER1",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
+
 	"S_ITEMICON",
 
 	// Item capsules
@@ -3748,6 +3760,27 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
 
+	// Grow
+	"S_GROW_PARTICLE",
+
+	// Shrink
+	"S_SHRINK_POHBEE",
+	"S_SHRINK_POHBEE2",
+	"S_SHRINK_POHBEE3",
+	"S_SHRINK_POHBEE4",
+	"S_SHRINK_POHBEE5",
+	"S_SHRINK_POHBEE6",
+	"S_SHRINK_POHBEE7",
+	"S_SHRINK_POHBEE8",
+
+	"S_SHRINK_CHAIN",
+
+	"S_SHRINK_GUN",
+	"S_SHRINK_GUN_OVERLAY",
+
+	"S_SHRINK_LASER",
+	"S_SHRINK_PARTICLE",
+
 	// The legend
 	"S_SINK",
 	"S_SINK_SHIELD",
@@ -3797,6 +3830,14 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLEBUMPER_EXBLAST8",
 	"S_BATTLEBUMPER_EXBLAST9",
 	"S_BATTLEBUMPER_EXBLAST10",
+
+	// Tripwire
+	"S_TRIPWIREBOOST_TOP",
+	"S_TRIPWIREBOOST_BOTTOM",
+	"S_TRIPWIREBOOST_BLAST_TOP",
+	"S_TRIPWIREBOOST_BLAST_BOTTOM",
+
+	"S_SMOOTHLANDING",
 
 	// DEZ respawn laser
 	"S_DEZLASER",
@@ -4493,6 +4534,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 // because sadly no one remembers this place while searching for full state names.
 const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity testing later.
 	"MT_NULL",
+	"MT_RAY",
 	"MT_UNKNOWN",
 
 	"MT_THOK", // Thok! mobj
@@ -4631,6 +4673,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_REDSPRING",
 	"MT_BLUESPRING",
 	"MT_GREYSPRING",
+	"MT_POGOSPRING",
 	"MT_YELLOWDIAG", // Yellow Diagonal Spring
 	"MT_REDDIAG", // Red Diagonal Spring
 	"MT_BLUEDIAG", // Blue Diagonal Spring
@@ -5273,6 +5316,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BRAKEDRIFT",
 	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_ITEM_DEBRIS",
+	"MT_ITEM_DEBRIS_CLOUD_SPAWNER",
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
@@ -5322,6 +5367,14 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_HYUDORO",
 	"MT_HYUDORO_CENTER",
 
+	"MT_GROW_PARTICLE",
+
+	"MT_SHRINK_POHBEE",
+	"MT_SHRINK_GUN",
+	"MT_SHRINK_CHAIN",
+	"MT_SHRINK_LASER",
+	"MT_SHRINK_PARTICLE",
+
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
 	"MT_SINKTRAIL",
@@ -5329,6 +5382,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER", // Battle Mode bumper
 	"MT_BATTLEBUMPER_DEBRIS",
 	"MT_BATTLEBUMPER_BLAST",
+
+	"MT_TRIPWIREBOOST",
+
+	"MT_SMOOTHLANDING",
 
 	"MT_DEZLASER",
 
@@ -5995,101 +6052,6 @@ const char *const HUDITEMS_LIST[] = {
 	"POWERUPS"
 };
 
-const char *const MENUTYPES_LIST[] = {
-	"NONE",
-
-	"MAIN",
-
-	// Single Player
-	"SP_MAIN",
-
-	"SP_LOAD",
-	"SP_PLAYER",
-
-	"SP_LEVELSELECT",
-	"SP_LEVELSTATS",
-
-	"SP_TIMEATTACK",
-	"SP_TIMEATTACK_LEVELSELECT",
-	"SP_GUESTREPLAY",
-	"SP_REPLAY",
-	"SP_GHOST",
-
-	"SP_NIGHTSATTACK",
-	"SP_NIGHTS_LEVELSELECT",
-	"SP_NIGHTS_GUESTREPLAY",
-	"SP_NIGHTS_REPLAY",
-	"SP_NIGHTS_GHOST",
-
-	// Multiplayer
-	"MP_MAIN",
-	"MP_SPLITSCREEN", // SplitServer
-	"MP_SERVER",
-	"MP_CONNECT",
-	"MP_ROOM",
-	"MP_PLAYERSETUP", // MP_PlayerSetupDef shared with SPLITSCREEN if #defined NONET
-	"MP_SERVER_OPTIONS",
-
-	// Options
-	"OP_MAIN",
-
-	"OP_P1CONTROLS",
-	"OP_CHANGECONTROLS", // OP_ChangeControlsDef shared with P2
-	"OP_P1MOUSE",
-	"OP_P1JOYSTICK",
-	"OP_JOYSTICKSET", // OP_JoystickSetDef shared with P2
-	"OP_P1CAMERA",
-
-	"OP_P2CONTROLS",
-	"OP_P2MOUSE",
-	"OP_P2JOYSTICK",
-	"OP_P2CAMERA",
-
-	"OP_PLAYSTYLE",
-
-	"OP_VIDEO",
-	"OP_VIDEOMODE",
-	"OP_COLOR",
-	"OP_OPENGL",
-	"OP_OPENGL_LIGHTING",
-
-	"OP_SOUND",
-
-	"OP_SERVER",
-	"OP_MONITORTOGGLE",
-
-	"OP_DATA",
-	"OP_ADDONS",
-	"OP_SCREENSHOTS",
-	"OP_ERASEDATA",
-
-	// Extras
-	"SR_MAIN",
-	"SR_PANDORA",
-	"SR_LEVELSELECT",
-	"SR_UNLOCKCHECKLIST",
-	"SR_EMBLEMHINT",
-	"SR_PLAYER",
-	"SR_SOUNDTEST",
-
-	// Addons (Part of MISC, but let's make it our own)
-	"AD_MAIN",
-
-	// MISC
-	// "MESSAGE",
-	// "SPAUSE",
-
-	// "MPAUSE",
-	// "SCRAMBLETEAM",
-	// "CHANGETEAM",
-	// "CHANGELEVEL",
-
-	// "MAPAUSE",
-	// "HELP",
-
-	"SPECIAL"
-};
-
 struct int_const_s const INT_CONST[] = {
 	// If a mod removes some variables here,
 	// please leave the names in-tact and just set
@@ -6558,9 +6520,9 @@ struct int_const_s const INT_CONST[] = {
 	{"BT_DRIFT",BT_DRIFT},
 	{"BT_BRAKE",BT_BRAKE},
 	{"BT_ATTACK",BT_ATTACK},
-	{"BT_CUSTOM1",BT_CUSTOM1}, // Lua customizable
-	{"BT_CUSTOM2",BT_CUSTOM2}, // Lua customizable
-	{"BT_CUSTOM3",BT_CUSTOM3}, // Lua customizable
+	{"BT_LUAA",BT_LUAA}, // Lua customizable
+	{"BT_LUAB",BT_LUAB}, // Lua customizable
+	{"BT_LUAC",BT_LUAC}, // Lua customizable
 
 	// Lua command registration flags
 	{"COM_ADMIN",COM_ADMIN},
@@ -6582,8 +6544,7 @@ struct int_const_s const INT_CONST[] = {
 	{"CV_SHOWMODIF",CV_SHOWMODIF},
 	{"CV_SHOWMODIFONETIME",CV_SHOWMODIFONETIME},
 	{"CV_NOSHOWHELP",CV_NOSHOWHELP},
-	{"CV_HIDEN",CV_HIDEN},
-	{"CV_HIDDEN",CV_HIDEN},
+	{"CV_HIDDEN",CV_HIDDEN},
 	{"CV_CHEAT",CV_CHEAT},
 	{"CV_NOLUA",CV_NOLUA},
 
@@ -6691,7 +6652,7 @@ struct int_const_s const INT_CONST[] = {
 	{"GS_INTERMISSION",GS_INTERMISSION},
 	{"GS_CONTINUING",GS_CONTINUING},
 	{"GS_TITLESCREEN",GS_TITLESCREEN},
-	{"GS_TIMEATTACK",GS_TIMEATTACK},
+	{"GS_MENU",GS_MENU},
 	{"GS_CREDITS",GS_CREDITS},
 	{"GS_EVALUATION",GS_EVALUATION},
 	{"GS_GAMEEND",GS_GAMEEND},
@@ -6740,6 +6701,11 @@ struct int_const_s const INT_CONST[] = {
 	{"SPOT_NONE",SPOT_NONE},
 	{"SPOT_WEAK",SPOT_WEAK},
 	{"SPOT_BUMP",SPOT_BUMP},
+
+	// precipeffect_t
+	{"PRECIPFX_THUNDER",PRECIPFX_THUNDER},
+	{"PRECIPFX_LIGHTNING",PRECIPFX_LIGHTNING},
+	{"PRECIPFX_WATERPARTICLES",PRECIPFX_WATERPARTICLES},
 
 	{NULL,0}
 };

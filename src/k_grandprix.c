@@ -639,7 +639,7 @@ void K_RetireBots(void)
 --------------------------------------------------*/
 void K_FakeBotResults(player_t *bot)
 {
-	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 distfactor = FixedMul(32 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	UINT32 worstdist = 0;
 	tic_t besttime = UINT32_MAX;
 	UINT8 numplayers = 0;

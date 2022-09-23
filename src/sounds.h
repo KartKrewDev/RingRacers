@@ -1118,8 +1118,6 @@ typedef enum
 	sfx_kpogos,
 	sfx_alarmi,
 	sfx_alarmg,
-	sfx_kinvnc,
-	sfx_kgrow,
 	sfx_itrol1,
 	sfx_itrol2,
 	sfx_itrol3,
@@ -1166,6 +1164,7 @@ typedef enum
 	sfx_kstart,
 	sfx_typri1,
 	sfx_typri2,
+	sfx_eggspr,
 
 	// SRB2Kart - Drop target sounds
 	sfx_kdtrg1,
@@ -1174,6 +1173,15 @@ typedef enum
 
 	// SRB2Kart - Powerup clash SFX
 	sfx_parry,
+
+	// Fast fall bounce
+	sfx_ffbonc,
+
+	// Shout message sound effect
+	sfx_sysmsg,
+
+	// Shrink laser
+	sfx_beam01,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

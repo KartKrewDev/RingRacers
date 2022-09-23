@@ -66,7 +66,7 @@
 
 #include "md5.h" // map MD5
 
-// for LUAh_MapLoad
+// for MapLoad hook
 #include "lua_script.h"
 #include "lua_hook.h"
 
@@ -96,6 +96,7 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time
@@ -390,7 +391,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	mapheaderinfo[num]->muspostbossfadein = 0;
 	mapheaderinfo[num]->musforcereset = -1;
 	mapheaderinfo[num]->forcecharacter[0] = '\0';
-	mapheaderinfo[num]->weather = 0;
+	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
@@ -579,15 +580,7 @@ or NULL if we want to allocate it now.
 static INT32
 Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 {
-#ifndef NO_PNG_LUMPS
-	UINT8         buffer[8];
-#endif
-
-	lumpnum_t    flatnum;
 	int       texturenum;
-	UINT8     *flatpatch;
-	size_t    lumplength;
-
 	size_t i;
 
 	// Scan through the already found flats, return if it matches.
@@ -615,57 +608,23 @@ Ploadflat (levelflat_t *levelflat, const char *flatname, boolean resize)
 	strlcpy(levelflat->name, flatname, sizeof (levelflat->name));
 	strupr(levelflat->name);
 
-	/* If we can't find a flat, try looking for a texture! */
-	if (( flatnum = R_GetFlatNumForName(levelflat->name) ) == LUMPERROR)
+	if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
 	{
-		if (( texturenum = R_CheckTextureNumForName(levelflat->name) ) == -1)
-		{
-			// check for REDWALL
-			if (( texturenum = R_CheckTextureNumForName("REDWALL") ) != -1)
-				goto texturefound;
-			// check for REDFLR
-			else if (( flatnum = R_GetFlatNumForName("REDFLR") ) != LUMPERROR)
-				goto flatfound;
-			// nevermind
-			levelflat->type = LEVELFLAT_NONE;
-		}
-		else
-		{
-texturefound:
-			levelflat->type = LEVELFLAT_TEXTURE;
-			levelflat->u.texture.    num = texturenum;
-			levelflat->u.texture.lastnum = texturenum;
-			/* start out unanimated */
-			levelflat->u.texture.basenum = -1;
-		}
+		// check for missing texture
+		if (( texturenum = R_CheckTextureNumForName(MISSING_TEXTURE) ) != -1)
+			goto texturefound;
+
+		// nevermind
+		levelflat->type = LEVELFLAT_NONE;
 	}
 	else
 	{
-flatfound:
-		/* This could be a flat, patch, or PNG. */
-		flatpatch = W_CacheLumpNum(flatnum, PU_CACHE);
-		lumplength = W_LumpLength(flatnum);
-		if (Picture_CheckIfDoomPatch((softwarepatch_t *)flatpatch, lumplength))
-			levelflat->type = LEVELFLAT_PATCH;
-		else
-		{
-#ifndef NO_PNG_LUMPS
-			/*
-			Only need eight bytes for PNG headers.
-			FIXME: Put this elsewhere.
-			*/
-			W_ReadLumpHeader(flatnum, buffer, 8, 0);
-			if (Picture_IsLumpPNG(buffer, lumplength))
-				levelflat->type = LEVELFLAT_PNG;
-			else
-#endif/*NO_PNG_LUMPS*/
-				levelflat->type = LEVELFLAT_FLAT;/* phew */
-		}
-		if (flatpatch)
-			Z_Free(flatpatch);
-
-		levelflat->u.flat.    lumpnum = flatnum;
-		levelflat->u.flat.baselumpnum = LUMPERROR;
+texturefound:
+		levelflat->type = LEVELFLAT_TEXTURE;
+		levelflat->u.texture.    num = texturenum;
+		levelflat->u.texture.lastnum = texturenum;
+		/* start out unanimated */
+		levelflat->u.texture.basenum = -1;
 	}
 
 	levelflat->terrain =
@@ -3924,7 +3883,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also m_menu.c's Nextmap_OnChange
+	// see also k_menu.c's Nextmap_OnChange
 	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
@@ -4063,24 +4022,36 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	spectateGriefed = 0;
+	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
+
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if ((gametyperules & GTR_CIRCUIT) && server)
+	numlaps = 0;
+	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_basenumlaps.value
+		if ((netgame || multiplayer) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_basenumlaps.value)))
+		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
-			CV_StealthSetValue(&cv_numlaps, cv_basenumlaps.value);
+			numlaps = cv_numlaps.value;
 		}
 		else
 		{
-			CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
+			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
 	}
+
+	wantedcalcdelay = wantedfrequency*2;
+	indirectitemcooldown = 0;
+	mapreset = 0;
+
+	thwompsactive = false;
+	lastLowestLap = 0;
+	spbplace = -1;
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
@@ -4117,6 +4088,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -4366,8 +4338,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_SpawnSlopes(fromnetsave);
 
-	P_SpawnSpecialsAfterSlopes();
-
 	P_SpawnMapThings(!fromnetsave);
 
 	for (numcoopstarts = 0; numcoopstarts < MAXPLAYERS; numcoopstarts++)
@@ -4428,17 +4398,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		memset(localaiming, 0, sizeof(localaiming));
 		K_InitDirector();
 	}
-
-	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
-	mapreset = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-		nospectategrief[i] = -1;
-
-	thwompsactive = false;
-	lastLowestLap = 0;
-	spbplace = -1;
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
@@ -4524,7 +4483,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		P_PreTicker(2);
 		P_MapStart(); // just in case MapLoad modifies tmthing
-		LUAh_MapLoad();
+		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tmthing
 	}
 
