@@ -28,6 +28,9 @@ Make sure this matches the actual number of states
 #define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
+#define STUMBLE_STEEP_VAL ANG60
+#define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
@@ -45,6 +48,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 fixed_t K_ItemOddsScale(UINT8 numPlayers, boolean spbrush);
 UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers, boolean spbrush);
 INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, fixed_t mashed, boolean spbrush, boolean bot, boolean rival);
+INT32 K_GetRollingRouletteItem(player_t *player);
 INT32 K_GetShieldFromItem(INT32 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
@@ -75,6 +79,10 @@ void K_RemoveGrowShrink(player_t *player);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_TumbleInterrupt(player_t *player);
+angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll);
+boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir);
+void K_InitStumbleIndicator(player_t *player);
+void K_UpdateStumbleIndicator(player_t *player);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);
@@ -90,7 +98,7 @@ void K_SpawnWipeoutTrail(mobj_t *mo);
 void K_SpawnDraftDust(mobj_t *mo);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_Squish(mobj_t *mo);
-mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow);
+mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset);
 void K_PuntMine(mobj_t *mine, mobj_t *punter);
 void K_DoSneaker(player_t *player, INT32 type);
 void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound);
@@ -142,6 +150,7 @@ fixed_t K_GetNewSpeed(player_t *player);
 fixed_t K_3dKartMovement(player_t *player);
 boolean K_PlayerEBrake(player_t *player);
 SINT8 K_Sliptiding(player_t *player);
+boolean K_FastFallBounce(player_t *player);
 void K_AdjustPlayerFriction(player_t *player);
 void K_MoveKartPlayer(player_t *player, boolean onground);
 void K_CheckSpectateStatus(void);

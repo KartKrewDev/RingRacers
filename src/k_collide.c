@@ -11,6 +11,7 @@
 #include "hu_stuff.h" // Sink snipe print
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
+#include "k_objects.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -265,8 +266,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			mobj_t *poof = P_SpawnMobj(t1->x, t1->y, t1->z, MT_EXPLODE);
-			S_StartSound(poof, t1->info->deathsound);
+			Obj_SpawnItemDebrisEffects(t1, t2);
 
 #if 0
 			// Eggbox snipe!

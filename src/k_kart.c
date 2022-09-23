@@ -19,6 +19,7 @@
 #include "p_setup.h"
 #include "r_draw.h"
 #include "r_local.h"
+#include "r_things.h"
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "v_video.h"
@@ -349,7 +350,7 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 #define NUMKARTODDS 	80
 
 // Less ugly 2D arrays
-static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
+static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
 				//P-Odds	 0  1  2  3  4  5  6  7
 			   /*Sneaker*/ { 0, 0, 2, 4, 6, 0, 0, 0 }, // Sneaker
@@ -382,7 +383,7 @@ static INT32 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 			   /*Jawz x2*/ { 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
 };
 
-static INT32 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
+static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 {
 				//P-Odds	 0  1
 			   /*Sneaker*/ { 2, 1 }, // Sneaker
@@ -492,6 +493,10 @@ static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 		case KRITEM_DUALJAWZ: // Jawz x2
 			player->itemtype = KITEM_JAWZ;
 			player->itemamount = 2;
+			break;
+		case KITEM_BALLHOG: // Ballhog x5
+			player->itemtype = KITEM_BALLHOG;
+			player->itemamount = 5;
 			break;
 		default:
 			if (getitem <= 0 || getitem >= NUMKARTRESULTS) // Sad (Fallback)
@@ -892,6 +897,54 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 #undef SETUPDISTTABLE
 
 	return useodds;
+}
+
+INT32 K_GetRollingRouletteItem(player_t *player)
+{
+	static UINT8 translation[NUMKARTITEMS-1];
+	static UINT16 roulette_size;
+
+	static INT16 odds_cached = -1;
+
+	// Race odds have more columns than Battle
+	const UINT8 EMPTYODDS[sizeof K_KartItemOddsRace[0]] = {0};
+
+	if (odds_cached != gametype)
+	{
+		UINT8 *odds_row;
+		size_t odds_row_size;
+
+		UINT8 i;
+
+		roulette_size = 0;
+
+		if (gametype == GT_BATTLE)
+		{
+			odds_row = K_KartItemOddsBattle[0];
+			odds_row_size = sizeof K_KartItemOddsBattle[0];
+		}
+		else
+		{
+			odds_row = K_KartItemOddsRace[0];
+			odds_row_size = sizeof K_KartItemOddsRace[0];
+		}
+
+		for (i = 1; i < NUMKARTITEMS; ++i)
+		{
+			if (memcmp(odds_row, EMPTYODDS, odds_row_size))
+			{
+				translation[roulette_size] = i;
+				roulette_size++;
+			}
+
+			odds_row += odds_row_size;
+		}
+
+		roulette_size *= 3;
+		odds_cached = gametype;
+	}
+
+	return translation[(player->itemroulette % roulette_size) / 3];
 }
 
 static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
@@ -3793,6 +3846,234 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 		P_StartQuake(64<<FRACBITS, 10);
 }
 
+angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
+{
+	fixed_t pitchMul = -FINESINE(angle >> ANGLETOFINESHIFT);
+	fixed_t rollMul = FINECOSINE(angle >> ANGLETOFINESHIFT);
+
+	angle_t slope = FixedMul(pitch, pitchMul) + FixedMul(roll, rollMul);
+
+	if (slope > ANGLE_180)
+	{
+		slope = InvAngle(slope);
+	}
+
+	return slope;
+}
+
+boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
+{
+	angle_t steepVal = ANGLE_MAX;
+	fixed_t gravityadjust;
+	angle_t oldSlope, newSlope;
+	angle_t slopeDelta;
+
+	// If you don't land upright on a slope, then you tumble,
+	// kinda like Kirby Air Ride
+
+	if (player->tumbleBounces)
+	{
+		// Already tumbling.
+		return false;
+	}
+
+	if ((player->mo->pitch == oldPitch)
+		&& (player->mo->roll == oldRoll))
+	{
+		// No change.
+		return false;
+	}
+
+	if (fromAir == true)
+	{
+		steepVal = STUMBLE_STEEP_VAL_AIR;
+	}
+	else
+	{
+		steepVal = STUMBLE_STEEP_VAL;
+	}
+
+	oldSlope = K_StumbleSlope(player->mo->angle, oldPitch, oldRoll);
+
+	if (oldSlope <= steepVal)
+	{
+		// Transferring from flat ground to a steep slope
+		// is a free action. (The other way around isn't, though.)
+		return false;
+	}
+
+	newSlope = K_StumbleSlope(player->mo->angle, player->mo->pitch, player->mo->roll);
+	slopeDelta = AngleDelta(oldSlope, newSlope);
+
+	if (slopeDelta <= steepVal)
+	{
+		// Needs to be VERY steep before we'll punish this.
+		return false;
+	}
+
+	// Oh jeez, you landed on your side.
+	// You get to tumble.
+
+	P_ResetPlayer(player);
+
+#if 0
+	// Single, medium bounce
+	player->tumbleBounces = TUMBLEBOUNCES;
+	player->tumbleHeight = 30;
+#else
+	// Two small bounces
+	player->tumbleBounces = TUMBLEBOUNCES-1;
+	player->tumbleHeight = 20;
+#endif
+
+	player->pflags &= ~PF_TUMBLESOUND;
+	S_StartSound(player->mo, sfx_s3k9b);
+
+	gravityadjust = P_GetMobjGravity(player->mo)/2;	// so we'll halve it for our calculations.
+
+	if (player->mo->eflags & MFE_UNDERWATER)
+		gravityadjust /= 2;	// halve "gravity" underwater
+
+	// and then modulate momz like that...
+	player->mo->momz = -gravityadjust * player->tumbleHeight;
+
+	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+
+	if (P_IsDisplayPlayer(player))
+		P_StartQuake(64<<FRACBITS, 10);
+
+	// Reset slope.
+	player->mo->pitch = player->mo->roll = 0;
+	return true;
+}
+
+void K_InitStumbleIndicator(player_t *player)
+{
+	mobj_t *new = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->stumbleIndicator) == false)
+	{
+		P_RemoveMobj(player->stumbleIndicator);
+	}
+
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SMOOTHLANDING);
+
+	P_SetTarget(&player->stumbleIndicator, new);
+	P_SetTarget(&new->target, player->mo);
+}
+
+void K_UpdateStumbleIndicator(player_t *player)
+{
+	const angle_t fudge = ANG15;
+	mobj_t *mobj = NULL;
+
+	boolean air = false;
+	angle_t steepVal = STUMBLE_STEEP_VAL;
+	angle_t slopeSteep = 0;
+	angle_t steepRange = ANGLE_90;
+
+	INT32 delta = 0;
+	INT32 trans = 0;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator == NULL || P_MobjWasRemoved(player->stumbleIndicator) == true)
+	{
+		K_InitStumbleIndicator(player);
+		return;
+	}
+
+	mobj = player->stumbleIndicator;
+
+	P_MoveOrigin(mobj, player->mo->x, player->mo->y, player->mo->z + (player->mo->height / 2));
+
+	air = !P_IsObjectOnGround(player->mo);
+	steepVal = (air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL) - fudge;
+	slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
+
+	delta = 0;
+
+	if (slopeSteep > steepVal)
+	{
+		angle_t testAngles[2];
+		INT32 testDeltas[2];
+		UINT8 i;
+
+		testAngles[0] = R_PointToAngle2(0, 0, player->mo->pitch, player->mo->roll);
+		testAngles[1] = R_PointToAngle2(0, 0, -player->mo->pitch, -player->mo->roll);
+
+		for (i = 0; i < 2; i++)
+		{
+			testDeltas[i] = AngleDeltaSigned(player->mo->angle, testAngles[i]);
+		}
+
+		if (abs(testDeltas[1]) < abs(testDeltas[0]))
+		{
+			delta = testDeltas[1];
+		}
+		else
+		{
+			delta = testDeltas[0];
+		}
+	}
+
+	if (delta < 0)
+	{
+		mobj->renderflags |= RF_HORIZONTALFLIP;
+	}
+	else
+	{
+		mobj->renderflags &= ~RF_HORIZONTALFLIP;
+	}
+
+	steepRange = ANGLE_90 - steepVal;
+	delta = max(0, abs(delta) - ((signed)steepVal));
+	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS - 2)) + (FRACUNIT/2)) / FRACUNIT;
+
+	if (trans < 0)
+	{
+		trans = 0;
+	}
+
+	if (trans > (NUMTRANSMAPS - 2))
+	{
+		trans = (NUMTRANSMAPS - 2);
+	}
+
+	// invert
+	trans = (NUMTRANSMAPS - 2) - trans;
+
+	mobj->renderflags |= RF_DONTDRAW;
+
+	if (trans < (NUMTRANSMAPS - 2))
+	{
+		mobj->renderflags &= ~(RF_TRANSMASK | K_GetPlayerDontDrawFlag(player));
+
+		if (trans != 0)
+		{
+			mobj->renderflags |= (trans << RF_TRANSSHIFT);
+		}
+	}
+}
+
 static boolean K_LastTumbleBounceCondition(player_t *player)
 {
 	return (player->tumbleBounces > TUMBLEBOUNCES && player->tumbleHeight < 60);
@@ -3827,6 +4108,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->tumbleHeight = 10;
 			player->pflags |= PF_TUMBLELASTBOUNCE;
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
+			player->mo->pitch = player->mo->roll = 0; // Prevent Kodachrome Void infinite
 		}
 	}
 
@@ -4227,7 +4509,6 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 	if (source->player != NULL)
 	{
-		
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
 		{
 			// Nerf the base item speed a bit.
@@ -4339,6 +4620,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			th->destscale = (5*th->destscale)>>2;
 			S_StartSound(th, sfx_s3kbfl);
 			S_StartSound(th, sfx_cdfm35);
+			break;
+		case MT_BALLHOG:
+			// Contra spread shot scale up
+			th->destscale = th->destscale << 1;
+			th->scalespeed = abs(th->destscale - th->scale) / (2*TICRATE);
 			break;
 		default:
 			break;
@@ -5094,7 +5380,7 @@ static mobj_t *K_FindLastTrailMobj(player_t *player)
 	return trail;
 }
 
-mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow)
+mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset)
 {
 	mobj_t *mo;
 	INT32 dir;
@@ -5160,46 +5446,21 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 	if (missile) // Shootables
 	{
-		if (mapthing == MT_BALLHOG) // Messy
+		if (dir == -1 && mapthing != MT_SPB)
 		{
-			mo = NULL; // can't return multiple projectiles
-			if (dir == -1)
-			{
-				// Shoot backward
-				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) - 0x06000000, 0, PROJSPEED/8);
-				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) - 0x03000000, 0, PROJSPEED/8);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/8);
-				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + 0x03000000, 0, PROJSPEED/8);
-				K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + 0x06000000, 0, PROJSPEED/8);
-			}
-			else
-			{
-				// Shoot forward
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle - 0x06000000, 0, PROJSPEED);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle - 0x03000000, 0, PROJSPEED);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle, 0, PROJSPEED);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + 0x03000000, 0, PROJSPEED);
-				K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + 0x06000000, 0, PROJSPEED);
-			}
+			// Shoot backward
+			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED/8);
 		}
 		else
 		{
-			if (dir == -1 && mapthing != MT_SPB)
-			{
-				// Shoot backward
-				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + ANGLE_180, 0, PROJSPEED/8);
-			}
-			else
-			{
-				// Shoot forward
-				mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle, 0, PROJSPEED);
-			}
+			// Shoot forward
+			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED);
+		}
 
-			if (mapthing == MT_DROPTARGET && mo)
-			{
-				mo->reactiontime = TICRATE/2;
-				P_SetMobjState(mo, mo->info->painstate);
-			}
+		if (mapthing == MT_DROPTARGET && mo)
+		{
+			mo->reactiontime = TICRATE/2;
+			P_SetMobjState(mo, mo->info->painstate);
 		}
 	}
 	else
@@ -5561,7 +5822,6 @@ void K_DoSneaker(player_t *player, INT32 type)
 	if (type != 0)
 	{
 		player->pflags |= PF_ATTACKDOWN;
-		K_PlayBoostTaunt(player->mo);
 	}
 
 	player->sneakertimer = sneakertime;
@@ -6070,6 +6330,10 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 				case KRITEM_DUALJAWZ: // Jawz x2
 					newType = KITEM_JAWZ;
 					newAmount = 2;
+					break;
+				case KITEM_BALLHOG: // Ballhog x5
+					newType = KITEM_BALLHOG;
+					newAmount = 5;
 					break;
 				default:
 					newType = i;
@@ -7832,6 +8096,8 @@ void K_KartPlayerAfterThink(player_t *player)
 {
 	K_KartResetPlayerColor(player);
 
+	K_UpdateStumbleIndicator(player);
+
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
 
@@ -8931,7 +9197,7 @@ void K_StripItems(player_t *player)
 
 	player->curshield = KSHIELD_NONE;
 	player->bananadrag = 0;
-
+	player->ballhogcharge = 0;
 	player->sadtimer = 0;
 
 	K_UpdateHnextList(player, true);
@@ -9273,31 +9539,7 @@ static void K_KartSpindash(player_t *player)
 	}
 	else if (player->fastfall != 0)
 	{
-		// Handle fastfall bounce.
-		const fixed_t maxBounce = player->mo->scale * 10;
-		const fixed_t minBounce = player->mo->scale;
-		fixed_t bounce = 2 * abs(player->fastfall) / 3;
-
-		if (bounce > maxBounce)
-		{
-			bounce = maxBounce;
-		}
-		else
-		{
-			// Lose speed on bad bounce.
-			player->mo->momx /= 2;
-			player->mo->momy /= 2;
-
-			if (bounce < minBounce)
-			{
-				bounce = minBounce;
-			}
-		}
-
-		S_StartSound(player->mo, sfx_ffbonc);
-		player->mo->momz = bounce * P_MobjFlip(player->mo);
-
-		player->fastfall = 0;
+		// Still handling fast-fall bounce.
 		return;
 	}
 
@@ -9363,6 +9605,41 @@ static void K_KartSpindash(player_t *player)
 }
 
 #undef SPINDASHTHRUSTTIME
+
+boolean K_FastFallBounce(player_t *player)
+{
+	// Handle fastfall bounce.
+	if (player->fastfall != 0)
+	{
+		const fixed_t maxBounce = player->mo->scale * 10;
+		const fixed_t minBounce = player->mo->scale;
+		fixed_t bounce = 2 * abs(player->fastfall) / 3;
+
+		if (bounce > maxBounce)
+		{
+			bounce = maxBounce;
+		}
+		else
+		{
+			// Lose speed on bad bounce.
+			player->mo->momx /= 2;
+			player->mo->momy /= 2;
+
+			if (bounce < minBounce)
+			{
+				bounce = minBounce;
+			}
+		}
+
+		S_StartSound(player->mo, sfx_ffbonc);
+		player->mo->momz = bounce * P_MobjFlip(player->mo);
+
+		player->fastfall = 0;
+		return true;
+	}
+
+	return false;
+}
 
 static void K_AirFailsafe(player_t *player)
 {
@@ -9651,7 +9928,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				{
 					if (ATTACK_IS_DOWN)
 					{
-						K_ThrowKartItem(player, false, MT_EGGMANITEM, -1, 0);
+						K_ThrowKartItem(player, false, MT_EGGMANITEM, -1, 0, 0);
 						K_PlayAttackTaunt(player->mo);
 						player->pflags &= ~PF_EGGMANOUT;
 						K_UpdateHnextList(player, true);
@@ -9759,7 +10036,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->pflags & PF_ITEMOUT)) // Banana x3 thrown
 							{
-								K_ThrowKartItem(player, false, MT_BANANA, -1, 0);
+								K_ThrowKartItem(player, false, MT_BANANA, -1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								K_UpdateHnextList(player, false);
@@ -9822,7 +10099,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->pflags & PF_ITEMOUT)) // Orbinaut x3 thrown
 							{
-								K_ThrowKartItem(player, true, MT_ORBINAUT, 1, 0);
+								K_ThrowKartItem(player, true, MT_ORBINAUT, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								K_UpdateHnextList(player, false);
@@ -9864,9 +10141,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->pflags & PF_ITEMOUT)) // Jawz thrown
 							{
 								if (player->throwdir == 1 || player->throwdir == 0)
-									K_ThrowKartItem(player, true, MT_JAWZ, 1, 0);
+									K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
 								else if (player->throwdir == -1) // Throwing backward gives you a dud that doesn't home in
-									K_ThrowKartItem(player, true, MT_JAWZ_DUD, -1, 0);
+									K_ThrowKartItem(player, true, MT_JAWZ_DUD, -1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								K_UpdateHnextList(player, false);
@@ -9892,7 +10169,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->pflags & PF_ITEMOUT))
 							{
-								K_ThrowKartItem(player, false, MT_SSMINE, 1, 1);
+								K_ThrowKartItem(player, false, MT_SSMINE, 1, 1, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								player->pflags &= ~PF_ITEMOUT;
@@ -9927,7 +10204,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && (player->pflags & PF_ITEMOUT))
 							{
-								K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0);
+								K_ThrowKartItem(player, (player->throwdir > 0), MT_DROPTARGET, -1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								player->pflags &= ~PF_ITEMOUT;
@@ -9935,18 +10212,63 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_BALLHOG:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (!HOLDING_ITEM && NO_HYUDORO)
 							{
-								player->itemamount--;
-								K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0);
-								K_PlayAttackTaunt(player->mo);
+								INT32 ballhogmax = ((player->itemamount-1) * BALLHOGINCREMENT) + 1;
+
+								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY)
+									&& (player->ballhogcharge < ballhogmax))
+								{
+									player->ballhogcharge++;
+								}
+								else
+								{
+									if (cmd->buttons & BT_ATTACK)
+									{
+										player->pflags &= ~PF_HOLDREADY;
+									}
+									else
+									{
+										player->pflags |= PF_HOLDREADY;
+									}
+
+									if (player->ballhogcharge > 0)
+									{
+										INT32 numhogs = min((player->ballhogcharge / BALLHOGINCREMENT) + 1, player->itemamount);
+
+										if (numhogs <= 1)
+										{
+											player->itemamount--;
+											K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, 0);
+										}
+										else
+										{
+											angle_t cone = 0x01800000 * (numhogs-1);
+											angle_t offsetAmt = (cone * 2) / (numhogs-1);
+											angle_t angleOffset = cone;
+											INT32 i;
+
+											player->itemamount -= numhogs;
+
+											for (i = 0; i < numhogs; i++)
+											{
+												K_ThrowKartItem(player, true, MT_BALLHOG, 1, 0, angleOffset);
+												angleOffset -= offsetAmt;
+											}
+										}
+
+										player->ballhogcharge = 0;
+										K_PlayAttackTaunt(player->mo);
+										player->pflags &= ~PF_HOLDREADY;
+									}
+								}
 							}
 							break;
 						case KITEM_SPB:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
 								player->itemamount--;
-								K_ThrowKartItem(player, true, MT_SPB, 1, 0);
+								K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 							}
 							break;
@@ -10048,7 +10370,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 									if (player->bubbleblowup > bubbletime*2)
 									{
-										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0);
+										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
 										player->bubblecool = 0;
@@ -10198,7 +10520,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->pflags & PF_ITEMOUT)) // Sink thrown
 							{
-								K_ThrowKartItem(player, false, MT_SINK, 1, 2);
+								K_ThrowKartItem(player, false, MT_SINK, 1, 2, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								player->pflags &= ~PF_ITEMOUT;

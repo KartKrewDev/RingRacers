@@ -1781,15 +1781,15 @@ void D_SRB2Main(void)
 		}
 	}
 
+	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+	PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
 	if (autostart || netgame)
 	{
 		gameaction = ga_nothing;
 
 		CV_ClearChangedFlags();
-
-		// Has to be done before anything else so skin, color, etc in command buffer has an affect.
-		// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
-		PR_ApplyProfile(cv_ttlprofilen.value, 0);
 
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
@@ -1893,9 +1893,13 @@ void D_SRB2Main(void)
 	else if (M_CheckParm("-skipintro"))
 	{
 		F_StartTitleScreen();
+		CV_StealthSetValue(&cv_currprofile, -1);
 	}
 	else
+	{
 		F_StartIntro(); // Tails 03-03-2002
+		CV_StealthSetValue(&cv_currprofile, -1);
+	}
 
 	CON_ToggleOff();
 

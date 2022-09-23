@@ -695,6 +695,40 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 	}
 }
 
+static patch_t **K_GetItemPatchTable(INT32 item)
+{
+	patch_t **kp[1 + NUMKARTITEMS] = {
+		kp_sadface,
+		NULL,
+		kp_sneaker,
+		kp_rocketsneaker,
+		kp_invincibility,
+		kp_banana,
+		kp_eggman,
+		kp_orbinaut,
+		kp_jawz,
+		kp_mine,
+		kp_landmine,
+		kp_ballhog,
+		kp_selfpropelledbomb,
+		kp_grow,
+		kp_shrink,
+		kp_lightningshield,
+		kp_bubbleshield,
+		kp_flameshield,
+		kp_hyudoro,
+		kp_pogospring,
+		kp_superring,
+		kp_kitchensink,
+		kp_droptarget,
+	};
+
+	if (item >= KITEM_SAD && item < NUMKARTITEMS)
+		return kp[item - KITEM_SAD];
+	else
+		return NULL;
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -1096,90 +1130,23 @@ static void K_drawKartItem(void)
 
 	if (stplyr->itemroulette)
 	{
+		const INT32 item = K_GetRollingRouletteItem(stplyr);
+
 		if (stplyr->skincolor)
 			localcolor = stplyr->skincolor;
 
-		switch((stplyr->itemroulette % (16*3)) / 3)
+		switch (item)
 		{
-			// Each case is handled in threes, to give three frames of in-game time to see the item on the roulette
-			case 0: // Sneaker
-				localpatch = kp_sneaker[offset];
-				//localcolor = SKINCOLOR_RASPBERRY;
-				break;
-			case 1: // Banana
-				localpatch = kp_banana[offset];
-				//localcolor = SKINCOLOR_YELLOW;
-				break;
-			case 2: // Orbinaut
-				localpatch = kp_orbinaut[3+offset];
-				//localcolor = SKINCOLOR_STEEL;
-				break;
-			case 3: // Mine
-				localpatch = kp_mine[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 4: // Grow
-				localpatch = kp_grow[offset];
-				//localcolor = SKINCOLOR_TEAL;
-				break;
-			case 5: // Hyudoro
-				localpatch = kp_hyudoro[offset];
-				//localcolor = SKINCOLOR_STEEL;
-				break;
-			case 6: // Rocket Sneaker
-				localpatch = kp_rocketsneaker[offset];
-				//localcolor = SKINCOLOR_TANGERINE;
-				break;
-			case 7: // Jawz
-				localpatch = kp_jawz[offset];
-				//localcolor = SKINCOLOR_JAWZ;
-				break;
-			case 8: // Self-Propelled Bomb
-				localpatch = kp_selfpropelledbomb[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 9: // Shrink
-				localpatch = kp_shrink[offset];
-				//localcolor = SKINCOLOR_ORANGE;
-				break;
-			case 10: // Invincibility
+			case KITEM_INVINCIBILITY:
 				localpatch = localinv;
-				//localcolor = SKINCOLOR_GREY;
 				break;
-			case 11: // Eggman Monitor
-				localpatch = kp_eggman[offset];
-				//localcolor = SKINCOLOR_ROSE;
+
+			case KITEM_ORBINAUT:
+				localpatch = kp_orbinaut[3 + offset];
 				break;
-			case 12: // Ballhog
-				localpatch = kp_ballhog[offset];
-				//localcolor = SKINCOLOR_LILAC;
-				break;
-			case 13: // Lightning Shield
-				localpatch = kp_lightningshield[offset];
-				//localcolor = SKINCOLOR_CYAN;
-				break;
-			case 14: // Super Ring
-				localpatch = kp_superring[offset];
-				//localcolor = SKINCOLOR_GOLD;
-				break;
-			case 15: // Land Mine
-				localpatch = kp_landmine[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 16: // Drop Target
-				localpatch = kp_droptarget[offset];
-				//localcolor = SKINCOLOR_LIME;
-				break;
-			/*case 17: // Pogo Spring
-				localpatch = kp_pogospring[offset];
-				localcolor = SKINCOLOR_TANGERINE;
-				break;
-			case 18: // Kitchen Sink
-				localpatch = kp_kitchensink[offset];
-				localcolor = SKINCOLOR_STEEL;
-				break;*/
+
 			default:
-				break;
+				localpatch = K_GetItemPatchTable(item)[offset];
 		}
 	}
 	else
@@ -1203,6 +1170,16 @@ static void K_drawKartItem(void)
 		{
 			if (leveltime & 1)
 				localpatch = kp_eggman[offset];
+			else
+				localpatch = kp_nodraw;
+		}
+		else if (stplyr->ballhogcharge > 0)
+		{
+			itembar = stplyr->ballhogcharge;
+			maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
+
+			if (leveltime & 1)
+				localpatch = kp_ballhog[offset];
 			else
 				localpatch = kp_nodraw;
 		}
@@ -1230,79 +1207,27 @@ static void K_drawKartItem(void)
 
 			switch(stplyr->itemtype)
 			{
-				case KITEM_SNEAKER:
-					localpatch = kp_sneaker[offset];
-					break;
-				case KITEM_ROCKETSNEAKER:
-					localpatch = kp_rocketsneaker[offset];
-					break;
 				case KITEM_INVINCIBILITY:
 					localpatch = localinv;
 					localbg = kp_itembg[offset+1];
 					break;
-				case KITEM_BANANA:
-					localpatch = kp_banana[offset];
-					break;
-				case KITEM_EGGMAN:
-					localpatch = kp_eggman[offset];
-					break;
+
 				case KITEM_ORBINAUT:
 					localpatch = kp_orbinaut[(offset ? 4 : min(stplyr->itemamount-1, 3))];
 					break;
-				case KITEM_JAWZ:
-					localpatch = kp_jawz[offset];
-					break;
-				case KITEM_MINE:
-					localpatch = kp_mine[offset];
-					break;
-				case KITEM_LANDMINE:
-					localpatch = kp_landmine[offset];
-					break;
-				case KITEM_DROPTARGET:
-					localpatch = kp_droptarget[offset];
-					break;
-				case KITEM_BALLHOG:
-					localpatch = kp_ballhog[offset];
-					break;
+
 				case KITEM_SPB:
-					localpatch = kp_selfpropelledbomb[offset];
-					localbg = kp_itembg[offset+1];
-					break;
-				case KITEM_GROW:
-					localpatch = kp_grow[offset];
-					break;
-				case KITEM_SHRINK:
-					localpatch = kp_shrink[offset];
-					break;
 				case KITEM_LIGHTNINGSHIELD:
-					localpatch = kp_lightningshield[offset];
-					localbg = kp_itembg[offset+1];
-					break;
 				case KITEM_BUBBLESHIELD:
-					localpatch = kp_bubbleshield[offset];
-					localbg = kp_itembg[offset+1];
-					break;
 				case KITEM_FLAMESHIELD:
-					localpatch = kp_flameshield[offset];
 					localbg = kp_itembg[offset+1];
-					break;
-				case KITEM_HYUDORO:
-					localpatch = kp_hyudoro[offset];
-					break;
-				case KITEM_POGOSPRING:
-					localpatch = kp_pogospring[offset];
-					break;
-				case KITEM_SUPERRING:
-					localpatch = kp_superring[offset];
-					break;
-				case KITEM_KITCHENSINK:
-					localpatch = kp_kitchensink[offset];
-					break;
-				case KITEM_SAD:
-					localpatch = kp_sadface[offset];
-					break;
+					/*FALLTHRU*/
+
 				default:
-					localpatch = kp_nodraw; // diagnose underflows
+					localpatch = K_GetItemPatchTable(stplyr->itemtype)[offset];
+
+					if (localpatch == NULL)
+						localpatch = kp_nodraw; // diagnose underflows
 					break;
 			}
 
@@ -2167,7 +2092,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			}
 			else if (tab[i].num != serverplayer || !server_lagless)
 			{
-				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0);
+				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0, false);
 			}
 		}
 
@@ -4868,7 +4793,7 @@ void K_drawKartHUD(void)
 		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
 	}
 
-	if (netgame && r_splitscreen)
+	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
 	}
