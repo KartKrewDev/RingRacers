@@ -904,27 +904,44 @@ INT32 K_GetRollingRouletteItem(player_t *player)
 	static UINT8 translation[NUMKARTITEMS-1];
 	static UINT16 roulette_size;
 
-	static boolean odds_uncached = true;
+	static INT16 odds_cached = -1;
 
+	// Race odds have more columns than Battle
 	const UINT8 EMPTYODDS[sizeof K_KartItemOddsRace[0]] = {0};
 
-	if (odds_uncached)
+	if (odds_cached != gametype)
 	{
+		UINT8 *odds_row;
+		size_t odds_row_size;
+
 		UINT8 i;
 
 		roulette_size = 0;
 
+		if (gametype == GT_BATTLE)
+		{
+			odds_row = K_KartItemOddsBattle[0];
+			odds_row_size = sizeof K_KartItemOddsBattle[0];
+		}
+		else
+		{
+			odds_row = K_KartItemOddsRace[0];
+			odds_row_size = sizeof K_KartItemOddsRace[0];
+		}
+
 		for (i = 1; i < NUMKARTITEMS; ++i)
 		{
-			if (memcmp(K_KartItemOddsRace[i - 1], EMPTYODDS, sizeof EMPTYODDS))
+			if (memcmp(odds_row, EMPTYODDS, odds_row_size))
 			{
 				translation[roulette_size] = i;
 				roulette_size++;
 			}
+
+			odds_row += odds_row_size;
 		}
 
 		roulette_size *= 3;
-		odds_uncached = false;
+		odds_cached = gametype;
 	}
 
 	return translation[(player->itemroulette % roulette_size) / 3];
