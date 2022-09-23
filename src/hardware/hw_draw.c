@@ -31,6 +31,7 @@
 #include "../p_local.h" // stplyr
 #include "../g_game.h" // players
 #include "../k_hud.h"
+#include "../r_plane.h" // R_FlatDimensionsFromLumpSize
 
 #include <fcntl.h>
 #include "../i_video.h"  // for rendermode != render_glide
@@ -482,42 +483,17 @@ void HWR_DrawPic(INT32 x, INT32 y, lumpnum_t lumpnum)
 // --------------------------------------------------------------------------
 void HWR_DrawFlatFill (INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum)
 {
-	FOutVector  v[4];
-	double dflatsize;
-	INT32 flatflag;
 	const size_t len = W_LumpLength(flatlumpnum);
 
-	switch (len)
-	{
-		case 4194304: // 2048x2048 lump
-			dflatsize = 2048.0f;
-			flatflag = 2047;
-			break;
-		case 1048576: // 1024x1024 lump
-			dflatsize = 1024.0f;
-			flatflag = 1023;
-			break;
-		case 262144:// 512x512 lump
-			dflatsize = 512.0f;
-			flatflag = 511;
-			break;
-		case 65536: // 256x256 lump
-			dflatsize = 256.0f;
-			flatflag = 255;
-			break;
-		case 16384: // 128x128 lump
-			dflatsize = 128.0f;
-			flatflag = 127;
-			break;
-		case 1024: // 32x32 lump
-			dflatsize = 32.0f;
-			flatflag = 31;
-			break;
-		default: // 64x64 lump
-			dflatsize = 64.0f;
-			flatflag = 63;
-			break;
-	}
+	size_t sflatsize;
+	double dflatsize;
+	INT32 flatflag;
+
+	FOutVector v[4];
+
+	sflatsize = R_FlatDimensionsFromLumpSize(len);
+	dflatsize = (double)sflatsize;
+	flatflag = sflatsize - 1;
 
 //  3--2
 //  | /|

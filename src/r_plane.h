@@ -89,6 +89,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_PlaneBounds(visplane_t *plane);
 
+size_t R_FlatDimensionsFromLumpSize(size_t size);
 void R_CheckFlatLength(size_t size);
 boolean R_CheckPowersOfTwo(void);
 

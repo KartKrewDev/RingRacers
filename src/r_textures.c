@@ -657,6 +657,44 @@ boolean R_CheckPowersOfTwo(void)
 }
 
 //
+// R_FlatDimensionsFromLumpSize
+//
+// Returns the flat's square size from its lump length.
+//
+size_t R_FlatDimensionsFromLumpSize(size_t size)
+{
+	switch (size)
+	{
+		case 4194304: // 2048x2048 lump
+			return 2048;
+
+		case 1048576: // 1024x1024 lump
+			return 1024;
+
+		case 262144:// 512x512 lump
+			return 512;
+
+		case 65536: // 256x256 lump
+			return 256;
+
+		case 16384: // 128x128 lump
+			return 128;
+
+		case 1024: // 32x32 lump
+			return 32;
+
+		case 256: // 16x16 lump
+			return 16;
+
+		case 64: // 8x8 lump
+			return 8;
+
+		default: // 64x64 lump
+			return 64;
+	}
+}
+
+//
 // R_CheckFlatLength
 //
 // Determine the flat's dimensions from its lump length.
@@ -706,6 +744,20 @@ void R_CheckFlatLength(size_t size)
 			nflatyshift = 22;
 			nflatshiftup = 11;
 			ds_flatwidth = ds_flatheight = 32;
+			break;
+		case 256: // 16x16 lump
+			nflatmask = 0xF0;
+			nflatxshift = 28;
+			nflatyshift = 24;
+			nflatshiftup = 12;
+			ds_flatwidth = ds_flatheight = 16;
+			break;
+		case 64: // 8x8 lump
+			nflatmask = 0x38;
+			nflatxshift = 29;
+			nflatyshift = 26;
+			nflatshiftup = 13;
+			ds_flatwidth = ds_flatheight = 8;
 			break;
 		default: // 64x64 lump
 			nflatmask = 0xFC0;
@@ -774,30 +826,7 @@ Rloadflats (INT32 i, INT32 w)
 			W_ReadLumpHeaderPwad(wadnum, lumpnum, header, sizeof header, 0);
 			lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 
-			switch (lumplength)
-			{
-				case 4194304: // 2048x2048 lump
-					flatsize = 2048;
-					break;
-				case 1048576: // 1024x1024 lump
-					flatsize = 1024;
-					break;
-				case 262144:// 512x512 lump
-					flatsize = 512;
-					break;
-				case 65536: // 256x256 lump
-					flatsize = 256;
-					break;
-				case 16384: // 128x128 lump
-					flatsize = 128;
-					break;
-				case 1024: // 32x32 lump
-					flatsize = 32;
-					break;
-				default: // 64x64 lump
-					flatsize = 64;
-					break;
-			}
+			flatsize = R_FlatDimensionsFromLumpSize(lumplength);
 
 			//CONS_Printf("\n\"%s\" is a flat, dimensions %d x %d",W_CheckNameForNumPwad((UINT16)w,texstart+j),flatsize,flatsize);
 			texture = textures[i] = Z_Calloc(sizeof(texture_t) + sizeof(texpatch_t), PU_STATIC, NULL);

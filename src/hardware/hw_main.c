@@ -46,6 +46,7 @@
 // SRB2Kart
 #include "../k_kart.h" // HITLAGJITTERS
 #include "../r_fps.h"
+#include "../r_plane.h" // R_FlatDimensionsFromLumpSize
 
 #ifdef NEWCLIP
 #include "hw_clip.h"
@@ -393,31 +394,9 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 		if (levelflat->type == LEVELFLAT_FLAT)
 		{
 			size_t len = W_LumpLength(levelflat->u.flat.lumpnum);
-			switch (len)
-			{
-				case 4194304: // 2048x2048 lump
-					fflatwidth = fflatheight = 2048.0f;
-					break;
-				case 1048576: // 1024x1024 lump
-					fflatwidth = fflatheight = 1024.0f;
-					break;
-				case 262144:// 512x512 lump
-					fflatwidth = fflatheight = 512.0f;
-					break;
-				case 65536: // 256x256 lump
-					fflatwidth = fflatheight = 256.0f;
-					break;
-				case 16384: // 128x128 lump
-					fflatwidth = fflatheight = 128.0f;
-					break;
-				case 1024: // 32x32 lump
-					fflatwidth = fflatheight = 32.0f;
-					break;
-				default: // 64x64 lump
-					fflatwidth = fflatheight = 64.0f;
-					break;
-			}
-			flatflag = ((INT32)fflatwidth)-1;
+			size_t sflatsize = R_FlatDimensionsFromLumpSize(len);
+			fflatwidth = fflatheight = (double)sflatsize;
+			flatflag = sflatsize-1;
 		}
 		else
 		{
@@ -2756,31 +2735,9 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, 
 		if (levelflat->type == LEVELFLAT_FLAT)
 		{
 			size_t len = W_LumpLength(levelflat->u.flat.lumpnum);
-			switch (len)
-			{
-				case 4194304: // 2048x2048 lump
-					fflatwidth = fflatheight = 2048.0f;
-					break;
-				case 1048576: // 1024x1024 lump
-					fflatwidth = fflatheight = 1024.0f;
-					break;
-				case 262144:// 512x512 lump
-					fflatwidth = fflatheight = 512.0f;
-					break;
-				case 65536: // 256x256 lump
-					fflatwidth = fflatheight = 256.0f;
-					break;
-				case 16384: // 128x128 lump
-					fflatwidth = fflatheight = 128.0f;
-					break;
-				case 1024: // 32x32 lump
-					fflatwidth = fflatheight = 32.0f;
-					break;
-				default: // 64x64 lump
-					fflatwidth = fflatheight = 64.0f;
-					break;
-			}
-			flatflag = ((INT32)fflatwidth)-1;
+			size_t sflatsize = R_FlatDimensionsFromLumpSize(len);
+			fflatwidth = fflatheight = (double)sflatsize;
+			flatflag = sflatsize-1;
 		}
 		else
 		{
