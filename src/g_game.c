@@ -3512,6 +3512,7 @@ tryagain:
 				continue;
 		}
 
+#ifdef STAFFGHOSTS
 		if (pprevmap == -2) // title demo hack
 		{
 			lumpnum_t l;
@@ -3519,6 +3520,7 @@ tryagain:
 			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
 				continue;
 		}
+#endif //#ifdef STAFFGHOSTS
 
 		okmaps[numokmaps++] = ix;
 	}

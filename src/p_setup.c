@@ -3760,6 +3760,7 @@ static void P_LoadRecordGhosts(void)
 	if (cv_ghost_guest.value && FIL_FileExists(va("%s-guest.lmp", gpath)))
 		G_AddGhost(va("%s-guest.lmp", gpath));
 
+#ifdef STAFFGHOSTS
 	// Staff Attack ghosts
 	if (cv_ghost_staff.value)
 	{
@@ -3772,6 +3773,7 @@ static void P_LoadRecordGhosts(void)
 			j++;
 		}
 	}
+#endif //#ifdef STAFFGHOSTS
 
 	free(gpath);
 }

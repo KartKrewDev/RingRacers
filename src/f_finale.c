@@ -2197,6 +2197,7 @@ void F_TitleScreenTicker(boolean run)
 		return;
 	}
 
+#ifdef STAFFGHOSTS
 	// is it time?
 	if (!(--demoIdleLeft))
 	{
@@ -2233,38 +2234,13 @@ void F_TitleScreenTicker(boolean run)
 			return;
 		}
 
-		// Replay intro when done cycling through demos
-		/*
-		if (curDemo == numDemos) -- uuuh... we have a LOT of maps AND a big devteam... probably not gonna see a repeat unless you're super unlucky :V
-		{
-			curDemo = 0;
-			F_StartIntro();
-			return;
-		}
-		*/
-
 		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
 
 		numstaff = 1;
 		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
 			numstaff++;
 
-#if 0 // turns out this isn't how we're gonna organise 'em
-		if (numstaff > 1)
-		{
-			if (laststaff && laststaff <= numstaff) // don't do the same staff member twice in a row, even if they're on different maps
-			{
-				numstaff = M_RandomKey(numstaff-1)+1;
-				if (numstaff >= laststaff)
-					numstaff++;
-			}
-			else
-				numstaff = M_RandomKey(numstaff)+1;
-		}
-		laststaff = numstaff;
-#else
 		numstaff = M_RandomKey(numstaff)+1;
-#endif
 
 		// Setup demo name
 		dname2 = Z_StrDup(va("%sS%02u", mapname, numstaff));
@@ -2287,6 +2263,7 @@ loadreplay:
 			Z_Free(dname2);
 		}
 	}
+#endif //#ifdef STAFFGHOSTS
 }
 
 void F_TitleDemoTicker(void)

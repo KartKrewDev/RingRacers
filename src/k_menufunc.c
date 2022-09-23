@@ -245,7 +245,7 @@ static void Dummymenuplayer_OnChange(void)
 
 static void Dummystaff_OnChange(void)
 {
-#if 0
+#ifdef STAFFGHOSTS
 	lumpnum_t l;
 
 	dummystaffname[0] = '\0';
@@ -277,7 +277,7 @@ static void Dummystaff_OnChange(void)
 
 		sprintf(temp, " - %d", cv_dummystaff.value);
 	}
-#endif
+#endif //#ifdef STAFFGHOSTS
 }
 
 void Screenshot_option_Onchange(void)
