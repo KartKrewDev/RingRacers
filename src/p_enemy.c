@@ -14543,9 +14543,9 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 
 		mobj_t *puff = P_SpawnMobjFromMobj(
 				target,
-				P_RandomRange(-spacing, spacing) * FRACUNIT,
-				P_RandomRange(-spacing, spacing) * FRACUNIT,
-				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, 0, 4 * spacing) * FRACUNIT,
 				MT_SPINDASHDUST
 		);
 
