@@ -6033,42 +6033,44 @@ void K_DoSneaker(player_t *player, INT32 type)
 
 static void K_DoShrink(player_t *user)
 {
-	mobj_t *mobj, *next;
-
 	S_StartSound(NULL, sfx_kc46); // Sound the BANG!
 	user->pflags |= PF_ATTACKDOWN;
 
 	Obj_CreateShrinkPohbees(user);
 
 #if 0
-	// kill everything in the kitem list while we're at it:
-	for (mobj = kitemcap; mobj; mobj = next)
 	{
-		next = mobj->itnext;
+		mobj_t *mobj, *next;
 
-		if (mobj->type == MT_SPB)
+		// kill everything in the kitem list while we're at it:
+		for (mobj = kitemcap; mobj; mobj = next)
 		{
-			continue;
-		}
+			next = mobj->itnext;
 
-		// check if the item is being held by a player behind us before removing it.
-		// check if the item is a "shield" first, bc i'm p sure thrown items keep the player that threw em as target anyway
-
-		if (mobj->type == MT_BANANA_SHIELD || mobj->type == MT_JAWZ_SHIELD ||
-		mobj->type == MT_SSMINE_SHIELD || mobj->type == MT_EGGMANITEM_SHIELD ||
-		mobj->type == MT_SINK_SHIELD || mobj->type == MT_ORBINAUT_SHIELD ||
-		mobj->type == MT_DROPTARGET_SHIELD)
-		{
-			if (mobj->target && mobj->target->player)
+			if (mobj->type == MT_SPB)
 			{
-				if (mobj->target->player->position > user->position)
-					continue; // this guy's behind us, don't take his stuff away!
+				continue;
 			}
-		}
 
-		mobj->destscale = 0;
-		mobj->flags &= ~(MF_SOLID|MF_SHOOTABLE|MF_SPECIAL);
-		mobj->flags |= MF_NOCLIPTHING; // Just for safety
+			// check if the item is being held by a player behind us before removing it.
+			// check if the item is a "shield" first, bc i'm p sure thrown items keep the player that threw em as target anyway
+
+			if (mobj->type == MT_BANANA_SHIELD || mobj->type == MT_JAWZ_SHIELD ||
+			mobj->type == MT_SSMINE_SHIELD || mobj->type == MT_EGGMANITEM_SHIELD ||
+			mobj->type == MT_SINK_SHIELD || mobj->type == MT_ORBINAUT_SHIELD ||
+			mobj->type == MT_DROPTARGET_SHIELD)
+			{
+				if (mobj->target && mobj->target->player)
+				{
+					if (mobj->target->player->position > user->position)
+						continue; // this guy's behind us, don't take his stuff away!
+				}
+			}
+
+			mobj->destscale = 0;
+			mobj->flags &= ~(MF_SOLID|MF_SHOOTABLE|MF_SPECIAL);
+			mobj->flags |= MF_NOCLIPTHING; // Just for safety
+		}
 	}
 #endif
 }
