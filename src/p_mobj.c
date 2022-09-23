@@ -6743,7 +6743,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			case KITEM_SPB:
 			case KITEM_SHRINK:
-				indirectitemcooldown = 20*TICRATE;
+				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 				/* FALLTHRU */
 			default:
 				mobj->sprite = SPR_ITEM;

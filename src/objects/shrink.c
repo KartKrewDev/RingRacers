@@ -439,6 +439,8 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 {
 	mobj_t *gun = NULL;
 
+	K_SetItemCooldown(KITEM_SHRINK, 20*TICRATE);
+
 	pohbee->momx = pohbee->momy = pohbee->momz = 0;
 	pohbee->spritexscale = pohbee->spriteyscale = 2*FRACUNIT;
 

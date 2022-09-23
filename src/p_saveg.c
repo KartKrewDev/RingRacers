@@ -4560,7 +4560,8 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
-	WRITEUINT32(save_p, indirectitemcooldown);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		WRITEUINT32(save_p, itemCooldowns[i]);
 	WRITEUINT32(save_p, mapreset);
 
 	WRITEUINT8(save_p, spectateGriefed);
@@ -4723,7 +4724,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
-	indirectitemcooldown = READUINT32(save_p);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	spectateGriefed = READUINT8(save_p);

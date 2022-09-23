@@ -47,7 +47,6 @@
 // encoremode is Encore Mode (duh), bool
 // comeback is Battle Mode's karma comeback, also bool
 // battlewanted is an array of the WANTED player nums, -1 for no player in that slot
-// indirectitemcooldown is timer before anyone's allowed another Shrink/SPB
 // mapreset is set when enough players fill an empty server
 
 void K_TimerReset(void)
@@ -448,6 +447,111 @@ INT32 K_GetShieldFromItem(INT32 item)
 	}
 }
 
+SINT8 K_ItemResultToType(SINT8 getitem)
+{
+	if (getitem <= 0 || getitem >= NUMKARTRESULTS) // Sad (Fallback)
+	{
+		if (getitem != 0)
+		{
+			CONS_Printf("ERROR: K_GetItemResultToItemType - Item roulette gave bad item (%d) :(\n", getitem);
+		}
+
+		return KITEM_SAD;
+	}
+
+	if (getitem >= NUMKARTITEMS)
+	{
+		switch (getitem)
+		{
+			case KRITEM_DUALSNEAKER:
+			case KRITEM_TRIPLESNEAKER:
+				return KITEM_SNEAKER;
+
+			case KRITEM_TRIPLEBANANA:
+			case KRITEM_TENFOLDBANANA:
+				return KITEM_BANANA;
+
+			case KRITEM_TRIPLEORBINAUT:
+			case KRITEM_QUADORBINAUT:
+				return KITEM_ORBINAUT;
+
+			case KRITEM_DUALJAWZ:
+				return KITEM_JAWZ;
+
+			default:
+				I_Error("Bad item cooldown redirect for result %d\n", getitem);
+				break;
+		}
+	}
+
+	return getitem;
+}
+
+UINT8 K_ItemResultToAmount(SINT8 getitem)
+{
+	switch (getitem)
+	{
+		case KRITEM_DUALSNEAKER:
+		case KRITEM_DUALJAWZ:
+			return 2;
+
+		case KRITEM_TRIPLESNEAKER:
+		case KRITEM_TRIPLEBANANA:
+		case KRITEM_TRIPLEORBINAUT:
+			return 3;
+
+		case KRITEM_QUADORBINAUT:
+			return 4;
+
+		case KITEM_BALLHOG: // Not a special result, but has a special amount
+			return 5;
+
+		case KRITEM_TENFOLDBANANA:
+			return 10;
+
+		default:
+			return 1;
+	}
+}
+
+tic_t K_GetItemCooldown(SINT8 itemResult)
+{
+	SINT8 itemType = K_ItemResultToType(itemResult);
+
+	if (itemType < 1 || itemType >= NUMKARTITEMS)
+	{
+		return 0;
+	}
+
+	return itemCooldowns[itemType - 1];
+}
+
+void K_SetItemCooldown(SINT8 itemResult, tic_t time)
+{
+	SINT8 itemType = K_ItemResultToType(itemResult);
+
+	if (itemType < 1 || itemType >= NUMKARTITEMS)
+	{
+		return;
+	}
+
+	itemCooldowns[itemType - 1] = max(itemCooldowns[itemType - 1], time);
+}
+
+void K_RunItemCooldowns(void)
+{
+	size_t i;
+
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+	{
+		if (itemCooldowns[i] > 0)
+		{
+			itemCooldowns[i]--;
+		}
+	}
+}
+
+
 /**	\brief	Item Roulette for Kart
 
 	\param	player		player
@@ -457,61 +561,16 @@ INT32 K_GetShieldFromItem(INT32 item)
 */
 static void K_KartGetItemResult(player_t *player, SINT8 getitem)
 {
-	if (getitem == KITEM_SPB) // Indirect items
+	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK)
 	{
-		indirectitemcooldown = 20*TICRATE;
+		K_SetItemCooldown(getitem, 20*TICRATE);
 	}
 
 	player->botvars.itemdelay = TICRATE;
 	player->botvars.itemconfirm = 0;
 
-	switch (getitem)
-	{
-		// Special roulettes first, then the generic ones are handled by default
-		case KRITEM_DUALSNEAKER: // Sneaker x2
-			player->itemtype = KITEM_SNEAKER;
-			player->itemamount = 2;
-			break;
-		case KRITEM_TRIPLESNEAKER: // Sneaker x3
-			player->itemtype = KITEM_SNEAKER;
-			player->itemamount = 3;
-			break;
-		case KRITEM_TRIPLEBANANA: // Banana x3
-			player->itemtype = KITEM_BANANA;
-			player->itemamount = 3;
-			break;
-		case KRITEM_TENFOLDBANANA: // Banana x10
-			player->itemtype = KITEM_BANANA;
-			player->itemamount = 10;
-			break;
-		case KRITEM_TRIPLEORBINAUT: // Orbinaut x3
-			player->itemtype = KITEM_ORBINAUT;
-			player->itemamount = 3;
-			break;
-		case KRITEM_QUADORBINAUT: // Orbinaut x4
-			player->itemtype = KITEM_ORBINAUT;
-			player->itemamount = 4;
-			break;
-		case KRITEM_DUALJAWZ: // Jawz x2
-			player->itemtype = KITEM_JAWZ;
-			player->itemamount = 2;
-			break;
-		case KITEM_BALLHOG: // Ballhog x5
-			player->itemtype = KITEM_BALLHOG;
-			player->itemamount = 5;
-			break;
-		default:
-			if (getitem <= 0 || getitem >= NUMKARTRESULTS) // Sad (Fallback)
-			{
-				if (getitem != 0)
-					CONS_Printf("ERROR: P_KartGetItemResult - Item roulette gave bad item (%d) :(\n", getitem);
-				player->itemtype = KITEM_SAD;
-			}
-			else
-				player->itemtype = getitem;
-			player->itemamount = 1;
-			break;
-	}
+	player->itemtype = K_ItemResultToType(getitem);
+	player->itemamount = K_ItemResultToAmount(getitem);
 }
 
 fixed_t K_ItemOddsScale(UINT8 playerCount)
@@ -591,7 +650,6 @@ INT32 K_KartGetItemOdds(
 
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
-	boolean indirectItem = false;
 	boolean notNearEnd = false;
 
 	INT32 shieldtype = KSHIELD_NONE;
@@ -600,7 +658,15 @@ INT32 K_KartGetItemOdds(
 	I_Assert(KartItemCVars[NUMKARTRESULTS-2] != NULL); // Make sure this exists
 
 	if (!KartItemCVars[item-1]->value && !modeattacking)
+	{
 		return 0;
+	}
+
+	if (K_GetItemCooldown(item) > 0)
+	{
+		// Cooldown is still running, don't give another.
+		return 0;
+	}
 
 	/*
 	if (bot)
@@ -719,7 +785,6 @@ INT32 K_KartGetItemOdds(
 
 		case KITEM_SPB:
 			cooldownOnStart = true;
-			indirectItem = true;
 			notNearEnd = true;
 
 			if (firstDist < ENDDIST*2 // No SPB when 1st is almost done
@@ -775,12 +840,8 @@ INT32 K_KartGetItemOdds(
 		return newodds;
 	}
 
-	if ((indirectItem == true) && (indirectitemcooldown > 0))
-	{
-		// Too many items that act indirectly in a match can feel kind of bad.
-		newodds = 0;
-	}
-	else if ((cooldownOnStart == true) && (leveltime < (30*TICRATE)+starttime))
+	
+	if ((cooldownOnStart == true) && (leveltime < (30*TICRATE)+starttime))
 	{
 		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
 		newodds = 0;
@@ -946,7 +1007,7 @@ boolean K_ForcedSPB(player_t *player)
 		return false;
 	}
 
-	if (indirectitemcooldown > 0)
+	if (itemCooldowns[KITEM_SPB - 1] > 0)
 	{
 		return false;
 	}
@@ -6436,46 +6497,8 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 			// K_KartGetItemResult requires a player
 			// but item roulette will need rewritten to change this
 
-			switch (i)
-			{
-				// Special roulettes first, then the generic ones are handled by default
-				case KRITEM_DUALSNEAKER: // Sneaker x2
-					newType = KITEM_SNEAKER;
-					newAmount = 2;
-					break;
-				case KRITEM_TRIPLESNEAKER: // Sneaker x3
-					newType = KITEM_SNEAKER;
-					newAmount = 3;
-					break;
-				case KRITEM_TRIPLEBANANA: // Banana x3
-					newType = KITEM_BANANA;
-					newAmount = 3;
-					break;
-				case KRITEM_TENFOLDBANANA: // Banana x10
-					newType = KITEM_BANANA;
-					newAmount = 10;
-					break;
-				case KRITEM_TRIPLEORBINAUT: // Orbinaut x3
-					newType = KITEM_ORBINAUT;
-					newAmount = 3;
-					break;
-				case KRITEM_QUADORBINAUT: // Orbinaut x4
-					newType = KITEM_ORBINAUT;
-					newAmount = 4;
-					break;
-				case KRITEM_DUALJAWZ: // Jawz x2
-					newType = KITEM_JAWZ;
-					newAmount = 2;
-					break;
-				case KITEM_BALLHOG: // Ballhog x5
-					newType = KITEM_BALLHOG;
-					newAmount = 5;
-					break;
-				default:
-					newType = i;
-					newAmount = 1;
-					break;
-			}
+			newType = K_ItemResultToType(i);
+			newAmount = K_ItemResultToAmount(i);
 
 			if (newAmount > 1)
 			{
@@ -10701,9 +10724,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (spbplace == -1 || player->position != spbplace)
 			player->pflags &= ~PF_RINGLOCK; // reset ring lock
 
-		if (player->itemtype == KITEM_SPB)
+		if (player->itemtype == KITEM_SPB
+			|| player->itemtype == KITEM_SHRINK)
 		{
-			indirectitemcooldown = 20*TICRATE;
+			K_SetItemCooldown(player->itemtype, 20*TICRATE);
 		}
 
 		if (player->hyudorotimer > 0)

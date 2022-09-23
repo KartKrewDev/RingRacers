@@ -4607,6 +4607,7 @@ static void K_drawDistributionDebugger(void)
 			0,
 			stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
 		);
+		INT32 amount = 1;
 
 		if (itemodds <= 0)
 			continue;
@@ -4615,27 +4616,9 @@ static void K_drawDistributionDebugger(void)
 		V_DrawThinString(x+11, y+31, V_SNAPTOTOP, va("%d", itemodds));
 
 		// Display amount for multi-items
-		if (i >= NUMKARTITEMS)
+		amount = K_ItemResultToAmount(i);
+		if (amount > 1)
 		{
-			INT32 amount;
-			switch (i)
-			{
-				case KRITEM_TENFOLDBANANA:
-					amount = 10;
-					break;
-				case KRITEM_QUADORBINAUT:
-					amount = 4;
-					break;
-				case KRITEM_DUALJAWZ:
-					amount = 2;
-					break;
-				case KRITEM_DUALSNEAKER:
-					amount = 2;
-					break;
-				default:
-					amount = 3;
-					break;
-			}
 			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
 		}
 

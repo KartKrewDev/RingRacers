@@ -766,7 +766,7 @@ void Obj_SPBThink(mobj_t *spb)
 		return;
 	}
 
-	indirectitemcooldown = 20*TICRATE;
+	K_SetItemCooldown(KITEM_SPB, 20*TICRATE);
 
 	ghost = P_SpawnGhostMobj(spb);
 	ghost->fuse = 3;
