@@ -711,7 +711,7 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else
 	{
-		if (!t2->threshold)
+		if (!t2->threshold || t2->type == MT_DROPTARGET)
 		{
 			if (!t2->momx && !t2->momy)
 			{
