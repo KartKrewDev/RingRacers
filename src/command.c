@@ -1653,7 +1653,6 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			var->value = atoi(var->string);
 	}
 
-finish:
 	if (var->flags & CV_SHOWMODIFONETIME || var->flags & CV_SHOWMODIF)
 	{
 		CONS_Printf(M_GetText("%s set to %s\n"), var->name, var->string);
