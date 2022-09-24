@@ -3273,7 +3273,7 @@ void A_BossScream(mobj_t *actor)
 		return;
 
 	if (locvar1 & 1)
-		fa = (FixedAngle(P_RandomKey(PR_UNDEFINED, 360)*FRACUNIT)>>ANGLETOFINESHIFT) & FINEMASK;
+		fa = (FixedAngle(P_RandomKey(PR_EXPLOSION, 360)*FRACUNIT)>>ANGLETOFINESHIFT) & FINEMASK;
 	else
 	{
 		actor->movecount += 4*16;
@@ -3290,11 +3290,11 @@ void A_BossScream(mobj_t *actor)
 		explodetype = (mobjtype_t)locvar2;
 
 	if (locvar1 & 2)
-		z = actor->z + (P_RandomKey(PR_UNDEFINED, (actor->height - mobjinfo[explodetype].height)>>FRACBITS)<<FRACBITS);
+		z = actor->z + (P_RandomKey(PR_EXPLOSION, (actor->height - mobjinfo[explodetype].height)>>FRACBITS)<<FRACBITS);
 	else if (actor->eflags & MFE_VERTICALFLIP)
-		z = actor->z + actor->height - mobjinfo[explodetype].height - FixedMul((P_RandomByte(PR_UNDEFINED)<<(FRACBITS-2)) - 8*FRACUNIT, actor->scale);
+		z = actor->z + actor->height - mobjinfo[explodetype].height - FixedMul((P_RandomByte(PR_EXPLOSION)<<(FRACBITS-2)) - 8*FRACUNIT, actor->scale);
 	else
-		z = actor->z + FixedMul((P_RandomByte(PR_UNDEFINED)<<(FRACBITS-2)) - 8*FRACUNIT, actor->scale);
+		z = actor->z + FixedMul((P_RandomByte(PR_EXPLOSION)<<(FRACBITS-2)) - 8*FRACUNIT, actor->scale);
 
 	mo = P_SpawnMobj(x, y, z, explodetype);
 	if (actor->eflags & MFE_VERTICALFLIP)
@@ -3811,7 +3811,7 @@ void A_BubbleSpawn(mobj_t *actor)
 			return; // don't make bubble!
 	}
 
-	prandom = P_RandomByte(PR_UNDEFINED);
+	prandom = P_RandomByte(PR_BUBBLE);
 
 	if (leveltime % (3*TICRATE) < 8)
 		bubble = P_SpawnMobj(actor->x, actor->y, actor->z + (actor->height / 2), MT_EXTRALARGEBUBBLE);
@@ -3859,7 +3859,7 @@ void A_FanBubbleSpawn(mobj_t *actor)
 			return; // don't make bubble!
 	}
 
-	prandom = P_RandomByte(PR_UNDEFINED);
+	prandom = P_RandomByte(PR_BUBBLE);
 
 	if ((prandom & 0x7) == 0x7)
 		bubble = P_SpawnMobj(actor->x, actor->y, hz, MT_SMALLBUBBLE);
@@ -3899,7 +3899,7 @@ void A_BubbleRise(mobj_t *actor)
 		// Move around slightly to make it look like it's bending around the water
 		if (!locvar1)
 		{
-			UINT8 prandom = P_RandomByte(PR_UNDEFINED);
+			UINT8 prandom = P_RandomByte(PR_BUBBLE);
 			if (!(prandom & 0x7)) // *****000
 			{
 				P_InstaThrust(actor, prandom & 0x70 ? actor->angle + ANGLE_90 : actor->angle,
@@ -4246,7 +4246,7 @@ void A_SetSolidSteam(mobj_t *actor)
 
 	if (!(actor->flags2 & MF2_AMBUSH))
 	{
-		if (P_RandomChance(PR_UNDEFINED, FRACUNIT/8))
+		if (P_RandomChance(PR_DECORATION, FRACUNIT/8))
 		{
 			if (actor->info->deathsound)
 				S_StartSound(actor, actor->info->deathsound); // Hiss!
@@ -5249,7 +5249,7 @@ void A_RockSpawn(mobj_t *actor)
 	type = MT_ROCKCRUMBLE1 + (sides[line->sidenum[0]].rowoffset >> FRACBITS);
 
 	if (line->flags & ML_NOCLIMB)
-		randomoomph = P_RandomByte(PR_UNDEFINED) * (FRACUNIT/32);
+		randomoomph = P_RandomByte(PR_DECORATION) * (FRACUNIT/32);
 	else
 		randomoomph = 0;
 
@@ -5797,7 +5797,7 @@ void A_MixUp(mobj_t *actor)
 		{
 			if (counter > 255) // fail-safe to avoid endless loop
 				break;
-			prandom = P_RandomByte(PR_UNDEFINED);
+			prandom = P_RandomByte(PR_PLAYERSTARTS);
 			prandom %= numplayers; // I love modular arithmetic, don't you?
 			if (prandom) // Make sure it's not a useless mix
 				break;
@@ -7122,7 +7122,7 @@ void A_SmokeTrailer(mobj_t *actor)
 	P_SetObjectMomZ(th, FRACUNIT, false);
 	th->destscale = actor->scale;
 	P_SetScale(th, actor->scale);
-	th->tics -= P_RandomByte(PR_UNDEFINED) & 3;
+	th->tics -= P_RandomByte(PR_SMOLDERING) & 3;
 	if (th->tics < 1)
 		th->tics = 1;
 }
@@ -7239,7 +7239,7 @@ void A_ChangeAngleRelative(mobj_t *actor)
 	if (angle > amax)
 		angle = amax;*/
 
-	actor->angle += FixedAngle(P_RandomRange(PR_UNDEFINED, amin, amax));
+	actor->angle += FixedAngle(P_RandomRange(PR_RANDOMANIM, amin, amax));
 }
 
 // Function: A_ChangeAngleAbsolute
@@ -7272,7 +7272,7 @@ void A_ChangeAngleAbsolute(mobj_t *actor)
 	if (angle > amax)
 		angle = amax;*/
 
-	actor->angle = FixedAngle(P_RandomRange(PR_UNDEFINED, amin, amax));
+	actor->angle = FixedAngle(P_RandomRange(PR_RANDOMANIM, amin, amax));
 }
 
 // Function: A_RollAngle
@@ -7321,7 +7321,7 @@ void A_ChangeRollAngleRelative(mobj_t *actor)
 		I_Error("A_ChangeRollAngleRelative: var1 is greater than var2");
 #endif
 
-	actor->rollangle += FixedAngle(P_RandomRange(PR_UNDEFINED, amin, amax));
+	actor->rollangle += FixedAngle(P_RandomRange(PR_RANDOMANIM, amin, amax));
 }
 
 // Function: A_ChangeRollAngleAbsolute
@@ -7346,7 +7346,7 @@ void A_ChangeRollAngleAbsolute(mobj_t *actor)
 		I_Error("A_ChangeRollAngleAbsolute: var1 is greater than var2");
 #endif
 
-	actor->rollangle = FixedAngle(P_RandomRange(PR_UNDEFINED, amin, amax));
+	actor->rollangle = FixedAngle(P_RandomRange(PR_RANDOMANIM, amin, amax));
 }
 
 // Function: A_PlaySound
@@ -7536,7 +7536,7 @@ void A_SetRandomTics(mobj_t *actor)
 	if (LUA_CallAction(A_SETRANDOMTICS, actor))
 		return;
 
-	actor->tics = P_RandomRange(PR_UNDEFINED, locvar1, locvar2);
+	actor->tics = P_RandomRange(PR_RANDOMANIM, locvar1, locvar2);
 }
 
 // Function: A_ChangeColorRelative
@@ -7981,7 +7981,7 @@ void A_RandomState(mobj_t *actor)
 	if (LUA_CallAction(A_RANDOMSTATE, actor))
 		return;
 
-	P_SetMobjState(actor, P_RandomChance(PR_UNDEFINED, FRACUNIT/2) ? locvar1 : locvar2);
+	P_SetMobjState(actor, P_RandomChance(PR_RANDOMANIM, FRACUNIT/2) ? locvar1 : locvar2);
 }
 
 // Function: A_RandomStateRange
@@ -7999,7 +7999,7 @@ void A_RandomStateRange(mobj_t *actor)
 	if (LUA_CallAction(A_RANDOMSTATERANGE, actor))
 		return;
 
-	P_SetMobjState(actor, P_RandomRange(PR_UNDEFINED, locvar1, locvar2));
+	P_SetMobjState(actor, P_RandomRange(PR_RANDOMANIM, locvar1, locvar2));
 }
 
 // Function: A_StateRangeByAngle
@@ -8753,7 +8753,7 @@ void A_CheckRandom(mobj_t *actor)
 		chance *= (locvar1 >> 16);
 	chance /= (locvar1 & 0xFFFF);
 
-	if (P_RandomChance(PR_UNDEFINED, chance))
+	if (P_RandomChance(PR_RANDOMANIM, chance))
 		P_SetMobjState(actor, locvar2);
 }
 
@@ -10937,9 +10937,9 @@ void A_FlameParticle(mobj_t *actor)
 	rad = actor->radius>>FRACBITS;
 	hei = actor->height>>FRACBITS;
 	particle = P_SpawnMobjFromMobj(actor,
-		P_RandomRange(PR_UNDEFINED, rad, -rad)<<FRACBITS,
-		P_RandomRange(PR_UNDEFINED, rad, -rad)<<FRACBITS,
-		P_RandomRange(PR_UNDEFINED, hei/2, hei)<<FRACBITS,
+		P_RandomRange(PR_DECORATION, rad, -rad)<<FRACBITS,
+		P_RandomRange(PR_DECORATION, rad, -rad)<<FRACBITS,
+		P_RandomRange(PR_DECORATION, hei/2, hei)<<FRACBITS,
 		type);
 	P_SetObjectMomZ(particle, 2<<FRACBITS, false);
 }
@@ -11073,20 +11073,20 @@ void A_LightBeamReset(mobj_t *actor)
 	if (LUA_CallAction(A_LIGHTBEAMRESET, actor))
 		return;
 
-	actor->destscale = FRACUNIT + P_SignedRandom(PR_UNDEFINED)*FRACUNIT/256;
+	actor->destscale = FRACUNIT + P_SignedRandom(PR_DECORATION)*FRACUNIT/256;
 	P_SetScale(actor, actor->destscale);
 
 	if (!actor->spawnpoint)
 		return; // this can't work properly welp
 
-	actor->momx = -(P_SignedRandom(PR_UNDEFINED)*FINESINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/128;
-	actor->momy = (P_SignedRandom(PR_UNDEFINED)*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/128;
-	actor->momz = (P_SignedRandom(PR_UNDEFINED)*FRACUNIT)/128;
+	actor->momx = -(P_SignedRandom(PR_DECORATION)*FINESINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/128;
+	actor->momy = (P_SignedRandom(PR_DECORATION)*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/128;
+	actor->momz = (P_SignedRandom(PR_DECORATION)*FRACUNIT)/128;
 
 	P_SetOrigin(actor,
-		actor->spawnpoint->x*FRACUNIT - (P_SignedRandom(PR_UNDEFINED)*FINESINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
-		actor->spawnpoint->y*FRACUNIT + (P_SignedRandom(PR_UNDEFINED)*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
-		actor->spawnpoint->z*FRACUNIT + (P_SignedRandom(PR_UNDEFINED)*FRACUNIT)/2);
+		actor->spawnpoint->x*FRACUNIT - (P_SignedRandom(PR_DECORATION)*FINESINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
+		actor->spawnpoint->y*FRACUNIT + (P_SignedRandom(PR_DECORATION)*FINECOSINE(((actor->spawnpoint->angle*ANG1)>>ANGLETOFINESHIFT) & FINEMASK))/2,
+		actor->spawnpoint->z*FRACUNIT + (P_SignedRandom(PR_DECORATION)*FRACUNIT)/2);
 }
 
 // Function: A_MineExplode
@@ -11125,9 +11125,9 @@ void A_MineExplode(mobj_t *actor)
 		P_SpawnMobj(actor->x, actor->y, actor->z, type);
 		for (i = 0; i < 16; i++)
 		{
-			mobj_t *b = P_SpawnMobj(actor->x+P_RandomRange(PR_UNDEFINED, -dist, dist)*FRACUNIT,
-				actor->y+P_RandomRange(PR_UNDEFINED, -dist, dist)*FRACUNIT,
-				actor->z+P_RandomRange(PR_UNDEFINED, ((actor->eflags & MFE_UNDERWATER) ? -dist : 0), dist)*FRACUNIT,
+			mobj_t *b = P_SpawnMobj(actor->x+P_RandomRange(PR_EXPLOSION, -dist, dist)*FRACUNIT,
+				actor->y+P_RandomRange(PR_EXPLOSION, -dist, dist)*FRACUNIT,
+				actor->z+P_RandomRange(PR_EXPLOSION, ((actor->eflags & MFE_UNDERWATER) ? -dist : 0), dist)*FRACUNIT,
 				type);
 			fixed_t dx = b->x - actor->x, dy = b->y - actor->y, dz = b->z - actor->z;
 			fixed_t dm = P_AproxDistance(dz, P_AproxDistance(dy, dx));
@@ -13349,17 +13349,17 @@ void A_JawzExplode(mobj_t *actor)
 	{
 		INT32 speed, speed2;
 
-		truc = P_SpawnMobj(actor->x + P_RandomRange(PR_UNDEFINED, -8, 8)*FRACUNIT, actor->y + P_RandomRange(PR_UNDEFINED, -8, 8)*FRACUNIT,
-			actor->z + P_RandomRange(PR_UNDEFINED, 0, 8)*FRACUNIT, MT_BOOMPARTICLE);
+		truc = P_SpawnMobj(actor->x + P_RandomRange(PR_EXPLOSION, -8, 8)*FRACUNIT, actor->y + P_RandomRange(PR_EXPLOSION, -8, 8)*FRACUNIT,
+			actor->z + P_RandomRange(PR_EXPLOSION, 0, 8)*FRACUNIT, MT_BOOMPARTICLE);
 		truc->scale = actor->scale*2;
 
 		speed = FixedMul(7*FRACUNIT, actor->scale)>>FRACBITS;
-		truc->momx = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
-		truc->momy = P_RandomRange(PR_UNDEFINED, -speed, speed)*FRACUNIT;
+		truc->momx = P_RandomRange(PR_EXPLOSION, -speed, speed)*FRACUNIT;
+		truc->momy = P_RandomRange(PR_EXPLOSION, -speed, speed)*FRACUNIT;
 
 		speed = FixedMul(5*FRACUNIT, actor->scale)>>FRACBITS;
 		speed2 = FixedMul(15*FRACUNIT, actor->scale)>>FRACBITS;
-		truc->momz = P_RandomRange(PR_UNDEFINED, speed, speed2)*FRACUNIT;
+		truc->momz = P_RandomRange(PR_EXPLOSION, speed, speed2)*FRACUNIT;
 		truc->tics = TICRATE*2;
 		truc->color = SKINCOLOR_KETCHUP;
 
@@ -13439,8 +13439,8 @@ void A_LandMineExplode(mobj_t *actor)
 		//K_MatchGenericExtraFlags(expl, actor);
 		P_SetScale(expl, actor->scale*4);
 
-		expl->momx = P_RandomRange(PR_UNDEFINED, -3, 3)*actor->scale/2;
-		expl->momy = P_RandomRange(PR_UNDEFINED, -3, 3)*actor->scale/2;
+		expl->momx = P_RandomRange(PR_EXPLOSION, -3, 3)*actor->scale/2;
+		expl->momy = P_RandomRange(PR_EXPLOSION, -3, 3)*actor->scale/2;
 
 		// 100/45 = 2.22 fu/t
 		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
@@ -13524,11 +13524,11 @@ void A_FZBoomSmoke(mobj_t *actor)
 
 	for (i = 0; i < 8+(4*var1); i++)
 	{
-		mobj_t *smoke = P_SpawnMobj(actor->x + (P_RandomRange(PR_UNDEFINED, -rad, rad)*actor->scale), actor->y + (P_RandomRange(PR_UNDEFINED, -rad, rad)*actor->scale),
-			actor->z + (P_RandomRange(PR_UNDEFINED, 0, 72)*actor->scale), MT_THOK);
+		mobj_t *smoke = P_SpawnMobj(actor->x + (P_RandomRange(PR_SMOLDERING, -rad, rad)*actor->scale), actor->y + (P_RandomRange(PR_SMOLDERING, -rad, rad)*actor->scale),
+			actor->z + (P_RandomRange(PR_SMOLDERING, 0, 72)*actor->scale), MT_THOK);
 
 		P_SetMobjState(smoke, S_FZEROSMOKE1);
-		smoke->tics += P_RandomRange(PR_UNDEFINED, -3, 4);
+		smoke->tics += P_RandomRange(PR_SMOLDERING, -3, 4);
 		smoke->scale = actor->scale*3;
 	}
 	return;
@@ -13548,7 +13548,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 	{
 		fake = P_SpawnMobj(actor->x, actor->y, actor->z, MT_THOK);
 		fake->sprite = SPR_ENM1;
-		fake->frame = P_RandomRange(PR_UNDEFINED, 0, 6);
+		fake->frame = P_RandomRange(PR_DECORATION, 0, 6);
 		P_SetScale(fake, FRACUNIT*3/2);
 		fake->scale = FRACUNIT*3/2;
 		fake->destscale = FRACUNIT*3/2;
@@ -13651,7 +13651,7 @@ void A_MayonakaArrow(mobj_t *actor)
 
 	iswarning = actor->spawnpoint->options & MTF_OBJECTSPECIAL;	// is our object a warning sign?
 	// "animtimer" is replaced by "extravalue1" here.
-	actor->extravalue1 = ((actor->extravalue1) ? (actor->extravalue1+1) : (P_RandomRange(PR_UNDEFINED, 0, (iswarning) ? (TICRATE/2) : TICRATE*3)));
+	actor->extravalue1 = ((actor->extravalue1) ? (actor->extravalue1+1) : (P_RandomRange(PR_DECORATION, 0, (iswarning) ? (TICRATE/2) : TICRATE*3)));
 	flip = ((actor->spawnpoint->options & 1) ? (3) : (0));	// flip adds 3 frames, which is the flipped version of the sign.
 	// special warning behavior:
 	if (iswarning)
@@ -13691,7 +13691,7 @@ void A_MementosTPParticles(mobj_t *actor)
 
 	for (; i<4; i++)
 	{
-		particle = P_SpawnMobj(actor->x + (P_RandomRange(PR_UNDEFINED, -256, 256)<<FRACBITS), actor->y + (P_RandomRange(PR_UNDEFINED, -256, 256)<<FRACBITS), actor->z + (P_RandomRange(PR_UNDEFINED, 48, 256)<<FRACBITS), MT_MEMENTOSPARTICLE);
+		particle = P_SpawnMobj(actor->x + (P_RandomRange(PR_DECORATION, -256, 256)<<FRACBITS), actor->y + (P_RandomRange(PR_DECORATION, -256, 256)<<FRACBITS), actor->z + (P_RandomRange(PR_DECORATION, 48, 256)<<FRACBITS), MT_MEMENTOSPARTICLE);
 		particle->frame = 0;
 		particle->color = ((i%2) ? (SKINCOLOR_RED) : (SKINCOLOR_BLACK));
 		particle->destscale = 1;
@@ -13754,7 +13754,7 @@ void A_ReaperThinker(mobj_t *actor)
 		// Spawn particles as we grow out of the floor, ゴ ゴ ゴ ゴ
 		for (; i<16; i++)
 		{
-			particle = P_SpawnMobj(actor->x + (P_RandomRange(PR_UNDEFINED, -60, 60)<<FRACBITS), actor->y + (P_RandomRange(PR_UNDEFINED, -60, 60)<<FRACBITS), actor->z, MT_THOK);
+			particle = P_SpawnMobj(actor->x + (P_RandomRange(PR_DECORATION, -60, 60)<<FRACBITS), actor->y + (P_RandomRange(PR_DECORATION, -60, 60)<<FRACBITS), actor->z, MT_THOK);
 			particle->momz = 20<<FRACBITS;
 			particle->color = ((i%2 !=0) ? (SKINCOLOR_RED) : (SKINCOLOR_BLACK));
 			particle->frame = 0;
@@ -14030,9 +14030,9 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 
 		mobj_t *puff = P_SpawnMobjFromMobj(
 				target,
-				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
-				P_RandomRange(PR_UNDEFINED, 0, 4 * spacing) * FRACUNIT,
+				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_ITEM_DEBRIS, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_ITEM_DEBRIS, 0, 4 * spacing) * FRACUNIT,
 				MT_SPINDASHDUST
 		);
 

@@ -36,15 +36,31 @@ typedef enum
 	// However each instance of RNG being used for
 	// gameplay should be split up as much as possible.
 
-	PR_ITEM_ROULETTE, // Item results
-	PR_ITEM_RINGS, // Flung ring direction
-	PR_ITEM_SHRINK, // Shrink gun offsets
-	PR_PLAYERSTARTS, // Player starts
-	PR_TERRAIN, // TERRAIN particles
+	PR_EXECUTOR, // Linedef executor
 
 	PR_DECORATION, // Generic decoration
+	PR_TERRAIN, // TERRAIN particles
+	PR_BUBBLE, // Decorative air bubbles
+
+	PR_RANDOMANIM, // FF_ANIMATE|FF_RANDOMANIM
+
+	PR_PLAYERSTARTS, // Player starts
 	PR_VOICES, // Player voice sounds
+
+	PR_RULESCRAMBLE, // Netgame rule scrambing events
+
+	PR_ITEM_ROULETTE, // Item results
+	PR_ITEM_RINGS, // Flung ring/bumper/player (on death)
+	PR_ITEM_SHRINK, // Shrink gun offsets
+	PR_ITEM_BUBBLE, // Item bubbles
+	PR_ITEM_DEBRIS, // Item debris
+	PR_ITEM_BOOST, // Boost
+
 	PR_EXPLOSION, // Explosion VFX
+	PR_SMOLDERING, // Smoldering particles
+	PR_SPARKLE, // Endsign and/or Emerald
+
+	PR_MOVINGTARGET, // Randomised moving targets
 
 	PRNUMCLASS
 } pr_class_t;

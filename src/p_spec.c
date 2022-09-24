@@ -3298,9 +3298,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			INT32 result;
 
 			if (rvalue1 <= rvalue2)
-				result = P_RandomRange(PR_UNDEFINED, rvalue1, rvalue2);
+				result = P_RandomRange(PR_EXECUTOR, rvalue1, rvalue2);
 			else
-				result = P_RandomRange(PR_UNDEFINED, rvalue2, rvalue1);
+				result = P_RandomRange(PR_EXECUTOR, rvalue2, rvalue1);
 
 			P_LinedefExecute((INT16)result, mo, NULL);
 			break;

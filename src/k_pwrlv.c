@@ -515,26 +515,26 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				{
 					case 5:
 						speed = KARTSPEED_HARD;
-						encore = P_RandomChance(PR_UNDEFINED, FRACUNIT>>1);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 4:
-						speed = P_RandomChance(PR_UNDEFINED, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(PR_UNDEFINED, FRACUNIT>>1);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 3:
-						speed = P_RandomChance(PR_UNDEFINED, (3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(PR_UNDEFINED, FRACUNIT>>2);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>2);
 						break;
 					case 2:
 						speed = KARTSPEED_NORMAL;
-						encore = P_RandomChance(PR_UNDEFINED, FRACUNIT>>3);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>3);
 						break;
 					case 1: default:
 						speed = KARTSPEED_NORMAL;
 						encore = false;
 						break;
 					case 0:
-						speed = P_RandomChance(PR_UNDEFINED, (3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
 						encore = false;
 						break;
 				}
