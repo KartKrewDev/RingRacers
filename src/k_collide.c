@@ -852,7 +852,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 	/*
 	if (t2->player && (t2->player->invincibilitytimer > 0
-		|| t2->player->growshrinktimer > 0))
+		|| K_IsBigger(t2, t1) == true))
 		return true;
 	*/
 
@@ -936,8 +936,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Cause stumble on scale difference
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
+	t1Condition = K_IsBigger(t1, t2);
+	t2Condition = K_IsBigger(t2, t1);
 
 	if (t1Condition == true && t2Condition == false)
 	{

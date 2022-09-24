@@ -1409,7 +1409,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 		case MT_FALLINGROCK:
 			if (against->player)
 			{
-				if (against->player->invincibilitytimer || against->player->growshrinktimer > 0)
+				if (against->player->invincibilitytimer || K_IsBigger(against, mobj) == true)
 					weight = 0;
 				else
 					weight = K_PlayerWeight(against, NULL);
@@ -3933,6 +3933,17 @@ void K_RemoveGrowShrink(player_t *player)
 	player->growshrinktimer = 0;
 
 	P_RestoreMusic(player);
+}
+
+boolean K_IsBigger(mobj_t *compare, mobj_t *other)
+{
+	if ((compare == NULL || P_MobjWasRemoved(compare) == true)
+		|| (other == NULL || P_MobjWasRemoved(other) == true))
+	{
+		return false;
+	}
+
+	return (compare->scale > other->scale + (mapobjectscale/2));
 }
 
 static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
