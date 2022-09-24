@@ -768,6 +768,11 @@ void P_Ticker(boolean run)
 		K_TimerInit();
 	}
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
+	}
+
 //	Z_CheckMemCleanup();
 }
 

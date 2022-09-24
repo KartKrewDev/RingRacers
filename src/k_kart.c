@@ -1008,9 +1008,6 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	else if (!(player->itemroulette >= (TICRATE*3)))
 		return;
 
-	if (cmd->buttons & BT_ATTACK)
-		player->pflags |= PF_ATTACKDOWN;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] && !players[i].spectator
@@ -2540,7 +2537,7 @@ void K_KartMoveAnimation(player_t *player)
 
 	if (!lookback)
 	{
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 
 		// Uses turning over steering -- it's important to show player feedback immediately.
 		if (player->cmd.turning < -minturn)
@@ -2564,7 +2561,7 @@ void K_KartMoveAnimation(player_t *player)
 		destGlanceDir = -(2*intsign(player->aizdriftturn));
 		player->glanceDir = destGlanceDir;
 		drift = turndir = 0;
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 	}
 	else if (player->aizdriftturn)
 	{
@@ -2610,14 +2607,14 @@ void K_KartMoveAnimation(player_t *player)
 					gainaxstate = S_GAINAX_MID1;
 			}
 
-			if (destGlanceDir && !(player->pflags & PF_LOOKDOWN))
+			if (destGlanceDir && !(player->pflags & PF_GAINAX))
 			{
 				mobj_t *gainax = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_GAINAX);
 				gainax->movedir = (destGlanceDir < 0) ? (ANGLE_270-ANG10) : (ANGLE_90+ANG10);
 				P_SetTarget(&gainax->target, player->mo);
 				P_SetMobjState(gainax, gainaxstate);
 				gainax->flags2 |= MF2_AMBUSH;
-				player->pflags |= PF_LOOKDOWN;
+				player->pflags |= PF_GAINAX;
 			}
 		}
 		else if (K_GetForwardMove(player) < 0 && destGlanceDir == 0)
@@ -2874,7 +2871,7 @@ void K_KartMoveAnimation(player_t *player)
 	}
 
 	if (!player->glanceDir)
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 
 	// Update lastspeed value -- we use to display slow driving frames instead of fast driving when slowing down.
 	player->lastspeed = player->speed;
@@ -5899,11 +5896,6 @@ void K_DoSneaker(player_t *player, INT32 type)
 		}
 	}
 
-	if (type != 0)
-	{
-		player->pflags |= PF_ATTACKDOWN;
-	}
-
 	player->sneakertimer = sneakertime;
 
 	// set angle for spun out players:
@@ -5915,7 +5907,6 @@ static void K_DoShrink(player_t *user)
 	mobj_t *mobj, *next;
 
 	S_StartSound(user->mo, sfx_kc46); // Sound the BANG!
-	user->pflags |= PF_ATTACKDOWN;
 
 	Obj_CreateShrinkPohbees(user);
 
@@ -9935,7 +9926,7 @@ void K_UnsetItemOut(player_t *player)
 void K_MoveKartPlayer(player_t *player, boolean onground)
 {
 	ticcmd_t *cmd = &player->cmd;
-	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->pflags & PF_ATTACKDOWN));
+	boolean ATTACK_IS_DOWN = ((cmd->buttons & BT_ATTACK) && !(player->oldcmd.buttons & BT_ATTACK));
 	boolean HOLDING_ITEM = (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT));
 	boolean NO_HYUDORO = (player->stealingtimer == 0);
 
@@ -9970,11 +9961,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->pflags &= ~PF_USERINGS;
 	}
 
-	if ((player->pflags & PF_ATTACKDOWN) && !(cmd->buttons & BT_ATTACK))
-		player->pflags &= ~PF_ATTACKDOWN;
-	else if (cmd->buttons & BT_ATTACK)
-		player->pflags |= PF_ATTACKDOWN;
-
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -9982,7 +9968,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
-				if ((player->pflags & PF_ATTACKDOWN) && !player->ringdelay && player->rings > 0)
+				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 					P_SetMobjState(ring, S_FASTRING1);
