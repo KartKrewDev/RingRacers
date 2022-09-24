@@ -428,6 +428,9 @@ typedef struct player_s
 	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
 
+	UINT16 gateBoost;		// Juicebox Manta Ring boosts
+	UINT8 gateSound;		// Sound effect combo
+
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;

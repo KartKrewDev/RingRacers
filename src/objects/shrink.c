@@ -439,6 +439,8 @@ void Obj_PohbeeThinker(mobj_t *pohbee)
 {
 	mobj_t *gun = NULL;
 
+	K_SetItemCooldown(KITEM_SHRINK, 20*TICRATE);
+
 	pohbee->momx = pohbee->momy = pohbee->momz = 0;
 	pohbee->spritexscale = pohbee->spriteyscale = 2*FRACUNIT;
 
@@ -482,6 +484,8 @@ void Obj_PohbeeRemoved(mobj_t *pohbee)
 		P_RemoveMobj(gun);
 		gun = nextGun;
 	}
+
+	P_SetTarget(&pohbee_guns(pohbee), NULL);
 }
 
 void Obj_ShrinkGunRemoved(mobj_t *gun)
@@ -493,6 +497,8 @@ void Obj_ShrinkGunRemoved(mobj_t *gun)
 		P_RemoveMobj(gun_laser(gun));
 	}
 
+	P_SetTarget(&gun_laser(gun), NULL);
+
 	chain = gun_chains(gun);
 	while (chain != NULL && P_MobjWasRemoved(chain) == false)
 	{
@@ -500,6 +506,8 @@ void Obj_ShrinkGunRemoved(mobj_t *gun)
 		P_RemoveMobj(chain);
 		chain = nextChain;
 	}
+
+	P_SetTarget(&gun_chains(gun), NULL);
 }
 
 boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)

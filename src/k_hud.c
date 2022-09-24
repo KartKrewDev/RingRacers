@@ -4445,7 +4445,6 @@ static void K_drawDistributionDebugger(void)
 		kp_jawz[1],
 		kp_mine[1],
 		kp_landmine[1],
-		kp_droptarget[1],
 		kp_ballhog[1],
 		kp_selfpropelledbomb[1],
 		kp_grow[1],
@@ -4457,6 +4456,7 @@ static void K_drawDistributionDebugger(void)
 		kp_pogospring[1],
 		kp_superring[1],
 		kp_kitchensink[1],
+		kp_droptarget[1],
 
 		kp_sneaker[1],
 		kp_sneaker[1],
@@ -4471,10 +4471,16 @@ static void K_drawDistributionDebugger(void)
 	UINT32 pdis = 0;
 	INT32 i;
 	INT32 x = -9, y = -9;
-	boolean spbrush = false;
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
+
+	if (K_ForcedSPB(stplyr) == true)
+	{
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[KITEM_SPB]);
+		V_DrawThinString(x+11, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, "EX");
+		return;
+	}
 
 	// The only code duplication from the Kart, just to avoid the actual item function from calculating pingame twice
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4498,14 +4504,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	if (spbplace != -1 && stplyr->position == spbplace+1)
-	{
-		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
-		pdis = (3 * pdis) / 2;
-		spbrush = true;
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
+	pdis = K_ScaleItemDistance(pdis, pingame);
 
 	if (stplyr->bot && stplyr->botvars.rival)
 	{
@@ -4513,7 +4512,7 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
+	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
@@ -4521,38 +4520,21 @@ static void K_drawDistributionDebugger(void)
 			useodds, i,
 			stplyr->distancetofinish,
 			0,
-			spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
+			stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
 		);
+		INT32 amount = 1;
 
 		if (itemodds <= 0)
 			continue;
 
-		V_DrawScaledPatch(x, y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, items[i]);
-		V_DrawThinString(x+11, y+31, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("%d", itemodds));
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[i]);
+		V_DrawThinString(x+11, y+31, V_SNAPTOTOP, va("%d", itemodds));
 
 		// Display amount for multi-items
-		if (i >= NUMKARTITEMS)
+		amount = K_ItemResultToAmount(i);
+		if (amount > 1)
 		{
-			INT32 amount;
-			switch (i)
-			{
-				case KRITEM_TENFOLDBANANA:
-					amount = 10;
-					break;
-				case KRITEM_QUADORBINAUT:
-					amount = 4;
-					break;
-				case KRITEM_DUALJAWZ:
-					amount = 2;
-					break;
-				case KRITEM_DUALSNEAKER:
-					amount = 2;
-					break;
-				default:
-					amount = 3;
-					break;
-			}
-			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("x%d", amount));
+			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
 		}
 
 		x += 32;
@@ -4563,7 +4545,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	V_DrawString(0, 0, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("USEODDS %d", useodds));
+	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
 }
 
 static void K_drawCheckpointDebugger(void)
