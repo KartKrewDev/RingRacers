@@ -1594,21 +1594,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (P_MobjWasRemoved(mo))
 			return;
 
-		//{ SRB2kart - Jawz
-		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
-		{
-			if (mo->health == 1)
-			{
-				// This Item Damage
-				S_StartSound(mo, mo->info->deathsound);
-				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-
-				P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-				P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-			}
-		}
-		//}
-		else if (mo->flags & MF_MISSILE)
+		if (mo->flags & MF_MISSILE)
 		{
 			// explode a missile
 			if (P_CheckSkyHit(mo))
@@ -1745,23 +1731,32 @@ void P_XYMovement(mobj_t *mo)
 						fx->scale = mo->scale;
 					}
 
-					if (mo->type == MT_ORBINAUT) // Orbinaut speed decreasing
+					switch (mo->type)
 					{
-						if (mo->health > 1)
-						{
-							S_StartSound(mo, mo->info->attacksound);
-							mo->health--;
-							mo->threshold = 0;
-						}
-						else if (mo->health == 1)
-						{
-							// This Item Damage
-							S_StartSound(mo, mo->info->deathsound);
-							P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+						case MT_ORBINAUT: // Orbinaut speed decreasing
+							if (mo->health > 1)
+							{
+								S_StartSound(mo, mo->info->attacksound);
+								mo->health--;
+								mo->threshold = 0;
+							}
+							/*FALLTHRU*/
 
-							P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-							P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-						}
+						case MT_JAWZ:
+						case MT_JAWZ_DUD:
+							if (mo->health == 1)
+							{
+								// This Item Damage
+								S_StartSound(mo, mo->info->deathsound);
+								P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+
+								P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+								P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
+							}
+							break;
+
+						default:
+							break;
 					}
 
 					// Bubble bounce
