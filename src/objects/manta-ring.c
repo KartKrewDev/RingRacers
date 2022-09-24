@@ -138,6 +138,9 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 			other->player->gateSound = 0;
 		}
 
+		K_SpawnDriftBoostExplosion(other->player, 3);
+		K_SpawnDriftElectricSparks(other->player, SKINCOLOR_CRIMSON, true);
+
 		for (i = 0; i < 5; i++)
 		{
 			S_StopSoundByID(other, sfx_gate01 + i);

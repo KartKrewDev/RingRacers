@@ -125,7 +125,7 @@ INT32 K_GetKartDriftSparkValue(player_t *player);
 INT32 K_StairJankFlip(INT32 value);
 INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
-void K_SpawnDriftElectricSparks(player_t *player);
+void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave);
 void K_KartUpdatePosition(player_t *player);
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount);
 void K_DropItems(player_t *player);

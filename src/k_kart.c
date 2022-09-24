@@ -4931,9 +4931,10 @@ static void K_SpawnDriftElectricity(player_t *player)
 	}
 }
 
-void K_SpawnDriftElectricSparks(player_t *player)
+void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 {
 	SINT8 hdir, vdir, i;
+	int shockscale = shockwave ? 2 : 1;
 
 	mobj_t *mo = player->mo;
 	angle_t momangle = K_MomentumAngle(mo) + ANGLE_180;
@@ -4943,12 +4944,7 @@ void K_SpawnDriftElectricSparks(player_t *player)
 	fixed_t z = FixedDiv(mo->height, 2 * mo->scale); // P_SpawnMobjFromMobj will rescale
 
 	fixed_t sparkspeed = mobjinfo[MT_DRIFTELECTRICSPARK].speed;
-	fixed_t sparkradius = 2 * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
-	UINT16 color = K_DriftSparkColor(player, player->driftcharge);
-
-	// if the sparks are spawned from first blood rather than drift boost, color will be SKINCOLOR_NONE. ew!
-	if (color == SKINCOLOR_NONE)
-		color = SKINCOLOR_SILVER;
+	fixed_t sparkradius = 2 * shockscale * mobjinfo[MT_DRIFTELECTRICSPARK].radius;
 
 	for (hdir = -1; hdir <= 1; hdir += 2)
 	{
@@ -4971,6 +4967,12 @@ void K_SpawnDriftElectricSparks(player_t *player)
 				spark->momx += mo->momx; // copy player speed
 				spark->momy += mo->momy;
 				spark->momz += P_GetMobjZMovement(mo);
+				spark->destscale = shockscale * spark->scale;
+				P_SetScale(spark, shockscale * spark->scale);
+				spark->radius = shockscale * spark->radius;
+
+				if (shockwave)
+					spark->frame |= FF_ADD;
 
 				sparkangle += ANGLE_90;
 			}
@@ -9097,7 +9099,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->strongdriftboost = 85;
 
 				K_SpawnDriftBoostExplosion(player, 3);
-				K_SpawnDriftElectricSparks(player);
+				K_SpawnDriftElectricSparks(player, K_DriftSparkColor(player, player->driftcharge), false);
 			}
 			else if (player->driftcharge >= dsfour)
 			{
@@ -9111,7 +9113,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->strongdriftboost = 125;
 
 				K_SpawnDriftBoostExplosion(player, 4);
-				K_SpawnDriftElectricSparks(player);
+				K_SpawnDriftElectricSparks(player, K_DriftSparkColor(player, player->driftcharge), false);
 			}
 		}
 

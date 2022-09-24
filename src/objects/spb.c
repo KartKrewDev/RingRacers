@@ -24,7 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 
-#define SPB_SEEKTEST
+// #define SPB_SEEKTEST
 
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
