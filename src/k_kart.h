@@ -82,6 +82,7 @@ void K_DoInstashield(player_t *player);
 void K_DoPowerClash(player_t *t1, player_t *t2);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_RemoveGrowShrink(player_t *player);
+boolean K_IsBigger(mobj_t *compare, mobj_t *other);
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type);
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_TumbleInterrupt(player_t *player);
