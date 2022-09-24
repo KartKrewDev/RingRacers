@@ -4005,7 +4005,7 @@ angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
 	return slope;
 }
 
-static void K_StumblePlayer(player_t *player)
+void K_StumblePlayer(player_t *player)
 {
 	P_ResetPlayer(player);
 

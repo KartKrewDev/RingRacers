@@ -862,23 +862,46 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
-	const boolean flameT1 = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
-	const boolean flameT2 = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
-
 	boolean t1Condition = false;
 	boolean t2Condition = false;
 	boolean stungT1 = false;
 	boolean stungT2 = false;
 
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8)) || (t1->player->invincibilitytimer > 0);
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8)) || (t2->player->invincibilitytimer > 0);
+	// Clash instead of damage if both parties have any of these conditions
+	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8))
+		|| (t1->player->invincibilitytimer > 0)
+		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
 
-	if ((t1Condition == true || flameT1 == true) && (t2Condition == true || flameT2 == true))
+	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8))
+		|| (t2->player->invincibilitytimer > 0)
+		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
+
+	if (t1Condition == true && t2Condition == true)
 	{
 		K_DoPowerClash(t1->player, t2->player);
 		return false;
 	}
-	else if (t1Condition == true && t2Condition == false)
+
+	// Cause stumble on scale difference
+	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
+	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		K_StumblePlayer(t2->player);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		K_StumblePlayer(t1->player);
+		return true;
+	}
+
+	// Cause tumble on invincibility
+	t1Condition = (t1->player->invincibilitytimer > 0);
+	t2Condition = (t2->player->invincibilitytimer > 0);
+
+	if (t1Condition == true && t2Condition == false)
 	{
 		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
 		return true;
@@ -890,8 +913,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Flame Shield dash damage
-	t1Condition = flameT1;
-	t2Condition = flameT2;
+	t1Condition = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+	t2Condition = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
 
 	if (t1Condition == true && t2Condition == false)
 	{

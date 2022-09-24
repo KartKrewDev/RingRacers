@@ -86,6 +86,7 @@ void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 typ
 void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_TumbleInterrupt(player_t *player);
 angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll);
+void K_StumblePlayer(player_t *player);
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir);
 void K_InitStumbleIndicator(player_t *player);
 void K_UpdateStumbleIndicator(player_t *player);
