@@ -317,7 +317,7 @@ SINT8 pickedvote; // What vote the host rolls
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
-tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
+tic_t itemCooldowns[NUMKARTITEMS - 1]; // Cooldowns to prevent item spawning
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
@@ -2409,11 +2409,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	//p->follower = NULL;	// respawn a new one with you, it looks better.
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
 
-
-	// Don't do anything immediately
-	p->pflags |= PF_BRAKEDOWN;
-	p->pflags |= PF_ATTACKDOWN;
-	p->pflags |= PF_ACCELDOWN;
 
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation

@@ -3366,34 +3366,14 @@ void M_DrawItemToggles(void)
 			cv = KartItemCVars[currentMenu->menuitems[thisitem].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
-			switch (currentMenu->menuitems[thisitem].mvar1)
-			{
-				case KRITEM_DUALSNEAKER:
-				case KRITEM_DUALJAWZ:
-					drawnum = 2;
-					break;
-				case KRITEM_TRIPLESNEAKER:
-				case KRITEM_TRIPLEBANANA:
-				case KRITEM_TRIPLEORBINAUT:
-					drawnum = 3;
-					break;
-				case KRITEM_QUADORBINAUT:
-					drawnum = 4;
-					break;
-				case KRITEM_TENFOLDBANANA:
-					drawnum = 10;
-					break;
-				default:
-					drawnum = 0;
-					break;
-			}
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
 
 			if (cv->value)
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
 			else
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
 
-			if (drawnum != 0)
+			if (drawnum > 1)
 			{
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
 				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
@@ -3433,30 +3413,14 @@ void M_DrawItemToggles(void)
 			cv = KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
-			switch (currentMenu->menuitems[itemOn].mvar1)
-			{
-				case KRITEM_DUALSNEAKER:
-				case KRITEM_DUALJAWZ:
-					drawnum = 2;
-					break;
-				case KRITEM_TRIPLESNEAKER:
-				case KRITEM_TRIPLEBANANA:
-					drawnum = 3;
-					break;
-				case KRITEM_TENFOLDBANANA:
-					drawnum = 10;
-					break;
-				default:
-					drawnum = 0;
-					break;
-			}
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);
 
 			if (cv->value)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
 			else
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 
-			if (drawnum != 0)
+			if (drawnum > 1)
 			{
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
