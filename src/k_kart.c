@@ -3943,7 +3943,7 @@ boolean K_IsBigger(mobj_t *compare, mobj_t *other)
 		return false;
 	}
 
-	return (compare->scale > other->scale + (mapobjectscale/2));
+	return (compare->scale > other->scale + (mapobjectscale / 4));
 }
 
 static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
