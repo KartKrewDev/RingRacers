@@ -13209,7 +13209,6 @@ void A_ItemPop(mobj_t *actor)
 
 void A_JawzChase(mobj_t *actor)
 {
-	const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 	player_t *player;
 	fixed_t thrustamount = 0;
 	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
@@ -13294,30 +13293,29 @@ void A_JawzChase(mobj_t *actor)
 			P_SetTarget(&actor->tracer, NULL);
 	}
 
-	if (!P_IsObjectOnGround(actor))
-	{
-		// No friction in the air
-		frictionsafety = FRACUNIT;
-	}
-
-	if (currentspeed >= topspeed)
-	{
-		// Thrust as if you were at top speed, slow down naturally
-		thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
-	}
-	else
-	{
-		const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-		// Thrust to immediately get to top speed
-		thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
-	}
-
 	if (!actor->tracer)
 	{
 		actor->angle = K_MomentumAngle(actor);
 	}
 
-	P_Thrust(actor, actor->angle, thrustamount);
+	if (P_IsObjectOnGround(actor))
+	{
+		const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
+
+		if (currentspeed >= topspeed)
+		{
+			// Thrust as if you were at top speed, slow down naturally
+			thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
+		}
+		else
+		{
+			const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+			// Thrust to immediately get to top speed
+			thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
+		}
+
+		P_Thrust(actor, actor->angle, thrustamount);
+	}
 
 	if ((actor->tracer != NULL) && (actor->tracer->health > 0))
 		return;

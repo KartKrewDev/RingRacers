@@ -1594,21 +1594,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (P_MobjWasRemoved(mo))
 			return;
 
-		//{ SRB2kart - Jawz
-		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
-		{
-			if (mo->health == 1)
-			{
-				// This Item Damage
-				S_StartSound(mo, mo->info->deathsound);
-				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-
-				P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-				P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-			}
-		}
-		//}
-		else if (mo->flags & MF_MISSILE)
+		if (mo->flags & MF_MISSILE)
 		{
 			// explode a missile
 			if (P_CheckSkyHit(mo))
@@ -1671,7 +1657,7 @@ void P_XYMovement(mobj_t *mo)
 		{
 			boolean walltransferred = false;
 
-			if (player || mo->flags & MF_SLIDEME)
+			//if (player || mo->flags & MF_SLIDEME)
 			{ // try to slide along it
 				// Wall transfer part 1.
 				pslope_t *transferslope = NULL;
@@ -1745,23 +1731,32 @@ void P_XYMovement(mobj_t *mo)
 						fx->scale = mo->scale;
 					}
 
-					if (mo->type == MT_ORBINAUT) // Orbinaut speed decreasing
+					switch (mo->type)
 					{
-						if (mo->health > 1)
-						{
-							S_StartSound(mo, mo->info->attacksound);
-							mo->health--;
-							mo->threshold = 0;
-						}
-						else if (mo->health == 1)
-						{
-							// This Item Damage
-							S_StartSound(mo, mo->info->deathsound);
-							P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+						case MT_ORBINAUT: // Orbinaut speed decreasing
+							if (mo->health > 1)
+							{
+								S_StartSound(mo, mo->info->attacksound);
+								mo->health--;
+								mo->threshold = 0;
+							}
+							/*FALLTHRU*/
 
-							P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-							P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-						}
+						case MT_JAWZ:
+						case MT_JAWZ_DUD:
+							if (mo->health == 1)
+							{
+								// This Item Damage
+								S_StartSound(mo, mo->info->deathsound);
+								P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+
+								P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+								P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
+							}
+							break;
+
+						default:
+							break;
 					}
 
 					// Bubble bounce
@@ -6739,40 +6734,45 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else
 		{
-			fixed_t finalspeed = mobj->movefactor;
-			const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-			fixed_t thrustamount = 0;
-			fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 			ghost->colorized = true; // already has color!
 
-			if (!grounded)
-			{
-				// No friction in the air
-				frictionsafety = FRACUNIT;
-			}
-
 			mobj->angle = K_MomentumAngle(mobj);
-			if (mobj->health <= 5)
-			{
-				INT32 i;
-				for (i = 5; i >= mobj->health; i--)
-					finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
-			}
 
-			if (currentspeed >= finalspeed)
+			if (P_IsObjectOnGround(mobj))
 			{
-				// Thrust as if you were at top speed, slow down naturally
-				thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
-			}
-			else
-			{
-				const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-				// Thrust to immediately get to top speed
-				thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
-			}
+				fixed_t finalspeed = mobj->movefactor;
+				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
+				fixed_t thrustamount = 0;
+				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 
-			P_Thrust(mobj, mobj->angle, thrustamount);
+				if (!grounded)
+				{
+					// No friction in the air
+					frictionsafety = FRACUNIT;
+				}
+
+				if (mobj->health <= 5)
+				{
+					INT32 i;
+					for (i = 5; i >= mobj->health; i--)
+						finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
+				}
+
+				if (currentspeed >= finalspeed)
+				{
+					// Thrust as if you were at top speed, slow down naturally
+					thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
+				}
+				else
+				{
+					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+					// Thrust to immediately get to top speed
+					thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
+				}
+
+				P_Thrust(mobj, mobj->angle, thrustamount);
+			}
 
 			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
 				K_DoPogoSpring(mobj, 0, 1);
