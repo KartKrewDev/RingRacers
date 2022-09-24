@@ -192,6 +192,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->mo, META_MOBJ);
 	else if (fastcmp(field,"cmd"))
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
+	else if (fastcmp(field,"oldcmd"))
+		LUA_PushUserdata(L, &plr->oldcmd, META_TICCMD);
 	else if (fastcmp(field,"respawn"))
 		LUA_PushUserdata(L, &plr->respawn, META_RESPAWN);
 	else if (fastcmp(field,"playerstate"))
@@ -529,6 +531,8 @@ static int player_set(lua_State *L)
 		(newmo->player = plr)->mo = newmo; // set player pointer for new mobj, and set new mobj as the player's mobj
 	}
 	else if (fastcmp(field,"cmd"))
+		return NOSET;
+	else if (fastcmp(field,"oldcmd"))
 		return NOSET;
 	else if (fastcmp(field,"respawn"))
 		return NOSET;

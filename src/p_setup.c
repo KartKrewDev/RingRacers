@@ -4079,6 +4079,9 @@ static void P_InitGametype(void)
 
 		G_RecordDemo(buf);
 	}
+
+	// Started a game? Move on to the next jam when you go back to the title screen
+	CV_SetValue(&cv_menujam_update, 1);
 }
 
 /** Loads a level from a lump or external wad.
