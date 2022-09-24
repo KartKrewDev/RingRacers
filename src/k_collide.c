@@ -897,21 +897,6 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return true;
 	}
 
-	// Cause stumble on scale difference
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
-
-	if (t1Condition == true && t2Condition == false)
-	{
-		K_StumblePlayer(t2->player);
-		return true;
-	}
-	else if (t1Condition == false && t2Condition == true)
-	{
-		K_StumblePlayer(t1->player);
-		return true;
-	}
-
 	// Flame Shield dash damage
 	t1Condition = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
 	t2Condition = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
@@ -948,6 +933,21 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
+	}
+
+	// Cause stumble on scale difference
+	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8));
+	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8));
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		K_StumblePlayer(t2->player);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		K_StumblePlayer(t1->player);
+		return true;
 	}
 
 	// Ring sting, this is a bit more unique
