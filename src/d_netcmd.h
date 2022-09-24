@@ -23,6 +23,19 @@ extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skin[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_follower[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS];
+
+// current profile loaded.
+// Used to know how to make the options menu behave among other things.
+extern consvar_t cv_currprofile;
+
+// This is used to save the last profile you used on the title screen.
+// that way you can mash n all...
+extern consvar_t cv_ttlprofilen;
+
+// CVar that allows starting as many splitscreens as you want with one device
+// Intended for use with testing
+extern consvar_t cv_splitdevice;
 
 // preferred number of players
 extern consvar_t cv_splitplayers;
@@ -56,7 +69,7 @@ extern consvar_t cv_runscripts;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_ingamecap, cv_respawntime;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
 extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
@@ -70,13 +83,13 @@ extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
 
 extern consvar_t cv_kartminimap;
 extern consvar_t cv_kartcheck;
-extern consvar_t cv_kartinvinsfx;
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;
 extern consvar_t cv_kartfrantic;
 extern consvar_t cv_kartcomeback;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
+extern consvar_t cv_kartgametypepreference;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
 extern consvar_t cv_kartbot;
@@ -85,7 +98,7 @@ extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
@@ -104,6 +117,7 @@ extern consvar_t cv_maxping;
 extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_pingmeasurement;
 extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
@@ -113,6 +127,10 @@ extern consvar_t cv_sleep;
 extern consvar_t cv_perfstats;
 
 extern consvar_t cv_director;
+
+extern consvar_t cv_schedule;
+
+extern consvar_t cv_livestudioaudience;
 
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
@@ -157,6 +175,10 @@ typedef enum
 	XD_GIVEITEM,    // 32
 	XD_ADDBOT,      // 33
 	XD_DISCORD,     // 34
+	XD_PLAYSOUND,   // 35
+	XD_SCHEDULETASK, // 36
+	XD_SCHEDULECLEAR, // 37
+	XD_AUTOMATE,    // 38
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -224,6 +246,37 @@ void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
+
+typedef struct
+{
+	UINT16 basetime;
+	UINT16 timer;
+	char *command;
+} scheduleTask_t;
+
+extern scheduleTask_t **schedule;
+extern size_t schedule_size;
+extern size_t schedule_len;
+
+void Schedule_Run(void);
+void Schedule_Insert(scheduleTask_t *addTask);
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command);
+void Schedule_Clear(void);
+
+typedef enum
+{
+	AEV_ROUNDSTART,
+	AEV_INTERMISSIONSTART,
+	AEV_VOTESTART,
+	AEV__MAX
+} automateEvents_t;
+
+void Automate_Run(automateEvents_t type);
+void Automate_Set(automateEvents_t type, const char *command);
+void Automate_Clear(void);
+
+extern UINT32 livestudioaudience_timer;
+void LiveStudioAudience(void);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

@@ -75,7 +75,7 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 	{
 		brightmapStorage_t *bms = &brightmapStorage[i];
 
-		if (checkHash == bms->textureHash)
+		if (checkHash == bms->textureHash && !strncmp(checkName, bms->textureName, 8))
 		{
 			// Name matches.
 			return bms;
@@ -119,8 +119,8 @@ static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
 				if (bms == NULL)
 				{
 					bms = K_NewBrightmap();
-					strncpy(bms->textureName, tkn, 9);
-					bms->textureHash = quickncasehash(bms->textureName, 8);
+					strncpy(bms->textureName, tkn, 8);
+					bms->textureHash = quickncasehash(tkn, 8);
 				}
 
 				Z_Free(tkn);
@@ -129,8 +129,8 @@ static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
 
 				if (tkn && pos < size)
 				{
-					strncpy(bms->brightmapName, tkn, 9);
-					bms->brightmapHash = quickncasehash(bms->brightmapName, 8);
+					strncpy(bms->brightmapName, tkn, 8);
+					bms->brightmapHash = quickncasehash(tkn, 8);
 				}
 				else
 				{

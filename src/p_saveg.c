@@ -64,6 +64,7 @@ typedef enum
 	SKYBOXVIEW = 0x08,
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
+	STUMBLE = 0x40,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -202,6 +203,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].hoverhyudoro)
 			flags |= HOVERHYUDORO;
 
+		if (players[i].stumbleIndicator)
+			flags |= STUMBLE;
+
 		WRITEUINT16(save_p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -218,6 +222,9 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & HOVERHYUDORO)
 			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
+
+		if (flags & STUMBLE)
+			WRITEUINT32(save_p, players[i].stumbleIndicator->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -261,6 +268,9 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].driftcharge);
 		WRITEUINT8(save_p, players[i].driftboost);
 		WRITEUINT8(save_p, players[i].strongdriftboost);
+
+		WRITEUINT16(save_p, players[i].gateBoost);
+		WRITEUINT8(save_p, players[i].gateSound);
 
 		WRITESINT8(save_p, players[i].aizdriftstrat);
 		WRITEINT32(save_p, players[i].aizdrifttilt);
@@ -320,6 +330,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].flamemeter);
 		WRITEUINT8(save_p, players[i].flamelength);
 
+		WRITEUINT16(save_p, players[i].ballhogcharge);
+
 		WRITEUINT16(save_p, players[i].hyudorotimer);
 		WRITESINT8(save_p, players[i].stealingtimer);
 
@@ -366,6 +378,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].kickstartaccel);
 
 		WRITEUINT8(save_p, players[i].stairjank);
+
+		WRITEUINT8(save_p, players[i].shrinkLaserDelay);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -505,6 +519,9 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & HOVERHYUDORO)
 			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
 
+		if (flags & STUMBLE)
+			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save_p);
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -548,6 +565,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].driftcharge = READFIXED(save_p);
 		players[i].driftboost = READUINT8(save_p);
 		players[i].strongdriftboost = READUINT8(save_p);
+
+		players[i].gateBoost = READUINT16(save_p);
+		players[i].gateSound = READUINT8(save_p);
 
 		players[i].aizdriftstrat = READSINT8(save_p);
 		players[i].aizdrifttilt = READINT32(save_p);
@@ -607,6 +627,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].flamemeter = READUINT16(save_p);
 		players[i].flamelength = READUINT8(save_p);
 
+		players[i].ballhogcharge = READUINT16(save_p);
+
 		players[i].hyudorotimer = READUINT16(save_p);
 		players[i].stealingtimer = READSINT8(save_p);
 
@@ -653,6 +675,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kickstartaccel = READUINT8(save_p);
 
 		players[i].stairjank = READUINT8(save_p);
+
+		players[i].shrinkLaserDelay = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -4193,21 +4217,21 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hprev, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->itnext)
 		{
 			temp = (UINT32)(size_t)mobj->itnext;
 			mobj->itnext = NULL;
-			if (!(mobj->itnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->itnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
 		if (mobj->terrain)
@@ -4280,6 +4304,13 @@ static void P_RelinkPointers(void)
 				mobj->player->hoverhyudoro = NULL;
 				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
+			}
+			if (mobj->player->stumbleIndicator)
+			{
+				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
+				mobj->player->stumbleIndicator = NULL;
+				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
 			}
 		}
 	}
@@ -4423,7 +4454,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	INT32 i;
+	size_t i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4533,7 +4564,8 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
-	WRITEUINT32(save_p, indirectitemcooldown);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		WRITEUINT32(save_p, itemCooldowns[i]);
 	WRITEUINT32(save_p, mapreset);
 
 	WRITEUINT8(save_p, spectateGriefed);
@@ -4552,11 +4584,25 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, 0x2f);
 	else
 		WRITEUINT8(save_p, 0x2e);
+
+	WRITEUINT32(save_p, livestudioaudience_timer);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	WRITEUINT32(save_p, schedule_len);
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		WRITEINT16(save_p, task->basetime);
+		WRITEINT16(save_p, task->timer);
+		WRITESTRING(save_p, task->command);
+	}
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	INT32 i;
+	size_t i;
+	size_t numTasks;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4682,7 +4728,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
-	indirectitemcooldown = READUINT32(save_p);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	spectateGriefed = READUINT8(save_p);
@@ -4699,6 +4746,26 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
 		paused = true;
+
+	livestudioaudience_timer = READUINT32(save_p);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	Schedule_Clear();
+
+	numTasks = READUINT32(save_p);
+	for (i = 0; i < numTasks; i++)
+	{
+		INT16 basetime;
+		INT16 timer;
+		char command[MAXTEXTCMD];
+
+		basetime = READINT16(save_p);
+		timer = READINT16(save_p);
+		READSTRING(save_p, command);
+
+		Schedule_Add(basetime, timer, command);
+	}
 
 	return true;
 }

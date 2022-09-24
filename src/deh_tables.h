@@ -69,7 +69,6 @@ extern const char *COLOR_ENUMS[];
 extern const char *const POWERS_LIST[];
 extern const char *const KARTHUD_LIST[];
 extern const char *const HUDITEMS_LIST[];
-extern const char *const MENUTYPES_LIST[];
 
 extern struct int_const_s const INT_CONST[];
 

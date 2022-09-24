@@ -17,7 +17,7 @@
 #include "../z_zone.h"
 #include "../console.h"
 #include "../v_video.h"
-#include "../m_menu.h"
+#include "../k_menu.h"
 #include "../i_system.h"
 #include "../m_argv.h"
 #include "../i_video.h"

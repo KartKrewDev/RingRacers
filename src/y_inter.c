@@ -26,7 +26,7 @@
 #include "w_wad.h"
 #include "y_inter.h"
 #include "z_zone.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "i_system.h"
 #include "p_setup.h"
@@ -41,11 +41,10 @@
 #include "lua_hudlib_drawlist.h"
 
 #include "m_random.h" // M_RandomKey
-#include "g_input.h" // PlayerInputDown
+#include "g_input.h" // G_PlayerInputDown
 #include "k_battle.h"
 #include "k_boss.h"
 #include "k_pwrlv.h"
-#include "console.h" // cons_menuhighlight
 #include "k_grandprix.h"
 
 #ifdef HWRENDER
@@ -88,24 +87,10 @@ static patch_t *bgpatch = NULL;     // INTERSCR
 static patch_t *widebgpatch = NULL;
 static patch_t *bgtile = NULL;      // SPECTILE/SRB2BACK
 static patch_t *interpic = NULL;    // custom picture defined in map header
-static boolean usetile;
 static INT32 timer;
 
-typedef struct
-{
-	INT32 source_width, source_height;
-	INT32 source_bpp, source_rowbytes;
-	UINT8 *source_picture;
-	INT32 target_width, target_height;
-	INT32 target_bpp, target_rowbytes;
-	UINT8 *target_picture;
-} y_buffer_t;
-
-boolean usebuffer = false;
-static boolean useinterpic;
-
+static INT32 timer;
 static INT32 powertype = PWRLV_DISABLED;
-static y_buffer_t *y_buffer;
 
 static INT32 intertic;
 static INT32 endtic = -1;
@@ -117,8 +102,6 @@ intertype_t intermissiontypes[NUMGAMETYPES];
 static huddrawlist_h luahuddrawlist_intermission;
 
 static void Y_FollowIntermission(void);
-
-static void Y_RescaleScreenBuffer(void);
 static void Y_UnloadData(void);
 
 // SRB2Kart: voting stuff
@@ -345,91 +328,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 }
 
 //
-// Y_ConsiderScreenBuffer
-//
-// Can we copy the current screen to a buffer?
-//
-void Y_ConsiderScreenBuffer(void)
-{
-	if (gameaction != ga_completed)
-		return;
-
-	if (y_buffer == NULL)
-		y_buffer = Z_Calloc(sizeof(y_buffer_t), PU_STATIC, NULL);
-	else
-		return;
-
-	y_buffer->source_width = vid.width;
-	y_buffer->source_height = vid.height;
-	y_buffer->source_bpp = vid.bpp;
-	y_buffer->source_rowbytes = vid.rowbytes;
-	y_buffer->source_picture = ZZ_Alloc(y_buffer->source_width*vid.bpp * y_buffer->source_height);
-	VID_BlitLinearScreen(screens[1], y_buffer->source_picture, vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-
-	// Make the rescaled screen buffer
-	Y_RescaleScreenBuffer();
-}
-
-//
-// Y_RescaleScreenBuffer
-//
-// Write the rescaled source picture, to the destination picture that has the current screen's resolutions.
-//
-static void Y_RescaleScreenBuffer(void)
-{
-	INT32 sx, sy; // source
-	INT32 dx, dy; // dest
-	fixed_t scalefac, yscalefac;
-	fixed_t rowfrac, colfrac;
-	UINT8 *dest;
-
-	// Who knows?
-	if (y_buffer == NULL)
-		return;
-
-	if (y_buffer->target_picture)
-		Z_Free(y_buffer->target_picture);
-
-	y_buffer->target_width = vid.width;
-	y_buffer->target_height = vid.height;
-	y_buffer->target_rowbytes = vid.rowbytes;
-	y_buffer->target_bpp = vid.bpp;
-	y_buffer->target_picture = ZZ_Alloc(y_buffer->target_width*vid.bpp * y_buffer->target_height);
-	dest = y_buffer->target_picture;
-
-	scalefac = FixedDiv(y_buffer->target_width*FRACUNIT, y_buffer->source_width*FRACUNIT);
-	yscalefac = FixedDiv(y_buffer->target_height*FRACUNIT, y_buffer->source_height*FRACUNIT);
-
-	rowfrac = FixedDiv(FRACUNIT, yscalefac);
-	colfrac = FixedDiv(FRACUNIT, scalefac);
-
-	for (sy = 0, dy = 0; sy < (y_buffer->source_height << FRACBITS) && dy < y_buffer->target_height; sy += rowfrac, dy++)
-		for (sx = 0, dx = 0; sx < (y_buffer->source_width << FRACBITS) && dx < y_buffer->target_width; sx += colfrac, dx += y_buffer->target_bpp)
-			dest[(dy * y_buffer->target_rowbytes) + dx] = y_buffer->source_picture[((sy>>FRACBITS) * y_buffer->source_width) + (sx>>FRACBITS)];
-}
-
-//
-// Y_CleanupScreenBuffer
-//
-// Free all related memory.
-//
-void Y_CleanupScreenBuffer(void)
-{
-	// Who knows?
-	if (y_buffer == NULL)
-		return;
-
-	if (y_buffer->target_picture)
-		Z_Free(y_buffer->target_picture);
-
-	if (y_buffer->source_picture)
-		Z_Free(y_buffer->source_picture);
-
-	Z_Free(y_buffer);
-	y_buffer = NULL;
-}
-
-//
 // Y_IntermissionDrawer
 //
 // Called by D_Display. Nothing is modified here; all it does is draw. (SRB2Kart: er, about that...)
@@ -442,58 +340,25 @@ void Y_IntermissionDrawer(void)
 	if (intertype == int_none || rendermode == render_none)
 		return;
 
-	if (useinterpic)
-		V_DrawScaledPatch(0, 0, 0, interpic);
-	else if (!usetile)
+	// the merge was kind of a mess, how does this work -- toast 171021
 	{
-		if (rendermode == render_soft && usebuffer)
-		{
-			// no y_buffer
-			if (y_buffer == NULL)
-				VID_BlitLinearScreen(screens[1], screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			else
-			{
-				// Maybe the resolution changed?
-				if ((y_buffer->target_width != vid.width) || (y_buffer->target_height != vid.height))
-					Y_RescaleScreenBuffer();
-
-				// Blit the already-scaled screen buffer to the current screen
-				VID_BlitLinearScreen(y_buffer->target_picture, screens[0], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-			}
-		}
-#ifdef HWRENDER
-		else if (rendermode != render_soft && usebuffer)
-			HWR_DrawIntermissionBG();
-#endif
-		else if (bgpatch)
-		{
-			fixed_t hs = vid.width  * FRACUNIT / BASEVIDWIDTH;
-			fixed_t vs = vid.height * FRACUNIT / BASEVIDHEIGHT;
-			V_DrawStretchyFixedPatch(0, 0, hs, vs, V_NOSCALEPATCH, bgpatch, NULL);
-		}
+		M_DrawMenuBackground();
 	}
-	else if (bgtile)
-		V_DrawPatchFill(bgtile);
 
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUAh_IntermissionHUD(luahuddrawlist_intermission);
+		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
-	if (usebuffer) // Fade everything out
-		V_DrawFadeScreen(0xFF00, 22);
-
 	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
-	if (cons_menuhighlight.value)
-		hilicol = cons_menuhighlight.value;
-	else if (modeattacking)
+	if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
@@ -639,7 +504,7 @@ void Y_IntermissionDrawer(void)
 				{
 					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
 					{
-						// No power level (splitscreen guests)
+						// No power level (guests)
 						STRBUFCPY(strtime, "----");
 					}
 					else
@@ -710,7 +575,7 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false && bossinfo.boss == false)
+	if (timer && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
@@ -720,38 +585,40 @@ skiptallydrawer:
 		else
 			string = va("%s starts in %d", cv_advancemap.string, tickdown);
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
-			string);
-	}
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol, string);
 
-	if ((demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
-		switch (demo.savemode)
+		if ((demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
 		{
-		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Look Backward: Save replay");
-			break;
+			switch (demo.savemode)
+			{
+				case DSM_NOTSAVING:
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "(B) or (X): Save replay");
+					break;
 
-		case DSM_SAVED:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Replay saved!");
-			break;
+				case DSM_SAVED:
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|hilicol, "Replay saved!");
+					break;
 
-		case DSM_TITLEENTRY:
-			ST_DrawDemoTitleEntry();
-			break;
+				case DSM_TITLEENTRY:
+					ST_DrawDemoTitleEntry();
+					break;
 
-		default: // Don't render any text here
-			break;
+				default: // Don't render any text here
+					break;
+			}
 		}
 
-	//if ((intertic/TICRATE) & 1) // Make it obvious that scrambling is happening next round. (OR NOT, I GUESS)
-	//{
-		/*if (cv_scrambleonchange.value && cv_teamscramble.value)
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, hilicol, M_GetText("Teams will be scrambled next round!"));*/
+		//if ((intertic/TICRATE) & 1) // Make it obvious that scrambling is happening next round. (OR NOT, I GUESS)
+		//{
+			if (speedscramble != -1 && speedscramble != gamespeed)
+			{
+				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
+			}
+		//}
+	}
 
-		if (speedscramble != -1 && speedscramble != gamespeed)
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
-	//}
+	M_DrawMenuForeground();
 }
 
 //
@@ -766,7 +633,7 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && PlayerInputDown(1, gc_lookback))
+		if (demo.savemode == DSM_NOTSAVING && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
 			demo.savemode = DSM_TITLEENTRY;
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
@@ -777,7 +644,7 @@ void Y_Ticker(void)
 	if (paused || P_AutoPause())
 		return;
 
-	LUAh_IntermissionThinker();
+	LUA_HOOK(IntermissionThinker);
 
 	intertic++;
 
@@ -1017,12 +884,11 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
-	//if (intertype == int_race || intertype == int_battle)
-	{
-		//bgtile = W_CachePatchName("SRB2BACK", PU_STATIC);
-		usetile = useinterpic = false;
-		usebuffer = true;
-	}
+	Automate_Run(AEV_INTERMISSIONSTART);
+	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
+	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);
+
+	M_UpdateMenuBGImage(true);
 }
 
 // ======
@@ -1038,7 +904,6 @@ void Y_EndIntermission(void)
 	endtic = -1;
 	sorttic = -1;
 	intertype = int_none;
-	usebuffer = false;
 }
 
 //
@@ -1318,9 +1183,7 @@ void Y_VoteDrawer(void)
 	if (timer)
 	{
 		INT32 hilicol, tickdown = (timer+1)/TICRATE;
-		if (cons_menuhighlight.value)
-			hilicol = cons_menuhighlight.value;
-		else if (gametype == GT_RACE)
+		if (gametype == GT_RACE)
 			hilicol = V_SKYMAP;
 		else //if (gametype == GT_BATTLE)
 			hilicol = V_REDMAP;
@@ -1372,7 +1235,7 @@ void Y_VoteTicker(void)
 	if (paused || P_AutoPause() || !voteclient.loaded)
 		return;
 
-	LUAh_VoteThinker();
+	LUA_HOOK(VoteThinker);
 
 	votetic++;
 
@@ -1503,15 +1366,15 @@ void Y_VoteTicker(void)
 
 				if ((playeringame[p] && !players[p].spectator)
 						&& !voteclient.playerinfo[i].delay
-						&& pickedvote == -1 && votes[p] == -1)
+						&& pickedvote == -1 && votes[p] == -1 && menuactive == false)
 				{
-					if (PlayerInputDown(i+1, gc_aimforward) || PlayerJoyAxis(i+1, AXISAIM) < 0)
+					if (G_PlayerInputDown(i, gc_up, 0))
 					{
 						voteclient.playerinfo[i].selection--;
 						pressed = true;
 					}
 
-					if ((PlayerInputDown(i+1, gc_aimbackward) || PlayerJoyAxis(i+1, AXISAIM) > 0) && !pressed)
+					if (G_PlayerInputDown(i, gc_down, 0) && pressed == false)
 					{
 						voteclient.playerinfo[i].selection++;
 						pressed = true;
@@ -1522,7 +1385,7 @@ void Y_VoteTicker(void)
 					if (voteclient.playerinfo[i].selection > 3)
 						voteclient.playerinfo[i].selection = 0;
 
-					if ((PlayerInputDown(i+1, gc_accelerate) || PlayerJoyAxis(i+1, AXISMOVE) > 0) && !pressed)
+					if (G_PlayerInputDown(i, gc_a, 0) && pressed == false)
 					{
 						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
 						pressed = true;
@@ -1588,6 +1451,7 @@ void Y_VoteTicker(void)
 void Y_StartVote(void)
 {
 	INT32 i = 0;
+	boolean battlemode = ((votelevels[0][1] & ~VOTEMODIFIER_ENCORE) == GT_BATTLE); // todo gametyperules
 
 	votetic = -1;
 
@@ -1596,8 +1460,8 @@ void Y_StartVote(void)
 		I_Error("voteendtic is dirty");
 #endif
 
-	widebgpatch = W_CachePatchName(((gametype == GT_BATTLE) ? "BATTLSCW" : "INTERSCW"), PU_STATIC);
-	bgpatch = W_CachePatchName(((gametype == GT_BATTLE) ? "BATTLSCR" : "INTERSCR"), PU_STATIC);
+	widebgpatch = W_CachePatchName((battlemode ? "BATTLSCW" : "INTERSCW"), PU_STATIC);
+	bgpatch = W_CachePatchName((battlemode ? "BATTLSCR" : "INTERSCR"), PU_STATIC);
 	cursor = W_CachePatchName("M_CURSOR", PU_STATIC);
 	cursor1 = W_CachePatchName("P1CURSOR", PU_STATIC);
 	cursor2 = W_CachePatchName("P2CURSOR", PU_STATIC);
@@ -1631,8 +1495,8 @@ void Y_StartVote(void)
 		lumpnum_t lumpnum;
 
 		// set up the encore
-		levelinfo[i].encore = (votelevels[i][1] & 0x80);
-		votelevels[i][1] &= ~0x80;
+		levelinfo[i].encore = (votelevels[i][1] & VOTEMODIFIER_ENCORE);
+		votelevels[i][1] &= ~VOTEMODIFIER_ENCORE;
 
 		// set up the levelstring
 		if (mapheaderinfo[votelevels[i][0]]->levelflags & LF_NOZONE || !mapheaderinfo[votelevels[i][0]]->zonttl[0])
@@ -1667,7 +1531,7 @@ void Y_StartVote(void)
 		// set up the gtc and gts
 		levelinfo[i].gtc = G_GetGametypeColor(votelevels[i][1]);
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
-			levelinfo[i].gts = gametype_cons_t[votelevels[i][1]].strvalue;
+			levelinfo[i].gts = Gametype_Names[votelevels[i][1]];
 		else
 			levelinfo[i].gts = NULL;
 
@@ -1680,6 +1544,7 @@ void Y_StartVote(void)
 	}
 
 	voteclient.loaded = true;
+	Automate_Run(AEV_VOTESTART);
 }
 
 //

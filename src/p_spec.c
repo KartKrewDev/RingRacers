@@ -36,7 +36,7 @@
 #include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
-#include "lua_hook.h" // LUAh_LinedefExecute
+#include "lua_hook.h" // LUA_HookLinedefExecute
 #include "f_finale.h" // control text prompt
 #include "r_skins.h" // skins
 
@@ -1925,7 +1925,7 @@ static void K_HandleLapIncrement(player_t *player)
 				player->startboost = 125;
 
 				K_SpawnDriftBoostExplosion(player, 4);
-				K_SpawnDriftElectricSparks(player);
+				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 
 				rainbowstartavailable = false;
 			}
@@ -3028,7 +3028,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 443: // Calls a named Lua function
 			if (line->stringargs[0])
-				LUAh_LinedefExecute(line, mo, callsec);
+				LUA_HookLinedefExecute(line, mo, callsec);
 			else
 				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in arg0str)\n", sizeu1(line-lines));
 			break;

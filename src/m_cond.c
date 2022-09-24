@@ -20,7 +20,9 @@
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
+
 #include "k_pwrlv.h"
+#include "k_profiles.h"
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -108,7 +110,20 @@ UINT8 M_CheckCondition(condition_t *cn)
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
 			return (matchesplayed >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-			return (vspowerlevel[cn->extrainfo1] >= (unsigned)cn->requirement);
+		{
+			UINT8 i;
+			for (i = PROFILE_GUEST; i < PR_GetNumProfiles(); i++)
+			{
+				profile_t *p = PR_GetProfile(i);
+
+				if (p->powerlevels[cn->extrainfo1] >= (unsigned)cn->requirement)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
@@ -359,10 +374,14 @@ UINT8 M_SecretUnlocked(INT32 type)
 {
 	INT32 i;
 
-#if 1
 	if (dedicated)
 		return true;
-#endif
+
+#if 0
+	(void)type;
+	(void)i;
+	return false; // for quick testing
+#else
 
 #ifdef DEVELOP
 #define CHADYES true
@@ -378,6 +397,7 @@ UINT8 M_SecretUnlocked(INT32 type)
 	return CHADYES;
 
 #undef CHADYES
+#endif //if 0
 }
 
 UINT8 M_MapLocked(INT32 mapnum)

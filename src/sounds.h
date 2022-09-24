@@ -1118,8 +1118,6 @@ typedef enum
 	sfx_kpogos,
 	sfx_alarmi,
 	sfx_alarmg,
-	sfx_kinvnc,
-	sfx_kgrow,
 	sfx_itrol1,
 	sfx_itrol2,
 	sfx_itrol3,
@@ -1178,6 +1176,24 @@ typedef enum
 
 	// Fast fall bounce
 	sfx_ffbonc,
+
+	// Shout message sound effect
+	sfx_sysmsg,
+
+	// Shrink laser
+	sfx_beam01,
+
+	// SPB seeking
+	sfx_spbska,
+	sfx_spbskb,
+	sfx_spbskc,
+
+	// Juicebox for SPB
+	sfx_gate01,
+	sfx_gate02,
+	sfx_gate03,
+	sfx_gate04,
+	sfx_gate05,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

@@ -66,7 +66,7 @@
 
 #include "md5.h" // map MD5
 
-// for LUAh_MapLoad
+// for MapLoad hook
 #include "lua_script.h"
 #include "lua_hook.h"
 
@@ -96,6 +96,7 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
+#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
 
 // Replay names have time
@@ -3882,7 +3883,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also m_menu.c's Nextmap_OnChange
+	// see also k_menu.c's Nextmap_OnChange
 	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath = malloc(glen);
 	INT32 i;
@@ -4021,6 +4022,8 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	size_t i;
+
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
 
@@ -4045,7 +4048,10 @@ static void P_InitGametype(void)
 	}
 
 	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
+
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = 0;
+
 	mapreset = 0;
 
 	thwompsactive = false;
@@ -4073,6 +4079,9 @@ static void P_InitGametype(void)
 
 		G_RecordDemo(buf);
 	}
+
+	// Started a game? Move on to the next jam when you go back to the title screen
+	CV_SetValue(&cv_menujam_update, 1);
 }
 
 /** Loads a level from a lump or external wad.
@@ -4485,7 +4494,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		P_PreTicker(2);
 		P_MapStart(); // just in case MapLoad modifies tmthing
-		LUAh_MapLoad();
+		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tmthing
 	}
 

@@ -581,7 +581,7 @@ void P_Ticker(boolean run)
 		ps_lua_mobjhooks = 0;
 		ps_checkposition_calls = 0;
 
-		LUAh_PreThinkFrame();
+		LUA_HOOK(PreThinkFrame);
 
 		ps_playerthink_time = I_GetPreciseTime();
 
@@ -654,7 +654,7 @@ void P_Ticker(boolean run)
 		}
 
 		ps_lua_thinkframe_time = I_GetPreciseTime();
-		LUAh_ThinkFrame();
+		LUA_HOOK(ThinkFrame);
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
@@ -683,8 +683,7 @@ void P_Ticker(boolean run)
 		if (exitcountdown > 1)
 			exitcountdown--;
 
-		if (indirectitemcooldown > 0)
-			indirectitemcooldown--;
+		K_RunItemCooldowns();
 
 		K_BossInfoTicker();
 
@@ -721,7 +720,7 @@ void P_Ticker(boolean run)
 			G_WriteAllGhostTics();
 
 			if (cv_recordmultiplayerdemos.value && (demo.savemode == DSM_NOTSAVING || demo.savemode == DSM_WILLAUTOSAVE))
-				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && PlayerInputDown(1, gc_lookback))
+				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
 					demo.savemode = DSM_TITLEENTRY;
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
@@ -748,7 +747,7 @@ void P_Ticker(boolean run)
 	// Always move the camera.
 	P_RunChaseCameras();
 
-	LUAh_PostThinkFrame();
+	LUA_HOOK(PostThinkFrame);
 
 	if (run)
 	{
@@ -766,6 +765,11 @@ void P_Ticker(boolean run)
 		// The values needed to set this properly are not correct at map load,
 		// so we have to do it at the second tick instead...
 		K_TimerInit();
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
 	}
 
 //	Z_CheckMemCleanup();
@@ -802,7 +806,7 @@ void P_PreTicker(INT32 frames)
 				K_KartUpdatePosition(&players[i]);
 
 		// OK! Now that we got all of that sorted, players can think!
-		LUAh_PreThinkFrame();
+		LUA_HOOK(PreThinkFrame);
 
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -825,7 +829,7 @@ void P_PreTicker(INT32 frames)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		LUAh_ThinkFrame();
+		LUA_HOOK(ThinkFrame);
 
 		// Run shield positioning
 		P_RunOverlays();
@@ -833,7 +837,7 @@ void P_PreTicker(INT32 frames)
 		P_UpdateSpecials();
 		P_RespawnSpecials();
 
-		LUAh_PostThinkFrame();
+		LUA_HOOK(PostThinkFrame);
 
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();

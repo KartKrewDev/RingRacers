@@ -21,7 +21,7 @@
 #include "m_argv.h"
 #include "z_zone.h"
 #include "w_wad.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "f_finale.h"
 #include "st_stuff.h"
@@ -52,7 +52,6 @@ statenum_t get_state(const char *word);
 spritenum_t get_sprite(const char *word);
 playersprite_t get_sprite2(const char *word);
 sfxenum_t get_sfx(const char *word);
-menutype_t get_menutype(const char *word);
 //INT16 get_gametype(const char *word);
 //powertype_t get_power(const char *word);
 skincolornum_t get_skincolor(const char *word);
@@ -72,14 +71,12 @@ void readcutscene(MYFILE *f, INT32 num);
 void readlevelheader(MYFILE *f, INT32 num);
 void readgametype(MYFILE *f, char *gtname);
 void readsprite2(MYFILE *f, INT32 num);
-void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2);
 #ifdef HWRENDER
 void readlight(MYFILE *f, INT32 num);
 #endif
 void readskincolor(MYFILE *f, INT32 num);
 void readthing(MYFILE *f, INT32 num);
 void readfreeslots(MYFILE *f);
-void readPlayer(MYFILE *f, INT32 num);
 void clear_levels(void);
 void clear_conditionsets(void);
 

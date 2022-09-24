@@ -23,110 +23,93 @@
 #define NUMKEYS 256
 
 #define MOUSEBUTTONS 8
-#define JOYBUTTONS   32 // 32 buttons
-#define JOYHATS      4  // 4 hats
-#define JOYAXISSET   4  // 4 Sets of 2 axises
+
+#define JOYBUTTONS   21 // 21 buttons, to match SDL_GameControllerButton
+#define JOYANALOGS   2 // 2 sets of analog stick axes, with positive and negative each
+#define JOYTRIGGERS  1 // 1 set of trigger axes, positive only
+#define JOYAXISSETS (JOYANALOGS + JOYTRIGGERS)
+#define JOYAXES ((4 * JOYANALOGS) + (2 * JOYTRIGGERS))
+
+#define MAXINPUTMAPPING 4
 
 //
 // mouse and joystick buttons are handled as 'virtual' keys
 //
 typedef enum
 {
-	KEY_MOUSE1 = NUMKEYS,
-	KEY_JOY1 = KEY_MOUSE1 + MOUSEBUTTONS,
-	KEY_HAT1 = KEY_JOY1 + JOYBUTTONS,
+	KEY_JOY1 = NUMKEYS,
+	KEY_HAT1 = KEY_JOY1 + 11, // macro for SDL_CONTROLLER_BUTTON_DPAD_UP
+	KEY_AXIS1 = KEY_JOY1 + JOYBUTTONS,
+	JOYINPUTEND = KEY_AXIS1 + JOYAXES,
 
-	KEY_DBLMOUSE1 =KEY_HAT1 + JOYHATS*4, // double clicks
-	KEY_DBLJOY1 = KEY_DBLMOUSE1 + MOUSEBUTTONS,
-	KEY_DBLHAT1 = KEY_DBLJOY1 + JOYBUTTONS,
-
-	KEY_2MOUSE1 = KEY_DBLHAT1 + JOYHATS*4,
-	KEY_2JOY1 = KEY_2MOUSE1 + MOUSEBUTTONS,
-	KEY_2HAT1 = KEY_2JOY1 + JOYBUTTONS,
-
-	KEY_DBL2MOUSE1 = KEY_2HAT1 + JOYHATS*4,
-	KEY_DBL2JOY1 = KEY_DBL2MOUSE1 + MOUSEBUTTONS,
-	KEY_DBL2HAT1 = KEY_DBL2JOY1 + JOYBUTTONS,
-
-	KEY_3JOY1 = KEY_DBL2HAT1 + JOYHATS*4,
-	KEY_3HAT1 = KEY_3JOY1 + JOYBUTTONS,
-
-	KEY_DBL3JOY1 = KEY_3HAT1 + JOYHATS*4,
-	KEY_DBL3HAT1 = KEY_DBL3JOY1 + JOYBUTTONS,
-
-	KEY_4JOY1 = KEY_DBL3HAT1 + JOYHATS*4,
-	KEY_4HAT1 = KEY_4JOY1 + JOYBUTTONS,
-
-	KEY_DBL4JOY1 = KEY_4HAT1 + JOYHATS*4,
-	KEY_DBL4HAT1 = KEY_DBL4JOY1 + JOYBUTTONS,
-
-	KEY_MOUSEWHEELUP = KEY_DBL4HAT1 + JOYHATS*4,
+	KEY_MOUSE1 = JOYINPUTEND,
+	KEY_MOUSEMOVE = KEY_MOUSE1 + MOUSEBUTTONS,
+	KEY_MOUSEWHEELUP = KEY_MOUSEMOVE + 4,
 	KEY_MOUSEWHEELDOWN = KEY_MOUSEWHEELUP + 1,
-	KEY_2MOUSEWHEELUP = KEY_MOUSEWHEELDOWN + 1,
-	KEY_2MOUSEWHEELDOWN = KEY_2MOUSEWHEELUP + 1,
+	MOUSEINPUTEND = KEY_MOUSEWHEELDOWN + 1,
 
-	NUMINPUTS = KEY_2MOUSEWHEELDOWN + 1,
+	NUMINPUTS = MOUSEINPUTEND,
 } key_input_e;
 
 typedef enum
 {
 	gc_null = 0, // a key/button mapped to gc_null has no effect
-	gc_aimforward,
-	gc_aimbackward,
-	gc_turnleft,
-	gc_turnright,
-	gc_accelerate,
-	gc_drift,
-	gc_brake,
-	gc_spindash,
-	gc_fire,
-	gc_lookback,
-	gc_camreset,
-	gc_camtoggle,
-	gc_spectate,
-	gc_lookup,
-	gc_lookdown,
-	gc_centerview,
-	gc_talkkey,
-	gc_teamkey,
-	gc_scores,
+
+	// The actual gamepad
+	gc_up,
+	gc_down,
+	gc_left,
+	gc_right,
+	gc_a,
+	gc_b,
+	gc_c,
+	gc_x,
+	gc_y,
+	gc_z,
+	gc_l,
+	gc_r,
+	gc_start,
+
+	// special keys
+	gc_abc,
+	gc_luaa,
+	gc_luab,
+	gc_luac,
 	gc_console,
-	gc_pause,
-	gc_systemmenu,
+	gc_talk,
+	gc_teamtalk,
 	gc_screenshot,
 	gc_recordgif,
-	gc_viewpoint,
-	gc_custom1, // Lua scriptable
-	gc_custom2, // Lua scriptable
-	gc_custom3, // Lua scriptable
-	num_gamecontrols
-} gamecontrols_e;
 
-typedef enum
-{
-	gcs_custom,
-	gcs_kart, // Kart doesn't really need this code, like, at all? But I don't feel like removing it.
-	num_gamecontrolschemes
-} gamecontrolschemes_e;
+	num_gamecontrols,
+
+	// alias gameplay controls
+	gc_accel = gc_a,
+	gc_brake = gc_x,
+	gc_drift = gc_r,
+
+	gc_item = gc_l,
+	gc_spindash = gc_c,
+
+	gc_lookback = gc_b,
+} gamecontrols_e;
 
 // mouse values are used once
 extern consvar_t cv_mousesens, cv_mouseysens;
 extern consvar_t cv_mousesens2, cv_mouseysens2;
 extern consvar_t cv_controlperkey;
 
-extern INT32 mousex, mousey;
-extern INT32 mlooky; //mousey with mlookSensitivity
+// current state of the keys: JOYAXISRANGE or 0 when boolean.
+// Or anything inbetween for analog values
+#define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
+extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
+extern boolean deviceResponding[MAXDEVICES];
 
-extern INT32 joyxmove[MAXSPLITSCREENPLAYERS][JOYAXISSET], joyymove[MAXSPLITSCREENPLAYERS][JOYAXISSET];
+// several key codes (or virtual key) per game control
+extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
+extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
 
-// current state of the keys: true if pushed
-extern UINT8 gamekeydown[NUMINPUTS];
-
-// two key codes (or virtual key) per game control
-extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][2];
-extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][num_gamecontrols][2]; // default control storage, use 0 (gcs_custom) for memory retention
-#define PlayerInputDown(p, gc) (gamekeydown[gamecontrol[p-1][gc][0]] || gamekeydown[gamecontrol[p-1][gc][1]])
-
+/*
 #define num_gcl_accelerate 1
 #define num_gcl_brake 1
 #define num_gcl_drift 1
@@ -142,9 +125,12 @@ extern const INT32 gcl_spindash[num_gcl_spindash];
 extern const INT32 gcl_movement[num_gcl_movement];
 extern const INT32 gcl_item[num_gcl_item];
 extern const INT32 gcl_full[num_gcl_full];
+*/
 
 // peace to my little coder fingers!
 // check a gamecontrol being active or not
+
+INT32 G_GetDevicePlayer(INT32 deviceID);
 
 // remaps the input event to a game control.
 void G_MapEventsToControls(event_t *ev);
@@ -153,17 +139,20 @@ void G_MapEventsToControls(event_t *ev);
 const char *G_KeynumToString(INT32 keynum);
 INT32 G_KeyStringtoNum(const char *keystr);
 
+boolean G_KeyBindIsNecessary(INT32 gc);
+boolean G_KeyIsAvailable(INT32 key, INT32 deviceID);
+
 // detach any keys associated to the given game control
-void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control);
+void G_ClearControlKeys(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 control);
 void G_ClearAllControlKeys(void);
 void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
 void Command_Setcontrol3_f(void);
 void Command_Setcontrol4_f(void);
 void G_DefineDefaultControls(void);
-INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
-void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[2], INT32 (*fromcontrolsb)[2], INT32 (*fromcontrolsc)[2], INT32 (*fromcontrolsd)[2]);
-INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
+INT32 G_GetControlScheme(INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen);
+void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen);
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrolsa)[MAXINPUTMAPPING], INT32 (*fromcontrolsb)[MAXINPUTMAPPING], INT32 (*fromcontrolsc)[MAXINPUTMAPPING], INT32 (*fromcontrolsd)[MAXINPUTMAPPING]);
+INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
 
 #endif

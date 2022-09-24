@@ -110,7 +110,7 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 void K_UpdateMatchRaceBots(void)
 {
 	const UINT8 difficulty = cv_kartbot.value;
-	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value);
+	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
@@ -136,9 +136,9 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (cv_ingamecap.value > 0)
+	if (cv_maxplayers.value > 0)
 	{
-		pmax = min(pmax, cv_ingamecap.value);
+		pmax = min(pmax, cv_maxplayers.value);
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -298,7 +298,7 @@ boolean K_BotCanTakeCut(player_t *player)
 /*--------------------------------------------------
 	static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 
-		Gets the bot's speed value, adjusted for predictions.
+		What the bot "thinks" their speed is, for predictions.
 		Mainly to make bots brake earlier when on friction sectors.
 
 	Input Arguments:-
@@ -311,6 +311,12 @@ boolean K_BotCanTakeCut(player_t *player)
 static fixed_t K_BotSpeedScaled(player_t *player, fixed_t speed)
 {
 	fixed_t result = speed;
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		// You have no air control, so don't predict too far ahead.
+		return 0;
+	}
 
 	if (player->mo->movefactor != FRACUNIT)
 	{
@@ -650,7 +656,8 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const fixed_t speed = K_BotSpeedScaled(player, P_AproxDistance(player->mo->momx, player->mo->momy));
 
 	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
-	const INT32 distance = ((speed / FRACUNIT) * futuresight) + startDist;
+	const INT32 maxDist = startDist * 4; // This function gets very laggy when it goes far distances, and going too far isn't very helpful anyway.
+	const INT32 distance = min(((speed / FRACUNIT) * (INT32)futuresight) + startDist, maxDist);
 
 	// Halves radius when encountering a wall on your way to your destination.
 	fixed_t radreduce = FRACUNIT;
@@ -660,7 +667,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	angle_t angletonext = ANGLE_MAX;
 	INT32 disttonext = INT32_MAX;
 
-	waypoint_t *finishLine = K_GetFinishLineWaypoint();
 	waypoint_t *wp = player->nextwaypoint;
 	mobj_t *prevwpmobj = player->mo;
 
@@ -676,8 +682,8 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
 	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
 
-	pathfindsuccess = K_PathfindToWaypoint(
-		player->nextwaypoint, finishLine,
+	pathfindsuccess = K_PathfindThruCircuit(
+		player->nextwaypoint, (unsigned)distanceleft,
 		&pathtofinish,
 		useshortcuts, huntbackwards
 	);
@@ -719,35 +725,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			{
 				// We're done!!
 				break;
-			}
-
-			if (i == pathtofinish.numnodes-1 && disttonext > 0)
-			{
-				// We were pathfinding to the finish, but we want to go past it.
-				// Set up a new pathfind.
-
-				waypoint_t *next = NULL;
-
-				if (finishLine->numnextwaypoints == 0)
-				{
-					distanceleft = 0;
-					break;
-				}
-
-				// default to first one
-				next = wp->nextwaypoints[0];
-
-				pathfindsuccess = K_PathfindToWaypoint(
-					next, finishLine,
-					&pathtofinish,
-					useshortcuts, huntbackwards
-				);
-
-				if (pathfindsuccess == false)
-				{
-					distanceleft = 0;
-					break;
-				}
 			}
 		}
 
@@ -976,6 +953,55 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 }
 
 /*--------------------------------------------------
+	static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+
+		Calculates a new destination angle while in the air,
+		to be able to successfully smooth land.
+
+	Input Arguments:-
+		player - Bot player to check.
+		destangle - Previous destination angle.
+
+	Return:-
+		New destination angle.
+--------------------------------------------------*/
+static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+{
+	angle_t newAngle = destangle;
+	boolean air = !P_IsObjectOnGround(player->mo);
+	angle_t steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
+	angle_t slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
+
+	if (slopeSteep > steepVal)
+	{
+		fixed_t pitchMul = -FINESINE(destangle >> ANGLETOFINESHIFT);
+		fixed_t rollMul = FINECOSINE(destangle >> ANGLETOFINESHIFT);
+		angle_t testAngles[2];
+		angle_t testDeltas[2];
+		UINT8 i;
+
+		testAngles[0] = R_PointToAngle2(0, 0, rollMul, pitchMul);
+		testAngles[1] = R_PointToAngle2(0, 0, -rollMul, -pitchMul);
+
+		for (i = 0; i < 2; i++)
+		{
+			testDeltas[i] = AngleDelta(testAngles[i], destangle);
+		}
+
+		if (testDeltas[1] < testDeltas[0])
+		{
+			return testAngles[1];
+		}
+		else
+		{
+			return testAngles[0];
+		}
+	}
+
+	return newAngle;
+}
+
+/*--------------------------------------------------
 	static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
 
 		Determines inputs for standard track driving.
@@ -997,6 +1023,8 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	INT32 anglediff;
 
 	I_Assert(predict != NULL);
+
+	destangle = K_BotSmoothLanding(player, destangle);
 
 	moveangle = player->mo->angle;
 	anglediff = AngleDeltaSigned(moveangle, destangle);
@@ -1128,6 +1156,8 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 		}
 	}
 
+	destangle = K_BotSmoothLanding(player, destangle);
+
 	// Calculate turn direction first.
 	moveangle = player->mo->angle;
 	angle = (moveangle - destangle);
@@ -1247,7 +1277,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Complete override of all ticcmd functionality
-	if (LUAh_BotTiccmd(player, cmd) == true)
+	if (LUA_HookTiccmd(player, cmd, HOOK(BotTiccmd)) == true)
 	{
 		return;
 	}

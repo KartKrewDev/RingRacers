@@ -58,11 +58,11 @@ typedef enum
 //
 typedef enum
 {
-	// True if button down last tic.
-	PF_ATTACKDOWN		= 1,
-	PF_ACCELDOWN		= 1<<1,
-	PF_BRAKEDOWN		= 1<<2,
-	PF_LOOKDOWN			= 1<<3,
+	// free: 1<<0 to 1<<2
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	PF_GAINAX			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -268,7 +268,9 @@ typedef enum
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
 
-#define TRIPWIRETIME (TICRATE)
+#define TRIPWIRETIME (15)
+
+#define BALLHOGINCREMENT (7)
 
 //}
 
@@ -328,6 +330,7 @@ typedef struct player_s
 
 	// Caveat: ticcmd_t is ATTRPACK! Be careful what precedes it.
 	ticcmd_t cmd;
+	ticcmd_t oldcmd; // from the previous tic
 
 	playerstate_t playerstate;
 
@@ -425,6 +428,9 @@ typedef struct player_s
 	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
 
+	UINT16 gateBoost;		// Juicebox Manta Ring boosts
+	UINT8 gateSound;		// Sound effect combo
+
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
@@ -486,9 +492,11 @@ typedef struct player_s
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
+	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
-	mobj_t *hoverhyudoro;   // First hyudoro hovering next to player
+	mobj_t *hoverhyudoro;	// First hyudoro hovering next to player
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
@@ -583,6 +591,10 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+
+	UINT8 shrinkLaserDelay;
+
+	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

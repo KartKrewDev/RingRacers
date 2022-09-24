@@ -162,7 +162,7 @@ extern char logfilename[1024];
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #ifndef BETAVERSION
-#define UPDATE_ALERT
+//#define UPDATE_ALERT
 #endif
 
 // The string used in the alert that pops up in the event of an update being available.
@@ -205,8 +205,10 @@ extern char logfilename[1024];
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
+#define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
 #define MAXSKINS UINT8_MAX
+#define SKINNAMESIZE 16	// Moved from r_skins.h as including that particular header causes issues later down the line.
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32
@@ -224,6 +226,10 @@ typedef struct skincolor_s
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
 } skincolor_t;
+
+#define FOLLOWERCOLOR_MATCH UINT16_MAX
+#define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 
 typedef enum
 {

@@ -26,7 +26,6 @@
 #include "i_time.h"
 #include "i_system.h"
 #include "i_threads.h"
-#include "m_menu.h"
 #include "console.h"
 #include "d_main.h"
 #include "m_misc.h" // movie mode
@@ -43,6 +42,9 @@
 #define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
 #endif
 
+// SRB2Kart
+#include "k_menu.h"
+
 typedef struct fademask_s {
 	UINT8* mask;
 	UINT16 width, height;
@@ -58,7 +60,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_toblack,
 	0,  // wipe_continuing_toblack
 	0,  // wipe_titlescreen_toblack
-	0,  // wipe_timeattack_toblack
+	1,  // wipe_menu_toblack
 	99, // wipe_credits_toblack
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_gameend_toblack
@@ -74,7 +76,7 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_voting_final
 	0,  // wipe_continuing_final
 	0,  // wipe_titlescreen_final
-	0,  // wipe_timeattack_final
+	1,  // wipe_menu_final
 	99, // wipe_credits_final
 	0,  // wipe_evaluation_final
 	0,  // wipe_gameend_final
@@ -509,11 +511,11 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		if (drawMenu)
 		{
 #ifdef HAVE_THREADS
-			I_lock_mutex(&m_menu_mutex);
+			I_lock_mutex(&k_menu_mutex);
 #endif
 			M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-			I_unlock_mutex(m_menu_mutex);
+			I_unlock_mutex(k_menu_mutex);
 #endif
 		}
 

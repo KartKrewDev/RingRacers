@@ -195,7 +195,6 @@ extern INT16 bootmap; //bootmap for loading a map on startup
 
 extern INT16 tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
-extern INT32 tutorialgcs; // which control scheme is loaded?
 
 extern boolean looptitle;
 
@@ -708,7 +707,7 @@ extern boolean comeback;
 
 extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;
-extern tic_t indirectitemcooldown;
+extern tic_t itemCooldowns[NUMKARTITEMS - 1];
 extern tic_t mapreset;
 extern boolean thwompsactive;
 extern UINT8 lastLowestLap;
@@ -797,7 +796,6 @@ extern consvar_t cv_forceskin; // force clients to use the server's skin
 extern consvar_t cv_downloading; // allow clients to downloading WADs.
 extern consvar_t cv_nettimeout; // SRB2Kart: Advanced server options menu
 extern consvar_t cv_jointimeout;
-extern consvar_t cv_maxping;
 extern ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];

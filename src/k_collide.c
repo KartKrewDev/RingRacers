@@ -11,6 +11,7 @@
 #include "hu_stuff.h" // Sink snipe print
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
+#include "k_objects.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -44,7 +45,7 @@ boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
 		return true;
 
-	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
+	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && ((t1->threshold > 0 && t2->type == MT_PLAYER) || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
 	if (t1->health <= 0 || t2->health <= 0)
@@ -265,8 +266,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			mobj_t *poof = P_SpawnMobj(t1->x, t1->y, t1->z, MT_EXPLODE);
-			S_StartSound(poof, t1->info->deathsound);
+			Obj_SpawnItemDebrisEffects(t1, t2);
 
 #if 0
 			// Eggbox snipe!
