@@ -2095,7 +2095,7 @@ static void CL_ConnectToServer(void)
 	// It works... sometimes but not always which is weird.
 
 	if (joinedIP[0])	// false if we have "" which is \0
-		M_AddToJoinedIPs(joinedIP, netbuffer->u.serverinfo.servername);
+		M_AddToJoinedIPs(joinedIP, connectedservername);
 
 	joinedIP[0] = '\0';	// And empty this for good measure regardless of whether or not we actually used it.
 
