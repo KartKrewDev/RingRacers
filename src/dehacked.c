@@ -356,30 +356,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 				}
 #endif
-				else if (fastcmp(word, "SPRITE") || fastcmp(word, "SPRITEINFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite(word2); // find a sprite by name
-					if (i < NUMSPRITES && i > 0)
-						readspriteinfo(f, i, false);
-					else
-					{
-						deh_warning("Sprite number %d out of range (0 - %d)", i, NUMSPRITES-1);
-						ignorelines(f);
-					}
-				}
-				else if (fastcmp(word, "SPRITE2INFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite2(word2); // find a sprite by name
-					if (i < NUMPLAYERSPRITES && i >= 0)
-						readspriteinfo(f, i, true);
-					else
-					{
-						deh_warning("Sprite2 number %d out of range (0 - %d)", i, NUMPLAYERSPRITES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "LEVEL"))
 				{
 					// Support using the actual map name,

@@ -20,4 +20,13 @@ void Obj_SpawnItemDebrisEffects(mobj_t *collectible, mobj_t *collector);
 void Obj_ItemDebrisThink(mobj_t *debris);
 fixed_t Obj_ItemDebrisBounce(mobj_t *debris, fixed_t momz);
 
+/* SPB */
+void Obj_SPBThink(mobj_t *spb);
+void Obj_SPBExplode(mobj_t *spb);
+void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher);
+
+/* SPB Juicebox Rings */
+void Obj_MantaRingThink(mobj_t *manta);
+mobj_t *Obj_MantaRingCreate(mobj_t *spb, mobj_t *owner, mobj_t *chase);
+
 #endif/*k_objects_H*/

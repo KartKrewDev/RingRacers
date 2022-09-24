@@ -695,6 +695,40 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 	}
 }
 
+static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
+{
+	patch_t **kp[1 + NUMKARTITEMS] = {
+		kp_sadface,
+		NULL,
+		kp_sneaker,
+		kp_rocketsneaker,
+		kp_invincibility,
+		kp_banana,
+		kp_eggman,
+		kp_orbinaut,
+		kp_jawz,
+		kp_mine,
+		kp_landmine,
+		kp_ballhog,
+		kp_selfpropelledbomb,
+		kp_grow,
+		kp_shrink,
+		kp_lightningshield,
+		kp_bubbleshield,
+		kp_flameshield,
+		kp_hyudoro,
+		kp_pogospring,
+		kp_superring,
+		kp_kitchensink,
+		kp_droptarget,
+	};
+
+	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
+		return kp[item - KITEM_SAD][offset];
+	else
+		return NULL;
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -1096,90 +1130,23 @@ static void K_drawKartItem(void)
 
 	if (stplyr->itemroulette)
 	{
+		const INT32 item = K_GetRollingRouletteItem(stplyr);
+
 		if (stplyr->skincolor)
 			localcolor = stplyr->skincolor;
 
-		switch((stplyr->itemroulette % (16*3)) / 3)
+		switch (item)
 		{
-			// Each case is handled in threes, to give three frames of in-game time to see the item on the roulette
-			case 0: // Sneaker
-				localpatch = kp_sneaker[offset];
-				//localcolor = SKINCOLOR_RASPBERRY;
-				break;
-			case 1: // Banana
-				localpatch = kp_banana[offset];
-				//localcolor = SKINCOLOR_YELLOW;
-				break;
-			case 2: // Orbinaut
-				localpatch = kp_orbinaut[3+offset];
-				//localcolor = SKINCOLOR_STEEL;
-				break;
-			case 3: // Mine
-				localpatch = kp_mine[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 4: // Grow
-				localpatch = kp_grow[offset];
-				//localcolor = SKINCOLOR_TEAL;
-				break;
-			case 5: // Hyudoro
-				localpatch = kp_hyudoro[offset];
-				//localcolor = SKINCOLOR_STEEL;
-				break;
-			case 6: // Rocket Sneaker
-				localpatch = kp_rocketsneaker[offset];
-				//localcolor = SKINCOLOR_TANGERINE;
-				break;
-			case 7: // Jawz
-				localpatch = kp_jawz[offset];
-				//localcolor = SKINCOLOR_JAWZ;
-				break;
-			case 8: // Self-Propelled Bomb
-				localpatch = kp_selfpropelledbomb[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 9: // Shrink
-				localpatch = kp_shrink[offset];
-				//localcolor = SKINCOLOR_ORANGE;
-				break;
-			case 10: // Invincibility
+			case KITEM_INVINCIBILITY:
 				localpatch = localinv;
-				//localcolor = SKINCOLOR_GREY;
 				break;
-			case 11: // Eggman Monitor
-				localpatch = kp_eggman[offset];
-				//localcolor = SKINCOLOR_ROSE;
+
+			case KITEM_ORBINAUT:
+				localpatch = kp_orbinaut[3 + offset];
 				break;
-			case 12: // Ballhog
-				localpatch = kp_ballhog[offset];
-				//localcolor = SKINCOLOR_LILAC;
-				break;
-			case 13: // Lightning Shield
-				localpatch = kp_lightningshield[offset];
-				//localcolor = SKINCOLOR_CYAN;
-				break;
-			case 14: // Super Ring
-				localpatch = kp_superring[offset];
-				//localcolor = SKINCOLOR_GOLD;
-				break;
-			case 15: // Land Mine
-				localpatch = kp_landmine[offset];
-				//localcolor = SKINCOLOR_JET;
-				break;
-			case 16: // Drop Target
-				localpatch = kp_droptarget[offset];
-				//localcolor = SKINCOLOR_LIME;
-				break;
-			/*case 17: // Pogo Spring
-				localpatch = kp_pogospring[offset];
-				localcolor = SKINCOLOR_TANGERINE;
-				break;
-			case 18: // Kitchen Sink
-				localpatch = kp_kitchensink[offset];
-				localcolor = SKINCOLOR_STEEL;
-				break;*/
+
 			default:
-				break;
+				localpatch = K_GetCachedItemPatch(item, offset);
 		}
 	}
 	else
@@ -1240,79 +1207,27 @@ static void K_drawKartItem(void)
 
 			switch(stplyr->itemtype)
 			{
-				case KITEM_SNEAKER:
-					localpatch = kp_sneaker[offset];
-					break;
-				case KITEM_ROCKETSNEAKER:
-					localpatch = kp_rocketsneaker[offset];
-					break;
 				case KITEM_INVINCIBILITY:
 					localpatch = localinv;
 					localbg = kp_itembg[offset+1];
 					break;
-				case KITEM_BANANA:
-					localpatch = kp_banana[offset];
-					break;
-				case KITEM_EGGMAN:
-					localpatch = kp_eggman[offset];
-					break;
+
 				case KITEM_ORBINAUT:
 					localpatch = kp_orbinaut[(offset ? 4 : min(stplyr->itemamount-1, 3))];
 					break;
-				case KITEM_JAWZ:
-					localpatch = kp_jawz[offset];
-					break;
-				case KITEM_MINE:
-					localpatch = kp_mine[offset];
-					break;
-				case KITEM_LANDMINE:
-					localpatch = kp_landmine[offset];
-					break;
-				case KITEM_DROPTARGET:
-					localpatch = kp_droptarget[offset];
-					break;
-				case KITEM_BALLHOG:
-					localpatch = kp_ballhog[offset];
-					break;
+
 				case KITEM_SPB:
-					localpatch = kp_selfpropelledbomb[offset];
-					localbg = kp_itembg[offset+1];
-					break;
-				case KITEM_GROW:
-					localpatch = kp_grow[offset];
-					break;
-				case KITEM_SHRINK:
-					localpatch = kp_shrink[offset];
-					break;
 				case KITEM_LIGHTNINGSHIELD:
-					localpatch = kp_lightningshield[offset];
-					localbg = kp_itembg[offset+1];
-					break;
 				case KITEM_BUBBLESHIELD:
-					localpatch = kp_bubbleshield[offset];
-					localbg = kp_itembg[offset+1];
-					break;
 				case KITEM_FLAMESHIELD:
-					localpatch = kp_flameshield[offset];
 					localbg = kp_itembg[offset+1];
-					break;
-				case KITEM_HYUDORO:
-					localpatch = kp_hyudoro[offset];
-					break;
-				case KITEM_POGOSPRING:
-					localpatch = kp_pogospring[offset];
-					break;
-				case KITEM_SUPERRING:
-					localpatch = kp_superring[offset];
-					break;
-				case KITEM_KITCHENSINK:
-					localpatch = kp_kitchensink[offset];
-					break;
-				case KITEM_SAD:
-					localpatch = kp_sadface[offset];
-					break;
+					/*FALLTHRU*/
+
 				default:
-					localpatch = kp_nodraw; // diagnose underflows
+					localpatch = K_GetCachedItemPatch(stplyr->itemtype, offset);
+
+					if (localpatch == NULL)
+						localpatch = kp_nodraw; // diagnose underflows
 					break;
 			}
 
@@ -4530,7 +4445,6 @@ static void K_drawDistributionDebugger(void)
 		kp_jawz[1],
 		kp_mine[1],
 		kp_landmine[1],
-		kp_droptarget[1],
 		kp_ballhog[1],
 		kp_selfpropelledbomb[1],
 		kp_grow[1],
@@ -4542,6 +4456,7 @@ static void K_drawDistributionDebugger(void)
 		kp_pogospring[1],
 		kp_superring[1],
 		kp_kitchensink[1],
+		kp_droptarget[1],
 
 		kp_sneaker[1],
 		kp_sneaker[1],
@@ -4556,10 +4471,16 @@ static void K_drawDistributionDebugger(void)
 	UINT32 pdis = 0;
 	INT32 i;
 	INT32 x = -9, y = -9;
-	boolean spbrush = false;
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
+
+	if (K_ForcedSPB(stplyr) == true)
+	{
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[KITEM_SPB]);
+		V_DrawThinString(x+11, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, "EX");
+		return;
+	}
 
 	// The only code duplication from the Kart, just to avoid the actual item function from calculating pingame twice
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4583,14 +4504,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	if (spbplace != -1 && stplyr->position == spbplace+1)
-	{
-		// SPB Rush Mode: It's 2nd place's job to catch-up items and make 1st place's job hell
-		pdis = (3 * pdis) / 2;
-		spbrush = true;
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame, spbrush);
+	pdis = K_ScaleItemDistance(pdis, pingame);
 
 	if (stplyr->bot && stplyr->botvars.rival)
 	{
@@ -4598,7 +4512,7 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper, spbrush);
+	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
@@ -4606,38 +4520,21 @@ static void K_drawDistributionDebugger(void)
 			useodds, i,
 			stplyr->distancetofinish,
 			0,
-			spbrush, stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
+			stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
 		);
+		INT32 amount = 1;
 
 		if (itemodds <= 0)
 			continue;
 
-		V_DrawScaledPatch(x, y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, items[i]);
-		V_DrawThinString(x+11, y+31, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("%d", itemodds));
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[i]);
+		V_DrawThinString(x+11, y+31, V_SNAPTOTOP, va("%d", itemodds));
 
 		// Display amount for multi-items
-		if (i >= NUMKARTITEMS)
+		amount = K_ItemResultToAmount(i);
+		if (amount > 1)
 		{
-			INT32 amount;
-			switch (i)
-			{
-				case KRITEM_TENFOLDBANANA:
-					amount = 10;
-					break;
-				case KRITEM_QUADORBINAUT:
-					amount = 4;
-					break;
-				case KRITEM_DUALJAWZ:
-					amount = 2;
-					break;
-				case KRITEM_DUALSNEAKER:
-					amount = 2;
-					break;
-				default:
-					amount = 3;
-					break;
-			}
-			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("x%d", amount));
+			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
 		}
 
 		x += 32;
@@ -4648,7 +4545,7 @@ static void K_drawDistributionDebugger(void)
 		}
 	}
 
-	V_DrawString(0, 0, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, va("USEODDS %d", useodds));
+	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
 }
 
 static void K_drawCheckpointDebugger(void)

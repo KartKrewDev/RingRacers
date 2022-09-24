@@ -1594,21 +1594,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (P_MobjWasRemoved(mo))
 			return;
 
-		//{ SRB2kart - Jawz
-		if (mo->type == MT_JAWZ || mo->type == MT_JAWZ_DUD)
-		{
-			if (mo->health == 1)
-			{
-				// This Item Damage
-				S_StartSound(mo, mo->info->deathsound);
-				P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
-
-				P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-				P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-			}
-		}
-		//}
-		else if (mo->flags & MF_MISSILE)
+		if (mo->flags & MF_MISSILE)
 		{
 			// explode a missile
 			if (P_CheckSkyHit(mo))
@@ -1671,7 +1657,7 @@ void P_XYMovement(mobj_t *mo)
 		{
 			boolean walltransferred = false;
 
-			if (player || mo->flags & MF_SLIDEME)
+			//if (player || mo->flags & MF_SLIDEME)
 			{ // try to slide along it
 				// Wall transfer part 1.
 				pslope_t *transferslope = NULL;
@@ -1745,23 +1731,32 @@ void P_XYMovement(mobj_t *mo)
 						fx->scale = mo->scale;
 					}
 
-					if (mo->type == MT_ORBINAUT) // Orbinaut speed decreasing
+					switch (mo->type)
 					{
-						if (mo->health > 1)
-						{
-							S_StartSound(mo, mo->info->attacksound);
-							mo->health--;
-							mo->threshold = 0;
-						}
-						else if (mo->health == 1)
-						{
-							// This Item Damage
-							S_StartSound(mo, mo->info->deathsound);
-							P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+						case MT_ORBINAUT: // Orbinaut speed decreasing
+							if (mo->health > 1)
+							{
+								S_StartSound(mo, mo->info->attacksound);
+								mo->health--;
+								mo->threshold = 0;
+							}
+							/*FALLTHRU*/
 
-							P_SetObjectMomZ(mo, 8*FRACUNIT, false);
-							P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
-						}
+						case MT_JAWZ:
+						case MT_JAWZ_DUD:
+							if (mo->health == 1)
+							{
+								// This Item Damage
+								S_StartSound(mo, mo->info->deathsound);
+								P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
+
+								P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+								P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
+							}
+							break;
+
+						default:
+							break;
 					}
 
 					// Bubble bounce
@@ -5997,79 +5992,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				{
 					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
 					mobj->tracer->sprite = SPR_ITEM;
-					switch((mobj->target->player->itemroulette % (16*3)) / 3)
-					{
-						// Each case is handled in threes, to give three frames of in-game time to see the item on the roulette
-						case 0: // Sneaker
-							mobj->tracer->frame = KITEM_SNEAKER;
-							//localcolor = SKINCOLOR_RASPBERRY;
-							break;
-						case 1: // Banana
-							mobj->tracer->frame = KITEM_BANANA;
-							//localcolor = SKINCOLOR_YELLOW;
-							break;
-						case 2: // Orbinaut
-							mobj->tracer->frame = KITEM_ORBINAUT;
-							//localcolor = SKINCOLOR_STEEL;
-							break;
-						case 3: // Mine
-							mobj->tracer->frame = KITEM_MINE;
-							//localcolor = SKINCOLOR_JET;
-							break;
-						case 4: // Grow
-							mobj->tracer->frame = KITEM_GROW;
-							//localcolor = SKINCOLOR_TEAL;
-							break;
-						case 5: // Hyudoro
-							mobj->tracer->frame = KITEM_HYUDORO;
-							//localcolor = SKINCOLOR_STEEL;
-							break;
-						case 6: // Rocket Sneaker
-							mobj->tracer->frame = KITEM_ROCKETSNEAKER;
-							//localcolor = SKINCOLOR_TANGERINE;
-							break;
-						case 7: // Jawz
-							mobj->tracer->frame = KITEM_JAWZ;
-							//localcolor = SKINCOLOR_JAWZ;
-							break;
-						case 8: // Self-Propelled Bomb
-							mobj->tracer->frame = KITEM_SPB;
-							//localcolor = SKINCOLOR_JET;
-							break;
-						case 9: // Shrink
-							mobj->tracer->frame = KITEM_SHRINK;
-							//localcolor = SKINCOLOR_ORANGE;
-							break;
-						case 10: // Invincibility
-							mobj->tracer->frame = KITEM_INVINCIBILITY;
-							//localcolor = SKINCOLOR_GREY;
-							break;
-						case 11: // Eggman Monitor
-							mobj->tracer->frame = KITEM_EGGMAN;
-							//localcolor = SKINCOLOR_ROSE;
-							break;
-						case 12: // Ballhog
-							mobj->tracer->frame = KITEM_BALLHOG;
-							//localcolor = SKINCOLOR_LILAC;
-							break;
-						case 13: // Lightning Shield
-							mobj->tracer->frame = KITEM_LIGHTNINGSHIELD;
-							//localcolor = SKINCOLOR_CYAN;
-							break;
-						case 14: // Super Ring
-							mobj->tracer->frame = KITEM_SUPERRING;
-							//localcolor = SKINCOLOR_GOLD;
-							break;
-						case 15: // Land Mine
-							mobj->tracer->frame = KITEM_LANDMINE;
-							//localcolor = SKINCOLOR_JET;
-							break;
-						case 16: // Drop Target
-							mobj->tracer->frame = KITEM_DROPTARGET;
-							//localcolor = SKINCOLOR_LIME;
-							break;
-					}
-					mobj->tracer->frame |= FF_FULLBRIGHT;
+					mobj->tracer->frame = K_GetRollingRouletteItem(mobj->target->player) | FF_FULLBRIGHT;
 					mobj->tracer->renderflags &= ~RF_DONTDRAW;
 				}
 				else if (mobj->target->player->stealingtimer < 0)
@@ -6738,7 +6661,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			case KITEM_SPB:
 			case KITEM_SHRINK:
-				indirectitemcooldown = 20*TICRATE;
+				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 				/* FALLTHRU */
 			default:
 				mobj->sprite = SPR_ITEM;
@@ -6811,40 +6734,45 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else
 		{
-			fixed_t finalspeed = mobj->movefactor;
-			const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-			fixed_t thrustamount = 0;
-			fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
 			ghost->colorized = true; // already has color!
 
-			if (!grounded)
-			{
-				// No friction in the air
-				frictionsafety = FRACUNIT;
-			}
-
 			mobj->angle = K_MomentumAngle(mobj);
-			if (mobj->health <= 5)
-			{
-				INT32 i;
-				for (i = 5; i >= mobj->health; i--)
-					finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
-			}
 
-			if (currentspeed >= finalspeed)
+			if (P_IsObjectOnGround(mobj))
 			{
-				// Thrust as if you were at top speed, slow down naturally
-				thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
-			}
-			else
-			{
-				const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-				// Thrust to immediately get to top speed
-				thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
-			}
+				fixed_t finalspeed = mobj->movefactor;
+				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
+				fixed_t thrustamount = 0;
+				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
 
-			P_Thrust(mobj, mobj->angle, thrustamount);
+				if (!grounded)
+				{
+					// No friction in the air
+					frictionsafety = FRACUNIT;
+				}
+
+				if (mobj->health <= 5)
+				{
+					INT32 i;
+					for (i = 5; i >= mobj->health; i--)
+						finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
+				}
+
+				if (currentspeed >= finalspeed)
+				{
+					// Thrust as if you were at top speed, slow down naturally
+					thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
+				}
+				else
+				{
+					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+					// Thrust to immediately get to top speed
+					thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
+				}
+
+				P_Thrust(mobj, mobj->angle, thrustamount);
+			}
 
 			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
 				K_DoPogoSpring(mobj, 0, 1);
@@ -6983,8 +6911,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->threshold--;
 		break;
 	case MT_SPB:
-		indirectitemcooldown = 20*TICRATE;
-		/* FALLTHRU */
+		{
+			Obj_SPBThink(mobj);
+			break;
+		}
+	case MT_MANTARING:
+		{
+			Obj_MantaRingThink(mobj);
+			break;
+		}
 	case MT_BALLHOG:
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -9346,6 +9281,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+	case MT_SPB:
+	{
+		Obj_SPBExplode(mobj);
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:
@@ -9382,6 +9322,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->hnext, NULL);
 	if (mobj->hprev && P_MobjWasRemoved(mobj->hprev))
 		P_SetTarget(&mobj->hprev, NULL);
+	if (mobj->itnext && P_MobjWasRemoved(mobj->itnext))
+		P_SetTarget(&mobj->itnext, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -10781,6 +10723,8 @@ void P_RemoveMobj(mobj_t *mobj)
 			P_SetTarget(&mobj->hprev, NULL);
 		}
 	}
+
+	P_SetTarget(&mobj->itnext, NULL);
 
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.
 #ifdef SCRAMBLE_REMOVED

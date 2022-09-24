@@ -71,7 +71,6 @@ void readcutscene(MYFILE *f, INT32 num);
 void readlevelheader(MYFILE *f, INT32 num);
 void readgametype(MYFILE *f, char *gtname);
 void readsprite2(MYFILE *f, INT32 num);
-void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2);
 #ifdef HWRENDER
 void readlight(MYFILE *f, INT32 num);
 #endif

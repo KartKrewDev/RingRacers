@@ -2218,7 +2218,7 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 		player->glanceDir = 0;
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 	}
 	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
@@ -2592,7 +2592,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 		if (mo->type == MT_SPB) // If you destroy a SPB, you don't get the luxury of a cooldown.
 		{
 			spbplace = -1;
-			indirectitemcooldown = 0;
+			itemCooldowns[KITEM_SPB - 1] = 0;
 		}
 
 		if (mo->flags & MF_BOSS) //don't OHKO bosses nor players!
@@ -4186,7 +4186,7 @@ void P_PlayerThink(player_t *player)
 	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
-		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		if (!player->exiting && !(player->oldcmd.buttons & BT_ACCELERATE))
 		{
 			player->kickstartaccel = 0;
 		}
@@ -4393,19 +4393,6 @@ void P_PlayerThink(player_t *player)
 
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
-
-	// check for buttons
-	if (cmd->buttons & BT_ACCELERATE)
-		player->pflags |= PF_ACCELDOWN;
-	else
-		player->pflags &= ~PF_ACCELDOWN;
-
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_BRAKEDOWN;
-	else
-		player->pflags &= ~PF_BRAKEDOWN;
-
-	// PF_LOOKDOWN handled in K_KartMoveAnimation
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings
