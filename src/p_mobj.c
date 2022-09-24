@@ -1671,7 +1671,7 @@ void P_XYMovement(mobj_t *mo)
 		{
 			boolean walltransferred = false;
 
-			if (player || mo->flags & MF_SLIDEME)
+			//if (player || mo->flags & MF_SLIDEME)
 			{ // try to slide along it
 				// Wall transfer part 1.
 				pslope_t *transferslope = NULL;
