@@ -565,6 +565,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BHOG", // Ballhog
 	"BHBM", // Ballhog BOOM
 	"SPBM", // Self-Propelled Bomb
+	"TRIS", // SPB Manta Ring start
+	"TRNQ", // SPB Manta Ring loop
 	"THNS", // Lightning Shield
 	"BUBS", // Bubble Shield (not Bubs)
 	"BWVE", // Bubble Shield waves
@@ -4199,27 +4201,30 @@ state_t states[NUMSTATES] =
 	{SPR_BHBM, FF_FULLBRIGHT|14, 1, {NULL}, 0, 0, S_BALLHOGBOOM16},			// S_BALLHOGBOOM15
 	{SPR_BHBM, FF_FULLBRIGHT|15, 1, {NULL}, 0, 0, S_NULL},					// S_BALLHOGBOOM16
 
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0,  S_SPB2}, // S_SPB1
-	{SPR_SPBM, 1, 1, {A_SPBChase}, 0, 0,  S_SPB3}, // S_SPB2
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0,  S_SPB4}, // S_SPB3
-	{SPR_SPBM, 2, 1, {A_SPBChase}, 0, 0,  S_SPB5}, // S_SPB4
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0,  S_SPB6}, // S_SPB5
-	{SPR_SPBM, 3, 1, {A_SPBChase}, 0, 0,  S_SPB7}, // S_SPB6
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0,  S_SPB8}, // S_SPB7
-	{SPR_SPBM, 4, 1, {A_SPBChase}, 0, 0,  S_SPB9}, // S_SPB8
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB10}, // S_SPB9
-	{SPR_SPBM, 5, 1, {A_SPBChase}, 0, 0, S_SPB11}, // S_SPB10
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB12}, // S_SPB11
-	{SPR_SPBM, 6, 1, {A_SPBChase}, 0, 0, S_SPB13}, // S_SPB12
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB14}, // S_SPB13
-	{SPR_SPBM, 7, 1, {A_SPBChase}, 0, 0, S_SPB15}, // S_SPB14
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB16}, // S_SPB15
-	{SPR_SPBM, 8, 1, {A_SPBChase}, 0, 0, S_SPB17}, // S_SPB16
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB18}, // S_SPB17
-	{SPR_SPBM, 8, 1, {A_SPBChase}, 0, 0, S_SPB19}, // S_SPB18
-	{SPR_SPBM, 0, 1, {A_SPBChase}, 0, 0, S_SPB20}, // S_SPB19
-	{SPR_SPBM, 8, 1, {A_SPBChase}, 0, 0,  S_SPB1}, // S_SPB20
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB2}, // S_SPB1
+	{SPR_SPBM, 1, 1, {NULL}, 0, 0,  S_SPB3}, // S_SPB2
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB4}, // S_SPB3
+	{SPR_SPBM, 2, 1, {NULL}, 0, 0,  S_SPB5}, // S_SPB4
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB6}, // S_SPB5
+	{SPR_SPBM, 3, 1, {NULL}, 0, 0,  S_SPB7}, // S_SPB6
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0,  S_SPB8}, // S_SPB7
+	{SPR_SPBM, 4, 1, {NULL}, 0, 0,  S_SPB9}, // S_SPB8
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB10}, // S_SPB9
+	{SPR_SPBM, 5, 1, {NULL}, 0, 0, S_SPB11}, // S_SPB10
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB12}, // S_SPB11
+	{SPR_SPBM, 6, 1, {NULL}, 0, 0, S_SPB13}, // S_SPB12
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB14}, // S_SPB13
+	{SPR_SPBM, 7, 1, {NULL}, 0, 0, S_SPB15}, // S_SPB14
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB16}, // S_SPB15
+	{SPR_SPBM, 8, 1, {NULL}, 0, 0, S_SPB17}, // S_SPB16
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB18}, // S_SPB17
+	{SPR_SPBM, 8, 1, {NULL}, 0, 0, S_SPB19}, // S_SPB18
+	{SPR_SPBM, 0, 1, {NULL}, 0, 0, S_SPB20}, // S_SPB19
+	{SPR_SPBM, 8, 1, {NULL}, 0, 0,  S_SPB1}, // S_SPB20
 	{SPR_SPBM, 8, 175, {NULL}, 0, 0, S_NULL}, // S_SPB_DEAD
+
+	{SPR_TRIS, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD,  9, {NULL},  2, 3, S_MANTA2}, // S_MANTA1
+	{SPR_TRNQ, FF_FULLBRIGHT|FF_ANIMATE|FF_PAPERSPRITE|FF_ADD, -1, {NULL}, 7, 1, S_NULL},   // S_MANTA2
 
 	{SPR_THNS, FF_FULLBRIGHT|9,  2, {NULL}, 0, 0, S_LIGHTNINGSHIELD2},		// S_LIGHTNINGSHIELD1
 	{SPR_THNS, FF_FULLBRIGHT|10, 2, {NULL}, 0, 0, S_LIGHTNINGSHIELD3},		// S_LIGHTNINGSHIELD2
@@ -23906,6 +23911,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_MANTARING
+		-1,             // doomednum
+		S_MANTA1,       // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_LIGHTNINGSHIELD
 		-1,             // doomednum
 		S_LIGHTNINGSHIELD1, // spawnstate
@@ -28704,13 +28736,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    16<<FRACBITS,    // radius
+	    16<<FRACBITS,   // radius
 	    32<<FRACBITS,   // height
 	    1,              // display offset
-	    100,            // mass
+	    DMG_NORMAL,     // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_DONTENCOREMAP|MF_NOGRAVITY|MF_PAIN, // flags
+	    MF_NOGRAVITY|MF_PAIN|MF_NOHITLAGFORME|MF_DONTENCOREMAP, // flags
 	    S_NULL          // raisestate
 	},
 

@@ -664,7 +664,7 @@ extern boolean comeback;
 
 extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;
-extern tic_t indirectitemcooldown;
+extern tic_t itemCooldowns[NUMKARTITEMS - 1];
 extern tic_t mapreset;
 extern boolean thwompsactive;
 extern UINT8 lastLowestLap;

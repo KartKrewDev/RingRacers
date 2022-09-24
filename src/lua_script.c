@@ -357,9 +357,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);
 		return 1;
-	} else if (fastcmp(word,"indirectitemcooldown")) {
-		lua_pushinteger(L, indirectitemcooldown);
-		return 1;
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
@@ -445,8 +442,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word,"exitcountdown"))
 		exitcountdown = (tic_t)luaL_checkinteger(L, 2);
-	else if (fastcmp(word,"indirectitemcooldown"))
-		indirectitemcooldown = (tic_t)luaL_checkinteger(L, 2);
 	else
 		return 0;
 

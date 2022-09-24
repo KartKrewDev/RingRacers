@@ -545,7 +545,7 @@ extern struct menutransition_s {
 extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
-extern consvar_t cv_chooseskin, cv_serversort;
+extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update;
 
 void M_SetMenuDelay(UINT8 i);
 

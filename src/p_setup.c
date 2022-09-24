@@ -3846,6 +3846,8 @@ static void P_InitPlayers(void)
 
 static void P_InitGametype(void)
 {
+	size_t i;
+
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
 
@@ -3870,7 +3872,10 @@ static void P_InitGametype(void)
 	}
 
 	wantedcalcdelay = wantedfrequency*2;
-	indirectitemcooldown = 0;
+
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = 0;
+
 	mapreset = 0;
 
 	thwompsactive = false;
@@ -3898,6 +3903,9 @@ static void P_InitGametype(void)
 
 		G_RecordDemo(buf);
 	}
+
+	// Started a game? Move on to the next jam when you go back to the title screen
+	CV_SetValue(&cv_menujam_update, 1);
 }
 
 /** Loads a level from a lump or external wad.

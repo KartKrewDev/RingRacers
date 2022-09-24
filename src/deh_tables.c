@@ -311,7 +311,6 @@ actionpointer_t actionpointers[] =
 	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
-	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
@@ -3641,6 +3640,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPB20",
 	"S_SPB_DEAD",
 
+	// Juicebox for SPB
+	"S_MANTA1",
+	"S_MANTA2",
+
 	// Lightning Shield
 	"S_LIGHTNINGSHIELD1",
 	"S_LIGHTNINGSHIELD2",
@@ -5345,6 +5348,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
+	"MT_MANTARING", // Juicebox for SPB
 
 	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_BUBBLESHIELD",
@@ -5714,11 +5718,14 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// True if button down last tic.
-	"ATTACKDOWN",
-	"ACCELDOWN",
-	"BRAKEDOWN",
-	"LOOKDOWN",
+	// free: 1<<0 to 1<<2 (name un-matchable)
+	"\x01",
+	"\x01",
+	"\x01",
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	"GAINAX",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?

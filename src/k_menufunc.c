@@ -143,6 +143,10 @@ consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesN
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
 
+consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
+static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
+
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
 CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
@@ -945,7 +949,13 @@ void M_StartControlPanel(void)
 		paused = false;
 		CON_ToggleOff();
 
-		S_ChangeMusicInternal("menu", true);
+		if (cv_menujam_update.value)
+		{
+			CV_AddValue(&cv_menujam, 1);
+			CV_SetValue(&cv_menujam_update, 0);
+		}
+
+		S_ChangeMusicInternal(cv_menujam.string, true);
 	}
 
 	menuactive = true;
@@ -1686,6 +1696,14 @@ void M_Init(void)
 	CV_RegisterVar(&cv_chooseskin);
 	CV_RegisterVar(&cv_autorecord);
 
+	// don't lose your position in the jam cycle
+	CV_RegisterVar(&cv_menujam_update);
+	CV_RegisterVar(&cv_menujam);
+
+#ifndef NONET
+	CV_RegisterVar(&cv_serversort);
+#endif
+
 	if (dedicated)
 		return;
 
@@ -1712,20 +1730,6 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyaddonsearch);
 
 	M_UpdateMenuBGImage(true);
-
-#if 0
-#ifdef HWRENDER
-	// Permanently hide some options based on render mode
-	if (rendermode == render_soft)
-		OP_VideoOptionsMenu[op_video_ogl].status =
-			OP_VideoOptionsMenu[op_video_kartman].status =
-			OP_VideoOptionsMenu[op_video_md2]    .status = IT_DISABLED;
-#endif
-#endif
-
-#ifndef NONET
-	CV_RegisterVar(&cv_serversort);
-#endif
 }
 
 // ==================================================
