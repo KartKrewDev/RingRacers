@@ -58,11 +58,11 @@ typedef enum
 //
 typedef enum
 {
-	// True if button down last tic.
-	PF_ATTACKDOWN		= 1,
-	PF_ACCELDOWN		= 1<<1,
-	PF_BRAKEDOWN		= 1<<2,
-	PF_LOOKDOWN			= 1<<3,
+	// free: 1<<0 to 1<<2
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	PF_GAINAX			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
@@ -337,6 +337,7 @@ typedef struct player_s
 
 	// Caveat: ticcmd_t is ATTRPACK! Be careful what precedes it.
 	ticcmd_t cmd;
+	ticcmd_t oldcmd; // from the previous tic
 
 	playerstate_t playerstate;
 
@@ -434,6 +435,9 @@ typedef struct player_s
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
 	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
+
+	UINT16 gateBoost;		// Juicebox Manta Ring boosts
+	UINT8 gateSound;		// Sound effect combo
 
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;

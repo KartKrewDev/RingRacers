@@ -683,8 +683,7 @@ void P_Ticker(boolean run)
 		if (exitcountdown > 1)
 			exitcountdown--;
 
-		if (indirectitemcooldown > 0)
-			indirectitemcooldown--;
+		K_RunItemCooldowns();
 
 		K_BossInfoTicker();
 
@@ -766,6 +765,11 @@ void P_Ticker(boolean run)
 		// The values needed to set this properly are not correct at map load,
 		// so we have to do it at the second tick instead...
 		K_TimerInit();
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
 	}
 
 //	Z_CheckMemCleanup();
