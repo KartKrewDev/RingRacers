@@ -4966,7 +4966,6 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 				spark->momz += P_GetMobjZMovement(mo);
 				spark->destscale = shockscale * spark->scale;
 				P_SetScale(spark, shockscale * spark->scale);
-				spark->radius = shockscale * spark->radius;
 
 				if (shockwave)
 					spark->frame |= FF_ADD;
