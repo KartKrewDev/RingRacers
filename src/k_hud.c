@@ -695,7 +695,7 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 	}
 }
 
-static patch_t **K_GetItemPatchTable(INT32 item)
+static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 {
 	patch_t **kp[1 + NUMKARTITEMS] = {
 		kp_sadface,
@@ -723,8 +723,8 @@ static patch_t **K_GetItemPatchTable(INT32 item)
 		kp_droptarget,
 	};
 
-	if (item >= KITEM_SAD && item < NUMKARTITEMS)
-		return kp[item - KITEM_SAD];
+	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
+		return kp[item - KITEM_SAD][offset];
 	else
 		return NULL;
 }
@@ -1146,7 +1146,7 @@ static void K_drawKartItem(void)
 				break;
 
 			default:
-				localpatch = K_GetItemPatchTable(item)[offset];
+				localpatch = K_GetCachedItemPatch(item, offset);
 		}
 	}
 	else
@@ -1224,7 +1224,7 @@ static void K_drawKartItem(void)
 					/*FALLTHRU*/
 
 				default:
-					localpatch = K_GetItemPatchTable(stplyr->itemtype)[offset];
+					localpatch = K_GetCachedItemPatch(stplyr->itemtype, offset);
 
 					if (localpatch == NULL)
 						localpatch = kp_nodraw; // diagnose underflows
