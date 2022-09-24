@@ -10726,6 +10726,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				player->trickpanel = 0;
 				K_trickPanelTimingVisual(player, momz);	// fail trick visual
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
+				if (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT))
+					K_DropHnextList(player, true);
 			}
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv
