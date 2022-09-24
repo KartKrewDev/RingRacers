@@ -6661,7 +6661,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				break;
 			case KITEM_SPB:
 			case KITEM_SHRINK:
-				indirectitemcooldown = 20*TICRATE;
+				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 				/* FALLTHRU */
 			default:
 				mobj->sprite = SPR_ITEM;
@@ -6911,8 +6911,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->threshold--;
 		break;
 	case MT_SPB:
-		indirectitemcooldown = 20*TICRATE;
-		/* FALLTHRU */
+		{
+			Obj_SPBThink(mobj);
+			break;
+		}
+	case MT_MANTARING:
+		{
+			Obj_MantaRingThink(mobj);
+			break;
+		}
 	case MT_BALLHOG:
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -9274,6 +9281,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+	case MT_SPB:
+	{
+		Obj_SPBExplode(mobj);
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:
@@ -9310,6 +9322,8 @@ void P_MobjThinker(mobj_t *mobj)
 		P_SetTarget(&mobj->hnext, NULL);
 	if (mobj->hprev && P_MobjWasRemoved(mobj->hprev))
 		P_SetTarget(&mobj->hprev, NULL);
+	if (mobj->itnext && P_MobjWasRemoved(mobj->itnext))
+		P_SetTarget(&mobj->itnext, NULL);
 
 	if (mobj->flags & MF_NOTHINK)
 		return;
@@ -10709,6 +10723,8 @@ void P_RemoveMobj(mobj_t *mobj)
 			P_SetTarget(&mobj->hprev, NULL);
 		}
 	}
+
+	P_SetTarget(&mobj->itnext, NULL);
 
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.
 #ifdef SCRAMBLE_REMOVED

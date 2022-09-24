@@ -252,6 +252,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->driftboost);
 	else if (fastcmp(field,"strongdriftboost"))
 		lua_pushinteger(L, plr->strongdriftboost);
+	else if (fastcmp(field,"gateBoost"))
+		lua_pushinteger(L, plr->gateBoost);
+	else if (fastcmp(field,"gateSound"))
+		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -616,6 +620,12 @@ static int player_set(lua_State *L)
 		plr->driftcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftboost"))
 		plr->driftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"strongdriftboost"))
+		plr->strongdriftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateBoost"))
+		plr->gateBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateSound"))
+		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstraft"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))

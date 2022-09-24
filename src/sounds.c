@@ -1118,6 +1118,18 @@ sfxinfo_t S_sfx[NUMSFX] =
   // Shrink laser beam
   {"beam01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // SPB seeking
+  {"spbska", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskb", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskc", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Juicebox for SPB
+  {"gate01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate02", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate03", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

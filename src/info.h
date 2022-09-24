@@ -275,7 +275,6 @@ enum actionnum
 	A_ITEMPOP,
 	A_JAWZCHASE,
 	A_JAWZEXPLODE,
-	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
 	A_LANDMINEEXPLODE,
@@ -548,7 +547,6 @@ void A_ChangeHeight();
 void A_ItemPop();
 void A_JawzChase();
 void A_JawzExplode();
-void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
 void A_LandMineExplode();
@@ -1113,6 +1111,8 @@ typedef enum sprite
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
+	SPR_TRIS, // SPB Manta Ring start
+	SPR_TRNQ, // SPB Manta Ring loop
 	SPR_THNS, // Thunder Shield
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BWVE, // Bubble Shield waves
@@ -4650,6 +4650,10 @@ typedef enum state
 	S_SPB20,
 	S_SPB_DEAD,
 
+	// Juicebox for SPB
+	S_MANTA1,
+	S_MANTA2,
+
 	// Thunder Shield
 	S_LIGHTNINGSHIELD1,
 	S_LIGHTNINGSHIELD2,
@@ -6390,6 +6394,7 @@ typedef enum mobj_type
 
 	MT_SPB, // SPB stuff
 	MT_SPBEXPLOSION,
+	MT_MANTARING, // Juicebox for SPB
 
 	MT_LIGHTNINGSHIELD, // Shields
 	MT_BUBBLESHIELD,
