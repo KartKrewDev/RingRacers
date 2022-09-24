@@ -931,7 +931,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| (tm.thing->player && tm.thing->player->bubbleblowup))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER && tm.thing->target != thing)))
 	{
@@ -967,7 +967,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	else if ((tm.thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET_SHIELD)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER)))
 	{
