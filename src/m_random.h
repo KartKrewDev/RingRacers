@@ -106,13 +106,16 @@ fixed_t P_RandomPeek(pr_class_t pr_class);
 #define P_GetRandSeed(pr) P_GetRandSeedD(__FILE__, __LINE__, pr)
 #define P_GetInitSeed(pr) P_GetInitSeedD(__FILE__, __LINE__, pr)
 #define P_SetRandSeed(pr, s) P_SetRandSeedD(__FILE__, __LINE__, pr, s)
+#define P_SetRandSeedNet(pr, i, s) P_SetRandSeedD(__FILE__, __LINE__, pr, i, s)
 UINT32 P_GetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class);
 void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 seed);
+void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed);
 #else
 UINT32 P_GetRandSeed(pr_class_t pr_class);
 UINT32 P_GetInitSeed(pr_class_t pr_class);
 void P_SetRandSeed(pr_class_t pr_class, UINT32 seed);
+void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed);
 #endif
 
 void P_ClearRandom(UINT32 seed);

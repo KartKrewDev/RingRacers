@@ -4452,6 +4452,17 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	playeringame[consoleplayer] = true;
 }
 
+static void P_NetArchiveRNG(void)
+{
+	size_t i;
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetInitSeed(i));
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
+}
+
 static void P_NetArchiveMisc(boolean resending)
 {
 	size_t i;
@@ -4475,10 +4486,7 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		WRITEUINT32(save_p, P_GetRandSeed(i));
-	}
+	P_NetArchiveRNG();
 
 	WRITEUINT32(save_p, tokenlist);
 
@@ -4602,6 +4610,19 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 }
 
+static inline void P_NetUnArchiveRNG(void)
+{
+	size_t i;
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		UINT32 init = READUINT32(save_p);
+		UINT32 seed = READUINT32(save_p);
+
+		P_SetRandSeedNet(i, init, seed);
+	}
+}
+
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	size_t i;
@@ -4638,10 +4659,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		P_SetRandSeed(i, READUINT32(save_p));
-	}
+	P_NetUnArchiveRNG();
 
 	tokenlist = READUINT32(save_p);
 
@@ -4894,8 +4912,6 @@ boolean P_LoadGame(INT16 mapoverride)
 
 boolean P_LoadNetGame(boolean reloading)
 {
-	size_t i;
-
 	CV_LoadNetVars(&save_p);
 
 	if (!P_NetUnArchiveMisc(reloading))
@@ -4917,12 +4933,6 @@ boolean P_LoadNetGame(boolean reloading)
 	}
 
 	LUA_UnArchive(&save_p);
-
-	// This is stupid and hacky, but maybe it'll work!
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		P_SetRandSeed(i, P_GetInitSeed(i));
-	}
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,

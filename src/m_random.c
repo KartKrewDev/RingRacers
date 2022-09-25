@@ -231,7 +231,7 @@ UINT32 P_GetInitSeedD(const char *rfile, INT32 rline, pr_class_t pr_class)
 }
 
 /** Sets the random seed.
-  * Used at the beginning of the game, and also for netgames.
+  * Used at the beginning of a game.
   *
   * \param pr_class RNG class to adjust.
   * \param seed New random seed.
@@ -251,8 +251,31 @@ void P_SetRandSeedD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 
 	rng.seed[pr_class] = rng.init[pr_class] = seed;
 }
 
+/** Sets both the initial seed and the current seed.
+  * Used for netgame sync.
+  *
+  * \param pr_class RNG class to adjust.
+  * \param init Sent initial seed.
+  * \param seed Sent current seed.
+  * \sa P_SetRandSeed
+  */
+#ifndef DEBUGRANDOM
+void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed)
+{
+#else
+void P_SetRandSeedNetD(const char *rfile, INT32 rline, pr_class_t pr_class, UINT32 init, UINT32 seed)
+{
+	CONS_Printf("P_SetRandSeedNet(%u) at: %sp %d\n", pr_class, rfile, rline);
+#endif
+	if (!init) init = DEFAULT_SEED;
+	rng.init[pr_class] = init;
+
+	if (!seed) seed = DEFAULT_SEED;
+	rng.seed[pr_class] = seed;
+}
+
 /** Initializes random seeds for all classes.
-  * Used at the beginning of the game.
+  * Used at the beginning of a game.
   *
   * \param rindex New random index.
   * \sa P_SetRandSeed
