@@ -53,6 +53,7 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
 #define ARCHIVEBLOCK_WAYPOINTS 0x7F46498F
+#define ARCHIVEBLOCK_RNG      0x7FAAB5BD
 
 // Note: This cannot be bigger
 // than an UINT16
@@ -4452,17 +4453,6 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	playeringame[consoleplayer] = true;
 }
 
-static void P_NetArchiveRNG(void)
-{
-	size_t i;
-
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		WRITEUINT32(save_p, P_GetInitSeed(i));
-		WRITEUINT32(save_p, P_GetRandSeed(i));
-	}
-}
-
 static void P_NetArchiveMisc(boolean resending)
 {
 	size_t i;
@@ -4485,8 +4475,6 @@ static void P_NetArchiveMisc(boolean resending)
 			pig |= (playeringame[i] != 0)<<i;
 		WRITEUINT32(save_p, pig);
 	}
-
-	P_NetArchiveRNG();
 
 	WRITEUINT32(save_p, tokenlist);
 
@@ -4605,19 +4593,6 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 }
 
-static inline void P_NetUnArchiveRNG(void)
-{
-	size_t i;
-
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		UINT32 init = READUINT32(save_p);
-		UINT32 seed = READUINT32(save_p);
-
-		P_SetRandSeedNet(i, init, seed);
-	}
-}
-
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	size_t i;
@@ -4653,8 +4628,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 			// playerstate is set in unarchiveplayers
 		}
 	}
-
-	P_NetUnArchiveRNG();
 
 	tokenlist = READUINT32(save_p);
 
@@ -4832,6 +4805,35 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
+static void P_NetArchiveRNG(void)
+{
+	size_t i;
+
+	WRITEUINT32(save_p, ARCHIVEBLOCK_RNG);
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetInitSeed(i));
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
+}
+
+static inline void P_NetUnArchiveRNG(void)
+{
+	size_t i;
+
+	if (READUINT32(save_p) != ARCHIVEBLOCK_RNG)
+		I_Error("Bad $$$.sav at archive block RNG");
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		UINT32 init = READUINT32(save_p);
+		UINT32 seed = READUINT32(save_p);
+
+		P_SetRandSeedNet(i, init, seed);
+	}
+}
+
 void P_SaveGame(INT16 mapnum)
 {
 	P_ArchiveMisc(mapnum);
@@ -4875,6 +4877,8 @@ void P_SaveNetGame(boolean resending)
 		P_NetArchiveWaypoints();
 	}
 	LUA_Archive(&save_p);
+
+	P_NetArchiveRNG();
 
 	P_ArchiveLuabanksAndConsistency();
 }
@@ -4923,6 +4927,8 @@ boolean P_LoadNetGame(boolean reloading)
 	}
 
 	LUA_UnArchive(&save_p);
+
+	P_NetUnArchiveRNG();
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,
