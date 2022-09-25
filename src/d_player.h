@@ -601,6 +601,8 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+	UINT8 topdriftheld;
+	UINT8 topinfirst;
 
 	UINT8 shrinkLaserDelay;
 
