@@ -2553,10 +2553,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Failed to read file '%s'.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-
-		return;
+		infobuffer = NULL;
+		goto badreplay;
 	}
 
 	info_p = infobuffer;
@@ -2564,10 +2562,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	if (memcmp(info_p, DEMOHEADER, 12))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is not a Ring Racers replay file.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-		Z_Free(infobuffer);
-		return;
+		goto badreplay;
 	}
 
 	pdemo->type = MD_LOADED;
@@ -2589,10 +2584,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_ERROR, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-		Z_Free(infobuffer);
-		return;
+		goto badreplay;
 	}
 
 	if (version != VERSION || subversion != SUBVERSION)
@@ -2602,10 +2594,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	if (memcmp(info_p, "PLAY", 4))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is the wrong type of recording and cannot be played.\n"), pdemo->filepath);
-		pdemo->type = MD_INVALID;
-		sprintf(pdemo->title, "INVALID REPLAY");
-		Z_Free(infobuffer);
-		return;
+		goto badreplay;
 	}
 	info_p += 4; // "PLAY"
 	READSTRINGN(info_p, mapname, sizeof(mapname));
@@ -2703,6 +2692,12 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	}
 
 	// I think that's everything we need?
+	Z_Free(infobuffer);
+	return;
+
+badreplay:
+	pdemo->type = MD_INVALID;
+	sprintf(pdemo->title, "INVALID REPLAY");
 	Z_Free(infobuffer);
 }
 
