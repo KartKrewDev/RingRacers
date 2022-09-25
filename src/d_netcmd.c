@@ -2971,7 +2971,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	mapnumber = READINT16(*cp);
 
 	if (netgame)
-		P_SetRandSeed(READUINT32(*cp));
+		P_ClearRandom(READUINT32(*cp));
 
 	if (!skipprecutscene)
 	{
@@ -3225,7 +3225,9 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum)
 	if (playernum != serverplayer) // it's not from the server, wtf?
 		return;
 
-	P_SetRandSeed(seed);
+	// Sal: this seems unused, so this is probably fine?
+	// If it needs specific RNG classes, then it should be easy to add.
+	P_ClearRandom(seed);
 }
 
 /** Clears all players' scores in a netgame.

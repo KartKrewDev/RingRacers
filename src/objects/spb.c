@@ -209,9 +209,9 @@ static void SpawnSPBSliptide(mobj_t *spb, SINT8 dir)
 static void SpawnSPBSpeedLines(mobj_t *spb)
 {
 	mobj_t *fast = P_SpawnMobjFromMobj(spb,
-		P_RandomRange(-24, 24) * FRACUNIT,
-		P_RandomRange(-24, 24) * FRACUNIT,
-		(spb->info->height / 2) + (P_RandomRange(-24, 24) * FRACUNIT),
+		P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT,
+		P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT,
+		(spb->info->height / 2) + (P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT),
 		MT_FASTLINE
 	);
 
