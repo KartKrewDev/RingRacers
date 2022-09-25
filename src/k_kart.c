@@ -7151,6 +7151,8 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
+		thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
+
 		if (gametyperules & GTR_CIRCUIT)
 		{
 			if (player->position > source->position)
@@ -7168,7 +7170,13 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			}
 
 			// Z pos too high/low
-			if (abs(player->mo->z - (actor->z + actor->momz)) > RING_DIST/8)
+			if (abs(player->mo->z - (actor->z + actor->momz)) > FixedMul(RING_DIST/8, mapobjectscale))
+			{
+				continue;
+			}
+
+			// Distance too far away
+			if (thisdist > FixedMul(RING_DIST*2, mapobjectscale))
 			{
 				continue;
 			}
@@ -7179,14 +7187,6 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 
 		// Don't go for people who are behind you
 		if (thisang > range)
-		{
-			continue;
-		}
-
-		thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
-
-		// Don't go for people who are too far away
-		if (thisdist > 2*RING_DIST)
 		{
 			continue;
 		}
