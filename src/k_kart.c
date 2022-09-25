@@ -7155,7 +7155,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			if (player->position > source->position)
+			if (player->position >= source->position)
 			{
 				// Don't pay attention to people who aren't above your position
 				continue;
@@ -7191,7 +7191,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
-		thisScore = (AngleFixed(thisang) * 2) + (thisdist / 4);
+		thisScore = (AngleFixed(thisang) * 8) + (thisdist / 32);
 
 		//CONS_Printf("got score %f from player # %d\n", FixedToFloat(thisScore), i);
 
