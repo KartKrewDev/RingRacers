@@ -7191,7 +7191,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 			continue;
 		}
 
-		thisScore = (AngleFixed(thisang) * 2) + (thisdist / 2);
+		thisScore = (AngleFixed(thisang) * 2) + (thisdist / 4);
 
 		//CONS_Printf("got score %f from player # %d\n", FixedToFloat(thisScore), i);
 
@@ -8269,26 +8269,69 @@ void K_KartPlayerAfterThink(player_t *player)
 	// Jawz reticule (seeking)
 	if (player->itemtype == KITEM_JAWZ && (player->pflags & PF_ITEMOUT))
 	{
-		INT32 lasttarg = player->lastjawztarget;
-		player_t *targ;
-		mobj_t *ret;
+		INT32 lastTargID = player->lastjawztarget;
+		player_t *lastTarg = NULL;
+		player_t *targ = NULL;
+		mobj_t *ret = NULL;
+
+		if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
+			&& playeringame[lastTargID] == true)
+		{
+			if (players[lastTargID].spectator == false)
+			{
+				lastTarg = &players[lastTargID];
+			}
+		}
 
 		if (player->throwdir == -1)
 		{
+			// Backwards Jawz targets yourself.
 			targ = player;
 			player->jawztargetdelay = 0;
 		}
-		else if (player->jawztargetdelay && playeringame[lasttarg] && !players[lasttarg].spectator)
-		{
-			targ = &players[lasttarg];
-			player->jawztargetdelay--;
-		}
 		else
 		{
+			// Find a new target.
 			targ = K_FindJawzTarget(player->mo, player, ANGLE_45);
 		}
 
-		if (!targ || !targ->mo || P_MobjWasRemoved(targ->mo))
+		if (targ != NULL && targ->mo != NULL && P_MobjWasRemoved(targ->mo) == false)
+		{
+			if (targ - players == lastTargID)
+			{
+				// Increment delay.
+				if (player->jawztargetdelay < 10)
+				{
+					player->jawztargetdelay++;
+				}
+			}
+			else
+			{
+				if (player->jawztargetdelay > 0)
+				{
+					// Wait a bit before swapping...
+					player->jawztargetdelay--;
+					targ = lastTarg;
+				}
+				else
+				{
+					// Allow a swap.
+					if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
+					{
+						S_StartSound(NULL, sfx_s3k89);
+					}
+					else
+					{
+						S_StartSound(targ->mo, sfx_s3k89);
+					}
+
+					player->lastjawztarget = targ - players;
+					player->jawztargetdelay = 5;
+				}
+			}
+		}
+
+		if (targ == NULL || targ->mo == NULL || P_MobjWasRemoved(targ->mo) == true)
 		{
 			player->lastjawztarget = -1;
 			player->jawztargetdelay = 0;
@@ -8303,17 +8346,6 @@ void K_KartPlayerAfterThink(player_t *player)
 		ret->frame |= ((leveltime % 10) / 2);
 		ret->tics = 1;
 		ret->color = player->skincolor;
-
-		if (targ - players != lasttarg)
-		{
-			if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
-				S_StartSound(NULL, sfx_s3k89);
-			else
-				S_StartSound(targ->mo, sfx_s3k89);
-
-			player->lastjawztarget = targ - players;
-			player->jawztargetdelay = 5;
-		}
 	}
 	else
 	{
