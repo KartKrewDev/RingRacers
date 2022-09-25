@@ -85,10 +85,6 @@
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
 
-#ifdef _WINDOWS
-#include "win32/win_main.h" // I_DoStartupMouse
-#endif
-
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
 #endif
@@ -714,11 +710,6 @@ void D_SRB2Loop(void)
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-#ifdef _WINDOWS
-	CONS_Printf("I_StartupMouse()...\n");
-	I_DoStartupMouse();
-#endif
-
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
@@ -1258,9 +1249,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
-#endif
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));

@@ -35,10 +35,6 @@
 #include "filesrch.h"
 #include "m_misc.h"
 
-#ifdef _WINDOWS
-#include "win32/win_main.h"
-#endif
-
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
@@ -1550,13 +1546,6 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 //
 void CONS_Error(const char *msg)
 {
-#if defined(RPC_NO_WINDOWS_H) && defined(_WINDOWS)
-	if (!graphics_started)
-	{
-		MessageBoxA(vid.WndParent, msg, "Dr. Robotnik's Ring Racers Warning", MB_OK);
-		return;
-	}
-#endif
 	CONS_Printf("\x82%s", msg); // write error msg in different colour
 	CONS_Printf(M_GetText("Press ENTER to continue\n"));
 

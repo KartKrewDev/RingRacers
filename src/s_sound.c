@@ -62,15 +62,7 @@ static lumpnum_t S_GetMusicLumpNum(const char *mname);
 
 static boolean S_CheckQueue(void);
 
-#if defined (_WINDOWS) && !defined (SURROUND) //&& defined (_X86_)
-#define SURROUND
-#endif
-
-#ifdef _WINDOWS
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#else
 consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#endif
 
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -996,11 +988,9 @@ void S_SetSfxVolume(INT32 volume)
 
 void S_ClearSfx(void)
 {
-#ifndef DJGPPDOS
 	size_t i;
 	for (i = 1; i < NUMSFX; i++)
 		I_FreeSfx(S_sfx + i);
-#endif
 }
 
 static void S_StopChannel(INT32 cnum)
