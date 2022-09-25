@@ -4091,23 +4091,14 @@ state_t states[NUMSTATES] =
 	{SPR_ORBN, 11, 3, {NULL}, 0, 0, S_ORBINAUT_SHIELD1},	// S_ORBINAUT_SHIELD6
 	{SPR_ORBN,  6, 175, {NULL}, 0, 0, S_NULL},			// S_ORBINAUT_SHIELDDEAD
 
-	{SPR_JAWZ, 0, 1, {A_JawzChase}, 0, 0, S_JAWZ2},	// S_JAWZ1
-	{SPR_JAWZ, 4, 1, {A_JawzChase}, 0, 0, S_JAWZ3},	// S_JAWZ2
-	{SPR_JAWZ, 1, 1, {A_JawzChase}, 0, 0, S_JAWZ4},	// S_JAWZ3
-	{SPR_JAWZ, 4, 1, {A_JawzChase}, 0, 0, S_JAWZ5},	// S_JAWZ4
-	{SPR_JAWZ, 2, 1, {A_JawzChase}, 0, 0, S_JAWZ6},	// S_JAWZ5
-	{SPR_JAWZ, 4, 1, {A_JawzChase}, 0, 0, S_JAWZ7},	// S_JAWZ6
-	{SPR_JAWZ, 3, 1, {A_JawzChase}, 0, 0, S_JAWZ8},	// S_JAWZ7
-	{SPR_JAWZ, 4, 1, {A_JawzChase}, 0, 0, S_JAWZ1},	// S_JAWZ8
-
-	{SPR_JAWZ, 0, 1, {NULL}, 0, 0, S_JAWZ_DUD2},	// S_JAWZ_DUD1
-	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ_DUD3},	// S_JAWZ_DUD2
-	{SPR_JAWZ, 1, 1, {NULL}, 0, 0, S_JAWZ_DUD4},	// S_JAWZ_DUD3
-	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ_DUD5},	// S_JAWZ_DUD4
-	{SPR_JAWZ, 2, 1, {NULL}, 0, 0, S_JAWZ_DUD6},	// S_JAWZ_DUD5
-	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ_DUD7},	// S_JAWZ_DUD6
-	{SPR_JAWZ, 3, 1, {NULL}, 0, 0, S_JAWZ_DUD8},	// S_JAWZ_DUD7
-	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ_DUD1},	// S_JAWZ_DUD8
+	{SPR_JAWZ, 0, 1, {NULL}, 0, 0, S_JAWZ2},	// S_JAWZ1
+	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ3},	// S_JAWZ2
+	{SPR_JAWZ, 1, 1, {NULL}, 0, 0, S_JAWZ4},	// S_JAWZ3
+	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ5},	// S_JAWZ4
+	{SPR_JAWZ, 2, 1, {NULL}, 0, 0, S_JAWZ6},	// S_JAWZ5
+	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ7},	// S_JAWZ6
+	{SPR_JAWZ, 3, 1, {NULL}, 0, 0, S_JAWZ8},	// S_JAWZ7
+	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ1},	// S_JAWZ8
 
 	{SPR_JAWZ, 0, 1, {NULL}, 0, 0, S_JAWZ_SHIELD2},	// S_JAWZ_SHIELD1
 	{SPR_JAWZ, 4, 1, {NULL}, 0, 0, S_JAWZ_SHIELD3},	// S_JAWZ_SHIELD2
@@ -23482,33 +23473,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_JAWZ
 		-1,             // doomednum
 		S_JAWZ1,        // spawnstate
-		1,              // spawnhealth
-		S_NULL,         // seestate
-		sfx_tossed,     // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_JAWZ_DEAD1,   // deathstate
-		S_JAWZ_DEAD2,   // xdeathstate
-		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
-		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		1,              // damage
-		sfx_s3kc0s,     // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP,   // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_JAWZ_DUD
-		-1,             // doomednum
-		S_JAWZ_DUD1,    // spawnstate
 		1,              // spawnhealth
 		S_NULL,         // seestate
 		sfx_tossed,     // seesound
