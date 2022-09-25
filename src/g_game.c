@@ -4261,7 +4261,7 @@ void G_LoadGameData(void)
 		{
 			// Since it's not worth declaring the entire gamedata
 			// corrupt over extra maps, we report and move on.
-			CONS_Alert(CONS_WARNING, "Map with lumpname %s does not exist, time record data will be discarded", mapname);
+			CONS_Alert(CONS_WARNING, "Map with lumpname %s does not exist, time record data will be discarded\n", mapname);
 		}
 	}
 
