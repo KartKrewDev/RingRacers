@@ -698,6 +698,7 @@ typedef struct
 } patch_t;
 
 extern patch_t *missingpat;
+extern patch_t *blanklvl;
 
 #if defined(_MSC_VER)
 #pragma pack(1)
