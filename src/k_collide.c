@@ -758,8 +758,10 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 		if (P_PlayerInPain(t2->player)
 			|| t2->player->flashing || t2->player->hyudorotimer
-			|| t2->player->justbumped || t2->scale > t1->scale + (mapobjectscale/8))
+			|| t2->player->justbumped || K_IsBigger(t2, t1))
+		{
 			return true;
+		}
 
 		// Player Damage
 		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
@@ -852,7 +854,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 	/*
 	if (t2->player && (t2->player->invincibilitytimer > 0
-		|| t2->player->growshrinktimer > 0))
+		|| K_IsBigger(t2, t1) == true))
 		return true;
 	*/
 
@@ -862,23 +864,31 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
-	const boolean flameT1 = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
-	const boolean flameT2 = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
-
 	boolean t1Condition = false;
 	boolean t2Condition = false;
 	boolean stungT1 = false;
 	boolean stungT2 = false;
 
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8)) || (t1->player->invincibilitytimer > 0);
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8)) || (t2->player->invincibilitytimer > 0);
+	// Clash instead of damage if both parties have any of these conditions
+	t1Condition = (K_IsBigger(t1, t2) == true)
+		|| (t1->player->invincibilitytimer > 0)
+		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
 
-	if ((t1Condition == true || flameT1 == true) && (t2Condition == true || flameT2 == true))
+	t2Condition = (K_IsBigger(t2, t1) == true)
+		|| (t2->player->invincibilitytimer > 0)
+		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
+
+	if (t1Condition == true && t2Condition == true)
 	{
 		K_DoPowerClash(t1->player, t2->player);
 		return false;
 	}
-	else if (t1Condition == true && t2Condition == false)
+
+	// Cause tumble on invincibility
+	t1Condition = (t1->player->invincibilitytimer > 0);
+	t2Condition = (t2->player->invincibilitytimer > 0);
+
+	if (t1Condition == true && t2Condition == false)
 	{
 		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
 		return true;
@@ -890,8 +900,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Flame Shield dash damage
-	t1Condition = flameT1;
-	t2Condition = flameT2;
+	t1Condition = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+	t2Condition = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
 
 	if (t1Condition == true && t2Condition == false)
 	{
@@ -925,6 +935,21 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
+	}
+
+	// Cause stumble on scale difference
+	t1Condition = K_IsBigger(t1, t2);
+	t2Condition = K_IsBigger(t2, t1);
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		K_StumblePlayer(t2->player);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		K_StumblePlayer(t1->player);
+		return true;
 	}
 
 	// Ring sting, this is a bit more unique
