@@ -1141,7 +1141,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Vote Mode Change", "Set how often voting proposes a different gamemode.",
 		NULL, {.cvar = &cv_kartvoterulechanges}, 0, 0},
 
-#ifndef NONET
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1170,7 +1169,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_SUBMENU, "Advanced...", "Advanced options. Be careful when messing with these!",
 		NULL, {.submenu = &OPTIONS_ServerAdvancedDef}, 0, 0},
 
-#endif
 };
 
 menu_t OPTIONS_ServerDef = {
@@ -1188,7 +1186,6 @@ menu_t OPTIONS_ServerDef = {
 	NULL,
 };
 
-#ifndef NONET
 menuitem_t OPTIONS_ServerAdvanced[] =
 {
 
@@ -1246,7 +1243,6 @@ menu_t OPTIONS_ServerAdvancedDef = {
 	NULL,
 	NULL,
 };
-#endif
 
 // data options menu -- see dopt_e
 menuitem_t OPTIONS_Data[] =
