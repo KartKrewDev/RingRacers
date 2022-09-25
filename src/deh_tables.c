@@ -309,7 +309,6 @@ actionpointer_t actionpointers[] =
 
 	// SRB2Kart
 	{{A_ItemPop},                "A_ITEMPOP"},
-	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
@@ -3512,14 +3511,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JAWZ6",
 	"S_JAWZ7",
 	"S_JAWZ8",
-	"S_JAWZ_DUD1",
-	"S_JAWZ_DUD2",
-	"S_JAWZ_DUD3",
-	"S_JAWZ_DUD4",
-	"S_JAWZ_DUD5",
-	"S_JAWZ_DUD6",
-	"S_JAWZ_DUD7",
-	"S_JAWZ_DUD8",
 	"S_JAWZ_SHIELD1",
 	"S_JAWZ_SHIELD2",
 	"S_JAWZ_SHIELD3",
@@ -5326,7 +5317,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_ORBINAUT_SHIELD",
 
 	"MT_JAWZ", // Jawz stuff
-	"MT_JAWZ_DUD",
 	"MT_JAWZ_SHIELD",
 
 	"MT_PLAYERRETICULE", // Jawz reticule

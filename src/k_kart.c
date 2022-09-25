@@ -1421,7 +1421,6 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 				weight = K_PlayerWeight(against, NULL);
 			break;
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL) + (3*FRACUNIT);
@@ -4674,7 +4673,7 @@ fixed_t K_ItemScaleForPlayer(player_t *player)
 	}
 }
 
-static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed)
+static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed, SINT8 dir)
 {
 	mobj_t *th;
 	fixed_t x, y, z;
@@ -4688,20 +4687,20 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
 		{
 			// Nerf the base item speed a bit.
-			finalspeed = FixedMul(finalspeed, SHRINK_PHYSICS_SCALE);
+			speed = finalspeed = FixedMul(speed, SHRINK_PHYSICS_SCALE);
 		}
 
 		if (source->player->speed > topspeed)
 		{
-			angle_t input = source->angle - an;
-			boolean invert = (input > ANGLE_180);
-			if (invert)
-				input = InvAngle(input);
+			angle_t delta = AngleDelta(source->angle, an);
 
-			finalspeed = max(speed, FixedMul(speed, FixedMul(
-				FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
-				(((180<<FRACBITS) - AngleFixed(input)) / 180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
-				)));
+			finalspeed = max(speed, FixedMul(
+				speed,
+				FixedMul(
+					FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
+					FixedDiv(AngleFixed(ANGLE_180 - delta), 180 * FRACUNIT) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
+				)
+			));
 		}
 
 		finalscale = K_ItemScaleForPlayer(source->player);
@@ -4710,6 +4709,12 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	if (type == MT_BUBBLESHIELDTRAP)
 	{
 		finalscale = source->scale;
+	}
+
+	if (dir == -1 && (type == MT_ORBINAUT || type == MT_BALLHOG))
+	{
+		// Backwards nerfs
+		finalspeed /= 8;
 	}
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
@@ -4763,31 +4768,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	switch (type)
 	{
 		case MT_ORBINAUT:
-			if (source && source->player)
-				th->color = source->player->skincolor;
-			else
-				th->color = SKINCOLOR_GREY;
-			th->movefactor = finalspeed;
+			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
-			if (source && source->player)
-			{
-				INT32 lasttarg = source->player->lastjawztarget;
-				th->cvmem = source->player->skincolor;
-				if ((lasttarg >= 0 && lasttarg < MAXPLAYERS)
-					&& playeringame[lasttarg]
-					&& !players[lasttarg].spectator
-					&& players[lasttarg].mo)
-				{
-					P_SetTarget(&th->tracer, players[lasttarg].mo);
-				}
-			}
-			else
-				th->cvmem = SKINCOLOR_KETCHUP;
-			/* FALLTHRU */
-		case MT_JAWZ_DUD:
-			S_StartSound(th, th->info->activesound);
-			/* FALLTHRU */
+			Obj_JawzThrown(th, finalspeed, dir);
+			break;
 		case MT_SPB:
 			th->movefactor = finalspeed;
 			break;
@@ -5623,15 +5608,15 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 	if (missile) // Shootables
 	{
-		if (dir == -1 && mapthing != MT_SPB)
+		if (dir < 0 && mapthing != MT_SPB)
 		{
 			// Shoot backward
-			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED/8);
+			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED, dir);
 		}
 		else
 		{
 			// Shoot forward
-			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED);
+			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, dir);
 		}
 
 		if (mapthing == MT_DROPTARGET && mo)
@@ -6265,7 +6250,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 				break;
 			case MT_JAWZ_SHIELD:
 				orbit = true;
-				type = MT_JAWZ_DUD;
+				type = MT_JAWZ;
 				break;
 			// Kart trailing items
 			case MT_BANANA_SHIELD:
@@ -6321,6 +6306,12 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 		dropwork->health = work->health; // will never be set to 0 as long as above guard exists
 		dropwork->hitlag = work->hitlag;
+
+		if (orbit == true)
+		{
+			// Projectile item; set fuse
+			dropwork->fuse = RR_PROJECTILE_FUSE;
+		}
 
 		// Copy interp data
 		dropwork->old_angle = work->old_angle;
@@ -6383,7 +6374,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 			dropwork->tics = -1;
 
-			if (type == MT_JAWZ_DUD)
+			if (type == MT_JAWZ)
 			{
 				dropwork->z += 20*flip*dropwork->scale;
 			}
@@ -6771,8 +6762,11 @@ static void K_MoveHeldObjects(player_t *player)
 	if (!player->mo->hnext)
 	{
 		player->bananadrag = 0;
+
 		if (player->pflags & PF_EGGMANOUT)
+		{
 			player->pflags &= ~PF_EGGMANOUT;
+		}
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
@@ -6787,14 +6781,18 @@ static void K_MoveHeldObjects(player_t *player)
 		// we need this here too because this is done in afterthink - pointers are cleaned up at the START of each tic...
 		P_SetTarget(&player->mo->hnext, NULL);
 		player->bananadrag = 0;
+
 		if (player->pflags & PF_EGGMANOUT)
+		{
 			player->pflags &= ~PF_EGGMANOUT;
+		}
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
 			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
+
 		return;
 	}
 
@@ -6805,80 +6803,9 @@ static void K_MoveHeldObjects(player_t *player)
 		case MT_ORBINAUT_SHIELD: // Kart orbit items
 		case MT_JAWZ_SHIELD:
 			{
-				mobj_t *cur = player->mo->hnext;
-				fixed_t speed = ((8 - min(4, player->itemamount)) * cur->info->speed) / 7;
-
-				player->bananadrag = 0; // Just to make sure
-
-				while (cur && !P_MobjWasRemoved(cur))
-				{
-					const fixed_t radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(cur->radius, cur->radius); // mobj's distance from its Target, or Radius.
-					fixed_t z;
-
-					if (!cur->health)
-					{
-						cur = cur->hnext;
-						continue;
-					}
-
-					cur->color = player->skincolor;
-
-					cur->angle -= ANGLE_90;
-					cur->angle += FixedAngle(speed);
-
-					if (cur->extravalue1 < radius)
-						cur->extravalue1 += P_AproxDistance(cur->extravalue1, radius) / 12;
-					if (cur->extravalue1 > radius)
-						cur->extravalue1 = radius;
-
-					// If the player is on the ceiling, then flip your items as well.
-					if (player && player->mo->eflags & MFE_VERTICALFLIP)
-						cur->eflags |= MFE_VERTICALFLIP;
-					else
-						cur->eflags &= ~MFE_VERTICALFLIP;
-
-					// Shrink your items if the player shrunk too.
-					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), finalscale)));
-
-					if (P_MobjFlip(cur) > 0)
-						z = player->mo->z;
-					else
-						z = player->mo->z + player->mo->height - cur->height;
-
-					cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
-					P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
-					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
-					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
-					cur->flags &= ~MF_NOCLIPTHING;
-
-					if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true))
-						P_SlideMove(cur);
-
-					if (P_IsObjectOnGround(player->mo))
-					{
-						if (P_MobjFlip(cur) > 0)
-						{
-							if (cur->floorz > player->mo->z - cur->height)
-								z = cur->floorz;
-						}
-						else
-						{
-							if (cur->ceilingz < player->mo->z + player->mo->height + cur->height)
-								z = cur->ceilingz - cur->height;
-						}
-					}
-
-					// Center it during the scale up animation
-					z += (FixedMul(mobjinfo[cur->type].height, finalscale - cur->scale)>>1) * P_MobjFlip(cur);
-
-					cur->z = z;
-					cur->momx = cur->momy = 0;
-					cur->angle += ANGLE_90;
-
-					cur = cur->hnext;
-				}
+				Obj_OrbinautJawzMoveHeld(player);
+				break;
 			}
-			break;
 		case MT_BANANA_SHIELD: // Kart trailing items
 		case MT_SSMINE_SHIELD:
 		case MT_DROPTARGET_SHIELD:
@@ -7088,94 +7015,110 @@ static void K_MoveHeldObjects(player_t *player)
 	}
 }
 
-player_t *K_FindJawzTarget(mobj_t *actor, player_t *source)
+player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 {
-	fixed_t best = -1;
+	fixed_t best = INT32_MAX;
 	player_t *wtarg = NULL;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		angle_t thisang;
-		player_t *player;
+		angle_t thisang = ANGLE_MAX;
+		fixed_t thisdist = INT32_MAX;
+		fixed_t thisScore = INT32_MAX;
+		player_t *player = NULL;
 
-		if (!playeringame[i])
+		if (playeringame[i] == false)
+		{
 			continue;
+		}
 
 		player = &players[i];
 
-		if (player->spectator)
-			continue; // spectator
-
-		if (!player->mo)
-			continue;
-
-		if (player->mo->health <= 0)
-			continue; // dead
-
 		// Don't target yourself, stupid.
 		if (player == source)
+		{
 			continue;
+		}
 
-		// Don't home in on teammates.
-		if (G_GametypeHasTeams() && source->ctfteam == player->ctfteam)
+		if (player->spectator)
+		{
+			// Spectators
 			continue;
+		}
 
-		// Invisible, don't bother
-		if (player->hyudorotimer)
+		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		{
+			// Invalid mobj
 			continue;
+		}
 
-		// Find the angle, see who's got the best.
-		thisang = actor->angle - R_PointToAngle2(actor->x, actor->y, player->mo->x, player->mo->y);
-		if (thisang > ANGLE_180)
-			thisang = InvAngle(thisang);
+		if (player->mo->health <= 0)
+		{
+			// dead
+			continue;
+		}
 
-		// Jawz only go after the person directly ahead of you in race... sort of literally now!
+		if (G_GametypeHasTeams() && source != NULL && source->ctfteam == player->ctfteam)
+		{
+			// Don't home in on teammates.
+			continue;
+		}
+
+		if (player->hyudorotimer > 0)
+		{
+			// Invisible player
+			continue;
+		}
+
+		thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
+
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			// Don't go for people who are behind you
-			if (thisang > ANGLE_67h)
-				continue;
-			// Don't pay attention to people who aren't above your position
 			if (player->position >= source->position)
-				continue;
-			if ((best == -1) || (player->position > best))
 			{
-				wtarg = player;
-				best = player->position;
+				// Don't pay attention to people who aren't above your position
+				continue;
 			}
 		}
 		else
 		{
-			fixed_t thisdist;
-			fixed_t thisavg;
-
-			// Don't go for people who are behind you
-			if (thisang > ANGLE_45)
-				continue;
-
-			// Don't pay attention to dead players
 			if (player->bumpers <= 0)
+			{
+				// Don't pay attention to dead players
 				continue;
+			}
 
 			// Z pos too high/low
-			if (abs(player->mo->z - (actor->z + actor->momz)) > RING_DIST/8)
-				continue;
-
-			thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
-
-			if (thisdist > 2*RING_DIST) // Don't go for people who are too far away
-				continue;
-
-			thisavg = (AngleFixed(thisang) + thisdist) / 2;
-
-			//CONS_Printf("got avg %d from player # %d\n", thisavg>>FRACBITS, i);
-
-			if ((best == -1) || (thisavg < best))
+			if (abs(player->mo->z - (actor->z + actor->momz)) > FixedMul(RING_DIST/8, mapobjectscale))
 			{
-				wtarg = player;
-				best = thisavg;
+				continue;
 			}
+
+			// Distance too far away
+			if (thisdist > FixedMul(RING_DIST*2, mapobjectscale))
+			{
+				continue;
+			}
+		}
+
+		// Find the angle, see who's got the best.
+		thisang = AngleDelta(actor->angle, R_PointToAngle2(actor->x, actor->y, player->mo->x, player->mo->y));
+
+		// Don't go for people who are behind you
+		if (thisang > range)
+		{
+			continue;
+		}
+
+		thisScore = (AngleFixed(thisang) * 8) + (thisdist / 32);
+
+		//CONS_Printf("got score %f from player # %d\n", FixedToFloat(thisScore), i);
+
+		if (thisScore < best)
+		{
+			wtarg = player;
+			best = thisScore;
 		}
 	}
 
@@ -8246,19 +8189,69 @@ void K_KartPlayerAfterThink(player_t *player)
 	// Jawz reticule (seeking)
 	if (player->itemtype == KITEM_JAWZ && (player->pflags & PF_ITEMOUT))
 	{
-		INT32 lasttarg = player->lastjawztarget;
-		player_t *targ;
-		mobj_t *ret;
+		INT32 lastTargID = player->lastjawztarget;
+		player_t *lastTarg = NULL;
+		player_t *targ = NULL;
+		mobj_t *ret = NULL;
 
-		if (player->jawztargetdelay && playeringame[lasttarg] && !players[lasttarg].spectator)
+		if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
+			&& playeringame[lastTargID] == true)
 		{
-			targ = &players[lasttarg];
-			player->jawztargetdelay--;
+			if (players[lastTargID].spectator == false)
+			{
+				lastTarg = &players[lastTargID];
+			}
+		}
+
+		if (player->throwdir == -1)
+		{
+			// Backwards Jawz targets yourself.
+			targ = player;
+			player->jawztargetdelay = 0;
 		}
 		else
-			targ = K_FindJawzTarget(player->mo, player);
+		{
+			// Find a new target.
+			targ = K_FindJawzTarget(player->mo, player, ANGLE_45);
+		}
 
-		if (!targ || !targ->mo || P_MobjWasRemoved(targ->mo))
+		if (targ != NULL && targ->mo != NULL && P_MobjWasRemoved(targ->mo) == false)
+		{
+			if (targ - players == lastTargID)
+			{
+				// Increment delay.
+				if (player->jawztargetdelay < 10)
+				{
+					player->jawztargetdelay++;
+				}
+			}
+			else
+			{
+				if (player->jawztargetdelay > 0)
+				{
+					// Wait a bit before swapping...
+					player->jawztargetdelay--;
+					targ = lastTarg;
+				}
+				else
+				{
+					// Allow a swap.
+					if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
+					{
+						S_StartSound(NULL, sfx_s3k89);
+					}
+					else
+					{
+						S_StartSound(targ->mo, sfx_s3k89);
+					}
+
+					player->lastjawztarget = targ - players;
+					player->jawztargetdelay = 5;
+				}
+			}
+		}
+
+		if (targ == NULL || targ->mo == NULL || P_MobjWasRemoved(targ->mo) == true)
 		{
 			player->lastjawztarget = -1;
 			player->jawztargetdelay = 0;
@@ -8273,17 +8266,6 @@ void K_KartPlayerAfterThink(player_t *player)
 		ret->frame |= ((leveltime % 10) / 2);
 		ret->tics = 1;
 		ret->color = player->skincolor;
-
-		if (targ-players != lasttarg)
-		{
-			if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
-				S_StartSound(NULL, sfx_s3k89);
-			else
-				S_StartSound(targ->mo, sfx_s3k89);
-
-			player->lastjawztarget = targ-players;
-			player->jawztargetdelay = 5;
-		}
 	}
 	else
 	{
@@ -10277,10 +10259,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->pflags & PF_ITEMOUT)) // Jawz thrown
 							{
-								if (player->throwdir == 1 || player->throwdir == 0)
-									K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
-								else if (player->throwdir == -1) // Throwing backward gives you a dud that doesn't home in
-									K_ThrowKartItem(player, true, MT_JAWZ_DUD, -1, 0, 0);
+								K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								K_UpdateHnextList(player, false);
