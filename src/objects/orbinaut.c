@@ -281,12 +281,15 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 void Obj_OrbinautJawzMoveHeld(player_t *player)
 {
 	fixed_t finalscale = K_ItemScaleForPlayer(player);
-	mobj_t *cur = player->mo->hnext;
-	fixed_t speed = ((8 - min(4, player->itemamount)) * cur->info->speed) / 7;
+	fixed_t speed = 0;
+	mobj_t *cur = NULL;
 
 	player->bananadrag = 0; // Just to make sure
 
-	while (cur && !P_MobjWasRemoved(cur))
+	cur = player->mo->hnext;
+	speed = ((8 - min(4, player->itemamount)) * cur->info->speed) / 7;
+
+	while (cur != NULL && P_MobjWasRemoved(cur) == false)
 	{
 		const fixed_t radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(cur->radius, cur->radius); // mobj's distance from its Target, or Radius.
 		fixed_t z;
@@ -300,7 +303,7 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 		cur->color = player->skincolor;
 
 		cur->angle -= ANGLE_90;
-		cur->angle += FixedAngle(speed);
+		cur->angle += FixedAngle(speed) / 3;
 
 		if (orbinaut_shield_dist(cur) < radius)
 		{
