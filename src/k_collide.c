@@ -758,8 +758,10 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 		if (P_PlayerInPain(t2->player)
 			|| t2->player->flashing || t2->player->hyudorotimer
-			|| t2->player->justbumped || t2->scale > t1->scale + (mapobjectscale/8))
+			|| t2->player->justbumped || K_IsBigger(t2, t1))
+		{
 			return true;
+		}
 
 		// Player Damage
 		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
@@ -868,11 +870,11 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	boolean stungT2 = false;
 
 	// Clash instead of damage if both parties have any of these conditions
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8))
+	t1Condition = (K_IsBigger(t1, t2) == true)
 		|| (t1->player->invincibilitytimer > 0)
 		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
 
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8))
+	t2Condition = (K_IsBigger(t2, t1) == true)
 		|| (t2->player->invincibilitytimer > 0)
 		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
 
