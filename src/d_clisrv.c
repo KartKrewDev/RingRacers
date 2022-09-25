@@ -924,7 +924,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	strncpy(netbuffer->u.serverinfo.gametypename, Gametype_Names[prefgametype],
 			sizeof netbuffer->u.serverinfo.gametypename);
 	netbuffer->u.serverinfo.modifiedgame = (UINT8)modifiedgame;
-	netbuffer->u.serverinfo.cheatsenabled = (UINT8)CV_CheatsEnabled();
+	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
 
 	netbuffer->u.serverinfo.kartvars = (UINT8) (
 		(gamespeed & SV_SPEEDMASK) |
