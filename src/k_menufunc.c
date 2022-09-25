@@ -143,6 +143,10 @@ consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesN
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
 
+consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
+static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
+
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
 CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
@@ -245,7 +249,7 @@ static void Dummymenuplayer_OnChange(void)
 
 static void Dummystaff_OnChange(void)
 {
-#if 0
+#ifdef STAFFGHOSTS
 	lumpnum_t l;
 
 	dummystaffname[0] = '\0';
@@ -277,7 +281,7 @@ static void Dummystaff_OnChange(void)
 
 		sprintf(temp, " - %d", cv_dummystaff.value);
 	}
-#endif
+#endif //#ifdef STAFFGHOSTS
 }
 
 void Screenshot_option_Onchange(void)
@@ -945,7 +949,13 @@ void M_StartControlPanel(void)
 		paused = false;
 		CON_ToggleOff();
 
-		S_ChangeMusicInternal("menu", true);
+		if (cv_menujam_update.value)
+		{
+			CV_AddValue(&cv_menujam, 1);
+			CV_SetValue(&cv_menujam_update, 0);
+		}
+
+		S_ChangeMusicInternal(cv_menujam.string, true);
 	}
 
 	menuactive = true;
@@ -1686,6 +1696,14 @@ void M_Init(void)
 	CV_RegisterVar(&cv_chooseskin);
 	CV_RegisterVar(&cv_autorecord);
 
+	// don't lose your position in the jam cycle
+	CV_RegisterVar(&cv_menujam_update);
+	CV_RegisterVar(&cv_menujam);
+
+#ifndef NONET
+	CV_RegisterVar(&cv_serversort);
+#endif
+
 	if (dedicated)
 		return;
 
@@ -1712,20 +1730,6 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyaddonsearch);
 
 	M_UpdateMenuBGImage(true);
-
-#if 0
-#ifdef HWRENDER
-	// Permanently hide some options based on render mode
-	if (rendermode == render_soft)
-		OP_VideoOptionsMenu[op_video_ogl].status =
-			OP_VideoOptionsMenu[op_video_kartman].status =
-			OP_VideoOptionsMenu[op_video_md2]    .status = IT_DISABLED;
-#endif
-#endif
-
-#ifndef NONET
-	CV_RegisterVar(&cv_serversort);
-#endif
 }
 
 // ==================================================
@@ -3178,6 +3182,8 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 {
+	UINT32 tolflag = G_TOLFlag(gt);
+
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
 		return false;
@@ -3186,48 +3192,40 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (!mapheaderinfo[mapnum]->lvlttl[0])
 		return false;
 
+	// Does the map have a LUMP?
+	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+		return false;
+
 	if (M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
+	// Check for TOL
+	if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+		return false;
+
 	// Should the map be hidden?
-	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 		return false;
 
 	// I don't know why, but some may have exceptions.
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
-		return true;
-
-	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
 	{
-		if (levellist.selectedcup && levellist.selectedcup->numlevels)
-		{
-			UINT8 i;
-
-			for (i = 0; i < levellist.selectedcup->numlevels; i++)
-			{
-				if (mapnum == levellist.selectedcup->levellist[i])
-					break;
-			}
-
-			if (i == levellist.selectedcup->numlevels)
-				return false;
-		}
-
-		return true;
+		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
+			return false;
 	}
 
-	// Hmm? Couldn't decide?
-	return false;
+	// Survived our checks.
+	return true;
 }
 
 INT16 M_CountLevelsToShowInList(UINT8 gt)
 {
 	INT16 mapnum, count = 0;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			count++;
 
@@ -3238,7 +3236,7 @@ INT16 M_GetFirstLevelInList(UINT8 gt)
 {
 	INT16 mapnum;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			return mapnum;
 
@@ -3406,7 +3404,9 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		M_SetMenuDelay(pid);
 
-		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		if ((!newcup)
+			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3414,7 +3414,7 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-
+			INT32 levelNum;
 			UINT8 ssplayers = cv_splitplayers.value-1;
 
 			S_StartSound(NULL, sfx_s3k63);
@@ -3458,8 +3458,10 @@ void M_CupSelectHandler(INT32 choice)
 				netgame = levellist.netgame;	// ^ ditto.
 			}
 
+			levelNum = grandprixinfo.cup->cachedlevels[0];
+
 			D_MapChange(
-				grandprixinfo.cup->levellist[0] + 1,
+				levelNum + 1,
 				GT_RACE,
 				grandprixinfo.encore,
 				true,
@@ -3545,16 +3547,16 @@ void M_LevelSelectHandler(INT32 choice)
 		{
 			map++;
 
-			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 				map++;
 
-			if (map >= NUMMAPS)
+			if (map >= nummapheaders)
 				break;
 
 			add--;
 		}
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 		{
 			// This shouldn't happen
 			return;

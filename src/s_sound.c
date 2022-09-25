@@ -386,7 +386,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -407,7 +406,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -763,7 +761,6 @@ void S_StopSound(void *origin)
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -2394,6 +2391,7 @@ void S_StartEx(boolean reset)
 	music_stack_fadein = JINGLEPOSTFADE;
 }
 
+// TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;

@@ -32,6 +32,7 @@
 #include "k_battle.h"
 #include "k_respawn.h"
 #include "k_collide.h"
+#include "k_objects.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -311,7 +312,6 @@ void A_ChangeHeight(mobj_t *actor);
 void A_ItemPop(mobj_t *actor);
 void A_JawzChase(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
-void A_SPBChase(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
 void A_LandMineExplode(mobj_t *actor);
@@ -326,6 +326,7 @@ void A_ReaperThinker(mobj_t *actor);
 void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
+void A_SpawnItemDebrisCloud(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -3460,28 +3461,6 @@ void A_BossDeath(mobj_t *mo)
 		EV_DoElevator(&junk, elevateUp, false);
 		Tag_FSet(&junk.tags, LE_CAPSULE2);
 		EV_DoElevator(&junk, elevateHighest, false);
-
-		if (mapheaderinfo[gamemap-1]->muspostbossname[0] &&
-			S_MusicExists(mapheaderinfo[gamemap-1]->muspostbossname))
-		{
-			// Touching the egg trap button calls P_DoPlayerExit, which calls P_RestoreMusic.
-			// So just park ourselves in the mapmus variables.
-			// But don't change the mapmus variables if they were modified from their level header values (e.g., TUNES).
-			boolean changed = strnicmp(mapheaderinfo[gamemap-1]->musname, S_MusicName(), 7);
-			if (!strnicmp(mapheaderinfo[gamemap-1]->musname, mapmusname, 7))
-			{
-				strncpy(mapmusname, mapheaderinfo[gamemap-1]->muspostbossname, 7);
-				mapmusname[6] = 0;
-				mapmusflags = (mapheaderinfo[gamemap-1]->muspostbosstrack & MUSIC_TRACKMASK) | MUSIC_RELOADRESET;
-				mapmusposition = mapheaderinfo[gamemap-1]->muspostbosspos;
-			}
-
-			// don't change if we're in another tune
-			// but in case we're in jingle, use our parked mapmus variables so the correct track restores
-			if (!changed)
-				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, (1*MUSICRATE)+(MUSICRATE/2),
-					mapheaderinfo[gamemap-1]->muspostbossfadein);
-		}
 	}
 
 bossjustdie:
@@ -13166,9 +13145,6 @@ void A_ItemPop(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 
-	mobj_t *remains;
-	mobjtype_t explode;
-
 	if (LUA_CallAction(A_ITEMPOP, actor))
 		return;
 
@@ -13185,68 +13161,32 @@ void A_ItemPop(mobj_t *actor)
 	actor->flags |= MF_NOCLIP;
 	P_SetThingPosition(actor);
 
-	// item explosion
-	explode = mobjinfo[actor->info->damage].mass;
-	remains = P_SpawnMobj(actor->x, actor->y,
-		((actor->eflags & MFE_VERTICALFLIP) ? (actor->z + 3*(actor->height/4) - FixedMul(mobjinfo[explode].height, actor->scale)) : (actor->z + actor->height/4)), explode);
-	if (actor->eflags & MFE_VERTICALFLIP)
-	{
-		remains->eflags |= MFE_VERTICALFLIP;
-		remains->flags2 |= MF2_OBJECTFLIP;
-	}
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
+	// RF_DONTDRAW will flicker as the object's fuse gets
+	// closer to running out (see P_FuseThink)
+	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
+	actor->color = SKINCOLOR_GREY;
+	actor->colorized = true;
 
-	remains = P_SpawnMobj(actor->x, actor->y, actor->z, actor->info->damage);
-	remains->type = actor->type; // Transfer type information
-	P_UnsetThingPosition(remains);
-	if (sector_list)
-	{
-		P_DelSeclist(sector_list);
-		sector_list = NULL;
-	}
-	P_SetThingPosition(remains);
-	remains->destscale = actor->destscale;
-	P_SetScale(remains, actor->scale);
-	remains->flags = actor->flags; // Transfer flags
-	remains->flags2 = actor->flags2; // Transfer flags2
-	remains->fuse = actor->fuse; // Transfer respawn timer
-	remains->cvmem = leveltime;
-	remains->threshold = actor->threshold;
-	if (remains->threshold != 69 && remains->threshold != 70)
-	{
-		remains->threshold = 68;
-	}
-	// To insure this information doesn't have to be rediscovered every time you look at this function...
-	// A threshold of 0 is for a "living", ordinary random item.
-	// 68 means regular popped random item debris.
-	// 69 used to mean old Karma Item behaviour (now you can replicate this with MF2_DONTRESPAWN).
-	// 70 is a powered up Overtime item.
-	remains->skin = NULL;
-	remains->spawnpoint = actor->spawnpoint;
-
-	P_SetTarget(&tmthing, remains);
-
-	if (actor->info->deathsound)
-		S_StartSound(remains, actor->info->deathsound);
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
 		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
 	else if (locvar1 == 0)
 		actor->target->player->itemroulette = 1;
 
-	remains->flags2 &= ~MF2_AMBUSH;
-
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
+	{
 		numgotboxes++;
 
-	P_RemoveMobj(actor);
+		// do not flicker back in just yet, handled by
+		// P_RespawnBattleBoxes eventually
+		P_SetMobjState(actor, S_INVISIBLE);
+	}
 }
 
 void A_JawzChase(mobj_t *actor)
 {
-	const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
 	player_t *player;
 	fixed_t thrustamount = 0;
 	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
@@ -13331,30 +13271,29 @@ void A_JawzChase(mobj_t *actor)
 			P_SetTarget(&actor->tracer, NULL);
 	}
 
-	if (!P_IsObjectOnGround(actor))
-	{
-		// No friction in the air
-		frictionsafety = FRACUNIT;
-	}
-
-	if (currentspeed >= topspeed)
-	{
-		// Thrust as if you were at top speed, slow down naturally
-		thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
-	}
-	else
-	{
-		const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-		// Thrust to immediately get to top speed
-		thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
-	}
-
 	if (!actor->tracer)
 	{
 		actor->angle = K_MomentumAngle(actor);
 	}
 
-	P_Thrust(actor, actor->angle, thrustamount);
+	if (P_IsObjectOnGround(actor))
+	{
+		const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
+
+		if (currentspeed >= topspeed)
+		{
+			// Thrust as if you were at top speed, slow down naturally
+			thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
+		}
+		else
+		{
+			const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
+			// Thrust to immediately get to top speed
+			thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
+		}
+
+		P_Thrust(actor, actor->angle, thrustamount);
+	}
 
 	if ((actor->tracer != NULL) && (actor->tracer->health > 0))
 		return;
@@ -13404,516 +13343,6 @@ void A_JawzExplode(mobj_t *actor)
 
 		shrapnel--;
 	}
-
-	return;
-}
-
-static void SpawnSPBTrailRings(mobj_t *actor)
-{
-	I_Assert(actor != NULL);
-
-	if (leveltime % 6 == 0)
-	{
-		if (leveltime % (actor->extravalue1 == 2 ? 6 : 3) == 0)	// Extravalue1 == 2 is seeking mode. Because the SPB is about twice as fast as normal in that mode, also spawn the rings twice as often to make up for it!
-		{
-			mobj_t *ring = P_SpawnMobj(actor->x - actor->momx, actor->y - actor->momy,
-				actor->z - actor->momz + (24*mapobjectscale), MT_RING);
-			ring->threshold = 10;
-			ring->fuse = 35*TICRATE;
-			ring->colorized = true;
-			ring->color = SKINCOLOR_RED;
-		}
-	}
-}
-
-// Spawns the V shaped dust. To be used when the SPB is going mostly forward.
-static void SpawnSPBDust(mobj_t *mo)
-{
-	// The easiest way to spawn a V shaped cone of dust from the SPB is simply to spawn 2 particles, and to both move them to the sides in opposite direction.
-	mobj_t *dust;
-	fixed_t sx;
-	fixed_t sy;
-	fixed_t sz = mo->floorz;
-	angle_t sa = mo->angle - ANG1*60;
-	INT32 i;
-
-	if (mo->eflags & MFE_VERTICALFLIP)
-		sz = mo->ceilingz;
-
-	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)	// Only ever other frame. Also don't spawn it if we're way above the ground.
-	{
-		// Determine spawning position next to the SPB:
-		for (i=0; i < 2; i++)
-		{
-			sx = mo->x + FixedMul((mo->scale*96), FINECOSINE((sa)>>ANGLETOFINESHIFT));
-			sy = mo->y + FixedMul((mo->scale*96), FINESINE((sa)>>ANGLETOFINESHIFT));
-
-			dust = P_SpawnMobj(sx, sy, sz, MT_SPBDUST);
-			dust->momx = mo->momx/2;
-			dust->momy = mo->momy/2;
-			dust->momz = mo->momz/2;	// Give some of the momentum to the dust
-			P_SetScale(dust, mo->scale*2);
-			dust->colorized = true;
-			dust->color = SKINCOLOR_RED;
-			P_InitAngle(dust, mo->angle - FixedAngle(FRACUNIT*90 - FRACUNIT*180*i)); // The first one will spawn to the right of the spb, the second one to the left.
-			P_Thrust(dust, dust->angle, 6*dust->scale);
-
-			K_MatchGenericExtraFlags(dust, mo);
-
-			sa += ANG1*120;	// Add 120 degrees to get to mo->angle + ANG1*60
-		}
-	}
-}
-
-// Spawns SPB slip tide. To be used when the SPB is turning.
-// Modified version of K_SpawnAIZDust. Maybe we could merge those to be cleaner?
-
-// dir should be either 1 or -1 to determine where to spawn the dust.
-
-static void SpawnSPBAIZDust(mobj_t *mo, INT32 dir)
-{
-	fixed_t newx;
-	fixed_t newy;
-	mobj_t *spark;
-	angle_t travelangle;
-	fixed_t sz = mo->floorz;
-
-	if (mo->eflags & MFE_VERTICALFLIP)
-		sz = mo->ceilingz;
-
-	travelangle = K_MomentumAngle(mo);
-	if (leveltime & 1 && abs(mo->z - sz) < FRACUNIT*64)
-	{
-		newx = mo->x + P_ReturnThrustX(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
-		newy = mo->y + P_ReturnThrustY(mo, travelangle - (dir*ANGLE_45), FixedMul(24*FRACUNIT, mo->scale));
-		spark = P_SpawnMobj(newx, newy, sz, MT_AIZDRIFTSTRAT);
-		spark->colorized = true;
-		spark->color = SKINCOLOR_RED;
-		spark->flags = MF_NOGRAVITY|MF_PAIN;
-		P_SetTarget(&spark->target, mo);
-
-		P_InitAngle(spark, travelangle+(dir*ANGLE_90));
-		P_SetScale(spark, (spark->destscale = mo->scale*3/2));
-
-		spark->momx = (6*mo->momx)/5;
-		spark->momy = (6*mo->momy)/5;
-
-		K_MatchGenericExtraFlags(spark, mo);
-	}
-}
-
-// Used for seeking and when SPB is trailing its target from way too close!
-static void SpawnSPBSpeedLines(mobj_t *actor)
-{
-	mobj_t *fast = P_SpawnMobj(actor->x + (P_RandomRange(-24,24) * actor->scale),
-		actor->y + (P_RandomRange(-24,24) * actor->scale),
-		actor->z + (actor->height/2) + (P_RandomRange(-24,24) * actor->scale),
-		MT_FASTLINE);
-
-	P_SetTarget(&fast->target, actor);
-	P_InitAngle(fast, K_MomentumAngle(actor));
-	fast->color = SKINCOLOR_RED;
-	fast->colorized = true;
-	K_MatchGenericExtraFlags(fast, actor);
-}
-
-
-void A_SPBChase(mobj_t *actor)
-{
-	player_t *player = NULL;
-	player_t *scplayer = NULL;	// secondary target for seeking
-	UINT8 i;
-	UINT8 bestrank = UINT8_MAX;
-	fixed_t dist;
-	angle_t hang, vang;
-	fixed_t wspeed, xyspeed, zspeed;
-	fixed_t pdist = 1536<<FRACBITS;	// best player distance when seeking
-	angle_t pangle;		// angle between us and the player
-
-	if (LUA_CallAction(A_SPBCHASE, actor))
-		return;
-
-	// Default speed
-	wspeed = FixedMul(mapobjectscale, K_GetKartSpeedFromStat(5)*2);	// Go at twice the average speed a player would be going at!
-
-	if (actor->threshold) // Just fired, go straight.
-	{
-		actor->lastlook = -1;
-		actor->cusval = -1;
-		spbplace = -1;
-		P_InstaThrust(actor, actor->angle, wspeed);
-		return;
-	}
-
-	// Find the player with the best rank
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator || players[i].exiting)
-			continue; // not in-game
-
-		/*if (!players[i].mo)
-			continue; // no mobj
-
-		if (players[i].mo->health <= 0)
-			continue; // dead
-
-		if (players[i].respawn.state != RESPAWNST_NONE)
-			continue;*/ // respawning
-
-		if (players[i].position < bestrank)
-		{
-			bestrank = players[i].position;
-			player = &players[i];
-		}
-	}
-
-	// lastlook = last player num targetted
-	// cvmem = stored speed
-	// cusval = next waypoint heap index
-	// extravalue1 = SPB movement mode
-	// extravalue2 = mode misc option
-
-	if (actor->extravalue1 == 1) // MODE: TARGETING
-	{
-		actor->cusval = -1; // Reset waypoint
-
-		if (actor->tracer && actor->tracer->health)
-		{
-			fixed_t defspeed = wspeed;
-			fixed_t range = (160*actor->tracer->scale);
-			fixed_t cx = 0, cy =0;
-
-			// Play the intimidating gurgle
-			if (!S_SoundPlaying(actor, actor->info->activesound))
-				S_StartSound(actor, actor->info->activesound);
-
-			// Maybe we want SPB to target an object later? IDK lol
-			if (actor->tracer->player)
-			{
-				UINT8 fracmax = 32;
-				UINT8 spark = ((10-actor->tracer->player->kartspeed) + actor->tracer->player->kartweight) / 2;
-				fixed_t easiness = ((actor->tracer->player->kartspeed + (10-spark)) << FRACBITS) / 2;
-
-				actor->lastlook = actor->tracer->player-players; // Save the player num for death scumming...
-				actor->tracer->player->pflags |= PF_RINGLOCK; // set ring lock
-
-				if (actor->tracer->hitlag)
-				{
-					// If the player is frozen through no fault of their own, the SPB should be too.
-					actor->hitlag = actor->tracer->hitlag;
-				}
-
-				if (!P_IsObjectOnGround(actor->tracer))
-				{
-					// In the air you have no control; basically don't hit unless you make a near complete stop
-					defspeed = (7 * actor->tracer->player->speed) / 8;
-				}
-				else
-				{
-					// 7/8ths max speed for Knuckles, 3/4ths max speed for min accel, exactly max speed for max accel
-					defspeed = FixedMul(((fracmax+1)<<FRACBITS) - easiness, K_GetKartSpeed(actor->tracer->player, false, false)) / fracmax;
-				}
-
-				// Be fairer on conveyors
-				cx = actor->tracer->player->cmomx;
-				cy = actor->tracer->player->cmomy;
-
-				// Switch targets if you're no longer 1st for long enough
-				if (actor->tracer->player->position <= bestrank)
-					actor->extravalue2 = 7*TICRATE;
-				else if (actor->extravalue2-- <= 0)
-					actor->extravalue1 = 0; // back to SEEKING
-
-				spbplace = actor->tracer->player->position;
-			}
-
-			dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
-
-			wspeed = FixedMul(defspeed, FRACUNIT + FixedDiv(dist-range, range));
-			if (wspeed < defspeed)
-				wspeed = defspeed;
-			if (wspeed > (3*defspeed)/2)
-				wspeed = (3*defspeed)/2;
-			if (wspeed < 20*actor->tracer->scale)
-				wspeed = 20*actor->tracer->scale;
-			if (actor->tracer->player->carry == CR_SLIDING)
-				wspeed = actor->tracer->player->speed/2;
-			//  ^^^^ current section: These are annoying, and grand metropolis in particular needs this.
-
-			hang = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-			vang = R_PointToAngle2(0, actor->z, dist, actor->tracer->z);
-
-			// Modify stored speed
-			if (wspeed > actor->cvmem)
-				actor->cvmem += (wspeed - actor->cvmem) / TICRATE;
-			else
-				actor->cvmem = wspeed;
-
-			{
-				// Smoothly rotate horz angle
-				angle_t input = hang - actor->angle;
-				boolean invert = (input > ANGLE_180);
-				if (invert)
-					input = InvAngle(input);
-
-				// Slow down when turning; it looks better and makes U-turns not unfair
-				xyspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-				input = FixedAngle(AngleFixed(input)/4);
-				if (invert)
-					input = InvAngle(input);
-
-				actor->angle += input;
-
-				// Smoothly rotate vert angle
-				input = vang - actor->movedir;
-				invert = (input > ANGLE_180);
-				if (invert)
-					input = InvAngle(input);
-
-				// Slow down when turning; might as well do it for momz, since we do it above too
-				zspeed = FixedMul(actor->cvmem, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-				input = FixedAngle(AngleFixed(input)/4);
-				if (invert)
-					input = InvAngle(input);
-
-				actor->movedir += input;
-			}
-
-			actor->momx = cx + FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
-			actor->momy = cy + FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
-			actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
-
-			// Spawn a trail of rings behind the SPB!
-			SpawnSPBTrailRings(actor);
-
-			// Red speed lines for when it's gaining on its target. A tell for when you're starting to lose too much speed!
-			if (R_PointToDist2(0, 0, actor->momx, actor->momy) > (actor->tracer->player ? (16*actor->tracer->player->speed)/15
-				: (16*R_PointToDist2(0, 0, actor->tracer->momx, actor->tracer->momy))/15) // Going faster than the target
-				&& xyspeed > K_GetKartSpeed(actor->tracer->player, false, false) / 4) // Don't display speedup lines at pitifully low speeds
-					SpawnSPBSpeedLines(actor);
-
-			return;
-		}
-		else // Target's gone, return to SEEKING
-		{
-			P_SetTarget(&actor->tracer, NULL);
-			actor->extravalue1 = 2; // WAIT...
-			actor->extravalue2 = 52; // Slightly over the respawn timer length
-			return;
-		}
-	}
-	else if (actor->extravalue1 == 2) // MODE: WAIT...
-	{
-		actor->momx = actor->momy = actor->momz = 0; // Stoooop
-		actor->cusval = -1; // Reset waypoint
-
-		if (actor->lastlook != -1
-			&& playeringame[actor->lastlook]
-			&& !players[actor->lastlook].spectator
-			&& !players[actor->lastlook].exiting)
-		{
-			spbplace = players[actor->lastlook].position;
-			players[actor->lastlook].pflags |= PF_RINGLOCK;
-			if (actor->extravalue2-- <= 0 && players[actor->lastlook].mo)
-			{
-				P_SetTarget(&actor->tracer, players[actor->lastlook].mo);
-				actor->extravalue1 = 1; // TARGET ACQUIRED
-				actor->extravalue2 = 7*TICRATE;
-				actor->cvmem = wspeed;
-			}
-		}
-		else
-		{
-			actor->extravalue1 = 0; // SEEKING
-			actor->extravalue2 = 0;
-			spbplace = -1;
-		}
-	}
-	else // MODE: SEEKING
-	{
-		waypoint_t *lastwaypoint = NULL;
-		waypoint_t *bestwaypoint = NULL;
-		waypoint_t *nextwaypoint = NULL;
-		waypoint_t *tempwaypoint = NULL;
-
-		actor->lastlook = -1; // Just make sure this is reset
-
-		if (!player || !player->mo || player->mo->health <= 0 || (player->respawn.state != RESPAWNST_NONE))
-		{
-			// No one there? Completely STOP.
-			actor->momx = actor->momy = actor->momz = 0;
-			if (!player)
-				spbplace = -1;
-			return;
-		}
-
-		// Found someone, now get close enough to initiate the slaughter...
-		P_SetTarget(&actor->tracer, player->mo);
-		spbplace = bestrank;
-		dist = P_AproxDistance(P_AproxDistance(actor->x-actor->tracer->x, actor->y-actor->tracer->y), actor->z-actor->tracer->z);
-
-		/*
-			K_GetBestWaypointForMobj returns the waypoint closest to the object that isn't its current waypoint. While this is usually good enough,
-			in cases where the track overlaps, this means that the SPB will sometimes target a waypoint on an earlier/later portion of the track instead of following along.
-			For this reason, we're going to try and make sure to avoid these situations.
-		*/
-
-		// Move along the waypoints until you get close enough
-		if (actor->cusval > -1 && actor->extravalue2 > 0)
-		{
-			// Previously set nextwaypoint
-			lastwaypoint = K_GetWaypointFromIndex((size_t)actor->cusval);
-			tempwaypoint = K_GetBestWaypointForMobj(actor);
-			// check if the tempwaypoint corresponds to lastwaypoint's next ID at least;
-			// This is to avoid situations where the SPB decides to suicide jump down a bridge because it found a COMPLETELY unrelated waypoint down there.
-
-			if (K_GetWaypointID(tempwaypoint) == K_GetWaypointNextID(lastwaypoint) || K_GetWaypointID(tempwaypoint) == K_GetWaypointID(lastwaypoint))
-				// either our previous or curr waypoint ID, sure, take it
-				bestwaypoint = tempwaypoint;
-			else
-				bestwaypoint = K_GetWaypointFromIndex((size_t)actor->extravalue2);	// keep going from the PREVIOUS wp.
-		}
-		else
-			bestwaypoint = K_GetBestWaypointForMobj(actor);
-
-		if (bestwaypoint == NULL && lastwaypoint == NULL)
-		{
-			// We have invalid waypoints all around, so use closest to try and make it non-NULL.
-			bestwaypoint = K_GetClosestWaypointToMobj(actor);
-		}
-
-		if (bestwaypoint != NULL)
-		{
-			const boolean huntbackwards = false;
-			boolean       useshortcuts  = false;
-
-			// If the player is on a shortcut, use shortcuts. No escape.
-			if (K_GetWaypointIsShortcut(player->nextwaypoint))
-			{
-				useshortcuts = true;
-			}
-
-			nextwaypoint = K_GetNextWaypointToDestination(
-				bestwaypoint, player->nextwaypoint, useshortcuts, huntbackwards);
-		}
-
-		if (nextwaypoint == NULL && lastwaypoint != NULL)
-		{
-			// Restore to the last nextwaypoint
-			nextwaypoint = lastwaypoint;
-		}
-
-		if (nextwaypoint != NULL)
-		{
-			const fixed_t xywaypointdist = P_AproxDistance(
-				actor->x - nextwaypoint->mobj->x, actor->y - nextwaypoint->mobj->y);
-
-			hang = R_PointToAngle2(actor->x, actor->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
-			vang = R_PointToAngle2(0, actor->z, xywaypointdist, nextwaypoint->mobj->z);
-
-			actor->cusval = (INT32)K_GetWaypointHeapIndex(nextwaypoint);
-			actor->extravalue2 = (INT32)K_GetWaypointHeapIndex(bestwaypoint);	// save our last best, used above.
-		}
-		else
-		{
-			// continue straight ahead... Shouldn't happen.
-			hang = actor->angle;
-			vang = 0U;
-		}
-
-		{
-			// Smoothly rotate horz angle
-			angle_t input = hang - actor->angle;
-			boolean invert = (input > ANGLE_180);
-			INT32 turnangle;
-
-			if (invert)
-				input = InvAngle(input);
-
-			input = FixedAngle(AngleFixed(input)/8);
-
-			// Slow down when turning; it looks better and makes U-turns not unfair
-			xyspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-			if (invert)
-				input = InvAngle(input);
-			actor->angle += input;
-
-			// If input is small enough, spawn dust. Otherwise, spawn a slip tide!
-			turnangle = AngleFixed(input)/FRACUNIT;
-
-			// The SPB is really turning if that value is >= 3 and <= 357. This looks pretty bad check-wise so feel free to change it for something that isn't as terrible.
-			if (turnangle >= 3 && turnangle <= 357)
-				SpawnSPBAIZDust(actor, turnangle < 180 ? 1 : -1);	// 1 if turning left, -1 if turning right. Angles work counterclockwise, remember!
-			else
-				SpawnSPBDust(actor);	// if we're mostly going straight, then spawn the V dust cone!
-
-			SpawnSPBSpeedLines(actor);	// Always spawn speed lines while seeking
-
-			// Smoothly rotate vert angle
-			input = vang - actor->movedir;
-			invert = (input > ANGLE_180);
-			if (invert)
-				input = InvAngle(input);
-
-			input = FixedAngle(AngleFixed(input)/8);
-
-			// Slow down when turning; might as well do it for momz, since we do it above too
-			zspeed = FixedMul(wspeed, max(0, (((180<<FRACBITS) - AngleFixed(input)) / 90) - FRACUNIT));
-
-			if (invert)
-				input = InvAngle(input);
-			actor->movedir += input;
-		}
-
-		actor->momx = FixedMul(FixedMul(xyspeed, FINECOSINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
-		actor->momy = FixedMul(FixedMul(xyspeed, FINESINE(actor->angle>>ANGLETOFINESHIFT)), FINECOSINE(actor->movedir>>ANGLETOFINESHIFT));
-		actor->momz = FixedMul(zspeed, FINESINE(actor->movedir>>ANGLETOFINESHIFT));
-
-		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
-		for (i=0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator || players[i].exiting)
-				continue; // not in-game
-
-			if (R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y) < pdist)
-			{
-				pdist = R_PointToDist2(actor->x, actor->y, players[i].mo->x, players[i].mo->y);
-				scplayer = &players[i];	// it doesn't matter if we override this guy now.
-			}
-		}
-
-		// different player from our main target, try and ram into em~!
-		if (scplayer && scplayer != player)
-		{
-			pangle = actor->angle - R_PointToAngle2(actor->x, actor->y,scplayer->mo->x, scplayer->mo->y);
-			// check if the angle wouldn't make us LOSE speed...
-			if ((INT32)pangle/ANG1 >= -80 && (INT32)pangle/ANG1 <= 80)	// allow for around 80 degrees
-			{
-				// Thrust us towards the guy, try to screw em up!
-				P_Thrust(actor, R_PointToAngle2(actor->x, actor->y, scplayer->mo->x, scplayer->mo->y), actor->movefactor/4);	// not too fast though.
-			}
-		}
-
-		// Spawn a trail of rings behind the SPB!
-		SpawnSPBTrailRings(actor);
-
-		if (dist <= (1024*actor->tracer->scale) && !(actor->flags2 & MF2_AMBUSH)) // Close enough to target? Use Ambush flag to disable targetting so I can have an easier time testing stuff...
-		{
-			S_StartSound(actor, actor->info->attacksound);
-			actor->extravalue1 = 1; // TARGET ACQUIRED
-			actor->extravalue2 = 7*TICRATE;
-			actor->cvmem = wspeed;
-		}
-	}
-
-	// Finally, no matter what, the spb should not be able to be under the ground, or above the ceiling;
-	if (actor->z < actor->floorz)
-		actor->z = actor->floorz;
-	else if (actor->z > actor->ceilingz - actor->height)
-		actor->z = actor->ceilingz - actor->height;
 
 	return;
 }
@@ -14523,5 +13952,83 @@ void A_InvincSparkleRotate(mobj_t *actor)
 	{
 		ghost->frame |= FF_ADD;
 		ghost->fuse = 4;
+	}
+}
+
+// Function: A_SpawnItemDebrisCloud
+//
+// Description: Spawns the poofs of an exploded item box. Target is a player to spawn the particles around.
+//
+// var1 = Copy extravalue2 / var1 fraction of target's momentum.
+// var2 = unused
+//
+void
+A_SpawnItemDebrisCloud (mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+
+	mobj_t *target = actor->target;
+	player_t *player;
+
+	fixed_t kartspeed;
+	fixed_t fade;
+
+	if (target == NULL || target->player == NULL)
+	{
+		return;
+	}
+
+	player = target->player;
+	kartspeed = K_GetKartSpeed(player, false, false);
+
+	// Scale around >50% top speed
+	fade = FixedMul(locvar1, (FixedDiv(player->speed,
+					kartspeed) - FRACUNIT/2) * 2);
+
+	if (fade < 1)
+	{
+		fade = 1;
+	}
+
+	if (actor->extravalue2 > fade)
+	{
+		actor->extravalue2 = fade;
+	}
+
+	// MT_ITEM_DEBRIS_CLOUD_SPAWNER
+	// extravalue2 from A_Repeat
+	fade = actor->extravalue2 * FRACUNIT / locvar1;
+
+	// Most of this code is from p_inter.c, MT_ITEMCAPSULE
+
+	// dust effects
+	{
+		const INT16 spacing =
+			(target->radius / 2) / target->scale;
+
+		mobj_t *puff = P_SpawnMobjFromMobj(
+				target,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(-spacing, spacing) * FRACUNIT,
+				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				MT_SPINDASHDUST
+		);
+
+		puff->color = target->color;
+		puff->colorized = true;
+
+		puff->momz = puff->scale * P_MobjFlip(puff);
+
+		P_InitAngle(puff, R_PointToAngle2(
+					target->x,
+					target->y,
+					puff->x,
+					puff->y));
+
+		P_Thrust(puff, puff->angle, 3 * puff->scale);
+
+		puff->momx += FixedMul(target->momx, fade);
+		puff->momy += FixedMul(target->momy, fade);
+		puff->momz += FixedMul(target->momz, fade);
 	}
 }

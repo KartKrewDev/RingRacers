@@ -275,7 +275,6 @@ enum actionnum
 	A_ITEMPOP,
 	A_JAWZCHASE,
 	A_JAWZEXPLODE,
-	A_SPBCHASE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
 	A_LANDMINEEXPLODE,
@@ -290,6 +289,7 @@ enum actionnum
 	A_REAPERTHINKER,
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
+	A_SPAWNITEMDEBRISCLOUD,
 	NUMACTIONS
 };
 
@@ -547,7 +547,6 @@ void A_ChangeHeight();
 void A_ItemPop();
 void A_JawzChase();
 void A_JawzExplode();
-void A_SPBChase();
 void A_SSMineSearch();
 void A_SSMineExplode();
 void A_LandMineExplode();
@@ -563,6 +562,7 @@ void A_ReaperThinker();
 void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
+void A_SpawnItemDebrisCloud();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1076,6 +1076,7 @@ typedef enum sprite
 	SPR_RNDM, // Random Item Box
 	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
+	SPR_ITRI, // Item Box Debris
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
 	SPR_DSHR, // Speed boost dust release
@@ -1110,6 +1111,8 @@ typedef enum sprite
 	SPR_BHOG, // Ballhog
 	SPR_BHBM, // Ballhog BOOM
 	SPR_SPBM, // Self-Propelled Bomb
+	SPR_TRIS, // SPB Manta Ring start
+	SPR_TRNQ, // SPB Manta Ring loop
 	SPR_THNS, // Thunder Shield
 	SPR_BUBS, // Bubble Shield (not Bubs)
 	SPR_BWVE, // Bubble Shield waves
@@ -1121,7 +1124,9 @@ typedef enum sprite
 	SPR_HYUU, // Hyudoro
 	SPR_GRWP, // Grow
 	SPR_POHB, // Shrink Poh-Bee
-	SPR_SHRG, // Shrink gun / laser
+	SPR_POHC, // Shrink Poh-Bee chain
+	SPR_SHRG, // Shrink gun
+	SPR_SHRL, // Shrink laser
 	SPR_SINK, // Kitchen Sink
 	SPR_SITR, // Kitchen Sink Trail
 	SPR_KBLN, // Battle Mode Bumper
@@ -1131,6 +1136,7 @@ typedef enum sprite
 	SPR_BEXB, // Battle Bumper Explosion: Blast
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
+	SPR_SMLD, // Smooth landing
 	SPR_DEZL, // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4270,6 +4276,10 @@ typedef enum state
 	S_RANDOMITEMPOP4,
 	//}
 
+	S_ITEM_DEBRIS,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER1,
+	S_ITEM_DEBRIS_CLOUD_SPAWNER2,
+
 	S_ITEMICON,
 
 	// Item capsules
@@ -4640,6 +4650,10 @@ typedef enum state
 	S_SPB20,
 	S_SPB_DEAD,
 
+	// Juicebox for SPB
+	S_MANTA1,
+	S_MANTA2,
+
 	// Thunder Shield
 	S_LIGHTNINGSHIELD1,
 	S_LIGHTNINGSHIELD2,
@@ -4752,8 +4766,20 @@ typedef enum state
 	S_GROW_PARTICLE,
 
 	// Shrink
-	S_SHRINK_GUN,
+	S_SHRINK_POHBEE,
+	S_SHRINK_POHBEE2,
+	S_SHRINK_POHBEE3,
+	S_SHRINK_POHBEE4,
+	S_SHRINK_POHBEE5,
+	S_SHRINK_POHBEE6,
+	S_SHRINK_POHBEE7,
+	S_SHRINK_POHBEE8,
+
 	S_SHRINK_CHAIN,
+
+	S_SHRINK_GUN,
+	S_SHRINK_GUN_OVERLAY,
+
 	S_SHRINK_LASER,
 	S_SHRINK_PARTICLE,
 
@@ -4811,6 +4837,8 @@ typedef enum state
 	S_TRIPWIREBOOST_BOTTOM,
 	S_TRIPWIREBOOST_BLAST_TOP,
 	S_TRIPWIREBOOST_BLAST_BOTTOM,
+
+	S_SMOOTHLANDING,
 
 	// DEZ Laser respawn
 	S_DEZLASER,
@@ -6326,6 +6354,8 @@ typedef enum mobj_type
 	MT_BRAKEDRIFT,
 	MT_BRAKEDUST,
 	MT_DRIFTDUST,
+	MT_ITEM_DEBRIS,
+	MT_ITEM_DEBRIS_CLOUD_SPAWNER,
 	MT_DRIFTELECTRICITY,
 	MT_DRIFTELECTRICSPARK,
 	MT_JANKSPARK,
@@ -6364,6 +6394,7 @@ typedef enum mobj_type
 
 	MT_SPB, // SPB stuff
 	MT_SPBEXPLOSION,
+	MT_MANTARING, // Juicebox for SPB
 
 	MT_LIGHTNINGSHIELD, // Shields
 	MT_BUBBLESHIELD,
@@ -6392,6 +6423,8 @@ typedef enum mobj_type
 	MT_BATTLEBUMPER_BLAST,
 
 	MT_TRIPWIREBOOST,
+
+	MT_SMOOTHLANDING,
 
 	MT_DEZLASER,
 

@@ -36,6 +36,7 @@
 #include "d_netfil.h" // findfile
 #include "r_data.h" // Color_cons_t
 #include "r_skins.h"
+#include "m_random.h"
 
 //========
 // protos.
@@ -53,6 +54,8 @@ static void COM_Wait_f(void);
 static void COM_Help_f(void);
 static void COM_Toggle_f(void);
 static void COM_Add_f(void);
+static void COM_Choose_f(void);
+static void COM_ChooseWeighted_f(void);
 
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
@@ -361,6 +364,8 @@ void COM_Init(void)
 	COM_AddCommand("help", COM_Help_f);
 	COM_AddCommand("toggle", COM_Toggle_f);
 	COM_AddCommand("add", COM_Add_f);
+	COM_AddCommand("choose", COM_Choose_f);
+	COM_AddCommand("chooseweighted", COM_ChooseWeighted_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
 }
 
@@ -1019,15 +1024,17 @@ static void COM_Help_f(void)
 
 /** Toggles a console variable. Useful for on/off values.
   *
-  * This works on on/off, yes/no values only
+  * This works on on/off, yes/no values by default. Given
+  * a list of values, cycles between them.
   */
 static void COM_Toggle_f(void)
 {
 	consvar_t *cvar;
 
-	if (COM_Argc() != 2)
+	if (COM_Argc() == 1 || COM_Argc() == 3)
 	{
 		CONS_Printf(M_GetText("Toggle <cvar_name>: Toggle the value of a cvar\n"));
+		CONS_Printf("Toggle <cvar_name> <value1> <value2>...: Cycle along a set of values\n");
 		return;
 	}
 	cvar = CV_FindVar(COM_Argv(1));
@@ -1037,15 +1044,44 @@ static void COM_Toggle_f(void)
 		return;
 	}
 
-	if (!(cvar->PossibleValue == CV_YesNo || cvar->PossibleValue == CV_OnOff))
+	if (COM_Argc() == 2)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("%s is not a boolean value\n"), COM_Argv(1));
-		return;
+		if (!(cvar->PossibleValue == CV_YesNo || cvar->PossibleValue == CV_OnOff))
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("%s is not a boolean value\n"), COM_Argv(1));
+			return;
+		}
 	}
 
 	// netcvar don't change imediately
 	cvar->flags |= CV_SHOWMODIFONETIME;
-	CV_AddValue(cvar, +1);
+
+	if (COM_Argc() == 2)
+	{
+		CV_AddValue(cvar, +1);
+	}
+	else
+	{
+		size_t i;
+
+		for (i = 2; i < COM_Argc() - 1; ++i)
+		{
+			const char *str = COM_Argv(i);
+			INT32 val;
+
+			if (CV_CompleteValue(cvar, &str, &val))
+			{
+				if (str ? !stricmp(cvar->string, str)
+						: cvar->value == val)
+				{
+					CV_Set(cvar, COM_Argv(i + 1));
+					return;
+				}
+			}
+		}
+
+		CV_Set(cvar, COM_Argv(2));
+	}
 }
 
 /** Command variant of CV_AddValue
@@ -1073,6 +1109,81 @@ static void COM_Add_f(void)
 	}
 	else
 		CV_AddValue(cvar, atoi(COM_Argv(2)));
+}
+
+static void COM_Choose_f(void)
+{
+	size_t na = COM_Argc();
+
+	if (na < 2)
+	{
+		CONS_Printf(M_GetText("choose <option1> [<option2>] [<option3>] [...]: Picks a command at random\n"));
+		return;
+	}
+
+	COM_BufAddText(COM_Argv(M_RandomKey(na - 1) + 1));
+	COM_BufAddText("\n");
+}
+
+static void COM_ChooseWeighted_f(void)
+{
+	size_t na = COM_Argc();
+	size_t i, cmd;
+	const char *commands[40];
+	INT32 weights[40];
+	INT32 totalWeight = 0;
+	INT32 roll;
+
+	if (na < 3)
+	{
+		CONS_Printf(M_GetText("chooseweighted <option1> <weight1> [<option2> <weight2>] [<option3> <weight3>] [...]: Picks a command with weighted randomization\n"));
+		return;
+	}
+
+	memset(weights, 0, sizeof(weights));
+
+	i = 1;
+	cmd = 0;
+	while (i < na)
+	{
+		commands[cmd] = COM_Argv(i);
+
+		i++;
+		if (i >= na)
+		{
+			break;
+		}
+
+		weights[cmd] = atoi(COM_Argv(i));
+		totalWeight += weights[cmd];
+
+		i++;
+		cmd++;
+	}
+
+	if (cmd == 0 || totalWeight <= 0)
+	{
+		return;
+	}
+
+	roll = M_RandomRange(1, totalWeight);
+
+	for (i = 0; i < cmd; i++)
+	{
+		if (roll <= weights[i])
+		{
+			if (commands[i] == NULL)
+			{
+				break;
+			}
+
+			COM_BufAddText(commands[i]);
+			COM_BufAddText("\n");
+			break;
+		}
+
+		roll -= weights[i];
+	}
 }
 
 // =========================================================================
@@ -1344,26 +1455,27 @@ const char *CV_CompleteVar(char *partial, INT32 skips)
 	return NULL;
 }
 
-/** Sets a value to a variable with less checking. Only for internal use.
-  *
-  * \param var    Variable to set.
-  * \param valstr String value for the variable.
-  */
-static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
+boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 {
-	boolean override = false;
+	const char *valstr = *valstrp;
+
 	INT32 overrideval = 0;
 
-	// If we want messages informing us if cheats have been enabled or disabled,
-	// we need to rework the consvars a little bit.  This call crashes the game
-	// on load because not all variables will be registered at that time.
-/*	boolean prevcheats = false;
-	if (var->flags & CV_CHEAT)
-		prevcheats = CV_CheatsEnabled(); */
+	INT32 v;
+
+	if (var == &cv_forceskin)
+	{
+		v = R_SkinAvailable(valstr);
+
+		if (!R_SkinUsable(-1, v))
+			v = -1;
+
+		goto finish;
+	}
 
 	if (var->PossibleValue)
 	{
-		INT32 v;
+		INT32 i;
 
 		if (var->flags & CV_FLOAT)
 		{
@@ -1384,7 +1496,6 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 		{
 #define MINVAL 0
 #define MAXVAL 1
-			INT32 i;
 #ifdef PARANOIA
 			if (!var->PossibleValue[MAXVAL].strvalue)
 				I_Error("Bounded cvar \"%s\" without maximum!\n", var->name);
@@ -1393,52 +1504,26 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			// search for other
 			for (i = MAXVAL+1; var->PossibleValue[i].strvalue; i++)
 				if (v == var->PossibleValue[i].value || !stricmp(var->PossibleValue[i].strvalue, valstr))
-				{
-					if (client && execversion_enabled)
-					{
-						if (var->revert.allocated)
-						{
-							Z_Free(var->revert.v.string);
-							var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
-						}
-
-						var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-
-						return;
-					}
-
-					// free the old value string
-					Z_Free(var->zstring);
-					var->zstring = NULL;
-
-					var->value = var->PossibleValue[i].value;
-					var->string = var->PossibleValue[i].strvalue;
-					goto finish;
-				}
+					goto found;
 
 			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
-				v = var->PossibleValue[MINVAL].value;
-				valstr = var->PossibleValue[MINVAL].strvalue;
-				override = true;
-				overrideval = v;
+				i = MINVAL;
+				goto found;
 			}
 			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
-				v = var->PossibleValue[MAXVAL].value;
-				valstr = var->PossibleValue[MAXVAL].strvalue;
-				override = true;
-				overrideval = v;
+				i = MAXVAL;
+				goto found;
 			}
 			if (v == INT32_MIN)
 				goto badinput;
+			valstr = NULL; // not a preset value
 #undef MINVAL
 #undef MAXVAL
 		}
 		else
 		{
-			INT32 i;
-
 			// check first strings
 			for (i = 0; var->PossibleValue[i].strvalue; i++)
 				if (!stricmp(var->PossibleValue[i].strvalue, valstr))
@@ -1470,27 +1555,69 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 			// ...or not.
 			goto badinput;
 found:
-			if (client && execversion_enabled)
-			{
-				var->revert.v.const_munge = var->PossibleValue[i].strvalue;
-				return;
-			}
+			v = var->PossibleValue[i].value;
+			valstr = var->PossibleValue[i].strvalue;
+		}
 
-			var->value = var->PossibleValue[i].value;
-			var->string = var->PossibleValue[i].strvalue;
-			goto finish;
+finish:
+		if (intval)
+			*intval = v;
+
+		*valstrp = valstr;
+
+		return true;
+	}
+
+// landing point for possiblevalue failures
+badinput:
+	return false;
+}
+
+/** Sets a value to a variable with less checking. Only for internal use.
+  *
+  * \param var    Variable to set.
+  * \param valstr String value for the variable.
+  */
+static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
+{
+	boolean override = false;
+	INT32 overrideval = 0;
+
+	// If we want messages informing us if cheats have been enabled or disabled,
+	// we need to rework the consvars a little bit.  This call crashes the game
+	// on load because not all variables will be registered at that time.
+/*	boolean prevcheats = false;
+	if (var->flags & CV_CHEAT)
+		prevcheats = CV_CheatsEnabled(); */
+
+	const char *overridestr = valstr;
+
+	if (CV_CompleteValue(var, &overridestr, &overrideval))
+	{
+		if (overridestr)
+		{
+			valstr = overridestr;
+			override = true;
 		}
 	}
+	else if (var->PossibleValue)
+		goto badinput;
 
 	if (client && execversion_enabled)
 	{
 		if (var->revert.allocated)
 		{
 			Z_Free(var->revert.v.string);
+
 			// Z_StrDup creates a new zone memory block, so we can keep the allocated flag on
+			if (override)
+				var->revert.allocated = false; // the below value is not allocated in zone memory, don't try to free it!
 		}
 
-		var->revert.v.string = Z_StrDup(valstr);
+		if (override)
+			var->revert.v.const_munge = valstr;
+		else
+			var->revert.v.string = Z_StrDup(valstr);
 
 		return;
 	}
@@ -1498,28 +1625,25 @@ found:
 	// free the old value string
 	Z_Free(var->zstring);
 
-	var->string = var->zstring = Z_StrDup(valstr);
-
 	if (override)
-		var->value = overrideval;
-	else if (var->flags & CV_FLOAT)
 	{
-		double d = atof(var->string);
-		var->value = (INT32)(d * FRACUNIT);
+		var->zstring = NULL;
+		var->value = overrideval;
+		var->string = valstr;
 	}
 	else
 	{
-		if (var == &cv_forceskin)
+		var->string = var->zstring = Z_StrDup(valstr);
+
+		if (var->flags & CV_FLOAT)
 		{
-			var->value = R_SkinAvailable(var->string);
-			if (!R_SkinUsable(-1, var->value))
-				var->value = -1;
+			double d = atof(var->string);
+			var->value = (INT32)(d * FRACUNIT);
 		}
 		else
 			var->value = atoi(var->string);
 	}
 
-finish:
 	// See the note above.
 /* 	if (var->flags & CV_CHEAT)
 	{
@@ -1961,42 +2085,6 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 
 	if (var->PossibleValue)
 	{
-		/*
-		if (var == &cv_nextmap)
-		{
-			// Special case for the nextmap variable, used only directly from the menu
-			INT32 oldvalue = var->value - 1, gt;
-			gt = cv_newgametype.value;
-			{
-				newvalue = var->value - 1;
-				do
-				{
-					if(increment > 0) // Going up!
-					{
-						if (++newvalue == NUMMAPS)
-							newvalue = -1;
-					}
-					else // Going down!
-					{
-						if (--newvalue == -2)
-							newvalue = NUMMAPS-1;
-					}
-
-					if (newvalue == oldvalue)
-						break; // don't loop forever if there's none of a certain gametype
-
-					if(!mapheaderinfo[newvalue])
-						continue; // Don't allocate the header.  That just makes memory usage skyrocket.
-
-				} while (!M_CanShowLevelInList(newvalue, gt));
-
-				var->value = newvalue + 1;
-				var->func();
-				return;
-			}
-		}
-		else
-		*/
 #define MINVAL 0
 #define MAXVAL 1
 		if (var->PossibleValue[MINVAL].strvalue && !strcmp(var->PossibleValue[MINVAL].strvalue, "MIN"))

@@ -1054,8 +1054,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kpogos", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pogo Spring use
   {"alarmi", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Invincibility alarm
   {"alarmg", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow alarm
-  {"kinvnc", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Invincibility music
-  {"kgrow",  false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow music
   {"itrol1",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Roulette spinning
   {"itrol2",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"itrol3",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1115,7 +1113,22 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"ffbonc", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // Shout message sound effect
-  {"sysmsg", false,  60,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+  {"sysmsg", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+
+  // Shrink laser beam
+  {"beam01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // SPB seeking
+  {"spbska", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskb", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskc", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Juicebox for SPB
+  {"gate01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate02", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate03", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // SRB2Kart - Engine sounds
   // Engine class A

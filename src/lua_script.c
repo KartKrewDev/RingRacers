@@ -211,35 +211,17 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, cv_pointlimit.value);
 		return 1;
 	// begin map vars
-	} else if (fastcmp(word,"spstage_start")) {
-		lua_pushinteger(L, spstage_start);
-		return 1;
-	} else if (fastcmp(word,"spmarathon_start")) {
-		lua_pushinteger(L, spmarathon_start);
-		return 1;
-	} else if (fastcmp(word,"sstage_start")) {
-		lua_pushinteger(L, sstage_start);
-		return 1;
-	} else if (fastcmp(word,"sstage_end")) {
-		lua_pushinteger(L, sstage_end);
-		return 1;
-	} else if (fastcmp(word,"smpstage_start")) {
-		lua_pushinteger(L, smpstage_start);
-		return 1;
-	} else if (fastcmp(word,"smpstage_end")) {
-		lua_pushinteger(L, smpstage_end);
-		return 1;
 	} else if (fastcmp(word,"titlemap")) {
-		lua_pushinteger(L, titlemap);
+		lua_pushstring(L, titlemap);
 		return 1;
 	} else if (fastcmp(word,"titlemapinaction")) {
 		lua_pushboolean(L, (titlemapinaction != TITLEMAP_OFF));
 		return 1;
 	} else if (fastcmp(word,"bootmap")) {
-		lua_pushinteger(L, bootmap);
+		lua_pushstring(L, bootmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmap")) {
-		lua_pushinteger(L, tutorialmap);
+		lua_pushstring(L, tutorialmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);
@@ -375,9 +357,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);
 		return 1;
-	} else if (fastcmp(word,"indirectitemcooldown")) {
-		lua_pushinteger(L, indirectitemcooldown);
-		return 1;
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
@@ -463,8 +442,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word,"exitcountdown"))
 		exitcountdown = (tic_t)luaL_checkinteger(L, 2);
-	else if (fastcmp(word,"indirectitemcooldown"))
-		indirectitemcooldown = (tic_t)luaL_checkinteger(L, 2);
 	else
 		return 0;
 

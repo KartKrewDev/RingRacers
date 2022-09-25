@@ -64,6 +64,7 @@ typedef enum
 	SKYBOXVIEW = 0x08,
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
+	STUMBLE = 0x40,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -202,6 +203,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].hoverhyudoro)
 			flags |= HOVERHYUDORO;
 
+		if (players[i].stumbleIndicator)
+			flags |= STUMBLE;
+
 		WRITEUINT16(save_p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -218,6 +222,9 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & HOVERHYUDORO)
 			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
+
+		if (flags & STUMBLE)
+			WRITEUINT32(save_p, players[i].stumbleIndicator->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -261,6 +268,9 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].driftcharge);
 		WRITEUINT8(save_p, players[i].driftboost);
 		WRITEUINT8(save_p, players[i].strongdriftboost);
+
+		WRITEUINT16(save_p, players[i].gateBoost);
+		WRITEUINT8(save_p, players[i].gateSound);
 
 		WRITESINT8(save_p, players[i].aizdriftstrat);
 		WRITEINT32(save_p, players[i].aizdrifttilt);
@@ -319,6 +329,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].flamedash);
 		WRITEUINT16(save_p, players[i].flamemeter);
 		WRITEUINT8(save_p, players[i].flamelength);
+
+		WRITEUINT16(save_p, players[i].ballhogcharge);
 
 		WRITEUINT16(save_p, players[i].hyudorotimer);
 		WRITESINT8(save_p, players[i].stealingtimer);
@@ -507,6 +519,9 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & HOVERHYUDORO)
 			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
 
+		if (flags & STUMBLE)
+			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save_p);
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -550,6 +565,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].driftcharge = READFIXED(save_p);
 		players[i].driftboost = READUINT8(save_p);
 		players[i].strongdriftboost = READUINT8(save_p);
+
+		players[i].gateBoost = READUINT16(save_p);
+		players[i].gateSound = READUINT8(save_p);
 
 		players[i].aizdriftstrat = READSINT8(save_p);
 		players[i].aizdrifttilt = READINT32(save_p);
@@ -608,6 +626,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].flamedash = READUINT16(save_p);
 		players[i].flamemeter = READUINT16(save_p);
 		players[i].flamelength = READUINT8(save_p);
+
+		players[i].ballhogcharge = READUINT16(save_p);
 
 		players[i].hyudorotimer = READUINT16(save_p);
 		players[i].stealingtimer = READSINT8(save_p);
@@ -4293,6 +4313,13 @@ static void P_RelinkPointers(void)
 				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
 			}
+			if (mobj->player->stumbleIndicator)
+			{
+				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
+				mobj->player->stumbleIndicator = NULL;
+				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
+			}
 		}
 	}
 }
@@ -4408,8 +4435,8 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
@@ -4463,7 +4490,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, encoremode);
 
 	WRITEUINT32(save_p, leveltime);
-	WRITEUINT32(save_p, ssspheres);
 	WRITEINT16(save_p, lastmap);
 	WRITEUINT16(save_p, bossdisabled);
 
@@ -4489,7 +4515,6 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 
 	WRITEUINT32(save_p, token);
-	WRITEINT32(save_p, sstimer);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4518,9 +4543,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, gravity);
 	WRITEFIXED(save_p, mapobjectscale);
 
-	WRITEUINT32(save_p, countdowntimer);
-	WRITEUINT8(save_p, countdowntimeup);
-
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
 	WRITEUINT8(save_p, numtargets);
@@ -4545,7 +4567,8 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
-	WRITEUINT32(save_p, indirectitemcooldown);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		WRITEUINT32(save_p, itemCooldowns[i]);
 	WRITEUINT32(save_p, mapreset);
 
 	WRITEUINT8(save_p, spectateGriefed);
@@ -4594,8 +4617,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
@@ -4629,7 +4652,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// get the time
 	leveltime = READUINT32(save_p);
-	ssspheres = READUINT32(save_p);
 	lastmap = READINT16(save_p);
 	bossdisabled = READUINT16(save_p);
 
@@ -4652,7 +4674,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	}
 
 	token = READUINT32(save_p);
-	sstimer = READINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 
@@ -4681,9 +4702,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	gravity = READFIXED(save_p);
 	mapobjectscale = READFIXED(save_p);
 
-	countdowntimer = (tic_t)READUINT32(save_p);
-	countdowntimeup = (boolean)READUINT8(save_p);
-
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
 	numtargets = READUINT8(save_p);
@@ -4708,7 +4726,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
-	indirectitemcooldown = READUINT32(save_p);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	spectateGriefed = READUINT8(save_p);
@@ -4859,7 +4878,7 @@ boolean P_LoadGame(INT16 mapoverride)
 		return false;
 
 	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, 0, true);
+	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
 	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
 
 	return true;

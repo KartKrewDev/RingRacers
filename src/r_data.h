@@ -55,7 +55,7 @@ extern size_t flatmemory, spritememory, texturememory;
 //#define COLORMAPREVERSELIST
 
 void R_InitColormaps(void);
-void R_ReInitColormaps(UINT16 num, lumpnum_t newencoremap);
+void R_ReInitColormaps(UINT16 num, void *newencoremap, size_t encoremapsize);
 void R_ClearColormaps(void);
 extracolormap_t *R_CreateDefaultColormap(boolean lighttable);
 extracolormap_t *R_GetDefaultColormap(void);

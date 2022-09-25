@@ -64,10 +64,6 @@
 #include "i_system.h"
 #include "md5.h"
 #include "lua_script.h"
-#ifdef SCANTHINGS
-#include "p_setup.h" // P_ScanThings
-#endif
-#include "m_misc.h" // M_MapNumber
 #include "g_game.h" // G_SetGameModified
 
 #include "k_terrain.h"
@@ -94,10 +90,12 @@ typedef struct
 
 // Must be a power of two
 #define LUMPNUMCACHESIZE 64
+#define LUMPNUMCACHENAME 32
 
 typedef struct lumpnum_cache_s
 {
-	char lumpname[32];
+	char lumpname[LUMPNUMCACHENAME];
+	UINT32 lumphash;
 	lumpnum_t lumpnum;
 } lumpnum_cache_t;
 
@@ -273,22 +271,6 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 				DEH_LoadDehackedLumpPwad(wadnum, lump, mainfile);
 			}
 	}
-
-#ifdef SCANTHINGS
-	// Scan maps for emblems 'n shit
-	{
-		lumpinfo_t *lump_p = wadfiles[wadnum]->lumpinfo;
-		for (lump = 0; lump < wadfiles[wadnum]->numlumps; lump++, lump_p++)
-		{
-			const char *name = lump_p->name;
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P' && name[5]=='\0')
-			{
-				INT16 mapnum = (INT16)M_MapNumber(name[3], name[4]);
-				P_ScanThings(mapnum, wadnum, lump + ML_THINGS);
-			}
-		}
-	}
-#endif
 }
 
 /** Compute MD5 message digest for bytes read from STREAM of this filname.
@@ -975,6 +957,53 @@ UINT16 W_FindNextEmptyInPwad(UINT16 wad, UINT16 startlump)
 	return INT16_MAX;
 }
 
+// Get a map marker for WADs, and a standalone WAD file lump inside PK3s.
+UINT16 W_CheckNumForMapPwad(const char *name, UINT16 wad, UINT16 startlump)
+{
+	UINT16 i, end;
+
+	if (wadfiles[wad]->type == RET_WAD)
+	{
+		for (i = startlump; i < wadfiles[wad]->numlumps; i++)
+		{
+			// Not the name?
+			if (strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->name))
+				continue;
+
+			// Not a header?
+			if (W_LumpLength(i | (wad << 16)) > 0)
+				continue;
+
+			return i;
+		}
+	}
+	else if (wadfiles[wad]->type == RET_PK3)
+	{
+		i = W_CheckNumForFolderStartPK3("maps/", wad, startlump);
+
+		if (i != INT16_MAX)
+		{
+			end = W_CheckNumForFolderEndPK3("maps/", wad, i);
+
+			// Now look for the specified map.
+			for (; i < end; i++)
+			{
+				// Not the name?
+				if (strcasecmp(name, (wadfiles[wad]->lumpinfo + i)->longname))
+					continue;
+
+				// Not a .wad?
+				if (!W_IsLumpWad(i | (wad << 16)))
+					continue;
+
+				return i;
+			}
+		}
+	}
+
+	return INT16_MAX;
+}
+
 //
 // Same as the original, but checks in one pwad only.
 // wadid is a wad number
@@ -1114,8 +1143,12 @@ UINT16 W_CheckNumForFullNamePK3(const char *name, UINT16 wad, UINT16 startlump)
 //
 lumpnum_t W_CheckNumForName(const char *name)
 {
-	INT32 i;
 	lumpnum_t check = INT16_MAX;
+	UINT32 hash = quickncasehash(name, 8);
+	INT32 i;
+
+	if (name == NULL)
+		return LUMPERROR;
 
 	if (!*name) // some doofus gave us an empty string?
 		return LUMPERROR;
@@ -1125,6 +1158,7 @@ lumpnum_t W_CheckNumForName(const char *name)
 	for (i = lumpnumcacheindex + LUMPNUMCACHESIZE; i > lumpnumcacheindex; i--)
 	{
 		if (!lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname[8]
+			&& lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumphash == hash
 			&& strncmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name, 8) == 0)
 		{
 			lumpnumcacheindex = i & (LUMPNUMCACHESIZE - 1);
@@ -1140,14 +1174,18 @@ lumpnum_t W_CheckNumForName(const char *name)
 			break; //found it
 	}
 
-	if (check == INT16_MAX) return LUMPERROR;
+	if (check == INT16_MAX)
+	{
+		return LUMPERROR;
+	}
 	else
 	{
 		// Update the cache.
 		lumpnumcacheindex = (lumpnumcacheindex + 1) & (LUMPNUMCACHESIZE - 1);
-		memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', 32);
+		memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', LUMPNUMCACHENAME);
 		strncpy(lumpnumcache[lumpnumcacheindex].lumpname, name, 8);
-		lumpnumcache[lumpnumcacheindex].lumpnum = (i<<16)+check;
+		lumpnumcache[lumpnumcacheindex].lumpnum = (i << 16) + check;
+		lumpnumcache[lumpnumcacheindex].lumphash = hash;
 
 		return lumpnumcache[lumpnumcacheindex].lumpnum;
 	}
@@ -1161,8 +1199,12 @@ lumpnum_t W_CheckNumForName(const char *name)
 //
 lumpnum_t W_CheckNumForLongName(const char *name)
 {
-	INT32 i;
 	lumpnum_t check = INT16_MAX;
+	UINT32 hash = quickncasehash(name, LUMPNUMCACHENAME);
+	INT32 i;
+
+	if (name == NULL)
+		return LUMPERROR;
 
 	if (!*name) // some doofus gave us an empty string?
 		return LUMPERROR;
@@ -1171,7 +1213,8 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 	// most recent entries first
 	for (i = lumpnumcacheindex + LUMPNUMCACHESIZE; i > lumpnumcacheindex; i--)
 	{
-		if (strcmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name) == 0)
+		if (lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumphash == hash
+			&& strcmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name) == 0)
 		{
 			lumpnumcacheindex = i & (LUMPNUMCACHESIZE - 1);
 			return lumpnumcache[lumpnumcacheindex].lumpnum;
@@ -1186,16 +1229,20 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 			break; //found it
 	}
 
-	if (check == INT16_MAX) return LUMPERROR;
+	if (check == INT16_MAX)
+	{
+		return LUMPERROR;
+	}
 	else
 	{
-		if (strlen(name) < 32)
+		if (strlen(name) < LUMPNUMCACHENAME)
 		{
 			// Update the cache.
 			lumpnumcacheindex = (lumpnumcacheindex + 1) & (LUMPNUMCACHESIZE - 1);
-			memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', 32);
-			strlcpy(lumpnumcache[lumpnumcacheindex].lumpname, name, 32);
+			memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', LUMPNUMCACHENAME);
+			strlcpy(lumpnumcache[lumpnumcacheindex].lumpname, name, LUMPNUMCACHENAME);
 			lumpnumcache[lumpnumcacheindex].lumpnum = (i << 16) + check;
+			lumpnumcache[lumpnumcacheindex].lumphash = hash;
 		}
 
 		return (i << 16) + check;
@@ -1204,45 +1251,50 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 
 // Look for valid map data through all added files in descendant order.
 // Get a map marker for WADs, and a standalone WAD file lump inside PK3s.
-// TODO: Make it search through cache first, maybe...?
 lumpnum_t W_CheckNumForMap(const char *name)
 {
-	UINT32 hash = quickncasehash(name, 8);
-	UINT16 lumpNum, end;
-	UINT32 i;
-	lumpinfo_t *p;
-	for (i = numwadfiles - 1; i < numwadfiles; i--)
+	lumpnum_t check = INT16_MAX;
+	UINT32 hash = quickncasehash(name, LUMPNUMCACHENAME);
+	INT32 i;
+
+	// Check the lumpnumcache first. Loop backwards so that we check
+	// most recent entries first
+	for (i = lumpnumcacheindex + LUMPNUMCACHESIZE; i > lumpnumcacheindex; i--)
 	{
-		if (wadfiles[i]->type == RET_WAD)
+		if (lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumphash == hash
+			&& strcasecmp(lumpnumcache[i & (LUMPNUMCACHESIZE - 1)].lumpname, name) == 0)
 		{
-			for (lumpNum = 0; lumpNum < wadfiles[i]->numlumps; lumpNum++)
-			{
-				p = wadfiles[i]->lumpinfo + lumpNum;
-				if (p->hash == hash && !strncmp(name, p->name, 8))
-					return (i<<16) + lumpNum;
-			}
-		}
-		else if (wadfiles[i]->type == RET_PK3)
-		{
-			lumpNum = W_CheckNumForFolderStartPK3("maps/", i, 0);
-			if (lumpNum != INT16_MAX)
-				end = W_CheckNumForFolderEndPK3("maps/", i, lumpNum);
-			else
-				continue;
-			// Now look for the specified map.
-			for (; lumpNum < end; lumpNum++)
-			{
-				p = wadfiles[i]->lumpinfo + lumpNum;
-				if (p->hash == hash && !strnicmp(name, p->name, 8))
-				{
-					const char *extension = strrchr(p->fullname, '.');
-					if (!(extension && stricmp(extension, ".wad")))
-						return (i<<16) + lumpNum;
-				}
-			}
+			lumpnumcacheindex = i & (LUMPNUMCACHESIZE - 1);
+			return lumpnumcache[lumpnumcacheindex].lumpnum;
 		}
 	}
-	return LUMPERROR;
+
+	for (i = numwadfiles - 1; i >= 0; i--)
+	{
+		check = W_CheckNumForMapPwad(name, (UINT16)i, 0);
+
+		if (check != INT16_MAX)
+			break; // found it
+	}
+
+	if (check == INT16_MAX)
+	{
+		return LUMPERROR;
+	}
+	else
+	{
+		if (strlen(name) < LUMPNUMCACHENAME)
+		{
+			// Update the cache.
+			lumpnumcacheindex = (lumpnumcacheindex + 1) & (LUMPNUMCACHESIZE - 1);
+			memset(lumpnumcache[lumpnumcacheindex].lumpname, '\0', LUMPNUMCACHENAME);
+			strlcpy(lumpnumcache[lumpnumcacheindex].lumpname, name, LUMPNUMCACHENAME);
+			lumpnumcache[lumpnumcacheindex].lumpnum = (i << 16) + check;
+			lumpnumcache[lumpnumcacheindex].lumphash = hash;
+		}
+
+		return (i << 16) + check;
+	}
 }
 
 //
@@ -1714,6 +1766,27 @@ void *W_CacheLumpName(const char *name, INT32 tag)
 // Cache a patch into heap memory, convert the patch format as necessary
 //
 
+static void *MakePatch(void *lumpdata, size_t size, INT32 tag, void *cache)
+{
+	void *ptr, *dest;
+	size_t len = size;
+
+	ptr = lumpdata;
+
+#ifndef NO_PNG_LUMPS
+	if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
+	{
+		ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, 0);
+	}
+#endif
+
+	dest = Z_Calloc(sizeof(patch_t), tag, cache);
+
+	Patch_Create(ptr, len, dest);
+
+	return dest;
+}
+
 void *W_CacheSoftwarePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 {
 	lumpcache_t *lumpcache = NULL;
@@ -1726,21 +1799,13 @@ void *W_CacheSoftwarePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 	if (!lumpcache[lump])
 	{
 		size_t len = W_LumpLengthPwad(wad, lump);
-		void *ptr, *dest, *lumpdata = Z_Malloc(len, PU_STATIC, NULL);
+		void *lumpdata = Z_Malloc(len, PU_STATIC, NULL);
 
 		// read the lump in full
 		W_ReadLumpHeaderPwad(wad, lump, lumpdata, 0, 0);
-		ptr = lumpdata;
 
-#ifndef NO_PNG_LUMPS
-		if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
-			ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, 0);
-#endif
-
-		dest = Z_Calloc(sizeof(patch_t), tag, &lumpcache[lump]);
-		Patch_Create(ptr, len, dest);
-
-		Z_Free(ptr);
+		MakePatch(lumpdata, len, tag, &lumpcache[lump]);
+		Z_Free(lumpdata);
 	}
 	else
 		Z_ChangeTag(lumpcache[lump], tag);
@@ -2206,32 +2271,56 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 
 	if (W_IsLumpWad(lumpnum))
 	{
+		UINT32 realentry;
+		size_t *vsizecache;
+
 		// Remember that we're assuming that the WAD will have a specific set of lumps in a specific order.
 		UINT8 *wadData = W_CacheLumpNum(lumpnum, PU_LEVEL);
 		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
-		numlumps = ((wadinfo_t *)wadData)->numlumps;
-		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
 
-		// Build the lumps.
-		for (i = 0; i < numlumps; i++)
+		i = ((wadinfo_t *)wadData)->numlumps;
+		vsizecache = Z_Malloc(sizeof(size_t)*i, PU_LEVEL, NULL);
+
+		for (realentry = 0; realentry < i; realentry++)
 		{
-			vlumps[i].size = (size_t)(((filelump_t *)(fileinfo + i))->size);
-			// Play it safe with the name in this case.
-			memcpy(vlumps[i].name, (fileinfo + i)->name, 8);
-			vlumps[i].name[8] = '\0';
-			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
-			memcpy(vlumps[i].data, wadData + (fileinfo + i)->filepos, vlumps[i].size);
+			vsizecache[realentry] = (size_t)(((filelump_t *)(fileinfo + realentry))->size);
+
+			if (!vsizecache[realentry])
+				continue;
+
+			numlumps++;
 		}
 
+		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
+
+		// Build the lumps, skipping over empty entries.
+		for (i = 0, realentry = 0; i < numlumps; realentry++)
+		{
+			if (vsizecache[realentry] == 0)
+				continue;
+			vlumps[i].size = vsizecache[realentry];
+			// Play it safe with the name in this case.
+			memcpy(vlumps[i].name, (fileinfo + realentry)->name, 8);
+			vlumps[i].name[8] = '\0';
+			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
+			memcpy(vlumps[i].data, wadData + (fileinfo + realentry)->filepos, vlumps[i].size);
+			i++;
+		}
+
+		Z_Free(vsizecache);
 		Z_Free(wadData);
 	}
 	else
 	{
-		// Count number of lumps until the end of resource OR up until next "MAPXX" lump.
+		// Count number of lumps until the end of resource OR up until next 0-length lump.
 		lumpnum_t lumppos = lumpnum + 1;
 		for (i = LUMPNUM(lumppos); i < wadfiles[WADFILENUM(lumpnum)]->numlumps; i++, lumppos++, numlumps++)
-			if (memcmp(W_CheckNameForNum(lumppos), "MAP", 3) == 0)
-				break;
+		{
+			if (W_LumpLength(lumppos) > 0)
+				continue;
+
+			break;
+		}
 		numlumps++;
 
 		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
@@ -2257,7 +2346,12 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 void vres_Free(virtres_t* vres)
 {
 	while (vres->numlumps--)
-		Z_Free(vres->vlumps[vres->numlumps].data);
+	{
+		if (vres->vlumps[vres->numlumps].data)
+		{
+			Z_Free(vres->vlumps[vres->numlumps].data);
+		}
+	}
 	Z_Free(vres->vlumps);
 	Z_Free(vres);
 }
@@ -2287,4 +2381,31 @@ virtlump_t* vres_Find(const virtres_t* vres, const char* name)
 		if (fastcmp(name, vres->vlumps[i].name))
 			return &vres->vlumps[i];
 	return NULL;
+}
+
+/** \brief Gets patch from given virtual lump
+ *
+ * \param Virtual lump
+ * \return Patch data
+ *
+ */
+void *vres_GetPatch(virtlump_t *vlump, INT32 tag)
+{
+	patch_t *patch;
+
+	if (!vlump)
+		return NULL;
+
+	patch = MakePatch(vlump->data, vlump->size, tag, NULL);
+
+#ifdef HWRENDER
+	// Software-only compile cache the data without conversion
+	if (rendermode == render_soft || rendermode == render_none)
+#endif
+		return (void *)patch;
+
+#ifdef HWRENDER
+	Patch_CreateGL(patch);
+	return (void *)patch;
+#endif
 }

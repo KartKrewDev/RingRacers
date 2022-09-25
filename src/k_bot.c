@@ -953,6 +953,55 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 }
 
 /*--------------------------------------------------
+	static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+
+		Calculates a new destination angle while in the air,
+		to be able to successfully smooth land.
+
+	Input Arguments:-
+		player - Bot player to check.
+		destangle - Previous destination angle.
+
+	Return:-
+		New destination angle.
+--------------------------------------------------*/
+static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+{
+	angle_t newAngle = destangle;
+	boolean air = !P_IsObjectOnGround(player->mo);
+	angle_t steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
+	angle_t slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
+
+	if (slopeSteep > steepVal)
+	{
+		fixed_t pitchMul = -FINESINE(destangle >> ANGLETOFINESHIFT);
+		fixed_t rollMul = FINECOSINE(destangle >> ANGLETOFINESHIFT);
+		angle_t testAngles[2];
+		angle_t testDeltas[2];
+		UINT8 i;
+
+		testAngles[0] = R_PointToAngle2(0, 0, rollMul, pitchMul);
+		testAngles[1] = R_PointToAngle2(0, 0, -rollMul, -pitchMul);
+
+		for (i = 0; i < 2; i++)
+		{
+			testDeltas[i] = AngleDelta(testAngles[i], destangle);
+		}
+
+		if (testDeltas[1] < testDeltas[0])
+		{
+			return testAngles[1];
+		}
+		else
+		{
+			return testAngles[0];
+		}
+	}
+
+	return newAngle;
+}
+
+/*--------------------------------------------------
 	static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *predict)
 
 		Determines inputs for standard track driving.
@@ -974,6 +1023,8 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	INT32 anglediff;
 
 	I_Assert(predict != NULL);
+
+	destangle = K_BotSmoothLanding(player, destangle);
 
 	moveangle = player->mo->angle;
 	anglediff = AngleDeltaSigned(moveangle, destangle);
@@ -1104,6 +1155,8 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 			break;
 		}
 	}
+
+	destangle = K_BotSmoothLanding(player, destangle);
 
 	// Calculate turn direction first.
 	moveangle = player->mo->angle;

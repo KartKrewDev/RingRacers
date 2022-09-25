@@ -32,17 +32,6 @@ char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
-const char NIGHTSGRADE_LIST[] = {
-	'F', // GRADE_F
-	'E', // GRADE_E
-	'D', // GRADE_D
-	'C', // GRADE_C
-	'B', // GRADE_B
-	'A', // GRADE_A
-	'S', // GRADE_S
-	'\0'
-};
-
 struct flickytypes_s FLICKYTYPES[] = {
 	{"BLUEBIRD", MT_FLICKY_01}, // Flicky (Flicky)
 	{"RABBIT",   MT_FLICKY_02}, // Pocky (1)
@@ -322,7 +311,6 @@ actionpointer_t actionpointers[] =
 	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
-	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
@@ -337,6 +325,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 
 	{{NULL},                     "NONE"},
 
@@ -3277,6 +3266,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEMPOP4",
 	//}
 
+	"S_ITEM_DEBRIS",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER1",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
+
 	"S_ITEMICON",
 
 	// Item capsules
@@ -3647,6 +3640,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPB20",
 	"S_SPB_DEAD",
 
+	// Juicebox for SPB
+	"S_MANTA1",
+	"S_MANTA2",
+
 	// Lightning Shield
 	"S_LIGHTNINGSHIELD1",
 	"S_LIGHTNINGSHIELD2",
@@ -3759,8 +3756,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GROW_PARTICLE",
 
 	// Shrink
-	"S_SHRINK_GUN",
+	"S_SHRINK_POHBEE",
+	"S_SHRINK_POHBEE2",
+	"S_SHRINK_POHBEE3",
+	"S_SHRINK_POHBEE4",
+	"S_SHRINK_POHBEE5",
+	"S_SHRINK_POHBEE6",
+	"S_SHRINK_POHBEE7",
+	"S_SHRINK_POHBEE8",
+
 	"S_SHRINK_CHAIN",
+
+	"S_SHRINK_GUN",
+	"S_SHRINK_GUN_OVERLAY",
+
 	"S_SHRINK_LASER",
 	"S_SHRINK_PARTICLE",
 
@@ -3819,6 +3828,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BOTTOM",
 	"S_TRIPWIREBOOST_BLAST_TOP",
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
+
+	"S_SMOOTHLANDING",
 
 	// DEZ respawn laser
 	"S_DEZLASER",
@@ -5297,6 +5308,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BRAKEDRIFT",
 	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_ITEM_DEBRIS",
+	"MT_ITEM_DEBRIS_CLOUD_SPAWNER",
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
@@ -5335,6 +5348,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
+	"MT_MANTARING", // Juicebox for SPB
 
 	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_BUBBLESHIELD",
@@ -5363,6 +5377,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEBUMPER_BLAST",
 
 	"MT_TRIPWIREBOOST",
+
+	"MT_SMOOTHLANDING",
 
 	"MT_DEZLASER",
 
@@ -5702,11 +5718,14 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// True if button down last tic.
-	"ATTACKDOWN",
-	"ACCELDOWN",
-	"BRAKEDOWN",
-	"LOOKDOWN",
+	// free: 1<<0 to 1<<2 (name un-matchable)
+	"\x01",
+	"\x01",
+	"\x01",
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	"GAINAX",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?

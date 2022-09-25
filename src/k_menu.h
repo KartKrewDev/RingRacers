@@ -218,6 +218,15 @@ extern menu_t PLAY_LevelSelectDef;
 extern menuitem_t PLAY_TimeAttack[];
 extern menu_t PLAY_TimeAttackDef;
 
+typedef enum
+{
+	ta_replay = 0,
+	ta_guest,
+	ta_ghosts,
+	ta_spacer,
+	ta_start,
+} ta_e;
+
 extern menuitem_t PLAY_TAReplay[];
 extern menu_t PLAY_TAReplayDef;
 
@@ -536,7 +545,7 @@ extern struct menutransition_s {
 extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
-extern consvar_t cv_chooseskin, cv_serversort;
+extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update;
 
 void M_SetMenuDelay(UINT8 i);
 

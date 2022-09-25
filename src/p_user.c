@@ -300,11 +300,15 @@ boolean P_PlayerMoving(INT32 pnum)
 //
 UINT8 P_GetNextEmerald(void)
 {
-	if (gamemap >= sstage_start && gamemap <= sstage_end)
-		return (UINT8)(gamemap - sstage_start);
-	if (gamemap >= smpstage_start || gamemap <= smpstage_end)
-		return (UINT8)(gamemap - smpstage_start);
-	return 0;
+	INT16 mapnum = gamemap-1;
+
+	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
+		return 0;
+
+	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
+		return 0;
+
+	return mapheaderinfo[mapnum]->cup->emeraldnum;
 }
 
 //
@@ -1197,7 +1201,7 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->sprite2 = mobj->sprite2;
 	ghost->frame = mobj->frame;
 	ghost->tics = -1;
-	ghost->renderflags |= tr_trans50 << RF_TRANSSHIFT;
+	ghost->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|RF_TRANS50;
 	ghost->fuse = ghost->info->damage;
 	ghost->skin = mobj->skin;
 	ghost->standingslope = mobj->standingslope;
@@ -1206,6 +1210,11 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->spryoff = mobj->spryoff;
 	ghost->sprzoff = mobj->sprzoff;
 	ghost->rollangle = mobj->rollangle;
+
+	ghost->spritexscale = mobj->spritexscale;
+	ghost->spriteyscale = mobj->spriteyscale;
+	ghost->spritexoffset = mobj->spritexoffset;
+	ghost->spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->flags2 & MF2_OBJECTFLIP)
 		ghost->flags |= MF2_OBJECTFLIP;
@@ -1334,7 +1343,7 @@ void P_DoPlayerExit(player_t *player)
 //
 // Handles player hitting floor surface.
 // Returns whether to clip momz.
-boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll)
 {
 	boolean clipmomz;
 
@@ -1342,9 +1351,32 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir)
 
 	clipmomz = !(P_CheckDeathPitCollide(player->mo));
 
-	if (fromAir == true && clipmomz == true)
+	if (clipmomz == true)
 	{
-		K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+		if (fromAir == true)
+		{
+			K_SpawnSplashForMobj(player->mo, abs(player->mo->momz));
+		}
+
+		if (player->mo->health > 0)
+		{
+			boolean air = fromAir;
+
+			if (P_IsObjectOnGround(player->mo) && (player->mo->eflags & MFE_JUSTHITFLOOR))
+			{
+				air = true;
+			}
+
+			if (K_CheckStumble(player, oldPitch, oldRoll, air) == true)
+			{
+				return false;
+			}
+
+			if (air == false && K_FastFallBounce(player) == true)
+			{
+				return false;
+			}
+		}
 	}
 
 	return clipmomz;
@@ -1657,7 +1689,7 @@ static void P_CheckQuicksand(player_t *player)
 					player->mo->z = ceilingheight - player->mo->height;
 
 				if (player->mo->momz <= 0)
-					P_PlayerHitFloor(player, false);
+					P_PlayerHitFloor(player, false, player->mo->roll, player->mo->pitch);
 			}
 			else
 			{
@@ -1669,7 +1701,7 @@ static void P_CheckQuicksand(player_t *player)
 					player->mo->z = floorheight;
 
 				if (player->mo->momz >= 0)
-					P_PlayerHitFloor(player, false);
+					P_PlayerHitFloor(player, false, player->mo->roll, player->mo->pitch);
 			}
 
 			friction = abs(rover->master->v1->y - rover->master->v2->y)>>6;
@@ -2116,9 +2148,6 @@ void P_MovePlayer(player_t *player)
 
 	fixed_t runspd;
 
-	if (countdowntimeup)
-		return;
-
 	cmd = &player->cmd;
 	runspd = 14*player->mo->scale; //srb2kart
 
@@ -2190,7 +2219,7 @@ void P_MovePlayer(player_t *player)
 		player->drawangle -= ANGLE_22h;
 		player->mo->rollangle = 0;
 		player->glanceDir = 0;
-		player->pflags &= ~PF_LOOKDOWN;
+		player->pflags &= ~PF_GAINAX;
 	}
 	else if ((player->pflags & PF_FAULT) || (player->spinouttimer > 0))
 	{
@@ -2564,7 +2593,7 @@ void P_NukeEnemies(mobj_t *inflictor, mobj_t *source, fixed_t radius)
 		if (mo->type == MT_SPB) // If you destroy a SPB, you don't get the luxury of a cooldown.
 		{
 			spbplace = -1;
-			indirectitemcooldown = 0;
+			itemCooldowns[KITEM_SPB - 1] = 0;
 		}
 
 		if (mo->flags & MF_BOSS) //don't OHKO bosses nor players!
@@ -4158,7 +4187,7 @@ void P_PlayerThink(player_t *player)
 	}
 	else if (cmd->buttons & BT_ACCELERATE)
 	{
-		if (!player->exiting && !(player->pflags & PF_ACCELDOWN))
+		if (!player->exiting && !(player->oldcmd.buttons & BT_ACCELERATE))
 		{
 			player->kickstartaccel = 0;
 		}
@@ -4260,14 +4289,7 @@ void P_PlayerThink(player_t *player)
 
 	if (!player->spectator)
 		P_PlayerInSpecialSector(player);
-	else if (
-#else
-	if (player->spectator &&
 #endif
-		(gametyperules & GTR_LIVES))
-	{
-		/*P_ConsiderAllGone()*/;
-	}
 
 	if (player->playerstate == PST_DEAD)
 	{
@@ -4365,19 +4387,6 @@ void P_PlayerThink(player_t *player)
 
 	P_DoBubbleBreath(player); // Spawn Sonic's bubbles
 	P_CheckInvincibilityTimer(player); // Spawn Invincibility Sparkles
-
-	// check for buttons
-	if (cmd->buttons & BT_ACCELERATE)
-		player->pflags |= PF_ACCELDOWN;
-	else
-		player->pflags &= ~PF_ACCELDOWN;
-
-	if (cmd->buttons & BT_BRAKE)
-		player->pflags |= PF_BRAKEDOWN;
-	else
-		player->pflags &= ~PF_BRAKEDOWN;
-
-	// PF_LOOKDOWN handled in K_KartMoveAnimation
 
 	// Counters, time dependent power ups.
 	// Time Bonus & Ring Bonus count settings

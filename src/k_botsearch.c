@@ -501,8 +501,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
 				if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->scale > thing->scale + (mapobjectscale/8),
-					thing->scale > globalsmuggle.botmo->scale + (mapobjectscale/8)
+					K_IsBigger(globalsmuggle.botmo, thing),
+					K_IsBigger(thing, globalsmuggle.botmo)
 				))
 				{
 					break;

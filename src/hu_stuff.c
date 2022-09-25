@@ -79,6 +79,7 @@ typedef enum
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
 patch_t *pingmeasure[2]; // ping measurement graphic
+patch_t *pinglocal[2]; // mindelay indecator
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -97,6 +98,7 @@ static char hu_tick;
 //-------------------------------------------
 
 patch_t *missingpat;
+patch_t *blanklvl;
 
 // song credits
 static patch_t *songcreditbg;
@@ -185,6 +187,8 @@ void HU_LoadGraphics(void)
 
 	Font_Load();
 
+	HU_UpdatePatch(&blanklvl, "BLANKLVL");
+
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
 	// cache ping gfx:
@@ -196,6 +200,9 @@ void HU_LoadGraphics(void)
 
 	HU_UpdatePatch(&pingmeasure[0], "PINGD");
 	HU_UpdatePatch(&pingmeasure[1], "PINGMS");
+
+	HU_UpdatePatch(&pinglocal[0], "PINGGFXL");
+	HU_UpdatePatch(&pinglocal[1], "MPINGL");
 
 	// fps stuff
 	HU_UpdatePatch(&framecounter, "FRAMER");
@@ -2334,37 +2341,65 @@ void HU_Erase(void)
 static int
 Ping_gfx_num (int lag)
 {
-	if (lag < 2)
+	if (lag <= 2)
 		return 0;
-	else if (lag < 4)
+	else if (lag <= 4)
 		return 1;
-	else if (lag < 7)
+	else if (lag <= 7)
 		return 2;
-	else if (lag < 10)
+	else if (lag <= 10)
 		return 3;
 	else
 		return 4;
 }
 
+static int
+Ping_gfx_color (int lag)
+{
+	if (lag <= 2)
+		return SKINCOLOR_JAWZ;
+	else if (lag <= 4)
+		return SKINCOLOR_MINT;
+	else if (lag <= 7)
+		return SKINCOLOR_GOLD;
+	else if (lag <= 10)
+		return SKINCOLOR_RASPBERRY;
+	else
+		return SKINCOLOR_MAGENTA;
+}
+
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags)
+void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
 	INT32 gfxnum; // gfx to draw
+	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
+
+	if (!server && lag <= (tic_t)cv_mindelay.value)
+	{
+		lag = cv_mindelay.value;
+		drawlocal = true;
+	}
 
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
 		V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
-	V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+
+	if (drawlocal)
+		V_DrawScaledPatch(x+2, y, flags, pinglocal[0]);
+	else
+		V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+
+	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
 
 	if (servermaxping && lag > servermaxping && hu_tick < 4)
 	{
 		// flash ping red if too high
-		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
 	}
 
 	if (cv_pingmeasurement.value)
@@ -2389,7 +2424,16 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 		w /= 2;
 	}
 
-	patch = mping[Ping_gfx_num(lag)];
+	// This looks kinda dumb, but basically:
+	// Servers with mindelay set modify the ping table.
+	// Clients with mindelay unset don't, because they can't.
+	// Both are affected by mindelay, but a client's lag value is pre-adjustment.
+	if (server && cv_mindelay.value && (tic_t)cv_mindelay.value <= lag)
+		patch = pinglocal[1];
+	else if (!server && cv_mindelay.value && (tic_t)cv_mindelay.value >= lag)
+		patch = pinglocal[1];
+	else
+		patch = mping[Ping_gfx_num(lag)];
 
 	if (( flags & V_SNAPTORIGHT ))
 		x += ( w - SHORT (patch->width) );

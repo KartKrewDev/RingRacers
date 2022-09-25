@@ -24,6 +24,7 @@
 #include "dehacked.h"
 #include "deh_lua.h"
 #include "deh_tables.h"
+#include "deh_soc.h" // freeslotusage
 
 // freeslot takes a name (string only!)
 // and allocates it to the appropriate free slot.
@@ -473,18 +474,6 @@ static inline int lib_getenum(lua_State *L)
 				return 1;
 			}
 		return luaL_error(L, "skincolor '%s' could not be found.\n", word);
-	}
-	else if (fastncmp("GRADE_",word,6))
-	{
-		p = word+6;
-		for (i = 0; NIGHTSGRADE_LIST[i]; i++)
-			if (*p == NIGHTSGRADE_LIST[i])
-			{
-				lua_pushinteger(L, i);
-				return 1;
-			}
-		if (mathlib) return luaL_error(L, "NiGHTS grade '%s' could not be found.\n", word);
-		return 0;
 	}
 	else if (fastncmp("PRECIP_",word,7)) {
 		p = word+7;

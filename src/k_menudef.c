@@ -204,6 +204,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
+// see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
 	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},
@@ -871,9 +872,6 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Character Voices", "Set how often to play character voices in game.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Powerup Warning", "Set how to warn you from other player's powerups such as Invincibility.",
-		NULL, {.cvar = &cv_kartinvinsfx}, 0, 0},
-
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
@@ -1037,6 +1035,12 @@ menuitem_t OPTIONS_Gameplay[] =
 
 	{IT_STRING | IT_CVAR, "Karma Comeback", "Enable Karma Comeback in Battle mode.",
 		NULL, {.cvar = &cv_kartcomeback}, 0, 0},
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+	
+	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! Higher = more delay.",
+		NULL, {.cvar = &cv_mindelay}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

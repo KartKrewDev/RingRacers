@@ -1368,7 +1368,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
 					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
@@ -1394,7 +1394,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE; // kill
@@ -1425,7 +1425,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			// kill
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE;
@@ -2801,12 +2801,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz <= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmfloorslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -2821,12 +2824,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz >= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmceilingslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -3117,7 +3123,7 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	}
 
 	if ((P_MobjFlip(thing)*(thing->z - oldz) > 0 || hitfloor) && thing->player)
-		P_PlayerHitFloor(thing->player, !onfloor);
+		P_PlayerHitFloor(thing->player, !onfloor, thing->pitch, thing->roll);
 
 	// debug: be sure it falls to the floor
 	thing->eflags &= ~MFE_ONGROUND;

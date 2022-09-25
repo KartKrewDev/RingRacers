@@ -409,8 +409,6 @@ consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR|CV_CHEAT, C
 static CV_PossibleValue_t kartminimap_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_kartminimap = CVAR_INIT ("kartminimap", "4", CV_SAVE, kartminimap_cons_t, NULL);
 consvar_t cv_kartcheck = CVAR_INIT ("kartcheck", "Yes", CV_SAVE, CV_YesNo, NULL);
-static CV_PossibleValue_t kartinvinsfx_cons_t[] = {{0, "Music"}, {1, "SFX"}, {0, NULL}};
-consvar_t cv_kartinvinsfx = CVAR_INIT ("kartinvinsfx", "SFX", CV_SAVE, kartinvinsfx_cons_t, NULL);
 consvar_t cv_kartspeed = CVAR_INIT ("kartspeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
 consvar_t cv_kartbumpers = CVAR_INIT ("kartbumpers", "3", CV_NETVAR|CV_CHEAT, kartbumpers_cons_t, NULL);
@@ -519,9 +517,9 @@ consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_Y
 
 consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
+consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
 //static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
+consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
 consvar_t cv_maxping = CVAR_INIT ("maxdelay", "20", CV_SAVE, CV_Unsigned, NULL);
 
 consvar_t cv_lagless = CVAR_INIT ("lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange);
@@ -974,6 +972,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
+	CV_RegisterVar(&cv_mindelay);
 
 #ifdef NETGAME_DEVMODE
 	CV_RegisterVar(&cv_fishcake);
@@ -1395,7 +1394,7 @@ UINT8 CanChangeSkin(INT32 playernum)
 		return true;
 
 	// Force skin in effect.
-	if ((cv_forceskin.value != -1) || (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'))
+	if (cv_forceskin.value != -1)
 		return false;
 
 	// Can change skin in intermission and whatnot.
@@ -2511,8 +2510,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
-		const char *mapname = G_BuildMapName(mapnum);
-		I_Assert(W_CheckNumForName(mapname) != LUMPERROR);
+		//I_Assert(W_CheckNumForName(G_BuildMapName(mapnum)) != LUMPERROR);
 		buf_p = buf;
 		if (pencoremode)
 			flags |= 1;
@@ -2527,7 +2525,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
 
-		WRITESTRINGN(buf_p, mapname, MAX_WADPATH);
+		WRITEINT16(buf_p, mapnum);
 	}
 
 	if (delay == 1)
@@ -2970,11 +2968,11 @@ static void Command_Map_f(void)
   */
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 {
-	char mapname[MAX_WADPATH+1];
 	UINT8 flags;
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
+	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -3011,7 +3009,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	FLS = ((flags & (1<<3)) != 0);
 
-	READSTRINGN(*cp, mapname, MAX_WADPATH);
+	mapnumber = READINT16(*cp);
 
 	if (netgame)
 		P_SetRandSeed(READUINT32(*cp));
@@ -3019,7 +3017,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (!skipprecutscene)
 	{
 		DEBFILE(va("Warping to %s [resetplayer=%d lastgametype=%d gametype=%d cpnd=%d]\n",
-			mapname, resetplayer, lastgametype, gametype, chmappending));
+			G_BuildMapName(mapnumber), resetplayer, lastgametype, gametype, chmappending));
 		CON_LogMessage(M_GetText("Speeding off to level...\n"));
 	}
 
@@ -3035,7 +3033,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
 
-	G_InitNew(pencoremode, mapname, resetplayer, skipprecutscene, FLS);
+	G_InitNew(pencoremode, mapnumber, resetplayer, skipprecutscene, FLS);
 	if (demo.playback && !demo.timing)
 		precache = true;
 	if (demo.timing)
@@ -5256,8 +5254,9 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
 	INT32 i;
 	UINT8 gt, secondgt;
+	INT16 tempvotelevels[4][2];
 
-	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
@@ -5277,10 +5276,15 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	for (i = 0; i < 4; i++)
 	{
-		votelevels[i][0] = (UINT16)READUINT16(*cp);
-		votelevels[i][1] = gt;
-		if (!mapheaderinfo[votelevels[i][0]])
-			P_AllocMapHeader(votelevels[i][0]);
+		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
+		tempvotelevels[i][1] = gt;
+		if (tempvotelevels[i][0] < nummapheaders && mapheaderinfo[tempvotelevels[i][0]])
+			continue;
+
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempvotelevels[i][0], nummapheaders);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempvotelevels[i][0], player_names[playernum]);
+		return;
 	}
 
 	// If third entry has an illelegal Encore flag... (illelegal!?)
@@ -5291,12 +5295,14 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 		// Apply it to the second entry instead, gametype permitting!
 		if (gametypedefaultrules[gt] & GTR_CIRCUIT)
 		{
-			votelevels[1][1] |= VOTEMODIFIER_ENCORE;
+			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
 		}
 	}
 
 	// Finally, set third entry's gametype/Encore status.
-	votelevels[2][1] = secondgt;
+	tempvotelevels[2][1] = secondgt;
+
+	memcpy(votelevels, tempvotelevels, sizeof(votelevels));
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();

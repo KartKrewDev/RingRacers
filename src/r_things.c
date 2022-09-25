@@ -1811,8 +1811,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (spriterotangle
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
-		rollangle = R_GetRollAngle(vflip
-				? InvAngle(spriterotangle) : spriterotangle);
+		if ((papersprite && ang >= ANGLE_180) != vflip)
+		{
+			rollangle = R_GetRollAngle(InvAngle(spriterotangle));
+		}
+		else
+		{
+			rollangle = R_GetRollAngle(spriterotangle);
+		}
 		rotsprite = Patch_GetRotatedSprite(sprframe, (thing->frame & FF_FRAMEMASK), rot, flip, false, sprinfo, rollangle);
 
 		if (rotsprite != NULL)

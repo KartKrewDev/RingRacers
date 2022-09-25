@@ -1846,14 +1846,16 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
 		while (x < BASEVIDWIDTH + pad)
 		{
-			lumpnum_t lumpnum;
-			patch_t *PictureOfLevel;
+			INT32 cupLevelNum = cup->cachedlevels[i];
+			patch_t *PictureOfLevel = NULL;
 
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[i]+1)));
-			if (lumpnum != LUMPERROR)
-				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-			else
-				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+			if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
+			{
+				PictureOfLevel = mapheaderinfo[cupLevelNum]->thumbnailPic;
+			}
+
+			if (!PictureOfLevel)
+				PictureOfLevel = blanklvl;
 
 			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
 			i = (i+1) % cup->numlevels;
@@ -2073,18 +2075,19 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
 {
-	lumpnum_t lumpnum;
-	patch_t *PictureOfLevel;
+	patch_t *PictureOfLevel = NULL;
 	UINT8 *colormap = NULL;
 
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map+1)));
-	if (lumpnum != LUMPERROR)
-		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-	else
-		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+	if (mapheaderinfo[map])
+	{
+		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
+	}
+
+	if (!PictureOfLevel)
+		PictureOfLevel = blanklvl;
 
 	if (redblink)
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
@@ -2114,10 +2117,10 @@ void M_DrawLevelSelect(void)
 	{
 		INT16 lvlx = t, lvly = y;
 
-		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 			map++;
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 			break;
 
 		if (i == levellist.cursor && tatransition)
@@ -2146,7 +2149,7 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	lumpnum_t lumpnum;
+	patch_t *minimap = NULL;
 	UINT8 i;
 	consvar_t *cv;
 
@@ -2156,17 +2159,34 @@ void M_DrawTimeAttack(void)
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	if (currentMenu == &PLAY_TimeAttackDef)
+	if (currentMenu == &PLAY_TimeAttackDef && mapheaderinfo[map])
 	{
-		lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
-		if (lumpnum != LUMPERROR)
-			V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
+		tic_t timerec = 0;
+		tic_t laprec = 0;
+		UINT32 timeheight = 82;
 
-		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
-		K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+		if ((minimap = mapheaderinfo[map]->minimapPic))
+			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
-		V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(0, 162+t, 118, map, 1);
+		if (mapheaderinfo[map]->mainrecord)
+		{
+			timerec = mapheaderinfo[map]->mainrecord->time;
+			laprec = mapheaderinfo[map]->mainrecord->lap;
+		}
+
+		if (levellist.newgametype != GT_BATTLE)
+		{
+			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
+			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
+			timeheight += 30;
+		}
+		else
+		{
+			timeheight += 15;
+		}
+
+		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map, 1);
 	}
 	else
 		opty = 80;
@@ -3366,34 +3386,14 @@ void M_DrawItemToggles(void)
 			cv = KartItemCVars[currentMenu->menuitems[thisitem].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
-			switch (currentMenu->menuitems[thisitem].mvar1)
-			{
-				case KRITEM_DUALSNEAKER:
-				case KRITEM_DUALJAWZ:
-					drawnum = 2;
-					break;
-				case KRITEM_TRIPLESNEAKER:
-				case KRITEM_TRIPLEBANANA:
-				case KRITEM_TRIPLEORBINAUT:
-					drawnum = 3;
-					break;
-				case KRITEM_QUADORBINAUT:
-					drawnum = 4;
-					break;
-				case KRITEM_TENFOLDBANANA:
-					drawnum = 10;
-					break;
-				default:
-					drawnum = 0;
-					break;
-			}
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
 
 			if (cv->value)
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBG", PU_CACHE));
 			else
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISBGD", PU_CACHE));
 
-			if (drawnum != 0)
+			if (drawnum > 1)
 			{
 				V_DrawScaledPatch(x, y, 0, W_CachePatchName("K_ISMUL", PU_CACHE));
 				V_DrawScaledPatch(x, y, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[thisitem].mvar1, true), PU_CACHE));
@@ -3433,30 +3433,14 @@ void M_DrawItemToggles(void)
 			cv = KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
-			switch (currentMenu->menuitems[itemOn].mvar1)
-			{
-				case KRITEM_DUALSNEAKER:
-				case KRITEM_DUALJAWZ:
-					drawnum = 2;
-					break;
-				case KRITEM_TRIPLESNEAKER:
-				case KRITEM_TRIPLEBANANA:
-					drawnum = 3;
-					break;
-				case KRITEM_TENFOLDBANANA:
-					drawnum = 10;
-					break;
-				default:
-					drawnum = 0;
-					break;
-			}
+			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);
 
 			if (cv->value)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBG", PU_CACHE));
 			else
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITBGD", PU_CACHE));
 
-			if (drawnum != 0)
+			if (drawnum > 1)
 			{
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
@@ -3825,8 +3809,7 @@ void M_DrawPlaybackMenu(void)
 #define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
 void M_DrawReplayHutReplayInfo(void)
 {
-	lumpnum_t lumpnum;
-	patch_t *patch;
+	patch_t *patch = NULL;
 	UINT8 *colormap;
 	INT32 x, y, w, h;
 
@@ -3852,11 +3835,19 @@ void M_DrawReplayHutReplayInfo(void)
 
 		//  A 160x100 image of the level as entry MAPxxP
 		//CONS_Printf("%d %s\n", extrasmenu.demolist[dir_on[menudepthleft]].map, G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map));
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map)));
-		if (lumpnum != LUMPERROR)
-			patch = W_CachePatchNum(lumpnum, PU_CACHE);
-		else
+
+		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map])
+		{
+			patch = mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map]->thumbnailPic;
+			if (!patch)
+			{
+				patch = blanklvl;
+			}
+		}
+		else if (!patch)
+		{
 			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
+		}
 
 		if (!(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & DF_ENCORE))
 			V_DrawSmallScaledPatch(x, y, V_SNAPTOTOP, patch);

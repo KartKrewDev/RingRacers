@@ -28,6 +28,23 @@
 #include "r_things.h" // numskins
 
 /*--------------------------------------------------
+	static inline boolean K_ItemButtonWasDown(player_t *player)
+
+		Looks for players around the bot, and presses the item button
+		if there is one in range.
+
+	Input Arguments:-
+		player - Bot to check.
+
+	Return:-
+		true if the item button was pressed last tic, otherwise false.
+--------------------------------------------------*/
+static inline boolean K_ItemButtonWasDown(player_t *player)
+{
+	return (player->oldcmd.buttons & BT_ATTACK);
+}
+
+/*--------------------------------------------------
 	static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t radius)
 
 		Looks for players around the bot, and presses the item button
@@ -45,7 +62,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 {
 	UINT8 i;
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return false;
 	}
@@ -327,7 +344,7 @@ static void K_ItemConfirmForTarget(player_t *bot, player_t *target, UINT16 amoun
 --------------------------------------------------*/
 static boolean K_BotGenericPressItem(player_t *player, ticcmd_t *cmd, SINT8 dir)
 {
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return false;
 	}
@@ -352,7 +369,7 @@ static boolean K_BotGenericPressItem(player_t *player, ticcmd_t *cmd, SINT8 dir)
 --------------------------------------------------*/
 static void K_BotItemGenericTap(player_t *player, ticcmd_t *cmd)
 {
-	if (!(player->pflags & PF_ATTACKDOWN))
+	if (K_ItemButtonWasDown(player) == false)
 	{
 		cmd->buttons |= BT_ATTACK;
 		player->botvars.itemconfirm = 0;
@@ -475,7 +492,7 @@ static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 		|| player->speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
-		if (!player->sneakertimer && !(player->pflags & PF_ATTACKDOWN))
+		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 2*TICRATE;
@@ -503,7 +520,7 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 {
 	if (player->botvars.itemconfirm > TICRATE)
 	{
-		if (!player->sneakertimer && !(player->pflags & PF_ATTACKDOWN))
+		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 0;
@@ -1193,7 +1210,7 @@ static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
 	boolean mash = false;
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return;
 	}

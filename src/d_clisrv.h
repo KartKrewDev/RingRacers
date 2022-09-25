@@ -279,7 +279,6 @@ typedef struct
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
-	char mapname[8];
 	char maptitle[33];
 	unsigned char mapmd5[16];
 	UINT8 actnum;
@@ -445,6 +444,7 @@ extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
 extern boolean server_lagless;
+extern consvar_t cv_mindelay;
 
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
