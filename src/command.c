@@ -1600,6 +1600,7 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 	{
 		// Enforce to default value without cheats.
 		overridestr = var->defaultvalue;
+		valstr = overridestr;
 	}
 
 	if (CV_CompleteValue(var, &overridestr, &overrideval))
