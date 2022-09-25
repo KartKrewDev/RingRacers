@@ -933,7 +933,6 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	CopyCaretColors(netbuffer->u.serverinfo.servername, cv_servername.string,
 		MAXSERVERNAME);
-	strncpy(netbuffer->u.serverinfo.mapname, G_BuildMapName(gamemap), 7);
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
 

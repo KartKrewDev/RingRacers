@@ -911,9 +911,9 @@ static void DebugPrintpacket(const char *header)
 				netbuffer->u.servercfg.modifiedgame);
 			break;
 		case PT_SERVERINFO:
-			fprintf(debugfile, "    '%s' player %d/%d, map %s, filenum %d, time %u \n",
+			fprintf(debugfile, "    '%s' player %d/%d, filenum %d, time %u \n",
 				netbuffer->u.serverinfo.servername, netbuffer->u.serverinfo.numberofplayer,
-				netbuffer->u.serverinfo.maxplayer, netbuffer->u.serverinfo.mapname,
+				netbuffer->u.serverinfo.maxplayer,
 				netbuffer->u.serverinfo.fileneedednum,
 				(UINT32)LONG(netbuffer->u.serverinfo.time));
 			fprintfstringnewline((char *)netbuffer->u.serverinfo.fileneeded,
