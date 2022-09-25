@@ -1142,7 +1142,13 @@ void G_GhostTicker(void)
 					g->p++; // ditto
 			}
 			else if (ziptic == DW_RNG)
-				g->p += 4; // RNG seed
+			{
+				INT32 i;
+				for (i = 0; i < PRNUMCLASS; i++)
+				{
+					g->p += 4; // RNG seed
+				}
+			}
 			else
 				I_Error("Ghost is not a record attack ghost DXD"); //@TODO lmao don't blow up like this
 
@@ -2541,6 +2547,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT8 *infobuffer, *info_p, *extrainfo_p;
 	UINT8 version, subversion, pdemoflags;
 	UINT16 pdemoversion, count;
+	char mapname[MAXMAPLUMPNAME];
+	INT32 i;
 
 	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
 	{
@@ -2600,7 +2608,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		return;
 	}
 	info_p += 4; // "PLAY"
-	pdemo->map = READINT16(info_p);
+	READSTRINGN(info_p, mapname, sizeof(mapname));
+	pdemo->map = G_MapNumber(mapname);
 	info_p += 16; // mapmd5
 
 	pdemoflags = READUINT8(info_p);
@@ -2617,7 +2626,11 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
-	info_p += 4; // RNG seed
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		info_p += 4; // RNG seed
+	}
 
 	extrainfo_p = infobuffer + READUINT32(info_p); // The extra UINT32 read is for a blank 4 bytes?
 
@@ -2651,7 +2664,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	while (READUINT8(extrainfo_p) == DW_STANDING) // Assume standings are always first in the extrainfo
 	{
-		INT32 i;
 		char temp[16];
 
 		pdemo->standings[count].ranking = READUINT8(extrainfo_p);
@@ -3290,7 +3302,11 @@ void G_AddGhost(char *defdemoname)
 			break;
 	}
 
-	p += 4; // random seed
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		p += 4; // random seed
+	}
+
 	p += 4; // Extra data location reference
 
 	// net var data
@@ -3448,6 +3464,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	UINT8 *buffer,*p;
 	UINT16 ghostversion;
 	UINT8 flags;
+	INT32 i;
 
 	buffer = p = W_CacheLumpNum(l, PU_CACHE);
 
@@ -3508,7 +3525,11 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 			break;
 	}
 
-	p += 4; // random seed
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		p += 4; // random seed
+	}
+
 	p += 4; // Extrainfo location marker
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
