@@ -204,6 +204,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
+// see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
 	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},

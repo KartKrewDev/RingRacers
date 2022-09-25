@@ -387,7 +387,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// kill
 			if (player->invincibilitytimer > 0
-				|| player->growshrinktimer > 0
+				|| K_IsBigger(toucher, special) == true
 				|| player->flamedash > 0)
 			{
 				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
@@ -916,7 +916,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	// SRB2kart
 	if (target->type != MT_PLAYER && !(target->flags & MF_MONITOR)
 		 && !(target->type == MT_ORBINAUT || target->type == MT_ORBINAUT_SHIELD
-		 || target->type == MT_JAWZ || target->type == MT_JAWZ_DUD || target->type == MT_JAWZ_SHIELD
+		 || target->type == MT_JAWZ || target->type == MT_JAWZ_SHIELD
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
 		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
@@ -1497,7 +1497,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 	}
 
-	if ((target->type == MT_JAWZ || target->type == MT_JAWZ_DUD || target->type == MT_JAWZ_SHIELD) && !(target->flags2 & MF2_AMBUSH))
+	if ((target->type == MT_JAWZ || target->type == MT_JAWZ_SHIELD) && !(target->flags2 & MF2_AMBUSH))
 	{
 		target->z += P_MobjFlip(target)*20*target->scale;
 	}
@@ -1926,7 +1926,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || player->growshrinktimer > 0 || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
 				{
 					// Full invulnerability
 					K_DoInstashield(player);

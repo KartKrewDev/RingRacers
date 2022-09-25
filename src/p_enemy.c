@@ -310,7 +310,6 @@ void A_ChangeHeight(mobj_t *actor);
 // SRB2Kart
 //
 void A_ItemPop(mobj_t *actor);
-void A_JawzChase(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
@@ -3461,28 +3460,6 @@ void A_BossDeath(mobj_t *mo)
 		EV_DoElevator(&junk, elevateUp, false);
 		Tag_FSet(&junk.tags, LE_CAPSULE2);
 		EV_DoElevator(&junk, elevateHighest, false);
-
-		if (mapheaderinfo[gamemap-1]->muspostbossname[0] &&
-			S_MusicExists(mapheaderinfo[gamemap-1]->muspostbossname))
-		{
-			// Touching the egg trap button calls P_DoPlayerExit, which calls P_RestoreMusic.
-			// So just park ourselves in the mapmus variables.
-			// But don't change the mapmus variables if they were modified from their level header values (e.g., TUNES).
-			boolean changed = strnicmp(mapheaderinfo[gamemap-1]->musname, S_MusicName(), 7);
-			if (!strnicmp(mapheaderinfo[gamemap-1]->musname, mapmusname, 7))
-			{
-				strncpy(mapmusname, mapheaderinfo[gamemap-1]->muspostbossname, 7);
-				mapmusname[6] = 0;
-				mapmusflags = (mapheaderinfo[gamemap-1]->muspostbosstrack & MUSIC_TRACKMASK) | MUSIC_RELOADRESET;
-				mapmusposition = mapheaderinfo[gamemap-1]->muspostbosspos;
-			}
-
-			// don't change if we're in another tune
-			// but in case we're in jingle, use our parked mapmus variables so the correct track restores
-			if (!changed)
-				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, (1*MUSICRATE)+(MUSICRATE/2),
-					mapheaderinfo[gamemap-1]->muspostbossfadein);
-		}
 	}
 
 bossjustdie:
@@ -13205,132 +13182,6 @@ void A_ItemPop(mobj_t *actor)
 		// P_RespawnBattleBoxes eventually
 		P_SetMobjState(actor, S_INVISIBLE);
 	}
-}
-
-void A_JawzChase(mobj_t *actor)
-{
-	player_t *player;
-	fixed_t thrustamount = 0;
-	fixed_t frictionsafety = (actor->friction == 0) ? 1 : actor->friction;
-	fixed_t topspeed = actor->movefactor;
-
-	if (LUA_CallAction(A_JAWZCHASE, actor))
-		return;
-
-	if (actor->tracer)
-	{
-		/*if ((gametyperules & GTR_CIRCUIT)) // Stop looking after first target in race
-			actor->extravalue1 = 1;*/
-
-		if (actor->tracer->health)
-		{
-			const angle_t targetangle = R_PointToAngle2(actor->x, actor->y, actor->tracer->x, actor->tracer->y);
-			mobj_t *ret;
-			angle_t angledelta = actor->angle - targetangle;
-			boolean turnclockwise = true;
-
-			if (gametyperules & GTR_CIRCUIT)
-			{
-				const fixed_t distbarrier = FixedMul(512*mapobjectscale, FRACUNIT + ((gamespeed-1) * (FRACUNIT/4)));
-				const fixed_t distaway = P_AproxDistance(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
-				if (distaway < distbarrier)
-				{
-					if (actor->tracer->player)
-					{
-						fixed_t speeddifference = abs(topspeed - min(actor->tracer->player->speed, K_GetKartSpeed(actor->tracer->player, false, false)));
-						topspeed = topspeed - FixedMul(speeddifference, FRACUNIT-FixedDiv(distaway, distbarrier));
-					}
-				}
-			}
-
-			if (angledelta != 0)
-			{
-				angle_t MAX_JAWZ_TURN = ANGLE_90/15; // We can turn a maximum of 6 degrees per frame at regular max speed
-				// MAX_JAWZ_TURN gets stronger the slower the top speed of jawz
-				if (topspeed < actor->movefactor)
-				{
-					if (topspeed == 0)
-					{
-						MAX_JAWZ_TURN = ANGLE_180;
-					}
-					else
-					{
-						fixed_t anglemultiplier = FixedDiv(actor->movefactor, topspeed);
-						MAX_JAWZ_TURN += FixedAngle(FixedMul(AngleFixed(MAX_JAWZ_TURN), anglemultiplier));
-					}
-				}
-
-				if (angledelta > ANGLE_180)
-				{
-					angledelta = InvAngle(angledelta);
-					turnclockwise = false;
-				}
-
-				if (angledelta > MAX_JAWZ_TURN)
-				{
-					angledelta = MAX_JAWZ_TURN;
-				}
-
-				if (turnclockwise)
-				{
-					actor->angle -= angledelta;
-				}
-				else
-				{
-					actor->angle += angledelta;
-				}
-			}
-
-			ret = P_SpawnMobj(actor->tracer->x, actor->tracer->y, actor->tracer->z, MT_PLAYERRETICULE);
-			ret->old_x = actor->tracer->old_x;
-			ret->old_y = actor->tracer->old_y;
-			ret->old_z = actor->tracer->old_z;
-			P_SetTarget(&ret->target, actor->tracer);
-			ret->frame |= ((leveltime % 10) / 2) + 5;
-			ret->color = actor->cvmem;
-		}
-		else
-			P_SetTarget(&actor->tracer, NULL);
-	}
-
-	if (!actor->tracer)
-	{
-		actor->angle = K_MomentumAngle(actor);
-	}
-
-	if (P_IsObjectOnGround(actor))
-	{
-		const fixed_t currentspeed = R_PointToDist2(0, 0, actor->momx, actor->momy);
-
-		if (currentspeed >= topspeed)
-		{
-			// Thrust as if you were at top speed, slow down naturally
-			thrustamount = FixedDiv(topspeed, frictionsafety) - topspeed;
-		}
-		else
-		{
-			const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-			// Thrust to immediately get to top speed
-			thrustamount = beatfriction + FixedDiv(topspeed - currentspeed, frictionsafety);
-		}
-
-		P_Thrust(actor, actor->angle, thrustamount);
-	}
-
-	if ((actor->tracer != NULL) && (actor->tracer->health > 0))
-		return;
-
-	if (actor->extravalue1) // Disable looking by setting this
-		return;
-
-	if (!actor->target || P_MobjWasRemoved(actor->target)) // No source!
-		return;
-
-	player = K_FindJawzTarget(actor, actor->target->player);
-	if (player)
-		P_SetTarget(&actor->tracer, player->mo);
-
-	return;
 }
 
 void A_JawzExplode(mobj_t *actor)

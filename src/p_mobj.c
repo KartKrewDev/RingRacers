@@ -1743,7 +1743,6 @@ void P_XYMovement(mobj_t *mo)
 							/*FALLTHRU*/
 
 						case MT_JAWZ:
-						case MT_JAWZ_DUD:
 							if (mo->health == 1)
 							{
 								// This Item Damage
@@ -2181,7 +2180,6 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BANANA:
 		case MT_ORBINAUT:
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_BALLHOG:
 		case MT_SSMINE:
 		case MT_LANDMINE:
@@ -4993,7 +4991,7 @@ boolean P_IsKartItem(INT32 type)
 		type == MT_BANANA || type == MT_BANANA_SHIELD ||
 		type == MT_DROPTARGET || type == MT_DROPTARGET_SHIELD ||
 		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
-		type == MT_JAWZ || type == MT_JAWZ_DUD || type == MT_JAWZ_SHIELD ||
+		type == MT_JAWZ || type == MT_JAWZ_SHIELD ||
 		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
 		type == MT_SINK || type == MT_SINK_SHIELD ||
 		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP ||
@@ -6328,7 +6326,6 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_JAWZ:
-	case MT_JAWZ_DUD:
 		if (P_IsObjectOnGround(mobj))
 			P_SetMobjState(mobj, mobj->info->xdeathstate);
 		/* FALLTHRU */
@@ -6712,164 +6709,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_ORBINAUT:
 	{
-		boolean grounded = P_IsObjectOnGround(mobj);
-
-		if (mobj->flags2 & MF2_AMBUSH)
-		{
-			if (grounded && (mobj->flags & MF_NOCLIPTHING))
-			{
-				mobj->momx = 1;
-				mobj->momy = 0;
-				mobj->frame = 3;
-				S_StartSound(mobj, mobj->info->activesound);
-				mobj->flags &= ~MF_NOCLIPTHING;
-			}
-			else if (mobj->movecount)
-				mobj->movecount--;
-			else if (mobj->frame < 3)
-			{
-				mobj->movecount = 2;
-				mobj->frame++;
-			}
-		}
-		else
-		{
-			mobj_t *ghost = P_SpawnGhostMobj(mobj);
-			ghost->colorized = true; // already has color!
-
-			mobj->angle = K_MomentumAngle(mobj);
-
-			if (P_IsObjectOnGround(mobj))
-			{
-				fixed_t finalspeed = mobj->movefactor;
-				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-				fixed_t thrustamount = 0;
-				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
-
-				if (!grounded)
-				{
-					// No friction in the air
-					frictionsafety = FRACUNIT;
-				}
-
-				if (mobj->health <= 5)
-				{
-					INT32 i;
-					for (i = 5; i >= mobj->health; i--)
-						finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
-				}
-
-				if (currentspeed >= finalspeed)
-				{
-					// Thrust as if you were at top speed, slow down naturally
-					thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
-				}
-				else
-				{
-					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-					// Thrust to immediately get to top speed
-					thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
-				}
-
-				P_Thrust(mobj, mobj->angle, thrustamount);
-			}
-
-			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-				K_DoPogoSpring(mobj, 0, 1);
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
-
-			if (leveltime % 6 == 0)
-				S_StartSound(mobj, mobj->info->activesound);
-		}
+		Obj_OrbinautThink(mobj);
 		break;
 	}
 	case MT_JAWZ:
 	{
-		mobj_t *ghost = P_SpawnGhostMobj(mobj);
-
-		if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
-		{
-			ghost->color = mobj->target->player->skincolor;
-			ghost->colorized = true;
-		}
-
-		if (mobj->threshold > 0)
-			mobj->threshold--;
-		if (leveltime % TICRATE == 0)
-			S_StartSound(mobj, mobj->info->activesound);
-
-		// Movement handling has ALL been moved to A_JawzChase
-
-		K_DriftDustHandling(mobj);
-
-		if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-			K_DoPogoSpring(mobj, 0, 1);
-
-		if (!(gametyperules & GTR_CIRCUIT))
-			mobj->friction = max(0, 3 * mobj->friction / 4);
-
-		break;
-	}
-	case MT_JAWZ_DUD:
-	{
-		boolean grounded = P_IsObjectOnGround(mobj);
-
-		if (mobj->flags2 & MF2_AMBUSH)
-		{
-			if (grounded && (mobj->flags & MF_NOCLIPTHING))
-			{
-				mobj->momx = 1;
-				mobj->momy = 0;
-				S_StartSound(mobj, mobj->info->deathsound);
-				mobj->flags &= ~MF_NOCLIPTHING;
-			}
-		}
-		else
-		{
-			mobj_t *ghost = P_SpawnGhostMobj(mobj);
-			const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-			fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
-			fixed_t thrustamount = 0;
-
-			if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
-			{
-				ghost->color = mobj->target->player->skincolor;
-				ghost->colorized = true;
-			}
-
-			if (!grounded)
-			{
-				// No friction in the air
-				frictionsafety = FRACUNIT;
-			}
-
-			if (currentspeed >= mobj->movefactor)
-			{
-				// Thrust as if you were at top speed, slow down naturally
-				thrustamount = FixedDiv(mobj->movefactor, frictionsafety) - mobj->movefactor;
-			}
-			else
-			{
-				const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-				// Thrust to immediately get to top speed
-				thrustamount = beatfriction + FixedDiv(mobj->movefactor - currentspeed, frictionsafety);
-			}
-
-			mobj->angle = K_MomentumAngle(mobj);
-			P_Thrust(mobj, mobj->angle, thrustamount);
-
-			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-				K_DoPogoSpring(mobj, 0, 1);
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
-
-			if (leveltime % TICRATE == 0)
-				S_StartSound(mobj, mobj->info->activesound);
-		}
-
+		Obj_JawzThink(mobj);
 		break;
 	}
 	case MT_EGGMANITEM:
@@ -9450,7 +9295,7 @@ void P_MobjThinker(mobj_t *mobj)
 	// Destroy items sector special
 	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
 	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
-	|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
+	|| mobj->type == MT_JAWZ
 	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP
 	|| mobj->type == MT_LANDMINE)
 	{
@@ -9539,7 +9384,7 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_CANNONBALLDECOR
 		|| mobj->type == MT_FALLINGROCK
 		|| mobj->type == MT_ORBINAUT
-		|| mobj->type == MT_JAWZ || mobj->type == MT_JAWZ_DUD
+		|| mobj->type == MT_JAWZ
 		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime))
 	{
 		P_TryMove(mobj, mobj->x, mobj->y, true); // Sets mo->standingslope correctly
@@ -9841,7 +9686,6 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
@@ -11225,7 +11069,7 @@ void P_SpawnPlayer(INT32 playernum)
 	else if (p->bot)
 	{
 		/*
-		if (bonusgame || specialstage)
+		if (bonusgame || specialstage || boss)
 		{
 			// Bots should avoid
 			p->spectator = true;

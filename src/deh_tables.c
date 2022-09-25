@@ -32,17 +32,6 @@ char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
-const char NIGHTSGRADE_LIST[] = {
-	'F', // GRADE_F
-	'E', // GRADE_E
-	'D', // GRADE_D
-	'C', // GRADE_C
-	'B', // GRADE_B
-	'A', // GRADE_A
-	'S', // GRADE_S
-	'\0'
-};
-
 struct flickytypes_s FLICKYTYPES[] = {
 	{"BLUEBIRD", MT_FLICKY_01}, // Flicky (Flicky)
 	{"RABBIT",   MT_FLICKY_02}, // Pocky (1)
@@ -320,7 +309,6 @@ actionpointer_t actionpointers[] =
 
 	// SRB2Kart
 	{{A_ItemPop},                "A_ITEMPOP"},
-	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
@@ -3523,14 +3511,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JAWZ6",
 	"S_JAWZ7",
 	"S_JAWZ8",
-	"S_JAWZ_DUD1",
-	"S_JAWZ_DUD2",
-	"S_JAWZ_DUD3",
-	"S_JAWZ_DUD4",
-	"S_JAWZ_DUD5",
-	"S_JAWZ_DUD6",
-	"S_JAWZ_DUD7",
-	"S_JAWZ_DUD8",
 	"S_JAWZ_SHIELD1",
 	"S_JAWZ_SHIELD2",
 	"S_JAWZ_SHIELD3",
@@ -5337,7 +5317,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_ORBINAUT_SHIELD",
 
 	"MT_JAWZ", // Jawz stuff
-	"MT_JAWZ_DUD",
 	"MT_JAWZ_SHIELD",
 
 	"MT_PLAYERRETICULE", // Jawz reticule

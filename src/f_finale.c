@@ -1828,6 +1828,7 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
+	INT32 titleMapNum;
 	setup_numplayers = 0;
 
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -1839,20 +1840,20 @@ void F_StartTitleScreen(void)
 	else
 		wipegamestate = GS_TITLESCREEN;
 
-	if (titlemap)
+	if (titlemap
+		&& ((titleMapNum = G_MapNumber(titlemap)) < nummapheaders)
+		&& mapheaderinfo[titleMapNum]
+		&& mapheaderinfo[titleMapNum]->lumpnum != LUMPERROR)
 	{
 		mapthing_t *startpos;
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
-		gamemap = titlemap;
+		gamemap = titleMapNum+1;
 
-		if (!mapheaderinfo[gamemap-1])
-			P_AllocMapHeader(gamemap-1);
-
-		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-		globalweather = mapheaderinfo[gamemap-1]->weather;
+		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
+		globalweather = mapheaderinfo[titleMapNum]->weather;
 
 		G_DoLoadLevel(true);
 		if (!titlemap)
@@ -2187,12 +2188,14 @@ void F_TitleScreenTicker(boolean run)
 		return;
 	}
 
+#ifdef STAFFGHOSTS
 	// is it time?
 	if (!(--demoIdleLeft))
 	{
 		//static boolean use_netreplay = false;
 
 		char dname[9];
+		char *dname2 = dname;
 		lumpnum_t l;
 		const char *mapname;
 		UINT8 numstaff;
@@ -2222,41 +2225,16 @@ void F_TitleScreenTicker(boolean run)
 			return;
 		}
 
-		// Replay intro when done cycling through demos
-		/*
-		if (curDemo == numDemos) -- uuuh... we have a LOT of maps AND a big devteam... probably not gonna see a repeat unless you're super unlucky :V
-		{
-			curDemo = 0;
-			F_StartIntro();
-			return;
-		}
-		*/
-
 		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
 
 		numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
+		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
 			numstaff++;
 
-#if 0 // turns out this isn't how we're gonna organise 'em
-		if (numstaff > 1)
-		{
-			if (laststaff && laststaff <= numstaff) // don't do the same staff member twice in a row, even if they're on different maps
-			{
-				numstaff = M_RandomKey(numstaff-1)+1;
-				if (numstaff >= laststaff)
-					numstaff++;
-			}
-			else
-				numstaff = M_RandomKey(numstaff)+1;
-		}
-		laststaff = numstaff;
-#else
 		numstaff = M_RandomKey(numstaff)+1;
-#endif
 
 		// Setup demo name
-		snprintf(dname, 9, "%sS%02u", mapname, numstaff);
+		dname2 = Z_StrDup(va("%sS%02u", mapname, numstaff));
 
 		/*if ((l = W_CheckNumForName(dname)) == LUMPERROR) -- we KNOW it exists now
 		{
@@ -2269,8 +2247,14 @@ loadreplay:
 		demo.title = demo.fromtitle = true;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
-		G_DoPlayDemo(dname);
+		G_DoPlayDemo(dname2);
+
+		if (dname2 != dname)
+		{
+			Z_Free(dname2);
+		}
 	}
+#endif //#ifdef STAFFGHOSTS
 }
 
 void F_TitleDemoTicker(void)
@@ -2400,7 +2384,7 @@ void F_EndCutScene(void)
 			F_StartGameEvaluation();
 		else if (cutnum == introtoplay-1)
 			D_StartTitle();
-		else if (nextmap < 1100-1)
+		else if (nextmap < NEXTMAP_SPECIAL)
 			G_NextLevel();
 		else
 			G_EndGame();

@@ -2522,6 +2522,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 415: // Run a script
+			// FIXME: cursed
+			CONS_Alert(CONS_WARNING, "Linedef special 415 is currently broken! Fix it later, BYE.\n");
+#if 0
 			if (cv_runscripts.value)
 			{
 				INT32 scrnum;
@@ -2556,6 +2559,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				else
 					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 			}
+#endif
 			break;
 
 		case 416: // Spawn adjustable fire flicker
@@ -5927,10 +5931,6 @@ void P_InitSpecials(void)
 	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
 	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
-	// Defaults in case levels don't have them set.
-	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
-	ssspheres = mapheaderinfo[gamemap-1]->ssspheres;
-
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
 	// Set weather
@@ -6022,11 +6022,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 		// Process Section 2
 		switch(GETSECSPECIAL(sector->special, 2))
 		{
-			case 10: // Time for special stage
-				sstimer = (sector->floorheight>>FRACBITS) * TICRATE + 6; // Time to finish
-				ssspheres = sector->ceilingheight>>FRACBITS; // Ring count for special stage
-				break;
-
 			case 11: // Custom global gravity!
 				gravity = sector->floorheight/1000;
 				break;
