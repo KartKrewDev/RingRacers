@@ -4150,7 +4150,7 @@ void G_LoadGameSettings(void)
 void G_LoadGameData(void)
 {
 	size_t length;
-	INT32 i, j;
+	UINT32 i, j;
 	UINT32 versionID;
 	UINT8 rtemp;
 
