@@ -1062,7 +1062,6 @@ void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
 void M_DrawReplayHut(void);
 void M_DrawReplayStartMenu(void);
-void M_DrawReplayHutReplayInfo(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
