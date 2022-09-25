@@ -98,6 +98,7 @@ static char hu_tick;
 //-------------------------------------------
 
 patch_t *missingpat;
+patch_t *blanklvl;
 
 // song credits
 static patch_t *songcreditbg;
@@ -185,6 +186,8 @@ void HU_LoadGraphics(void)
 		return;
 
 	Font_Load();
+
+	HU_UpdatePatch(&blanklvl, "BLANKLVL");
 
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 

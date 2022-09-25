@@ -358,25 +358,14 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 #endif
 				else if (fastcmp(word, "LEVEL"))
 				{
-					// Support using the actual map name,
-					// i.e., Level AB, Level FZ, etc.
-
-					// Convert to map number
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						i = M_MapNumber(word2[0], word2[1]);
-
-					if (i > 0 && i <= NUMMAPS)
+					size_t len = strlen(word2);
+					if (len <= MAXMAPLUMPNAME-1)
 					{
-						if (mapheaderinfo[i])
-						{
-							G_SetGameModified(multiplayer, true); // Only a major mod if editing stuff that isn't your own!
-						}
-
-						readlevelheader(f, i);
+						readlevelheader(f, word2);
 					}
 					else
 					{
-						deh_warning("Level number %d out of range (1 - %d)", i, NUMMAPS);
+						deh_warning("Map header's lumpname %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXMAPLUMPNAME-1));
 						ignorelines(f);
 					}
 				}

@@ -32,17 +32,6 @@ char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
-const char NIGHTSGRADE_LIST[] = {
-	'F', // GRADE_F
-	'E', // GRADE_E
-	'D', // GRADE_D
-	'C', // GRADE_C
-	'B', // GRADE_B
-	'A', // GRADE_A
-	'S', // GRADE_S
-	'\0'
-};
-
 struct flickytypes_s FLICKYTYPES[] = {
 	{"BLUEBIRD", MT_FLICKY_01}, // Flicky (Flicky)
 	{"RABBIT",   MT_FLICKY_02}, // Pocky (1)

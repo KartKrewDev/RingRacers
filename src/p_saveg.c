@@ -4427,8 +4427,8 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
@@ -4493,7 +4493,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, encoremode);
 
 	WRITEUINT32(save_p, leveltime);
-	WRITEUINT32(save_p, ssspheres);
 	WRITEINT16(save_p, lastmap);
 	WRITEUINT16(save_p, bossdisabled);
 
@@ -4519,7 +4518,6 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 
 	WRITEUINT32(save_p, token);
-	WRITEINT32(save_p, sstimer);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4547,9 +4545,6 @@ static void P_NetArchiveMisc(boolean resending)
 
 	WRITEFIXED(save_p, gravity);
 	WRITEFIXED(save_p, mapobjectscale);
-
-	WRITEUINT32(save_p, countdowntimer);
-	WRITEUINT8(save_p, countdowntimeup);
 
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
@@ -4638,8 +4633,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
@@ -4673,7 +4668,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// get the time
 	leveltime = READUINT32(save_p);
-	ssspheres = READUINT32(save_p);
 	lastmap = READINT16(save_p);
 	bossdisabled = READUINT16(save_p);
 
@@ -4696,7 +4690,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	}
 
 	token = READUINT32(save_p);
-	sstimer = READINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 
@@ -4724,9 +4717,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	gravity = READFIXED(save_p);
 	mapobjectscale = READFIXED(save_p);
-
-	countdowntimer = (tic_t)READUINT32(save_p);
-	countdowntimeup = (boolean)READUINT8(save_p);
 
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
@@ -4904,7 +4894,7 @@ boolean P_LoadGame(INT16 mapoverride)
 		return false;
 
 	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, 0, true);
+	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
 	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
 
 	return true;

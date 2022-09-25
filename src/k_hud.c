@@ -3320,7 +3320,6 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	INT32 lumpnum;
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
@@ -3344,12 +3343,12 @@ static void K_drawKartMinimap(void)
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(gamemap)));
+	AutomapPic = mapheaderinfo[gamemap-1]->minimapPic;
 
-	if (lumpnum != -1)
-		AutomapPic = W_CachePatchName(va("%sR", G_BuildMapName(gamemap)), PU_HUDGFX);
-	else
+	if (!AutomapPic)
+	{
 		return; // no pic, just get outta here
+	}
 
 	if (r_splitscreen < 2) // 1/2P right aligned
 	{

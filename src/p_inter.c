@@ -387,7 +387,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// kill
 			if (player->invincibilitytimer > 0
-				|| player->growshrinktimer > 0
+				|| K_IsBigger(toucher, special) == true
 				|| player->flamedash > 0)
 			{
 				P_KillMobj(special, toucher, toucher, DMG_NORMAL);
@@ -1926,7 +1926,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || player->growshrinktimer > 0 || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
 				{
 					// Full invulnerability
 					K_DoInstashield(player);
