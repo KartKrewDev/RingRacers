@@ -118,7 +118,7 @@ void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player, boolean keepshields);
 void K_RepairOrbitChain(mobj_t *orbit);
 void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
-player_t *K_FindJawzTarget(mobj_t *actor, player_t *source);
+player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
 INT32 K_GetKartRingPower(player_t *player, boolean boosted);
 void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);

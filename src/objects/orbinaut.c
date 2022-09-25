@@ -36,7 +36,6 @@
 #define orbinaut_turn(o) ((o)->extravalue1)
 
 #define orbinaut_owner(o) ((o)->target)
-#define orbinaut_center(o) ((o)->tracer)
 
 #define orbinaut_shield_dist(o) ((o)->extravalue1)
 
@@ -45,7 +44,7 @@ void Obj_OrbinautThink(mobj_t *th)
 	boolean grounded = P_IsObjectOnGround(th);
 	mobj_t *ghost = NULL;
 
-	if (th->fuse <= TICRATE)
+	if (th->fuse > 0 && th->fuse <= TICRATE)
 	{
 		th->renderflags ^= RF_DONTDRAW;
 	}
@@ -177,7 +176,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player)
 	{
 		if ((t2->player->flashing > 0 && t2->hitlag == 0)
-			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_JAWZ_DUD))
+			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ))
 			return true;
 
 		if (t2->player->hyudorotimer)
@@ -198,7 +197,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 		damageitem = true;
 	}
-	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
+	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_BALLHOG)
@@ -279,7 +278,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 	}
 }
 
-void Obj_OrbinautMoveHeld(player_t *player)
+void Obj_OrbinautJawzMoveHeld(player_t *player)
 {
 	fixed_t finalscale = K_ItemScaleForPlayer(player);
 	mobj_t *cur = player->mo->hnext;

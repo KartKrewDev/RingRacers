@@ -1421,7 +1421,6 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 				weight = K_PlayerWeight(against, NULL);
 			break;
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL) + (3*FRACUNIT);
@@ -4712,6 +4711,12 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
+	if (dir == -1 && (type == MT_ORBINAUT || type == MT_BALLHOG))
+	{
+		// Backwards nerfs
+		finalspeed /= 8;
+	}
+
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	y = source->y + source->momy + FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	z = source->z; // spawn on the ground please
@@ -4766,23 +4771,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
-			if (source && source->player)
-			{
-				INT32 lasttarg = source->player->lastjawztarget;
-				th->cvmem = source->player->skincolor;
-				if ((lasttarg >= 0 && lasttarg < MAXPLAYERS)
-					&& playeringame[lasttarg]
-					&& !players[lasttarg].spectator
-					&& players[lasttarg].mo)
-				{
-					P_SetTarget(&th->tracer, players[lasttarg].mo);
-				}
-			}
-			else
-				th->cvmem = SKINCOLOR_KETCHUP;
-
-			S_StartSound(th, th->info->activesound);
-			th->movefactor = finalspeed;
+			Obj_JawzThrown(th, finalspeed, dir);
 			break;
 		case MT_SPB:
 			th->movefactor = finalspeed;
@@ -5622,12 +5611,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		if (dir == -1 && mapthing != MT_SPB)
 		{
 			// Shoot backward
-			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED / 8, dir);
+			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED, -1);
 		}
 		else
 		{
 			// Shoot forward
-			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, dir);
+			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, 1);
 		}
 
 		if (mapthing == MT_DROPTARGET && mo)
@@ -6341,7 +6330,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 				break;
 			case MT_JAWZ_SHIELD:
 				orbit = true;
-				type = MT_JAWZ_DUD;
+				type = MT_JAWZ;
 				break;
 			// Kart trailing items
 			case MT_BANANA_SHIELD:
@@ -6465,7 +6454,7 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 			dropwork->tics = -1;
 
-			if (type == MT_JAWZ_DUD)
+			if (type == MT_JAWZ)
 			{
 				dropwork->z += 20*flip*dropwork->scale;
 			}
@@ -6894,7 +6883,7 @@ static void K_MoveHeldObjects(player_t *player)
 		case MT_ORBINAUT_SHIELD: // Kart orbit items
 		case MT_JAWZ_SHIELD:
 			{
-				Obj_OrbinautMoveHeld(player);
+				Obj_OrbinautJawzMoveHeld(player);
 				break;
 			}
 		case MT_BANANA_SHIELD: // Kart trailing items
@@ -7106,94 +7095,110 @@ static void K_MoveHeldObjects(player_t *player)
 	}
 }
 
-player_t *K_FindJawzTarget(mobj_t *actor, player_t *source)
+player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 {
-	fixed_t best = -1;
+	fixed_t best = INT32_MAX;
 	player_t *wtarg = NULL;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		angle_t thisang;
-		player_t *player;
+		angle_t thisang = ANGLE_MAX;
+		fixed_t thisdist = INT32_MAX;
+		fixed_t thisScore = INT32_MAX;
+		player_t *player = NULL;
 
-		if (!playeringame[i])
+		if (playeringame[i] == false)
+		{
 			continue;
+		}
 
 		player = &players[i];
 
-		if (player->spectator)
-			continue; // spectator
-
-		if (!player->mo)
-			continue;
-
-		if (player->mo->health <= 0)
-			continue; // dead
-
 		// Don't target yourself, stupid.
 		if (player == source)
+		{
 			continue;
+		}
 
-		// Don't home in on teammates.
-		if (G_GametypeHasTeams() && source->ctfteam == player->ctfteam)
+		if (player->spectator)
+		{
+			// Spectators
 			continue;
+		}
 
-		// Invisible, don't bother
-		if (player->hyudorotimer)
+		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		{
+			// Invalid mobj
 			continue;
+		}
 
-		// Find the angle, see who's got the best.
-		thisang = actor->angle - R_PointToAngle2(actor->x, actor->y, player->mo->x, player->mo->y);
-		if (thisang > ANGLE_180)
-			thisang = InvAngle(thisang);
+		if (player->mo->health <= 0)
+		{
+			// dead
+			continue;
+		}
 
-		// Jawz only go after the person directly ahead of you in race... sort of literally now!
+		if (G_GametypeHasTeams() && source != NULL && source->ctfteam == player->ctfteam)
+		{
+			// Don't home in on teammates.
+			continue;
+		}
+
+		if (player->hyudorotimer > 0)
+		{
+			// Invisible player
+			continue;
+		}
+
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			// Don't go for people who are behind you
-			if (thisang > ANGLE_67h)
-				continue;
-			// Don't pay attention to people who aren't above your position
-			if (player->position >= source->position)
-				continue;
-			if ((best == -1) || (player->position > best))
+			if (player->position > source->position)
 			{
-				wtarg = player;
-				best = player->position;
+				// Don't pay attention to people who aren't above your position
+				continue;
 			}
 		}
 		else
 		{
-			fixed_t thisdist;
-			fixed_t thisavg;
-
-			// Don't go for people who are behind you
-			if (thisang > ANGLE_45)
-				continue;
-
-			// Don't pay attention to dead players
 			if (player->bumpers <= 0)
+			{
+				// Don't pay attention to dead players
 				continue;
+			}
 
 			// Z pos too high/low
 			if (abs(player->mo->z - (actor->z + actor->momz)) > RING_DIST/8)
-				continue;
-
-			thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
-
-			if (thisdist > 2*RING_DIST) // Don't go for people who are too far away
-				continue;
-
-			thisavg = (AngleFixed(thisang) + thisdist) / 2;
-
-			//CONS_Printf("got avg %d from player # %d\n", thisavg>>FRACBITS, i);
-
-			if ((best == -1) || (thisavg < best))
 			{
-				wtarg = player;
-				best = thisavg;
+				continue;
 			}
+		}
+
+		// Find the angle, see who's got the best.
+		thisang = AngleDelta(actor->angle, R_PointToAngle2(actor->x, actor->y, player->mo->x, player->mo->y));
+
+		// Don't go for people who are behind you
+		if (thisang > range)
+		{
+			continue;
+		}
+
+		thisdist = P_AproxDistance(player->mo->x - (actor->x + actor->momx), player->mo->y - (actor->y + actor->momy));
+
+		// Don't go for people who are too far away
+		if (thisdist > 2*RING_DIST)
+		{
+			continue;
+		}
+
+		thisScore = (AngleFixed(thisang) * 2) + (thisdist / 2);
+
+		//CONS_Printf("got score %f from player # %d\n", FixedToFloat(thisScore), i);
+
+		if (thisScore < best)
+		{
+			wtarg = player;
+			best = thisScore;
 		}
 	}
 
@@ -8274,7 +8279,7 @@ void K_KartPlayerAfterThink(player_t *player)
 			player->jawztargetdelay--;
 		}
 		else
-			targ = K_FindJawzTarget(player->mo, player);
+			targ = K_FindJawzTarget(player->mo, player, ANGLE_45);
 
 		if (!targ || !targ->mo || P_MobjWasRemoved(targ->mo))
 		{
@@ -10295,10 +10300,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							else if (ATTACK_IS_DOWN && HOLDING_ITEM && (player->pflags & PF_ITEMOUT)) // Jawz thrown
 							{
-								if (player->throwdir == 1 || player->throwdir == 0)
-									K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
-								else if (player->throwdir == -1) // Throwing backward gives you a dud that doesn't home in
-									K_ThrowKartItem(player, true, MT_JAWZ_DUD, -1, 0, 0);
+								K_ThrowKartItem(player, true, MT_JAWZ, 1, 0, 0);
 								K_PlayAttackTaunt(player->mo);
 								player->itemamount--;
 								K_UpdateHnextList(player, false);

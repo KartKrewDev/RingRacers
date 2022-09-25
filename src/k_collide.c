@@ -80,7 +80,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
-		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
@@ -334,7 +334,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 			K_PuntMine(t1, t2);
 		}
 	}
-	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
+	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
 		// Bomb death
@@ -395,7 +395,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
-		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
