@@ -6712,77 +6712,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_ORBINAUT:
 	{
-		boolean grounded = P_IsObjectOnGround(mobj);
-
-		if (mobj->flags2 & MF2_AMBUSH)
-		{
-			if (grounded && (mobj->flags & MF_NOCLIPTHING))
-			{
-				mobj->momx = 1;
-				mobj->momy = 0;
-				mobj->frame = 3;
-				S_StartSound(mobj, mobj->info->activesound);
-				mobj->flags &= ~MF_NOCLIPTHING;
-			}
-			else if (mobj->movecount)
-				mobj->movecount--;
-			else if (mobj->frame < 3)
-			{
-				mobj->movecount = 2;
-				mobj->frame++;
-			}
-		}
-		else
-		{
-			mobj_t *ghost = P_SpawnGhostMobj(mobj);
-			ghost->colorized = true; // already has color!
-
-			mobj->angle = K_MomentumAngle(mobj);
-
-			if (P_IsObjectOnGround(mobj))
-			{
-				fixed_t finalspeed = mobj->movefactor;
-				const fixed_t currentspeed = R_PointToDist2(0, 0, mobj->momx, mobj->momy);
-				fixed_t thrustamount = 0;
-				fixed_t frictionsafety = (mobj->friction == 0) ? 1 : mobj->friction;
-
-				if (!grounded)
-				{
-					// No friction in the air
-					frictionsafety = FRACUNIT;
-				}
-
-				if (mobj->health <= 5)
-				{
-					INT32 i;
-					for (i = 5; i >= mobj->health; i--)
-						finalspeed = FixedMul(finalspeed, FRACUNIT-FRACUNIT/4);
-				}
-
-				if (currentspeed >= finalspeed)
-				{
-					// Thrust as if you were at top speed, slow down naturally
-					thrustamount = FixedDiv(finalspeed, frictionsafety) - finalspeed;
-				}
-				else
-				{
-					const fixed_t beatfriction = FixedDiv(currentspeed, frictionsafety) - currentspeed;
-					// Thrust to immediately get to top speed
-					thrustamount = beatfriction + FixedDiv(finalspeed - currentspeed, frictionsafety);
-				}
-
-				P_Thrust(mobj, mobj->angle, thrustamount);
-			}
-
-			if (P_MobjTouchingSectorSpecial(mobj, 3, 1, true))
-				K_DoPogoSpring(mobj, 0, 1);
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
-
-			if (leveltime % 6 == 0)
-				S_StartSound(mobj, mobj->info->activesound);
-		}
+		Obj_OrbinautThink(mobj);
 		break;
 	}
 	case MT_JAWZ:

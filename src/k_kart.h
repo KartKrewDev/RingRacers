@@ -28,6 +28,8 @@ Make sure this matches the actual number of states
 #define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
+#define RR_PROJECTILE_FUSE (8*TICRATE)
+
 #define STUMBLE_STEEP_VAL ANG60
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
 

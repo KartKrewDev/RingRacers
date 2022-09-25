@@ -4674,7 +4674,7 @@ fixed_t K_ItemScaleForPlayer(player_t *player)
 	}
 }
 
-static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed)
+static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, INT32 flags2, fixed_t speed, SINT8 dir)
 {
 	mobj_t *th;
 	fixed_t x, y, z;
@@ -4688,20 +4688,20 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
 		{
 			// Nerf the base item speed a bit.
-			finalspeed = FixedMul(finalspeed, SHRINK_PHYSICS_SCALE);
+			speed = finalspeed = FixedMul(speed, SHRINK_PHYSICS_SCALE);
 		}
 
 		if (source->player->speed > topspeed)
 		{
-			angle_t input = source->angle - an;
-			boolean invert = (input > ANGLE_180);
-			if (invert)
-				input = InvAngle(input);
+			angle_t delta = AngleDelta(source->angle, an);
 
-			finalspeed = max(speed, FixedMul(speed, FixedMul(
-				FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
-				(((180<<FRACBITS) - AngleFixed(input)) / 180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
-				)));
+			finalspeed = max(speed, FixedMul(
+				speed,
+				FixedMul(
+					FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
+					FixedDiv((ANGLE_180 - delta), ANGLE_180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
+				)
+			));
 		}
 
 		finalscale = K_ItemScaleForPlayer(source->player);
@@ -4763,11 +4763,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	switch (type)
 	{
 		case MT_ORBINAUT:
-			if (source && source->player)
-				th->color = source->player->skincolor;
-			else
-				th->color = SKINCOLOR_GREY;
-			th->movefactor = finalspeed;
+			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
 			if (source && source->player)
@@ -4784,10 +4780,10 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			}
 			else
 				th->cvmem = SKINCOLOR_KETCHUP;
-			/* FALLTHRU */
-		case MT_JAWZ_DUD:
+
 			S_StartSound(th, th->info->activesound);
-			/* FALLTHRU */
+			th->movefactor = finalspeed;
+			break;
 		case MT_SPB:
 			th->movefactor = finalspeed;
 			break;
@@ -5626,12 +5622,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		if (dir == -1 && mapthing != MT_SPB)
 		{
 			// Shoot backward
-			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED/8);
+			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED / 8, dir);
 		}
 		else
 		{
 			// Shoot forward
-			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED);
+			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, dir);
 		}
 
 		if (mapthing == MT_DROPTARGET && mo)
@@ -6402,6 +6398,12 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		dropwork->health = work->health; // will never be set to 0 as long as above guard exists
 		dropwork->hitlag = work->hitlag;
 
+		if (orbit == true)
+		{
+			// Projectile item; set fuse
+			dropwork->fuse = RR_PROJECTILE_FUSE;
+		}
+
 		// Copy interp data
 		dropwork->old_angle = work->old_angle;
 		dropwork->old_x = work->old_x;
@@ -6851,8 +6853,11 @@ static void K_MoveHeldObjects(player_t *player)
 	if (!player->mo->hnext)
 	{
 		player->bananadrag = 0;
+
 		if (player->pflags & PF_EGGMANOUT)
+		{
 			player->pflags &= ~PF_EGGMANOUT;
+		}
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
@@ -6867,14 +6872,18 @@ static void K_MoveHeldObjects(player_t *player)
 		// we need this here too because this is done in afterthink - pointers are cleaned up at the START of each tic...
 		P_SetTarget(&player->mo->hnext, NULL);
 		player->bananadrag = 0;
+
 		if (player->pflags & PF_EGGMANOUT)
+		{
 			player->pflags &= ~PF_EGGMANOUT;
+		}
 		else if (player->pflags & PF_ITEMOUT)
 		{
 			player->itemamount = 0;
 			K_UnsetItemOut(player);
 			player->itemtype = KITEM_NONE;
 		}
+
 		return;
 	}
 
@@ -6885,80 +6894,9 @@ static void K_MoveHeldObjects(player_t *player)
 		case MT_ORBINAUT_SHIELD: // Kart orbit items
 		case MT_JAWZ_SHIELD:
 			{
-				mobj_t *cur = player->mo->hnext;
-				fixed_t speed = ((8 - min(4, player->itemamount)) * cur->info->speed) / 7;
-
-				player->bananadrag = 0; // Just to make sure
-
-				while (cur && !P_MobjWasRemoved(cur))
-				{
-					const fixed_t radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(cur->radius, cur->radius); // mobj's distance from its Target, or Radius.
-					fixed_t z;
-
-					if (!cur->health)
-					{
-						cur = cur->hnext;
-						continue;
-					}
-
-					cur->color = player->skincolor;
-
-					cur->angle -= ANGLE_90;
-					cur->angle += FixedAngle(speed);
-
-					if (cur->extravalue1 < radius)
-						cur->extravalue1 += P_AproxDistance(cur->extravalue1, radius) / 12;
-					if (cur->extravalue1 > radius)
-						cur->extravalue1 = radius;
-
-					// If the player is on the ceiling, then flip your items as well.
-					if (player && player->mo->eflags & MFE_VERTICALFLIP)
-						cur->eflags |= MFE_VERTICALFLIP;
-					else
-						cur->eflags &= ~MFE_VERTICALFLIP;
-
-					// Shrink your items if the player shrunk too.
-					P_SetScale(cur, (cur->destscale = FixedMul(FixedDiv(cur->extravalue1, radius), finalscale)));
-
-					if (P_MobjFlip(cur) > 0)
-						z = player->mo->z;
-					else
-						z = player->mo->z + player->mo->height - cur->height;
-
-					cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
-					P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
-					cur->momx = FixedMul(FINECOSINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
-					cur->momy = FixedMul(FINESINE(cur->angle>>ANGLETOFINESHIFT), cur->extravalue1);
-					cur->flags &= ~MF_NOCLIPTHING;
-
-					if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true))
-						P_SlideMove(cur);
-
-					if (P_IsObjectOnGround(player->mo))
-					{
-						if (P_MobjFlip(cur) > 0)
-						{
-							if (cur->floorz > player->mo->z - cur->height)
-								z = cur->floorz;
-						}
-						else
-						{
-							if (cur->ceilingz < player->mo->z + player->mo->height + cur->height)
-								z = cur->ceilingz - cur->height;
-						}
-					}
-
-					// Center it during the scale up animation
-					z += (FixedMul(mobjinfo[cur->type].height, finalscale - cur->scale)>>1) * P_MobjFlip(cur);
-
-					cur->z = z;
-					cur->momx = cur->momy = 0;
-					cur->angle += ANGLE_90;
-
-					cur = cur->hnext;
-				}
+				Obj_OrbinautMoveHeld(player);
+				break;
 			}
-			break;
 		case MT_BANANA_SHIELD: // Kart trailing items
 		case MT_SSMINE_SHIELD:
 		case MT_DROPTARGET_SHIELD:
