@@ -35,4 +35,12 @@ mobj_t *P_SetTarget(mobj_t **mo, mobj_t *target);   // killough 11/98
 INT32 P_AltFlip(INT32 value, tic_t tics);
 #define P_RandomFlip(value) P_AltFlip(value, 1)
 
+// Multiply value back and forth between -(tics) and +(tics).
+// Example output P_ModulateFlip(2, 2):
+// Tic:  0   1   2   3   4   5   6   7   8
+// Val: -4  -2   0   2   4   2   0  -2  -4
+// A half cycle (one direction) takes 2 * tics.
+// A full cycle takes 4 * tics.
+INT32 P_LerpFlip(INT32 value, tic_t tics);
+
 #endif
