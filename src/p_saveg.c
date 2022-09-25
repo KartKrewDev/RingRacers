@@ -53,6 +53,7 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
 #define ARCHIVEBLOCK_WAYPOINTS 0x7F46498F
+#define ARCHIVEBLOCK_RNG      0x7FAAB5BD
 
 // Note: This cannot be bigger
 // than an UINT16
@@ -4475,8 +4476,6 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, P_GetRandSeed());
-
 	WRITEUINT32(save_p, tokenlist);
 
 	WRITEUINT8(save_p, encoremode);
@@ -4629,8 +4628,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 			// playerstate is set in unarchiveplayers
 		}
 	}
-
-	P_SetRandSeed(READUINT32(save_p));
 
 	tokenlist = READUINT32(save_p);
 
@@ -4808,6 +4805,35 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
+static void P_NetArchiveRNG(void)
+{
+	size_t i;
+
+	WRITEUINT32(save_p, ARCHIVEBLOCK_RNG);
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetInitSeed(i));
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
+}
+
+static inline void P_NetUnArchiveRNG(void)
+{
+	size_t i;
+
+	if (READUINT32(save_p) != ARCHIVEBLOCK_RNG)
+		I_Error("Bad $$$.sav at archive block RNG");
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		UINT32 init = READUINT32(save_p);
+		UINT32 seed = READUINT32(save_p);
+
+		P_SetRandSeedNet(i, init, seed);
+	}
+}
+
 void P_SaveGame(INT16 mapnum)
 {
 	P_ArchiveMisc(mapnum);
@@ -4852,6 +4878,8 @@ void P_SaveNetGame(boolean resending)
 	}
 	LUA_Archive(&save_p);
 
+	P_NetArchiveRNG();
+
 	P_ArchiveLuabanksAndConsistency();
 }
 
@@ -4879,9 +4907,12 @@ boolean P_LoadGame(INT16 mapoverride)
 boolean P_LoadNetGame(boolean reloading)
 {
 	CV_LoadNetVars(&save_p);
+
 	if (!P_NetUnArchiveMisc(reloading))
 		return false;
+
 	P_NetUnArchivePlayers();
+
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();
@@ -4894,10 +4925,10 @@ boolean P_LoadNetGame(boolean reloading)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
+
 	LUA_UnArchive(&save_p);
 
-	// This is stupid and hacky, but maybe it'll work!
-	P_SetRandSeed(P_GetInitSeed());
+	P_NetUnArchiveRNG();
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,

@@ -5020,7 +5020,19 @@ static INT16 Consistancy(void)
 	// I give up
 	// Coop desynching enemies is painful
 	if (gamestate == GS_LEVEL)
-		ret += P_GetRandSeed();
+	{
+		for (i = 0; i < PRNUMCLASS; i++)
+		{
+			if (i & 1)
+			{
+				ret -= P_GetRandSeed(i);
+			}
+			else
+			{
+				ret += P_GetRandSeed(i);
+			}
+		}
+	}
 
 #ifdef MOBJCONSISTANCY
 	if (gamestate == GS_LEVEL)

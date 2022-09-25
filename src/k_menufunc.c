@@ -4207,17 +4207,17 @@ void M_ServerListFillDebug(void)
 		serverlist[i].info.numberofplayer = min(i, 8);
 		serverlist[i].info.maxplayer = 8;
 
-		serverlist[i].info.avgpwrlv = P_RandomRange(500, 1500);
-		serverlist[i].info.time = P_RandomRange(16, 500);	// ping
+		serverlist[i].info.avgpwrlv = P_RandomRange(PR_UNDEFINED, 500, 1500);
+		serverlist[i].info.time = P_RandomRange(PR_UNDEFINED, 1, 8);	// ping
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
 		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
 
-		P_RandomRange(0, 5);	// change results...
-		serverlist[i].info.kartvars = P_RandomRange(0, 3) & SV_SPEEDMASK;
+		P_RandomRange(PR_UNDEFINED, 0, 5);	// change results...
+		serverlist[i].info.kartvars = P_RandomRange(PR_UNDEFINED, 0, 3) & SV_SPEEDMASK;
 
-		serverlist[i].info.modifiedgame = P_RandomRange(0, 1);
+		serverlist[i].info.modifiedgame = P_RandomRange(PR_UNDEFINED, 0, 1);
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}

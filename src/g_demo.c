@@ -392,14 +392,18 @@ void G_ReadDemoExtraData(void)
 		switch (p)
 		{
 		case DW_RNG:
-			rng = READUINT32(demo_p);
-			if (P_GetRandSeed() != rng)
+			for (i = 0; i < PRNUMCLASS; i++)
 			{
-				P_SetRandSeed(rng);
+				rng = READUINT32(demo_p);
 
-				if (demosynced)
-					CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
-				demosynced = false;
+				if (P_GetRandSeed(i) != rng)
+				{
+					P_SetRandSeed(i, rng);
+
+					if (demosynced)
+						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
+					demosynced = false;
+				}
 			}
 		}
 
@@ -514,7 +518,11 @@ void G_WriteDemoExtraData(void)
 			demo_writerng = 0;
 			timeout = 16;
 			WRITEUINT8(demo_p, DW_RNG);
-			WRITEUINT32(demo_p, P_GetRandSeed());
+
+			for (i = 0; i < PRNUMCLASS; i++)
+			{
+				WRITEUINT32(demo_p, P_GetRandSeed(i));
+			}
 		}
 	}
 
@@ -1134,7 +1142,13 @@ void G_GhostTicker(void)
 					g->p++; // ditto
 			}
 			else if (ziptic == DW_RNG)
-				g->p += 4; // RNG seed
+			{
+				INT32 i;
+				for (i = 0; i < PRNUMCLASS; i++)
+				{
+					g->p += 4; // RNG seed
+				}
+			}
 			else
 				I_Error("Ghost is not a record attack ghost DXD"); //@TODO lmao don't blow up like this
 
@@ -2035,7 +2049,10 @@ void G_BeginRecording(void)
 			break;
 	}
 
-	WRITEUINT32(demo_p,P_GetInitSeed());
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(demo_p, P_GetInitSeed(i));
+	}
 
 	// Reserved for extrainfo location from start of file
 	demoinfo_p = demo_p;
@@ -2530,6 +2547,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT8 *infobuffer, *info_p, *extrainfo_p;
 	UINT8 version, subversion, pdemoflags;
 	UINT16 pdemoversion, count;
+	char mapname[MAXMAPLUMPNAME];
+	INT32 i;
 
 	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
 	{
@@ -2589,7 +2608,8 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		return;
 	}
 	info_p += 4; // "PLAY"
-	pdemo->map = READINT16(info_p);
+	READSTRINGN(info_p, mapname, sizeof(mapname));
+	pdemo->map = G_MapNumber(mapname);
 	info_p += 16; // mapmd5
 
 	pdemoflags = READUINT8(info_p);
@@ -2606,7 +2626,11 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
-	info_p += 4; // RNG seed
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		info_p += 4; // RNG seed
+	}
 
 	extrainfo_p = infobuffer + READUINT32(info_p); // The extra UINT32 read is for a blank 4 bytes?
 
@@ -2640,7 +2664,6 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	while (READUINT8(extrainfo_p) == DW_STANDING) // Assume standings are always first in the extrainfo
 	{
-		INT32 i;
 		char temp[16];
 
 		pdemo->standings[count].ranking = READUINT8(extrainfo_p);
@@ -2705,7 +2728,7 @@ void G_DoPlayDemo(char *defdemoname)
 	lumpnum_t l;
 	char skin[17],color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
 	UINT8 version,subversion;
-	UINT32 randseed;
+	UINT32 randseed[PRNUMCLASS];
 	char msg[1024];
 
 	boolean spectator;
@@ -2914,7 +2937,10 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 
 	// Random seed
-	randseed = READUINT32(demo_p);
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		randseed[i] = READUINT32(demo_p);
+	}
 
 	demo_p += 4; // Extrainfo location
 
@@ -3118,7 +3144,11 @@ void G_DoPlayDemo(char *defdemoname)
 
 	R_ExecuteSetViewSize();
 
-	P_SetRandSeed(randseed);
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		P_SetRandSeed(i, randseed[i]);
+	}
+
 	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -3272,7 +3302,11 @@ void G_AddGhost(char *defdemoname)
 			break;
 	}
 
-	p += 4; // random seed
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		p += 4; // random seed
+	}
+
 	p += 4; // Extra data location reference
 
 	// net var data
@@ -3430,6 +3464,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	UINT8 *buffer,*p;
 	UINT16 ghostversion;
 	UINT8 flags;
+	INT32 i;
 
 	buffer = p = W_CacheLumpNum(l, PU_CACHE);
 
@@ -3490,7 +3525,11 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 			break;
 	}
 
-	p += 4; // random seed
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		p += 4; // random seed
+	}
+
 	p += 4; // Extrainfo location marker
 
 	// Ehhhh don't need ghostversion here (?) so I'll reuse the var here
@@ -3624,7 +3663,7 @@ static void WriteDemoChecksum(void)
 #ifdef NOMD5
 	UINT8 i;
 	for (i = 0; i < 16; i++, p++)
-		*p = P_RandomByte(); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
+		*p = P_RandomByte(PR_UNDEFINED); // This MD5 was chosen by fair dice roll and most likely < 50% correct.
 #else
 	md5_buffer((char *)p+16, demo_p - (p+16), p); // make a checksum of everything after the checksum in the file.
 #endif

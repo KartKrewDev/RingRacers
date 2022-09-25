@@ -74,6 +74,7 @@
 #include "k_grandprix.h"
 #include "k_boss.h"
 #include "doomstat.h"
+#include "m_random.h" // P_ClearRandom
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -1224,6 +1225,11 @@ void D_SRB2Main(void)
 
 	// initialise locale code
 	M_StartupLocale();
+
+	// This will be done more properly on
+	// level load, but for now at least make
+	// sure that it is initalized at all
+	P_ClearRandom(0);
 
 	// get parameters from a response file (eg: srb2 @parms.txt)
 	M_FindResponseFile();
