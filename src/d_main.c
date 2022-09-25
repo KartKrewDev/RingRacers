@@ -1438,6 +1438,10 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
+	// Do it before P_InitMapData because PNG patch
+	// conversion sometimes needs the palette
+	V_ReloadPalette();
+
 	//
 	// search for mainwad maps
 	//
