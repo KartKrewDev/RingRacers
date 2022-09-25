@@ -33,11 +33,10 @@
 #define jawz_droptime(o) ((o)->movecount)
 
 #define jawz_retcolor(o) ((o)->cvmem)
+#define jawz_stillturn(o) ((o)->cusval)
 
 #define jawz_owner(o) ((o)->target)
 #define jawz_chase(o) ((o)->tracer)
-
-#define jawz_shield_dist(o) ((o)->extravalue1)
 
 static void JawzChase(mobj_t *th, boolean grounded)
 {
@@ -131,6 +130,7 @@ static void JawzChase(mobj_t *th, boolean grounded)
 			P_SetTarget(&ret->target, jawz_chase(th));
 			ret->frame |= ((leveltime % 10) / 2) + 5;
 			ret->color = jawz_retcolor(th);
+			ret->renderflags = (ret->renderflags & ~RF_DONTDRAW) | (th->renderflags & RF_DONTDRAW);
 		}
 		else
 		{
@@ -152,6 +152,13 @@ static void JawzChase(mobj_t *th, boolean grounded)
 				P_SetTarget(&jawz_chase(th), newPlayer->mo);
 			}
 		}
+	}
+
+	if (jawz_stillturn(th) > 0)
+	{
+		// When beginning to chase your own owner,
+		// we should turn but not thrust quite yet.
+		return;
 	}
 
 	if (grounded == true)
@@ -222,6 +229,11 @@ void Obj_JawzThink(mobj_t *th)
 		jawz_selfdelay(th)--;
 	}
 
+	if (jawz_stillturn(th) > 0)
+	{
+		jawz_stillturn(th)--;
+	}
+
 	if (leveltime % TICRATE == 0)
 	{
 		S_StartSound(th, th->info->activesound);
@@ -247,8 +259,19 @@ void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 	{
 		// Thrown backwards, init self-chase
 		P_SetTarget(&jawz_chase(th), jawz_owner(th));
-		th->fuse = RR_PROJECTILE_FUSE;
+
+		// Stop it here.
+		th->momx = 0;
+		th->momy = 0;
+
+		// Slow down the top speed.
 		finalSpeed = FixedMul(finalSpeed, 4*FRACUNIT/5);
+
+		// Set a fuse.
+		th->fuse = RR_PROJECTILE_FUSE;
+
+		// Stay still while you turn towards the player
+		jawz_stillturn(th) = ANGLE_180 / MAX_JAWZ_TURN;
 	}
 	else
 	{

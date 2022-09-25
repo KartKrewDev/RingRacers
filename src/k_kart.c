@@ -4698,7 +4698,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 				speed,
 				FixedMul(
 					FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
-					FixedDiv((ANGLE_180 - delta), ANGLE_180) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
+					FixedDiv(AngleFixed(ANGLE_180 - delta), 180 * FRACUNIT) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
 				)
 			));
 		}
@@ -5608,15 +5608,15 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 	if (missile) // Shootables
 	{
-		if (dir == -1 && mapthing != MT_SPB)
+		if (dir < 0 && mapthing != MT_SPB)
 		{
 			// Shoot backward
-			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED, -1);
+			mo = K_SpawnKartMissile(player->mo, mapthing, (player->mo->angle + ANGLE_180) + angleOffset, 0, PROJSPEED, dir);
 		}
 		else
 		{
 			// Shoot forward
-			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, 1);
+			mo = K_SpawnKartMissile(player->mo, mapthing, player->mo->angle + angleOffset, 0, PROJSPEED, dir);
 		}
 
 		if (mapthing == MT_DROPTARGET && mo)
@@ -8273,13 +8273,20 @@ void K_KartPlayerAfterThink(player_t *player)
 		player_t *targ;
 		mobj_t *ret;
 
-		if (player->jawztargetdelay && playeringame[lasttarg] && !players[lasttarg].spectator)
+		if (player->throwdir == -1)
+		{
+			targ = player;
+			player->jawztargetdelay = 0;
+		}
+		else if (player->jawztargetdelay && playeringame[lasttarg] && !players[lasttarg].spectator)
 		{
 			targ = &players[lasttarg];
 			player->jawztargetdelay--;
 		}
 		else
+		{
 			targ = K_FindJawzTarget(player->mo, player, ANGLE_45);
+		}
 
 		if (!targ || !targ->mo || P_MobjWasRemoved(targ->mo))
 		{
@@ -8297,14 +8304,14 @@ void K_KartPlayerAfterThink(player_t *player)
 		ret->tics = 1;
 		ret->color = player->skincolor;
 
-		if (targ-players != lasttarg)
+		if (targ - players != lasttarg)
 		{
 			if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
 				S_StartSound(NULL, sfx_s3k89);
 			else
 				S_StartSound(targ->mo, sfx_s3k89);
 
-			player->lastjawztarget = targ-players;
+			player->lastjawztarget = targ - players;
 			player->jawztargetdelay = 5;
 		}
 	}
