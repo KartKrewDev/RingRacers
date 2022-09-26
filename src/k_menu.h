@@ -218,6 +218,15 @@ extern menu_t PLAY_LevelSelectDef;
 extern menuitem_t PLAY_TimeAttack[];
 extern menu_t PLAY_TimeAttackDef;
 
+typedef enum
+{
+	ta_replay = 0,
+	ta_guest,
+	ta_ghosts,
+	ta_spacer,
+	ta_start,
+} ta_e;
+
 extern menuitem_t PLAY_TAReplay[];
 extern menu_t PLAY_TAReplayDef;
 
@@ -349,10 +358,8 @@ extern menu_t OPTIONS_GameplayItemsDef;
 extern menuitem_t OPTIONS_Server[];
 extern menu_t OPTIONS_ServerDef;
 
-#ifndef NONET
 extern menuitem_t OPTIONS_ServerAdvanced[];
 extern menu_t OPTIONS_ServerAdvancedDef;
-#endif
 
 extern menuitem_t OPTIONS_Data[];
 extern menu_t OPTIONS_DataDef;
@@ -1053,7 +1060,6 @@ void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
 void M_DrawReplayHut(void);
 void M_DrawReplayStartMenu(void);
-void M_DrawReplayHutReplayInfo(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"

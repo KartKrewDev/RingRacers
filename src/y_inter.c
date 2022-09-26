@@ -111,7 +111,6 @@ typedef struct
 	char str[62];
 	UINT8 gtc;
 	const char *gts;
-	patch_t *pic;
 	boolean encore;
 } y_votelvlinfo;
 
@@ -834,8 +833,8 @@ void Y_StartIntermission(void)
 	//if (dedicated) return;
 
 	// This should always exist, but just in case...
-	if (!mapheaderinfo[prevmap])
-		P_AllocMapHeader(prevmap);
+	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
+		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
 	switch (intertype)
 	{
@@ -1011,7 +1010,18 @@ void Y_VoteDrawer(void)
 		else
 		{
 			str = levelinfo[i].str;
-			pic = levelinfo[i].pic;
+
+			pic = NULL;
+
+			if (mapheaderinfo[votelevels[i][0]])
+			{
+				pic = mapheaderinfo[votelevels[i][0]]->thumbnailPic;
+			}
+
+			if (!pic)
+			{
+				pic = blanklvl;
+			}
 		}
 
 		if (selected[i])
@@ -1131,9 +1141,23 @@ void Y_VoteDrawer(void)
 			patch_t *pic;
 
 			if (votes[i] >= 3 && (i != pickedvote || voteendtic == -1))
+			{
 				pic = randomlvl;
+			}
 			else
-				pic = levelinfo[votes[i]].pic;
+			{
+				pic = NULL;
+
+				if (mapheaderinfo[votelevels[votes[i]][0]])
+				{
+					pic = mapheaderinfo[votelevels[votes[i]][0]]->thumbnailPic;
+				}
+
+				if (!pic)
+				{
+					pic = blanklvl;
+				}
+			}
 
 			if (!timer && i == voteclient.ranim)
 			{
@@ -1492,8 +1516,6 @@ void Y_StartVote(void)
 
 	for (i = 0; i < 4; i++)
 	{
-		lumpnum_t lumpnum;
-
 		// set up the encore
 		levelinfo[i].encore = (votelevels[i][1] & VOTEMODIFIER_ENCORE);
 		votelevels[i][1] &= ~VOTEMODIFIER_ENCORE;
@@ -1534,13 +1556,6 @@ void Y_StartVote(void)
 			levelinfo[i].gts = Gametype_Names[votelevels[i][1]];
 		else
 			levelinfo[i].gts = NULL;
-
-		// set up the pic
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(votelevels[i][0]+1)));
-		if (lumpnum != LUMPERROR)
-			levelinfo[i].pic = W_CachePatchName(va("%sP", G_BuildMapName(votelevels[i][0]+1)), PU_STATIC);
-		else
-			levelinfo[i].pic = W_CachePatchName("BLANKLVL", PU_STATIC);
 	}
 
 	voteclient.loaded = true;
@@ -1561,8 +1576,6 @@ void Y_EndVote(void)
 //
 static void Y_UnloadVoteData(void)
 {
-	UINT8 i;
-
 	voteclient.loaded = false;
 
 	if (rendermode != render_soft)
@@ -1577,28 +1590,6 @@ static void Y_UnloadVoteData(void)
 	UNLOAD(cursor4);
 	UNLOAD(randomlvl);
 	UNLOAD(rubyicon);
-
-	// to prevent double frees...
-	for (i = 0; i < 4; i++)
-	{
-	// I went to all the trouble of doing this,
-	// but literally nowhere else frees level pics.
-#if 0
-		UINT8 j;
-
-		if (!levelinfo[i].pic)
-			continue;
-
-		for (j = i+1; j < 4; j++)
-		{
-			if (levelinfo[j].pic == levelinfo[i].pic)
-				levelinfo[j].pic = NULL;
-		}
-		UNLOAD(levelinfo[i].pic);
-#else
-		CLEANUP(levelinfo[i].pic);
-#endif
-	}
 }
 
 //

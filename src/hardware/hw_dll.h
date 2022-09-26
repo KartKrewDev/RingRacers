@@ -20,18 +20,10 @@
 // __declspec(dllexport) <return->type> (WINAPI *<function-name>) (<arguments>);
 
 #ifdef _CREATE_DLL_
- #ifdef _WINDOWS
-  #ifdef __cplusplus
-   #define EXPORT  extern "C" __declspec(dllexport)
-  #else
-   #define EXPORT  __declspec(dllexport)
-  #endif
+ #ifdef __cplusplus
+  #define EXPORT  extern "C"
  #else
-  #ifdef __cplusplus
-   #define EXPORT  extern "C"
-  #else
-   #define EXPORT
-  #endif
+  #define EXPORT
  #endif
  #ifdef _WIN32
   #define HWRAPI(fn)  WINAPI fn
@@ -56,9 +48,7 @@
 
 void GL_DBG_Printf(const char *format, ...) /*FUNCPRINTF*/;
 
-#ifdef _WINDOWS
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved);
-#elif defined (__CYGWIN__)
+#ifdef __CYGWIN__
 void _init() __attribute__((constructor));
 void _fini() __attribute__((destructor));
 #else

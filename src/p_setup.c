@@ -134,6 +134,8 @@ boolean stoppedclock;
 boolean levelloading;
 UINT8 levelfadecol;
 
+virtres_t *curmapvirt;
+
 // BLOCKMAP
 // Created from axis aligned bounding box
 // of the map, a rectangular array of
@@ -312,11 +314,19 @@ boolean P_IsDegeneratedTubeWaypointSequence(UINT8 sequence)
 FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 {
 	// don't use va() because the calling function probably uses it
-	char mapnum[10];
+	char mapname[MAXMAPLUMPNAME];
 
-	sprintf(mapnum, "%hd", gamemap);
+	if (gamemap > 0 && gamemap <= nummapheaders && mapheaderinfo[gamemap-1])
+	{
+		sprintf(mapname, "%s", mapheaderinfo[gamemap-1]->lumpname);
+	}
+	else
+	{
+		sprintf(mapname, "ID %d", gamemap-1);
+	}
+	
 	CON_LogMessage("Map ");
-	CON_LogMessage(mapnum);
+	CON_LogMessage(mapname);
 	CON_LogMessage(" is corrupt: ");
 	CON_LogMessage(msg);
 	CON_LogMessage("\n");
@@ -357,59 +367,34 @@ void P_DeleteFlickies(INT16 i)
   * \param i Map number to clear header for.
   * \sa P_ClearMapHeaderInfo
   */
-static void P_ClearSingleMapHeaderInfo(INT16 i)
+static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
-	const INT16 num = (INT16)(i-1);
-
-	boolean exists = (mapheaderinfo[gamemap-1]->alreadyExists == true);
-
 	mapheaderinfo[num]->lvlttl[0] = '\0';
-	mapheaderinfo[num]->selectheading[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
-	mapheaderinfo[num]->ltzzpatch[0] = '\0';
-	mapheaderinfo[num]->ltzztext[0] = '\0';
-	mapheaderinfo[num]->ltactdiamond[0] = '\0';
 	mapheaderinfo[num]->actnum = 0;
 	mapheaderinfo[num]->typeoflevel = 0;
-	mapheaderinfo[num]->nextlevel = (INT16)(i + 1);
-	mapheaderinfo[num]->marathonnext = 0;
-	mapheaderinfo[num]->startrings = 0;
-	mapheaderinfo[num]->sstimer = 90;
-	mapheaderinfo[num]->ssspheres = 1;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
-	snprintf(mapheaderinfo[num]->musname, 7, "%sM", G_BuildMapName(i));
+	sprintf(mapheaderinfo[num]->musname, "%.5sM", G_BuildMapName(num+1));
 	mapheaderinfo[num]->musname[6] = 0;
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
-	mapheaderinfo[num]->musinterfadeout = 0;
-	mapheaderinfo[num]->musintername[0] = 0;
-	mapheaderinfo[num]->muspostbossname[0] = 0;
-	mapheaderinfo[num]->muspostbosstrack = 0;
-	mapheaderinfo[num]->muspostbosspos = 0;
-	mapheaderinfo[num]->muspostbossfadein = 0;
-	mapheaderinfo[num]->musforcereset = -1;
-	mapheaderinfo[num]->forcecharacter[0] = '\0';
 	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;
 	mapheaderinfo[num]->skybox_scalex = 16;
 	mapheaderinfo[num]->skybox_scaley = 16;
 	mapheaderinfo[num]->skybox_scalez = 16;
-	mapheaderinfo[num]->interscreen[0] = '#';
 	mapheaderinfo[num]->runsoc[0] = '#';
 	mapheaderinfo[num]->scriptname[0] = '#';
 	mapheaderinfo[num]->precutscenenum = 0;
 	mapheaderinfo[num]->cutscenenum = 0;
-	mapheaderinfo[num]->countdown = 0;
 	mapheaderinfo[num]->palette = UINT16_MAX;
 	mapheaderinfo[num]->encorepal = UINT16_MAX;
 	mapheaderinfo[num]->numlaps = NUMLAPS_DEFAULT;
 	mapheaderinfo[num]->unlockrequired = -1;
 	mapheaderinfo[num]->levelselect = 0;
-	mapheaderinfo[num]->bonustype = 0;
-	mapheaderinfo[num]->maxbonuslives = -1;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
@@ -422,10 +407,10 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 #else // equivalent to "FlickyList = NONE"
 	P_DeleteFlickies(num);
 #endif
-	P_DeleteGrades(num);
 
-	// see p_setup.c - prevents replacing maps in addons with different versions
-	mapheaderinfo[num]->alreadyExists = exists;
+	mapheaderinfo[num]->mapvisited = 0;
+	Z_Free(mapheaderinfo[num]->mainrecord);
+	mapheaderinfo[num]->mainrecord = NULL;
 
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
@@ -437,110 +422,53 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
   */
 void P_AllocMapHeader(INT16 i)
 {
-	if (!mapheaderinfo[i])
+	if (i > nummapheaders)
+		I_Error("P_AllocMapHeader: Called on %d, should be %d", i, nummapheaders);
+
+	if (i >= NEXTMAP_SPECIAL)
 	{
-		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
-		mapheaderinfo[i]->flickies = NULL;
-		mapheaderinfo[i]->grades = NULL;
-	}
-	P_ClearSingleMapHeaderInfo(i + 1);
-}
-
-/** NiGHTS Grades are a special structure,
-  * we initialize them here.
-  *
-  * \param i Index of header to allocate grades for
-  * \param mare The mare we're adding grades for
-  * \param grades the string from DeHackEd, we work with it ourselves
-  */
-void P_AddGradesForMare(INT16 i, UINT8 mare, char *gtext)
-{
-	INT32 g;
-	char *spos = gtext;
-
-	CONS_Debug(DBG_SETUP, "Map %d Mare %d: ", i+1, (UINT16)mare+1);
-
-	if (mapheaderinfo[i]->numGradedMares < mare+1)
-	{
-		mapheaderinfo[i]->numGradedMares = mare+1;
-		mapheaderinfo[i]->grades = Z_Realloc(mapheaderinfo[i]->grades, sizeof(nightsgrades_t) * mapheaderinfo[i]->numGradedMares, PU_STATIC, NULL);
+		I_Error("P_AllocMapHeader: Too many maps!");
 	}
 
-	for (g = 0; g < 6; ++g)
+	if (i >= mapallocsize)
 	{
-		// Allow "partial" grading systems
-		if (spos != NULL)
+		if (!mapallocsize)
 		{
-			mapheaderinfo[i]->grades[mare].grade[g] = atoi(spos);
-			CONS_Debug(DBG_SETUP, "%u ", atoi(spos));
-			// Grab next comma
-			spos = strchr(spos, ',');
-			if (spos)
-				++spos;
+			mapallocsize = 16;
 		}
 		else
 		{
-			// Grade not reachable
-			mapheaderinfo[i]->grades[mare].grade[g] = UINT32_MAX;
+			mapallocsize *= 2;
 		}
+
+		mapheaderinfo = Z_ReallocAlign(
+			(void*) mapheaderinfo,
+			sizeof(mapheader_t*) * mapallocsize,
+			PU_STATIC,
+			NULL,
+			sizeof(mapheader_t*) * 8
+		);
+
+		if (!mapheaderinfo)
+			I_Error("P_AllocMapHeader: Not enough memory to realloc mapheaderinfo (size %d)", mapallocsize);
 	}
 
-	CONS_Debug(DBG_SETUP, "\n");
-}
-
-/** And this removes the grades safely.
-  *
-  * \param i The header to remove grades from
-  */
-void P_DeleteGrades(INT16 i)
-{
-	if (mapheaderinfo[i]->grades)
-		Z_Free(mapheaderinfo[i]->grades);
-
-	mapheaderinfo[i]->grades = NULL;
-	mapheaderinfo[i]->numGradedMares = 0;
-}
-
-/** And this fetches the grades
-  *
-  * \param pscore The player's score.
-  * \param map The game map.
-  * \param mare The mare to test.
-  */
-UINT8 P_GetGrade(UINT32 pscore, INT16 map, UINT8 mare)
-{
-	INT32 i;
-
-	// Determining the grade
-	if (mapheaderinfo[map-1] && mapheaderinfo[map-1]->grades && mapheaderinfo[map-1]->numGradedMares >= mare + 1)
+	if (!mapheaderinfo[i])
 	{
-		INT32 pgrade = 0;
-		for (i = 0; i < 6; ++i)
-		{
-			if (pscore >= mapheaderinfo[map-1]->grades[mare].grade[i])
-				++pgrade;
-		}
-		return (UINT8)pgrade;
+		mapheaderinfo[i] = Z_Malloc(sizeof(mapheader_t), PU_STATIC, NULL);
+		if (!mapheaderinfo[i])
+			I_Error("P_AllocMapHeader: Not enough memory to allocate new mapheader (ID %d)", i);
+
+		mapheaderinfo[i]->lumpnum = LUMPERROR;
+		mapheaderinfo[i]->lumpname = NULL;
+		mapheaderinfo[i]->thumbnailPic = NULL;
+		mapheaderinfo[i]->minimapPic = NULL;
+		mapheaderinfo[i]->cup = NULL;
+		mapheaderinfo[i]->mainrecord = NULL;
+		mapheaderinfo[i]->flickies = NULL;
+		nummapheaders++;
 	}
-	return 0;
-}
-
-UINT8 P_HasGrades(INT16 map, UINT8 mare)
-{
-	// Determining the grade
-	// Mare 0 is treated as overall and is true if ANY grades exist
-	if (mapheaderinfo[map-1] && mapheaderinfo[map-1]->grades
-		&& (mare == 0 || mapheaderinfo[map-1]->numGradedMares >= mare))
-		return true;
-	return false;
-}
-
-UINT32 P_GetScoreForGrade(INT16 map, UINT8 mare, UINT8 grade)
-{
-	// Get the score for the grade... if it exists
-	if (grade == GRADE_F || grade > GRADE_S || !P_HasGrades(map, mare)) return 0;
-
-	return mapheaderinfo[map-1]->grades[mare].grade[grade-1];
+	P_ClearSingleMapHeaderInfo(i);
 }
 
 //
@@ -736,69 +664,6 @@ void P_ReloadRings(void)
 	}
 }
 
-#ifdef SCANTHINGS
-void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum)
-{
-	size_t i, n;
-	UINT8 *data, *datastart;
-	UINT16 type, maprings;
-	INT16 tol;
-	UINT32 flags;
-
-	tol = mapheaderinfo[mapnum-1]->typeoflevel;
-	flags = mapheaderinfo[mapnum-1]->levelflags;
-
-	n = W_LumpLengthPwad(wadnum, lumpnum) / (5 * sizeof (INT16));
-	//CONS_Printf("%u map things found!\n", n);
-
-	maprings = 0;
-	data = datastart = W_CacheLumpNumPwad(wadnum, lumpnum, PU_STATIC);
-	for (i = 0; i < n; i++)
-	{
-		data += 3 * sizeof (INT16); // skip x y position, angle
-		type = READUINT16(data) & 4095;
-		data += sizeof (INT16); // skip options
-
-		if (mt->type == mobjinfo[MT_RANDOMITEM].doomednum)
-		{
-			nummapboxes++;
-		}
-		else if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-		{
-			maptargets++;
-		}
-		else if (mt->type == mobjinfo[MT_RING].doomednum)
-		{
-			maprings++;
-		}
-		else
-		{
-			switch (type)
-			{
-			case 603: // 10 diagonal rings
-				maprings += 10;
-				break;
-			case 600: // 5 vertical rings
-			case 601: // 5 vertical rings
-			case 602: // 5 diagonal rings
-				maprings += 5;
-				break;
-			case 604: // 8 circle rings
-				maprings += 8;
-				break;
-			case 605: // 16 circle rings
-				maprings += 16;
-				break;
-			}
-		}
-	}
-	Z_Free(datastart);
-
-	if (maprings)
-		CONS_Printf("%s has %u rings\n", G_BuildMapName(mapnum), maprings);
-}
-#endif
-
 static void P_SpawnMapThings(boolean spawnemblems)
 {
 	size_t i;
@@ -847,6 +712,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 // Experimental groovy write function!
 void P_WriteThings(void)
 {
+	const char * filename;
 	size_t i, length;
 	mapthing_t *mt;
 	UINT8 *savebuffer, *savebuf_p;
@@ -875,11 +741,13 @@ void P_WriteThings(void)
 
 	length = savebuf_p - savebuffer;
 
-	FIL_WriteFile(va("newthings%d.lmp", gamemap), savebuffer, length);
+	filename = va("newthings-%s.lmp", G_BuildMapName(gamemap));
+
+	FIL_WriteFile(filename, savebuffer, length);
 	free(savebuffer);
 	savebuf_p = NULL;
 
-	CONS_Printf(M_GetText("newthings%d.lmp saved.\n"), gamemap);
+	CONS_Printf(M_GetText("%s saved.\n"), filename);
 }
 
 //
@@ -3560,15 +3428,14 @@ static void P_MakeMapMD5(virtres_t *virt, void *dest)
 
 static boolean P_LoadMapFromFile(void)
 {
-	virtres_t *virt = vres_GetMap(lastloadedmaplumpnum);
-	virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
+	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
 	size_t i;
 	udmf = textmap != NULL;
 
-	if (!P_LoadMapData(virt))
+	if (!P_LoadMapData(curmapvirt))
 		return false;
-	P_LoadMapBSP(virt);
-	P_LoadMapLUT(virt);
+	P_LoadMapBSP(curmapvirt);
+	P_LoadMapLUT(curmapvirt);
 
 	P_LinkMapData();
 
@@ -3593,9 +3460,9 @@ static boolean P_LoadMapFromFile(void)
 		if (sectors[i].tags.count)
 			spawnsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
 
-	P_MakeMapMD5(virt, &mapmd5);
+	P_MakeMapMD5(curmapvirt, &mapmd5);
 
-	vres_Free(virt);
+	vres_Free(curmapvirt);
 	return true;
 }
 
@@ -3659,15 +3526,6 @@ static void P_InitLevelSettings(void)
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
 
-	// map time limit
-	if (mapheaderinfo[gamemap-1]->countdown)
-	{
-		countdowntimer = mapheaderinfo[gamemap-1]->countdown * TICRATE;
-	}
-	else
-		countdowntimer = 0;
-	countdowntimeup = false;
-
 	// clear ctf pointers
 	redflag = blueflag = NULL;
 	rflagpoint = bflagpoint = NULL;
@@ -3675,7 +3533,7 @@ static void P_InitLevelSettings(void)
 	// circuit, race and competition stuff
 	circuitmap = false;
 	numstarposts = 0;
-	ssspheres = timeinmap = 0;
+	timeinmap = 0;
 
 	// special stage
 	stagefailed = true; // assume failed unless proven otherwise - P_GiveEmerald or emerald touchspecial
@@ -3819,43 +3677,6 @@ static void P_RunLevelScript(const char *scriptname)
 	COM_BufExecute(); // Run it!
 }
 
-static void P_ForceCharacter(const char *forcecharskin)
-{
-	UINT8 i;
-
-	if (netgame)
-	{
-		char skincmd[33];
-
-		for (i = 0; i <= splitscreen; i++)
-		{
-			const char *num = "";
-
-			if (i > 0)
-				num = va("%d", i+1);
-
-			sprintf(skincmd, "skin%s %s\n", num, forcecharskin);
-			CV_Set(&cv_skin[i], forcecharskin);
-		}
-
-		COM_BufAddText(skincmd);
-	}
-	else
-	{
-		for (i = 0; i <= splitscreen; i++)
-		{
-			SetPlayerSkin(g_localplayers[i], forcecharskin);
-
-			// normal player colors in single player
-			if ((unsigned)cv_playercolor[i].value != skins[players[g_localplayers[i]].skin].prefcolor && !modeattacking)
-			{
-				CV_StealthSetValue(&cv_playercolor[i], skins[players[g_localplayers[i]].skin].prefcolor);
-				players[g_localplayers[i]].skincolor = skins[players[g_localplayers[i]].skin].prefcolor;
-			}
-		}
-	}
-}
-
 static void P_ResetSpawnpoints(void)
 {
 	UINT8 i;
@@ -3939,17 +3760,20 @@ static void P_LoadRecordGhosts(void)
 	if (cv_ghost_guest.value && FIL_FileExists(va("%s-guest.lmp", gpath)))
 		G_AddGhost(va("%s-guest.lmp", gpath));
 
+#ifdef STAFFGHOSTS
 	// Staff Attack ghosts
 	if (cv_ghost_staff.value)
 	{
 		lumpnum_t l;
 		UINT8 j = 1;
-		while (j <= 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
+		// TODO: Use map header to determine lump name
+		while (j <= 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
 		{
 			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));
 			j++;
 		}
 	}
+#endif //#ifdef STAFFGHOSTS
 
 	free(gpath);
 }
@@ -4096,6 +3920,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Map header should always be in place at this point
 	INT32 i, ranspecialwipe = 0;
 	sector_t *ss;
+	virtlump_t *encoreLump = NULL;
 
 	levelloading = true;
 
@@ -4132,9 +3957,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
-
-	if (mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0')
-		P_ForceCharacter(mapheaderinfo[gamemap-1]->forcecharacter);
 
 	// Initial height of PointOfView
 	// will be set by player think.
@@ -4317,13 +4139,33 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	// internal game map
-	maplumpname = G_BuildMapName(gamemap);
-	lastloadedmaplumpnum = W_CheckNumForMap(maplumpname);
+	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
+	lastloadedmaplumpnum = mapheaderinfo[gamemap-1]->lumpnum;
 	if (lastloadedmaplumpnum == LUMPERROR)
 		I_Error("Map %s not found.\n", maplumpname);
 
-	R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette,
-		W_CheckNumForName(va("%s%c", maplumpname, (encoremode ? 'E' : 'T'))));
+	curmapvirt = vres_GetMap(lastloadedmaplumpnum);
+
+	if (mapheaderinfo[gamemap-1])
+	{
+		if (encoremode)
+		{
+			encoreLump = vres_Find(curmapvirt, "ENCORE");
+		}
+		else
+		{
+			encoreLump = vres_Find(curmapvirt, "TWEAKMAP");
+		}
+	}
+
+	if (encoreLump)
+	{
+		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump->data, encoreLump->size);
+	}
+	else
+	{
+		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, NULL, 0);
+	}
 	CON_SetupBackColormap();
 
 	// SRB2 determines the sky texture to be used depending on the map header.
@@ -4424,9 +4266,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	skipstats = 0;
 
 	if (!(netgame || multiplayer || demo.playback) && !majormods)
-		mapvisited[gamemap-1] |= MV_VISITED;
+		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
 	else if (!demo.playback)
-		mapvisited[gamemap-1] |= MV_MP; // you want to record that you've been there this session, but not permanently
+		mapheaderinfo[gamemap-1]->mapvisited |= MV_MP; // you want to record that you've been there this session, but not permanently
 
 	G_AddMapToBuffer(gamemap-1);
 
@@ -4613,6 +4455,118 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+// Initialising map data (and catching replacements)...
+UINT8 P_InitMapData(INT32 numexistingmapheaders)
+{
+	UINT8 ret = 0;
+	INT32 i;
+	lumpnum_t maplump;
+	virtres_t *virtmap;
+	virtlump_t *minimap, *thumbnailPic;
+	char *name;
+
+	for (i = 0; i < nummapheaders; ++i)
+	{
+		name = mapheaderinfo[i]->lumpname;
+		maplump = W_CheckNumForMap(name);
+
+		// Doesn't exist?
+		if (maplump == INT16_MAX)
+		{
+#ifndef DEVELOP
+			if (!numexistingmapheaders)
+			{
+				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
+			}
+#endif
+			continue;
+		}
+
+		// No change?
+		if (mapheaderinfo[i]->lumpnum == maplump)
+			continue;
+
+		// Okay, it does...
+		{
+			ret |= MAPRET_ADDED;
+			CONS_Printf("%s\n", name);
+
+			if (numexistingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			{
+				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
+
+				//If you replaced the map you're on, end the level when done.
+				if (i == gamemap - 1)
+					ret |= MAPRET_CURRENTREPLACED;
+			}
+
+			mapheaderinfo[i]->lumpnum = maplump;
+
+			// Get map thumbnail and minimap
+			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
+			thumbnailPic = vres_Find(virtmap, "PICTURE");
+			minimap = vres_Find(virtmap, "MINIMAP");
+
+			// Clear out existing graphics...
+			if (mapheaderinfo[i]->thumbnailPic)
+			{
+				Patch_Free(mapheaderinfo[i]->thumbnailPic);
+			}
+
+			if (mapheaderinfo[i]->minimapPic)
+			{
+				Patch_Free(mapheaderinfo[i]->minimapPic);
+			}
+
+			// Now apply the new ones!
+			if (thumbnailPic)
+			{
+				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_STATIC);
+			}
+
+			if (minimap)
+			{
+				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_STATIC);
+			}
+
+			vres_Free(virtmap);
+
+			// Now associate it with a cup cache.
+			// (The core assumption is that cups < headers.)
+			if (i >= numexistingmapheaders)
+			{
+				cupheader_t *cup = kartcupheaders;
+				INT32 j;
+				while (cup)
+				{
+					for (j = 0; j < CUPCACHE_MAX; j++)
+					{
+						// Already discovered?
+						if (cup->cachedlevels[j] != NEXTMAP_INVALID)
+							continue;
+
+						if (!cup->levellist[j] || strcasecmp(cup->levellist[j], name) != 0)
+							continue;
+
+						// Only panic about back-reference for non-bonus material.
+						if (j < MAXLEVELLIST || j == CUPCACHE_SPECIAL)
+						{
+							if (mapheaderinfo[i]->cup)
+								I_Error("P_InitMapData: Map %s cannot appear in cups multiple times! (First in %s, now in %s)", name, mapheaderinfo[i]->cup->name, cup->name);
+							mapheaderinfo[i]->cup = cup;
+						}
+
+						cup->cachedlevels[j] = i;
+					}
+					cup = cup->next;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
 UINT16 p_adding_file = INT16_MAX;
 
 //
@@ -4622,13 +4576,13 @@ UINT16 p_adding_file = INT16_MAX;
 boolean P_AddWadFile(const char *wadfilename)
 {
 	size_t i, j, sreplaces = 0, mreplaces = 0, digmreplaces = 0;
+	INT32 numexistingmapheaders = nummapheaders;
 	UINT16 numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
 
 	//boolean texturechange = false; ///\todo Useless; broken when back-frontporting PK3 changes?
-	boolean mapsadded = false;
-	boolean replacedcurrentmap = false;
+	UINT8 mapsadded = 0;
 
 	// Vars to help us with the position start and amount of each resource type.
 	// Useful for PK3s since they use folders.
@@ -4778,36 +4732,8 @@ boolean P_AddWadFile(const char *wadfilename)
 	//
 	// search for maps
 	//
-	lumpinfo = wadfiles[wadnum]->lumpinfo;
-	for (i = 0; i < numlumps; i++, lumpinfo++)
-	{
-		name = lumpinfo->name;
-		if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-		{
-			INT16 num;
-			if (name[5]!='\0')
-				continue;
-			num = (INT16)M_MapNumber(name[3], name[4]);
+	mapsadded = P_InitMapData(numexistingmapheaders);
 
-			// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-			if (num <= NUMMAPS && mapheaderinfo[num-1])
-			{
-				if (mapheaderinfo[num - 1]->alreadyExists != false)
-				{
-					G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-				}
-
-				mapheaderinfo[num - 1]->alreadyExists = true;
-			}
-
-			//If you replaced the map you're on, end the level when done.
-			if (num == gamemap)
-				replacedcurrentmap = true;
-
-			CONS_Printf("%s\n", name);
-			mapsadded = true;
-		}
-	}
 	if (!mapsadded)
 		CONS_Printf(M_GetText("No maps added\n"));
 
@@ -4825,7 +4751,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	if (cursaveslot > 0)
 		cursaveslot = 0;
 
-	if (replacedcurrentmap && gamestate == GS_LEVEL && (netgame || multiplayer))
+	if ((mapsadded & MAPRET_CURRENTREPLACED) && gamestate == GS_LEVEL && (netgame || multiplayer))
 	{
 		CONS_Printf(M_GetText("Current map %d replaced by added file, ending the level to ensure consistency.\n"), gamemap);
 		if (server)

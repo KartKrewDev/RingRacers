@@ -590,7 +590,7 @@ void K_RetireBots(void)
 
 		if (bot->pflags & PF_NOCONTEST)
 		{
-			UINT8 skinnum = P_RandomKey(numskins);
+			UINT8 skinnum = P_RandomKey(PR_UNDEFINED, numskins);
 			UINT8 loops = 0;
 
 			while (!skinusable[skinnum])

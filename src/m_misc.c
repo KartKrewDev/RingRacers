@@ -72,8 +72,6 @@ typedef off_t off64_t;
 #else
 #define PRIdS "u"
 #endif
-#elif defined (DJGPP)
-#define PRIdS "u"
 #else
 #define PRIdS "zu"
 #endif
@@ -221,32 +219,6 @@ void M_AddToJoinedIPs(char *address, char *servname)
 	// and add the new IP at the start of the table!
 	strcpy(joinedIPlist[0][0], address);
 	strcpy(joinedIPlist[0][1], servname);
-}
-
-/** Returns the map number for a map identified by the last two characters in
-  * its name.
-  *
-  * \param first  The first character after MAP.
-  * \param second The second character after MAP.
-  * \return The map number, or 0 if no map corresponds to these characters.
-  * \sa G_BuildMapName
-  */
-INT32 M_MapNumber(char first, char second)
-{
-	if (isdigit(first))
-	{
-		if (isdigit(second))
-			return ((INT32)first - '0') * 10 + ((INT32)second - '0');
-		return 0;
-	}
-
-	if (!isalpha(first))
-		return 0;
-	if (!isalnum(second))
-		return 0;
-
-	return 100 + ((INT32)tolower(first) - 'a') * 36 + (isdigit(second) ? ((INT32)second - '0') :
-		((INT32)tolower(second) - 'a') + 10);
 }
 
 // ==========================================================================
@@ -935,8 +907,6 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char interfacetxt[] =
 #ifdef HAVE_SDL
 	 "SDL";
-#elif defined (_WINDOWS)
-	 "DirectX";
 #else
 	 "Unknown";
 #endif
@@ -961,9 +931,11 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 			break;
 	}
 
+#if 0
 	if (gamestate == GS_LEVEL)
 		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
 	else
+#endif
 		snprintf(maptext, 8, "Unknown");
 
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')

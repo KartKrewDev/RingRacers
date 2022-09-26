@@ -62,15 +62,7 @@ static lumpnum_t S_GetMusicLumpNum(const char *mname);
 
 static boolean S_CheckQueue(void);
 
-#if defined (_WINDOWS) && !defined (SURROUND) //&& defined (_X86_)
-#define SURROUND
-#endif
-
-#ifdef _WINDOWS
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#else
 consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#endif
 
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -386,7 +378,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -407,7 +398,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -763,7 +753,6 @@ void S_StopSound(void *origin)
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -996,11 +985,9 @@ void S_SetSfxVolume(INT32 volume)
 
 void S_ClearSfx(void)
 {
-#ifndef DJGPPDOS
 	size_t i;
 	for (i = 1; i < NUMSFX; i++)
 		I_FreeSfx(S_sfx + i);
-#endif
 }
 
 static void S_StopChannel(INT32 cnum)
@@ -2394,6 +2381,7 @@ void S_StartEx(boolean reset)
 	music_stack_fadein = JINGLEPOSTFADE;
 }
 
+// TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;

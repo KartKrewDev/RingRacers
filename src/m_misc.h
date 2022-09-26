@@ -61,8 +61,6 @@ void M_AddToJoinedIPs(char *address, char *servname);
 void M_SaveJoinedIPs(void);
 void M_LoadJoinedIPs(void);
 
-INT32 M_MapNumber(char first, char second);
-
 boolean FIL_WriteFile(char const *name, const void *source, size_t length);
 size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag);
 #define FIL_ReadFile(n, b) FIL_ReadFileTag(n, b, PU_STATIC)
