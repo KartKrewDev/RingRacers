@@ -633,20 +633,20 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 
 		if (s->spread > 0)
 		{
-			xOff = P_RandomRange(-s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
-			yOff = P_RandomRange(-s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
+			xOff = P_RandomRange(PR_TERRAIN, -s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
+			yOff = P_RandomRange(PR_TERRAIN, -s->spread / FRACUNIT, s->spread / FRACUNIT) * FRACUNIT;
 		}
 
 		if (s->cone > 0)
 		{
-			pushAngle += P_RandomRange(-s->cone / ANG1, s->cone / ANG1) * ANG1;
+			pushAngle += P_RandomRange(PR_TERRAIN, -s->cone / ANG1, s->cone / ANG1) * ANG1;
 		}
 
 		dust = P_SpawnMobjFromMobj(
 			mo,
 			xOff + (12 * FINECOSINE(pushAngle >> ANGLETOFINESHIFT)),
 			yOff + (12 * FINESINE(pushAngle >> ANGLETOFINESHIFT)),
-			0, //P_RandomRange(0, s->spread / FRACUNIT) * FRACUNIT,
+			0, //P_RandomRange(PR_TERRAIN, 0, s->spread / FRACUNIT) * FRACUNIT,
 			s->mobjType
 		);
 
