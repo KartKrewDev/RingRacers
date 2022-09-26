@@ -198,19 +198,19 @@ void M_AddToJoinedIPs(char *address, char *servname)
 	UINT8 i = 0;
 
 	// Check for dupes...
-	for (i = 0; i < NUMLOGIP; i++)
+	for (i = 0; i < NUMLOGIP-1; i++)
 	{
-		// I don't care about the server name (this is broken anyway...) but definitely check the addresses
+		// Check the addresses
 		if (strcmp(joinedIPlist[i][0], address) == 0)
 		{
-			return;
+			break;
 		}
 	}
 
 	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
 	// Start by moving every IP up 1 slot (dropping the last IP in the table)
-	for (i = NUMLOGIP-1; i; i--)
+	for (; i; i--)
 	{
 		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
 		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
