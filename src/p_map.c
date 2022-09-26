@@ -838,7 +838,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	// Bubble Shield reflect
 	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
 		|| (thing->player && thing->player->bubbleblowup))
-		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
@@ -853,7 +853,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->bubbleblowup)
 		|| (tmthing->player && tmthing->player->bubbleblowup))
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
@@ -873,7 +873,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// Droptarget reflect
 	if ((thing->type == MT_DROPTARGET || thing->type == MT_DROPTARGET_SHIELD)
-		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER)))
@@ -887,7 +887,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return K_DropTargetCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if ((tmthing->type == MT_DROPTARGET || tmthing->type == MT_DROPTARGET_SHIELD)
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER)))
@@ -906,7 +906,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_DROPTARGET_SHIELD || tmthing->type == MT_DROPTARGET_SHIELD)
 		return BMIT_CONTINUE;
 
-	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_ORBINAUT_SHIELD || tmthing->type == MT_JAWZ_SHIELD)
 	{
 		// see if it went over / under
@@ -915,9 +915,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_OrbinautJawzCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD)
 	{
 		// see if it went over / under
@@ -926,7 +926,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_OrbinautJawzCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	if (tmthing->type == MT_BANANA || tmthing->type == MT_BANANA_SHIELD || tmthing->type == MT_BALLHOG)
@@ -1343,7 +1343,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
 					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
@@ -1369,7 +1369,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE; // kill
@@ -1400,7 +1400,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			// kill
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE;

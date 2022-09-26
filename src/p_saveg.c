@@ -53,6 +53,7 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
 #define ARCHIVEBLOCK_WAYPOINTS 0x7F46498F
+#define ARCHIVEBLOCK_RNG      0x7FAAB5BD
 
 // Note: This cannot be bigger
 // than an UINT16
@@ -4427,8 +4428,8 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
@@ -4475,14 +4476,11 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, P_GetRandSeed());
-
 	WRITEUINT32(save_p, tokenlist);
 
 	WRITEUINT8(save_p, encoremode);
 
 	WRITEUINT32(save_p, leveltime);
-	WRITEUINT32(save_p, ssspheres);
 	WRITEINT16(save_p, lastmap);
 	WRITEUINT16(save_p, bossdisabled);
 
@@ -4508,7 +4506,6 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 
 	WRITEUINT32(save_p, token);
-	WRITEINT32(save_p, sstimer);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4536,9 +4533,6 @@ static void P_NetArchiveMisc(boolean resending)
 
 	WRITEFIXED(save_p, gravity);
 	WRITEFIXED(save_p, mapobjectscale);
-
-	WRITEUINT32(save_p, countdowntimer);
-	WRITEUINT8(save_p, countdowntimeup);
 
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
@@ -4614,8 +4608,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
@@ -4635,8 +4629,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	P_SetRandSeed(READUINT32(save_p));
-
 	tokenlist = READUINT32(save_p);
 
 	encoremode = (boolean)READUINT8(save_p);
@@ -4649,7 +4641,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// get the time
 	leveltime = READUINT32(save_p);
-	ssspheres = READUINT32(save_p);
 	lastmap = READINT16(save_p);
 	bossdisabled = READUINT16(save_p);
 
@@ -4672,7 +4663,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	}
 
 	token = READUINT32(save_p);
-	sstimer = READINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 
@@ -4700,9 +4690,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	gravity = READFIXED(save_p);
 	mapobjectscale = READFIXED(save_p);
-
-	countdowntimer = (tic_t)READUINT32(save_p);
-	countdowntimeup = (boolean)READUINT8(save_p);
 
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
@@ -4818,6 +4805,35 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
+static void P_NetArchiveRNG(void)
+{
+	size_t i;
+
+	WRITEUINT32(save_p, ARCHIVEBLOCK_RNG);
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetInitSeed(i));
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
+}
+
+static inline void P_NetUnArchiveRNG(void)
+{
+	size_t i;
+
+	if (READUINT32(save_p) != ARCHIVEBLOCK_RNG)
+		I_Error("Bad $$$.sav at archive block RNG");
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		UINT32 init = READUINT32(save_p);
+		UINT32 seed = READUINT32(save_p);
+
+		P_SetRandSeedNet(i, init, seed);
+	}
+}
+
 void P_SaveGame(INT16 mapnum)
 {
 	P_ArchiveMisc(mapnum);
@@ -4862,6 +4878,8 @@ void P_SaveNetGame(boolean resending)
 	}
 	LUA_Archive(&save_p);
 
+	P_NetArchiveRNG();
+
 	P_ArchiveLuabanksAndConsistency();
 }
 
@@ -4880,7 +4898,7 @@ boolean P_LoadGame(INT16 mapoverride)
 		return false;
 
 	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, 0, true);
+	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
 	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
 
 	return true;
@@ -4889,9 +4907,12 @@ boolean P_LoadGame(INT16 mapoverride)
 boolean P_LoadNetGame(boolean reloading)
 {
 	CV_LoadNetVars(&save_p);
+
 	if (!P_NetUnArchiveMisc(reloading))
 		return false;
+
 	P_NetUnArchivePlayers();
+
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();
@@ -4904,10 +4925,10 @@ boolean P_LoadNetGame(boolean reloading)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
+
 	LUA_UnArchive(&save_p);
 
-	// This is stupid and hacky, but maybe it'll work!
-	P_SetRandSeed(P_GetInitSeed());
+	P_NetUnArchiveRNG();
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,

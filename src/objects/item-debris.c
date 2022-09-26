@@ -95,9 +95,9 @@ spawn_cloud
 	{
 		mobj_t *puff = P_SpawnMobjFromMobj(
 				collectible,
-				P_RandomRange(-spacing, spacing) * FRACUNIT,
-				P_RandomRange(-spacing, spacing) * FRACUNIT,
-				P_RandomRange(0, 4 * spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, -spacing, spacing) * FRACUNIT,
+				P_RandomRange(PR_UNDEFINED, 0, 4 * spacing) * FRACUNIT,
 				MT_SPINDASHDUST
 		);
 

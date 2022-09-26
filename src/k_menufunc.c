@@ -249,7 +249,7 @@ static void Dummymenuplayer_OnChange(void)
 
 static void Dummystaff_OnChange(void)
 {
-#if 0
+#ifdef STAFFGHOSTS
 	lumpnum_t l;
 
 	dummystaffname[0] = '\0';
@@ -281,7 +281,7 @@ static void Dummystaff_OnChange(void)
 
 		sprintf(temp, " - %d", cv_dummystaff.value);
 	}
-#endif
+#endif //#ifdef STAFFGHOSTS
 }
 
 void Screenshot_option_Onchange(void)
@@ -3182,6 +3182,8 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 {
+	UINT32 tolflag = G_TOLFlag(gt);
+
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
 		return false;
@@ -3190,48 +3192,40 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (!mapheaderinfo[mapnum]->lvlttl[0])
 		return false;
 
+	// Does the map have a LUMP?
+	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+		return false;
+
 	if (M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
+	// Check for TOL
+	if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+		return false;
+
 	// Should the map be hidden?
-	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 		return false;
 
 	// I don't know why, but some may have exceptions.
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
-		return true;
-
-	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
 	{
-		if (levellist.selectedcup && levellist.selectedcup->numlevels)
-		{
-			UINT8 i;
-
-			for (i = 0; i < levellist.selectedcup->numlevels; i++)
-			{
-				if (mapnum == levellist.selectedcup->levellist[i])
-					break;
-			}
-
-			if (i == levellist.selectedcup->numlevels)
-				return false;
-		}
-
-		return true;
+		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
+			return false;
 	}
 
-	// Hmm? Couldn't decide?
-	return false;
+	// Survived our checks.
+	return true;
 }
 
 INT16 M_CountLevelsToShowInList(UINT8 gt)
 {
 	INT16 mapnum, count = 0;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			count++;
 
@@ -3242,7 +3236,7 @@ INT16 M_GetFirstLevelInList(UINT8 gt)
 {
 	INT16 mapnum;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			return mapnum;
 
@@ -3410,7 +3404,9 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		M_SetMenuDelay(pid);
 
-		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		if ((!newcup)
+			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3418,7 +3414,7 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-
+			INT32 levelNum;
 			UINT8 ssplayers = cv_splitplayers.value-1;
 
 			S_StartSound(NULL, sfx_s3k63);
@@ -3462,8 +3458,10 @@ void M_CupSelectHandler(INT32 choice)
 				netgame = levellist.netgame;	// ^ ditto.
 			}
 
+			levelNum = grandprixinfo.cup->cachedlevels[0];
+
 			D_MapChange(
-				grandprixinfo.cup->levellist[0] + 1,
+				levelNum + 1,
 				GT_RACE,
 				grandprixinfo.encore,
 				true,
@@ -3549,16 +3547,16 @@ void M_LevelSelectHandler(INT32 choice)
 		{
 			map++;
 
-			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 				map++;
 
-			if (map >= NUMMAPS)
+			if (map >= nummapheaders)
 				break;
 
 			add--;
 		}
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 		{
 			// This shouldn't happen
 			return;
@@ -4209,17 +4207,17 @@ void M_ServerListFillDebug(void)
 		serverlist[i].info.numberofplayer = min(i, 8);
 		serverlist[i].info.maxplayer = 8;
 
-		serverlist[i].info.avgpwrlv = P_RandomRange(500, 1500);
-		serverlist[i].info.time = P_RandomRange(16, 500);	// ping
+		serverlist[i].info.avgpwrlv = P_RandomRange(PR_UNDEFINED, 500, 1500);
+		serverlist[i].info.time = P_RandomRange(PR_UNDEFINED, 1, 8);	// ping
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
 		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
 
-		P_RandomRange(0, 5);	// change results...
-		serverlist[i].info.kartvars = P_RandomRange(0, 3) & SV_SPEEDMASK;
+		P_RandomRange(PR_UNDEFINED, 0, 5);	// change results...
+		serverlist[i].info.kartvars = P_RandomRange(PR_UNDEFINED, 0, 3) & SV_SPEEDMASK;
 
-		serverlist[i].info.modifiedgame = P_RandomRange(0, 1);
+		serverlist[i].info.modifiedgame = P_RandomRange(PR_UNDEFINED, 0, 1);
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}

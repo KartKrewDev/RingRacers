@@ -300,11 +300,15 @@ boolean P_PlayerMoving(INT32 pnum)
 //
 UINT8 P_GetNextEmerald(void)
 {
-	if (gamemap >= sstage_start && gamemap <= sstage_end)
-		return (UINT8)(gamemap - sstage_start);
-	if (gamemap >= smpstage_start || gamemap <= smpstage_end)
-		return (UINT8)(gamemap - smpstage_start);
-	return 0;
+	INT16 mapnum = gamemap-1;
+
+	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
+		return 0;
+
+	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
+		return 0;
+
+	return mapheaderinfo[mapnum]->cup->emeraldnum;
 }
 
 //
@@ -1746,12 +1750,12 @@ static void P_DoBubbleBreath(player_t *player)
 
 	if (player->charflags & SF_MACHINE)
 	{
-		if (P_RandomChance(FRACUNIT/5))
+		if (P_RandomChance(PR_BUBBLE, FRACUNIT/5))
 		{
 			fixed_t r = player->mo->radius>>FRACBITS;
-			x += (P_RandomRange(r, -r)<<FRACBITS);
-			y += (P_RandomRange(r, -r)<<FRACBITS);
-			z += (P_RandomKey(player->mo->height>>FRACBITS)<<FRACBITS);
+			x += (P_RandomRange(PR_BUBBLE, r, -r)<<FRACBITS);
+			y += (P_RandomRange(PR_BUBBLE, r, -r)<<FRACBITS);
+			z += (P_RandomKey(PR_BUBBLE, player->mo->height>>FRACBITS)<<FRACBITS);
 			bubble = P_SpawnMobj(x, y, z, MT_WATERZAP);
 			S_StartSound(bubble, sfx_beelec);
 		}
@@ -1763,9 +1767,9 @@ static void P_DoBubbleBreath(player_t *player)
 		else
 			z += FixedDiv(player->mo->height,5*(FRACUNIT/4));
 
-		if (P_RandomChance(FRACUNIT/16))
+		if (P_RandomChance(PR_BUBBLE, FRACUNIT/16))
 			bubble = P_SpawnMobj(x, y, z, MT_SMALLBUBBLE);
-		else if (P_RandomChance(3*FRACUNIT/256))
+		else if (P_RandomChance(PR_BUBBLE, 3*FRACUNIT/256))
 			bubble = P_SpawnMobj(x, y, z, MT_MEDIUMBUBBLE);
 	}
 
@@ -2144,9 +2148,6 @@ void P_MovePlayer(player_t *player)
 
 	fixed_t runspd;
 
-	if (countdowntimeup)
-		return;
-
 	cmd = &player->cmd;
 	runspd = 14*player->mo->scale; //srb2kart
 
@@ -2381,7 +2382,7 @@ void P_MovePlayer(player_t *player)
 	// Little water sound while touching water - just a nicety.
 	if ((player->mo->eflags & MFE_TOUCHWATER) && !(player->mo->eflags & MFE_UNDERWATER) && !player->spectator)
 	{
-		if (P_RandomChance(FRACUNIT/2) && leveltime % TICRATE == 0)
+		if (P_RandomChance(PR_BUBBLE, FRACUNIT/2) && leveltime % TICRATE == 0)
 			S_StartSound(player->mo, sfx_floush);
 	}
 
@@ -3717,7 +3718,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else if (redscore > bluescore)
 			changeto = 2;
 		else
-			changeto = (P_RandomFixed() & 1) + 1;
+			changeto = (P_RandomFixed(PR_RULESCRAMBLE) & 1) + 1;
 
 		if (!LUA_HookTeamSwitch(player, changeto, true, false, false))
 			return false;
@@ -4288,14 +4289,7 @@ void P_PlayerThink(player_t *player)
 
 	if (!player->spectator)
 		P_PlayerInSpecialSector(player);
-	else if (
-#else
-	if (player->spectator &&
 #endif
-		(gametyperules & GTR_LIVES))
-	{
-		/*P_ConsiderAllGone()*/;
-	}
 
 	if (player->playerstate == PST_DEAD)
 	{

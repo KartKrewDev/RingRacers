@@ -1846,14 +1846,16 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
 		while (x < BASEVIDWIDTH + pad)
 		{
-			lumpnum_t lumpnum;
-			patch_t *PictureOfLevel;
+			INT32 cupLevelNum = cup->cachedlevels[i];
+			patch_t *PictureOfLevel = NULL;
 
-			lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(cup->levellist[i]+1)));
-			if (lumpnum != LUMPERROR)
-				PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-			else
-				PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+			if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
+			{
+				PictureOfLevel = mapheaderinfo[cupLevelNum]->thumbnailPic;
+			}
+
+			if (!PictureOfLevel)
+				PictureOfLevel = blanklvl;
 
 			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
 			i = (i+1) % cup->numlevels;
@@ -2073,18 +2075,19 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
 {
-	lumpnum_t lumpnum;
-	patch_t *PictureOfLevel;
+	patch_t *PictureOfLevel = NULL;
 	UINT8 *colormap = NULL;
 
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 
-	lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(map+1)));
-	if (lumpnum != LUMPERROR)
-		PictureOfLevel = W_CachePatchNum(lumpnum, PU_CACHE);
-	else
-		PictureOfLevel = W_CachePatchName("BLANKLVL", PU_CACHE);
+	if (mapheaderinfo[map])
+	{
+		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
+	}
+
+	if (!PictureOfLevel)
+		PictureOfLevel = blanklvl;
 
 	if (redblink)
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
@@ -2114,10 +2117,10 @@ void M_DrawLevelSelect(void)
 	{
 		INT16 lvlx = t, lvly = y;
 
-		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 			map++;
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 			break;
 
 		if (i == levellist.cursor && tatransition)
@@ -2146,7 +2149,7 @@ void M_DrawTimeAttack(void)
 	INT16 rightedge = 149+t+155;
 	INT16 opty = 140;
 	INT32 w;
-	lumpnum_t lumpnum;
+	patch_t *minimap = NULL;
 	UINT8 i;
 	consvar_t *cv;
 
@@ -2156,17 +2159,34 @@ void M_DrawTimeAttack(void)
 
 	V_DrawScaledPatch(149+t, 70, 0, W_CachePatchName("BESTTIME", PU_CACHE));
 
-	if (currentMenu == &PLAY_TimeAttackDef)
+	if (currentMenu == &PLAY_TimeAttackDef && mapheaderinfo[map])
 	{
-		lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(map+1)));
-		if (lumpnum != LUMPERROR)
-			V_DrawScaledPatch(24-t, 82, 0, W_CachePatchNum(lumpnum, PU_CACHE));
+		tic_t timerec = 0;
+		tic_t laprec = 0;
+		UINT32 timeheight = 82;
 
-		V_DrawRightAlignedString(rightedge-12, 82, highlightflags, "BEST LAP:");
-		K_drawKartTimestamp(0, 162+t, 88, 0, 2);
+		if ((minimap = mapheaderinfo[map]->minimapPic))
+			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
-		V_DrawRightAlignedString(rightedge-12, 112, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(0, 162+t, 118, map, 1);
+		if (mapheaderinfo[map]->mainrecord)
+		{
+			timerec = mapheaderinfo[map]->mainrecord->time;
+			laprec = mapheaderinfo[map]->mainrecord->lap;
+		}
+
+		if (levellist.newgametype != GT_BATTLE)
+		{
+			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
+			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
+			timeheight += 30;
+		}
+		else
+		{
+			timeheight += 15;
+		}
+
+		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map, 1);
 	}
 	else
 		opty = 80;
@@ -3787,14 +3807,13 @@ void M_DrawPlaybackMenu(void)
 
 #define SCALEDVIEWWIDTH (vid.width/vid.dupx)
 #define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
-void M_DrawReplayHutReplayInfo(void)
+static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 {
-	lumpnum_t lumpnum;
-	patch_t *patch;
+	patch_t *patch = NULL;
 	UINT8 *colormap;
 	INT32 x, y, w, h;
 
-	switch (extrasmenu.demolist[dir_on[menudepthleft]].type)
+	switch (demoref->type)
 	{
 	case MD_NOTLOADED:
 		V_DrawCenteredString(160, 40, V_SNAPTOTOP, "Loading replay information...");
@@ -3815,14 +3834,20 @@ void M_DrawReplayHutReplayInfo(void)
 		x = 15; y = 15;
 
 		//  A 160x100 image of the level as entry MAPxxP
-		//CONS_Printf("%d %s\n", extrasmenu.demolist[dir_on[menudepthleft]].map, G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map));
-		lumpnum = W_CheckNumForName(va("%sP", G_BuildMapName(extrasmenu.demolist[dir_on[menudepthleft]].map)));
-		if (lumpnum != LUMPERROR)
-			patch = W_CachePatchNum(lumpnum, PU_CACHE);
+		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
+		{
+			patch = mapheaderinfo[demoref->map]->thumbnailPic;
+			if (!patch)
+			{
+				patch = blanklvl;
+			}
+		}
 		else
+		{
 			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
+		}
 
-		if (!(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & DF_ENCORE))
+		if (!(demoref->kartspeed & DF_ENCORE))
 			V_DrawSmallScaledPatch(x, y, V_SNAPTOTOP, patch);
 		else
 		{
@@ -3840,43 +3865,42 @@ void M_DrawReplayHutReplayInfo(void)
 
 		x += 85;
 
-		if (mapheaderinfo[extrasmenu.demolist[dir_on[menudepthleft]].map-1])
-			V_DrawString(x, y, V_SNAPTOTOP, G_BuildMapTitle(extrasmenu.demolist[dir_on[menudepthleft]].map));
+		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
+			V_DrawString(x, y, V_SNAPTOTOP, G_BuildMapTitle(demoref->map+1));
 		else
 			V_DrawString(x, y, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
 
-		if (extrasmenu.demolist[dir_on[menudepthleft]].numlaps)
-			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", extrasmenu.demolist[dir_on[menudepthleft]].numlaps));
+		if (demoref->numlaps)
+			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
 
-		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE ?
-			va("Race (%s speed)", kartspeed_cons_t[(extrasmenu.demolist[dir_on[menudepthleft]].kartspeed & ~DF_ENCORE) + 1].strvalue) :
+		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->gametype == GT_RACE ?
+			va("Race (%s speed)", kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue) :
 			"Battle Mode");
 
-		if (!extrasmenu.demolist[dir_on[menudepthleft]].standings[0].ranking)
+		if (!demoref->standings[0].ranking)
 		{
 			// No standings were loaded!
 			V_DrawString(x, y+39, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
-
 
 			break;
 		}
 
 		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
-		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].standings[0].name);
+		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
 
-		if (extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE)
+		if (demoref->gametype == GT_RACE)
 		{
 			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
 			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
-											G_TicsToMinutes(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore, true),
-											G_TicsToSeconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore),
-											G_TicsToCentiseconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore)
+											G_TicsToMinutes(demoref->standings[0].timeorscore, true),
+											G_TicsToSeconds(demoref->standings[0].timeorscore),
+											G_TicsToCentiseconds(demoref->standings[0].timeorscore)
 			));
 		}
 		else
 		{
 			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
-			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", extrasmenu.demolist[dir_on[menudepthleft]].standings[0].timeorscore));
+			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
 		}
 
 		// Character face!
@@ -3884,12 +3908,12 @@ void M_DrawReplayHutReplayInfo(void)
 		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
 		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
 
-		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin != 0xFF)
+		if (demoref->standings[0].skin != 0xFF)
 		{
-			patch = faceprefix[extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin][FACE_WANTED];
+			patch = faceprefix[demoref->standings[0].skin][FACE_WANTED];
 			colormap = R_GetTranslationColormap(
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].skin,
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].color,
+				demoref->standings[0].skin,
+				demoref->standings[0].color,
 				GTC_MENUCACHE);
 		}
 		else
@@ -3897,7 +3921,7 @@ void M_DrawReplayHutReplayInfo(void)
 			patch = W_CachePatchName("M_NOWANT", PU_CACHE);
 			colormap = R_GetTranslationColormap(
 				TC_RAINBOW,
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[0].color,
+				demoref->standings[0].color,
 				GTC_MENUCACHE);
 		}
 
@@ -4046,7 +4070,7 @@ void M_DrawReplayHut(void)
 
 	if (itemOn == replaylistitem)
 	{
-		M_DrawReplayHutReplayInfo();
+		M_DrawReplayHutReplayInfo(&extrasmenu.demolist[dir_on[menudepthleft]]);
 	}
 }
 
@@ -4054,42 +4078,43 @@ void M_DrawReplayStartMenu(void)
 {
 	const char *warning;
 	UINT8 i;
+	menudemo_t *demoref = &extrasmenu.demolist[dir_on[menudepthleft]];
 
 	M_DrawEggaChannel();
 	M_DrawGenericMenu();
 
 #define STARTY 62-(extrasmenu.replayScrollTitle>>1)
 	// Draw rankings beyond first
-	for (i = 1; i < MAXPLAYERS && extrasmenu.demolist[dir_on[menudepthleft]].standings[i].ranking; i++)
+	for (i = 1; i < MAXPLAYERS && demoref->standings[i].ranking; i++)
 	{
 		patch_t *patch;
 		UINT8 *colormap;
 
-		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20, V_SNAPTOTOP|highlightflags, va("%2d", extrasmenu.demolist[dir_on[menudepthleft]].standings[i].ranking));
-		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_SNAPTOTOP|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].standings[i].name);
+		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20, V_SNAPTOTOP|highlightflags, va("%2d", demoref->standings[i].ranking));
+		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[i].name);
 
-		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore == UINT32_MAX-1)
+		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
 			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
-		else if (extrasmenu.demolist[dir_on[menudepthleft]].gametype == GT_RACE)
+		else if (demoref->gametype == GT_RACE)
 			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",
-											G_TicsToMinutes(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore, true),
-											G_TicsToSeconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore),
-											G_TicsToCentiseconds(extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore)
+											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
+											G_TicsToSeconds(demoref->standings[i].timeorscore),
+											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
 			));
 		else
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", extrasmenu.demolist[dir_on[menudepthleft]].standings[i].timeorscore));
+			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
 
 		// Character face!
 
 		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
 		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
 
-		if (extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin != 0xFF)
+		if (demoref->standings[i].skin != 0xFF)
 		{
-			patch = faceprefix[extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin][FACE_RANK];
+			patch = faceprefix[demoref->standings[i].skin][FACE_RANK];
 			colormap = R_GetTranslationColormap(
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].skin,
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].color,
+				demoref->standings[i].skin,
+				demoref->standings[i].color,
 				GTC_MENUCACHE);
 		}
 		else
@@ -4097,7 +4122,7 @@ void M_DrawReplayStartMenu(void)
 			patch = W_CachePatchName("M_NORANK", PU_CACHE);
 			colormap = R_GetTranslationColormap(
 				TC_RAINBOW,
-				extrasmenu.demolist[dir_on[menudepthleft]].standings[i].color,
+				demoref->standings[i].color,
 				GTC_MENUCACHE);
 		}
 
@@ -4130,12 +4155,12 @@ void M_DrawReplayStartMenu(void)
 	}
 
 	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
-	M_DrawReplayHutReplayInfo();
+	M_DrawReplayHutReplayInfo(demoref);
 
-	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[dir_on[menudepthleft]].title);
+	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, demoref->title);
 
 	// Draw a warning prompt if needed
-	switch (extrasmenu.demolist[dir_on[menudepthleft]].addonstatus)
+	switch (demoref->addonstatus)
 	{
 	case DFILE_ERROR_CANNOTLOAD:
 		warning = "Some addons in this replay cannot be loaded.\nYou can watch anyway, but desyncs may occur.";

@@ -933,7 +933,6 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 
 	CopyCaretColors(netbuffer->u.serverinfo.servername, cv_servername.string,
 		MAXSERVERNAME);
-	strncpy(netbuffer->u.serverinfo.mapname, G_BuildMapName(gamemap), 7);
 
 	M_Memcpy(netbuffer->u.serverinfo.mapmd5, mapmd5, 16);
 
@@ -5021,7 +5020,19 @@ static INT16 Consistancy(void)
 	// I give up
 	// Coop desynching enemies is painful
 	if (gamestate == GS_LEVEL)
-		ret += P_GetRandSeed();
+	{
+		for (i = 0; i < PRNUMCLASS; i++)
+		{
+			if (i & 1)
+			{
+				ret -= P_GetRandSeed(i);
+			}
+			else
+			{
+				ret += P_GetRandSeed(i);
+			}
+		}
+	}
 
 #ifdef MOBJCONSISTANCY
 	if (gamestate == GS_LEVEL)
