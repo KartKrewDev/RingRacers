@@ -3621,25 +3621,46 @@ void G_AddMapToBuffer(INT16 map)
 //
 static void G_UpdateVisited(void)
 {
-	// Update visitation flags?
-	if (!demo.playback) // Not watching a demo
+	UINT8 i;
+	UINT8 earnedEmblems;
+
+	// No demos.
+	if (demo.playback)
+		return;
+
+	// Check if every local player wiped out.
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		UINT8 earnedEmblems;
+		if (!playeringame[i]) // Not here.
+			continue;
 
-		// Update visitation flags
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_BEATEN;
+		if (!P_IsLocalPlayer(&players[i])) // Not local.
+			continue;
 
-		if (encoremode == true)
-		{
-			mapheaderinfo[gamemap-1]->mapvisited |= MV_ENCORE;
-		}
+		if (players[i].spectator) // Not playing.
+			continue;
 
-		if (modeattacking)
-			G_UpdateRecordReplays();
-
-		if ((earnedEmblems = M_CompletionEmblems()))
-			CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+		if (players[i].pflags & PF_NOCONTEST) // Sonic after not surviving.
+			continue;
+		break;
 	}
+
+	if (i == MAXPLAYERS) // Not a single living local soul?
+		return;
+
+	// Update visitation flags
+	mapheaderinfo[gamemap-1]->mapvisited |= MV_BEATEN;
+
+	if (encoremode == true)
+	{
+		mapheaderinfo[gamemap-1]->mapvisited |= MV_ENCORE;
+	}
+
+	if (modeattacking)
+		G_UpdateRecordReplays();
+
+	if ((earnedEmblems = M_CompletionEmblems()))
+		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
