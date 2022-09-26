@@ -53,10 +53,8 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum,
 	size_t packetlength);
 boolean HGetPacket(void);
 void D_SetDoomcom(void);
-#ifndef NONET
 void D_SaveBan(void);
 void D_LoadBan(boolean warning);
-#endif
 boolean D_CheckNetGame(void);
 void D_CloseConnection(void);
 void Net_UnAcknowledgePacket(INT32 node);

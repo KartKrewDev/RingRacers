@@ -40,11 +40,9 @@ ifndef MINGW64
 libs+=-Wl,--large-address-aware
 endif
 
-ifndef NONET
 ifndef MINGW64 # miniupnc is broken with MINGW64
 opts+=-I../libs -DSTATIC_MINIUPNPC
 libs+=-L../libs/miniupnpc/mingw$(32) -lws2_32 -liphlpapi
-endif
 endif
 
 ifndef NO_DISCORDRPC
