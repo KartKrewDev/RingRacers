@@ -3302,9 +3302,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			INT32 result;
 
 			if (rvalue1 <= rvalue2)
-				result = P_RandomRange(rvalue1, rvalue2);
+				result = P_RandomRange(PR_EXECUTOR, rvalue1, rvalue2);
 			else
-				result = P_RandomRange(rvalue2, rvalue1);
+				result = P_RandomRange(PR_EXECUTOR, rvalue2, rvalue1);
 
 			P_LinedefExecute((INT16)result, mo, NULL);
 			break;
@@ -3700,9 +3700,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				{
 					if (line->sidenum[1] != 0xffff) // Make sure the linedef has a back side
 					{
-						x = P_RandomRange(sides[line->sidenum[0]].textureoffset>>FRACBITS, sides[line->sidenum[1]].textureoffset>>FRACBITS)<<FRACBITS;
-						y = P_RandomRange(sides[line->sidenum[0]].rowoffset>>FRACBITS, sides[line->sidenum[1]].rowoffset>>FRACBITS)<<FRACBITS;
-						z = P_RandomRange(line->frontsector->floorheight>>FRACBITS, line->frontsector->ceilingheight>>FRACBITS)<<FRACBITS;
+						x = P_RandomRange(PR_UNDEFINED, sides[line->sidenum[0]].textureoffset>>FRACBITS, sides[line->sidenum[1]].textureoffset>>FRACBITS)<<FRACBITS;
+						y = P_RandomRange(PR_UNDEFINED, sides[line->sidenum[0]].rowoffset>>FRACBITS, sides[line->sidenum[1]].rowoffset>>FRACBITS)<<FRACBITS;
+						z = P_RandomRange(PR_UNDEFINED, line->frontsector->floorheight>>FRACBITS, line->frontsector->ceilingheight>>FRACBITS)<<FRACBITS;
 					}
 					else
 					{

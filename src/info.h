@@ -273,7 +273,6 @@ enum actionnum
 	A_DRAGONSEGMENT,
 	A_CHANGEHEIGHT,
 	A_ITEMPOP,
-	A_JAWZCHASE,
 	A_JAWZEXPLODE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
@@ -545,7 +544,6 @@ void A_ChangeHeight();
 // SRB2Kart
 //
 void A_ItemPop();
-void A_JawzChase();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
@@ -4522,14 +4520,6 @@ typedef enum state
 	S_JAWZ6,
 	S_JAWZ7,
 	S_JAWZ8,
-	S_JAWZ_DUD1,
-	S_JAWZ_DUD2,
-	S_JAWZ_DUD3,
-	S_JAWZ_DUD4,
-	S_JAWZ_DUD5,
-	S_JAWZ_DUD6,
-	S_JAWZ_DUD7,
-	S_JAWZ_DUD8,
 	S_JAWZ_SHIELD1,
 	S_JAWZ_SHIELD2,
 	S_JAWZ_SHIELD3,
@@ -6372,7 +6362,6 @@ typedef enum mobj_type
 	MT_ORBINAUT_SHIELD,
 
 	MT_JAWZ, // Jawz stuff
-	MT_JAWZ_DUD,
 	MT_JAWZ_SHIELD,
 
 	MT_PLAYERRETICULE, // Jawz reticule
