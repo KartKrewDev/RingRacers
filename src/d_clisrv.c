@@ -2045,8 +2045,9 @@ static void CL_ConnectToServer(void)
 	// @TODO: Save the proper server name, right now it doesn't seem like we can consistently retrieve it from the serverlist....?
 	// It works... sometimes but not always which is weird.
 
+	tmpsave[0] = '\0'; // TEMPORARY -- connectedservername is currently only set for YOUR server
 	if (joinedIP[0])	// false if we have "" which is \0
-		M_AddToJoinedIPs(joinedIP, connectedservername);
+		M_AddToJoinedIPs(joinedIP, tmpsave); //connectedservername); -- as above
 
 	joinedIP[0] = '\0';	// And empty this for good measure regardless of whether or not we actually used it.
 
