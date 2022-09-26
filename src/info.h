@@ -1119,6 +1119,7 @@ typedef enum sprite
 	SPR_FLMP, // Flame Shield paper sprites
 	SPR_FLML, // Flame Shield speed lines
 	SPR_FLMF, // Flame Shield flash
+	SPR_GTOP, // Marble Garden Zone Spinning Top
 	SPR_HYUU, // Hyudoro
 	SPR_GRWP, // Grow
 	SPR_POHB, // Shrink Poh-Bee

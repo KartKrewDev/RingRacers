@@ -575,6 +575,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FLMP", // Flame Shield paper sprites
 	"FLML", // Flame Shield speed lines
 	"FLMF", // Flame Shield flash
+	"GTOP", // Marble Garden Zone Spinning Top
 	"HYUU", // Hyudoro
 	"GRWP", // Grow
 	"POHB", // Shrink Poh-Bee
