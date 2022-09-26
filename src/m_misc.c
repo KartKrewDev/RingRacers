@@ -212,7 +212,7 @@ void M_AddToJoinedIPs(char *address, char *servname)
 	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
 	// Start by moving every IP up 1 slot (dropping the last IP in the table)
-	for (i = NUMLOGIP; i; i--)
+	for (i = NUMLOGIP-1; i; i--)
 	{
 		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
 		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
