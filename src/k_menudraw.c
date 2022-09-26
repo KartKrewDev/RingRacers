@@ -2417,7 +2417,7 @@ void M_DrawMPJoinIP(void)
 			case IT_STRING:
 			{
 
-				char str[MAXSTRINGLENGTH];
+				char str[MAX_LOGIP];
 				strcpy(str, currentMenu->menuitems[i].text);
 
 				// The last 3 options of this menu are to be the joined IP addresses...
@@ -2430,9 +2430,9 @@ void M_DrawMPJoinIP(void)
 					}
 
 					if (joinedIPlist[index][1][0])	// Try drawing server name
-						strcpy(str, joinedIPlist[index][1]);
+						strlcpy(str, joinedIPlist[index][1], MAX_LOGIP);
 					else if (joinedIPlist[index][0][0])	// If that fails, get the address
-						strcpy(str, joinedIPlist[index][0]);
+						strlcpy(str, joinedIPlist[index][0], MAX_LOGIP);
 					else
 						strcpy(str, "---");		// If that fails too then there's nothing!
 				}

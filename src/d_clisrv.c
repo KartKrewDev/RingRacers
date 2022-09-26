@@ -2425,7 +2425,7 @@ static void Command_connect(void)
 
 				// Last IPs joined:
 				// Keep the address we typed in memory so that we can save it if we *succesfully* join the server
-				strcpy(joinedIP, COM_Argv(1));
+				strlcpy(joinedIP, COM_Argv(1), MAX_LOGIP);
 			}
 			else
 			{
