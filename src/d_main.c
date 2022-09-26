@@ -44,7 +44,7 @@
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "p_setup.h"
 #include "p_saveg.h"
@@ -74,6 +74,7 @@
 #include "k_grandprix.h"
 #include "k_boss.h"
 #include "doomstat.h"
+#include "m_random.h" // P_ClearRandom
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -184,7 +185,9 @@ void D_ProcessEvents(void)
 	event_t *ev;
 
 	boolean eaten;
+	boolean menuresponse = false;
 
+	memset(deviceResponding, false, sizeof (deviceResponding));
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
@@ -205,25 +208,6 @@ void D_ProcessEvents(void)
 				continue;
 		}
 
-		// Menu input
-#ifdef HAVE_THREADS
-		I_lock_mutex(&m_menu_mutex);
-#endif
-		{
-			eaten = M_Responder(ev);
-		}
-#ifdef HAVE_THREADS
-		I_unlock_mutex(m_menu_mutex);
-#endif
-
-		if (eaten)
-			continue; // menu ate the event
-
-		// Demo input:
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
-
 		// console input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&con_mutex);
@@ -241,7 +225,36 @@ void D_ProcessEvents(void)
 			continue; // ate the event
 		}
 
+		// Menu input
+		menuresponse = true;
+#ifdef HAVE_THREADS
+		I_lock_mutex(&k_menu_mutex);
+#endif
+		{
+			eaten = M_Responder(ev);
+		}
+#ifdef HAVE_THREADS
+		I_unlock_mutex(k_menu_mutex);
+#endif
+
+		if (eaten)
+			continue; // menu ate the event
+
+		// Demo input:
+		/*
+		if (demo.playback)
+			if (M_DemoResponder(ev))
+				continue;	// demo ate the event
+		*/
+
+
 		G_Responder(ev);
+	}
+
+	// Reset menu controls when no event is processed
+	if (!menuresponse)
+	{
+		M_MapMenuControls(NULL);
 	}
 }
 
@@ -321,7 +334,7 @@ static void D_Display(void)
 		// set for all later
 		wipedefindex = gamestate; // wipe_xxx_toblack
 		if (gamestate == GS_TITLESCREEN && wipegamestate != GS_INTRO)
-			wipedefindex = wipe_timeattack_toblack;
+			wipedefindex = wipe_titlescreen_toblack;
 
 		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
 			wipetypepre = wipedefs[wipedefindex];
@@ -335,20 +348,20 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+				F_RunWipe(wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
-				R_ReInitColormaps(0, LUMPERROR);
+				R_ReInitColormaps(0, NULL, 0);
 			}
 
 			F_WipeStartScreen();
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK, "FADEMAP0", false, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 
@@ -388,7 +401,7 @@ static void D_Display(void)
 			HU_Drawer();
 			break;
 
-		case GS_TIMEATTACK:
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -541,9 +554,8 @@ static void D_Display(void)
 				if (rendermode == render_soft)
 				{
 					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
 				}
+
 				lastdraw = false;
 			}
 
@@ -595,11 +607,11 @@ static void D_Display(void)
 	vid.recalc = 0;
 
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_Drawer(); // menu is drawn even on top of everything
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 	// focus lost moved to M_Drawer
 
@@ -623,7 +635,7 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
+			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
@@ -928,20 +940,16 @@ void D_StartTitle(void)
 
 	if (netgame)
 	{
-		if (gametyperules & GTR_CAMPAIGN)
+		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+
+		if (server)
 		{
-			G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+			i = G_GetFirstMapOfGametype(gametype)+1;
 
-			if (server)
-			{
-				char mapname[6];
+			if (i > nummapheaders)
+				I_Error("D_StartTitle: No valid map ID found!?");
 
-				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof (mapname));
-				strlwr(mapname);
-				mapname[5] = '\0';
-
-				COM_BufAddText(va("map %s\n", mapname));
-			}
+			COM_BufAddText(va("map %s\n", G_BuildMapName(i)));
 		}
 
 		return;
@@ -990,25 +998,13 @@ void D_StartTitle(void)
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 	advancedemo = false;
-	F_InitMenuPresValues();
 	F_StartTitleScreen();
-
-	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
-	/*
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
-			M_TutorialSaveControlResponse, MM_YESNO);
-	}
-	*/
-
 	tutorialmode = false;
 }
 
@@ -1197,12 +1193,9 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 i;
-	UINT16 wadnum;
-	lumpinfo_t *lumpinfo;
-	char *name;
-
 	INT32 p;
+
+	INT32 numbasemapheaders;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
@@ -1232,6 +1225,11 @@ void D_SRB2Main(void)
 
 	// initialise locale code
 	M_StartupLocale();
+
+	// This will be done more properly on
+	// level load, but for now at least make
+	// sure that it is initalized at all
+	P_ClearRandom(0);
 
 	// get parameters from a response file (eg: srb2 @parms.txt)
 	M_FindResponseFile();
@@ -1269,6 +1267,9 @@ void D_SRB2Main(void)
 	// default savegame
 	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
 	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
+
+	// Init the joined IP table for quick rejoining of past games.
+	M_InitJoinedIPArray();
 
 	{
 		const char *userhome = D_Home(); //Alam: path to home
@@ -1316,6 +1317,33 @@ void D_SRB2Main(void)
 
 		configfile[sizeof configfile - 1] = '\0';
 	}
+
+	// If config isn't writable, tons of behavior will be broken.
+	// Fail loudly before things get confusing!
+	{
+		FILE *tmpfile;
+		char testfile[MAX_WADPATH];
+
+		snprintf(testfile, sizeof testfile, "%s" PATHSEP "file.tmp", srb2home);
+		testfile[sizeof testfile - 1] = '\0';
+
+		tmpfile = fopen(testfile, "w");
+		if (tmpfile == NULL)
+		{
+#if defined (_WIN32)
+			I_Error("Couldn't write game config.\nMake sure the game is installed somewhere it has write permissions.\n\n(Don't use the Downloads folder, Program Files, or your desktop!\nIf unsure, we recommend making a subfolder in your Documents folder.)");
+#else
+			I_Error("Couldn't write game config.\nMake sure you've installed the game somewhere it has write permissions.");
+#endif
+		}
+		else
+		{
+			fclose(tmpfile);
+			remove(testfile);
+		}
+	}
+
+	M_LoadJoinedIPs();	// load joined ips
 
 	// Create addons dir
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
@@ -1373,13 +1401,6 @@ void D_SRB2Main(void)
 	// adapt tables to SRB2's needs, including extra slots for dehacked file support
 	P_PatchInfoTables();
 
-	// initiate menu metadata before SOCcing them
-	M_InitMenuPresTables();
-
-	// init title screen display params
-	if (M_GetUrlProtocolArg() || M_CheckParm("-connect"))
-		F_InitMenuPresValues();
-
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
@@ -1389,10 +1410,6 @@ void D_SRB2Main(void)
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
-
-	// Setup character tables
-	// Have to be done here before files are loaded
-	M_InitCharacterTables();
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1427,31 +1444,16 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
-	//
-	// search for maps
-	//
-	for (wadnum = 0; wadnum <= mainwads; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
+	// Do it before P_InitMapData because PNG patch
+	// conversion sometimes needs the palette
+	V_ReloadPalette();
 
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
+	//
+	// search for mainwad maps
+	//
+	P_InitMapData(0);
 
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
-			}
-		}
-	}
+	numbasemapheaders = nummapheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1460,37 +1462,9 @@ void D_SRB2Main(void)
 	D_CleanFile(startuppwads);
 
 	//
-	// search for maps... again.
+	// search for pwad maps
 	//
-	for (wadnum = mainwads+1; wadnum < numwadfiles; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
-
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					if (mapheaderinfo[num - 1]->alreadyExists != false)
-					{
-						G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-					}
-
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
-
-				CONS_Printf("%s\n", name);
-			}
-		}
-	}
+	P_InitMapData(numbasemapheaders);
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
@@ -1539,6 +1513,9 @@ void D_SRB2Main(void)
 
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
+
+	// Load Profiles now that default controls have been defined
+	PR_LoadProfiles();	// load control profiles
 
 	M_Init();
 
@@ -1692,9 +1669,9 @@ void D_SRB2Main(void)
 
 	// user settings come before "+" parameters.
 	if (dedicated)
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartserv.cfg\"\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringserv.cfg\"\n", srb2home));
 	else
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"kartexec.cfg\" -noerror\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s"PATHSEP"ringexec.cfg\" -noerror\n", srb2home));
 
 	if (!autostart)
 		M_PushSpecialParameters(); // push all "+" parameters at the command buffer
@@ -1744,15 +1721,19 @@ void D_SRB2Main(void)
 	// rei/miru: bootmap (Idea: starts the game on a predefined map)
 	if (bootmap && !(M_CheckParm("-warp") && M_IsNextParm()))
 	{
-		pstartmap = bootmap;
+		pstartmap = G_MapNumber(bootmap)+1;
 
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
+		if (pstartmap > nummapheaders)
 		{
-			autostart = true;
+			I_Error("Cannot warp to map %s (not found)\n", bootmap);
 		}
+
+		autostart = true;
 	}
+
+	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+	PR_ApplyProfile(cv_ttlprofilen.value, 0);
 
 	if (autostart || netgame)
 	{
@@ -1844,14 +1825,11 @@ void D_SRB2Main(void)
 
 		if (server && !M_CheckParm("+map"))
 		{
-			// Prevent warping to nonexistent levels
-			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
-				I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
 			// Prevent warping to locked levels
 			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
 			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
 			// lives hell.
-			else if (!dedicated && M_MapLocked(pstartmap))
+			if (!dedicated && M_MapLocked(pstartmap))
 				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
 			{
@@ -1861,11 +1839,14 @@ void D_SRB2Main(void)
 	}
 	else if (M_CheckParm("-skipintro"))
 	{
-		F_InitMenuPresValues();
 		F_StartTitleScreen();
+		CV_StealthSetValue(&cv_currprofile, -1);
 	}
 	else
+	{
 		F_StartIntro(); // Tails 03-03-2002
+		CV_StealthSetValue(&cv_currprofile, -1);
+	}
 
 	CON_ToggleOff();
 

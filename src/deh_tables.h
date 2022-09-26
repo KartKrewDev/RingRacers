@@ -53,7 +53,6 @@ struct int_const_s {
 	lua_Integer v;
 };
 
-extern const char NIGHTSGRADE_LIST[];
 extern struct flickytypes_s FLICKYTYPES[];
 extern actionpointer_t actionpointers[]; // Array mapping action names to action functions.
 extern const char *const STATE_LIST[];
@@ -69,7 +68,6 @@ extern const char *COLOR_ENUMS[];
 extern const char *const POWERS_LIST[];
 extern const char *const KARTHUD_LIST[];
 extern const char *const HUDITEMS_LIST[];
-extern const char *const MENUTYPES_LIST[];
 
 extern struct int_const_s const INT_CONST[];
 

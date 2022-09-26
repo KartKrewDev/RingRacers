@@ -192,6 +192,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->mo, META_MOBJ);
 	else if (fastcmp(field,"cmd"))
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
+	else if (fastcmp(field,"oldcmd"))
+		LUA_PushUserdata(L, &plr->oldcmd, META_TICCMD);
 	else if (fastcmp(field,"respawn"))
 		LUA_PushUserdata(L, &plr->respawn, META_RESPAWN);
 	else if (fastcmp(field,"playerstate"))
@@ -250,6 +252,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->driftboost);
 	else if (fastcmp(field,"strongdriftboost"))
 		lua_pushinteger(L, plr->strongdriftboost);
+	else if (fastcmp(field,"gateBoost"))
+		lua_pushinteger(L, plr->gateBoost);
+	else if (fastcmp(field,"gateSound"))
+		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -274,6 +280,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spindashspeed);
 	else if (fastcmp(field,"spindashboost"))
 		lua_pushinteger(L, plr->spindashboost);
+	else if (fastcmp(field,"fastfall"))
+		lua_pushfixed(L, plr->fastfall);
 	else if (fastcmp(field,"numboosts"))
 		lua_pushinteger(L, plr->numboosts);
 	else if (fastcmp(field,"boostpower"))
@@ -334,6 +342,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flamemeter);
 	else if (fastcmp(field,"flamelength"))
 		lua_pushinteger(L, plr->flamelength);
+	else if (fastcmp(field,"ballhogcharge"))
+		lua_pushinteger(L, plr->ballhogcharge);
 	else if (fastcmp(field,"hyudorotimer"))
 		lua_pushinteger(L, plr->hyudorotimer);
 	else if (fastcmp(field,"stealingtimer"))
@@ -360,10 +370,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastjawztarget);
 	else if (fastcmp(field,"jawztargetdelay"))
 		lua_pushinteger(L, plr->jawztargetdelay);
-	else if (fastcmp(field,"confirmInflictor"))
-		lua_pushinteger(L, plr->confirmInflictor);
-	else if (fastcmp(field,"confirmInflictorDelay"))
-		lua_pushinteger(L, plr->confirmInflictorDelay);
+	else if (fastcmp(field,"confirmVictim"))
+		lua_pushinteger(L, plr->confirmVictim);
+	else if (fastcmp(field,"confirmVictimDelay"))
+		lua_pushinteger(L, plr->confirmVictimDelay);
 	else if (fastcmp(field,"glanceDir"))
 		lua_pushinteger(L, plr->glanceDir);
 	else if (fastcmp(field,"trickpanel"))
@@ -522,6 +532,8 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"cmd"))
 		return NOSET;
+	else if (fastcmp(field,"oldcmd"))
+		return NOSET;
 	else if (fastcmp(field,"respawn"))
 		return NOSET;
 	else if (fastcmp(field,"playerstate"))
@@ -608,6 +620,12 @@ static int player_set(lua_State *L)
 		plr->driftcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftboost"))
 		plr->driftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"strongdriftboost"))
+		plr->strongdriftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateBoost"))
+		plr->gateBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateSound"))
+		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstraft"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -632,6 +650,8 @@ static int player_set(lua_State *L)
 		plr->spindashspeed = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spindashboost"))
 		plr->spindashboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"fastfall"))
+		plr->fastfall = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"numboosts"))
 		plr->numboosts = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"boostpower"))
@@ -692,6 +712,8 @@ static int player_set(lua_State *L)
 		plr->flamemeter = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamelength"))
 		plr->flamelength = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ballhogcharge"))
+		plr->ballhogcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"hyudorotimer"))
 		plr->hyudorotimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stealingtimer"))
@@ -718,10 +740,10 @@ static int player_set(lua_State *L)
 		plr->lastjawztarget = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"jawztargetdelay"))
 		plr->jawztargetdelay = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmInflictor"))
-		plr->confirmInflictor = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"confirmInflictorDelay"))
-		plr->confirmInflictorDelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmVictim"))
+		plr->confirmVictim = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"confirmVictimDelay"))
+		plr->confirmVictimDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"glanceDir"))
 		plr->glanceDir = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickpanel"))

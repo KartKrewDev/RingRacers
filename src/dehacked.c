@@ -11,6 +11,7 @@
 /// \brief Load dehacked file and change tables and text
 
 #include "doomdef.h"
+
 #include "m_cond.h"
 #include "deh_soc.h"
 #include "deh_tables.h"
@@ -245,18 +246,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else
 				i = 0;
 
-			if (fastcmp(word, "CHARACTER"))
-			{
-				if (i >= 0 && i < 32)
-					readPlayer(f, i);
-				else
-				{
-					deh_warning("Character %d out of range (0 - 31)", i);
-					ignorelines(f);
-				}
-				continue;
-			}
-			else if (fastcmp(word, "EMBLEM"))
+			if (fastcmp(word, "EMBLEM"))
 			{
 				if (!mainfile && !gamedataadded)
 				{
@@ -366,51 +356,16 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 				}
 #endif
-				else if (fastcmp(word, "SPRITE") || fastcmp(word, "SPRITEINFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite(word2); // find a sprite by name
-					if (i < NUMSPRITES && i > 0)
-						readspriteinfo(f, i, false);
-					else
-					{
-						deh_warning("Sprite number %d out of range (0 - %d)", i, NUMSPRITES-1);
-						ignorelines(f);
-					}
-				}
-				else if (fastcmp(word, "SPRITE2INFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite2(word2); // find a sprite by name
-					if (i < NUMPLAYERSPRITES && i >= 0)
-						readspriteinfo(f, i, true);
-					else
-					{
-						deh_warning("Sprite2 number %d out of range (0 - %d)", i, NUMPLAYERSPRITES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "LEVEL"))
 				{
-					// Support using the actual map name,
-					// i.e., Level AB, Level FZ, etc.
-
-					// Convert to map number
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						i = M_MapNumber(word2[0], word2[1]);
-
-					if (i > 0 && i <= NUMMAPS)
+					size_t len = strlen(word2);
+					if (len <= MAXMAPLUMPNAME-1)
 					{
-						if (mapheaderinfo[i])
-						{
-							G_SetGameModified(multiplayer, true); // Only a major mod if editing stuff that isn't your own!
-						}
-
-						readlevelheader(f, i);
+						readlevelheader(f, word2);
 					}
 					else
 					{
-						deh_warning("Level number %d out of range (1 - %d)", i, NUMMAPS);
+						deh_warning("Map header's lumpname %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXMAPLUMPNAME-1));
 						ignorelines(f);
 					}
 				}
@@ -495,19 +450,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "MENU"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_menutype(word2); // find a huditem by name
-					if (i >= 1 && i < NUMMENUTYPES)
-						readmenu(f, i);
-					else
-					{
-						// zero-based, but let's start at 1
-						deh_warning("Menu number %d out of range (1 - %d)", i, NUMMENUTYPES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "UNLOCKABLE"))
 				{
 					if (!mainfile && !gamedataadded)
@@ -564,6 +506,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					{
 						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
 						cup->id = numkartcupheaders;
+						cup->unlockrequired = -1;
 						deh_strlcpy(cup->name, word2,
 							sizeof(cup->name), va("Cup header %s: name", word2));
 						if (prev != NULL)

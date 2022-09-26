@@ -33,13 +33,14 @@ typedef enum
 	BT_LOOKBACK		  = 1<<5,	// Look Backward
 
 	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
+	BT_SPINDASHMASK	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
 
 	// free: 1<<6 to 1<<12
 
 	// Lua garbage
-	BT_CUSTOM1		= 1<<13,
-	BT_CUSTOM2		= 1<<14,
-	BT_CUSTOM3		= 1<<15,
+	BT_LUAA			= 1<<13,
+	BT_LUAB			= 1<<14,
+	BT_LUAC			= 1<<15,
 } buttoncode_t;
 
 // The data sampled per tick (single player)

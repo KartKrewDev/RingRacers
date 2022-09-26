@@ -31,7 +31,6 @@ m_cheat.c
 m_cond.c
 m_easing.c
 m_fixed.c
-m_menu.c
 m_misc.c
 m_perfstats.c
 m_random.c
@@ -66,6 +65,7 @@ r_skins.c
 r_sky.c
 r_splats.c
 r_things.c
+r_bbox.c
 r_textures.c
 r_patch.c
 r_patchrotation.c
@@ -115,7 +115,12 @@ k_botsearch.c
 k_grandprix.c
 k_boss.c
 k_hud.c
+k_menudef.c
+k_menufunc.c
+k_menudraw.c
 k_terrain.c
 k_brightmap.c
+k_terrain.c
 k_director.c
 k_follower.c
+k_profiles.c

@@ -20,7 +20,9 @@
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
+
 #include "k_pwrlv.h"
+#include "k_profiles.h"
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -79,7 +81,10 @@ void M_ClearSecrets(void)
 {
 	INT32 i;
 
-	memset(mapvisited, 0, sizeof(mapvisited));
+	for (i = 0; i < nummapheaders; ++i)
+	{
+		mapheaderinfo[i]->mapvisited = 0;
+	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		emblemlocations[i].collected = false;
@@ -108,17 +113,38 @@ UINT8 M_CheckCondition(condition_t *cn)
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
 			return (matchesplayed >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-			return (vspowerlevel[cn->extrainfo1] >= (unsigned)cn->requirement);
+		{
+			UINT8 i;
+			for (i = PROFILE_GUEST; i < PR_GetNumProfiles(); i++)
+			{
+				profile_t *p = PR_GetProfile(i);
+
+				if (p->powerlevels[cn->extrainfo1] >= (unsigned)cn->requirement)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return (M_GotLowEnoughTime(cn->requirement));
 		case UC_MAPVISITED: // Requires map x to be visited
-			return ((mapvisited[cn->requirement - 1] & MV_VISITED) == MV_VISITED);
 		case UC_MAPBEATEN: // Requires map x to be beaten
-			return ((mapvisited[cn->requirement - 1] & MV_BEATEN) == MV_BEATEN);
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
-			return ((mapvisited[cn->requirement - 1] & MV_ENCORE) == MV_ENCORE);
+		{
+			UINT8 mvtype = MV_VISITED;
+			if (cn->type == UC_MAPBEATEN)
+				mvtype = MV_BEATEN;
+			else if (cn->type == UC_MAPENCORE)
+				mvtype = MV_ENCORE;
+
+			return ((cn->requirement < nummapheaders)
+				&& (mapheaderinfo[cn->requirement])
+				&& ((mapheaderinfo[cn->requirement]->mapvisited & mvtype) == mvtype));
+		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 		case UC_TRIGGER: // requires map trigger set
@@ -283,10 +309,17 @@ UINT8 M_CheckLevelEmblems(void)
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
 	{
+		INT32 checkLevel;
+
 		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
 			continue;
 
-		levelnum = emblemlocations[i].level;
+		checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+			continue;
+
+		levelnum = checkLevel;
 		valToReach = emblemlocations[i].var;
 
 		switch (emblemlocations[i].type)
@@ -316,17 +349,24 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].type != ET_MAP || emblemlocations[i].collected)
+		INT32 checkLevel;
+
+		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
 			continue;
 
-		levelnum = emblemlocations[i].level;
+		checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+			continue;
+
+		levelnum = checkLevel;
 		embtype = emblemlocations[i].var;
 		flags = MV_BEATEN;
 
 		if (embtype & ME_ENCORE)
 			flags |= MV_ENCORE;
 
-		res = ((mapvisited[levelnum - 1] & flags) == flags);
+		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
 
 		emblemlocations[i].collected = res;
 		if (res)
@@ -359,10 +399,14 @@ UINT8 M_SecretUnlocked(INT32 type)
 {
 	INT32 i;
 
-#if 1
 	if (dedicated)
 		return true;
-#endif
+
+#if 0
+	(void)type;
+	(void)i;
+	return false; // for quick testing
+#else
 
 #ifdef DEVELOP
 #define CHADYES true
@@ -378,6 +422,7 @@ UINT8 M_SecretUnlocked(INT32 type)
 	return CHADYES;
 
 #undef CHADYES
+#endif //if 0
 }
 
 UINT8 M_MapLocked(INT32 mapnum)
@@ -387,7 +432,8 @@ UINT8 M_MapLocked(INT32 mapnum)
 	if (1)
 		return false;
 #endif	
-	
+	if (!mapnum || mapnum > nummapheaders)
+		return false;
 	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
 		return false;
 	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)
@@ -438,14 +484,14 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	INT32 curtics = 0;
 	INT32 i;
 
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mainrecords[i] || !mainrecords[i]->time)
+		if (!mapheaderinfo[i]->mainrecord || !mapheaderinfo[i]->mainrecord->time)
 			return false;
-		else if ((curtics += mainrecords[i]->time) > tictime)
+		else if ((curtics += mapheaderinfo[i]->mainrecord->time) > tictime)
 			return false;
 	}
 	return true;
@@ -472,7 +518,12 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	while (--i >= 0)
 	{
-		if (emblemlocations[i].level == map)
+		INT32 checkLevel = G_MapNumber(emblemlocations[i].level);
+
+		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+			continue;
+
+		if (checkLevel == map)
 			return &emblemlocations[i];
 	}
 	return NULL;

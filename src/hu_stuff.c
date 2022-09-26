@@ -16,7 +16,7 @@
 #include "hu_stuff.h"
 #include "font.h"
 
-#include "m_menu.h" // gametype_cons_t
+#include "k_menu.h" // gametype_cons_t
 #include "m_cond.h" // emblems
 #include "m_misc.h" // word jumping
 
@@ -64,8 +64,11 @@
 #define HU_INPUTX 0
 #define HU_INPUTY 0
 
-#define HU_SERVER_SAY 1 // Server message (dedicated).
-#define HU_CSAY       2 // Server CECHOes to everyone.
+typedef enum
+{
+	HU_SHOUT		= 1,		// Shout message
+	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+} sayflags_t;
 
 //-------------------------------------------
 //              heads up font
@@ -75,6 +78,8 @@
 // Note: I'd like to adress that at this point we might *REALLY* want to work towards a common drawString function that can take any font we want because this is really turning into a MESS. :V -Lat'
 patch_t *pinggfx[5];	// small ping graphic
 patch_t *mping[5]; // smaller ping graphic
+patch_t *pingmeasure[2]; // ping measurement graphic
+patch_t *pinglocal[2]; // mindelay indecator
 
 patch_t *framecounter;
 patch_t *frameslash;	// framerate stuff. Used in screen.c
@@ -93,6 +98,7 @@ static char hu_tick;
 //-------------------------------------------
 
 patch_t *missingpat;
+patch_t *blanklvl;
 
 // song credits
 static patch_t *songcreditbg;
@@ -168,6 +174,7 @@ static void Command_Say_f(void);
 static void Command_Sayto_f(void);
 static void Command_Sayteam_f(void);
 static void Command_CSay_f(void);
+static void Command_Shout(void);
 static void Got_Saycmd(UINT8 **p, INT32 playernum);
 #endif
 
@@ -180,6 +187,8 @@ void HU_LoadGraphics(void)
 
 	Font_Load();
 
+	HU_UpdatePatch(&blanklvl, "BLANKLVL");
+
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
 	// cache ping gfx:
@@ -188,6 +197,12 @@ void HU_LoadGraphics(void)
 		HU_UpdatePatch(&pinggfx[i], "PINGGFX%d", i+1);
 		HU_UpdatePatch(&mping[i], "MPING%d", i+1);
 	}
+
+	HU_UpdatePatch(&pingmeasure[0], "PINGD");
+	HU_UpdatePatch(&pingmeasure[1], "PINGMS");
+
+	HU_UpdatePatch(&pinglocal[0], "PINGGFXL");
+	HU_UpdatePatch(&pinglocal[1], "MPINGL");
 
 	// fps stuff
 	HU_UpdatePatch(&framecounter, "FRAMER");
@@ -206,6 +221,7 @@ void HU_Init(void)
 	COM_AddCommand("sayto", Command_Sayto_f);
 	COM_AddCommand("sayteam", Command_Sayteam_f);
 	COM_AddCommand("csay", Command_CSay_f);
+	COM_AddCommand("shout", Command_Shout);
 	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 #endif
 
@@ -237,15 +253,13 @@ void HU_Init(void)
 		DIG  (3);
 
 		ADIM (HU);
-
 		PR   ("STCFN");
 		REG;
 
 		PR   ("TNYFN");
 		REG;
 
-		ADIM (KART);
-		PR   ("MKFNT");
+		PR   ("FILEF");
 		REG;
 
 		ADIM (LT);
@@ -277,6 +291,26 @@ void HU_Init(void)
 		REG;
 
 		PR   ("PINGN");
+		REG;
+
+		PR   ("PRFN");
+		REG;
+
+		DIG  (3);
+
+		ADIM (KART);
+		PR   ("MKFNT");
+		REG;
+
+		ADIM (LT);
+		PR   ("GAMEM");
+		REG;
+
+		ADIM (LT);
+		PR   ("THIFN");
+		REG;
+
+		PR   ("TLWFN");
 		REG;
 
 #undef  REG
@@ -452,7 +486,7 @@ void HU_AddChatText(const char *text, boolean playsound)
   * to -32 to say to everyone on that player's team. Note: This means you
   * have to add 1 to the player number, since they are 0 to 31 internally.
   *
-  * The flag HU_SERVER_SAY will be set if it is the dedicated server speaking.
+  * The flag HU_SHOUT will be set if it is the dedicated server speaking.
   *
   * This function obtains the message using COM_Argc() and COM_Argv().
   *
@@ -479,14 +513,17 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 		return;
 	}
 
-	// Only servers/admins can CSAY.
-	if(!server && !(IsPlayerAdmin(consoleplayer)))
-		flags &= ~HU_CSAY;
+	// Only servers/admins can shout or CSAY.
+	if (!server && !IsPlayerAdmin(consoleplayer))
+	{
+		flags &= ~(HU_SHOUT|HU_CSAY);
+	}
 
-	// We handle HU_SERVER_SAY, not the caller.
-	flags &= ~HU_SERVER_SAY;
-	if(dedicated && !(flags & HU_CSAY))
-		flags |= HU_SERVER_SAY;
+	// Enforce shout for the dedicated server.
+	if (dedicated && !(flags & HU_CSAY))
+	{
+		flags |= HU_SHOUT;
+	}
 
 	buf[0] = target;
 	buf[1] = flags;
@@ -560,6 +597,8 @@ static void Command_Say_f(void)
 		return;
 	}
 
+	// Autoshout is handled by HU_queueChatChar.
+	// If you're using the say command, you can use the shout command, lol.
 	DoSayCommand(0, 1, 0);
 }
 
@@ -623,7 +662,7 @@ static void Command_CSay_f(void)
 		return;
 	}
 
-	if(!server && !IsPlayerAdmin(consoleplayer))
+	if (!server && !IsPlayerAdmin(consoleplayer))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Only servers and admins can use csay.\n"));
 		return;
@@ -631,6 +670,24 @@ static void Command_CSay_f(void)
 
 	DoSayCommand(0, 1, HU_CSAY);
 }
+
+static void Command_Shout(void)
+{
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(M_GetText("shout <message>: send a message with special alert sound, name, and color\n"));
+		return;
+	}
+
+	if (!server && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Only servers and admins can use shout.\n"));
+		return;
+	}
+
+	DoSayCommand(0, 1, HU_SHOUT);
+}
+
 static tic_t stop_spamming[MAXPLAYERS];
 
 /** Receives a message, processing an ::XD_SAY command.
@@ -654,7 +711,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	msg = (char *)*p;
 	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
 
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
+	if ((cv_mute.value || flags & (HU_CSAY|HU_SHOUT)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
 	{
 		CONS_Alert(CONS_WARNING, cv_mute.value ?
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
@@ -683,7 +740,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
 
 	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
-	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & HU_CSAY))
+	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & (HU_CSAY|HU_SHOUT)))
 	{
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
 		stop_spamming[playernum] = 4;
@@ -694,7 +751,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
 
-	if (LUAh_PlayerMsg(playernum, target, flags, msg, spam_eatmsg))
+	if (LUA_HookPlayerMsg(playernum, target, flags, msg, spam_eatmsg))
 		return;
 
 	if (spam_eatmsg)
@@ -716,8 +773,8 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		action = true;
 	}
 
-	if (flags & HU_SERVER_SAY)
-		dispname = "SERVER";
+	if (flags & HU_SHOUT)
+		dispname = cv_shoutname.zstring;
 	else
 		dispname = player_names[playernum];
 
@@ -743,7 +800,30 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		char *tempchar = NULL;
 		char color_prefix[2];
 
-		if (players[playernum].spectator)
+		if (flags & HU_SHOUT)
+		{
+			if (cv_shoutcolor.value == -1)
+			{
+				UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
+
+				if (chatcolor > V_TANMAP)
+				{
+					sprintf(color_prefix, "%c", '\x80');
+				}
+				else
+				{
+					sprintf(color_prefix, "%c", '\x80' + (chatcolor >> V_CHARCOLORSHIFT));
+				}
+			}
+			else
+			{
+				sprintf(color_prefix, "%c", '\x80' + cv_shoutcolor.value);
+			}
+
+			// Colorize full text
+			cstart = textcolor = color_prefix;
+		}
+		else if (players[playernum].spectator)
 		{
 			// grey text
 			cstart = textcolor = "\x86";
@@ -830,7 +910,10 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			fmt2 = "%s<%s%s>\x80%s %s%s";
 		}*/
 
-		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), cv_chatnotifications.value); // add to chat
+		HU_AddChatText(va(fmt2, prefix, cstart, dispname, cend, textcolor, msg), (cv_chatnotifications.value) && !(flags & HU_SHOUT)); // add to chat
+
+		if ((cv_chatnotifications.value) && (flags & HU_SHOUT))
+			S_StartSound(NULL, sfx_sysmsg);
 
 		if (tempchar)
 			Z_Free(tempchar);
@@ -911,10 +994,12 @@ void HU_Ticker(void)
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
+	/*
 	if (PlayerInputDown(1, gc_scores))
 		hu_showscores = !chat_on;
 	else
 		hu_showscores = false;
+	*/
 
 	hu_keystrokes = false;
 
@@ -1062,8 +1147,12 @@ static void HU_sendChatMessage(void)
 	}
 	if (ci > 2) // don't send target+flags+empty message.
 	{
-		buf[0] = teamtalk ? -1 : target; // target
-		buf[1] = 0; // flags
+		if (teamtalk)
+			buf[0] = -1; // target
+		else
+			buf[0] = target;
+
+		buf[1] = ((server || IsPlayerAdmin(consoleplayer)) && cv_autoshout.value) ? HU_SHOUT : 0; // flags
 		SendNetXCmd(XD_SAY, buf, 2 + strlen(&buf[2]) + 1);
 	}
 }
@@ -1096,16 +1185,24 @@ boolean HU_Responder(event_t *ev)
 	// (Unless if you're sharing a keyboard, since you probably establish when you start chatting that you have dibs on it...)
 	// (Ahhh, the good ol days when I was a kid who couldn't afford an extra USB controller...)
 
-	if (ev->data1 >= KEY_MOUSE1)
+	if (ev->data1 >= NUMKEYS)
 	{
-		INT32 i;
+		INT32 i, j;
 		for (i = 0; i < num_gamecontrols; i++)
 		{
-			if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1)
+			for (j = 0; j < MAXINPUTMAPPING; j++)
+			{
+				if (gamecontrol[0][i][j] == ev->data1)
+					break;
+			}
+
+			if (j < MAXINPUTMAPPING)
+			{
 				break;
+			}
 		}
 
-		if (i == num_gamecontrols)
+		if (i == num_gamecontrols && j == MAXINPUTMAPPING)
 			return false;
 	}
 
@@ -1113,7 +1210,7 @@ boolean HU_Responder(event_t *ev)
 	if (!chat_on)
 	{
 		// enter chat mode
-		if ((ev->data1 == gamecontrol[0][gc_talkkey][0] || ev->data1 == gamecontrol[0][gc_talkkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_talk][0] || ev->data1 == gamecontrol[0][gc_talk][1])
 			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
 		{
 			chat_on = true;
@@ -1123,7 +1220,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-		if ((ev->data1 == gamecontrol[0][gc_teamkey][0] || ev->data1 == gamecontrol[0][gc_teamkey][1])
+		if ((ev->data1 == gamecontrol[0][gc_teamtalk][0] || ev->data1 == gamecontrol[0][gc_teamtalk][1])
 			&& netgame && !OLD_MUTE)
 		{
 			chat_on = true;
@@ -1147,9 +1244,9 @@ boolean HU_Responder(event_t *ev)
 			return true;
 
 		// Ignore non-keyboard keys, except when the talk key is bound
-		if (ev->data1 >= KEY_MOUSE1
-		&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
-		&& ev->data1 != gamecontrol[0][gc_talkkey][1]))
+		if (ev->data1 >= NUMKEYS
+		/*&& (ev->data1 != gamecontrol[0][gc_talkkey][0]
+		&& ev->data1 != gamecontrol[0][gc_talkkey][1])*/)
 			return false;
 
 		c = CON_ShiftChar(c);
@@ -1189,9 +1286,9 @@ boolean HU_Responder(event_t *ev)
 			I_UpdateMouseGrab();
 		}
 		else if (c == KEY_ESCAPE
-			|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
+			/*|| ((c == gamecontrol[0][gc_talkkey][0] || c == gamecontrol[0][gc_talkkey][1]
 			|| c == gamecontrol[0][gc_teamkey][0] || c == gamecontrol[0][gc_teamkey][1])
-			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
+			&& c >= NUMKEYS)*/) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			chat_on = false;
 			c_input = 0; // reset input cursor
@@ -1484,7 +1581,7 @@ static void HU_drawChatLog(INT32 offset)
 	INT32 x = chatx+2, y, dx = 0, dy = 0;
 	UINT32 i = 0;
 	INT32 chat_topy, chat_bottomy;
-	INT32 highlight = HU_GetHighlightColor();
+	INT32 highlight = V_YELLOWMAP;
 	boolean atbottom = false;
 
 	// make sure that our scroll position isn't "illegal";
@@ -2028,7 +2125,7 @@ void HU_Drawer(void)
 			if (renderisnewtic)
 			{
 				LUA_HUD_ClearDrawList(luahuddrawlist_scores);
-				LUAh_ScoresHUD(luahuddrawlist_scores);
+				LUA_HookHUD(luahuddrawlist_scores, HUD_HOOK(scores));
 			}
 			LUA_HUD_DrawList(luahuddrawlist_scores);
 		}
@@ -2151,39 +2248,82 @@ void HU_Erase(void)
 //======================================================================
 
 static int
-Ping_gfx_num (int ping)
+Ping_gfx_num (int lag)
 {
-	if (ping < 76)
+	if (lag <= 2)
 		return 0;
-	else if (ping < 137)
+	else if (lag <= 4)
 		return 1;
-	else if (ping < 256)
+	else if (lag <= 7)
 		return 2;
-	else if (ping < 500)
+	else if (lag <= 10)
 		return 3;
 	else
 		return 4;
 }
 
+static int
+Ping_gfx_color (int lag)
+{
+	if (lag <= 2)
+		return SKINCOLOR_JAWZ;
+	else if (lag <= 4)
+		return SKINCOLOR_MINT;
+	else if (lag <= 7)
+		return SKINCOLOR_GOLD;
+	else if (lag <= 10)
+		return SKINCOLOR_RASPBERRY;
+	else
+		return SKINCOLOR_MAGENTA;
+}
+
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags)
+void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 {
-	INT32 gfxnum;	// gfx to draw
-	UINT8 const *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
+	UINT8 *colormap = NULL;
+	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
+	INT32 gfxnum; // gfx to draw
+	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
 
-	gfxnum = Ping_gfx_num(ping);
+	if (!server && lag <= (tic_t)cv_mindelay.value)
+	{
+		lag = cv_mindelay.value;
+		drawlocal = true;
+	}
 
-	V_DrawScaledPatch(x, y, flags, pinggfx[gfxnum]);
-	if (servermaxping && ping > servermaxping && hu_tick < 4)		// flash ping red if too high
-		V_DrawPingNum(x, y+9, flags, ping, colormap);
+	gfxnum = Ping_gfx_num(lag);
+
+	if (measureid == 1)
+		V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+
+	if (drawlocal)
+		V_DrawScaledPatch(x+2, y, flags, pinglocal[0]);
 	else
-		V_DrawPingNum(x, y+9, flags, ping, NULL);
+		V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+
+	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
+
+	if (servermaxping && lag > servermaxping && hu_tick < 4)
+	{
+		// flash ping red if too high
+		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_WHITE, GTC_CACHE);
+	}
+
+	if (cv_pingmeasurement.value)
+	{
+		lag = (INT32)(lag * (1000.00f / TICRATE));
+	}
+
+	x = V_DrawPingNum(x + (measureid == 1 ? 11 - pingmeasure[measureid]->width : 10), y+9, flags, lag, colormap);
+
+	if (measureid == 0)
+		V_DrawScaledPatch(x+1 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
 }
 
 void
-HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
+HU_drawMiniPing (INT32 x, INT32 y, UINT32 lag, INT32 flags)
 {
 	patch_t *patch;
 	INT32 w = BASEVIDWIDTH;
@@ -2193,7 +2333,16 @@ HU_drawMiniPing (INT32 x, INT32 y, UINT32 ping, INT32 flags)
 		w /= 2;
 	}
 
-	patch = mping[Ping_gfx_num(ping)];
+	// This looks kinda dumb, but basically:
+	// Servers with mindelay set modify the ping table.
+	// Clients with mindelay unset don't, because they can't.
+	// Both are affected by mindelay, but a client's lag value is pre-adjustment.
+	if (server && cv_mindelay.value && (tic_t)cv_mindelay.value <= lag)
+		patch = pinglocal[1];
+	else if (!server && cv_mindelay.value && (tic_t)cv_mindelay.value >= lag)
+		patch = pinglocal[1];
+	else
+		patch = mping[Ping_gfx_num(lag)];
 
 	if (( flags & V_SNAPTORIGHT ))
 		x += ( w - SHORT (patch->width) );
@@ -2279,9 +2428,7 @@ static void HU_DrawRankings(void)
 
 	V_DrawFadeScreen(0xFF00, 16); // A little more readable, and prevents cheating the fades under other circumstances.
 
-	if (cons_menuhighlight.value)
-		hilicol = cons_menuhighlight.value;
-	else if (modeattacking)
+	if (modeattacking)
 		hilicol = V_ORANGEMAP;
 	else
 		hilicol = ((gametype == GT_RACE) ? V_SKYMAP : V_REDMAP);
@@ -2290,7 +2437,7 @@ static void HU_DrawRankings(void)
 	if (modeattacking)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Record Attack");
 	else
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametype_cons_t[gametype].strvalue);
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, Gametype_Names[gametype]);
 
 	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
 	{

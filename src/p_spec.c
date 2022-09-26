@@ -36,7 +36,7 @@
 #include "v_video.h" // V_ALLOWLOWERCASE
 #include "m_misc.h"
 #include "m_cond.h" //unlock triggers
-#include "lua_hook.h" // LUAh_LinedefExecute
+#include "lua_hook.h" // LUA_HookLinedefExecute
 #include "f_finale.h" // control text prompt
 #include "r_skins.h" // skins
 
@@ -1925,7 +1925,7 @@ static void K_HandleLapIncrement(player_t *player)
 				player->startboost = 125;
 
 				K_SpawnDriftBoostExplosion(player, 4);
-				K_SpawnDriftElectricSparks(player);
+				K_SpawnDriftElectricSparks(player, SKINCOLOR_SILVER, false);
 
 				rainbowstartavailable = false;
 			}
@@ -2522,6 +2522,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			break;
 
 		case 415: // Run a script
+			// FIXME: cursed
+			CONS_Alert(CONS_WARNING, "Linedef special 415 is currently broken! Fix it later, BYE.\n");
+#if 0
 			if (cv_runscripts.value)
 			{
 				INT32 scrnum;
@@ -2556,6 +2559,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				else
 					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
 			}
+#endif
 			break;
 
 		case 416: // Spawn adjustable fire flicker
@@ -3028,7 +3032,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 		case 443: // Calls a named Lua function
 			if (line->stringargs[0])
-				LUAh_LinedefExecute(line, mo, callsec);
+				LUA_HookLinedefExecute(line, mo, callsec);
 			else
 				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in arg0str)\n", sizeu1(line-lines));
 			break;
@@ -3298,9 +3302,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			INT32 result;
 
 			if (rvalue1 <= rvalue2)
-				result = P_RandomRange(rvalue1, rvalue2);
+				result = P_RandomRange(PR_EXECUTOR, rvalue1, rvalue2);
 			else
-				result = P_RandomRange(rvalue2, rvalue1);
+				result = P_RandomRange(PR_EXECUTOR, rvalue2, rvalue1);
 
 			P_LinedefExecute((INT16)result, mo, NULL);
 			break;
@@ -3696,9 +3700,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				{
 					if (line->sidenum[1] != 0xffff) // Make sure the linedef has a back side
 					{
-						x = P_RandomRange(sides[line->sidenum[0]].textureoffset>>FRACBITS, sides[line->sidenum[1]].textureoffset>>FRACBITS)<<FRACBITS;
-						y = P_RandomRange(sides[line->sidenum[0]].rowoffset>>FRACBITS, sides[line->sidenum[1]].rowoffset>>FRACBITS)<<FRACBITS;
-						z = P_RandomRange(line->frontsector->floorheight>>FRACBITS, line->frontsector->ceilingheight>>FRACBITS)<<FRACBITS;
+						x = P_RandomRange(PR_UNDEFINED, sides[line->sidenum[0]].textureoffset>>FRACBITS, sides[line->sidenum[1]].textureoffset>>FRACBITS)<<FRACBITS;
+						y = P_RandomRange(PR_UNDEFINED, sides[line->sidenum[0]].rowoffset>>FRACBITS, sides[line->sidenum[1]].rowoffset>>FRACBITS)<<FRACBITS;
+						z = P_RandomRange(PR_UNDEFINED, line->frontsector->floorheight>>FRACBITS, line->frontsector->ceilingheight>>FRACBITS)<<FRACBITS;
 					}
 					else
 					{
@@ -5927,10 +5931,6 @@ void P_InitSpecials(void)
 	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
 	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
-	// Defaults in case levels don't have them set.
-	sstimer = mapheaderinfo[gamemap-1]->sstimer*TICRATE + 6;
-	ssspheres = mapheaderinfo[gamemap-1]->ssspheres;
-
 	CheckForBustableBlocks = CheckForBouncySector = CheckForQuicksand = CheckForMarioBlocks = CheckForFloatBob = CheckForReverseGravity = false;
 
 	// Set weather
@@ -6022,11 +6022,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 		// Process Section 2
 		switch(GETSECSPECIAL(sector->special, 2))
 		{
-			case 10: // Time for special stage
-				sstimer = (sector->floorheight>>FRACBITS) * TICRATE + 6; // Time to finish
-				ssspheres = sector->ceilingheight>>FRACBITS; // Ring count for special stage
-				break;
-
 			case 11: // Custom global gravity!
 				gravity = sector->floorheight/1000;
 				break;

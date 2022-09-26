@@ -20,7 +20,7 @@
 #include "i_net.h"
 #include "g_game.h"
 #include "p_tick.h"
-#include "m_menu.h" // gametype_cons_t
+#include "k_menu.h" // gametype_cons_t
 #include "r_things.h" // skins
 #include "mserv.h" // cv_advertise
 #include "z_zone.h"
@@ -156,6 +156,9 @@ static void DRPC_HandleJoin(const char *secret)
 {
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
+	M_ClearMenus(true); //Don't have menus open during connection screen
+	if (demo.playback && demo.title)
+		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
 }
@@ -264,7 +267,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	else
 	{
 		discordRequestList = newRequest;
-		M_RefreshPauseMenu();
+		//M_RefreshPauseMenu();
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
@@ -362,8 +365,7 @@ static const char *DRPC_GetServerIP(void)
 		{
 			// We're not the server, so we could successfully get the IP!
 			// No need to do anything else :)
-			sprintf(self_ip, "%s:%u", address, current_port);
-			return self_ip;
+			return address;
 		}
 	}
 
@@ -403,7 +405,9 @@ void DRPC_UpdatePresence(void)
 {
 	char detailstr[48+1];
 
+#ifdef USEMAPIMG
 	char mapimg[8+1];
+#endif
 	char mapname[5+21+21+2+1];
 
 	char charimg[4+SKINNAMESIZE+1];
@@ -449,10 +453,7 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-				char *xorjoin = DRPC_XORIPString(join);
-				discordPresence.joinSecret = xorjoin;
-				free(xorjoin);
-
+				discordPresence.joinSecret = DRPC_XORIPString(join);
 				joinSecretSet = true;
 			}
 			else
@@ -509,14 +510,18 @@ void DRPC_UpdatePresence(void)
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
 		&& !(demo.playback && demo.title))
 	{
+#ifdef USEMAPIMG
 		if ((gamemap >= 1 && gamemap <= 60) // supported race maps
 			|| (gamemap >= 136 && gamemap <= 164)) // supported battle maps
 		{
-			snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
+			//FIXME
+			//snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 			strlwr(mapimg);
 			discordPresence.largeImageKey = mapimg; // Map image
 		}
-		else if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
+		else
+#endif
+		if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
 		{
 			// Hell map, use the method that got you here :P
 			discordPresence.largeImageKey = "miscdice";

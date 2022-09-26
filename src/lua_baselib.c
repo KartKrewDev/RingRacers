@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -33,8 +32,7 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
-#include "m_menu.h" // Player Setup menu color stuff
-#include "m_misc.h" // M_MapNumber
+#include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 
@@ -356,41 +354,39 @@ static int lib_pMoveColorAfter(lua_State *L)
 static int lib_pGetColorBefore(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorBefore(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorBefore(color, amount, follower));
 	return 1;
 }
 
 static int lib_pGetColorAfter(lua_State *L)
 {
 	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	lua_pushinteger(L, M_GetColorAfter(color));
+	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
+	boolean follower = lua_optboolean(L, 3);
+	lua_pushinteger(L, M_GetColorAfter(color, amount, follower));
 	return 1;
 }
 
-// M_MISC
-//////////////
-
-static int lib_mMapNumber(lua_State *L)
+static int lib_pGetEffectiveFollowerColor(lua_State *L)
 {
-	const char *arg = luaL_checkstring(L, 1);
-	size_t len = strlen(arg);
-	if (len == 2 || len == 5) {
-		char first = arg[len-2];
-		char second = arg[len-1];
-		lua_pushinteger(L, M_MapNumber(first, second));
-	} else {
-		lua_pushinteger(L, 0);
-	}
+	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
+	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
+	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, playercolor));
 	return 1;
 }
 
 // M_RANDOM
 //////////////
 
+// TODO: Lua needs a way to set RNG class, which will break compatibility.
+// It will be more desireable to do it when RNG classes can be freeslotted.
+
 static int lib_pRandomFixed(lua_State *L)
 {
 	NOHUD
-	lua_pushfixed(L, P_RandomFixed());
+	lua_pushfixed(L, P_RandomFixed(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -398,7 +394,7 @@ static int lib_pRandomFixed(lua_State *L)
 static int lib_pRandomByte(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_RandomByte());
+	lua_pushinteger(L, P_RandomByte(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -410,7 +406,7 @@ static int lib_pRandomKey(lua_State *L)
 	NOHUD
 	if (a > 65536)
 		LUA_UsageWarning(L, "P_RandomKey: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomKey(a));
+	lua_pushinteger(L, P_RandomKey(PR_UNDEFINED, a));
 	demo_writerng = 2;
 	return 1;
 }
@@ -428,7 +424,7 @@ static int lib_pRandomRange(lua_State *L)
 	}
 	if ((b-a+1) > 65536)
 		LUA_UsageWarning(L, "P_RandomRange: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomRange(a, b));
+	lua_pushinteger(L, P_RandomRange(PR_UNDEFINED, a, b));
 	demo_writerng = 2;
 	return 1;
 }
@@ -437,7 +433,7 @@ static int lib_pRandomRange(lua_State *L)
 static int lib_pSignedRandom(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_SignedRandom());
+	lua_pushinteger(L, P_SignedRandom(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -446,7 +442,7 @@ static int lib_pRandomChance(lua_State *L)
 {
 	fixed_t p = luaL_checkfixed(L, 1);
 	NOHUD
-	lua_pushboolean(L, P_RandomChance(p));
+	lua_pushboolean(L, P_RandomChance(PR_UNDEFINED, p));
 	demo_writerng = 2;
 	return 1;
 }
@@ -2488,9 +2484,8 @@ static int lib_sStopSoundByID(lua_State *L)
 
 static int lib_sChangeMusic(lua_State *L)
 {
-	UINT32 position, prefadems, fadeinms;
-
 	const char *music_name = luaL_checkstring(L, 1);
+	UINT32 position, prefadems, fadeinms;
 	boolean looping = (boolean)lua_opttrueboolean(L, 2);
 	player_t *player = NULL;
 	UINT16 music_flags = 0;
@@ -3054,12 +3049,12 @@ static int lib_gBuildMapTitle(lua_State *L)
 {
 	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
 	char *name;
-	if (map < 1 || map > NUMMAPS)
+	if (map < 1 || map > nummapheaders)
 	{
 		return luaL_error(L,
-				"map number %d out of range (1 - %d)",
+				"map ID %d out of range (1 - %d)",
 				map,
-				NUMMAPS
+				nummapheaders
 		);
 	}
 	name = G_BuildMapTitle(map);
@@ -3339,23 +3334,37 @@ static int lib_kOvertakeSound(lua_State *L)
 static int lib_kPainSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayPainSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
-	K_PlayPainSound(mobj);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayPainSound(mobj, other);
 	return 0;
 }
 
 static int lib_kHitEmSound(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *victim = NULL;
+	mobj_t *other = NULL;
 	NOHUD
 	if (!mobj->player)
 		return luaL_error(L, "K_PlayHitEmSound: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-		victim = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
-	K_PlayHitEmSound(mobj, victim);
+		other = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	K_PlayHitEmSound(mobj, other);
+	return 0;
+}
+
+static int lib_kTryHurtSoundExchange(lua_State *L)
+{
+	mobj_t *victim = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *attacker = *((mobj_t **)luaL_checkudata(L, 2, META_MOBJ));
+	NOHUD
+	if (!victim->player)
+		return luaL_error(L, "K_TryHurtSoundExchange: mobj_t isn't a player object.");	//Nothing bad would happen if we let it run the func, but telling why it ain't doing anything is helpful.
+	K_TryHurtSoundExchange(victim, attacker);
 	return 0;
 }
 
@@ -3626,7 +3635,7 @@ static int lib_kFindJawzTarget(lua_State *L)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!source)
 		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, K_FindJawzTarget(actor, source), META_PLAYER);
+	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, ANGLE_45), META_PLAYER);
 	return 1;
 }
 
@@ -3813,9 +3822,6 @@ static luaL_Reg lib[] = {
 	{"M_GetColorAfter",lib_pGetColorAfter},
 	{"M_GetColorBefore",lib_pGetColorBefore},
 
-	// m_misc
-	{"M_MapNumber",lib_mMapNumber},
-
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},
 	{"P_RandomByte",lib_pRandomByte},
@@ -3896,6 +3902,7 @@ static luaL_Reg lib[] = {
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_NukeEnemies",lib_pNukeEnemies},
+	{"K_GetEffectiveFollowerColor",lib_pGetEffectiveFollowerColor},
 
 	// p_map
 	{"P_CheckPosition",lib_pCheckPosition},
@@ -4037,6 +4044,7 @@ static luaL_Reg lib[] = {
 	{"K_PlayLossSound", lib_kLossSound},
 	{"K_PlayPainSound", lib_kPainSound},
 	{"K_PlayHitEmSound", lib_kHitEmSound},
+	{"K_TryHurtSoundExchange", lib_kTryHurtSoundExchange},
 	{"K_IsPlayerLosing",lib_kIsPlayerLosing},
 	{"K_IsPlayerWanted",lib_kIsPlayerWanted},
 	{"K_KartBouncing",lib_kKartBouncing},

@@ -176,6 +176,23 @@ static void K_SetFollowerState(mobj_t *f, statenum_t state)
 }
 
 /*--------------------------------------------------
+	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+{
+	if (followercolor < numskincolors) // bog standard
+		return followercolor;
+
+	if (followercolor == FOLLOWERCOLOR_OPPOSITE) // "Opposite"
+		return skincolors[playercolor].invcolor;
+
+	//if (followercolor == FOLLOWERCOLOR_MATCH) -- "Match"
+	return playercolor;
+}
+
+/*--------------------------------------------------
 	static void K_UpdateFollowerState(mobj_t *f, statenum_t state, followerstate_t type)
 
 		Sets a follower object's state & current state type tracker.
@@ -302,24 +319,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-	switch (player->followercolor)
-	{
-		case FOLLOWERCOLOR_MATCH: // "Match"
-			color = player->skincolor;
-			break;
-
-		case FOLLOWERCOLOR_OPPOSITE: // "Opposite"
-			color = skincolors[player->skincolor].invcolor;
-			break;
-
-		default:
-			color = player->followercolor;
-			if (color == 0 || color > MAXSKINCOLORS+2) // Make sure this isn't garbage
-			{
-				color = player->skincolor; // "Match" as fallback.
-			}
-			break;
-	}
+	color = K_GetEffectiveFollowerColor(player->followercolor, player->skincolor);
 
 	if (player->follower == NULL) // follower doesn't exist / isn't valid
 	{

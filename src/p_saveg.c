@@ -53,6 +53,7 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
 #define ARCHIVEBLOCK_WAYPOINTS 0x7F46498F
+#define ARCHIVEBLOCK_RNG      0x7FAAB5BD
 
 // Note: This cannot be bigger
 // than an UINT16
@@ -64,6 +65,7 @@ typedef enum
 	SKYBOXVIEW = 0x08,
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
+	STUMBLE = 0x40,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(void)
@@ -202,6 +204,9 @@ static void P_NetArchivePlayers(void)
 		if (players[i].hoverhyudoro)
 			flags |= HOVERHYUDORO;
 
+		if (players[i].stumbleIndicator)
+			flags |= STUMBLE;
+
 		WRITEUINT16(save_p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -218,6 +223,9 @@ static void P_NetArchivePlayers(void)
 
 		if (flags & HOVERHYUDORO)
 			WRITEUINT32(save_p, players[i].hoverhyudoro->mobjnum);
+
+		if (flags & STUMBLE)
+			WRITEUINT32(save_p, players[i].stumbleIndicator->mobjnum);
 
 		WRITEUINT32(save_p, (UINT32)players[i].followitem);
 
@@ -262,6 +270,9 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].driftboost);
 		WRITEUINT8(save_p, players[i].strongdriftboost);
 
+		WRITEUINT16(save_p, players[i].gateBoost);
+		WRITEUINT8(save_p, players[i].gateSound);
+
 		WRITESINT8(save_p, players[i].aizdriftstrat);
 		WRITEINT32(save_p, players[i].aizdrifttilt);
 		WRITEINT32(save_p, players[i].aizdriftturn);
@@ -279,6 +290,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].spindash);
 		WRITEFIXED(save_p, players[i].spindashspeed);
 		WRITEUINT8(save_p, players[i].spindashboost);
+
+		WRITEFIXED(save_p, players[i].fastfall);
 
 		WRITEUINT8(save_p, players[i].numboosts);
 		WRITEFIXED(save_p, players[i].boostpower);
@@ -318,6 +331,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].flamemeter);
 		WRITEUINT8(save_p, players[i].flamelength);
 
+		WRITEUINT16(save_p, players[i].ballhogcharge);
+
 		WRITEUINT16(save_p, players[i].hyudorotimer);
 		WRITESINT8(save_p, players[i].stealingtimer);
 
@@ -337,8 +352,8 @@ static void P_NetArchivePlayers(void)
 		WRITESINT8(save_p, players[i].lastjawztarget);
 		WRITEUINT8(save_p, players[i].jawztargetdelay);
 
-		WRITEUINT8(save_p, players[i].confirmInflictor);
-		WRITEUINT8(save_p, players[i].confirmInflictorDelay);
+		WRITEUINT8(save_p, players[i].confirmVictim);
+		WRITEUINT8(save_p, players[i].confirmVictimDelay);
 
 		WRITEUINT8(save_p, players[i].trickpanel);
 		WRITEUINT8(save_p, players[i].tricktime);
@@ -364,6 +379,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].kickstartaccel);
 
 		WRITEUINT8(save_p, players[i].stairjank);
+
+		WRITEUINT8(save_p, players[i].shrinkLaserDelay);
 
 		// respawnvars_t
 		WRITEUINT8(save_p, players[i].respawn.state);
@@ -503,6 +520,9 @@ static void P_NetUnArchivePlayers(void)
 		if (flags & HOVERHYUDORO)
 			players[i].hoverhyudoro = (mobj_t *)(size_t)READUINT32(save_p);
 
+		if (flags & STUMBLE)
+			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save_p);
+
 		players[i].followitem = (mobjtype_t)READUINT32(save_p);
 
 		//SetPlayerSkinByNum(i, players[i].skin);
@@ -547,6 +567,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].driftboost = READUINT8(save_p);
 		players[i].strongdriftboost = READUINT8(save_p);
 
+		players[i].gateBoost = READUINT16(save_p);
+		players[i].gateSound = READUINT8(save_p);
+
 		players[i].aizdriftstrat = READSINT8(save_p);
 		players[i].aizdrifttilt = READINT32(save_p);
 		players[i].aizdriftturn = READINT32(save_p);
@@ -564,6 +587,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spindash = READUINT16(save_p);
 		players[i].spindashspeed = READFIXED(save_p);
 		players[i].spindashboost = READUINT8(save_p);
+
+		players[i].fastfall = READFIXED(save_p);
 
 		players[i].numboosts = READUINT8(save_p);
 		players[i].boostpower = READFIXED(save_p);
@@ -603,6 +628,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].flamemeter = READUINT16(save_p);
 		players[i].flamelength = READUINT8(save_p);
 
+		players[i].ballhogcharge = READUINT16(save_p);
+
 		players[i].hyudorotimer = READUINT16(save_p);
 		players[i].stealingtimer = READSINT8(save_p);
 
@@ -622,8 +649,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].lastjawztarget = READSINT8(save_p);
 		players[i].jawztargetdelay = READUINT8(save_p);
 
-		players[i].confirmInflictor = READUINT8(save_p);
-		players[i].confirmInflictorDelay = READUINT8(save_p);
+		players[i].confirmVictim = READUINT8(save_p);
+		players[i].confirmVictimDelay = READUINT8(save_p);
 
 		players[i].trickpanel = READUINT8(save_p);
 		players[i].tricktime = READUINT8(save_p);
@@ -649,6 +676,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kickstartaccel = READUINT8(save_p);
 
 		players[i].stairjank = READUINT8(save_p);
+
+		players[i].shrinkLaserDelay = READUINT8(save_p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save_p);
@@ -4189,21 +4218,21 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->hprev, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->itnext)
 		{
 			temp = (UINT32)(size_t)mobj->itnext;
 			mobj->itnext = NULL;
-			if (!(mobj->itnext = P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->itnext, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "itnext not found on %d\n", mobj->type);
 		}
 		if (mobj->terrain)
@@ -4276,6 +4305,13 @@ static void P_RelinkPointers(void)
 				mobj->player->hoverhyudoro = NULL;
 				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
+			}
+			if (mobj->player->stumbleIndicator)
+			{
+				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
+				mobj->player->stumbleIndicator = NULL;
+				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
+					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
 			}
 		}
 	}
@@ -4392,8 +4428,8 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
@@ -4419,7 +4455,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	INT32 i;
+	size_t i;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4440,14 +4476,11 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, P_GetRandSeed());
-
 	WRITEUINT32(save_p, tokenlist);
 
 	WRITEUINT8(save_p, encoremode);
 
 	WRITEUINT32(save_p, leveltime);
-	WRITEUINT32(save_p, ssspheres);
 	WRITEINT16(save_p, lastmap);
 	WRITEUINT16(save_p, bossdisabled);
 
@@ -4473,7 +4506,6 @@ static void P_NetArchiveMisc(boolean resending)
 	}
 
 	WRITEUINT32(save_p, token);
-	WRITEINT32(save_p, sstimer);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4502,9 +4534,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, gravity);
 	WRITEFIXED(save_p, mapobjectscale);
 
-	WRITEUINT32(save_p, countdowntimer);
-	WRITEUINT8(save_p, countdowntimeup);
-
 	// SRB2kart
 	WRITEINT32(save_p, numgotboxes);
 	WRITEUINT8(save_p, numtargets);
@@ -4529,7 +4558,8 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEFIXED(save_p, battleovertime.z);
 
 	WRITEUINT32(save_p, wantedcalcdelay);
-	WRITEUINT32(save_p, indirectitemcooldown);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		WRITEUINT32(save_p, itemCooldowns[i]);
 	WRITEUINT32(save_p, mapreset);
 
 	WRITEUINT8(save_p, spectateGriefed);
@@ -4548,11 +4578,25 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, 0x2f);
 	else
 		WRITEUINT8(save_p, 0x2e);
+
+	WRITEUINT32(save_p, livestudioaudience_timer);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	WRITEUINT32(save_p, schedule_len);
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		WRITEINT16(save_p, task->basetime);
+		WRITEINT16(save_p, task->timer);
+		WRITESTRING(save_p, task->command);
+	}
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	INT32 i;
+	size_t i;
+	size_t numTasks;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4564,8 +4608,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// gamemap changed; we assume that its map header is always valid,
 	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
+		I_Error("P_NetUnArchiveMisc: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
 
 	// tell the sound code to reset the music since we're skipping what
 	// normally sets this flag
@@ -4585,8 +4629,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	P_SetRandSeed(READUINT32(save_p));
-
 	tokenlist = READUINT32(save_p);
 
 	encoremode = (boolean)READUINT8(save_p);
@@ -4599,7 +4641,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	// get the time
 	leveltime = READUINT32(save_p);
-	ssspheres = READUINT32(save_p);
 	lastmap = READINT16(save_p);
 	bossdisabled = READUINT16(save_p);
 
@@ -4622,7 +4663,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	}
 
 	token = READUINT32(save_p);
-	sstimer = READINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 
@@ -4651,9 +4691,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	gravity = READFIXED(save_p);
 	mapobjectscale = READFIXED(save_p);
 
-	countdowntimer = (tic_t)READUINT32(save_p);
-	countdowntimeup = (boolean)READUINT8(save_p);
-
 	// SRB2kart
 	numgotboxes = READINT32(save_p);
 	numtargets = READUINT8(save_p);
@@ -4678,7 +4715,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	battleovertime.z = READFIXED(save_p);
 
 	wantedcalcdelay = READUINT32(save_p);
-	indirectitemcooldown = READUINT32(save_p);
+	for (i = 0; i < NUMKARTITEMS-1; i++)
+		itemCooldowns[i] = READUINT32(save_p);
 	mapreset = READUINT32(save_p);
 
 	spectateGriefed = READUINT8(save_p);
@@ -4695,6 +4733,26 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)
 		paused = true;
+
+	livestudioaudience_timer = READUINT32(save_p);
+
+	// Only the server uses this, but it
+	// needs synched for remote admins anyway.
+	Schedule_Clear();
+
+	numTasks = READUINT32(save_p);
+	for (i = 0; i < numTasks; i++)
+	{
+		INT16 basetime;
+		INT16 timer;
+		char command[MAXTEXTCMD];
+
+		basetime = READINT16(save_p);
+		timer = READINT16(save_p);
+		READSTRING(save_p, command);
+
+		Schedule_Add(basetime, timer, command);
+	}
 
 	return true;
 }
@@ -4747,6 +4805,35 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
+static void P_NetArchiveRNG(void)
+{
+	size_t i;
+
+	WRITEUINT32(save_p, ARCHIVEBLOCK_RNG);
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(save_p, P_GetInitSeed(i));
+		WRITEUINT32(save_p, P_GetRandSeed(i));
+	}
+}
+
+static inline void P_NetUnArchiveRNG(void)
+{
+	size_t i;
+
+	if (READUINT32(save_p) != ARCHIVEBLOCK_RNG)
+		I_Error("Bad $$$.sav at archive block RNG");
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		UINT32 init = READUINT32(save_p);
+		UINT32 seed = READUINT32(save_p);
+
+		P_SetRandSeedNet(i, init, seed);
+	}
+}
+
 void P_SaveGame(INT16 mapnum)
 {
 	P_ArchiveMisc(mapnum);
@@ -4791,6 +4878,8 @@ void P_SaveNetGame(boolean resending)
 	}
 	LUA_Archive(&save_p);
 
+	P_NetArchiveRNG();
+
 	P_ArchiveLuabanksAndConsistency();
 }
 
@@ -4809,7 +4898,7 @@ boolean P_LoadGame(INT16 mapoverride)
 		return false;
 
 	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, G_BuildMapName(gamemap), savedata.skin, 0, true);
+	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
 	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
 
 	return true;
@@ -4818,9 +4907,12 @@ boolean P_LoadGame(INT16 mapoverride)
 boolean P_LoadNetGame(boolean reloading)
 {
 	CV_LoadNetVars(&save_p);
+
 	if (!P_NetUnArchiveMisc(reloading))
 		return false;
+
 	P_NetUnArchivePlayers();
+
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();
@@ -4833,10 +4925,10 @@ boolean P_LoadNetGame(boolean reloading)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
+
 	LUA_UnArchive(&save_p);
 
-	// This is stupid and hacky, but maybe it'll work!
-	P_SetRandSeed(P_GetInitSeed());
+	P_NetUnArchiveRNG();
 
 	// The precipitation would normally be spawned in P_SetupLevel, which is called by
 	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,

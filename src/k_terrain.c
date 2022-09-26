@@ -91,6 +91,7 @@ t_splash_t *K_GetSplashByIndex(size_t checkIndex)
 --------------------------------------------------*/
 t_splash_t *K_GetSplashByName(const char *checkName)
 {
+	UINT32 checkHash = quickncasehash(checkName, TERRAIN_NAME_LEN);
 	size_t i;
 
 	if (numSplashDefs == 0)
@@ -102,7 +103,7 @@ t_splash_t *K_GetSplashByName(const char *checkName)
 	{
 		t_splash_t *s = &splashDefs[i];
 
-		if (stricmp(checkName, s->name) == 0)
+		if (checkHash == s->hash && !strncmp(checkName, s->name, TERRAIN_NAME_LEN))
 		{
 			// Name matches.
 			return s;
@@ -159,6 +160,7 @@ t_footstep_t *K_GetFootstepByIndex(size_t checkIndex)
 --------------------------------------------------*/
 t_footstep_t *K_GetFootstepByName(const char *checkName)
 {
+	UINT32 checkHash = quickncasehash(checkName, TERRAIN_NAME_LEN);
 	size_t i;
 
 	if (numFootstepDefs == 0)
@@ -170,7 +172,7 @@ t_footstep_t *K_GetFootstepByName(const char *checkName)
 	{
 		t_footstep_t *fs = &footstepDefs[i];
 
-		if (stricmp(checkName, fs->name) == 0)
+		if (checkHash == fs->hash && !strncmp(checkName, fs->name, TERRAIN_NAME_LEN))
 		{
 			// Name matches.
 			return fs;
@@ -227,21 +229,20 @@ terrain_t *K_GetTerrainByIndex(size_t checkIndex)
 --------------------------------------------------*/
 terrain_t *K_GetTerrainByName(const char *checkName)
 {
+	UINT32 checkHash = quickncasehash(checkName, TERRAIN_NAME_LEN);
 	size_t i;
 
-	if (numTerrainDefs == 0)
+	if (numTerrainDefs > 0)
 	{
-		return NULL;
-	}
-
-	for (i = 0; i < numTerrainDefs; i++)
-	{
-		terrain_t *t = &terrainDefs[i];
-
-		if (stricmp(checkName, t->name) == 0)
+		for (i = 0; i < numTerrainDefs; i++)
 		{
-			// Name matches.
-			return t;
+			terrain_t *t = &terrainDefs[i];
+
+			if (checkHash == t->hash && !strncmp(checkName, t->name, TERRAIN_NAME_LEN))
+			{
+				// Name matches.
+				return t;
+			}
 		}
 	}
 
@@ -265,20 +266,19 @@ terrain_t *K_GetDefaultTerrain(void)
 --------------------------------------------------*/
 terrain_t *K_GetTerrainForTextureName(const char *checkName)
 {
+	UINT32 checkHash = quickncasehash(checkName, 8);
 	size_t i;
 
-	if (numTerrainFloorDefs == 0)
+	if (numTerrainFloorDefs > 0)
 	{
-		return NULL;
-	}
-
-	for (i = 0; i < numTerrainFloorDefs; i++)
-	{
-		t_floor_t *f = &terrainFloorDefs[i];
-
-		if (strncasecmp(checkName, f->textureName, 8) == 0)
+		for (i = 0; i < numTerrainFloorDefs; i++)
 		{
-			return K_GetTerrainByIndex(f->terrainID);
+			t_floor_t *f = &terrainFloorDefs[i];
+
+			if (checkHash == f->textureHash && !strncmp(checkName, f->textureName, 8))
+			{
+				return K_GetTerrainByIndex(f->terrainID);
+			}
 		}
 	}
 
@@ -294,15 +294,15 @@ terrain_t *K_GetTerrainForTextureName(const char *checkName)
 --------------------------------------------------*/
 terrain_t *K_GetTerrainForTextureNum(INT32 textureNum)
 {
-	texture_t *tex = NULL;
-
-	if (textureNum < 0 || textureNum >= numtextures)
+	if (textureNum >= 0 && textureNum < numtextures)
 	{
-		return NULL;
+		texture_t *tex = textures[textureNum];
+		return K_GetTerrainForTextureName(tex->name);
 	}
 
-	tex = textures[textureNum];
-	return K_GetTerrainForTextureName(tex->name);
+	// This texture doesn't have a terrain directly applied to it,
+	// so we fallback to the default terrain.
+	return K_GetDefaultTerrain();
 }
 
 /*--------------------------------------------------
@@ -539,7 +539,7 @@ static void K_SpawnSplashParticles(mobj_t *mo, t_splash_t *s, fixed_t impact)
 		if (numParticles == 1)
 		{
 			// Random angle.
-			pushAngle = P_RandomRange(0, ANGLE_MAX);
+			pushAngle = P_RandomRange(PR_TERRAIN, 0, ANGLE_MAX);
 		}
 
 		dust = P_SpawnMobjFromMobj(
@@ -668,20 +668,20 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 	if (((timer / fs->frequency) / 2) & 1)
 	{
 		tireAngle -= ANGLE_45;
-		tireAngle -= P_RandomRange(0, fs->cone / ANG1) * ANG1;
-		pushAngle -= P_RandomRange(0, fs->cone / ANG1) * ANG1;
+		tireAngle -= P_RandomRange(PR_TERRAIN, 0, fs->cone / ANG1) * ANG1;
+		pushAngle -= P_RandomRange(PR_TERRAIN, 0, fs->cone / ANG1) * ANG1;
 	}
 	else
 	{
 		tireAngle += ANGLE_45;
-		tireAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
-		pushAngle += P_RandomRange(0, fs->cone / ANG1) * ANG1;
+		tireAngle += P_RandomRange(PR_TERRAIN, 0, fs->cone / ANG1) * ANG1;
+		pushAngle += P_RandomRange(PR_TERRAIN, 0, fs->cone / ANG1) * ANG1;
 	}
 
 	if (fs->spread > 0)
 	{
-		xOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
-		yOff = P_RandomRange(-fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+		xOff = P_RandomRange(PR_TERRAIN, -fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
+		yOff = P_RandomRange(PR_TERRAIN, -fs->spread / FRACUNIT, fs->spread / FRACUNIT) * FRACUNIT;
 	}
 
 	dust = P_SpawnMobjFromMobj(
@@ -1187,6 +1187,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 {
 	char *tkn = M_GetToken((char *)data);
+	UINT32 tknHash = 0;
 	size_t pos = 0;
 	size_t i;
 
@@ -1211,11 +1212,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			{
 				t_splash_t *s = NULL;
 
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
 				for (i = 0; i < numSplashDefs; i++)
 				{
 					s = &splashDefs[i];
 
-					if (stricmp(tkn, s->name) == 0)
+					if (tknHash == s->hash && !strncmp(tkn, s->name, TERRAIN_NAME_LEN))
 					{
 						break;
 					}
@@ -1227,6 +1230,8 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 					s = &splashDefs[i];
 
 					strncpy(s->name, tkn, TERRAIN_NAME_LEN);
+					s->hash = tknHash;
+
 					CONS_Printf("Created new Splash type '%s'\n", s->name);
 				}
 
@@ -1248,11 +1253,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			{
 				t_footstep_t *fs = NULL;
 
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
 				for (i = 0; i < numFootstepDefs; i++)
 				{
 					fs = &footstepDefs[i];
 
-					if (stricmp(tkn, fs->name) == 0)
+					if (tknHash == fs->hash && !strncmp(tkn, fs->name, TERRAIN_NAME_LEN))
 					{
 						break;
 					}
@@ -1264,6 +1271,8 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 					fs = &footstepDefs[i];
 
 					strncpy(fs->name, tkn, TERRAIN_NAME_LEN);
+					fs->hash = tknHash;
+
 					CONS_Printf("Created new Footstep type '%s'\n", fs->name);
 				}
 
@@ -1285,11 +1294,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			{
 				terrain_t *t = NULL;
 
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
 				for (i = 0; i < numTerrainDefs; i++)
 				{
 					t = &terrainDefs[i];
 
-					if (stricmp(tkn, t->name) == 0)
+					if (tknHash == t->hash && !strncmp(tkn, t->name, TERRAIN_NAME_LEN))
 					{
 						break;
 					}
@@ -1301,6 +1312,8 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 					t = &terrainDefs[i];
 
 					strncpy(t->name, tkn, TERRAIN_NAME_LEN);
+					t->hash = tknHash;
+
 					CONS_Printf("Created new Terrain type '%s'\n", t->name);
 				}
 
@@ -1333,11 +1346,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 				{
 					t_floor_t *f = NULL;
 
+					tknHash = quickncasehash(tkn, 8);
+
 					for (i = 0; i < numTerrainFloorDefs; i++)
 					{
 						f = &terrainFloorDefs[i];
 
-						if (stricmp(tkn, f->textureName) == 0)
+						if (f->textureHash == tknHash && !strncmp(tkn, f->textureName, 8))
 						{
 							break;
 						}
@@ -1348,7 +1363,8 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 						K_NewTerrainFloorDefs();
 						f = &terrainFloorDefs[i];
 
-						strncpy(f->textureName, tkn, 9);
+						strncpy(f->textureName, tkn, 8);
+						f->textureHash = tknHash;
 					}
 
 					Z_Free(tkn);
@@ -1398,11 +1414,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			{
 				terrain_t *t = NULL;
 
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
 				for (i = 0; i < numTerrainDefs; i++)
 				{
 					t = &terrainDefs[i];
 
-					if (stricmp(tkn, t->name) == 0)
+					if (tknHash == t->hash && !strncmp(tkn, t->name, TERRAIN_NAME_LEN))
 					{
 						break;
 					}
@@ -1435,11 +1453,13 @@ static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 			{
 				t_footstep_t *fs = NULL;
 
+				tknHash = quickncasehash(tkn, TERRAIN_NAME_LEN);
+
 				for (i = 0; i < numFootstepDefs; i++)
 				{
 					fs = &footstepDefs[i];
 
-					if (stricmp(tkn, fs->name) == 0)
+					if (tknHash == fs->hash && !strncmp(tkn, fs->name, TERRAIN_NAME_LEN))
 					{
 						break;
 					}

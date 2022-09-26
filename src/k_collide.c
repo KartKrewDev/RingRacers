@@ -11,6 +11,7 @@
 #include "hu_stuff.h" // Sink snipe print
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
+#include "k_objects.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -34,104 +35,6 @@ angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 	momuy = t2->momy - P_ReturnThrustX(t2, test, 2*momuy);
 
 	return R_PointToAngle2(0, 0, momux, momuy);
-}
-
-boolean K_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
-{
-	boolean damageitem = false;
-	boolean sprung = false;
-
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
-	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
-		return true;
-
-	if (t1->health <= 0 || t2->health <= 0)
-		return true;
-
-	if ((t1->type == MT_ORBINAUT_SHIELD || t1->type == MT_JAWZ_SHIELD) && t1->lastlook
-		&& (t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD) && t2->lastlook
-		&& (t1->target == t2->target)) // Don't hit each other if you have the same target
-		return true;
-
-	if (t2->player)
-	{
-		if ((t2->player->flashing > 0 && t2->hitlag == 0)
-			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_JAWZ_DUD))
-			return true;
-
-		if (t2->player->hyudorotimer)
-			return true; // no interaction
-
-		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
-		{
-			// Melt item
-			S_StartSound(t2, sfx_s3k43);
-		}
-		else
-		{
-			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT|DMG_WOMBO);
-			K_KartBouncing(t2, t1);
-			S_StartSound(t2, sfx_s3k7b);
-		}
-
-		damageitem = true;
-	}
-	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
-		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD
-		|| t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
-		|| t2->type == MT_BALLHOG)
-	{
-		// Other Item Damage
-		angle_t bounceangle = K_GetCollideAngle(t1, t2);
-
-		S_StartSound(t2, t2->info->deathsound);
-		P_KillMobj(t2, t1, t1, DMG_NORMAL);
-
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
-		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
-
-		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
-
-		damageitem = true;
-	}
-	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
-	{
-		damageitem = true;
-		// Bomb death
-		P_KillMobj(t2, t1, t1, DMG_NORMAL);
-	}
-	else if (t2->flags & MF_SPRING && (t1->type != MT_ORBINAUT_SHIELD && t1->type != MT_JAWZ_SHIELD))
-	{
-		// Let thrown items hit springs!
-		sprung = P_DoSpring(t2, t1);
-	}
-	else if (t2->flags & MF_SHOOTABLE)
-	{
-		// Shootable damage
-		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-		damageitem = true;
-	}
-
-	if (damageitem)
-	{
-		// This Item Damage
-		angle_t bounceangle = K_GetCollideAngle(t2, t1);
-		S_StartSound(t1, t1->info->deathsound);
-		P_KillMobj(t1, t2, t2, DMG_NORMAL);
-
-		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
-		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
-	}
-
-	if (sprung)
-	{
-		return false;
-	}
-
-	return true;
 }
 
 boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
@@ -177,7 +80,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
-		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
@@ -265,8 +168,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			mobj_t *poof = P_SpawnMobj(t1->x, t1->y, t1->z, MT_EXPLODE);
-			S_StartSound(poof, t1->info->deathsound);
+			Obj_SpawnItemDebrisEffects(t1, t2);
 
 #if 0
 			// Eggbox snipe!
@@ -432,7 +334,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 			K_PuntMine(t1, t2);
 		}
 	}
-	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD
+	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
 	{
 		// Bomb death
@@ -493,7 +395,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
-		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_DUD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BALLHOG)
 	{
 		// Other Item Damage
@@ -758,8 +660,10 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 		if (P_PlayerInPain(t2->player)
 			|| t2->player->flashing || t2->player->hyudorotimer
-			|| t2->player->justbumped || t2->scale > t1->scale + (mapobjectscale/8))
+			|| t2->player->justbumped || K_IsBigger(t2, t1))
+		{
 			return true;
+		}
 
 		// Player Damage
 		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
@@ -852,7 +756,7 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 	/*
 	if (t2->player && (t2->player->invincibilitytimer > 0
-		|| t2->player->growshrinktimer > 0))
+		|| K_IsBigger(t2, t1) == true))
 		return true;
 	*/
 
@@ -862,23 +766,31 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
-	const boolean flameT1 = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
-	const boolean flameT2 = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
-
 	boolean t1Condition = false;
 	boolean t2Condition = false;
 	boolean stungT1 = false;
 	boolean stungT2 = false;
 
-	t1Condition = (t1->scale > t2->scale + (mapobjectscale/8)) || (t1->player->invincibilitytimer > 0);
-	t2Condition = (t2->scale > t1->scale + (mapobjectscale/8)) || (t2->player->invincibilitytimer > 0);
+	// Clash instead of damage if both parties have any of these conditions
+	t1Condition = (K_IsBigger(t1, t2) == true)
+		|| (t1->player->invincibilitytimer > 0)
+		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
 
-	if ((t1Condition == true || flameT1 == true) && (t2Condition == true || flameT2 == true))
+	t2Condition = (K_IsBigger(t2, t1) == true)
+		|| (t2->player->invincibilitytimer > 0)
+		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
+
+	if (t1Condition == true && t2Condition == true)
 	{
 		K_DoPowerClash(t1->player, t2->player);
 		return false;
 	}
-	else if (t1Condition == true && t2Condition == false)
+
+	// Cause tumble on invincibility
+	t1Condition = (t1->player->invincibilitytimer > 0);
+	t2Condition = (t2->player->invincibilitytimer > 0);
+
+	if (t1Condition == true && t2Condition == false)
 	{
 		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
 		return true;
@@ -890,8 +802,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Flame Shield dash damage
-	t1Condition = flameT1;
-	t2Condition = flameT2;
+	t1Condition = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+	t2Condition = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
 
 	if (t1Condition == true && t2Condition == false)
 	{
@@ -925,6 +837,21 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
+	}
+
+	// Cause stumble on scale difference
+	t1Condition = K_IsBigger(t1, t2);
+	t2Condition = K_IsBigger(t2, t1);
+
+	if (t1Condition == true && t2Condition == false)
+	{
+		K_StumblePlayer(t2->player);
+		return true;
+	}
+	else if (t1Condition == false && t2Condition == true)
+	{
+		K_StumblePlayer(t1->player);
+		return true;
 	}
 
 	// Ring sting, this is a bit more unique

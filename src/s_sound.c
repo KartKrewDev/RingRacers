@@ -31,6 +31,7 @@
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
 #include "k_boss.h" // bossinfo
+#include "byteptr.h"
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -43,6 +44,8 @@ CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {MAX_VOLUME, "MAX"}, {0, 
 static void SetChannelsNum(void);
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
+static void Command_PlaySound(void);
+static void Got_PlaySound(UINT8 **p, INT32 playernum);
 
 // Sound system toggles
 static void GameSounds_OnChange(void);
@@ -268,6 +271,8 @@ void S_RegisterSoundStuff(void)
 
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
+	COM_AddCommand("playsound", Command_PlaySound);
+	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
 }
 
 static void SetChannelsNum(void)
@@ -381,7 +386,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -402,7 +406,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -758,7 +761,6 @@ void S_StopSound(void *origin)
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -2121,6 +2123,15 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 {
 	char newmusic[7];
 
+	struct MusicChange hook_param = {
+		newmusic,
+		&mflags,
+		&looping,
+		&position,
+		&prefadems,
+		&fadeinms
+	};
+
 	if (S_MusicDisabled()
 		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
@@ -2128,7 +2139,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	strncpy(newmusic, mmusic, 7);
 
-	if (LUAh_MusicChange(music_name, newmusic, &mflags, &looping, &position, &prefadems, &fadeinms))
+	if (LUA_HookMusicChange(music_name, &hook_param))
 		return;
 
 	newmusic[6] = 0;
@@ -2380,6 +2391,7 @@ void S_StartEx(boolean reset)
 	music_stack_fadein = JINGLEPOSTFADE;
 }
 
+// TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;
@@ -2469,6 +2481,71 @@ static void Command_RestartAudio_f(void)
 		S_ChangeMusicInternal("titles", looptitle);
 }
 
+static void Command_PlaySound(void)
+{
+	const char *sound;
+	const size_t argc = COM_Argc();
+	sfxenum_t sfx = NUMSFX;
+	UINT8 buf[4];
+	UINT8 *buf_p = buf;
+
+	if (argc < 2)
+	{
+		CONS_Printf("playsound <name/num>: Plays a sound effect for the entire server.\n");
+		return;
+	}
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf("This can only be used by the server host.\n");
+		return;
+	}
+
+	sound = COM_Argv(1);
+	if (*sound >= '0' && *sound <= '9')
+	{
+		sfx = atoi(sound);
+	}
+	else
+	{
+		for (sfx = 0; sfx < sfxfree; sfx++)
+		{
+			if (S_sfx[sfx].name && fasticmp(sound, S_sfx[sfx].name))
+				break;
+		}
+	}
+
+	if (sfx < 0 || sfx >= NUMSFX)
+	{
+		CONS_Printf("Could not find sound effect named \"sfx_%s\".\n", sound);
+		return;
+	}
+
+	WRITEINT32(buf_p, sfx);
+	SendNetXCmd(XD_PLAYSOUND, buf, buf_p - buf);
+}
+
+static void Got_PlaySound(UINT8 **cp, INT32 playernum)
+{
+	INT32 sound_id = READINT32(*cp);
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum)) // hacked client, or disasterous bug
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal playsound received from %s (serverplayer is %s)\n"), player_names[playernum], player_names[serverplayer]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	if (sound_id < 0 || sound_id >= NUMSFX)
+	{
+		// bad sound effect, ignore
+		return;
+	}
+
+	S_StartSound(NULL, sound_id);
+}
+
 void GameSounds_OnChange(void)
 {
 	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
@@ -2505,9 +2582,9 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("_title"))
+		else if (S_MusicExists("menu"))
 		{
-			S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("menu", looptitle);
 		}
 	}
 	else

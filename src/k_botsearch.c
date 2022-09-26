@@ -413,7 +413,6 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
@@ -424,6 +423,16 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
 			K_AddDodgeObject(thing, side, 20);
+			break;
+		case MT_SHRINK_GUN:
+			if (thing->target == globalsmuggle.botmo)
+			{
+				K_AddAttackObject(thing, side, 20);
+			}
+			else
+			{
+				K_AddDodgeObject(thing, side, 20);
+			}
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff >= 45)
@@ -491,8 +500,8 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
 				if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->scale > thing->scale + (mapobjectscale/8),
-					thing->scale > globalsmuggle.botmo->scale + (mapobjectscale/8)
+					K_IsBigger(globalsmuggle.botmo, thing),
+					K_IsBigger(thing, globalsmuggle.botmo)
 				))
 				{
 					break;

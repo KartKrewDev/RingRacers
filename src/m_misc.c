@@ -46,7 +46,7 @@
 #include "m_anigif.h"
 
 // So that the screenshot menu auto-updates...
-#include "m_menu.h"
+#include "k_menu.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -181,30 +181,49 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
-/** Returns the map number for a map identified by the last two characters in
-  * its name.
-  *
-  * \param first  The first character after MAP.
-  * \param second The second character after MAP.
-  * \return The map number, or 0 if no map corresponds to these characters.
-  * \sa G_BuildMapName
-  */
-INT32 M_MapNumber(char first, char second)
+char joinedIPlist[NUMLOGIP][2][255];
+char joinedIP[255];
+
+// This initializes the above array to have NULL evrywhere it should.
+void M_InitJoinedIPArray(void)
 {
-	if (isdigit(first))
+	UINT8 i;
+	for (i=0; i < NUMLOGIP; i++)
 	{
-		if (isdigit(second))
-			return ((INT32)first - '0') * 10 + ((INT32)second - '0');
-		return 0;
+		strcpy(joinedIPlist[i][0], "");
+		strcpy(joinedIPlist[i][1], "");
+	}
+}
+
+// This adds an entry to the above array
+void M_AddToJoinedIPs(char *address, char *servname)
+{
+
+	UINT8 i = 0;
+	UINT8 dupeindex = 0;
+
+	// Check for dupes...
+	for (; i < NUMLOGIP && !dupeindex; i++)
+	{
+		// I don't care about the server name (this is broken anyway...) but definitely check the addresses
+		if (strcmp(joinedIPlist[i][0], address) == 0)
+			dupeindex = i;
 	}
 
-	if (!isalpha(first))
-		return 0;
-	if (!isalnum(second))
-		return 0;
+	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
-	return 100 + ((INT32)tolower(first) - 'a') * 36 + (isdigit(second) ? ((INT32)second - '0') :
-		((INT32)tolower(second) - 'a') + 10);
+	// Start by moving every IP up 1 slot (dropping the last IP in the table)
+	// If we found duplicates, start here instead and pull the rest up.
+	i = dupeindex ? dupeindex : NUMLOGIP;
+	for (; i; i--)
+	{
+		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
+		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
+	}
+
+	// and add the new IP at the start of the table!
+	strcpy(joinedIPlist[0][0], address);
+	strcpy(joinedIPlist[0][1], servname);
 }
 
 // ==========================================================================
@@ -449,6 +468,87 @@ boolean FIL_CheckExtension(const char *in)
 	return false;
 }
 
+// LAST IPs JOINED LOG FILE!
+// ...It won't be as overly engineered as the config file because let's be real there's 0 need to...
+
+// Save the file:
+void M_SaveJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i;
+	char *filepath;
+
+	if (!strlen(joinedIPlist[0][0]))
+		return;	// Don't bother, there's nothing to save.
+
+	// append srb2home to beginning of filename
+	// but check if srb2home isn't already there, first
+	if (!strstr(IPLOGFILE, srb2home))
+		filepath = va(pandf,srb2home, IPLOGFILE);
+	else
+		filepath = Z_StrDup(IPLOGFILE);
+
+	f = fopen(filepath, "w");
+
+	if (f == NULL)
+		return;	// Uh I guess you don't have disk space?????????
+
+	for (i=0; i < NUMLOGIP; i++)
+	{
+		if (strlen(joinedIPlist[i][0]))
+		{
+			char savestring[MAXSTRINGLENGTH];
+			strcpy(savestring, joinedIPlist[i][0]);
+			strcat(savestring, IPLOGFILESEP);
+			strcat(savestring, joinedIPlist[i][1]);
+
+			fputs(savestring, f);
+			fputs("\n", f);	// Because this won't do it automatically now will it...
+		}
+	}
+
+	fclose(f);
+}
+
+
+// Load the file:
+void M_LoadJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i = 0;
+	char *filepath;
+	char *s;
+	char content[255];	// 255 is more than long enough!
+
+	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+	f = fopen(filepath, "r");
+
+	if (f == NULL)
+		return;	// File doesn't exist? sure, just do nothing then.
+
+	while (fgets(content, 255, f) && i < NUMLOGIP && content[0] && content[0] != '\n')	// Don't let us write more than we can chew!
+	{
+
+		// Now we have garbage under the form of "address;string"
+		// Now you might ask yourself, but what do we do if the player fucked with their file and now there's a bunch of garbage?
+		// ...Well that's not my problem lol.
+
+		s = strtok(content, IPLOGFILESEP);	// We got the address
+		strcpy(joinedIPlist[i][0], s);
+
+		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
+
+		if (strlen(s))
+			s[strlen(s)-1] = '\0';	// Remove the \n
+
+		strcpy(joinedIPlist[i][1], s);
+
+		i++;
+	}
+	fclose(f);	// We're done here
+}
+
+
 // ==========================================================================
 //                        CONFIGURATION FILE
 // ==========================================================================
@@ -507,7 +607,7 @@ void Command_LoadConfig_f(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// temporarily reset execversion to default
@@ -561,7 +661,7 @@ void M_FirstLoadConfig(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// register execversion here before we load any configs
@@ -663,15 +763,7 @@ void M_SaveConfig(const char *filename)
 
 	if (!dedicated)
 	{
-		if (tutorialmode && tutorialgcs)
-		{
-			// using gcs_custom as temp storage
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
-		else
-		{
-			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
+		G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
 	}
 
 	fclose(f);
@@ -838,9 +930,11 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 			break;
 	}
 
+#if 0
 	if (gamestate == GS_LEVEL)
 		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
 	else
+#endif
 		snprintf(maptext, 8, "Unknown");
 
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
@@ -1651,12 +1745,12 @@ boolean M_ScreenshotResponder(event_t *ev)
 
 	ch = ev->data1;
 
-	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
+	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]) // remappable F8
+	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]) // remappable F9
+	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;

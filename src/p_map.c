@@ -32,6 +32,7 @@
 #include "hu_stuff.h" // SRB2kart
 #include "i_system.h" // SRB2kart
 #include "k_terrain.h"
+#include "k_objects.h"
 
 #include "r_splats.h"
 
@@ -656,7 +657,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	{
-		UINT8 shouldCollide = LUAh_MobjCollide(thing, tmthing); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_Hook2Mobj(thing, tmthing, MOBJ_HOOK(MobjCollide)); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -664,7 +665,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 
-		shouldCollide = LUAh_MobjMoveCollide(tmthing, thing); // checks hook for tmthing's type
+		shouldCollide = LUA_Hook2Mobj(tmthing, thing, MOBJ_HOOK(MobjMoveCollide)); // checks hook for tmthing's type
 		if (P_MobjWasRemoved(tmthing) || P_MobjWasRemoved(thing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -739,6 +740,81 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
 
+	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
+	{
+		if (tmthing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (thing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (tmthing->z > thing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+	else if (tmthing->type == MT_SHRINK_GUN || tmthing->type == MT_SHRINK_PARTICLE)
+	{
+		if (thing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (tmthing->type == MT_SHRINK_GUN)
+		{
+			// Use special collision for the laser gun.
+			// The laser sprite itself is just a visual,
+			// the gun itself does the colliding for us.
+			if (thing->z > tmthing->z)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (thing->z + thing->height < tmthing->floorz)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+		else
+		{
+			if (tmthing->z > thing->z + thing->height)
+			{
+				return BMIT_CONTINUE; // overhead
+			}
+
+			if (tmthing->z + tmthing->height < thing->z)
+			{
+				return BMIT_CONTINUE; // underneath
+			}
+		}
+
+		return Obj_ShrinkLaserCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+	}
+
 	if (tmthing->type == MT_SMK_ICEBLOCK)
 	{
 		// see if it went over / under
@@ -787,7 +863,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	// Bubble Shield reflect
 	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
 		|| (thing->player && thing->player->bubbleblowup))
-		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
@@ -802,7 +878,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 	else if (((tmthing->type == MT_BUBBLESHIELD && tmthing->target->player && tmthing->target->player->bubbleblowup)
 		|| (tmthing->player && tmthing->player->bubbleblowup))
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
@@ -822,7 +898,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// Droptarget reflect
 	if ((thing->type == MT_DROPTARGET || thing->type == MT_DROPTARGET_SHIELD)
-		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
 		|| (tmthing->type == MT_PLAYER)))
@@ -836,7 +912,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return K_DropTargetCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if ((tmthing->type == MT_DROPTARGET || tmthing->type == MT_DROPTARGET_SHIELD)
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| (thing->type == MT_PLAYER)))
@@ -855,7 +931,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_DROPTARGET_SHIELD || tmthing->type == MT_DROPTARGET_SHIELD)
 		return BMIT_CONTINUE;
 
-	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ || tmthing->type == MT_JAWZ_DUD
+	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_ORBINAUT_SHIELD || tmthing->type == MT_JAWZ_SHIELD)
 	{
 		// see if it went over / under
@@ -864,9 +940,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_OrbinautJawzCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_JAWZ_DUD
+	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD)
 	{
 		// see if it went over / under
@@ -875,7 +951,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		if (tmthing->z + tmthing->height < thing->z)
 			return BMIT_CONTINUE; // underneath
 
-		return K_OrbinautJawzCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
+		return Obj_OrbinautJawzCollide(thing, tmthing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
 	if (tmthing->type == MT_BANANA || tmthing->type == MT_BANANA_SHIELD || tmthing->type == MT_BALLHOG)
@@ -1292,7 +1368,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				if (thing->type == MT_BLUEROBRA_JOINT)
 					P_KillMobj(thing->target, tmthing, tmthing, DMG_NORMAL);
@@ -1318,7 +1394,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE; // dead
 
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE; // kill
@@ -1349,7 +1425,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			// kill
 			if (tmthing->player->invincibilitytimer > 0
-				|| tmthing->player->growshrinktimer > 0)
+				|| K_IsBigger(tmthing, thing) == true)
 			{
 				P_KillMobj(thing, tmthing, tmthing, DMG_NORMAL);
 				return BMIT_CONTINUE;
@@ -1640,7 +1716,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	blockingline = ld;
 
 	{
-		UINT8 shouldCollide = LUAh_MobjLineCollide(tmthing, blockingline); // checks hook for thing's type
+		UINT8 shouldCollide = LUA_HookMobjLineCollide(tmthing, blockingline); // checks hook for thing's type
 		if (P_MobjWasRemoved(tmthing))
 			return BMIT_CONTINUE; // one of them was removed???
 		if (shouldCollide == 1)
@@ -2463,12 +2539,6 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	const fixed_t maxstepmove = P_BaseStepUp();
 	fixed_t maxstep = maxstepmove;
 
-	if (thing->type == MT_SKIM)
-	{
-		// Skim special (not needed for kart?)
-		return 0;
-	}
-
 	if (P_WaterStepUp(thing) == true)
 	{
 		// Add some extra stepmove when waterskipping
@@ -2489,21 +2559,19 @@ fixed_t P_GetThingStepUp(mobj_t *thing)
 	return maxstep;
 }
 
-//
-// P_TryMove
-// Attempt to move to a new position.
-//
-boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+static boolean
+increment_move
+(		mobj_t * thing,
+		fixed_t x,
+		fixed_t y,
+		boolean allowdropoff,
+		fixed_t * return_stairjank)
 {
 	fixed_t tryx = thing->x;
 	fixed_t tryy = thing->y;
-	fixed_t oldx = tryx;
-	fixed_t oldy = tryy;
 	fixed_t radius = thing->radius;
 	fixed_t thingtop;
-	fixed_t startingonground = P_IsObjectOnGround(thing);
 	fixed_t stairjank = 0;
-	pslope_t *oldslope = thing->standingslope;
 	floatok = false;
 
 	// reset this to 0 at the start of each trymove call as it's only used here
@@ -2525,16 +2593,20 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 #endif
 
 	do {
-		if (thing->flags & MF_NOCLIP) {
+		if (thing->flags & MF_NOCLIP)
+		{
 			tryx = x;
 			tryy = y;
-		} else {
+		}
+		else
+		{
 			if (x-tryx > radius)
 				tryx += radius;
 			else if (x-tryx < -radius)
 				tryx -= radius;
 			else
 				tryx = x;
+
 			if (y-tryy > radius)
 				tryy += radius;
 			else if (y-tryy < -radius)
@@ -2603,7 +2675,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 						return false; // mobj must lower itself to fit
 					}
 				}
-				else if (!(P_MobjTouchingSectorSpecial(thing, 1, 14, false))) // Step down
+				else if (thing->momz * P_MobjFlip(thing) <= 0 // Step down requires moving down.
+					&& !(P_MobjTouchingSectorSpecial(thing, 1, 14, false)))
 				{
 					// If the floor difference is MAXSTEPMOVE or less, and the sector isn't Section1:14, ALWAYS
 					// step down! Formerly required a Section1:13 sector for the full MAXSTEPMOVE, but no more.
@@ -2644,7 +2717,45 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		}
 	} while (tryx != x || tryy != y);
 
+	if (return_stairjank)
+		*return_stairjank = stairjank;
+
+	return true;
+}
+
+//
+// P_CheckMove
+// Check if a P_TryMove would be successful.
+//
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	boolean moveok;
+	mobj_t *hack = P_SpawnMobjFromMobj(thing, 0, 0, 0, MT_RAY);
+
+	hack->radius = thing->radius;
+	hack->height = thing->height;
+
+	moveok = increment_move(hack, x, y, allowdropoff, NULL);
+	P_RemoveMobj(hack);
+
+	return moveok;
+}
+
+//
+// P_TryMove
+// Attempt to move to a new position.
+//
+boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
+{
+	fixed_t oldx = thing->x;
+	fixed_t oldy = thing->y;
+	fixed_t startingonground = P_IsObjectOnGround(thing);
+	fixed_t stairjank = 0;
+	pslope_t *oldslope = thing->standingslope;
+
 	// The move is ok!
+	if (!increment_move(thing, x, y, allowdropoff, &stairjank))
+		return false;
 
 	// If it's a pushable object, check if anything is
 	// standing on top and move it, too.
@@ -2690,12 +2801,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz <= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmfloorslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -2710,12 +2824,15 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 
 			if (thing->momz >= 0)
 			{
+				angle_t oldPitch = thing->pitch;
+				angle_t oldRoll = thing->roll;
+
 				thing->standingslope = tmceilingslope;
 				P_SetPitchRollFromSlope(thing, thing->standingslope);
 
-				if (thing->momz == 0 && thing->player && !startingonground)
+				if (thing->player)
 				{
-					P_PlayerHitFloor(thing->player, true);
+					P_PlayerHitFloor(thing->player, !startingonground, oldPitch, oldRoll);
 				}
 			}
 		}
@@ -3006,7 +3123,7 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	}
 
 	if ((P_MobjFlip(thing)*(thing->z - oldz) > 0 || hitfloor) && thing->player)
-		P_PlayerHitFloor(thing->player, !onfloor);
+		P_PlayerHitFloor(thing->player, !onfloor, thing->pitch, thing->roll);
 
 	// debug: be sure it falls to the floor
 	thing->eflags &= ~MFE_ONGROUND;

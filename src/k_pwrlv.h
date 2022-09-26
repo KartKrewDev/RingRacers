@@ -31,7 +31,6 @@ typedef enum
 extern SINT8 speedscramble;
 extern SINT8 encorescramble;
 
-extern UINT16 vspowerlevel[PWRLV_NUMTYPES];
 extern UINT16 clientpowerlevels[MAXPLAYERS][PWRLV_NUMTYPES];
 extern INT16 clientPowerAdd[MAXPLAYERS];
 extern UINT8 spectateGriefed;

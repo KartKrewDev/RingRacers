@@ -17,10 +17,7 @@
 #include "p_tick.h" // leveltime
 #include "k_grandprix.h"
 #include "k_boss.h"
-
-// Online rankings for the main gametypes.
-// This array is saved to the gamedata.
-UINT16 vspowerlevel[PWRLV_NUMTYPES];
+#include "k_profiles.h"
 
 // Client-sided calculations done for Power Levels.
 // This is done so that clients will never be able to hack someone else's score over the server.
@@ -60,16 +57,8 @@ SINT8 K_UsingPowerLevels(void)
 
 void K_ClearClientPowerLevels(void)
 {
-	UINT8 i, j;
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		clientPowerAdd[i] = 0;
-
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-		{
-			clientpowerlevels[i][j] = 0;
-		}
-	}
+	memset(clientpowerlevels, 0, sizeof clientpowerlevels);
+	memset(clientPowerAdd, 0, sizeof clientPowerAdd);
 }
 
 // Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating
@@ -370,6 +359,7 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 			// Get at least one point.
 			inc = 1;
 		}
+#if 0
 		else
 		{
 			// You trade points in 1v1s,
@@ -388,6 +378,7 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 baseInc)
 				}
 			}
 		}
+#endif
 	}
 
 	if (yourPower + inc > PWRLVRECORD_MAX)
@@ -416,14 +407,16 @@ void K_CashInPowerLevels(void)
 	{
 		if (playeringame[i] == true && powerType != PWRLV_DISABLED)
 		{
+			profile_t *pr = PR_GetPlayerProfile(&players[i]);
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
+
 			clientpowerlevels[i][powerType] += inc;
 
 			//CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
 
-			if (!demo.playback && i == consoleplayer && inc != 0)
+			if (pr != NULL && inc != 0)
 			{
-				vspowerlevel[powerType] = clientpowerlevels[i][powerType];
+				pr->powerlevels[powerType] = clientpowerlevels[i][powerType];
 
 				if (M_UpdateUnlockablesAndExtraEmblems())
 				{
@@ -522,26 +515,26 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				{
 					case 5:
 						speed = KARTSPEED_HARD;
-						encore = P_RandomChance(FRACUNIT>>1);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 4:
-						speed = P_RandomChance((7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>1);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 3:
-						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>2);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>2);
 						break;
 					case 2:
 						speed = KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>3);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>3);
 						break;
 					case 1: default:
 						speed = KARTSPEED_NORMAL;
 						encore = false;
 						break;
 					case 0:
-						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
 						encore = false;
 						break;
 				}
@@ -567,6 +560,7 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 
 void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 {
+	profile_t *pr;
 	UINT8 p = 0;
 
 	SINT8 powerType = PWRLV_DISABLED;
@@ -631,17 +625,22 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 	K_UpdatePowerLevelsOnFailure(&players[playerNum]);
 	inc = K_FinalPowerIncrement(&players[playerNum], yourPower, clientPowerAdd[playerNum]);
 
-	if (inc >= 0)
+	if (inc == 0)
 	{
-		// Don't record no change or increases.
+		// No change
 		return;
 	}
 
-	// pointLoss isn't set for stuff like sync-outs,
-	// which shouldn't be so harsh on the victim!
-	if (!demo.playback && pointLoss == true && playerNum == consoleplayer)
+	if (inc < 0 && pointLoss == false)
 	{
-		vspowerlevel[powerType] = yourPower + inc;
+		// Don't record point losses for sync-out / crashes.
+		return;
+	}
+
+	pr = PR_GetPlayerProfile(&players[playerNum]);
+	if (pr != NULL)
+	{
+		pr->powerlevels[powerType] = yourPower + inc;
 
 		if (M_UpdateUnlockablesAndExtraEmblems())
 		{

@@ -22,7 +22,6 @@
 #include "r_defs.h" // spritedef_t
 
 /// Defaults
-#define SKINNAMESIZE 16
 #define SKINRIVALS 3
 // should be all lowercase!! S_SKIN processing does a strlwr
 #define DEFAULTSKIN "eggman"

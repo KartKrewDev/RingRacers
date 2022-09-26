@@ -22,7 +22,7 @@
 #include "d_net.h"
 
 #include "m_cheat.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_random.h"
 #include "m_misc.h"
 
@@ -58,20 +58,6 @@ typedef struct
 // ==========================================================================
 
 // Cheat responders
-/*static UINT8 cheatf_ultimate(void)
-{
-	if (menuactive && (currentMenu != &MainDef && currentMenu != &SP_LoadDef))
-		return 0; // Only on the main menu, or the save select!
-
-	BwehHehHe();
-	ultimate_selectable = (!ultimate_selectable);
-
-	// If on the save select, move to what is now Ultimate Mode!
-	if (currentMenu == &SP_LoadDef)
-		M_ForceSaveSlotSelected(NOSAVESLOT);
-	return 1;
-}*/
-
 static UINT8 cheatf_warp(void)
 {
 	UINT8 i;
@@ -83,7 +69,7 @@ static UINT8 cheatf_warp(void)
 	if (menuactive && currentMenu != &MainDef)
 		return 0; // Only on the main menu!
 
-	// Temporarily unlock EVERYTHING.
+	// Unlock EVERYTHING.
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		if (!unlockables[i].conditionset)
@@ -133,18 +119,6 @@ static UINT8 cheatf_devmode(void)
 	return 1;
 }
 #endif
-
-/*static cheatseq_t cheat_ultimate = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE('u'), SCRAMBLE('l'), SCRAMBLE('t'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('t'), SCRAMBLE('e'), 0xff }
-};*/
-
-/*static cheatseq_t cheat_ultimate_joy = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }
-};*/
 
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
@@ -253,8 +227,6 @@ boolean cht_Responder(event_t *ev)
 	else
 		ch = (UINT8)ev->data1;
 
-	//ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
-	//ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
 #ifdef DEVELOP
@@ -710,9 +682,9 @@ void Command_CauseCfail_f(void)
 	}
 
 	P_UnsetThingPosition(players[consoleplayer].mo);
-	P_RandomFixed();
-	P_RandomByte();
-	P_RandomFixed();
+	P_RandomFixed(PR_UNDEFINED);
+	P_RandomByte(PR_UNDEFINED);
+	P_RandomFixed(PR_UNDEFINED);
 	players[consoleplayer].mo->x = 0;
 	players[consoleplayer].mo->y = 123311; //cfail cansuled kthxbye
 	players[consoleplayer].mo->z = 123311;
@@ -1081,11 +1053,11 @@ void OP_ObjectplaceMovement(player_t *player)
 	}
 
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (player->pflags & PF_STASIS)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
 		if (!(cmd->buttons & (BT_ATTACK|BT_DRIFT)))
-			player->pflags &= ~PF_ATTACKDOWN;
+			player->pflags &= ~PF_STASIS;
 
 		// Do nothing.
 		return;
@@ -1094,12 +1066,12 @@ void OP_ObjectplaceMovement(player_t *player)
 	/*if (cmd->buttons & BT_FORWARD)
 	{
 		OP_CycleThings(-1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 	else*/ if (cmd->buttons & BT_DRIFT)
 	{
 		OP_CycleThings(1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 
 	// Place an object and add it to the maplist
@@ -1110,7 +1082,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		mobjtype_t spawnthing = op_currentdoomednum;
 		boolean ceiling;
 
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 
 		if (cv_mapthingnum.value > 0 && cv_mapthingnum.value < 4096)
 		{
