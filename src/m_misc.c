@@ -538,8 +538,6 @@ void M_LoadJoinedIPs(void)
 			}
 			*c = '\0';
 		}
-
-		i++;
 	}
 	fclose(f);	// We're done here
 }
