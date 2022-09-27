@@ -1775,9 +1775,9 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 	if (cvar)
 		Setvalue(cvar, svalue, stealth);
 
-	if ((cvar->flags & CV_CHEAT) && stricmp(svalue, cvar->defaultvalue) != 0)
+	if ((cvar->flags & CV_CHEAT) && stricmp(cvar->string, cvar->defaultvalue) != 0) // use cvar->string to compare what it is now
 	{
-		CV_CheaterWarning(playernum, va("%s %s", cvar->name, svalue));
+		CV_CheaterWarning(playernum, va("%s %s", cvar->name, svalue)); // but use svalue to show what they inputted
 	}
 }
 
