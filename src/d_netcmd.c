@@ -441,7 +441,7 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 #undef  FOREACH
 	{0}
 };
-consvar_t cv_kartdebugitem = CVAR_INIT ("kartdebugitem", "0", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
+consvar_t cv_kartdebugitem = CVAR_INIT ("kartdebugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
 consvar_t cv_kartdebugamount = CVAR_INIT ("kartdebugamount", "1", CV_NETVAR|CV_CHEAT, kartdebugamount_cons_t, NULL);
 
