@@ -3232,7 +3232,7 @@ tripwirepass_t K_TripwirePassConditions(player_t *player)
 
 	if (
 			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, true)
+			player->speed > 2 * K_GetKartSpeed(player, false, false)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3250,6 +3250,11 @@ boolean K_TripwirePass(player_t *player)
 	return (player->tripwirePass != TRIPWIRE_NONE);
 }
 
+boolean K_MovingHorizontally(mobj_t *mobj)
+{
+	return (P_AproxDistance(mobj->momx, mobj->momy) / 5 > abs(mobj->momz));
+}
+
 boolean K_WaterRun(player_t *player)
 {
 	if (
@@ -3257,10 +3262,28 @@ boolean K_WaterRun(player_t *player)
 			player->sneakertimer ||
 			player->tiregrease ||
 			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, true)
+			player->speed > 2 * K_GetKartSpeed(player, false, false)
 	)
 		return true;
 	return false;
+}
+
+boolean K_WaterSkip(player_t *player)
+{
+	if (player->waterskip >= 2)
+	{
+		// Already finished waterskipping.
+		return false;
+	}
+
+	if (player->waterskip > 0)
+	{
+		// Already waterskipping.
+		// Simply make sure you haven't slowed down drastically.
+		return (player->speed > 20 * mapobjectscale);
+	}
+
+	return K_MovingHorizontally(player->mo);
 }
 
 static fixed_t K_FlameShieldDashVar(INT32 val)

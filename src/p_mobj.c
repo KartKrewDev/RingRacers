@@ -3073,25 +3073,92 @@ boolean P_SceneryZMovement(mobj_t *mo)
 	return true;
 }
 
+//
 // P_CanRunOnWater
 //
-// Returns true if player can waterrun on the 3D floor
+// Returns true if player can water run on a 3D floor
 //
 boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 {
-	boolean flip = player->mo->eflags & MFE_VERTICALFLIP;
-	fixed_t surfaceheight = flip ? player->mo->waterbottom : player->mo->watertop;
-	fixed_t playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
-	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
-	fixed_t span = player->mo->watertop - player->mo->waterbottom;
+	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
+	fixed_t surfaceheight = INT32_MAX;
+	fixed_t playerbottom = INT32_MAX;
+	fixed_t surfDiff = INT32_MAX;
+	fixed_t maxStep = INT32_MAX;
+	boolean doifit = false;
 
-	return
-		clip > -(player->mo->height / 2) &&
-		span > player->mo->height &&
-		player->speed / 5 > abs(player->mo->momz) &&
-		player->speed > K_GetKartSpeed(player, false, false) &&
-		K_WaterRun(player) &&
-		(rover->flags & FF_SWIMMABLE);
+	pslope_t *waterSlope = NULL;
+	angle_t ourZAng = 0;
+	angle_t waterZAng = 0;
+
+	if (rover == NULL)
+	{
+		// No rover.
+		return false;
+	}
+
+	if (!(rover->flags & FF_SWIMMABLE))
+	{
+		// It's not even a water FOF.
+		return false;
+	}
+
+	if (player->carry != CR_NONE) // Special carry state.
+	{
+		// No good player state.
+		return false;
+	}
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		// Don't allow jumping onto water to start a water run.
+		// (Already water running still counts as being on the ground.)
+		return false;
+	}
+
+	if (K_WaterRun(player) == false)
+	{
+		// Basic conditions for enabling water run.
+		return false;
+	}
+
+	if (player->mo->standingslope != NULL)
+	{
+		ourZAng = player->mo->standingslope->zangle;
+	}
+ 
+	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
+	if (waterSlope != NULL)
+	{
+		waterZAng = waterSlope->zangle;
+	}
+ 
+	if (ourZAng != waterZAng)
+	{
+		// The surface slopes are different.
+		return false;
+	}
+ 
+	surfaceheight = flip ? P_GetFFloorBottomZAt(rover, player->mo->x, player->mo->y) : P_GetFFloorTopZAt(rover, player->mo->x, player->mo->y);
+	playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
+ 
+	doifit = flip ? (surfaceheight - player->mo->floorz >= player->mo->height) : (player->mo->ceilingz - surfaceheight >= player->mo->height);
+ 
+	if (!doifit)
+	{
+		// Player can't fit in this space.
+		return false;
+	}
+ 
+	surfDiff = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
+	maxStep = P_GetThingStepUp(player->mo);
+	if (surfDiff <= maxStep && surfDiff >= 0)
+	{
+		// We start water run IF we can step-down!
+		return true;
+	}
+ 
+	return false;
 }
 
 boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover)
@@ -3308,23 +3375,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
+
+				// skipping stone!
+				if (K_WaterSkip(p) == true)
+				{
+					const fixed_t hop = 5 * mapobjectscale;
+
+					mobj->momx = (4*mobj->momx)/5;
+					mobj->momy = (4*mobj->momy)/5;
+					mobj->momz = hop * P_MobjFlip(mobj);
+
+					p->waterskip++;
+				}
 			}
-
-			// skipping stone!
-			if (p && p->waterskip < 2
-				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& (splashValid == true))
-			{
-				const fixed_t hop = 5 * mobj->scale;
-
-				mobj->momx = (4*mobj->momx)/5;
-				mobj->momy = (4*mobj->momy)/5;
-				mobj->momz = hop * P_MobjFlip(mobj);
-
-				p->waterskip++;
-			}
-
 		}
 		else if (P_MobjFlip(mobj) * mobj->momz > 0)
 		{
