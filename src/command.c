@@ -1599,8 +1599,13 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 	if ((var->flags & CV_CHEAT) && CV_CheatsEnabled() == false)
 	{
 		// Enforce to default value without cheats.
-		overridestr = var->defaultvalue;
-		valstr = overridestr;
+		if (stricmp(var->defaultvalue, valstr) != 0)
+		{
+			// Warn the user about this.
+			CONS_Printf("This cannot be used without cheats enabled.\n");
+		}
+
+		valstr = overridestr = var->defaultvalue;
 	}
 
 	if (CV_CompleteValue(var, &overridestr, &overrideval))

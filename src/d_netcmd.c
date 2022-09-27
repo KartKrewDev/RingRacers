@@ -5621,8 +5621,7 @@ static void Command_KartGiveItem_f(void)
 	}
 	else
 	{
-		CONS_Alert(CONS_NOTICE,
-				"The server does not allow this.\n");
+		CONS_Printf("This cannot be used without cheats enabled.\n");
 	}
 }
 
