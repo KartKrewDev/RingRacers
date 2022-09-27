@@ -5306,6 +5306,13 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 
 	players[playernum].itemtype   = item;
 	players[playernum].itemamount = amt;
+
+	CV_CheaterWarning(
+		playernum,
+			(amt != 1) // FIXME: we should have actual KITEM_ name array
+			? va("kartgiveitem %s %d", cv_kartdebugitem.PossibleValue[item+1].strvalue, amt)
+			: va("kartgiveitem %s", cv_kartdebugitem.PossibleValue[item+1].strvalue)
+	);
 }
 
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)

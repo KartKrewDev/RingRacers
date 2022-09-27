@@ -233,6 +233,7 @@ void CV_CheatsChanged(void);
 
 boolean CV_IsSetToDefault(consvar_t *v);
 boolean CV_CheatsEnabled(void);
+void CV_CheaterWarning(UINT8 playerID, const char *command);
 
 // Returns cvar by name. Exposed here for Lua.
 consvar_t *CV_FindVar(const char *name);

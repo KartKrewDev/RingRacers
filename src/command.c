@@ -1774,6 +1774,11 @@ static void Got_NetVar(UINT8 **p, INT32 playernum)
 
 	if (cvar)
 		Setvalue(cvar, svalue, stealth);
+
+	if ((cvar->flags & CV_CHEAT) && stricmp(svalue, cvar->defaultvalue) != 0)
+	{
+		CV_CheaterWarning(playernum, va("%s %s", cvar->name, svalue));
+	}
 }
 
 void CV_SaveVars(UINT8 **p, boolean in_demo)
@@ -1915,6 +1920,15 @@ boolean CV_IsSetToDefault(consvar_t *v)
 boolean CV_CheatsEnabled(void)
 {
 	return (boolean)cv_cheats.value;
+}
+
+// Consistent print about cheaters in multiplayer.
+void CV_CheaterWarning(UINT8 playerID, const char *command)
+{
+	if (netgame)
+	{
+		CONS_Printf("\x85" "%s cheats:" "\x80" " %s\n", player_names[playerID], command);
+	}
 }
 
 /** Sets a value to a variable, performing some checks and calling the
