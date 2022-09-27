@@ -3284,21 +3284,29 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 	}
 
-	// Spectators and dead players don't get to do any of the things after this.
-	if (p && (p->spectator || p->playerstate != PST_LIVE))
+	if (P_IsObjectOnGround(mobj) == true)
 	{
-		return;
+		mobj->waterskip = 0;
+	}
+
+	if (p != NULL)
+	{
+		// Spectators and dead players don't get to do any of the things after this.
+		if (p->spectator || p->playerstate != PST_LIVE)
+		{
+			return;
+		}
+	}
+
+	if (mobj->flags & MF_APPLYTERRAIN)
+	{
+		K_SpawnWaterRunParticles(mobj);
 	}
 
 	// The rest of this code only executes on a water state change.
 	if (waterwasnotset || !!(mobj->eflags & MFE_UNDERWATER) == wasinwater)
 	{
 		return;
-	}
-
-	if (P_IsObjectOnGround(mobj) == true)
-	{
-		mobj->waterskip = 0;
 	}
 
 	if (p != NULL
@@ -6795,11 +6803,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_JAWZ:
 	{
 		Obj_JawzThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_EGGMANITEM:
@@ -6863,6 +6873,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			P_MobjCheckWater(mobj);
 		}
 		break;
 	case MT_SINK:

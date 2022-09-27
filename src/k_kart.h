@@ -145,6 +145,7 @@ boolean K_TripwirePass(player_t *player);
 boolean K_MovingHorizontally(mobj_t *mobj);
 boolean K_WaterRun(mobj_t *mobj);
 boolean K_WaterSkip(mobj_t *mobj);
+void K_SpawnWaterRunParticles(mobj_t *mobj);
 void K_ApplyTripWire(player_t *player, tripwirestate_t state);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
