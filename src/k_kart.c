@@ -8974,6 +8974,16 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	return outputSteering;
 }
 
+static fixed_t K_GetUnderwaterStrafeMul(player_t *player)
+{
+	const fixed_t minSpeed = 11 * player->mo->scale;
+	fixed_t baseline = INT32_MAX;
+
+	baseline = 2 * K_GetKartSpeed(player, false, true) / 3;
+
+	return max(0, FixedDiv(player->speed - minSpeed, baseline - minSpeed));
+}
+
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
 	fixed_t turnfixed = turnvalue * FRACUNIT;
@@ -9051,10 +9061,10 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if ((player->mo->eflags & MFE_UNDERWATER) &&
-			player->speed > 11 * player->mo->scale)
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
-		turnfixed /= 2;
+		fixed_t div = min(FRACUNIT + K_GetUnderwaterStrafeMul(player), 2*FRACUNIT);
+		turnfixed = FixedDiv(turnfixed, div);
 	}
 
 	// Weight has a small effect on turning
@@ -9065,18 +9075,15 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 {
-	if ((player->mo->eflags & MFE_UNDERWATER) &&
-			player->speed > 11 * player->mo->scale)
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
 		INT32 steer = (K_GetKartTurnValue(player,
 					player->steering) << TICCMD_REDUCE);
-		fixed_t minimum = INT32_MAX;
 
 		if (!player->drift)
 			steer = 9 * steer / 5;
 
-		minimum = 2 * K_GetKartSpeed(player, false, true) / 3;
-		return FixedMul(steer, 8 * FixedDiv(max(player->speed, minimum), minimum));
+		return FixedMul(steer, 8 * K_GetUnderwaterStrafeMul(player));
 	}
 	else
 		return 0;
