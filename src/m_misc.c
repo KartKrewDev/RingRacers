@@ -72,8 +72,6 @@ typedef off_t off64_t;
 #else
 #define PRIdS "u"
 #endif
-#elif defined (DJGPP)
-#define PRIdS "u"
 #else
 #define PRIdS "zu"
 #endif
@@ -181,8 +179,8 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
-char joinedIPlist[NUMLOGIP][2][255];
-char joinedIP[255];
+char joinedIPlist[NUMLOGIP][2][MAX_LOGIP];
+char joinedIP[MAX_LOGIP];
 
 // This initializes the above array to have NULL evrywhere it should.
 void M_InitJoinedIPArray(void)
@@ -190,40 +188,37 @@ void M_InitJoinedIPArray(void)
 	UINT8 i;
 	for (i=0; i < NUMLOGIP; i++)
 	{
-		strcpy(joinedIPlist[i][0], "");
-		strcpy(joinedIPlist[i][1], "");
+		joinedIPlist[i][0][0] = joinedIPlist[i][1][0] = '\0';
 	}
 }
 
 // This adds an entry to the above array
 void M_AddToJoinedIPs(char *address, char *servname)
 {
-
 	UINT8 i = 0;
-	UINT8 dupeindex = 0;
 
 	// Check for dupes...
-	for (; i < NUMLOGIP && !dupeindex; i++)
+	for (i = 0; i < NUMLOGIP-1; i++) // intentionally not < NUMLOGIP
 	{
-		// I don't care about the server name (this is broken anyway...) but definitely check the addresses
+		// Check the addresses
 		if (strcmp(joinedIPlist[i][0], address) == 0)
-			dupeindex = i;
+		{
+			break;
+		}
 	}
 
 	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
 	// Start by moving every IP up 1 slot (dropping the last IP in the table)
-	// If we found duplicates, start here instead and pull the rest up.
-	i = dupeindex ? dupeindex : NUMLOGIP;
 	for (; i; i--)
 	{
-		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
-		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
+		strlcpy(joinedIPlist[i][0], joinedIPlist[i-1][0], MAX_LOGIP);
+		strlcpy(joinedIPlist[i][1], joinedIPlist[i-1][1], MAX_LOGIP);
 	}
 
 	// and add the new IP at the start of the table!
-	strcpy(joinedIPlist[0][0], address);
-	strcpy(joinedIPlist[0][1], servname);
+	strlcpy(joinedIPlist[0][0], address, MAX_LOGIP);
+	strlcpy(joinedIPlist[0][1], servname, MAX_LOGIP);
 }
 
 // ==========================================================================
@@ -476,34 +471,24 @@ void M_SaveJoinedIPs(void)
 {
 	FILE *f = NULL;
 	UINT8 i;
-	char *filepath;
+	const char *filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
 
-	if (!strlen(joinedIPlist[0][0]))
+	if (!*joinedIPlist[0][0])
 		return;	// Don't bother, there's nothing to save.
-
-	// append srb2home to beginning of filename
-	// but check if srb2home isn't already there, first
-	if (!strstr(IPLOGFILE, srb2home))
-		filepath = va(pandf,srb2home, IPLOGFILE);
-	else
-		filepath = Z_StrDup(IPLOGFILE);
 
 	f = fopen(filepath, "w");
 
-	if (f == NULL)
-		return;	// Uh I guess you don't have disk space?????????
-
-	for (i=0; i < NUMLOGIP; i++)
+	if (!f)
 	{
-		if (strlen(joinedIPlist[i][0]))
-		{
-			char savestring[MAXSTRINGLENGTH];
-			strcpy(savestring, joinedIPlist[i][0]);
-			strcat(savestring, IPLOGFILESEP);
-			strcat(savestring, joinedIPlist[i][1]);
+		CONS_Alert(CONS_WARNING, "Could not save recent IP list into %s\n", IPLOGFILE);
+		return;
+	}
 
-			fputs(savestring, f);
-			fputs("\n", f);	// Because this won't do it automatically now will it...
+	for (i = 0; i < NUMLOGIP; i++)
+	{
+		if (*joinedIPlist[i][0])
+		{
+			fprintf(f, "%s%s%s\n", joinedIPlist[i][0], IPLOGFILESEP, joinedIPlist[i][1]);
 		}
 	}
 
@@ -518,7 +503,7 @@ void M_LoadJoinedIPs(void)
 	UINT8 i = 0;
 	char *filepath;
 	char *s;
-	char content[255];	// 255 is more than long enough!
+	char buffer[2*(MAX_LOGIP+1)];
 
 	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
 	f = fopen(filepath, "r");
@@ -526,24 +511,33 @@ void M_LoadJoinedIPs(void)
 	if (f == NULL)
 		return;	// File doesn't exist? sure, just do nothing then.
 
-	while (fgets(content, 255, f) && i < NUMLOGIP && content[0] && content[0] != '\n')	// Don't let us write more than we can chew!
+	for (i = 0; fgets(buffer, (int)sizeof(buffer), f); i++)	// Don't let us write more than we can chew!
 	{
+		if (i >= NUMLOGIP)
+			break;
 
-		// Now we have garbage under the form of "address;string"
-		// Now you might ask yourself, but what do we do if the player fucked with their file and now there's a bunch of garbage?
-		// ...Well that's not my problem lol.
+		if (!*buffer || *buffer == '\n')
+			break;
 
-		s = strtok(content, IPLOGFILESEP);	// We got the address
-		strcpy(joinedIPlist[i][0], s);
+		s = strtok(buffer, IPLOGFILESEP);	// We got the address
+		strlcpy(joinedIPlist[i][0], s, MAX_LOGIP);
 
 		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
 
-		if (strlen(s))
-			s[strlen(s)-1] = '\0';	// Remove the \n
-
-		strcpy(joinedIPlist[i][1], s);
-
-		i++;
+		if (s)
+		{
+			UINT16 j = 1;
+			//strcpy(joinedIPlist[i][1], s); -- get rid of \n too...
+			char *c = joinedIPlist[i][1];
+			while (*s && *s != '\n' && j < MAX_LOGIP)
+			{
+				*c = *s;
+				s++;
+				c++;
+				j++;
+			}
+			*c = '\0';
+		}
 	}
 	fclose(f);	// We're done here
 }
@@ -904,8 +898,6 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char interfacetxt[] =
 #ifdef HAVE_SDL
 	 "SDL";
-#elif defined (_WINDOWS)
-	 "DirectX";
 #else
 	 "Unknown";
 #endif

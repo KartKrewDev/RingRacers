@@ -7633,9 +7633,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					ghost->renderflags |= RF_DONTDRAW;
 			}
 
-			// Could probably be moved somewhere else.
-			K_HandleFootstepParticles(player->mo);
-
 			if (P_IsObjectOnGround(player->mo))
 			{
 				// Draft dust
@@ -8061,6 +8058,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_GetKartSpeed(player, false, false) / 2 <= player->speed)
 	{
 		K_SpawnBrakeVisuals(player);
+	}
+	else
+	{
+		player->mo->spriteyoffset = 0;
 	}
 
 	K_HandleDelayedHitByEm(player);
