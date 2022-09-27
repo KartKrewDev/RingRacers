@@ -1666,6 +1666,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 		}
 
+		case MT_MONITOR:
+			Obj_MonitorOnDeath(target);
+			break;
+
 		default:
 			break;
 	}
@@ -2005,6 +2009,17 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	else if (target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD)
 	{
 		laglength = 0; // handled elsewhere
+	}
+
+	switch (target->type)
+	{
+		case MT_MONITOR:
+			damage = Obj_MonitorGetDamage(target, inflictor, damagetype);
+			Obj_MonitorOnDamage(target, inflictor, damage);
+			break;
+
+		default:
+			break;
 	}
 
 	// Everything above here can't be forced.

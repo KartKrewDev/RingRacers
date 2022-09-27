@@ -3077,6 +3077,17 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				P_RemoveMobj(mo);
 				return false;
 			}
+			break;
+		case MT_MONITOR_SHARD:
+			// Hits the ground
+			if ((mo->eflags & MFE_VERTICALFLIP)
+					? (mo->ceilingz <= (mo->z + mo->height))
+					: (mo->z <= mo->floorz))
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -6520,6 +6531,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_MONITOR_SHARD:
+		Obj_MonitorShardThink(mobj);
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -7383,6 +7397,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_EMERALD:
 		{
+			if (mobj->threshold > 0)
+				mobj->threshold--;
+		}
+		/*FALLTHRU*/
+	case MT_MONITOR:
+		{
 			if (battleovertime.enabled >= 10*TICRATE)
 			{
 				fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
@@ -7392,6 +7412,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					// Delete emeralds to let them reappear
 					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 				}
+			}
+
+			// Don't spawn sparkles on a monitor with no
+			// emerald inside
+			if (mobj->type == MT_MONITOR &&
+					Obj_MonitorGetEmerald(mobj) == 0)
+			{
+				break;
 			}
 
 			if (leveltime % 3 == 0)
@@ -7407,9 +7435,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				sparkle->color = mobj->color;
 				sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
 			}
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
 		}
 		break;
 	case MT_DRIFTEXPLODE:
@@ -9414,6 +9439,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->colorized = false;
 		}
 		break;
+	case MT_MONITOR_PART:
+		Obj_MonitorPartThink(mobj);
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -9519,6 +9547,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_SNAPPER_HEAD:
 		case MT_SNAPPER_LEG:
 		case MT_MINECARTSEG:
+		case MT_MONITOR_PART:
 			return true;
 
 		case MT_RANDOMITEM:
@@ -10618,6 +10647,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->scalespeed >>= 1;
 			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
 
+			break;
+		}
+		case MT_MONITOR: {
+			Obj_MonitorSpawnParts(mobj);
 			break;
 		}
 		case MT_KARMAHITBOX:

@@ -10,4 +10,5 @@ target_sources(SRB2SDL2 PRIVATE
 	duel-bomb.c
 	broly.c
 	ufo.c
+	monitor.c
 )
