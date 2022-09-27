@@ -83,7 +83,7 @@ static UINT8 cheatf_warp(void)
 
 	if (success)
 	{
-		G_SaveGameData(); //G_SetGameModified(false);
+		G_SaveGameData(); //G_SetUsedCheats();
 		S_StartSound(0, sfx_kc42);
 	}
 
@@ -107,7 +107,7 @@ static UINT8 cheatf_devmode(void)
 	S_StartSound(0, sfx_itemup);
 
 	// Just unlock all the things and turn on -debug and console devmode.
-	G_SetGameModified(false, false); // might need to revist the latter later
+	G_SetUsedCheats();
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		unlockables[i].unlocked = true;
 	devparm = true;
@@ -236,11 +236,8 @@ boolean cht_Responder(event_t *ev)
 }
 
 // Console cheat commands rely on these a lot...
-#define REQUIRE_PANDORA if (!M_SecretUnlocked(SECRET_PANDORA) && !cv_debug)\
-{ CONS_Printf(M_GetText("You haven't earned this yet.\n")); return; }
-
-#define REQUIRE_DEVMODE if (!cv_debug)\
-{ CONS_Printf(M_GetText("DEVMODE must be enabled.\n")); return; }
+#define REQUIRE_CHEATS if (!CV_CheatsEnabled())\
+{ CONS_Printf(M_GetText("Cheats must be enabled.\n")); return; }
 
 #define REQUIRE_OBJECTPLACE if (!objectplacing)\
 { CONS_Printf(M_GetText("OBJECTPLACE must be enabled.\n")); return; }
@@ -256,37 +253,35 @@ void Command_CheatNoClip_f(void)
 {
 	player_t *plyr;
 
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make netplay compatible
 
 	plyr = &players[consoleplayer];
 
 	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
 		return;
 
-	plyr->pflags ^= PF_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->pflags & PF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+	plyr->cheats ^= PC_NOCLIP;
+	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->cheats & PC_NOCLIP ? M_GetText("On") : M_GetText("Off"));
 
-	if (plyr->pflags & PF_NOCLIP)
+	if (plyr->cheats & PC_NOCLIP)
 		plyr->mo->flags |= MF_NOCLIP;
 	else
 		plyr->mo->flags &= ~MF_NOCLIP;
-
-	G_SetGameModified(multiplayer, true);
 }
 
 void Command_CheatGod_f(void)
 {
 	player_t *plyr;
 
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	plyr = &players[consoleplayer];
-	plyr->pflags ^= PF_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->pflags & PF_GODMODE ? M_GetText("On") : M_GetText("Off"));
-
-	G_SetGameModified(multiplayer, true);
+	plyr->cheats ^= PC_GODMODE;
+	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->cheats & PC_GODMODE ? M_GetText("On") : M_GetText("Off"));
 }
 
 void Command_Scale_f(void)
@@ -294,9 +289,9 @@ void Command_Scale_f(void)
 	const double scaled = atof(COM_Argv(1));
 	fixed_t scale = FLOAT_TO_FIXED(scaled);
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (scale < FRACUNIT/100 || scale > 100*FRACUNIT) //COM_Argv(1) will return a null string if they did not give a paramater, so...
 	{
@@ -314,9 +309,9 @@ void Command_Scale_f(void)
 
 void Command_Gravflip_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (players[consoleplayer].mo)
 		players[consoleplayer].mo->flags2 ^= MF2_OBJECTFLIP;
@@ -324,9 +319,9 @@ void Command_Gravflip_f(void)
 
 void Command_Hurtme_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 2)
 	{
@@ -344,9 +339,9 @@ void Command_RTeleport_f(void)
 	player_t *p = &players[consoleplayer];
 	subsector_t *ss;
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 3 || COM_Argc() > 7)
 	{
@@ -406,9 +401,9 @@ void Command_Teleport_f(void)
 	player_t *p = &players[consoleplayer];
 	subsector_t *ss;
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 3 || COM_Argc() > 11)
 	{
@@ -622,9 +617,9 @@ void Command_Teleport_f(void)
 
 void Command_Skynum_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -640,9 +635,9 @@ void Command_Skynum_f(void)
 
 void Command_Weather_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -660,9 +655,9 @@ void Command_Toggletwod_f(void)
 {
 	player_t *p = &players[consoleplayer];
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (p->mo)
 		p->mo->flags2 ^= MF2_TWOD;
@@ -675,6 +670,9 @@ void Command_Toggletwod_f(void)
 // Don't enable this for normal builds...
 void Command_CauseCfail_f(void)
 {
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
 	if (consoleplayer == serverplayer)
 	{
 		CONS_Printf(M_GetText("Only remote players can use this command.\n"));
@@ -717,9 +715,9 @@ void Command_Dumplua_f(void)
 
 void Command_Savecheckpoint_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	players[consoleplayer].respawn.pointx = players[consoleplayer].mo->x;
 	players[consoleplayer].respawn.pointy = players[consoleplayer].mo->y;
@@ -732,8 +730,8 @@ void Command_Savecheckpoint_f(void)
 /*
 void Command_Getallemeralds_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	emeralds = EMERALD_ALL;
 
@@ -742,6 +740,7 @@ void Command_Getallemeralds_f(void)
 
 void Command_Resetemeralds_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_SINGLEPLAYER;
 
 	emeralds = 0;
@@ -752,9 +751,8 @@ void Command_Resetemeralds_f(void)
 
 void Command_Devmode_f(void)
 {
-#ifndef _DEBUG
-	REQUIRE_SINGLEPLAYER;
-#endif
+	REQUIRE_CHEATS;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() > 1)
 	{
@@ -771,15 +769,12 @@ void Command_Devmode_f(void)
 		CONS_Printf(M_GetText("devmode <flags>: enable debugging tools and info, prepend with 0x to use hexadecimal\n"));
 		return;
 	}
-
-	G_SetGameModified(multiplayer, true);
 }
 
 void Command_Setrings_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
@@ -787,16 +782,13 @@ void Command_Setrings_f(void)
 		players[consoleplayer].rings = 0;
 		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
 		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-
-		G_SetGameModified(multiplayer, true);
 	}
 }
 
 void Command_Setlives_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
@@ -811,8 +803,6 @@ void Command_Setlives_f(void)
 			players[consoleplayer].lives = 0;
 			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
 		}
-
-		G_SetGameModified(multiplayer, true);
 	}
 }
 
@@ -1121,7 +1111,6 @@ void OP_ObjectplaceMovement(player_t *player)
 void Command_Writethings_f(void)
 {
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
 	REQUIRE_OBJECTPLACE;
 
 	P_WriteThings();
@@ -1133,9 +1122,8 @@ void Command_ObjectPlace_f(void)
 	size_t silent;
 
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-
-	G_SetGameModified(multiplayer, true);
+	REQUIRE_CHEATS;
+	REQUIRE_SINGLEPLAYER; // this one will very likely never be multiplayer compatible...
 
 	silent = COM_CheckParm("-silent");
 

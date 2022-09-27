@@ -239,6 +239,7 @@ void G_LoadGameData(void);
 void G_LoadGameSettings(void);
 
 void G_SetGameModified(boolean silent, boolean major);
+void G_SetUsedCheats(void);
 
 void G_SetGamestate(gamestate_t newstate);
 

@@ -292,7 +292,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		player->kartweight = skin->kartweight;
 
 #if 0
-		if (!(cv_debug || devparm) && !(netgame || multiplayer || demo.playback))
+		if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
 		{
 			for (i = 0; i <= r_splitscreen; i++)
 			{
