@@ -1100,7 +1100,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (joystickvector.xaxis != 0)
 	{
-		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
+		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) / JOYAXISRANGE;
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
@@ -1132,20 +1132,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward += ((value * MAXPLMOVE) >> 10);
+			forward += ((value * MAXPLMOVE) / JOYAXISRANGE);
 		}
 
 		value = G_PlayerInputAnalog(forplayer, gc_brake, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
-			forward -= ((value * MAXPLMOVE) >> 10);
+			forward -= ((value * MAXPLMOVE) / JOYAXISRANGE);
 		}
 
 		// But forward/backward IS used for aiming.
 		if (joystickvector.yaxis != 0)
 		{
-			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) >> 10;
+			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 	}
 
