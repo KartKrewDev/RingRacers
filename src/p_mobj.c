@@ -2082,7 +2082,7 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	if (mo->player && mo->player->pflags & PF_GODMODE)
+	if (mo->player && mo->player->cheats & PC_GODMODE)
 		return false;
 
 	if (((mo->z <= mo->subsector->sector->floorheight
@@ -3737,7 +3737,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
 			}
 
-			if (!resetcalled && !(player->pflags & PF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
+			if (!resetcalled && !(player->cheats & PC_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
 			{
 				P_ResetCamera(player, thiscam);
 			}
@@ -10773,7 +10773,7 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
-consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 
 static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 {
@@ -11655,31 +11655,23 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 	switch (i)
 	{
-	case MT_EMBLEM:
-		if (netgame || multiplayer)
-			return false; // Single player only
+		case MT_ITEMCAPSULE:
+			{
+				boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
 
-		if (modifiedgame && !savemoddata)
-			return false; // No cheating!!
+				// don't spawn ring capsules in GTR_SPHERES gametypes
+				if (isRingCapsule && (gametyperules & GTR_SPHERES))
+					return false;
 
-		break;
-	case MT_ITEMCAPSULE:
-		{
-			boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
-
-			// don't spawn ring capsules in GTR_SPHERES gametypes
-			if (isRingCapsule && (gametyperules & GTR_SPHERES))
-				return false;
-
-			// in record attack, only spawn ring capsules
-			// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-			if (modeattacking
-			&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
-				return false;
-		}
-		break;
-	default:
-		break;
+				// in record attack, only spawn ring capsules
+				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
+				if (modeattacking
+				&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
+					return false;
+			}
+			break;
+		default:
+			break;
 	}
 
 	// No bosses outside of a combat situation.

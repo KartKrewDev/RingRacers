@@ -427,18 +427,23 @@ UINT8 M_SecretUnlocked(INT32 type)
 
 UINT8 M_MapLocked(INT32 mapnum)
 {
-
 #ifdef DEVELOP
-	if (1)
+	(void)mapnum;
+	return false;
+#else
+	// Don't lock maps in dedicated servers.
+	// That just makes hosts' lives hell.
+	if (dedicated)
 		return false;
-#endif	
-	if (!mapnum || mapnum > nummapheaders)
-		return false;
+	
 	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
 		return false;
+
 	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)
 		return true;
+
 	return false;
+#endif
 }
 
 INT32 M_CountEmblems(void)

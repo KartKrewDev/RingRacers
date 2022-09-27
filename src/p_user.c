@@ -3036,7 +3036,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	}
 
 #ifndef NOCLIPCAM
-	cameranoclip = ((player->pflags & PF_NOCLIP)
+	cameranoclip = ((player->cheats & PC_NOCLIP)
 		|| (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)) // Noclipping player camera noclips too!!
 		|| (leveltime < introtime)); // Kart intro cam
 #endif

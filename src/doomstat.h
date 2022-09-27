@@ -127,6 +127,7 @@ extern boolean modifiedgame;
 extern boolean majormods;
 extern UINT16 mainwads;
 extern boolean savemoddata; // This mod saves time/emblem data.
+extern boolean usedCheats;
 extern boolean imcontinuing; // Temporary flag while continuing
 extern boolean metalrecording;
 
@@ -652,8 +653,6 @@ extern INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
 extern INT16 scrambleteams[MAXPLAYERS]; //for CTF team scramble
 extern INT16 scrambletotal; //for CTF team scramble
 extern INT16 scramblecount; //for CTF team scramble
-
-extern INT32 cheats;
 
 // SRB2kart
 extern UINT8 numlaps;

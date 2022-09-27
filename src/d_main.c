@@ -1518,6 +1518,12 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-noupload"))
 		COM_BufAddText("downloading 0\n");
 
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		// Moved from G_LoadGameData itself, as it would cause some crazy
+		// confusion issues when loading mods.
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 	G_LoadGameData();
 
 	wipegamestate = gamestate;
@@ -1601,7 +1607,7 @@ void D_SRB2Main(void)
 		{
 			if (!M_CheckParm("-server"))
 			{
-				G_SetGameModified(true, true);
+				G_SetUsedCheats();
 
 				// Start up a "minor" grand prix session
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
@@ -1814,16 +1820,12 @@ void D_SRB2Main(void)
 
 		if (server && !M_CheckParm("+map"))
 		{
-			// Prevent warping to locked levels
-			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-			// lives hell.
-			if (!dedicated && M_MapLocked(pstartmap))
-				I_Error("You need to unlock this level before you can warp to it!\n");
-			else
+			if (M_MapLocked(pstartmap))
 			{
-				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
+				G_SetUsedCheats();
 			}
+
+			D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
 	else if (M_CheckParm("-skipintro"))
