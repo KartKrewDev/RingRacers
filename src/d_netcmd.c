@@ -809,14 +809,12 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
 	CV_RegisterVar(&cv_httpsource);
-#ifndef NONET
 	CV_RegisterVar(&cv_allownewplayer);
 #ifdef VANILLAJOINNEXTROUND
 	CV_RegisterVar(&cv_joinnextround);
 #endif
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_blamecfail);
-#endif
 
 	COM_AddCommand("ping", Command_Ping_f);
 	CV_RegisterVar(&cv_nettimeout);
@@ -4711,8 +4709,6 @@ static void Command_Version_f(void)
 	// Base library
 #if defined( HAVE_SDL)
 	CONS_Printf("SDL ");
-#elif defined(_WINDOWS)
-	CONS_Printf("DD ");
 #endif
 
 	// OS

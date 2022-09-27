@@ -1882,7 +1882,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ITNEXT;
 	if (mobj->lastmomz)
 		diff2 |= MD2_LASTMOMZ;
-	if (mobj->terrain != NULL)
+	if (mobj->terrain != NULL || mobj->terrainOverlay != NULL)
 		diff2 |= MD2_TERRAIN;
 
 	if (diff2 != 0)
@@ -3202,6 +3202,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_TERRAIN)
 	{
 		mobj->terrain = (terrain_t *)(size_t)READUINT32(save_p);
+		mobj->terrainOverlay = (mobj_t *)(size_t)READUINT32(save_p);
 	}
 	else
 	{
@@ -4243,6 +4244,13 @@ static void P_RelinkPointers(void)
 			{
 				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
 			}
+		}
+		if (mobj->terrainOverlay)
+		{
+			temp = (UINT32)(size_t)mobj->terrainOverlay;
+			mobj->terrainOverlay = NULL;
+			if (!P_SetTarget(&mobj->terrainOverlay, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "terrainOverlay not found on %d\n", mobj->type);
 		}
 		if (mobj->player)
 		{

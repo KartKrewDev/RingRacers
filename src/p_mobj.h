@@ -147,8 +147,8 @@ typedef enum
 	MF_PAIN             = 1<<22,
 	// This mobj will stick to any surface or solid object it touches.
 	MF_STICKY           = 1<<23,
-	// NiGHTS hidden item. Goes to seestate and turns MF_SPECIAL when paralooped.
-	MF_NIGHTSITEM       = 1<<24,
+	// Object uses terrain effects. (Overlays, footsteps, etc)
+	MF_APPLYTERRAIN     = 1<<24,
 	// for chase camera, don't be blocked by things (partial clipping)
 	MF_NOCLIPTHING      = 1<<25,
 	// Missile bounces like a grenade.
@@ -406,6 +406,8 @@ typedef struct mobj_s
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
 	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
+	struct mobj_s *terrainOverlay; // Overlay sprite object for terrain
+
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
 
 	INT32 dispoffset;
