@@ -8871,12 +8871,13 @@ INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 	{
 		INT32 steer = (K_GetKartTurnValue(player,
 					player->steering) << TICCMD_REDUCE);
+		fixed_t minimum = INT32_MAX;
 
 		if (!player->drift)
 			steer = 9 * steer / 5;
 
-		return FixedMul(steer, 8 * FixedDiv(player->speed,
-					2 * K_GetKartSpeed(player, false, true) / 3));
+		minimum = 2 * K_GetKartSpeed(player, false, true) / 3;
+		return FixedMul(steer, 8 * FixedDiv(max(player->speed, minimum), minimum));
 	}
 	else
 		return 0;
