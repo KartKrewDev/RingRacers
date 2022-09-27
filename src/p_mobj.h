@@ -409,6 +409,7 @@ typedef struct mobj_s
 	struct mobj_s *terrainOverlay; // Overlay sprite object for terrain
 
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
+	UINT8 waterskip; // Water skipping counter
 
 	INT32 dispoffset;
 

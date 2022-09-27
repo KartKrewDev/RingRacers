@@ -3255,35 +3255,90 @@ boolean K_MovingHorizontally(mobj_t *mobj)
 	return (P_AproxDistance(mobj->momx, mobj->momy) / 5 > abs(mobj->momz));
 }
 
-boolean K_WaterRun(player_t *player)
+boolean K_WaterRun(mobj_t *mobj)
 {
-	if (
-			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->tiregrease ||
-			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, false)
-	)
-		return true;
-	return false;
+	switch (mobj->type)
+	{
+		case MT_JAWZ:
+		{
+			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
+			{
+				fixed_t jawzFeet = P_GetMobjFeet(mobj);
+				fixed_t chaseFeet = P_GetMobjFeet(mobj->tracer);
+				fixed_t footDiff = (chaseFeet - jawzFeet) * P_MobjFlip(mobj);
+
+				// Water run if the player we're chasing is above/equal to us.
+				// Start water skipping if they're underneath the water.
+				return (footDiff > -mobj->tracer->height);
+			}
+
+			return false;
+		}
+
+		case MT_PLAYER:
+		{
+			if (mobj->player == NULL)
+			{
+				return false;
+			}
+
+			if (mobj->player->invincibilitytimer
+				|| mobj->player->sneakertimer
+				|| mobj->player->tiregrease
+				|| mobj->player->flamedash
+				|| mobj->player->speed > 2 * K_GetKartSpeed(mobj->player, false, false))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		default:
+		{
+			return false;
+		}
+	}
 }
 
-boolean K_WaterSkip(player_t *player)
+boolean K_WaterSkip(mobj_t *mobj)
 {
-	if (player->waterskip >= 2)
+	if (mobj->waterskip >= 2)
 	{
 		// Already finished waterskipping.
 		return false;
 	}
 
-	if (player->waterskip > 0)
+	switch (mobj->type)
+	{
+		case MT_PLAYER:
+		case MT_ORBINAUT:
+		case MT_JAWZ:
+		case MT_BALLHOG:
+		{
+			// Allow
+			break;
+		}
+
+		default:
+		{
+			// Don't allow
+			return false;
+		}
+	}
+
+	if (mobj->waterskip > 0)
 	{
 		// Already waterskipping.
 		// Simply make sure you haven't slowed down drastically.
-		return (player->speed > 20 * mapobjectscale);
+		return (P_AproxDistance(mobj->momx, mobj->momy) > 20 * mapobjectscale);
 	}
-
-	return K_MovingHorizontally(player->mo);
+	else
+	{
+		// Need to be moving horizontally and not vertically
+		// to be able to start a water skip.
+		return K_MovingHorizontally(mobj);
+	}
 }
 
 static fixed_t K_FlameShieldDashVar(INT32 val)
@@ -7979,9 +8034,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
 	}
-
-	if (P_IsObjectOnGround(player->mo))
-		player->waterskip = 0;
 
 	if (player->instashield)
 		player->instashield--;
