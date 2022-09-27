@@ -3097,8 +3097,12 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	player_t *player = mobj->player;
 
 	fixed_t surfaceheight = INT32_MAX;
-	fixed_t mobjbottom = INT32_MAX;
 	fixed_t surfDiff = INT32_MAX;
+
+	fixed_t floorheight = INT32_MAX;
+	fixed_t floorDiff = INT32_MAX;
+
+	fixed_t mobjbottom = INT32_MAX;
 	fixed_t maxStep = INT32_MAX;
 	boolean doifit = false;
 
@@ -3142,38 +3146,48 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	{
 		ourZAng = mobj->standingslope->zangle;
 	}
- 
+
 	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
 	if (waterSlope != NULL)
 	{
 		waterZAng = waterSlope->zangle;
 	}
- 
+
 	if (ourZAng != waterZAng)
 	{
 		// The surface slopes are different.
 		return false;
 	}
- 
+
 	surfaceheight = flip ? P_GetFFloorBottomZAt(rover, mobj->x, mobj->y) : P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
 	mobjbottom = flip ? (mobj->z + mobj->height) : mobj->z;
- 
+
 	doifit = flip ? (surfaceheight - mobj->floorz >= mobj->height) : (mobj->ceilingz - surfaceheight >= mobj->height);
- 
+
 	if (!doifit)
 	{
 		// Object can't fit in this space.
 		return false;
 	}
- 
-	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
+
 	maxStep = P_GetThingStepUp(mobj);
+
+	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
 	if (surfDiff <= maxStep && surfDiff >= 0)
 	{
 		// We start water run IF we can step-down!
+		floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
+		floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
+		if (floorDiff <= maxStep && floorDiff >= 0)
+		{
+			// ... but NOT if real floor is in range.
+			// FIXME: Count solid FOFs in this check
+			return false;
+		}
+
 		return true;
 	}
- 
+
 	return false;
 }
 
@@ -3202,6 +3216,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 	boolean wasgroundpounding = false;
 	fixed_t top2 = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
 	fixed_t bot2 = P_GetSectorFloorZAt(sector, mobj->x, mobj->y);
+	pslope_t *topslope = NULL;
+	pslope_t *bottomslope = NULL;
 
 	// Default if no water exists.
 	mobj->watertop = mobj->waterbottom = mobj->z - 1000*FRACUNIT;
@@ -3244,6 +3260,9 @@ void P_MobjCheckWater(mobj_t *mobj)
 		mobj->watertop = topheight;
 		mobj->waterbottom = bottomheight;
 
+		topslope = *rover->t_slope;
+		bottomslope = *rover->b_slope;
+
 		// Just touching the water?
 		if (((mobj->eflags & MFE_VERTICALFLIP) && thingtop - height < bottomheight)
 		 || (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z + height > topheight))
@@ -3281,6 +3300,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 				mobj->watertop = mobj->z;
 				mobj->waterbottom = mobj->z - height;
 			}
+
+			topslope = bottomslope = NULL;
 		}
 	}
 
@@ -3323,6 +3344,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 		fixed_t waterZ = INT32_MAX;
 		fixed_t solidZ = INT32_MAX;
 		fixed_t diff = INT32_MAX;
+		INT32 waterDelta = 0;
 
 		fixed_t thingZ = INT32_MAX;
 		boolean splashValid = false;
@@ -3331,11 +3353,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			waterZ = mobj->waterbottom;
 			solidZ = mobj->ceilingz;
+			if (bottomslope)
+			{
+				waterDelta = bottomslope->zdelta;
+			}
 		}
 		else
 		{
 			waterZ = mobj->watertop;
 			solidZ = mobj->floorz;
+			if (topslope)
+			{
+				waterDelta = topslope->zdelta;
+			}
 		}
 
 		diff = waterZ - solidZ;
@@ -3406,7 +3436,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 				P_SetScale(splish, mobj->scale);
 
 				// skipping stone!
-				if (K_WaterSkip(mobj) == true)
+				if (K_WaterSkip(mobj) == true
+					&& abs(waterDelta) < FRACUNIT/21) // Only on flat water
 				{
 					const fixed_t hop = 5 * mapobjectscale;
 
