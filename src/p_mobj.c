@@ -2179,17 +2179,6 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BIGTUMBLEWEED:
 		case MT_LITTLETUMBLEWEED:
 		case MT_SHELL:
-		// SRB2kart stuff that should die in pits
-		// Shouldn't stop moving along the Z if there's no speed though!
-		case MT_EGGMANITEM:
-		case MT_BANANA:
-		case MT_ORBINAUT:
-		case MT_JAWZ:
-		case MT_BALLHOG:
-		case MT_SSMINE:
-		case MT_LANDMINE:
-		case MT_DROPTARGET:
-		case MT_BUBBLESHIELDTRAP:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -2271,6 +2260,17 @@ boolean P_ZMovement(mobj_t *mo)
 			}
 			break;
 		default:
+			// SRB2kart stuff that should die in pits
+			// Shouldn't stop moving along the Z if there's no speed though!
+			if (P_CanDeleteKartItem(mo->type))
+			{
+				// Remove stuff from death pits.
+				if (P_CheckDeathPitCollide(mo))
+				{
+					P_RemoveMobj(mo);
+					return false;
+				}
+			}
 			break;
 	}
 
@@ -5035,6 +5035,15 @@ boolean P_IsKartItem(INT32 type)
 		default:
 			return P_IsKartFieldItem(type);
 	}
+}
+
+// This item can die in death sectors. There may be some
+// special conditions for items that don't switch types...
+// TODO: just make a general function for things that should
+// die like this?
+boolean P_CanDeleteKartItem(INT32 type)
+{
+	return P_IsKartFieldItem(type);
 }
 
 // Called when a kart item "thinks"
@@ -9329,11 +9338,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 
 	// Destroy items sector special
-	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
-	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
-	|| mobj->type == MT_JAWZ
-	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP
-	|| mobj->type == MT_LANDMINE)
+	if (P_CanDeleteKartItems(mobj->type))
 	{
 		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
 		{
