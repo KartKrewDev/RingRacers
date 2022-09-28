@@ -6843,6 +6843,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_LANDMINE:
 		mobj->friction = ORIG_FRICTION/4;
 
+		if (mobj->target && mobj->target->player)
+			mobj->color = mobj->target->player->skincolor;
+		else
+			mobj->color = SKINCOLOR_SAPPHIRE;
+
 		if (mobj->momx || mobj->momy || mobj->momz)
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
