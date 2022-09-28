@@ -517,10 +517,10 @@ Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 	hyudoro_mode(hyu) = HYU_PATROL;
 
 	// Set splitscreen player visibility
+	hyu->renderflags |= RF_DONTDRAW;
 	if (master && !P_MobjWasRemoved(master) && master->player)
 	{
-		hyu->renderflags |= RF_DONTDRAW &
-			~(K_GetPlayerDontDrawFlag(master->player));
+		hyu->renderflags &= ~(K_GetPlayerDontDrawFlag(master->player));
 	}
 
 	spawn_hyudoro_shadow(hyu); // this sucks btw
