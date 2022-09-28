@@ -12734,6 +12734,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Increment no. of capsules on the map counter
 		maptargets++;
+		break;
+	}
+	case MT_BANANA:
+	{
+		// Give Duel bananas a random angle
+		mobj->angle = FixedMul(P_RandomFixed(PR_DECORATION), ANGLE_MAX);
+		*doangle = false;
+		break;
 	}
 	default:
 		break;
