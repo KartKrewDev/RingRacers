@@ -1703,7 +1703,13 @@ void P_XYMovement(mobj_t *mo)
 
 			if (walltransferred == false)
 			{
-				if (mo->flags & MF_SLIDEME)
+				if (mo->type == MT_DUELBOMB)
+				{
+					P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BUMP);
+					Obj_DuelBombReverse(mo);
+					xmove = ymove = 0;
+				}
+				else if (mo->flags & MF_SLIDEME)
 				{
 					P_SlideMove(mo);
 					if (P_MobjWasRemoved(mo))
@@ -1757,10 +1763,6 @@ void P_XYMovement(mobj_t *mo)
 
 						case MT_BUBBLESHIELDTRAP:
 							S_StartSound(mo, sfx_s3k44); // Bubble bounce
-							break;
-
-						case MT_DUELBOMB:
-							Obj_DuelBombReverse(mo);
 							break;
 
 						default:
@@ -10329,9 +10331,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			// Remove before release
 			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
 			break;
-		case MT_DUELBOMB:
-			Obj_DuelBombInit(mobj);
-			break;
 		default:
 			break;
 	}
@@ -12750,6 +12749,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Increment no. of capsules on the map counter
 		maptargets++;
+		break;
+	}
+	case MT_DUELBOMB:
+	{
+		// Duel Bomb needs init to match real map thing's angle
+		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
+		Obj_DuelBombInit(mobj);
+		*doangle = false;
 		break;
 	}
 	case MT_BANANA:
