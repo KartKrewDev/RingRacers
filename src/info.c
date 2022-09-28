@@ -24066,7 +24066,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HYUDORO
-		2055,           // doomednum
+		-1,             // doomednum
 		S_HYUDORO,      // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -24093,7 +24093,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HYUDORO_CENTER
-		-1,             // doomednum
+		2055,           // doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate

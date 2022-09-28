@@ -11558,7 +11558,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 		case MT_EGGMANITEM:
 		case MT_SSMINE:
 		case MT_LANDMINE:
-		case MT_HYUDORO:
+		case MT_HYUDORO_CENTER:
 		case MT_DROPTARGET:
 			{
 				// Duel objects.
@@ -12741,6 +12741,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Give Duel bananas a random angle
 		mobj->angle = FixedMul(P_RandomFixed(PR_DECORATION), ANGLE_MAX);
 		*doangle = false;
+		break;
+	}
+	case MT_HYUDORO_CENTER:
+	{
+		Obj_InitHyudoroCenter(mobj, NULL);
 		break;
 	}
 	default:

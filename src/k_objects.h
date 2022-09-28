@@ -3,6 +3,7 @@
 #define k_objects_H
 
 /* Hyudoro */
+void Obj_InitHyudoroCenter(mobj_t *center, mobj_t *master);
 void Obj_HyudoroDeploy(mobj_t *master);
 void Obj_HyudoroThink(mobj_t *actor);
 void Obj_HyudoroCenterThink(mobj_t *actor);

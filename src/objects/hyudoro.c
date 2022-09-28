@@ -388,11 +388,8 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 }
 
 void
-Obj_HyudoroDeploy (mobj_t *master)
+Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 {
-	mobj_t *center = P_SpawnMobjFromMobj(
-			master, 0, 0, 0, MT_HYUDORO_CENTER);
-
 	mobj_t *hyu = P_SpawnMobjFromMobj(
 			center, 0, 0, 0, MT_HYUDORO);
 
@@ -405,20 +402,30 @@ Obj_HyudoroDeploy (mobj_t *master)
 
 	center->radius = hyu->radius;
 
-	P_InitAngle(hyu, master->angle);
+	P_InitAngle(hyu, center->angle);
 	P_SetTarget(&hyudoro_center(hyu), center);
 	P_SetTarget(&hyudoro_center_master(center), master);
 
 	hyudoro_mode(hyu) = HYU_PATROL;
 
 	// Set splitscreen player visibility
-	if (master->player)
+	if (master && !P_MobjWasRemoved(master) && master->player)
 	{
 		hyu->renderflags |= RF_DONTDRAW &
 			~(K_GetPlayerDontDrawFlag(master->player));
 	}
 
 	spawn_hyudoro_shadow(hyu); // this sucks btw
+}
+
+void
+Obj_HyudoroDeploy (mobj_t *master)
+{
+	mobj_t *center = P_SpawnMobjFromMobj(
+			master, 0, 0, 0, MT_HYUDORO_CENTER);
+
+	center->angle = master->angle;
+	Obj_InitHyudoroCenter(center, master);
 
 	S_StartSound(master, sfx_s3k92); // scary ghost noise
 }
