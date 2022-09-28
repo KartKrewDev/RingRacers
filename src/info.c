@@ -8308,7 +8308,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_POGOSPRING
-		-1,             // doomednum
+		2057,           // doomednum
 		S_POGOSPRING1,  // spawnstate
 		1000,           // spawnhealth
 		S_POGOSPRING2B, // seestate

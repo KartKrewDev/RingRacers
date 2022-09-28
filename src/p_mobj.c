@@ -11575,6 +11575,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 		case MT_LANDMINE:
 		case MT_HYUDORO_CENTER:
 		case MT_DROPTARGET:
+		case MT_POGOSPRING:
 			{
 				// Duel objects.
 				// Normally only spawn when placed by the map in Duels,
@@ -12761,6 +12762,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_HYUDORO_CENTER:
 	{
 		Obj_InitHyudoroCenter(mobj, NULL);
+		break;
+	}
+	case MT_POGOSPRING:
+	{
+		// Start as tumble version.
+		mobj->reactiontime++;
 		break;
 	}
 	default:
