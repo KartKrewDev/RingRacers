@@ -5362,6 +5362,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SINK_SHIELD",
 	"MT_SINKTRAIL",
 
+	"MT_DUELBOMB", // Duel mode bombs
+
 	"MT_BATTLEBUMPER", // Battle Mode bumper
 	"MT_BATTLEBUMPER_DEBRIS",
 	"MT_BATTLEBUMPER_BLAST",

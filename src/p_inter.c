@@ -356,6 +356,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				Obj_SPBTouch(special, toucher);
 				return;
 			}
+		case MT_DUELBOMB:
+			{
+				Obj_DuelBombTouch(special, toucher);
+				return;
+			}
 		case MT_EMERALD:
 			if (!P_CanPickupItem(player, 0))
 				return;

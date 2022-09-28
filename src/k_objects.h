@@ -40,4 +40,10 @@ void Obj_OrbinautJawzMoveHeld(player_t *player);
 void Obj_JawzThink(mobj_t *th);
 void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 
+/* Duel Bomb */
+void Obj_DuelBombThink(mobj_t *bomb);
+void Obj_DuelBombReverse(mobj_t *bomb);
+void Obj_DuelBombTouch(mobj_t *bomb, mobj_t *toucher);
+void Obj_DuelBombInit(mobj_t *bomb);
+
 #endif/*k_objects_H*/

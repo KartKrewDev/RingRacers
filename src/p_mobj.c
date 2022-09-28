@@ -1720,7 +1720,8 @@ void P_XYMovement(mobj_t *mo)
 
 					//{ SRB2kart - Orbinaut, Ballhog
 					// Bump sparks
-					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG)
+					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG
+						|| mo->type == MT_DUELBOMB)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -1754,13 +1755,17 @@ void P_XYMovement(mobj_t *mo)
 							}
 							break;
 
+						case MT_BUBBLESHIELDTRAP:
+							S_StartSound(mo, sfx_s3k44); // Bubble bounce
+							break;
+
+						case MT_DUELBOMB:
+							Obj_DuelBombReverse(mo);
+							break;
+
 						default:
 							break;
 					}
-
-					// Bubble bounce
-					if (mo->type == MT_BUBBLESHIELDTRAP)
-						S_StartSound(mo, sfx_s3k44);
 				}
 			}
 		}
@@ -2190,6 +2195,7 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_LANDMINE:
 		case MT_DROPTARGET:
 		case MT_BUBBLESHIELDTRAP:
+		case MT_DUELBOMB:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -6906,6 +6912,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_SPBEXPLOSION:
 		mobj->health--;
 		break;
+	case MT_DUELBOMB:
+	{
+		Obj_DuelBombThink(mobj);
+		break;
+	}
 	case MT_EMERALD:
 		{
 			if (battleovertime.enabled >= 10*TICRATE)
@@ -9708,6 +9719,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
+		case MT_DUELBOMB:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -10316,6 +10328,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BOSS3WAYPOINT:
 			// Remove before release
 			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
+			break;
+		case MT_DUELBOMB:
+			Obj_DuelBombInit(mobj);
 			break;
 		default:
 			break;
@@ -11553,7 +11568,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 					return false;
 			}
 			break;
-		//case MT_DUELBOMB:
+		case MT_DUELBOMB:
 		case MT_BANANA:
 		case MT_EGGMANITEM:
 		case MT_SSMINE:
@@ -12787,6 +12802,11 @@ static void P_SetAmbush(mobj_t *mobj)
 		mobj->type != MT_NIGHTSBUMPER &&
 		mobj->type != MT_STARPOST)
 		mobj->flags2 |= MF2_AMBUSH;
+
+	if (mobj->type == MT_DUELBOMB)
+	{
+		Obj_DuelBombReverse(mobj);
+	}
 }
 
 static void P_SetObjectSpecial(mobj_t *mobj)
