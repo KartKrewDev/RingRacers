@@ -11548,6 +11548,21 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 					return false;
 			}
 			break;
+		//case MT_DUELBOMB:
+		case MT_BANANA:
+		case MT_EGGMANITEM:
+		case MT_SSMINE:
+		case MT_LANDMINE:
+		case MT_HYUDORO:
+		case MT_DROPTARGET:
+			{
+				// Duel objects.
+				// Normally only spawn when placed by the map in Duels,
+				// but can be forced to always spawn with the Extra flag.
+				if (inDuel == false && !(mthing->options & MTF_EXTRA))
+					return false;
+			}
+			break;
 		default:
 			break;
 	}

@@ -23310,7 +23310,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_EGGMANITEM
-		-1,             // doomednum
+		2052,           // doomednum
 		S_EGGMANITEM1,  // spawnstate
 		2,              // spawnhealth
 		S_NULL,         // seestate
@@ -23364,7 +23364,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_BANANA
-		-1,             // doomednum
+		2051,           // doomednum
 		S_BANANA,       // spawnstate
 		2,              // spawnhealth
 		S_NULL,         // seestate
@@ -23553,7 +23553,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_SSMINE
-		-1,						// doomednum
+		2053,					// doomednum
 		S_SSMINE_AIR1,			// spawnstate
 		1,						// spawnhealth
 		S_NULL,					// seestate
@@ -23688,7 +23688,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_LANDMINE
-		-1,						// doomednum
+		2054,					// doomednum
 		S_LANDMINE,				// spawnstate
 		2,						// spawnhealth
 		S_NULL,					// seestate
@@ -23715,7 +23715,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_DROPTARGET
-		-1,             // doomednum
+		2056,           // doomednum
 		S_DROPTARGET,   // spawnstate
 		3,              // spawnhealth
 		S_NULL,         // seestate
@@ -24066,7 +24066,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HYUDORO
-		-1,             // doomednum
+		2055,           // doomednum
 		S_HYUDORO,      // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate

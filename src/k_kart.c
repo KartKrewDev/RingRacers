@@ -78,6 +78,9 @@ void K_TimerInit(void)
 			numPlayers++;
 		}
 
+		// 1v1 activates DUEL rules!
+		inDuel = (numPlayers == 2);
+
 		if (numPlayers >= 2)
 		{
 			rainbowstartavailable = true;
