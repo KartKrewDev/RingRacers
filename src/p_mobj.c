@@ -1734,6 +1734,7 @@ void P_XYMovement(mobj_t *mo)
 					switch (mo->type)
 					{
 						case MT_ORBINAUT: // Orbinaut speed decreasing
+						case MT_GARDENTOP:
 							if (mo->health > 1)
 							{
 								S_StartSound(mo, mo->info->attacksound);
@@ -6324,6 +6325,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			return false;
 		}
 		/* FALLTHRU */
+	case MT_GARDENTOP:
 	case MT_ORBINAUT_SHIELD:
 	case MT_BANANA_SHIELD:
 	case MT_EGGMANITEM_SHIELD:
@@ -7028,7 +7030,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
-	case MT_TRIPWIREBOOST:
+	case MT_TRIPWIREBOOST: {
+		mobj_t *top;
+		fixed_t newHeight;
+		fixed_t newScale;
+
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
@@ -7036,10 +7042,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
+		newHeight = mobj->target->height;
+		newScale = mobj->target->scale;
+
+		top = K_GetGardenTop(mobj->target->player);
+
+		if (top)
+		{
+			newHeight += 5 * top->height / 4;
+			newScale = FixedMul(newScale, FixedDiv(newHeight / 2, mobj->target->height));
+		}
+
 		mobj->angle = K_MomentumAngle(mobj->target);
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
-		mobj->destscale = mobj->target->scale;
-		P_SetScale(mobj, mobj->target->scale);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (newHeight / 2));
+		mobj->destscale = newScale;
+		P_SetScale(mobj, newScale);
 
 		if (mobj->extravalue1)
 		{
@@ -7111,6 +7128,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	}
 	case MT_BOOSTFLAME:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -7680,6 +7698,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_InitAngle(underlay, mobj->angle);
 			P_SetMobjState(underlay, underlayst);
 		}
+		break;
+	}
+	case MT_GARDENTOP:
+	{
+		Obj_GardenTopThink(mobj);
+		break;
+	}
+	case MT_GARDENTOPSPARK:
+	{
+		Obj_GardenTopSparkThink(mobj);
 		break;
 	}
 	case MT_HYUDORO:
@@ -9727,6 +9755,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_BUBBLESHIELD:
 		case MT_BUBBLESHIELDTRAP:
 		case MT_FLAMESHIELD:
+		case MT_GARDENTOP:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:

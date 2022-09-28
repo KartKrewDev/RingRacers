@@ -290,6 +290,8 @@ typedef enum
 #define ITEMSCALE_GROW 1
 #define ITEMSCALE_SHRINK 2
 
+#define GARDENTOP_MAXGRINDTIME (45)
+
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {

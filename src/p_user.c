@@ -3263,6 +3263,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}
 
+	/* The Top is Big Large so zoom out */
+	if (player->curshield == KSHIELD_TOP)
+	{
+		camdist += 40 * mapobjectscale;
+		camheight += 40 * mapobjectscale;
+	}
+
 	if (!resetcalled && (leveltime >= introtime && timeover != 2)
 		&& (t_cam_rotate[num] != -42))
 	{
