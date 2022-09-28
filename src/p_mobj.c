@@ -4992,20 +4992,49 @@ cont:
 }
 
 // Kartitem stuff.
+
+// This item is never attached to a player -- it can DIE
+// unconditionally in death sectors.
+boolean P_IsKartFieldItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_BANANA:
+		case MT_EGGMANITEM:
+		case MT_ORBINAUT:
+		case MT_JAWZ:
+		case MT_SSMINE:
+		case MT_LANDMINE:
+		case MT_BALLHOG:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_POGOSPRING:
+		case MT_SINK:
+		case MT_DROPTARGET:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 boolean P_IsKartItem(INT32 type)
 {
-	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
-		type == MT_BANANA || type == MT_BANANA_SHIELD ||
-		type == MT_DROPTARGET || type == MT_DROPTARGET_SHIELD ||
-		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
-		type == MT_JAWZ || type == MT_JAWZ_SHIELD ||
-		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
-		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP ||
-		type == MT_LANDMINE)
-		return true;
-	else
-		return false;
+	switch (type)
+	{
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA_SHIELD:
+		case MT_DROPTARGET_SHIELD:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE_SHIELD:
+		case MT_SINK_SHIELD:
+		case MT_SPB:
+		case MT_HYUDORO:
+			return true;
+
+		default:
+			return P_IsKartFieldItem(type);
+	}
 }
 
 // Called when a kart item "thinks"
