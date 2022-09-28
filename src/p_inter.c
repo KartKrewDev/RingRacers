@@ -1017,7 +1017,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				target->fuse = 2;
 			}
-			else
+			else if (inDuel == false)
 			{
 				UINT8 i;
 
