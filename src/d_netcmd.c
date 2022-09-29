@@ -1731,40 +1731,65 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 #endif
 }
 
-void SendWeaponPref(UINT8 n)
+enum {
+	WP_KICKSTARTACCEL = 1<<0,
+	WP_SHRINKME = 1<<1,
+};
+
+void WeaponPref_Send(UINT8 ssplayer)
 {
-	UINT8 buf[1];
+	UINT8 prefs = 0;
 
-	buf[0] = 0;
+	if (cv_kickstartaccel[ssplayer].value)
+		prefs |= WP_KICKSTARTACCEL;
 
-	if (cv_kickstartaccel[n].value)
-		buf[0] |= 1;
+	if (cv_shrinkme[ssplayer].value)
+		prefs |= WP_SHRINKME;
 
-	if (cv_shrinkme[n].value)
-		buf[0] |= 2;
-
-	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
+	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, &prefs, 1);
 }
 
-static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
+void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 {
+	player_t *player = &players[playernum];
+
+	UINT8 prefs = 0;
+
+	if (player->pflags & PF_KICKSTARTACCEL)
+		prefs |= WP_KICKSTARTACCEL;
+
+	if (player->pflags & PF_SHRINKME)
+		prefs |= WP_SHRINKME;
+
+	WRITEUINT8(*cp, prefs);
+}
+
+void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
+{
+	player_t *player = &players[playernum];
+
 	UINT8 prefs = READUINT8(*cp);
 
-	players[playernum].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
+	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
 
-	if (prefs & 1)
-		players[playernum].pflags |= PF_KICKSTARTACCEL;
+	if (prefs & WP_KICKSTARTACCEL)
+		player->pflags |= PF_KICKSTARTACCEL;
 
-	if (prefs & 2)
-		players[playernum].pflags |= PF_SHRINKME;
+	if (prefs & WP_SHRINKME)
+		player->pflags |= PF_SHRINKME;
 
 	if (leveltime < 2)
 	{
 		// BAD HACK: No other place I tried to slot this in
 		// made it work for the host when they initally host,
 		// so this will have to do.
-		K_UpdateShrinkCheat(&players[playernum]);
+		K_UpdateShrinkCheat(player);
 	}
+}
+
+static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
+{
+	WeaponPref_Parse(cp, playernum);
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
@@ -1952,7 +1977,7 @@ void D_SendPlayerConfig(UINT8 n)
 	UINT8 *p = buf;
 
 	SendNameAndColor(n);
-	SendWeaponPref(n);
+	WeaponPref_Send(n);
 
 	if (pr != NULL)
 	{
