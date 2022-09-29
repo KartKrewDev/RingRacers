@@ -169,7 +169,7 @@ typedef enum
 typedef enum
 {
 	MF2_AXIS           = 1,     // It's a NiGHTS axis! (For faster checking)
-	MF2_TWOD           = 1<<1,  // Moves like it's in a 2D level
+	// free: 1<<1
 	MF2_DONTRESPAWN    = 1<<2,  // Don't respawn this object!
 	// free: 1<<3
 	MF2_AUTOMATIC      = 1<<4,  // Thrown ring has automatic properties

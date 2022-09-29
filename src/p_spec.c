@@ -2836,16 +2836,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			EV_DoCrush(line, crushBothOnce);
 			break;
 
-		case 432: // Enable 2D Mode (Disable if noclimb)
-			if (mo && mo->player)
-			{
-				if (line->flags & ML_NOCLIMB)
-					mo->flags2 &= ~MF2_TWOD;
-				else
-					mo->flags2 |= MF2_TWOD;
-			}
-			break;
-
 		case 433: // Flip gravity (Flop gravity if noclimb) Works on pushables, too!
 			if (line->flags & ML_NOCLIMB)
 				mo->flags2 &= ~MF2_OBJECTFLIP;
