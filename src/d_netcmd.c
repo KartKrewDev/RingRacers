@@ -4756,6 +4756,9 @@ static void Command_Version_f(void)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif
 
+	if (compuncommitted)
+		CONS_Printf("\x85" "! UNCOMMITTED CHANGES ! " "\x80");
+
 	CONS_Printf("\n");
 }
 

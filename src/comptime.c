@@ -15,6 +15,13 @@ const char *comprevision = SRB2_COMP_REVISION;
 #elif (defined(COMPVERSION))
 #include "comptime.h"
 
+const int compuncommitted =
+#if (defined(COMPVERSION_UNCOMMITTED))
+1;
+#else
+0;
+#endif
+
 #else
 const char *compbranch = "Unknown";
 const char *comprevision = "illegal";
