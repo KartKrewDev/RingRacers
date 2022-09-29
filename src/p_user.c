@@ -4452,3 +4452,27 @@ boolean P_PlayerFullbright(player_t *player)
 {
 	return (player->invincibilitytimer > 0);
 }
+
+void P_ResetPlayerCheats(void)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = &players[i];
+		mobj_t *thing = player->mo;
+
+		if (!playeringame[i])
+			continue;
+
+		player->pflags &= ~(PF_GODMODE);
+
+		if (P_MobjWasRemoved(thing))
+			continue;
+
+		thing->flags &= ~(MF_NOCLIP);
+
+		thing->destscale = mapobjectscale;
+		P_SetScale(thing, thing->destscale);
+	}
+}
