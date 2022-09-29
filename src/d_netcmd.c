@@ -5570,7 +5570,7 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 		case CHEAT_DEVMODE: {
 			UINT32 flags = READUINT32(*cp);
 			cht_debug = flags;
-			CV_CheaterWarning(targetPlayer, va("devmode %08x", flags));
+			CV_CheaterWarning(targetPlayer, va("devmode %x", flags));
 			break;
 		}
 
