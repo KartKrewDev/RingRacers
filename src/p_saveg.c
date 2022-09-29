@@ -394,6 +394,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
 		WRITEUINT8(save_p, players[i].respawn.truedeath);
+		WRITEUINT8(save_p, players[i].respawn.manual);
 
 		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
@@ -691,6 +692,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
 		players[i].respawn.truedeath = READUINT8(save_p);
+		players[i].respawn.manual = READUINT8(save_p);
 
 		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
