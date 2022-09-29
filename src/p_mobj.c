@@ -9491,7 +9491,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 
 	// Destroy items sector special
-	if (P_CanDeleteKartItems(mobj->type))
+	if (P_CanDeleteKartItem(mobj->type))
 	{
 		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
 		{
