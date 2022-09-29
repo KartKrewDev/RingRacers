@@ -10802,7 +10802,6 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 		thinker_t *thinker = (thinker_t *)mobj;
 		thinker_t *next = thinker->next;
 		(next->prev = thinker->prev)->next = next;
-		R_DestroyLevelInterpolators(thinker);
 		Z_Free(thinker);
 	}
 }
