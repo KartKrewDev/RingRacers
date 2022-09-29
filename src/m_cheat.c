@@ -748,13 +748,7 @@ void Command_Setrings_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		// P_GivePlayerRings does value clamping
-		players[consoleplayer].rings = 0;
-		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
-		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-	}
+	D_Cheat(consoleplayer, CHEAT_RINGS, atoi(COM_Argv(1)));
 }
 
 void Command_Setlives_f(void)
@@ -762,20 +756,7 @@ void Command_Setlives_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		SINT8 lives = atoi(COM_Argv(1));
-		if (lives == -1)
-		{
-			players[consoleplayer].lives = INFLIVES; // infinity!
-		}
-		else
-		{
-			// P_GivePlayerLives does value clamping
-			players[consoleplayer].lives = 0;
-			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
-		}
-	}
+	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
 //

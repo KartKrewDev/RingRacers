@@ -602,7 +602,4 @@ typedef struct player_s
 #endif
 } player_t;
 
-// Value for infinite lives
-#define INFLIVES 0x7F
-
 #endif

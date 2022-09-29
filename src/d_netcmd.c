@@ -1995,6 +1995,13 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 	switch (cheat)
 	{
+		case CHEAT_RINGS:
+		case CHEAT_LIVES:
+			// If you're confused why 'int' instead of
+			// 'SINT8', search online: 'default argument promotions'
+			COPY(WRITESINT8, int);
+			break;
+
 		case CHEAT_SCALE:
 			COPY(WRITEFIXED, fixed_t);
 			break;
@@ -5492,6 +5499,28 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->pflags ^= PF_GODMODE;
 
 			CV_CheaterWarning(targetPlayer, va("GOD MODE %s", status));
+			break;
+		}
+
+		case CHEAT_RINGS: {
+			SINT8 rings = READSINT8(*cp);
+
+			// P_GivePlayerRings does value clamping
+			player->rings = 0;
+			P_GivePlayerRings(player, rings);
+
+			CV_CheaterWarning(targetPlayer, va("rings = %d", rings));
+			break;
+		}
+
+		case CHEAT_LIVES: {
+			SINT8 lives = READSINT8(*cp);
+
+			// P_GivePlayerLives does value clamping
+			player->lives = 0;
+			P_GivePlayerLives(player, lives);
+
+			CV_CheaterWarning(targetPlayer, va("lives = %d", lives));
 			break;
 		}
 
