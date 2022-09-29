@@ -256,7 +256,8 @@ modulate (mobj_t *top)
 
 		if (top_float(top) > 0)
 		{
-			top_float(top) -= hover_step;
+			top_float(top) = max(0,
+					top_float(top) - hover_step);
 		}
 		else if (P_IsObjectOnGround(top))
 		{
@@ -276,7 +277,8 @@ modulate (mobj_t *top)
 
 		if (top_float(top) < max_hover)
 		{
-			top_float(top) += hover_step;
+			top_float(top) = min(max_hover,
+					top_float(top) + hover_step);
 		}
 		else
 		{
