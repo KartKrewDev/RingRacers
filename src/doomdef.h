@@ -691,10 +691,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #undef UPDATE_ALERT
 #endif
 
-/// - SRB2Kart options -
-/// Camera always has noclip.
-#define NOCLIPCAM
-
 /// Other karma comeback modes
 //#define OTHERKARMAMODES
 

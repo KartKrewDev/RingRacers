@@ -2354,11 +2354,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam)
 		fixed_t tryx = thiscam->x;
 		fixed_t tryy = thiscam->y;
 
-#ifndef NOCLIPCAM
-		if ((players[displayplayers[i]].cheats & PC_NOCLIP) || (leveltime < introtime)) // Noclipping player camera noclips too!!
-#else
 		if (!(players[displayplayers[i]].pflags & PF_NOCONTEST)) // Time Over should not clip through walls
-#endif
 		{
 			floatok = true;
 			thiscam->floorz = thiscam->z;
