@@ -1874,7 +1874,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
-		if (player->cheats & PC_GODMODE)
+		if (player->pflags & PF_GODMODE)
 			return false;
 
 		if (!force)

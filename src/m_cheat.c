@@ -262,13 +262,8 @@ void Command_CheatNoClip_f(void)
 	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
 		return;
 
-	plyr->cheats ^= PC_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->cheats & PC_NOCLIP ? M_GetText("On") : M_GetText("Off"));
-
-	if (plyr->cheats & PC_NOCLIP)
-		plyr->mo->flags |= MF_NOCLIP;
-	else
-		plyr->mo->flags &= ~MF_NOCLIP;
+	plyr->mo->flags ^= MF_NOCLIP;
+	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->mo->flags & MF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
 }
 
 void Command_CheatGod_f(void)
@@ -280,8 +275,8 @@ void Command_CheatGod_f(void)
 	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	plyr = &players[consoleplayer];
-	plyr->cheats ^= PC_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->cheats & PC_GODMODE ? M_GetText("On") : M_GetText("Off"));
+	plyr->pflags ^= PF_GODMODE;
+	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->pflags & PF_GODMODE ? M_GetText("On") : M_GetText("Off"));
 }
 
 void Command_Scale_f(void)

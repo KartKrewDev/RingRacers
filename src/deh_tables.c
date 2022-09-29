@@ -5708,8 +5708,9 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// free: 1<<0 to 1<<2 (name un-matchable)
-	"\x01",
+	"GODMODE",
+
+	// free: 1<<1 and 1<<2 (name un-matchable)
 	"\x01",
 	"\x01",
 
