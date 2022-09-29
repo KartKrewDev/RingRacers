@@ -306,64 +306,21 @@ void Command_Hurtme_f(void)
 
 void Command_RTeleport_f(void)
 {
-	fixed_t intx, inty, intz;
-	size_t i;
-	player_t *p = &players[consoleplayer];
-	subsector_t *ss;
+	float x = atof(COM_Argv(1));
+	float y = atof(COM_Argv(2));
+	float z = atof(COM_Argv(3));
 
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (COM_Argc() < 3 || COM_Argc() > 7)
+	if (COM_Argc() != 4)
 	{
-		CONS_Printf(M_GetText("rteleport -x <value> -y <value> -z <value>: relative teleport to a location\n"));
+		CONS_Printf(M_GetText("rteleport <x> <y> <z>: relative teleport to a location\n"));
 		return;
 	}
 
-	if (!p->mo)
-		return;
-
-	i = COM_CheckParm("-x");
-	if (i)
-		intx = atoi(COM_Argv(i + 1));
-	else
-		intx = 0;
-
-	i = COM_CheckParm("-y");
-	if (i)
-		inty = atoi(COM_Argv(i + 1));
-	else
-		inty = 0;
-
-	ss = R_PointInSubsectorOrNull(p->mo->x + intx*FRACUNIT, p->mo->y + inty*FRACUNIT);
-	if (!ss || ss->sector->ceilingheight - ss->sector->floorheight < p->mo->height)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Not a valid location.\n"));
-		return;
-	}
-	i = COM_CheckParm("-z");
-	if (i)
-	{
-		intz = atoi(COM_Argv(i + 1));
-		intz <<= FRACBITS;
-		intz += p->mo->z;
-		if (intz < ss->sector->floorheight)
-			intz = ss->sector->floorheight;
-		if (intz > ss->sector->ceilingheight - p->mo->height)
-			intz = ss->sector->ceilingheight - p->mo->height;
-	}
-	else
-		intz = p->mo->z;
-
-	CONS_Printf(M_GetText("Teleporting by %d, %d, %d...\n"), intx, inty, FixedInt((intz-p->mo->z)));
-
-	P_MapStart();
-	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
-		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
-	else
-		S_StartSound(p->mo, sfx_mixup);
-	P_MapEnd();
+	D_Cheat(consoleplayer, CHEAT_RELATIVE_TELEPORT,
+			FLOAT_TO_FIXED(x), FLOAT_TO_FIXED(y), FLOAT_TO_FIXED(z));
 }
 
 void Command_Teleport_f(void)
