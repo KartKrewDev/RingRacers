@@ -651,18 +651,6 @@ void Command_Weather_f(void)
 	P_SwitchWeather(atoi(COM_Argv(1)));
 }
 
-void Command_Toggletwod_f(void)
-{
-	player_t *p = &players[consoleplayer];
-
-	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
-
-	if (p->mo)
-		p->mo->flags2 ^= MF2_TWOD;
-}
-
 #ifdef _DEBUG
 // You never thought you needed this, did you? >=D
 // Yes, this has the specific purpose of completely screwing you up

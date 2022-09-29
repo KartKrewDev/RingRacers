@@ -5649,7 +5649,7 @@ const char *const MOBJFLAG_LIST[] = {
 // \tMF2_(\S+).*// (.+) --> \t"\1", // \2
 const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			  // It's a NiGHTS axis! (For faster checking)
-	"TWOD",			  // Moves like it's in a 2D level
+	"\x01",			  // free: 1<<1 (name un-matchable)
 	"DONTRESPAWN",	  // Don't respawn this object!
 	"\x01",			  // free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	  // Thrown ring has automatic properties
