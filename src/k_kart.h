@@ -69,6 +69,7 @@ void K_SpawnDashDustRelease(player_t *player);
 void K_SpawnDriftBoostClip(player_t *player);
 void K_SpawnDriftBoostClipSpark(mobj_t *clip);
 void K_SpawnNormalSpeedLines(player_t *player);
+void K_SpawnGardenTopSpeedLines(player_t *player);
 void K_SpawnInvincibilitySpeedLines(mobj_t *mo);
 void K_SpawnBumpEffect(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
@@ -146,6 +147,9 @@ boolean K_MovingHorizontally(mobj_t *mobj);
 boolean K_WaterRun(mobj_t *mobj);
 boolean K_WaterSkip(mobj_t *mobj);
 void K_SpawnWaterRunParticles(mobj_t *mobj);
+boolean K_IsRidingFloatingTop(player_t *player);
+boolean K_IsHoldingDownTop(player_t *player);
+mobj_t *K_GetGardenTop(player_t *player);
 void K_ApplyTripWire(player_t *player, tripwirestate_t state);
 INT16 K_GetSpindashChargeTime(player_t *player);
 fixed_t K_GetSpindashChargeSpeed(player_t *player);
@@ -172,6 +176,7 @@ UINT8 K_GetOrbinautItemFrame(UINT8 count);
 boolean K_IsSPBInGame(void);
 void K_KartEbrakeVisuals(player_t *p);
 void K_HandleDirectionalInfluence(player_t *player);
+fixed_t K_DefaultPlayerRadius(player_t *player);
 
 // sound stuff for lua
 void K_PlayAttackTaunt(mobj_t *source);

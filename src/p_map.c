@@ -866,6 +866,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
+		|| tmthing->type == MT_GARDENTOP
 		|| (tmthing->type == MT_PLAYER && thing->target != tmthing)))
 	{
 		// see if it went over / under
@@ -881,6 +882,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER && tmthing->target != thing)))
 	{
 		// see if it went over / under
@@ -901,6 +903,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		&& (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
 		|| tmthing->type == MT_BANANA || tmthing->type == MT_EGGMANITEM || tmthing->type == MT_BALLHOG
 		|| tmthing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || tmthing->type == MT_SINK
+		|| tmthing->type == MT_GARDENTOP
 		|| (tmthing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -915,6 +918,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tmthing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -932,7 +936,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 
 	if (tmthing->type == MT_ORBINAUT || tmthing->type == MT_JAWZ
-		|| tmthing->type == MT_ORBINAUT_SHIELD || tmthing->type == MT_JAWZ_SHIELD)
+		|| tmthing->type == MT_ORBINAUT_SHIELD || tmthing->type == MT_JAWZ_SHIELD
+		|| tmthing->type == MT_GARDENTOP)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -943,7 +948,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return Obj_OrbinautJawzCollide(tmthing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
-		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD)
+		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD
+		|| thing->type == MT_GARDENTOP)
 	{
 		// see if it went over / under
 		if (tmthing->z > thing->z + thing->height)
@@ -2840,6 +2846,11 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff)
 		// don't set standingslope if you're not going to clip against it
 		thing->standingslope = NULL;
 		thing->terrain = NULL;
+	}
+
+	if (thing->player && K_IsRidingFloatingTop(thing->player))
+	{
+		stairjank = false;
 	}
 
 	/* FIXME: slope step down (even up) has some false

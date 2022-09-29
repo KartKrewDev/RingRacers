@@ -1801,7 +1801,7 @@ static void P_3dMovement(player_t *player)
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
-	if (player->stairjank > 8 && leveltime & 3)
+	if ((player->stairjank > 8 && leveltime & 3) || K_IsRidingFloatingTop(player))
 	{
 		movepushangle = K_MomentumAngle(player->mo);
 	}
@@ -1884,6 +1884,7 @@ static void P_3dMovement(player_t *player)
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
+		if (player->curshield != KSHIELD_TOP)
 		{
 			INT32 a = K_GetUnderwaterTurnAdjust(player);
 			INT32 adj = 0;
@@ -1966,6 +1967,24 @@ static void P_3dMovement(player_t *player)
 
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
+
+	// Releasing a drift while on the Top translates all your
+	// momentum (and even then some) into whichever direction
+	// you're facing
+	if (onground && player->curshield == KSHIELD_TOP && (K_GetKartButtons(player) & BT_DRIFT) != BT_DRIFT && (player->oldcmd.buttons & BT_DRIFT))
+	{
+		const fixed_t gmin = FRACUNIT/4;
+		const fixed_t gmax = 5*FRACUNIT/2;
+
+		const fixed_t grindfactor = (gmax - gmin) / GARDENTOP_MAXGRINDTIME;
+		const fixed_t grindscale = gmin + (player->topdriftheld * grindfactor);
+
+		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
+		P_InstaThrust(player->mo, player->mo->angle, FixedMul(speed, grindscale));
+
+		player->topdriftheld = 0;/* reset after release */
+	}
 
 	if (!onground)
 	{
@@ -3167,6 +3186,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 			angle = thiscam->angle + input;
 		}
+	}
+
+	/* The Top is Big Large so zoom out */
+	if (player->curshield == KSHIELD_TOP)
+	{
+		camdist += 40 * mapobjectscale;
+		camheight += 40 * mapobjectscale;
 	}
 
 	if (!resetcalled && (leveltime >= introtime && timeover != 2)
