@@ -1082,7 +1082,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo)
 		fixed_t speedDiv = FRACUNIT + FixedMul(FixedDiv(speed, maxSpeed), o->speed);
 		tic_t animSpeed = max(FixedDiv(mo->state->tics, speedDiv), 1);
 
-		mo->tics = min(mo->tics, animSpeed);
+		mo->tics = min((tic_t)mo->tics, animSpeed);
 	}
 }
 
