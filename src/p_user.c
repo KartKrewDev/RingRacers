@@ -4466,6 +4466,7 @@ void P_ResetPlayerCheats(void)
 			continue;
 
 		player->pflags &= ~(PF_GODMODE);
+		player->respawn.manual = false;
 
 		if (P_MobjWasRemoved(thing))
 			continue;
