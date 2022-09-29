@@ -1940,7 +1940,7 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				continue;
 			}
 
-			if (thing->player && P_CheckSolidFFloorSurface(thing->player, rover))
+			if (P_CheckSolidFFloorSurface(thing, rover))
 				;
 			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
 				;
@@ -2524,9 +2524,7 @@ static boolean P_WaterRunning(mobj_t *thing)
 
 static boolean P_WaterStepUp(mobj_t *thing)
 {
-	player_t *player = thing->player;
-	return (player && player->waterskip) ||
-		P_WaterRunning(thing);
+	return (thing->waterskip > 0 || P_WaterRunning(thing));
 }
 
 fixed_t P_BaseStepUp(void)

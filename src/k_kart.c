@@ -3231,7 +3231,7 @@ tripwirepass_t K_TripwirePassConditions(player_t *player)
 
 	if (
 			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, true)
+			player->speed > 2 * K_GetKartSpeed(player, false, false)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -3249,17 +3249,241 @@ boolean K_TripwirePass(player_t *player)
 	return (player->tripwirePass != TRIPWIRE_NONE);
 }
 
-boolean K_WaterRun(player_t *player)
+boolean K_MovingHorizontally(mobj_t *mobj)
 {
-	if (
-			player->invincibilitytimer ||
-			player->sneakertimer ||
-			player->tiregrease ||
-			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, true)
-	)
-		return true;
-	return false;
+	return (P_AproxDistance(mobj->momx, mobj->momy) / 5 > abs(mobj->momz));
+}
+
+boolean K_WaterRun(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_JAWZ:
+		{
+			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
+			{
+				fixed_t jawzFeet = P_GetMobjFeet(mobj);
+				fixed_t chaseFeet = P_GetMobjFeet(mobj->tracer);
+				fixed_t footDiff = (chaseFeet - jawzFeet) * P_MobjFlip(mobj);
+
+				// Water run if the player we're chasing is above/equal to us.
+				// Start water skipping if they're underneath the water.
+				return (footDiff > -mobj->tracer->height);
+			}
+
+			return false;
+		}
+
+		case MT_PLAYER:
+		{
+			if (mobj->player == NULL)
+			{
+				return false;
+			}
+
+			if (mobj->player->invincibilitytimer
+				|| mobj->player->sneakertimer
+				|| mobj->player->tiregrease
+				|| mobj->player->flamedash
+				|| mobj->player->speed > 2 * K_GetKartSpeed(mobj->player, false, false))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		default:
+		{
+			return false;
+		}
+	}
+}
+
+boolean K_WaterSkip(mobj_t *mobj)
+{
+	if (mobj->waterskip >= 2)
+	{
+		// Already finished waterskipping.
+		return false;
+	}
+
+	switch (mobj->type)
+	{
+		case MT_PLAYER:
+		case MT_ORBINAUT:
+		case MT_JAWZ:
+		case MT_BALLHOG:
+		{
+			// Allow
+			break;
+		}
+
+		default:
+		{
+			// Don't allow
+			return false;
+		}
+	}
+
+	if (mobj->waterskip > 0)
+	{
+		// Already waterskipping.
+		// Simply make sure you haven't slowed down drastically.
+		return (P_AproxDistance(mobj->momx, mobj->momy) > 20 * mapobjectscale);
+	}
+	else
+	{
+		// Need to be moving horizontally and not vertically
+		// to be able to start a water skip.
+		return K_MovingHorizontally(mobj);
+	}
+}
+
+void K_SpawnWaterRunParticles(mobj_t *mobj)
+{
+	fixed_t runSpeed = 14 * mobj->scale;
+	fixed_t curSpeed = INT32_MAX;
+	fixed_t topSpeed = INT32_MAX;
+	fixed_t trailScale = FRACUNIT;
+
+	if (mobj->momz != 0)
+	{
+		// Only while touching ground.
+		return;
+	}
+
+	if (mobj->watertop == INT32_MAX || mobj->waterbottom == INT32_MIN)
+	{
+		// Invalid water plane.
+		return;
+	}
+
+	if (mobj->player != NULL)
+	{
+		if (mobj->player->spectator)
+		{
+			// Not as spectator.
+			return;
+		}
+
+		if (mobj->player->carry == CR_SLIDING)
+		{
+			// Not in water slides.
+			return;
+		}
+
+		topSpeed = K_GetKartSpeed(mobj->player, false, false);
+		runSpeed = FixedMul(runSpeed, mobj->movefactor);
+	}
+	else
+	{
+		topSpeed = FixedMul(mobj->scale, K_GetKartSpeedFromStat(5));
+	}
+
+	curSpeed = P_AproxDistance(mobj->momx, mobj->momy);
+
+	if (curSpeed <= runSpeed)
+	{
+		// Not fast enough.
+		return;
+	}
+
+	// Near the water plane.
+	if ((!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z + mobj->height >= mobj->watertop && mobj->z <= mobj->watertop)
+		|| (mobj->eflags & MFE_VERTICALFLIP && mobj->z + mobj->height >= mobj->waterbottom && mobj->z <= mobj->waterbottom))
+	{
+		if (topSpeed > runSpeed)
+		{
+			trailScale = FixedMul(FixedDiv(curSpeed - runSpeed, topSpeed - runSpeed), mapobjectscale);
+		}
+		else
+		{
+			trailScale = mapobjectscale; // Scaling is based off difference between runspeed and top speed
+		}
+
+		if (trailScale > 0)
+		{
+			const angle_t forwardangle = K_MomentumAngle(mobj);
+			const fixed_t playerVisualRadius = mobj->radius + (8 * mobj->scale);
+			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
+			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
+			const statenum_t curUnderlayFrame = S_WATERTRAILUNDERLAY1 + (leveltime % numFrames);
+			fixed_t x1, x2, y1, y2;
+			mobj_t *water;
+
+			x1 = mobj->x + mobj->momx + P_ReturnThrustX(mobj, forwardangle + ANGLE_90, playerVisualRadius);
+			y1 = mobj->y + mobj->momy + P_ReturnThrustY(mobj, forwardangle + ANGLE_90, playerVisualRadius);
+			x1 = x1 + P_ReturnThrustX(mobj, forwardangle, playerVisualRadius);
+			y1 = y1 + P_ReturnThrustY(mobj, forwardangle, playerVisualRadius);
+
+			x2 = mobj->x + mobj->momx + P_ReturnThrustX(mobj, forwardangle - ANGLE_90, playerVisualRadius);
+			y2 = mobj->y + mobj->momy + P_ReturnThrustY(mobj, forwardangle - ANGLE_90, playerVisualRadius);
+			x2 = x2 + P_ReturnThrustX(mobj, forwardangle, playerVisualRadius);
+			y2 = y2 + P_ReturnThrustY(mobj, forwardangle, playerVisualRadius);
+
+			// Left
+			// underlay
+			water = P_SpawnMobj(x1, y1,
+				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
+			water->destscale = trailScale;
+			water->momx = mobj->momx;
+			water->momy = mobj->momy;
+			water->momz = mobj->momz;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curUnderlayFrame);
+
+			// overlay
+			water = P_SpawnMobj(x1, y1,
+				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
+			P_InitAngle(water, forwardangle - ANGLE_180 - ANGLE_22h);
+			water->destscale = trailScale;
+			water->momx = mobj->momx;
+			water->momy = mobj->momy;
+			water->momz = mobj->momz;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curOverlayFrame);
+
+			// Right
+			// Underlay
+			water = P_SpawnMobj(x2, y2,
+				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, mobj->scale) : mobj->watertop), MT_WATERTRAILUNDERLAY);
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
+			water->destscale = trailScale;
+			water->momx = mobj->momx;
+			water->momy = mobj->momy;
+			water->momz = mobj->momz;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curUnderlayFrame);
+
+			// Overlay
+			water = P_SpawnMobj(x2, y2,
+				((mobj->eflags & MFE_VERTICALFLIP) ? mobj->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, mobj->scale) : mobj->watertop), MT_WATERTRAIL);
+			P_InitAngle(water, forwardangle - ANGLE_180 + ANGLE_22h);
+			water->destscale = trailScale;
+			water->momx = mobj->momx;
+			water->momy = mobj->momy;
+			water->momz = mobj->momz;
+			P_SetScale(water, trailScale);
+			P_SetMobjState(water, curOverlayFrame);
+
+			if (!S_SoundPlaying(mobj, sfx_s3kdbs))
+			{
+				const INT32 volume = (min(trailScale, FRACUNIT) * 255) / FRACUNIT;
+				S_StartSoundAtVolume(mobj, sfx_s3kdbs, volume);
+			}
+		}
+
+		// Little water sound while touching water - just a nicety.
+		if ((mobj->eflags & MFE_TOUCHWATER) && !(mobj->eflags & MFE_UNDERWATER))
+		{
+			if (P_RandomChance(PR_BUBBLE, FRACUNIT/2) && leveltime % TICRATE == 0)
+			{
+				S_StartSound(mobj, sfx_floush);
+			}
+		}
+	}
 }
 
 static fixed_t K_FlameShieldDashVar(INT32 val)
@@ -7956,9 +8180,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (P_IsObjectOnGround(player->mo))
-		player->waterskip = 0;
-
 	if (player->instashield)
 		player->instashield--;
 
@@ -8752,6 +8973,16 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	return outputSteering;
 }
 
+static fixed_t K_GetUnderwaterStrafeMul(player_t *player)
+{
+	const fixed_t minSpeed = 11 * player->mo->scale;
+	fixed_t baseline = INT32_MAX;
+
+	baseline = 2 * K_GetKartSpeed(player, false, true) / 3;
+
+	return max(0, FixedDiv(player->speed - minSpeed, baseline - minSpeed));
+}
+
 INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 {
 	fixed_t turnfixed = turnvalue * FRACUNIT;
@@ -8829,10 +9060,10 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
 	}
 
-	if ((player->mo->eflags & MFE_UNDERWATER) &&
-			player->speed > 11 * player->mo->scale)
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
-		turnfixed /= 2;
+		fixed_t div = min(FRACUNIT + K_GetUnderwaterStrafeMul(player), 2*FRACUNIT);
+		turnfixed = FixedDiv(turnfixed, div);
 	}
 
 	// Weight has a small effect on turning
@@ -8843,8 +9074,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 {
-	if ((player->mo->eflags & MFE_UNDERWATER) &&
-			player->speed > 11 * player->mo->scale)
+	if (player->mo->eflags & MFE_UNDERWATER)
 	{
 		INT32 steer = (K_GetKartTurnValue(player,
 					player->steering) << TICCMD_REDUCE);
@@ -8852,8 +9082,7 @@ INT32 K_GetUnderwaterTurnAdjust(player_t *player)
 		if (!player->drift)
 			steer = 9 * steer / 5;
 
-		return FixedMul(steer, 8 * FixedDiv(player->speed,
-					2 * K_GetKartSpeed(player, false, true) / 3));
+		return FixedMul(steer, 8 * K_GetUnderwaterStrafeMul(player));
 	}
 	else
 		return 0;

@@ -264,8 +264,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->aizdriftturn);
 	else if (fastcmp(field,"offroad"))
 		lua_pushinteger(L, plr->offroad);
-	else if (fastcmp(field,"waterskip"))
-		lua_pushinteger(L, plr->waterskip);
 	else if (fastcmp(field,"tiregrease"))
 		lua_pushinteger(L, plr->tiregrease);
 	else if (fastcmp(field,"springstars"))
@@ -634,8 +632,6 @@ static int player_set(lua_State *L)
 		plr->aizdriftturn = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"offroad"))
 		plr->offroad = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"waterskip"))
-		plr->waterskip = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tiregrease"))
 		plr->tiregrease = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"springstars"))

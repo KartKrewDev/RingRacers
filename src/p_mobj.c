@@ -1105,6 +1105,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		}
 	}
 
+	if (mo->waterskip > 0)
+	{
+		gravityadd = (4*gravityadd)/3;
+	}
+
 	if (mo->player)
 	{
 		if (mo->flags2 & MF2_OBJECTFLIP)
@@ -1116,11 +1121,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		if (wasflip == !(mo->eflags & MFE_VERTICALFLIP)) // note!! == ! is not equivalent to != here - turns numeric into bool this way
 		{
 			P_PlayerFlip(mo);
-		}
-
-		if (mo->player->waterskip)
-		{
-			gravityadd = (4*gravityadd)/3;
 		}
 
 		if (mo->player->trickpanel >= 2)
@@ -1938,7 +1938,7 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 		topheight = P_GetFOFTopZ(mo, sector, rover, mo->x, mo->y, NULL);
 		bottomheight = P_GetFOFBottomZ(mo, sector, rover, mo->x, mo->y, NULL);
 
-		if (mo->player && P_CheckSolidFFloorSurface(mo->player, rover)) // only the player should stand on lava or run on water
+		if (P_CheckSolidFFloorSurface(mo, rover)) // only the player should stand on lava or run on water
 			;
 		else if (motype != 0 && rover->flags & FF_SWIMMABLE) // "scenery" only
 			continue;
@@ -2097,11 +2097,18 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 	return false;
 }
 
-boolean P_CheckSolidLava(ffloor_t *rover)
+boolean P_CheckSolidLava(mobj_t *mobj, ffloor_t *rover)
 {
+	if (mobj->player == NULL)
+	{
+		return false;
+	}
+
 	if (rover->flags & FF_SWIMMABLE && GETSECSPECIAL(rover->master->frontsector->special, 1) == 3
 		&& !(rover->master->flags & ML_BLOCKPLAYERS))
-			return true;
+	{
+		return true;
+	}
 
 	return false;
 }
@@ -3079,31 +3086,115 @@ boolean P_SceneryZMovement(mobj_t *mo)
 	return true;
 }
 
+//
 // P_CanRunOnWater
 //
-// Returns true if player can waterrun on the 3D floor
+// Returns true if player can water run on a 3D floor
 //
-boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
+boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 {
-	boolean flip = player->mo->eflags & MFE_VERTICALFLIP;
-	fixed_t surfaceheight = flip ? player->mo->waterbottom : player->mo->watertop;
-	fixed_t playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
-	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
-	fixed_t span = player->mo->watertop - player->mo->waterbottom;
+	const boolean flip = (mobj->eflags & MFE_VERTICALFLIP);
+	player_t *player = mobj->player;
 
-	return
-		clip > -(player->mo->height / 2) &&
-		span > player->mo->height &&
-		player->speed / 5 > abs(player->mo->momz) &&
-		player->speed > K_GetKartSpeed(player, false, false) &&
-		K_WaterRun(player) &&
-		(rover->flags & FF_SWIMMABLE);
+	fixed_t surfaceheight = INT32_MAX;
+	fixed_t surfDiff = INT32_MAX;
+
+	fixed_t floorheight = INT32_MAX;
+	fixed_t floorDiff = INT32_MAX;
+
+	fixed_t mobjbottom = INT32_MAX;
+	fixed_t maxStep = INT32_MAX;
+	boolean doifit = false;
+
+	pslope_t *waterSlope = NULL;
+	angle_t ourZAng = 0;
+	angle_t waterZAng = 0;
+
+	if (rover == NULL)
+	{
+		// No rover.
+		return false;
+	}
+
+	if (!(rover->flags & FF_SWIMMABLE))
+	{
+		// It's not even a water FOF.
+		return false;
+	}
+
+	if (player != NULL
+		&& player->carry != CR_NONE) // Special carry state.
+	{
+		// No good player state.
+		return false;
+	}
+
+	if (P_IsObjectOnGround(mobj) == false)
+	{
+		// Don't allow jumping onto water to start a water run.
+		// (Already water running still counts as being on the ground.)
+		return false;
+	}
+
+	if (K_WaterRun(mobj) == false)
+	{
+		// Basic conditions for enabling water run.
+		return false;
+	}
+
+	if (mobj->standingslope != NULL)
+	{
+		ourZAng = mobj->standingslope->zangle;
+	}
+
+	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
+	if (waterSlope != NULL)
+	{
+		waterZAng = waterSlope->zangle;
+	}
+
+	if (ourZAng != waterZAng)
+	{
+		// The surface slopes are different.
+		return false;
+	}
+
+	surfaceheight = flip ? P_GetFFloorBottomZAt(rover, mobj->x, mobj->y) : P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
+	mobjbottom = flip ? (mobj->z + mobj->height) : mobj->z;
+
+	doifit = flip ? (surfaceheight - mobj->floorz >= mobj->height) : (mobj->ceilingz - surfaceheight >= mobj->height);
+
+	if (!doifit)
+	{
+		// Object can't fit in this space.
+		return false;
+	}
+
+	maxStep = P_GetThingStepUp(mobj);
+
+	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
+	if (surfDiff <= maxStep && surfDiff >= 0)
+	{
+		// We start water run IF we can step-down!
+		floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
+		floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
+		if (floorDiff <= maxStep && floorDiff >= 0)
+		{
+			// ... but NOT if real floor is in range.
+			// FIXME: Count solid FOFs in this check
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
-boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover)
+boolean P_CheckSolidFFloorSurface(mobj_t *mobj, ffloor_t *rover)
 {
-	return P_CheckSolidLava(rover) ||
-		P_CanRunOnWater(player, rover);
+	return P_CheckSolidLava(mobj, rover) ||
+		P_CanRunOnWater(mobj, rover);
 }
 
 //
@@ -3125,6 +3216,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 	boolean wasgroundpounding = false;
 	fixed_t top2 = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
 	fixed_t bot2 = P_GetSectorFloorZAt(sector, mobj->x, mobj->y);
+	pslope_t *topslope = NULL;
+	pslope_t *bottomslope = NULL;
 
 	// Default if no water exists.
 	mobj->watertop = mobj->waterbottom = mobj->z - 1000*FRACUNIT;
@@ -3167,6 +3260,9 @@ void P_MobjCheckWater(mobj_t *mobj)
 		mobj->watertop = topheight;
 		mobj->waterbottom = bottomheight;
 
+		topslope = *rover->t_slope;
+		bottomslope = *rover->b_slope;
+
 		// Just touching the water?
 		if (((mobj->eflags & MFE_VERTICALFLIP) && thingtop - height < bottomheight)
 		 || (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z + height > topheight))
@@ -3204,13 +3300,28 @@ void P_MobjCheckWater(mobj_t *mobj)
 				mobj->watertop = mobj->z;
 				mobj->waterbottom = mobj->z - height;
 			}
+
+			topslope = bottomslope = NULL;
 		}
 	}
 
-	// Spectators and dead players don't get to do any of the things after this.
-	if (p && (p->spectator || p->playerstate != PST_LIVE))
+	if (P_IsObjectOnGround(mobj) == true)
 	{
-		return;
+		mobj->waterskip = 0;
+	}
+
+	if (p != NULL)
+	{
+		// Spectators and dead players don't get to do any of the things after this.
+		if (p->spectator || p->playerstate != PST_LIVE)
+		{
+			return;
+		}
+	}
+
+	if (mobj->flags & MF_APPLYTERRAIN)
+	{
+		K_SpawnWaterRunParticles(mobj);
 	}
 
 	// The rest of this code only executes on a water state change.
@@ -3219,20 +3330,21 @@ void P_MobjCheckWater(mobj_t *mobj)
 		return;
 	}
 
-	if (p && !p->waterskip &&
-			p->curshield != KSHIELD_BUBBLE && wasinwater)
+	if (p != NULL
+		&& p->curshield != KSHIELD_BUBBLE
+		&& mobj->waterskip == 0
+		&& wasinwater)
 	{
+		// Play the gasp sound
 		S_StartSound(mobj, sfx_s3k38);
 	}
 
-	if ((p) // Players
-	 || (mobj->flags & MF_PUSHABLE) // Pushables
-	 || ((mobj->info->flags & MF_PUSHABLE) && mobj->fuse) // Previously pushable, might be moving still
-	)
+	if (mobj->flags & MF_APPLYTERRAIN)
 	{
 		fixed_t waterZ = INT32_MAX;
 		fixed_t solidZ = INT32_MAX;
 		fixed_t diff = INT32_MAX;
+		INT32 waterDelta = 0;
 
 		fixed_t thingZ = INT32_MAX;
 		boolean splashValid = false;
@@ -3241,11 +3353,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			waterZ = mobj->waterbottom;
 			solidZ = mobj->ceilingz;
+			if (bottomslope)
+			{
+				waterDelta = bottomslope->zdelta;
+			}
 		}
 		else
 		{
 			waterZ = mobj->watertop;
 			solidZ = mobj->floorz;
+			if (topslope)
+			{
+				waterDelta = topslope->zdelta;
+			}
 		}
 
 		diff = waterZ - solidZ;
@@ -3314,25 +3434,22 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
+
+				// skipping stone!
+				if (K_WaterSkip(mobj) == true
+					&& abs(waterDelta) < FRACUNIT/21) // Only on flat water
+				{
+					const fixed_t hop = 5 * mapobjectscale;
+
+					mobj->momx = (4*mobj->momx)/5;
+					mobj->momy = (4*mobj->momy)/5;
+					mobj->momz = hop * P_MobjFlip(mobj);
+
+					mobj->waterskip++;
+				}
 			}
-
-			// skipping stone!
-			if (p && p->waterskip < 2
-				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& (splashValid == true))
-			{
-				const fixed_t hop = 5 * mobj->scale;
-
-				mobj->momx = (4*mobj->momx)/5;
-				mobj->momy = (4*mobj->momy)/5;
-				mobj->momz = hop * P_MobjFlip(mobj);
-
-				p->waterskip++;
-			}
-
 		}
-		else if (P_MobjFlip(mobj) * mobj->momz > 0)
+		else
 		{
 			if (splashValid == true && !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
 			{
@@ -6717,11 +6834,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_JAWZ:
 	{
 		Obj_JawzThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_EGGMANITEM:
@@ -6785,6 +6904,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			P_MobjCheckWater(mobj);
 		}
 		break;
 	case MT_SINK:
@@ -9872,6 +9993,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->colorized = false;
 
 	mobj->hitlag = 0;
+	mobj->waterskip = 0;
 
 	// Set shadowscale here, before spawn hook so that Lua can change it
 	P_DefaultMobjShadowScale(mobj);

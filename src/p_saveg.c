@@ -280,7 +280,6 @@ static void P_NetArchivePlayers(void)
 		WRITEINT32(save_p, players[i].underwatertilt);
 
 		WRITEFIXED(save_p, players[i].offroad);
-		WRITEUINT8(save_p, players[i].waterskip);
 
 		WRITEUINT16(save_p, players[i].tiregrease);
 		WRITEUINT16(save_p, players[i].springstars);
@@ -577,7 +576,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].underwatertilt = READINT32(save_p);
 
 		players[i].offroad = READFIXED(save_p);
-		players[i].waterskip = READUINT8(save_p);
 
 		players[i].tiregrease = READUINT16(save_p);
 		players[i].springstars = READUINT16(save_p);
@@ -1638,6 +1636,7 @@ typedef enum
 	MD2_ITNEXT       = 1<<27,
 	MD2_LASTMOMZ     = 1<<28,
 	MD2_TERRAIN      = 1<<29,
+	MD2_WATERSKIP    = 1<<30,
 } mobj_diff2_t;
 
 typedef enum
@@ -1872,6 +1871,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
+	if (mobj->waterskip)
+		diff2 |= MD2_WATERSKIP;
 	if (mobj->dispoffset)
 		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
@@ -2081,6 +2082,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_HITLAG)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
+	if (diff2 & MD2_WATERSKIP)
+	{
+		WRITEUINT8(save_p, mobj->waterskip);
 	}
 	if (diff2 & MD2_DISPOFFSET)
 	{
@@ -3190,6 +3195,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_HITLAG)
 	{
 		mobj->hitlag = READINT32(save_p);
+	}
+	if (diff2 & MD2_WATERSKIP)
+	{
+		mobj->waterskip = READUINT8(save_p);
 	}
 	if (diff2 & MD2_DISPOFFSET)
 	{
