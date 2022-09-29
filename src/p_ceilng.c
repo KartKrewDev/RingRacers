@@ -13,6 +13,7 @@
 
 #include "doomdef.h"
 #include "p_local.h"
+#include "r_fps.h"
 #include "r_main.h"
 #include "s_sound.h"
 #include "z_zone.h"
@@ -67,7 +68,8 @@ void T_MoveCeiling(ceiling_t *ceiling)
 				switch (ceiling->type)
 				{
 					case instantMoveCeilingByFrontSector:
-						ceiling->sector->ceilingpic = ceiling->texture;
+						if (ceiling->texture > -1)
+							ceiling->sector->ceilingpic = ceiling->texture;
 						ceiling->sector->ceilingdata = NULL;
 						ceiling->sector->ceilspeed = 0;
 						P_RemoveThinker(&ceiling->thinker);
@@ -186,7 +188,8 @@ void T_MoveCeiling(ceiling_t *ceiling)
 						break;
 
 					case instantMoveCeilingByFrontSector:
-						ceiling->sector->ceilingpic = ceiling->texture;
+						if (ceiling->texture > -1)
+							ceiling->sector->ceilingpic = ceiling->texture;
 						ceiling->sector->ceilingdata = NULL;
 						ceiling->sector->ceilspeed = 0;
 						P_RemoveThinker(&ceiling->thinker);
@@ -395,9 +398,8 @@ INT32 EV_DoCeiling(line_t *line, ceiling_e type)
 	sector_t *sec;
 	ceiling_t *ceiling;
 	mtag_t tag = Tag_FGet(&line->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -513,7 +515,10 @@ INT32 EV_DoCeiling(line_t *line, ceiling_e type)
 					ceiling->direction = -1;
 					ceiling->bottomheight = line->frontsector->ceilingheight;
 				}
-				ceiling->texture = line->frontsector->ceilingpic;
+				if (line->flags & ML_NOCLIMB)
+					ceiling->texture = -1;
+				else
+					ceiling->texture = line->frontsector->ceilingpic;
 				break;
 
 			case moveCeilingByFrontTexture:
@@ -598,6 +603,9 @@ INT32 EV_DoCeiling(line_t *line, ceiling_e type)
 		ceiling->tag = tag;
 		ceiling->type = type;
 		firstone = 0;
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
 	}
 	return rtn;
 }
@@ -617,9 +625,8 @@ INT32 EV_DoCrush(line_t *line, ceiling_e type)
 	sector_t *sec;
 	ceiling_t *ceiling;
 	mtag_t tag = Tag_FGet(&line->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -676,6 +683,10 @@ INT32 EV_DoCrush(line_t *line, ceiling_e type)
 
 		ceiling->tag = tag;
 		ceiling->type = type;
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, false);
+		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
 	}
 	return rtn;
 }

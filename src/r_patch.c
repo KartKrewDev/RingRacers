@@ -76,8 +76,7 @@ static void Patch_FreeData(patch_t *patch)
 
 	for (i = 0; i < 4; i++)
 	{
-		if (patch->flats[i])
-			Z_Free(patch->flats[i]);
+		Z_Free(patch->flats[i]);
 	}
 
 #ifdef ROTSPRITE
@@ -96,14 +95,14 @@ static void Patch_FreeData(patch_t *patch)
 	}
 #endif
 
-	if (patch->columnofs)
-		Z_Free(patch->columnofs);
-	if (patch->columns)
-		Z_Free(patch->columns);
+	Z_Free(patch->columnofs);
+	Z_Free(patch->columns);
 }
 
 void Patch_Free(patch_t *patch)
 {
+	if (!patch || patch == missingpat)
+		return;
 	Patch_FreeData(patch);
 	Z_Free(patch);
 }

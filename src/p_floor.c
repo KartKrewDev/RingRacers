@@ -16,6 +16,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "p_slopes.h"
+#include "r_fps.h"
 #include "r_state.h"
 #include "s_sound.h"
 #include "z_zone.h"
@@ -573,6 +574,8 @@ void T_ContinuousFalling(continuousfall_t *faller)
 	{
 		faller->sector->ceilingheight = faller->ceilingstartheight;
 		faller->sector->floorheight = faller->floorstartheight;
+
+		R_ClearLevelInterpolatorState(&faller->thinker);
 	}
 
 	P_CheckSector(faller->sector, false); // you might think this is irrelevant. you would be wrong
@@ -635,7 +638,6 @@ void T_BounceCheese(bouncecheese_t *bouncer)
 	boolean remove;
 	INT32 i;
 	mtag_t tag = Tag_FGet(&bouncer->sourceline->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	if (bouncer->sector->crumblestate == CRUMBLE_RESTORE || bouncer->sector->crumblestate == CRUMBLE_WAIT
 		|| bouncer->sector->crumblestate == CRUMBLE_ACTIVATED) // Oops! Crumbler says to remove yourself!
@@ -650,7 +652,7 @@ void T_BounceCheese(bouncecheese_t *bouncer)
 	}
 
 	// You can use multiple target sectors, but at your own risk!!!
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		actionsector = &sectors[i];
 		actionsector->moved = true;
@@ -775,7 +777,6 @@ void T_StartCrumble(crumble_t *crumble)
 	sector_t *sector;
 	INT32 i;
 	mtag_t tag = Tag_FGet(&crumble->sourceline->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	// Once done, the no-return thinker just sits there,
 	// constantly 'returning'... kind of an oxymoron, isn't it?
@@ -804,7 +805,7 @@ void T_StartCrumble(crumble_t *crumble)
 		}
 		else if (++crumble->timer == 0) // Reposition back to original spot
 		{
-			TAG_ITER_SECTORS(0, tag, i)
+			TAG_ITER_SECTORS(tag, i)
 			{
 				sector = &sectors[i];
 
@@ -840,7 +841,7 @@ void T_StartCrumble(crumble_t *crumble)
 		// Flash to indicate that the platform is about to return.
 		if (crumble->timer > -224 && (leveltime % ((abs(crumble->timer)/8) + 1) == 0))
 		{
-			TAG_ITER_SECTORS(0, tag, i)
+			TAG_ITER_SECTORS(tag, i)
 			{
 				sector = &sectors[i];
 
@@ -932,7 +933,7 @@ void T_StartCrumble(crumble_t *crumble)
 		P_RemoveThinker(&crumble->thinker);
 	}
 
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		sector = &sectors[i];
 		sector->moved = true;
@@ -948,7 +949,6 @@ void T_StartCrumble(crumble_t *crumble)
 void T_MarioBlock(mariothink_t *block)
 {
 	INT32 i;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	T_MovePlane
 	(
@@ -983,7 +983,7 @@ void T_MarioBlock(mariothink_t *block)
 		block->sector->ceilspeed = 0;
 		block->direction = 0;
 	}
-	TAG_ITER_SECTORS(0, (INT16)block->tag, i)
+	TAG_ITER_SECTORS((INT16)block->tag, i)
 		P_RecalcPrecipInSector(&sectors[i]);
 }
 
@@ -1283,9 +1283,8 @@ void T_NoEnemiesSector(noenemies_t *nobaddies)
 	INT32 secnum = -1;
 	boolean FOFsector = false;
 	mtag_t tag = Tag_FGet(&nobaddies->sourceline->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -1296,14 +1295,13 @@ void T_NoEnemiesSector(noenemies_t *nobaddies)
 		{
 			INT32 targetsecnum = -1;
 			mtag_t tag2 = Tag_FGet(&sec->lines[i]->tags);
-			TAG_ITER_DECLARECOUNTER(1);
 
 			if (sec->lines[i]->special < 100 || sec->lines[i]->special >= 300)
 				continue;
 
 			FOFsector = true;
 
-			TAG_ITER_SECTORS(1, tag2, targetsecnum)
+			TAG_ITER_SECTORS(tag2, targetsecnum)
 			{
 				if (T_SectorHasEnemies(&sectors[targetsecnum]))
 					return;
@@ -1363,7 +1361,6 @@ void T_EachTimeThinker(eachtime_t *eachtime)
 	fixed_t bottomheight, topheight;
 	ffloor_t *rover;
 	mtag_t tag = Tag_FGet(&eachtime->sourceline->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1373,7 +1370,7 @@ void T_EachTimeThinker(eachtime_t *eachtime)
 		eachtime->playersOnArea[i] = false;
 	}
 
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -1391,14 +1388,13 @@ void T_EachTimeThinker(eachtime_t *eachtime)
 		{
 			INT32 targetsecnum = -1;
 			mtag_t tag2 = Tag_FGet(&sec->lines[i]->tags);
-			TAG_ITER_DECLARECOUNTER(1);
 
 			if (sec->lines[i]->special < 100 || sec->lines[i]->special >= 300)
 				continue;
 
 			FOFsector = true;
 
-			TAG_ITER_SECTORS(1, tag2, targetsecnum)
+			TAG_ITER_SECTORS(tag2, targetsecnum)
 			{
 				targetsec = &sectors[targetsecnum];
 
@@ -1485,8 +1481,8 @@ void T_EachTimeThinker(eachtime_t *eachtime)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (P_IsPlayerValid(i) && playersArea[i])
-				continue;
+			if (P_IsPlayerValid(i) && !playersArea[i])
+				return;
 		}
 	}
 
@@ -1533,12 +1529,11 @@ void T_RaiseSector(raise_t *raise)
 	INT32 direction;
 	result_e res = 0;
 	mtag_t tag = raise->tag;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	if (raise->sector->crumblestate >= CRUMBLE_FALL || raise->sector->ceilingdata)
 		return;
 
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		sector = &sectors[i];
 
@@ -1665,7 +1660,7 @@ void T_RaiseSector(raise_t *raise)
 	raise->sector->ceilspeed = 42;
 	raise->sector->floorspeed = speed*direction;
 
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 		P_RecalcPrecipInSector(&sectors[i]);
 }
 
@@ -1759,9 +1754,8 @@ void EV_DoFloor(line_t *line, floor_e floortype)
 	sector_t *sec;
 	floormove_t *dofloor;
 	mtag_t tag = Tag_FGet(&line->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -1957,6 +1951,9 @@ void EV_DoFloor(line_t *line, floor_e floortype)
 		}
 
 		firstone = 0;
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&dofloor->thinker, sec, false);
 	}
 }
 
@@ -1976,10 +1973,9 @@ void EV_DoElevator(line_t *line, elevator_e elevtype, boolean customspeed)
 	sector_t *sec;
 	elevator_t *elevator;
 	mtag_t tag = Tag_FGet(&line->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	// act on all sectors with the same tag as the triggering linedef
-	TAG_ITER_SECTORS(0, tag, secnum)
+	TAG_ITER_SECTORS(tag, secnum)
 	{
 		sec = &sectors[secnum];
 
@@ -2088,6 +2084,10 @@ void EV_DoElevator(line_t *line, elevator_e elevtype, boolean customspeed)
 			default:
 				break;
 		}
+
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, false);
+		R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, true);
 	}
 }
 
@@ -2202,7 +2202,7 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 				for (c = topz; c > bottomz; c -= spacing)
 				{
 					spawned = P_SpawnMobj(a, b, c, type);
-					spawned->angle += P_RandomKey(36)*ANG10; // irrelevant for default objects but might make sense for some custom ones
+					spawned->angle += P_RandomKey(PR_TERRAIN, 36)*ANG10; // irrelevant for default objects but might make sense for some custom ones
 
 					if (flags & ML_EFFECT1)
 					{
@@ -2242,6 +2242,10 @@ void EV_BounceSector(sector_t *sec, fixed_t momz, line_t *sourceline)
 	bouncer->speed = momz/2;
 	bouncer->distance = FRACUNIT;
 	bouncer->low = true;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&bouncer->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&bouncer->thinker, sec, true);
 }
 
 // For T_ContinuousFalling special
@@ -2267,6 +2271,10 @@ void EV_DoContinuousFall(sector_t *sec, sector_t *backsector, fixed_t spd, boole
 
 	faller->destheight = backwards ? backsector->ceilingheight : backsector->floorheight;
 	faller->direction = backwards ? 1 : -1;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&faller->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&faller->thinker, sec, true);
 }
 
 // Some other 3dfloor special things Tails 03-11-2002 (Search p_mobj.c for description)
@@ -2277,7 +2285,6 @@ INT32 EV_StartCrumble(sector_t *sec, ffloor_t *rover, boolean floating,
 	sector_t *foundsec;
 	INT32 i;
 	mtag_t tag = Tag_FGet(&rover->master->tags);
-	TAG_ITER_DECLARECOUNTER(0);
 
 	// If floor is already activated, skip it
 	if (sec->floordata)
@@ -2320,7 +2327,11 @@ INT32 EV_StartCrumble(sector_t *sec, ffloor_t *rover, boolean floating,
 
 	crumble->sector->crumblestate = CRUMBLE_ACTIVATED;
 
-	TAG_ITER_SECTORS(0, tag, i)
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&crumble->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&crumble->thinker, sec, true);
+
+	TAG_ITER_SECTORS(tag, i)
 	{
 		foundsec = &sectors[i];
 
@@ -2371,6 +2382,10 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		block->ceilingstartheight = block->sector->ceilingheight;
 		block->tag = (INT16)Tag_FGet(&sector->tags);
 
+		// interpolation
+		R_CreateInterpolator_SectorPlane(&block->thinker, roversec, false);
+		R_CreateInterpolator_SectorPlane(&block->thinker, roversec, true);
+
 		if (itsamonitor)
 		{
 			oldx = thing->x;
@@ -2379,9 +2394,9 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		}
 
 		P_UnsetThingPosition(thing);
-		thing->x = sector->soundorg.x;
-		thing->y = sector->soundorg.y;
-		thing->z = topheight;
+		thing->x = thing->old_x = sector->soundorg.x;
+		thing->y = thing->old_y = sector->soundorg.y;
+		thing->z = thing->old_z = topheight;
 		thing->momz = FixedMul(6*FRACUNIT, thing->scale);
 		P_SetThingPosition(thing);
 		if (thing->flags & MF_SHOOTABLE)
@@ -2402,9 +2417,9 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 		if (itsamonitor && thing)
 		{
 			P_UnsetThingPosition(thing);
-			thing->x = oldx;
-			thing->y = oldy;
-			thing->z = oldz;
+			thing->x = thing->old_x = oldx;
+			thing->y = thing->old_y = oldy;
+			thing->z = thing->old_z = oldz;
 			thing->momx = 1;
 			thing->momy = 1;
 			P_SetThingPosition(thing);

@@ -28,6 +28,9 @@
 
 //#define VIEWHEIGHTS "41"
 
+// Maximum laps per map.
+#define MAX_LAPS 99
+
 // Maximum player score.
 #define MAXSCORE 99999990 // 999999990
 
@@ -123,7 +126,7 @@ struct demofreecam_s {
 
 	camera_t *cam;	// this is useful when the game is paused, notably
 	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
-	
+
 	angle_t localangle;	// keeps track of the cam angle for cmds
 	angle_t localaiming;	// ditto with aiming
 	boolean turnheld;	// holding turn button for gradual turn speed
@@ -155,6 +158,7 @@ void P_ResetPlayer(player_t *player);
 boolean P_PlayerCanDamage(player_t *player, mobj_t *thing);
 
 boolean P_IsLocalPlayer(player_t *player);
+boolean P_IsMachineLocalPlayer(player_t *player);
 boolean P_IsDisplayPlayer(player_t *player);
 
 void P_SetPlayerAngle(player_t *player, angle_t angle);
@@ -168,14 +172,14 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
-boolean P_PlayerHitFloor(player_t *player, boolean dorollstuff);
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
 boolean P_EndingMusic(player_t *player);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
-void P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
+INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
 void P_GivePlayerLives(player_t *player, INT32 numlives);
 UINT8 P_GetNextEmerald(void);
 void P_GiveEmerald(boolean spawnObj);
@@ -276,6 +280,7 @@ void P_RespawnSpecials(void);
 
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
+void P_CalculatePrecipFloor(precipmobj_t *mobj);
 void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
@@ -385,6 +390,7 @@ extern camera_t *mapcampointer;
 extern fixed_t tmx;
 extern fixed_t tmy;
 extern pslope_t *tmfloorslope, *tmceilingslope;
+extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);
@@ -404,15 +410,22 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
+fixed_t P_BaseStepUp(void);
+fixed_t P_GetThingStepUp(mobj_t *thing);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
+void P_InitAngle(mobj_t *thing, angle_t newValue);
+void P_InitPitch(mobj_t *thing, angle_t newValue);
+void P_InitRoll(mobj_t *thing, angle_t newValue);
 void P_SlideMove(mobj_t *mo);
 void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
 boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2);
+boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2);
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius);
 
 boolean P_CheckSector(sector_t *sector, boolean crunch);
@@ -427,7 +440,7 @@ void P_RadiusAttack(mobj_t *spot, mobj_t *source, fixed_t damagedist, UINT8 dama
 
 fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
-boolean PIT_PushableMoved(mobj_t *thing);
+BlockItReturn_t PIT_PushableMoved(mobj_t *thing);
 
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
 
@@ -479,6 +492,7 @@ typedef struct BasicFF_s
 #define DMG_SPECTATOR  0x83
 #define DMG_TIMEOVER   0x84
 // Masks
+#define DMG_WOMBO		 0x10 // Flag - setting this flag allows objects to damage you if you're already in spinout. The effect is reversed on objects with MF_MISSILE (setting it prevents them from comboing in spinout)
 #define DMG_STEAL        0x20 // Flag - can steal bumpers, will only deal damage to players, and will not deal damage outside Battle Mode.
 #define DMG_CANTHURTSELF 0x40 // Flag - cannot hurt your self or your team
 #define DMG_DEATHMASK    DMG_INSTAKILL // if bit 7 is set, this is a death type instead of a damage type
@@ -527,5 +541,6 @@ fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale);
 fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
+fixed_t P_GetMobjZMovement(mobj_t *mo);
 
 #endif // __P_LOCAL__

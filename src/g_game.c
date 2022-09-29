@@ -21,6 +21,7 @@
 #include "filesrch.h" // for refreshdirmenu
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -32,7 +33,7 @@
 #include "g_demo.h"
 #include "m_cheat.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
 #include "st_stuff.h"
@@ -56,6 +57,7 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_bot.h"
 #include "doomstat.h"
 
@@ -73,8 +75,12 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 #define SAVEGAMESIZE (1024)
 
 // SRB2kart
-char gamedatafilename[64] = "kartdata.dat";
-char timeattackfolder[64] = "kart";
+char gamedatafilename[64] =
+#ifdef DEVELOP
+	"develop"
+#endif
+	"ringdata.dat";
+char timeattackfolder[64] = "ringracers";
 char customversionstring[32] = "\0";
 
 static void G_DoCompleted(void);
@@ -91,19 +97,21 @@ UINT32 mapmusresume;
 INT16 gamemap = 1;
 UINT32 maptol;
 
-UINT8 globalweather = PRECIP_NONE;
-UINT8 curWeather = PRECIP_NONE;
+preciptype_t globalweather = PRECIP_NONE;
+preciptype_t curWeather = PRECIP_NONE;
 
 precipprops_t precipprops[MAXPRECIP] =
 {
-	{MT_NULL, 0}, // PRECIP_NONE
-	{MT_RAIN, 0}, // PRECIP_RAIN
-	{MT_SNOWFLAKE, 0}, // PRECIP_SNOW
-	{MT_BLIZZARDSNOW, 0}, // PRECIP_BLIZZARD
-	{MT_RAIN, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
-	{MT_NULL, PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
-	{MT_RAIN, PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
+	{"NONE",				MT_NULL, 			0}, // PRECIP_NONE
+	{"RAIN",				MT_RAIN, 			0}, // PRECIP_RAIN
+	{"SNOW",				MT_SNOWFLAKE,		0}, // PRECIP_SNOW
+	{"BLIZZARD",			MT_BLIZZARDSNOW,	0}, // PRECIP_BLIZZARD
+	{"STORM",				MT_RAIN,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM
+	{"STORM_NORAIN",		MT_NULL,			PRECIPFX_THUNDER|PRECIPFX_LIGHTNING}, // PRECIP_STORM_NORAIN
+	{"STORM_NOSTRIKES",		MT_RAIN,			PRECIPFX_THUNDER} // PRECIP_STORM_NOSTRIKES
 };
+
+preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
 //INT16 lastmapsaved = 0; // Last map we auto-saved at
@@ -120,6 +128,7 @@ UINT16 mainwads = 0;
 boolean modifiedgame = false; // Set if homebrew PWAD stuff has been added.
 boolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been added.
 boolean savemoddata = false;
+boolean usedCheats = false; // Set when a "cheats on" is ever used.
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
 boolean imcontinuing = false;
@@ -143,20 +152,15 @@ INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
-UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
-INT16 spstage_start, spmarathon_start;
-INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
-
-INT16 titlemap = 0;
+char * titlemap = NULL;
 boolean hidetitlepics = false;
-INT16 bootmap; //bootmap for loading a map on startup
+char * bootmap = NULL; //bootmap for loading a map on startup
 
-INT16 tutorialmap = 0; // map to load for tutorial
+char * tutorialmap = NULL; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
-INT32 tutorialgcs = gcs_custom; // which control scheme is loaded?
 
 boolean looptitle = true;
 
@@ -165,8 +169,6 @@ UINT16 skincolor_blueteam = SKINCOLOR_BLUE;
 UINT16 skincolor_redring = SKINCOLOR_RASPBERRY;
 UINT16 skincolor_bluering = SKINCOLOR_PERIWINKLE;
 
-tic_t countdowntimer = 0;
-boolean countdowntimeup = false;
 boolean exitfadestarted = false;
 
 cutscene_t *cutscenes[128];
@@ -185,7 +187,8 @@ mapthing_t *bflagpoint;
 struct quake quake;
 
 // Map Header Information
-mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
+mapheader_t** mapheaderinfo = {NULL};
+INT32 nummapheaders, mapallocsize = 0;
 
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
@@ -204,18 +207,9 @@ UINT32 tokenlist; // List of tokens collected
 boolean gottoken; // Did you get a token? Used for end of act
 INT32 tokenbits; // Used for setting token bits
 
-// Old Special Stage
-INT32 sstimer; // Time allotted in the special stage
-
 tic_t totalplaytime;
 UINT32 matchesplayed; // SRB2Kart
 boolean gamedataloaded = false;
-
-// Time attack data for levels
-// These are dynamically allocated for space reasons now
-recorddata_t *mainrecords[NUMMAPS]   = {NULL};
-//nightsdata_t *nightsrecords[NUMMAPS] = {NULL};
-UINT8 mapvisited[NUMMAPS];
 
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;
@@ -261,7 +255,7 @@ INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
 INT32 bubbletime = TICRATE/2;
-INT32 comebacktime = 10*TICRATE;
+INT32 comebacktime = 3*TICRATE;
 INT32 bumptime = 6;
 INT32 greasetics = 3*TICRATE;
 INT32 wipeoutslowtime = 20;
@@ -286,6 +280,8 @@ tic_t racecountdown, exitcountdown; // for racing
 fixed_t gravity;
 fixed_t mapobjectscale;
 
+struct maplighting maplighting;
+
 INT16 autobalance; //for CTF team balance
 INT16 teamscramble; //for CTF team scramble
 INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
@@ -293,10 +289,9 @@ INT16 scrambleteams[MAXPLAYERS]; //for CTF team scramble
 INT16 scrambletotal; //for CTF team scramble
 INT16 scramblecount; //for CTF team scramble
 
-INT32 cheats; //for multiplayer cheat commands
-
 // SRB2Kart
 // Cvars that we don't want changed mid-game
+UINT8 numlaps; // Removed from Cvar hell
 UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for easy, 1 for normal, 2 for hard
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
@@ -304,15 +299,14 @@ boolean franticitems; // Frantic items currently enabled?
 boolean comeback; // Battle Mode's karma comeback is on/off
 
 // Voting system
-INT16 votelevels[5][2]; // Levels that were rolled by the host
+INT16 votelevels[4][2]; // Levels that were rolled by the host
 SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
 // Server-sided, synched variables
 SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
-tic_t indirectitemcooldown; // Cooldown before any more Shrink, SPB, or any other item that works indirectly is awarded
-tic_t hyubgone; // Cooldown before hyudoro is allowed to be rerolled
+tic_t itemCooldowns[NUMKARTITEMS - 1]; // Cooldowns to prevent item spawning
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
 boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
@@ -325,7 +319,25 @@ boolean legitimateexit; // Did this client actually finish the match?
 boolean comebackshowninfo; // Have you already seen the "ATTACK OR PROTECT" message?
 tic_t curlap; // Current lap time
 tic_t bestlap; // Best lap time
-static INT16 randmapbuffer[NUMMAPS+1]; // Buffer for maps RandMap is allowed to roll
+
+typedef struct
+{
+	INT16 *mapbuffer;			// Pointer to zone memory
+	INT32 lastnummapheaders;	// Reset if nummapheaders != this
+	UINT8 counttogametype;		// Time to gametype change event
+} randmaps_t;
+static randmaps_t randmaps = {NULL, 0, 0};
+
+static void G_ResetRandMapBuffer(void)
+{
+	INT32 i;
+	Z_Free(randmaps.mapbuffer);
+	randmaps.lastnummapheaders = nummapheaders;
+	randmaps.mapbuffer = Z_Malloc(randmaps.lastnummapheaders * sizeof(INT16), PU_STATIC, NULL);
+	for (i = 0; i < randmaps.lastnummapheaders; i++)
+		randmaps.mapbuffer[i] = -1;
+	//intentionally not resetting randmaps.counttogametype here
+}
 
 // Grading
 UINT32 timesBeaten;
@@ -342,27 +354,10 @@ INT16 prevmap, nextmap;
 
 static UINT8 *savebuffer;
 
-static void kickstartaccel_OnChange(void);
-static void kickstartaccel2_OnChange(void);
-static void kickstartaccel3_OnChange(void);
-static void kickstartaccel4_OnChange(void);
-void SendWeaponPref(UINT8 n);
-
-static CV_PossibleValue_t joyaxis_cons_t[] = {{0, "None"},
-{1, "X-Axis"}, {2, "Y-Axis"}, {-1, "X-Axis-"}, {-2, "Y-Axis-"},
-#if JOYAXISSET > 1
-{3, "Z-Axis"}, {4, "X-Rudder"}, {-3, "Z-Axis-"}, {-4, "X-Rudder-"},
-#endif
-#if JOYAXISSET > 2
-{5, "Y-Rudder"}, {6, "Z-Rudder"}, {-5, "Y-Rudder-"}, {-6, "Z-Rudder-"},
-#endif
-#if JOYAXISSET > 3
-{7, "U-Axis"}, {8, "V-Axis"}, {-7, "U-Axis-"}, {-8, "V-Axis-"},
-#endif
- {0, NULL}};
-#if JOYAXISSET > 4
-"More Axis Sets"
-#endif
+static void weaponPrefChange(void);
+static void weaponPrefChange2(void);
+static void weaponPrefChange3(void);
+static void weaponPrefChange4(void);
 
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
@@ -391,6 +386,36 @@ consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, 
 static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
 consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
 
+// Shout settings
+// The relevant ones are CV_NETVAR because too lazy to send them any other way
+consvar_t cv_shoutname = CVAR_INIT ("shout_name", "SERVER", CV_NETVAR, NULL, NULL);
+
+static CV_PossibleValue_t shoutcolor_cons_t[] =
+{
+	{-1, "Player color"},
+	{0, "White"},
+	{1, "Yellow"},
+	{2, "Purple"},
+	{3, "Green"},
+	{4, "Blue"},
+	{5, "Red"},
+	{6, "Gray"},
+	{7, "Orange"},
+	{8, "Sky-blue"},
+	{9, "Gold"},
+	{10, "Lavender"},
+	{11, "Aqua-green"},
+	{12, "Magenta"},
+	{13, "Pink"},
+	{14, "Brown"},
+	{15, "Tan"},
+	{0, NULL}
+};
+consvar_t cv_shoutcolor = CVAR_INIT ("shout_color", "Red", CV_NETVAR, shoutcolor_cons_t, NULL);
+
+// If on and you're an admin, your messages will automatically become shouts.
+consvar_t cv_autoshout = CVAR_INIT ("autoshout", "Off", CV_NETVAR, CV_OnOff, NULL);
+
 // Pause game upon window losing focus
 consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL);
 
@@ -407,74 +432,25 @@ consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE,
 consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel_OnChange),
-	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel2_OnChange),
-	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel3_OnChange),
-	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, kickstartaccel4_OnChange)
+	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
-consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_turn", "X-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_move", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move2", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move3", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_move4", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_brake", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_brake", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_aimaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_aim", "Y-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_look", "None", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_look", "None", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_fire", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire2", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire3", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis_fire4", "Z-Axis", CV_SAVE, joyaxis_cons_t, NULL)
-};
-
-consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joyaxis_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis2_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis3_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL),
-	CVAR_INIT ("joyaxis4_drift", "Z-Rudder", CV_SAVE, joyaxis_cons_t, NULL)
+consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("shrinkme", "Off", CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("shrinkme2", "Off", CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("shrinkme3", "Off", CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("shrinkme4", "Off", CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
 static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joy_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy2_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy3_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy4_deadzone", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
-};
-
-consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("joy_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy2_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy3_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("joy4_digdeadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
+	CVAR_INIT ("deadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone2", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone3", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("deadzone4", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
 };
 
 // now automatically allocated in D_RegisterClientCommands
@@ -485,21 +461,23 @@ INT32 player_name_changes[MAXPLAYERS];
 // Allocation for time and nights data
 void G_AllocMainRecordData(INT16 i)
 {
-	if (!mainrecords[i])
-		mainrecords[i] = Z_Malloc(sizeof(recorddata_t), PU_STATIC, NULL);
-	memset(mainrecords[i], 0, sizeof(recorddata_t));
+	if (i > nummapheaders || !mapheaderinfo[i])
+		I_Error("G_AllocMainRecordData: Internal map ID %d not found (nummapheaders = %d)\n", i, nummapheaders);
+	if (!mapheaderinfo[i]->mainrecord)
+		mapheaderinfo[i]->mainrecord = Z_Malloc(sizeof(recorddata_t), PU_STATIC, NULL);
+	memset(mapheaderinfo[i]->mainrecord, 0, sizeof(recorddata_t));
 }
 
 // MAKE SURE YOU SAVE DATA BEFORE CALLING THIS
 void G_ClearRecords(void)
 {
 	INT16 i;
-	for (i = 0; i < NUMMAPS; ++i)
+	for (i = 0; i < nummapheaders; ++i)
 	{
-		if (mainrecords[i])
+		if (mapheaderinfo[i]->mainrecord)
 		{
-			Z_Free(mainrecords[i]);
-			mainrecords[i] = NULL;
+			Z_Free(mapheaderinfo[i]->mainrecord);
+			mapheaderinfo[i]->mainrecord = NULL;
 		}
 		/*if (nightsrecords[i])
 		{
@@ -512,20 +490,22 @@ void G_ClearRecords(void)
 // For easy retrieval of records
 tic_t G_GetBestTime(INT16 map)
 {
-	if (!mainrecords[map-1] || mainrecords[map-1]->time <= 0)
+	if (!mapheaderinfo[map] || !mapheaderinfo[map]->mainrecord || mapheaderinfo[map]->mainrecord->time <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mainrecords[map-1]->time;
+	return mapheaderinfo[map]->mainrecord->time;
 }
+
+// BE RIGHT BACK
 
 // Not needed
 /*
 tic_t G_GetBestLap(INT16 map)
 {
-	if (!mainrecords[map-1] || mainrecords[map-1]->lap <= 0)
+	if (!mapheaderinfo[map] || !mapheaderinfo[map]->mainrecord || mapheaderinfo[map]->mainrecord->lap <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mainrecords[map-1]->lap;
+	return mapheaderinfo[map]->mainrecord->lap;
 }
 */
 
@@ -542,7 +522,7 @@ static void G_UpdateRecordReplays(void)
 	UINT8 earnedEmblems;
 
 	// Record new best time
-	if (!mainrecords[gamemap-1])
+	if (!mapheaderinfo[gamemap-1]->mainrecord)
 		G_AllocMainRecordData(gamemap-1);
 
 	if (players[consoleplayer].pflags & PF_NOCONTEST)
@@ -550,20 +530,20 @@ static void G_UpdateRecordReplays(void)
 		players[consoleplayer].realtime = UINT32_MAX;
 	}
 
-	if (((mainrecords[gamemap-1]->time == 0) || (players[consoleplayer].realtime < mainrecords[gamemap-1]->time))
+	if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
 		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
 	{
-		mainrecords[gamemap-1]->time = players[consoleplayer].realtime;
+		mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
 	}
 
 	if (modeattacking == ATTACKING_TIME)
 	{
-		if ((mainrecords[gamemap-1]->lap == 0) || (bestlap < mainrecords[gamemap-1]->lap))
-			mainrecords[gamemap-1]->lap = bestlap;
+		if ((mapheaderinfo[gamemap-1]->mainrecord->lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->mainrecord->lap))
+			mapheaderinfo[gamemap-1]->mainrecord->lap = bestlap;
 	}
 	else
 	{
-		mainrecords[gamemap-1]->lap = 0;
+		mapheaderinfo[gamemap-1]->mainrecord->lap = 0;
 	}
 
 	// Save demo!
@@ -649,44 +629,76 @@ void G_SetGameModified(boolean silent, boolean major)
 		Command_ExitGame_f();
 }
 
-/** Builds an original game map name from a map number.
-  * The complexity is due to MAPA0-MAPZZ.
+// for consistency among messages: this sets cheats as used.
+void G_SetUsedCheats(void)
+{
+	if (usedCheats)
+		return;
+
+	usedCheats = true;
+	CONS_Alert(CONS_NOTICE, M_GetText("Cheats activated -- game must be restarted to save progress.\n"));
+
+	// If in record attack recording, cancel it.
+	if (modeattacking)
+		M_EndModeAttackRun();
+	else if (marathonmode)
+		Command_ExitGame_f();
+}
+/** Returns the map lump name for a map number.
   *
   * \param map Map number.
-  * \return Pointer to a static buffer containing the desired map name.
-  * \sa M_MapNumber
+  * \return Map name.
+  * \sa G_MapNumber
   */
 const char *G_BuildMapName(INT32 map)
 {
-	static char mapname[10] = "MAPXX"; // internal map name (wad resource name)
-
-	I_Assert(map >= 0);
-	I_Assert(map <= NUMMAPS);
-
-	if (map == 0) // hack???
+	if (map > 0 && map <= nummapheaders && mapheaderinfo[map - 1] != NULL)
 	{
-		if (gamestate == GS_TITLESCREEN)
-			map = -1;
-		else if (gamestate == GS_LEVEL)
-			map = gamemap-1;
-		else
-			map = prevmap;
-		map = G_RandMap(G_TOLFlag(cv_newgametype.value), map, false, 0, false, NULL)+1;
+		return mapheaderinfo[map - 1]->lumpname;
 	}
-
-	if (map < 100)
-		sprintf(&mapname[3], "%.2d", map);
 	else
 	{
-		mapname[3] = (char)('A' + (char)((map - 100) / 36));
-		if ((map - 100) % 36 < 10)
-			mapname[4] = (char)('0' + (char)((map - 100) % 36));
-		else
-			mapname[4] = (char)('A' + (char)((map - 100) % 36) - 10);
-		mapname[5] = '\0';
+		return NULL;
+	}
+}
+
+/** Returns the map number for map lump name.
+  *
+  * \param name Map name;
+  * \return Map number.
+  * \sa G_BuildMapName, nextmapspecial_t
+  */
+INT32 G_MapNumber(const char * name)
+{
+#ifdef NEXTMAPINSOC
+	if (strncasecmp("NEXTMAP_", name, 8) != 0)
+#endif
+	{
+		INT32 map;
+
+		for (map = 0; map < nummapheaders; ++map)
+		{
+			if (strcasecmp(mapheaderinfo[map]->lumpname, name) != 0)
+				continue;
+
+			return map;
+		}
+
+		return NEXTMAP_INVALID;
 	}
 
-	return mapname;
+#ifdef NEXTMAPINSOC
+	name += 8;
+
+	if (strcasecmp("EVALUATION", name) == 0)
+		return NEXTMAP_EVALUATION;
+	if (strcasecmp("CREDITS", name) == 0)
+		return NEXTMAP_CREDITS;
+	if (strcasecmp("CEREMONY", name) == 0)
+		return NEXTMAP_CEREMONY;
+	//if (strcasecmp("TITLE", name) == 0)
+		return NEXTMAP_TITLE;
+#endif
 }
 
 /** Clips the console player's mouse aiming to the current view.
@@ -724,74 +736,161 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel)
+// Default controls for keyboard. These are hardcoded and cannot be changed.
+static INT32 keyboardMenuDefaults[][2] = {
+	{gc_a, 		KEY_ENTER},
+	{gc_c, 		KEY_BACKSPACE},
+	{gc_x, 		KEY_ESCAPE},
+	{gc_left, 	KEY_LEFTARROW},
+	{gc_right, 	KEY_RIGHTARROW},
+	{gc_up, 	KEY_UPARROW},
+	{gc_down, 	KEY_DOWNARROW},
+
+	// special control
+	{gc_start, 	KEY_ESCAPE},
+	// 8 total controls*
+};
+
+#define KEYBOARDDEFAULTSSPLIT 7
+
+
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-	INT32 retaxis;
-	INT32 axisval;
-	boolean flp = false;
+	INT32 deviceID;
+	INT32 i, j;
+	INT32 deadzone = 0;
+	boolean trydefaults = true;
+	boolean tryingotherID = false;
+	INT32 *controltable = &(gamecontrol[p][gc][0]);
 
-	//find what axis to get
-	switch (axissel)
+	if (p >= MAXSPLITSCREENPLAYERS)
 	{
-		case AXISTURN:
-			axisval = cv_turnaxis[player-1].value;
-			break;
-		case AXISMOVE:
-			axisval = cv_moveaxis[player-1].value;
-			break;
-		case AXISBRAKE:
-			axisval = cv_brakeaxis[player-1].value;
-			break;
-		case AXISAIM:
-			axisval = cv_aimaxis[player-1].value;
-			break;
-		case AXISLOOK:
-			axisval = cv_lookaxis[player-1].value;
-			break;
-		case AXISFIRE:
-			axisval = cv_fireaxis[player-1].value;
-			break;
-		case AXISDRIFT:
-			axisval = cv_driftaxis[player-1].value;
-			break;
-		default:
-			return 0;
-	}
-
-	if (axisval < 0) //odd -axises
-	{
-		axisval = -axisval;
-		flp = true;
-	}
-	if (axisval > JOYAXISSET*2 || axisval == 0) //not there in array or None
+#ifdef PARANOIA
+		CONS_Debug(DBG_GAMELOGIC, "G_PlayerInputAnalog: Invalid player ID %d\n", p);
+#endif
 		return 0;
-
-	if (axisval%2)
-	{
-		axisval /= 2;
-		retaxis = joyxmove[player-1][axisval];
-	}
-	else
-	{
-		axisval--;
-		axisval /= 2;
-		retaxis = joyymove[player-1][axisval];
 	}
 
-	if (retaxis < (-JOYAXISRANGE))
-		retaxis = -JOYAXISRANGE;
-	if (retaxis > (+JOYAXISRANGE))
-		retaxis = +JOYAXISRANGE;
+	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 
-	if (!Joystick[player-1].bGamepadStyle && axissel >= AXISDIGITAL)
+	deviceID = cv_usejoystick[p].value;
+
+retrygetcontrol:
+	for (i = 0; i < MAXINPUTMAPPING; i++)
 	{
-		const INT32 jdeadzone = ((JOYAXISRANGE-1) * cv_digitaldeadzone[player-1].value) >> FRACBITS;
-		if (-jdeadzone < retaxis && retaxis < jdeadzone)
-			return 0;
+		INT32 key = controltable[i];
+		INT32 menukey = KEY_NULL;
+		INT32 value = 0;
+		boolean processinput = true;
+
+
+		// for menus, keyboards have defaults!
+		if (deviceID == 0)
+		{
+
+			// In menus, check indexes 0 through 5 (everything besides gc_start)
+			// Outside of menus, only consider the hardcoded input for gc_start at index 6
+
+			INT32 maxj = menuactive ? KEYBOARDDEFAULTSSPLIT : KEYBOARDDEFAULTSSPLIT+1;
+			j = (!menuactive) ? KEYBOARDDEFAULTSSPLIT : 0;
+
+			for (; j < maxj; j++)	// check keyboardMenuDefaults
+			{
+				// the gc we're looking for
+				if (gc == keyboardMenuDefaults[j][0])
+				{
+					menukey = keyboardMenuDefaults[j][1];
+					break;
+				}
+
+				// The key is mapped to *something else*...?
+				// Then don't process that as it would conflict with our hardcoded inputs.
+				else if (key == keyboardMenuDefaults[j][1])
+				{
+					processinput = false;
+					break;
+				}
+			}
+		}
+
+		// Invalid key number.
+		if (!G_KeyIsAvailable(key, deviceID) && !G_KeyIsAvailable(menukey, deviceID))
+		{
+			continue;
+		}
+
+		if (processinput)
+		{
+			// It's possible to access this control right now, so let's disable the default control backup for later.
+			trydefaults = false;
+
+			value = gamekeydown[deviceID][key];
+			if (menukey && gamekeydown[deviceID][menukey])
+				value = gamekeydown[deviceID][menukey];
+
+			if (value >= deadzone)
+			{
+				return value;
+			}
+		}
 	}
 
-	if (flp) retaxis = -retaxis; //flip it around
-	return retaxis;
+	// If you're on controller, try your keyboard-based binds as an immediate backup.
+	// Do not do this if there are more than 1 local player.
+	if (p == 0 && deviceID > 0 && !tryingotherID && menuPlayers < 2 && !splitscreen)
+	{
+		deviceID = 0;
+		goto retrygetcontrol;
+	}
+
+	if (menuPlayers == 0)
+	{
+		return 0;
+	}
+
+	// We don't want menus to become unnavigable if people unbind
+	// all of their controls, so we do several things in this scenario.
+	// First: try other controllers.
+
+	if (!tryingotherID)
+	{
+		deviceID = MAXDEVICES;
+		tryingotherID = true;
+	}
+loweringid:
+	deviceID--;
+	if (deviceID > 0)
+	{
+		for (i = 0; i < menuPlayers; i++)
+		{
+			if (deviceID != cv_usejoystick[i].value)
+				continue;
+			// Controller taken? Try again...
+			goto loweringid;
+		}
+		goto retrygetcontrol;
+	}
+
+	if (trydefaults && G_KeyBindIsNecessary(gc))
+	{
+		// If we still haven't found anything and the keybind is necessary,
+		// try it all again but with default binds.
+		trydefaults = false;
+		controltable = &(gamecontroldefault[gc][0]);
+		tryingotherID = false;
+		deviceID = cv_usejoystick[p].value;
+		goto retrygetcontrol;
+
+	}
+
+	return 0;
+}
+
+#undef KEYBOARDDEFAULTSSPLIT
+
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers)
+{
+	return (G_PlayerInputAnalog(p, gc, menuPlayers) != 0);
 }
 
 // Take a magnitude of two axes, and adjust it to take out the deadzone
@@ -863,32 +962,90 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
+INT32 localsteering[MAXSPLITSCREENPLAYERS];
+INT32 localdelta[MAXSPLITSCREENPLAYERS];
+INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+UINT8 localtic;
+
+void G_ResetAnglePrediction(player_t *player)
+{
+	UINT16 i, j;
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (&players[displayplayers[i]] == player)
+		{
+			localdelta[i] = 0;
+			for (j = 0; j < TICCMD_LATENCYMASK; j++)
+			{
+				localstoredeltas[i][j] = 0;
+			}
+			break;
+		}
+	}
+}
+
+// Turning was removed from G_BuildTiccmd to prevent easy client hacking.
+// This brings back the camera prediction that was lost.
+static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
+{
+	angle_t angleChange = 0;
+	angle_t destAngle = player->angleturn;
+	angle_t diff = 0;
+
+	localtic = cmd->latency;
+
+	if (player->pflags & PF_DRIFTEND)
+	{
+		// Otherwise, your angle slingshots off to the side violently...
+		G_ResetAnglePrediction(player);
+	}
+	else
+	{
+		while (realtics > 0)
+		{
+			localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+			angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+
+			// Store the angle we applied to this tic, so we can revert it later.
+			// If we trust the camera to do all of the work, then it can get out of sync fast.
+			localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
+			localdelta[ssplayer - 1] += angleChange;
+
+			realtics--;
+		}
+	}
+
+	// We COULD set it to destAngle directly...
+	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
+	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
+	destAngle = player->angleturn + localdelta[ssplayer - 1];
+	diff = destAngle - localangle[ssplayer - 1];
+
+	if (diff > ANGLE_180)
+	{
+		diff = InvAngle(InvAngle(diff) / 2);
+	}
+	else
+	{
+		diff /= 2;
+	}
+
+	localangle[ssplayer - 1] += diff;
+}
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
-
-	const INT32 lookaxis = cv_lookaxis[forplayer].value;
-	const boolean invertmouse = cv_invertmouse.value;
-	const boolean analogjoystickmove = cv_usejoystick[forplayer].value && !Joystick[forplayer].bGamepadStyle;
-	const boolean gamepadjoystickmove = cv_usejoystick[forplayer].value && Joystick[forplayer].bGamepadStyle;
-	const boolean usejoystick = (analogjoystickmove || gamepadjoystickmove);
-
-	static boolean keyboard_look[MAXSPLITSCREENPLAYERS]; // true if lookup/down using keyboard
-	static boolean resetdown[MAXSPLITSCREENPLAYERS]; // don't cam reset every frame
-
-	INT32 forward, axis;
+	INT32 forward;
 
 	joystickvector2_t joystickvector;
 
-	boolean turnleft, turnright;
-
 	player_t *player = &players[g_localplayers[forplayer]];
-	camera_t *thiscam = &camera[forplayer];
-	boolean *kbl = &keyboard_look[forplayer];
-	boolean *rd = &resetdown[forplayer];
-	const boolean mouseaiming = player->spectator;
-
-	(void)realtics;
+	//camera_t *thiscam = &camera[forplayer];
+	//boolean *kbl = &keyboard_look[forplayer];
+	//boolean *rd = &resetdown[forplayer];
+	//const boolean mouseaiming = player->spectator;
 
 	if (demo.playback) return;
 
@@ -917,16 +1074,27 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
+	cmd->flags = 0;
+
+	if (menuactive || chat_on || CON_Ready())
+	{
+		cmd->flags |= TICCMD_TYPING;
+
+		if (hu_keystrokes)
+		{
+			cmd->flags |= TICCMD_KEYSTROKE;
+		}
+
+		goto aftercmdinput;
+	}
+
 	if (K_PlayerUsesBotMovement(player))
 	{
 		// Bot ticcmd is generated by K_BuildBotTiccmd
 		return;
 	}
 
-	turnright = PlayerInputDown(ssplayer, gc_turnright);
-	turnleft = PlayerInputDown(ssplayer, gc_turnleft);
-
-	joystickvector.xaxis = PlayerJoyAxis(ssplayer, AXISTURN);
+	joystickvector.xaxis = G_PlayerInputAnalog(forplayer, gc_right, 0) - G_PlayerInputAnalog(forplayer, gc_left, 0);
 	joystickvector.yaxis = 0;
 	G_HandleAxisDeadZone(forplayer, &joystickvector);
 
@@ -934,153 +1102,105 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// use it for aiming to throw items forward/backward and the vote screen
 	// This mean that the turn axis will still be gradient but up/down will be 0
 	// until the stick is pushed far enough
-	joystickvector.yaxis = PlayerJoyAxis(ssplayer, AXISAIM);
+	joystickvector.yaxis = G_PlayerInputAnalog(forplayer, gc_down, 0) - G_PlayerInputAnalog(forplayer, gc_up, 0);
 
 	if (encoremode)
 	{
-		turnright ^= turnleft; // swap these using three XORs
-		turnleft ^= turnright;
-		turnright ^= turnleft;
 		joystickvector.xaxis = -joystickvector.xaxis;
 	}
 
-	if (gamepadjoystickmove && joystickvector.xaxis != 0)
-	{
-		turnright = turnright || (joystickvector.xaxis > 0);
-		turnleft = turnleft || (joystickvector.xaxis < 0);
-	}
 	forward = 0;
-
 	cmd->turning = 0;
 
-	// let movement keys cancel each other out
-	if (turnright && !(turnleft))
+	if (joystickvector.xaxis != 0)
 	{
-		cmd->turning -= KART_FULLTURN;
-	}
-	else if (turnleft && !(turnright))
-	{
-		cmd->turning += KART_FULLTURN;
-	}
-
-	if (analogjoystickmove && joystickvector.xaxis != 0)
-	{
-		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) >> 10;
-	}
-
-	// Specator mouse turning
-	if (player->spectator)
-	{
-		cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
+		cmd->turning -= (joystickvector.xaxis * KART_FULLTURN) / JOYAXISRANGE;
 	}
 
 	if (player->spectator || objectplacing) // SRB2Kart: spectators need special controls
 	{
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (usejoystick && axis > 0))
+		if (G_PlayerInputDown(forplayer, gc_accel, 0))
+		{
 			cmd->buttons |= BT_ACCELERATE;
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (usejoystick && axis > 0))
+		}
+
+		if (G_PlayerInputDown(forplayer, gc_brake, 0))
+		{
 			cmd->buttons |= BT_BRAKE;
-		axis = PlayerJoyAxis(ssplayer, AXISAIM);
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (usejoystick && axis < 0))
+		}
+
+		if (joystickvector.yaxis < 0)
+		{
 			forward += MAXPLMOVE;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (usejoystick && axis > 0))
+		}
+
+		if (joystickvector.yaxis > 0)
+		{
 			forward -= MAXPLMOVE;
+		}
 	}
 	else
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		axis = PlayerJoyAxis(ssplayer, AXISMOVE);
-		if (PlayerInputDown(ssplayer, gc_accelerate) || (gamepadjoystickmove && axis > 0))
+		INT32 value = G_PlayerInputAnalog(forplayer, gc_accel, 0);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
-			forward = MAXPLMOVE; // 50
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_ACCELERATE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			forward += ((axis * MAXPLMOVE) >> 10);
+			forward += ((value * MAXPLMOVE) / JOYAXISRANGE);
 		}
 
-		axis = PlayerJoyAxis(ssplayer, AXISBRAKE);
-		if (PlayerInputDown(ssplayer, gc_brake) || (gamepadjoystickmove && axis > 0))
+		value = G_PlayerInputAnalog(forplayer, gc_brake, 0);
+		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= MAXPLMOVE;
-		}
-		else if (analogjoystickmove && axis > 0)
-		{
-			cmd->buttons |= BT_BRAKE;
-			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			if (cmd->buttons & BT_ACCELERATE || cmd->forwardmove <= 0)
-				forward -= ((axis * MAXPLMOVE) >> 10);
+			forward -= ((value * MAXPLMOVE) / JOYAXISRANGE);
 		}
 
 		// But forward/backward IS used for aiming.
-		if (PlayerInputDown(ssplayer, gc_aimforward) || (joystickvector.yaxis < 0))
-			cmd->buttons |= BT_FORWARD;
-		if (PlayerInputDown(ssplayer, gc_aimbackward) || (joystickvector.yaxis > 0))
-			cmd->buttons |= BT_BACKWARD;
+		if (joystickvector.yaxis != 0)
+		{
+			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
+		}
 	}
 
-	// fire with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISFIRE);
-	if (PlayerInputDown(ssplayer, gc_fire) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_ATTACK;
-
-	// drift with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISDRIFT);
-	if (PlayerInputDown(ssplayer, gc_drift) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_DRIFT;
-
-	// Spindash with any button/key
-	// Simply holds all of the inputs for you.
-	axis = PlayerJoyAxis(ssplayer, AXISSPINDASH);
-	if (PlayerInputDown(ssplayer, gc_spindash) || (usejoystick && axis > 0))
-		cmd->buttons |= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT);
-
-	// rear view with any button/key
-	axis = PlayerJoyAxis(ssplayer, AXISLOOKBACK);
-	if (PlayerInputDown(ssplayer, gc_lookback) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_LOOKBACK;
-
-	// Lua scriptable buttons
-	if (PlayerInputDown(ssplayer, gc_custom1))
-		cmd->buttons |= BT_CUSTOM1;
-	if (PlayerInputDown(ssplayer, gc_custom2))
-		cmd->buttons |= BT_CUSTOM2;
-	if (PlayerInputDown(ssplayer, gc_custom3))
-		cmd->buttons |= BT_CUSTOM3;
-
-	// Reset camera
-	if (PlayerInputDown(ssplayer, gc_camreset))
+	// drift
+	if (G_PlayerInputDown(forplayer, gc_drift, 0))
 	{
-		if (thiscam->chase && *rd == false)
-			P_ResetCamera(player, thiscam);
-		*rd = true;
+		cmd->buttons |= BT_DRIFT;
 	}
-	else
-		*rd = false;
+
+	// C
+	if (G_PlayerInputDown(forplayer, gc_spindash, 0))
+	{
+		forward = 0;
+		cmd->buttons |= BT_SPINDASHMASK;
+	}
+
+	// fire
+	if (G_PlayerInputDown(forplayer, gc_item, 0))
+	{
+		cmd->buttons |= BT_ATTACK;
+	}
+
+	// rear view
+	if (G_PlayerInputDown(forplayer, gc_lookback, 0))
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	// lua buttons a thru c
+	if (G_PlayerInputDown(forplayer, gc_luaa, 0)) { cmd->buttons |= BT_LUAA; }
+	if (G_PlayerInputDown(forplayer, gc_luab, 0)) { cmd->buttons |= BT_LUAB; }
+	if (G_PlayerInputDown(forplayer, gc_luac, 0)) { cmd->buttons |= BT_LUAC; }
 
 	// spectator aiming shit, ahhhh...
+	/*
 	{
 		INT32 player_invert = invertmouse ? -1 : 1;
 		INT32 screen_invert =
 			(player->mo && (player->mo->eflags & MFE_VERTICALFLIP)
 			 && (!thiscam->chase)) //because chasecam's not inverted
 			 ? -1 : 1; // set to -1 or 1 to multiply
-
-		// mouse look stuff (mouse look is not the same as mouse aim)
-		if (mouseaiming && player->spectator)
-		{
-			*kbl = false;
-
-			// looking up/down
-			cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
-		}
 
 		axis = PlayerJoyAxis(ssplayer, AXISLOOK);
 		if (analogjoystickmove && axis != 0 && lookaxis && player->spectator)
@@ -1107,22 +1227,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (PlayerInputDown(ssplayer, gc_centerview)) // No need to put a spectator limit on this one though :V
 			cmd->aiming = 0;
 	}
-
-	mousex = mousey = mlooky = 0;
+	*/
 
 	cmd->forwardmove += (SINT8)forward;
 
-	cmd->flags = 0;
-
-	if (chat_on || CON_Ready())
-	{
-		cmd->flags |= TICCMD_TYPING;
-
-		if (hu_keystrokes)
-		{
-			cmd->flags |= TICCMD_KEYSTROKE;
-		}
-	}
+aftercmdinput:
 
 	/* 	Lua: Allow this hook to overwrite ticcmd.
 		We check if we're actually in a level because for some reason this Hook would run in menus and on the titlescreen otherwise.
@@ -1136,11 +1245,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	*/
 	if (addedtogame && gamestate == GS_LEVEL)
 	{
-		LUAh_PlayerCmd(player, cmd);
+		LUA_HookTiccmd(player, cmd, HOOK(PlayerCmd));
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
-		cmd->latency = (leveltime & 0xFF);
+		cmd->latency = (leveltime & TICCMD_LATENCYMASK);
 	}
 
 	if (cmd->forwardmove > MAXPLMOVE)
@@ -1153,13 +1262,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else if (cmd->turning < -KART_FULLTURN)
 		cmd->turning = -KART_FULLTURN;
 
+	if (cmd->throwdir > KART_FULLTURN)
+		cmd->throwdir = KART_FULLTURN;
+	else if (cmd->throwdir < -KART_FULLTURN)
+		cmd->throwdir = -KART_FULLTURN;
+
+	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
+
 	// Reset away view if a command is given.
 	if ((cmd->forwardmove || cmd->buttons)
 		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
 	{
 		// Call ViewpointSwitch hooks here.
 		// The viewpoint was forcibly changed.
-		LUAh_ViewpointSwitch(player, &players[consoleplayer], true);
+		LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
 		displayplayers[0] = consoleplayer;
 	}
 }
@@ -1176,6 +1292,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
 		dest[i].turning = (INT16)SHORT(src[i].turning);
+		dest[i].throwdir = (INT16)SHORT(src[i].throwdir);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
 		dest[i].latency = src[i].latency;
@@ -1184,22 +1301,22 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	return dest;
 }
 
-static void kickstartaccel_OnChange(void)
+static void weaponPrefChange(void)
 {
 	SendWeaponPref(0);
 }
 
-static void kickstartaccel2_OnChange(void)
+static void weaponPrefChange2(void)
 {
 	SendWeaponPref(1);
 }
 
-static void kickstartaccel3_OnChange(void)
+static void weaponPrefChange3(void)
 {
 	SendWeaponPref(2);
 }
 
-static void kickstartaccel4_OnChange(void)
+static void weaponPrefChange4(void)
 {
 	SendWeaponPref(3);
 }
@@ -1209,7 +1326,8 @@ static void kickstartaccel4_OnChange(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i, j;
+	boolean doAutomate = false;
+	INT32 i;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1219,6 +1337,8 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
+	if (cv_currprofile.value == -1)
+		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)
@@ -1227,9 +1347,11 @@ void G_DoLoadLevel(boolean resetplayer)
 	// cleanup
 	if (titlemapinaction == TITLEMAP_LOADING)
 	{
-		if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
+		//if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
+		if (gamemap < 1 || gamemap > nummapheaders)
 		{
-			titlemap = 0; // let's not infinite recursion ok
+			Z_Free(titlemap);
+			titlemap = NULL; // let's not infinite recursion ok
 			Command_ExitGame_f();
 			return;
 		}
@@ -1239,7 +1361,13 @@ void G_DoLoadLevel(boolean resetplayer)
 	else
 		titlemapinaction = TITLEMAP_OFF;
 
+	// Doing this matches HOSTMOD behavior.
+	// Is that desired? IDK
+	doAutomate = (gamestate != GS_LEVEL);
+
 	G_SetGamestate(GS_LEVEL);
+	if (wipegamestate == GS_MENU)
+		M_ClearMenus(true);
 	I_UpdateMouseGrab();
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1269,17 +1397,17 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
-	{
-		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
-			joyxmove[j][i] = joyymove[j][i] = 0;
-	}
-	mousex = mousey = 0;
+	memset(deviceResponding, false, sizeof (deviceResponding));
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
 
 	server_lagless = cv_lagless.value;
+
+	if (doAutomate == true)
+	{
+		Automate_Run(AEV_ROUNDSTART);
+	}
 }
 
 //
@@ -1300,6 +1428,16 @@ void G_StartTitleCard(void)
 
 	// prepare status bar
 	ST_startTitleCard();
+
+	// play the sound
+	{
+		sfxenum_t kstart = sfx_kstart;
+		if (bossinfo.boss)
+			kstart = sfx_ssa021;
+		else if (encoremode)
+			kstart = sfx_ruby2;
+		S_StartSound(NULL, kstart);
+	}
 
 	// start the title card
 	WipeStageTitle = (!titlemapinaction);
@@ -1329,7 +1467,10 @@ void G_PreLevelTitleCard(void)
             M_DoScreenShot();
 
         while (!((nowtime = I_GetTime()) - lasttime))
-            I_Sleep();
+        {
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
         lasttime = nowtime;
     }
 #endif
@@ -1360,7 +1501,7 @@ static INT32 camtoggledelay[MAXSPLITSCREENPLAYERS];
 //
 boolean G_Responder(event_t *ev)
 {
-	UINT8 i;
+	//INT32 i;
 
 	// any other key pops up menu if in demos
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
@@ -1455,7 +1596,7 @@ boolean G_Responder(event_t *ev)
 
 	// allow spy mode changes even during the demo
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->data1 == KEY_F12 || ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]))
+		&& (ev->data1 == KEY_F12 /*|| ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]*/))
 	{
 		if (!demo.playback && (r_splitscreen || !netgame))
 			g_localplayers[0] = consoleplayer;
@@ -1473,6 +1614,7 @@ boolean G_Responder(event_t *ev)
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
+		/*
 		if (ev->data1 == gamecontrol[1][gc_viewpoint][0] || ev->data1 == gamecontrol[1][gc_viewpoint][1])
 		{
 			G_AdjustView(2, 1, true);
@@ -1488,12 +1630,13 @@ boolean G_Responder(event_t *ev)
 			G_AdjustView(4, 1, true);
 			return true;
 		}
+		*/
 
 		// Allow pausing
 		if (
-			ev->data1 == gamecontrol[0][gc_pause][0]
-			|| ev->data1 == gamecontrol[0][gc_pause][1]
-			|| ev->data1 == KEY_PAUSE
+			//ev->data1 == gamecontrol[0][gc_pause][0]
+			//|| ev->data1 == gamecontrol[0][gc_pause][1]
+			ev->data1 == KEY_PAUSE
 		)
 		{
 			paused = !paused;
@@ -1527,9 +1670,9 @@ boolean G_Responder(event_t *ev)
 	switch (ev->type)
 	{
 		case ev_keydown:
-			if (ev->data1 == gamecontrol[0][gc_pause][0]
-				|| ev->data1 == gamecontrol[0][gc_pause][1]
-				|| ev->data1 == KEY_PAUSE)
+			if (//ev->data1 == gamecontrol[0][gc_pause][0]
+				//|| ev->data1 == gamecontrol[0][gc_pause][1]
+				ev->data1 == KEY_PAUSE)
 			{
 				if (modeattacking && !demo.playback && (gamestate == GS_LEVEL))
 				{
@@ -1559,6 +1702,7 @@ boolean G_Responder(event_t *ev)
 				}
 			}
 
+			/*
 			for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 			{
 				if (ev->data1 == gamecontrol[i][gc_camtoggle][0]
@@ -1571,6 +1715,7 @@ boolean G_Responder(event_t *ev)
 					}
 				}
 			}
+			*/
 
 			return true;
 
@@ -1581,15 +1726,6 @@ boolean G_Responder(event_t *ev)
 			return true; // eat events
 
 		case ev_joystick:
-			return true; // eat events
-
-		case ev_joystick2:
-			return true; // eat events
-
-		case ev_joystick3:
-			return true; // eat events
-
-		case ev_joystick4:
 			return true; // eat events
 
 		default:
@@ -1883,7 +2019,7 @@ void G_Ticker(boolean run)
 			default: I_Error("gameaction = %d\n", gameaction);
 		}
 
-	buf = gametic % TICQUEUE;
+	buf = gametic % BACKUPTICS;
 
 	if (!demo.playback)
 	{
@@ -1904,7 +2040,7 @@ void G_Ticker(boolean run)
 				else
 				{
 					//@TODO add a cvar to allow setting this max
-					cmd->latency = min(((leveltime & 0xFF) - cmd->latency) & 0xFF, MAXPREDICTTICS-1);
+					cmd->latency = min(((leveltime & TICCMD_LATENCYMASK) - cmd->latency) & TICCMD_LATENCYMASK, MAXPREDICTTICS-1);
 				}
 			}
 		}
@@ -1921,7 +2057,6 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
-			R_UpdateViewInterpolation();
 
 			break;
 
@@ -1937,8 +2072,7 @@ void G_Ticker(boolean run)
 			HU_Ticker();
 			break;
 
-		case GS_TIMEATTACK:
-			F_MenuPresTicker(run);
+		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -1980,10 +2114,7 @@ void G_Ticker(boolean run)
 
 		case GS_TITLESCREEN:
 			if (titlemapinaction)
-			{
 				P_Ticker(run);
-				R_UpdateViewInterpolation();
-			}
 
 			F_TitleScreenTicker(run);
 			break;
@@ -2087,19 +2218,21 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 followitem;
 
 	INT32 pflags;
+	INT32 cheats;
 
 	UINT8 ctfteam;
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
+	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
 
 	tic_t jointime;
-	tic_t quittime;
 
 	UINT8 splitscreenindex;
 	boolean spectator;
@@ -2134,7 +2267,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	ctfteam = players[player].ctfteam;
 
 	jointime = players[player].jointime;
-	quittime = players[player].quittime;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2165,7 +2297,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
+	cheats = 0;
 
 	// SRB2kart
 	if (betweenmaps || leveltime < introtime)
@@ -2179,11 +2312,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
 		spheres = 0;
 		kickstartaccel = 0;
-		khudfault = nocontrol = 0;
+		khudfault = 0;
+		nocontrol = 0;
 		laps = 0;
+		latestlap = 0;
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudcardanimation = 0;
 		starpostnum = 0;
 		xtralife = 0;
 
@@ -2220,9 +2356,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = players[player].nocontrol;
 
 		laps = players[player].laps;
+		latestlap = players[player].latestlap;
+
 		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
+
 		exiting = players[player].exiting;
+		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+
 		starpostnum = players[player].starpostnum;
 
 		xtralife = players[player].xtralife;
@@ -2234,11 +2375,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	// As long as we're not in multiplayer, carry over cheatcodes from map to map
 	if (!(netgame || multiplayer))
-		pflags |= (players[player].pflags & (PF_GODMODE|PF_NOCLIP));
+		cheats = players[player].cheats;
 
-
-	// Obliterate follower from existence
-	P_SetTarget(&players[player].follower, NULL);
+	if (!betweenmaps)
+	{
+		// Obliterate follower from existence (if valid memory)
+		P_SetTarget(&players[player].follower, NULL);
+	}
 
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
@@ -2249,9 +2392,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->roundscore = roundscore;
 	p->lives = lives;
 	p->pflags = pflags;
+	p->cheats = cheats;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
-	p->quittime = quittime;
 	p->splitscreenindex = splitscreenindex;
 	p->spectator = spectator;
 	p->steering = steering;
@@ -2269,8 +2412,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
+	p->latestlap = latestlap;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -2295,7 +2440,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
-	p->tripWireState = TRIP_NONE;
+
+	p->botvars.rubberband = FRACUNIT;
+	p->botvars.controller = UINT16_MAX;
 
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
@@ -2308,11 +2455,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	//p->follower = NULL;	// respawn a new one with you, it looks better.
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
 
-
-	// Don't do anything immediately
-	p->pflags |= PF_BRAKEDOWN;
-	p->pflags |= PF_ATTACKDOWN;
-	p->pflags |= PF_ACCELDOWN;
 
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation
@@ -2352,23 +2494,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (leveltime < starttime)
 		return;
 
-	if (p-players == consoleplayer)
-	{
-		if (mapmusflags & MUSIC_RELOADRESET)
-		{
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-			mapmusresume = 0;
-			songcredit = true;
-		}
-
-		// This is in S_Start, but this was not here previously.
-		// if (RESETMUSIC)
-		// 	S_StopMusic();
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-	}
+	if (exiting)
+		return;
 
 	P_RestoreMusic(p);
 
@@ -2430,7 +2557,7 @@ void G_SpawnPlayer(INT32 playernum)
 
 	P_SpawnPlayer(playernum);
 	G_MovePlayerToSpawnOrStarpost(playernum);
-	LUAh_PlayerSpawn(&players[playernum]); // Lua hook for player spawning :)
+	LUA_HookPlayer(&players[playernum], HOOK(PlayerSpawn)); // Lua hook for player spawning :)
 }
 
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
@@ -2460,7 +2587,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 		return NULL;
 	}
 
-	if ((!players[playernum].ctfteam && numredctfstarts && (!numbluectfstarts || P_RandomChance(FRACUNIT/2))) || players[playernum].ctfteam == 1) //red
+	if ((!players[playernum].ctfteam && numredctfstarts && (!numbluectfstarts || P_RandomChance(PR_PLAYERSTARTS, FRACUNIT/2))) || players[playernum].ctfteam == 1) //red
 	{
 		if (!numredctfstarts)
 		{
@@ -2471,7 +2598,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 		for (j = 0; j < 32; j++)
 		{
-			i = P_RandomKey(numredctfstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numredctfstarts);
 			if (G_CheckSpot(playernum, redctfstarts[i]))
 				return redctfstarts[i];
 		}
@@ -2491,7 +2618,7 @@ mapthing_t *G_FindTeamStart(INT32 playernum)
 
 		for (j = 0; j < 32; j++)
 		{
-			i = P_RandomKey(numbluectfstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numbluectfstarts);
 			if (G_CheckSpot(playernum, bluectfstarts[i]))
 				return bluectfstarts[i];
 		}
@@ -2512,7 +2639,7 @@ mapthing_t *G_FindBattleStart(INT32 playernum)
 	{
 		for (j = 0; j < 64; j++)
 		{
-			i = P_RandomKey(numdmstarts);
+			i = P_RandomKey(PR_PLAYERSTARTS, numdmstarts);
 			if (G_CheckSpot(playernum, deathmatchstarts[i]))
 				return deathmatchstarts[i];
 		}
@@ -2663,7 +2790,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	{
 		// In platform gametypes, spawn in Co-op starts first
 		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS)
+		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
 			spawnpoint = G_FindBattleStartOrFallback(playernum);
 		else
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
@@ -2770,10 +2897,30 @@ void G_ExitLevel(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.wonround != true)
+		UINT8 i;
+		boolean youlost = false;
+		if (bossinfo.boss == true)
 		{
-			UINT8 i;
+			youlost = true;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator && !players[i].bot)
+				{
+					if (players[i].bumpers > 0)
+					{
+						youlost = false;
+						break;
+					}
+				}
+			}
+		}
+		else if (grandprixinfo.gp == true)
+		{
+			youlost = (grandprixinfo.wonround != true);
+		}
 
+		if (youlost)
+		{
 			// You didn't win...
 
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -2857,7 +3004,7 @@ const char *Gametype_ConstantNames[NUMGAMETYPES] =
 UINT32 gametypedefaultrules[NUMGAMETYPES] =
 {
 	// Race
-	GTR_CIRCUIT|GTR_BOTS,
+	GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS,
 	// Battle
 	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
 };
@@ -3002,6 +3149,7 @@ UINT32 gametypetol[NUMGAMETYPES] =
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
+	{"BOSS",TOL_BOSS},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -3057,18 +3205,15 @@ INT32 G_GetGametypeByName(const char *gametypestr)
 //
 boolean G_IsSpecialStage(INT32 mapnum)
 {
-#if 1
-	(void)mapnum;
-#else
-	if (modeattacking == ATTACKING_TIME)
-		return false;
-	if (mapnum >= sstage_start && mapnum <= sstage_end)
-		return true;
-	if (mapnum >= smpstage_start && mapnum <= smpstage_end)
-		return true;
-#endif
+	mapnum--; // gamemap-based to 0 indexed
 
-	return false;
+	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
+		return false;
+
+	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
+		return false;
+
+	return true;
 }
 
 //
@@ -3079,10 +3224,17 @@ boolean G_IsSpecialStage(INT32 mapnum)
 //
 boolean G_GametypeUsesLives(void)
 {
+	if (modeattacking || metalrecording) // NOT in Record Attack
+		return false;
+
+	if (bossinfo.boss == true) // Fighting a boss?
+	{
+		return true;
+	}
+
 	if ((grandprixinfo.gp == true) // In Grand Prix
 		&& (gametype == GT_RACE) // NOT in bonus round
-		&& !G_IsSpecialStage(gamemap) // NOT in special stage
-		&& !(modeattacking || metalrecording)) // NOT in Record Attack
+		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
 	{
 		return true;
 	}
@@ -3129,76 +3281,89 @@ boolean G_GametypeHasSpectators(void)
 //
 // Oh, yeah, and we sometimes flip encore mode on here too.
 //
-INT16 G_SometimesGetDifferentGametype(void)
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 {
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1) && (gametyperules & GTR_CIRCUIT));
+	// Most of the gametype references in this condition are intentionally not prefgametype.
+	// This is so a server CAN continue playing a gametype if they like the taste of it.
+	// The encore check needs prefgametype so can't use G_RaceGametype...
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1)
+		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
+	UINT8 encoremodifier = 0;
 
-	if (!cv_kartvoterulechanges.value // never
-		&& encorescramble != 1) // destroying the code for this one instance
-		return gametype;
+	// -- the below is only necessary if you want to use randmaps.mapbuffer here
+	//if (randmaps.lastnummapheaders != nummapheaders)
+		//G_ResetRandMapBuffer();
 
-	if (randmapbuffer[NUMMAPS] > 0 && (encorepossible || cv_kartvoterulechanges.value != 3))
+	if (encorepossible)
 	{
-		randmapbuffer[NUMMAPS]--;
-		if (encorepossible)
+		if (encorescramble != -1)
 		{
-			if (encorescramble != -1)
-				encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
-			else
-			{
-				switch (cv_kartvoterulechanges.value)
-				{
-					case 3: // always
-						randmapbuffer[NUMMAPS] = 0; // gotta prep this in case it isn't already set
-						break;
-					case 2: // frequent
-						encorepossible = M_RandomChance(FRACUNIT>>1);
-						break;
-					case 1: // sometimes
-					default:
-						encorepossible = M_RandomChance(FRACUNIT>>2);
-						break;
-				}
-			}
-			if (encorepossible != (cv_kartencore.value == 1))
-				return (gametype|0x80);
+			encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
 		}
-		return gametype;
+		else
+		{
+			switch (cv_kartvoterulechanges.value)
+			{
+				case 3: // always
+					encorepossible = true;
+					break;
+				case 2: // frequent
+					encorepossible = M_RandomChance(FRACUNIT>>1);
+					break;
+				case 1: // sometimes
+					encorepossible = M_RandomChance(FRACUNIT>>2);
+					break;
+				default:
+					break;
+			}
+		}
+		if (encorepossible != (cv_kartencore.value == 1))
+			encoremodifier = VOTEMODIFIER_ENCORE;
 	}
 
-	if (!cv_kartvoterulechanges.value) // never (again)
-		return gametype;
+	if (!cv_kartvoterulechanges.value) // never
+		return (gametype|encoremodifier);
+
+	if (randmaps.counttogametype > 0 && (cv_kartvoterulechanges.value != 3))
+	{
+		randmaps.counttogametype--;
+		return (gametype|encoremodifier);
+	}
 
 	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
 	{
-		case 3: // always
-			randmapbuffer[NUMMAPS] = 1; // every other vote (or always if !encorepossible)
-			break;
 		case 1: // sometimes
-			randmapbuffer[NUMMAPS] = 5; // per "cup"
+			randmaps.counttogametype = 5; // per "cup"
 			break;
 		default:
 			// fallthrough - happens when clearing buffer, but needs a reasonable countdown if cvar is modified
 		case 2: // frequent
-			randmapbuffer[NUMMAPS] = 2; // ...every 1/2th-ish cup?
+			randmaps.counttogametype = 2; // ...every 1/2th-ish cup?
 			break;
 	}
 
-	if (gametype == GT_BATTLE)
-		return GT_RACE;
-	return GT_BATTLE;
+	// Only this response is prefgametype-based.
+	// todo custom gametypes
+	if (prefgametype == GT_BATTLE)
+	{
+		// Intentionally does not use encoremodifier!
+		if (cv_kartencore.value == 1)
+			return (GT_RACE|VOTEMODIFIER_ENCORE);
+		return (GT_RACE);
+	}
+	// This might appear wrong HERE, but the game will display the Encore possibility on the second voting choice instead.
+	return (GT_BATTLE|encoremodifier);
 }
 
 //
 // G_GetGametypeColor
 //
 // Pretty and consistent ^u^
-// See also M_GetGametypeColor.
+// See also M_GetGametypeColor (if that still exists).
 //
 UINT8 G_GetGametypeColor(INT16 gt)
 {
-	if (modeattacking // == ATTACKING_TIME
-	|| gamestate == GS_TIMEATTACK)
+	if (modeattacking) // == ATTACKING_RECORD
 		return orangemap[0];
 
 	if (gt == GT_BATTLE)
@@ -3220,20 +3385,54 @@ UINT32 G_TOLFlag(INT32 pgametype)
 	return gametypetol[pgametype];
 }
 
-static UINT32 TOLMaps(UINT32 tolflags)
+INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
-	UINT32 num = 0;
-	UINT32 i;
+	INT16 mapnum = NEXTMAP_INVALID;
 
-	// Find all the maps that are ok and and put them in an array.
-	for (i = 0; i < NUMMAPS; i++)
+	if ((gametypedefaultrules[pgametype] & GTR_CAMPAIGN) && kartcupheaders)
+	{
+		mapnum = kartcupheaders->cachedlevels[0];
+	}
+
+	if (mapnum >= nummapheaders)
+	{
+		UINT32 tolflag = G_TOLFlag(pgametype);
+		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
+		{
+			if (!mapheaderinfo[mapnum])
+				continue;
+			if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+				continue;
+			if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+				continue;
+			if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
+				continue;
+			break;
+		}
+	}
+
+	return mapnum;
+}
+
+static INT32 TOLMaps(UINT8 pgametype)
+{
+	INT32 num = 0;
+	INT32 i;
+
+	UINT32 tolflag = G_TOLFlag(pgametype);
+
+	// Find all the maps that are ok
+	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
+		if (mapheaderinfo[i]->lumpnum == LUMPERROR)
+			continue;
+		if (!(mapheaderinfo[i]->typeoflevel & tolflag))
+			continue;
 		if (mapheaderinfo[i]->menuflags & LF2_HIDEINMENU) // Don't include Map Hell
 			continue;
-		if ((mapheaderinfo[i]->typeoflevel & tolflags) == tolflags)
-			num++;
+		num++;
 	}
 
 	return num;
@@ -3248,20 +3447,27 @@ static UINT32 TOLMaps(UINT32 tolflags)
   * \author Graue <graue@oceanbase.org>
   */
 static INT16 *okmaps = NULL;
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer)
 {
-	INT32 numokmaps = 0;
+	UINT32 numokmaps = 0;
 	INT16 ix, bufx;
 	UINT16 extbufsize = 0;
 	boolean usehellmaps; // Only consider Hell maps in this pick
 
+	if (randmaps.lastnummapheaders != nummapheaders)
+		G_ResetRandMapBuffer();
+
 	if (!okmaps)
-		okmaps = Z_Malloc(NUMMAPS * sizeof(INT16), PU_STATIC, NULL);
+	{
+		//CONS_Printf("(making okmaps)\n");
+		okmaps = Z_Malloc(nummapheaders * sizeof(INT16), PU_STATIC, NULL);
+	}
 
 	if (extbuffer != NULL)
 	{
 		bufx = 0;
-		while (extbuffer[bufx]) {
+		while (extbuffer[bufx])
+		{
 			extbufsize++; bufx++;
 		}
 	}
@@ -3271,16 +3477,16 @@ tryagain:
 	usehellmaps = (maphell == 0 ? false : (maphell == 2 || M_RandomChance(FRACUNIT/100))); // 1% chance of Hell
 
 	// Find all the maps that are ok and and put them in an array.
-	for (ix = 0; ix < NUMMAPS; ix++)
+	for (ix = 0; ix < nummapheaders; ix++)
 	{
 		boolean isokmap = true;
 
-		if (!mapheaderinfo[ix])
+		if (!mapheaderinfo[ix] || mapheaderinfo[ix]->lumpnum == LUMPERROR)
 			continue;
 
 		if ((mapheaderinfo[ix]->typeoflevel & tolflags) != tolflags
 			|| ix == pprevmap
-			|| (!dedicated && M_MapLocked(ix+1))
+			|| M_MapLocked(ix+1)
 			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
 			continue; //isokmap = false;
 
@@ -3303,11 +3509,11 @@ tryagain:
 					continue;
 			}
 
-			for (bufx = 0; bufx < (maphell ? 3 : NUMMAPS); bufx++)
+			for (bufx = 0; bufx < (maphell ? 3 : randmaps.lastnummapheaders); bufx++)
 			{
-				if (randmapbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
+				if (randmaps.mapbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
 					break;
-				if (ix == randmapbuffer[bufx])
+				if (ix == randmaps.mapbuffer[bufx])
 				{
 					isokmap = false;
 					break;
@@ -3318,12 +3524,15 @@ tryagain:
 				continue;
 		}
 
+#ifdef STAFFGHOSTS
 		if (pprevmap == -2) // title demo hack
 		{
 			lumpnum_t l;
-			if ((l = W_CheckNumForName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
+			// TODO: Use map header to determine lump name
+			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
 				continue;
 		}
+#endif //#ifdef STAFFGHOSTS
 
 		okmaps[numokmaps++] = ix;
 	}
@@ -3332,32 +3541,44 @@ tryagain:
 	{
 		if (!ignorebuffer)
 		{
-			if (randmapbuffer[3] == -1) // Is the buffer basically empty?
+			if (randmaps.mapbuffer[3] == -1) // Is the buffer basically empty?
 			{
-				ignorebuffer = true; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
+				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
-			for (bufx = 3; bufx < NUMMAPS; bufx++) // Let's clear all but the three most recent maps...
-				randmapbuffer[bufx] = -1;
+			for (bufx = 3; bufx < randmaps.lastnummapheaders; bufx++) // Let's clear all but the three most recent maps...
+				randmaps.mapbuffer[bufx] = -1;
+			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
 
 		if (maphell) // Any wiggle room to loosen our restrictions here?
 		{
+			//CONS_Printf("RANDMAP -maphell decrement\n");
 			maphell--;
 			goto tryagain;
 		}
 
+		//CONS_Printf("RANDMAP - defaulting to map01\n");
 		ix = 0; // Sorry, none match. You get MAP01.
-		for (bufx = 0; bufx < NUMMAPS+1; bufx++)
-			randmapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		if (ignorebuffer == 1)
+		{
+			//CONS_Printf("(emptying randmapbuffer entirely)\n");
+			for (bufx = 0; bufx < randmaps.lastnummapheaders; bufx++)
+				randmaps.mapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+		}
 	}
 	else
+	{
+		//CONS_Printf("RANDMAP - %d maps available to grab\n", numokmaps);
 		ix = okmaps[M_RandomKey(numokmaps)];
+	}
 
 	if (!callagainsoon)
 	{
+		//CONS_Printf("(freeing okmaps)\n");
 		Z_Free(okmaps);
 		okmaps = NULL;
 	}
@@ -3367,19 +3588,30 @@ tryagain:
 
 void G_AddMapToBuffer(INT16 map)
 {
-	INT16 bufx, refreshnum = max(0, (INT32)TOLMaps(G_TOLFlag(gametype))-3);
+	INT16 bufx;
+	INT16 refreshnum = (TOLMaps(gametype))-3;
 
-	// Add the map to the buffer.
-	for (bufx = NUMMAPS-1; bufx > 0; bufx--)
-		randmapbuffer[bufx] = randmapbuffer[bufx-1];
-	randmapbuffer[0] = map;
+	if (refreshnum < 0)
+		refreshnum = 3;
+
+	if (nummapheaders != randmaps.lastnummapheaders)
+	{
+		G_ResetRandMapBuffer();
+	}
+	else
+	{
+		for (bufx = randmaps.lastnummapheaders-1; bufx > 0; bufx--)
+			randmaps.mapbuffer[bufx] = randmaps.mapbuffer[bufx-1];
+	}
+
+	randmaps.mapbuffer[0] = map;
 
 	// We're getting pretty full, so lets flush this for future usage.
-	if (randmapbuffer[refreshnum] != -1)
+	if (randmaps.mapbuffer[refreshnum] != -1)
 	{
 		// Clear all but the five most recent maps.
-		for (bufx = 5; bufx < NUMMAPS; bufx++) // bufx < refreshnum? Might not handle everything for gametype switches, though.
-			randmapbuffer[bufx] = -1;
+		for (bufx = 5; bufx < randmaps.lastnummapheaders; bufx++)
+			randmaps.mapbuffer[bufx] = -1;
 		//CONS_Printf("Random map buffer has been flushed.\n");
 	}
 }
@@ -3389,28 +3621,46 @@ void G_AddMapToBuffer(INT16 map)
 //
 static void G_UpdateVisited(void)
 {
-	boolean spec = G_IsSpecialStage(gamemap);
-	// Update visitation flags?
-	if ((!modifiedgame || savemoddata) // Not modified
-		&& !multiplayer && !demo.playback // SP/RA/NiGHTS mode
-		&& !(spec && stagefailed)) // Not failed the special stage
+	UINT8 i;
+	UINT8 earnedEmblems;
+
+	// No demos.
+	if (demo.playback)
+		return;
+
+	// Check if every local player wiped out.
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		UINT8 earnedEmblems;
+		if (!playeringame[i]) // Not here.
+			continue;
 
-		// Update visitation flags
-		mapvisited[gamemap-1] |= MV_BEATEN;
+		if (!P_IsLocalPlayer(&players[i])) // Not local.
+			continue;
 
-		if (encoremode == true)
-		{
-			mapvisited[gamemap-1] |= MV_ENCORE;
-		}
+		if (players[i].spectator) // Not playing.
+			continue;
 
-		if (modeattacking)
-			G_UpdateRecordReplays();
-
-		if ((earnedEmblems = M_CompletionEmblems()))
-			CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+		if (players[i].pflags & PF_NOCONTEST) // Sonic after not surviving.
+			continue;
+		break;
 	}
+
+	if (i == MAXPLAYERS) // Not a single living local soul?
+		return;
+
+	// Update visitation flags
+	mapheaderinfo[gamemap-1]->mapvisited |= MV_BEATEN;
+
+	if (encoremode == true)
+	{
+		mapheaderinfo[gamemap-1]->mapvisited |= MV_ENCORE;
+	}
+
+	if (modeattacking)
+		G_UpdateRecordReplays();
+
+	if ((earnedEmblems = M_CompletionEmblems()))
+		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
@@ -3423,7 +3673,7 @@ static boolean CanSaveLevel(INT32 mapnum)
 static void G_HandleSaveLevel(void)
 {
 	// do this before running the intermission or custom cutscene, mostly for the sake of marathon mode but it also massively reduces redundant file save events in f_finale.c
-	if (nextmap >= 1100-1)
+	if (nextmap >= NEXTMAP_SPECIAL)
 	{
 		if (!gamecomplete)
 			gamecomplete = 2; // special temporary mode to prevent using SP level select in pause menu until the intermission is over without restricting it in every intermission
@@ -3436,14 +3686,180 @@ static void G_HandleSaveLevel(void)
 					remove(liveeventbackup);
 				cursaveslot = 0;
 			}
-			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer || ultimatemode || demo.recording || metalrecording || modeattacking))
-				G_SaveGame((UINT32)cursaveslot, spstage_start);
+			else if (!usedCheats && !(netgame || multiplayer || ultimatemode || demo.recording || metalrecording || modeattacking))
+				G_SaveGame((UINT32)cursaveslot, 0); // TODO when we readd a campaign one day
 		}
 	}
 	// and doing THIS here means you don't lose your progress if you close the game mid-intermission
-	else if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking)
-		&& (!modifiedgame || savemoddata) && cursaveslot > 0 && CanSaveLevel(lastmap+1))
+	else if (!(ultimatemode || demo.playback || demo.recording || metalrecording || modeattacking)
+		&& cursaveslot > 0 && CanSaveLevel(lastmap+1))
+	{
 		G_SaveGame((UINT32)cursaveslot, lastmap+1); // not nextmap+1 to route around special stages
+	}
+}
+
+static void G_GetNextMap(void)
+{
+	INT32 i;
+
+	// go to next level
+	// nextmap is 0-based, unlike gamemap
+	if (nextmapoverride != 0)
+	{
+		nextmap = (INT16)(nextmapoverride-1);
+	}
+	else if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.roundnum == 0 || grandprixinfo.cup == NULL) // Single session
+		{
+			nextmap = prevmap; // Same map
+		}
+		else
+		{
+			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
+			{
+				nextmap = NEXTMAP_CEREMONY; // ceremonymap
+			}
+			else
+			{
+				// Proceed to next map
+				const INT32 cupLevelNum =grandprixinfo.cup->cachedlevels[grandprixinfo.roundnum];
+
+				if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
+				{
+					nextmap = cupLevelNum;
+				}
+				else
+				{
+					nextmap = prevmap; // Prevent uninitialised use
+				}
+
+				grandprixinfo.roundnum++;
+			}
+		}
+	}
+	else if (bossinfo.boss == true)
+	{
+		nextmap = NEXTMAP_TITLE; // temporary
+	}
+	else
+	{
+		UINT32 tolflag = G_TOLFlag(gametype);
+		register INT16 cm;
+
+		if (gametyperules & GTR_CAMPAIGN)
+		{
+			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
+			UINT8 gettingresult = 0;
+
+			while (cup)
+			{
+				// Not unlocked? Grab the next result afterwards
+				if (!marathonmode && cup->unlockrequired != -1 && !unlockables[cup->unlockrequired].unlocked)
+				{
+					cup = cup->next;
+					gettingresult = 1;
+					continue;
+				}
+
+				for (i = 0; i < cup->numlevels; i++)
+				{
+					cm = cup->cachedlevels[i];
+
+					// Not valid?
+					if (cm >= nummapheaders
+						|| !mapheaderinfo[cm]
+						|| mapheaderinfo[cm]->lumpnum == LUMPERROR
+						|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
+						|| (!marathonmode && M_MapLocked(cm+1)))
+						continue;
+
+					// Grab the first valid after the map you're on
+					if (gettingresult)
+					{
+						nextmap = cm;
+						gettingresult = 2;
+						break;
+					}
+
+					// Not the map you're on?
+					if (cm != prevmap)
+					{
+						continue;
+					}
+
+					// Ok, this is the current map, time to get the next
+					gettingresult = 1;
+				}
+
+				// We have a good nextmap?
+				if (gettingresult == 2)
+				{
+					break;
+				}
+
+				// Ok, iterate to the next
+				cup = cup->next;
+			}
+
+			// Didn't get a nextmap before reaching the end?
+			if (gettingresult != 2)
+			{
+				if (marathonmode)
+				{
+					nextmap = NEXTMAP_CEREMONY; // ceremonymap
+				}
+				else
+				{
+					nextmap = NEXTMAP_TITLE;
+				}
+			}
+		}
+		else
+		{
+			cm = prevmap;
+			if (++cm >= nummapheaders)
+				cm = 0;
+
+			while (cm != prevmap)
+			{
+				if (!mapheaderinfo[cm]
+					|| mapheaderinfo[cm]->lumpnum == LUMPERROR
+					|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
+					|| (mapheaderinfo[cm]->menuflags & LF2_HIDEINMENU)
+					|| M_MapLocked(cm+1))
+				{
+					if (++cm >= nummapheaders)
+						cm = 0;
+					continue;
+				}
+
+				break;
+			}
+
+			nextmap = cm;
+		}
+
+		if (!marathonmode)
+		{
+			if (cv_advancemap.value == 0) // Stay on same map.
+			{
+				nextmap = prevmap;
+			}
+			else if (cv_advancemap.value == 2) // Go to random map.
+			{
+				nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
+			}
+			else if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
+			{
+				nextmap = G_GetFirstMapOfGametype(gametype);
+			}
+		}
+	}
+
+	// We are committed to this map now.
+	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
+		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 }
 
 //
@@ -3465,12 +3881,18 @@ static void G_DoCompleted(void)
 	if (metalrecording)
 		G_StopMetalRecording(false);
 
+	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
+
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			// SRB2Kart: exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
+				clientPowerAdd[i] = 0;
+
 				if (players[i].bot)
 				{
 					K_FakeBotResults(&players[i]);
@@ -3488,6 +3910,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 		}
+	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
@@ -3500,138 +3923,24 @@ static void G_DoCompleted(void)
 
 	prevmap = (INT16)(gamemap-1);
 
-	if (demo.playback) goto demointermission;
-
-	// go to next level
-	// nextmap is 0-based, unlike gamemap
-	if (nextmapoverride != 0)
+	if (!demo.playback)
 	{
-		nextmap = (INT16)(nextmapoverride-1);
-	}
-	else if (marathonmode && mapheaderinfo[gamemap-1]->marathonnext)
-	{
-		nextmap = (INT16)(mapheaderinfo[gamemap-1]->marathonnext-1);
-	}
-	else if (grandprixinfo.gp == true)
-	{
-		if (grandprixinfo.roundnum == 0 || grandprixinfo.cup == NULL) // Single session
-		{
-			nextmap = prevmap; // Same map
-		}
-		else
-		{
-			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
-			{
-				nextmap = 1101; // ceremonymap
-			}
-			else
-			{
-				// Proceed to next map
-				nextmap = grandprixinfo.cup->levellist[grandprixinfo.roundnum];
-				grandprixinfo.roundnum++;
-			}
-		}
-	}
-	else
-	{
-		nextmap = (INT16)(mapheaderinfo[gamemap-1]->nextlevel-1);
-		if (marathonmode && nextmap == spmarathon_start-1)
-			nextmap = 1100-1; // No infinite loop for you
-	}
+		G_GetNextMap();
 
-	// Remember last map for when you come out of the special stage.
-	if (!spec)
-		lastmap = nextmap;
-
-	// If nextmap is actually going to get used, make sure it points to
-	// a map of the proper gametype -- skip levels that don't support
-	// the current gametype. (Helps avoid playing boss levels in Race,
-	// for instance).
-	if (!modeattacking && grandprixinfo.gp == false)
-	{
-		if (nextmap >= 0 && nextmap < NUMMAPS)
-		{
-			register INT16 cm = nextmap;
-			UINT32 tolflag = G_TOLFlag(gametype);
-			UINT8 visitedmap[(NUMMAPS+7)/8];
-
-			memset(visitedmap, 0, sizeof (visitedmap));
-
-			while (!mapheaderinfo[cm] || !(mapheaderinfo[cm]->typeoflevel & tolflag))
-			{
-				visitedmap[cm/8] |= (1<<(cm&7));
-				if (!mapheaderinfo[cm])
-					cm = -1; // guarantee error execution
-				else if (marathonmode && mapheaderinfo[cm]->marathonnext)
-					cm = (INT16)(mapheaderinfo[cm]->marathonnext-1);
-				else
-					cm = (INT16)(mapheaderinfo[cm]->nextlevel-1);
-
-				if (cm >= NUMMAPS || cm < 0) // out of range (either 1100ish or error)
-				{
-					cm = nextmap; //Start the loop again so that the error checking below is executed.
-
-					//Make sure the map actually exists before you try to go to it!
-					if ((W_CheckNumForName(G_BuildMapName(cm + 1)) == LUMPERROR))
-					{
-						CONS_Alert(CONS_ERROR, M_GetText("Next map given (MAP %d) doesn't exist! Reverting to MAP01.\n"), cm+1);
-						cm = 0;
-						break;
-					}
-				}
-
-				if (visitedmap[cm/8] & (1<<(cm&7))) // smells familiar
-				{
-					// We got stuck in a loop, came back to the map we started on
-					// without finding one supporting the current gametype.
-					// Thus, print a warning, and just use this map anyways.
-					CONS_Alert(CONS_WARNING, M_GetText("Can't find a compatible map after map %d; using map %d anyway\n"), prevmap+1, cm+1);
-					break;
-				}
-			}
-			nextmap = cm;
-		}
-
-		// wrap around in race
-		if (nextmap >= 1100-1 && nextmap <= 1102-1 && !(gametyperules & GTR_CAMPAIGN))
-			nextmap = (INT16)(spstage_start-1);
-
-		if (nextmap < 0 || (nextmap >= NUMMAPS && nextmap < 1100-1) || nextmap > 1103-1)
-			I_Error("Followed map %d to invalid map %d\n", prevmap + 1, nextmap + 1);
-
+		// Remember last map for when you come out of the special stage.
 		if (!spec)
-			lastmap = nextmap; // Remember last map for when you come out of the special stage.
+			lastmap = nextmap;
+
+		// Set up power level gametype scrambles
+		K_SetPowerLevelScrambles(powertype);
 	}
-
-	automapactive = false;
-
-	if (!(gametyperules & GTR_CAMPAIGN))
-	{
-		if (cv_advancemap.value == 0) // Stay on same map.
-		{
-			nextmap = prevmap;
-		}
-		else if (cv_advancemap.value == 2) // Go to random map.
-		{
-			nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, false, NULL);
-		}
-	}
-
-	// We are committed to this map now.
-	// We may as well allocate its header if it doesn't exist
-	// (That is, if it's a real map)
-	if (nextmap < NUMMAPS && !mapheaderinfo[nextmap])
-		P_AllocMapHeader(nextmap);
-
-	// Set up power level gametype scrambles
-	K_SetPowerLevelScrambles(powertype);
-
-demointermission:
 
 	// If the current gametype has no intermission screen set, then don't start it.
 	Y_DetermineIntermissionType();
 
-	if ((skipstats && !modeattacking) || (spec && modeattacking && stagefailed) || (intertype == int_none))
+	if ((skipstats && !modeattacking)
+		|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+		|| (intertype == int_none))
 	{
 		G_UpdateVisited();
 		G_HandleSaveLevel();
@@ -3649,27 +3958,20 @@ demointermission:
 // See also F_EndCutscene, the only other place which handles intra-map/ending transitions
 void G_AfterIntermission(void)
 {
-	Y_CleanupScreenBuffer();
-
-	if (modeattacking)
-	{
-		M_EndModeAttackRun();
-		return;
-	}
-
 	if (gamecomplete == 2) // special temporary mode to prevent using SP level select in pause menu until the intermission is over without restricting it in every intermission
 		gamecomplete = 1;
 
 	HU_ClearCEcho();
-	//G_NextLevel();
 
 	if (demo.playback)
 	{
 		G_StopDemo();
 
+#if 0
 		if (demo.inreplayhut)
 			M_ReplayHut(0);
 		else
+#endif
 			D_StartTitle();
 
 		return;
@@ -3683,11 +3985,11 @@ void G_AfterIntermission(void)
 		return;
 	}
 
-	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[gamemap-1]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
-		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->cutscenenum-1, false, false);
+	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
+		F_StartCustomCutscene(mapheaderinfo[prevmap]->cutscenenum-1, false, false);
 	else
 	{
-		if (nextmap < 1100-1)
+		if (nextmap < NEXTMAP_SPECIAL)
 			G_NextLevel();
 		else
 			G_EndGame();
@@ -3704,7 +4006,7 @@ void G_NextLevel(void)
 {
 	if (gamestate != GS_VOTING)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && !modeattacking && !skipstats && (multiplayer || netgame))
+		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
 		{
 			UINT8 i;
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3801,7 +4103,7 @@ static void G_DoContinued(void)
 	tokenlist = 0;
 	token = 0;
 
-	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && (!modifiedgame || savemoddata) && cursaveslot > 0)
+	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && !usedCheats && cursaveslot > 0)
 		G_SaveGameOver((UINT32)cursaveslot, true);
 
 	// Reset # of lives
@@ -3828,27 +4130,27 @@ void G_EndGame(void)
 	if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
 		G_SaveDemo();
 
-	// Only do evaluation and credits in coop games.
-	if (gametyperules & GTR_CAMPAIGN)
+	// Only do evaluation and credits in singleplayer contexts
+	if (!netgame && (gametyperules & GTR_CAMPAIGN))
 	{
-		if (nextmap == 1103-1) // end game with ending
+		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			F_StartEnding();
+			D_StartTitle(); //F_StartEnding(); -- temporary
 			return;
 		}
-		if (nextmap == 1102-1) // end game with credits
+		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{
 			F_StartCredits();
 			return;
 		}
-		if (nextmap == 1101-1) // end game with evaluation
+		if (nextmap == NEXTMAP_EVALUATION) // end game with evaluation
 		{
 			F_StartGameEvaluation();
 			return;
 		}
 	}
 
-	// 1100 or competitive multiplayer, so go back to title screen.
+	// direct or competitive multiplayer, so go back to title screen.
 	D_StartTitle();
 }
 
@@ -3858,30 +4160,26 @@ void G_EndGame(void)
 // Sets a tad of default info we need.
 void G_LoadGameSettings(void)
 {
-	// defaults
-	spstage_start = spmarathon_start = 1;
-	sstage_start = 50;
-	sstage_end = 56; // 7 special stages in vanilla SRB2
-	sstage_end++; // plus one weirdo
-	smpstage_start = 60;
-	smpstage_end = 66; // 7 multiplayer special stages too
-
 	// initialize free sfx slots for skin sounds
 	S_InitRuntimeSounds();
 }
+
+#define GD_VERSIONCHECK 0xBA5ED444 // Change every major version, as usual
 
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
 void G_LoadGameData(void)
 {
 	size_t length;
-	INT32 i, j;
-	UINT8 modded = false;
+	UINT32 i, j;
+	UINT32 versionID;
 	UINT8 rtemp;
 
 	//For records
-	tic_t rectime;
-	tic_t reclap;
+	UINT32 numgamedatamapheaders;
+
+	// Stop saving, until we successfully load it again.
+	gamedataloaded = false;
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
@@ -3891,63 +4189,56 @@ void G_LoadGameData(void)
 	totalplaytime = 0; // total play time (separate from all)
 	matchesplayed = 0; // SRB2Kart: matches played & finished
 
-	for (i = 0; i < PWRLV_NUMTYPES; i++) // SRB2Kart: online rank system
-		vspowerlevel[i] = PWRLVRECORD_START;
-
 	if (M_CheckParm("-nodata"))
-		return; // Don't load.
-
-	// Allow saving of gamedata beyond this point
-	gamedataloaded = true;
-
-	if (M_CheckParm("-gamedata") && M_IsNextParm())
 	{
-		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+		// Don't load at all.
+		return;
 	}
 
 	if (M_CheckParm("-resetdata"))
-		return; // Don't load (essentially, reset).
+	{
+		// Don't load, but do save. (essentially, reset)
+		gamedataloaded = true;
+		return; 
+	}
 
 	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer);
-	if (!length) // Aw, no game data. Their loss!
+	if (!length)
+	{
+		// No gamedata. We can save a new one.
+		gamedataloaded = true;
 		return;
+	}
 
 	save_p = savebuffer;
 
 	// Version check
-	if (READUINT32(save_p) != 0xFCAFE211)
+	versionID = READUINT32(save_p);
+	if (versionID != GD_VERSIONCHECK)
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
 		Z_Free(savebuffer);
 		save_p = NULL;
-		I_Error("Game data is from another version of SRB2.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
+		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
 	totalplaytime = READUINT32(save_p);
 	matchesplayed = READUINT32(save_p);
 
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
 	{
-		vspowerlevel[i] = READUINT16(save_p);
-		if (vspowerlevel[i] < PWRLVRECORD_MIN || vspowerlevel[i] > PWRLVRECORD_MAX)
+		// Quick & dirty hash for what mod this save file is for.
+		UINT32 modID = READUINT32(save_p);
+		UINT32 expectedID = quickncasehash(timeattackfolder, 64);
+
+		if (modID != expectedID)
+		{
+			// Aha! Someone's been screwing with the save file!
 			goto datacorrupt;
+		}
 	}
-
-	modded = READUINT8(save_p);
-
-	// Aha! Someone's been screwing with the save file!
-	if ((modded && !savemoddata))
-		goto datacorrupt;
-	else if (modded != true && modded != false)
-		goto datacorrupt;
-
-	// TODO put another cipher on these things? meh, I don't care...
-	for (i = 0; i < NUMMAPS; i++)
-		if ((mapvisited[i] = READUINT8(save_p)) > MV_MAX)
-			goto datacorrupt;
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;)
@@ -3982,22 +4273,56 @@ void G_LoadGameData(void)
 	timesBeaten = READUINT32(save_p);
 
 	// Main records
-	for (i = 0; i < NUMMAPS; ++i)
+	numgamedatamapheaders = READUINT32(save_p);
+	if (numgamedatamapheaders >= NEXTMAP_SPECIAL)
+		goto datacorrupt;
+
+	for (i = 0; i < numgamedatamapheaders; i++)
 	{
+		char mapname[MAXMAPLUMPNAME];
+		INT16 mapnum;
+		tic_t rectime;
+		tic_t reclap;
+
+		READSTRINGN(save_p, mapname, sizeof(mapname));
+		mapnum = G_MapNumber(mapname);
+
+		rtemp = READUINT8(save_p);
 		rectime = (tic_t)READUINT32(save_p);
 		reclap  = (tic_t)READUINT32(save_p);
 
-		if (rectime || reclap)
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
-			G_AllocMainRecordData((INT16)i);
-			mainrecords[i]->time = rectime;
-			mainrecords[i]->lap = reclap;
+			// Valid mapheader, time to populate with record data.
+
+			if ((mapheaderinfo[mapnum]->mapvisited = rtemp) & ~MV_MAX)
+				goto datacorrupt;
+
+			if (rectime || reclap)
+			{
+				G_AllocMainRecordData((INT16)i);
+				mapheaderinfo[i]->mainrecord->time = rectime;
+				mapheaderinfo[i]->mainrecord->lap = reclap;
+				CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
+			}
+		}
+		else
+		{
+			// Since it's not worth declaring the entire gamedata
+			// corrupt over extra maps, we report and move on.
+			CONS_Alert(CONS_WARNING, "Map with lumpname %s does not exist, time record data will be discarded\n", mapname);
 		}
 	}
 
 	// done
 	Z_Free(savebuffer);
 	save_p = NULL;
+
+	// Don't consider loaded until it's a success!
+	// It used to do this much earlier, but this would cause the gamedata to
+	// save over itself when it I_Errors from the corruption landing point below,
+	// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
+	gamedataloaded = true;
 
 	// Silent update unlockables in case they're out of sync with conditions
 	M_SilentUpdateUnlockablesAndEmblems();
@@ -4007,7 +4332,7 @@ void G_LoadGameData(void)
 	// Landing point for corrupt gamedata
 	datacorrupt:
 	{
-		const char *gdfolder = "the SRB2Kart folder";
+		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
@@ -4029,40 +4354,32 @@ void G_SaveGameData(void)
 	if (!gamedataloaded)
 		return; // If never loaded (-nodata), don't save
 
-	save_p = savebuffer = (UINT8 *)malloc(GAMEDATASIZE);
+	length = (4+4+4+1+(MAXEMBLEMS)+MAXEXTRAEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS+4+4);
+	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
+
+	save_p = savebuffer = (UINT8 *)malloc(length);
 	if (!save_p)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 		return;
 	}
 
-#if 0
-	// SRB2Kart: Let players unlock stuff with addons.
-	if (modifiedgame && !savemoddata)
+	if (usedCheats)
 	{
 		free(savebuffer);
 		save_p = savebuffer = NULL;
 		return;
 	}
-#endif
 
 	// Version test
-	WRITEUINT32(save_p, 0xFCAFE211);
 
-	WRITEUINT32(save_p, totalplaytime);
-	WRITEUINT32(save_p, matchesplayed);
-
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-		WRITEUINT16(save_p, vspowerlevel[i]);
-
-	WRITEUINT8(save_p, (UINT8)savemoddata);
-
-	// TODO put another cipher on these things? meh, I don't care...
-	for (i = 0; i < NUMMAPS; i++)
-		WRITEUINT8(save_p, (mapvisited[i] & MV_MAX));
+	WRITEUINT32(save_p, GD_VERSIONCHECK); // 4
+	WRITEUINT32(save_p, totalplaytime); // 4
+	WRITEUINT32(save_p, matchesplayed); // 4
+	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag
-	for (i = 0; i < MAXEMBLEMS;)
+	for (i = 0; i < MAXEMBLEMS;) // MAXEMBLEMS * 1;
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
@@ -4070,7 +4387,7 @@ void G_SaveGameData(void)
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
-	for (i = 0; i < MAXEXTRAEMBLEMS;)
+	for (i = 0; i < MAXEXTRAEMBLEMS;) // MAXEXTRAEMBLEMS * 1;
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
@@ -4078,7 +4395,7 @@ void G_SaveGameData(void)
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;)
+	for (i = 0; i < MAXUNLOCKABLES;) // MAXUNLOCKABLES * 1;
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
@@ -4086,7 +4403,7 @@ void G_SaveGameData(void)
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
-	for (i = 0; i < MAXCONDITIONSETS;)
+	for (i = 0; i < MAXCONDITIONSETS;) // MAXCONDITIONSETS * 1;
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
@@ -4095,22 +4412,28 @@ void G_SaveGameData(void)
 		i += j;
 	}
 
-	WRITEUINT32(save_p, timesBeaten);
+	WRITEUINT32(save_p, timesBeaten); // 4
 
 	// Main records
-	for (i = 0; i < NUMMAPS; i++)
+	WRITEUINT32(save_p, nummapheaders); // 4
+
+	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
-		if (mainrecords[i])
+		// For figuring out which header to assing it to on load
+		WRITESTRINGN(save_p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+
+		WRITEUINT8(save_p, (mapheaderinfo[i]->mapvisited & MV_MAX));
+
+		if (mapheaderinfo[i]->mainrecord)
 		{
-			WRITEUINT32(save_p, mainrecords[i]->time);
-			WRITEUINT32(save_p, mainrecords[i]->lap);
+			WRITEUINT32(save_p, mapheaderinfo[i]->mainrecord->time);
+			WRITEUINT32(save_p, mapheaderinfo[i]->mainrecord->lap);
 		}
 		else
 		{
 			WRITEUINT32(save_p, 0);
 			WRITEUINT32(save_p, 0);
 		}
-		WRITEUINT8(save_p, 0); // compat
 	}
 
 	length = save_p - savebuffer;
@@ -4118,6 +4441,9 @@ void G_SaveGameData(void)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
+
+	// Also save profiles here.
+	PR_SaveProfiles();
 }
 
 #define VERSIONSIZE 16
@@ -4388,9 +4714,8 @@ cleanup:
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayers[], playeringame[] should be set.
 //
-void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
+void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
-	INT32 i;
 	UINT16 color = SKINCOLOR_NONE;
 
 	paused = false;
@@ -4400,8 +4725,7 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 
 	G_FreeGhosts(); // TODO: do we actually need to do this?
 
-	for (i = 0; i < NUMMAPS+1; i++)
-		randmapbuffer[i] = -1;
+	G_ResetRandMapBuffer();
 
 	// this leave the actual game if needed
 	SV_StartSinglePlayerServer();
@@ -4420,23 +4744,20 @@ void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar
 		CV_StealthSetValue(&cv_playercolor[0], color);
 	}
 
-	if (mapname)
-	{
-		D_MapChange(M_MapNumber(mapname[3], mapname[4]), gametype, pencoremode, true, 1, false, FLS);
-	}
+	D_MapChange(map, gametype, pencoremode, true, 1, false, FLS);
 }
 
 //
 // This is the map command interpretation something like Command_Map_f
 //
 // called at: map cmd execution, doloadgame, doplaydemo
-void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, boolean skipprecutscene, boolean FLS)
+void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skipprecutscene, boolean FLS)
 {
+	const char * mapname = G_BuildMapName(map);
+
 	INT32 i;
 
 	(void)FLS;
-
-	Y_CleanupScreenBuffer();
 
 	if (paused)
 	{
@@ -4444,14 +4765,14 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		S_ResumeAudio();
 	}
 
-	prevencoremode = ((gamestate == GS_TITLESCREEN) ? false : encoremode);
+	prevencoremode = ((!Playing()) ? false : encoremode);
 	encoremode = pencoremode;
 
 	legitimateexit = false; // SRB2Kart
 	comebackshowninfo = false;
 
 	if (!demo.playback && !netgame) // Netgame sets random seed elsewhere, demo playback sets seed just before us!
-		P_SetRandSeed(M_RandomizedSeed()); // Use a more "Random" random seed
+		P_ClearRandom(M_RandomizedSeed()); // Use a more "Random" random seed
 
 	// Clear a bunch of variables
 	redscore = bluescore = lastmap = 0;
@@ -4463,7 +4784,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
 
 		// Clear cheatcodes too, just in case.
-		players[i].pflags &= ~(PF_GODMODE|PF_NOCLIP);
+		players[i].cheats = 0;
 
 		players[i].roundscore = 0;
 
@@ -4486,19 +4807,20 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	// internal game map
 	// well this check is useless because it is done before (d_netcmd.c::command_map_f)
 	// but in case of for demos....
-	if (W_CheckNumForName(mapname) == LUMPERROR)
+	if (!mapname)
+	{
+		I_Error("Internal game map with ID %d not found\n", map);
+		Command_ExitGame_f();
+		return;
+	}
+	if (mapheaderinfo[map-1]->lumpnum == LUMPERROR)
 	{
 		I_Error("Internal game map '%s' not found\n", mapname);
 		Command_ExitGame_f();
 		return;
 	}
 
-	gamemap = (INT16)M_MapNumber(mapname[3], mapname[4]); // get xx out of MAPxx
-
-	// gamemap changed; we assume that its map header is always valid,
-	// so make it so
-	if(!mapheaderinfo[gamemap-1])
-		P_AllocMapHeader(gamemap-1);
+	gamemap = map;
 
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 	globalweather = mapheaderinfo[gamemap-1]->weather;
@@ -4513,7 +4835,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{
-		LUAh_MapChange(gamemap);
+		LUA_HookInt(gamemap, HOOK(MapChange));
 		G_DoLoadLevel(resetplayer);
 	}
 
@@ -4521,7 +4843,7 @@ void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer, bool
 	{
 		char *title = G_BuildMapTitle(gamemap);
 
-		CON_LogMessage(va(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap)));
+		CON_LogMessage(va(M_GetText("Map is now \"%s"), mapname));
 		if (title)
 		{
 			CON_LogMessage(va(": %s", title));
@@ -4536,11 +4858,8 @@ char *G_BuildMapTitle(INT32 mapnum)
 {
 	char *title = NULL;
 
-	if (mapnum == 0)
-		return Z_StrDup("Random");
-
-	if (!mapheaderinfo[mapnum-1])
-		P_AllocMapHeader(mapnum-1);
+	if (!mapnum || mapnum > nummapheaders || !mapheaderinfo[mapnum-1])
+		I_Error("G_BuildMapTitle: Internal map ID %d not found (nummapheaders = %d)", mapnum-1, nummapheaders);
 
 	if (strcmp(mapheaderinfo[mapnum-1]->lvlttl, ""))
 	{
@@ -4636,21 +4955,16 @@ INT32 G_FindMap(const char *mapname, char **foundmapnamep,
 
 	mapnamelen = strlen(mapname);
 
-	/* Count available maps; how ugly. */
-	for (i = 0, freqc = 0; i < NUMMAPS; ++i)
-	{
-		if (mapheaderinfo[i])
-			freqc++;
-	}
-
-	freq = ZZ_Calloc(freqc * sizeof (mapsearchfreq_t));
+	freq = ZZ_Calloc(nummapheaders * sizeof (mapsearchfreq_t));
 
 	wanttable = !!( freqp );
 
 	freqc = 0;
-	for (i = 0, mapnum = 1; i < NUMMAPS; ++i, ++mapnum)
-		if (mapheaderinfo[i])
+	for (i = 0, mapnum = 1; i < nummapheaders; ++i, ++mapnum)
 	{
+		if (!mapheaderinfo[i] || mapheaderinfo[i]->lumpnum == LUMPERROR)
+			continue;
+
 		if (!( realmapname = G_BuildMapTitle(mapnum) ))
 			continue;
 
@@ -4759,55 +5073,30 @@ void G_FreeMapSearch(mapsearchfreq_t *freq, INT32 freqc)
 
 INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 {
-	boolean usemapcode = false;
-
 	INT32 newmapnum;
-
-	size_t mapnamelen;
 
 	char *p;
 
-	mapnamelen = strlen(mapname);
+	/* Now detect map number in base 10, which no one asked for. */
+	newmapnum = strtol(mapname, &p, 10);
 
-	if (mapnamelen == 2)/* maybe two digit code */
+	if (*p == '\0')/* we got it */
 	{
-		if (( newmapnum = M_MapNumber(mapname[0], mapname[1]) ))
-			usemapcode = true;
-	}
-	else if (mapnamelen == 5 && strnicmp(mapname, "MAP", 3) == 0)
-	{
-		if (( newmapnum = M_MapNumber(mapname[3], mapname[4]) ))
-			usemapcode = true;
-	}
-
-	if (!usemapcode)
-	{
-		/* Now detect map number in base 10, which no one asked for. */
-		newmapnum = strtol(mapname, &p, 10);
-		if (*p == '\0')/* we got it */
-		{
-			if (newmapnum < 1 || newmapnum > NUMMAPS)
-			{
-				CONS_Alert(CONS_ERROR, M_GetText("Invalid map number %d.\n"), newmapnum);
-				return 0;
-			}
-			usemapcode = true;
-		}
-		else
-		{
-			newmapnum = G_FindMap(mapname, realmapnamep, NULL, NULL);
-		}
-	}
-
-	if (usemapcode)
-	{
-		/* we can't check mapheaderinfo for this hahahaha */
-		if (W_CheckNumForName(G_BuildMapName(newmapnum)) == LUMPERROR)
+		if (newmapnum < 1 || newmapnum > nummapheaders)
 			return 0;
-
-		if (realmapnamep)
-			(*realmapnamep) = G_BuildMapTitle(newmapnum);
+		if (!mapheaderinfo[newmapnum-1] || mapheaderinfo[newmapnum-1]->lumpnum == LUMPERROR)
+			return 0;
 	}
+	else
+	{
+		newmapnum = G_MapNumber(mapname)+1;
+
+		if (newmapnum > nummapheaders)
+			return G_FindMap(mapname, realmapnamep, NULL, NULL);
+	}
+
+	if (realmapnamep)
+		(*realmapnamep) = G_BuildMapTitle(newmapnum);
 
 	return newmapnum;
 }

@@ -116,6 +116,8 @@ extern vmode_t specialmodes[NUMSPECIALMODES];
 // color mode dependent drawer function pointers
 // ---------------------------------------------
 
+#define USE_COL_SPAN_ASM 0
+
 #define BASEDRAWFUNC 0
 
 enum
@@ -129,12 +131,17 @@ enum
 	COLDRAWFUNC_TWOSMULTIPATCH,
 	COLDRAWFUNC_TWOSMULTIPATCHTRANS,
 	COLDRAWFUNC_FOG,
+	COLDRAWFUNC_DROPSHADOW,
 
 	COLDRAWFUNC_MAX
 };
 
 extern void (*colfunc)(void);
 extern void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+extern void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
+extern int colfunctype;
 
 enum
 {
@@ -163,6 +170,9 @@ enum
 extern void (*spanfunc)(void);
 extern void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 extern void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+extern void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // -----
 // CPUID
@@ -181,7 +191,8 @@ extern boolean R_SSE2;
 extern viddef_t vid;
 extern INT32 setmodeneeded; // mode number to set if needed, or 0
 extern UINT8 setrenderneeded;
-extern double aproxfps;
+
+extern double averageFPS;
 
 void SCR_ChangeRenderer(void);
 
@@ -190,11 +201,12 @@ extern CV_PossibleValue_t cv_renderer_t[];
 extern INT32 scr_bpp;
 extern UINT8 *scr_borderpatch; // patch used to fill the view borders
 
-extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_renderer, cv_fullscreen;
+extern consvar_t cv_scr_width, cv_scr_height, cv_scr_depth, cv_renderview, cv_renderer, cv_renderhitbox, cv_fullscreen;
 extern consvar_t cv_vhseffect, cv_shittyscreen;
 
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
+extern consvar_t cv_timescale;
 
 // Initialize the screen
 void SCR_Startup(void);
@@ -205,6 +217,13 @@ void SCR_SetMode(void);
 // Set drawer functions for Software
 void SCR_SetDrawFuncs(void);
 
+// Set current column / span drawers
+void R_SetColumnFunc(size_t id, boolean brightmapped);
+void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped);
+
+// Compare current column drawer
+boolean R_CheckColumnFunc(size_t id);
+
 // Recalc screen size dependent stuff
 void SCR_Recalc(void);
 
@@ -214,7 +233,7 @@ void SCR_CheckDefaultMode(void);
 // Set the mode number which is saved in the config
 void SCR_SetDefaultMode(void);
 
-void SCR_CalcAproxFps(void);
+void SCR_CalculateFPS(void);
 
 FUNCMATH boolean SCR_IsAspectCorrect(INT32 width, INT32 height);
 

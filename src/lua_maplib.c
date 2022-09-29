@@ -2085,8 +2085,8 @@ static int lib_getMapheaderinfo(lua_State *L)
 	lua_remove(L, 1); // dummy userdata table is unused.
 	if (lua_isnumber(L, 1))
 	{
-		size_t i = lua_tointeger(L, 1)-1;
-		if (i >= NUMMAPS)
+		INT32 i = lua_tointeger(L, 1)-1;
+		if (i < 0 || i >= nummapheaders)
 			return 0;
 		LUA_PushUserdata(L, mapheaderinfo[i], META_MAPHEADER);
 		//CONS_Printf(mapheaderinfo[i]->lvlttl);
@@ -2104,7 +2104,7 @@ static int lib_getMapheaderinfo(lua_State *L)
 
 static int lib_nummapheaders(lua_State *L)
 {
-	lua_pushinteger(L, NUMMAPS);
+	lua_pushinteger(L, nummapheaders);
 	return 1;
 }
 
@@ -2116,7 +2116,6 @@ static int mapheaderinfo_get(lua_State *L)
 {
 	mapheader_t *header = *((mapheader_t **)luaL_checkudata(L, 1, META_MAPHEADER));
 	const char *field = luaL_checkstring(L, 2);
-	INT16 i;
 	if (fastcmp(field,"lvlttl"))
 		lua_pushstring(L, header->lvlttl);
 	else if (fastcmp(field,"subttl"))
@@ -2127,10 +2126,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->actnum);
 	else if (fastcmp(field,"typeoflevel"))
 		lua_pushinteger(L, header->typeoflevel);
-	else if (fastcmp(field,"nextlevel"))
-		lua_pushinteger(L, header->nextlevel);
-	else if (fastcmp(field,"marathonnext"))
-		lua_pushinteger(L, header->marathonnext);
 	else if (fastcmp(field,"keywords"))
 		lua_pushstring(L, header->keywords);
 	else if (fastcmp(field,"musname"))
@@ -2139,22 +2134,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->mustrack);
 	else if (fastcmp(field,"muspos"))
 		lua_pushinteger(L, header->muspos);
-	else if (fastcmp(field,"musinterfadeout"))
-		lua_pushinteger(L, header->musinterfadeout);
-	else if (fastcmp(field,"musintername"))
-		lua_pushstring(L, header->musintername);
-	else if (fastcmp(field,"muspostbossname"))
-		lua_pushstring(L, header->muspostbossname);
-	else if (fastcmp(field,"muspostbosstrack"))
-		lua_pushinteger(L, header->muspostbosstrack);
-	else if (fastcmp(field,"muspostbosspos"))
-		lua_pushinteger(L, header->muspostbosspos);
-	else if (fastcmp(field,"muspostbossfadein"))
-		lua_pushinteger(L, header->muspostbossfadein);
-	else if (fastcmp(field,"musforcereset"))
-		lua_pushinteger(L, header->musforcereset);
-	else if (fastcmp(field,"forcecharacter"))
-		lua_pushstring(L, header->forcecharacter);
 	else if (fastcmp(field,"weather"))
 		lua_pushinteger(L, header->weather);
 	else if (fastcmp(field,"skytexture"))
@@ -2165,12 +2144,7 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->skybox_scaley);
 	else if (fastcmp(field,"skybox_scalez"))
 		lua_pushinteger(L, header->skybox_scalez);
-	else if (fastcmp(field,"interscreen")) {
-		for (i = 0; i < 8; i++)
-			if (!header->interscreen[i])
-				break;
-		lua_pushlstring(L, header->interscreen, i);
-	} else if (fastcmp(field,"runsoc"))
+	else if (fastcmp(field,"runsoc"))
 		lua_pushstring(L, header->runsoc);
 	else if (fastcmp(field,"scriptname"))
 		lua_pushstring(L, header->scriptname);
@@ -2178,8 +2152,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->precutscenenum);
 	else if (fastcmp(field,"cutscenenum"))
 		lua_pushinteger(L, header->cutscenenum);
-	else if (fastcmp(field,"countdown"))
-		lua_pushinteger(L, header->countdown);
 	else if (fastcmp(field,"palette"))
 		lua_pushinteger(L, header->palette);
 	else if (fastcmp(field,"numlaps"))
@@ -2188,31 +2160,14 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->unlockrequired);
 	else if (fastcmp(field,"levelselect"))
 		lua_pushinteger(L, header->levelselect);
-	else if (fastcmp(field,"bonustype"))
-		lua_pushinteger(L, header->bonustype);
-	else if (fastcmp(field,"ltzzpatch"))
-		lua_pushstring(L, header->ltzzpatch);
-	else if (fastcmp(field,"ltzztext"))
-		lua_pushstring(L, header->ltzztext);
-	else if (fastcmp(field,"ltactdiamond"))
-		lua_pushstring(L, header->ltactdiamond);
-	else if (fastcmp(field,"maxbonuslives"))
-		lua_pushinteger(L, header->maxbonuslives);
 	else if (fastcmp(field,"levelflags"))
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))
 		lua_pushinteger(L, header->menuflags);
 	else if (fastcmp(field,"mobj_scale"))
 		lua_pushfixed(L, header->mobj_scale);
-	else if (fastcmp(field,"startrings"))
-		lua_pushinteger(L, header->startrings);
-	else if (fastcmp(field, "sstimer"))
-		lua_pushinteger(L, header->sstimer);
-	else if (fastcmp(field, "ssspheres"))
-		lua_pushinteger(L, header->ssspheres);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
-	// TODO add support for reading numGradedMares and grades
 	else {
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)

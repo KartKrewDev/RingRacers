@@ -21,8 +21,9 @@ Documentation available here.
 #include "doomdef.h"
 #include "d_clisrv.h"
 #include "command.h"
+#include "console.h"
 #include "m_argv.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "mserv.h"
 #include "i_tcp.h"/* for current_port */
 #include "i_threads.h"
@@ -54,6 +55,8 @@ consvar_t cv_masterserver_token = CVAR_INIT
 		NULL
 );
 
+#define HMS_QUERY_VERSION "?v=2.2"
+
 #ifdef MASTERSERVER
 
 static int hms_started;
@@ -79,6 +82,19 @@ Contact_error (void)
 	CONS_Alert(CONS_ERROR,
 			"There was a problem contacting the master server...\n"
 	);
+}
+
+static void
+Printf_url (const char *url)
+{
+	boolean startup;
+
+	I_lock_mutex(&con_mutex);
+	startup = con_startup;
+	I_unlock_mutex(con_mutex);
+
+	(startup ? I_OutputMsg : CONS_Printf)(
+			"HMS: connecting '%s'...\n", url);
 }
 
 static size_t
@@ -160,7 +176,7 @@ HMS_connect (const char *format, ...)
 
 	va_start (ap, format);
 	url = malloc(seek + vsnprintf(0, 0, format, ap) +
-			sizeof "?v=2" - 1 +
+			sizeof HMS_QUERY_VERSION - 1 +
 			token_length + 1);
 	va_end (ap);
 
@@ -174,13 +190,13 @@ HMS_connect (const char *format, ...)
 	seek += vsprintf(&url[seek], format, ap);
 	va_end (ap);
 
-	strcpy(&url[seek], "?v=2");
-	seek += sizeof "?v=2" - 1;
+	strcpy(&url[seek], HMS_QUERY_VERSION);
+	seek += sizeof HMS_QUERY_VERSION - 1;
 
 	if (quack_token)
 		sprintf(&url[seek], "&token=%s", quack_token);
 
-	CONS_Printf("HMS: connecting '%s'...\n", url);
+	Printf_url(url);
 
 	buffer = malloc(sizeof *buffer);
 	buffer->curl = curl;

@@ -151,18 +151,9 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
-	
-	// If player was tumbling, set variables so that they don't tumble like crazy after they're done respawning
-	if (player->tumbleBounces > 0)
-	{
-		player->tumbleBounces = 0; // MAXBOUNCES-1;
-		player->pflags &= ~PF_TUMBLELASTBOUNCE;
-		//players->tumbleHeight = 20;
-		players->mo->rollangle = 0;
-		player->spinouttype = KSPIN_WIPEOUT;
-		player->spinouttimer = player->wipeoutslow = (3*TICRATE/2)+2;
-	}
+	player->gateBoost = 0;
 
+	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
@@ -278,6 +269,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.state = RESPAWNST_MOVE;
 
 	player->respawn.airtimer = player->airtime;
+	player->respawn.truedeath = false;
 }
 
 /*--------------------------------------------------
@@ -567,7 +559,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		lasersteps--;
 	}
 
-	if (lasersteps == 0) // Don't spawn them beyond the respawn point.
+	// Respawning after death: everything about the player
+	// is invisible
+	if (!player->respawn.truedeath && lasersteps == 0) // Don't spawn them beyond the respawn point.
 	{
 		mobj_t *lasermo = P_SpawnMobj(laser.x, laser.y, laser.z + (player->mo->height / 2), MT_DEZLASER);
 
@@ -582,7 +576,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 			P_SetTarget(&lasermo->target, player->mo);
 
-			lasermo->angle = stepha + ANGLE_90;
+			P_InitAngle(lasermo, stepha + ANGLE_90);
 			P_SetScale(lasermo, (lasermo->destscale = player->mo->scale));
 		}
 	}
@@ -645,7 +639,7 @@ static void K_DropDashWait(player_t *player)
 
 				P_SetTarget(&laser->target, player->mo);
 
-				laser->angle = newangle + ANGLE_90;
+				P_InitAngle(laser, newangle + ANGLE_90);
 				laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
 				P_SetScale(laser, (laser->destscale = player->mo->scale));
 			}
@@ -672,11 +666,11 @@ static void K_HandleDropDash(player_t *player)
 	if (player->growshrinktimer < 0)
 	{
 		player->mo->scalespeed = mapobjectscale/TICRATE;
-		player->mo->destscale = (6*mapobjectscale)/8;
+		player->mo->destscale = FixedMul(mapobjectscale, SHRINK_SCALE);
 
-		if (cv_kartdebugshrink.value && !modeattacking && !player->bot)
+		if (K_PlayerShrinkCheat(player) == true)
 		{
-			player->mo->destscale = (6*player->mo->destscale)/8;
+			player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 		}
 	}
 

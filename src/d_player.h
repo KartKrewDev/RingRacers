@@ -58,16 +58,16 @@ typedef enum
 //
 typedef enum
 {
-	// True if button down last tic.
-	PF_ATTACKDOWN = 1,
-	PF_ACCELDOWN  = 1<<1,
-	PF_BRAKEDOWN  = 1<<2,
-	PF_LOOKDOWN   = 1<<3,
+	// free: 1<<0 to 1<<2
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	PF_GAINAX			= 1<<3,
 
 	// Accessibility and cheats
 	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
-	PF_GODMODE			= 1<<5,
-	PF_NOCLIP 			= 1<<6,
+	// 1<<5 free
+	// 1<<6 free
 
 	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
 
@@ -99,8 +99,18 @@ typedef enum
 	PF_HITFINISHLINE	= 1<<26, // Already hit the finish line this tic
 	PF_WRONGWAY			= 1<<27, // Moving the wrong way with respect to waypoints?
 
+	PF_SHRINKME			= 1<<28, // "Shrink me" cheat preference
+	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
+
 	// up to 1<<31 is free
 } pflags_t;
+
+typedef enum
+{
+	PC_GODMODE			= 1,
+	PC_NOCLIP 			= 1<<1,
+	// up to 1<<31 is free
+} pcheats_t;
 
 typedef enum
 {
@@ -142,13 +152,14 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (SPB,           11),\
 	FOREACH (GROW,          12),\
 	FOREACH (SHRINK,        13),\
-	FOREACH (THUNDERSHIELD, 14),\
+	FOREACH (LIGHTNINGSHIELD, 14),\
 	FOREACH (BUBBLESHIELD,  15),\
 	FOREACH (FLAMESHIELD,   16),\
 	FOREACH (HYUDORO,       17),\
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
-	FOREACH (KITCHENSINK,   20)
+	FOREACH (KITCHENSINK,   20),\
+	FOREACH (DROPTARGET,    21)
 
 typedef enum
 {
@@ -173,7 +184,7 @@ typedef enum
 typedef enum
 {
 	KSHIELD_NONE = 0,
-	KSHIELD_THUNDER = 1,
+	KSHIELD_LIGHTNING = 1,
 	KSHIELD_BUBBLE = 2,
 	KSHIELD_FLAME = 3,
 	NUMKARTSHIELDS
@@ -200,10 +211,18 @@ typedef enum
 
 typedef enum
 {
-	TRIP_NONE,
-	TRIP_PASSED,
-	TRIP_BLOCKED,
+	TRIPSTATE_NONE,
+	TRIPSTATE_PASSED,
+	TRIPSTATE_BLOCKED,
 } tripwirestate_t;
+
+typedef enum
+{
+	TRIPWIRE_NONE,
+	TRIPWIRE_IGNORE,
+	TRIPWIRE_BOOST,
+	TRIPWIRE_BLASTER,
+} tripwirepass_t;
 
 typedef enum
 {
@@ -254,11 +273,20 @@ typedef enum
 #define TRICKDELAY (TICRATE/4)
 
 #define TUMBLEBOUNCES 3
+#define TUMBLEGRAVITY (4*FRACUNIT)
+
+#define TRIPWIRETIME (15)
+
+#define BALLHOGINCREMENT (7)
 
 //}
 
 // for kickstartaccel
-#define ACCEL_KICKSTART 35
+#define ACCEL_KICKSTART (TICRATE)
+
+#define ITEMSCALE_NORMAL 0
+#define ITEMSCALE_GROW 1
+#define ITEMSCALE_SHRINK 2
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -273,6 +301,7 @@ typedef struct respawnvars_s
 	tic_t airtimer; // Time spent in the air before respawning
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
+	boolean truedeath; // Your soul has left your body
 } respawnvars_t;
 
 // player_t struct for all bot variables
@@ -282,6 +311,9 @@ typedef struct botvars_s
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
+	fixed_t rubberband; // Bot rubberband value
+	UINT16 controller; // Special bot controller linedef ID
+
 	tic_t itemdelay; // Delay before using item at all
 	tic_t itemconfirm; // When high enough, they will use their item
 
@@ -289,6 +321,12 @@ typedef struct botvars_s
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
 } botvars_t;
+
+// player_t struct for all skybox variables
+typedef struct {
+	mobj_t * viewpoint;
+	mobj_t * centerpoint;
+} skybox_t;
 
 // ========================================================================
 //                          PLAYER STRUCTURE
@@ -299,6 +337,7 @@ typedef struct player_s
 
 	// Caveat: ticcmd_t is ATTRPACK! Be careful what precedes it.
 	ticcmd_t cmd;
+	ticcmd_t oldcmd; // from the previous tic
 
 	playerstate_t playerstate;
 
@@ -311,8 +350,9 @@ typedef struct player_s
 	// bounded/scaled total momentum.
 	fixed_t bob;
 
+	skybox_t skybox;
+
 	angle_t viewrollangle;
-	angle_t old_viewrollangle;
 	// camera tilt
 	// TODO: expose to lua
 	angle_t tilt;
@@ -327,10 +367,12 @@ typedef struct player_s
 	// fun thing for player sprite
 	angle_t drawangle;
 	angle_t old_drawangle; // interp
+	angle_t old_drawangle2;
 
 	// Bit flags.
 	// See pflags_t, above.
 	pflags_t pflags;
+	pcheats_t cheats;
 
 	// playing animation.
 	panim_t panim;
@@ -386,11 +428,16 @@ typedef struct player_s
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
 	UINT16 tumbleHeight;	// In *mobjscaled* fracunits, or mfu, not raw fu
+	UINT8 justDI;			// Turn-lockout timer to briefly prevent unintended turning after DI, resets when actionable or no input
+	boolean flipDI;			// Bananas flip the DI direction. Was a bug, but it made bananas much more interesting.
 
 	SINT8 drift;			// (-5 to 5) - Drifting Left or Right, plus a bigger counter = sharper turn
 	fixed_t driftcharge;	// Charge your drift so you can release a burst of speed
 	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
+
+	UINT16 gateBoost;		// Juicebox Manta Ring boosts
+	UINT8 gateSound;		// Sound effect combo
 
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
@@ -410,6 +457,8 @@ typedef struct player_s
 	fixed_t spindashspeed;	// Spindash release speed
 	UINT8 spindashboost;	// Spindash release boost timer
 
+	fixed_t fastfall;		// Fast fall momentum
+
 	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
 	fixed_t boostpower;		// Base boost value, for offroad
 	fixed_t speedboost;		// Boost value smoothing for max speed
@@ -421,6 +470,10 @@ typedef struct player_s
 	UINT16 draftleeway;		// Leniency timer before removing draft power
 	SINT8 lastdraft;		// (-1 to 15) - Last player being drafted
 
+	UINT8 tripwireState; // see tripwirestate_t
+	UINT8 tripwirePass; // see tripwirepass_t
+	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
+
 	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
 	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
 
@@ -428,6 +481,7 @@ typedef struct player_s
 	SINT8 itemtype;		// KITEM_ constant for item number
 	UINT8 itemamount;	// Amount of said item
 	SINT8 throwdir; 	// Held dir of controls; 1 = forward, 0 = none, -1 = backward (was "player->heldDir")
+	UINT8 itemscale;	// Item scale value, from when an item was taken out. (0 for normal, 1 for grow, 2 for shrink.)
 
 	UINT8 sadtimer;		// How long you've been sad
 
@@ -446,8 +500,11 @@ typedef struct player_s
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
+	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
+	mobj_t *hoverhyudoro;	// First hyudoro hovering next to player
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
@@ -465,12 +522,16 @@ typedef struct player_s
 	SINT8 lastjawztarget;	// (-1 to 15) - Last person you target with jawz, for playing the target switch sfx
 	UINT8 jawztargetdelay;	// (0 to 5) - Delay for Jawz target switching, to make it less twitchy
 
+	UINT8 confirmVictim;		// Player ID that you dealt damage to
+	UINT8 confirmVictimDelay;	// Delay before playing the sound
+
 	UINT8 trickpanel; 	// Trick panel state
 	UINT8 tricktime;	// Increases while you're tricking. You can't input any trick until it's reached a certain threshold
 	fixed_t trickboostpower;	// Save the rough speed multiplier. Used for upwards tricks.
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;
@@ -478,10 +539,9 @@ typedef struct player_s
 	INT16 karmadelay;
 	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
+	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
-
-	UINT8 tripWireState; // see tripwirestate_t
 
 	//
 
@@ -506,6 +566,7 @@ typedef struct player_s
 	INT16 totalring; // Total number of rings obtained for GP
 	tic_t realtime; // integer replacement for leveltime
 	UINT8 laps; // Number of laps (optional)
+	UINT8 latestlap;
 	INT32 starpostnum; // The number of the last starpost you hit
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
@@ -531,7 +592,6 @@ typedef struct player_s
 	UINT8 splitscreenindex;
 
 	tic_t jointime; // Timer when player joins game to change skin/color
-	tic_t quittime; // Time elapsed since user disconnected, zero if connected
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer
@@ -539,6 +599,10 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+
+	UINT8 shrinkLaserDelay;
+
+	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

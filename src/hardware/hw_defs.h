@@ -113,7 +113,7 @@ typedef struct
 	UINT8       splitscreen;
 	boolean     flip;            // screenflip
 	boolean     shearing;        // 14042019
-	angle_t     viewaiming;      // 17052019
+	float       viewaiming;      // 17052019
 	boolean     roll;
 	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
 	FLOAT       centerx, centery;
@@ -133,6 +133,7 @@ typedef struct
 // Predefined shader types
 enum
 {
+	SHADER_NONE = -1,
 	SHADER_DEFAULT = 0,
 
 	SHADER_FLOOR,
@@ -227,14 +228,16 @@ enum EPolyFlags
 	PF_NoDepthTest      = 0x00000200,   // Disables the depth test mode
 	PF_Invisible        = 0x00000400,   // Disables write to color buffer
 	PF_Decal            = 0x00000800,   // Enables polygon offset
-	PF_Modulated        = 0x00001000,   // Modulation (multiply output with constant ARGB)
+	PF_Modulated        = 0x00001000,   // Modulation (multiply output with constant RGBA)
 	                                    // When set, pass the color constant into the FSurfaceInfo -> PolyColor
 	PF_NoTexture        = 0x00002000,   // Disables texturing
 	PF_Corona           = 0x00004000,   // Tells the renderer we are drawing a corona
-	PF_Ripple           = 0x00008000,   // Water effect shader
+	PF_ColorMapped      = 0x00008000,   // Surface has "tint" and "fade" colors, which are sent as uniforms to a shader.
 	PF_RemoveYWrap      = 0x00010000,   // Forces clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Forces repeat texture on X
-	PF_ForceWrapY       = 0x00040000    // Forces repeat texture on Y
+	PF_ForceWrapY       = 0x00040000,   // Forces repeat texture on Y
+	PF_Ripple           = 0x00100000,   // Water ripple effect. The current backend doesn't use it for anything.
+	PF_WireFrame        = 0x00200000,   // Draws vertices as lines instead of triangles
 };
 
 
@@ -263,7 +266,6 @@ struct FTextureInfo
 };
 typedef struct FTextureInfo FTextureInfo;
 
-// jimita 14032019
 struct FLightInfo
 {
 	FUINT			light_level;
@@ -279,7 +281,7 @@ struct FSurfaceInfo
 	RGBA_t			PolyColor;
 	RGBA_t			TintColor;
 	RGBA_t			FadeColor;
-	FLightInfo		LightInfo;	// jimita 14032019
+	FLightInfo		LightInfo;
 };
 typedef struct FSurfaceInfo FSurfaceInfo;
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2019-2020, James R.
+Copyright 2019-2022, James R.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,7 @@ apng_default_flush (png_structp pngp)
 	if (!( pngp ))
 		return;
 
-	fflush((png_FILE_p)png_get_io_ptr);
+	fflush((png_FILE_p)png_get_io_ptr(pngp));
 }
 #endif/* PNG_STDIO_SUPPORTED */
 #endif/* PNG_WRITE_FLUSH_SUPPORTED */

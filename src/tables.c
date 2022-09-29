@@ -185,6 +185,16 @@ INT32 AngleDeltaSigned(angle_t a1, angle_t a2)
 	return (INT32)(a1) - (INT32)(a2);
 }
 
+float AngleToFloat(angle_t x)
+{
+	return x / (float)ANG1;
+}
+
+angle_t FloatToAngle(float f)
+{
+	return (angle_t)(f * ANG1);
+}
+
 #include "t_ftan.c"
 
 #include "t_fsin.c"

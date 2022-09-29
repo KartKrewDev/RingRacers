@@ -120,9 +120,9 @@ typedef enum
 	CV_SHOWMODIF = 128,  // say something when modified
 	CV_SHOWMODIFONETIME = 256, // same but will be reset to 0 when modified, set in toggle
 	CV_NOSHOWHELP = 512, // Don't show variable in the HELP list Tails 08-13-2002
-	CV_HIDEN = 1024, // variable is not part of the cvar list so cannot be accessed by the console
+	CV_HIDDEN = 1024, // variable is not part of the cvar list so cannot be accessed by the console
 	                 // can only be set when we have the pointer to it
-                   // used on menus
+	                 // used on menus
 	CV_CHEAT = 2048, // Don't let this be used in multiplayer unless cheats are on.
 	CV_NOLUA = 4096,/* don't let this be called from Lua */
 } cvflags_t;
@@ -175,7 +175,7 @@ extern CV_PossibleValue_t CV_Natural[];
 #define KARTSPEED_NORMAL 1
 #define KARTSPEED_HARD 2
 #define KARTGP_MASTER 3 // Not a speed setting, gives the hardest speed with maxed out bots
-extern CV_PossibleValue_t kartspeed_cons_t[];
+extern CV_PossibleValue_t kartspeed_cons_t[], dummykartspeed_cons_t[], gpdifficulty_cons_t[];
 
 extern consvar_t cv_execversion;
 
@@ -193,6 +193,12 @@ void CV_ClearChangedFlags(void);
 
 // returns the name of the nearest console variable name found
 const char *CV_CompleteVar(char *partial, INT32 skips);
+
+// Returns true if valstrp is within the PossibleValues of
+// var. If an exact string value exists, it is returned in
+// valstrp. An integer value is returned in intval if it
+// is not NULL.
+boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval);
 
 // equivalent to "<varname> <value>" typed at the console
 void CV_Set(consvar_t *var, const char *value);
@@ -223,10 +229,11 @@ void CV_RevertNetVars(void);
 void CV_LoadDemoVars(UINT8 **p);
 
 // reset cheat netvars after cheats is deactivated
-void CV_ResetCheatNetVars(void);
+void CV_CheatsChanged(void);
 
 boolean CV_IsSetToDefault(consvar_t *v);
-UINT8 CV_CheatsEnabled(void);
+boolean CV_CheatsEnabled(void);
+void CV_CheaterWarning(UINT8 playerID, const char *command);
 
 // Returns cvar by name. Exposed here for Lua.
 consvar_t *CV_FindVar(const char *name);

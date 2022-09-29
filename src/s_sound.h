@@ -179,8 +179,9 @@ extern struct cursongcredit
 {
 	musicdef_t *def;
 	UINT16 anim;
-	INT32 x;
 	UINT8 trans;
+	fixed_t x;
+	fixed_t old_x;
 } cursongcredit;
 
 extern musicdef_t *musicdefstart;
@@ -241,6 +242,16 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst);
 //
 // Music Playback
 //
+
+/* this is for the sake of the hook */
+struct MusicChange {
+	char    * newname;
+	UINT16  * mflags;
+	boolean * looping;
+	UINT32  * position;
+	UINT32  * prefadems;
+	UINT32  * fadeinms;
+};
 
 enum
 {
@@ -314,12 +325,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #ifndef HW3SOUND
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
-#endif
-
-#ifdef MUSICSLOT_COMPATIBILITY
-// For compatibility with code/scripts relying on older versions
-// This is a list of all the "special" slot names and their associated numbers
-extern const char *compat_special_music_slots[16];
 #endif
 
 #endif

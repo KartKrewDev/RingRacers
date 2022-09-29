@@ -21,7 +21,7 @@
 #include "m_argv.h"
 #include "z_zone.h"
 #include "w_wad.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_misc.h"
 #include "f_finale.h"
 #include "st_stuff.h"
@@ -43,7 +43,7 @@
 
 #include "info.h"
 #include "dehacked.h"
-#include "doomdef.h" // MUSICSLOT_COMPATIBILITY, HWRENDER
+#include "doomdef.h" // HWRENDER
 
 // Crazy word-reading stuff
 /// \todo Put these in a seperate file or something.
@@ -52,11 +52,6 @@ statenum_t get_state(const char *word);
 spritenum_t get_sprite(const char *word);
 playersprite_t get_sprite2(const char *word);
 sfxenum_t get_sfx(const char *word);
-#ifdef MUSICSLOT_COMPATIBILITY
-UINT16 get_mus(const char *word, UINT8 dehacked_mode);
-#endif
-hudnum_t get_huditem(const char *word);
-menutype_t get_menutype(const char *word);
 //INT16 get_gametype(const char *word);
 //powertype_t get_power(const char *word);
 skincolornum_t get_skincolor(const char *word);
@@ -73,25 +68,21 @@ void readhuditem(MYFILE *f, INT32 num);
 void readmenu(MYFILE *f, INT32 num);
 void readtextprompt(MYFILE *f, INT32 num);
 void readcutscene(MYFILE *f, INT32 num);
-void readlevelheader(MYFILE *f, INT32 num);
+void readlevelheader(MYFILE *f, char * name);
 void readgametype(MYFILE *f, char *gtname);
 void readsprite2(MYFILE *f, INT32 num);
-void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2);
 #ifdef HWRENDER
 void readlight(MYFILE *f, INT32 num);
 #endif
 void readskincolor(MYFILE *f, INT32 num);
 void readthing(MYFILE *f, INT32 num);
 void readfreeslots(MYFILE *f);
-void readPlayer(MYFILE *f, INT32 num);
 void clear_levels(void);
 void clear_conditionsets(void);
 
-// SRB2Kart
-extern int freeslotusage[2][2];
-void DEH_UpdateMaxFreeslots(void);
-
 void readcupheader(MYFILE *f, cupheader_t *cup);
 void readfollower(MYFILE *f);
+preciptype_t get_precip(const char *word);
+void readweather(MYFILE *f, INT32 num);
 
 #endif

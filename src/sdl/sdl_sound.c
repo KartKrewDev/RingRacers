@@ -517,7 +517,7 @@ static inline void I_SetChannels(void)
 		}
 }
 
-void I_SetSfxVolume(UINT8 volume)
+void I_SetSfxVolume(int volume)
 {
 	INT32 i;
 
@@ -1466,7 +1466,7 @@ void I_ResumeSong(void)
 #endif
 }
 
-void I_SetMusicVolume(UINT8 volume)
+void I_SetMusicVolume(int volume)
 {
 	(void)volume;
 }
@@ -1476,6 +1476,9 @@ boolean I_SetSongTrack(int track)
 	(void)track;
 	return false;
 }
+
+void I_UpdateSongLagThreshold(void){}
+void I_UpdateSongLagConditions(void){}
 
 /// ------------------------
 /// MUSIC FADING

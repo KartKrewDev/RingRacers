@@ -22,7 +22,6 @@
 #include "r_defs.h" // spritedef_t
 
 /// Defaults
-#define SKINNAMESIZE 16
 #define SKINRIVALS 3
 // should be all lowercase!! S_SKIN processing does a strlwr
 #define DEFAULTSKIN "eggman"
@@ -89,52 +88,5 @@ void R_PatchSkins(UINT16 wadnum);
 void R_AddSkins(UINT16 wadnum);
 
 UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
-
-// SRB2Kart Followers
-
-//
-// We'll define these here because they're really just a mobj that'll follow some rules behind a player
-//
-typedef struct follower_s
-{
-	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
-	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
-
-	UINT16 defaultcolor;	// default color for menus.
-
-	fixed_t scale;			// Scale relative to the player's.
-	fixed_t bubblescale;	// Bubble scale relative to the player scale. If not set, no bubble will spawn (default)
-
-	// some position shenanigans:
-	INT32 atangle;			// angle the object will be at around the player. The object itself will always face the same direction as the player.
-	INT32 dist;				// distance relative to the player. (In a circle)
-	INT32 height;			// height of the follower, this is mostly important for Z flipping.
-	INT32 zoffs;			// Z offset relative to the player's height. Cannot be negative.
-
-	// movement options
-
-	UINT32 horzlag;			// Lag for X/Y displacement. Default is 2. Must be > 0 because we divide by this number.
-	UINT32 vertlag;			// not Vert from Neptunia lagging, this is for Z displacement lag Default is 6. Must be > 0 because we divide by this number.
-	INT32 bobamp;			// Bob amplitude. Default is 4.
-	INT32 bobspeed;			// Arbitrary modifier for bobbing speed, default is TICRATE*2 (70).
-
-	// from there on out, everything is STATES to allow customization
-	// these are only set once when the action is performed and are then free to animate however they want.
-
-	INT32 idlestate;		// state when the player is at a standstill
-	INT32 followstate;		// state when the player is moving
-	INT32 hurtstate;		// state when the player is being hurt
-	INT32 winstate;			// state when the player has won
-	INT32 losestate;		// state when the player has lost
-	INT32 hitconfirmstate;	// state for hit confirm
-	UINT32 hitconfirmtime;	// time to keep the above playing for
-} follower_t;
-
-extern INT32 numfollowers;
-extern follower_t followers[MAXSKINS]; // again, use the same rules as skins, no reason not to.
-
-INT32 R_FollowerAvailable(const char *name);
-boolean SetPlayerFollower(INT32 playernum,const char *skinname);
-void SetFollower(INT32 playernum,INT32 skinnum);
 
 #endif //__R_SKINS__

@@ -100,11 +100,13 @@ typedef struct
 
 typedef struct
 {
-	spriteframepivot_t pivot[64];
-	boolean available;
+	spriteframepivot_t pivot[64 + 1];
+#define SPRINFO_DEFAULT_PIVOT (64)
+	UINT8 available[BIT_ARRAY_SIZE(64 + 1)]; // 1 extra for default_pivot
 } spriteinfo_t;
 
 // Portable Network Graphics
+#define PNG_HEADER_SIZE (8)
 boolean Picture_IsLumpPNG(const UINT8 *d, size_t s);
 #define Picture_ThrowPNGError(lumpname, wadfilename) I_Error("W_Wad: Lump \"%s\" in file \"%s\" is a .png - please convert to either Doom or Flat (raw) image format.", lumpname, wadfilename); // Fears Of LJ Sonic
 

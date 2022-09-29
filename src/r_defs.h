@@ -150,7 +150,7 @@ typedef enum
 	FF_SPINBUST          = 0x10000000, ///< Used with ::FF_BUSTUP. Also bustable if you're in your spinning frames.
 	FF_STRONGBUST        = 0x20000000, ///< Used with ::FF_BUSTUP. Only bustable by "strong" characters (Knuckles) and abilities (bouncing, twinspin, melee).
 	FF_RIPPLE            = 0x40000000, ///< Ripple the flats
-	FF_COLORMAPONLY      = 0x80000000, ///< Only copy the colormap, not the lightlevel
+	FF_COLORMAPONLY      = (INT32)0x80000000, ///< Only copy the colormap, not the lightlevel
 	FF_GOOWATER          = FF_SHATTERBOTTOM, ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
 } ffloortype_e;
 
@@ -251,6 +251,12 @@ typedef struct pslope_s
 	// SRB2Kart: For P_VeryTopOfFOF & P_VeryBottomOfFOF
 	fixed_t lowz;
 	fixed_t highz;
+
+	// Light offsets (see seg_t)
+	SINT8 lightOffset;
+#ifdef HWRENDER
+	INT16 hwLightOffset;
+#endif
 } pslope_t;
 
 typedef enum
@@ -691,6 +697,9 @@ typedef struct
 #endif
 } patch_t;
 
+extern patch_t *missingpat;
+extern patch_t *blanklvl;
+
 #if defined(_MSC_VER)
 #pragma pack(1)
 #endif
@@ -718,7 +727,7 @@ typedef struct
 	UINT8 mode;       // see pic_mode_t above
 	INT16 height;
 	INT16 reserved1; // set to 0
-	UINT8 data[0];
+	UINT8 data[];
 } ATTRPACK pic_t;
 
 #ifdef _MSC_VER
@@ -775,7 +784,7 @@ typedef enum
 	RF_MODULATE			= ((AST_MODULATE-1)<<RF_BLENDSHIFT),
 	RF_OVERLAY			= ((AST_OVERLAY-1)<<RF_BLENDSHIFT),
 
-	RF_TRANSMASK       	= 0xF0000000,   // --Transparency override
+	RF_TRANSMASK       	= (INT32)0xF0000000,   // --Transparency override
 	RF_TRANSSHIFT		= (7*4),
 	RF_TRANS10       	= (1<<RF_TRANSSHIFT),   // 10%
 	RF_TRANS20       	= (2<<RF_TRANSSHIFT),   // 20%
@@ -784,8 +793,8 @@ typedef enum
 	RF_TRANS50       	= (5<<RF_TRANSSHIFT),   // 50%
 	RF_TRANS60       	= (6<<RF_TRANSSHIFT),   // 60%
 	RF_TRANS70       	= (7<<RF_TRANSSHIFT),   // 70%
-	RF_TRANS80       	= (8<<RF_TRANSSHIFT),   // 80%
-	RF_TRANS90       	= (9<<RF_TRANSSHIFT),   // 90%
+	RF_TRANS80       	= (INT32)(8U<<RF_TRANSSHIFT),   // 80%
+	RF_TRANS90       	= (INT32)(9U<<RF_TRANSSHIFT),   // 90%
 	RF_GHOSTLY			= (RF_TRANS80 | RF_FULLBRIGHT),
 	RF_GHOSTLYMASK		= (RF_TRANSMASK | RF_FULLBRIGHT),
 } renderflags_t;

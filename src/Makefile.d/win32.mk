@@ -2,10 +2,11 @@
 # Mingw, if you don't know, that's Win32/Win64
 #
 
-ifndef MINGW64
-EXENAME?=srb2kart.exe
-else
-EXENAME?=srb2kart64.exe
+exesuffix:=$(exesuffix)$(if $(MINGW64),64).exe
+
+# disable dynamicbase if under msys2
+ifdef MSYSTEM
+libs+=-Wl,--disable-dynamicbase
 endif
 
 sources+=win32/Srb2win.rc
@@ -39,11 +40,9 @@ ifndef MINGW64
 libs+=-Wl,--large-address-aware
 endif
 
-ifndef NONET
 ifndef MINGW64 # miniupnc is broken with MINGW64
 opts+=-I../libs -DSTATIC_MINIUPNPC
 libs+=-L../libs/miniupnpc/mingw$(32) -lws2_32 -liphlpapi
-endif
 endif
 
 ifndef NO_DISCORDRPC

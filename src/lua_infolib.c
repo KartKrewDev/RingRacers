@@ -242,6 +242,30 @@ static int lib_spr2namelen(lua_State *L)
 // SPRITE INFO //
 /////////////////
 
+struct PivotFrame {
+	spriteinfo_t *sprinfo;
+	UINT8 frame;
+};
+
+static UINT8 GetPivotFrame(lua_State *L, int idx)
+{
+	const char *field = luaL_checkstring(L, idx);
+	UINT8 frame;
+
+	if (fastcmp("default", field))
+	{
+		frame = SPRINFO_DEFAULT_PIVOT;
+	}
+	else
+	{
+		frame = R_Char2Frame(field[0]);
+		if (frame == 255)
+			luaL_error(L, "invalid frame %s", field);
+	}
+
+	return frame;
+}
+
 // spriteinfo[]
 static int lib_getSpriteInfo(lua_State *L)
 {
@@ -349,24 +373,23 @@ static int PopPivotTable(spriteinfo_t *info, lua_State *L, int stk)
 	while (lua_next(L, stk))
 	{
 		int idx = 0;
-		const char *framestr = NULL;
 		switch (lua_type(L, stk+1))
 		{
 			case LUA_TSTRING:
-				framestr = lua_tostring(L, stk+1);
-				idx = R_Char2Frame(framestr[0]);
+				idx = GetPivotFrame(L, stk+1);
 				break;
 			case LUA_TNUMBER:
 				idx = lua_tonumber(L, stk+1);
+
+				if ((idx < 0) || (idx >= 64))
+					return luaL_error(L, "pivot frame %d out of range (0 - %d)", idx, 63);
 				break;
 			default:
 				TYPEERROR("pivot frame", LUA_TNUMBER, lua_type(L, stk+1));
 		}
-		if ((idx < 0) || (idx >= 64))
-			return luaL_error(L, "pivot frame %d out of range (0 - %d)", idx, 63);
 		// the values in pivot[] are also tables
 		if (PopPivotSubTable(info->pivot, L, stk+2, idx))
-			info->available = true;
+			set_bit_array(info->available, idx);
 		lua_pop(L, 1);
 	}
 
@@ -441,7 +464,7 @@ static int spriteinfo_get(lua_State *L)
 	{
 		// bypass LUA_PushUserdata
 		void **userdata = lua_newuserdata(L, sizeof(void *));
-		*userdata = &sprinfo->pivot;
+		*userdata = sprinfo;
 		luaL_getmetatable(L, META_PIVOTLIST);
 		lua_setmetatable(L, -2);
 
@@ -480,9 +503,8 @@ static int spriteinfo_set(lua_State *L)
 		// pivot[] is userdata
 		else if (lua_isuserdata(L, 1))
 		{
-			spriteframepivot_t *pivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-			memcpy(&sprinfo->pivot, pivot, sizeof(spriteframepivot_t));
-			sprinfo->available = true; // Just in case?
+			spriteinfo_t *copyinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
+			memcpy(sprinfo, copyinfo, sizeof(spriteinfo_t));
 		}
 	}
 	else
@@ -505,20 +527,16 @@ static int spriteinfo_num(lua_State *L)
 // framepivot_t
 static int pivotlist_get(lua_State *L)
 {
-	void **userdata;
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
-	const char *field = luaL_checkstring(L, 2);
-	UINT8 frame;
+	struct PivotFrame *container;
+	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
+	UINT8 frame = GetPivotFrame(L, 2);
 
 	I_Assert(framepivot != NULL);
 
-	frame = R_Char2Frame(field[0]);
-	if (frame == 255)
-		luaL_error(L, "invalid frame %s", field);
-
 	// bypass LUA_PushUserdata
-	userdata = lua_newuserdata(L, sizeof(void *));
-	*userdata = &framepivot[frame];
+	container = lua_newuserdata(L, sizeof *container);
+	container->sprinfo = sprinfo;
+	container->frame = frame;
 	luaL_getmetatable(L, META_FRAMEPIVOT);
 	lua_setmetatable(L, -2);
 
@@ -528,11 +546,9 @@ static int pivotlist_get(lua_State *L)
 
 static int pivotlist_set(lua_State *L)
 {
-	// Because I already know it's a spriteframepivot_t anyway
-	spriteframepivot_t *pivotlist = *((spriteframepivot_t **)lua_touserdata(L, 1));
-	//spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
-	const char *field = luaL_checkstring(L, 2);
+	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_PIVOTLIST));
 	UINT8 frame;
+	int okcool = 0;
 
 	if (!lua_lumploading)
 		return luaL_error(L, "Do not alter spriteframepivot_t from within a hook or coroutine!");
@@ -543,19 +559,21 @@ static int pivotlist_set(lua_State *L)
 
 	I_Assert(pivotlist != NULL);
 
-	frame = R_Char2Frame(field[0]);
-	if (frame == 255)
-		luaL_error(L, "invalid frame %s", field);
+	frame = GetPivotFrame(L, 2);
 
 	// pivot[] is a table
 	if (lua_istable(L, 3))
-		return PopPivotSubTable(pivotlist, L, 3, frame);
+		okcool = PopPivotSubTable(sprinfo->pivot, L, 3, frame);
 	// pivot[] is userdata
 	else if (lua_isuserdata(L, 3))
 	{
-		spriteframepivot_t *copypivot = *((spriteframepivot_t **)luaL_checkudata(L, 3, META_FRAMEPIVOT));
-		memcpy(&pivotlist[frame], copypivot, sizeof(spriteframepivot_t));
+		struct PivotFrame *container = luaL_checkudata(L, 3, META_FRAMEPIVOT);
+		memcpy(&sprinfo->pivot[frame], &container->sprinfo->pivot[container->frame], sizeof(spriteframepivot_t));
+		okcool = 1;
 	}
+
+	if (okcool)
+		set_bit_array(sprinfo->available, frame);
 
 	return 0;
 }
@@ -568,7 +586,8 @@ static int pivotlist_num(lua_State *L)
 
 static int framepivot_get(lua_State *L)
 {
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
+	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
+	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
 	const char *field = luaL_checkstring(L, 2);
 
 	I_Assert(framepivot != NULL);
@@ -585,7 +604,9 @@ static int framepivot_get(lua_State *L)
 
 static int framepivot_set(lua_State *L)
 {
-	spriteframepivot_t *framepivot = *((spriteframepivot_t **)luaL_checkudata(L, 1, META_FRAMEPIVOT));
+	struct PivotFrame *container = luaL_checkudata(L, 1, META_FRAMEPIVOT);
+	spriteframepivot_t *framepivot = &container->sprinfo->pivot[container->frame];
+	UINT8 *available = container->sprinfo->available;
 	const char *field = luaL_checkstring(L, 2);
 
 	if (!lua_lumploading)
@@ -598,9 +619,15 @@ static int framepivot_set(lua_State *L)
 	I_Assert(framepivot != NULL);
 
 	if (fastcmp("x", field))
+	{
 		framepivot->x = luaL_checkinteger(L, 3);
+		set_bit_array(available, container->frame);
+	}
 	else if (fastcmp("y", field))
+	{
 		framepivot->y = luaL_checkinteger(L, 3);
+		set_bit_array(available, container->frame);
+	}
 	else
 		return luaL_error(L, va("Field %s does not exist in spriteframepivot_t", field));
 
@@ -1758,6 +1785,151 @@ static int colorramp_len(lua_State *L)
 	return 1;
 }
 
+//////////////////
+// PRECIP PROPS //
+//////////////////
+
+// Arbitrary precipprops[] table index -> precipprops_t *
+static int lib_getPrecipProps(lua_State *L)
+{
+	INT32 i;
+	lua_remove(L, 1);
+
+	i = luaL_checkinteger(L, 1);
+	if (i <= 0 || i >= MAXPRECIP)
+		return luaL_error(L, "precipprops[] index %d out of range (1 - %d)", i, MAXPRECIP-1);
+	LUA_PushUserdata(L, &precipprops[i], META_PRECIPPROPS);
+	return 1;
+}
+
+// Lua table full of data -> precipprops[]
+static int lib_setPrecipProps(lua_State *L)
+{
+	precipprops_t *props;
+	lua_remove(L, 1); // don't care about precipprops[] userdata.
+	{
+		INT32 i = luaL_checkinteger(L, 1);
+		if (i <= 0 || i >= MAXPRECIP)
+			return luaL_error(L, "precipprops[] index %d out of range (1 - %d)", i, MAXPRECIP-1);
+		props = &precipprops[i]; // get the precipprops to assign to.
+	}
+
+	luaL_checktype(L, 2, LUA_TTABLE); // check that we've been passed a table.
+	lua_remove(L, 1); // pop preciptype num, don't need it any more.
+	lua_settop(L, 1); // cut the stack here. the only thing left now is the table of data we're assigning to the precipprops.
+
+	if (hud_running)
+		return luaL_error(L, "Do not alter precipprops in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter precipprops in CMD building code!");
+
+	// clear the precipprops to start with, in case of missing table elements
+	// make sure we do not clear the name
+	memset(props + sizeof(props->name), 0, sizeof(precipprops_t) - sizeof(props->name));
+
+	lua_pushnil(L);
+	while (lua_next(L, 1)) {
+		lua_Integer i = 0;
+		const char *str = NULL;
+		lua_Integer value;
+
+		if (lua_isnumber(L, 2))
+			i = lua_tointeger(L, 2);
+		else
+			str = luaL_checkstring(L, 2);
+
+		if (i == 1 || (str && fastcmp(str, "type")))
+		{
+			value = luaL_checkinteger(L, 3);
+			if (value < MT_NULL || value >= NUMMOBJTYPES)
+				return luaL_error(L, "type number %d is invalid.", value);
+			props->type = luaL_checkinteger(L, 3);
+		}
+		else if (i == 2 || (str && fastcmp(str, "effects")))
+		{
+			props->effects = luaL_checkinteger(L, 3);
+		}
+
+		lua_pop(L, 1);
+	}
+	return 0;
+}
+
+// #precipprops -> MAXPRECIP
+static int lib_precippropslen(lua_State *L)
+{
+	lua_pushinteger(L, MAXPRECIP);
+	return 1;
+}
+
+// precipprops_t *, field -> number
+static int precipprops_get(lua_State *L)
+{
+	precipprops_t *props = *((precipprops_t **)luaL_checkudata(L, 1, META_PRECIPPROPS));
+	const char *field = luaL_checkstring(L, 2);
+
+	I_Assert(props != NULL);
+	I_Assert(props >= precipprops);
+
+	if (fastcmp(field, "type"))
+	{
+		lua_pushinteger(L, props->type);
+	}
+	else if (fastcmp(field,"effects"))
+	{
+		lua_pushinteger(L, props->effects);
+	}
+	else
+	{
+		CONS_Debug(DBG_LUA, M_GetText("'%s' has no field named '%s'; returning nil.\n"), "precipprops_t", field);
+		return 0;
+	}
+
+	return 1;
+}
+
+// precipprops_t *, field, number -> precipprops[]
+static int precipprops_set(lua_State *L)
+{
+	precipprops_t *props = *((precipprops_t **)luaL_checkudata(L, 1, META_PRECIPPROPS));
+	const char *field = luaL_checkstring(L, 2);
+
+	if (hud_running)
+		return luaL_error(L, "Do not alter precipprops in HUD rendering code!");
+	if (hook_cmd_running)
+		return luaL_error(L, "Do not alter precipprops in CMD building code!");
+
+	I_Assert(props != NULL);
+	I_Assert(props >= precipprops);
+
+	if (fastcmp(field, "type"))
+	{
+		props->type = luaL_checkinteger(L, 3);
+	}
+	else if (fastcmp(field, "effects"))
+	{
+		props->effects = luaL_checkinteger(L, 3);
+	}
+	else
+	{
+		return luaL_error(L, LUA_QL("precipprops_t") " has no field named " LUA_QS, field);
+	}
+
+	return 0;
+}
+
+// precipprops_t * -> PRECIP_*
+static int precipprops_num(lua_State *L)
+{
+	precipprops_t *props = *((precipprops_t **)luaL_checkudata(L, 1, META_PRECIPPROPS));
+
+	I_Assert(props != NULL);
+	I_Assert(props >= precipprops);
+
+	lua_pushinteger(L, props - precipprops);
+	return 1;
+}
+
 //////////////////////////////
 //
 // Now push all these functions into the Lua state!
@@ -1861,6 +2033,17 @@ int LUA_InfoLib(lua_State *L)
 		lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
 
+	luaL_newmetatable(L, META_PRECIPPROPS);
+		lua_pushcfunction(L, precipprops_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, precipprops_set);
+		lua_setfield(L, -2, "__newindex");
+
+		lua_pushcfunction(L, precipprops_num);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L, 1);
+
 	lua_newuserdata(L, 0);
 		lua_createtable(L, 0, 2);
 			lua_pushcfunction(L, lib_getSprname);
@@ -1960,6 +2143,19 @@ int LUA_InfoLib(lua_State *L)
 			lua_setfield(L, -2, "__len");
 		lua_setmetatable(L, -2);
 	lua_setglobal(L, "spriteinfo");
+
+	lua_newuserdata(L, 0);
+		lua_createtable(L, 0, 2);
+			lua_pushcfunction(L, lib_getPrecipProps);
+			lua_setfield(L, -2, "__index");
+
+			lua_pushcfunction(L, lib_setPrecipProps);
+			lua_setfield(L, -2, "__newindex");
+
+			lua_pushcfunction(L, lib_precippropslen);
+			lua_setfield(L, -2, "__len");
+		lua_setmetatable(L, -2);
+	lua_setglobal(L, "precipprops");
 
 	luaL_newmetatable(L, META_LUABANKS);
 		lua_pushcfunction(L, lib_getluabanks);

@@ -11,6 +11,7 @@
 /// \brief Load dehacked file and change tables and text
 
 #include "doomdef.h"
+
 #include "m_cond.h"
 #include "deh_soc.h"
 #include "deh_tables.h"
@@ -51,7 +52,14 @@ void deh_strlcpy(char *dst, const char *src, size_t size, const char *warntext)
 	strlcpy(dst, src, size);
 }
 
-ATTRINLINE static FUNCINLINE char myfget_color(MYFILE *f)
+int freeslotusage[2][2] = {{0, 0}, {0, 0}}; // [S_, MT_][max, previous .wad's max]
+void DEH_UpdateMaxFreeslots(void)
+{
+	freeslotusage[0][1] = freeslotusage[0][0];
+	freeslotusage[1][1] = freeslotusage[1][0];
+}
+
+ATTRINLINE static FUNCINLINE unsigned char myfget_color(MYFILE *f)
 {
 	char c = *f->curpos++;
 	if (c == '^') // oh, nevermind then.
@@ -188,25 +196,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	dbg_line = -1; // start at -1 so the first line is 0.
 	while (!myfeof(f))
 	{
-		char origpos[128];
-		INT32 size = 0;
-		char *traverse;
-
 		myfgets(s, MAXLINELEN, f);
 		memcpy(textline, s, MAXLINELEN);
 		if (s[0] == '\n' || s[0] == '#')
 			continue;
-
-		traverse = s;
-
-		while (traverse[0] != '\n')
-		{
-			traverse++;
-			size++;
-		}
-
-		strncpy(origpos, s, size);
-		origpos[size] = '\0';
 
 		if (NULL != (word = strtok(s, " "))) {
 			strupr(word);
@@ -253,18 +246,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else
 				i = 0;
 
-			if (fastcmp(word, "CHARACTER"))
-			{
-				if (i >= 0 && i < 32)
-					readPlayer(f, i);
-				else
-				{
-					deh_warning("Character %d out of range (0 - 31)", i);
-					ignorelines(f);
-				}
-				continue;
-			}
-			else if (fastcmp(word, "EMBLEM"))
+			if (fastcmp(word, "EMBLEM"))
 			{
 				if (!mainfile && !gamedataadded)
 				{
@@ -374,51 +356,16 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					}
 				}
 #endif
-				else if (fastcmp(word, "SPRITE") || fastcmp(word, "SPRITEINFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite(word2); // find a sprite by name
-					if (i < NUMSPRITES && i > 0)
-						readspriteinfo(f, i, false);
-					else
-					{
-						deh_warning("Sprite number %d out of range (0 - %d)", i, NUMSPRITES-1);
-						ignorelines(f);
-					}
-				}
-				else if (fastcmp(word, "SPRITE2INFO"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_sprite2(word2); // find a sprite by name
-					if (i < NUMPLAYERSPRITES && i >= 0)
-						readspriteinfo(f, i, true);
-					else
-					{
-						deh_warning("Sprite2 number %d out of range (0 - %d)", i, NUMPLAYERSPRITES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "LEVEL"))
 				{
-					// Support using the actual map name,
-					// i.e., Level AB, Level FZ, etc.
-
-					// Convert to map number
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						i = M_MapNumber(word2[0], word2[1]);
-
-					if (i > 0 && i <= NUMMAPS)
+					size_t len = strlen(word2);
+					if (len <= MAXMAPLUMPNAME-1)
 					{
-						if (mapheaderinfo[i])
-						{
-							G_SetGameModified(multiplayer, true); // Only a major mod if editing stuff that isn't your own!
-						}
-
-						readlevelheader(f, i);
+						readlevelheader(f, word2);
 					}
 					else
 					{
-						deh_warning("Level number %d out of range (1 - %d)", i, NUMMAPS);
+						deh_warning("Map header's lumpname %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXMAPLUMPNAME-1));
 						ignorelines(f);
 					}
 				}
@@ -503,31 +450,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 				}
-				else if (fastcmp(word, "HUDITEM"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_huditem(word2); // find a huditem by name
-					if (i >= 0 && i < NUMHUDITEMS)
-						readhuditem(f, i);
-					else
-					{
-						deh_warning("HUD item number %d out of range (0 - %d)", i, NUMHUDITEMS-1);
-						ignorelines(f);
-					}
-				}
-				else if (fastcmp(word, "MENU"))
-				{
-					if (i == 0 && word2[0] != '0') // If word2 isn't a number
-						i = get_menutype(word2); // find a huditem by name
-					if (i >= 1 && i < NUMMENUTYPES)
-						readmenu(f, i);
-					else
-					{
-						// zero-based, but let's start at 1
-						deh_warning("Menu number %d out of range (1 - %d)", i, NUMMENUTYPES-1);
-						ignorelines(f);
-					}
-				}
 				else if (fastcmp(word, "UNLOCKABLE"))
 				{
 					if (!mainfile && !gamedataadded)
@@ -584,6 +506,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					{
 						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
 						cup->id = numkartcupheaders;
+						cup->unlockrequired = -1;
 						deh_strlcpy(cup->name, word2,
 							sizeof(cup->name), va("Cup header %s: name", word2));
 						if (prev != NULL)
@@ -596,7 +519,19 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 					readcupheader(f, cup);
 				}
-				else if (fastcmp(word, "SRB2KART"))
+				else if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
+				{
+					if (i == 0 && word2[0] != '0') // If word2 isn't a number
+						i = get_precip(word2); // find a weather type by name
+					if (i < MAXPRECIP && i > 0)
+						readweather(f, i);
+					else
+					{
+						deh_warning("Weather number %d out of range (1 - %d)", i, MAXPRECIP-1);
+						ignorelines(f);
+					}
+				}
+				else if (fastcmp(word, "RINGRACERS"))
 				{
 					if (isdigit(word2[0]))
 					{
@@ -604,7 +539,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						if (i != PATCHVERSION)
 						{
 							deh_warning(
-									"Patch is for SRB2Kart version %d, "
+									"Patch is for Ring Racers version %d, "
 									"only version %d is supported",
 									i,
 									PATCHVERSION
@@ -614,11 +549,15 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning(
-								"SRB2Kart version definition has incorrect format, "
-								"use \"SRB2KART %d\"",
+								"Ring Racers version definition has incorrect format, "
+								"use \"RINGRACERS %d\"",
 								PATCHVERSION
 						);
 					}
+				}
+				else if (fastcmp(word, "SRB2KART"))
+				{
+					deh_warning("Patch is only compatible with SRB2Kart.");
 				}
 				else if (fastcmp(word, "SRB2"))
 				{

@@ -63,7 +63,7 @@
 #include "../i_system.h"
 #include "../v_video.h"
 #include "../m_argv.h"
-#include "../m_menu.h"
+#include "../k_menu.h"
 #include "../d_main.h"
 #include "../s_sound.h"
 #include "../i_sound.h"  	// midi pause/unpause
@@ -106,8 +106,10 @@ rendermode_t chosenrendermode = render_none; // set by command line arguments
 
 boolean highcolor = false;
 
+static void Impl_SetVsync(void);
+
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync);
 static consvar_t cv_stretch = CVAR_INIT ("stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL);
 
@@ -372,7 +374,7 @@ static boolean IgnoreMouse(void)
 	if (cv_alwaysgrabmouse.value)
 		return false;
 	if (menuactive)
-		return !M_MouseNeeded();
+		return false; // return !M_MouseNeeded();
 	if (paused || con_destlines || chat_on)
 		return true;
 	if (gamestate != GS_LEVEL && gamestate != GS_INTERMISSION &&
@@ -526,95 +528,31 @@ static inline void SDLJoyRemap(event_t *event)
 	(void)event;
 }
 
-static INT32 SDLJoyAxis(const Sint16 axis, evtype_t which)
+static INT32 SDLJoyAxis(const Sint16 axis, UINT8 pid)
 {
 	// -32768 to 32767
-	INT32 raxis = axis/32;
-	if (which == ev_joystick)
+	INT32 raxis = axis / 32;
+
+	if (Joystick[pid].bGamepadStyle)
 	{
-		if (Joystick[0].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else
-				raxis = 0;
-		}
+		// gamepad control type, on or off, live or die
+		if (raxis < -(JOYAXISRANGE/2))
+			raxis = -1;
+		else if (raxis > (JOYAXISRANGE/2))
+			raxis = 1;
 		else
-		{
-			raxis = JoyInfo[0].scale!=1?((raxis/JoyInfo[0].scale)*JoyInfo[0].scale):raxis;
+			raxis = 0;
+	}
+	else
+	{
+		raxis = (abs(JoyInfo[pid].scale) > 1) ? ((raxis / JoyInfo[pid].scale) * JoyInfo[pid].scale) : raxis;
 
 #ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
+		if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
+			raxis = 0;
 #endif
-		}
 	}
-	else if (which == ev_joystick2)
-	{
-		if (Joystick[1].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[1].scale!=1?((raxis/JoyInfo[1].scale)*JoyInfo[1].scale):raxis;
 
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
-	else if (which == ev_joystick3)
-	{
-		if (Joystick[2].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[2].scale!=1?((raxis/JoyInfo[2].scale)*JoyInfo[2].scale):raxis;
-
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
-	else if (which == ev_joystick4)
-	{
-		if (Joystick[3].bGamepadStyle)
-		{
-			// gamepad control type, on or off, live or die
-			if (raxis < -(JOYAXISRANGE/2))
-				raxis = -1;
-			else if (raxis > (JOYAXISRANGE/2))
-				raxis = 1;
-			else raxis = 0;
-		}
-		else
-		{
-			raxis = JoyInfo[3].scale!=1?((raxis/JoyInfo[3].scale)*JoyInfo[3].scale):raxis;
-
-#ifdef SDL_JDEADZONE
-			if (-SDL_JDEADZONE <= raxis && raxis <= SDL_JDEADZONE)
-				raxis = 0;
-#endif
-		}
-	}
 	return raxis;
 }
 
@@ -679,7 +617,8 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		{
 			SDLforceUngrabMouse();
 		}
-		memset(gamekeydown, 0, NUMKEYS); // TODO this is a scary memset
+		memset(gamekeydown, 0, sizeof(gamekeydown)); // TODO this is a scary memset
+		memset(deviceResponding, false, sizeof (deviceResponding));
 
 		if (MOUSE_MENU)
 		{
@@ -692,6 +631,9 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 static void Impl_HandleKeyboardEvent(SDL_KeyboardEvent evt, Uint32 type)
 {
 	event_t event;
+
+	event.device = 0;
+
 	if (type == SDL_KEYUP)
 	{
 		event.type = ev_keyup;
@@ -773,6 +715,8 @@ static void Impl_HandleMouseButtonEvent(SDL_MouseButtonEvent evt, Uint32 type)
 	/// \todo inputEvent.button.which
 	if (USE_MOUSEINPUT)
 	{
+		event.device = 0;
+
 		if (type == SDL_MOUSEBUTTONUP)
 		{
 			event.type = ev_keyup;
@@ -805,6 +749,8 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 
 	SDL_memset(&event, 0, sizeof(event_t));
 
+	event.device = 0;
+
 	if (evt.y > 0)
 	{
 		event.data1 = KEY_MOUSEWHEELUP;
@@ -826,137 +772,86 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 	}
 }
 
-static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
+static void Impl_HandleControllerAxisEvent(SDL_ControllerAxisEvent evt)
 {
 	event_t event;
-	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
-	UINT8 i;
+	INT32 value;
 
-	// Determine the Joystick IDs for each current open joystick
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
+	event.type = ev_joystick;
 
-	evt.axis++;
+	event.device = 1 + evt.which;
+	if (event.device == INT32_MAX)
+	{
+		return;
+	}
+
 	event.data1 = event.data2 = event.data3 = INT32_MAX;
 
-	if (evt.which == joyid[0])
-	{
-		event.type = ev_joystick;
-	}
-	else if (evt.which == joyid[1])
-	{
-		event.type = ev_joystick2;
-	}
-	else if (evt.which == joyid[2])
-	{
-		event.type = ev_joystick3;
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.type = ev_joystick4;
-	}
-	else return;
 	//axis
-	if (evt.axis > JOYAXISSET*2)
-		return;
-	//vaule
-	if (evt.axis%2)
+	if (evt.axis > 2 * JOYAXISSETS)
 	{
-		event.data1 = evt.axis / 2;
-		event.data2 = SDLJoyAxis(evt.value, event.type);
+		return;
+	}
+
+	//vaule[sic]
+	value = SDLJoyAxis(evt.value, evt.which);
+
+	if (evt.axis & 1)
+	{
+		event.data3 = value;
 	}
 	else
 	{
-		evt.axis--;
-		event.data1 = evt.axis / 2;
-		event.data3 = SDLJoyAxis(evt.value, event.type);
+		event.data2 = value;
 	}
+
+	event.data1 = evt.axis / 2;
+
 	D_PostEvent(&event);
 }
 
-#if 0
-static void Impl_HandleJoystickHatEvent(SDL_JoyHatEvent evt)
+static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint32 type)
 {
 	event_t event;
-	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
-	UINT8 i;
 
-	// Determine the Joystick IDs for each current open joystick
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
+	event.device = 1 + evt.which;
 
-	if (evt.hat >= JOYHATS)
-		return; // ignore hats with too high an index
+	if (event.device == INT32_MAX)
+	{
+		return;
+	}
 
-	if (evt.which == joyid[0])
-	{
-		event.data1 = KEY_HAT1 + (evt.hat*4);
-	}
-	else if (evt.which == joyid[1])
-	{
-		event.data1 = KEY_2HAT1 + (evt.hat*4);
-	}
-	else if (evt.which == joyid[2])
-	{
-		event.data1 = KEY_3HAT1 + (evt.hat*4);
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.data1 = KEY_4HAT1 + (evt.hat*4);
-	}
-	else return;
+	event.data1 = KEY_JOY1;
 
-	// NOTE: UNFINISHED
-}
-#endif
-
-static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
-{
-	event_t event;
-	SDL_JoystickID joyid[MAXSPLITSCREENPLAYERS];
-	UINT8 i;
-
-	// Determine the Joystick IDs for each current open joystick
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		joyid[i] = SDL_JoystickInstanceID(JoyInfo[i].dev);
-
-	if (evt.which == joyid[0])
-	{
-		event.data1 = KEY_JOY1;
-	}
-	else if (evt.which == joyid[1])
-	{
-		event.data1 = KEY_2JOY1;
-	}
-	else if (evt.which == joyid[2])
-	{
-		event.data1 = KEY_3JOY1;
-	}
-	else if (evt.which == joyid[3])
-	{
-		event.data1 = KEY_4JOY1;
-	}
-	else return;
-	if (type == SDL_JOYBUTTONUP)
+	if (type == SDL_CONTROLLERBUTTONUP)
 	{
 		event.type = ev_keyup;
 	}
-	else if (type == SDL_JOYBUTTONDOWN)
+	else if (type == SDL_CONTROLLERBUTTONDOWN)
 	{
 		event.type = ev_keydown;
 	}
-	else return;
+	else
+	{
+		return;
+	}
+
 	if (evt.button < JOYBUTTONS)
 	{
 		event.data1 += evt.button;
 	}
-	else return;
+	else
+	{
+		return;
+	}
 
 	SDLJoyRemap(&event);
-	if (event.type != ev_console) D_PostEvent(&event);
+
+	if (event.type != ev_console)
+	{
+		D_PostEvent(&event);
+	}
 }
-
-
 
 void I_GetEvent(void)
 {
@@ -998,28 +893,23 @@ void I_GetEvent(void)
 			case SDL_MOUSEWHEEL:
 				Impl_HandleMouseWheelEvent(evt.wheel);
 				break;
-			case SDL_JOYAXISMOTION:
-				Impl_HandleJoystickAxisEvent(evt.jaxis);
+			case SDL_CONTROLLERAXISMOTION:
+				Impl_HandleControllerAxisEvent(evt.caxis);
 				break;
-#if 0
-			case SDL_JOYHATMOTION:
-				Impl_HandleJoystickHatEvent(evt.jhat)
-				break;
-#endif
-			case SDL_JOYBUTTONUP:
-			case SDL_JOYBUTTONDOWN:
-				Impl_HandleJoystickButtonEvent(evt.jbutton, evt.type);
+			case SDL_CONTROLLERBUTTONUP:
+			case SDL_CONTROLLERBUTTONDOWN:
+				Impl_HandleControllerButtonEvent(evt.cbutton, evt.type);
 				break;
 
 			////////////////////////////////////////////////////////////
 
-			case SDL_JOYDEVICEADDED:
+			case SDL_CONTROLLERDEVICEADDED:
 				{
 					// OH BOY are you in for a good time! #abominationstation
 
-					SDL_Joystick *newjoy = SDL_JoystickOpen(evt.jdevice.which);
+					SDL_GameController *newcontroller = SDL_GameControllerOpen(evt.cdevice.which);
 
-					CONS_Debug(DBG_GAMELOGIC, "Joystick device index %d added\n", evt.jdevice.which + 1);
+					CONS_Debug(DBG_GAMELOGIC, "Controller device index %d added\n", evt.cdevice.which + 1);
 
 					////////////////////////////////////////////////////////////
 					// Because SDL's device index is unstable, we're going to cheat here a bit:
@@ -1034,7 +924,7 @@ void I_GetEvent(void)
 
 					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 					{
-						if (newjoy && (!JoyInfo[i].dev || !SDL_JoystickGetAttached(JoyInfo[i].dev))) 
+						if (newcontroller && (!JoyInfo[i].dev || !SDL_GameControllerGetAttached(JoyInfo[i].dev))) 
 						{
 							UINT8 j;
 
@@ -1043,14 +933,14 @@ void I_GetEvent(void)
 								if (i == j)
 									continue;
 
-								if (JoyInfo[j].dev == newjoy)
+								if (JoyInfo[j].dev == newcontroller)
 									break;
 							}
 
 							if (j == MAXSPLITSCREENPLAYERS)
 							{
 								// ensures we aren't overriding a currently active device
-								cv_usejoystick[i].value = evt.jdevice.which + 1;
+								cv_usejoystick[i].value = evt.cdevice.which + 1;
 								I_UpdateJoystickDeviceIndices(0);
 							}
 						}
@@ -1084,27 +974,29 @@ void I_GetEvent(void)
 					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 						CONS_Debug(DBG_GAMELOGIC, "Joystick%d device index: %d\n", i+1, JoyInfo[i].oldjoy);
 
+#if 0
 					// update the menu
 					if (currentMenu == &OP_JoystickSetDef)
 						M_SetupJoystickMenu(0);
+#endif
 
 					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 					{
-						if (JoyInfo[i].dev == newjoy)
+						if (JoyInfo[i].dev == newcontroller)
 							break;
 					}
 
 					if (i == MAXSPLITSCREENPLAYERS)
-						SDL_JoystickClose(newjoy);
+						I_StoreExJoystick(newcontroller);
 				}
 				break;
 
 			////////////////////////////////////////////////////////////
 
-			case SDL_JOYDEVICEREMOVED:
+			case SDL_CONTROLLERDEVICEREMOVED:
 				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 				{
-					if (JoyInfo[i].dev && !SDL_JoystickGetAttached(JoyInfo[i].dev))
+					if (JoyInfo[i].dev && !SDL_GameControllerGetAttached(JoyInfo[i].dev))
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Joystick%d removed, device index: %d\n", i+1, JoyInfo[i].oldjoy);
 						I_ShutdownJoystick(i);
@@ -1144,12 +1036,14 @@ void I_GetEvent(void)
 				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 					CONS_Debug(DBG_GAMELOGIC, "Joystick%d device index: %d\n", i+1, JoyInfo[i].oldjoy);
 
+#if 0
 				// update the menu
 				if (currentMenu == &OP_JoystickSetDef)
 					M_SetupJoystickMenu(0);
+#endif
 				break;
 			case SDL_QUIT:
-				LUAh_GameQuit(true);
+				LUA_HookBool(true, HOOK(GameQuit));
 				I_Quit();
 				break;
 		}
@@ -1171,7 +1065,10 @@ void I_GetEvent(void)
 
 	// In order to make wheels act like buttons, we have to set their state to Up.
 	// This is because wheel messages don't have an up/down state.
-	gamekeydown[KEY_MOUSEWHEELDOWN] = gamekeydown[KEY_MOUSEWHEELUP] = 0;
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		gamekeydown[i][KEY_MOUSEWHEELDOWN] = gamekeydown[i][KEY_MOUSEWHEELUP] = 0;
+	}
 }
 
 void I_StartupMouse(void)
@@ -1199,16 +1096,12 @@ void I_StartupMouse(void)
 void I_OsPolling(void)
 {
 	SDL_Keymod mod;
-	UINT8 i;
 
 	if (consolevent)
 		I_GetConsoleEvents();
-	if (SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
-	{
-		SDL_JoystickUpdate();
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-			I_GetJoystickEvents(i);
-	}
+
+	if (SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER) == (SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER))
+		SDL_GameControllerUpdate();
 
 	I_GetEvent();
 
@@ -1256,11 +1149,14 @@ void I_UpdateNoBlit(void)
 // from PrBoom's src/SDL/i_video.c
 static inline boolean I_SkipFrame(void)
 {
-#if 0
+#if 1
+	// While I fixed the FPS counter bugging out with this,
+	// I actually really like being able to pause and
+	// use perfstats to measure rendering performance
+	// without game logic changes.
+	return false;
+#else
 	static boolean skip = false;
-
-	if (rendermode != render_soft)
-		return false;
 
 	skip = !skip;
 
@@ -1276,12 +1172,13 @@ static inline boolean I_SkipFrame(void)
 			return false;
 	}
 #endif
-	return false;
 }
 
 //
 // I_FinishUpdate
 //
+static SDL_Rect src_rect = { 0, 0, 0, 0 };
+
 void I_FinishUpdate(void)
 {
 	int player;
@@ -1289,10 +1186,10 @@ void I_FinishUpdate(void)
 	if (rendermode == render_none)
 		return; //Alam: No software or OpenGl surface
 
+	SCR_CalculateFPS();
+
 	if (I_SkipFrame())
 		return;
-
-	SCR_CalcAproxFps();
 
 	if (st_overlay)
 	{
@@ -1322,6 +1219,8 @@ void I_FinishUpdate(void)
 				}
 			}
 		}
+		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
+			SCR_DisplayLocalPing();
 	}
 
 	if (marathonmode)
@@ -1338,27 +1237,22 @@ void I_FinishUpdate(void)
 
 	if (rendermode == render_soft && screens[0])
 	{
-		SDL_Rect rect;
-
-		rect.x = 0;
-		rect.y = 0;
-		rect.w = vid.width;
-		rect.h = vid.height;
-
 		if (!bufSurface) //Double-Check
 		{
 			Impl_VideoSetupSDLBuffer();
 		}
+
 		if (bufSurface)
 		{
-			SDL_BlitSurface(bufSurface, NULL, vidSurface, &rect);
+			SDL_BlitSurface(bufSurface, &src_rect, vidSurface, &src_rect);
 			// Fury -- there's no way around UpdateTexture, the GL backend uses it anyway
 			SDL_LockSurface(vidSurface);
-			SDL_UpdateTexture(texture, &rect, vidSurface->pixels, vidSurface->pitch);
+			SDL_UpdateTexture(texture, &src_rect, vidSurface->pixels, vidSurface->pitch);
 			SDL_UnlockSurface(vidSurface);
 		}
+
 		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
 	}
 #ifdef HWRENDER
@@ -1367,6 +1261,7 @@ void I_FinishUpdate(void)
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
+
 	exposevideo = SDL_FALSE;
 }
 
@@ -1583,8 +1478,22 @@ static SDL_bool Impl_CreateContext(void)
 		int flags = 0; // Use this to set SDL_RENDERER_* flags now
 		if (usesdl2soft)
 			flags |= SDL_RENDERER_SOFTWARE;
+#if 0
+		// This shit is BROKEN.
+		// - The version of SDL we're using cannot toggle VSync at runtime. We'll need a new SDL version implemented to have this work properly.
+		// - cv_vidwait is initialized before config is loaded, so it's forced to default value at runtime, and forced off when switching. The config loading code would need restructured.
+		// - With both this & frame interpolation on, I_FinishUpdate takes x10 longer. At this point, it is simpler to use a standard FPS cap.
+		// So you can probably guess why I'm kinda over this, I'm just disabling it.
 		else if (cv_vidwait.value)
 			flags |= SDL_RENDERER_PRESENTVSYNC;
+#endif
+
+		// 3 August 2022
+		// Possibly a Windows 11 issue; the default
+		// "direct3d" driver (D3D9) causes Drmingw exchndl
+		// to not write RPT files. Every other driver
+		// seems fine.
+		SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
 
 		if (!renderer)
 			renderer = SDL_CreateRenderer(window, -1, flags);
@@ -1703,6 +1612,27 @@ boolean VID_CheckRenderer(void)
 	return rendererchanged;
 }
 
+static UINT32 refresh_rate;
+static UINT32 VID_GetRefreshRate(void)
+{
+	int index = SDL_GetWindowDisplayIndex(window);
+	SDL_DisplayMode m;
+
+	if (SDL_WasInit(SDL_INIT_VIDEO) == 0)
+	{
+		// Video not init yet.
+		return 0;
+	}
+
+	if (SDL_GetCurrentDisplayMode(index, &m) != 0)
+	{
+		// Error has occurred.
+		return 0;
+	}
+
+	return m.refresh_rate;
+}
+
 INT32 VID_SetMode(INT32 modeNum)
 {
 	SDLdoUngrabMouse();
@@ -1719,7 +1649,12 @@ INT32 VID_SetMode(INT32 modeNum)
 	vid.height = windowedModes[modeNum][1];
 	vid.modenum = modeNum;
 
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	src_rect.w = vid.width;
+	src_rect.h = vid.height;
+
+	refresh_rate = VID_GetRefreshRate();
+
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_CheckRenderer();
 	return SDL_TRUE;
 }
@@ -1746,7 +1681,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	window = SDL_CreateWindow("SRB2Kart "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	window = SDL_CreateWindow("Dr. Robotnik's Ring Racers "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 
 
@@ -1922,7 +1857,7 @@ void I_StartupGraphics(void)
 
 	// Create window
 	//Impl_CreateWindow(USE_FULLSCREEN);
-	//Impl_SetWindowName("SRB2Kart "VERSIONSTRING);
+	//Impl_SetWindowName("Dr. Robotnik's Ring Racers "VERSIONSTRING);
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
 
 	vid.width = BASEVIDWIDTH; // Default size for startup
@@ -1971,43 +1906,43 @@ void VID_StartupOpenGL(void)
 	if (!glstartup)
 	{
 		CONS_Printf("VID_StartupOpenGL()...\n");
-		HWD.pfnInit             = hwSym("Init",NULL);
-		HWD.pfnFinishUpdate     = NULL;
-		HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
-		HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
-		HWD.pfnDrawIndexedTriangles = hwSym("DrawIndexedTriangles",NULL);
-		HWD.pfnRenderSkyDome    = hwSym("RenderSkyDome",NULL);
-		HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
-		HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
-		HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
-		HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
-		HWD.pfnDeleteTexture    = hwSym("DeleteTexture",NULL);
-		HWD.pfnReadRect         = hwSym("ReadRect",NULL);
-		HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
-		HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
-		HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
-		HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
-		HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
-		HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
-		HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
-		HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
-		HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
-		HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
-		HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
-		HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
-		HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
-		HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
-		HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
-		HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
-		HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
+		*(void**)&HWD.pfnInit             = hwSym("Init",NULL);
+		*(void**)&HWD.pfnFinishUpdate     = NULL;
+		*(void**)&HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
+		*(void**)&HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
+		*(void**)&HWD.pfnDrawIndexedTriangles = hwSym("DrawIndexedTriangles",NULL);
+		*(void**)&HWD.pfnRenderSkyDome    = hwSym("RenderSkyDome",NULL);
+		*(void**)&HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
+		*(void**)&HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
+		*(void**)&HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
+		*(void**)&HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
+		*(void**)&HWD.pfnDeleteTexture    = hwSym("DeleteTexture",NULL);
+		*(void**)&HWD.pfnReadRect         = hwSym("ReadRect",NULL);
+		*(void**)&HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
+		*(void**)&HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
+		*(void**)&HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
+		*(void**)&HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
+		*(void**)&HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
+		*(void**)&HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
+		*(void**)&HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
+		*(void**)&HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
+		*(void**)&HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
+		*(void**)&HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
+		*(void**)&HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
+		*(void**)&HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
+		*(void**)&HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
+		*(void**)&HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
+		*(void**)&HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
+		*(void**)&HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
+		*(void**)&HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
 
-		HWD.pfnCompileShaders   = hwSym("CompileShaders",NULL);
-		HWD.pfnCleanShaders     = hwSym("CleanShaders",NULL);
-		HWD.pfnSetShader        = hwSym("SetShader",NULL);
-		HWD.pfnUnSetShader      = hwSym("UnSetShader",NULL);
+		*(void**)&HWD.pfnCompileShaders   = hwSym("CompileShaders",NULL);
+		*(void**)&HWD.pfnCleanShaders     = hwSym("CleanShaders",NULL);
+		*(void**)&HWD.pfnSetShader        = hwSym("SetShader",NULL);
+		*(void**)&HWD.pfnUnSetShader      = hwSym("UnSetShader",NULL);
 
-		HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
-		HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
+		*(void**)&HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
+		*(void**)&HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
 
 		vid.glstate = HWD.pfnInit() ? VID_GL_LIBRARY_LOADED : VID_GL_LIBRARY_ERROR; // let load the OpenGL library
 
@@ -2061,3 +1996,21 @@ void I_ShutdownGraphics(void)
 	framebuffer = SDL_FALSE;
 }
 #endif
+
+UINT32 I_GetRefreshRate(void)
+{
+	// Moved to VID_GetRefreshRate.
+	// Precalculating it like that won't work as
+	// well for windowed mode since you can drag
+	// the window around, but very slow PCs might have
+	// trouble querying mode over and over again.
+	return refresh_rate;
+}
+
+static void Impl_SetVsync(void)
+{
+#if SDL_VERSION_ATLEAST(2,0,18)
+	if (renderer)
+		SDL_RenderSetVSync(renderer, cv_vidwait.value);
+#endif
+}

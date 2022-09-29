@@ -37,7 +37,8 @@ applications may follow different packet versions.
 //  be transmitted.
 
 // Networking and tick handling related.
-#define TICQUEUE 512 // more than enough for most timeouts....
+#define BACKUPTICS 512 // more than enough for most timeouts....
+#define CLIENTBACKUPTICS 32
 #define MAXTEXTCMD 256
 
 // No. of tics your controls can be delayed by.
@@ -212,7 +213,7 @@ typedef struct
 	UINT8 iteration;
 	UINT32 position;
 	UINT16 size;
-	UINT8 data[0]; // Size is variable using hardware_MAXPACKETLENGTH
+	UINT8 data[]; // Size is variable using hardware_MAXPACKETLENGTH
 } ATTRPACK filetx_pak;
 
 typedef struct
@@ -226,7 +227,7 @@ typedef struct
 	UINT8 fileid;
 	UINT8 iteration;
 	UINT8 numsegments;
-	fileacksegment_t segments[0];
+	fileacksegment_t segments[];
 } ATTRPACK fileack_pak;
 
 #ifdef _MSC_VER
@@ -278,7 +279,6 @@ typedef struct
 	tic_t time;
 	tic_t leveltime;
 	char servername[MAXSERVERNAME];
-	char mapname[8];
 	char maptitle[33];
 	unsigned char mapmd5[16];
 	UINT8 actnum;
@@ -357,8 +357,8 @@ typedef struct
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
-		filetx_pak filetxpak;               //         139 bytes
-		fileack_pak fileack;
+		char filetxpak[sizeof (filetx_pak)];//         139 bytes
+		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
 		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
@@ -393,6 +393,7 @@ extern INT32 mapchangepending;
 extern doomdata_t *netbuffer;
 extern consvar_t cv_stunserver;
 extern consvar_t cv_httpsource;
+extern consvar_t cv_kicktime;
 
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
@@ -409,7 +410,6 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PING_HIGH   6
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
-#define KICK_MSG_KEEP_BODY   0x80
 
 typedef enum
 {
@@ -444,8 +444,9 @@ extern UINT32 playerpingtable[MAXPLAYERS];
 extern tic_t servermaxping;
 
 extern boolean server_lagless;
+extern consvar_t cv_mindelay;
 
-extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxplayers, cv_joindelay, cv_rejointimeout;
+extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_maxconnections, cv_joindelay;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
@@ -488,18 +489,16 @@ boolean Playing(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-void TryRunTics(tic_t realtic);
+boolean TryRunTics(tic_t realtic);
 
 // extra data for lmps
 // these functions scare me. they contain magic.
 /*boolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);
 void ReadLmpExtraData(UINT8 **demo_pointer, INT32 playernum);*/
 
-#ifndef NONET
 // translate a playername in a player number return -1 if not found and
 // print a error message in the console
 SINT8 nametonum(const char *name);
-#endif
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
@@ -520,11 +519,11 @@ extern UINT8 hu_redownloadinggamestate;
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
 
+extern boolean hu_stopped;
+
 //
 // SRB2Kart
 //
-
-extern boolean hu_stopped;
 
 typedef struct rewind_s {
 	UINT8 savebuffer[(768*1024)];

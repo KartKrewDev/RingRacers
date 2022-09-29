@@ -2,8 +2,6 @@
 # Makefile options for unices (linux, bsd...)
 #
 
-EXENAME?=lsdl2srb2kart
-
 opts+=-DUNIXCOMMON -DLUA_USE_POSIX
 libs+=-lm
 

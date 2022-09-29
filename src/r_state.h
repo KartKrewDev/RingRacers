@@ -54,6 +54,9 @@ extern extracolormap_t *extra_colormaps;
 // for global animation
 extern INT32 *texturetranslation;
 
+// for brightmaps
+extern INT32 *texturebrightmaps;
+
 // Sprites
 extern size_t numspritelumps, max_spritelumps;
 

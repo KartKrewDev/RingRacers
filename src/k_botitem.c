@@ -28,6 +28,23 @@
 #include "r_things.h" // numskins
 
 /*--------------------------------------------------
+	static inline boolean K_ItemButtonWasDown(player_t *player)
+
+		Looks for players around the bot, and presses the item button
+		if there is one in range.
+
+	Input Arguments:-
+		player - Bot to check.
+
+	Return:-
+		true if the item button was pressed last tic, otherwise false.
+--------------------------------------------------*/
+static inline boolean K_ItemButtonWasDown(player_t *player)
+{
+	return (player->oldcmd.buttons & BT_ATTACK);
+}
+
+/*--------------------------------------------------
 	static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t radius)
 
 		Looks for players around the bot, and presses the item button
@@ -45,7 +62,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 {
 	UINT8 i;
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return false;
 	}
@@ -86,7 +103,7 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
+	static player_t *K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
 
 		Looks for players around a specified x/y coordinate.
 
@@ -97,9 +114,9 @@ static boolean K_BotUseItemNearPlayer(player_t *player, ticcmd_t *cmd, fixed_t r
 		radius - The radius to look for players in.
 
 	Return:-
-		true if a player was found around the coordinate, otherwise false.
+		The player we found, NULL if nothing was found.
 --------------------------------------------------*/
-static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
+static player_t *K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t radius)
 {
 	UINT8 i;
 
@@ -129,15 +146,15 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 
 		if (dist <= radius)
 		{
-			return true;
+			return target;
 		}
 	}
 
-	return false;
+	return NULL;
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
+	static player_t *K_PlayerPredictThrow(player_t *player, UINT8 extra)
 
 		Looks for players around the predicted coordinates of their thrown item.
 
@@ -146,9 +163,9 @@ static boolean K_PlayerNearSpot(player_t *player, fixed_t x, fixed_t y, fixed_t 
 		extra - Extra throwing distance, for aim forward on mines.
 
 	Return:-
-		true if a player was found around the coordinate, otherwise false.
+		The player we're trying to throw at, NULL if none was found.
 --------------------------------------------------*/
-static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
+static player_t *K_PlayerPredictThrow(player_t *player, UINT8 extra)
 {
 	const fixed_t dist = (30 + (extra * 10)) * player->mo->scale;
 	const UINT32 airtime = FixedDiv(dist + player->mo->momz, gravity);
@@ -159,7 +176,7 @@ static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
 }
 
 /*--------------------------------------------------
-	static boolean K_PlayerInCone(player_t *player, UINT16 cone, boolean flip)
+	static player_t *K_PlayerInCone(player_t *player, UINT16 cone, boolean flip)
 
 		Looks for players in the .
 
@@ -172,7 +189,7 @@ static boolean K_PlayerPredictThrow(player_t *player, UINT8 extra)
 	Return:-
 		true if a player was found in the cone, otherwise false.
 --------------------------------------------------*/
-static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boolean flip)
+static player_t *K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boolean flip)
 {
 	UINT8 i;
 
@@ -222,20 +239,94 @@ static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boo
 			{
 				if (ad >= 180-cone)
 				{
-					return true;
+					return target;
 				}
 			}
 			else
 			{
 				if (ad <= cone)
 				{
-					return true;
+					return target;
 				}
 			}
 		}
 	}
 
+	return NULL;
+}
+
+/*--------------------------------------------------
+	static boolean K_RivalBotAggression(player_t *bot, player_t *target)
+
+		Returns if a bot is a rival & wants to be aggressive to a player.
+
+	Input Arguments:-
+		bot - Bot to check.
+		target - Who the bot wants to attack.
+
+	Return:-
+		false if not the rival. false if the target is another bot. Otherwise, true.
+--------------------------------------------------*/
+static boolean K_RivalBotAggression(player_t *bot, player_t *target)
+{
+	if (bot == NULL || target == NULL)
+	{
+		// Invalid.
+		return false;
+	}
+
+	if (bot->bot == false)
+	{
+		// lol
+		return false;
+	}
+
+	if (bot->botvars.rival == false)
+	{
+		// Not the rival, we aren't self-aware.
+		return false;
+	}
+
+	if (target->bot == false)
+	{
+		// This bot knows that the real threat is the player.
+		return true;
+	}
+
+	// Calling them your friends is misleading, but you'll at least spare them.
 	return false;
+}
+
+/*--------------------------------------------------
+	static void K_ItemConfirmForTarget(player_t *bot, player_t *target, UINT16 amount)
+
+		Handles updating item confirm values for offense items.
+
+	Input Arguments:-
+		bot - Bot to check.
+		target - Who the bot wants to attack.
+		amount - Amount to increase item confirm time by.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_ItemConfirmForTarget(player_t *bot, player_t *target, UINT16 amount)
+{
+	if (bot == NULL || target == NULL)
+	{
+		return;
+	}
+
+	if (K_RivalBotAggression(bot, target) == true)
+	{
+		// Double the rate when you're aggressive.
+		bot->botvars.itemconfirm += amount << 1;
+	}
+	else
+	{
+		// Do as normal.
+		bot->botvars.itemconfirm += amount;
+	}
 }
 
 /*--------------------------------------------------
@@ -253,20 +344,12 @@ static boolean K_PlayerInCone(player_t *player, fixed_t radius, UINT16 cone, boo
 --------------------------------------------------*/
 static boolean K_BotGenericPressItem(player_t *player, ticcmd_t *cmd, SINT8 dir)
 {
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return false;
 	}
 
-	if (dir == 1)
-	{
-		cmd->buttons |= BT_FORWARD;
-	}
-	else if (dir == -1)
-	{
-		cmd->buttons |= BT_BACKWARD;
-	}
-
+	cmd->throwdir = KART_FULLTURN * dir;
 	cmd->buttons |= BT_ATTACK;
 	player->botvars.itemconfirm = 0;
 	return true;
@@ -286,7 +369,7 @@ static boolean K_BotGenericPressItem(player_t *player, ticcmd_t *cmd, SINT8 dir)
 --------------------------------------------------*/
 static void K_BotItemGenericTap(player_t *player, ticcmd_t *cmd)
 {
-	if (!(player->pflags & PF_ATTACKDOWN))
+	if (K_ItemButtonWasDown(player) == false)
 	{
 		cmd->buttons |= BT_ATTACK;
 		player->botvars.itemconfirm = 0;
@@ -308,6 +391,8 @@ static void K_BotItemGenericTap(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean mine)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+
 	if (abs(turnamt) >= KART_FULLTURN/2)
 	{
 		// DON'T reveal on turns, we can place bananas on turns whenever we have multiple to spare,
@@ -316,21 +401,21 @@ static boolean K_BotRevealsGenericTrap(player_t *player, INT16 turnamt, boolean 
 	}
 
 	// Check the predicted throws.
-	if (K_PlayerPredictThrow(player, 0))
+	if (K_PlayerPredictThrow(player, 0) != NULL)
 	{
 		return true;
 	}
 
 	if (mine)
 	{
-		if (K_PlayerPredictThrow(player, 1))
+		if (K_PlayerPredictThrow(player, 1) != NULL)
 		{
 			return true;
 		}
 	}
 
 	// Check your behind.
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	if (K_PlayerInCone(player, coneDist, 15, true) != NULL)
 	{
 		return true;
 	}
@@ -403,11 +488,11 @@ static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 {
 	if ((player->offroad && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 		|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
-		|| player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+		|| player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/8) // Have another type of boost (tethering)
 		|| player->botvars.itemconfirm > 4*TICRATE) // Held onto it for too long
 	{
-		if (!player->sneakertimer && !(player->pflags & PF_ATTACKDOWN))
+		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 2*TICRATE;
@@ -435,7 +520,7 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 {
 	if (player->botvars.itemconfirm > TICRATE)
 	{
-		if (!player->sneakertimer && !(player->pflags & PF_ATTACKDOWN))
+		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
 		{
 			cmd->buttons |= BT_ATTACK;
 			player->botvars.itemconfirm = 0;
@@ -446,7 +531,6 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 		player->botvars.itemconfirm++;
 	}
 }
-
 
 /*--------------------------------------------------
 	static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
@@ -463,9 +547,20 @@ static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, coneDist, 15, true);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+		throwdir = -1;
+		tryLookback = true;
+	}
 
 	if (abs(turnamt) >= KART_FULLTURN/2)
 	{
@@ -474,20 +569,21 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	}
 	else
 	{
-		if (K_PlayerPredictThrow(player, 0))
+		target = K_PlayerPredictThrow(player, 0);
+
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 1;
 		}
 	}
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	if (tryLookback == true && throwdir == -1)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
-		throwdir = -1;
+		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -508,13 +604,17 @@ static void K_BotItemBanana(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 0;
+	boolean tryLookback = false;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, coneDist, 15, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
 	}
 
@@ -522,27 +622,71 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 	{
 		player->botvars.itemconfirm += player->botvars.difficulty / 2;
 		throwdir = -1;
+		tryLookback = true;
 	}
 	else
 	{
-		if (K_PlayerPredictThrow(player, 0))
+		target = K_PlayerPredictThrow(player, 0);
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 0;
 		}
 
-		if (K_PlayerPredictThrow(player, 1))
+		target = K_PlayerPredictThrow(player, 1);
+		if (target != NULL)
 		{
-			player->botvars.itemconfirm += player->botvars.difficulty * 2;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 			throwdir = 1;
 		}
 	}
 
-	
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+
+		Item usage for landmine tossing.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+		turnamt - How hard they currently are turning.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemLandmine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+{
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	player_t *target = NULL;
+
+	player->botvars.itemconfirm++;
+
+	if (abs(turnamt) >= KART_FULLTURN/2)
+	{
+		player->botvars.itemconfirm += player->botvars.difficulty / 2;
+	}
+
+	target = K_PlayerInCone(player, coneDist, 15, true);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, -1);
 	}
 }
 
@@ -560,21 +704,27 @@ static void K_BotItemMine(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 --------------------------------------------------*/
 static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	player_t *target = NULL;
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerPredictThrow(player, 0))
+	target = K_PlayerPredictThrow(player, 0);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty / 2;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty / 2);
 		throwdir = 1;
 	}
 
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, coneDist, 15, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
+		tryLookback = true;
 	}
 
 	if (stealth > 1 || player->itemroulette > 0)
@@ -583,7 +733,12 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 		throwdir = -1;
 	}
 
-	if (player->botvars.itemconfirm > 2*TICRATE || player->bananadrag >= TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -602,7 +757,9 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static boolean K_BotRevealsEggbox(player_t *player)
 {
+	const fixed_t coneDist = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const UINT8 stealth = K_EggboxStealth(player->mo->x, player->mo->y);
+	player_t *target = NULL;
 
 	// This is a stealthy spot for an eggbox, lets reveal it!
 	if (stealth > 1)
@@ -611,13 +768,15 @@ static boolean K_BotRevealsEggbox(player_t *player)
 	}
 
 	// Check the predicted throws.
-	if (K_PlayerPredictThrow(player, 0))
+	target = K_PlayerPredictThrow(player, 0);
+	if (target != NULL)
 	{
 		return true;
 	}
 
 	// Check your behind.
-	if (K_PlayerInCone(player, player->mo->radius * 16, 10, true))
+	target = K_PlayerInCone(player, coneDist, 15, true);
+	if (target != NULL)
 	{
 		return true;
 	}
@@ -644,7 +803,7 @@ static void K_BotItemEggmanShield(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (K_BotRevealsEggbox(player) || (player->botvars.itemconfirm++ > 20*TICRATE))
+	if (K_BotRevealsEggbox(player) == true || (player->botvars.itemconfirm++ > 20*TICRATE))
 	{
 		K_BotGenericPressItem(player, cmd, 0);
 	}
@@ -666,8 +825,9 @@ static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 {
 	if (player->position == 1)
 	{
+		// Hey, we aren't gonna find anyone up here...
+		// why don't we slow down a bit? :)
 		cmd->forwardmove /= 2;
-		cmd->buttons |= BT_BRAKE;
 	}
 
 	K_BotUseItemNearPlayer(player, cmd, 128*player->mo->scale);
@@ -687,29 +847,103 @@ static void K_BotItemEggmanExplosion(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 {
-	const fixed_t topspeed = K_GetKartSpeed(player, false);
-	fixed_t radius = (player->mo->radius * 32);
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	UINT8 snipeMul = 2;
+	player_t *target = NULL;
 
 	if (player->speed > topspeed)
 	{
 		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
 	}
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, radius, 10, false))
+	target = K_PlayerInCone(player, radius, 15, false);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty * 2;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
 		throwdir = 1;
 	}
-	else if (K_PlayerInCone(player, radius, 10, true))
+	else
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
-		throwdir = -1;
+		target = K_PlayerInCone(player, radius, 15, true);
+
+		if (target != NULL)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+			throwdir = -1;
+			tryLookback = true;
+		}
 	}
 
-	if (player->botvars.itemconfirm > 5*TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, throwdir);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+
+		Item usage for Drop Target throwing.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+{
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	fixed_t radius = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	UINT8 snipeMul = 2;
+	player_t *target = NULL;
+
+	if (player->speed > topspeed)
+	{
+		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
+	}
+
+	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, radius, 15, false);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
+		throwdir = 1;
+	}
+	else
+	{
+		target = K_PlayerInCone(player, radius, 15, true);
+
+		if (target != NULL)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+			throwdir = -1;
+			tryLookback = true;
+		}
+	}
+
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
@@ -729,39 +963,76 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 {
-	const fixed_t topspeed = K_GetKartSpeed(player, false);
-	fixed_t radius = (player->mo->radius * 32);
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	SINT8 throwdir = 1;
+	boolean tryLookback = false;
+	UINT8 snipeMul = 2;
+	INT32 lastTarg = player->lastjawztarget;
+	player_t *target = NULL;
 
 	if (player->speed > topspeed)
 	{
 		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
 	}
 
 	player->botvars.itemconfirm++;
 
-	if (K_PlayerInCone(player, radius, 10, true))
+	target = K_PlayerInCone(player, radius, 15, true);
+	if (target != NULL)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty;
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
 		throwdir = -1;
+		tryLookback = true;
 	}
 
-	if (player->lastjawztarget != -1)
+	if (lastTarg != -1
+		&& playeringame[lastTarg] == true
+		&& players[lastTarg].spectator == false
+		&& players[lastTarg].mo != NULL
+		&& P_MobjWasRemoved(players[lastTarg].mo) == false)
 	{
-		player->botvars.itemconfirm += player->botvars.difficulty * 2;
-		throwdir = 1;
+		mobj_t *targMo = players[lastTarg].mo;
+		mobj_t *mobj = NULL, *next = NULL;
+		boolean targettedAlready = false;
+
+		target = &players[lastTarg];
+
+		// Make sure no other Jawz are targetting this player.
+		for (mobj = kitemcap; mobj; mobj = next)
+		{
+			next = mobj->itnext;
+
+			if (mobj->type == MT_JAWZ && mobj->target == targMo)
+			{
+				targettedAlready = true;
+				break;
+			}
+		}
+
+		if (targettedAlready == false)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
+			throwdir = 1;
+		}
 	}
 
-	if (player->botvars.itemconfirm > 5*TICRATE)
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
 }
 
 /*--------------------------------------------------
-	static void K_BotItemThunder(player_t *player, ticcmd_t *cmd)
+	static void K_BotItemLightning(player_t *player, ticcmd_t *cmd)
 
-		Item usage for Thunder Shield.
+		Item usage for Lightning Shield.
 
 	Input Arguments:-
 		player - Bot to do this for.
@@ -770,9 +1041,9 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotItemThunder(player_t *player, ticcmd_t *cmd)
+static void K_BotItemLightning(player_t *player, ticcmd_t *cmd)
 {
-	if (!K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale))
+	if (K_BotUseItemNearPlayer(player, cmd, 192*player->mo->scale) == false)
 	{
 		if (player->botvars.itemconfirm > 10*TICRATE)
 		{
@@ -846,7 +1117,7 @@ static void K_BotItemBubble(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->bubbleblowup >= bubbletime)
 	{
-		if (player->botvars.itemconfirm >= 10*TICRATE)
+		if (player->botvars.itemconfirm > 10*TICRATE)
 		{
 			hold = true;
 		}
@@ -911,7 +1182,7 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 {
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
-	if (player->speed < K_GetKartSpeed(player, false)/2 // Being slowed down too much
+	if (player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/5)) // Have another type of boost (tethering)
 	{
 		saferingsval -= 5;
@@ -939,7 +1210,7 @@ static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
 	boolean mash = false;
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (K_ItemButtonWasDown(player) == true)
 	{
 		return;
 	}
@@ -1036,7 +1307,6 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						K_BotItemSneaker(player, cmd);
 						break;
 					case KITEM_BANANA:
-					case KITEM_LANDMINE:
 						if (!(player->pflags & PF_ITEMOUT))
 						{
 							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
@@ -1055,7 +1325,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 							K_BotItemGenericOrbitShield(player, cmd);
 						}
 						else if (player->position != 1) // Hold onto orbiting items when in 1st :)
-						/* FALL-THRU */
+						/* FALLTHRU */
 					case KITEM_BALLHOG:
 						{
 							K_BotItemOrbinaut(player, cmd);
@@ -1081,8 +1351,21 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 							K_BotItemMine(player, cmd, turnamt);
 						}
 						break;
-					case KITEM_THUNDERSHIELD:
-						K_BotItemThunder(player, cmd);
+					case KITEM_LANDMINE:
+						K_BotItemLandmine(player, cmd, turnamt);
+						break;
+					case KITEM_DROPTARGET:
+						if (!(player->pflags & PF_ITEMOUT))
+						{
+							K_BotItemGenericTrapShield(player, cmd, turnamt, false);
+						}
+						else
+						{
+							K_BotItemDropTarget(player, cmd);
+						}
+						break;
+					case KITEM_LIGHTNINGSHIELD:
+						K_BotItemLightning(player, cmd);
 						break;
 					case KITEM_BUBBLESHIELD:
 						K_BotItemBubble(player, cmd);

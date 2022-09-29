@@ -47,8 +47,8 @@ extern fixed_t windowtop;
 extern fixed_t windowbottom;
 extern INT32 lengthcol;
 
-void R_DrawMaskedColumn(column_t *column);
-void R_DrawFlippedMaskedColumn(column_t *column);
+void R_DrawMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip);
+void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip);
 
 // ----------------
 // SPRITE RENDERING
@@ -66,9 +66,12 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 
+UINT8 R_GetBoundingBoxColor(mobj_t *thing);
+boolean R_ThingBoundingBoxVisible(mobj_t *thing);
+
 boolean R_ThingVisible (mobj_t *thing);
 
-boolean R_ThingVisibleWithinDist (mobj_t *thing,
+boolean R_ThingWithinDist (mobj_t *thing,
 		fixed_t        draw_dist);
 
 boolean R_PrecipThingVisible (precipmobj_t *precipthing,
@@ -83,6 +86,8 @@ boolean R_ThingIsFloorSprite (mobj_t *thing);
 boolean R_ThingIsFullBright (mobj_t *thing);
 boolean R_ThingIsSemiBright (mobj_t *thing);
 boolean R_ThingIsFullDark (mobj_t *thing);
+
+boolean R_ThingIsFlashing(mobj_t *thing);
 
 // --------------
 // MASKED DRAWING
@@ -99,7 +104,7 @@ typedef struct
 	sector_t* viewsector;
 } maskcount_t;
 
-void R_DrawMasked(maskcount_t* masks, UINT8 nummasks);
+void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
 
 // ----------
 // VISSPRITES
@@ -132,6 +137,7 @@ typedef enum
 	SC_SPLAT      = 1<<11,
 	// srb2kart
 	SC_SEMIBRIGHT = 1<<12,
+	SC_BBOX       = 1<<13,
 	// masks
 	SC_CUTMASK    = SC_TOP|SC_BOTTOM,
 	SC_FLAGMASK   = ~SC_CUTMASK
@@ -166,7 +172,12 @@ typedef struct vissprite_s
 	fixed_t xiscale; // negative if flipped
 
 	angle_t centerangle; // for paper sprites
-	angle_t viewangle; // for floor sprites, the viewpoint's current angle
+
+	// for floor sprites
+	struct {
+		fixed_t x, y, z; // the viewpoint's current position
+		angle_t angle; // the viewpoint's current angle
+	} viewpoint;
 
 	struct {
 		fixed_t tan; // The amount to shear the sprite vertically per row
@@ -187,9 +198,11 @@ typedef struct vissprite_s
 
 	extracolormap_t *extra_colormap; // global colormaps
 
-	// Precalculated top and bottom screen coords for the sprite.
-	fixed_t thingheight; // The actual height of the thing
+	fixed_t thingheight; // The actual height of the thing (for 3D floors)
+
 	sector_t *sector; // The sector containing the thing.
+
+	// Precalculated top and bottom screen coords for the sprite.
 	INT16 sz, szt;
 
 	spritecut_e cut;
@@ -204,14 +217,17 @@ typedef struct vissprite_s
 	INT16 clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
 
 	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
+
+	fixed_t floorclip; // Cut off your tires in tall grass
 } vissprite_t;
 
 extern UINT32 visspritecount;
 
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal);
-void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, portal_t* portal);
+void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal);
 
-boolean R_SpriteIsFlashing(vissprite_t *vis);
+void R_DrawThingBoundingBox(vissprite_t *spr);
+
 UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
 
 // ----------

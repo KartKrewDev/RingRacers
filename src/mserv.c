@@ -20,8 +20,10 @@
 #include "command.h"
 #include "i_threads.h"
 #include "mserv.h"
-#include "m_menu.h"
 #include "z_zone.h"
+
+// SRB2Kart
+#include "k_menu.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -49,9 +51,7 @@ static I_cond  MSCond;
 #  define Unlock_state()
 #endif/*HAVE_THREADS*/
 
-#ifndef NONET
 static void Command_Listserv_f(void);
-#endif
 
 #endif/*MASTERSERVER*/
 
@@ -61,6 +61,8 @@ static void MasterServer_OnChange(void);
 
 static void Advertise_OnChange(void);
 
+static void RendezvousServer_OnChange(void);
+
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
 	{60, "MAX"},
@@ -68,8 +70,8 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ms.kartkrew.org/ms/api", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_rendezvousserver = CVAR_INIT ("rendezvousserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
-consvar_t cv_servername = CVAR_INIT ("servername", "SRB2Kart server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "relay.kartkrew.org", CV_SAVE|CV_CALL, NULL, RendezvousServer_OnChange);
+consvar_t cv_servername = CVAR_INIT ("servername", "Ring Racers server", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 consvar_t cv_server_contact = CVAR_INIT ("server_contact", "", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, MasterClient_Ticker);
@@ -93,7 +95,6 @@ UINT16 current_port = 0;
   */
 void AddMServCommands(void)
 {
-#ifndef NONET
 	CV_RegisterVar(&cv_masterserver);
 	CV_RegisterVar(&cv_masterserver_update_rate);
 	CV_RegisterVar(&cv_masterserver_timeout);
@@ -105,7 +106,7 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_server_contact);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f);
-#endif
+	COM_AddCommand("masterserver_update", Update_parameters); // allows people to updates manually in case you were delisted by accident
 #endif
 }
 
@@ -114,11 +115,11 @@ void AddMServCommands(void)
 static void WarnGUI (void)
 {
 #ifdef HAVE_THREADS
-	I_lock_mutex(&m_menu_mutex);
+	I_lock_mutex(&k_menu_mutex);
 #endif
 	M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
 #ifdef HAVE_THREADS
-	I_unlock_mutex(m_menu_mutex);
+	I_unlock_mutex(k_menu_mutex);
 #endif
 }
 
@@ -175,7 +176,6 @@ char *GetMODVersion(int id)
 }
 #endif
 
-#ifndef NONET
 /** Gets a list of game servers. Called from console.
   */
 static void Command_Listserv_f(void)
@@ -186,7 +186,6 @@ static void Command_Listserv_f(void)
 		HMS_list_servers();
 	}
 }
-#endif
 
 static void
 Finish_registration (void)
@@ -431,7 +430,7 @@ void UnregisterServer(void)
 static boolean
 Online (void)
 {
-	return ( serverrunning && cv_advertise.value );
+	return ( serverrunning && netgame && cv_advertise.value );
 }
 
 static inline void SendPingToMasterServer(void)
@@ -515,17 +514,6 @@ static void MasterServer_OnChange(void)
 #ifdef MASTERSERVER
 	UnregisterServer();
 
-	/*
-	TODO: remove this for v2, it's just a hack
-	for those coming in with an old config.
-	*/
-	if (
-			! cv_masterserver.changed &&
-			strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
-	){
-		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
-	}
-
 	Set_api(cv_masterserver.string);
 
 	if (Online())
@@ -540,7 +528,7 @@ Advertise_OnChange(void)
 
 	if (cv_advertise.value)
 	{
-		if (serverrunning)
+		if (serverrunning && netgame)
 		{
 			Lock_state();
 			{
@@ -563,3 +551,16 @@ Advertise_OnChange(void)
 	DRPC_UpdatePresence();
 #endif
 }
+
+#ifdef DEVELOP
+static void
+RendezvousServer_OnChange (void)
+{
+	consvar_t *cvar = &cv_rendezvousserver;
+
+	if (!strcmp(cvar->string, "jart-dev.jameds.org"))
+		CV_StealthSet(cvar, cvar->defaultvalue);
+}
+#else
+#error "This was an indev thing, remove at release."
+#endif

@@ -22,7 +22,7 @@
 #include "d_net.h"
 
 #include "m_cheat.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "m_random.h"
 #include "m_misc.h"
 
@@ -50,7 +50,7 @@ typedef struct
 {
 	UINT8 *p;
 	UINT8 (*func)(void); // called when cheat confirmed.
-	UINT8 sequence[];
+	UINT8 *sequence;
 } cheatseq_t;
 
 // ==========================================================================
@@ -58,20 +58,6 @@ typedef struct
 // ==========================================================================
 
 // Cheat responders
-/*static UINT8 cheatf_ultimate(void)
-{
-	if (menuactive && (currentMenu != &MainDef && currentMenu != &SP_LoadDef))
-		return 0; // Only on the main menu, or the save select!
-
-	BwehHehHe();
-	ultimate_selectable = (!ultimate_selectable);
-
-	// If on the save select, move to what is now Ultimate Mode!
-	if (currentMenu == &SP_LoadDef)
-		M_ForceSaveSlotSelected(NOSAVESLOT);
-	return 1;
-}*/
-
 static UINT8 cheatf_warp(void)
 {
 	UINT8 i;
@@ -83,7 +69,7 @@ static UINT8 cheatf_warp(void)
 	if (menuactive && currentMenu != &MainDef)
 		return 0; // Only on the main menu!
 
-	// Temporarily unlock EVERYTHING.
+	// Unlock EVERYTHING.
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		if (!unlockables[i].conditionset)
@@ -97,7 +83,7 @@ static UINT8 cheatf_warp(void)
 
 	if (success)
 	{
-		G_SaveGameData(); //G_SetGameModified(false);
+		G_SaveGameData(); //G_SetUsedCheats();
 		S_StartSound(0, sfx_kc42);
 	}
 
@@ -121,7 +107,7 @@ static UINT8 cheatf_devmode(void)
 	S_StartSound(0, sfx_itemup);
 
 	// Just unlock all the things and turn on -debug and console devmode.
-	G_SetGameModified(false, false); // might need to revist the latter later
+	G_SetUsedCheats();
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		unlockables[i].unlocked = true;
 	devparm = true;
@@ -134,22 +120,10 @@ static UINT8 cheatf_devmode(void)
 }
 #endif
 
-/*static cheatseq_t cheat_ultimate = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE('u'), SCRAMBLE('l'), SCRAMBLE('t'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('t'), SCRAMBLE('e'), 0xff }
-};*/
-
-/*static cheatseq_t cheat_ultimate_joy = {
-	0, cheatf_ultimate,
-	{ SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_DOWNARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }
-};*/
-
 static cheatseq_t cheat_warp = {
 	0, cheatf_warp,
 	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
-	{ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
+	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
 static cheatseq_t cheat_warp_joy = {
@@ -158,7 +132,7 @@ static cheatseq_t cheat_warp_joy = {
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }*/
-	  { SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
+	  (UINT8[]){ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
 	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
 	  SCRAMBLE(KEY_ENTER), 0xff }
@@ -167,7 +141,7 @@ static cheatseq_t cheat_warp_joy = {
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	0, cheatf_devmode,
-	{ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
+	(UINT8[]){ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
 };
 #endif
 
@@ -253,8 +227,6 @@ boolean cht_Responder(event_t *ev)
 	else
 		ch = (UINT8)ev->data1;
 
-	//ret += cht_CheckCheat(&cheat_ultimate, (char)ch);
-	//ret += cht_CheckCheat(&cheat_ultimate_joy, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp, (char)ch);
 	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
 #ifdef DEVELOP
@@ -264,11 +236,8 @@ boolean cht_Responder(event_t *ev)
 }
 
 // Console cheat commands rely on these a lot...
-#define REQUIRE_PANDORA if (!M_SecretUnlocked(SECRET_PANDORA) && !cv_debug)\
-{ CONS_Printf(M_GetText("You haven't earned this yet.\n")); return; }
-
-#define REQUIRE_DEVMODE if (!cv_debug)\
-{ CONS_Printf(M_GetText("DEVMODE must be enabled.\n")); return; }
+#define REQUIRE_CHEATS if (!CV_CheatsEnabled())\
+{ CONS_Printf(M_GetText("Cheats must be enabled.\n")); return; }
 
 #define REQUIRE_OBJECTPLACE if (!objectplacing)\
 { CONS_Printf(M_GetText("OBJECTPLACE must be enabled.\n")); return; }
@@ -284,37 +253,35 @@ void Command_CheatNoClip_f(void)
 {
 	player_t *plyr;
 
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make netplay compatible
 
 	plyr = &players[consoleplayer];
 
 	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
 		return;
 
-	plyr->pflags ^= PF_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->pflags & PF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+	plyr->cheats ^= PC_NOCLIP;
+	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->cheats & PC_NOCLIP ? M_GetText("On") : M_GetText("Off"));
 
-	if (plyr->pflags & PF_NOCLIP)
+	if (plyr->cheats & PC_NOCLIP)
 		plyr->mo->flags |= MF_NOCLIP;
 	else
 		plyr->mo->flags &= ~MF_NOCLIP;
-
-	G_SetGameModified(multiplayer, true);
 }
 
 void Command_CheatGod_f(void)
 {
 	player_t *plyr;
 
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	plyr = &players[consoleplayer];
-	plyr->pflags ^= PF_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->pflags & PF_GODMODE ? M_GetText("On") : M_GetText("Off"));
-
-	G_SetGameModified(multiplayer, true);
+	plyr->cheats ^= PC_GODMODE;
+	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->cheats & PC_GODMODE ? M_GetText("On") : M_GetText("Off"));
 }
 
 void Command_Scale_f(void)
@@ -322,9 +289,9 @@ void Command_Scale_f(void)
 	const double scaled = atof(COM_Argv(1));
 	fixed_t scale = FLOAT_TO_FIXED(scaled);
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (scale < FRACUNIT/100 || scale > 100*FRACUNIT) //COM_Argv(1) will return a null string if they did not give a paramater, so...
 	{
@@ -342,9 +309,9 @@ void Command_Scale_f(void)
 
 void Command_Gravflip_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (players[consoleplayer].mo)
 		players[consoleplayer].mo->flags2 ^= MF2_OBJECTFLIP;
@@ -352,9 +319,9 @@ void Command_Gravflip_f(void)
 
 void Command_Hurtme_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 2)
 	{
@@ -372,9 +339,9 @@ void Command_RTeleport_f(void)
 	player_t *p = &players[consoleplayer];
 	subsector_t *ss;
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 3 || COM_Argc() > 7)
 	{
@@ -434,9 +401,9 @@ void Command_Teleport_f(void)
 	player_t *p = &players[consoleplayer];
 	subsector_t *ss;
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 3 || COM_Argc() > 11)
 	{
@@ -650,9 +617,9 @@ void Command_Teleport_f(void)
 
 void Command_Skynum_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -668,9 +635,9 @@ void Command_Skynum_f(void)
 
 void Command_Weather_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -688,9 +655,9 @@ void Command_Toggletwod_f(void)
 {
 	player_t *p = &players[consoleplayer];
 
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (p->mo)
 		p->mo->flags2 ^= MF2_TWOD;
@@ -703,6 +670,9 @@ void Command_Toggletwod_f(void)
 // Don't enable this for normal builds...
 void Command_CauseCfail_f(void)
 {
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
 	if (consoleplayer == serverplayer)
 	{
 		CONS_Printf(M_GetText("Only remote players can use this command.\n"));
@@ -710,9 +680,9 @@ void Command_CauseCfail_f(void)
 	}
 
 	P_UnsetThingPosition(players[consoleplayer].mo);
-	P_RandomFixed();
-	P_RandomByte();
-	P_RandomFixed();
+	P_RandomFixed(PR_UNDEFINED);
+	P_RandomByte(PR_UNDEFINED);
+	P_RandomFixed(PR_UNDEFINED);
 	players[consoleplayer].mo->x = 0;
 	players[consoleplayer].mo->y = 123311; //cfail cansuled kthxbye
 	players[consoleplayer].mo->z = 123311;
@@ -745,9 +715,9 @@ void Command_Dumplua_f(void)
 
 void Command_Savecheckpoint_f(void)
 {
-	REQUIRE_DEVMODE;
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	players[consoleplayer].respawn.pointx = players[consoleplayer].mo->x;
 	players[consoleplayer].respawn.pointy = players[consoleplayer].mo->y;
@@ -760,8 +730,8 @@ void Command_Savecheckpoint_f(void)
 /*
 void Command_Getallemeralds_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	emeralds = EMERALD_ALL;
 
@@ -770,6 +740,7 @@ void Command_Getallemeralds_f(void)
 
 void Command_Resetemeralds_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_SINGLEPLAYER;
 
 	emeralds = 0;
@@ -780,9 +751,8 @@ void Command_Resetemeralds_f(void)
 
 void Command_Devmode_f(void)
 {
-#ifndef _DEBUG
-	REQUIRE_SINGLEPLAYER;
-#endif
+	REQUIRE_CHEATS;
+	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() > 1)
 	{
@@ -799,15 +769,12 @@ void Command_Devmode_f(void)
 		CONS_Printf(M_GetText("devmode <flags>: enable debugging tools and info, prepend with 0x to use hexadecimal\n"));
 		return;
 	}
-
-	G_SetGameModified(multiplayer, true);
 }
 
 void Command_Setrings_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
@@ -815,16 +782,13 @@ void Command_Setrings_f(void)
 		players[consoleplayer].rings = 0;
 		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
 		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-
-		G_SetGameModified(multiplayer, true);
 	}
 }
 
 void Command_Setlives_f(void)
 {
+	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-	REQUIRE_PANDORA;
 
 	if (COM_Argc() > 1)
 	{
@@ -839,8 +803,6 @@ void Command_Setlives_f(void)
 			players[consoleplayer].lives = 0;
 			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
 		}
-
-		G_SetGameModified(multiplayer, true);
 	}
 }
 
@@ -1081,11 +1043,11 @@ void OP_ObjectplaceMovement(player_t *player)
 	}
 
 
-	if (player->pflags & PF_ATTACKDOWN)
+	if (player->pflags & PF_STASIS)
 	{
 		// Are ANY objectplace buttons pressed?  If no, remove flag.
 		if (!(cmd->buttons & (BT_ATTACK|BT_DRIFT)))
-			player->pflags &= ~PF_ATTACKDOWN;
+			player->pflags &= ~PF_STASIS;
 
 		// Do nothing.
 		return;
@@ -1094,12 +1056,12 @@ void OP_ObjectplaceMovement(player_t *player)
 	/*if (cmd->buttons & BT_FORWARD)
 	{
 		OP_CycleThings(-1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 	else*/ if (cmd->buttons & BT_DRIFT)
 	{
 		OP_CycleThings(1);
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 	}
 
 	// Place an object and add it to the maplist
@@ -1110,7 +1072,7 @@ void OP_ObjectplaceMovement(player_t *player)
 		mobjtype_t spawnthing = op_currentdoomednum;
 		boolean ceiling;
 
-		player->pflags |= PF_ATTACKDOWN;
+		player->pflags |= PF_STASIS;
 
 		if (cv_mapthingnum.value > 0 && cv_mapthingnum.value < 4096)
 		{
@@ -1149,7 +1111,6 @@ void OP_ObjectplaceMovement(player_t *player)
 void Command_Writethings_f(void)
 {
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
 	REQUIRE_OBJECTPLACE;
 
 	P_WriteThings();
@@ -1161,9 +1122,8 @@ void Command_ObjectPlace_f(void)
 	size_t silent;
 
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER;
-
-	G_SetGameModified(multiplayer, true);
+	REQUIRE_CHEATS;
+	REQUIRE_SINGLEPLAYER; // this one will very likely never be multiplayer compatible...
 
 	silent = COM_CheckParm("-silent");
 

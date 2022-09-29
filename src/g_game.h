@@ -23,7 +23,6 @@
 extern char gamedatafilename[64];
 extern char timeattackfolder[64];
 extern char customversionstring[32];
-#define GAMEDATASIZE (4*8192)
 
 extern char  player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 extern INT32 player_name_changes[MAXPLAYERS];
@@ -36,6 +35,19 @@ extern tic_t levelstarttic;
 
 // for modding?
 extern INT16 prevmap, nextmap;
+
+// see also G_MapNumber
+typedef enum
+{
+	NEXTMAP_RESERVED = INT16_MAX, // so nextmap+1 doesn't roll over -- remove when gamemap is made 0-indexed
+	NEXTMAP_TITLE = INT16_MAX-1,
+	NEXTMAP_EVALUATION = INT16_MAX-2,
+	NEXTMAP_CREDITS = INT16_MAX-3,
+	NEXTMAP_CEREMONY = INT16_MAX-4,
+	NEXTMAP_INVALID = INT16_MAX-5, // Always last (swap with NEXTMAP_RESERVED when removing that)
+	NEXTMAP_SPECIAL = NEXTMAP_INVALID
+} nextmapspecial_t;
+
 extern INT32 gameovertics;
 extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
@@ -48,6 +60,7 @@ extern boolean promptactive;
 extern consvar_t cv_tutorialprompt;
 
 extern consvar_t cv_chatwidth, cv_chatnotifications, cv_chatheight, cv_chattime, cv_consolechat, cv_chatbacktint, cv_chatspamprotection;
+extern consvar_t cv_shoutname, cv_shoutcolor, cv_autoshout;
 extern consvar_t cv_songcredits;
 
 extern consvar_t cv_pauseifunfocused;
@@ -55,6 +68,8 @@ extern consvar_t cv_pauseifunfocused;
 extern consvar_t cv_invertmouse;
 
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
+
 extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
@@ -63,7 +78,6 @@ extern consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_digitaldeadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
@@ -79,9 +93,10 @@ extern consvar_t cv_resume;
 #define MAXPLMOVE (50)
 #define SLOWTURNTICS (6)
 
-// build an internal map name MAPxx from map number
 const char *G_BuildMapName(INT32 map);
+INT32 G_MapNumber(const char *mapname);
 
+void G_ResetAnglePrediction(player_t *player);
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -93,28 +108,15 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 INT32 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 
-typedef enum
-{
-	AXISNONE = 0,
-
-	AXISTURN,
-	AXISMOVE,
-	AXISBRAKE,
-	AXISLOOK,
-
-	AXISDIGITAL, // axes below this use digital deadzone
-
-	AXISFIRE = AXISDIGITAL,
-	AXISDRIFT,
-	AXISSPINDASH,
-	AXISLOOKBACK,
-	AXISAIM,
-} axis_input_e;
-
-INT32 PlayerJoyAxis(UINT8 player, axis_input_e axissel);
-
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
+extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
+extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
+extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+extern UINT8 localtic;
+
+INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);
+boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);
 
 //
 // GAME
@@ -122,7 +124,7 @@ extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but sig
 void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
 void G_PlayerReborn(INT32 player, boolean betweenmaps);
-void G_InitNew(UINT8 pencoremode, const char *mapname, boolean resetplayer,
+void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer,
 	boolean skipprecutscene, boolean FLS);
 char *G_BuildMapTitle(INT32 mapnum);
 
@@ -160,7 +162,7 @@ void G_SpawnPlayer(INT32 playernum);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
-void G_DeferedInitNew(boolean pencoremode, const char *mapname, INT32 pickedchar,
+void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar,
 	UINT8 ssplayers, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
 
@@ -192,7 +194,8 @@ boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
-INT16 G_SometimesGetDifferentGametype(void);
+#define VOTEMODIFIER_ENCORE 0x80
+INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype);
 UINT8 G_GetGametypeColor(INT16 gt);
 void G_ExitLevel(void);
 void G_NextLevel(void);
@@ -236,6 +239,7 @@ void G_LoadGameData(void);
 void G_LoadGameSettings(void);
 
 void G_SetGameModified(boolean silent, boolean major);
+void G_SetUsedCheats(void);
 
 void G_SetGamestate(gamestate_t newstate);
 
@@ -253,8 +257,9 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 
 // Don't split up TOL handling
 UINT32 G_TOLFlag(INT32 pgametype);
+INT16 G_GetFirstMapOfGametype(UINT8 pgametype);
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
+INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
 void G_AddMapToBuffer(INT16 map);
 
 #endif

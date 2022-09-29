@@ -30,6 +30,8 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
+#include "k_boss.h" // bossinfo
+#include "byteptr.h"
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -42,6 +44,8 @@ CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {MAX_VOLUME, "MAX"}, {0, 
 static void SetChannelsNum(void);
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
+static void Command_PlaySound(void);
+static void Got_PlaySound(UINT8 **p, INT32 playernum);
 
 // Sound system toggles
 static void GameSounds_OnChange(void);
@@ -58,15 +62,7 @@ static lumpnum_t S_GetMusicLumpNum(const char *mname);
 
 static boolean S_CheckQueue(void);
 
-#if defined (_WINDOWS) && !defined (SURROUND) //&& defined (_X86_)
-#define SURROUND
-#endif
-
-#ifdef _WINDOWS
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "44100", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#else
 consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-#endif
 
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -267,6 +263,8 @@ void S_RegisterSoundStuff(void)
 
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
+	COM_AddCommand("playsound", Command_PlaySound);
+	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
 }
 
 static void SetChannelsNum(void)
@@ -380,7 +378,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -401,7 +398,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -519,6 +515,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	sfxinfo_t *sfx;
 	INT32 sep, pitch, priority, cnum;
 	boolean anyListeners = false;
+	boolean itsUs = false;
 	INT32 i;
 
 	listener_t listener[MAXSPLITSCREENPLAYERS];
@@ -555,6 +552,11 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		else
 		{
 			listenmobj[i] = player->mo;
+		}
+
+		if (origin && origin == listenmobj[i])
+		{
+			itsUs = true;
 		}
 	}
 
@@ -615,40 +617,51 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	// Initialize sound parameters
 	pitch = NORM_PITCH;
 	priority = NORM_PRIORITY;
+	sep = NORM_SEP;
 
-	for (i = r_splitscreen; i >= 0; i--)
+	i = 0; // sensible default
+
 	{
-		// Copy the sound for the splitscreen players!
-		if (listenmobj[i] == NULL && i != 0)
-		{
-			continue;
-		}
-
 		// Check to see if it is audible, and if not, modify the params
-		if (origin && origin != listenmobj[i])
+		if (origin && !itsUs)
 		{
-			boolean rc = S_AdjustSoundParams(listenmobj[i], origin, &volume, &sep, &pitch, sfx);
+			boolean audible = false;
 
-			if (!rc)
+			if (r_splitscreen > 0)
 			{
-				continue; // Maybe the other player can hear it...
+				fixed_t recdist = INT32_MAX;
+				UINT8 j = 0;
+
+				for (; j <= r_splitscreen; j++)
+				{
+					fixed_t thisdist = INT32_MAX;
+
+					if (!listenmobj[j])
+					{
+						continue;
+					}
+
+					thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+					if (thisdist >= recdist)
+					{
+						continue;
+					}
+				
+					recdist = thisdist;
+					i = j;
+				}
 			}
 
-			if (origin->x == listener[i].x && origin->y == listener[i].y)
+			if (listenmobj[i])
 			{
-				sep = NORM_SEP;
+				audible = S_AdjustSoundParams(listenmobj[i], origin, &volume, &sep, &pitch, sfx);
 			}
-		}
-		else if (i > 0 && !origin)
-		{
-			// Do not play origin-less sounds for the splitscreen players.
-			// The first player will be able to hear it just fine,
-			// we really don't want it playing twice.
-			continue;
-		}
-		else
-		{
-			sep = NORM_SEP;
+
+			if (!audible)
+			{
+				return;
+			}
 		}
 
 		// This is supposed to handle the loading/caching.
@@ -660,6 +673,14 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		if (!sfx->data)
 		{
 			sfx->data = I_GetSfx(sfx);
+
+			if (!sfx->data)
+			{
+				CONS_Alert(CONS_WARNING,
+						"Tried to load invalid sfx_%s\n",
+						sfx->name);
+				return;/* don't play it */
+			}
 		}
 
 		// increase the usefulness
@@ -732,7 +753,6 @@ void S_StopSound(void *origin)
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
 		{
 			S_StopChannel(cnum);
-			break;
 		}
 	}
 }
@@ -856,43 +876,50 @@ void S_UpdateSounds(void)
 				{
 					boolean itsUs = false;
 
-					for (i = 0; i <= r_splitscreen; i++)
+					for (i = r_splitscreen; i >= 0; i--)
 					{
-						if (c->origin == players[displayplayers[i]].mo)
-						{
-							itsUs = true;
-							break;
-						}
+						if (c->origin != listenmobj[i])
+							continue;
+
+						itsUs = true;
 					}
 
 					if (itsUs == false)
 					{
-						const mobj_t *soundmobj = c->origin;
-						fixed_t recdist = INT32_MAX;
-						UINT8 p = 0;
+						const mobj_t *origin = c->origin;
 
-						for (i = 0; i <= r_splitscreen; i++)
+						i = 0;
+
+						if (r_splitscreen > 0)
 						{
-							fixed_t thisdist = INT32_MAX;
+							fixed_t recdist = INT32_MAX;
+							UINT8 j = 0;
 
-							if (!listenmobj[i])
+							for (; j <= r_splitscreen; j++)
 							{
-								continue;
-							}
+								fixed_t thisdist = INT32_MAX;
 
-							thisdist = P_AproxDistance(listener[i].x - soundmobj->x, listener[i].y - soundmobj->y);
+								if (!listenmobj[j])
+								{
+									continue;
+								}
 
-							if (thisdist < recdist)
-							{
+								thisdist = P_AproxDistance(listener[j].x - origin->x, listener[j].y - origin->y);
+
+								if (thisdist >= recdist)
+								{
+									continue;
+								}
+
 								recdist = thisdist;
-								p = i;
+								i = j;
 							}
 						}
 
-						if (listenmobj[p])
+						if (listenmobj[i])
 						{
 							audible = S_AdjustSoundParams(
-								listenmobj[p], c->origin,
+								listenmobj[i], c->origin,
 								&volume, &sep, &pitch,
 								c->sfxinfo
 							);
@@ -958,11 +985,9 @@ void S_SetSfxVolume(INT32 volume)
 
 void S_ClearSfx(void)
 {
-#ifndef DJGPPDOS
 	size_t i;
 	for (i = 1; i < NUMSFX; i++)
 		I_FreeSfx(S_sfx + i);
-#endif
 }
 
 static void S_StopChannel(INT32 cnum)
@@ -1031,7 +1056,6 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	const boolean reverse = (stereoreverse.value ^ encoremode);
 
 	fixed_t approx_dist;
-	angle_t angle;
 
 	listener_t listensource;
 	INT32 i;
@@ -1109,28 +1133,35 @@ boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 
 	if (approx_dist > S_CLIPPING_DIST)
 		return false;
 
-	// angle of source to listener
-	angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
-
-	if (angle > listensource.angle)
-		angle = angle - listensource.angle;
+	if (source->x == listensource.x && source->y == listensource.y)
+	{
+		*sep = NORM_SEP;
+	}
 	else
-		angle = angle + InvAngle(listensource.angle);
+	{
+		// angle of source to listener
+		angle_t angle = R_PointToAngle2(listensource.x, listensource.y, source->x, source->y);
 
-	if (reverse)
-		angle = InvAngle(angle);
+		if (angle > listensource.angle)
+			angle = angle - listensource.angle;
+		else
+			angle = angle + InvAngle(listensource.angle);
+
+		if (reverse)
+			angle = InvAngle(angle);
 
 #ifdef SURROUND
-	// Produce a surround sound for angle from 105 till 255
-	if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
-		*sep = SURROUND_SEP;
-	else
+		// Produce a surround sound for angle from 105 till 255
+		if (surround.value == 1 && (angle > ANG105 && angle < ANG255 ))
+			*sep = SURROUND_SEP;
+		else
 #endif
-	{
-		angle >>= ANGLETOFINESHIFT;
+		{
+			angle >>= ANGLETOFINESHIFT;
 
-		// stereo separation
-		*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+			// stereo separation
+			*sep = 128 - (FixedMul(S_STEREO_SWING, FINESINE(angle))>>FRACBITS);
+		}
 	}
 
 	// volume calculation
@@ -1290,28 +1321,6 @@ void S_InitSfxChannels(INT32 sfxVolume)
 /// ------------------------
 /// Music
 /// ------------------------
-
-#ifdef MUSICSLOT_COMPATIBILITY
-const char *compat_special_music_slots[16] =
-{
-	"_title", // 1036  title screen
-	"_intro", // 1037  intro
-	"_clear", // 1038  level clear
-	"_inv", // 1039  invincibility
-	"_shoes",  // 1040  super sneakers
-	"_minv", // 1041  Mario invincibility
-	"_drown",  // 1042  drowning
-	"_gover", // 1043  game over
-	"_1up", // 1044  extra life
-	"_conti", // 1045  continue screen
-	"_super", // 1046  Super Sonic
-	"_chsel", // 1047  character select
-	"_creds", // 1048  credits
-	"_inter", // 1049  Race Results
-	"_stjr",   // 1050  Sonic Team Jr. Presents
-	""
-};
-#endif
 
 static char      music_name[7]; // up to 6-character name
 static void      *music_data;
@@ -1580,7 +1589,7 @@ void S_ShowMusicCredit(void)
 		{
 			cursongcredit.def = def;
 			cursongcredit.anim = 5*TICRATE;
-			cursongcredit.x = 0;
+			cursongcredit.x = cursongcredit.old_x =0;
 			cursongcredit.trans = NUMTRANSMAPS;
 			return;
 		}
@@ -2104,6 +2113,15 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 {
 	char newmusic[7];
 
+	struct MusicChange hook_param = {
+		newmusic,
+		&mflags,
+		&looping,
+		&position,
+		&prefadems,
+		&fadeinms
+	};
+
 	if (S_MusicDisabled()
 		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
@@ -2111,7 +2129,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	strncpy(newmusic, mmusic, 7);
 
-	if (LUAh_MusicChange(music_name, newmusic, &mflags, &looping, &position, &prefadems, &fadeinms))
+	if (LUA_HookMusicChange(music_name, &hook_param))
 		return;
 
 	newmusic[6] = 0;
@@ -2351,7 +2369,9 @@ void S_StartEx(boolean reset)
 	S_StopMusic(); // Starting ambience should always be restarted, if playing.
 
 	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-		S_ChangeMusicEx((encoremode ? "estart" : "kstart"), 0, false, mapmusposition, 0, 0);
+	{
+		;
+	}
 	else
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 
@@ -2361,10 +2381,11 @@ void S_StartEx(boolean reset)
 	music_stack_fadein = JINGLEPOSTFADE;
 }
 
+// TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;
-	UINT16 tunenum, track = 0;
+	UINT16 track = 0;
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
 
@@ -2380,7 +2401,6 @@ static void Command_Tunes_f(void)
 	}
 
 	tunearg = COM_Argv(1);
-	tunenum = (UINT16)atoi(tunearg);
 	track = 0;
 
 	if (!strcasecmp(tunearg, "-show"))
@@ -2399,24 +2419,14 @@ static void Command_Tunes_f(void)
 		tunearg = mapheaderinfo[gamemap-1]->musname;
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
-	else if (!tunearg[2] && toupper(tunearg[0]) >= 'A' && toupper(tunearg[0]) <= 'Z')
-		tunenum = (UINT16)M_MapNumber(tunearg[0], tunearg[1]);
 
-	if (tunenum && tunenum >= 1036)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Valid music slots are 1 to 1035.\n"));
-		return;
-	}
-	if (!tunenum && strlen(tunearg) > 6) // This is automatic -- just show the error just in case
+	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
 		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
 
 	if (argc > 2)
 		track = (UINT16)atoi(COM_Argv(2))-1;
 
-	if (tunenum)
-		snprintf(mapmusname, 7, "%sM", G_BuildMapName(tunenum));
-	else
-		strncpy(mapmusname, tunearg, 7);
+	strncpy(mapmusname, tunearg, 7);
 
 	if (argc > 4)
 		position = (UINT32)atoi(COM_Argv(4));
@@ -2461,6 +2471,71 @@ static void Command_RestartAudio_f(void)
 		S_ChangeMusicInternal("titles", looptitle);
 }
 
+static void Command_PlaySound(void)
+{
+	const char *sound;
+	const size_t argc = COM_Argc();
+	sfxenum_t sfx = NUMSFX;
+	UINT8 buf[4];
+	UINT8 *buf_p = buf;
+
+	if (argc < 2)
+	{
+		CONS_Printf("playsound <name/num>: Plays a sound effect for the entire server.\n");
+		return;
+	}
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf("This can only be used by the server host.\n");
+		return;
+	}
+
+	sound = COM_Argv(1);
+	if (*sound >= '0' && *sound <= '9')
+	{
+		sfx = atoi(sound);
+	}
+	else
+	{
+		for (sfx = 0; sfx < sfxfree; sfx++)
+		{
+			if (S_sfx[sfx].name && fasticmp(sound, S_sfx[sfx].name))
+				break;
+		}
+	}
+
+	if (sfx < 0 || sfx >= NUMSFX)
+	{
+		CONS_Printf("Could not find sound effect named \"sfx_%s\".\n", sound);
+		return;
+	}
+
+	WRITEINT32(buf_p, sfx);
+	SendNetXCmd(XD_PLAYSOUND, buf, buf_p - buf);
+}
+
+static void Got_PlaySound(UINT8 **cp, INT32 playernum)
+{
+	INT32 sound_id = READINT32(*cp);
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum)) // hacked client, or disasterous bug
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal playsound received from %s (serverplayer is %s)\n"), player_names[playernum], player_names[serverplayer]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	if (sound_id < 0 || sound_id >= NUMSFX)
+	{
+		// bad sound effect, ignore
+		return;
+	}
+
+	S_StartSound(NULL, sound_id);
+}
+
 void GameSounds_OnChange(void)
 {
 	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
@@ -2497,9 +2572,9 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("_title"))
+		else if (S_MusicExists("menu"))
 		{
-			S_ChangeMusicInternal("_title", looptitle);
+			S_ChangeMusicInternal("menu", looptitle);
 		}
 	}
 	else

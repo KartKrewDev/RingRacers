@@ -16,11 +16,12 @@
 
 #include "console.h"
 #include "command.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "g_game.h"
 #include "hu_stuff.h"
 #include "g_input.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "r_local.h"
 #include "r_skins.h"
 #include "p_local.h"
@@ -56,14 +57,11 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
+#include "k_follower.h"
 #include "doomstat.h"
 #include "deh_tables.h"
-
-#ifdef NETGAME_DEVMODE
-#define CV_RESTRICT CV_NETVAR
-#else
-#define CV_RESTRICT 0
-#endif
+#include "m_perfstats.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -95,11 +93,13 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
 static void NumLaps_OnChange(void);
-static void BaseNumLaps_OnChange(void);
 static void Mute_OnChange(void);
 
 static void AutoBalance_OnChange(void);
@@ -138,16 +138,14 @@ static void Color4_OnChange(void);
 static void DummyConsvar_OnChange(void);
 static void SoundTest_OnChange(void);
 
-static void BaseNumLaps_OnChange(void);
 static void KartFrantic_OnChange(void);
 static void KartSpeed_OnChange(void);
 static void KartEncore_OnChange(void);
 static void KartComeback_OnChange(void);
 static void KartEliminateLast_OnChange(void);
 
-#ifdef NETGAME_DEVMODE
-static void Fishcake_OnChange(void);
-#endif
+static void Schedule_OnChange(void);
+static void LiveStudioAudience_OnChange(void);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -155,6 +153,8 @@ static void Command_Stopdemo_f(void);
 static void Command_StartMovie_f(void);
 static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
+static void Command_RandomMap(void);
+static void Command_RestartLevel(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
@@ -210,7 +210,6 @@ static void Command_ShowScores_f(void);
 static void Command_ShowTime_f(void);
 
 static void Command_Isgamemodified_f(void);
-static void Command_Cheats_f(void);
 #ifdef _DEBUG
 static void Command_Togglemodified_f(void);
 static void Command_Archivetest_f(void);
@@ -218,11 +217,15 @@ static void Command_Archivetest_f(void);
 
 static void Command_KartGiveItem_f(void);
 
+static void Command_Schedule_Add(void);
+static void Command_Schedule_Clear(void);
+static void Command_Schedule_List(void);
+
+static void Command_Automate_Set(void);
+
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
-
-void SendWeaponPref(UINT8 n);
 
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 
@@ -231,29 +234,26 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 	{4, "/dev/js3"}, {0, NULL}};
 #else
 // accept whatever value - it is in fact the joystick device number
-#define usejoystick_cons_t NULL
+static CV_PossibleValue_t usejoystick_cons_t[] = {{-1, "MIN"}, {MAXGAMEPADS, "MAX"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
 static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
 
-static CV_PossibleValue_t sleeping_cons_t[] = {{-1, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t sleeping_cons_t[] = {{0, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
 
 static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}};
 
 consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", 0, CV_OnOff, NULL);
 
-#ifdef NETGAME_DEVMODE
-static consvar_t cv_fishcake = CVAR_INIT ("fishcake", "Off", CV_CALL|CV_NOSHOWHELP|CV_RESTRICT, CV_OnOff, Fishcake_OnChange);
-#endif
 static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
 
 consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
 consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
-static CV_PossibleValue_t ingamecap_cons_t[] = {{0, "MIN"}, {MAXPLAYERS-1, "MAX"}, {0, NULL}};
-consvar_t cv_ingamecap = CVAR_INIT ("ingamecap", "0", CV_NETVAR, ingamecap_cons_t, NULL);
+static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
 
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
 
@@ -301,6 +301,28 @@ consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
 };
 
+// last selected profile, unaccessible cvar only set internally but is saved.
+// It's used to know what profile to autoload you to when you get into the character setup.
+
+static CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
+
+consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("lastprofile", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile2", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile3", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+	CVAR_INIT ("lastprofile4", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
+};
+
+// currently loaded profile for P1 menuing.
+// You choose this profile when starting the game, this will also set lastprofile[0]
+consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofile_cons_t, NULL);
+
+// This one is used exclusively for the titlescreen
+consvar_t cv_ttlprofilen = CVAR_INIT ("ttlprofilen", "0", CV_SAVE, lastprofile_cons_t, NULL);
+
+// Cvar for using splitscreen with 1 device.
+consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, NULL);
+
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
 INT32 cv_debug;
@@ -308,10 +330,10 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
-	CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
-	CVAR_INIT ("use_joystick3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
-	CVAR_INIT ("use_joystick4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
+	CVAR_INIT ("use_device", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
+	CVAR_INIT ("use_device2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
+	CVAR_INIT ("use_device3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
+	CVAR_INIT ("use_device4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
 };
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
@@ -340,51 +362,52 @@ consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
 #endif
 
 // SRB2kart
-consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_sneaker = 				CVAR_INIT ("sneaker", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_rocketsneaker = 		CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_invincibility = 		CVAR_INIT ("invincibility", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_banana = 				CVAR_INIT ("banana", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_eggmanmonitor = 		CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_shrink = 				CVAR_INIT ("shrink", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_thundershield = 		CVAR_INIT ("thundershield", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_bubbleshield = 		CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_flameshield = 			CVAR_INIT ("flameshield", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_hyudoro = 				CVAR_INIT ("hyudoro", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_pogospring = 			CVAR_INIT ("pogospring", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kitchensink = 			CVAR_INIT ("kitchensink", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_sneaker = 				CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_rocketsneaker = 		CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_invincibility = 		CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_banana = 				CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_eggmanmonitor = 		CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_shrink = 				CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_lightningshield = 		CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_bubbleshield = 		CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_flameshield = 			CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_hyudoro = 				CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_pogospring = 			CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_kitchensink = 			CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_triplebanana = 		CVAR_INIT ("triplebanana", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_decabanana = 			CVAR_INIT ("decabanana", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_triplebanana = 		CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_decabanana = 			CVAR_INIT ("decabanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL);
 
 static CV_PossibleValue_t kartminimap_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_kartminimap = CVAR_INIT ("kartminimap", "4", CV_SAVE, kartminimap_cons_t, NULL);
 consvar_t cv_kartcheck = CVAR_INIT ("kartcheck", "Yes", CV_SAVE, CV_YesNo, NULL);
-static CV_PossibleValue_t kartinvinsfx_cons_t[] = {{0, "Music"}, {1, "SFX"}, {0, NULL}};
-consvar_t cv_kartinvinsfx = CVAR_INIT ("kartinvinsfx", "SFX", CV_SAVE, kartinvinsfx_cons_t, NULL);
 consvar_t cv_kartspeed = CVAR_INIT ("kartspeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
-consvar_t cv_kartbumpers = CVAR_INIT ("kartbumpers", "3", CV_NETVAR|CV_CHEAT, kartbumpers_cons_t, NULL);
-consvar_t cv_kartfrantic = CVAR_INIT ("kartfrantic", "Off", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
-consvar_t cv_kartcomeback = CVAR_INIT ("kartcomeback", "On", CV_NETVAR|CV_CHEAT|CV_CALL|CV_NOINIT, CV_OnOff, KartComeback_OnChange);
+consvar_t cv_kartbumpers = CVAR_INIT ("kartbumpers", "3", CV_NETVAR, kartbumpers_cons_t, NULL);
+consvar_t cv_kartfrantic = CVAR_INIT ("kartfrantic", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
+consvar_t cv_kartcomeback = CVAR_INIT ("kartcomeback", "On", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartComeback_OnChange);
 static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
 consvar_t cv_kartencore = CVAR_INIT ("kartencore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
 static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
 consvar_t cv_kartvoterulechanges = CVAR_INIT ("kartvoterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL);
+static CV_PossibleValue_t kartgametypepreference_cons_t[] = {{-1, "None"}, {GT_RACE, "Race"}, {GT_BATTLE, "Battle"}, {0, NULL}};
+consvar_t cv_kartgametypepreference = CVAR_INIT ("kartgametypepreference", "None", CV_NETVAR, kartgametypepreference_cons_t, NULL);
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
-consvar_t cv_kartspeedometer = CVAR_INIT ("kartdisplayspeed", "Off", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
+consvar_t cv_kartspeedometer = CVAR_INIT ("kartdisplayspeed", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
 consvar_t cv_kartvoices = CVAR_INIT ("kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 
@@ -399,13 +422,17 @@ static CV_PossibleValue_t kartbot_cons_t[] = {
 	{7, "Lv.7"},
 	{8, "Lv.8"},
 	{9, "Lv.9"},
+	{10,"Lv.10"},
+	{11,"Lv.11"},
+	{12,"Lv.12"},
+	{13,"Lv.MAX"},
 	{0, NULL}
 };
-consvar_t cv_kartbot = CVAR_INIT ("kartbot", "0", CV_NETVAR|CV_CHEAT, kartbot_cons_t, NULL);
+consvar_t cv_kartbot = CVAR_INIT ("kartbot", "0", CV_NETVAR, kartbot_cons_t, NULL);
 
-consvar_t cv_karteliminatelast = CVAR_INIT ("karteliminatelast", "Yes", CV_NETVAR|CV_CHEAT|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
+consvar_t cv_karteliminatelast = CVAR_INIT ("karteliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
-consvar_t cv_kartusepwrlv = CVAR_INIT ("kartusepwrlv", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
+consvar_t cv_kartusepwrlv = CVAR_INIT ("kartusepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] =
 {
@@ -414,37 +441,30 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 #undef  FOREACH
 	{0}
 };
-consvar_t cv_kartdebugitem = CVAR_INIT ("kartdebugitem", "0", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugitem_cons_t, NULL);
+consvar_t cv_kartdebugitem = CVAR_INIT ("kartdebugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
-consvar_t cv_kartdebugamount = CVAR_INIT ("kartdebugamount", "1", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugamount_cons_t, NULL);
-consvar_t cv_kartallowgiveitem = CVAR_INIT ("kartallowgiveitem",
-#ifdef DEVELOP
-	"Yes",
-#else
-	"No",
-#endif
-	CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_YesNo, NULL
-);
-consvar_t cv_kartdebugshrink = CVAR_INIT ("kartdebugshrink", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
-consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
-consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
-static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
-consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, kartdebugwaypoint_cons_t, NULL);
-consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, CV_OnOff, NULL);
+consvar_t cv_kartdebugamount = CVAR_INIT ("kartdebugamount", "1", CV_NETVAR|CV_CHEAT, kartdebugamount_cons_t, NULL);
 
-consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
-consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
-consvar_t cv_kartdebugcolorize = CVAR_INIT ("kartdebugcolorize", "Off", CV_NOSHOWHELP, CV_OnOff, NULL);
+consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
+consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
+consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+
+consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugcolorize = CVAR_INIT ("kartdebugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugdirector = CVAR_INIT ("kartdebugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
 
-consvar_t cv_gravity = CVAR_INIT ("gravity", "0.8", CV_RESTRICT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
+consvar_t cv_gravity = CVAR_INIT ("gravity", "0.8", CV_CHEAT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
 
 consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", CV_CALL, NULL, SoundTest_OnChange);
 
 static CV_PossibleValue_t minitimelimit_cons_t[] = {{15, "MIN"}, {9999, "MAX"}, {0, NULL}};
-consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "30", CV_NETVAR|CV_CHEAT, minitimelimit_cons_t, NULL);
+consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "30", CV_NETVAR, minitimelimit_cons_t, NULL);
 
 consvar_t cv_autobalance = CVAR_INIT ("autobalance", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, AutoBalance_OnChange);
 consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
@@ -453,7 +473,7 @@ consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", CV_SAVE|CV
 consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
-consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
+consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -461,10 +481,9 @@ static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, 
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
 consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
-static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
-consvar_t cv_numlaps = CVAR_INIT ("numlaps", "3", CV_NETVAR|CV_CALL|CV_NOINIT, numlaps_cons_t, NumLaps_OnChange);
-static CV_PossibleValue_t basenumlaps_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, "Map default"}, {0, NULL}};
-consvar_t cv_basenumlaps = CVAR_INIT ("basenumlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, basenumlaps_cons_t, BaseNumLaps_OnChange);
+
+static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
+consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
 // Point and time limits for every gametype
 INT32 pointlimits[NUMGAMETYPES];
@@ -477,19 +496,22 @@ consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_Y
 
 consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
+consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
 //static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "105", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
-consvar_t cv_maxping = CVAR_INIT ("maxping", "800", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
+consvar_t cv_maxping = CVAR_INIT ("maxdelay", "20", CV_SAVE, CV_Unsigned, NULL);
 
 consvar_t cv_lagless = CVAR_INIT ("lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange);
 
 static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
-consvar_t cv_pingtimeout = CVAR_INIT ("pingtimeout", "10", CV_SAVE|CV_NETVAR, pingtimeout_cons_t, NULL);
+consvar_t cv_pingtimeout = CVAR_INIT ("maxdelaytimeout", "10", CV_SAVE|CV_NETVAR, pingtimeout_cons_t, NULL);
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
 static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
 consvar_t cv_showping = CVAR_INIT ("showping", "Always", CV_SAVE, showping_cons_t, NULL);
+
+static CV_PossibleValue_t pingmeasurement_cons_t[] = {{0, "Frames"}, {1, "Milliseconds"}, {0, NULL}};
+consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Frames", CV_SAVE, pingmeasurement_cons_t, NULL);
 
 consvar_t cv_showviewpointtext = CVAR_INIT ("showviewpointtext", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -508,8 +530,26 @@ consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
-	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};
+	{PS_OFF, "Off"},
+	{PS_RENDER, "Rendering"},
+	{PS_LOGIC, "Logic"},
+	{PS_BOT, "Bots"},
+	{PS_THINKFRAME, "ThinkFrame"},
+	{0, NULL}
+};
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NULL);
+
+consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
+
+consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
+
+consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
+
+#ifdef DEVELOP
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "On", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#else
+consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "Off", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
+#endif
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -526,44 +566,66 @@ UINT8 splitscreen = 0;
 boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 
+// Scheduled commands.
+scheduleTask_t **schedule = NULL;
+size_t schedule_size = 0;
+size_t schedule_len = 0;
+
+// Automation commands
+char *automate_commands[AEV__MAX];
+
+const char *automate_names[AEV__MAX] =
+{
+	"RoundStart", // AEV_ROUNDSTART
+	"IntermissionStart", // AEV_INTERMISSIONSTART
+	"VoteStart" // AEV_VOTESTART
+};
+
+UINT32 livestudioaudience_timer = 90;
+
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
 {
-	"NAMEANDCOLOR",
-	"WEAPONPREF",
-	"KICK",
-	"NETVAR",
-	"SAY",
-	"MAP",
-	"EXITLEVEL",
-	"ADDFILE",
-	"PAUSE",
-	"ADDPLAYER",
-	"TEAMCHANGE",
-	"CLEARSCORES",
-	"VERIFIED",
-	"RANDOMSEED",
-	"RUNSOC",
-	"REQADDFILE",
-	"SETMOTD",
-	"RESPAWN",
-	"DEMOTED",
-	"LUACMD",
-	"LUAVAR",
-	"LUAFILE",
+	"NAMEANDCOLOR", // XD_NAMEANDCOLOR
+	"WEAPONPREF", // XD_WEAPONPREF
+	"KICK", // XD_KICK
+	"NETVAR", // XD_NETVAR
+	"SAY", // XD_SAY
+	"MAP", // XD_MAP
+	"EXITLEVEL", // XD_EXITLEVEL
+	"ADDFILE", // XD_ADDFILE
+	"PAUSE", // XD_PAUSE
+	"ADDPLAYER", // XD_ADDPLAYER
+	"TEAMCHANGE", // XD_TEAMCHANGE
+	"CLEARSCORES", // XD_CLEARSCORES
+	"VERIFIED", // XD_VERIFIED
+	"RANDOMSEED", // XD_RANDOMSEED
+	"RUNSOC", // XD_RUNSOC
+	"REQADDFILE", // XD_REQADDFILE
+	"SETMOTD", // XD_SETMOTD
+	"RESPAWN", // XD_RESPAWN
+	"DEMOTED", // XD_DEMOTED
+	"LUACMD", // XD_LUACMD
+	"LUAVAR", // XD_LUAVAR
+	"LUAFILE", // XD_LUAFILE
 
 	// SRB2Kart
-	"SETUPVOTE",
-	"MODIFYVOTE",
-	"PICKVOTE",
-	"REMOVEPLAYER",
-	"POWERLEVEL",
-	"PARTYINVITE",
-	"ACCEPTPARTYINVITE",
-	"LEAVEPARTY",
-	"CANCELPARTYINVITE",
-	"GIVEITEM",
-	"ADDBOT"
+	"SETUPVOTE", // XD_SETUPVOTE
+	"MODIFYVOTE", // XD_MODIFYVOTE
+	"PICKVOTE", // XD_PICKVOTE
+	"REMOVEPLAYER", // XD_REMOVEPLAYER
+	"POWERLEVEL", // XD_POWERLEVEL
+	"PARTYINVITE", // XD_PARTYINVITE
+	"ACCEPTPARTYINVITE", // XD_ACCEPTPARTYINVITE
+	"LEAVEPARTY", // XD_LEAVEPARTY
+	"CANCELPARTYINVITE", // XD_CANCELPARTYINVITE
+	"GIVEITEM", // XD_GIVEITEM
+	"ADDBOT", // XD_ADDBOT
+	"DISCORD", // XD_DISCORD
+	"PLAYSOUND", // XD_PLAYSOUND
+	"SCHEDULETASK", // XD_SCHEDULETASK
+	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
+	"AUTOMATE" // XD_AUTOMATE
 };
 
 // =========================================================================
@@ -578,16 +640,9 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 void D_RegisterServerCommands(void)
 {
 	INT32 i;
+
 	Forceskin_cons_t[0].value = -1;
 	Forceskin_cons_t[0].strvalue = "Off";
-
-	for (i = 0; i < NUMGAMETYPES; i++)
-	{
-		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = Gametype_Names[i];
-	}
-	gametype_cons_t[NUMGAMETYPES].value = 0;
-	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
 
 	// Set the values to 0/NULL, it will be overwritten later when a skin is assigned to the slot.
 	for (i = 1; i < MAXSKINS; i++)
@@ -595,6 +650,7 @@ void D_RegisterServerCommands(void)
 		Forceskin_cons_t[i].value = 0;
 		Forceskin_cons_t[i].strvalue = NULL;
 	}
+
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
 	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
@@ -618,6 +674,10 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
 
+	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
+	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
+	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
+
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
 	COM_AddCommand("login", Command_Login_f); // useful in dedicated to kick off remote admin
@@ -635,6 +695,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
 	COM_AddCommand("clearscores", Command_Clearscores_f);
 	COM_AddCommand("map", Command_Map_f);
+	COM_AddCommand("randommap", Command_RandomMap);
+	COM_AddCommand("restartlevel", Command_RestartLevel);
 
 	COM_AddCommand("exitgame", Command_ExitGame_f);
 	COM_AddCommand("retry", Command_Retry_f);
@@ -663,7 +725,6 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("isgamemodified", Command_Isgamemodified_f); // test
 	COM_AddCommand("showscores", Command_ShowScores_f);
 	COM_AddCommand("showtime", Command_ShowTime_f);
-	COM_AddCommand("cheats", Command_Cheats_f); // test
 #ifdef _DEBUG
 	COM_AddCommand("togglemodified", Command_Togglemodified_f);
 	COM_AddCommand("archivetest", Command_Archivetest_f);
@@ -672,6 +733,12 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("downloads", Command_Downloads_f);
 
 	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
+
+	COM_AddCommand("schedule_add", Command_Schedule_Add);
+	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
+	COM_AddCommand("schedule_list", Command_Schedule_List);
+
+	COM_AddCommand("automate_set", Command_Automate_Set);
 
 	// for master server connection
 	AddMServCommands();
@@ -683,7 +750,6 @@ void D_RegisterServerCommands(void)
 	// misc
 	CV_RegisterVar(&cv_pointlimit);
 	CV_RegisterVar(&cv_numlaps);
-	CV_RegisterVar(&cv_basenumlaps);
 
 	CV_RegisterVar(&cv_autobalance);
 	CV_RegisterVar(&cv_teamscramble);
@@ -710,38 +776,42 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_allowexitlevel);
 	CV_RegisterVar(&cv_restrictskinchange);
 	CV_RegisterVar(&cv_allowteamchange);
-	CV_RegisterVar(&cv_ingamecap);
+	CV_RegisterVar(&cv_maxplayers);
 	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
-	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_maxconnections);
 	CV_RegisterVar(&cv_joindelay);
-	CV_RegisterVar(&cv_rejointimeout);
 	CV_RegisterVar(&cv_resynchattempts);
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
 	CV_RegisterVar(&cv_httpsource);
-#ifndef NONET
 	CV_RegisterVar(&cv_allownewplayer);
 #ifdef VANILLAJOINNEXTROUND
 	CV_RegisterVar(&cv_joinnextround);
 #endif
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_blamecfail);
-#endif
 
 	COM_AddCommand("ping", Command_Ping_f);
 	CV_RegisterVar(&cv_nettimeout);
 	CV_RegisterVar(&cv_jointimeout);
-
+	CV_RegisterVar(&cv_kicktime);
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
 	CV_RegisterVar(&cv_maxping);
 	CV_RegisterVar(&cv_lagless);
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
+	CV_RegisterVar(&cv_pingmeasurement);
 	CV_RegisterVar(&cv_showviewpointtext);
+
+	CV_RegisterVar(&cv_director);
+
+	CV_RegisterVar(&cv_schedule);
+	CV_RegisterVar(&cv_automate);
+	CV_RegisterVar(&cv_livestudioaudience);
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
@@ -778,10 +848,10 @@ void D_RegisterClientCommands(void)
 		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
 	}
 
-	Followercolor_cons_t[1].value = -1;
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
 	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
 
-	Followercolor_cons_t[0].value = -2;
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
 	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
 
 	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
@@ -864,7 +934,12 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_skin[i]);
 		CV_RegisterVar(&cv_follower[i]);
 		CV_RegisterVar(&cv_followercolor[i]);
+		CV_RegisterVar(&cv_lastprofile[i]);
 	}
+
+	CV_RegisterVar(&cv_currprofile);
+	CV_RegisterVar(&cv_ttlprofilen);
+	CV_RegisterVar(&cv_splitdevice);
 
 	// preferred number of players
 	CV_RegisterVar(&cv_splitplayers);
@@ -873,10 +948,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
-
-#ifdef NETGAME_DEVMODE
-	CV_RegisterVar(&cv_fishcake);
-#endif
+	CV_RegisterVar(&cv_mindelay);
 
 	// HUD
 	CV_RegisterVar(&cv_itemfinder);
@@ -919,7 +991,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_bsaturation);
 	CV_RegisterVar(&cv_msaturation);
 
-	// m_menu.c
+	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
 	CV_RegisterVar(&cv_chatheight);
 	CV_RegisterVar(&cv_chatwidth);
@@ -928,6 +1000,11 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
+
+	CV_RegisterVar(&cv_shoutname);
+	CV_RegisterVar(&cv_shoutcolor);
+	CV_RegisterVar(&cv_autoshout);
+
 	CV_RegisterVar(&cv_songcredits);
 	CV_RegisterVar(&cv_tutorialprompt);
 	CV_RegisterVar(&cv_showfocuslost);
@@ -937,15 +1014,8 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
-		CV_RegisterVar(&cv_turnaxis[i]);
-		CV_RegisterVar(&cv_moveaxis[i]);
-		CV_RegisterVar(&cv_brakeaxis[i]);
-		CV_RegisterVar(&cv_aimaxis[i]);
-		CV_RegisterVar(&cv_lookaxis[i]);
-		CV_RegisterVar(&cv_fireaxis[i]);
-		CV_RegisterVar(&cv_driftaxis[i]);
+		CV_RegisterVar(&cv_shrinkme[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
-		CV_RegisterVar(&cv_digitaldeadzone[i]);
 	}
 
 	// filesrch.c
@@ -982,6 +1052,7 @@ void D_RegisterClientCommands(void)
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
 	CV_RegisterVar(&cv_renderview);
+	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_vhseffect);
 	CV_RegisterVar(&cv_shittyscreen);
 	CV_RegisterVar(&cv_renderer);
@@ -1050,6 +1121,15 @@ void D_RegisterClientCommands(void)
   * \sa CleanupPlayerName, SetPlayerName, Got_NameAndColor
   * \author Graue <graue@oceanbase.org>
   */
+
+static boolean AllowedPlayerNameChar(char ch)
+{
+	if (!isprint(ch) || ch == ';' || ch == '"' || (UINT8)(ch) >= 0x80)
+		return false;
+
+	return true;
+}
+
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 {
 	INT32 ix;
@@ -1071,7 +1151,7 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
 	// Also, anything over 0x80 is disallowed too, since compilers love to
 	// differ on whether they're printable characters or not.
 	for (ix = 0; name[ix] != '\0'; ix++)
-		if (!isprint(name[ix]) || name[ix] == ';' || (UINT8)(name[ix]) >= 0x80)
+		if (!AllowedPlayerNameChar(name[ix]))
 			return false;
 
 	// Check if a player is currently using the name, case-insensitively.
@@ -1116,6 +1196,7 @@ boolean EnsurePlayerNameIsGood(char *name, INT32 playernum)
   * is restored to what it was before.
   *
   * We assume that if playernum is in ::g_localplayers
+  * (unless clientjoin is true, a necessary evil)
   * the console variable ::cv_playername[n] is
   * already set to newname. However, the player name table is assumed to
   * contain the old name.
@@ -1134,6 +1215,10 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 	char *tmpname = NULL;
 	INT32 i;
 	boolean namefailed = true;
+	boolean clientjoin = !!(playernum >= MAXPLAYERS);
+
+	if (clientjoin)
+		playernum -= MAXPLAYERS;
 
 	buf = Z_StrDup(newname);
 
@@ -1157,8 +1242,7 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 
 		do
 		{
-			/* from EnsurePlayerNameIsGood */
-			if (!isprint(*p) || *p == ';' || (UINT8)*p >= 0x80)
+			if (!AllowedPlayerNameChar(*p))
 				break;
 		}
 		while (*++p) ;
@@ -1191,17 +1275,20 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 		}
 
 		// no stealing another player's name
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (!clientjoin)
 		{
-			if (i != playernum && playeringame[i]
-				&& strcasecmp(tmpname, player_names[i]) == 0)
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				break;
+				if (i != playernum && playeringame[i]
+					&& strcasecmp(tmpname, player_names[i]) == 0)
+				{
+					break;
+				}
 			}
-		}
 
-		if (i < MAXPLAYERS)
-			break;
+			if (i < MAXPLAYERS)
+				break;
+		}
 
 		// name is okay then
 		namefailed = false;
@@ -1212,18 +1299,23 @@ void CleanupPlayerName(INT32 playernum, const char *newname)
 
 	// set consvars whether namefailed or not, because even if it succeeded,
 	// spaces may have been removed
-	for (i = 0; i <= splitscreen; i++)
+	if (clientjoin)
+		CV_StealthSet(&cv_playername[playernum], tmpname);
+	else
 	{
-		if (playernum == g_localplayers[i])
+		for (i = 0; i <= splitscreen; i++)
 		{
-			CV_StealthSet(&cv_playername[i], tmpname);
-			break;
+			if (playernum == g_localplayers[i])
+			{
+				CV_StealthSet(&cv_playername[i], tmpname);
+				break;
+			}
 		}
-	}
 
-	if (i > splitscreen)
-	{
-		I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
+		if (i > splitscreen)
+		{
+			I_Assert(((void)"CleanupPlayerName used on non-local player", 0));
+		}
 	}
 
 	Z_Free(buf);
@@ -1263,7 +1355,7 @@ static void SetPlayerName(INT32 playernum, char *newname)
 	{
 		CONS_Printf(M_GetText("Player %d sent a bad name change\n"), playernum+1);
 		if (server && netgame)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 	}
 }
 
@@ -1274,7 +1366,7 @@ UINT8 CanChangeSkin(INT32 playernum)
 		return true;
 
 	// Force skin in effect.
-	if ((cv_forceskin.value != -1) || (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->forcecharacter[0] != '\0'))
+	if (cv_forceskin.value != -1)
 		return false;
 
 	// Can change skin in intermission and whatnot.
@@ -1284,6 +1376,8 @@ UINT8 CanChangeSkin(INT32 playernum)
 	// Server has skin change restrictions.
 	if (cv_restrictskinchange.value)
 	{
+		UINT8 i;
+
 		// Can change skin during initial countdown.
 		if (leveltime < starttime)
 			return true;
@@ -1292,8 +1386,22 @@ UINT8 CanChangeSkin(INT32 playernum)
 		if (players[playernum].spectator)
 			return true;
 
-		return false;
+		// Check for freeeplay
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (i == consoleplayer)
+				continue;
+			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
+				return false;	// Not freeplay!
+		}
+
+		// if we've gotten here, then it's freeplay, and switching anytime is fair game.
+		return true;
 	}
+	// if restrictskinchange is off and we're trying to change skins, don't allow changing skins while moving after the race has started.
+	else if (gamestate == GS_LEVEL && leveltime >= starttime)
+		return (!P_PlayerMoving(playernum));
+
 
 	return true;
 }
@@ -1419,7 +1527,7 @@ static void SendNameAndColor(UINT8 n)
 		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
 
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
-	if (cv_follower[n].value > numfollowers-1 || cv_follower[n].value < -1)
+	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
 		CV_StealthSet(&cv_follower[n], "-1");
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
@@ -1445,12 +1553,13 @@ static void SendNameAndColor(UINT8 n)
 
 		player->skincolor = cv_playercolor[n].value;
 
-		if (player->mo && !player->dye)
-			player->mo->color = player->skincolor;
+		K_KartResetPlayerColor(player);
 
 		// Update follower for local games:
 		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
-			SetFollower(playernum, cv_follower[n].value);
+			K_SetFollowerByNum(playernum, cv_follower[n].value);
+
+		player->followercolor = cv_followercolor[n].value;
 
 		if (metalrecording && n == 0)
 		{ // Starring Metal Sonic as themselves, obviously.
@@ -1506,7 +1615,7 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITESINT8(p, (SINT8)cv_follower[n].value);
-	WRITEUINT16(p, (UINT8)cv_followercolor[n].value);
+	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
@@ -1563,7 +1672,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	demo_extradata[playernum] |= DXD_COLOR;
 
 	// normal player colors
-	if (server && !P_IsLocalPlayer(p))
+	if (server && !P_IsMachineLocalPlayer(p))
 	{
 		boolean kick = false;
 
@@ -1610,7 +1719,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		if (kick)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s (team: %d), color: %d)\n"), player_names[playernum], p->ctfteam, p->skincolor);
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
 	}
@@ -1628,11 +1737,13 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		SetPlayerSkinByNum(playernum, skin);
 
 	// set follower colour:
-	// Don't bother doing garbage and kicking if we receive None, this is both silly and a waste of time, this will be handled properly in P_HandleFollower.
+	// Don't bother doing garbage and kicking if we receive None,
+	// this is both silly and a waste of time,
+	// this will be handled properly in K_HandleFollower.
 	p->followercolor = followercolor;
 
 	// set follower
-	SetFollower(playernum, follower);
+	K_SetFollowerByNum(playernum, follower);
 
 #ifdef HAVE_DISCORDRPC
 	if (playernum == consoleplayer)
@@ -1645,9 +1756,12 @@ void SendWeaponPref(UINT8 n)
 	UINT8 buf[1];
 
 	buf[0] = 0;
-	// Player option cvars that need to be synched go HERE
+
 	if (cv_kickstartaccel[n].value)
 		buf[0] |= 1;
+
+	if (cv_shrinkme[n].value)
+		buf[0] |= 2;
 
 	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
 }
@@ -1656,10 +1770,21 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 {
 	UINT8 prefs = READUINT8(*cp);
 
-	// Player option cvars that need to be synched go HERE
-	players[playernum].pflags &= ~(PF_KICKSTARTACCEL);
+	players[playernum].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
+
 	if (prefs & 1)
 		players[playernum].pflags |= PF_KICKSTARTACCEL;
+
+	if (prefs & 2)
+		players[playernum].pflags |= PF_SHRINKME;
+
+	if (leveltime < 2)
+	{
+		// BAD HACK: No other place I tried to slot this in
+		// made it work for the host when they initally host,
+		// so this will have to do.
+		K_UpdateShrinkCheat(&players[playernum]);
+	}
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
@@ -1701,7 +1826,7 @@ static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal splitscreen invitation received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -1732,7 +1857,7 @@ static void Got_AcceptPartyInvite(UINT8 **cp,INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -1796,7 +1921,7 @@ static void Got_CancelPartyInvite(UINT8 **cp,INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal cancel splitscreen invite received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 	}
 }
 
@@ -1808,7 +1933,7 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal accept splitscreen invite received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -1839,33 +1964,30 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 	}
 }
 
-void D_SendPlayerConfig(void)
+void D_SendPlayerConfig(UINT8 n)
 {
-	UINT8 i;
+	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
 
-	for (i = 0; i <= splitscreen; i++)
+	UINT8 buf[4];
+	UINT8 *p = buf;
+
+	SendNameAndColor(n);
+	SendWeaponPref(n);
+
+	if (pr != NULL)
 	{
-		UINT8 buf[4];
-		UINT8 *p = buf;
-
-		SendNameAndColor(i);
-		SendWeaponPref(i);
-
-		if (i == 0)
-		{
-			// Send it over
-			WRITEUINT16(p, vspowerlevel[PWRLV_RACE]);
-			WRITEUINT16(p, vspowerlevel[PWRLV_BATTLE]);
-		}
-		else
-		{
-			// Splitscreen players have invalid powerlevel
-			WRITEUINT16(p, 0);
-			WRITEUINT16(p, 0);
-		}
-
-		SendNetXCmdForPlayer(i, XD_POWERLEVEL, buf, p-buf);
+		// Send it over
+		WRITEUINT16(p, pr->powerlevels[PWRLV_RACE]);
+		WRITEUINT16(p, pr->powerlevels[PWRLV_BATTLE]);
 	}
+	else
+	{
+		// Guest players have no power level
+		WRITEUINT16(p, 0);
+		WRITEUINT16(p, 0);
+	}
+
+	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
 }
 
 // Only works for displayplayer, sorry!
@@ -2354,10 +2476,12 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	// The supplied data are assumed to be good.
 	I_Assert(delay >= 0 && delay <= 2);
 
+	/*
 	if (mapnum != -1)
 	{
 		CV_SetValue(&cv_nextmap, mapnum);
 	}
+	*/
 
 	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
 	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
@@ -2370,12 +2494,15 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		// Too lazy to change the input value for every instance of this function.......
 		pencoremode = grandprixinfo.encore;
 	}
+	else if (bossinfo.boss == true)
+	{
+		pencoremode = bossinfo.encore;
+	}
 
 	if (delay != 2)
 	{
 		UINT8 flags = 0;
-		const char *mapname = G_BuildMapName(mapnum);
-		I_Assert(W_CheckNumForName(mapname) != LUMPERROR);
+		//I_Assert(W_CheckNumForName(G_BuildMapName(mapnum)) != LUMPERROR);
 		buf_p = buf;
 		if (pencoremode)
 			flags |= 1;
@@ -2390,7 +2517,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
 
-		WRITESTRINGN(buf_p, mapname, MAX_WADPATH);
+		WRITEINT16(buf_p, mapnum);
 	}
 
 	if (delay == 1)
@@ -2418,30 +2545,31 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 
 void D_SetupVote(void)
 {
-	UINT8 buf[6*2]; // five UINT16 maps (at twice the width of a UINT8), and two gametypes
+	UINT8 buf[5*2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
 	INT32 i;
-	UINT8 secondgt = G_SometimesGetDifferentGametype();
-	INT16 votebuffer[3] = {-1,-1,-1};
+	UINT8 gt = (cv_kartgametypepreference.value == -1) ? gametype : cv_kartgametypepreference.value;
+	UINT8 secondgt = G_SometimesGetDifferentGametype(gt);
+	INT16 votebuffer[4] = {-1,-1,-1,0};
 
-	if ((cv_kartencore.value == 1) && (gametyperules & GTR_CIRCUIT))
-		WRITEUINT8(p, (gametype|0x80));
+	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gt] & GTR_CIRCUIT))
+		WRITEUINT8(p, (gt|VOTEMODIFIER_ENCORE));
 	else
-		WRITEUINT8(p, gametype);
+		WRITEUINT8(p, gt);
 	WRITEUINT8(p, secondgt);
-	secondgt &= ~0x80;
+	secondgt &= ~VOTEMODIFIER_ENCORE;
 
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 4; i++)
 	{
 		UINT16 m;
 		if (i == 2) // sometimes a different gametype
-			m = G_RandMap(G_TOLFlag(secondgt), prevmap, false, 0, true, votebuffer);
-		else if (i >= 3) // unknown-random and force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, (i-2), (i < 4), votebuffer);
+			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
+		else if (i >= 3) // unknown-random and formerly force-unknown MAP HELL
+			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, (i-2), (i < 4), votebuffer);
 		else
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, false, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
-			votebuffer[min(i, 2)] = m; // min() is a dumb workaround for gcc 4.4 array-bounds error
+			votebuffer[i] = m;
 		WRITEUINT16(p, m);
 	}
 
@@ -2469,7 +2597,6 @@ void D_PickVote(void)
 	SINT8 templevels[MAXPLAYERS];
 	SINT8 votecompare = -1;
 	UINT8 numvotes = 0, key = 0;
-	boolean force = true;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -2483,8 +2610,6 @@ void D_PickVote(void)
 			numvotes++;
 			if (votecompare == -1)
 				votecompare = votes[i];
-			else if (votes[i] != votecompare)
-				force = false;
 		}
 	}
 
@@ -2493,10 +2618,7 @@ void D_PickVote(void)
 	if (numvotes > 0)
 	{
 		WRITESINT8(p, temppicks[key]);
-		if (force && templevels[key] == 3 && numvotes > 1)
-			WRITESINT8(p, 4);
-		else
-			WRITESINT8(p, templevels[key]);
+		WRITESINT8(p, templevels[key]);
 	}
 	else
 	{
@@ -2558,7 +2680,8 @@ static void Command_Map_f(void)
 	const char *gametypename;
 	boolean newresetplayers;
 
-	boolean mustmodifygame;
+	boolean usingcheats;
+	boolean ischeating;
 
 	INT32 newmapnum;
 
@@ -2567,7 +2690,6 @@ static void Command_Map_f(void)
 
 	INT32 newgametype = gametype;
 	boolean newencoremode = (cv_kartencore.value == 1);
-	boolean startgp = false;
 
 	INT32 d;
 
@@ -2583,20 +2705,8 @@ static void Command_Map_f(void)
 	option_skill    =   COM_CheckPartialParm("-s");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
 
-	mustmodifygame = !(netgame || multiplayer) && !majormods;
-
-	if (mustmodifygame)
-	{
-		/* May want to be more descriptive? */
-		CONS_Printf(M_GetText("Sorry, level change disabled in single player.\n"));
-		return;
-	}
-
-	if (!newresetplayers && !cv_debug)
-	{
-		CONS_Printf(M_GetText("DEVMODE must be enabled.\n"));
-		return;
-	}
+	usingcheats = CV_CheatsEnabled();
+	ischeating = (!(netgame || multiplayer)) || (!newresetplayers);
 
 	if (option_gametype)
 	{
@@ -2639,10 +2749,15 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (mustmodifygame && option_force)
+	if (M_MapLocked(newmapnum))
 	{
-		G_SetGameModified(multiplayer, true);
-		startgp = true;
+		ischeating = true;
+	}
+
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
 	}
 
 	// new gametype value
@@ -2684,88 +2799,39 @@ static void Command_Map_f(void)
 			}
 		}
 	}
+	else if (!Playing())
+	{
+		newresetplayers = true;
+		if (mapheaderinfo[newmapnum-1])
+		{
+			// Let's just guess so we don't have to specify the gametype EVERY time...
+			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & TOL_RACE) ? GT_RACE : GT_BATTLE;
+		}
+	}
 
 	// new encoremode value
 	if (option_encore)
 	{
 		newencoremode = !newencoremode;
 
-		if (!M_SecretUnlocked(SECRET_ENCORE) && newencoremode == true && !option_force)
+		if (!M_SecretUnlocked(SECRET_ENCORE) && newencoremode == true && !usingcheats)
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
 		}
 	}
 
-	if (startgp)
-	{
-		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
-		grandprixinfo.masterbots = false;
-
-		if (option_skill)
-		{
-			const char *masterstr = "Master";
-			const char *skillname = COM_Argv(option_skill + 1);
-			INT32 newskill = -1;
-			INT32 j;
-
-			if (!strcasecmp(masterstr, skillname))
-			{
-				newskill = KARTGP_MASTER;
-			}
-			else
-			{
-				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				{
-					if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
-					{
-						newskill = (INT16)kartspeed_cons_t[j].value;
-						break;
-					}
-				}
-
-				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-				{
-					INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
-					if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
-						newskill = (INT16)num;
-				}
-			}
-
-			if (newskill != -1)
-			{
-				if (newskill == KARTGP_MASTER)
-				{
-					grandprixinfo.gamespeed = KARTSPEED_HARD;
-					grandprixinfo.masterbots = true;
-				}
-				else
-				{
-					grandprixinfo.gamespeed = newskill;
-					grandprixinfo.masterbots = false;
-				}
-			}
-		}
-
-		grandprixinfo.encore = newencoremode;
-
-		grandprixinfo.gp = true;
-		grandprixinfo.roundnum = 0;
-		grandprixinfo.cup = NULL;
-		grandprixinfo.wonround = false;
-
-		grandprixinfo.initalize = true;
-	}
-
-	if (!option_force && newgametype == gametype) // SRB2Kart
+	if (!option_force && newgametype == gametype && Playing()) // SRB2Kart
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
 	if (cv_debug || option_force || cv_skipmapcheck.value)
+	{
 		fromlevelselect = false; // The player wants us to trek on anyway.  Do so.
-	// G_TOLFlag handles both multiplayer gametype and ignores it for !multiplayer
+	}
 	else
 	{
+		// G_TOLFlag handles both multiplayer gametype and ignores it for !multiplayer
 		if (!(
 					mapheaderinfo[newmapnum-1] &&
 					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
@@ -2786,22 +2852,83 @@ static void Command_Map_f(void)
 		}
 	}
 
-	// Prevent warping to locked levels
-	// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-	// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-	// lives hell.
-	if (!dedicated && M_MapLocked(newmapnum))
+	if (!(netgame || multiplayer))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You need to unlock this level before you can warp to it!\n"));
-		Z_Free(realmapname);
-		Z_Free(mapname);
-		return;
+		if (newgametype == GT_BATTLE)
+		{
+			grandprixinfo.gp = false;
+			K_ResetBossInfo();
+
+			if (mapheaderinfo[newmapnum-1] &&
+				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
+			{
+				bossinfo.boss = true;
+				bossinfo.encore = newencoremode;
+			}
+		}
+		else // default GP
+		{
+			grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+			grandprixinfo.masterbots = false;
+
+			if (option_skill)
+			{
+				const char *masterstr = "Master";
+				const char *skillname = COM_Argv(option_skill + 1);
+				INT32 newskill = -1;
+				INT32 j;
+
+				if (!strcasecmp(masterstr, skillname))
+				{
+					newskill = KARTGP_MASTER;
+				}
+				else
+				{
+					for (j = 0; kartspeed_cons_t[j].strvalue; j++)
+					{
+						if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
+						{
+							newskill = (INT16)kartspeed_cons_t[j].value;
+							break;
+						}
+					}
+
+					if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+					{
+						INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+						if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+							newskill = (INT16)num;
+					}
+				}
+
+				if (newskill != -1)
+				{
+					if (newskill == KARTGP_MASTER)
+					{
+						grandprixinfo.gamespeed = KARTSPEED_HARD;
+						grandprixinfo.masterbots = true;
+					}
+					else
+					{
+						grandprixinfo.gamespeed = newskill;
+						grandprixinfo.masterbots = false;
+					}
+				}
+			}
+
+			grandprixinfo.encore = newencoremode;
+
+			grandprixinfo.gp = true;
+			grandprixinfo.roundnum = 0;
+			grandprixinfo.cup = NULL;
+			grandprixinfo.wonround = false;
+
+			bossinfo.boss = false;
+
+			grandprixinfo.initalize = true;
+		}
 	}
 
-	if (tutorialmode && tutorialgcs)
-	{
-		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_full, num_gcl_full); // using gcs_custom as temp storage
-	}
 	tutorialmode = false; // warping takes us out of tutorial mode
 
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);
@@ -2818,11 +2945,11 @@ static void Command_Map_f(void)
   */
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 {
-	char mapname[MAX_WADPATH+1];
 	UINT8 flags;
 	INT32 resetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, FLS;
 	boolean pencoremode;
+	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -2830,7 +2957,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal map change received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -2852,22 +2979,22 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
-	if (!(gametyperules & GTR_CIRCUIT))
+	if (!(gametyperules & GTR_CIRCUIT) && !bossinfo.boss)
 		pencoremode = false;
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
 
 	FLS = ((flags & (1<<3)) != 0);
 
-	READSTRINGN(*cp, mapname, MAX_WADPATH);
+	mapnumber = READINT16(*cp);
 
 	if (netgame)
-		P_SetRandSeed(READUINT32(*cp));
+		P_ClearRandom(READUINT32(*cp));
 
 	if (!skipprecutscene)
 	{
 		DEBFILE(va("Warping to %s [resetplayer=%d lastgametype=%d gametype=%d cpnd=%d]\n",
-			mapname, resetplayer, lastgametype, gametype, chmappending));
+			G_BuildMapName(mapnumber), resetplayer, lastgametype, gametype, chmappending));
 		CON_LogMessage(M_GetText("Speeding off to level...\n"));
 	}
 
@@ -2883,7 +3010,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
 
-	G_InitNew(pencoremode, mapname, resetplayer, skipprecutscene, FLS);
+	G_InitNew(pencoremode, mapnumber, resetplayer, skipprecutscene, FLS);
 	if (demo.playback && !demo.timing)
 		precache = true;
 	if (demo.timing)
@@ -2898,6 +3025,67 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
+}
+
+static void Command_RandomMap(void)
+{
+	INT32 oldmapnum;
+	INT32 newmapnum;
+	INT32 newgametype;
+	boolean newencoremode;
+	boolean newresetplayers;
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	// TODO: Handle singleplayer conditions.
+	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
+
+	if (Playing())
+	{
+		newgametype = gametype;
+		newencoremode = encoremode;
+		newresetplayers = false;
+
+		if (gamestate == GS_LEVEL)
+		{
+			oldmapnum = gamemap-1;
+		}
+		else
+		{
+			oldmapnum = prevmap;
+		}
+	}
+	else
+	{
+		newgametype = cv_dummygametype.value; // Changed from cv_newgametype to match newmenus
+		newencoremode = false;
+		newresetplayers = true;
+		oldmapnum = -1;
+	}
+
+	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
+	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, false);
+}
+
+static void Command_RestartLevel(void)
+{
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("You must be in a game to use this.\n"));
+		return;
+	}
+
+	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
 }
 
 static void Command_Pause(void)
@@ -2924,7 +3112,7 @@ static void Command_Pause(void)
 		}
 		else if (modeattacking)	// in time attack, pausing restarts the map
 		{
-			M_ModeAttackRetry(0);	// directly call from m_menu;
+			//M_ModeAttackRetry(0);	// directly call from m_menu;
 			return;
 		}
 
@@ -2943,7 +3131,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal pause command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3020,7 +3208,7 @@ static void Got_Respawn(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3055,7 +3243,9 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum)
 	if (playernum != serverplayer) // it's not from the server, wtf?
 		return;
 
-	P_SetRandSeed(seed);
+	// Sal: this seems unused, so this is probably fine?
+	// If it needs specific RNG classes, then it should be easy to add.
+	P_ClearRandom(seed);
 }
 
 /** Clears all players' scores in a netgame.
@@ -3090,7 +3280,7 @@ static void Got_Clearscores(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal clear scores command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3326,7 +3516,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		// this should never happen unless the client is hacked/buggy
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 	}
 
 	if (NetPacket.packet.verification) // Special marker that the server sent the request
@@ -3335,7 +3525,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
 			if (server)
-				SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+				SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
 		playernum = NetPacket.packet.playernum;
@@ -3360,13 +3550,13 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
 			if (server)
-				SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+				SendKick(playernum, KICK_MSG_CON_FAIL);
 		}
 		return;
 	}
 
 	// Don't switch team, just go away, please, go awaayyyy, aaauuauugghhhghgh
-	if (!LUAh_TeamSwitch(&players[playernum], NetPacket.packet.newteam, players[playernum].spectator, NetPacket.packet.autobalance, NetPacket.packet.scrambled))
+	if (!LUA_HookTeamSwitch(&players[playernum], NetPacket.packet.newteam, players[playernum].spectator, NetPacket.packet.autobalance, NetPacket.packet.scrambled))
 		return;
 
 	//Make sure that the right team number is sent. Keep in mind that normal clients cannot change to certain teams in certain gametypes.
@@ -3384,7 +3574,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	if (server && ((NetPacket.packet.newteam < 0 || NetPacket.packet.newteam > 3) || error))
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
-		SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		SendKick(playernum, KICK_MSG_CON_FAIL);
 	}
 
 	//Safety first!
@@ -3453,15 +3643,20 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	//reset view if you are changed, or viewing someone who was changed.
-	if (playernum == consoleplayer || displayplayers[0] == playernum)
+	// Reset away view (some code referenced from P_SpectatorJoinGame)
 	{
-		// Call ViewpointSwitch hooks here.
-		// The viewpoint was forcibly changed.
-		if (displayplayers[0] != consoleplayer) // You're already viewing yourself. No big deal.
-			LUAh_ViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		displayplayers[0] = consoleplayer;
+		for (i = 0; i < r_splitscreen; i++)
+		{
+			if (localplayertable[i] == playernum)
+			{
+				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
+				displayplayers[i] = playernum;
+				break;
+			}
+		}
 	}
 
 	/*if (G_GametypeHasTeams())
@@ -3495,6 +3690,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 		if (players[playernum].mo)
 			players[playernum].mo->health = 1;
+
+		K_StripItems(&players[playernum]);
 	}
 
 	K_CheckBumpers(); // SRB2Kart
@@ -3576,7 +3773,10 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
-#ifdef DEVELOP
+#if defined (TESTERS) || defined (HOSTTESTERS)
+	(void)playernum;
+	return false;
+#elif defined (DEVELOP)
 	return playernum != serverplayer;
 #else
 	INT32 i;
@@ -3606,9 +3806,7 @@ void SetAdminPlayer(INT32 playernum)
 
 void ClearAdminPlayers(void)
 {
-	INT32 i;
-	for (i = 0; i < MAXPLAYERS; i++)
-		adminplayers[i] = -1;
+	memset(adminplayers, -1, sizeof(adminplayers));
 }
 
 void RemoveAdminPlayer(INT32 playernum)
@@ -3663,7 +3861,7 @@ static void Got_Verification(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal verification received from %s (serverplayer is %s)\n"), player_names[playernum], player_names[serverplayer]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3713,7 +3911,7 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal demotion received from %s (serverplayer is %s)\n"), player_names[playernum], player_names[serverplayer]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3723,6 +3921,218 @@ static void Got_Removal(UINT8 **cp, INT32 playernum)
 		return;
 
 	CONS_Printf(M_GetText("You are no longer a server administrator.\n"));
+}
+
+void Schedule_Run(void)
+{
+	size_t i;
+
+	if (schedule_len == 0)
+	{
+		// No scheduled tasks to run.
+		return;
+	}
+
+	if (!cv_schedule.value)
+	{
+		// We don't WANT to run tasks.
+		return;
+	}
+
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task == NULL)
+		{
+			// Shouldn't happen.
+			break;
+		}
+
+		if (task->timer > 0)
+		{
+			task->timer--;
+		}
+
+		if (task->timer == 0)
+		{
+			// Reset timer
+			task->timer = task->basetime;
+
+			// Run command for server
+			if (server)
+			{
+				CONS_Printf(
+					"%d seconds elapsed, running \"" "\x82" "%s" "\x80" "\".\n",
+					task->basetime,
+					task->command
+				);
+
+				COM_BufAddText(task->command);
+				COM_BufAddText("\n");
+			}
+		}
+	}
+}
+
+void Schedule_Insert(scheduleTask_t *addTask)
+{
+	if (schedule_len >= schedule_size)
+	{
+		if (schedule_size == 0)
+		{
+			schedule_size = 8;
+		}
+		else
+		{
+			schedule_size *= 2;
+		}
+		
+		schedule = Z_ReallocAlign(
+			(void*) schedule,
+			sizeof(scheduleTask_t*) * schedule_size,
+			PU_STATIC,
+			NULL,
+			sizeof(scheduleTask_t*) * 8
+		);
+	}
+
+	schedule[schedule_len] = addTask;
+	schedule_len++;
+}
+
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command)
+{
+	scheduleTask_t *task = (scheduleTask_t*) Z_CallocAlign(
+		sizeof(scheduleTask_t),
+		PU_STATIC,
+		NULL,
+		sizeof(scheduleTask_t) * 8
+	);
+
+	task->basetime = basetime;
+	task->timer = timeleft;
+	task->command = Z_StrDup(command);
+
+	Schedule_Insert(task);
+}
+
+void Schedule_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		if (task->command)
+			Z_Free(task->command);
+	}
+
+	schedule_len = 0;
+	schedule_size = 0;
+	schedule = NULL;
+}
+
+void Automate_Set(automateEvents_t type, const char *command)
+{
+	if (!server)
+	{
+		// Since there's no list command or anything for this,
+		// we don't need this code to run for anyone but the server.
+		return;
+	}
+
+	if (automate_commands[type] != NULL)
+	{
+		// Free the old command.
+		Z_Free(automate_commands[type]);
+	}
+
+	if (command == NULL || strlen(command) == 0)
+	{
+		// Remove the command.
+		automate_commands[type] = NULL;
+	}
+	else
+	{
+		// New command.
+		automate_commands[type] = Z_StrDup(command);
+	}
+}
+
+void Automate_Run(automateEvents_t type)
+{
+	if (!server)
+	{
+		// Only the server should be doing this.
+		return;
+	}
+
+	if (K_CanChangeRules() == false)
+	{
+		// Don't engage in automation while in a restricted context.
+		return;
+	}
+
+#ifdef PARANOIA
+	if (type >= AEV__MAX)
+	{
+		// Shouldn't happen.
+		I_Error("Attempted to run invalid automation type.");
+		return;
+	}
+#endif
+
+	if (!cv_automate.value)
+	{
+		// We don't want to run automation.
+		return;
+	}
+
+	if (automate_commands[type] == NULL)
+	{
+		// No command to run.
+		return;
+	}
+
+	CONS_Printf(
+		"Running %s automate command \"" "\x82" "%s" "\x80" "\"...\n",
+		automate_names[type],
+		automate_commands[type]
+	);
+
+	COM_BufAddText(automate_commands[type]);
+	COM_BufAddText("\n");
+}
+
+void Automate_Clear(void)
+{
+	size_t i;
+
+	for (i = 0; i < AEV__MAX; i++)
+	{
+		Automate_Set(i, NULL);
+	}
+}
+
+void LiveStudioAudience(void)
+{
+	if (livestudioaudience_timer == 0)
+	{
+		S_StartSound(NULL, sfx_mbv91);
+		livestudioaudience_timer = 90;
+	}
+	else
+	{
+		livestudioaudience_timer--;
+	}
 }
 
 static void Command_MotD_f(void)
@@ -3787,7 +4197,7 @@ static void Got_MotD_f(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal motd change received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		Z_Free(mymotd);
 		return;
 	}
@@ -3843,7 +4253,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal runsoc command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -3880,6 +4290,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
   */
 static void Command_Addfile(void)
 {
+#ifndef TESTERS
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
@@ -4009,6 +4420,7 @@ static void Command_Addfile(void)
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
+#endif/*TESTERS*/
 }
 
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
@@ -4035,7 +4447,7 @@ static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum)
 	if ((playernum != serverplayer && !IsPlayerAdmin(playernum)) || kick)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal addfile command received from %s\n"), player_names[playernum]);
-		SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -4083,7 +4495,7 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal addfile command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -4268,16 +4680,14 @@ static void Command_ListDoomednums_f(void)
 static void Command_Version_f(void)
 {
 #ifdef DEVELOP
-	CONS_Printf("SRB2Kart %s-%s (%s %s)\n", compbranch, comprevision, compdate, comptime);
+	CONS_Printf("Ring Racers %s-%s (%s %s)\n", compbranch, comprevision, compdate, comptime);
 #else
-	CONS_Printf("SRB2Kart %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
+	CONS_Printf("Ring Racers %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
 #endif
 
 	// Base library
 #if defined( HAVE_SDL)
 	CONS_Printf("SDL ");
-#elif defined(_WINDOWS)
-	CONS_Printf("DD ");
 #endif
 
 	// OS
@@ -4313,7 +4723,11 @@ static void Command_Version_f(void)
 #endif
 
 	// DEVELOP build
-#ifdef DEVELOP
+#if defined(TESTERS)
+	CONS_Printf("\x88" "TESTERS " "\x80");
+#elif defined(HOSTTESTERS)
+	CONS_Printf("\x82" "HOSTTESTERS " "\x80");
+#elif defined(DEVELOP)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif
 
@@ -4366,7 +4780,7 @@ static void Command_Playintro_f(void)
   */
 FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
-	LUAh_GameQuit(true);
+	LUA_HookBool(true, HOOK(GameQuit));
 	I_Quit();
 }
 
@@ -4421,24 +4835,6 @@ static void PointLimit_OnChange(void)
 		CONS_Printf(M_GetText("Point limit disabled\n"));
 }
 
-static void NumLaps_OnChange(void)
-{
-	if (K_CanChangeRules() == false)
-	{
-		return;
-	}
-
-	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-	&& (cv_numlaps.value > mapheaderinfo[gamemap - 1]->numlaps))
-	{
-		CV_StealthSetValue(&cv_numlaps, mapheaderinfo[gamemap - 1]->numlaps);
-	}
-
-	// Just don't be verbose
-	if (gametyperules & GTR_CIRCUIT)
-		CONS_Printf(M_GetText("Number of laps set to %d\n"), cv_numlaps.value);
-}
-
 static void NetTimeout_OnChange(void)
 {
 	connectiontimeout = (tic_t)cv_nettimeout.value;
@@ -4470,7 +4866,7 @@ UINT32 timelimitintics = 0;
 static void TimeLimit_OnChange(void)
 {
 	// Don't allow timelimit in Single Player/Co-Op/Race!
-	if (server && Playing() && cv_timelimit.value != 0 && !(gametyperules & GTR_TIMELIMIT))
+	if (server && Playing() && cv_timelimit.value != 0 && (bossinfo.boss || !(gametyperules & GTR_TIMELIMIT)))
 	{
 		CV_SetValue(&cv_timelimit, 0);
 		return;
@@ -4512,6 +4908,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (oldgt && newgt)
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
 	}
+
 	// Only do the following as the server, not as remote admin.
 	// There will always be a server, and this only needs to be done once.
 	if (server && (multiplayer || netgame))
@@ -4525,10 +4922,12 @@ void D_GameTypeChanged(INT32 lastgametype)
 			CV_SetValue(&cv_pointlimit, pointlimits[gametype]);
 		}
 	}
+	/* -- no longer useful
 	else if (!multiplayer && !netgame)
 	{
 		G_SetGametype(GT_RACE);
 	}
+	*/
 
 	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
 	if (server)
@@ -4564,23 +4963,12 @@ void D_GameTypeChanged(INT32 lastgametype)
 
 static void Gravity_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_PANDORA) && !netgame && !cv_debug
-		&& strcmp(cv_gravity.string, cv_gravity.defaultvalue))
+	if (netgame)
 	{
-		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSet(&cv_gravity, cv_gravity.defaultvalue);
+		// TODO: multiplayer support
 		return;
 	}
-#ifndef NETGAME_GRAVITY
-	if(netgame)
-	{
-		CV_StealthSet(&cv_gravity, cv_gravity.defaultvalue);
-		return;
-	}
-#endif
 
-	if (!CV_IsSetToDefault(&cv_gravity))
-		G_SetGameModified(multiplayer, true);
 	gravity = cv_gravity.value;
 }
 
@@ -4799,7 +5187,7 @@ static void Command_Mapmd5_f(void)
 
 static void Command_ExitLevel_f(void)
 {
-	if (!(netgame || multiplayer) && !cv_debug)
+	if (!(netgame || multiplayer) && !CV_CheatsEnabled())
 		CONS_Printf(M_GetText("This only works in a netgame.\n"));
 	else if (!(server || (IsPlayerAdmin(consoleplayer))))
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
@@ -4821,7 +5209,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal exitlevel command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -4832,27 +5220,55 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
 	INT32 i;
 	UINT8 gt, secondgt;
+	INT16 tempvotelevels[4][2];
 
-	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
 	gt = (UINT8)READUINT8(*cp);
 	secondgt = (UINT8)READUINT8(*cp);
 
-	for (i = 0; i < 5; i++)
+	// Strip illegal Encore flag.
+	if ((gt & VOTEMODIFIER_ENCORE)
+		&& !(gametypedefaultrules[(gt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
 	{
-		votelevels[i][0] = (UINT16)READUINT16(*cp);
-		votelevels[i][1] = gt;
-		if (!mapheaderinfo[votelevels[i][0]])
-			P_AllocMapHeader(votelevels[i][0]);
+		gt &= ~VOTEMODIFIER_ENCORE;
 	}
 
-	votelevels[2][1] = secondgt;
+	for (i = 0; i < 4; i++)
+	{
+		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
+		tempvotelevels[i][1] = gt;
+		if (tempvotelevels[i][0] < nummapheaders && mapheaderinfo[tempvotelevels[i][0]])
+			continue;
+
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempvotelevels[i][0], nummapheaders);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempvotelevels[i][0], player_names[playernum]);
+		return;
+	}
+
+	// If third entry has an illelegal Encore flag... (illelegal!?)
+	if ((secondgt & VOTEMODIFIER_ENCORE)
+		&& !(gametypedefaultrules[(secondgt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
+	{
+		secondgt &= ~VOTEMODIFIER_ENCORE;
+		// Apply it to the second entry instead, gametype permitting!
+		if (gametypedefaultrules[gt] & GTR_CIRCUIT)
+		{
+			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
+		}
+	}
+
+	// Finally, set third entry's gametype/Encore status.
+	tempvotelevels[2][1] = secondgt;
+
+	memcpy(votelevels, tempvotelevels, sizeof(votelevels));
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();
@@ -4876,7 +5292,7 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
@@ -4892,7 +5308,7 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 	amt  = READUINT8 (*cp);
 
 	if (
-			( netgame && ! cv_kartallowgiveitem.value ) ||
+			( !CV_CheatsEnabled() ) ||
 			( item < KITEM_SAD || item >= NUMKARTITEMS )
 	)
 	{
@@ -4900,12 +5316,117 @@ static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
 				M_GetText ("Illegal give item received from %s\n"),
 				player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 
+	K_StripItems(&players[playernum]);
+	players[playernum].itemroulette = 0;
+
 	players[playernum].itemtype   = item;
 	players[playernum].itemamount = amt;
+
+	CV_CheaterWarning(
+		playernum,
+			(amt != 1) // FIXME: we should have actual KITEM_ name array
+			? va("kartgiveitem %s %d", cv_kartdebugitem.PossibleValue[item+1].strvalue, amt)
+			: va("kartgiveitem %s", cv_kartdebugitem.PossibleValue[item+1].strvalue)
+	);
+}
+
+static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
+{
+	char command[MAXTEXTCMD];
+	INT16 seconds;
+
+	seconds = READINT16(*cp);
+	READSTRING(*cp, command);
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule task received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Add(seconds, seconds, (const char *)command);
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf(
+			"OK! Running \"" "\x82" "%s" "\x80" "\" every " "\x82" "%d" "\x80" " seconds.\n",
+			command,
+			seconds
+		);
+	}
+}
+
+static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum)
+{
+	(void)cp;
+
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal schedule clear received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Schedule_Clear();
+
+	if (server || consoleplayer == playernum)
+	{
+		CONS_Printf("All scheduled tasks have been cleared.\n");
+	}
+}
+
+static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
+{
+	UINT8 eventID;
+	char command[MAXTEXTCMD];
+
+	eventID = READUINT8(*cp);
+	READSTRING(*cp, command);
+
+	if (
+		(playernum != serverplayer && !IsPlayerAdmin(playernum))
+		|| (eventID >= AEV__MAX)
+	)
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal automate received from %s\n"),
+				player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	Automate_Set(eventID, command);
+
+	if (server || consoleplayer == playernum)
+	{
+		if (command[0] == '\0')
+		{
+			CONS_Printf(
+				"Removed the %s automate command.\n",
+				automate_names[eventID]
+			);
+		}
+		else
+		{
+			CONS_Printf(
+				"Set the %s automate command to \"" "\x82" "%s" "\x80" "\".\n",
+				automate_names[eventID],
+				command
+			);
+		}
+	}
 }
 
 /** Prints the number of displayplayers[0].
@@ -4946,7 +5467,7 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
-	LUAh_GameQuit(false);
+	LUA_HookBool(false, HOOK(GameQuit));
 
 	D_QuitNetGame();
 	CL_Reset();
@@ -4980,9 +5501,9 @@ void Command_Retry_f(void)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
-	else if (grandprixinfo.gp == false)
+	else if (grandprixinfo.gp == false && bossinfo.boss == false)
 	{
-		CONS_Printf(M_GetText("This only works in Grand Prix.\n"));
+		CONS_Printf(M_GetText("This only works in singleplayer games.\n"));
 	}
 	else
 	{
@@ -4990,23 +5511,6 @@ void Command_Retry_f(void)
 		G_SetRetryFlag();
 	}
 }
-
-#ifdef NETGAME_DEVMODE
-// Allow the use of devmode in netgames.
-static void Fishcake_OnChange(void)
-{
-	cv_debug = cv_fishcake.value;
-	// consvar_t's get changed to default when registered
-	// so don't make modifiedgame always on!
-	if (cv_debug)
-	{
-		G_SetGameModified(multiplayer, true);
-	}
-
-	else if (cv_debug != cv_fishcake.value)
-		CV_SetValue(&cv_fishcake, cv_debug);
-}
-#endif
 
 /** Reports to the console whether or not the game has been modified.
   *
@@ -5024,27 +5528,6 @@ static void Command_Isgamemodified_f(void)
 		CONS_Printf("The game has been modified with only minor addons. You can play Record Attack, earn medals and unlock extras.\n");
 	else
 		CONS_Printf("The game has not been modified. You can play Record Attack, earn medals and unlock extras.\n");
-}
-
-static void Command_Cheats_f(void)
-{
-	if (COM_CheckParm("off"))
-	{
-		if (!(server || (IsPlayerAdmin(consoleplayer))))
-			CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
-		else
-			CV_ResetCheatNetVars();
-		return;
-	}
-
-	if (CV_CheatsEnabled())
-	{
-		CONS_Printf(M_GetText("At least one CHEAT-marked variable has been changed -- Cheats are enabled.\n"));
-		if (server || (IsPlayerAdmin(consoleplayer)))
-			CONS_Printf(M_GetText("Type CHEATS OFF to reset all cheat variables to default.\n"));
-	}
-	else
-		CONS_Printf(M_GetText("No CHEAT-marked variables are changed -- Cheats are disabled.\n"));
 }
 
 #ifdef _DEBUG
@@ -5099,8 +5582,6 @@ static void Command_Archivetest_f(void)
 #endif
 
 /** Give yourself an, optional quantity or one of, an item.
-  *
-  * \sa cv_kartallowgiveitem
 */
 static void Command_KartGiveItem_f(void)
 {
@@ -5114,8 +5595,7 @@ static void Command_KartGiveItem_f(void)
 
 	int i;
 
-	/* Allow always in local games. */
-	if (! netgame || cv_kartallowgiveitem.value)
+	if (CV_CheatsEnabled())
 	{
 		ac = COM_Argc();
 		if (ac < 2)
@@ -5167,9 +5647,137 @@ static void Command_KartGiveItem_f(void)
 	}
 	else
 	{
-		CONS_Alert(CONS_NOTICE,
-				"The server does not allow this.\n");
+		CONS_Printf("This cannot be used without cheats enabled.\n");
 	}
+}
+
+static void Command_Schedule_Add(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+	INT16 seconds;
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("schedule <seconds> <...>: runs the specified commands on a recurring timer\n");
+		return;
+	}
+
+	seconds = atoi(COM_Argv(1));
+
+	if (seconds <= 0)
+	{
+		CONS_Printf("Timer must be at least 1 second.\n");
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEINT16(buf_p, seconds);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_SCHEDULETASK, buf, buf_p - buf);
+}
+
+static void Command_Schedule_Clear(void)
+{
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	SendNetXCmd(XD_SCHEDULECLEAR, NULL, 0);
+}
+
+static void Command_Schedule_List(void)
+{
+	size_t i;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		// I set it up in a way that this information could be available
+		// to everyone, but HOSTMOD has it server/admin-only too, so eh?
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		CONS_Printf("No tasks are scheduled.\n");
+		return;
+	}
+
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+
+		CONS_Printf(
+			"In " "\x82" "%d" "\x80" " second%s: " "\x82" "%s" "\x80" "\n",
+			task->timer,
+			(task->timer > 1) ? "s" : "",
+			task->command
+		);
+	}
+}
+
+static void Command_Automate_Set(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t ac;
+
+	const char *event;
+	size_t eventID;
+
+	const char *command;
+
+	if (!(server || IsPlayerAdmin(consoleplayer)))
+	{
+		CONS_Printf("Only the server or a remote admin can use this.\n");
+		return;
+	}
+
+	ac = COM_Argc();
+	if (ac < 3)
+	{
+		CONS_Printf("automate_set <event> <command>: sets the command to run each time a event triggers\n");
+		return;
+	}
+
+	event = COM_Argv(1);
+
+	for (eventID = 0; eventID < AEV__MAX; eventID++)
+	{
+		if (strcasecmp(event, automate_names[eventID]) == 0)
+		{
+			break;
+		}
+	}
+
+	if (eventID == AEV__MAX)
+	{
+		CONS_Printf("Unknown event type \"%s\".\n", event);
+		return;
+	}
+
+	command = COM_Argv(2);
+
+	WRITEUINT8(buf_p, eventID);
+	WRITESTRING(buf_p, command);
+
+	SendNetXCmd(XD_AUTOMATE, buf, buf_p - buf);
 }
 
 /** Makes a change to ::cv_forceskin take effect immediately.
@@ -5243,7 +5851,6 @@ static void Follower_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5263,13 +5870,13 @@ static void Follower_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[0], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[0], str);
+		cv_follower[0].value = num;
 	}
 
 	if (!Playing())
@@ -5297,7 +5904,6 @@ static void Follower2_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5317,13 +5923,13 @@ static void Follower2_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[1], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[1], str);
+		cv_follower[1].value = num;
 	}
 
 	if (!Playing())
@@ -5348,7 +5954,6 @@ static void Follower3_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5368,13 +5973,13 @@ static void Follower3_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[2], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[2], str);
+		cv_follower[2].value = num;
 	}
 
 	if (!Playing())
@@ -5399,7 +6004,6 @@ static void Follower4_OnChange(void)
 {
 	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
 	INT32 num;
-	char set[10];	// This isn't Lua and mixed declarations in the middle of code make caveman compilers scream.
 
 	// there is a slight chance that we will actually use a string instead so...
 	// let's investigate the string...
@@ -5419,13 +6023,13 @@ static void Follower4_OnChange(void)
 			return;
 		}
 
-		num = R_FollowerAvailable(str);
+		num = K_FollowerAvailable(str);
 
 		if (num == -1) // that's an error.
 			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
 
-		sprintf(set, "%d", num);
-		CV_StealthSet(&cv_follower[3], set);	// set it to a number. It's easier for us to send later :)
+		CV_StealthSet(&cv_follower[3], str);
+		cv_follower[3].value = num;
 	}
 
 	if (!Playing())
@@ -5446,7 +6050,7 @@ static void Followercolor4_OnChange(void)
 	}
 }
 
-/** Sends a skin change for the console player, unless that player is moving.
+/** Sends a skin change for the console player, unless that player is moving. Also forces them to spectate if the change is done during gameplay
   * \sa cv_skin, Skin2_OnChange, Color_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5455,7 +6059,7 @@ static void Skin_OnChange(void)
 	if (!Playing())
 		return; // do whatever you want
 
-	if (!(cv_debug || devparm) && !(multiplayer || netgame) // In single player.
+	if (!CV_CheatsEnabled() && !(multiplayer || netgame) // In single player.
 		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
 	{
 		CV_StealthSet(&cv_skin[0], skins[players[consoleplayer].skin].name);
@@ -5472,7 +6076,7 @@ static void Skin_OnChange(void)
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
-  * player is moving.
+  * player is moving. Forces spectate the player if the change is done during gameplay.
   * \sa cv_skin2, Skin_OnChange, Color2_OnChange
   * \author Graue <graue@oceanbase.org>
   */
@@ -5531,7 +6135,7 @@ static void Color_OnChange(void)
 	}
 	else
 	{
-		if (!(cv_debug || devparm) && !(multiplayer || netgame)) // In single player.
+		if (!CV_CheatsEnabled() && !(multiplayer || netgame)) // In single player.
 		{
 			CV_StealthSet(&cv_skin[0], skins[players[consoleplayer].skin].name);
 			return;
@@ -5702,21 +6306,23 @@ static void Command_ShowTime_f(void)
 }
 
 // SRB2Kart: On change messages
-static void BaseNumLaps_OnChange(void)
+static void NumLaps_OnChange(void)
 {
-	if (K_CanChangeRules() == true)
+	if (K_CanChangeRules() == false)
 	{
-		const char *str = va("%d", cv_basenumlaps.value);
+		return;
+	}
 
-		if (cv_basenumlaps.value == 0)
-		{
-			str = "map defaults";
-		}
-
-		CONS_Printf(M_GetText("Number of laps will be changed to %s next round.\n"), str);
+	if (leveltime < starttime)
+	{
+		CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), cv_numlaps.value);
+		numlaps = (UINT8)cv_numlaps.value;
+	}
+	else
+	{
+		CONS_Printf(M_GetText("Number of laps will be set to %d next round.\n"), cv_numlaps.value);
 	}
 }
-
 
 static void KartFrantic_OnChange(void)
 {
@@ -5738,13 +6344,6 @@ static void KartFrantic_OnChange(void)
 
 static void KartSpeed_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_HARDSPEED) && cv_kartspeed.value == KARTSPEED_HARD)
-	{
-		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSet(&cv_kartspeed, cv_kartspeed.defaultvalue);
-		return;
-	}
-
 	if (K_CanChangeRules() == false)
 	{
 		return;
@@ -5799,6 +6398,33 @@ static void KartEliminateLast_OnChange(void)
 	P_CheckRacers();
 }
 
+static void Schedule_OnChange(void)
+{
+	size_t i;
+
+	if (cv_schedule.value)
+	{
+		return;
+	}
+
+	if (schedule_len == 0)
+	{
+		return;
+	}
+
+	// Reset timers when turning off.
+	for (i = 0; i < schedule_len; i++)
+	{
+		scheduleTask_t *task = schedule[i];
+		task->timer = task->basetime;
+	}
+}
+
+static void LiveStudioAudience_OnChange(void)
+{
+	livestudioaudience_timer = 90;
+}
+
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
@@ -5806,7 +6432,7 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 		// protect against hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
 

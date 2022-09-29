@@ -27,7 +27,10 @@ typedef UINT32*(*getnodeconnectioncostsfunc)(void*);
 typedef UINT32(*getnodeheuristicfunc)(void*, void*);
 
 // function pointer for getting if a node is traversable from its base data
-typedef boolean(*getnodetraversablefunc)(void*);
+typedef boolean(*getnodetraversablefunc)(void*, void*);
+
+// function pointer for getting if a node is our pathfinding end point
+typedef boolean(*getpathfindfinishedfunc)(void*, void*);
 
 
 // A pathfindnode contains information about a node from the pathfinding
@@ -58,10 +61,12 @@ typedef struct pathfindsetup_s {
 	size_t nodesarraycapacity;
 	void   *startnodedata;
 	void   *endnodedata;
+	UINT32 endgscore;
 	getconnectednodesfunc getconnectednodes;
 	getnodeconnectioncostsfunc getconnectioncosts;
 	getnodeheuristicfunc getheuristic;
 	getnodetraversablefunc gettraversable;
+	getpathfindfinishedfunc getfinished;
 } pathfindsetup_t;
 
 

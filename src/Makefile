@@ -64,7 +64,6 @@
 #
 # Netplay incompatible
 # --------------------
-# NONET=1 - Disable online capability.
 # NOMD5=1 - Disable MD5 checksum (validation tool).
 # NOPOSTPROCESSING=1 - ?
 # MOBJCONSISTANCY=1 - ??
@@ -193,6 +192,9 @@ nasm_format:=
 # also defines the name as a macro to the compiler.
 passthru_opts:=
 
+# separate suffix with an underscore
+exesuffix:=$(call _,$(EXESUFFIX))
+
 include Makefile.d/platform.mk
 include Makefile.d/features.mk
 include Makefile.d/versions.mk
@@ -208,6 +210,7 @@ objdir:=$(makedir)/objs
 sources+=\
 	$(call List,Sourcefile)\
 	$(call List,blua/Sourcefile)\
+	$(call List,objects/Sourcefile)\
 
 depends:=$(basename $(filter %.c %.s,$(sources)))
 objects:=$(basename $(filter %.c %.s %.nas,$(sources)))
@@ -229,17 +232,22 @@ endif
 objects:=$(addprefix $(objdir)/,$(objects))
 
 ifdef DEBUGMODE
-bin:=../bin/debug
+EXEDIR?=../bin/debug
 else
-bin:=../bin
+EXEDIR?=../bin
 endif
 
-# default EXENAME (usually set by platform)
-EXENAME?=srb2
+# append branch name by default
+ifndef EXENAME
+base:=ringracers
+branch:=$(shell git symbolic-ref -q --short HEAD)
+EXENAME:=$(base)$(call _,$(filter-out master,$(branch)))$(exesuffix)
+endif
+
 DBGNAME?=$(EXENAME).debug
 
-exe:=$(bin)/$(EXENAME)
-dbg:=$(bin)/$(DBGNAME)
+exe:=$(EXEDIR)/$(EXENAME)
+dbg:=$(EXEDIR)/$(DBGNAME)
 
 build_done==== Build is done, look for \
            $(<F) at $(abspath $(<D)) ===

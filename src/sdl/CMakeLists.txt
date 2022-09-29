@@ -79,11 +79,11 @@ if(${SDL2_FOUND})
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Windows)
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2win)
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2kart)
 	elseif(${CMAKE_SYSTEM} MATCHES Linux)
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdlsrb2)
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdlsrb2kart)
 	else()
-		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2)
+		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2kart)
 	endif()
 
 	if(${CMAKE_SYSTEM} MATCHES Darwin)
@@ -122,6 +122,14 @@ if(${SDL2_FOUND})
 				rt
 			)
 		endif()
+	endif()
+
+	if(${CMAKE_SYSTEM} MATCHES Windows AND ${CMAKE_C_COMPILER_ID} MATCHES "GNU" AND ${SRB2_SYSTEM_BITS} EQUAL 32)
+		target_link_libraries(SRB2SDL2 PRIVATE
+			"${CMAKE_CURRENT_SOURCE_DIR}/../../libs/drmingw/lib/win32/libexchndl.a"
+			"${CMAKE_CURRENT_SOURCE_DIR}/../../libs/drmingw/lib/win32/libmgwhelp.a"
+		)
+		target_include_directories(SRB2SDL2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../libs/drmingw/include")
 	endif()
 
 	#target_link_libraries(SRB2SDL2 PRIVATE SRB2Core)
@@ -168,23 +176,8 @@ if(${SDL2_FOUND})
 
 	target_compile_definitions(SRB2SDL2 PRIVATE
 		-DDIRECTFULLSCREEN -DHAVE_SDL
+		-DHAVE_THREADS
 	)
-
-	## strip debug symbols into separate file when using gcc.
-	## to be consistent with Makefile, don't generate for OS X.
-	if((CMAKE_COMPILER_IS_GNUCC) AND NOT (${CMAKE_SYSTEM} MATCHES Darwin))
-		if((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
-			if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-				set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")
-			endif()
-			message(STATUS "Will make separate debug symbols in *.debug")
-			add_custom_command(TARGET SRB2SDL2 POST_BUILD
-				COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
-				COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
-				COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
-			)
-		endif()
-	endif()
 
 	#### Installation ####
 	if(${CMAKE_SYSTEM} MATCHES Darwin)

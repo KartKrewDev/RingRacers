@@ -44,7 +44,7 @@ static char netmask[16] = {0};
 #include <pspthreadman.h>
 PSP_HEAP_SIZE_KB(24*1024);
 PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_USER | PSP_THREAD_ATTR_VFPU);
-PSP_MAIN_THREAD_NAME("SRB2Kart");
+PSP_MAIN_THREAD_NAME("Dr. Robotnik's Ring Racers");
 PSP_MAIN_THREAD_STACK_SIZE_KB(256);
 #endif
 
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 #endif
 #endif
 	// startup SRB2
-	CONS_Printf("%s", M_GetText("Setting up SRB2...\n"));
+	CONS_Printf("%s", M_GetText("Setting up Dr. Robotnik's Ring Racers...\n"));
 	D_SRB2Main();
 	CONS_Printf("%s", M_GetText("Entering main game loop...\n"));
 	// never return

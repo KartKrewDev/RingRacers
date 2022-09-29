@@ -54,17 +54,6 @@ typedef long ssize_t;
 		#define PDWORD_PTR PDWORD
 	#endif
 #endif
-#elif defined (__DJGPP__)
-#define UINT8 unsigned char
-#define SINT8 signed char
-
-#define UINT16 unsigned short int
-#define INT16 signed short int
-
-#define INT32 signed long
-#define UINT32 unsigned long
-#define INT64  signed long long
-#define UINT64 unsigned long long
 #else
 #define __STDC_LIMIT_MACROS
 #include <stdint.h>
@@ -368,6 +357,8 @@ typedef UINT32 tic_t;
 #define UINT2RGBA(a) (UINT32)((a&0xff)<<24)|((a&0xff00)<<8)|((a&0xff0000)>>8)|(((UINT32)a&0xff000000)>>24)
 #endif
 
+#define TOSTR(x) #x
+
 /* preprocessor dumb and needs second macro to expand input */
 #define WSTRING2(s) L ## s
 #define WSTRING(s) WSTRING2 (s)
@@ -402,11 +393,17 @@ unset_bit_array (bitarray_t * const array, const int value)
 	array[value >> 3] &= ~(1<<(value & 7));
 }
 
-#ifdef HAVE_SDL
 typedef UINT64 precise_t;
-#endif
 
 #define intsign(n) \
 	((n) < 0 ? -1 : (n) > 0 ? 1 : 0)
+
+// ISO C forbids function pointer -> void pointer cast but
+// if it's wrapped in a struct, we can take a pointer to
+// that struct and it's fine...
+
+// Cast function pointer to (void*)
+#define FUNCPTRCAST(p) ((union{void(*f)(void);void*v;})\
+		{(void(*)(void))p}).v
 
 #endif //__DOOMTYPE__

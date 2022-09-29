@@ -55,13 +55,6 @@
 #endif
 #endif
 
-#ifdef _WINDOWS
-#define NONET
-#if !defined (HWRENDER) && !defined (NOHW)
-#define HWRENDER
-#endif
-#endif
-
 #ifdef _WIN32
 #define ASMCALL __cdecl
 #else
@@ -100,7 +93,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 
-#if defined (_WIN32) || defined (__DJGPP__)
+#ifdef _WIN32
 #include <io.h>
 #endif
 
@@ -122,11 +115,12 @@ extern char logfilename[1024];
 #endif
 
 /* A mod name to further distinguish versions. */
-#define SRB2APPLICATION "SRB2Kart"
+#define SRB2APPLICATION "RingRacers"
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSIONSTRING "Development EXE"
+#define VERSIONSTRING_RC "Development EXE" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
@@ -145,7 +139,7 @@ extern char logfilename[1024];
 #define VERSIONSTRINGW WSTRING (VERSIONSTRING)
 
 /* A custom URL protocol for server links. */
-#define SERVER_URL_PROTOCOL "srb2kart://"
+#define SERVER_URL_PROTOCOL "ringracers://"
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -161,13 +155,13 @@ extern char logfilename[1024];
 
 // Comment out this line to completely disable update alerts (recommended for testing, but not for release)
 #ifndef BETAVERSION
-#define UPDATE_ALERT
+//#define UPDATE_ALERT
 #endif
 
 // The string used in the alert that pops up in the event of an update being available.
 // Please change to apply to your modification (we don't want everyone asking where your mod is on SRB2.org!).
 #define UPDATE_ALERT_STRING \
-"A new update is available for SRB2Kart.\n"\
+"A new update is available for Ring Racers.\n"\
 "Please visit kartkrew.org to download it.\n"\
 "\n"\
 "You are using version: %s\n"\
@@ -204,8 +198,10 @@ extern char logfilename[1024];
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 #define MAXSPLITSCREENPLAYERS 4 // Max number of players on a single computer
+#define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
-#define MAXSKINS 128
+#define MAXSKINS UINT8_MAX
+#define SKINNAMESIZE 16	// Moved from r_skins.h as including that particular header causes issues later down the line.
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32
@@ -223,6 +219,10 @@ typedef struct skincolor_s
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
 } skincolor_t;
+
+#define FOLLOWERCOLOR_MATCH UINT16_MAX
+#define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 
 typedef enum
 {
@@ -244,7 +244,10 @@ typedef enum
 	SKINCOLOR_PEACH,
 	SKINCOLOR_BROWN,
 	SKINCOLOR_LEATHER,
-	SKINCOLOR_PINK,
+
+	FIRSTRAINBOWCOLOR,
+
+	SKINCOLOR_PINK = FIRSTRAINBOWCOLOR,
 	SKINCOLOR_ROSE,
 	SKINCOLOR_CINNAMON,
 	SKINCOLOR_RUBY,
@@ -394,6 +397,8 @@ typedef enum
 	SKINCOLOR_CHAOSEMERALD6,
 	SKINCOLOR_CHAOSEMERALD7,
 
+	SKINCOLOR_INVINCFLASH,
+
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
 
@@ -437,9 +442,9 @@ enum {
 
 // Name of local directory for config files and savegames
 #if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
-#define DEFAULTDIR ".srb2kart"
+#define DEFAULTDIR ".ringracers"
 #else
-#define DEFAULTDIR "srb2kart"
+#define DEFAULTDIR "ringracers"
 #endif
 
 #include "g_state.h"
@@ -550,6 +555,22 @@ extern boolean capslock;
 // i_system.c, replace getchar() once the keyboard has been appropriated
 INT32 I_GetKey(void);
 
+/* http://www.cse.yorku.ca/~oz/hash.html */
+static inline
+UINT32 quickncasehash (const char *p, size_t n)
+{
+	size_t i = 0;
+	UINT32 x = 5381;
+
+	while (i < n && p[i])
+	{
+		x = (x * 33) ^ tolower(p[i]);
+		i++;
+	}
+
+	return x;
+}
+
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
@@ -597,12 +618,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
 
-///	Allows the use of devmode in multiplayer. AKA "fishcake"
-//#define NETGAME_DEVMODE
-
-///	Allows gravity changes in netgames, no questions asked.
-//#define NETGAME_GRAVITY
-
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
 
@@ -627,10 +642,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Experimental tweaks to analog mode. (Needs a lot of work before it's ready for primetime.)
 //#define REDSANALOG
-
-/// Backwards compatibility with musicslots.
-/// \note	You should leave this enabled unless you're working with a future SRB2 version.
-#define MUSICSLOT_COMPATIBILITY
 
 /// Experimental attempts at preventing MF_PAPERCOLLISION objects from getting stuck in walls.
 //#define PAPER_COLLISIONCORRECTION
@@ -668,13 +679,13 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #define USER_VOLUME_SCALE 2
 #define MAX_VOLUME ( 100 * VOLUME_DIVIDER / USER_VOLUME_SCALE )
 
-#if defined (HAVE_CURL) && ! defined (NONET)
+#ifdef HAVE_CURL
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT
 #endif
 
-#if defined (HAVE_CURL) && ! defined (NONET)
+#ifdef HAVE_CURL
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT

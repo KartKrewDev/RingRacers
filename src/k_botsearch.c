@@ -27,6 +27,7 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "p_slopes.h" // P_GetZAt
+#include "m_perfstats.h"
 
 struct globalsmuggle
 {
@@ -40,6 +41,9 @@ struct globalsmuggle
 	INT64 avoidAvgX[2], avoidAvgY[2];
 	UINT32 avoidObjs[2];
 
+	fixed_t annoyscore;
+	mobj_t *annoymo;
+
 	fixed_t closestlinedist;
 
 	fixed_t eggboxx, eggboxy;
@@ -48,7 +52,7 @@ struct globalsmuggle
 } globalsmuggle;
 
 /*--------------------------------------------------
-	static boolean K_FindEggboxes(mobj_t *thing)
+	static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 
 		Blockmap search function.
 		Increments the random items and egg boxes counters.
@@ -57,27 +61,27 @@ struct globalsmuggle
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindEggboxes(mobj_t *thing)
+static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
 {
 	fixed_t dist;
 
 	if (thing->type != MT_RANDOMITEM && thing->type != MT_EGGMANITEM)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (!thing->health)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	dist = P_AproxDistance(thing->x - globalsmuggle.eggboxx, thing->y - globalsmuggle.eggboxy);
 
 	if (dist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (thing->type == MT_RANDOMITEM)
@@ -89,7 +93,7 @@ static boolean K_FindEggboxes(mobj_t *thing)
 		globalsmuggle.eggboxes++;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -122,7 +126,7 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 		}
 	}
 
-	return (globalsmuggle.randomitems * globalsmuggle.eggboxes);
+	return (globalsmuggle.randomitems * (globalsmuggle.eggboxes + 1));
 }
 
 /*--------------------------------------------------
@@ -162,43 +166,31 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 }
 
 /*--------------------------------------------------
-	static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+	boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 
-		Tells us if a bot will play more careful around
-		this sector. Checks FOFs in the sector, as well.
-
-	Input Arguments:-
-		player - Player to check against.
-		sec - Sector to check against.
-		x - Linedef cross X position, for slopes
-		y - Linedef cross Y position, for slopes
-
-	Return:-
-		true if avoiding this sector, false otherwise.
+		See header file for description.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
+boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t y)
 {
 	const boolean flip = (player->mo->eflags & MFE_VERTICALFLIP);
-	INT32 specialflag = 0;
 	fixed_t highestfloor = INT32_MAX;
 	sector_t *bestsector = NULL;
 	ffloor_t *rover;
 
+	// TODO: Properly support SF_FLIPSPECIAL_FLOOR / SF_FLIPSPECIAL_CEILING.
+	// An earlier attempt at it caused lots of false positives and other weird
+	// quirks with intangible FOFs.
+
 	if (flip == true)
 	{
-		specialflag = SF_FLIPSPECIAL_CEILING;
 		highestfloor = P_GetZAt(sec->c_slope, x, y, sec->ceilingheight);
 	}
 	else
 	{
-		specialflag = SF_FLIPSPECIAL_FLOOR;
 		highestfloor = P_GetZAt(sec->f_slope, x, y, sec->floorheight);
 	}
 
-	if (sec->flags & specialflag)
-	{
-		bestsector = sec;
-	}
+	bestsector = sec;
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
@@ -216,15 +208,13 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 		if (!(rover->flags & FF_BLOCKPLAYER))
 		{
 			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
-			&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
+				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
 			{
 				// Bad intangible sector at our height, so we DEFINITELY want to avoid
 				return true;
 			}
-		}
 
-		if ((rover->flags & FF_BLOCKPLAYER) && !(rover->master->frontsector->flags & specialflag))
-		{
+			// Ignore them, we want the one below it.
 			continue;
 		}
 
@@ -232,7 +222,7 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 		if (flip == true)
 		{
 			if (bottom < highestfloor
-			&& bottom >= player->mo->z + player->mo->height)
+				&& bottom >= player->mo->z + player->mo->height)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = bottom;
@@ -241,7 +231,7 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 		else
 		{
 			if (top > highestfloor
-			&& top <= player->mo->z)
+				&& top <= player->mo->z)
 			{
 				bestsector = rover->master->frontsector;
 				highestfloor = top;
@@ -255,171 +245,6 @@ static boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, 
 	}
 
 	return K_BotHatesThisSectorsSpecial(player, bestsector);
-}
-
-/*--------------------------------------------------
-	static boolean K_FindBlockingWalls(line_t *line)
-
-		Blockmap search function.
-		Reels the bot prediction back in based on solid walls
-		or other obstacles surrounding the bot.
-
-	Input Arguments:-
-		line - Linedef passed in from iteration.
-
-	Return:-
-		true continues searching, false ends the search early.
---------------------------------------------------*/
-static boolean K_FindBlockingWalls(line_t *line)
-{
-	// Condensed version of PIT_CheckLine
-	const fixed_t maxstepmove = FixedMul(MAXSTEPMOVE, mapobjectscale);
-	fixed_t maxstep = maxstepmove;
-	fixed_t linedist = INT32_MAX;
-	INT32 lineside = 0;
-	vertex_t pos;
-
-	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
-	{
-		return false;
-	}
-
-	if (line->polyobj && !(line->polyobj->flags & POF_SOLID))
-	{
-		return true;
-	}
-
-	if (tmbbox[BOXRIGHT] <= line->bbox[BOXLEFT] || tmbbox[BOXLEFT] >= line->bbox[BOXRIGHT]
-		|| tmbbox[BOXTOP] <= line->bbox[BOXBOTTOM] || tmbbox[BOXBOTTOM] >= line->bbox[BOXTOP])
-	{
-		return true;
-	}
-
-	if (P_BoxOnLineSide(tmbbox, line) != -1)
-	{
-		return true;
-	}
-
-	lineside = P_PointOnLineSide(globalsmuggle.botmo->x, globalsmuggle.botmo->y, line);
-
-	// one sided line
-	if (!line->backsector)
-	{
-		if (lineside)
-		{
-			// don't hit the back side
-			return true;
-		}
-
-		goto blocked;
-	}
-
-	if ((line->flags & ML_IMPASSABLE) || (line->flags & ML_BLOCKPLAYERS))
-	{
-		goto blocked;
-	}
-
-	// set openrange, opentop, openbottom
-	P_LineOpening(line, globalsmuggle.botmo);
-
-	if (globalsmuggle.botmo->player->waterskip)
-		maxstep += maxstepmove;
-
-	if (P_MobjTouchingSectorSpecial(globalsmuggle.botmo, 1, 13, false))
-		maxstep <<= 1;
-	else if (P_MobjTouchingSectorSpecial(globalsmuggle.botmo, 1, 12, false))
-		maxstep = 0;
-
-	if ((openrange < globalsmuggle.botmo->height) // doesn't fit
-		|| (opentop - globalsmuggle.botmo->z < globalsmuggle.botmo->height) // mobj is too high
-		|| (openbottom - globalsmuggle.botmo->z > maxstep)) // too big a step up
-	{
-		goto blocked;
-	}
-
-	// Treat damage sectors like walls
-	P_ClosestPointOnLine(globalsmuggle.botmo->x, globalsmuggle.botmo->y, line, &pos);
-
-	if (lineside)
-	{
-		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->frontsector, pos.x, pos.y))
-			goto blocked;
-	}
-	else
-	{
-		if (K_BotHatesThisSector(globalsmuggle.botmo->player, line->backsector, pos.x, pos.y))
-			goto blocked;
-	}
-
-	// We weren't blocked!
-	return true;
-
-blocked:
-	linedist = K_DistanceOfLineFromPoint(line->v1->x, line->v1->y, line->v2->x, line->v2->y, globalsmuggle.botmo->x, globalsmuggle.botmo->y);
-	linedist -= (globalsmuggle.botmo->radius * 8); // Maintain a reasonable distance away from it
-
-	if (linedist > globalsmuggle.distancetocheck)
-	{
-		return true;
-	}
-
-	if (linedist <= 0)
-	{
-		globalsmuggle.closestlinedist = 0;
-		return false;
-	}
-
-	if (linedist < globalsmuggle.closestlinedist)
-	{
-		globalsmuggle.closestlinedist = linedist;
-	}
-
-	return true;
-}
-
-/*--------------------------------------------------
-	fixed_t K_BotReducePrediction(player_t *player)
-
-		See header file for description.
---------------------------------------------------*/
-fixed_t K_BotReducePrediction(player_t *player)
-{
-	INT32 xl, xh, yl, yh, bx, by;
-
-	globalsmuggle.botmo = player->mo;
-	globalsmuggle.distancetocheck = (player->mo->radius * 32);
-	globalsmuggle.closestlinedist = INT32_MAX;
-
-	tmx = player->mo->x;
-	tmy = player->mo->y;
-
-	xl = (unsigned)(tmx - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(tmx + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(tmy - globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(tmy + globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
-
-	BMBOUNDFIX(xl, xh, yl, yh);
-
-	tmbbox[BOXTOP] = tmy + globalsmuggle.distancetocheck;
-	tmbbox[BOXBOTTOM] = tmy - globalsmuggle.distancetocheck;
-	tmbbox[BOXRIGHT] = tmx + globalsmuggle.distancetocheck;
-	tmbbox[BOXLEFT] = tmx - globalsmuggle.distancetocheck;
-
-	// Check for lines that the bot might collide with
-	for (bx = xl; bx <= xh; bx++)
-	{
-		for (by = yl; by <= yh; by++)
-		{
-			P_BlockLinesIterator(bx, by, K_FindBlockingWalls);
-		}
-	}
-
-	if (globalsmuggle.closestlinedist == INT32_MAX)
-	{
-		return FRACUNIT;
-	}
-
-	return (FRACUNIT/2) + (FixedDiv(globalsmuggle.closestlinedist, globalsmuggle.distancetocheck) / 2);
 }
 
 /*--------------------------------------------------
@@ -519,7 +344,7 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 }
 
 /*--------------------------------------------------
-	static boolean K_FindObjectsForNudging(mobj_t *thing)
+	static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 		Blockmap search function.
 		Finds objects around the bot to steer towards/away from.
@@ -528,9 +353,9 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 		thing - Object passed in from iteration.
 
 	Return:-
-		true continues searching, false ends the search early.
+		BlockItReturn_t enum, see its definition for more information.
 --------------------------------------------------*/
-static boolean K_FindObjectsForNudging(mobj_t *thing)
+static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
 	INT16 anglediff;
 	fixed_t fulldist;
@@ -539,29 +364,29 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 
 	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
 	{
-		return false;
+		return BMIT_ABORT;
 	}
 
 	if (thing->health <= 0)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (globalsmuggle.botmo == thing)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
 
 	if (fulldist > globalsmuggle.distancetocheck)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
 	{
-		return true;
+		return BMIT_CONTINUE;
 	}
 
 	predictangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.predict->x, globalsmuggle.predict->y);
@@ -588,15 +413,26 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
 		case MT_JAWZ:
-		case MT_JAWZ_DUD:
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE:
 		case MT_SSMINE_SHIELD:
 		case MT_LANDMINE:
+		case MT_DROPTARGET:
+		case MT_DROPTARGET_SHIELD:
 		case MT_BALLHOG:
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
 			K_AddDodgeObject(thing, side, 20);
+			break;
+		case MT_SHRINK_GUN:
+			if (thing->target == globalsmuggle.botmo)
+			{
+				K_AddAttackObject(thing, side, 20);
+			}
+			else
+			{
+				K_AddDodgeObject(thing, side, 20);
+			}
 			break;
 		case MT_RANDOMITEM:
 			if (anglediff >= 45)
@@ -651,7 +487,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			if ((RINGTOTAL(globalsmuggle.botmo->player) < 20 && !(globalsmuggle.botmo->player->pflags & PF_RINGLOCK)
 				&& P_CanPickupItem(globalsmuggle.botmo->player, 0))
 				&& !thing->extravalue1
-				&& (globalsmuggle.botmo->player->itemtype != KITEM_THUNDERSHIELD))
+				&& (globalsmuggle.botmo->player->itemtype != KITEM_LIGHTNINGSHIELD))
 			{
 				K_AddAttackObject(thing, side, (RINGTOTAL(globalsmuggle.botmo->player) < 3) ? 5 : 1);
 			}
@@ -664,8 +500,8 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				// There REALLY ought to be a better way to handle this logic, right?!
 				// Squishing
 				if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->scale > thing->scale + (mapobjectscale/8),
-					thing->scale > globalsmuggle.botmo->scale + (mapobjectscale/8)
+					K_IsBigger(globalsmuggle.botmo, thing),
+					K_IsBigger(thing, globalsmuggle.botmo)
 				))
 				{
 					break;
@@ -678,10 +514,10 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 				{
 					break;
 				}
-				// Thunder Shield
+				// Lightning Shield
 				else if (K_PlayerAttackSteer(thing, side, 20,
-					globalsmuggle.botmo->player->itemtype == KITEM_THUNDERSHIELD,
-					thing->player->itemtype == KITEM_THUNDERSHIELD
+					globalsmuggle.botmo->player->itemtype == KITEM_LIGHTNINGSHIELD,
+					thing->player->itemtype == KITEM_LIGHTNINGSHIELD
 				))
 				{
 					break;
@@ -777,7 +613,7 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 			break;
 	}
 
-	return true;
+	return BMIT_CONTINUE;
 }
 
 /*--------------------------------------------------
@@ -787,6 +623,8 @@ static boolean K_FindObjectsForNudging(mobj_t *thing)
 --------------------------------------------------*/
 void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 {
+	const precise_t time = I_GetPreciseTime();
+
 	INT32 xl, xh, yl, yh, bx, by;
 
 	fixed_t distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
@@ -794,7 +632,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	fixed_t avgX = 0, avgY = 0;
 	fixed_t avgDist = 0;
 
-	const fixed_t baseNudge = 128 * mapobjectscale;
+	const fixed_t baseNudge = predict->radius;
 	fixed_t maxNudge = distToPredict;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
@@ -901,7 +739,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	// Check if our side is invalid, if so, don't do the code below.
 	if (gotoSide != -1 && globalsmuggle.gotoObjs[gotoSide] == 0)
 	{
-		// Do not use a side 
+		// Do not use a side
 		gotoSide = -1;
 	}
 
@@ -943,4 +781,154 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
 	}
+
+	ps_bots[player - players].nudge += I_GetPreciseTime() - time;
+}
+
+/*--------------------------------------------------
+	static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
+
+		Blockmap search function.
+		Finds players around the bot to bump.
+
+	Input Arguments:-
+		thing - Object passed in from iteration.
+
+	Return:-
+		BlockItReturn_t enum, see its definition for more information.
+--------------------------------------------------*/
+static BlockItReturn_t K_FindPlayersToBully(mobj_t *thing)
+{
+	INT16 anglediff;
+	fixed_t fulldist;
+	fixed_t ourweight, theirweight, weightdiff;
+	angle_t ourangle, destangle, angle;
+
+	if (!globalsmuggle.botmo || P_MobjWasRemoved(globalsmuggle.botmo) || !globalsmuggle.botmo->player)
+	{
+		return BMIT_ABORT;
+	}
+
+	if (thing->health <= 0)
+	{
+		return BMIT_CONTINUE;
+	}
+
+	if (!thing->player)
+	{
+		return BMIT_CONTINUE;
+	}
+
+	if (globalsmuggle.botmo == thing)
+	{
+		return BMIT_CONTINUE;
+	}
+
+	fulldist = R_PointToDist2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y) - thing->radius;
+
+	if (fulldist > globalsmuggle.distancetocheck)
+	{
+		return BMIT_CONTINUE;
+	}
+
+	if (P_CheckSight(globalsmuggle.botmo, thing) == false)
+	{
+		return BMIT_CONTINUE;
+	}
+
+	ourangle = globalsmuggle.botmo->angle;
+	destangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, thing->x, thing->y);
+	angle = (ourangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	anglediff = abs(anglediff);
+
+	ourweight = K_GetMobjWeight(globalsmuggle.botmo, thing);
+	theirweight = K_GetMobjWeight(thing, globalsmuggle.botmo);
+	weightdiff = 0;
+
+	if (anglediff >= 90)
+	{
+		weightdiff = theirweight - ourweight;
+	}
+	else
+	{
+		weightdiff = ourweight - theirweight;
+	}
+
+	if (weightdiff > mapobjectscale && weightdiff > globalsmuggle.annoyscore)
+	{
+		globalsmuggle.annoyscore = weightdiff;
+		globalsmuggle.annoymo = thing;
+	}
+
+	return BMIT_CONTINUE;
+}
+
+/*--------------------------------------------------
+	INT32 K_PositionBully(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+INT32 K_PositionBully(player_t *player)
+{
+	INT32 xl, xh, yl, yh, bx, by;
+
+	angle_t ourangle, destangle, angle;
+	INT16 anglediff;
+
+	globalsmuggle.botmo = player->mo;
+	globalsmuggle.distancetocheck = 1024*player->mo->scale;
+
+	globalsmuggle.annoymo = NULL;
+	globalsmuggle.annoyscore = 0;
+
+	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(globalsmuggle.botmo->y - globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(globalsmuggle.botmo->y + globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+
+	BMBOUNDFIX(xl, xh, yl, yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
+		{
+			P_BlockThingsIterator(bx, by, K_FindPlayersToBully);
+		}
+	}
+
+	if (globalsmuggle.annoymo == NULL)
+	{
+		return INT32_MAX;
+	}
+
+	ourangle = globalsmuggle.botmo->angle;
+	destangle = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, globalsmuggle.annoymo->x, globalsmuggle.annoymo->y);
+	angle = (ourangle - destangle);
+
+	if (angle < ANGLE_180)
+	{
+		anglediff = AngleFixed(angle)>>FRACBITS;
+	}
+	else 
+	{
+		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+	}
+
+	if (anglediff < 30)
+		return 0;
+
+	if (anglediff < 0)
+		return -KART_FULLTURN;
+
+	return KART_FULLTURN;
 }

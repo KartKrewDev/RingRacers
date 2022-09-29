@@ -155,9 +155,9 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 //#define DEFAULTSEARCHPATH3 "/pc/home/alam/srb2code/data"
 #elif defined (GP2X)
 #define DEFAULTWADLOCATION1 "/mnt/sd"
-#define DEFAULTWADLOCATION2 "/mnt/sd/SRB2Kart"
+#define DEFAULTWADLOCATION2 "/mnt/sd/RingRacers"
 #define DEFAULTWADLOCATION3 "/tmp/mnt/sd"
-#define DEFAULTWADLOCATION4 "/tmp/mnt/sd/SRB2Kart"
+#define DEFAULTWADLOCATION4 "/tmp/mnt/sd/RingRacers"
 #define DEFAULTSEARCHPATH1 "/mnt/sd"
 #define DEFAULTSEARCHPATH2 "/tmp/mnt/sd"
 #elif defined (_WII)
@@ -184,10 +184,10 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 #define DEFAULTSEARCHPATH1 "host0:/"
 #define DEFAULTSEARCHPATH2 "ms0:/PSP/GAME/SRB2PSP"
 #elif defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define DEFAULTWADLOCATION1 "/usr/local/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION2 "/usr/local/games/SRB2Kart"
-#define DEFAULTWADLOCATION3 "/usr/share/games/SRB2Kart"
-#define DEFAULTWADLOCATION4 "/usr/games/SRB2Kart"
+#define DEFAULTWADLOCATION1 "/usr/local/share/games/RingRacers"
+#define DEFAULTWADLOCATION2 "/usr/local/games/RingRacers"
+#define DEFAULTWADLOCATION3 "/usr/share/games/RingRacers"
+#define DEFAULTWADLOCATION4 "/usr/games/RingRacers"
 #define DEFAULTSEARCHPATH1 "/usr/local/games"
 #define DEFAULTSEARCHPATH2 "/usr/games"
 #define DEFAULTSEARCHPATH3 "/usr/local"
@@ -196,21 +196,21 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 #ifdef __GNUC__
 #include <openxdk/debug.h>
 #endif
-#define DEFAULTWADLOCATION1 "c:\\srb2kart"
-#define DEFAULTWADLOCATION2 "d:\\srb2kart"
-#define DEFAULTWADLOCATION3 "e:\\srb2kart"
-#define DEFAULTWADLOCATION4 "f:\\srb2kart"
-#define DEFAULTWADLOCATION5 "g:\\srb2kart"
-#define DEFAULTWADLOCATION6 "h:\\srb2kart"
-#define DEFAULTWADLOCATION7 "i:\\srb2kart"
+#define DEFAULTWADLOCATION1 "c:\\ringracers"
+#define DEFAULTWADLOCATION2 "d:\\ringracers"
+#define DEFAULTWADLOCATION3 "e:\\ringracers"
+#define DEFAULTWADLOCATION4 "f:\\ringracers"
+#define DEFAULTWADLOCATION5 "g:\\ringracers"
+#define DEFAULTWADLOCATION6 "h:\\ringracers"
+#define DEFAULTWADLOCATION7 "i:\\ringracers"
 #elif defined (_WIN32_WCE)
 #define NOCWD
 #define NOHOME
-#define DEFAULTWADLOCATION1 "\\Storage Card\\SRB2Kart"
+#define DEFAULTWADLOCATION1 "\\Storage Card\\RingRacers"
 #define DEFAULTSEARCHPATH1 "\\Storage Card"
 #elif defined (_WIN32)
-#define DEFAULTWADLOCATION1 "c:\\games\\srb2kart"
-#define DEFAULTWADLOCATION2 "\\games\\srb2kart"
+#define DEFAULTWADLOCATION1 "c:\\games\\ringracers"
+#define DEFAULTWADLOCATION2 "\\games\\ringracers"
 #define DEFAULTSEARCHPATH1 "c:\\games"
 #define DEFAULTSEARCHPATH2 "\\games"
 #endif
@@ -701,7 +701,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2Kart Console");
+		SetConsoleTitleA("Dr. Robotnik's Ring Racers Console");
 		consolevent = SDL_TRUE;
 	}
 
@@ -2333,8 +2333,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2Kart "VERSIONSTRING, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 Kart with integrated Mumble Link support.", 2048);
+		wcsncpy(mumble->name, L"Dr. Robotnik's Ring Racers "VERSIONSTRING, 256);
+		wcsncpy(mumble->description, L"Dr. Robotnik's Ring Racers with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;
@@ -2905,7 +2905,7 @@ void I_StartupTimer(void)
 	I_AddExitFunc(I_ShutdownTimer);
 #elif 0 //#elif !defined (_arch_dreamcast) && !defined(GP2X) // the DC have it own timer and GP2X have broken pthreads?
 	if (SDL_InitSubSystem(SDL_INIT_TIMER) < 0)
-		I_Error("SRB2: Needs SDL_Timer, Error: %s", SDL_GetError());
+		I_Error("Dr. Robotnik's Ring Racers: Needs SDL_Timer, Error: %s", SDL_GetError());
 #endif
 }
 
@@ -2925,13 +2925,13 @@ INT32 I_StartupSystem(void)
 	const SDL_version *SDLlinked;
 #ifdef _XBOX
 #ifdef __GNUC__
-	char DP[] ="      Sonic Robo Blast 2!\n";
+	char DP[] ="      Dr. Robotnik's Ring Racers!\n";
 	debugPrint(DP);
 #endif
-	unlink("e:/Games/SRB2/stdout.txt");
-	freopen("e:/Games/SRB2/stdout.txt", "w+", stdout);
-	unlink("e:/Games/SRB2/stderr.txt");
-	freopen("e:/Games/SRB2/stderr.txt", "w+", stderr);
+	unlink("e:/Games/RingRacers/stdout.txt");
+	freopen("e:/Games/RingRacers/stdout.txt", "w+", stdout);
+	unlink("e:/Games/RingRacers/stderr.txt");
+	freopen("e:/Games/RingRacers/stderr.txt", "w+", stderr);
 #endif
 #ifdef _arch_dreamcast
 #ifdef _DEBUG
@@ -2954,7 +2954,7 @@ INT32 I_StartupSystem(void)
 #else
 	if (SDL_Init(SDL_INIT_NOPARACHUTE) < 0)
 #endif
-		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
+		I_Error("Dr. Robotnik's Ring Racers: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
 	I_SetupMumble();
 #endif
@@ -3106,7 +3106,7 @@ void I_Error(const char *error, ...)
 			}
 #endif
 			OutputDebugStringA(buffer);
-			MessageBoxA(vid.WndParent, buffer, "SRB2 Recursive Error", MB_OK|MB_ICONERROR);
+			MessageBoxA(vid.WndParent, buffer, "Dr. Robotnik's Ring Racers Recursive Error", MB_OK|MB_ICONERROR);
 #else
 			// Don't print garbage
 			va_start(argptr, error);

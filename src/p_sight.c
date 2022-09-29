@@ -18,6 +18,9 @@
 #include "r_main.h"
 #include "r_state.h"
 
+#include "k_bot.h" // K_BotHatesThisSector
+#include "k_kart.h" // K_TripwirePass
+
 //
 // P_CheckSight
 //
@@ -513,6 +516,7 @@ typedef struct {
 	divline_t strace; // from t1 to t2
 	fixed_t bbox[4];
 	mobj_t *compareThing;
+	boolean alreadyHates;
 } traceblocking_t;
 
 static boolean P_CrossBlockingSubsector(size_t num, register traceblocking_t *tb)
@@ -572,8 +576,17 @@ static boolean P_CrossBlockingSubsector(size_t num, register traceblocking_t *tb
 
 		if (P_IsLineBlocking(line, tb->compareThing) == true)
 		{
-			// This line will block us
+			// This line will always block us
 			return false;
+		}
+
+		if (tb->compareThing->player != NULL)
+		{
+			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
+			{
+				// Can't go through trip wire.
+				return false;
+			}
 		}
 	}
 
@@ -652,7 +665,206 @@ boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2)
 		tb.bbox[BOXTOP] = t2->y, tb.bbox[BOXBOTTOM] = t1->y;
 
 	tb.compareThing = t1;
+	tb.alreadyHates = false;
 
 	// the head node is the last node output
 	return P_CrossBSPNodeBlocking((INT32)numnodes - 1, &tb);
 }
+
+//
+// ANOTHER version, this time for bot traversal.
+// (TODO: since we have so many versions of this function, the differences
+// should maybe just be a function var that gets called?)
+//
+
+static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t *tb)
+{
+	seg_t *seg;
+	INT32 count;
+
+#ifdef RANGECHECK
+	if (num >= numsubsectors)
+		I_Error("P_CrossBotTraversalSubsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
+#endif
+
+	// haleyjd 02/23/06: this assignment should be after the above check
+	seg = segs + subsectors[num].firstline;
+
+	for (count = subsectors[num].numlines; --count >= 0; seg++)  // check lines
+	{
+		line_t *line = seg->linedef;
+		divline_t divl;
+		const vertex_t *v1,*v2;
+		fixed_t maxstep = INT32_MAX;
+
+		if (seg->glseg)
+			continue;
+
+		// already checked other side?
+		if (line->validcount == validcount)
+			continue;
+
+		line->validcount = validcount;
+
+		// OPTIMIZE: killough 4/20/98: Added quick bounding-box rejection test
+		if (line->bbox[BOXLEFT  ] > tb->bbox[BOXRIGHT ] ||
+			line->bbox[BOXRIGHT ] < tb->bbox[BOXLEFT  ] ||
+			line->bbox[BOXBOTTOM] > tb->bbox[BOXTOP   ] ||
+			line->bbox[BOXTOP]    < tb->bbox[BOXBOTTOM])
+			continue;
+
+		v1 = line->v1;
+		v2 = line->v2;
+
+		// line isn't crossed?
+		if (P_DivlineSide(v1->x, v1->y, &tb->strace) ==
+			P_DivlineSide(v2->x, v2->y, &tb->strace))
+			continue;
+
+		// stop because it is not two sided anyway
+		if (!(line->flags & ML_TWOSIDED))
+			return false;
+
+		divl.dx = v2->x - (divl.x = v1->x);
+		divl.dy = v2->y - (divl.y = v1->y);
+
+		// line isn't crossed?
+		if (P_DivlineSide(tb->strace.x, tb->strace.y, &divl) ==
+			P_DivlineSide(tb->t2x, tb->t2y, &divl))
+			continue;
+
+		if (P_IsLineBlocking(line, tb->compareThing) == true)
+		{
+			// This line will always block us
+			return false;
+		}
+
+		if (tb->compareThing->player != NULL)
+		{
+			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
+			{
+				// Can't go through trip wire.
+				return false;
+			}
+		}
+
+		// set openrange, opentop, openbottom
+		tmx = tb->compareThing->x;
+		tmy = tb->compareThing->y;
+		P_LineOpening(line, tb->compareThing);
+		maxstep = P_GetThingStepUp(tb->compareThing);
+
+		if ((openrange < tb->compareThing->height) // doesn't fit
+			|| (opentop - tb->compareThing->z < tb->compareThing->height) // mobj is too high
+			|| (openbottom - tb->compareThing->z > maxstep)) // too big a step up
+		{
+			// This line situationally blocks us
+			return false;
+		}
+
+		if (tb->compareThing->player != NULL && tb->alreadyHates == false)
+		{
+			// Treat damage sectors like walls, if you're not already in a bad sector.
+			vertex_t pos;
+			P_ClosestPointOnLine(tb->compareThing->x, tb->compareThing->y, line, &pos);
+
+			if (K_BotHatesThisSector(tb->compareThing->player, line->frontsector, pos.x, pos.y)
+				|| K_BotHatesThisSector(tb->compareThing->player, line->backsector, pos.x, pos.y))
+			{
+				// This line does not block us, but we don't want to be in it.
+				return false;
+			}
+		}
+	}
+
+	// passed the subsector ok
+	return true;
+}
+
+static boolean P_CrossBSPNodeBotTraversal(INT32 bspnum, register traceblocking_t *tb)
+{
+	while (!(bspnum & NF_SUBSECTOR))
+	{
+		register node_t *bsp = nodes + bspnum;
+		INT32 side = P_DivlineSide(tb->strace.x,tb->strace.y,(divline_t *)bsp)&1;
+		if (side == P_DivlineSide(tb->t2x, tb->t2y, (divline_t *) bsp))
+			bspnum = bsp->children[side]; // doesn't touch the other side
+		else         // the partition plane is crossed here
+		{
+			if (!P_CrossBSPNodeBotTraversal(bsp->children[side], tb))
+				return false;  // cross the starting side
+			else
+				bspnum = bsp->children[side^1];  // cross the ending side
+		}
+	}
+
+	return P_CrossBotTraversalSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), tb);
+}
+
+boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
+{
+	const sector_t *s1, *s2;
+	size_t pnum;
+	traceblocking_t tb;
+
+	// First check for trivial rejection.
+	if (!t1 || !t2)
+		return false;
+
+	I_Assert(!P_MobjWasRemoved(t1));
+	I_Assert(!P_MobjWasRemoved(t2));
+
+	if (!t1->subsector || !t2->subsector
+	|| !t1->subsector->sector || !t2->subsector->sector)
+		return false;
+
+	s1 = t1->subsector->sector;
+	s2 = t2->subsector->sector;
+	pnum = (s1-sectors)*numsectors + (s2-sectors);
+
+	if (rejectmatrix != NULL)
+	{
+		// Check in REJECT table.
+		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
+			return false;
+	}
+
+	// killough 11/98: shortcut for melee situations
+	// same subsector? obviously visible
+	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
+	if (!t1->subsector->polyList &&
+		t1->subsector == t2->subsector)
+		return true;
+
+	validcount++;
+
+	tb.strace.dx = (tb.t2x = t2->x) - (tb.strace.x = t1->x);
+	tb.strace.dy = (tb.t2y = t2->y) - (tb.strace.y = t1->y);
+
+	if (t1->x > t2->x)
+		tb.bbox[BOXRIGHT] = t1->x, tb.bbox[BOXLEFT] = t2->x;
+	else
+		tb.bbox[BOXRIGHT] = t2->x, tb.bbox[BOXLEFT] = t1->x;
+
+	if (t1->y > t2->y)
+		tb.bbox[BOXTOP] = t1->y, tb.bbox[BOXBOTTOM] = t2->y;
+	else
+		tb.bbox[BOXTOP] = t2->y, tb.bbox[BOXBOTTOM] = t1->y;
+
+	tb.compareThing = t1;
+	if (t1->player != NULL)
+	{
+		tb.alreadyHates = K_BotHatesThisSector(
+			t1->player, t1->subsector->sector,
+			t1->x, t1->y
+		);
+	}
+	else
+	{
+		tb.alreadyHates = false;
+	}
+
+	// the head node is the last node output
+	return P_CrossBSPNodeBotTraversal((INT32)numnodes - 1, &tb);
+}
+

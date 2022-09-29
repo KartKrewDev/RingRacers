@@ -20,10 +20,6 @@
 #else
 #include <winsock.h>
 #endif
-#elif !defined (__DJGPP__)
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #endif
 
 #include "i_addrinfo.h"
@@ -80,10 +76,10 @@ static HMODULE WS_getfunctions(HMODULE tmp)
 {
 	if (tmp != NULL)
 	{
-		WS_getaddrinfo = (p_getaddrinfo)(LPVOID)GetProcAddress(tmp, "getaddrinfo");
+		*(void**)&WS_getaddrinfo = FUNCPTRCAST(GetProcAddress(tmp, "getaddrinfo"));
 		if (WS_getaddrinfo == NULL)
 			return NULL;
-		WS_freeaddrinfo = (p_freeaddrinfo)(LPVOID)GetProcAddress(tmp, "freeaddrinfo");
+		*(void**)&WS_freeaddrinfo = FUNCPTRCAST(GetProcAddress(tmp, "freeaddrinfo"));
 		if (WS_freeaddrinfo == NULL)
 		{
 			WS_getaddrinfo = NULL;

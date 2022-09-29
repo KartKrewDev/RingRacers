@@ -51,7 +51,7 @@ void T_FireFlicker(fireflicker_t *flick)
 	if (--flick->count)
 		return;
 
-	amount = (INT16)((UINT8)(P_RandomByte() & 3) * 16);
+	amount = (INT16)((UINT8)(P_RandomByte(PR_UNDEFINED) & 3) * 16);
 
 	if (flick->sector->lightlevel - amount < flick->minlight)
 		flick->sector->lightlevel = (INT16)flick->minlight;
@@ -235,7 +235,7 @@ strobe_t *P_SpawnAdjustableStrobeFlash(sector_t *minsector, sector_t *maxsector,
 		flash->minlight = 0;
 
 	if (!inSync)
-		flash->count = (P_RandomByte() & 7) + 1;
+		flash->count = (P_RandomByte(PR_UNDEFINED) & 7) + 1;
 	else
 		flash->count = 1;
 
@@ -374,10 +374,9 @@ void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, boolean
 void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, boolean ticbased, boolean force)
 {
 	INT32 i;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	// search all sectors for ones with tag
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		if (!force && ticbased // always let speed fader execute
 			&& sectors[i].lightingdata

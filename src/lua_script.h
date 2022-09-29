@@ -60,10 +60,10 @@ int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);
 
 void Got_Luacmd(UINT8 **cp, INT32 playernum); // lua_consolelib.c
-void LUA_CVarChanged(const char *name); // lua_consolelib.c
+void LUA_CVarChanged(void *cvar); // lua_consolelib.c
 int Lua_optoption(lua_State *L, int narg,
 	const char *def, const char *const lst[]);
-void LUAh_NetArchiveHook(lua_CFunction archFunc);
+void LUA_HookNetArchive(lua_CFunction archFunc);
 
 void LUA_PushTaggableObjectArray
 (		lua_State *L,
@@ -91,7 +91,6 @@ typedef enum {
 	LPUSHED_EXISTING,
 } lpushed_t;
 
-void LUA_PushLightUserdata(lua_State *L, void *data, const char *meta);
 void LUA_PushUserdata(lua_State *L, void *data, const char *meta);
 lpushed_t LUA_RawPushUserdata(lua_State *L, void *data);
 

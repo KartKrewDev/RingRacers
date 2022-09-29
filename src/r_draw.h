@@ -32,11 +32,13 @@ extern UINT8 *topleft;
 // -------------------------
 
 extern lighttable_t *dc_colormap;
+extern lighttable_t *dc_fullbright;
 extern INT32 dc_x, dc_yl, dc_yh;
 extern fixed_t dc_iscale, dc_texturemid;
 extern UINT8 dc_hires;
 
 extern UINT8 *dc_source; // first pixel in a column
+extern UINT8 *dc_brightmap; // brightmap texture column, can be NULL
 
 // translucency stuff here
 extern UINT8 *dc_transmap;
@@ -57,6 +59,7 @@ extern INT32 dc_texheight;
 
 extern INT32 ds_y, ds_x1, ds_x2;
 extern lighttable_t *ds_colormap;
+extern lighttable_t *ds_fullbright;
 extern lighttable_t *ds_translation;
 
 extern fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
@@ -66,6 +69,7 @@ extern UINT16 ds_flatwidth, ds_flatheight;
 extern boolean ds_powersoftwo;
 
 extern UINT8 *ds_source;
+extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
 
 typedef struct {
@@ -167,6 +171,7 @@ void R_DrawViewBorder(void);
 #endif
 
 #define TRANSPARENTPIXEL 255
+#define BRIGHTPIXEL 0
 
 // -----------------
 // 8bpp DRAWING CODE
@@ -175,6 +180,7 @@ void R_DrawViewBorder(void);
 void R_DrawColumn_8(void);
 void R_DrawShadeColumn_8(void);
 void R_DrawTranslucentColumn_8(void);
+void R_DrawDropShadowColumn_8(void);
 void R_DrawTranslatedColumn_8(void);
 void R_DrawTranslatedTranslucentColumn_8(void);
 void R_Draw2sMultiPatchColumn_8(void);
@@ -182,7 +188,7 @@ void R_Draw2sMultiPatchTranslucentColumn_8(void);
 void R_DrawFogColumn_8(void);
 void R_DrawColumnShadowed_8(void);
 
-#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / (zeroheight - FIXED_TO_FLOAT(viewz)) / 21.0f * FIXED_TO_FLOAT(fovtan[viewssnum]))
+#define PLANELIGHTFLOAT (BASEVIDWIDTH * BASEVIDWIDTH / vid.width / zeroheight / 21.0f * FIXED_TO_FLOAT(fovtan[viewssnum]))
 
 void R_DrawSpan_8(void);
 void R_DrawTranslucentSpan_8(void);

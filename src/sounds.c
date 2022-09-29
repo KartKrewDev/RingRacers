@@ -1054,8 +1054,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kpogos", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Pogo Spring use
   {"alarmi", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Invincibility alarm
   {"alarmg", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow alarm
-  {"kinvnc", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Invincibility music
-  {"kgrow",  false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow music
   {"itrol1",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Roulette spinning
   {"itrol2",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"itrol3",  true,  96,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1099,6 +1097,38 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Debug notification
   {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hammer cocks, bang bang
   {"itcaps", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, "Item capsule"},
+  {"kstart", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Sonic Adventure shwing!
+  {"typri1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 boss typewriting 1
+  {"typri2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 final boss-type typewriting
+  {"eggspr", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Sonic Unleashed Trap Spring
+
+  // SRB2Kart - Drop target sounds
+  {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
+  {"kdtrg2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Medium energy, SF_X8AWAYSOUND
+  {"kdtrg3", false,  64, 80, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // High energy, SF_X2AWAYSOUND|SF_X8AWAYSOUND
+
+    // SRB2kart - Grow/invinc clash
+  {"parry",  false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+
+  {"ffbonc", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Shout message sound effect
+  {"sysmsg", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Server notification"},
+
+  // Shrink laser beam
+  {"beam01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // SPB seeking
+  {"spbska", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskb", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"spbskc", false,  32, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Juicebox for SPB
+  {"gate01", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate02", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate03", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
   // SRB2Kart - Engine sounds
   // Engine class A

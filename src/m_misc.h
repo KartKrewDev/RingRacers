@@ -40,9 +40,26 @@ void M_SaveFrame(void);
 void M_StopMovie(void);
 
 // the file where game vars and settings are saved
-#define CONFIGFILENAME "kartconfig.cfg"
+#define CONFIGFILENAME "ringconfig.cfg"
 
-INT32 M_MapNumber(char first, char second);
+// The file where we'll save the last IPs we joined
+#define IPLOGFILE "ringsavedips.txt"
+#define IPLOGFILESEP ";"
+#define NUMLOGIP 3
+#define MAX_LOGIP 255
+
+// Array where we'll store addresses to display for last servers joined
+// {address, servame}
+extern char joinedIPlist[NUMLOGIP][2][MAX_LOGIP];
+
+// Keep the address we're joining in mind until we've finished joining.
+// Since we don't wanna add an IP address we aren't even sure worked out.
+extern char joinedIP[MAX_LOGIP];
+
+void M_InitJoinedIPArray(void);
+void M_AddToJoinedIPs(char *address, char *servname);
+void M_SaveJoinedIPs(void);
+void M_LoadJoinedIPs(void);
 
 boolean FIL_WriteFile(char const *name, const void *source, size_t length);
 size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag);

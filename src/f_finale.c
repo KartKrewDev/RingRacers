@@ -20,13 +20,13 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
 #include "i_threads.h"
-#include "m_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
 #include "console.h"
@@ -40,11 +40,15 @@
 #include "fastcmp.h"
 
 #include "lua_hud.h"
+#include "lua_hook.h"
+
+// SRB2Kart
+#include "k_menu.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
 INT32 finalecount;
-INT32 titlescrollxspeed = 5;
+INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
 UINT8 titlemapinaction = TITLEMAP_OFF;
 
@@ -52,21 +56,18 @@ static INT32 timetonext; // Delay between screen changes
 
 static tic_t animtimer; // Used for some animation timings
 static tic_t credbgtimer; // Credits background
-static INT16 skullAnimCounter; // Prompts: Chevron animation
 
 static tic_t stoptimer;
 
 static boolean keypressed = false;
 
-static tic_t xscrolltimer;
-static tic_t yscrolltimer;
 static INT32 menuanimtimer; // Title screen: background animation timing
 mobj_t *titlemapcameraref = NULL;
 
 // menu presentation state
 char curbgname[9];
 SINT8 curfadevalue;
-INT32 curbgcolor;
+INT32 curbgcolor = -1;	// Please stop assaulting my eyes.
 INT32 curbgxspeed;
 INT32 curbgyspeed;
 boolean curbghide;
@@ -81,7 +82,7 @@ static UINT32 demoIdleLeft;
 
 // customizable title screen graphics
 
-ttmode_enum ttmode = TTMODE_OLD;
+ttmode_enum ttmode = TTMODE_RINGRACERS;
 UINT8 ttscale = 1; // FRACUNIT / ttscale
 // ttmode user vars
 char ttname[9];
@@ -107,6 +108,13 @@ static patch_t *ttkart; // *vroom* KART
 static patch_t *ttcheckers; // *vroom* KART
 static patch_t *ttkflash; // flash screen
 */
+
+static patch_t *kts_bumper; // DR ROBOTNIKS RING RACERS
+static patch_t *kts_eggman; // dr. robotnik himself
+static patch_t *kts_tails; // tails himself
+static patch_t *kts_tails_tails; // tails' tails
+static patch_t *kts_electricity[6]; // ring o' electricity
+static patch_t *kts_copyright; // (C) SEGA
 
 #define NOWAY
 
@@ -157,6 +165,8 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
+
+static huddrawlist_h luahuddrawlist_title;
 
 //
 // This alters the text string cutscene_disptext.
@@ -345,16 +355,6 @@ static void F_IntroDrawScene(void)
 	// DRAW A FULL PIC INSTEAD OF FLAT!
 	if (intro_scenenum == 0)
 	{
-		if (finalecount == 8)
-			S_StartSound(NULL, sfx_vroom);
-		else if (finalecount == 47)
-		{
-			// Need to use M_Random otherwise it always uses the same sound
-			INT32 rskin = M_RandomKey(numskins);
-			UINT8 rtaunt = M_RandomKey(2);
-			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
-			S_StartSound(NULL, rsound);
-		}
 		background = W_CachePatchName("KARTKREW", PU_CACHE);
 		highres = true;
 	}
@@ -371,9 +371,6 @@ static void F_IntroDrawScene(void)
 
 	W_UnlockCachedPatch(background);
 
-	if (animtimer)
-		animtimer--;
-
 	V_DrawString(cx, cy, 0, cutscene_disptext);
 }
 
@@ -382,10 +379,31 @@ static void F_IntroDrawScene(void)
 //
 void F_IntroDrawer(void)
 {
-	if (timetonext <= 0)
+	// Used to be this whole thing, but now...
+	F_IntroDrawScene();
+}
+
+//
+// F_IntroTicker
+//
+void F_IntroTicker(void)
+{
+	// advance animation
+	finalecount++;
+
+	timetonext--;
+
+	if (intro_scenenum == 0)
 	{
-		if (intro_scenenum == 0)
+		if (timetonext <= 0)
 		{
+#if 0 // The necessary apparatus for constructing more elaborate intros...
+			intro_scenenum++;
+			F_NewCutscene(introtext[intro_scenenum]);
+			timetonext = introscenetime[intro_scenenum];
+			wipegamestate = -1;
+			animtimer = stoptimer = 0;
+#endif
 			if (rendermode != render_none)
 			{
 				F_WipeStartScreen();
@@ -402,17 +420,20 @@ void F_IntroDrawer(void)
 				while (quittime > nowtime)
 				{
 					while (!((nowtime = I_GetTime()) - lasttime))
-						I_Sleep();
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime(cv_timescale.value);
+					}
 					lasttime = nowtime;
 
 					I_OsPolling();
 					I_UpdateNoBlit();
 #ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
+					I_lock_mutex(&k_menu_mutex);
 #endif
 					M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
+					I_unlock_mutex(k_menu_mutex);
 #endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
@@ -422,42 +443,30 @@ void F_IntroDrawer(void)
 			}
 
 			D_StartTitle();
-			// Yes, this is a weird hack, we need to force a wipe for this because the game state has changed in the middle of where it would normally wipe
-			// Need to set the wipe start and then draw the first frame of the title screen to get it working
-			F_WipeStartScreen();
-			F_TitleScreenDrawer();
-			wipegamestate = -1; // force a wipe
 			return;
 		}
-
-		F_NewCutscene(introtext[++intro_scenenum]);
-		timetonext = introscenetime[intro_scenenum];
-
-		F_WipeStartScreen();
-		wipegamestate = -1;
-		animtimer = stoptimer = 0;
+		if (finalecount == 8)
+			S_StartSound(NULL, sfx_vroom);
+		else if (finalecount == 47)
+		{
+			// Need to use M_Random otherwise it always uses the same sound
+			INT32 rskin = M_RandomKey(numskins);
+			UINT8 rtaunt = M_RandomKey(2);
+			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
+			S_StartSound(NULL, rsound);
+		}
 	}
 
 	intro_curtime = introscenetime[intro_scenenum] - timetonext;
-
-	F_IntroDrawScene();
-}
-
-//
-// F_IntroTicker
-//
-void F_IntroTicker(void)
-{
-	// advance animation
-	finalecount++;
-
-	timetonext--;
 
 	F_WriteText();
 
 	// check for skipping
 	if (keypressed)
 		keypressed = false;
+	
+	if (animtimer > 0)
+		animtimer--;
 }
 
 //
@@ -517,7 +526,7 @@ boolean F_IntroResponder(event_t *event)
 //  CREDITS
 // =========
 static const char *credits[] = {
-	"\1SRB2Kart",
+	"\1Dr. Robotnik's Ring Racers",
 	"\1Credits",
 	"",
 	"\1Game Design",
@@ -1020,7 +1029,7 @@ void F_GameEvaluationDrawer(void)
 	{
 		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
 
-		if (!(netgame) && (!modifiedgame || savemoddata))
+		if (!usedCheats)
 		{
 			INT32 startcoord = 32;
 
@@ -1035,10 +1044,8 @@ void F_GameEvaluationDrawer(void)
 				}
 			}
 		}
-		else if (netgame)
-			V_DrawString(8, 96, V_YELLOWMAP, "Multiplayer games\ncan't unlock\nextras!");
 		else
-			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, V_YELLOWMAP, "Cheated games\ncan't unlock\nextras!");
 	}
 #endif
 
@@ -1092,14 +1099,7 @@ void F_GameEvaluationTicker(void)
 
 	if (finalecount == 5*TICRATE)
 	{
-		if (netgame || multiplayer) // modify this when we finally allow unlocking stuff in 2P
-		{
-			HU_SetCEchoFlags(V_YELLOWMAP);
-			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Multiplayer games can't unlock extras!");
-			S_StartSound(NULL, sfx_s3k68);
-		}
-		else if (!modifiedgame || savemoddata)
+		if (!usedCheats)
 		{
 			++timesBeaten;
 
@@ -1112,7 +1112,7 @@ void F_GameEvaluationTicker(void)
 		{
 			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Modified games can't unlock extras!");
+			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Cheated games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
 		}
 	}
@@ -1675,19 +1675,17 @@ void F_GameEndTicker(void)
 //  TITLE SCREEN
 // ==============
 
-void F_InitMenuPresValues(void)
+static void F_InitMenuPresValues(void)
 {
 	menuanimtimer = 0;
-	prevMenuId = 0;
-	activeMenuId = MainDef.menuid;
 
 	// Set defaults for presentation values
 	strncpy(curbgname, "TITLESKY", 9);
 	curfadevalue = 16;
-	curbgcolor = 31;
-	curbgxspeed = (gamestate == GS_TIMEATTACK) ? 0 : titlescrollxspeed;
-	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 22 : titlescrollyspeed;
-	curbghide = (gamestate == GS_TIMEATTACK) ? false : true;
+	curbgcolor = -1;
+	curbgxspeed = titlescrollxspeed;
+	curbgyspeed = titlescrollyspeed;
+	curbghide = false;
 
 	curhidepics = hidetitlepics;
 	curttmode = ttmode;
@@ -1698,10 +1696,8 @@ void F_InitMenuPresValues(void)
 	curttloop = ttloop;
 	curtttics = tttics;
 
-	// Find current presentation values
-	//M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
-	//M_SetMenuCurFadeValue(16);
-	//M_SetMenuCurTitlePics();
+	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+	luahuddrawlist_title = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -1717,23 +1713,25 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 	INT32 pw, ph; // scaled by dupz
 	patch_t *pat;
 	INT32 i, j;
+	fixed_t fracmenuanimtimer, xscrolltimer, yscrolltimer;
 
 	if (rendermode == render_none)
 		return;
 
+	V_DrawFill(0, 0, vid.width, vid.height, 31);
+
 	if (!patchname || !patchname[0])
 	{
-		V_DrawFill(0, 0, vid.width, vid.height, 31);
-		return;
-	}
-
-	if (!scrollxspeed && !scrollyspeed)
-	{
-		V_DrawPatchFill(W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY));
 		return;
 	}
 
 	pat = W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY);
+
+	if (scrollxspeed == 0 && scrollyspeed == 0)
+	{
+		V_DrawPatchFill(pat);
+		return;
+	}
 
 	patwidth = pat->width;
 	patheight = pat->height;
@@ -1743,12 +1741,13 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 	tilex = max(FixedCeil(FixedDiv(vid.width, pw)) >> FRACBITS, 1)+2; // one tile on both sides of center
 	tiley = max(FixedCeil(FixedDiv(vid.height, ph)) >> FRACBITS, 1)+2;
 
-	xscrolltimer = ((menuanimtimer*scrollxspeed)/16 + patwidth*xneg) % (patwidth);
-	yscrolltimer = ((menuanimtimer*scrollyspeed)/16 + patheight*yneg) % (patheight);
+	fracmenuanimtimer = (menuanimtimer * FRACUNIT) - (FRACUNIT - rendertimefrac);
+	xscrolltimer = ((fracmenuanimtimer*scrollxspeed)/16 + patwidth*xneg*FRACUNIT) % (patwidth * FRACUNIT);
+	yscrolltimer = ((fracmenuanimtimer*scrollyspeed)/16 + patheight*yneg*FRACUNIT) % (patheight * FRACUNIT);
 
 	// coordinate offsets
-	xscrolled = xscrolltimer * dupz;
-	yscrolled = yscrolltimer * dupz;
+	xscrolled = FixedInt(xscrolltimer * dupz);
+	yscrolled = FixedInt(yscrolltimer * dupz);
 
 	for (x = (xispos) ? -pw*(tilex-1)+pw : 0, i = 0;
 		i < tilex;
@@ -1764,8 +1763,6 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 				V_NOSCALESTART, pat);
 		}
 	}
-
-	W_UnlockCachedPatch(pat);
 }
 
 #define LOADTTGFX(arr, name, maxf) \
@@ -1796,15 +1793,30 @@ else \
 
 static void F_CacheTitleScreen(void)
 {
+	UINT16 i;
+
 	switch(curttmode)
 	{
-		case TTMODE_OLD:
 		case TTMODE_NONE:
+			break;
+
+		case TTMODE_OLD:
+			break; // idk do we still want this?
+
+		case TTMODE_RINGRACERS:
+			kts_bumper = W_CachePatchName("KTSBUMPR1", PU_PATCH_LOWPRIORITY);
+			kts_eggman = W_CachePatchName("KTSEGG01", PU_PATCH_LOWPRIORITY);
+			kts_tails = W_CachePatchName("KTSTAL01", PU_PATCH_LOWPRIORITY);
+			kts_tails_tails = W_CachePatchName("KTSTAL02", PU_PATCH_LOWPRIORITY);
+			for (i = 0; i < 6; i++)
+			{
+				kts_electricity[i] = W_CachePatchName(va("KTSELCT%.1d", i+1), PU_PATCH_LOWPRIORITY);
+			}
+			kts_copyright = W_CachePatchName("KTSCR", PU_PATCH_LOWPRIORITY);
 			break;
 
 		case TTMODE_USER:
 		{
-			UINT16 i;
 			lumpnum_t lumpnum;
 			char lumpname[9];
 
@@ -1816,29 +1828,32 @@ static void F_CacheTitleScreen(void)
 
 void F_StartTitleScreen(void)
 {
+	INT32 titleMapNum;
+	setup_numplayers = 0;
+
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
 	{
 		ttuser_count = 0;
 		finalecount = 0;
-		wipetypepost = menupres[MN_MAIN].enterwipe;
+		wipetypepost = 0;
 	}
 	else
 		wipegamestate = GS_TITLESCREEN;
 
-	if (titlemap)
+	if (titlemap
+		&& ((titleMapNum = G_MapNumber(titlemap)) < nummapheaders)
+		&& mapheaderinfo[titleMapNum]
+		&& mapheaderinfo[titleMapNum]->lumpnum != LUMPERROR)
 	{
 		mapthing_t *startpos;
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
-		gamemap = titlemap;
+		gamemap = titleMapNum+1;
 
-		if (!mapheaderinfo[gamemap-1])
-			P_AllocMapHeader(gamemap-1);
-
-		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-		globalweather = mapheaderinfo[gamemap-1]->weather;
+		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
+		globalweather = mapheaderinfo[titleMapNum]->weather;
 
 		G_DoLoadLevel(true);
 		if (!titlemap)
@@ -1872,10 +1887,6 @@ void F_StartTitleScreen(void)
 		camera[0].chase = true;
 		camera[0].height = 0;
 
-		// Run enter linedef exec for MN_MAIN, since this is where we start
-		if (menupres[MN_MAIN].entertag)
-			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayers[0]].mo, NULL);
-
 		wipegamestate = prevwipegamestate;
 	}
 	else
@@ -1894,6 +1905,7 @@ void F_StartTitleScreen(void)
 	demoDelayLeft = demoDelayTime;
 	demoIdleLeft = demoIdleTime;
 
+	F_InitMenuPresValues();
 	F_CacheTitleScreen();
 }
 
@@ -1910,6 +1922,8 @@ void F_TitleScreenDrawer(void)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, curbgcolor);
 	else if (!curbghide || !titlemapinaction || gamestate == GS_WAITINGPLAYERS)
 		F_SkyScroll(curbgxspeed, curbgyspeed, curbgname);
+	else
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	// Don't draw outside of the title screen, or if the patch isn't there.
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -1928,8 +1942,78 @@ void F_TitleScreenDrawer(void)
 
 	switch(curttmode)
 	{
-		case TTMODE_OLD:
 		case TTMODE_NONE:
+			break;
+
+		case TTMODE_RINGRACERS:
+		{
+			const char *eggName = "eggman";
+			INT32 eggSkin = R_SkinAvailable(eggName);
+			skincolornum_t eggColor = SKINCOLOR_RED;
+			UINT8 *eggColormap = NULL;
+
+			const char *tailsName = "tails";
+			INT32 tailsSkin = R_SkinAvailable(tailsName);
+			skincolornum_t tailsColor = SKINCOLOR_ORANGE;
+			UINT8 *tailsColormap = NULL;
+
+			if (eggSkin != -1)
+			{
+				eggColor = skins[eggSkin].prefcolor;
+			}
+			eggColormap = R_GetTranslationColormap(TC_DEFAULT, eggColor, GTC_MENUCACHE);
+
+			if (tailsSkin != -1)
+			{
+				tailsColor = skins[tailsSkin].prefcolor;
+			}
+			tailsColormap = R_GetTranslationColormap(TC_DEFAULT, tailsColor, GTC_MENUCACHE);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails_tails, tailsColormap);
+			V_DrawFixedPatch(0, 0, FRACUNIT, V_ADD, kts_electricity[finalecount % 6], NULL);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_eggman, eggColormap);
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_tails, tailsColormap);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_bumper, NULL);
+
+			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
+
+			// An adapted thing from old menus - most games have version info on the title screen now...
+			{
+				INT32 texty = vid.height - 10*vid.dupy;
+#define addtext(f, str) {\
+	V_DrawThinString(vid.dupx, texty, V_NOSCALESTART|f, str);\
+	texty -= 10*vid.dupy;\
+}
+				if (customversionstring[0] != '\0')
+				{
+					addtext(V_ALLOWLOWERCASE, customversionstring);
+					addtext(0, "Mod version:");
+				}
+				else
+				{
+// Development -- show revision / branch info
+#if defined(TESTERS)
+					addtext(V_ALLOWLOWERCASE|V_SKYMAP, "Tester client");
+					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+#elif defined(HOSTTESTERS)
+					addtext(V_ALLOWLOWERCASE|V_REDMAP, "Netgame host for testers");
+					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+#elif defined(DEVELOP)
+					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, comprevision);
+					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, compbranch);
+#else // Regular build
+					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
+#endif
+				}
+#undef addtext
+			}
+
+			break;
+		}
+
+		case TTMODE_OLD:
 /*
 			if (finalecount < 50)
 			{
@@ -1970,8 +2054,17 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "SRB2 Kart v2.0");
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "Dr. Robotnik's Ring Racers v2.0");
+
+#ifdef DEVELOP
+#if defined(TESTERS)
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP|V_ALLOWLOWERCASE, "Tester EXE");
+#elif defined(HOSTTESTERS)
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 96, V_REDMAP|V_ALLOWLOWERCASE, "Tester netgame host EXE");
+#else
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_ALLOWLOWERCASE, "Development EXE");
+#endif
+#endif
 			break;
 
 		case TTMODE_USER:
@@ -1993,36 +2086,36 @@ void F_TitleScreenDrawer(void)
 	}
 
 luahook:
-	LUAh_TitleHUD();
-}
+	// The title drawer is sometimes called without first being started
+	// In order to avoid use-before-initialization crashes, let's check and
+	// create the drawlist if it doesn't exist.
+	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+		luahuddrawlist_title = LUA_HUD_CreateDrawList();
+	}
 
-// separate animation timer for backgrounds, since we also count
-// during GS_TIMEATTACK
-void F_MenuPresTicker(boolean run)
-{
-	if (run)
-		menuanimtimer++;
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_title);
+		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
+	}
+	LUA_HUD_DrawList(luahuddrawlist_title);
 }
 
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
+	menuanimtimer++; // title sky
+
 	if (run)
 	{
 		finalecount++;
 
-		if (finalecount == 10)
-		{
-			S_StartSound(NULL, sfx_s23e);
-		}
-		else if (finalecount == 50)
+		if (finalecount == 1)
 		{
 			// Now start the music
-			if (menupres[MN_MAIN].musname[0])
-				S_ChangeMusic(menupres[MN_MAIN].musname, menupres[MN_MAIN].mustrack, menupres[MN_MAIN].muslooping);
-			else
-				S_ChangeMusicInternal("_title", looptitle);
-			S_StartSound(NULL, sfx_s23c);
+			S_ChangeMusicInternal("_title", looptitle);
 		}
 	}
 
@@ -2095,12 +2188,14 @@ void F_TitleScreenTicker(boolean run)
 		return;
 	}
 
+#ifdef STAFFGHOSTS
 	// is it time?
 	if (!(--demoIdleLeft))
 	{
 		//static boolean use_netreplay = false;
 
 		char dname[9];
+		char *dname2 = dname;
 		lumpnum_t l;
 		const char *mapname;
 		UINT8 numstaff;
@@ -2130,41 +2225,16 @@ void F_TitleScreenTicker(boolean run)
 			return;
 		}
 
-		// Replay intro when done cycling through demos
-		/*
-		if (curDemo == numDemos) -- uuuh... we have a LOT of maps AND a big devteam... probably not gonna see a repeat unless you're super unlucky :V
-		{
-			curDemo = 0;
-			F_StartIntro();
-			return;
-		}
-		*/
-
-		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, false, 0, false, NULL)+1);
+		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
 
 		numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
+		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
 			numstaff++;
 
-#if 0 // turns out this isn't how we're gonna organise 'em
-		if (numstaff > 1)
-		{
-			if (laststaff && laststaff <= numstaff) // don't do the same staff member twice in a row, even if they're on different maps
-			{
-				numstaff = M_RandomKey(numstaff-1)+1;
-				if (numstaff >= laststaff)
-					numstaff++;
-			}
-			else
-				numstaff = M_RandomKey(numstaff)+1;
-		}
-		laststaff = numstaff;
-#else
 		numstaff = M_RandomKey(numstaff)+1;
-#endif
 
 		// Setup demo name
-		snprintf(dname, 9, "%sS%02u", mapname, numstaff);
+		dname2 = Z_StrDup(va("%sS%02u", mapname, numstaff));
 
 		/*if ((l = W_CheckNumForName(dname)) == LUMPERROR) -- we KNOW it exists now
 		{
@@ -2177,8 +2247,14 @@ loadreplay:
 		demo.title = demo.fromtitle = true;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
-		G_DoPlayDemo(dname);
+		G_DoPlayDemo(dname2);
+
+		if (dname2 != dname)
+		{
+			Z_Free(dname2);
+		}
 	}
+#endif //#ifdef STAFFGHOSTS
 }
 
 void F_TitleDemoTicker(void)
@@ -2256,6 +2332,7 @@ static INT32 textxpos, textypos;
 static boolean dofadenow = false, cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
+
 static void F_AdvanceToNextScene(void)
 {
 	// Don't increment until after endcutscene check
@@ -2265,6 +2342,7 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
+
 	++scenenum;
 
 	timetonext = 0;
@@ -2280,7 +2358,6 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
-	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -2307,7 +2384,7 @@ void F_EndCutScene(void)
 			F_StartGameEvaluation();
 		else if (cutnum == introtoplay-1)
 			D_StartTitle();
-		else if (nextmap < 1100-1)
+		else if (nextmap < NEXTMAP_SPECIAL)
 			G_NextLevel();
 		else
 			G_EndGame();
@@ -2412,8 +2489,6 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
-
-	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2738,12 +2813,13 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 
 static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 {
-	INT32 gcs = gcs_custom;
+	INT32 gcs = 0;
 	boolean suffixed = true;
 
 	if (!tag || !tag[0] || !tutorialmode)
 		return false;
 
+	/*
 	if (!strncmp(tag, "TAA", 3)) // Accelerate
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_accelerate, num_gcl_accelerate);
 	else if (!strncmp(tag, "TAB", 3)) // Brake
@@ -2758,14 +2834,10 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_item, num_gcl_item);
 	else
 		gcs = G_GetControlScheme(gamecontrol[0], gcl_full, num_gcl_full);
+	*/
 
 	switch (gcs)
 	{
-		case gcs_kart:
-			// strncat(tag, "KART", length);
-			suffixed = false;
-			break;
-
 		default:
 			strncat(tag, "CUSTOM", length);
 			break;

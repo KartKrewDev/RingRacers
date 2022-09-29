@@ -15,6 +15,7 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "r_local.h"
@@ -33,12 +34,15 @@
 #include "s_sound.h" // ditto
 #include "g_game.h" // ditto
 #include "p_local.h" // P_AutoPause()
+
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #include "hardware/hw_light.h"
 #include "hardware/hw_model.h"
 #endif
 
+// SRB2Kart
+#include "r_fps.h" // R_GetFramerateCap
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
 #define RUSEASM //MSC.NET can't patch itself
@@ -49,10 +53,17 @@
 // --------------------------------------------
 void (*colfunc)(void);
 void (*colfuncs[COLDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*colfuncs_asm[COLDRAWFUNC_MAX])(void);
+#endif
+int colfunctype;
 
 void (*spanfunc)(void);
 void (*spanfuncs[SPANDRAWFUNC_MAX])(void);
 void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
+#ifdef USE_COL_SPAN_ASM
+void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
+#endif
 
 // ------------------
 // global video state
@@ -61,16 +72,17 @@ viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
 UINT8 setrenderneeded = 0;
 
-static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
-
-static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
-
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = CVAR_INIT ("scr_width", "640", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_height = CVAR_INIT ("scr_height", "400", CV_SAVE, CV_Unsigned, NULL);
+
+static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
+
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
 consvar_t cv_vhseffect = CVAR_INIT ("vhspause", "On", CV_SAVE, CV_OnOff, NULL);
+
+static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
 consvar_t cv_shittyscreen = CVAR_INIT ("televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL);
 
 CV_PossibleValue_t cv_renderer_t[] = {
@@ -118,9 +130,6 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[BASEDRAWFUNC] = R_DrawColumn_8;
 		spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8;
 
-		colfunc = colfuncs[BASEDRAWFUNC];
-		spanfunc = spanfuncs[BASEDRAWFUNC];
-
 		colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_TRANS] = R_DrawTranslatedColumn_8;
 		colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8;
@@ -129,6 +138,7 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8;
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS] = R_Draw2sMultiPatchTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_FOG] = R_DrawFogColumn_8;
+		colfuncs[COLDRAWFUNC_DROPSHADOW] = R_DrawDropShadowColumn_8;
 
 		spanfuncs[SPANDRAWFUNC_TRANS] = R_DrawTranslucentSpan_8;
 		spanfuncs[SPANDRAWFUNC_TILTED] = R_DrawTiltedSpan_8;
@@ -160,26 +170,29 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
 
-#ifdef RUSEASM
+#if (defined(RUSEASM) && defined(USE_COL_SPAN_ASM))
 		if (R_ASM)
 		{
 			if (R_MMX)
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
-				spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
+				spanfuncs_asm[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
 			}
 			else
 			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
+				colfuncs_asm[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
+				//colfuncs_asm[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
+				colfuncs_asm[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
 			}
 		}
 #endif
+
+		R_SetColumnFunc(BASEDRAWFUNC, false);
+		R_SetSpanFunc(BASEDRAWFUNC, false, false);
 	}
 /*	else if (vid.bpp > 1)
 	{
@@ -199,6 +212,65 @@ void SCR_SetDrawFuncs(void)
 	if (SCR_IsAspectCorrect(vid.width, vid.height))
 		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
 */
+}
+
+void R_SetColumnFunc(size_t id, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	colfunctype = id;
+
+#ifdef USE_COL_SPAN_ASM
+	if (colfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		colfunc = colfuncs_asm[id];
+	}
+	else
+#endif
+	{
+		colfunc = colfuncs[id];
+	}
+}
+
+void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
+{
+	I_Assert(id < COLDRAWFUNC_MAX);
+
+	if (spanfuncs_npo2[id] != NULL && npo2 == true)
+	{
+		spanfunc = spanfuncs_npo2[id];
+	}
+#ifdef USE_COL_SPAN_ASM
+	else if (spanfuncs_asm[id] != NULL && brightmapped == false)
+	{
+		spanfunc = spanfuncs_asm[id];
+	}
+#endif
+	else
+	{
+		spanfunc = spanfuncs[id];
+	}
+}
+
+boolean R_CheckColumnFunc(size_t id)
+{
+	size_t i;
+
+	if (colfunc == NULL)
+	{
+		// Shouldn't happen.
+		return false;
+	}
+
+	for (i = 0; i < COLDRAWFUNC_MAX; i++)
+	{
+		if (colfunc == colfuncs[id] || colfunc == colfuncs_asm[id])
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void SCR_SetMode(void)
@@ -333,12 +405,6 @@ void SCR_Recalc(void)
 	// vid.recalc lasts only for the next refresh...
 	con_recalc = true;
 	am_recalc = true;
-
-#ifdef HWRENDER
-	// Shoot! The screen texture was flushed!
-	if ((rendermode == render_opengl) && (gamestate == GS_INTERMISSION))
-		usebuffer = false;
-#endif
 }
 
 // Check for screen cmd-line parms: to force a resolution.
@@ -451,104 +517,110 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 	 );
 }
 
-// XMOD FPS display
-// moved out of os-specific code for consistency
-static boolean ticsgraph[TICRATE];
-static tic_t lasttic;
+double averageFPS = 0.0f;
 
-static UINT32 fpstime = 0;
-static UINT32 lastupdatetime = 0;
+#define USE_FPS_SAMPLES
 
-#define FPSUPDATERATE 1/20 // What fraction of a second to update at. The fraction will not simplify to 0, trust me.
-#define FPSMAXSAMPLES 16
+#ifdef USE_FPS_SAMPLES
+#define FPS_SAMPLE_RATE (0.05) // How often to update FPS samples, in seconds
+#define NUM_FPS_SAMPLES (16) // Number of samples to store
 
-static UINT32 fpssamples[FPSMAXSAMPLES];
-static UINT32 fpssampleslen = 0;
-static UINT32 fpssum = 0;
-double aproxfps = 0.0f;
+static double fps_samples[NUM_FPS_SAMPLES];
+static double updateElapsed = 0.0;
+#endif
 
-void SCR_CalcAproxFps(void)
+static boolean fps_init = false;
+static precise_t fps_enter = 0;
+
+void SCR_CalculateFPS(void)
 {
-	tic_t i = 0;
-	if (I_PreciseToMicros(fpstime - lastupdatetime) > 1000000 * FPSUPDATERATE)
+	precise_t fps_finish = 0;
+
+	double frameElapsed = 0.0;
+
+	if (fps_init == false)
 	{
-		if (fpssampleslen == FPSMAXSAMPLES)
-		{
-			fpssum -= fpssamples[0];
-
-			for (i = 1; i < fpssampleslen; i++)
-				fpssamples[i-1] = fpssamples[i];
-		}
-		else
-			fpssampleslen++;
-
-		fpssamples[fpssampleslen-1] = I_GetPreciseTime() - fpstime;
-		fpssum += fpssamples[fpssampleslen-1];
-
-		aproxfps = 1000000 / (I_PreciseToMicros(fpssum) / (double)fpssampleslen);
-
-		lastupdatetime = I_GetPreciseTime();
+		fps_enter = I_GetPreciseTime();
+		fps_init = true;
 	}
 
-	fpstime = I_GetPreciseTime();
+	fps_finish = I_GetPreciseTime();
+	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
+	fps_enter = fps_finish;
+
+#ifdef USE_FPS_SAMPLES
+	updateElapsed += frameElapsed;
+
+	if (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		static int sampleIndex = 0;
+		int i;
+
+		fps_samples[sampleIndex] = frameElapsed;
+
+		sampleIndex++;
+		if (sampleIndex >= NUM_FPS_SAMPLES)
+			sampleIndex = 0;
+
+		averageFPS = 0.0;
+		for (i = 0; i < NUM_FPS_SAMPLES; i++)
+		{
+			averageFPS += fps_samples[i];
+		}
+
+		if (averageFPS > 0.0)
+		{
+			averageFPS = 1.0 / (averageFPS / NUM_FPS_SAMPLES);
+		}
+	}
+
+	while (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		updateElapsed -= FPS_SAMPLE_RATE;
+	}
+#else
+	// Direct, unsampled counter.
+	averageFPS = 1.0 / frameElapsed;
+#endif
 }
 
 void SCR_DisplayTicRate(void)
 {
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
 	const UINT8 *ticcntcolor = NULL;
-
-	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-		ticsgraph[i % TICRATE] = false;
-
-	ticsgraph[ontic % TICRATE] = true;
-
-	for (i = 0;i < TICRATE;++i)
-		if (ticsgraph[i])
-			++totaltics;
+	UINT32 cap = R_GetFramerateCap();
+	UINT32 benchmark = (cap == 0) ? I_GetRefreshRate() : cap;
+	INT32 x = 318;
+	double fps = round(averageFPS);
 
 	// draw "FPS"
-	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
+	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
 
-	if (cv_frameinterpolation.value == 1)
-	{
-		if (aproxfps <= 15.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
-		else if (aproxfps >= 60.0f) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+	if (fps > (benchmark * 0.9))
+		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+	else if (fps < (benchmark * 0.5))
+		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
 
-		/*
-		if (cv_fpscap.value != 0)
-		{
-			// draw total frame:
-			//V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, cv_fpscap.value, ticcntcolor);
-			// draw "/"
-			//V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
-			// draw our actual framerate
-			V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
-		}
-		else
-		*/
-		{
-			// draw our actual framerate
-			V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, aproxfps, ticcntcolor);
-		}
-	}
-	else
+	if (cap != 0)
 	{
-		if (totaltics <= 15) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_RASPBERRY, GTC_CACHE);
-		else if (totaltics >= TICRATE) ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
+		UINT32 digits = 1;
+		UINT32 c2 = cap;
+
+		while (c2 > 0)
+		{
+			c2 = c2 / 10;
+			digits++;
+		}
 
 		// draw total frame:
-		V_DrawPingNum(318, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, TICRATE, ticcntcolor);
+		V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, cap, ticcntcolor);
+		x -= digits * 4;
+
 		// draw "/"
-		V_DrawFixedPatch(306<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, frameslash, ticcntcolor);
-		// draw our actual framerate
-		V_DrawPingNum(306, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_HUDTRANS, totaltics, ticcntcolor);
+		V_DrawFixedPatch(x<<FRACBITS, 190<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, frameslash, ticcntcolor);
 	}
 
-
-	lasttic = ontic;
+	// draw our actual framerate
+	V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, fps, ticcntcolor);
 }
 
 // SCR_DisplayLocalPing
@@ -556,11 +628,14 @@ void SCR_DisplayTicRate(void)
 
 void SCR_DisplayLocalPing(void)
 {
+	boolean offline;
+
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	if (! r_splitscreen && ( cv_showping.value == 1 || (cv_showping.value == 2 && ping > servermaxping) ))	// only show 2 (warning) if our ping is at a bad level
 	{
 		INT32 dispy = cv_ticrate.value ? 160 : 181;
-		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS);
+		offline = (consoleplayer == serverplayer);
+		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS, offline);
 	}
 }
 

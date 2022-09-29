@@ -17,7 +17,7 @@
 #include "../z_zone.h"
 #include "../console.h"
 #include "../v_video.h"
-#include "../m_menu.h"
+#include "../k_menu.h"
 #include "../i_system.h"
 #include "../m_argv.h"
 #include "../i_video.h"
@@ -589,7 +589,7 @@ static void loading_status(void)
 	sprintf(s, "%d%%", (++ls_percent)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol); // Black background to match fade in effect
 	//V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_CACHE)); // SRB2 background, ehhh too bright.
 	M_DrawTextBox(x-58, y-8, 13, 1);
 	V_DrawString(x-50, y, V_YELLOWMAP, "Loading...");

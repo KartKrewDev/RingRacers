@@ -154,16 +154,16 @@ static SDL_mutex *Msc_Mutex = NULL;
 #ifdef _arch_dreamcast
 #define MIDI_PATH     "/ram"
 #elif defined(GP2X)
-#define MIDI_PATH     "/mnt/sd/srb2"
-#define MIDI_PATH2    "/tmp/mnt/sd/srb2"
+#define MIDI_PATH     "/mnt/sd/ringracers"
+#define MIDI_PATH2    "/tmp/mnt/sd/ringracers"
 #else
 #define MIDI_PATH     srb2home
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define MIDI_PATH2    "/tmp"
 #endif
 #endif
-#define MIDI_TMPFILE  "srb2music"
-#define MIDI_TMPFILE2 "srb2wav"
+#define MIDI_TMPFILE  "ringracersmusic"
+#define MIDI_TMPFILE2 "ringracerswav"
 static INT32 musicvol = 62;
 
 #if SDL_MIXER_VERSION_ATLEAST(1,2,2)
@@ -1932,7 +1932,7 @@ boolean I_StartDigSong(const char *musicname, boolean looping)
 		loopstartDig = 0.0l;
 #else
 	if (looping && strcmp(data, "OggS")  == 0)
-		I_OutputMsg("I_StartDigSong: SRB2 was not compiled with looping music support(no Mix_FadeInMusicPos)\n");
+		I_OutputMsg("I_StartDigSong: Ring Racers was not compiled with looping music support(no Mix_FadeInMusicPos)\n");
 #endif
 
 	if (!LoadSong(data, lumplength, 1))

@@ -15,7 +15,7 @@
 
 #include <time.h>
 
-#if defined (_WIN32) || defined (__DJGPP__)
+#ifdef _WIN32
 #include <io.h>
 #include <direct.h>
 #else
@@ -30,10 +30,6 @@
 #elif defined (_WIN32)
 #include <sys/utime.h>
 #endif
-#ifdef __DJGPP__
-#include <dir.h>
-#include <utime.h>
-#endif
 
 #ifdef HAVE_CURL
 #include "curl/curl.h"
@@ -43,6 +39,7 @@
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -53,7 +50,7 @@
 #include "byteptr.h"
 #include "p_setup.h"
 #include "m_misc.h"
-#include "m_menu.h"
+#include "k_menu.h"
 #include "md5.h"
 #include "filesrch.h"
 
@@ -115,14 +112,12 @@ typedef struct
 } pauseddownload_t;
 static pauseddownload_t *pauseddownload = NULL;
 
-#ifndef NONET
 // for cl loading screen
 INT32 lastfilenum = -1;
 INT32 downloadcompletednum = 0;
 UINT32 downloadcompletedsize = 0;
 INT32 totalfilesrequestednum = 0;
 UINT32 totalfilesrequestedsize = 0;
-#endif
 
 #ifdef HAVE_CURL
 static CURL *http_handle;
@@ -161,10 +156,16 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 	char wadfilename[MAX_WADPATH] = "";
 	UINT8 filestatus;
 
-	for (i = mainwads+1; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
+#ifdef DEVELOP
+	i = 0;
+#else
+	i = mainwads + 1;
+#endif
+
+	for (; i < numwadfiles; i++) //mainwads+1, otherwise we start on the first mainwad
 	{
 		// If it has only music/sound lumps, don't put it in the list
-		if (!wadfiles[i]->important)
+		if (i > mainwads && !wadfiles[i]->important)
 			continue;
 
 		if (firstfile)
@@ -187,6 +188,12 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 		}
 
 		filestatus = 1; // Importance - not really used any more, holds 1 by default for backwards compat with MS
+
+		/* don't send mainwads!! */
+#ifdef DEVELOP
+		if (i <= mainwads)
+			filestatus += (2 << 4);
+#endif
 
 		// Store in the upper four bits
 		if (!cv_downloading.value)
@@ -240,9 +247,7 @@ void D_ParseFileneeded(INT32 fileneedednum_parm, UINT8 *fileneededstr, UINT16 fi
 
 void CL_PrepareDownloadSaveGame(const char *tmpsave)
 {
-#ifndef NONET
 	lastfilenum = -1;
-#endif
 
 	fileneedednum = 1;
 	fileneeded[0].status = FS_REQUESTED;
@@ -276,11 +281,16 @@ boolean CL_CheckDownloadable(void)
 		}
 
 	// Downloading locally disabled
+#ifndef TESTERS
 	if (!dlstatus && M_CheckParm("-nodownload"))
 		dlstatus = 3;
 
 	if (!dlstatus)
 		return true;
+#else
+	if (!dlstatus)
+		dlstatus = 3;
+#endif
 
 	// not downloadable, put reason in console
 	CONS_Alert(CONS_NOTICE, M_GetText("You need additional files to connect to this server:\n"));
@@ -448,7 +458,12 @@ INT32 CL_CheckFiles(void)
 	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
-		for (i = 0, j = mainwads+1; i < fileneedednum || j < numwadfiles;)
+#ifdef DEVELOP
+		j = 0;
+#else
+		j = mainwads + 1;
+#endif
+		for (i = 0; i < fileneedednum || j < numwadfiles;)
 		{
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
@@ -489,7 +504,12 @@ INT32 CL_CheckFiles(void)
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
 
 		// Check in already loaded files
-		for (j = mainwads+1; wadfiles[j]; j++)
+#ifdef DEVELOP
+		j = 0;
+#else
+		j = mainwads + 1;
+#endif
+		for (; wadfiles[j]; j++)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
@@ -979,7 +999,6 @@ static void SV_EndFileSend(INT32 node)
 	filestosend--;
 }
 
-#define PACKETPERTIC net_bandwidth/(TICRATE*software_MAXPACKETLENGTH)
 #define FILEFRAGMENTSIZE (software_MAXPACKETLENGTH - (FILETXHEADER + BASEPACKETSIZE))
 
 /** Handles file transmission
@@ -1012,14 +1031,7 @@ void FileSendTicker(void)
 	if (!filestosend) // No file to send
 		return;
 
-	if (cv_downloadspeed.value) // New behavior
-		packetsent = cv_downloadspeed.value;
-	else // Old behavior
-	{
-		packetsent = PACKETPERTIC;
-		if (!packetsent)
-			packetsent = 1;
-	}
+	packetsent = cv_downloadspeed.value;
 
 	netbuffer->packettype = PT_FILEFRAGMENT;
 
@@ -1103,7 +1115,7 @@ void FileSendTicker(void)
 		}
 
 		// Build a packet containing a file fragment
-		p = &netbuffer->u.filetxpak;
+		p = (void*)&netbuffer->u.filetxpak;
 		fragmentsize = FILEFRAGMENTSIZE;
 		if (f->size-transfer[i].position < fragmentsize)
 			fragmentsize = f->size-transfer[i].position;
@@ -1145,7 +1157,7 @@ void FileSendTicker(void)
 
 void PT_FileAck(void)
 {
-	fileack_pak *packet = &netbuffer->u.fileack;
+	fileack_pak *packet = (void*)&netbuffer->u.fileack;
 	INT32 node = doomcom->remotenode;
 	filetran_t *trans = &transfer[node];
 	INT32 i, j;
@@ -1289,10 +1301,11 @@ void FileReceiveTicker(void)
 
 void PT_FileFragment(void)
 {
-	INT32 filenum = netbuffer->u.filetxpak.fileid;
+	filetx_pak *pak = (void*)&netbuffer->u.filetxpak;
+	INT32 filenum = pak->fileid;
 	fileneeded_t *file = &fileneeded[filenum];
-	UINT32 fragmentpos = LONG(netbuffer->u.filetxpak.position);
-	UINT16 fragmentsize = SHORT(netbuffer->u.filetxpak.size);
+	UINT32 fragmentpos = LONG(pak->position);
+	UINT16 fragmentsize = SHORT(pak->size);
 	UINT16 boundedfragmentsize = doomcom->datalength - BASEPACKETSIZE - sizeof(netbuffer->u.filetxpak);
 	char *filename;
 
@@ -1360,7 +1373,7 @@ void PT_FileFragment(void)
 			CONS_Printf("\r%s...\n",filename);
 
 			file->currentsize = 0;
-			file->totalsize = LONG(netbuffer->u.filetxpak.filesize);
+			file->totalsize = LONG(pak->filesize);
 			file->ackresendposition = UINT32_MAX; // Only used for resumed downloads
 
 			file->receivedfragments = calloc(file->totalsize / fragmentsize + 1, sizeof(*file->receivedfragments));
@@ -1376,7 +1389,7 @@ void PT_FileFragment(void)
 		if (fragmentpos >= file->totalsize)
 			I_Error("Invalid file fragment\n");
 
-		file->iteration = max(file->iteration, netbuffer->u.filetxpak.iteration);
+		file->iteration = max(file->iteration, pak->iteration);
 
 		if (!file->receivedfragments[fragmentpos / fragmentsize]) // Not received yet
 		{
@@ -1384,7 +1397,7 @@ void PT_FileFragment(void)
 
 			// We can receive packets in the wrong order, anyway all OSes support gaped files
 			fseek(file->file, fragmentpos, SEEK_SET);
-			if (fragmentsize && fwrite(netbuffer->u.filetxpak.data, boundedfragmentsize, 1, file->file) != 1)
+			if (fragmentsize && fwrite(pak->data, boundedfragmentsize, 1, file->file) != 1)
 				I_Error("Can't write to %s: %s\n",filename, M_FileError(file->file));
 			file->currentsize += boundedfragmentsize;
 
@@ -1414,10 +1427,8 @@ void PT_FileFragment(void)
 					HSendPacket(servernode, true, 0, 0);
 				}
 
-#ifndef NONET
 				downloadcompletednum++;
 				downloadcompletedsize += file->totalsize;
-#endif
 			}
 		}
 		else // Already received
@@ -1451,9 +1462,7 @@ void PT_FileFragment(void)
 		I_Error("Received a file not requested (file id: %d, file status: %s)\n", filenum, s);
 	}
 
-#ifndef NONET
 	lastfilenum = filenum;
-#endif
 }
 
 /** \brief Checks if a node is downloading a file
@@ -1697,7 +1706,7 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		// Only allow HTTP and HTTPS
 		curl_easy_setopt(http_handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP|CURLPROTO_HTTPS);
 
-		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, va("SRB2Kart/v%d.%d", VERSION, SUBVERSION)); // Set user agent as some servers won't accept invalid user agents.
+		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, va("Ring Racers/v%d.%d", VERSION, SUBVERSION)); // Set user agent as some servers won't accept invalid user agents.
 
 		// Authenticate if the user so wishes
 		login = CURLGetLogin(url, NULL);

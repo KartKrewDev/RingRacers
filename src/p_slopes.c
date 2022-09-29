@@ -22,6 +22,7 @@
 #include "r_main.h"
 #include "p_maputl.h"
 #include "w_wad.h"
+#include "r_fps.h"
 #include "k_kart.h" // K_PlayerEBrake
 
 pslope_t *slopelist = NULL;
@@ -30,11 +31,74 @@ UINT16 slopecount = 0;
 static void P_BuildSlopeAnchorList (void);
 static void P_SetupAnchoredSlopes  (void);
 
+// Calculate light
+void P_UpdateSlopeLightOffset(pslope_t *slope)
+{
+	const UINT8 contrast = maplighting.contrast;
+
+	fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t zMul = FRACUNIT;
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	if (slope->normal.z == 0)
+	{
+		slope->lightOffset = slope->hwLightOffset = 0;
+		return;
+	}
+
+	if (maplighting.directional == true)
+	{
+		fixed_t nX = -slope->normal.x;
+		fixed_t nY = -slope->normal.y;
+		fixed_t nLen = FixedHypot(nX, nY);
+
+		if (nLen == 0)
+		{
+			slope->lightOffset = slope->hwLightOffset = 0;
+			return;
+		}
+
+		nX = FixedDiv(nX, nLen);
+		nY = FixedDiv(nY, nLen);
+
+		/*
+		if (slope is ceiling)
+		{
+			// There is no good way to calculate this condition here.
+			// We reverse it in R_FindPlane now.
+			nX = -nX;
+			nY = -nY;
+		}
+		*/
+
+		light = FixedMul(nX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(nY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->normal.y), abs(slope->normal.x)), ANGLE_90);
+	}
+
+	zMul = min(FRACUNIT, abs(slope->zdelta)*3/2); // *3/2, to make 60 degree slopes match walls.
+	contrastFixed = FixedMul(contrastFixed, zMul);
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -2 and 2 for software, -16 and 16 for hardware
+	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+#ifdef HWRENDER
+	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+#endif
+}
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope) {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 // Calculate slope's high & low z
@@ -127,8 +191,42 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 
 		// Get angles
 		slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
-		slope->zangle = InvAngle(R_PointToAngle2(0, 0, FRACUNIT, slope->zdelta));
+		slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
 	}
+
+	P_UpdateSlopeLightOffset(slope);
+}
+
+/// Setup slope via constants.
+static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	fixed_t m;
+	vector3_t *normal = &slope->normal;
+
+	// Set origin.
+	FV3_Load(&slope->o, 0, 0, c ? -FixedDiv(d, c) : 0);
+
+	// Get slope's normal.
+	FV3_Load(normal, a, b, c);
+	FV3_Normalize(normal);
+
+	// Invert normal if it's facing down.
+	if (normal->z < 0)
+		FV3_Negate(normal);
+
+	// Get direction vector
+	m = FixedHypot(normal->x, normal->y);
+	slope->d.x = -FixedDiv(normal->x, m);
+	slope->d.y = -FixedDiv(normal->y, m);
+
+	// Z delta
+	slope->zdelta = FixedDiv(m, normal->z);
+
+	// Get angles
+	slope->xydirection = R_PointToAngle2(0, 0, slope->d.x, slope->d.y)+ANGLE_180;
+	slope->zangle = R_PointToAngle2(0, 0, FRACUNIT, -slope->zdelta);
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Recalculate dynamic slopes.
@@ -211,6 +309,9 @@ static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, l
 	th->type = type;
 
 	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+
+	// interpolation
+	R_CreateInterpolator_DynSlope(&th->thinker, slope);
 }
 
 
@@ -510,6 +611,7 @@ static void line_SpawnViaMapthingVertexes(const int linenum, const boolean spawn
 	UINT16 tag2 = line->args[2];
 	UINT16 tag3 = line->args[3];
 	UINT8 flags = 0; // Slope flags
+
 	if (line->args[4] & TMSL_NOPHYSICS)
 		flags |= SL_NOPHYSICS;
 	if (line->args[4] & TMSL_DYNAMIC)
@@ -595,11 +697,10 @@ static boolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, boolean ceiling)
 {
 	INT32 i;
 	pslope_t **secslope = ceiling ? &sec->c_slope : &sec->f_slope;
-	TAG_ITER_DECLARECOUNTER(0);
 
 	if (!tag || *secslope)
 		return false;
-	TAG_ITER_SECTORS(0, tag, i)
+	TAG_ITER_SECTORS(tag, i)
 	{
 		pslope_t *srcslope = ceiling ? sectors[i].c_slope : sectors[i].f_slope;
 		if (srcslope)
@@ -681,12 +782,19 @@ pslope_t *P_SlopeById(UINT16 id)
 	return ret;
 }
 
+/// Creates a new slope from equation constants.
+pslope_t *MakeViaEquationConstants(const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
+{
+	pslope_t* ret = Slope_Add(0);
+
+	ReconfigureViaConstants(ret, a, b, c, d);
+
+	return ret;
+}
+
 /// Initializes and reads the slopes from the map data.
 void P_SpawnSlopes(const boolean fromsave) {
 	size_t i;
-
-	slopelist = NULL;
-	slopecount = 0;
 
 	/// Generates vertex slopes.
 	SpawnVertexSlopes();
@@ -727,6 +835,13 @@ void P_SpawnSlopes(const boolean fromsave) {
 			default:
 				break;
 		}
+}
+
+/// Initializes slopes.
+void P_InitSlopes(void)
+{
+	slopelist = NULL;
+	slopecount = 0;
 }
 
 // ============================================================================
@@ -779,6 +894,61 @@ fixed_t P_GetLightZAt(const lightlist_t *light, fixed_t x, fixed_t y)
 	return light->slope ? P_GetSlopeZAt(light->slope, x, y) : light->height;
 }
 
+// Returns true if we should run slope physics code on an object.
+boolean P_CanApplySlopePhysics(mobj_t *mo, pslope_t *slope)
+{
+	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid input.
+		return false;
+	}
+
+	if (slope->flags & SL_NOPHYSICS)
+	{
+		// Physics are turned off.
+		return false;
+	}
+
+	if (slope->normal.x == 0 && slope->normal.y == 0)
+	{
+		// Flat slope? No such thing, man. No such thing.
+		return false;
+	}
+
+	if (mo->player != NULL)
+	{
+		if (K_PlayerEBrake(mo->player) == true)
+		{
+			// Spindash negates slopes.
+			return false;
+		}
+	}
+
+	// We can do slope physics.
+	return true;
+}
+
+// Returns true if we should run slope launch code on an object.
+boolean P_CanApplySlopeLaunch(mobj_t *mo, pslope_t *slope)
+{
+	if (slope == NULL || mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid input.
+		return false;
+	}
+
+	// No physics slopes are fine to launch off of.
+
+	if (slope->normal.x == 0 && slope->normal.y == 0)
+	{
+		// Flat slope? No such thing, man. No such thing.
+		return false;
+	}
+
+	// We can do slope launching.
+	return true;
+}
+
 //
 // P_QuantizeMomentumToSlope
 //
@@ -808,48 +978,30 @@ void P_ReverseQuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope)
 	slope->zangle = InvAngle(slope->zangle);
 }
 
-// SRB2Kart: This fixes all slope-based jumps for different scales in Kart automatically without map tweaking.
-// However, they will always feel off every single time... see for yourself: https://cdn.discordapp.com/attachments/270211093761097728/484924392128774165/kart0181.gif
-//#define GROWNEVERMISSES
-
 //
 // P_SlopeLaunch
 //
 // Handles slope ejection for objects
 void P_SlopeLaunch(mobj_t *mo)
 {
-	if (!(mo->standingslope->flags & SL_NOPHYSICS) // If there's physics, time for launching.
-		&& (mo->standingslope->normal.x != 0
-		||  mo->standingslope->normal.y != 0))
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == true) // If there's physics, time for launching.
 	{
-		// Double the pre-rotation Z, then halve the post-rotation Z. This reduces the
-		// vertical launch given from slopes while increasing the horizontal launch
-		// given. Good for SRB2's gravity and horizontal speeds.
 		vector3_t slopemom;
 		slopemom.x = mo->momx;
 		slopemom.y = mo->momy;
 		slopemom.z = mo->momz;
 		P_QuantizeMomentumToSlope(&slopemom, mo->standingslope);
 
-#ifdef GROWNEVERMISSES
-		{
-			const fixed_t xyscale = mapobjectscale + (mapobjectscale - mo->scale);
-			const fixed_t zscale = mapobjectscale + (mapobjectscale - mo->scale);
-			mo->momx = FixedMul(slopemom.x, xyscale);
-			mo->momy = FixedMul(slopemom.y, xyscale);
-			mo->momz = FixedMul(slopemom.z, zscale);
-		}
-#else
 		mo->momx = slopemom.x;
 		mo->momy = slopemom.y;
 		mo->momz = slopemom.z;
-#endif
 
 		mo->eflags |= MFE_SLOPELAUNCHED;
 	}
 
 	//CONS_Printf("Launched off of slope.\n");
 	mo->standingslope = NULL;
+	mo->terrain = NULL;
 
 	if (mo->player)
 	{
@@ -868,18 +1020,23 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 	vector3_t slopemom, axis;
 	angle_t ang;
 
-	if (mo->standingslope->flags & SL_NOPHYSICS)
-		return 0;
+	if (P_CanApplySlopeLaunch(mo, mo->standingslope) == false)
+	{
+		return false;
+	}
 
 	// If there's physics, time for launching.
 	// Doesn't kill the vertical momentum as much as P_SlopeLaunch does.
 	ang = slope->zangle + ANG15*((slope->zangle > 0) ? 1 : -1);
 	if (ang > ANGLE_90 && ang < ANGLE_180)
-		ang = ((slope->zangle > 0) ? ANGLE_90 : InvAngle(ANGLE_90)); // hard cap of directly upwards
+	{
+		// hard cap of directly upwards
+		ang = ((slope->zangle > 0) ? ANGLE_90 : InvAngle(ANGLE_90));
+	}
 
 	slopemom.x = mo->momx;
 	slopemom.y = mo->momy;
-	slopemom.z = 3*(mo->momz/2);
+	slopemom.z = mo->momz;
 
 	axis.x = -slope->d.y;
 	axis.y = slope->d.x;
@@ -887,20 +1044,23 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	FV3_Rotate(&slopemom, &axis, ang >> ANGLETOFINESHIFT);
 
-	return 2*(slopemom.z/3);
+	return slopemom.z;
 }
 
 // Function to help handle landing on slopes
 void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 {
 	vector3_t mom; // Ditto.
-	if (slope->flags & SL_NOPHYSICS || (slope->normal.x == 0 && slope->normal.y == 0)) { // No physics, no need to make anything complicated.
+
+	if (P_CanApplySlopePhysics(thing, slope) == false) // No physics, no need to make anything complicated.
+	{ 
 		if (P_MobjFlip(thing)*(thing->momz) < 0) // falling, land on slope
 		{
 			thing->standingslope = slope;
 			P_SetPitchRollFromSlope(thing, slope);
 			thing->momz = -P_MobjFlip(thing);
 		}
+
 		return;
 	}
 
@@ -910,7 +1070,9 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 
 	P_ReverseQuantizeMomentumToSlope(&mom, slope);
 
-	if (P_MobjFlip(thing)*mom.z < 0) { // falling, land on slope
+	if (P_MobjFlip(thing)*mom.z < 0)
+	{
+		// falling, land on slope
 		thing->momx = mom.x;
 		thing->momy = mom.y;
 		thing->standingslope = slope;
@@ -925,27 +1087,29 @@ void P_ButteredSlope(mobj_t *mo)
 {
 	fixed_t thrust;
 
-	if (!mo->standingslope)
-		return;
-
-	if (mo->standingslope->flags & SL_NOPHYSICS)
-		return; // No physics, no butter.
-
 	if (mo->flags & (MF_NOCLIPHEIGHT|MF_NOGRAVITY))
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
-	if (mo->player) {
-		// SRB2Kart - spindash negates slopes
-		if (K_PlayerEBrake(mo->player))
-			return;
+	if (P_CanApplySlopePhysics(mo, mo->standingslope) == false)
+		return; // No physics, no butter.
 
-		// Changed in kart to only not apply physics on very slight slopes (I think about 4 degree angles)
+	if (mo->player != NULL)
+	{
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/21)
-			return; // Don't slide on non-steep slopes
+		{
+			// Don't slide on non-steep slopes.
+			// Changed in Ring Racers to only not apply physics on very slight slopes.
+			// (I think about 4 degree angles.)
+			return;
+		}
 
-		// This only means you can be stopped on slopes that aren't steeper than 45 degrees
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))
-			return; // Allow the player to stand still on slopes below a certain steepness
+		if (abs(mo->standingslope->zdelta) < FRACUNIT/2
+			&& !(mo->player->rmomx || mo->player->rmomy))
+		{
+			// Allow the player to stand still on slopes below a certain steepness.
+			// 45 degree angle steep, to be exact.
+			return; 
+		}
 	}
 
 	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5 / 4 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);

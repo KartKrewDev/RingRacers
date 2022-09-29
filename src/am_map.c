@@ -462,7 +462,7 @@ boolean AM_Responder(event_t *ev)
 			{
 				//faB: prevent alt-tab in win32 version to activate automap just before
 				//     minimizing the app; doesn't do any harm to the DOS version
-				if (!gamekeydown[KEY_LALT]  && !gamekeydown[KEY_RALT])
+				if (!gamekeydown[0][KEY_LALT] && !gamekeydown[0][KEY_RALT])
 				{
 					bigstate = 0; //added : 24-01-98 : toggle off large view
 					AM_Start();

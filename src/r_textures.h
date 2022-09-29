@@ -23,6 +23,8 @@
 #pragma interface
 #endif
 
+#define MISSING_TEXTURE "AASMELLY" // Replacement for invalid textures
+
 // A single patch from a texture definition,
 //  basically a rectangular area within
 //  the texture rectangle.
@@ -54,6 +56,7 @@ typedef struct
 {
 	// Keep name for switch changing, etc.
 	char name[8];
+	UINT32 hash;
 	UINT8 type; // TEXTURETYPE_
 	INT16 width, height;
 	boolean holes;
@@ -62,7 +65,7 @@ typedef struct
 
 	// All the patches[patchcount] are drawn back to front into the cached texture.
 	INT16 patchcount;
-	texpatch_t patches[0];
+	texpatch_t patches[];
 } texture_t;
 
 // all loaded and prepared textures from the start of the game
@@ -76,12 +79,14 @@ extern UINT8 **texturecache; // graphics data for each generated full-size textu
 
 // Load TEXTURES definitions, create lookup tables
 void R_LoadTextures(void);
+void R_LoadTexturesPwad(UINT16 wadnum);
 void R_FlushTextureCache(void);
 
 // Texture generation
 UINT8 *R_GenerateTexture(size_t texnum);
 UINT8 *R_GenerateTextureAsFlat(size_t texnum);
 INT32 R_GetTextureNum(INT32 texnum);
+INT32 R_GetTextureBrightmap(INT32 texnum);
 void R_CheckTextureCache(INT32 tex);
 void R_ClearTextureNumCache(boolean btell);
 
@@ -92,6 +97,8 @@ void *R_GetFlat(lumpnum_t flatnum);
 
 boolean R_CheckPowersOfTwo(void);
 void R_CheckFlatLength(size_t size);
+
+void R_UpdateTextureBrightmap(INT32 tx, INT32 bm);
 
 // Returns the texture number for the texture name.
 INT32 R_TextureNumForName(const char *name);

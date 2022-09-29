@@ -11,6 +11,7 @@
 /// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -95,14 +96,32 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
+	SINT8 K_BotDefaultSkin(void)
+
+		See header file for description.
+--------------------------------------------------*/
+SINT8 K_BotDefaultSkin(void)
+{
+	const char *defaultbotskinname = "eggrobo";
+	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
+
+	if (defaultbotskin == -1)
+	{
+		// This shouldn't happen, but just in case
+		defaultbotskin = 0;
+	}
+
+	return defaultbotskin;
+}
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
 		See header file for description.
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const char *defaultbotskinname = "eggrobo";
-	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
+	const SINT8 defaultbotskin = K_BotDefaultSkin();
 
 	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
@@ -119,12 +138,6 @@ void K_InitGrandPrixBots(void)
 
 	UINT8 newplayernum = 0;
 	UINT8 i, j;
-
-	if (defaultbotskin == -1)
-	{
-		// This shouldn't happen, but just in case
-		defaultbotskin = 0;
-	}
 
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
@@ -143,7 +156,7 @@ void K_InitGrandPrixBots(void)
 	}
 
 #if MAXPLAYERS != 16
-	I_Error("GP bot difficulty levels need rebalacned for the new player count!\n");
+	I_Error("GP bot difficulty levels need rebalanced for the new player count!\n");
 #endif
 
 	if (grandprixinfo.masterbots)
@@ -500,13 +513,133 @@ void K_IncreaseBotDifficulty(player_t *bot)
 }
 
 /*--------------------------------------------------
+	void K_RetireBots(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_RetireBots(void)
+{
+	const SINT8 defaultbotskin = K_BotDefaultSkin();
+	SINT8 newDifficulty;
+
+	boolean skinusable[MAXSKINS];
+
+	UINT8 i;
+
+	if (grandprixinfo.gp == true && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+	{
+		// Was last map, no replacement.
+		return;
+	}
+
+	// init usable bot skins list
+	for (i = 0; i < MAXSKINS; i++)
+	{
+		if (i < numskins)
+		{
+			skinusable[i] = true;
+		}
+		else
+		{
+			skinusable[i] = false;
+		}
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && !players[i].spectator)
+		{
+			skinusable[players[i].skin] = false;
+		}
+	}
+
+	if (!grandprixinfo.gp) // Sure, let's let this happen all the time :)
+	{
+		newDifficulty = cv_kartbot.value;
+	}
+	else
+	{
+		const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+		newDifficulty = startingdifficulty - 4 + grandprixinfo.roundnum;
+	}
+
+	if (newDifficulty > MAXBOTDIFFICULTY)
+	{
+		newDifficulty = MAXBOTDIFFICULTY;
+	}
+	else if (newDifficulty < 1)
+	{
+		newDifficulty = 1;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *bot = NULL;
+
+		if (!playeringame[i] || !players[i].bot)
+		{
+			continue;
+		}
+
+		bot = &players[i];
+
+		if (bot->spectator)
+		{
+			continue;
+		}
+
+		if (bot->pflags & PF_NOCONTEST)
+		{
+			UINT8 skinnum = P_RandomKey(PR_UNDEFINED, numskins);
+			UINT8 loops = 0;
+
+			while (!skinusable[skinnum])
+			{
+				if (loops >= numskins)
+				{
+					// no more skins
+					break;
+				}
+
+				skinnum++;
+
+				if (skinnum >= numskins)
+				{
+					skinnum = 0;
+				}
+
+				loops++;
+			}
+
+			if (loops >= numskins)
+			{
+				// Use default skin
+				skinnum = defaultbotskin;
+			}
+
+			skinusable[skinnum] = false;
+
+			bot->botvars.difficulty = newDifficulty;
+			bot->botvars.diffincrease = 0;
+
+			SetPlayerSkinByNum(bot - players, skinnum);
+			bot->skincolor = skins[skinnum].prefcolor;
+			sprintf(player_names[bot - players], "%s", skins[skinnum].realname);
+
+			bot->score = 0;
+			bot->pflags &= ~PF_NOCONTEST;
+		}
+	}
+}
+
+/*--------------------------------------------------
 	void K_FakeBotResults(player_t *bot)
 
 		See header file for description.
 --------------------------------------------------*/
 void K_FakeBotResults(player_t *bot)
 {
-	const UINT32 distfactor = FixedMul(32 * bot->mo->scale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 distfactor = FixedMul(32 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	UINT32 worstdist = 0;
 	tic_t besttime = UINT32_MAX;
 	UINT8 numplayers = 0;
@@ -592,6 +725,12 @@ boolean K_CanChangeRules(void)
 	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
 	{
 		// Don't cheat the rules of the GP!
+		return false;
+	}
+
+	if (bossinfo.boss == true)
+	{
+		// Don't cheat the boss!
 		return false;
 	}
 

@@ -14,6 +14,7 @@
 #ifndef __D_MAIN__
 #define __D_MAIN__
 
+#include "k_profiles.h"	// PR_LoadProfiles()
 #include "d_event.h"
 #include "w_wad.h"   // for MAX_WADFILES
 

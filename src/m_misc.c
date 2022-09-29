@@ -36,6 +36,7 @@
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "d_main.h"
 #include "m_argv.h"
@@ -45,7 +46,7 @@
 #include "m_anigif.h"
 
 // So that the screenshot menu auto-updates...
-#include "m_menu.h"
+#include "k_menu.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -63,9 +64,14 @@ typedef off_t off64_t;
 #if defined(__MINGW32__) && ((__GNUC__ > 7) || (__GNUC__ == 6 && __GNUC_MINOR__ >= 3)) && (__GNUC__ < 8)
 #define PRIdS "u"
 #elif defined (_WIN32)
-#define PRIdS "Iu"
-#elif defined (DJGPP)
+// pedantic: %I is nonstandard, is it ok to assume
+// unsigned int?
+//#define PRIdS "Iu"
+#ifdef _WIN64
+#define PRIdS "lu"
+#else
 #define PRIdS "u"
+#endif
 #else
 #define PRIdS "zu"
 #endif
@@ -173,30 +179,46 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
-/** Returns the map number for a map identified by the last two characters in
-  * its name.
-  *
-  * \param first  The first character after MAP.
-  * \param second The second character after MAP.
-  * \return The map number, or 0 if no map corresponds to these characters.
-  * \sa G_BuildMapName
-  */
-INT32 M_MapNumber(char first, char second)
+char joinedIPlist[NUMLOGIP][2][MAX_LOGIP];
+char joinedIP[MAX_LOGIP];
+
+// This initializes the above array to have NULL evrywhere it should.
+void M_InitJoinedIPArray(void)
 {
-	if (isdigit(first))
+	UINT8 i;
+	for (i=0; i < NUMLOGIP; i++)
 	{
-		if (isdigit(second))
-			return ((INT32)first - '0') * 10 + ((INT32)second - '0');
-		return 0;
+		joinedIPlist[i][0][0] = joinedIPlist[i][1][0] = '\0';
+	}
+}
+
+// This adds an entry to the above array
+void M_AddToJoinedIPs(char *address, char *servname)
+{
+	UINT8 i = 0;
+
+	// Check for dupes...
+	for (i = 0; i < NUMLOGIP-1; i++) // intentionally not < NUMLOGIP
+	{
+		// Check the addresses
+		if (strcmp(joinedIPlist[i][0], address) == 0)
+		{
+			break;
+		}
 	}
 
-	if (!isalpha(first))
-		return 0;
-	if (!isalnum(second))
-		return 0;
+	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
-	return 100 + ((INT32)tolower(first) - 'a') * 36 + (isdigit(second) ? ((INT32)second - '0') :
-		((INT32)tolower(second) - 'a') + 10);
+	// Start by moving every IP up 1 slot (dropping the last IP in the table)
+	for (; i; i--)
+	{
+		strlcpy(joinedIPlist[i][0], joinedIPlist[i-1][0], MAX_LOGIP);
+		strlcpy(joinedIPlist[i][1], joinedIPlist[i-1][1], MAX_LOGIP);
+	}
+
+	// and add the new IP at the start of the table!
+	strlcpy(joinedIPlist[0][0], address, MAX_LOGIP);
+	strlcpy(joinedIPlist[0][1], servname, MAX_LOGIP);
 }
 
 // ==========================================================================
@@ -441,6 +463,86 @@ boolean FIL_CheckExtension(const char *in)
 	return false;
 }
 
+// LAST IPs JOINED LOG FILE!
+// ...It won't be as overly engineered as the config file because let's be real there's 0 need to...
+
+// Save the file:
+void M_SaveJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i;
+	const char *filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+
+	if (!*joinedIPlist[0][0])
+		return;	// Don't bother, there's nothing to save.
+
+	f = fopen(filepath, "w");
+
+	if (!f)
+	{
+		CONS_Alert(CONS_WARNING, "Could not save recent IP list into %s\n", IPLOGFILE);
+		return;
+	}
+
+	for (i = 0; i < NUMLOGIP; i++)
+	{
+		if (*joinedIPlist[i][0])
+		{
+			fprintf(f, "%s%s%s\n", joinedIPlist[i][0], IPLOGFILESEP, joinedIPlist[i][1]);
+		}
+	}
+
+	fclose(f);
+}
+
+
+// Load the file:
+void M_LoadJoinedIPs(void)
+{
+	FILE *f = NULL;
+	UINT8 i = 0;
+	char *filepath;
+	char *s;
+	char buffer[2*(MAX_LOGIP+1)];
+
+	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+	f = fopen(filepath, "r");
+
+	if (f == NULL)
+		return;	// File doesn't exist? sure, just do nothing then.
+
+	for (i = 0; fgets(buffer, (int)sizeof(buffer), f); i++)	// Don't let us write more than we can chew!
+	{
+		if (i >= NUMLOGIP)
+			break;
+
+		if (!*buffer || *buffer == '\n')
+			break;
+
+		s = strtok(buffer, IPLOGFILESEP);	// We got the address
+		strlcpy(joinedIPlist[i][0], s, MAX_LOGIP);
+
+		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
+
+		if (s)
+		{
+			UINT16 j = 1;
+			//strcpy(joinedIPlist[i][1], s); -- get rid of \n too...
+			char *c = joinedIPlist[i][1];
+			while (*s && *s != '\n' && j < MAX_LOGIP)
+			{
+				*c = *s;
+				s++;
+				c++;
+				j++;
+			}
+			*c = '\0';
+		}
+	}
+	fclose(f);	// We're done here
+}
+
+
 // ==========================================================================
 //                        CONFIGURATION FILE
 // ==========================================================================
@@ -499,7 +601,7 @@ void Command_LoadConfig_f(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// temporarily reset execversion to default
@@ -553,7 +655,7 @@ void M_FirstLoadConfig(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		G_CopyControls(gamecontrol[i], gamecontroldefault[i][gcs_kart], NULL, 0);
+		G_CopyControls(gamecontrol[i], gamecontroldefault, NULL, 0);
 	}
 
 	// register execversion here before we load any configs
@@ -643,7 +745,7 @@ void M_SaveConfig(const char *filename)
 	}
 
 	// header message
-	fprintf(f, "// SRB2Kart configuration file.\n");
+	fprintf(f, "// Dr. Robotnik's Ring Racers configuration file.\n");
 
 	// print execversion FIRST, because subsequent consvars need to be filtered
 	// always print current EXECVERSION
@@ -655,15 +757,7 @@ void M_SaveConfig(const char *filename)
 
 	if (!dedicated)
 	{
-		if (tutorialmode && tutorialgcs)
-		{
-			// using gcs_custom as temp storage
-			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
-		else
-		{
-			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
-		}
+		G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1], gamecontrol[2], gamecontrol[3]);
 	}
 
 	fclose(f);
@@ -690,20 +784,20 @@ static void M_CreateScreenShotPalette(void)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[13] = "kartXXXX.ext";
+	static char freename[19] = "ringracersXXXX.ext";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
 
 	// find a file name to save it to
-	strcpy(freename+9,ext);
+	strcpy(freename+15,ext);
 
 	for (;;)
 	{
-		freename[4] = (char)('0' + (char)(i/1000));
-		freename[5] = (char)('0' + (char)((i/100)%10));
-		freename[6] = (char)('0' + (char)((i/10)%10));
-		freename[7] = (char)('0' + (char)(i%10));
+		freename[10] = (char)('0' + (char)(i/1000));
+		freename[11] = (char)('0' + (char)((i/100)%10));
+		freename[12] = (char)('0' + (char)((i/10)%10));
+		freename[13] = (char)('0' + (char)(i%10));
 
 		if (FIL_WriteFileOK(va(pandf,pathname,freename))) // access succeeds
 			result = 1; // too low
@@ -712,10 +806,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			if (!i)
 				break; // not too high, so it must be equal! YAY!
 
-			freename[4] = (char)('0' + (char)((i-1)/1000));
-			freename[5] = (char)('0' + (char)(((i-1)/100)%10));
-			freename[6] = (char)('0' + (char)(((i-1)/10)%10));
-			freename[7] = (char)('0' + (char)((i-1)%10));
+			freename[10] = (char)('0' + (char)((i-1)/1000));
+			freename[11] = (char)('0' + (char)(((i-1)/100)%10));
+			freename[12] = (char)('0' + (char)(((i-1)/10)%10));
+			freename[13] = (char)('0' + (char)((i-1)%10));
 			if (!FIL_WriteFileOK(va(pandf,pathname,freename))) // access fails
 				result = -1; // too high
 			else
@@ -733,10 +827,10 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 			return NULL;
 	}
 
-	freename[4] = (char)('0' + (char)(i/1000));
-	freename[5] = (char)('0' + (char)((i/100)%10));
-	freename[6] = (char)('0' + (char)((i/10)%10));
-	freename[7] = (char)('0' + (char)(i%10));
+	freename[10] = (char)('0' + (char)(i/1000));
+	freename[11] = (char)('0' + (char)((i/100)%10));
+	freename[12] = (char)('0' + (char)((i/10)%10));
+	freename[13] = (char)('0' + (char)(i%10));
 
 	return freename;
 }
@@ -746,12 +840,12 @@ static const char *Newsnapshotfile(const char *pathname, const char *ext)
 FUNCNORETURN static void PNG_error(png_structp PNG, png_const_charp pngtext)
 {
 	//CONS_Debug(DBG_RENDER, "libpng error at %p: %s", PNG, pngtext);
-	I_Error("libpng error at %p: %s", PNG, pngtext);
+	I_Error("libpng error at %p: %s", (void*)PNG, pngtext);
 }
 
 static void PNG_warn(png_structp PNG, png_const_charp pngtext)
 {
-	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", PNG, pngtext);
+	CONS_Debug(DBG_RENDER, "libpng warning at %p: %s", (void*)PNG, pngtext);
 }
 
 static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 width, PNG_CONST png_uint_32 height, PNG_CONST png_byte *palette)
@@ -796,16 +890,14 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "SRB2Kart " VERSIONSTRING;
+	char titletxt[] = "Dr. Robotnik's Ring Racers " VERSIONSTRING;
 	png_charp playertxt =  cv_playername[0].zstring;
-	char desctxt[] = "SRB2Kart Screenshot";
-	char Movietxt[] = "SRB2Kart Movie";
+	char desctxt[] = "Ring Racers Screenshot";
+	char Movietxt[] = "Ring Racers Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL
 	 "SDL";
-#elif defined (_WINDOWS)
-	 "DirectX";
 #else
 	 "Unknown";
 #endif
@@ -830,9 +922,11 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 			break;
 	}
 
+#if 0
 	if (gamestate == GS_LEVEL)
 		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
 	else
+#endif
 		snprintf(maptext, 8, "Unknown");
 
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
@@ -844,7 +938,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	else
 		snprintf(lvlttltext, 48, "Unknown");
 
-	if (gamestate == GS_LEVEL && &players[g_localplayers[0]] && players[g_localplayers[0]].mo)
+	if (gamestate == GS_LEVEL && players[g_localplayers[0]].mo)
 		snprintf(locationtxt, 40, "X:%d Y:%d Z:%d A:%d",
 			players[g_localplayers[0]].mo->x>>FRACBITS,
 			players[g_localplayers[0]].mo->y>>FRACBITS,
@@ -1643,12 +1737,12 @@ boolean M_ScreenshotResponder(event_t *ev)
 
 	ch = ev->data1;
 
-	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
+	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]) // remappable F8
+	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]) // remappable F9
+	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;
@@ -2555,26 +2649,25 @@ const char *M_FileError(FILE *fp)
 
 /** Return the number of parts of this path.
 */
-int M_PathParts(const char *path)
+int M_PathParts(const char *p)
 {
-	int n;
-	const char *p;
-	const char *t;
-	if (path == NULL)
+	int parts = 0;
+
+	if (p == NULL)
 		return 0;
-	for (n = 0, p = path ;; ++n)
+
+#ifdef _WIN32
+	if (!strncmp(&p[1], ":\\", 2))
+		p += 3;
+#endif
+
+	while (*(p += strspn(p, PATHSEP)))
 	{
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-			p += strspn(p, PATHSEP);
-		else
-		{
-			if (*t)/* there is something after the final delimiter */
-				n++;
-			break;
-		}
+		parts++;
+		p += strcspn(p, PATHSEP);
 	}
-	return n;
+
+	return parts;
 }
 
 /** Check whether a path is an absolute path.
@@ -2592,50 +2685,43 @@ boolean M_IsPathAbsolute(const char *path)
 */
 void M_MkdirEachUntil(const char *cpath, int start, int end, int mode)
 {
-	char path[MAX_WADPATH];
+	char path[256];
 	char *p;
-	char *t;
+	int n;
+	int c;
 
 	if (end > 0 && end <= start)
 		return;
 
 	strlcpy(path, cpath, sizeof path);
+
 #ifdef _WIN32
-	if (strncmp(&path[1], ":\\", 2) == 0)
+	if (!strncmp(&path[1], ":\\", 2))
 		p = &path[3];
 	else
 #endif
 		p = path;
 
-	if (end > 0)
-		end -= start;
-
-	for (; start > 0; --start)
+	while (end != 0 && *(p += strspn(p, PATHSEP)))
 	{
-		p += strspn(p, PATHSEP);
-		if (!( p = strchr(p, PATHSEP[0]) ))
-			return;
-	}
-	p += strspn(p, PATHSEP);
-	for (;;)
-	{
-		if (end > 0 && !--end)
-			break;
+		n = strcspn(p, PATHSEP);
 
-		t = p;
-		if (( p = strchr(p, PATHSEP[0]) ))
-		{
-			*p = '\0';
-			I_mkdir(path, mode);
-			*p = PATHSEP[0];
-			p += strspn(p, PATHSEP);
-		}
+		if (start > 0)
+			start--;
 		else
 		{
-			if (*t)
-				I_mkdir(path, mode);
-			break;
+			c = p[n];
+			p[n] = '\0';
+
+			I_mkdir(path, mode);
+
+			p[n] = c;
 		}
+
+		p += n;
+
+		if (end > 0)
+			end--;
 	}
 }
 

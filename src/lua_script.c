@@ -24,7 +24,7 @@
 #include "byteptr.h"
 #include "p_saveg.h"
 #include "p_local.h"
-#include "p_slopes.h" // for P_SlopeById
+#include "p_slopes.h" // for P_SlopeById and slopelist
 #include "p_polyobj.h" // polyobj_t, PolyObjects
 #ifdef LUA_ALLOW_BYTECODE
 #include "d_netfil.h" // for LUA_DumpFile
@@ -211,35 +211,17 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, cv_pointlimit.value);
 		return 1;
 	// begin map vars
-	} else if (fastcmp(word,"spstage_start")) {
-		lua_pushinteger(L, spstage_start);
-		return 1;
-	} else if (fastcmp(word,"spmarathon_start")) {
-		lua_pushinteger(L, spmarathon_start);
-		return 1;
-	} else if (fastcmp(word,"sstage_start")) {
-		lua_pushinteger(L, sstage_start);
-		return 1;
-	} else if (fastcmp(word,"sstage_end")) {
-		lua_pushinteger(L, sstage_end);
-		return 1;
-	} else if (fastcmp(word,"smpstage_start")) {
-		lua_pushinteger(L, smpstage_start);
-		return 1;
-	} else if (fastcmp(word,"smpstage_end")) {
-		lua_pushinteger(L, smpstage_end);
-		return 1;
 	} else if (fastcmp(word,"titlemap")) {
-		lua_pushinteger(L, titlemap);
+		lua_pushstring(L, titlemap);
 		return 1;
 	} else if (fastcmp(word,"titlemapinaction")) {
 		lua_pushboolean(L, (titlemapinaction != TITLEMAP_OFF));
 		return 1;
 	} else if (fastcmp(word,"bootmap")) {
-		lua_pushinteger(L, bootmap);
+		lua_pushstring(L, bootmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmap")) {
-		lua_pushinteger(L, tutorialmap);
+		lua_pushstring(L, tutorialmap);
 		return 1;
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);
@@ -299,6 +281,12 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	} else if (fastcmp(word,"leveltime")) {
 		lua_pushinteger(L, leveltime);
+		return 1;
+	} else if (fastcmp(word,"introtime")) {
+		lua_pushinteger(L, introtime);
+		return 1;
+	} else if (fastcmp(word,"starttime")) {
+		lua_pushinteger(L, starttime);
 		return 1;
 	} else if (fastcmp(word,"defrosting")) {
 		lua_pushinteger(L, hook_defrosting);
@@ -369,12 +357,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);
 		return 1;
-	} else if (fastcmp(word,"indirectitemcooldown")) {
-		lua_pushinteger(L, indirectitemcooldown);
-		return 1;
-	} else if (fastcmp(word,"hyubgone")) {
-		lua_pushinteger(L, hyubgone);
-		return 1;
 	} else if (fastcmp(word,"thwompsactive")) {
 		lua_pushboolean(L, thwompsactive);
 		return 1;
@@ -388,7 +370,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, mapobjectscale);
 		return 1;
 	} else if (fastcmp(word,"numlaps")) {
-		lua_pushinteger(L, cv_numlaps.value);
+		lua_pushinteger(L, numlaps);
 		return 1;
 	} else if (fastcmp(word,"racecountdown")) {
 		lua_pushinteger(L, racecountdown);
@@ -460,10 +442,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word,"exitcountdown"))
 		exitcountdown = (tic_t)luaL_checkinteger(L, 2);
-	else if (fastcmp(word,"indirectitemcooldown"))
-		indirectitemcooldown = (tic_t)luaL_checkinteger(L, 2);
-	else if (fastcmp(word,"hyubgone"))
-		hyubgone = (tic_t)luaL_checkinteger(L, 2);
 	else
 		return 0;
 
@@ -752,27 +730,6 @@ fixed_t LUA_EvalMath(const char *word)
 	return res;
 }
 
-/*
-LUA_PushUserdata but no userdata is created.
-You can't invalidate it therefore.
-*/
-
-void LUA_PushLightUserdata (lua_State *L, void *data, const char *meta)
-{
-	if (data)
-	{
-		lua_pushlightuserdata(L, data);
-		luaL_getmetatable(L, meta);
-		/*
-		The metatable is the last value on the stack, so this
-		applies it to the second value, which is the userdata.
-		*/
-		lua_setmetatable(L, -2);
-	}
-	else
-		lua_pushnil(L);
-}
-
 // Takes a pointer, any pointer, and a metatable name
 // Creates a userdata for that pointer with the given metatable
 // Pushes it to the stack and stores it in the registry.
@@ -903,6 +860,8 @@ void LUA_InvalidateLevel(void)
 	{
 		LUA_InvalidateUserdata(&lines[i]);
 		LUA_InvalidateUserdata(&lines[i].tags);
+		LUA_InvalidateUserdata(lines[i].args);
+		LUA_InvalidateUserdata(lines[i].stringargs);
 		LUA_InvalidateUserdata(lines[i].sidenum);
 	}
 	for (i = 0; i < numsides; i++)
@@ -914,6 +873,13 @@ void LUA_InvalidateLevel(void)
 		LUA_InvalidateUserdata(&PolyObjects[i]);
 		LUA_InvalidateUserdata(&PolyObjects[i].vertices);
 		LUA_InvalidateUserdata(&PolyObjects[i].lines);
+	}
+	for (pslope_t *slope = slopelist; slope; slope = slope->next)
+	{
+		LUA_InvalidateUserdata(slope);
+		LUA_InvalidateUserdata(&slope->normal);
+		LUA_InvalidateUserdata(&slope->o);
+		LUA_InvalidateUserdata(&slope->d);
 	}
 #ifdef HAVE_LUA_SEGS
 	for (i = 0; i < numsegs; i++)
@@ -937,6 +903,8 @@ void LUA_InvalidateMapthings(void)
 	{
 		LUA_InvalidateUserdata(&mapthings[i]);
 		LUA_InvalidateUserdata(&mapthings[i].tags);
+		LUA_InvalidateUserdata(mapthings[i].args);
+		LUA_InvalidateUserdata(mapthings[i].stringargs);
 	}
 }
 
@@ -1417,21 +1385,13 @@ static void ArchiveTables(UINT8 **p)
 			// Write key
 			e = ArchiveValue(p, TABLESINDEX, -2); // key should be either a number or a string, ArchiveValue can handle this.
 			if (e == 2) // invalid key type (function, thread, lightuserdata, or anything we don't recognise)
-			{
-				lua_pushvalue(gL, -2);
-				CONS_Alert(CONS_ERROR, "Index '%s' (%s) of table %d could not be archived!\n", lua_tostring(gL, -1), luaL_typename(gL, -1), i);
-				lua_pop(gL, 1);
-			}
+				CONS_Alert(CONS_ERROR, "Index '%s' (%s) of table %d could not be archived!\n", lua_tostring(gL, -2), luaL_typename(gL, -2), i);
 			// Write value
 			e = ArchiveValue(p, TABLESINDEX, -1);
 			if (e == 1)
 				n++; // the table contained a new table we'll have to archive. :(
 			else if (e == 2) // invalid value type
-			{
-				lua_pushvalue(gL, -2);
-				CONS_Alert(CONS_ERROR, "Type of value for table %d entry '%s' (%s) could not be archived!\n", i, lua_tostring(gL, -1), luaL_typename(gL, -1));
-				lua_pop(gL, 1);
-			}
+				CONS_Alert(CONS_ERROR, "Type of value for table %d entry '%s' (%s) could not be archived!\n", i, lua_tostring(gL, -2), luaL_typename(gL, -1));
 
 			lua_pop(gL, 1);
 		}
@@ -1704,7 +1664,7 @@ void LUA_Archive(UINT8 **p)
 		
 		WRITEUINT32(*p, UINT32_MAX); // end of mobjs marker, replaces mobjnum.
 
-		LUAh_NetArchiveHook(NetArchive); // call the NetArchive hook in archive mode
+		LUA_HookNetArchive(NetArchive); // call the NetArchive hook in archive mode
 	}
 
 	ArchiveTables(p);
@@ -1743,7 +1703,7 @@ void LUA_UnArchive(UINT8 **p)
 			}
 		} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.
 
-		LUAh_NetArchiveHook(NetUnArchive); // call the NetArchive hook in unarchive mode
+		LUA_HookNetArchive(NetUnArchive); // call the NetArchive hook in unarchive mode
 	}
 
 	UnArchiveTables(p);

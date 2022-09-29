@@ -56,6 +56,9 @@ void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
 UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 
+// Loads the correct palette into memory
+void V_ReloadPalette(void);
+
 // Set the current RGB palette lookup to use for palettized graphics
 void V_SetPalette(INT32 palettenum);
 
@@ -207,10 +210,15 @@ void V_EncoreInvertScreen(void);
 void V_DrawPromptBack(INT32 boxheight, INT32 color);
 
 /* Convenience macros for leagacy string function macros. */
-#define V__DrawOneScaleString( x,y,scale,option,font,string ) \
-	V_DrawStringScaled(x,y,scale,FRACUNIT,FRACUNIT,option,font,string)
-#define V__DrawDupxString( x,y,scale,option,font,string )\
-	V__DrawOneScaleString ((x)<<FRACBITS,(y)<<FRACBITS,scale,option,font,string)
+#define V__DrawOneScaleString( x,y,scale,option,cm,font,string ) \
+	V_DrawStringScaled(x,y,scale,FRACUNIT,FRACUNIT,option,cm,font,string)
+#define V__DrawDupxString( x,y,scale,option,cm,font,string )\
+	V__DrawOneScaleString ((x)<<FRACBITS,(y)<<FRACBITS,scale,option,cm,font,string)
+
+#define V__OneScaleStringWidth( scale,option,font,string ) \
+	V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string)
+#define V__IntegerStringWidth( scale,option,font,string ) \
+	(V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
 
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
@@ -220,7 +228,13 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UI
 UINT8 *V_GetStringColormap(INT32 colorflags);
 
 #define V_DrawLevelTitle( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT,option,LT_FONT,string)
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LT_FONT,string)
+
+// Find string width from lt_font chars
+#define V_LevelNameWidth( string ) \
+	V__IntegerStringWidth ( FRACUNIT,0,LT_FONT,string )
+
+INT32 V_LevelNameHeight(const char *string);
 
 // wordwrap a string using the hu_font
 char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
@@ -233,41 +247,66 @@ void V_DrawStringScaled(
 		fixed_t     space_scale,
 		fixed_t  linefeed_scale,
 		INT32       flags,
+		const UINT8 *colormap,
 		int         font,
 		const char *text);
 
+fixed_t V_StringScaledWidth(
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		const char *s);
+
 // draw a string using the hu_font
 #define V_DrawString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT,option,HU_FONT,string)
-#define V_DrawKartString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT,option,KART_FONT,string)
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,HU_FONT,string)
+
+#define V_StringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,HU_FONT,string )
+
 void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the hu_font, 0.5x scale
 #define V_DrawSmallString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT>>1,option,HU_FONT,string)
+	V__DrawDupxString (x,y,FRACUNIT>>1,option,NULL,HU_FONT,string)
+
+#define V_SmallStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT>>1,option,HU_FONT,string )
+
 void V_DrawCenteredSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedSmallString(INT32 x, INT32 y, INT32 option, const char *string);
 
 // draw a string using the tny_font
 #define V_DrawThinString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT,option,TINY_FONT,string)
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,TINY_FONT,string)
+
+#define V_ThinStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,TINY_FONT,string )
+
 void V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedThinString(INT32 x, INT32 y, INT32 option, const char *string);
 
 #define V_DrawStringAtFixed( x,y,option,string ) \
-	V__DrawOneScaleString (x,y,FRACUNIT,option,HU_FONT,string)
+	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,HU_FONT,string)
 
 #define V_DrawThinStringAtFixed( x,y,option,string ) \
-	V__DrawOneScaleString (x,y,FRACUNIT,option,TINY_FONT,string)
+	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,TINY_FONT,string)
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+
+
+void V_DrawCenteredThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
+void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
 
 // Draws a titlecard font string.
 // timer: when the letters start appearing (leave to 0 to disable)
 // threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
 // NOTE: This function ignores most conventional string flags (V_RETURN8, V_ALLOWLOWERCASE ...)
 // NOTE: This font only works with uppercase letters.
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean alignright, INT32 timer, INT32 threshold);
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold);
 
 // returns thr width of a string drawn using the above function.
 INT32 V_TitleCardStringWidth(const char *str);
@@ -278,25 +317,61 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 
 // Draw ping numbers. Used by the scoreboard and that one ping option. :P
 // This is a separate function because IMO lua should have access to it as well.
-void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap);
+INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap);
 
-// Find string width from lt_font chars
-INT32 V_LevelNameWidth(const char *string);
-INT32 V_LevelNameHeight(const char *string);
-INT16 V_LevelActNumWidth(UINT8 num); // act number width
+void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 
 #define V_DrawCreditString( x,y,option,string ) \
-	V__DrawOneScaleString (x,y,FRACUNIT,option,CRED_FONT,string)
-INT32 V_CreditStringWidth(const char *string);
+	V__DrawOneScaleString (x,y,FRACUNIT,option,NULL,CRED_FONT,string)
 
-// Find string width from hu_font chars
-INT32 V_StringWidth(const char *string, INT32 option);
-// Find string width from hu_font chars, 0.5x scale
-INT32 V_SmallStringWidth(const char *string, INT32 option);
-// Find string width from tny_font chars
-INT32 V_ThinStringWidth(const char *string, INT32 option);
-// Find string width from tny_font chars, 0.5x scale
-INT32 V_SmallThinStringWidth(const char *string, INT32 option);
+#define V_CreditStringWidth( string ) \
+	V__IntegerStringWidth ( FRACUNIT,0,CRED_FONT,string )
+
+// SRB2Kart
+#define V_DrawKartString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,KART_FONT,string)
+
+#define V_KartStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,KART_FONT,string )
+
+void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string);
+
+#define V_DrawGamemodeString( x,y,option,cm,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)
+
+#define V_GamemodeStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,GM_FONT,string )
+
+void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string);
+void V_DrawRightAlignedGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string);
+
+#define V_DrawFileString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,FILE_FONT,string)
+
+#define V_FileStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,FILE_FONT,string )
+
+void V_DrawCenteredFileString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedFileString(INT32 x, INT32 y, INT32 option, const char *string);
+
+#define V_DrawLSTitleHighString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LSHI_FONT,string)
+
+#define V_LSTitleHighStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,LSHI_FONT,string )
+
+void V_DrawCenteredLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const char *string);
+
+#define V_DrawLSTitleLowString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,LSLOW_FONT,string)
+
+#define V_LSTitleLowStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,LSLOW_FONT,string )
+
+void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
 
 void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param);
 

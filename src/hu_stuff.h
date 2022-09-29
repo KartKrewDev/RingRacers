@@ -32,17 +32,17 @@
 #define KART_FONTEND 'Z'
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
+
+#define AZ_FONTSTART 'A' // the first font character
+#define AZ_FONTEND 'Z'
+
+#define AZ_FONTSIZE (AZ_FONTEND - AZ_FONTSTART + 1)
 //
 
 // Level title font
 #define LT_FONTSTART '!' // the first font characters
 #define LT_FONTEND 'z' // the last font characters
 #define LT_FONTSIZE (LT_FONTEND - LT_FONTSTART + 1)
-
-// Under regular circumstances, we'd use the built in font stuff, however this font is a bit messy because of how we're gonna draw shit.
-// tc_font[0][n] is used for the "bottom" layer
-// tc_font[1][n] is used for the "top" layer
-extern patch_t *tc_font[2][LT_FONTSIZE];
 
 #define CRED_FONTSTART '!' // the first font character
 #define CRED_FONTEND 'Z' // the last font character
@@ -54,14 +54,23 @@ enum
 {
 	X        (HU),
 	X      (TINY),
-	X      (KART),
+	X      (FILE),
 
 	X        (LT),
 	X      (CRED),
 
+	X      (GTOL),
+	X      (GTFN),
+
 	X   (TALLNUM),
 	X (NIGHTSNUM),
 	X   (PINGNUM),
+	X	(PROFNUM),
+
+	X      (KART),
+	X        (GM),
+	X      (LSHI),
+	X     (LSLOW),
 };
 #undef  X
 
@@ -82,8 +91,8 @@ typedef struct
 //------------------------------------
 //           chat stuff
 //------------------------------------
-#define HU_MAXMSGLEN 224
-#define CHAT_BUFSIZE 64 // that's enough messages, right? We'll delete the older ones when that gets out of hand.
+#define HU_MAXMSGLEN 223
+#define CHAT_BUFSIZE 64		// that's enough messages, right? We'll delete the older ones when that gets out of hand.
 #define NETSPLITSCREEN // why the hell WOULDN'T we want this?
 #ifdef NETSPLITSCREEN
 #define OLDCHAT (cv_consolechat.value == 1 || dedicated || vid.width < 640)
@@ -106,14 +115,6 @@ extern patch_t *pinggfx[5];
 extern patch_t *framecounter;
 extern patch_t *frameslash;
 
-extern patch_t *rflagico;
-extern patch_t *bflagico;
-extern patch_t *rmatcico;
-extern patch_t *bmatcico;
-extern patch_t *tagico;
-extern patch_t *tallminus;
-extern patch_t *tallinfin;
-
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
 
@@ -122,8 +123,10 @@ void HU_Init(void);
 
 void HU_LoadGraphics(void);
 
-// Load a HUDGFX patch or NULL.
-patch_t *HU_CachePatch(const char *format, ...);
+// Load a HUDGFX patch or NULL/missingpat (dependent on required boolean).
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...);
+//#define HU_CachePatch(...) HU_UpdateOrBlankPatch(NULL, false, __VA_ARGS__) -- not sure how to default the missingpat here plus not currently used
+#define HU_UpdatePatch(user, ...) HU_UpdateOrBlankPatch(user, true, __VA_ARGS__)
 
 // reset heads up when consoleplayer respawns.
 void HU_Start(void);
@@ -135,7 +138,7 @@ void HU_Drawer(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags); // Lat': Ping drawer for scoreboard.
+void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags, boolean offline); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);
