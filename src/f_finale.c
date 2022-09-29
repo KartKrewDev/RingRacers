@@ -866,7 +866,7 @@ boolean F_CreditResponder(event_t *event)
 		return false;
 	}
 
-	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
+	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cht_debug)
 		return false;*/
 
 	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)

@@ -480,7 +480,7 @@ typedef enum
 
 void CONS_Printf(const char *fmt, ...) FUNCPRINTF;
 void CONS_Alert(alerttype_t level, const char *fmt, ...) FUNCDEBUG;
-void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
+void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // For help debugging functions.
 #define POTENTIALLYUNUSED CONS_Alert(CONS_WARNING, "(%s:%d) Unused code appears to be used.\n", __FILE__, __LINE__)
@@ -517,23 +517,35 @@ char *sizeu5(size_t num);
 extern int    VERSION;
 extern int SUBVERSION;
 extern boolean devparm; // development mode (-debug)
-// d_netcmd.c
-extern INT32 cv_debug;
 
-#define DBG_BASIC       0x0001
-#define DBG_DETAILED    0x0002
-#define DBG_PLAYER      0x0004
-#define DBG_RENDER      0x0008
-#define DBG_NIGHTSBASIC 0x0010
-#define DBG_NIGHTS      0x0020
-#define DBG_POLYOBJ     0x0040
-#define DBG_GAMELOGIC   0x0080
-#define DBG_NETPLAY     0x0100
-#define DBG_MEMORY      0x0200
-#define DBG_SETUP       0x0400
-#define DBG_LUA         0x0800
-#define DBG_RANDOMIZER  0x1000
-#define DBG_VIEWMORPH   0x2000
+// m_cheat.c
+extern UINT32 cht_debug;
+
+typedef enum
+{
+	DBG_NONE			= 0x00000000,
+	DBG_BASIC			= 0x00000001,
+	DBG_DETAILED		= 0x00000002,
+	DBG_PLAYER			= 0x00000004,
+	DBG_RENDER			= 0x00000008,
+	//DBG_NIGHTSBASIC	= 0x00000010, // free
+	//DBG_NIGHTS		= 0x00000020, // free
+	DBG_POLYOBJ			= 0x00000040,
+	DBG_GAMELOGIC		= 0x00000080,
+	DBG_NETPLAY			= 0x00000100,
+	DBG_MEMORY			= 0x00000200,
+	DBG_SETUP			= 0x00000400,
+	DBG_LUA				= 0x00000800,
+	DBG_RNG				= 0x00001000,
+} debugFlags_t;
+
+struct debugFlagNames_s
+{
+	const char *str;
+	debugFlags_t flag;
+};
+
+extern struct debugFlagNames_s const debug_flag_names[];
 
 // =======================
 // Misc stuff for later...

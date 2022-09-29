@@ -4464,7 +4464,7 @@ mobj_t *P_GetClosestAxis(mobj_t *source)
 	}
 
 	if (closestaxis == NULL)
-		CONS_Debug(DBG_NIGHTS, "ERROR: No axis points found!\n");
+		CONS_Alert(CONS_ERROR, "No axis points found!\n");
 
 	return closestaxis;
 }
@@ -4536,7 +4536,7 @@ void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT
 
 	if (!axis)
 	{
-		CONS_Debug(DBG_NIGHTS, "You forgot to put axis points in the map!\n");
+		CONS_Alert(CONS_WARNING, "You forgot to put axis points in the map!\n");
 		return;
 	}
 

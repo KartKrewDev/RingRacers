@@ -454,7 +454,7 @@ boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
-	if (devparm || cv_debug) // only automap in Debug Tails 01-19-2001
+	if (devparm || cht_debug) // only automap in Debug Tails 01-19-2001
 	{
 		if (!automapactive)
 		{
@@ -625,7 +625,7 @@ static inline void AM_doFollowPlayer(void)
   */
 void AM_Ticker(void)
 {
-	if (!cv_debug)
+	if (!cht_debug)
 		AM_Stop();
 
 	if (dedicated || !automapactive)

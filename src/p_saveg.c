@@ -4599,6 +4599,8 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEINT16(save_p, task->timer);
 		WRITESTRING(save_p, task->command);
 	}
+
+	WRITEUINT32(save_p, cht_debug);
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
@@ -4761,6 +4763,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 		Schedule_Add(basetime, timer, command);
 	}
+
+	cht_debug = READUINT32(save_p);
 
 	return true;
 }

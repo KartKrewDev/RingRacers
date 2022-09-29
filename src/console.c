@@ -1521,12 +1521,12 @@ void CONS_Alert(alerttype_t level, const char *fmt, ...)
 	CONS_Printf("%s", txt);
 }
 
-void CONS_Debug(INT32 debugflags, const char *fmt, ...)
+void CONS_Debug(UINT32 debugflags, const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
 
-	if ((cv_debug & debugflags) != debugflags)
+	if ((cht_debug & debugflags) != debugflags)
 		return;
 
 	if (txt == NULL)

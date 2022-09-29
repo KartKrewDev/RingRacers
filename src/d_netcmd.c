@@ -326,8 +326,6 @@ consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, N
 
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
-INT32 cv_debug;
-
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
@@ -2009,6 +2007,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 		case CHEAT_HURT:
 			COPY(WRITEINT32, INT32);
 			break;
+
+		case CHEAT_DEVMODE:
+			COPY(WRITEUINT32, UINT32);
+			break;
 	}
 
 #undef COPY
@@ -2852,7 +2854,7 @@ static void Command_Map_f(void)
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
-	if (cv_debug || option_force || cv_skipmapcheck.value)
+	if (cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		fromlevelselect = false; // The player wants us to trek on anyway.  Do so.
 	}
@@ -5565,6 +5567,13 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
+		case CHEAT_DEVMODE: {
+			UINT32 flags = READUINT32(*cp);
+			cht_debug = flags;
+			CV_CheaterWarning(targetPlayer, va("devmode %08x", flags));
+			break;
+		}
+
 		case NUMBER_OF_CHEATS:
 			break;
 	}
@@ -5625,7 +5634,7 @@ void Command_ExitGame_f(void)
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
