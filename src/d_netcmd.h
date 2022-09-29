@@ -179,6 +179,7 @@ typedef enum
 	XD_SCHEDULETASK, // 36
 	XD_SCHEDULECLEAR, // 37
 	XD_AUTOMATE,    // 38
+	XD_CHEAT,       // 39
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -277,6 +278,8 @@ void Automate_Clear(void);
 
 extern UINT32 livestudioaudience_timer;
 void LiveStudioAudience(void);
+
+void D_Cheat(INT32 playernum, INT32 cheat, ...);
 
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);

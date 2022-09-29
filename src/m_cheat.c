@@ -251,32 +251,18 @@ boolean cht_Responder(event_t *ev)
 // command that can be typed at the console!
 void Command_CheatNoClip_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make netplay compatible
 
-	plyr = &players[consoleplayer];
-
-	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
-		return;
-
-	plyr->mo->flags ^= MF_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->mo->flags & MF_NOCLIP ? M_GetText("On") : M_GetText("Off"));
+	D_Cheat(consoleplayer, CHEAT_NOCLIP);
 }
 
 void Command_CheatGod_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	plyr = &players[consoleplayer];
-	plyr->pflags ^= PF_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->pflags & PF_GODMODE ? M_GetText("On") : M_GetText("Off"));
+	D_Cheat(consoleplayer, CHEAT_GOD);
 }
 
 void Command_Scale_f(void)
@@ -286,7 +272,6 @@ void Command_Scale_f(void)
 
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (scale < FRACUNIT/100 || scale > 100*FRACUNIT) //COM_Argv(1) will return a null string if they did not give a paramater, so...
 	{
@@ -294,29 +279,21 @@ void Command_Scale_f(void)
 		return;
 	}
 
-	if (!players[consoleplayer].mo)
-		return;
-
-	players[consoleplayer].mo->destscale = scale;
-
-	CONS_Printf(M_GetText("Scale set to %s\n"), COM_Argv(1));
+	D_Cheat(consoleplayer, CHEAT_SCALE, scale);
 }
 
 void Command_Gravflip_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (players[consoleplayer].mo)
-		players[consoleplayer].mo->flags2 ^= MF2_OBJECTFLIP;
+	D_Cheat(consoleplayer, CHEAT_FLIP);
 }
 
 void Command_Hurtme_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 2)
 	{
@@ -324,7 +301,7 @@ void Command_Hurtme_f(void)
 		return;
 	}
 
-	P_DamageMobj(players[consoleplayer].mo, NULL, NULL, atoi(COM_Argv(1)), DMG_NORMAL);
+	D_Cheat(consoleplayer, CHEAT_HURT, atoi(COM_Argv(1)));
 }
 
 void Command_RTeleport_f(void)
