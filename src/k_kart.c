@@ -10744,8 +10744,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										mobj_t *top = Obj_GardenTopDestroy(player);
 
 										// Fly off the Top at high speed
-										P_Thrust(player->mo, K_MomentumAngle(player->mo), 80 * player->mo->scale);
-										P_SetObjectMomZ(player->mo, player->mo->height / 2, true);
+										P_Thrust(player->mo, K_MomentumAngle(player->mo), 80 * mapobjectscale);
+										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
 										top->momx = player->mo->momx;
 										top->momy = player->mo->momy;
