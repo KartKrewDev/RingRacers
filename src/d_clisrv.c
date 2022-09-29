@@ -895,8 +895,15 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->packettype = PT_SERVERINFO;
 	netbuffer->u.serverinfo._255 = 255;
 	netbuffer->u.serverinfo.packetversion = PACKETVERSION;
+
+#ifdef DEVELOP
+	memcpy(netbuffer->u.serverinfo.commit,
+			comprevision_abbrev_bin, GIT_SHA_ABBREV);
+#else
 	netbuffer->u.serverinfo.version = VERSION;
 	netbuffer->u.serverinfo.subversion = SUBVERSION;
+#endif
+
 	strncpy(netbuffer->u.serverinfo.application, SRB2APPLICATION,
 			sizeof netbuffer->u.serverinfo.application);
 	// return back the time value so client can compute their ping
@@ -1404,11 +1411,13 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (info->packetversion != PACKETVERSION)
 			return;/* old new packet format */
 
+#ifndef DEVELOP
 		if (info->version != VERSION)
 			return; // Not same version.
 
 		if (info->subversion != SUBVERSION)
 			return; // Close, but no cigar.
+#endif
 
 		if (strcmp(info->application, SRB2APPLICATION))
 			return;/* that's a different mod */
@@ -1681,6 +1690,35 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 
 		if (client)
 		{
+#ifdef DEVELOP
+			// Commits do not match? Do not connect!
+			if (memcmp(serverlist[i].info.commit,
+						comprevision_abbrev_bin,
+						GIT_SHA_ABBREV))
+			{
+				char theirs[GIT_SHA_ABBREV * 2 + 1];
+				UINT8 n;
+
+				for (n = 0; n < GIT_SHA_ABBREV; ++n)
+				{
+					sprintf(&theirs[n * 2], "%02hhx",
+							serverlist[i].info.commit[n]);
+				}
+
+				D_QuitNetGame();
+				CL_Reset();
+				D_StartTitle();
+
+				M_StartMessage(va(
+							"Your EXE differs from the server.\n"
+							"  Yours: %.*s\n"
+							"Theirs: %s\n\n"
+							"Press ESC\n",
+							GIT_SHA_ABBREV * 2, comprevision, theirs), NULL, MM_NOTHING);
+				return false;
+			}
+#endif
+
 #ifdef HAVE_CURL
 			if (serverlist[i].info.httpsource[0])
 				strncpy(http_source, serverlist[i].info.httpsource, MAX_MIRROR_LENGTH);
@@ -2014,8 +2052,10 @@ static void CL_ConnectToServer(void)
 		gametypestr[sizeof serverlist[i].info.gametypename - 1] = '\0';
 		CON_LogMessage(va(M_GetText("Gametype: %s\n"), gametypestr));
 
+#ifndef DEVELOP
 		CON_LogMessage(va(M_GetText("Version: %d.%d\n"),
 		 serverlist[i].info.version, serverlist[i].info.subversion));
+#endif
 	}
 	SL_ClearServerList(servernode);
 
