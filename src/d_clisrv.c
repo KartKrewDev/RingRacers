@@ -896,12 +896,12 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	netbuffer->u.serverinfo._255 = 255;
 	netbuffer->u.serverinfo.packetversion = PACKETVERSION;
 
+	netbuffer->u.serverinfo.version = VERSION;
+	netbuffer->u.serverinfo.subversion = SUBVERSION;
+
 #ifdef DEVELOP
 	memcpy(netbuffer->u.serverinfo.commit,
 			comprevision_abbrev_bin, GIT_SHA_ABBREV);
-#else
-	netbuffer->u.serverinfo.version = VERSION;
-	netbuffer->u.serverinfo.subversion = SUBVERSION;
 #endif
 
 	strncpy(netbuffer->u.serverinfo.application, SRB2APPLICATION,
@@ -1411,13 +1411,11 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (info->packetversion != PACKETVERSION)
 			return;/* old new packet format */
 
-#ifndef DEVELOP
 		if (info->version != VERSION)
 			return; // Not same version.
 
 		if (info->subversion != SUBVERSION)
 			return; // Close, but no cigar.
-#endif
 
 		if (strcmp(info->application, SRB2APPLICATION))
 			return;/* that's a different mod */
@@ -2052,10 +2050,8 @@ static void CL_ConnectToServer(void)
 		gametypestr[sizeof serverlist[i].info.gametypename - 1] = '\0';
 		CON_LogMessage(va(M_GetText("Gametype: %s\n"), gametypestr));
 
-#ifndef DEVELOP
 		CON_LogMessage(va(M_GetText("Version: %d.%d\n"),
 		 serverlist[i].info.version, serverlist[i].info.subversion));
-#endif
 	}
 	SL_ClearServerList(servernode);
 

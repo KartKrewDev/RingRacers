@@ -266,11 +266,10 @@ typedef struct
 	UINT8 _255;
 	UINT8 packetversion;
 	char  application[MAXAPPLICATION];
-#ifdef DEVELOP
-	UINT8 commit[GIT_SHA_ABBREV];
-#else
 	UINT8 version;
 	UINT8 subversion;
+#ifdef DEVELOP
+	UINT8 commit[GIT_SHA_ABBREV];
 #endif
 	UINT8 numberofplayer;
 	UINT8 maxplayer;
