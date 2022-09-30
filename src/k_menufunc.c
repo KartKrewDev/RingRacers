@@ -2016,7 +2016,7 @@ void M_QuitResponse(INT32 ch)
 
 	if (ch == MA_YES)
 	{
-		if (!(netgame || cv_debug))
+		if (!(netgame || cht_debug))
 		{
 			mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
 			if (quitsounds[mrand])
@@ -3577,7 +3577,7 @@ void M_LevelSelectHandler(INT32 choice)
 				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 				// Still need to reset devmode
-				cv_debug = 0;
+				cht_debug = 0;
 
 				if (demo.playback)
 					G_StopDemo();
@@ -3686,7 +3686,7 @@ void M_StartTimeAttack(INT32 choice)
 	}
 
 	// Still need to reset devmode
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 
 	if (demo.playback)

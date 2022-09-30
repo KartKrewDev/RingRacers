@@ -4589,7 +4589,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 
 	gameaction = ga_nothing;
 
-	if (cv_debug && saved)
+	if (cht_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
@@ -4691,7 +4691,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	}
 
 cleanup:
-	if (cv_debug && saved)
+	if (cht_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));

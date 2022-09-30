@@ -1899,7 +1899,7 @@ void CV_CheatsChanged(void)
 				CV_SetCVar(cvar, cvar->defaultvalue, false);
 
 		// Reset any other cheat command effects here, as well.
-		cv_debug = 0;
+		cht_debug = 0;
 
 		P_ResetPlayerCheats();
 	}

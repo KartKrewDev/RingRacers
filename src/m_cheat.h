@@ -29,10 +29,14 @@ typedef enum {
 	CHEAT_FLIP,
 	CHEAT_HURT,
 	CHEAT_RELATIVE_TELEPORT,
+	CHEAT_DEVMODE,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
 
+//
+// Cheat sequences
+//
 boolean cht_Responder(event_t *ev);
 void cht_Init(void);
 

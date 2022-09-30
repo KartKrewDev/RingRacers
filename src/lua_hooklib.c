@@ -411,7 +411,7 @@ static int call_single_hook_no_copy(Hook_State *hook)
 	else
 	{
 		/* print the error message once */
-		if (cv_debug & DBG_LUA || !in_bit_array(hooksErrored, hook->id))
+		if (cht_debug & DBG_LUA || !in_bit_array(hooksErrored, hook->id))
 		{
 			CONS_Alert(CONS_WARNING, "%s\n", lua_tostring(gL, -1));
 			set_bit_array(hooksErrored, hook->id);

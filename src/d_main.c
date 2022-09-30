@@ -962,7 +962,7 @@ void D_StartTitle(void)
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 	lastmaploaded = 0;
