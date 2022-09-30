@@ -674,15 +674,15 @@ void Command_Dumplua_f(void)
 
 void Command_Savecheckpoint_f(void)
 {
+	mobj_t *thing = players[consoleplayer].mo;
+
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	players[consoleplayer].respawn.pointx = players[consoleplayer].mo->x;
-	players[consoleplayer].respawn.pointy = players[consoleplayer].mo->y;
-	players[consoleplayer].respawn.pointz = players[consoleplayer].mo->floorz;
-
-	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].respawn.pointx, players[consoleplayer].respawn.pointy, players[consoleplayer].respawn.pointz);
+	if (!P_MobjWasRemoved(thing))
+	{
+		D_Cheat(consoleplayer, CHEAT_SAVECHECKPOINT, thing->x, thing->y, thing->z);
+	}
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.

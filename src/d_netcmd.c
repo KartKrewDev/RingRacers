@@ -2040,6 +2040,12 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 	switch (cheat)
 	{
+		case CHEAT_SAVECHECKPOINT:
+			COPY(WRITEFIXED, fixed_t); // x
+			COPY(WRITEFIXED, fixed_t); // y
+			COPY(WRITEFIXED, fixed_t); // z
+			break;
+
 		case CHEAT_RINGS:
 		case CHEAT_LIVES:
 			// If you're confused why 'int' instead of
@@ -5544,6 +5550,21 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->pflags ^= PF_GODMODE;
 
 			CV_CheaterWarning(targetPlayer, va("GOD MODE %s", status));
+			break;
+		}
+
+		case CHEAT_SAVECHECKPOINT: {
+			fixed_t x = READFIXED(*cp);
+			fixed_t y = READFIXED(*cp);
+			fixed_t z = READFIXED(*cp);
+
+			player->respawn.pointx = x;
+			player->respawn.pointy = y;
+			player->respawn.pointz = z;
+			player->respawn.manual = true;
+
+			CV_CheaterWarning(targetPlayer, va("temporary checkpoint created at %d, %d, %d",
+						x / FRACUNIT, y / FRACUNIT, z / FRACUNIT));
 			break;
 		}
 
