@@ -19,6 +19,18 @@
 #include "p_mobj.h"
 #include "command.h"
 
+typedef enum {
+	CHEAT_NOCLIP,
+	CHEAT_GOD,
+	CHEAT_RINGS,
+	CHEAT_LIVES,
+	CHEAT_SCALE,
+	CHEAT_FLIP,
+	CHEAT_HURT,
+
+	NUMBER_OF_CHEATS
+} cheat_t;
+
 boolean cht_Responder(event_t *ev);
 void cht_Init(void);
 

@@ -5718,8 +5718,9 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// free: 1<<0 to 1<<2 (name un-matchable)
-	"\x01",
+	"GODMODE",
+
+	// free: 1<<1 and 1<<2 (name un-matchable)
 	"\x01",
 	"\x01",
 
@@ -6355,9 +6356,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PA_FAST",PA_FAST},
 	{"PA_DRIFT",PA_DRIFT},
 	{"PA_HURT",PA_HURT},
-
-	// Value for infinite lives
-	{"INFLIVES",INFLIVES},
 
 	// Got Flags, for player->gotflag!
 	// Used to be MF_ for some stupid reason, now they're GF_ to stop them looking like mobjflags

@@ -96,6 +96,7 @@ static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
 static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
+static void Got_Cheat(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -626,7 +627,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PLAYSOUND", // XD_PLAYSOUND
 	"SCHEDULETASK", // XD_SCHEDULETASK
 	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
-	"AUTOMATE" // XD_AUTOMATE
+	"AUTOMATE", // XD_AUTOMATE
+	"CHEAT", // XD_CHEAT
 };
 
 // =========================================================================
@@ -678,6 +680,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
 	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
+
+	RegisterNetXCmd(XD_CHEAT, Got_Cheat);
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
@@ -2013,6 +2017,49 @@ void D_SendPlayerConfig(UINT8 n)
 	}
 
 	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
+}
+
+void D_Cheat(INT32 playernum, INT32 cheat, ...)
+{
+	va_list ap;
+
+	UINT8 buf[64];
+	UINT8 *p = buf;
+
+	if (!CV_CheatsEnabled())
+	{
+		CONS_Printf("This cannot be used without cheats enabled.\n");
+		return;
+	}
+
+	WRITEUINT8(p, playernum);
+	WRITEUINT8(p, cheat);
+
+	va_start(ap, cheat);
+#define COPY(writemacro, type) writemacro (p, va_arg(ap, type))
+
+	switch (cheat)
+	{
+		case CHEAT_RINGS:
+		case CHEAT_LIVES:
+			// If you're confused why 'int' instead of
+			// 'SINT8', search online: 'default argument promotions'
+			COPY(WRITESINT8, int);
+			break;
+
+		case CHEAT_SCALE:
+			COPY(WRITEFIXED, fixed_t);
+			break;
+
+		case CHEAT_HURT:
+			COPY(WRITEINT32, INT32);
+			break;
+	}
+
+#undef COPY
+	va_end(ap);
+
+	SendNetXCmd(XD_CHEAT, buf, p - buf);
 }
 
 // Only works for displayplayer, sorry!
@@ -5451,6 +5498,120 @@ static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
 				command
 			);
 		}
+	}
+}
+
+static void Got_Cheat(UINT8 **cp, INT32 playernum)
+{
+	UINT8 targetPlayer = READUINT8(*cp);
+	cheat_t cheat = READUINT8(*cp);
+
+	player_t *player;
+
+	if (cheat >= NUMBER_OF_CHEATS || !CV_CheatsEnabled() || targetPlayer >= MAXPLAYERS ||
+			playernode[targetPlayer] != playernode[playernum])
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal cheat command received from %s\n"),
+				player_names[playernum]);
+		return;
+	}
+
+	player = &players[targetPlayer];
+
+	switch (cheat)
+	{
+		case CHEAT_NOCLIP: {
+			const char *status = "on";
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->flags ^= MF_NOCLIP;
+
+				if (!(player->mo->flags & MF_NOCLIP))
+				{
+					status = "off";
+				}
+			}
+
+			CV_CheaterWarning(targetPlayer, va("noclip %s", status));
+			break;
+		}
+
+		case CHEAT_GOD: {
+			const char *status = (player->pflags & PF_GODMODE) ? "off" : "on";
+
+			player->pflags ^= PF_GODMODE;
+
+			CV_CheaterWarning(targetPlayer, va("GOD MODE %s", status));
+			break;
+		}
+
+		case CHEAT_RINGS: {
+			SINT8 rings = READSINT8(*cp);
+
+			// P_GivePlayerRings does value clamping
+			player->rings = 0;
+			P_GivePlayerRings(player, rings);
+
+			CV_CheaterWarning(targetPlayer, va("rings = %d", rings));
+			break;
+		}
+
+		case CHEAT_LIVES: {
+			SINT8 lives = READSINT8(*cp);
+
+			// P_GivePlayerLives does value clamping
+			player->lives = 0;
+			P_GivePlayerLives(player, lives);
+
+			CV_CheaterWarning(targetPlayer, va("lives = %d", lives));
+			break;
+		}
+
+		case CHEAT_SCALE: {
+			const fixed_t smin = FRACUNIT/100;
+			const fixed_t smax = 100*FRACUNIT;
+
+			fixed_t s = READFIXED(*cp);
+			float f;
+
+			s = min(max(smin, s), smax);
+			f = FIXED_TO_FLOAT(s);
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->destscale = s;
+			}
+
+			CV_CheaterWarning(targetPlayer, va("scale = %d%s", (int)f, M_Ftrim(FIXED_TO_FLOAT(s))));
+			break;
+		}
+
+		case CHEAT_FLIP: {
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->flags2 ^= MF2_OBJECTFLIP;
+			}
+
+			CV_CheaterWarning(targetPlayer, "invert gravity");
+			break;
+		}
+
+		case CHEAT_HURT: {
+			INT32 damage = READINT32(*cp);
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				P_DamageMobj(player->mo, NULL, NULL, damage, DMG_NORMAL);
+			}
+
+			CV_CheaterWarning(targetPlayer, va("%d damage to me", damage));
+			break;
+		}
+
+		case NUMBER_OF_CHEATS:
+			break;
 	}
 }
 

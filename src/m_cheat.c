@@ -251,37 +251,18 @@ boolean cht_Responder(event_t *ev)
 // command that can be typed at the console!
 void Command_CheatNoClip_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make netplay compatible
 
-	plyr = &players[consoleplayer];
-
-	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
-		return;
-
-	plyr->cheats ^= PC_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->cheats & PC_NOCLIP ? M_GetText("On") : M_GetText("Off"));
-
-	if (plyr->cheats & PC_NOCLIP)
-		plyr->mo->flags |= MF_NOCLIP;
-	else
-		plyr->mo->flags &= ~MF_NOCLIP;
+	D_Cheat(consoleplayer, CHEAT_NOCLIP);
 }
 
 void Command_CheatGod_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	plyr = &players[consoleplayer];
-	plyr->cheats ^= PC_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->cheats & PC_GODMODE ? M_GetText("On") : M_GetText("Off"));
+	D_Cheat(consoleplayer, CHEAT_GOD);
 }
 
 void Command_Scale_f(void)
@@ -291,7 +272,6 @@ void Command_Scale_f(void)
 
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (scale < FRACUNIT/100 || scale > 100*FRACUNIT) //COM_Argv(1) will return a null string if they did not give a paramater, so...
 	{
@@ -299,29 +279,21 @@ void Command_Scale_f(void)
 		return;
 	}
 
-	if (!players[consoleplayer].mo)
-		return;
-
-	players[consoleplayer].mo->destscale = scale;
-
-	CONS_Printf(M_GetText("Scale set to %s\n"), COM_Argv(1));
+	D_Cheat(consoleplayer, CHEAT_SCALE, scale);
 }
 
 void Command_Gravflip_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (players[consoleplayer].mo)
-		players[consoleplayer].mo->flags2 ^= MF2_OBJECTFLIP;
+	D_Cheat(consoleplayer, CHEAT_FLIP);
 }
 
 void Command_Hurtme_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 2)
 	{
@@ -329,7 +301,7 @@ void Command_Hurtme_f(void)
 		return;
 	}
 
-	P_DamageMobj(players[consoleplayer].mo, NULL, NULL, atoi(COM_Argv(1)), DMG_NORMAL);
+	D_Cheat(consoleplayer, CHEAT_HURT, atoi(COM_Argv(1)));
 }
 
 void Command_RTeleport_f(void)
@@ -619,7 +591,6 @@ void Command_Skynum_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -764,13 +735,7 @@ void Command_Setrings_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		// P_GivePlayerRings does value clamping
-		players[consoleplayer].rings = 0;
-		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
-		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-	}
+	D_Cheat(consoleplayer, CHEAT_RINGS, atoi(COM_Argv(1)));
 }
 
 void Command_Setlives_f(void)
@@ -778,20 +743,7 @@ void Command_Setlives_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		SINT8 lives = atoi(COM_Argv(1));
-		if (lives == -1)
-		{
-			players[consoleplayer].lives = INFLIVES; // infinity!
-		}
-		else
-		{
-			// P_GivePlayerLives does value clamping
-			players[consoleplayer].lives = 0;
-			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
-		}
-	}
+	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
 //

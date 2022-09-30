@@ -58,14 +58,15 @@ typedef enum
 //
 typedef enum
 {
-	// free: 1<<0 to 1<<2
+	PF_GODMODE			= 1<<0, // Immortal. No lightsnake from pits either
+
+	// free: 1<<1 and 1<<2
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?
 	PF_GAINAX			= 1<<3,
 
-	// Accessibility and cheats
-	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
+	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
 	// 1<<5 free
 	// 1<<6 free
 
@@ -104,13 +105,6 @@ typedef enum
 
 	// up to 1<<31 is free
 } pflags_t;
-
-typedef enum
-{
-	PC_GODMODE			= 1,
-	PC_NOCLIP 			= 1<<1,
-	// up to 1<<31 is free
-} pcheats_t;
 
 typedef enum
 {
@@ -376,7 +370,6 @@ typedef struct player_s
 	// Bit flags.
 	// See pflags_t, above.
 	pflags_t pflags;
-	pcheats_t cheats;
 
 	// playing animation.
 	panim_t panim;
@@ -613,8 +606,5 @@ typedef struct player_s
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 } player_t;
-
-// Value for infinite lives
-#define INFLIVES 0x7F
 
 #endif
