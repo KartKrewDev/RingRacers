@@ -731,7 +731,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("downloads", Command_Downloads_f);
 
-	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
+	COM_AddCommand("item", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -5840,7 +5840,7 @@ static void Command_KartGiveItem_f(void)
 {
 	int           ac;
 	const char *name;
-	int         item;
+	INT32       item;
 
 	const char * str;
 
@@ -5852,7 +5852,7 @@ static void Command_KartGiveItem_f(void)
 		if (ac < 2)
 		{
 			CONS_Printf(
-"kartgiveitem <item> [amount]: Give yourself an item\n"
+"item <item> [amount]: Give yourself an item\n"
 			);
 		}
 		else
@@ -5867,12 +5867,19 @@ static void Command_KartGiveItem_f(void)
 			}
 			else
 			{
-				for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
+				/* first check exact match */
+				if (!CV_CompleteValue(&cv_kartdebugitem, &name, &item))
 				{
-					if (strcasecmp(name, str) == 0)
+					CONS_Printf("\x83" "Autocomplete:\n");
+
+					/* then do very loose partial matching */
+					for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
 					{
-						item = kartdebugitem_cons_t[i].value;
-						break;
+						if (strcasestr(str, name) != NULL)
+						{
+							CONS_Printf("\x83\t%s\n", str);
+							item = kartdebugitem_cons_t[i].value;
+						}
 					}
 				}
 			}
@@ -5884,7 +5891,7 @@ static void Command_KartGiveItem_f(void)
 				if (ac > 2)
 					amt = atoi(COM_Argv(2));
 				else
-					amt = 1;/* default to one quantity */
+					amt = (item != KITEM_NONE);/* default to one quantity, or zero, if KITEM_NONE */
 
 				D_Cheat(consoleplayer, CHEAT_GIVEITEM, item, amt);
 			}
