@@ -659,7 +659,6 @@ extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
-extern boolean comeback;
 
 extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;

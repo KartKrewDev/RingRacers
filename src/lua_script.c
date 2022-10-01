@@ -351,9 +351,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"franticitems")) {
 		lua_pushboolean(L, franticitems);
 		return 1;
-	} else if (fastcmp(word,"comeback")) {
-		lua_pushboolean(L, comeback);
-		return 1;
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);
 		return 1;
