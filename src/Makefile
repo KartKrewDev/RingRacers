@@ -195,6 +195,14 @@ passthru_opts:=
 # separate suffix with an underscore
 exesuffix:=$(call _,$(EXESUFFIX))
 
+# If there are uncommitted changes
+# -uno: disregard untracked files
+# Warning: this can only be accurate for comptime.c since
+# that file is always recompiled!
+ifneq ($(shell git status --porcelain -uno),)
+opts+=-DCOMPVERSION_UNCOMMITTED
+endif
+
 include Makefile.d/platform.mk
 include Makefile.d/features.mk
 include Makefile.d/versions.mk
