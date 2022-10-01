@@ -35,7 +35,7 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 			INT32 starpostnum, tic_t starposttime, angle_t starpostangle,
 			fixed_t starpostscale, angle_t drawangle, INT32 flags2)
 {
-	const INT32 takeflags2 = MF2_TWOD|MF2_OBJECTFLIP;
+	const INT32 takeflags2 = MF2_OBJECTFLIP;
 	UINT8 i;
 
 	(void)starposttime;

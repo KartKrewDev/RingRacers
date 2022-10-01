@@ -2359,7 +2359,7 @@ void M_DrawMPHost(void)
 								case IT_CV_STRING:
 									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
 									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawString(xp + 94 + V_ThinStringWidth(cv->string, V_6WIDTHSPACE), yp+1, 0, "_");
+										V_DrawString(xp + 96 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
 
 									break;
 
@@ -2417,22 +2417,27 @@ void M_DrawMPJoinIP(void)
 			case IT_STRING:
 			{
 
-				char str[MAXSTRINGLENGTH];
+				char str[MAX_LOGIP];
 				strcpy(str, currentMenu->menuitems[i].text);
 
 				// The last 3 options of this menu are to be the joined IP addresses...
 				if (currentMenu->numitems - i <= NUMLOGIP)
 				{
 					UINT8 index = NUMLOGIP - (currentMenu->numitems - i);
-					if (strlen(joinedIPlist[index][1]))	// Try drawing server name
-						strcpy(str, joinedIPlist[index][1]);
-					else if (strlen(joinedIPlist[index][0]))	// If that fails, get the address
-						strcpy(str, joinedIPlist[index][0]);
+					if (index == 0)
+					{
+						xp += 8;
+					}
+
+					if (joinedIPlist[index][1][0])	// Try drawing server name
+						strlcpy(str, joinedIPlist[index][1], MAX_LOGIP);
+					else if (joinedIPlist[index][0][0])	// If that fails, get the address
+						strlcpy(str, joinedIPlist[index][0], MAX_LOGIP);
 					else
 						strcpy(str, "---");		// If that fails too then there's nothing!
 				}
 
-				V_DrawString(xp, yp, V_ALLOWLOWERCASE | ((i == itemOn || currentMenu->menuitems[i].status & IT_SPACE) ? highlightflags : 0), str);
+				V_DrawThinString(xp, yp, V_ALLOWLOWERCASE | ((i == itemOn || currentMenu->menuitems[i].status & IT_SPACE) ? highlightflags : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, str);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -2447,10 +2452,10 @@ void M_DrawMPJoinIP(void)
 								//colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_MOSS, GTC_CACHE);
 								colormapc = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
-								V_DrawFixedPatch((xp + 20)<<FRACBITS, (yp-3)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
-								V_DrawThinString(xp + 26, yp-1, V_ALLOWLOWERCASE, cv->string);
+								V_DrawFixedPatch((xp + 12)<<FRACBITS, (yp-2)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
+								V_DrawThinString(xp + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
 								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(xp + 24 + V_ThinStringWidth(cv->string, 0), yp, '_' | 0x80, false);
+									V_DrawString(xp + 18 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
 
 								/*// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
 								// Draw the small GO button here (and the text which is a separate graphic)

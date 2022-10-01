@@ -280,7 +280,6 @@ static void P_NetArchivePlayers(void)
 		WRITEINT32(save_p, players[i].underwatertilt);
 
 		WRITEFIXED(save_p, players[i].offroad);
-		WRITEUINT8(save_p, players[i].waterskip);
 
 		WRITEUINT16(save_p, players[i].tiregrease);
 		WRITEUINT16(save_p, players[i].springstars);
@@ -379,6 +378,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].kickstartaccel);
 
 		WRITEUINT8(save_p, players[i].stairjank);
+		WRITEUINT8(save_p, players[i].topdriftheld);
+		WRITEUINT8(save_p, players[i].topinfirst);
 
 		WRITEUINT8(save_p, players[i].shrinkLaserDelay);
 
@@ -394,6 +395,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].respawn.distanceleft);
 		WRITEUINT32(save_p, players[i].respawn.dropdash);
 		WRITEUINT8(save_p, players[i].respawn.truedeath);
+		WRITEUINT8(save_p, players[i].respawn.manual);
 
 		// botvars_t
 		WRITEUINT8(save_p, players[i].botvars.difficulty);
@@ -577,7 +579,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].underwatertilt = READINT32(save_p);
 
 		players[i].offroad = READFIXED(save_p);
-		players[i].waterskip = READUINT8(save_p);
 
 		players[i].tiregrease = READUINT16(save_p);
 		players[i].springstars = READUINT16(save_p);
@@ -676,6 +677,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].kickstartaccel = READUINT8(save_p);
 
 		players[i].stairjank = READUINT8(save_p);
+		players[i].topdriftheld = READUINT8(save_p);
+		players[i].topinfirst = READUINT8(save_p);
 
 		players[i].shrinkLaserDelay = READUINT8(save_p);
 
@@ -691,6 +694,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].respawn.distanceleft = READUINT32(save_p);
 		players[i].respawn.dropdash = READUINT32(save_p);
 		players[i].respawn.truedeath = READUINT8(save_p);
+		players[i].respawn.manual = READUINT8(save_p);
 
 		// botvars_t
 		players[i].botvars.difficulty = READUINT8(save_p);
@@ -1638,6 +1642,7 @@ typedef enum
 	MD2_ITNEXT       = 1<<27,
 	MD2_LASTMOMZ     = 1<<28,
 	MD2_TERRAIN      = 1<<29,
+	MD2_WATERSKIP    = 1<<30,
 } mobj_diff2_t;
 
 typedef enum
@@ -1872,6 +1877,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	}
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
+	if (mobj->waterskip)
+		diff2 |= MD2_WATERSKIP;
 	if (mobj->dispoffset)
 		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
@@ -1882,7 +1889,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff2 |= MD2_ITNEXT;
 	if (mobj->lastmomz)
 		diff2 |= MD2_LASTMOMZ;
-	if (mobj->terrain != NULL)
+	if (mobj->terrain != NULL || mobj->terrainOverlay != NULL)
 		diff2 |= MD2_TERRAIN;
 
 	if (diff2 != 0)
@@ -2081,6 +2088,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_HITLAG)
 	{
 		WRITEINT32(save_p, mobj->hitlag);
+	}
+	if (diff2 & MD2_WATERSKIP)
+	{
+		WRITEUINT8(save_p, mobj->waterskip);
 	}
 	if (diff2 & MD2_DISPOFFSET)
 	{
@@ -3191,6 +3202,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	{
 		mobj->hitlag = READINT32(save_p);
 	}
+	if (diff2 & MD2_WATERSKIP)
+	{
+		mobj->waterskip = READUINT8(save_p);
+	}
 	if (diff2 & MD2_DISPOFFSET)
 	{
 		mobj->dispoffset = READINT32(save_p);
@@ -3202,6 +3217,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	if (diff2 & MD2_TERRAIN)
 	{
 		mobj->terrain = (terrain_t *)(size_t)READUINT32(save_p);
+		mobj->terrainOverlay = (mobj_t *)(size_t)READUINT32(save_p);
 	}
 	else
 	{
@@ -4244,6 +4260,13 @@ static void P_RelinkPointers(void)
 				CONS_Debug(DBG_GAMELOGIC, "terrain not found on %d\n", mobj->type);
 			}
 		}
+		if (mobj->terrainOverlay)
+		{
+			temp = (UINT32)(size_t)mobj->terrainOverlay;
+			mobj->terrainOverlay = NULL;
+			if (!P_SetTarget(&mobj->terrainOverlay, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "terrainOverlay not found on %d\n", mobj->type);
+		}
 		if (mobj->player)
 		{
 			if ( mobj->player->skybox.viewpoint)
@@ -4591,6 +4614,8 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEINT16(save_p, task->timer);
 		WRITESTRING(save_p, task->command);
 	}
+
+	WRITEUINT32(save_p, cht_debug);
 }
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
@@ -4753,6 +4778,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 		Schedule_Add(basetime, timer, command);
 	}
+
+	cht_debug = READUINT32(save_p);
 
 	return true;
 }

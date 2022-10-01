@@ -64,7 +64,6 @@
 #
 # Netplay incompatible
 # --------------------
-# NONET=1 - Disable online capability.
 # NOMD5=1 - Disable MD5 checksum (validation tool).
 # NOPOSTPROCESSING=1 - ?
 # MOBJCONSISTANCY=1 - ??
@@ -195,6 +194,14 @@ passthru_opts:=
 
 # separate suffix with an underscore
 exesuffix:=$(call _,$(EXESUFFIX))
+
+# If there are uncommitted changes
+# -uno: disregard untracked files
+# Warning: this can only be accurate for comptime.c since
+# that file is always recompiled!
+ifneq ($(shell git status --porcelain -uno),)
+opts+=-DCOMPVERSION_UNCOMMITTED
+endif
 
 include Makefile.d/platform.mk
 include Makefile.d/features.mk

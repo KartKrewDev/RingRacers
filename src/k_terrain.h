@@ -68,8 +68,31 @@ typedef struct t_footstep_s
 
 typedef enum
 {
+	// Overlay actions.
+	TOV_UNDEFINED = -1,
+	TOV_STILL,
+	TOV_MOVING,
+	TOV__MAX
+} t_overlay_action_t;
+
+typedef struct t_overlay_s
+{
+	// Overlay definition.
+	// These are sprites displayed on top of the base object.
+
+	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	UINT32 hash;					// Lookup name's hash.
+
+	UINT16 states[TOV__MAX]; // State to use when the object is still.
+	fixed_t scale;			// Thing scale multiplier.
+	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
+	fixed_t speed;			// Speed-up based on object speed. 0 plays the animation at a constant rate.
+} t_overlay_t;
+
+typedef enum
+{
 	// Terrain flag values.
-	TRF_LIQUID = 1, // Texture water properties (wavy, slippery, etc)
+	TRF_LIQUID = 1, // Texture has water properties (wavy, slippery, etc)
 	TRF_SNEAKERPANEL = 1<<1, // Texture is a booster
 	TRF_STAIRJANK = 1<<2, // Texture is bumpy road
 	TRF_TRIPWIRE = 1<<3 // Texture is a tripwire when used as a midtexture
@@ -85,11 +108,13 @@ typedef struct terrain_s
 
 	size_t splashID;		// Splash defintion ID.
 	size_t footstepID;		// Footstep defintion ID.
+	size_t overlayID;		// Overlay defintion ID.
 
 	fixed_t friction;		// The default friction of this texture.
 	UINT8 offroad;			// The default offroad level of this texture.
 	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
 	UINT8 trickPanel;		// Trick panel strength
+	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;
 
@@ -224,6 +249,67 @@ t_footstep_t *K_GetFootstepByIndex(size_t checkIndex);
 --------------------------------------------------*/
 
 t_footstep_t *K_GetFootstepByName(const char *checkName);
+
+
+/*--------------------------------------------------
+	size_t K_GetOverlayHeapIndex(t_overlay_t *overlay);
+
+		Returns an overlay defintion's index in the
+		overlay definition heap.
+
+	Input Arguments:-
+		overlay - The overlay definition to return the index of.
+
+	Return:-
+		The overlay heap index, SIZE_MAX if the overlay was invalid.
+--------------------------------------------------*/
+
+size_t K_GetOverlayHeapIndex(t_overlay_t *overlay);
+
+
+/*--------------------------------------------------
+	size_t K_GetNumOverlayDefs(void);
+
+		Returns the number of overlay definitions.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		Length of overlayDefs.
+--------------------------------------------------*/
+
+size_t K_GetNumOverlayDefs(void);
+
+
+/*--------------------------------------------------
+	t_overlay_t *K_GetOverlayByIndex(size_t checkIndex);
+
+		Retrieves an overlay definition by its heap index.
+
+	Input Arguments:-
+		checkIndex - The heap index to retrieve.
+
+	Return:-
+		The overlay definition, NULL if it didn't exist.
+--------------------------------------------------*/
+
+t_overlay_t *K_GetOverlayByIndex(size_t checkIndex);
+
+
+/*--------------------------------------------------
+	t_overlay_t *K_GetOverlayByName(const char *checkName);
+
+		Retrieves an overlay definition by its lookup name.
+
+	Input Arguments:-
+		checkName - The lookup name to retrieve.
+
+	Return:-
+		The overlay definition, NULL if it didn't exist.
+--------------------------------------------------*/
+
+t_overlay_t *K_GetOverlayByName(const char *checkName);
 
 
 /*--------------------------------------------------
@@ -441,6 +527,23 @@ void K_SpawnSplashForMobj(mobj_t *mo, fixed_t impact);
 --------------------------------------------------*/
 
 void K_HandleFootstepParticles(mobj_t *mo);
+
+
+/*--------------------------------------------------
+	void K_UpdateTerrainOverlay(mobj_t *mo);
+
+		Updates an object's terrainOverlay pointer,
+		depending on the terrain type. Intended to be
+		called every tic.
+
+	Input Arguments:-
+		mo - The object to update the overlay for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_UpdateTerrainOverlay(mobj_t *mo);
 
 
 /*--------------------------------------------------

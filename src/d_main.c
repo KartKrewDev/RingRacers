@@ -86,10 +86,6 @@
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
 
-#ifdef _WINDOWS
-#include "win32/win_main.h" // I_DoStartupMouse
-#endif
-
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
 #endif
@@ -99,6 +95,10 @@
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
+
+#ifdef DEVELOP
+UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
+#endif
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -715,11 +715,6 @@ void D_SRB2Loop(void)
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-#ifdef _WINDOWS
-	CONS_Printf("I_StartupMouse()...\n");
-	I_DoStartupMouse();
-#endif
-
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
@@ -971,7 +966,7 @@ void D_StartTitle(void)
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 	lastmaploaded = 0;
@@ -1179,6 +1174,20 @@ static void IdentifyVersion(void)
 #endif
 }
 
+#ifdef DEVELOP
+static void
+D_AbbrevCommit (void)
+{
+	UINT8 i;
+
+	for (i = 0; i < GIT_SHA_ABBREV; ++i)
+	{
+		sscanf(&comprevision[i * 2], "%2hhx",
+				&comprevision_abbrev_bin[i]);
+	}
+}
+#endif
+
 static void
 D_ConvertVersionNumbers (void)
 {
@@ -1202,6 +1211,10 @@ void D_SRB2Main(void)
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
+
+#ifdef DEVELOP
+	D_AbbrevCommit();
+#endif
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
@@ -1257,9 +1270,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
-#endif
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
@@ -1529,6 +1540,12 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-noupload"))
 		COM_BufAddText("downloading 0\n");
 
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		// Moved from G_LoadGameData itself, as it would cause some crazy
+		// confusion issues when loading mods.
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 	G_LoadGameData();
 
 	wipegamestate = gamestate;
@@ -1612,7 +1629,7 @@ void D_SRB2Main(void)
 		{
 			if (!M_CheckParm("-server"))
 			{
-				G_SetGameModified(true, true);
+				G_SetUsedCheats();
 
 				// Start up a "minor" grand prix session
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
@@ -1825,16 +1842,12 @@ void D_SRB2Main(void)
 
 		if (server && !M_CheckParm("+map"))
 		{
-			// Prevent warping to locked levels
-			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-			// lives hell.
-			if (!dedicated && M_MapLocked(pstartmap))
-				I_Error("You need to unlock this level before you can warp to it!\n");
-			else
+			if (M_MapLocked(pstartmap))
 			{
-				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
+				G_SetUsedCheats();
 			}
+
+			D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
 	else if (M_CheckParm("-skipintro"))

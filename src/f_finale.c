@@ -866,7 +866,7 @@ boolean F_CreditResponder(event_t *event)
 		return false;
 	}
 
-	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
+	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cht_debug)
 		return false;*/
 
 	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
@@ -1029,7 +1029,7 @@ void F_GameEvaluationDrawer(void)
 	{
 		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
 
-		if (!(netgame) && (!modifiedgame || savemoddata))
+		if (!usedCheats)
 		{
 			INT32 startcoord = 32;
 
@@ -1044,10 +1044,8 @@ void F_GameEvaluationDrawer(void)
 				}
 			}
 		}
-		else if (netgame)
-			V_DrawString(8, 96, V_YELLOWMAP, "Multiplayer games\ncan't unlock\nextras!");
 		else
-			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, V_YELLOWMAP, "Cheated games\ncan't unlock\nextras!");
 	}
 #endif
 
@@ -1101,14 +1099,7 @@ void F_GameEvaluationTicker(void)
 
 	if (finalecount == 5*TICRATE)
 	{
-		if (netgame || multiplayer) // modify this when we finally allow unlocking stuff in 2P
-		{
-			HU_SetCEchoFlags(V_YELLOWMAP);
-			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Multiplayer games can't unlock extras!");
-			S_StartSound(NULL, sfx_s3k68);
-		}
-		else if (!modifiedgame || savemoddata)
+		if (!usedCheats)
 		{
 			++timesBeaten;
 
@@ -1121,7 +1112,7 @@ void F_GameEvaluationTicker(void)
 		{
 			HU_SetCEchoFlags(V_YELLOWMAP);
 			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Modified games can't unlock extras!");
+			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Cheated games can't unlock extras!");
 			S_StartSound(NULL, sfx_s3k68);
 		}
 	}
@@ -2015,6 +2006,8 @@ void F_TitleScreenDrawer(void)
 #else // Regular build
 					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
 #endif
+					if (compuncommitted)
+						addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
 				}
 #undef addtext
 			}

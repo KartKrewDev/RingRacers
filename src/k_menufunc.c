@@ -662,14 +662,12 @@ static void M_ChangeCvar(INT32 choice)
 	}
 	else
 	{
-#ifndef NONET
 		if (cv == &cv_nettimeout || cv == &cv_jointimeout)
 			choice *= (TICRATE/7);
 		else if (cv == &cv_maxsend)
 			choice *= 512;
 		else if (cv == &cv_maxping)
 			choice *= 50;
-#endif
 
 		CV_AddValue(cv, choice);
 	}
@@ -1700,9 +1698,7 @@ void M_Init(void)
 	CV_RegisterVar(&cv_menujam_update);
 	CV_RegisterVar(&cv_menujam);
 
-#ifndef NONET
 	CV_RegisterVar(&cv_serversort);
-#endif
 
 	if (dedicated)
 		return;
@@ -2020,7 +2016,7 @@ void M_QuitResponse(INT32 ch)
 
 	if (ch == MA_YES)
 	{
-		if (!(netgame || cv_debug))
+		if (!(netgame || cht_debug))
 		{
 			mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
 			if (quitsounds[mrand])
@@ -3581,7 +3577,7 @@ void M_LevelSelectHandler(INT32 choice)
 				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 				// Still need to reset devmode
-				cv_debug = 0;
+				cht_debug = 0;
 
 				if (demo.playback)
 					G_StopDemo();
@@ -3690,7 +3686,7 @@ void M_StartTimeAttack(INT32 choice)
 	}
 
 	// Still need to reset devmode
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 
 	if (demo.playback)
@@ -3879,7 +3875,7 @@ boolean M_JoinIPInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 
 		// Is there an address at this part of the table?
-		if (strlen(joinedIPlist[index][0]))
+		if (*joinedIPlist[index][0])
 			M_JoinIP(joinedIPlist[index][0]);
 		else
 			S_StartSound(NULL, sfx_lose);
@@ -4100,7 +4096,6 @@ void M_RefreshServers(INT32 choice)
 
 }
 
-#ifndef NONET
 #ifdef UPDATE_ALERT
 static void M_CheckMODVersion(int id)
 {
@@ -4225,8 +4220,6 @@ void M_ServerListFillDebug(void)
 
 #endif // SERVERLISTDEBUG
 
-#endif //NONET
-
 // Ascending order, not descending.
 // The casts are safe as long as the caller doesn't do anything stupid.
 #define SERVER_LIST_ENTRY_COMPARATOR(key) \
@@ -4266,7 +4259,6 @@ static int ServerListEntryComparator_gametypename(const void *entry1, const void
 
 void M_SortServerList(void)
 {
-#ifndef NONET
 	switch(cv_serversort.value)
 	{
 	case 0:		// Ping.
@@ -4288,7 +4280,6 @@ void M_SortServerList(void)
 		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_gametypename);
 		break;
 	}
-#endif
 }
 
 
@@ -4588,16 +4579,8 @@ void M_VideoModeMenu(INT32 choice)
 	optionsmenu.vidm_selected = 0;
 	nummodes = VID_NumModes();
 
-#ifdef _WINDOWS
-	// clean that later: skip windowed mode 0, video modes menu only shows FULL SCREEN modes
-	if (nummodes <= NUMSPECIALMODES)
-		i = 0; // unless we have nothing
-	else
-		i = NUMSPECIALMODES;
-#else
 	// DOS does not skip mode 0, because mode 0 is ALWAYS present
 	i = 0;
-#endif
 	for (; i < nummodes && optionsmenu.vidm_nummodes < MAXMODEDESCS; i++)
 	{
 		desc = VID_GetModeName(i);

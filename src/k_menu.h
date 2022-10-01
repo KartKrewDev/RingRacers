@@ -358,10 +358,8 @@ extern menu_t OPTIONS_GameplayItemsDef;
 extern menuitem_t OPTIONS_Server[];
 extern menu_t OPTIONS_ServerDef;
 
-#ifndef NONET
 extern menuitem_t OPTIONS_ServerAdvanced[];
 extern menu_t OPTIONS_ServerAdvancedDef;
-#endif
 
 extern menuitem_t OPTIONS_Data[];
 extern menu_t OPTIONS_DataDef;

@@ -3938,9 +3938,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Initialize sector node list.
 	P_Initsecnode();
 
-	if (netgame || multiplayer)
-		cv_debug = 0;
-
 	if (metalplayback)
 		G_StopMetalDemo();
 
@@ -4285,7 +4282,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
 			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
-			&& (!modifiedgame || savemoddata) && cursaveslot > 0)
+			&& !usedCheats && cursaveslot > 0)
 				G_SaveGame((UINT32)cursaveslot, gamemap);
 			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
 		}

@@ -44,6 +44,14 @@ INT32 P_AltFlip(INT32 n, tic_t tics)
 	return leveltime % (2 * tics) < tics ? n : -(n);
 }
 
+// Please read p_tick.h
+INT32 P_LerpFlip(INT32 n, tic_t tics)
+{
+	const tic_t w = 2 * tics;
+
+	return P_AltFlip(((leveltime % w) - tics) * n, w);
+}
+
 //
 // THINKERS
 // All thinkers should be allocated by Z_Calloc

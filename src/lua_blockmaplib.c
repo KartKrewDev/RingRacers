@@ -51,7 +51,7 @@ static UINT8 lib_searchBlockmap_Objects(lua_State *L, INT32 x, INT32 y, mobj_t *
 		LUA_PushUserdata(L, thing, META_MOBJ);
 		LUA_PushUserdata(L, mobj, META_MOBJ);
 		if (lua_pcall(gL, 2, 1, 0)) {
-			if (!blockfuncerror || cv_debug & DBG_LUA)
+			if (!blockfuncerror || cht_debug & DBG_LUA)
 				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 			lua_pop(gL, 1);
 			blockfuncerror = true;
@@ -112,7 +112,7 @@ static UINT8 lib_searchBlockmap_Lines(lua_State *L, INT32 x, INT32 y, mobj_t *th
 				LUA_PushUserdata(L, thing, META_MOBJ);
 				LUA_PushUserdata(L, po->lines[i], META_LINE);
 				if (lua_pcall(gL, 2, 1, 0)) {
-					if (!blockfuncerror || cv_debug & DBG_LUA)
+					if (!blockfuncerror || cht_debug & DBG_LUA)
 						CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 					lua_pop(gL, 1);
 					blockfuncerror = true;
@@ -149,7 +149,7 @@ static UINT8 lib_searchBlockmap_Lines(lua_State *L, INT32 x, INT32 y, mobj_t *th
 		LUA_PushUserdata(L, thing, META_MOBJ);
 		LUA_PushUserdata(L, ld, META_LINE);
 		if (lua_pcall(gL, 2, 1, 0)) {
-			if (!blockfuncerror || cv_debug & DBG_LUA)
+			if (!blockfuncerror || cht_debug & DBG_LUA)
 				CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 			lua_pop(gL, 1);
 			blockfuncerror = true;
@@ -195,7 +195,7 @@ static UINT8 lib_searchBlockmap_PolyObjs(lua_State *L, INT32 x, INT32 y, mobj_t 
 			LUA_PushUserdata(L, thing, META_MOBJ);
 			LUA_PushUserdata(L, po, META_POLYOBJ);
 			if (lua_pcall(gL, 2, 1, 0)) {
-				if (!blockfuncerror || cv_debug & DBG_LUA)
+				if (!blockfuncerror || cht_debug & DBG_LUA)
 					CONS_Alert(CONS_WARNING,"%s\n",lua_tostring(gL, -1));
 				lua_pop(gL, 1);
 				blockfuncerror = true;

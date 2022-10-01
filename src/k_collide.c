@@ -66,17 +66,22 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		if (t1->type == MT_BANANA && t1->health > 1)
 			S_StartSound(t2, sfx_bsnipe);
 
+		damageitem = true;
+
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
 		}
+		else if (K_IsRidingFloatingTop(t2->player))
+		{
+			// Float over silly banana
+			damageitem = false;
+		}
 		else
 		{
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL|DMG_WOMBO);
 		}
-
-		damageitem = true;
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
@@ -773,11 +778,13 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// Clash instead of damage if both parties have any of these conditions
 	t1Condition = (K_IsBigger(t1, t2) == true)
 		|| (t1->player->invincibilitytimer > 0)
-		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
+		|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player));
 
 	t2Condition = (K_IsBigger(t2, t1) == true)
 		|| (t2->player->invincibilitytimer > 0)
-		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
+		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD)
+		|| (t2->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t2->player));
 
 	if (t1Condition == true && t2Condition == true)
 	{

@@ -268,6 +268,9 @@ typedef struct
 	char  application[MAXAPPLICATION];
 	UINT8 version;
 	UINT8 subversion;
+#ifdef DEVELOP
+	UINT8 commit[GIT_SHA_ABBREV];
+#endif
 	UINT8 numberofplayer;
 	UINT8 maxplayer;
 	UINT8 refusereason; // 0: joinable, 1: joins disabled, 2: full
@@ -496,11 +499,9 @@ boolean TryRunTics(tic_t realtic);
 /*boolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);
 void ReadLmpExtraData(UINT8 **demo_pointer, INT32 playernum);*/
 
-#ifndef NONET
 // translate a playername in a player number return -1 if not found and
 // print a error message in the console
 SINT8 nametonum(const char *name);
-#endif
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];

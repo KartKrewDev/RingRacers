@@ -1105,6 +1105,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		}
 	}
 
+	if (mo->waterskip > 0)
+	{
+		gravityadd = (4*gravityadd)/3;
+	}
+
 	if (mo->player)
 	{
 		if (mo->flags2 & MF2_OBJECTFLIP)
@@ -1118,11 +1123,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			P_PlayerFlip(mo);
 		}
 
-		if (mo->player->waterskip)
-		{
-			gravityadd = (4*gravityadd)/3;
-		}
-
 		if (mo->player->trickpanel >= 2)
 		{
 			gravityadd = (5*gravityadd)/2;
@@ -1133,7 +1133,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
 		}
 
-		if (mo->player->fastfall != 0)
+		if (K_IsHoldingDownTop(mo->player))
+		{
+			gravityadd = (5*gravityadd)/2;
+		}
+		else if (mo->player->fastfall != 0)
 		{
 			// Fast falling
 			gravityadd *= 4;
@@ -1734,6 +1738,7 @@ void P_XYMovement(mobj_t *mo)
 					switch (mo->type)
 					{
 						case MT_ORBINAUT: // Orbinaut speed decreasing
+						case MT_GARDENTOP:
 							if (mo->health > 1)
 							{
 								S_StartSound(mo, mo->info->attacksound);
@@ -1771,10 +1776,15 @@ void P_XYMovement(mobj_t *mo)
 	if (P_MobjWasRemoved(mo)) // MF_SPECIAL touched a player! O_o;;
 		return;
 
+	if (moved == true)
+	{
+		// TERRAIN footstep effects.
+		K_HandleFootstepParticles(mo);
+	}
+
 	if (moved && oldslope && !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		// Check to see if we ran off
-
 		if (oldslope != mo->standingslope)
 		{
 			// First, compare different slopes
@@ -1933,7 +1943,7 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 		topheight = P_GetFOFTopZ(mo, sector, rover, mo->x, mo->y, NULL);
 		bottomheight = P_GetFOFBottomZ(mo, sector, rover, mo->x, mo->y, NULL);
 
-		if (mo->player && P_CheckSolidFFloorSurface(mo->player, rover)) // only the player should stand on lava or run on water
+		if (P_CheckSolidFFloorSurface(mo, rover)) // only the player should stand on lava or run on water
 			;
 		else if (motype != 0 && rover->flags & FF_SWIMMABLE) // "scenery" only
 			continue;
@@ -2092,11 +2102,18 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 	return false;
 }
 
-boolean P_CheckSolidLava(ffloor_t *rover)
+boolean P_CheckSolidLava(mobj_t *mobj, ffloor_t *rover)
 {
+	if (mobj->player == NULL)
+	{
+		return false;
+	}
+
 	if (rover->flags & FF_SWIMMABLE && GETSECSPECIAL(rover->master->frontsector->special, 1) == 3
 		&& !(rover->master->flags & ML_BLOCKPLAYERS))
-			return true;
+	{
+		return true;
+	}
 
 	return false;
 }
@@ -2174,17 +2191,6 @@ boolean P_ZMovement(mobj_t *mo)
 		case MT_BIGTUMBLEWEED:
 		case MT_LITTLETUMBLEWEED:
 		case MT_SHELL:
-		// SRB2kart stuff that should die in pits
-		// Shouldn't stop moving along the Z if there's no speed though!
-		case MT_EGGMANITEM:
-		case MT_BANANA:
-		case MT_ORBINAUT:
-		case MT_JAWZ:
-		case MT_BALLHOG:
-		case MT_SSMINE:
-		case MT_LANDMINE:
-		case MT_DROPTARGET:
-		case MT_BUBBLESHIELDTRAP:
 			// Remove stuff from death pits.
 			if (P_CheckDeathPitCollide(mo))
 			{
@@ -2266,6 +2272,17 @@ boolean P_ZMovement(mobj_t *mo)
 			}
 			break;
 		default:
+			// SRB2kart stuff that should die in pits
+			// Shouldn't stop moving along the Z if there's no speed though!
+			if (P_CanDeleteKartItem(mo->type))
+			{
+				// Remove stuff from death pits.
+				if (P_CheckDeathPitCollide(mo))
+				{
+					P_RemoveMobj(mo);
+					return false;
+				}
+			}
 			break;
 	}
 
@@ -2310,7 +2327,7 @@ boolean P_ZMovement(mobj_t *mo)
 	// clip movement
 	if (((mo->z <= mo->floorz && !(mo->eflags & MFE_VERTICALFLIP))
 		|| (mo->z + mo->height >= mo->ceilingz && mo->eflags & MFE_VERTICALFLIP))
-	&& !(mo->flags & MF_NOCLIPHEIGHT))
+		&& !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		vector3_t mom;
 		mom.x = mo->momx;
@@ -2418,6 +2435,7 @@ boolean P_ZMovement(mobj_t *mo)
 		if (P_MobjFlip(mo)*mom.z < 0) // falling
 		{
 			mo->eflags |= MFE_JUSTHITFLOOR;
+			K_SpawnSplashForMobj(mo, abs(mom.z));
 
 			if (mo->flags2 & MF2_SKULLFLY) // the skull slammed into something
 				mom.z = -mom.z;
@@ -3073,31 +3091,115 @@ boolean P_SceneryZMovement(mobj_t *mo)
 	return true;
 }
 
+//
 // P_CanRunOnWater
 //
-// Returns true if player can waterrun on the 3D floor
+// Returns true if player can water run on a 3D floor
 //
-boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
+boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 {
-	boolean flip = player->mo->eflags & MFE_VERTICALFLIP;
-	fixed_t surfaceheight = flip ? player->mo->waterbottom : player->mo->watertop;
-	fixed_t playerbottom = flip ? (player->mo->z + player->mo->height) : player->mo->z;
-	fixed_t clip = flip ? (surfaceheight - playerbottom) : (playerbottom - surfaceheight);
-	fixed_t span = player->mo->watertop - player->mo->waterbottom;
+	const boolean flip = (mobj->eflags & MFE_VERTICALFLIP);
+	player_t *player = mobj->player;
 
-	return
-		clip > -(player->mo->height / 2) &&
-		span > player->mo->height &&
-		player->speed / 5 > abs(player->mo->momz) &&
-		player->speed > K_GetKartSpeed(player, false, false) &&
-		K_WaterRun(player) &&
-		(rover->flags & FF_SWIMMABLE);
+	fixed_t surfaceheight = INT32_MAX;
+	fixed_t surfDiff = INT32_MAX;
+
+	fixed_t floorheight = INT32_MAX;
+	fixed_t floorDiff = INT32_MAX;
+
+	fixed_t mobjbottom = INT32_MAX;
+	fixed_t maxStep = INT32_MAX;
+	boolean doifit = false;
+
+	pslope_t *waterSlope = NULL;
+	angle_t ourZAng = 0;
+	angle_t waterZAng = 0;
+
+	if (rover == NULL)
+	{
+		// No rover.
+		return false;
+	}
+
+	if (!(rover->flags & FF_SWIMMABLE))
+	{
+		// It's not even a water FOF.
+		return false;
+	}
+
+	if (player != NULL
+		&& player->carry != CR_NONE) // Special carry state.
+	{
+		// No good player state.
+		return false;
+	}
+
+	if (P_IsObjectOnGround(mobj) == false)
+	{
+		// Don't allow jumping onto water to start a water run.
+		// (Already water running still counts as being on the ground.)
+		return false;
+	}
+
+	if (K_WaterRun(mobj) == false)
+	{
+		// Basic conditions for enabling water run.
+		return false;
+	}
+
+	if (mobj->standingslope != NULL)
+	{
+		ourZAng = mobj->standingslope->zangle;
+	}
+
+	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
+	if (waterSlope != NULL)
+	{
+		waterZAng = waterSlope->zangle;
+	}
+
+	if (ourZAng != waterZAng)
+	{
+		// The surface slopes are different.
+		return false;
+	}
+
+	surfaceheight = flip ? P_GetFFloorBottomZAt(rover, mobj->x, mobj->y) : P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
+	mobjbottom = flip ? (mobj->z + mobj->height) : mobj->z;
+
+	doifit = flip ? (surfaceheight - mobj->floorz >= mobj->height) : (mobj->ceilingz - surfaceheight >= mobj->height);
+
+	if (!doifit)
+	{
+		// Object can't fit in this space.
+		return false;
+	}
+
+	maxStep = P_GetThingStepUp(mobj);
+
+	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
+	if (surfDiff <= maxStep && surfDiff >= 0)
+	{
+		// We start water run IF we can step-down!
+		floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
+		floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
+		if (floorDiff <= maxStep && floorDiff >= 0)
+		{
+			// ... but NOT if real floor is in range.
+			// FIXME: Count solid FOFs in this check
+			return false;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
-boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover)
+boolean P_CheckSolidFFloorSurface(mobj_t *mobj, ffloor_t *rover)
 {
-	return P_CheckSolidLava(rover) ||
-		P_CanRunOnWater(player, rover);
+	return P_CheckSolidLava(mobj, rover) ||
+		P_CanRunOnWater(mobj, rover);
 }
 
 //
@@ -3119,6 +3221,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 	boolean wasgroundpounding = false;
 	fixed_t top2 = P_GetSectorCeilingZAt(sector, mobj->x, mobj->y);
 	fixed_t bot2 = P_GetSectorFloorZAt(sector, mobj->x, mobj->y);
+	pslope_t *topslope = NULL;
+	pslope_t *bottomslope = NULL;
 
 	// Default if no water exists.
 	mobj->watertop = mobj->waterbottom = mobj->z - 1000*FRACUNIT;
@@ -3161,6 +3265,9 @@ void P_MobjCheckWater(mobj_t *mobj)
 		mobj->watertop = topheight;
 		mobj->waterbottom = bottomheight;
 
+		topslope = *rover->t_slope;
+		bottomslope = *rover->b_slope;
+
 		// Just touching the water?
 		if (((mobj->eflags & MFE_VERTICALFLIP) && thingtop - height < bottomheight)
 		 || (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z + height > topheight))
@@ -3198,13 +3305,28 @@ void P_MobjCheckWater(mobj_t *mobj)
 				mobj->watertop = mobj->z;
 				mobj->waterbottom = mobj->z - height;
 			}
+
+			topslope = bottomslope = NULL;
 		}
 	}
 
-	// Spectators and dead players don't get to do any of the things after this.
-	if (p && (p->spectator || p->playerstate != PST_LIVE))
+	if (P_IsObjectOnGround(mobj) == true)
 	{
-		return;
+		mobj->waterskip = 0;
+	}
+
+	if (p != NULL)
+	{
+		// Spectators and dead players don't get to do any of the things after this.
+		if (p->spectator || p->playerstate != PST_LIVE)
+		{
+			return;
+		}
+	}
+
+	if (mobj->flags & MF_APPLYTERRAIN)
+	{
+		K_SpawnWaterRunParticles(mobj);
 	}
 
 	// The rest of this code only executes on a water state change.
@@ -3213,20 +3335,21 @@ void P_MobjCheckWater(mobj_t *mobj)
 		return;
 	}
 
-	if (p && !p->waterskip &&
-			p->curshield != KSHIELD_BUBBLE && wasinwater)
+	if (p != NULL
+		&& p->curshield != KSHIELD_BUBBLE
+		&& mobj->waterskip == 0
+		&& wasinwater)
 	{
+		// Play the gasp sound
 		S_StartSound(mobj, sfx_s3k38);
 	}
 
-	if ((p) // Players
-	 || (mobj->flags & MF_PUSHABLE) // Pushables
-	 || ((mobj->info->flags & MF_PUSHABLE) && mobj->fuse) // Previously pushable, might be moving still
-	)
+	if (mobj->flags & MF_APPLYTERRAIN)
 	{
 		fixed_t waterZ = INT32_MAX;
 		fixed_t solidZ = INT32_MAX;
 		fixed_t diff = INT32_MAX;
+		INT32 waterDelta = 0;
 
 		fixed_t thingZ = INT32_MAX;
 		boolean splashValid = false;
@@ -3235,11 +3358,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			waterZ = mobj->waterbottom;
 			solidZ = mobj->ceilingz;
+			if (bottomslope)
+			{
+				waterDelta = bottomslope->zdelta;
+			}
 		}
 		else
 		{
 			waterZ = mobj->watertop;
 			solidZ = mobj->floorz;
+			if (topslope)
+			{
+				waterDelta = topslope->zdelta;
+			}
 		}
 
 		diff = waterZ - solidZ;
@@ -3308,25 +3439,22 @@ void P_MobjCheckWater(mobj_t *mobj)
 
 				splish->destscale = mobj->scale;
 				P_SetScale(splish, mobj->scale);
+
+				// skipping stone!
+				if (K_WaterSkip(mobj) == true
+					&& abs(waterDelta) < FRACUNIT/21) // Only on flat water
+				{
+					const fixed_t hop = 5 * mapobjectscale;
+
+					mobj->momx = (4*mobj->momx)/5;
+					mobj->momy = (4*mobj->momy)/5;
+					mobj->momz = hop * P_MobjFlip(mobj);
+
+					mobj->waterskip++;
+				}
 			}
-
-			// skipping stone!
-			if (p && p->waterskip < 2
-				&& ((p->speed/3 > abs(mobj->momz)) // Going more forward than horizontal, so you can skip across the water.
-				|| (p->speed > 20*mapobjectscale && p->waterskip)) // Already skipped once, so you can skip once more!
-				&& (splashValid == true))
-			{
-				const fixed_t hop = 5 * mobj->scale;
-
-				mobj->momx = (4*mobj->momx)/5;
-				mobj->momy = (4*mobj->momy)/5;
-				mobj->momz = hop * P_MobjFlip(mobj);
-
-				p->waterskip++;
-			}
-
 		}
-		else if (P_MobjFlip(mobj) * mobj->momz > 0)
+		else
 		{
 			if (splashValid == true && !(mobj->eflags & MFE_UNDERWATER)) // underwater check to prevent splashes on opposite side
 			{
@@ -3614,7 +3742,7 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 				player->karthud[khud_timeovercam] = (2*TICRATE)+1;
 			}
 
-			if (!resetcalled && !(player->pflags & PF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
+			if (!resetcalled && !(player->mo->flags & MF_NOCLIP || leveltime < introtime) && !P_CheckSight(&dummy, player->mo)) // TODO: "P_CheckCameraSight" instead.
 			{
 				P_ResetCamera(player, thiscam);
 			}
@@ -3838,6 +3966,7 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 	}
 
 	P_SquishThink(mobj);
+	K_UpdateTerrainOverlay(mobj);
 
 animonly:
 	P_CyclePlayerMobjState(mobj);
@@ -4457,7 +4586,7 @@ mobj_t *P_GetClosestAxis(mobj_t *source)
 	}
 
 	if (closestaxis == NULL)
-		CONS_Debug(DBG_NIGHTS, "ERROR: No axis points found!\n");
+		CONS_Alert(CONS_ERROR, "No axis points found!\n");
 
 	return closestaxis;
 }
@@ -4529,7 +4658,7 @@ void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT
 
 	if (!axis)
 	{
-		CONS_Debug(DBG_NIGHTS, "You forgot to put axis points in the map!\n");
+		CONS_Alert(CONS_WARNING, "You forgot to put axis points in the map!\n");
 		return;
 	}
 
@@ -4985,20 +5114,58 @@ cont:
 }
 
 // Kartitem stuff.
+
+// This item is never attached to a player -- it can DIE
+// unconditionally in death sectors.
+boolean P_IsKartFieldItem(INT32 type)
+{
+	switch (type)
+	{
+		case MT_BANANA:
+		case MT_EGGMANITEM:
+		case MT_ORBINAUT:
+		case MT_JAWZ:
+		case MT_SSMINE:
+		case MT_LANDMINE:
+		case MT_BALLHOG:
+		case MT_BUBBLESHIELDTRAP:
+		case MT_POGOSPRING:
+		case MT_SINK:
+		case MT_DROPTARGET:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 boolean P_IsKartItem(INT32 type)
 {
-	if (type == MT_EGGMANITEM || type == MT_EGGMANITEM_SHIELD ||
-		type == MT_BANANA || type == MT_BANANA_SHIELD ||
-		type == MT_DROPTARGET || type == MT_DROPTARGET_SHIELD ||
-		type == MT_ORBINAUT || type == MT_ORBINAUT_SHIELD ||
-		type == MT_JAWZ || type == MT_JAWZ_SHIELD ||
-		type == MT_SSMINE || type == MT_SSMINE_SHIELD ||
-		type == MT_SINK || type == MT_SINK_SHIELD ||
-		type == MT_SPB || type == MT_BALLHOG || type == MT_BUBBLESHIELDTRAP ||
-		type == MT_LANDMINE)
-		return true;
-	else
-		return false;
+	switch (type)
+	{
+		case MT_EGGMANITEM_SHIELD:
+		case MT_BANANA_SHIELD:
+		case MT_DROPTARGET_SHIELD:
+		case MT_ORBINAUT_SHIELD:
+		case MT_JAWZ_SHIELD:
+		case MT_SSMINE_SHIELD:
+		case MT_SINK_SHIELD:
+		case MT_SPB:
+		case MT_HYUDORO:
+			return true;
+
+		default:
+			return P_IsKartFieldItem(type);
+	}
+}
+
+// This item can die in death sectors. There may be some
+// special conditions for items that don't switch types...
+// TODO: just make a general function for things that should
+// die like this?
+boolean P_CanDeleteKartItem(INT32 type)
+{
+	return P_IsKartFieldItem(type);
 }
 
 // Called when a kart item "thinks"
@@ -5098,7 +5265,7 @@ void P_RunOverlays(void)
 		}
 
 		mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP) | (mo->target->eflags & MFE_VERTICALFLIP);
-		mo->scale = mo->destscale = mo->target->scale;
+		mo->scale = mo->destscale = FixedMul(mo->target->scale, mo->movefactor);
 		mo->angle = (mo->target->player ? mo->target->player->drawangle : mo->target->angle) + mo->movedir;
 		mo->rollangle = mo->target->rollangle;
 		mo->pitch = mo->target->pitch;
@@ -6320,6 +6487,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			return false;
 		}
 		/* FALLTHRU */
+	case MT_GARDENTOP:
 	case MT_ORBINAUT_SHIELD:
 	case MT_BANANA_SHIELD:
 	case MT_EGGMANITEM_SHIELD:
@@ -6710,11 +6878,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_JAWZ:
 	{
 		Obj_JawzThink(mobj);
+		P_MobjCheckWater(mobj);
 		break;
 	}
 	case MT_EGGMANITEM:
@@ -6778,6 +6948,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			P_MobjCheckWater(mobj);
 		}
 		break;
 	case MT_SINK:
@@ -7024,7 +7196,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
-	case MT_TRIPWIREBOOST:
+	case MT_TRIPWIREBOOST: {
+		mobj_t *top;
+		fixed_t newHeight;
+		fixed_t newScale;
+
 		if (!mobj->target || !mobj->target->health
 			|| !mobj->target->player || !mobj->target->player->tripwireLeniency)
 		{
@@ -7032,10 +7208,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
+		newHeight = mobj->target->height;
+		newScale = mobj->target->scale;
+
+		top = K_GetGardenTop(mobj->target->player);
+
+		if (top)
+		{
+			newHeight += 5 * top->height / 4;
+			newScale = FixedMul(newScale, FixedDiv(newHeight / 2, mobj->target->height));
+		}
+
 		mobj->angle = K_MomentumAngle(mobj->target);
-		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (mobj->target->height >> 1));
-		mobj->destscale = mobj->target->scale;
-		P_SetScale(mobj, mobj->target->scale);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z + (newHeight / 2));
+		mobj->destscale = newScale;
+		P_SetScale(mobj, newScale);
 
 		if (mobj->extravalue1)
 		{
@@ -7107,6 +7294,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	}
 	case MT_BOOSTFLAME:
 		if (!mobj->target || !mobj->target->health)
 		{
@@ -7676,6 +7864,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			underlay->angle = mobj->angle;
 			P_SetMobjState(underlay, underlayst);
 		}
+		break;
+	}
+	case MT_GARDENTOP:
+	{
+		Obj_GardenTopThink(mobj);
+		break;
+	}
+	case MT_GARDENTOPSPARK:
+	{
+		Obj_GardenTopSparkThink(mobj);
 		break;
 	}
 	case MT_HYUDORO:
@@ -9293,11 +9491,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 
 	// Destroy items sector special
-	if (mobj->type == MT_BANANA || mobj->type == MT_EGGMANITEM
-	|| mobj->type == MT_ORBINAUT || mobj->type == MT_BALLHOG
-	|| mobj->type == MT_JAWZ
-	|| mobj->type == MT_SSMINE || mobj->type == MT_BUBBLESHIELDTRAP
-	|| mobj->type == MT_LANDMINE)
+	if (P_CanDeleteKartItem(mobj->type))
 	{
 		if (mobj->health > 0 && P_MobjTouchingSectorSpecial(mobj, 4, 7, true))
 		{
@@ -9397,6 +9591,7 @@ void P_MobjThinker(mobj_t *mobj)
 	}
 
 	P_SquishThink(mobj);
+	K_UpdateTerrainOverlay(mobj);
 
 	if (mobj->flags & (MF_ENEMY|MF_BOSS) && mobj->health
 		&& P_CheckDeathPitCollide(mobj)) // extra pit check in case these didn't have momz
@@ -9722,6 +9917,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_BUBBLESHIELD:
 		case MT_BUBBLESHIELDTRAP:
 		case MT_FLAMESHIELD:
+		case MT_GARDENTOP:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_RING:
@@ -9864,6 +10060,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->colorized = false;
 
 	mobj->hitlag = 0;
+	mobj->waterskip = 0;
 
 	// Set shadowscale here, before spawn hook so that Lua can change it
 	P_DefaultMobjShadowScale(mobj);
@@ -10643,7 +10840,7 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "2", CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
-consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 
 static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 {
@@ -11525,31 +11722,23 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 	switch (i)
 	{
-	case MT_EMBLEM:
-		if (netgame || multiplayer)
-			return false; // Single player only
+		case MT_ITEMCAPSULE:
+			{
+				boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
 
-		if (modifiedgame && !savemoddata)
-			return false; // No cheating!!
+				// don't spawn ring capsules in GTR_SPHERES gametypes
+				if (isRingCapsule && (gametyperules & GTR_SPHERES))
+					return false;
 
-		break;
-	case MT_ITEMCAPSULE:
-		{
-			boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
-
-			// don't spawn ring capsules in GTR_SPHERES gametypes
-			if (isRingCapsule && (gametyperules & GTR_SPHERES))
-				return false;
-
-			// in record attack, only spawn ring capsules
-			// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-			if (modeattacking
-			&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
-				return false;
-		}
-		break;
-	default:
-		break;
+				// in record attack, only spawn ring capsules
+				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
+				if (modeattacking
+				&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
+					return false;
+			}
+			break;
+		default:
+			break;
 	}
 
 	// No bosses outside of a combat situation.
@@ -12736,15 +12925,10 @@ static void P_SetAmbush(mobj_t *mobj)
 		mobj->flags ^= MF_NOGRAVITY;
 	}
 
-	if (mobj->flags & MF_NIGHTSITEM)
-	{
-		// Spawn already displayed
-		mobj->flags |= MF_SPECIAL;
-		mobj->flags &= ~MF_NIGHTSITEM;
-	}
-
 	if (mobj->flags & MF_PUSHABLE)
+	{
 		mobj->flags &= ~MF_PUSHABLE;
+	}
 
 	if ((mobj->flags & MF_MONITOR) && mobj->info->speed != 0)
 	{
@@ -12769,10 +12953,6 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 		// any monitor with nonzero speed is allowed to respawn like this
 		mobj->flags2 |= MF2_STRONGBOX;
 	}
-
-	// Requires you to be in bonus time to activate
-	if (mobj->flags & MF_NIGHTSITEM)
-		mobj->flags2 |= MF2_STRONGBOX;
 
 	// Pushables bounce and slide coolly with object special flag set
 	if (mobj->flags & MF_PUSHABLE)
@@ -12851,10 +13031,6 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 			mobj->lastlook = (mthing->angle & 16383);
 		}
 	}
-
-	// Final set of not being able to draw nightsitems.
-	if (mobj->flags & MF_NIGHTSITEM)
-		mobj->renderflags |= RF_DONTDRAW;
 
 	return mobj;
 }

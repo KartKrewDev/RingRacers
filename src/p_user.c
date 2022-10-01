@@ -1801,7 +1801,7 @@ static void P_3dMovement(player_t *player)
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
-	if (player->stairjank > 8 && leveltime & 3)
+	if ((player->stairjank > 8 && leveltime & 3) || K_IsRidingFloatingTop(player))
 	{
 		movepushangle = K_MomentumAngle(player->mo);
 	}
@@ -1884,6 +1884,7 @@ static void P_3dMovement(player_t *player)
 		if (player->mo->movefactor != FRACUNIT) // Friction-scaled acceleration...
 			movepushforward = FixedMul(movepushforward, player->mo->movefactor);
 
+		if (player->curshield != KSHIELD_TOP)
 		{
 			INT32 a = K_GetUnderwaterTurnAdjust(player);
 			INT32 adj = 0;
@@ -1966,6 +1967,24 @@ static void P_3dMovement(player_t *player)
 
 	player->mo->momx += totalthrust.x;
 	player->mo->momy += totalthrust.y;
+
+	// Releasing a drift while on the Top translates all your
+	// momentum (and even then some) into whichever direction
+	// you're facing
+	if (onground && player->curshield == KSHIELD_TOP && (K_GetKartButtons(player) & BT_DRIFT) != BT_DRIFT && (player->oldcmd.buttons & BT_DRIFT))
+	{
+		const fixed_t gmin = FRACUNIT/4;
+		const fixed_t gmax = 5*FRACUNIT/2;
+
+		const fixed_t grindfactor = (gmax - gmin) / GARDENTOP_MAXGRINDTIME;
+		const fixed_t grindscale = gmin + (player->topdriftheld * grindfactor);
+
+		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+
+		P_InstaThrust(player->mo, player->mo->angle, FixedMul(speed, grindscale));
+
+		player->topdriftheld = 0;/* reset after release */
+	}
 
 	if (!onground)
 	{
@@ -2291,100 +2310,6 @@ void P_MovePlayer(player_t *player)
 //////////////////
 //GAMEPLAY STUFF//
 //////////////////
-
-	if (((!(player->mo->eflags & MFE_VERTICALFLIP) && player->mo->z + player->mo->height >= player->mo->watertop && player->mo->z <= player->mo->watertop)
-		|| (player->mo->eflags & MFE_VERTICALFLIP && player->mo->z + player->mo->height >= player->mo->waterbottom && player->mo->z <= player->mo->waterbottom))
-	&& (player->speed > runspd)
-	&& player->mo->momz == 0 && player->carry != CR_SLIDING && !player->spectator)
-	{
-		fixed_t playerTopSpeed = K_GetKartSpeed(player, false, false);
-		fixed_t trailScale = FixedMul(FixedDiv(player->speed - runspd, playerTopSpeed - runspd), mapobjectscale);
-
-		if (playerTopSpeed > runspd)
-			trailScale = FixedMul(FixedDiv(player->speed - runspd, playerTopSpeed - runspd), mapobjectscale);
-		else
-			trailScale = mapobjectscale; // Scaling is based off difference between runspeed and top speed
-
-		if (trailScale > 0)
-		{
-			const angle_t forwardangle = K_MomentumAngle(player->mo);
-			const fixed_t playerVisualRadius = player->mo->radius + (8 * player->mo->scale);
-			const size_t numFrames = S_WATERTRAIL8 - S_WATERTRAIL1;
-			const statenum_t curOverlayFrame = S_WATERTRAIL1 + (leveltime % numFrames);
-			const statenum_t curUnderlayFrame = S_WATERTRAILUNDERLAY1 + (leveltime % numFrames);
-			fixed_t x1, x2, y1, y2;
-			mobj_t *water;
-
-			x1 = player->mo->x + player->mo->momx + P_ReturnThrustX(player->mo, forwardangle + ANGLE_90, playerVisualRadius);
-			y1 = player->mo->y + player->mo->momy + P_ReturnThrustY(player->mo, forwardangle + ANGLE_90, playerVisualRadius);
-			x1 = x1 + P_ReturnThrustX(player->mo, forwardangle, playerVisualRadius);
-			y1 = y1 + P_ReturnThrustY(player->mo, forwardangle, playerVisualRadius);
-
-			x2 = player->mo->x + player->mo->momx + P_ReturnThrustX(player->mo, forwardangle - ANGLE_90, playerVisualRadius);
-			y2 = player->mo->y + player->mo->momy + P_ReturnThrustY(player->mo, forwardangle - ANGLE_90, playerVisualRadius);
-			x2 = x2 + P_ReturnThrustX(player->mo, forwardangle, playerVisualRadius);
-			y2 = y2 + P_ReturnThrustY(player->mo, forwardangle, playerVisualRadius);
-
-			// Left
-			// underlay
-			water = P_SpawnMobj(x1, y1,
-				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = player->mo->momx;
-			water->momy = player->mo->momy;
-			water->momz = player->mo->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curUnderlayFrame);
-
-			// overlay
-			water = P_SpawnMobj(x1, y1,
-				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 - ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = player->mo->momx;
-			water->momy = player->mo->momy;
-			water->momz = player->mo->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curOverlayFrame);
-
-			// Right
-			// Underlay
-			water = P_SpawnMobj(x2, y2,
-				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAILUNDERLAY].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAILUNDERLAY);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = player->mo->momx;
-			water->momy = player->mo->momy;
-			water->momz = player->mo->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curUnderlayFrame);
-
-			// Overlay
-			water = P_SpawnMobj(x2, y2,
-				((player->mo->eflags & MFE_VERTICALFLIP) ? player->mo->waterbottom - FixedMul(mobjinfo[MT_WATERTRAIL].height, player->mo->scale) : player->mo->watertop), MT_WATERTRAIL);
-			water->angle = forwardangle - ANGLE_180 + ANGLE_22h;
-			water->destscale = trailScale;
-			water->momx = player->mo->momx;
-			water->momy = player->mo->momy;
-			water->momz = player->mo->momz;
-			P_SetScale(water, trailScale);
-			P_SetMobjState(water, curOverlayFrame);
-
-			if (!S_SoundPlaying(player->mo, sfx_s3kdbs))
-			{
-				const INT32 volume = (min(trailScale, FRACUNIT) * 255) / FRACUNIT;
-				S_StartSoundAtVolume(player->mo, sfx_s3kdbs, volume);
-			}
-		}
-	}
-
-	// Little water sound while touching water - just a nicety.
-	if ((player->mo->eflags & MFE_TOUCHWATER) && !(player->mo->eflags & MFE_UNDERWATER) && !player->spectator)
-	{
-		if (P_RandomChance(PR_BUBBLE, FRACUNIT/2) && leveltime % TICRATE == 0)
-			S_StartSound(player->mo, sfx_floush);
-	}
 
 	////////////////////////////
 	//SPINNING AND SPINDASHING//
@@ -3068,10 +2993,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	mobj_t *mo;
 	fixed_t f1, f2;
 	fixed_t speed;
-#ifndef NOCLIPCAM
-	boolean cameranoclip;
-	subsector_t *newsubsec;
-#endif
 
 	fixed_t playerScale = FixedDiv(player->mo->scale, mapobjectscale);
 	fixed_t scaleDiff = playerScale - FRACUNIT;
@@ -3128,12 +3049,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 		return true;
 	}
-
-#ifndef NOCLIPCAM
-	cameranoclip = ((player->pflags & PF_NOCLIP)
-		|| (mo->flags & (MF_NOCLIP|MF_NOCLIPHEIGHT)) // Noclipping player camera noclips too!!
-		|| (leveltime < introtime)); // Kart intro cam
-#endif
 
 	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
@@ -3263,6 +3178,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		}
 	}
 
+	/* The Top is Big Large so zoom out */
+	if (player->curshield == KSHIELD_TOP)
+	{
+		camdist += 40 * mapobjectscale;
+		camheight += 40 * mapobjectscale;
+	}
+
 	if (!resetcalled && (leveltime >= introtime && timeover != 2)
 		&& (t_cam_rotate[num] != -42))
 	{
@@ -3376,204 +3298,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		distz = max(camheight, distz);
 		z = mo->z + pviewheight + distz;
 	}
-
-#ifndef NOCLIPCAM // Disable all z-clipping for noclip cam
-	// move camera down to move under lower ceilings
-	newsubsec = R_PointInSubsectorOrNull(((mo->x>>FRACBITS) + (thiscam->x>>FRACBITS))<<(FRACBITS-1), ((mo->y>>FRACBITS) + (thiscam->y>>FRACBITS))<<(FRACBITS-1));
-
-	if (!newsubsec)
-		newsubsec = thiscam->subsector;
-
-	if (newsubsec)
-	{
-		fixed_t myfloorz, myceilingz;
-		fixed_t midz = thiscam->z + (thiscam->z - mo->z)/2;
-		fixed_t midx = ((mo->x>>FRACBITS) + (thiscam->x>>FRACBITS))<<(FRACBITS-1);
-		fixed_t midy = ((mo->y>>FRACBITS) + (thiscam->y>>FRACBITS))<<(FRACBITS-1);
-
-		// Cameras use the heightsec's heights rather then the actual sector heights.
-		// If you can see through it, why not move the camera through it too?
-		if (newsubsec->sector->camsec >= 0)
-		{
-			myfloorz = sectors[newsubsec->sector->camsec].floorheight;
-			myceilingz = sectors[newsubsec->sector->camsec].ceilingheight;
-		}
-		else if (newsubsec->sector->heightsec >= 0)
-		{
-			myfloorz = sectors[newsubsec->sector->heightsec].floorheight;
-			myceilingz = sectors[newsubsec->sector->heightsec].ceilingheight;
-		}
-		else
-		{
-			myfloorz = P_CameraGetFloorZ(thiscam, newsubsec->sector, midx, midy, NULL);
-			myceilingz = P_CameraGetCeilingZ(thiscam, newsubsec->sector, midx, midy, NULL);
-		}
-
-		// Check list of fake floors and see if floorz/ceilingz need to be altered.
-		if (newsubsec->sector->ffloors)
-		{
-			ffloor_t *rover;
-			fixed_t delta1, delta2;
-			INT32 thingtop = midz + thiscam->height;
-
-			for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
-			{
-				fixed_t topheight, bottomheight;
-				if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERALL) || GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
-					continue;
-
-				topheight = P_CameraGetFOFTopZ(thiscam, newsubsec->sector, rover, midx, midy, NULL);
-				bottomheight = P_CameraGetFOFBottomZ(thiscam, newsubsec->sector, rover, midx, midy, NULL);
-
-				delta1 = midz - (bottomheight
-					+ ((topheight - bottomheight)/2));
-				delta2 = thingtop - (bottomheight
-					+ ((topheight - bottomheight)/2));
-				if (topheight > myfloorz && abs(delta1) < abs(delta2))
-					myfloorz = topheight;
-				if (bottomheight < myceilingz && abs(delta1) >= abs(delta2))
-					myceilingz = bottomheight;
-			}
-		}
-
-	// Check polyobjects and see if floorz/ceilingz need to be altered
-	{
-		INT32 xl, xh, yl, yh, bx, by;
-		validcount++;
-
-		xl = (unsigned)(tmbbox[BOXLEFT] - bmaporgx)>>MAPBLOCKSHIFT;
-		xh = (unsigned)(tmbbox[BOXRIGHT] - bmaporgx)>>MAPBLOCKSHIFT;
-		yl = (unsigned)(tmbbox[BOXBOTTOM] - bmaporgy)>>MAPBLOCKSHIFT;
-		yh = (unsigned)(tmbbox[BOXTOP] - bmaporgy)>>MAPBLOCKSHIFT;
-
-		BMBOUNDFIX(xl, xh, yl, yh);
-
-		for (by = yl; by <= yh; by++)
-			for (bx = xl; bx <= xh; bx++)
-			{
-				INT32 offset;
-				polymaplink_t *plink; // haleyjd 02/22/06
-
-				if (bx < 0 || by < 0 || bx >= bmapwidth || by >= bmapheight)
-					continue;
-
-				offset = by*bmapwidth + bx;
-
-				// haleyjd 02/22/06: consider polyobject lines
-				plink = polyblocklinks[offset];
-
-				while (plink)
-				{
-					polyobj_t *po = plink->po;
-
-					if (po->validcount != validcount) // if polyobj hasn't been checked
-					{
-						sector_t *polysec;
-						fixed_t delta1, delta2, thingtop;
-						fixed_t polytop, polybottom;
-
-						po->validcount = validcount;
-
-						if (!P_PointInsidePolyobj(po, x, y) || !(po->flags & POF_SOLID))
-						{
-							plink = (polymaplink_t *)(plink->link.next);
-							continue;
-						}
-
-						// We're inside it! Yess...
-						polysec = po->lines[0]->backsector;
-
-						if (GETSECSPECIAL(polysec->special, 4) == 12)
-						{ // Camera noclip polyobj.
-							plink = (polymaplink_t *)(plink->link.next);
-							continue;
-						}
-
-						if (po->flags & POF_CLIPPLANES)
-						{
-							polytop = polysec->ceilingheight;
-							polybottom = polysec->floorheight;
-						}
-						else
-						{
-							polytop = INT32_MAX;
-							polybottom = INT32_MIN;
-						}
-
-						thingtop = midz + thiscam->height;
-						delta1 = midz - (polybottom + ((polytop - polybottom)/2));
-						delta2 = thingtop - (polybottom + ((polytop - polybottom)/2));
-
-						if (polytop > myfloorz && abs(delta1) < abs(delta2))
-							myfloorz = polytop;
-
-						if (polybottom < myceilingz && abs(delta1) >= abs(delta2))
-							myceilingz = polybottom;
-					}
-					plink = (polymaplink_t *)(plink->link.next);
-				}
-			}
-	}
-
-		// crushed camera
-		if (myceilingz <= myfloorz + thiscam->height && !resetcalled && !cameranoclip)
-		{
-			P_ResetCamera(player, thiscam);
-			return true;
-		}
-
-		// camera fit?
-		if (myceilingz != myfloorz
-			&& myceilingz - thiscam->height < z)
-		{
-/*			// no fit
-			if (!resetcalled && !cameranoclip)
-			{
-				P_ResetCamera(player, thiscam);
-				return true;
-			}
-*/
-			z = myceilingz - thiscam->height-FixedMul(11*FRACUNIT, mo->scale);
-			// is the camera fit is there own sector
-		}
-
-		// Make the camera a tad smarter with 3d floors
-		if (newsubsec->sector->ffloors && !cameranoclip)
-		{
-			ffloor_t *rover;
-
-			for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
-			{
-				fixed_t topheight, bottomheight;
-				if ((rover->flags & FF_BLOCKOTHERS) && (rover->flags & FF_RENDERALL) && (rover->flags & FF_EXISTS) && GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
-				{
-					topheight = P_CameraGetFOFTopZ(thiscam, newsubsec->sector, rover, midx, midy, NULL);
-					bottomheight = P_CameraGetFOFBottomZ(thiscam, newsubsec->sector, rover, midx, midy, NULL);
-
-					if (bottomheight - thiscam->height < z
-						&& midz < bottomheight)
-						z = bottomheight - thiscam->height-FixedMul(11*FRACUNIT, mo->scale);
-
-					else if (topheight + thiscam->height > z
-						&& midz > topheight)
-						z = topheight;
-
-					if ((mo->z >= topheight && midz < bottomheight)
-						|| ((mo->z < bottomheight && mo->z+mo->height < topheight) && midz >= topheight))
-					{
-						// Can't see
-						if (!resetcalled)
-							P_ResetCamera(player, thiscam);
-						return true;
-					}
-				}
-			}
-		}
-	}
-
-	if (thiscam->z < thiscam->floorz && !cameranoclip)
-		thiscam->z = thiscam->floorz;
-#endif // NOCLIPCAM
 
 	// point viewed by the camera
 	// this point is just 64 unit forward the player
@@ -4659,4 +4383,29 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 boolean P_PlayerFullbright(player_t *player)
 {
 	return (player->invincibilitytimer > 0);
+}
+
+void P_ResetPlayerCheats(void)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = &players[i];
+		mobj_t *thing = player->mo;
+
+		if (!playeringame[i])
+			continue;
+
+		player->pflags &= ~(PF_GODMODE);
+		player->respawn.manual = false;
+
+		if (P_MobjWasRemoved(thing))
+			continue;
+
+		thing->flags &= ~(MF_NOCLIP);
+
+		thing->destscale = mapobjectscale;
+		P_SetScale(thing, thing->destscale);
+	}
 }
