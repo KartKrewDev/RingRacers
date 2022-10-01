@@ -731,7 +731,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("downloads", Command_Downloads_f);
 
-	COM_AddCommand("item", Command_KartGiveItem_f);
+	COM_AddCommand("give", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -5852,7 +5852,7 @@ static void Command_KartGiveItem_f(void)
 		if (ac < 2)
 		{
 			CONS_Printf(
-"item <item> [amount]: Give yourself an item\n"
+"give <item> [amount]: Give yourself an item\n"
 			);
 		}
 		else
