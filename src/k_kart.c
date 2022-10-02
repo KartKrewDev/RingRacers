@@ -426,35 +426,35 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 {
 	//M  N  O  P
-	{ 0, 0, 2, 3, 4, 0, 0, 0 }, // Sneaker
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Rocket Sneaker
-	{ 0, 0, 0, 0, 2, 5, 5, 7 }, // Invincibility
-	{ 2, 3, 1, 0, 0, 0, 0, 0 }, // Banana
-	{ 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
-	{ 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
-	{ 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
-	{ 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
-	{ 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
-	{ 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
-	{ 0, 0, 0, 0, 2, 5, 0, 0 }, // Grow
-	{ 0, 0, 0, 0, 0, 2, 4, 2 }, // Shrink
-	{ 1, 0, 0, 0, 0, 0, 0, 0 }, // Lightning Shield
-	{ 0, 1, 2, 1, 0, 0, 0, 0 }, // Bubble Shield
-	{ 0, 0, 0, 0, 0, 1, 3, 5 }, // Flame Shield
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Hyudoro
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Pogo Spring
-	{ 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
-	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Garden Top
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Sneaker x2
-	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
-	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
-	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
-	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
-	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
+	{ 1, 1, 0, 0 }, // Sneaker
+	{ 0, 0, 0, 0 }, // Rocket Sneaker
+	{ 0, 0, 0, 0 }, // Invincibility
+	{ 0, 0, 0, 0 }, // Banana
+	{ 0, 0, 0, 0 }, // Eggman Monitor
+	{ 1, 1, 0, 0 }, // Orbinaut
+	{ 1, 1, 0, 0 }, // Jawz
+	{ 0, 0, 0, 0 }, // Mine
+	{ 0, 0, 0, 0 }, // Land Mine
+	{ 0, 0, 0, 0 }, // Ballhog
+	{ 0, 0, 0, 1 }, // Self-Propelled Bomb
+	{ 0, 0, 0, 0 }, // Grow
+	{ 0, 0, 0, 0 }, // Shrink
+	{ 0, 0, 0, 0 }, // Lightning Shield
+	{ 0, 0, 0, 0 }, // Bubble Shield
+	{ 0, 0, 0, 0 }, // Flame Shield
+	{ 0, 0, 0, 0 }, // Hyudoro
+	{ 0, 0, 0, 0 }, // Pogo Spring
+	{ 0, 0, 0, 0 }, // Super Ring
+	{ 0, 0, 0, 0 }, // Kitchen Sink
+	{ 0, 0, 0, 0 }, // Drop Target
+	{ 0, 0, 0, 0 }, // Garden Top
+	{ 0, 1, 1, 0 }, // Sneaker x2
+	{ 0, 0, 1, 1 }, // Sneaker x3
+	{ 0, 0, 0, 0 }, // Banana x3
+	{ 0, 0, 0, 0 }, // Banana x10
+	{ 0, 1, 1, 0 }, // Orbinaut x3
+	{ 0, 0, 1, 1 }, // Orbinaut x4
+	{ 0, 0, 1, 1 }  // Jawz x2
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
