@@ -267,7 +267,10 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
-	CV_RegisterVar(&cv_spbtest);
+
+	#ifdef DEVELOP
+		CV_RegisterVar(&cv_spbtest);
+	#endif
 }
 
 //}
