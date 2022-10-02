@@ -36,6 +36,7 @@
 #include "k_boss.h"
 #include "k_waypoint.h"
 #include "k_director.h"
+#include "k_specialstage.h"
 
 tic_t leveltime;
 
@@ -694,6 +695,8 @@ void P_Ticker(boolean run)
 		K_RunItemCooldowns();
 
 		K_BossInfoTicker();
+
+		K_TickSpecialStage();
 
 		if ((gametyperules & GTR_BUMPERS))
 		{

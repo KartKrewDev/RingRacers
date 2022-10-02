@@ -518,6 +518,7 @@ enum TypeOfLevel
 	TOL_RACE	= 0x0001, ///< Race
 	TOL_BATTLE	= 0x0002, ///< Battle
 	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
+	TOL_SPECIAL	= 0x0008, ///< Special Stage (variant of race, but forbidden)
 
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD

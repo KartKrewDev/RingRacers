@@ -96,8 +96,8 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
-#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
+#include "k_specialstage.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)

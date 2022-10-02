@@ -75,6 +75,7 @@
 #include "k_boss.h"
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
+#include "k_specialstage.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -981,6 +982,9 @@ void D_StartTitle(void)
 
 	// Reset boss info
 	K_ResetBossInfo();
+
+	// Reset Special Stage
+	K_ResetSpecialStage();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;

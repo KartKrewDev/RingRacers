@@ -62,6 +62,7 @@
 #include "doomstat.h"
 #include "deh_tables.h"
 #include "m_perfstats.h"
+#include "k_specialstage.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2943,6 +2944,7 @@ static void Command_Map_f(void)
 		if (newgametype == GT_BATTLE)
 		{
 			grandprixinfo.gp = false;
+			specialStage.active = false;
 			K_ResetBossInfo();
 
 			if (mapheaderinfo[newmapnum-1] &&
@@ -2952,66 +2954,79 @@ static void Command_Map_f(void)
 				bossinfo.encore = newencoremode;
 			}
 		}
-		else // default GP
+		else
 		{
-			grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
-			grandprixinfo.masterbots = false;
-
-			if (option_skill)
+			if (mapheaderinfo[newmapnum-1] &&
+				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_SPECIAL) // Special Stage
 			{
-				const char *masterstr = "Master";
-				const char *skillname = COM_Argv(option_skill + 1);
-				INT32 newskill = -1;
-				INT32 j;
+				grandprixinfo.gp = false;
+				bossinfo.boss = false;
 
-				if (!strcasecmp(masterstr, skillname))
-				{
-					newskill = KARTGP_MASTER;
-				}
-				else
-				{
-					for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-					{
-						if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
-						{
-							newskill = (INT16)kartspeed_cons_t[j].value;
-							break;
-						}
-					}
+				specialStage.active = true;
+				specialStage.encore = newencoremode;
+			}
+			else // default GP
+			{
+				grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+				grandprixinfo.masterbots = false;
 
-					if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-					{
-						INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
-						if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
-							newskill = (INT16)num;
-					}
-				}
-
-				if (newskill != -1)
+				if (option_skill)
 				{
-					if (newskill == KARTGP_MASTER)
+					const char *masterstr = "Master";
+					const char *skillname = COM_Argv(option_skill + 1);
+					INT32 newskill = -1;
+					INT32 j;
+
+					if (!strcasecmp(masterstr, skillname))
 					{
-						grandprixinfo.gamespeed = KARTSPEED_HARD;
-						grandprixinfo.masterbots = true;
+						newskill = KARTGP_MASTER;
 					}
 					else
 					{
-						grandprixinfo.gamespeed = newskill;
-						grandprixinfo.masterbots = false;
+						for (j = 0; kartspeed_cons_t[j].strvalue; j++)
+						{
+							if (!strcasecmp(kartspeed_cons_t[j].strvalue, skillname))
+							{
+								newskill = (INT16)kartspeed_cons_t[j].value;
+								break;
+							}
+						}
+
+						if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
+						{
+							INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+							if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+								newskill = (INT16)num;
+						}
+					}
+
+					if (newskill != -1)
+					{
+						if (newskill == KARTGP_MASTER)
+						{
+							grandprixinfo.gamespeed = KARTSPEED_HARD;
+							grandprixinfo.masterbots = true;
+						}
+						else
+						{
+							grandprixinfo.gamespeed = newskill;
+							grandprixinfo.masterbots = false;
+						}
 					}
 				}
+
+				grandprixinfo.encore = newencoremode;
+
+				grandprixinfo.gp = true;
+				grandprixinfo.roundnum = 0;
+				grandprixinfo.cup = NULL;
+				grandprixinfo.wonround = false;
+
+				bossinfo.boss = false;
+				specialStage.active = false;
+
+				grandprixinfo.initalize = true;
 			}
-
-			grandprixinfo.encore = newencoremode;
-
-			grandprixinfo.gp = true;
-			grandprixinfo.roundnum = 0;
-			grandprixinfo.cup = NULL;
-			grandprixinfo.wonround = false;
-
-			bossinfo.boss = false;
-
-			grandprixinfo.initalize = true;
 		}
 	}
 
