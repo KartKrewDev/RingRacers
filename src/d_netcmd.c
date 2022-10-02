@@ -455,6 +455,9 @@ consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_C
 consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("kartdebugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("kartdebugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
+#ifdef DEVELOP
+	consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT, CV_OnOff, NULL);
+#endif
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
