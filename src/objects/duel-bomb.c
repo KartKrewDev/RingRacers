@@ -77,18 +77,17 @@ void Obj_DuelBombTouch(mobj_t *bomb, mobj_t *toucher)
 	boom->color = SKINCOLOR_KETCHUP;
 	S_StartSound(boom, bomb->info->attacksound);
 
-	// Kill bomb
-	P_KillMobj(bomb, toucher, toucher, DMG_NORMAL);
-
 	if (player->invincibilitytimer > 0
 		|| K_IsBigger(toucher, bomb) == true
 		|| player->flamedash > 0)
 	{
 		// Kill without damaging.
+		P_KillMobj(bomb, toucher, toucher, DMG_NORMAL);
 		return;
 	}
 
 	P_DamageMobj(toucher, bomb, bomb, 1, DMG_TUMBLE);
+	P_KillMobj(bomb, toucher, toucher, DMG_NORMAL);
 }
 
 void Obj_DuelBombInit(mobj_t *bomb)
