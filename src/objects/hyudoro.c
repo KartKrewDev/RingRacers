@@ -118,6 +118,16 @@ sine_bob
 }
 
 static void
+bob_in_place
+(		mobj_t * hyu,
+		INT32 bob_speed)
+{
+	sine_bob(hyu,
+			(leveltime & (bob_speed - 1)) *
+			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+}
+
+static void
 project_hyudoro (mobj_t *hyu)
 {
 	mobj_t *center = hyudoro_center(hyu);
@@ -143,8 +153,6 @@ project_hyudoro (mobj_t *hyu)
 static void
 project_hyudoro_hover (mobj_t *hyu)
 {
-	const INT32 bob_speed = 64;
-
 	mobj_t *target = hyudoro_target(hyu);
 
 	// Turns a bit toward its target
@@ -170,9 +178,7 @@ project_hyudoro_hover (mobj_t *hyu)
 	hyu->pitch = target->pitch;
 	hyu->roll = target->roll;
 
-	sine_bob(hyu,
-			(leveltime & (bob_speed - 1)) *
-			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+	bob_in_place(hyu, 64);
 }
 
 static void
@@ -242,7 +248,6 @@ do_confused (mobj_t *hyu)
 {
 	// Hyudoro is confused.
 	// Spin around, try to find a new target.
-	const INT32 bob_speed = 32;
 
 	if (hyudoro_delivered(hyu))
 	{
@@ -258,9 +263,7 @@ do_confused (mobj_t *hyu)
 	hyu->angle += ANGLE_45;
 
 	// Bob very fast
-	sine_bob(hyu,
-			(leveltime & (bob_speed - 1)) *
-			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+	bob_in_place(hyu, 32);
 
 	hyu->sprzoff += hyu->height;
 }
