@@ -84,6 +84,9 @@ void V_CubeApply(RGBA_t *input);
 // Bottom 8 bits are used for parameter (screen or character)
 #define V_PARAMMASK          0x000000FF
 
+// strings/characters only
+#define V_STRINGDANCE        0x00000002
+
 // flags hacked in scrn (not supported by all functions (see src))
 // patch scaling uses bits 9 and 10
 #define V_SCALEPATCHSHIFT    8
@@ -219,6 +222,8 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color);
 	V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string)
 #define V__IntegerStringWidth( scale,option,font,string ) \
 	(V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
+
+INT32 V_DanceYOffset(INT32 counter);
 
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);

@@ -364,20 +364,7 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_WEAPONPREF)
 		{
-			i = READUINT8(demo_p);
-			players[p].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
-			if (i & 1)
-				players[p].pflags |= PF_KICKSTARTACCEL;
-			if (i & 2)
-				players[p].pflags |= PF_SHRINKME;
-
-			if (leveltime < 2)
-			{
-				// BAD HACK: No other place I tried to slot this in
-				// made it work for the host when they initally host,
-				// so this will have to do.
-				K_UpdateShrinkCheat(&players[p]);
-			}
+			WeaponPref_Parse(&demo_p, p);
 
 			//CONS_Printf("weaponpref is %d for player %d\n", i, p);
 		}
@@ -492,12 +479,7 @@ void G_WriteDemoExtraData(void)
 			}
 			if (demo_extradata[i] & DXD_WEAPONPREF)
 			{
-				UINT8 prefs = 0;
-				if (players[i].pflags & PF_KICKSTARTACCEL)
-					prefs |= 1;
-				if (players[i].pflags & PF_SHRINKME)
-					prefs |= 2;
-				WRITEUINT8(demo_p, prefs);
+				WeaponPref_Save(&demo_p, i);
 			}
 		}
 

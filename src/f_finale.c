@@ -866,7 +866,7 @@ boolean F_CreditResponder(event_t *event)
 		return false;
 	}
 
-	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
+	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cht_debug)
 		return false;*/
 
 	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
@@ -2006,6 +2006,8 @@ void F_TitleScreenDrawer(void)
 #else // Regular build
 					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
 #endif
+					if (compuncommitted)
+						addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
 				}
 #undef addtext
 			}

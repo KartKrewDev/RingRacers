@@ -2836,16 +2836,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 			EV_DoCrush(line, crushBothOnce);
 			break;
 
-		case 432: // Enable 2D Mode (Disable if noclimb)
-			if (mo && mo->player)
-			{
-				if (line->flags & ML_NOCLIMB)
-					mo->flags2 &= ~MF2_TWOD;
-				else
-					mo->flags2 |= MF2_TWOD;
-			}
-			break;
-
 		case 433: // Flip gravity (Flop gravity if noclimb) Works on pushables, too!
 			if (line->flags & ML_NOCLIMB)
 				mo->flags2 &= ~MF2_OBJECTFLIP;
@@ -4426,7 +4416,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 	switch (special)
 	{
 		case 1: // Damage (Generic)
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			if (!K_IsRidingFloatingTop(player) && (roversector || P_MobjReadyToTrigger(player->mo, sector)))
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
 			break;
 		case 2: // Damage (Water) // SRB2kart - These three damage types are now offroad sectors
@@ -4434,7 +4424,7 @@ void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *rovers
 		case 4: // Damage (Electrical)
 			break;
 		case 5: // Spikes
-			if (roversector || P_MobjReadyToTrigger(player->mo, sector))
+			if (!K_IsRidingFloatingTop(player) && (roversector || P_MobjReadyToTrigger(player->mo, sector)))
 				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_NORMAL);
 			break;
 		case 6: // Death Pit (Camera Mod)

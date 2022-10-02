@@ -915,39 +915,9 @@ void R_ApplyViewMorph(int s)
 
 	end = width * height;
 
-#if 0
-	if (cv_debug & DBG_VIEWMORPH)
+	for (p = 0; p < end; p++)
 	{
-		UINT8 border = 32;
-		UINT8 grid = 160;
-		INT32 ws = vid.width / 4;
-		INT32 hs = vid.width * (vid.height / 4);
-
-		memcpy(tmpscr, srcscr, vid.width*vid.height);
-		for (p = 0; p < vid.width; p++)
-		{
-			tmpscr[viewmorph.scrmap[p]] = border;
-			tmpscr[viewmorph.scrmap[p + hs]] = grid;
-			tmpscr[viewmorph.scrmap[p + hs*2]] = grid;
-			tmpscr[viewmorph.scrmap[p + hs*3]] = grid;
-			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
-		}
-		for (p = vid.width; p < end; p += vid.width)
-		{
-			tmpscr[viewmorph.scrmap[p]] = border;
-			tmpscr[viewmorph.scrmap[p + ws]] = grid;
-			tmpscr[viewmorph.scrmap[p + ws*2]] = grid;
-			tmpscr[viewmorph.scrmap[p + ws*3]] = grid;
-			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
-		}
-	}
-	else
-#endif
-	{
-		for (p = 0; p < end; p++)
-		{
-			tmpscr[p] = srcscr[viewmorph[s].scrmap[p]];
-		}
+		tmpscr[p] = srcscr[viewmorph[s].scrmap[p]];
 	}
 
 	VID_BlitLinearScreen(tmpscr, srcscr,

@@ -9,6 +9,14 @@ void Obj_HyudoroThink(mobj_t *actor);
 void Obj_HyudoroCenterThink(mobj_t *actor);
 void Obj_HyudoroCollide(mobj_t *special, mobj_t *toucher);
 
+/* Garden Top */
+void Obj_GardenTopDeploy(mobj_t *rider);
+mobj_t *Obj_GardenTopThrow(player_t *player);
+mobj_t *Obj_GardenTopDestroy(player_t *player);
+void Obj_GardenTopThink(mobj_t *top);
+void Obj_GardenTopSparkThink(mobj_t *spark);
+boolean Obj_GardenTopPlayerIsGrinding(player_t *player);
+
 /* Shrink */
 void Obj_PohbeeThinker(mobj_t *pohbee);
 void Obj_PohbeeRemoved(mobj_t *pohbee);

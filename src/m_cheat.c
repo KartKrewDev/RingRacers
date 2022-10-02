@@ -38,6 +38,8 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 
+#include "fastcmp.h"
+
 //
 // CHEAT SEQUENCE PACKAGE
 //
@@ -111,7 +113,7 @@ static UINT8 cheatf_devmode(void)
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		unlockables[i].unlocked = true;
 	devparm = true;
-	cv_debug |= 0x8000;
+	cht_debug |= 0x8000;
 
 	// Refresh secrets menu existing.
 	M_ClearMenus(true);
@@ -251,37 +253,18 @@ boolean cht_Responder(event_t *ev)
 // command that can be typed at the console!
 void Command_CheatNoClip_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make netplay compatible
 
-	plyr = &players[consoleplayer];
-
-	if (!plyr->mo || P_MobjWasRemoved(plyr->mo))
-		return;
-
-	plyr->cheats ^= PC_NOCLIP;
-	CONS_Printf(M_GetText("No Clipping %s\n"), plyr->cheats & PC_NOCLIP ? M_GetText("On") : M_GetText("Off"));
-
-	if (plyr->cheats & PC_NOCLIP)
-		plyr->mo->flags |= MF_NOCLIP;
-	else
-		plyr->mo->flags &= ~MF_NOCLIP;
+	D_Cheat(consoleplayer, CHEAT_NOCLIP);
 }
 
 void Command_CheatGod_f(void)
 {
-	player_t *plyr;
-
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	plyr = &players[consoleplayer];
-	plyr->cheats ^= PC_GODMODE;
-	CONS_Printf(M_GetText("Cheese Mode %s\n"), plyr->cheats & PC_GODMODE ? M_GetText("On") : M_GetText("Off"));
+	D_Cheat(consoleplayer, CHEAT_GOD);
 }
 
 void Command_Scale_f(void)
@@ -291,7 +274,6 @@ void Command_Scale_f(void)
 
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (scale < FRACUNIT/100 || scale > 100*FRACUNIT) //COM_Argv(1) will return a null string if they did not give a paramater, so...
 	{
@@ -299,29 +281,21 @@ void Command_Scale_f(void)
 		return;
 	}
 
-	if (!players[consoleplayer].mo)
-		return;
-
-	players[consoleplayer].mo->destscale = scale;
-
-	CONS_Printf(M_GetText("Scale set to %s\n"), COM_Argv(1));
+	D_Cheat(consoleplayer, CHEAT_SCALE, scale);
 }
 
 void Command_Gravflip_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (players[consoleplayer].mo)
-		players[consoleplayer].mo->flags2 ^= MF2_OBJECTFLIP;
+	D_Cheat(consoleplayer, CHEAT_FLIP);
 }
 
 void Command_Hurtme_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() < 2)
 	{
@@ -329,69 +303,26 @@ void Command_Hurtme_f(void)
 		return;
 	}
 
-	P_DamageMobj(players[consoleplayer].mo, NULL, NULL, atoi(COM_Argv(1)), DMG_NORMAL);
+	D_Cheat(consoleplayer, CHEAT_HURT, atoi(COM_Argv(1)));
 }
 
 void Command_RTeleport_f(void)
 {
-	fixed_t intx, inty, intz;
-	size_t i;
-	player_t *p = &players[consoleplayer];
-	subsector_t *ss;
+	float x = atof(COM_Argv(1));
+	float y = atof(COM_Argv(2));
+	float z = atof(COM_Argv(3));
 
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (COM_Argc() < 3 || COM_Argc() > 7)
+	if (COM_Argc() != 4)
 	{
-		CONS_Printf(M_GetText("rteleport -x <value> -y <value> -z <value>: relative teleport to a location\n"));
+		CONS_Printf(M_GetText("rteleport <x> <y> <z>: relative teleport to a location\n"));
 		return;
 	}
 
-	if (!p->mo)
-		return;
-
-	i = COM_CheckParm("-x");
-	if (i)
-		intx = atoi(COM_Argv(i + 1));
-	else
-		intx = 0;
-
-	i = COM_CheckParm("-y");
-	if (i)
-		inty = atoi(COM_Argv(i + 1));
-	else
-		inty = 0;
-
-	ss = R_PointInSubsectorOrNull(p->mo->x + intx*FRACUNIT, p->mo->y + inty*FRACUNIT);
-	if (!ss || ss->sector->ceilingheight - ss->sector->floorheight < p->mo->height)
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Not a valid location.\n"));
-		return;
-	}
-	i = COM_CheckParm("-z");
-	if (i)
-	{
-		intz = atoi(COM_Argv(i + 1));
-		intz <<= FRACBITS;
-		intz += p->mo->z;
-		if (intz < ss->sector->floorheight)
-			intz = ss->sector->floorheight;
-		if (intz > ss->sector->ceilingheight - p->mo->height)
-			intz = ss->sector->ceilingheight - p->mo->height;
-	}
-	else
-		intz = p->mo->z;
-
-	CONS_Printf(M_GetText("Teleporting by %d, %d, %d...\n"), intx, inty, FixedInt((intz-p->mo->z)));
-
-	P_MapStart();
-	if (!P_SetOrigin(p->mo, p->mo->x+intx*FRACUNIT, p->mo->y+inty*FRACUNIT, intz))
-		CONS_Alert(CONS_WARNING, M_GetText("Unable to teleport to that spot!\n"));
-	else
-		S_StartSound(p->mo, sfx_mixup);
-	P_MapEnd();
+	D_Cheat(consoleplayer, CHEAT_RELATIVE_TELEPORT,
+			FLOAT_TO_FIXED(x), FLOAT_TO_FIXED(y), FLOAT_TO_FIXED(z));
 }
 
 void Command_Teleport_f(void)
@@ -619,7 +550,6 @@ void Command_Skynum_f(void)
 {
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
 	if (COM_Argc() != 2)
 	{
@@ -649,18 +579,6 @@ void Command_Weather_f(void)
 	CONS_Printf(M_GetText("Previewing weather %s...\n"), COM_Argv(1));
 
 	P_SwitchWeather(atoi(COM_Argv(1)));
-}
-
-void Command_Toggletwod_f(void)
-{
-	player_t *p = &players[consoleplayer];
-
-	REQUIRE_CHEATS;
-	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
-
-	if (p->mo)
-		p->mo->flags2 ^= MF2_TWOD;
 }
 
 #ifdef _DEBUG
@@ -715,15 +633,15 @@ void Command_Dumplua_f(void)
 
 void Command_Savecheckpoint_f(void)
 {
+	mobj_t *thing = players[consoleplayer].mo;
+
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	players[consoleplayer].respawn.pointx = players[consoleplayer].mo->x;
-	players[consoleplayer].respawn.pointy = players[consoleplayer].mo->y;
-	players[consoleplayer].respawn.pointz = players[consoleplayer].mo->floorz;
-
-	CONS_Printf(M_GetText("Temporary checkpoint created at %d, %d, %d\n"), players[consoleplayer].respawn.pointx, players[consoleplayer].respawn.pointy, players[consoleplayer].respawn.pointz);
+	if (!P_MobjWasRemoved(thing))
+	{
+		D_Cheat(consoleplayer, CHEAT_SAVECHECKPOINT, thing->x, thing->y, thing->z);
+	}
 }
 
 // Like M_GetAllEmeralds() but for console devmode junkies.
@@ -749,24 +667,81 @@ void Command_Resetemeralds_f(void)
 }
 */
 
+//
+// Devmode
+//
+
+UINT32 cht_debug;
+
+struct debugFlagNames_s const debug_flag_names[] =
+{
+	{"None", DBG_NONE},
+	{"Basic", DBG_BASIC},
+	{"Detailed", DBG_DETAILED},
+	{"Player", DBG_PLAYER},
+	{"Render", DBG_RENDER},
+	{"Renderer", DBG_RENDER}, // alt name
+	{"Polyobj", DBG_POLYOBJ},
+	{"GameLogic", DBG_GAMELOGIC},
+	{"Game", DBG_GAMELOGIC}, // alt name
+	{"Netplay", DBG_NETPLAY},
+	{"Memory", DBG_MEMORY},
+	{"Setup", DBG_SETUP},
+	{"Lua", DBG_LUA},
+	{"RNG", DBG_RNG},
+	{"Randomizer", DBG_RNG}, // alt name
+	{NULL, 0}
+};
+
 void Command_Devmode_f(void)
 {
+	size_t argc = 0;
+
 	REQUIRE_CHEATS;
-	REQUIRE_SINGLEPLAYER; // TODO: make multiplayer compatible
 
-	if (COM_Argc() > 1)
+	argc = COM_Argc();
+	if (argc > 1)
 	{
-		const char *arg = COM_Argv(1);
+		UINT32 flags = 0;
+		size_t i;
 
-		if (arg[0] && arg[0] == '0' &&
-			arg[1] && arg[1] == 'x') // Use hexadecimal!
-			cv_debug = axtoi(arg+2);
-		else
-			cv_debug = atoi(arg);
+		for (i = 1; i < argc; i++)
+		{
+			const char *arg = COM_Argv(i);
+			size_t j;
+
+			// Try it as a string
+			for (j = 0; debug_flag_names[j].str; j++)
+			{
+				if (stricmp(arg, debug_flag_names[j].str) == 0)
+				{
+					break;
+				}
+			}
+
+			if (debug_flag_names[j].str)
+			{
+				flags |= debug_flag_names[j].flag;
+				continue;
+			}
+
+			// Try it as a number
+			if (arg[0] && arg[0] == '0' &&
+				arg[1] && arg[1] == 'x') // Use hexadecimal!
+			{
+				flags |= axtoi(arg+2);
+			}
+			else
+			{
+				flags |= atoi(arg);
+			}
+		}
+
+		D_Cheat(consoleplayer, CHEAT_DEVMODE, flags);
 	}
 	else
 	{
-		CONS_Printf(M_GetText("devmode <flags>: enable debugging tools and info, prepend with 0x to use hexadecimal\n"));
+		CONS_Printf(M_GetText("devmode <flags>: Enable debugging info. Prepend with 0x to use hexadecimal\n"));
 		return;
 	}
 }
@@ -776,13 +751,7 @@ void Command_Setrings_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		// P_GivePlayerRings does value clamping
-		players[consoleplayer].rings = 0;
-		P_GivePlayerRings(&players[consoleplayer], atoi(COM_Argv(1)));
-		players[consoleplayer].totalring -= atoi(COM_Argv(1)); //undo totalring addition done in P_GivePlayerRings
-	}
+	D_Cheat(consoleplayer, CHEAT_RINGS, atoi(COM_Argv(1)));
 }
 
 void Command_Setlives_f(void)
@@ -790,20 +759,7 @@ void Command_Setlives_f(void)
 	REQUIRE_CHEATS;
 	REQUIRE_INLEVEL;
 
-	if (COM_Argc() > 1)
-	{
-		SINT8 lives = atoi(COM_Argv(1));
-		if (lives == -1)
-		{
-			players[consoleplayer].lives = INFLIVES; // infinity!
-		}
-		else
-		{
-			// P_GivePlayerLives does value clamping
-			players[consoleplayer].lives = 0;
-			P_GivePlayerLives(&players[consoleplayer], atoi(COM_Argv(1)));
-		}
-	}
+	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
 //

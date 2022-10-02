@@ -143,6 +143,7 @@ void Obj_OrbinautThink(mobj_t *th)
 boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
+	boolean tumbleitem = false;
 	boolean sprung = false;
 
 	if ((orbinaut_selfdelay(t1) > 0 && t2->hitlag > 0)
@@ -173,6 +174,11 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		return true;
 	}
 
+	if (t1->type == MT_GARDENTOP)
+	{
+		tumbleitem = true;
+	}
+
 	if (t2->player)
 	{
 		if ((t2->player->flashing > 0 && t2->hitlag == 0)
@@ -190,7 +196,8 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			// Player Damage
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_WIPEOUT|DMG_WOMBO);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_WOMBO |
+					(tumbleitem ? DMG_TUMBLE : DMG_WIPEOUT));
 			K_KartBouncing(t2, t1);
 			S_StartSound(t2, sfx_s3k7b);
 		}
@@ -231,6 +238,11 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 		damageitem = true;
+	}
+
+	if (t1->type == MT_GARDENTOP)
+	{
+		damageitem = false;
 	}
 
 	if (damageitem)

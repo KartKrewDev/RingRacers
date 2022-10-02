@@ -1879,7 +1879,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
-		if (player->cheats & PC_GODMODE)
+		if (player->pflags & PF_GODMODE)
 			return false;
 
 		if (!force)
@@ -2018,6 +2018,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						source->player->emeralds |= player->emeralds;
 						player->emeralds = 0;
 						K_CheckEmeralds(source->player);
+					}
+
+					/* Drop "shield" immediately on contact. */
+					if (source->player->curshield == KSHIELD_TOP)
+					{
+						Obj_GardenTopDestroy(source->player);
 					}
 				}
 				else

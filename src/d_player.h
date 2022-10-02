@@ -58,14 +58,15 @@ typedef enum
 //
 typedef enum
 {
-	// free: 1<<0 to 1<<2
+	PF_GODMODE			= 1<<0, // Immortal. No lightsnake from pits either
+
+	// free: 1<<1 and 1<<2
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?
 	PF_GAINAX			= 1<<3,
 
-	// Accessibility and cheats
-	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
+	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
 	// 1<<5 free
 	// 1<<6 free
 
@@ -104,13 +105,6 @@ typedef enum
 
 	// up to 1<<31 is free
 } pflags_t;
-
-typedef enum
-{
-	PC_GODMODE			= 1,
-	PC_NOCLIP 			= 1<<1,
-	// up to 1<<31 is free
-} pcheats_t;
 
 typedef enum
 {
@@ -159,7 +153,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
 	FOREACH (KITCHENSINK,   20),\
-	FOREACH (DROPTARGET,    21)
+	FOREACH (DROPTARGET,    21),\
+	FOREACH (GARDENTOP,     22)
 
 typedef enum
 {
@@ -187,6 +182,7 @@ typedef enum
 	KSHIELD_LIGHTNING = 1,
 	KSHIELD_BUBBLE = 2,
 	KSHIELD_FLAME = 3,
+	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
 
@@ -288,6 +284,8 @@ typedef enum
 #define ITEMSCALE_GROW 1
 #define ITEMSCALE_SHRINK 2
 
+#define GARDENTOP_MAXGRINDTIME (45)
+
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
 {
@@ -302,6 +300,7 @@ typedef struct respawnvars_s
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
+	boolean manual; // Respawn coords were manually set, please respawn exactly there
 } respawnvars_t;
 
 // player_t struct for all bot variables
@@ -372,7 +371,6 @@ typedef struct player_s
 	// Bit flags.
 	// See pflags_t, above.
 	pflags_t pflags;
-	pcheats_t cheats;
 
 	// playing animation.
 	panim_t panim;
@@ -446,7 +444,6 @@ typedef struct player_s
 	INT32 underwatertilt;
 
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	UINT8 waterskip;		// Water skipping counter
 
 	UINT16 tiregrease;		// Reduced friction timer after hitting a spring
 	UINT16 springstars;		// Spawn stars around a player when they hit a spring
@@ -599,6 +596,8 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+	UINT8 topdriftheld;
+	UINT8 topinfirst;
 
 	UINT8 shrinkLaserDelay;
 
@@ -608,8 +607,5 @@ typedef struct player_s
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 } player_t;
-
-// Value for infinite lives
-#define INFLIVES 0x7F
 
 #endif

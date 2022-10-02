@@ -157,7 +157,13 @@ void K_DoIngameRespawn(player_t *player)
 	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
-	if (player->respawn.wp != NULL && leveltime >= starttime)
+	if (player->respawn.manual == true)
+	{
+		player->respawn.distanceleft = 0;
+		player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
+		player->respawn.manual = false; // one respawn only!
+	}
+	else if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;

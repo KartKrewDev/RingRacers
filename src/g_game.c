@@ -1304,22 +1304,22 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 
 static void weaponPrefChange(void)
 {
-	SendWeaponPref(0);
+	WeaponPref_Send(0);
 }
 
 static void weaponPrefChange2(void)
 {
-	SendWeaponPref(1);
+	WeaponPref_Send(1);
 }
 
 static void weaponPrefChange3(void)
 {
-	SendWeaponPref(2);
+	WeaponPref_Send(2);
 }
 
 static void weaponPrefChange4(void)
 {
-	SendWeaponPref(3);
+	WeaponPref_Send(3);
 }
 
 //
@@ -2219,7 +2219,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT32 followitem;
 
 	INT32 pflags;
-	INT32 cheats;
 
 	UINT8 ctfteam;
 
@@ -2299,7 +2298,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	botrival = players[player].botvars.rival;
 
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
-	cheats = 0;
 
 	// SRB2kart
 	if (betweenmaps || leveltime < introtime)
@@ -2374,10 +2372,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
 	}
 
-	// As long as we're not in multiplayer, carry over cheatcodes from map to map
-	if (!(netgame || multiplayer))
-		cheats = players[player].cheats;
-
 	if (!betweenmaps)
 	{
 		// Obliterate follower from existence (if valid memory)
@@ -2393,7 +2387,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->roundscore = roundscore;
 	p->lives = lives;
 	p->pflags = pflags;
-	p->cheats = cheats;
 	p->ctfteam = ctfteam;
 	p->jointime = jointime;
 	p->splitscreenindex = splitscreenindex;
@@ -4597,7 +4590,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 
 	gameaction = ga_nothing;
 
-	if (cv_debug && saved)
+	if (cht_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
@@ -4699,7 +4692,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	}
 
 cleanup:
-	if (cv_debug && saved)
+	if (cht_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
@@ -4783,9 +4776,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	{
 		players[i].playerstate = PST_REBORN;
 		memset(&players[i].respawn, 0, sizeof (players[i].respawn));
-
-		// Clear cheatcodes too, just in case.
-		players[i].cheats = 0;
 
 		players[i].roundscore = 0;
 

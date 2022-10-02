@@ -96,6 +96,7 @@ static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
 static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
+static void Got_Cheat(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -325,8 +326,6 @@ consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, N
 
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
-INT32 cv_debug;
-
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
 consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
@@ -362,7 +361,6 @@ consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
 #endif
 
 // SRB2kart
-consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_sneaker = 				CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_rocketsneaker = 		CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_invincibility = 		CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL);
@@ -372,7 +370,6 @@ consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, 
 consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL);
@@ -382,7 +379,10 @@ consvar_t cv_bubbleshield = 		CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_O
 consvar_t cv_flameshield = 			CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_hyudoro = 				CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_pogospring = 			CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_kitchensink = 			CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_gardentop = 			CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL);
 
 consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
@@ -625,7 +625,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"PLAYSOUND", // XD_PLAYSOUND
 	"SCHEDULETASK", // XD_SCHEDULETASK
 	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
-	"AUTOMATE" // XD_AUTOMATE
+	"AUTOMATE", // XD_AUTOMATE
+	"CHEAT", // XD_CHEAT
 };
 
 // =========================================================================
@@ -677,6 +678,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
 	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
+
+	RegisterNetXCmd(XD_CHEAT, Got_Cheat);
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f);
@@ -1094,7 +1097,6 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("rteleport", Command_RTeleport_f);
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
-	COM_AddCommand("toggletwod", Command_Toggletwod_f);
 #ifdef _DEBUG
 	COM_AddCommand("causecfail", Command_CauseCfail_f);
 #endif
@@ -1383,7 +1385,7 @@ UINT8 CanChangeSkin(INT32 playernum)
 			return true;
 
 		// Not in game, so you can change
-		if (players[playernum].spectator || players[playernum].playerstate == PST_DEAD || players[playernum].playerstate == PST_REBORN)
+		if (players[playernum].spectator)
 			return true;
 
 		// Check for freeeplay
@@ -1402,6 +1404,26 @@ UINT8 CanChangeSkin(INT32 playernum)
 	else if (gamestate == GS_LEVEL && leveltime >= starttime)
 		return (!P_PlayerMoving(playernum));
 
+
+	return true;
+}
+
+boolean CanChangeSkinWhilePlaying(INT32 playernum)
+{
+	INT32 i;
+
+	// Force skin in effect.
+	if ((cv_forceskin.value != -1))
+		return false;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (D_IsPlayerHumanAndGaming(i) &&
+				!P_IsLocalPlayer(&players[i]))
+		{
+			return CanChangeSkin(playernum);
+		}
+	}
 
 	return true;
 }
@@ -1731,40 +1753,65 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 #endif
 }
 
-void SendWeaponPref(UINT8 n)
+enum {
+	WP_KICKSTARTACCEL = 1<<0,
+	WP_SHRINKME = 1<<1,
+};
+
+void WeaponPref_Send(UINT8 ssplayer)
 {
-	UINT8 buf[1];
+	UINT8 prefs = 0;
 
-	buf[0] = 0;
+	if (cv_kickstartaccel[ssplayer].value)
+		prefs |= WP_KICKSTARTACCEL;
 
-	if (cv_kickstartaccel[n].value)
-		buf[0] |= 1;
+	if (cv_shrinkme[ssplayer].value)
+		prefs |= WP_SHRINKME;
 
-	if (cv_shrinkme[n].value)
-		buf[0] |= 2;
-
-	SendNetXCmdForPlayer(n, XD_WEAPONPREF, buf, 1);
+	SendNetXCmdForPlayer(ssplayer, XD_WEAPONPREF, &prefs, 1);
 }
 
-static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
+void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 {
+	player_t *player = &players[playernum];
+
+	UINT8 prefs = 0;
+
+	if (player->pflags & PF_KICKSTARTACCEL)
+		prefs |= WP_KICKSTARTACCEL;
+
+	if (player->pflags & PF_SHRINKME)
+		prefs |= WP_SHRINKME;
+
+	WRITEUINT8(*cp, prefs);
+}
+
+void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
+{
+	player_t *player = &players[playernum];
+
 	UINT8 prefs = READUINT8(*cp);
 
-	players[playernum].pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
+	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME);
 
-	if (prefs & 1)
-		players[playernum].pflags |= PF_KICKSTARTACCEL;
+	if (prefs & WP_KICKSTARTACCEL)
+		player->pflags |= PF_KICKSTARTACCEL;
 
-	if (prefs & 2)
-		players[playernum].pflags |= PF_SHRINKME;
+	if (prefs & WP_SHRINKME)
+		player->pflags |= PF_SHRINKME;
 
 	if (leveltime < 2)
 	{
 		// BAD HACK: No other place I tried to slot this in
 		// made it work for the host when they initally host,
 		// so this will have to do.
-		K_UpdateShrinkCheat(&players[playernum]);
+		K_UpdateShrinkCheat(player);
 	}
+}
+
+static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
+{
+	WeaponPref_Parse(cp, playernum);
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
@@ -1952,7 +1999,7 @@ void D_SendPlayerConfig(UINT8 n)
 	UINT8 *p = buf;
 
 	SendNameAndColor(n);
-	SendWeaponPref(n);
+	WeaponPref_Send(n);
 
 	if (pr != NULL)
 	{
@@ -1968,6 +2015,65 @@ void D_SendPlayerConfig(UINT8 n)
 	}
 
 	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
+}
+
+void D_Cheat(INT32 playernum, INT32 cheat, ...)
+{
+	va_list ap;
+
+	UINT8 buf[64];
+	UINT8 *p = buf;
+
+	if (!CV_CheatsEnabled())
+	{
+		CONS_Printf("This cannot be used without cheats enabled.\n");
+		return;
+	}
+
+	WRITEUINT8(p, playernum);
+	WRITEUINT8(p, cheat);
+
+	va_start(ap, cheat);
+#define COPY(writemacro, type) writemacro (p, va_arg(ap, type))
+
+	switch (cheat)
+	{
+		case CHEAT_SAVECHECKPOINT:
+			COPY(WRITEFIXED, fixed_t); // x
+			COPY(WRITEFIXED, fixed_t); // y
+			COPY(WRITEFIXED, fixed_t); // z
+			break;
+
+		case CHEAT_RINGS:
+		case CHEAT_LIVES:
+			// If you're confused why 'int' instead of
+			// 'SINT8', search online: 'default argument promotions'
+			COPY(WRITESINT8, int);
+			break;
+
+		case CHEAT_SCALE:
+			COPY(WRITEFIXED, fixed_t);
+			break;
+
+		case CHEAT_HURT:
+			COPY(WRITEINT32, INT32);
+			break;
+
+		case CHEAT_RELATIVE_TELEPORT:
+			COPY(WRITEFIXED, fixed_t);
+			COPY(WRITEFIXED, fixed_t);
+			COPY(WRITEFIXED, fixed_t);
+			break;
+
+		case CHEAT_DEVMODE:
+			COPY(WRITEUINT32, UINT32);
+			break;
+	}
+
+#undef COPY
+	va_end(ap);
+
+	SendNetXCmd(XD_CHEAT, buf, p - buf);
 }
 
 // Only works for displayplayer, sorry!
@@ -2805,7 +2911,7 @@ static void Command_Map_f(void)
 		newresetplayers = false; // if not forcing and gametypes is the same
 
 	// don't use a gametype the map doesn't support
-	if (cv_debug || option_force || cv_skipmapcheck.value)
+	if (cht_debug || option_force || cv_skipmapcheck.value)
 	{
 		fromlevelselect = false; // The player wants us to trek on anyway.  Do so.
 	}
@@ -4711,6 +4817,9 @@ static void Command_Version_f(void)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif
 
+	if (compuncommitted)
+		CONS_Printf("\x85" "! UNCOMMITTED CHANGES ! " "\x80");
+
 	CONS_Printf("\n");
 }
 
@@ -5409,6 +5518,175 @@ static void Got_Automatecmd(UINT8 **cp, INT32 playernum)
 	}
 }
 
+static void Got_Cheat(UINT8 **cp, INT32 playernum)
+{
+	UINT8 targetPlayer = READUINT8(*cp);
+	cheat_t cheat = READUINT8(*cp);
+
+	player_t *player;
+
+	if (cheat >= NUMBER_OF_CHEATS || !CV_CheatsEnabled() || targetPlayer >= MAXPLAYERS ||
+			playernode[targetPlayer] != playernode[playernum])
+	{
+		CONS_Alert(CONS_WARNING,
+				M_GetText ("Illegal cheat command received from %s\n"),
+				player_names[playernum]);
+		return;
+	}
+
+	player = &players[targetPlayer];
+
+	switch (cheat)
+	{
+		case CHEAT_NOCLIP: {
+			const char *status = "on";
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->flags ^= MF_NOCLIP;
+
+				if (!(player->mo->flags & MF_NOCLIP))
+				{
+					status = "off";
+				}
+			}
+
+			CV_CheaterWarning(targetPlayer, va("noclip %s", status));
+			break;
+		}
+
+		case CHEAT_GOD: {
+			const char *status = (player->pflags & PF_GODMODE) ? "off" : "on";
+
+			player->pflags ^= PF_GODMODE;
+
+			CV_CheaterWarning(targetPlayer, va("GOD MODE %s", status));
+			break;
+		}
+
+		case CHEAT_SAVECHECKPOINT: {
+			fixed_t x = READFIXED(*cp);
+			fixed_t y = READFIXED(*cp);
+			fixed_t z = READFIXED(*cp);
+
+			player->respawn.pointx = x;
+			player->respawn.pointy = y;
+			player->respawn.pointz = z;
+			player->respawn.manual = true;
+
+			CV_CheaterWarning(targetPlayer, va("temporary checkpoint created at %d, %d, %d",
+						x / FRACUNIT, y / FRACUNIT, z / FRACUNIT));
+			break;
+		}
+
+		case CHEAT_RINGS: {
+			SINT8 rings = READSINT8(*cp);
+
+			// P_GivePlayerRings does value clamping
+			player->rings = 0;
+			P_GivePlayerRings(player, rings);
+
+			CV_CheaterWarning(targetPlayer, va("rings = %d", rings));
+			break;
+		}
+
+		case CHEAT_LIVES: {
+			SINT8 lives = READSINT8(*cp);
+
+			// P_GivePlayerLives does value clamping
+			player->lives = 0;
+			P_GivePlayerLives(player, lives);
+
+			CV_CheaterWarning(targetPlayer, va("lives = %d", lives));
+			break;
+		}
+
+		case CHEAT_SCALE: {
+			const fixed_t smin = FRACUNIT/100;
+			const fixed_t smax = 100*FRACUNIT;
+
+			fixed_t s = READFIXED(*cp);
+			float f;
+
+			s = min(max(smin, s), smax);
+			f = FIXED_TO_FLOAT(s);
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->destscale = s;
+			}
+
+			CV_CheaterWarning(targetPlayer, va("scale = %d%s", (int)f, M_Ftrim(FIXED_TO_FLOAT(s))));
+			break;
+		}
+
+		case CHEAT_FLIP: {
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->flags2 ^= MF2_OBJECTFLIP;
+			}
+
+			CV_CheaterWarning(targetPlayer, "invert gravity");
+			break;
+		}
+
+		case CHEAT_HURT: {
+			INT32 damage = READINT32(*cp);
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				P_DamageMobj(player->mo, NULL, NULL, damage, DMG_NORMAL);
+			}
+
+			CV_CheaterWarning(targetPlayer, va("%d damage to me", damage));
+			break;
+		}
+
+		case CHEAT_RELATIVE_TELEPORT: {
+			fixed_t x = READFIXED(*cp);
+			fixed_t y = READFIXED(*cp);
+			fixed_t z = READFIXED(*cp);
+
+			float f[3] = {
+				FIXED_TO_FLOAT(x),
+				FIXED_TO_FLOAT(y),
+				FIXED_TO_FLOAT(z),
+			};
+			char t[3][9];
+
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				P_MapStart();
+				P_SetOrigin(player->mo,
+						player->mo->x + x,
+						player->mo->y + y,
+						player->mo->z + z);
+				P_MapEnd();
+
+				S_StartSound(player->mo, sfx_mixup);
+			}
+
+			strlcpy(t[0], M_Ftrim(f[0]), sizeof t[0]);
+			strlcpy(t[1], M_Ftrim(f[1]), sizeof t[1]);
+			strlcpy(t[2], M_Ftrim(f[2]), sizeof t[2]);
+
+			CV_CheaterWarning(targetPlayer, va("relative teleport by %d%s, %d%s, %d%s",
+						(int)f[0], t[0], (int)f[1], t[1], (int)f[2], t[2]));
+			break;
+		}
+
+		case CHEAT_DEVMODE: {
+			UINT32 flags = READUINT32(*cp);
+			cht_debug = flags;
+			CV_CheaterWarning(targetPlayer, va("devmode %x", flags));
+			break;
+		}
+
+		case NUMBER_OF_CHEATS:
+			break;
+	}
+}
+
 /** Prints the number of displayplayers[0].
   *
   * \todo Possibly remove this; it was useful for debugging at one point.
@@ -5464,7 +5742,7 @@ void Command_ExitGame_f(void)
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
@@ -6046,7 +6324,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer))
+	if (CanChangeSkinWhilePlaying(consoleplayer))
 		SendNameAndColor(0);
 	else
 	{
@@ -6065,7 +6343,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[1]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[1]))
 		SendNameAndColor(1);
 	else
 	{
@@ -6079,7 +6357,7 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[2]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[2]))
 		SendNameAndColor(2);
 	else
 	{
@@ -6093,7 +6371,7 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkin(g_localplayers[3]))
+	if (CanChangeSkinWhilePlaying(g_localplayers[3]))
 		SendNameAndColor(3);
 	else
 	{

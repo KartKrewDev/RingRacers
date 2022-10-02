@@ -72,14 +72,38 @@ extern consvar_t cv_pause;
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
-extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
-extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine, cv_landmine, cv_droptarget;
-extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_lightningshield, cv_bubbleshield, cv_flameshield;
-extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t
+	cv_sneaker,
+	cv_rocketsneaker,
+	cv_invincibility,
+	cv_banana,
+	cv_eggmanmonitor,
+	cv_orbinaut,
+	cv_jawz,
+	cv_mine,
+	cv_landmine,
+	cv_ballhog,
+	cv_selfpropelledbomb,
+	cv_grow,
+	cv_shrink,
+	cv_lightningshield,
+	cv_bubbleshield,
+	cv_flameshield,
+	cv_hyudoro,
+	cv_pogospring,
+	cv_superring,
+	cv_kitchensink,
+	cv_droptarget,
+	cv_gardentop;
 
-extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
-extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
+extern consvar_t
+	cv_dualsneaker,
+	cv_triplesneaker,
+	cv_triplebanana,
+	cv_decabanana,
+	cv_tripleorbinaut,
+	cv_quadorbinaut,
+	cv_dualjawz;
 
 extern consvar_t cv_kartminimap;
 extern consvar_t cv_kartcheck;
@@ -179,6 +203,7 @@ typedef enum
 	XD_SCHEDULETASK, // 36
 	XD_SCHEDULECLEAR, // 37
 	XD_AUTOMATE,    // 38
+	XD_CHEAT,       // 39
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -230,7 +255,9 @@ void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void CleanupPlayerName(INT32 playernum, const char *newname);
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
-void SendWeaponPref(UINT8 n);
+void WeaponPref_Send(UINT8 ssplayer);
+void WeaponPref_Save(UINT8 **cp, INT32 playernum);
+void WeaponPref_Parse(UINT8 **cp, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
@@ -278,7 +305,10 @@ void Automate_Clear(void);
 extern UINT32 livestudioaudience_timer;
 void LiveStudioAudience(void);
 
+void D_Cheat(INT32 playernum, INT32 cheat, ...);
+
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);
+boolean CanChangeSkinWhilePlaying(INT32 playernum);
 
 #endif

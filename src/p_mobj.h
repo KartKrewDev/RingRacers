@@ -169,7 +169,7 @@ typedef enum
 typedef enum
 {
 	MF2_AXIS           = 1,     // It's a NiGHTS axis! (For faster checking)
-	MF2_TWOD           = 1<<1,  // Moves like it's in a 2D level
+	// free: 1<<1
 	MF2_DONTRESPAWN    = 1<<2,  // Don't respawn this object!
 	// free: 1<<3
 	MF2_AUTOMATIC      = 1<<4,  // Thrown ring has automatic properties
@@ -409,6 +409,7 @@ typedef struct mobj_s
 	struct mobj_s *terrainOverlay; // Overlay sprite object for terrain
 
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
+	UINT8 waterskip; // Water skipping counter
 
 	INT32 dispoffset;
 
@@ -499,7 +500,9 @@ void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
 // kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
+boolean P_IsKartFieldItem(INT32 type);
 boolean P_IsKartItem(INT32 type);
+boolean P_CanDeleteKartItem(INT32 type);
 void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
 void P_RunKartItems(void);
 

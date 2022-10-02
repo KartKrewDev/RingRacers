@@ -3740,6 +3740,14 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAMESHIELDLINE3",
 	"S_FLAMESHIELDFLASH",
 
+	// Marble Garden Zone Spinning Top
+	"S_GARDENTOP_FLOATING",
+	"S_GARDENTOP_SINKING1",
+	"S_GARDENTOP_SINKING2",
+	"S_GARDENTOP_SINKING3",
+	"S_GARDENTOP_DEAD",
+	"S_GARDENTOPSPARK",
+
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
 
@@ -5346,6 +5354,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",
 	"MT_BUBBLESHIELDTRAP",
+	"MT_GARDENTOP",
+	"MT_GARDENTOPSPARK",
 
 	"MT_HYUDORO",
 	"MT_HYUDORO_CENTER",
@@ -5651,7 +5661,7 @@ const char *const MOBJFLAG_LIST[] = {
 // \tMF2_(\S+).*// (.+) --> \t"\1", // \2
 const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			  // It's a NiGHTS axis! (For faster checking)
-	"TWOD",			  // Moves like it's in a 2D level
+	"\x01",			  // free: 1<<1 (name un-matchable)
 	"DONTRESPAWN",	  // Don't respawn this object!
 	"\x01",			  // free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	  // Thrown ring has automatic properties
@@ -5710,8 +5720,9 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// free: 1<<0 to 1<<2 (name un-matchable)
-	"\x01",
+	"GODMODE",
+
+	// free: 1<<1 and 1<<2 (name un-matchable)
 	"\x01",
 	"\x01",
 
@@ -6348,9 +6359,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PA_DRIFT",PA_DRIFT},
 	{"PA_HURT",PA_HURT},
 
-	// Value for infinite lives
-	{"INFLIVES",INFLIVES},
-
 	// Got Flags, for player->gotflag!
 	// Used to be MF_ for some stupid reason, now they're GF_ to stop them looking like mobjflags
 	{"GF_REDFLAG",GF_REDFLAG},
@@ -6670,6 +6678,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KSHIELD_LIGHTNING",KSHIELD_LIGHTNING},
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
+	{"KSHIELD_TOP",KSHIELD_TOP},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 	// kartspinoutflags_t
