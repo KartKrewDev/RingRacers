@@ -4554,23 +4554,23 @@ static void K_drawDistributionDebugger(void)
 	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
 }
 
-static void K_drawCheckpointDebugger(void)
+static void K_DrawWaypointDebugger(void)
 {
+	if (cv_kartdebugwaypoints.value == 0)
+		return;
+
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
 
-	if (stplyr->starpostnum == numstarposts)
-		V_DrawString(8, 184, 0, va("Checkpoint: %d / %d (Can finish)", stplyr->starpostnum, numstarposts));
-	else
-		V_DrawString(8, 184, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
-}
+	V_DrawString(8, 166, 0, va("'Best' Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
+	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
-static void K_DrawWaypointDebugger(void)
-{
-	if ((cv_kartdebugwaypoints.value != 0) && (stplyr == &players[displayplayers[0]]))
+	if (numstarposts > 0)
 	{
-		V_DrawString(8, 166, 0, va("'Best' Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
-		V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
+		if (stplyr->starpostnum == numstarposts)
+			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d (Can finish)", stplyr->starpostnum, numstarposts));
+		else
+			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
 	}
 }
 
@@ -4784,9 +4784,6 @@ void K_drawKartHUD(void)
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
-
-	if (cv_kartdebugcheckpoint.value)
-		K_drawCheckpointDebugger();
 
 	if (cv_kartdebugnodes.value)
 	{
