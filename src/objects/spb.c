@@ -105,11 +105,7 @@ static void SPBMantaRings(mobj_t *spb)
 		Obj_MantaRingCreate(
 			spb,
 			spb_owner(spb),
-#ifdef DEVELOP
 			cv_spbtest.value ? NULL : spb_chase(spb)
-#else
-			spb_chase(spb)
-#endif
 		);
 	}
 }
@@ -358,11 +354,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			spb->fuse = 2*TICRATE;
 		}
 	}
-#ifdef DEVELOP
 	else if (!cv_spbtest.value)
-#else
-	else
-#endif
 	{
 		if (dist <= activeDist)
 		{
@@ -441,7 +433,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 				if (pathfindsuccess == true)
 				{
-#ifdef DEVELOP
 					if (cv_spbtest.value) {
 						if (pathtoplayer.numnodes > 1)
 						{
@@ -461,7 +452,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 						}
 					}
 					else
-#else
 					{
 						path_t reversepath = {0};
 						boolean reversesuccess = false;
@@ -502,7 +492,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 							Z_Free(reversepath.array);
 						}
 					}
-#endif
 					Z_Free(pathtoplayer.array);
 				}
 			}
