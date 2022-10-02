@@ -11755,30 +11755,26 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 					return false;
 			}
 			break;
-		case MT_DUELBOMB:
-		case MT_BANANA:
-		case MT_EGGMANITEM:
-		case MT_SSMINE:
-		case MT_LANDMINE:
-		case MT_HYUDORO_CENTER:
-		case MT_DROPTARGET:
-		case MT_POGOSPRING:
-			{
-				// Duel objects.
-				// Normally only spawn when placed by the map in Duels,
-				// but can be forced to always spawn with the Extra flag.
-				if (inDuel == false && !(mthing->options & MTF_EXTRA))
-					return false;
-			}
-			break;
 		default:
 			break;
+	}
+
+	if (inDuel == false)
+	{
+		if (K_IsDuelItem(i) == true
+			&& K_DuelItemAlwaysSpawns(mthing) == false)
+		{
+			// Only spawns in Duels.
+			return false;
+		}
 	}
 
 	// No bosses outside of a combat situation.
 	// (just in case we want boss arenas to do double duty as battle maps)
 	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+	{
 		return false;
+	}
 
 	if (metalrecording) // Metal Sonic can't use these things.
 	{
