@@ -49,10 +49,53 @@
 // battlewanted is an array of the WANTED player nums, -1 for no player in that slot
 // mapreset is set when enough players fill an empty server
 
+boolean K_IsDuelItem(mobjtype_t type)
+{
+	switch (type)
+	{
+		case MT_DUELBOMB:
+		case MT_BANANA:
+		case MT_EGGMANITEM:
+		case MT_SSMINE:
+		case MT_LANDMINE:
+		case MT_HYUDORO_CENTER:
+		case MT_DROPTARGET:
+		case MT_POGOSPRING:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
+{
+	return (mt->options & MTF_EXTRA);
+}
+
+static void K_SpawnDuelOnlyItems(void)
+{
+	mapthing_t *mt = NULL;
+	size_t i;
+
+	mt = mapthings;
+	for (i = 0; i < nummapthings; i++, mt++)
+	{
+		mobjtype_t type = P_GetMobjtype(mt->type);
+
+		if (K_IsDuelItem(type) == true
+			&& K_DuelItemAlwaysSpawns(mt) == false)
+		{
+			P_SpawnMapThing(mt);
+		}
+	}
+}
+
 void K_TimerReset(void)
 {
 	starttime = introtime = 3;
 	numbulbs = 1;
+	inDuel = false;
 }
 
 void K_TimerInit(void)
@@ -77,6 +120,9 @@ void K_TimerInit(void)
 
 			numPlayers++;
 		}
+
+		// 1v1 activates DUEL rules!
+		inDuel = (numPlayers == 2);
 
 		if (numPlayers >= 2)
 		{
@@ -106,6 +152,12 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_BattleInit();
+
+	if (inDuel == true)
+	{
+		K_SpawnDuelOnlyItems();
+	}
+
 	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
@@ -1437,6 +1489,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 			break;
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
+		case MT_DUELBOMB:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL);
 			break;

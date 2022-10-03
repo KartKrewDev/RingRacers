@@ -1707,7 +1707,13 @@ void P_XYMovement(mobj_t *mo)
 
 			if (walltransferred == false)
 			{
-				if (mo->flags & MF_SLIDEME)
+				if (mo->type == MT_DUELBOMB)
+				{
+					P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BUMP);
+					Obj_DuelBombReverse(mo);
+					xmove = ymove = 0;
+				}
+				else if (mo->flags & MF_SLIDEME)
 				{
 					P_SlideMove(mo);
 					if (P_MobjWasRemoved(mo))
@@ -1759,13 +1765,13 @@ void P_XYMovement(mobj_t *mo)
 							}
 							break;
 
+						case MT_BUBBLESHIELDTRAP:
+							S_StartSound(mo, sfx_s3k44); // Bubble bounce
+							break;
+
 						default:
 							break;
 					}
-
-					// Bubble bounce
-					if (mo->type == MT_BUBBLESHIELDTRAP)
-						S_StartSound(mo, sfx_s3k44);
 				}
 			}
 		}
@@ -5132,6 +5138,7 @@ boolean P_IsKartFieldItem(INT32 type)
 		case MT_POGOSPRING:
 		case MT_SINK:
 		case MT_DROPTARGET:
+		case MT_DUELBOMB:
 			return true;
 
 		default:
@@ -7008,6 +7015,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_LANDMINE:
 		mobj->friction = ORIG_FRICTION/4;
 
+		if (mobj->target && mobj->target->player)
+			mobj->color = mobj->target->player->skincolor;
+		else
+			mobj->color = SKINCOLOR_SAPPHIRE;
+
 		if (mobj->momx || mobj->momy || mobj->momz)
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -7066,6 +7078,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_SPBEXPLOSION:
 		mobj->health--;
 		break;
+	case MT_DUELBOMB:
+	{
+		Obj_DuelBombThink(mobj);
+		break;
+	}
 	case MT_EMERALD:
 		{
 			if (battleovertime.enabled >= 10*TICRATE)
@@ -9890,6 +9907,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SINK:
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
+		case MT_DUELBOMB:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -11741,10 +11759,22 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 			break;
 	}
 
+	if (inDuel == false)
+	{
+		if (K_IsDuelItem(i) == true
+			&& K_DuelItemAlwaysSpawns(mthing) == false)
+		{
+			// Only spawns in Duels.
+			return false;
+		}
+	}
+
 	// No bosses outside of a combat situation.
 	// (just in case we want boss arenas to do double duty as battle maps)
 	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+	{
 		return false;
+	}
 
 	if (metalrecording) // Metal Sonic can't use these things.
 	{
@@ -12903,6 +12933,33 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 		// Increment no. of capsules on the map counter
 		maptargets++;
+		break;
+	}
+	case MT_DUELBOMB:
+	{
+		// Duel Bomb needs init to match real map thing's angle
+		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
+		Obj_DuelBombInit(mobj);
+		*doangle = false;
+		break;
+	}
+	case MT_BANANA:
+	{
+		// Give Duel bananas a random angle
+		mobj->angle = FixedMul(P_RandomFixed(PR_DECORATION), ANGLE_MAX);
+		*doangle = false;
+		break;
+	}
+	case MT_HYUDORO_CENTER:
+	{
+		Obj_InitHyudoroCenter(mobj, NULL);
+		break;
+	}
+	case MT_POGOSPRING:
+	{
+		// Start as tumble version.
+		mobj->reactiontime++;
+		break;
 	}
 	default:
 		break;
@@ -12943,6 +13000,11 @@ static void P_SetAmbush(mobj_t *mobj)
 		mobj->type != MT_NIGHTSBUMPER &&
 		mobj->type != MT_STARPOST)
 		mobj->flags2 |= MF2_AMBUSH;
+
+	if (mobj->type == MT_DUELBOMB)
+	{
+		Obj_DuelBombReverse(mobj);
+	}
 }
 
 static void P_SetObjectSpecial(mobj_t *mobj)

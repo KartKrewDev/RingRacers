@@ -356,6 +356,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				Obj_SPBTouch(special, toucher);
 				return;
 			}
+		case MT_DUELBOMB:
+			{
+				Obj_DuelBombTouch(special, toucher);
+				return;
+			}
 		case MT_EMERALD:
 			if (!P_CanPickupItem(player, 0))
 				return;
@@ -1012,7 +1017,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				target->fuse = 2;
 			}
-			else
+			else if (inDuel == false)
 			{
 				UINT8 i;
 

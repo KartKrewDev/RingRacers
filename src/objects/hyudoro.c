@@ -1,3 +1,15 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) 2022 by James R.
+// Copyright (C) 2022 by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  hyudoro.c
+/// \brief Hyudoro item code.
+
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../info.h"
@@ -7,6 +19,7 @@
 #include "../p_local.h"
 #include "../r_main.h"
 #include "../s_sound.h"
+#include "../g_game.h"
 
 enum {
 	HYU_PATROL,
@@ -39,10 +52,13 @@ K_ChangePlayerItem
 #define hyudoro_hover_stack(o) ((o)->threshold)
 #define hyudoro_next(o) ((o)->tracer)
 #define hyudoro_stackpos(o) ((o)->reactiontime)
+#define hyudoro_delivered(o) (hyudoro_itemtype(o) == KITEM_NONE)
 
 // cannot be combined
 #define hyudoro_center(o) ((o)->target)
 #define hyudoro_target(o) ((o)->target)
+
+#define hyudoro_stolefrom(o) ((o)->hnext)
 
 #define hyudoro_center_max_radius(o) ((o)->threshold)
 #define hyudoro_center_master(o) ((o)->target)
@@ -102,6 +118,16 @@ sine_bob
 }
 
 static void
+bob_in_place
+(		mobj_t * hyu,
+		INT32 bob_speed)
+{
+	sine_bob(hyu,
+			(leveltime & (bob_speed - 1)) *
+			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+}
+
+static void
 project_hyudoro (mobj_t *hyu)
 {
 	mobj_t *center = hyudoro_center(hyu);
@@ -127,8 +153,6 @@ project_hyudoro (mobj_t *hyu)
 static void
 project_hyudoro_hover (mobj_t *hyu)
 {
-	const INT32 bob_speed = 64;
-
 	mobj_t *target = hyudoro_target(hyu);
 
 	// Turns a bit toward its target
@@ -154,9 +178,7 @@ project_hyudoro_hover (mobj_t *hyu)
 	hyu->pitch = target->pitch;
 	hyu->roll = target->roll;
 
-	sine_bob(hyu,
-			(leveltime & (bob_speed - 1)) *
-			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+	bob_in_place(hyu, 64);
 }
 
 static void
@@ -173,6 +195,79 @@ spawn_hyudoro_shadow (mobj_t *hyu)
 	P_SetTarget(&shadow->tracer, hyu);
 }
 
+static mobj_t *
+find_duel_target (mobj_t *ignore)
+{
+	mobj_t *ret = NULL;
+	UINT8 bestPosition = UINT8_MAX;
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = NULL;
+
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		player = &players[i];
+		if (player->spectator || player->exiting)
+		{
+			continue;
+		}
+
+		if (!player->mo || P_MobjWasRemoved(player->mo))
+		{
+			continue;
+		}
+
+		if (ignore != NULL && player->mo == ignore)
+		{
+			continue;
+		}
+
+		if (player->position < bestPosition)
+		{
+			ret = player->mo;
+			bestPosition = player->position;
+
+			if (bestPosition <= 1)
+			{
+				// Can't get any lower
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+
+static void
+do_confused (mobj_t *hyu)
+{
+	// Hyudoro is confused.
+	// Spin around, try to find a new target.
+
+	if (hyudoro_delivered(hyu))
+	{
+		// Already delivered, not confused
+		return;
+	}
+
+	// Try to find new target
+	P_SetTarget(&hyudoro_target(hyu),
+		find_duel_target(hyudoro_stolefrom(hyu)));
+
+	// Spin in circles
+	hyu->angle += ANGLE_45;
+
+	// Bob very fast
+	bob_in_place(hyu, 32);
+
+	hyu->sprzoff += hyu->height;
+}
+
 static void
 move_to_player (mobj_t *hyu)
 {
@@ -181,8 +276,11 @@ move_to_player (mobj_t *hyu)
 	angle_t angle;
 	fixed_t speed;
 
-	if (!target)
+	if (!target || P_MobjWasRemoved(target))
+	{
+		do_confused(hyu);
 		return;
+	}
 
 	angle = R_PointToAngle2(
 			hyu->x, hyu->y, target->x, target->y);
@@ -232,6 +330,9 @@ deliver_item (mobj_t *hyu)
 	hyu->destscale = target->scale / 4;
 	hyu->scalespeed =
 		abs(hyu->scale - hyu->destscale) / hyu->tics;
+
+	// sets as already delivered
+	hyudoro_itemtype(hyu) = KITEM_NONE;
 }
 
 static void
@@ -287,11 +388,14 @@ hyudoro_patrol_hit_player
 
 	mobj_t *center = hyudoro_center(hyu);
 
+	mobj_t *master = NULL;
+
 	if (!player)
 		return false;
 
 	// Cannot hit its master
-	if (toucher == get_hyudoro_master(hyu))
+	master = get_hyudoro_master(hyu);
+	if (toucher == master)
 		return false;
 
 	// Don't punish a punished player
@@ -313,8 +417,15 @@ hyudoro_patrol_hit_player
 	player->hyudorotimer = hyudorotime;
 	player->stealingtimer = hyudorotime;
 
-	P_SetTarget(&hyudoro_target(hyu),
-			hyudoro_center_master(center));
+	P_SetTarget(&hyudoro_stolefrom(hyu), toucher);
+
+	if (master == NULL || P_MobjWasRemoved(master))
+	{
+		// if master is NULL, it is probably a DUEL
+		master = find_duel_target(toucher);
+	}
+
+	P_SetTarget(&hyudoro_target(hyu), master);
 
 	if (center)
 		P_RemoveMobj(center);
@@ -388,11 +499,8 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 }
 
 void
-Obj_HyudoroDeploy (mobj_t *master)
+Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 {
-	mobj_t *center = P_SpawnMobjFromMobj(
-			master, 0, 0, 0, MT_HYUDORO_CENTER);
-
 	mobj_t *hyu = P_SpawnMobjFromMobj(
 			center, 0, 0, 0, MT_HYUDORO);
 
@@ -405,20 +513,30 @@ Obj_HyudoroDeploy (mobj_t *master)
 
 	center->radius = hyu->radius;
 
-	hyu->angle = master->angle;
+	hyu->angle = center->angle;
 	P_SetTarget(&hyudoro_center(hyu), center);
 	P_SetTarget(&hyudoro_center_master(center), master);
 
 	hyudoro_mode(hyu) = HYU_PATROL;
 
 	// Set splitscreen player visibility
-	if (master->player)
+	hyu->renderflags |= RF_DONTDRAW;
+	if (master && !P_MobjWasRemoved(master) && master->player)
 	{
-		hyu->renderflags |= RF_DONTDRAW &
-			~(K_GetPlayerDontDrawFlag(master->player));
+		hyu->renderflags &= ~(K_GetPlayerDontDrawFlag(master->player));
 	}
 
 	spawn_hyudoro_shadow(hyu); // this sucks btw
+}
+
+void
+Obj_HyudoroDeploy (mobj_t *master)
+{
+	mobj_t *center = P_SpawnMobjFromMobj(
+			master, 0, 0, 0, MT_HYUDORO_CENTER);
+
+	center->angle = master->angle;
+	Obj_InitHyudoroCenter(center, master);
 
 	S_StartSound(master, sfx_s3k92); // scary ghost noise
 }
