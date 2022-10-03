@@ -159,31 +159,6 @@ boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z)
 	return P_TeleportMove(thing, x, y, z);
 }
 
-//
-// P_InitAngle - Change an object's angle, including interp values.
-//
-void P_InitAngle(mobj_t *thing, angle_t newValue)
-{
-	thing->angle = thing->old_angle = newValue;
-}
-
-//
-// P_InitPitch - Change an object's pitch, including interp values.
-//
-void P_InitPitch(mobj_t *thing, angle_t newValue)
-{
-	thing->pitch = thing->old_pitch = newValue;
-}
-
-//
-// P_InitRoll - Change an object's roll, including interp values.
-//
-void P_InitRoll(mobj_t *thing, angle_t newValue)
-{
-	thing->roll = thing->old_roll = newValue;
-}
-
-
 // =========================================================================
 //                       MOVEMENT ITERATOR FUNCTIONS
 // =========================================================================
@@ -433,7 +408,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				mobj_t *grease;
 				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
 				P_SetTarget(&grease->target, object);
-				P_InitAngle(grease, K_MomentumAngle(object));
+				grease->angle = K_MomentumAngle(object);
 				grease->extravalue1 = i;
 			}
 		}

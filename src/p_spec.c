@@ -3705,7 +3705,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				if (mobj)
 				{
 					if (line->flags & ML_EFFECT1)
-						P_InitAngle(mobj, R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y));
+						mobj->angle = R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y);
 					CONS_Debug(DBG_GAMELOGIC, "Linedef Type %d - Spawn Object: %d spawned at (%d, %d, %d)\n", line->special, mobj->type, mobj->x>>FRACBITS, mobj->y>>FRACBITS, mobj->z>>FRACBITS); //TODO: Convert mobj->type to a string somehow.
 				}
 				else
@@ -3999,7 +3999,7 @@ void P_SetupSignExit(player_t *player)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
-		P_InitAngle(thing, player->mo->angle);
+		thing->angle = player->mo->angle;
 		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
 	}
 }

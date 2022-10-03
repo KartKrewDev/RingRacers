@@ -582,7 +582,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 			P_SetTarget(&lasermo->target, player->mo);
 
-			P_InitAngle(lasermo, stepha + ANGLE_90);
+			lasermo->angle = stepha + ANGLE_90;
 			P_SetScale(lasermo, (lasermo->destscale = player->mo->scale));
 		}
 	}
@@ -645,7 +645,7 @@ static void K_DropDashWait(player_t *player)
 
 				P_SetTarget(&laser->target, player->mo);
 
-				P_InitAngle(laser, newangle + ANGLE_90);
+				laser->angle = newangle + ANGLE_90;
 				laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
 				P_SetScale(laser, (laser->destscale = player->mo->scale));
 			}

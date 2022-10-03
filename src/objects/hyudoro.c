@@ -405,7 +405,7 @@ Obj_HyudoroDeploy (mobj_t *master)
 
 	center->radius = hyu->radius;
 
-	P_InitAngle(hyu, master->angle);
+	hyu->angle = master->angle;
 	P_SetTarget(&hyudoro_center(hyu), center);
 	P_SetTarget(&hyudoro_center_master(center), master);
 
