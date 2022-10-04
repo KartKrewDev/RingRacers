@@ -24,7 +24,26 @@
 #include "CAPI/String.h"
 #include "CAPI/Thread.h"
 
-boolean K_ACS_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
-boolean K_ACS_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+typedef enum
+{
+	ACS_ST_OPEN			=  1, // OPEN: Runs once when the level starts.
+	ACS_ST_RESPAWN		=  2, // RESPAWN: Runs when a player respawns.
+	ACS_ST_DEATH		=  3, // DEATH: Runs when a player dies.
+	ACS_ST_ENTER		=  4, // ENTER: Runs when a player enters the game; both on start of the level, and when un-spectating.
+} acs_scriptType_e;
+
+ACSVM_Environment *ACS_GetEnvironment(void);
+
+ACSVM_GlobalScope *ACS_GetGlobal(void);
+ACSVM_HubScope *ACS_GetHub(void);
+ACSVM_MapScope *ACS_GetMap(void);
+
+void ACS_Init(void);
+void ACS_Shutdown(void);
+void ACS_LoadLevelScripts(size_t mapID);
+void ACS_Tick(void);
+
+bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 
 #endif // __K_ACS__

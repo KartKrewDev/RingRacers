@@ -32,6 +32,7 @@ extern precise_t ps_botticcmd_time;
 extern precise_t ps_thinkertime;
 
 extern precise_t ps_thlist_times[];
+extern precise_t ps_acs_time;
 
 extern int       ps_checkposition_calls;
 

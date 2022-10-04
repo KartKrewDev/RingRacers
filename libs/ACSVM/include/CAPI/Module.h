@@ -45,7 +45,7 @@ struct ACSVM_ModuleName
 // Extern Functions                                                           |
 //
 
-ACSVM_ModuleName ACSVM_Module_GetName(ACSVM_Module const *module);
+void ACSVM_Module_GetName(ACSVM_Module const *module, ACSVM_ModuleName *out);
 
 // Returns false if reading fails.
 bool ACSVM_Module_ReadBytecode(ACSVM_Module *module, ACSVM_Byte const *data, size_t size);

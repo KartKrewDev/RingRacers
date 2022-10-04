@@ -75,6 +75,7 @@
 #include "k_boss.h"
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
+#include "k_acs.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -1611,6 +1612,10 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 	CON_SetLoadingProgress(LOADED_STINIT);
+
+	CONS_Printf("ACS_Init(): Init Action Code Script VM.\n");
+	ACS_Init();
+	CON_SetLoadingProgress(LOADED_ACSINIT);
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

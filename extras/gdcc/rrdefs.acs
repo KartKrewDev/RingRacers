@@ -1,0 +1,41 @@
+//-----------------------------------------------------------------------------
+//
+// Header for target library libacs.
+//
+// Defines for Dr. Robotnik's Ring Racers' ACS.
+//
+//-----------------------------------------------------------------------------
+
+#ifndef __GDCC_Header__ACS__rrdefs_acs__
+#define __GDCC_Header__ACS__rrdefs_acs__
+
+//----------------------------------------------------------------------------|
+// Macros                                                                     |
+//
+
+#define TRUE  1
+#define FALSE 0
+#define ON    1
+#define OFF   0
+#define YES   1
+#define NO    0
+
+#define LINE_FRONT 0
+#define LINE_BACK  1
+
+#define SIDE_FRONT 0
+#define SIDE_BACK  1
+
+#define TEXTURE_TOP    0
+#define TEXTURE_MIDDLE 1
+#define TEXTURE_BOTTOM 2
+
+#define GAMETYPE_RACE   0
+#define GAMETYPE_BATTLE 1
+
+#define GAMESPEED_EASY   0
+#define GAMESPEED_NORMAL 1
+#define GAMESPEED_HARD   2
+
+#endif//__GDCC_Header__ACS__rrdefs_acs__
+

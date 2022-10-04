@@ -1863,6 +1863,7 @@ static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
 	"Init rendering daemon...", //LOADED_RINIT
 	"Init audio subsystem...", //LOADED_SINITSFXCHANNELS
 	"Cache HUD...", //LOADED_STINIT
+	"Init ACSVM...", //LOADED_ACSINIT
 	"Check game status...", //LOADED_DCHECKNETGAME
 	"Now starting..."
 }; // see also con_loadprogress_t in console.h

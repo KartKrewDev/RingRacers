@@ -36,6 +36,7 @@
 #include "k_boss.h"
 #include "k_waypoint.h"
 #include "k_director.h"
+#include "k_acs.h"
 
 tic_t leveltime;
 
@@ -359,6 +360,10 @@ static inline void P_RunThinkers(void)
 
 	if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
 		K_RunBattleOvertime();
+
+	ps_acs_time = I_GetPreciseTime();
+	ACS_Tick();
+	ps_acs_time = I_GetPreciseTime() - ps_acs_time;
 }
 
 //

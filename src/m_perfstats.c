@@ -52,6 +52,7 @@ precise_t ps_botticcmd_time = 0;
 precise_t ps_thinkertime = 0;
 
 precise_t ps_thlist_times[NUM_THINKERLISTS];
+precise_t ps_acs_time = 0;
 
 int ps_checkposition_calls = 0;
 
@@ -350,7 +351,8 @@ static void M_DrawTickStats(void)
 		ps_tictime -
 		ps_playerthink_time -
 		ps_thinkertime -
-		ps_lua_thinkframe_time;
+		ps_lua_thinkframe_time -
+		ps_acs_time;
 
 	perfstatrow_t tictime_row[] = {
 		{"logic  ", "Game logic:     ", &ps_tictime},
@@ -374,6 +376,7 @@ static void M_DrawTickStats(void)
 
 	perfstatrow_t extra_thinker_time_row[] = {
 		{"lthinkf", "LUAh_ThinkFrame:", &ps_lua_thinkframe_time},
+		{"acs    ", "ACS_Tick:       ", &ps_acs_time},
 		{"botcmd ", "Bot logic:      ", &ps_botticcmd_time},
 		{"other  ", "Other:          ", &extratime},
 		{0}

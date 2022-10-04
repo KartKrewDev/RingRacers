@@ -1,0 +1,324 @@
+//-----------------------------------------------------------------------------
+//
+// Copyright(C) 2015-2017 David Hill
+// Copyright(C) 2022 Sally Cochenour
+//
+// See COPYLIB for license information.
+//
+//-----------------------------------------------------------------------------
+//
+// Header for target library libacs.
+//
+// Defines for Dr. Robotnik's Ring Racers' ACS.
+//
+//-----------------------------------------------------------------------------
+
+#ifndef __GDCC_Header__ACS__rrspecial_acs__
+#define __GDCC_Header__ACS__rrspecial_acs__
+
+
+//----------------------------------------------------------------------------|
+// Macros                                                                     |
+//
+
+#define ACS_ExecuteWait(num, ...) \
+	do \
+	{ \
+		int __execute_wait_num = (num); \
+		ACS_Execute(__execute_wait_num, __VA_ARGS__); \
+		ScriptWait(__execute_wait_num); \
+	} \
+	while(0)
+
+#define ACS_NamedExecuteWait(name, ...) \
+	do \
+	{ \
+		str __execute_wait_name = (name); \
+		ACS_NamedExecute(__execute_wait_name, __VA_ARGS__); \
+		NamedScriptWait(__execute_wait_name); \
+	} \
+	while(0)
+
+#define ACS_PrintPropertyBase() \
+	(char): PrintChar, \
+	(str):  PrintString, \
+	\
+	a(global): PrintGlobalCharArray, \
+	a(global): PrintGlobalCharRange, \
+	a(local):  PrintLocalCharArray, \
+	a(local):  PrintLocalCharRange, \
+	a(module): PrintModuleCharArray, \
+	a(module): PrintModuleCharRange, \
+	a(world):  PrintWorldCharArray, \
+	a(world):  PrintWorldCharRange, \
+	\
+	b: PrintBinary, \
+	c: PrintChar, \
+	d: PrintInt, \
+	f: PrintFixed, \
+	i: PrintInt, \
+	s: PrintString, \
+	x: PrintHex
+
+#pragma state save
+#pragma define raw ON
+#define suspend do (__suspend()); while(0)
+#pragma state restore
+
+
+//----------------------------------------------------------------------------|
+// Functions                                                                  |
+//
+
+// [type] [ID]:[function name]([required args], [optional args])
+
+// Currently just implements linedef executors.
+// Ideally would implement as many as possible.
+
+special
+	int		  400:Floor_SetHeightTexture(2,3), // tag, height[, texture]
+	int		  401:Ceiling_SetHeightTexture(2,3), // tag, height[, texture]
+	int		  402:Light_ChangeToValue(2), // tag, value
+	int		  403:Floor_Move(3,5), // tag, height, speed[, texture, script]
+	int		  404:Ceiling_Move(3,5), // tag, height, speed[, texture, script]
+	int		  405:Floor_MoveByOffset(3,4), // tag, offset, speed[, instant]
+
+	int		  407:Ceiling_MoveByOffset(3,4), // tag, offset, speed[, instant]
+
+	int		  409:Sector_ChangeTag(2), // old tag, new tag
+	int		  410:Line_ChangeFrontSectorTag(2), // line tag, new tag
+
+	int		  411:Sector_StopMovement(1), // tag
+	int		  412:Thing_Teleport(2, 5), // thing tag, sector tag[, silent, keep angle, keep speed]. Relative teleport is now a separate function.
+
+	// TODO: split all these damn features up into separate functions, instead of optional variables
+	int		  413:Level_SetMusic(1, 12), // name[, track, loop, local, reload reset, force reset, position, position is offset, fade out time, fade in time, fade out vol, fade in vol] 
+
+	int		  414:Thing_PlaySound(1, 3), // name[, local, origin enum]. Doing it from a sector is now a separate function.
+//	int		  415:Console_Execute(1), // script id
+	int		  416:Light_Flicker(2, 4), // tag, value a[, value b, frequency]
+	int		  417:Light_Pulse(2, 4), // tag, value a[, value b, frequency]
+	int		  418:Light_BlinkUnsynced(4, 5), // tag, low time, hi time, value a[, value b]
+	int		  419:Light_Blink(4, 5), // tag, low time, hi time, value a[, value b]
+	int		  420:Light_Fade(3, 5), // tag, value, speed[, speed is tics, no interrupt]
+	int		  421:Light_Stop(1), // tag
+	int		  422:Player_CutAwayView(2, 3), // tid, tics[, pitch]
+	int		  423:Level_SetSky(1, 2), // texture[, global]
+	int		  424:Level_SetWeather(1, 2), // effect[, global]
+	int		  425:Thing_SetState(1), // string
+	int		  426:Thing_Stop(0, 1), // [sector]
+	int		  427:Player_AddScore(1), // amount
+	int		  428:FOF_StartMovement(8, 9), // tag, bottom low, bottom hi, top low, top hi, speed, start delay, swap delay[, invert]
+	int		  429:Ceiling_Crush(2, 3), // tag, speed[, constant]
+	int		  430:Floor_Crush(2, 3), // tag, speed[, constant]
+	int		  431:Sector_Crush(2, 3), // tag, speed[, constant]
+//	int		  432:Thing_Set2D(1), // bool
+	int		  433:Thing_SetFlip(1), // bool
+//	int		  434:Player_CustomPower(?),
+	int		  435:Scroll_Change(3), // tag, dir, speed
+	int		  436:FOF_Shatter(2), // target, control
+	int		  437:Player_DisableControl(1, 2), // time[, allowjump]
+	int		  438:Thing_SetScale(1), // size
+	int		  439:Line_CopyTextures(1, 2), // tag[, existing]
+//	int		  440:Level_StartMetalSonicRace(0),
+	int		  441:SetUnlockableTrigger(1), // ID
+	int		  442:Sector_NextThingState(2, 3), // tag, type[, state]
+	int		  443:Lua_Execute(1), // script
+	int		  444:Earthquake(1, 2), // tics[, intensity]
+	int		  445:FOF_SetExists(2, 3), // target, control[, exists]
+	int		  446:FOF_Crumble(2, 3), // target, control[, options]
+	int		  447:Sector_SetColormap(2, 8), // tag, light[, fade, extra, flags, force light, force fade, force extra]
+	int		  448:SetSkyboxViewpoint(1, 2), // viewpoint ID[, global]. Center point is now a separate function 
+	int		  449:SetBossActive(1, 2), // boss ID[, active?]
+	int		  450:ACS_ExecuteAlways(1,4), // script[, arg1, arg2, arg3]
+	int		  451:ACS_ExecuteRandomAlways(2,5), // script low, script high[, arg1, arg2, arg3]
+	int		  452:FOF_SetAlpha(3, 5), // target, control, alpha[, add, update flags]
+	int		  453:FOF_Fade(4, 5), // target, control, alpha, time[, options]
+	int		  454:FOF_StopFade(2, 3), // target, control[, interrupt]
+//	int		  455:Sector_FadeColormap(?), // TODO
+	int		  456:Sector_StopColormapFade(1), // tag
+	int		  457:Thing_StartTracking(5), // tag, tolerance, time, script, continue
+	int		  458:Thing_StopTracking(0),
+	int		  459:Prompt_Open(1, 3), // prompt[, allow control, close script]. Closing is now a separate function.
+	int		  460:Player_AddRings(1, 2), // amount[, freq]
+	int		  461:Thing_Spawn(4, 5), // type, x, y, z[, angle]. Randomized coordinates can be handled by code.
+	int		  462:Level_Stopwatch(0),
+	int		  463:Thing_Dye(1), // color
+//	int		  464:TriggerEggCapsule(1, 2), // capsule ID[, end level]
+
+	int		  466:Level_SetFailed(0, 1), // [success?]
+
+	int		  480:Polyobj_DoorSlide(5), // po, speed, angle, dist, delay
+	int		  481:Polyobj_DoorSwing(4), // po, speed, angle, delay
+	int		  482:Polyobj_Move(4), // po, speed, angle, dist
+	int		  483:Polyobj_OR_Move(4), // po, speed, angle, dist
+	int		  484:Polyobj_RotateRight(3), // po, speed, angle
+	int		  485:Polyobj_OR_RotateRight(3), // po, speed, angle
+	int		  486:Polyobj_RotateLeft(3), // po, speed, angle
+	int		  487:Polyobj_OR_RotateLeft(3), // po, speed, angle
+	int		  488:Polyobj_MoveByWaypoints(4), // po, speed, sequence[, options]
+	int		  489:Polyobj_InvisibleIntangible(1, 2), // po[, just visibility]
+	int		  490:Polyobj_VisibleTangible(1, 2), // po[, just visibility]
+	int		  491:Polyobj_SetAlpha(2, 3), // po, alpha[, add]
+	int		  492:Polyobj_FadeAlpha(2, 3), // po, alpha, speed[, options]
+
+	int		  499:Sector_ToggleWaypoints(0, 1), // [enable?]
+
+	// internal functions have negative values
+	int		   -1:GetLineUDMFInt(2, int, str),
+	fixed	   -2:GetLineUDMFFixed(2, int, str),
+	int		   -3:GetThingUDMFInt(2, int, str),
+	fixed	   -4:GetThingUDMFFixed(2, int, str),
+	int		   -5:GetSectorUDMFInt(2, int, str),
+	fixed	   -6:GetSectorUDMFFixed(2, int, str),
+	int		   -7:GetSideUDMFInt(3, int, int, str),
+	fixed	   -8:GetSideUDMFFixed(3, int, int, str),
+	int		   -9:ACS_Execute(1, int, int, int, int),
+	int		  -10:ACS_Suspend(1, int),
+	int		  -11:ACS_Terminate(1, int),
+	int		  -12:ACS_ExecuteWithResult(1, int, int, int, int),
+	int		  -13:ACS_NamedExecute(1, str, int, int, int),
+	int		  -14:ACS_NamedSuspend(1, str),
+	int		  -15:ACS_NamedTerminate(1, str),
+	int		  -16:ACS_NamedExecuteWithResult(1, str, int, int, int),
+	int		  -17:ACS_NamedExecuteAlways(1, str, int, int, int),
+	int		  -18:UniqueTID(0, int, int),
+	int		  -19:IsTIDUsed(1, int),
+	int		  -20:Sqrt(1, int),
+	fixed	  -21:FixedSqrt(1, fixed),
+	fixed	  -22:VectorLength(2, fixed, fixed),
+	int		  -23:StrCmp(2, str, str, int),
+	int		  -24:StrICmp(2, str, str, int),
+	int		  -24:StrCaseCmp(2, str, str, int),
+	str		  -25:StrLeft(2, str, int),
+	str		  -25:StrRight(2, str, int),
+	str		  -26:StrMid(3, str, int, int),
+	int		  -27:GetChar(2, str, int),
+	int		  -28:StrArg(1, str),
+	fixed	  -29:Floor(1, fixed),
+	fixed	  -30:Round(1, fixed),
+	fixed	  -31:Ceil(1, fixed),
+
+	void  {  2     }:__suspend(void),
+
+	//  0 to 56: Implemented by ACSVM
+	void  { 55,  56}:Delay(int),
+	int   { 57,  58}:Random(int, int),
+	fixed { 57,  58}:RandomFixed(fixed, fixed),
+	int   { 59,  60}:ThingCount(int, int),
+	void  { 61,  62}:TagWait(int),
+	void  { 63,  64}:PolyWait(int),
+	void  { 65,  66}:ChangeFloor(int, str),
+	void  { 67,  68}:ChangeCeiling(int, str),
+	// 69 to 79: Implemented by ACSVM
+	int   { 80     }:LineSide(void),
+	void  { 81,  82}:ScriptWait(int), // 81 to 82: Implemented by ACSVM
+	void  { 83     }:ClearLineSpecial(void),
+	// 84 to 85: Implemented by ACSVM
+	void  { 85     }:BeginPrint(void),
+	void  { 85     }:BeginPrintBold(void),
+	void  { 86     }:EndPrint(void),
+	void  { 87     }:PrintString(str), // 87 to 89: Implemented by ACSVM
+	void  { 88     }:PrintInt(int),
+	void  { 88     }:PrintNumber(int),
+	void  { 89     }:PrintChar(int),
+	int   { 90     }:PlayerCount(void),
+	int   { 91     }:GameType(void),
+	int   { 92     }:GameSpeed(void),
+	int   { 93     }:Timer(void),
+	void  { 94     }:SectorSound(str, int),
+	void  { 95     }:AmbientSound(str, int),
+
+	void  { 97     }:SetLineTexture(int, int, int, str),
+	void  { 98     }:SetLineBlocking(int, int),
+	void  { 99     }:SetLineSpecial(int, int, int, int, int, int, int),
+	void  {100     }:ThingSound(int, str, int),
+	void  {101     }:EndPrintBold(void),
+
+	int   {118     }:IsMultiplayer(void),
+	int   {118     }:IsNetworkGame(void),
+
+	int   {135     }:SinglePlayer(void),
+	int   {136     }:FixedMul(int, int), // 136 to 137: Implemented by ACSVM
+	int   {137     }:FixedDiv(int, int),
+
+	void  {157     }:PrintFixed(fixed), // 157: Implemented by ACSVM
+
+	// 167 to 173: Implemented by ACSVM
+
+	// 175 to 179: Implemented by ACSVM
+
+	// 181 to 189: Implemented by ACSVM
+
+	// 203 to 217: Implemented by ACSVM
+
+	fixed {220     }:Sin(fixed),
+	fixed {221     }:Cos(fixed),
+	fixed {222     }:VectorAngle(fixed, fixed),
+
+	// 225 to 243: Implemented by ACSVM
+
+	int   {247     }:PlayerNumber(void),
+	int   {248     }:ActivatorTID(void),
+
+	int   {253     }:StrLen(str), // 253: Implemented by ACSVM
+
+	// 256 to 257: Implemented by ACSVM
+
+	// 263: Implemented by ACSVM
+
+	int   {267     }:PlayerInGame(int),
+	int   {268     }:PlayerIsBot(int),
+
+	void  {349     }:PrintBinary(int),
+	void  {350     }:PrintHex(int),
+
+	void  {273     }:PrintModuleCharArray(int, int), // 273 to 275: Implemented by ACSVM
+	void  {274     }:PrintWorldCharArray(int, int),
+	void  {275     }:PrintGlobalCharArray(int, int),
+
+	// 291 to 325: Implemented by ACSVM
+
+	// 330: Implemented by ACSVM
+
+	// 349 to 361: Implemented by ACSVM
+
+	str   {352     }:EndStrParam(void),
+	void  {353     }:PrintModuleCharRange(int, int, int, int),
+	void  {354     }:PrintWorldCharRange(int, int, int, int),
+	void  {355     }:PrintGlobalCharRange(int, int, int, int),
+	int   {356     }:StrCpyToModuleCharRange(int, int, int, int, str, int),
+	int   {357     }:StrCpyToWorldCharRange(int, int, int, int, str, int),
+	int   {358     }:StrCpyToGlobalCharRange(int, int, int, int, str, int),
+
+	void  {361     }:NamedScriptWait(str),
+
+	// 363 to 380: Implemented by ACSVM
+
+	void  {378     }:PrintLocalCharArray(int, int),
+	void  {379     }:PrintLocalCharRange(int, int, int, int),
+	int   {380     }:StrCpyToLocalCharRange(int, int, int, int, str, int);
+
+print __Print
+(
+	(begin): BeginPrint,
+	(end):   EndPrint,
+
+	ACS_PrintPropertyBase()
+);
+
+print __PrintBold
+(
+	(begin): BeginPrintBold,
+	(end):   EndPrintBold,
+
+	ACS_PrintPropertyBase()
+);
+
+print PrintRaw
+(
+	ACS_PrintPropertyBase()
+);
+
+#endif//__GDCC_Header__ACS__rrspecial_acs__
+

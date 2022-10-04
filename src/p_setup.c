@@ -98,6 +98,7 @@
 #include "k_brightmap.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
+#include "k_acs.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -4251,6 +4252,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// clear special respawning que
 	iquehead = iquetail = 0;
+
+	// Initialize ACS scripts
+	if (!fromnetsave)
+	{
+		ACS_LoadLevelScripts(gamemap-1);
+	}
 
 	// Remove the loading shit from the screen
 	if (rendermode != render_none && !titlemapinaction && !reloadinggamestate)

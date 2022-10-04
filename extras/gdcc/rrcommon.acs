@@ -1,0 +1,23 @@
+//-----------------------------------------------------------------------------
+//
+// Copyright(C) 2015 David Hill
+// Copyright(C) 2022 Sally Cochenour
+//
+// See COPYLIB for license information.
+//
+//-----------------------------------------------------------------------------
+//
+// Header for target library libacs.
+//
+// Defines for Dr. Robotnik's Ring Racers' ACS.
+//
+//-----------------------------------------------------------------------------
+
+#ifndef __GDCC_Header__ACS__rrcommon_acs__
+#define __GDCC_Header__ACS__rrcommon_acs__
+
+#include "rrspecial.acs"
+#include "rrdefs.acs"
+
+#endif//__GDCC_Header__ACS__rrcommon_acs__
+
