@@ -34,35 +34,6 @@ ACSVM_Environment *ACS_GetEnvironment(void)
 	return ACSenv;
 }
 
-ACSVM_GlobalScope *ACS_GetGlobal(void)
-{
-	return ACSVM_Environment_GetGlobalScope(ACSenv, 0);
-}
-
-ACSVM_HubScope *ACS_GetHub(void)
-{
-	ACSVM_GlobalScope *global = ACS_GetGlobal();
-
-	if (global == NULL)
-	{
-		return NULL;
-	}
-
-	return ACSVM_GlobalScope_GetHubScope(global, 0);
-}
-
-ACSVM_MapScope *ACS_GetMap(void)
-{
-	ACSVM_HubScope *hub = ACS_GetHub();
-
-	if (hub == NULL)
-	{
-		return NULL;
-	}
-
-	return ACSVM_HubScope_GetMapScope(hub, 0);
-}
-
 static void ACS_EnvBadAlloc(ACSVM_Environment *env, char const *what)
 {
 	(void)env;
@@ -79,8 +50,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 {
 	ACSVM_GlobalScope *global = ACSVM_Environment_GetGlobalScope(env, 0);
 
-	// Activate global scope immediately,
-	// since we don't want it off.
+	// Activate global scope immediately, since we don't want it off.
 	ACSVM_GlobalScope_SetActive(global, true);
 
 	// Add the data & function pointers
@@ -223,11 +193,24 @@ void ACS_Shutdown(void)
 	ACSenv = NULL;
 }
 
+static void ACS_ResetHub(ACSVM_GlobalScope *global)
+{
+	ACSVM_HubScope *hub = ACSVM_GlobalScope_GetHubScope(global, 0);
+	ACSVM_GlobalScope_FreeHubScope(global, hub);
+}
+
+static void ACS_ResetMap(ACSVM_HubScope *hub)
+{
+	ACSVM_MapScope *map = ACSVM_HubScope_GetMapScope(hub, 0);
+	ACSVM_HubScope_FreeMapScope(hub, map);
+}
+
 void ACS_LoadLevelScripts(size_t mapID)
 {
 	ACSVM_Environment *env = ACSenv;
 	ACSVM_StringTable *strTab = ACSVM_Environment_GetStringTable(env);
 
+	ACSVM_GlobalScope *global = NULL;
 	ACSVM_HubScope *hub = NULL;
 	ACSVM_MapScope *map = NULL;
 
@@ -235,18 +218,38 @@ void ACS_LoadLevelScripts(size_t mapID)
 	size_t modules_len = 0;
 	size_t modules_size = 4;
 
-	// No hub support. Simply always reset it.
-	hub = ACS_GetHub();
+	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
+
+	// Just some notes on how Hexen's scopes work, if anyone
+	// intends to implement proper hub logic:
+
+	// The integer is an ID for which hub / map it is,
+	// and instead sets active according to which ones
+	// should run, since you can go between them.
+
+	// But I didn't intend on implementing these features,
+	// since hubs aren't planned for Ring Racers (although
+	// they might be useful for SRB2), and I intentionally
+	// avoided implementing global ACS (since Lua would be
+	// a better language to do that kind of code).
+
+	// Since we literally only are using map scope, we can
+	// just free everything between every level.
+
+	// Reset hub scope, even if we are not using it.
+	ACS_ResetHub(global);
+	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
 	ACSVM_HubScope_SetActive(hub, true);
 
-	// Start up map scope.
+	// Start up new map scope.
+	ACS_ResetMap(hub);
 	map = ACSVM_HubScope_GetMapScope(hub, 0);
 	ACSVM_MapScope_SetActive(map, true);
 
 	// Allocate module list.
 	modules = Z_Calloc(modules_size * sizeof(ACSVM_Module *), PU_STATIC, NULL);
 
-	// Insert BEHAVIOR lump.
+	// Insert BEHAVIOR lump into the list.
 	{
 		char const *str = mapheaderinfo[mapID]->lumpname;
 		size_t len = strlen(str);

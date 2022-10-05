@@ -34,10 +34,6 @@ typedef enum
 
 ACSVM_Environment *ACS_GetEnvironment(void);
 
-ACSVM_GlobalScope *ACS_GetGlobal(void);
-ACSVM_HubScope *ACS_GetHub(void);
-ACSVM_MapScope *ACS_GetMap(void);
-
 void ACS_Init(void);
 void ACS_Shutdown(void);
 void ACS_LoadLevelScripts(size_t mapID);
