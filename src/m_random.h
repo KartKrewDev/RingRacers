@@ -37,6 +37,7 @@ typedef enum
 	// gameplay should be split up as much as possible.
 
 	PR_EXECUTOR, // Linedef executor
+	PR_ACS, // ACS scripts
 
 	PR_DECORATION, // Generic decoration
 	PR_TERRAIN, // TERRAIN particles

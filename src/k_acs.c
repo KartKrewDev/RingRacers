@@ -1,5 +1,6 @@
 // DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
+// Copyright (C) 2016 by James Haley, David Hill, et al. (Team Eternity)
 // Copyright (C) 2022 by Sally "TehRealSalt" Cochenour
 // Copyright (C) 2022 by Kart Krew
 //
@@ -18,6 +19,10 @@
 #include "z_zone.h"
 #include "w_wad.h"
 #include "i_system.h"
+#include "r_defs.h"
+#include "r_state.h"
+#include "p_polyobj.h"
+#include "taglist.h"
 
 #include "CAPI/BinaryIO.h"
 #include "CAPI/Environment.h"
@@ -29,50 +34,138 @@
 
 static ACSVM_Environment *ACSenv = NULL;
 
+/*--------------------------------------------------
+	ACSVM_Environment *ACS_GetEnvironment(void)
+
+		See header file for description.
+--------------------------------------------------*/
 ACSVM_Environment *ACS_GetEnvironment(void)
 {
 	return ACSenv;
 }
 
+/*--------------------------------------------------
+	static void ACS_EnvBadAlloc(ACSVM_Environment *env, char const *what)
+
+		ACSVM Environment hook. Runs in case of a memory
+		allocation failure occuring. Environment state
+		afterwards is unusable; the only thing safe to do
+		is using ACSVM_FreeEnvironment.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		what - Error string.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void ACS_EnvBadAlloc(ACSVM_Environment *env, char const *what)
 {
 	(void)env;
-	I_Error("Error allocating memory for ACS (%s)\n", what);
+
+	CONS_Alert(CONS_ERROR, "Error allocating memory for ACS (%s)\n", what);
+
+	if (env == ACSenv)
+	{
+		// Restart the main environment.
+		ACS_Shutdown();
+		I_RemoveExitFunc(ACS_Shutdown); // Since ACS_Init will add it again.
+		ACS_Init();
+	}
 }
 
+/*--------------------------------------------------
+	static void ACS_EnvReadError(ACSVM_Environment *env, char const *what)
+
+		ACSVM Environment hook. Runs when an ACS module
+		fails to read. Environment state should be safe
+		afterwards.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		what - Error string.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void ACS_EnvReadError(ACSVM_Environment *env, char const *what)
 {
 	(void)env;
-	I_Error("Error reading ACS module (%s)\n", what);
+	CONS_Alert(CONS_WARNING, "Error reading ACS module (%s)\n", what);
 }
 
+/*--------------------------------------------------
+	static void ACS_EnvSerialError(ACSVM_Environment *env, char const *what)
+
+		ACSVM Environment hook. Runs when the ACS state
+		fails to save or load. Environment state is
+		safe in that it shouldn't be causing crashes,
+		but it is indeterminate.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		what - Error string.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void ACS_EnvSerialError(ACSVM_Environment *env, char const *what)
+{
+	(void)env;
+	CONS_Alert(CONS_WARNING, "Error serializing ACS state (%s)\n", what);
+}
+
+/*--------------------------------------------------
+	static void ACS_EnvConstruct(ACSVM_Environment *env)
+
+		ACSVM Environment hook. Runs when the
+		environment is initally created.
+
+	Input Arguments:-
+		env - The ACS environment data to construct.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void ACS_EnvConstruct(ACSVM_Environment *env)
 {
 	ACSVM_GlobalScope *global = ACSVM_Environment_GetGlobalScope(env, 0);
 
 	// Activate global scope immediately, since we don't want it off.
+	// Not that we're adding any modules to it, though. :p
 	ACSVM_GlobalScope_SetActive(global, true);
 
 	// Add the data & function pointers
 	// See also:
-	// https://doomwiki.org/wiki/ACS0_instruction_set
-	// 
-	//  0 to 56: Implemented by ACSVM
+	// - https://doomwiki.org/wiki/ACS0_instruction_set
+	// - https://github.com/DavidPH/ACSVM/blob/master/ACSVM/CodeData.hpp
+	// - https://github.com/DavidPH/ACSVM/blob/master/ACSVM/CodeList.hpp
 
+	//  0 to 56: Implemented by ACSVM
+	ACSVM_Environment_AddCodeDataACS0(env,   57, "",        ACSVM_Code_CallFunc, 2, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
+	ACSVM_Environment_AddCodeDataACS0(env,   58, "WW",      ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
+
+	ACSVM_Environment_AddCodeDataACS0(env,   61, "",        ACSVM_Code_CallFunc, 1, ACSVM_Environment_AddCallFunc(env, ACS_CF_TagWait));
+	ACSVM_Environment_AddCodeDataACS0(env,   62, "W",       ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_TagWait));
+	ACSVM_Environment_AddCodeDataACS0(env,   63, "",        ACSVM_Code_CallFunc, 1, ACSVM_Environment_AddCallFunc(env, ACS_CF_PolyWait));
+	ACSVM_Environment_AddCodeDataACS0(env,   64, "W",       ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_PolyWait));
 	// 69 to 79: Implemented by ACSVM
 
 	// 81 to 82: Implemented by ACSVM
 
 	// 84 to 85: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,  86, "", ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
+	ACSVM_Environment_AddCodeDataACS0(env,   86, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
 	// 87 to 89: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,  93, "", ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Timer));
+	ACSVM_Environment_AddCodeDataACS0(env,   90, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_PlayerCount));
+	ACSVM_Environment_AddCodeDataACS0(env,   91, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_GameType));
+	ACSVM_Environment_AddCodeDataACS0(env,   92, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_GameSpeed));
+	ACSVM_Environment_AddCodeDataACS0(env,   93, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Timer));
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM
 
 	// 167 to 173: Implemented by ACSVM
-
+	ACSVM_Environment_AddCodeDataACS0(env,  174, "BB",      ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
 	// 175 to 179: Implemented by ACSVM
 
 	// 181 to 189: Implemented by ACSVM
@@ -86,7 +179,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// 256 to 257: Implemented by ACSVM
 
 	// 263: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env, 270, "", ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
+	ACSVM_Environment_AddCodeDataACS0(env,  270, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
 	// 273 to 275: Implemented by ACSVM
 
 	// 291 to 325: Implemented by ACSVM
@@ -98,10 +191,25 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// 363 to 380: Implemented by ACSVM
 }
 
+/*--------------------------------------------------
+	static void ACS_EnvLoadModule(ACSVM_Environment *env, ACSVM_Module *module)
+
+		ACSVM Environment hook. Runs when a ACS
+		module is being loaded.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		module - The ACS module being loaded.
+
+	Return:-
+		true when successful, otherwise false.
+		Returning false will also call the
+		ACS_EnvReadError hook.
+--------------------------------------------------*/
 static bool ACS_EnvLoadModule(ACSVM_Environment *env, ACSVM_Module *module)
 {
-	ACSVM_ModuleName name = {0};
-	const char *str = NULL;
+	ACSVM_ModuleName name = ACSVM_Module_GetName(module);
+	const char *str = ACSVM_String_GetStr(name.s);
 
 	size_t lumpLen = 0;
 
@@ -111,9 +219,6 @@ static bool ACS_EnvLoadModule(ACSVM_Environment *env, ACSVM_Module *module)
 	bool ret = false;
 
 	(void)env;
-
-	ACSVM_Module_GetName(module, &name);
-	str = ACSVM_String_GetStr(name.s);
 
 	if (name.i == (size_t)LUMPERROR)
 	{
@@ -171,6 +276,62 @@ static bool ACS_EnvLoadModule(ACSVM_Environment *env, ACSVM_Module *module)
 	return ret;
 }
 
+/*--------------------------------------------------
+	static bool ACS_EnvCheckTag(ACSVM_Environment const *env, ACSVM_Word type, ACSVM_Word tag)
+
+		ACSVM Environment hook. Ran to determine
+		whenever or not a thread should still be
+		waiting on a tag movement.
+		See: TagWait, PolyWait.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		type - The kind of level data we're waiting on. See also: acs_tagType_e.
+		tag - The tag of said level data.
+
+	Return:-
+		true when the tag is done moving and
+		execution can continue, or false to keep
+		the thread paused.
+--------------------------------------------------*/
+static bool ACS_EnvCheckTag(ACSVM_Environment const *env, ACSVM_Word type, ACSVM_Word tag)
+{
+	(void)env;
+
+	switch (type)
+	{
+		case ACS_TAGTYPE_SECTOR:
+		{
+			INT32 secnum = -1;
+
+			TAG_ITER_SECTORS(tag, secnum)
+			{
+				sector_t *sec = &sectors[secnum];
+
+				if (sec->floordata != NULL || sec->ceilingdata != NULL)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		case ACS_TAGTYPE_POLYOBJ:
+		{
+			const polyobj_t *po = Polyobj_GetForNum(tag);
+			return (po == NULL || po->thinker == NULL);
+		}
+	}
+
+	return true;
+}
+
+/*--------------------------------------------------
+	void ACS_Init(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void ACS_Init(void)
 {
 	// Initialize ACS on engine start-up.
@@ -178,14 +339,21 @@ void ACS_Init(void)
 
 	funcs.bad_alloc = ACS_EnvBadAlloc;
 	funcs.readError = ACS_EnvReadError;
+	funcs.serialError = ACS_EnvSerialError;
 	funcs.ctor = ACS_EnvConstruct;
 	funcs.loadModule = ACS_EnvLoadModule;
+	funcs.checkTag = ACS_EnvCheckTag;
 
 	ACSenv = ACSVM_AllocEnvironment(&funcs, NULL);
 
 	I_AddExitFunc(ACS_Shutdown);
 }
 
+/*--------------------------------------------------
+	void ACS_Shutdown(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void ACS_Shutdown(void)
 {
 	// Delete ACS environment.
@@ -193,18 +361,47 @@ void ACS_Shutdown(void)
 	ACSenv = NULL;
 }
 
+/*--------------------------------------------------
+	static void ACS_ResetHub(ACSVM_GlobalScope *global)
+
+		Shortcut function to quickly free the
+		only hub scope Ring Racers uses.
+
+	Input Arguments:-
+		global - The global scope to free the hub from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void ACS_ResetHub(ACSVM_GlobalScope *global)
 {
 	ACSVM_HubScope *hub = ACSVM_GlobalScope_GetHubScope(global, 0);
 	ACSVM_GlobalScope_FreeHubScope(global, hub);
 }
 
+/*--------------------------------------------------
+	static void ACS_ResetMap(ACSVM_HubScope *hub)
+
+		Shortcut function to quickly free the
+		only map scope Ring Racers uses.
+
+	Input Arguments:-
+		hub - The hub scope to free the map from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
 static void ACS_ResetMap(ACSVM_HubScope *hub)
 {
 	ACSVM_MapScope *map = ACSVM_HubScope_GetMapScope(hub, 0);
 	ACSVM_HubScope_FreeMapScope(hub, map);
 }
 
+/*--------------------------------------------------
+	void ACS_LoadLevelScripts(size_t mapID)
+
+		See header file for description.
+--------------------------------------------------*/
 void ACS_LoadLevelScripts(size_t mapID)
 {
 	ACSVM_Environment *env = ACSenv;
@@ -234,7 +431,9 @@ void ACS_LoadLevelScripts(size_t mapID)
 	// a better language to do that kind of code).
 
 	// Since we literally only are using map scope, we can
-	// just free everything between every level.
+	// just free everything between every level. But if
+	// hubs are to be implemented, this logic would need
+	// to be far more sophisticated.
 
 	// Reset hub scope, even if we are not using it.
 	ACS_ResetHub(global);
@@ -280,6 +479,11 @@ void ACS_LoadLevelScripts(size_t mapID)
 	ACSVM_MapScope_ScriptStartType(map, 1, NULL, 0, NULL, NULL);
 }
 
+/*--------------------------------------------------
+	void ACS_Tick(void)
+
+		See header file for description.
+--------------------------------------------------*/
 void ACS_Tick(void)
 {
 	ACSVM_Environment *env = ACSenv;

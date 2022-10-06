@@ -27,13 +27,11 @@ extern "C"
 //
 // ACSVM_Module_GetName
 //
-void ACSVM_Module_GetName(ACSVM_Module const *module_, ACSVM_ModuleName *out)
+ACSVM_ModuleName ACSVM_Module_GetName(ACSVM_Module const *module_)
 {
    auto module = reinterpret_cast<ACSVM::Module const *>(module_);
 
-   out->s = reinterpret_cast<ACSVM_String *>(module->name.s);
-   out->p = module->name.p;
-   out->i = module->name.i;
+   return {reinterpret_cast<ACSVM_String *>(module->name.s), module->name.p, module->name.i};
 }
 
 //
