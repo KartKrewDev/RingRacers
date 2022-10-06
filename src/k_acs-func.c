@@ -33,9 +33,8 @@ bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC
 {
 	(void)argC;
 
-	ACSVM_Thread_DataStk_Push(thread,
-		P_RandomRange(PR_ACS, argV[0], argV[1])
-	);
+	CONS_Printf("RANDOM %d thru %d\n", argV[0], argV[1]);
+	ACSVM_Thread_DataStk_Push(thread, P_RandomRange(PR_ACS, argV[0], argV[1]));
 	return false;
 }
 

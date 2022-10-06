@@ -116,6 +116,73 @@ static void ACS_EnvSerialError(ACSVM_Environment *env, char const *what)
 }
 
 /*--------------------------------------------------
+	static void ACS_EnvThreadKilled(ACSVM_Environment *env, char const *what)
+
+		ACSVM Environment hook. Runs when the thread
+		has been killed for whatever reason, so that
+		the console can warn the user about it.
+
+	Input Arguments:-
+		env - The ACS environment the thread is from.
+		thread - The thread that was stopped.
+		reason - The reason the thread was stopped. See ACSVM_KillType.
+		data - Bytecode data at time of stopping.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void ACS_EnvThreadKilled(ACSVM_Environment const *env, ACSVM_Thread *thread, ACSVM_Word reason, ACSVM_Word data)
+{
+	static const char *strings[] = {
+		"Just for fun", // ACSVM_KillType_None
+		"Out of bounds", // ACSVM_KillType_OutOfBounds
+		"Unknown code", // ACSVM_KillType_UnknownCode
+		"Unknown function", // ACSVM_KillType_UnknownFunc
+		"Reached recursion limit" // ACSVM_KillType_BranchLimit
+	};
+
+	(void)env;
+	(void)thread;
+	(void)data;
+
+	CONS_Alert(CONS_ERROR, "ACS thread killed (%s)\n", strings[reason]);
+}
+
+/*--------------------------------------------------
+	static void ACS_AddCodeDataCallFunc(
+		ACSVM_Environment *env, ACSVM_Word code,
+		char const *args, ACSVM_Word stack, ACSVM_Word func)
+
+		Shortcut function to simplify adding
+		CallFuncs. These are for code data ones;
+		accessible in all ACS formats.
+
+	Input Arguments:-
+		env - The ACS environment data to add this to.
+		code - The byte code for this function.
+		args - A string of arguments to use. The
+			letters represent different operations
+			to preform on the stack.
+		argc - Number of arguments to pull from
+			the stack, if not using args.
+		func - The function to add.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static inline void ACS_AddCodeDataCallFunc(ACSVM_Environment *env, ACSVM_Word code, char const *args, ACSVM_Word argc, ACSVM_CallFunc func)
+{
+	ACSVM_Environment_AddCodeDataACS0(
+		env,
+		code,
+		args,
+		((argc > 0) ? ACSVM_Code_CallFunc_Lit : ACSVM_Code_CallFunc),
+		argc,
+		ACSVM_Environment_AddCallFunc(env, func)
+	);
+}
+
+/*--------------------------------------------------
 	static void ACS_EnvConstruct(ACSVM_Environment *env)
 
 		ACSVM Environment hook. Runs when the
@@ -142,30 +209,30 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// - https://github.com/DavidPH/ACSVM/blob/master/ACSVM/CodeList.hpp
 
 	//  0 to 56: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,   57, "",        ACSVM_Code_CallFunc, 2, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
-	ACSVM_Environment_AddCodeDataACS0(env,   58, "WW",      ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
+	ACS_AddCodeDataCallFunc(env,   57, "",        2, ACS_CF_Random);
+	ACS_AddCodeDataCallFunc(env,   58, "WW",      0, ACS_CF_Random);
 
-	ACSVM_Environment_AddCodeDataACS0(env,   61, "",        ACSVM_Code_CallFunc, 1, ACSVM_Environment_AddCallFunc(env, ACS_CF_TagWait));
-	ACSVM_Environment_AddCodeDataACS0(env,   62, "W",       ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_TagWait));
-	ACSVM_Environment_AddCodeDataACS0(env,   63, "",        ACSVM_Code_CallFunc, 1, ACSVM_Environment_AddCallFunc(env, ACS_CF_PolyWait));
-	ACSVM_Environment_AddCodeDataACS0(env,   64, "W",       ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_PolyWait));
+	ACS_AddCodeDataCallFunc(env,   61, "",        1, ACS_CF_TagWait);
+	ACS_AddCodeDataCallFunc(env,   62, "W",       0, ACS_CF_TagWait);
+	ACS_AddCodeDataCallFunc(env,   63, "",        1, ACS_CF_PolyWait);
+	ACS_AddCodeDataCallFunc(env,   64, "W",       0, ACS_CF_PolyWait);
 	// 69 to 79: Implemented by ACSVM
 
 	// 81 to 82: Implemented by ACSVM
 
 	// 84 to 85: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,   86, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
+	ACS_AddCodeDataCallFunc(env,   86, "",        0, ACS_CF_EndPrint);
 	// 87 to 89: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,   90, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_PlayerCount));
-	ACSVM_Environment_AddCodeDataACS0(env,   91, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_GameType));
-	ACSVM_Environment_AddCodeDataACS0(env,   92, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_GameSpeed));
-	ACSVM_Environment_AddCodeDataACS0(env,   93, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Timer));
+	ACS_AddCodeDataCallFunc(env,   90, "",        0, ACS_CF_PlayerCount);
+	ACS_AddCodeDataCallFunc(env,   91, "",        0, ACS_CF_GameType);
+	ACS_AddCodeDataCallFunc(env,   92, "",        0, ACS_CF_GameSpeed);
+	ACS_AddCodeDataCallFunc(env,   93, "",        0, ACS_CF_Timer);
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM
 
 	// 167 to 173: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,  174, "BB",      ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_Random));
+	ACS_AddCodeDataCallFunc(env,  174, "BB",      0, ACS_CF_Random);
 	// 175 to 179: Implemented by ACSVM
 
 	// 181 to 189: Implemented by ACSVM
@@ -179,7 +246,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// 256 to 257: Implemented by ACSVM
 
 	// 263: Implemented by ACSVM
-	ACSVM_Environment_AddCodeDataACS0(env,  270, "",        ACSVM_Code_CallFunc, 0, ACSVM_Environment_AddCallFunc(env, ACS_CF_EndPrint));
+	ACS_AddCodeDataCallFunc(env,  270, "",        0, ACS_CF_EndPrint);
 	// 273 to 275: Implemented by ACSVM
 
 	// 291 to 325: Implemented by ACSVM
@@ -340,6 +407,7 @@ void ACS_Init(void)
 	funcs.bad_alloc = ACS_EnvBadAlloc;
 	funcs.readError = ACS_EnvReadError;
 	funcs.serialError = ACS_EnvSerialError;
+	funcs.printKill = ACS_EnvThreadKilled;
 	funcs.ctor = ACS_EnvConstruct;
 	funcs.loadModule = ACS_EnvLoadModule;
 	funcs.checkTag = ACS_EnvCheckTag;
