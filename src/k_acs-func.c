@@ -23,6 +23,10 @@
 #include "m_random.h"
 #include "g_game.h"
 #include "d_player.h"
+#include "r_defs.h"
+#include "r_state.h"
+#include "p_polyobj.h"
+#include "taglist.h"
 
 /*--------------------------------------------------
 	bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
@@ -31,10 +35,15 @@
 --------------------------------------------------*/
 bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
+	INT32 low = 0;
+	INT32 high = 0;
+
 	(void)argC;
 
-	CONS_Printf("RANDOM %d thru %d\n", argV[0], argV[1]);
-	ACSVM_Thread_DataStk_Push(thread, P_RandomRange(PR_ACS, argV[0], argV[1]));
+	low = (INT32)argV[0];
+	high = (INT32)argV[1];
+
+	ACSVM_Thread_DataStk_Push(thread, P_RandomRange(PR_ACS, low, high));
 	return false;
 }
 
@@ -76,6 +85,68 @@ bool ACS_CF_PolyWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word ar
 
 	ACSVM_Thread_SetState(thread, st);
 	return true; // Execution interrupted
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Changes a floor texture.
+--------------------------------------------------*/
+bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+	const char *texName = NULL;
+
+	INT32 secnum = -1;
+	INT32 tag = 0;
+
+	(void)argC;
+
+	tag = argV[0];
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[1]);
+	texName = ACSVM_String_GetStr(str);
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		sector_t *sec = &sectors[secnum];
+		sec->floorpic = P_AddLevelFlatRuntime(texName);
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Changes a ceiling texture.
+--------------------------------------------------*/
+bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+	const char *texName = NULL;
+
+	INT32 secnum = -1;
+	INT32 tag = 0;
+
+	(void)argC;
+
+	tag = argV[0];
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[1]);
+	texName = ACSVM_String_GetStr(str);
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		sector_t *sec = &sectors[secnum];
+		sec->ceilingpic = P_AddLevelFlatRuntime(texName);
+	}
+
+	return false;
 }
 
 /*--------------------------------------------------

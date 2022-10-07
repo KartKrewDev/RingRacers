@@ -301,6 +301,15 @@ bool ACSVM_MapScope_ScriptStop(ACSVM_MapScope *scope,
 }
 
 //
+// ACSVM_MapScope_GetString
+//
+ACSVM_String *ACSVM_MapScope_GetString(ACSVM_MapScope *scope, ACSVM::Word idx)
+{
+   return reinterpret_cast<ACSVM_String *>(
+      reinterpret_cast<ACSVM::MapScope *>(scope)->getString(idx));
+}
+
+//
 // ACSVM_MapScope_SetActive
 //
 void ACSVM_MapScope_SetActive(ACSVM_MapScope *scope, bool active)

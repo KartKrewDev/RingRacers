@@ -98,6 +98,8 @@ ACSVM_Word ACSVM_MapScope_ScriptStartTypeForced(ACSVM_MapScope *scope,
 bool ACSVM_MapScope_ScriptStop(ACSVM_MapScope *scope,
    ACSVM_ScriptName name, ACSVM_ScopeID id);
 
+ACSVM_String *ACSVM_MapScope_GetString(ACSVM_MapScope *scope, ACSVM_Word idx);
+
 void ACSVM_MapScope_SetActive(ACSVM_MapScope *scope, bool active);
 
 ACSVM_Array *ACSVM_ModuleScope_GetModArr (ACSVM_ModuleScope       *scope, ACSVM_Word idx);

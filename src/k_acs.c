@@ -151,7 +151,7 @@ static void ACS_EnvThreadKilled(ACSVM_Environment const *env, ACSVM_Thread *thre
 /*--------------------------------------------------
 	static void ACS_AddCodeDataCallFunc(
 		ACSVM_Environment *env, ACSVM_Word code,
-		char const *args, ACSVM_Word stack, ACSVM_Word func)
+		char const *args, ACSVM_Word argc, ACSVM_CallFunc func)
 
 		Shortcut function to simplify adding
 		CallFuncs. These are for code data ones;
@@ -172,13 +172,13 @@ static void ACS_EnvThreadKilled(ACSVM_Environment const *env, ACSVM_Thread *thre
 --------------------------------------------------*/
 static inline void ACS_AddCodeDataCallFunc(ACSVM_Environment *env, ACSVM_Word code, char const *args, ACSVM_Word argc, ACSVM_CallFunc func)
 {
+	ACSVM_Word funcId = ACSVM_Environment_AddCallFunc(env, func);
+	ACSVM_Code tCode = (argc != 0 ? ACSVM_Code_CallFunc : ACSVM_Code_CallFunc_Lit);
+
 	ACSVM_Environment_AddCodeDataACS0(
-		env,
-		code,
-		args,
-		((argc > 0) ? ACSVM_Code_CallFunc_Lit : ACSVM_Code_CallFunc),
-		argc,
-		ACSVM_Environment_AddCallFunc(env, func)
+		env, code,
+		args, tCode, argc,
+		funcId
 	);
 }
 
@@ -216,6 +216,10 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	ACS_AddCodeDataCallFunc(env,   62, "W",       0, ACS_CF_TagWait);
 	ACS_AddCodeDataCallFunc(env,   63, "",        1, ACS_CF_PolyWait);
 	ACS_AddCodeDataCallFunc(env,   64, "W",       0, ACS_CF_PolyWait);
+	ACS_AddCodeDataCallFunc(env,   65, "",        2, ACS_CF_ChangeFloor);
+	ACS_AddCodeDataCallFunc(env,   66, "WWS",     0, ACS_CF_ChangeFloor);
+	ACS_AddCodeDataCallFunc(env,   67, "",        2, ACS_CF_ChangeCeiling);
+	ACS_AddCodeDataCallFunc(env,   68, "WWS",     0, ACS_CF_ChangeCeiling);
 	// 69 to 79: Implemented by ACSVM
 
 	// 81 to 82: Implemented by ACSVM
