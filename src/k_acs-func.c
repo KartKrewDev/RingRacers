@@ -31,6 +31,8 @@
 #include "deh_tables.h"
 #include "fastcmp.h"
 #include "hu_stuff.h"
+#include "s_sound.h"
+#include "r_textures.h"
 
 /*--------------------------------------------------
 	static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
@@ -72,6 +74,46 @@ static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 	for (i = 0; i < MT_FIRSTFREESLOT; i++)
 	{
 		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
+		{
+			*type = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
+
+		Helper function for sound playing functions.
+		Gets a SFX id from a string.
+
+	Input Arguments:-
+		word: The sound effect string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
+{
+	sfxenum_t i;
+
+	if (fastncmp("SFX_", word, 4))
+	{
+		// take off the SFX_
+		word += 4;
+	}
+	else if (fastncmp("DS", word, 2))
+	{
+		// take off the DS
+		word += 2;
+	}
+
+	for (i = 0; i < NUMSFX; i++)
+	{
+		if (S_sfx[i].name && fasticmp(word, S_sfx[i].name))
 		{
 			*type = i;
 			return true;
@@ -362,6 +404,28 @@ bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word ar
 }
 
 /*--------------------------------------------------
+	bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		If there is an activating linedef, set its
+		special to 0.
+--------------------------------------------------*/
+bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+
+	(void)argV;
+	(void)argC;
+
+	if (info->line != NULL)
+	{
+		// One time only.
+		info->line->special = 0;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 
 		One of the ACS wrappers for CEcho. This
@@ -465,6 +529,285 @@ bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 	ACSVM_Thread_DataStk_Push(thread, leveltime);
 	return false;
 }
+
+/*--------------------------------------------------
+	bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Plays a point sound effect from a sector.
+--------------------------------------------------*/
+bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+
+	const char *sfxName = NULL;
+	size_t sfxLen = 0;
+
+	sfxenum_t sfxId = sfx_None;
+	INT32 vol = 0;
+	mobj_t *origin = NULL;
+
+	(void)argC;
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[0]);
+
+	sfxName = ACSVM_String_GetStr(str);
+	sfxLen = ACSVM_String_GetLen(str);
+
+	if (sfxLen > 0)
+	{
+		bool success = ACS_GetSFXFromString(sfxName, &sfxId);
+
+		if (success == false)
+		{
+			// Exit early.
+
+			CONS_Alert(CONS_WARNING,
+				"Couldn't find sfx named \"%s\" for SectorSound.\n",
+				sfxName
+			);
+
+			return false;
+		}
+	}
+
+	vol = argV[1];
+
+	if (info->sector != NULL)
+	{
+		// New to Ring Racers: Use activating sector directly.
+		origin = (void *)&info->sector->soundorg;
+	}
+	else if (info->line != NULL)
+	{
+		// Original Hexen behavior: Use line's frontsector.
+		origin = (void *)&info->line->frontsector->soundorg;
+	}
+
+	S_StartSoundAtVolume(origin, sfxId, vol);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Plays a sound effect globally.
+--------------------------------------------------*/
+bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+
+	const char *sfxName = NULL;
+	size_t sfxLen = 0;
+
+	sfxenum_t sfxId = sfx_None;
+	INT32 vol = 0;
+
+	(void)argC;
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[0]);
+
+	sfxName = ACSVM_String_GetStr(str);
+	sfxLen = ACSVM_String_GetLen(str);
+
+	if (sfxLen > 0)
+	{
+		bool success = ACS_GetSFXFromString(sfxName, &sfxId);
+
+		if (success == false)
+		{
+			// Exit early.
+
+			CONS_Alert(CONS_WARNING,
+				"Couldn't find sfx named \"%s\" for AmbientSound.\n",
+				sfxName
+			);
+
+			return false;
+		}
+	}
+
+	vol = argV[1];
+
+	S_StartSoundAtVolume(NULL, sfxId, vol);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Plays a sound effect globally.
+--------------------------------------------------*/
+enum
+{
+	SLT_POS_TOP,
+	SLT_POS_MIDDLE,
+	SLT_POS_BOTTOM
+};
+
+bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	mtag_t tag = 0;
+	UINT8 sideId = 0;
+	UINT8 texPos = 0;
+
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+	const char *texName = NULL;
+	INT32 texId = LUMPERROR;
+
+	INT32 lineId = -1;
+
+	(void)argC;
+
+	tag = argV[0];
+	sideId = (argV[1] & 1);
+	texPos = argV[2];
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[4]);
+	texName = ACSVM_String_GetStr(str);
+
+	texId = R_TextureNumForName(texName);
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+		side_t *side = &sides[line->sidenum[sideId]];
+
+		switch (texPos)
+		{
+			case SLT_POS_MIDDLE:
+			{
+				side->midtexture = texId;
+				break;
+			}
+			case SLT_POS_BOTTOM:
+			{
+				side->bottomtexture = texId;
+				break;
+			}
+			case SLT_POS_TOP:
+			default:
+			{
+				side->toptexture = texId;
+				break;
+			}
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Changes a linedef's special and arguments.
+--------------------------------------------------*/
+bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+
+	mtag_t tag = 0;
+	INT32 spec = 0;
+	size_t numArgs = 0;
+
+	INT32 lineId = -1;
+
+	tag = argV[0];
+	spec = argV[1];
+
+	numArgs = min(max(argC - 2, 0), NUMLINEARGS);
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+		size_t i;
+
+		if (info->line != NULL && line == info->line)
+		{
+			continue;
+		}
+
+		line->special = spec;
+
+		for (i = 0; i < numArgs; i++)
+		{
+			line->args[i] = argV[i + 2];
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Plays a sound effect for a tagged object.
+--------------------------------------------------*/
+bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_MapScope *map = NULL;
+	ACSVM_String *str = NULL;
+
+	const char *sfxName = NULL;
+	size_t sfxLen = 0;
+
+	mtag_t tag = 0;
+	sfxenum_t sfxId = sfx_None;
+	INT32 vol = 0;
+
+	(void)argC;
+
+	tag = argV[0];
+
+	map = ACSVM_Thread_GetScopeMap(thread);
+	str = ACSVM_MapScope_GetString(map, argV[1]);
+
+	sfxName = ACSVM_String_GetStr(str);
+	sfxLen = ACSVM_String_GetLen(str);
+
+	if (sfxLen > 0)
+	{
+		bool success = ACS_GetSFXFromString(sfxName, &sfxId);
+
+		if (success == false)
+		{
+			// Exit early.
+
+			CONS_Alert(CONS_WARNING,
+				"Couldn't find sfx named \"%s\" for AmbientSound.\n",
+				sfxName
+			);
+
+			return false;
+		}
+	}
+
+	vol = argV[2];
+
+#if 0
+	TAG_ITER_MOBJS(tag, mobj)
+	{
+		S_StartSoundAtVolume(mobj, sfxId, vol);
+	}
+#else
+	CONS_Alert(CONS_WARNING,
+		"ThingSound not implemented -- waiting for mobj tags.\n"
+	);
+
+	(void)tag;
+	(void)vol;
+#endif
+
+	return false;
+}
+
 
 /*--------------------------------------------------
 	bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)

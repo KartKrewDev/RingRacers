@@ -183,11 +183,17 @@ bool ACS_CF_PolyWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word ar
 bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_PlayerCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_GameType(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_GameSpeed(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 

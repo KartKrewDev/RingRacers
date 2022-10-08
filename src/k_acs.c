@@ -233,7 +233,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// 69 to 79: Implemented by ACSVM
 	ACS_AddCodeDataCallFunc(env,   80, "",        0, ACS_CF_LineSide);
 	// 81 to 82: Implemented by ACSVM
-
+	ACS_AddCodeDataCallFunc(env,   83, "",        0, ACS_CF_ClearLineSpecial);
 	// 84 to 85: Implemented by ACSVM
 	ACS_AddCodeDataCallFunc(env,   86, "",        0, ACS_CF_EndPrint);
 	// 87 to 89: Implemented by ACSVM
@@ -241,7 +241,13 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	ACS_AddCodeDataCallFunc(env,   91, "",        0, ACS_CF_GameType);
 	ACS_AddCodeDataCallFunc(env,   92, "",        0, ACS_CF_GameSpeed);
 	ACS_AddCodeDataCallFunc(env,   93, "",        0, ACS_CF_Timer);
+	ACS_AddCodeDataCallFunc(env,   94, "",        2, ACS_CF_SectorSound);
+	ACS_AddCodeDataCallFunc(env,   95, "",        2, ACS_CF_AmbientSound);
 
+	ACS_AddCodeDataCallFunc(env,   97, "",        4, ACS_CF_SetLineTexture);
+
+	ACS_AddCodeDataCallFunc(env,   99, "",        7, ACS_CF_SetLineSpecial);
+	ACS_AddCodeDataCallFunc(env,  100, "",        3, ACS_CF_ThingSound);
 	ACS_AddCodeDataCallFunc(env,  101, "",        0, ACS_CF_EndPrintBold);
 	// 136 to 137: Implemented by ACSVM
 
