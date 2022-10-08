@@ -205,7 +205,7 @@ special
 	void  { 55,  56}:Delay(int),
 	int   { 57,  58}:Random(int, int),
 	fixed { 57,  58}:RandomFixed(fixed, fixed),
-	int   { 59,  60}:ThingCount(int, int),
+	int   { 59,  60}:ThingCount(str, int),
 	void  { 61,  62}:TagWait(int),
 	void  { 63,  64}:PolyWait(int),
 	void  { 65,  66}:ChangeFloor(int, str),

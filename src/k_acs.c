@@ -202,7 +202,12 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// Not that we're adding any modules to it, though. :p
 	ACSVM_GlobalScope_SetActive(global, true);
 
-	// Add the data & function pointers
+	// Add the data & function pointers.
+
+	// Starting with raw ACS0 codes. I'm using this classic-style
+	// format here to have a blueprint for what needs implementing,
+	// but it'd also be fine to move these to new style.
+
 	// See also:
 	// - https://doomwiki.org/wiki/ACS0_instruction_set
 	// - https://github.com/DavidPH/ACSVM/blob/master/ACSVM/CodeData.hpp
@@ -211,7 +216,8 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	//  0 to 56: Implemented by ACSVM
 	ACS_AddCodeDataCallFunc(env,   57, "",        2, ACS_CF_Random);
 	ACS_AddCodeDataCallFunc(env,   58, "WW",      0, ACS_CF_Random);
-
+	ACS_AddCodeDataCallFunc(env,   59, "",        2, ACS_CF_ThingCount);
+	ACS_AddCodeDataCallFunc(env,   60, "WW",      0, ACS_CF_ThingCount);
 	ACS_AddCodeDataCallFunc(env,   61, "",        1, ACS_CF_TagWait);
 	ACS_AddCodeDataCallFunc(env,   62, "W",       0, ACS_CF_TagWait);
 	ACS_AddCodeDataCallFunc(env,   63, "",        1, ACS_CF_PolyWait);
