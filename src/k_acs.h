@@ -16,6 +16,10 @@
 
 #include "doomtype.h"
 #include "doomdef.h"
+#include "p_mobj.h"
+#include "r_defs.h"
+#include "p_polyobj.h"
+#include "d_player.h"
 
 #include "CAPI/BinaryIO.h"
 #include "CAPI/Environment.h"
@@ -25,6 +29,9 @@
 #include "CAPI/String.h"
 #include "CAPI/Thread.h"
 
+//
+// Special global script types.
+//
 typedef enum
 {
 	ACS_ST_OPEN			=  1, // OPEN: Runs once when the level starts.
@@ -33,11 +40,26 @@ typedef enum
 	ACS_ST_ENTER		=  4, // ENTER: Runs when a player enters the game; both on start of the level, and when un-spectating.
 } acs_scriptType_e;
 
+//
+// Script "waiting on tag" types.
+//
 typedef enum
 {
 	ACS_TAGTYPE_POLYOBJ,
 	ACS_TAGTYPE_SECTOR,
 } acs_tagType_e;
+
+//
+// Thread activator info
+//
+typedef struct
+{
+	mobj_t *mo;				// Object that activated this thread.
+	line_t *line;			// Linedef that activated this thread.
+	UINT8 side;				// Front / back side of said linedef.
+	sector_t *sector;		// Sector that activated this thread.
+	polyobj_t *po;			// Polyobject that activated this thread.
+} acs_threadinfo_t;
 
 /*--------------------------------------------------
 	ACSVM_Environment *ACS_GetEnvironment(void);
@@ -97,6 +119,33 @@ void ACS_LoadLevelScripts(size_t mapID);
 
 
 /*--------------------------------------------------
+	void ACS_RunPlayerEnterScript(player_t *player);
+
+		Runs the map's special script for a player
+		entering the game.
+
+	Input Arguments:-
+		player: The player to run the script for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_RunPlayerEnterScript(player_t *player);
+
+
+/*--------------------------------------------------
+	void ACS_RunLevelStartScripts(void);
+
+		Runs the map's special scripts for opening
+		the level, and for all players to enter
+		the game.
+--------------------------------------------------*/
+
+void ACS_RunLevelStartScripts(void);
+
+
+/*--------------------------------------------------
 	void ACS_Tick(void);
 
 		Executes all of the ACS environment's
@@ -104,6 +153,7 @@ void ACS_LoadLevelScripts(size_t mapID);
 --------------------------------------------------*/
 
 void ACS_Tick(void);
+
 
 /*--------------------------------------------------
 	bool ACS_CF_???(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
@@ -132,11 +182,14 @@ bool ACS_CF_TagWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word arg
 bool ACS_CF_PolyWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_PlayerCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_GameType(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_GameSpeed(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
+bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC);
 
 
 #endif // __K_ACS__

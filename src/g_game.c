@@ -60,6 +60,7 @@
 #include "k_boss.h"
 #include "k_bot.h"
 #include "doomstat.h"
+#include "k_acs.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2877,6 +2878,8 @@ void G_DoReborn(INT32 playernum)
 		if (oldmo)
 			G_ChangePlayerReferences(oldmo, players[playernum].mo);
 	}
+
+	ACS_RunPlayerEnterScript(player);
 }
 
 void G_AddPlayer(INT32 playernum)

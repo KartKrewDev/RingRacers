@@ -156,6 +156,14 @@ ACSVM_Thread *ACSVM_AllocThread(ACSVM_Environment *env,
 }
 
 //
+// ACSVM_AllocThreadInfo
+//
+ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *data)
+{
+   return new(std::nothrow) ACSVM_ThreadInfo(data);
+}
+
+//
 // ACSVM_ThreadFromVoid
 //
 ACSVM_Thread *ACSVM_ThreadFromVoid(void *thread)

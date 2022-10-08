@@ -30,6 +30,7 @@
 #include "p_local.h"
 #include "deh_tables.h"
 #include "fastcmp.h"
+#include "hu_stuff.h"
 
 /*--------------------------------------------------
 	static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
@@ -110,6 +111,34 @@ static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 
 		// Count this object.
 		return true;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
+
+		Helper function for many print functions.
+		Returns whenever or not the activator of the
+		thread is a display player or not.
+
+	Input Arguments:-
+		thread: The thread we're exeucting on.
+
+	Return:-
+		true if it's for a display player,
+		otherwise false.
+--------------------------------------------------*/
+static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
+{
+	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		return P_IsDisplayPlayer(info->mo->player);
 	}
 
 	return false;
@@ -316,9 +345,28 @@ bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wo
 }
 
 /*--------------------------------------------------
+	bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		Pushes which side of the linedef was
+		activated.
+--------------------------------------------------*/
+bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+
+	(void)argV;
+	(void)argC;
+
+	ACSVM_Thread_DataStk_Push(thread, info->side);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 
-		ACS wrapper for CONS_Printf.
+		One of the ACS wrappers for CEcho. This
+		version only prints if the activator is a
+		display player.
 --------------------------------------------------*/
 bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
@@ -328,7 +376,13 @@ bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word ar
 	(void)argC;
 
 	buf = ACSVM_Thread_GetPrintBuf(thread);
-	CONS_Printf("%s\n", ACSVM_PrintBuf_GetData(buf));
+
+	if (ACS_ActivatorIsLocal(thread) == true)
+	{
+		HU_SetCEchoDuration(5);
+		HU_DoCEcho(ACSVM_PrintBuf_GetData(buf));
+	}
+
 	ACSVM_PrintBuf_Drop(buf);
 
 	return false;
@@ -409,5 +463,54 @@ bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 	(void)argC;
 
 	ACSVM_Thread_DataStk_Push(thread, leveltime);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		One of the ACS wrappers for CEcho. This
+		version prints for all players.
+--------------------------------------------------*/
+bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_PrintBuf *buf = NULL;
+
+	(void)argV;
+	(void)argC;
+
+	buf = ACSVM_Thread_GetPrintBuf(thread);
+
+	HU_SetCEchoDuration(5);
+	HU_DoCEcho(ACSVM_PrintBuf_GetData(buf));
+
+	ACSVM_PrintBuf_Drop(buf);
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		One of the ACS wrappers for CONS_Printf.
+		This version only prints if the activator
+		is a display player.
+--------------------------------------------------*/
+bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	ACSVM_PrintBuf *buf = NULL;
+
+	(void)argV;
+	(void)argC;
+
+	buf = ACSVM_Thread_GetPrintBuf(thread);
+
+	if (ACS_ActivatorIsLocal(thread) == true)
+	{
+		CONS_Printf("%s\n", ACSVM_PrintBuf_GetData(buf));
+	}
+
+	ACSVM_PrintBuf_Drop(buf);
+
 	return false;
 }

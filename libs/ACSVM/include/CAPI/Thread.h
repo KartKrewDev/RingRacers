@@ -133,6 +133,8 @@ public:
 ACSVM_Thread *ACSVM_AllocThread(ACSVM_Environment *env,
    ACSVM_ThreadFuncs const *funcs, void *data);
 
+ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *data);
+
 ACSVM_Thread *ACSVM_ThreadFromVoid(void *thread);
 
 void ACSVM_Thread_Exec(ACSVM_Thread *thread);

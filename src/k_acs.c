@@ -23,6 +23,10 @@
 #include "r_state.h"
 #include "p_polyobj.h"
 #include "taglist.h"
+#include "d_player.h"
+#include "g_game.h"
+#include "p_tick.h"
+#include "p_local.h"
 
 #include "CAPI/BinaryIO.h"
 #include "CAPI/Environment.h"
@@ -227,7 +231,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	ACS_AddCodeDataCallFunc(env,   67, "",        2, ACS_CF_ChangeCeiling);
 	ACS_AddCodeDataCallFunc(env,   68, "WWS",     0, ACS_CF_ChangeCeiling);
 	// 69 to 79: Implemented by ACSVM
-
+	ACS_AddCodeDataCallFunc(env,   80, "",        0, ACS_CF_LineSide);
 	// 81 to 82: Implemented by ACSVM
 
 	// 84 to 85: Implemented by ACSVM
@@ -237,6 +241,8 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	ACS_AddCodeDataCallFunc(env,   91, "",        0, ACS_CF_GameType);
 	ACS_AddCodeDataCallFunc(env,   92, "",        0, ACS_CF_GameSpeed);
 	ACS_AddCodeDataCallFunc(env,   93, "",        0, ACS_CF_Timer);
+
+	ACS_AddCodeDataCallFunc(env,  101, "",        0, ACS_CF_EndPrintBold);
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM
@@ -256,7 +262,7 @@ static void ACS_EnvConstruct(ACSVM_Environment *env)
 	// 256 to 257: Implemented by ACSVM
 
 	// 263: Implemented by ACSVM
-	ACS_AddCodeDataCallFunc(env,  270, "",        0, ACS_CF_EndPrint);
+	ACS_AddCodeDataCallFunc(env,  270, "",        0, ACS_CF_EndLog);
 	// 273 to 275: Implemented by ACSVM
 
 	// 291 to 325: Implemented by ACSVM
@@ -405,6 +411,85 @@ static bool ACS_EnvCheckTag(ACSVM_Environment const *env, ACSVM_Word type, ACSVM
 }
 
 /*--------------------------------------------------
+	static void ACS_ThrDestruct(ACSVM_Thread *thread)
+
+		ACSVM Thread hook. Runs as the thread
+		is in the process of being destroyed.
+
+	Input Arguments:-
+		thread - The ACS thread data to destroy.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void ACS_ThrDestruct(ACSVM_Thread *thread)
+{
+	acs_threadinfo_t *info = ACSVM_Thread_GetInfo(thread);
+
+	if (info != NULL)
+	{
+		Z_Free(info);
+	}
+}
+
+/*--------------------------------------------------
+	static void ACS_ThrStart(ACSVM_Thread *thread, void *data)
+
+		ACSVM Thread hook. Runs immediately after
+		an ACS thread has been started.
+
+	Input Arguments:-
+		thread - The ACS thread data.
+		data - ACS thread info, as a raw pointer.
+
+	Return:-
+		The newly created ACS thread.
+--------------------------------------------------*/
+static void ACS_ThrStart(ACSVM_Thread *thread, void *data)
+{
+	acs_threadinfo_t *activator = NULL;
+
+	ACSVM_Thread_SetResult(thread, 1);
+
+	if (data == NULL)
+	{
+		// Create an empty one, to reduce NULL checks.
+		// Might not be necessary.
+		activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+	}
+	else
+	{
+		activator = (acs_threadinfo_t *)data;
+	}
+
+	ACSVM_Thread_SetInfo(thread, activator);
+}
+
+/*--------------------------------------------------
+	static ACSVM_Thread *ACS_EnvAllocThread(ACSVM_Environment *env)
+
+		ACSVM Environment hook. Runs when an ACS
+		thread is being created. This is where
+		our own thread hooks are supposed to
+		be loaded.
+
+	Input Arguments:-
+		env - The ACS environment data.
+
+	Return:-
+		The newly created ACS thread.
+--------------------------------------------------*/
+static ACSVM_Thread *ACS_EnvAllocThread(ACSVM_Environment *env)
+{
+	ACSVM_ThreadFuncs funcs = {0};
+
+	funcs.dtor = ACS_ThrDestruct;
+	funcs.start = ACS_ThrStart;
+
+	return ACSVM_AllocThread(env, &funcs, NULL);
+}
+
+/*--------------------------------------------------
 	void ACS_Init(void)
 
 		See header file for description.
@@ -421,6 +506,7 @@ void ACS_Init(void)
 	funcs.ctor = ACS_EnvConstruct;
 	funcs.loadModule = ACS_EnvLoadModule;
 	funcs.checkTag = ACS_EnvCheckTag;
+	funcs.allocThread = ACS_EnvAllocThread;
 
 	ACSenv = ACSVM_AllocEnvironment(&funcs, NULL);
 
@@ -520,7 +606,7 @@ void ACS_LoadLevelScripts(size_t mapID)
 
 	// Start up new map scope.
 	ACS_ResetMap(hub);
-	map = ACSVM_HubScope_GetMapScope(hub, 0);
+	map = ACSVM_HubScope_GetMapScope(hub, 0); // This is where you'd put in mapID if you add hub support.
 	ACSVM_MapScope_SetActive(map, true);
 
 	// Allocate module list.
@@ -552,9 +638,70 @@ void ACS_LoadLevelScripts(size_t mapID)
 		// Register the modules with map scope.
 		ACSVM_MapScope_AddModules(map, modules, modules_len);
 	}
+}
+
+/*--------------------------------------------------
+	void ACS_RunPlayerEnterScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerEnterScript(player_t *player)
+{
+	ACSVM_GlobalScope *global = NULL;
+	ACSVM_HubScope *hub = NULL;
+	ACSVM_MapScope *map = NULL;
+
+	acs_threadinfo_t *activator = NULL;
+
+	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
+	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
+	map = ACSVM_HubScope_GetMapScope(hub, 0);
+
+	activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+
+	P_SetTarget(&activator->mo, player->mo);
+
+	ACSVM_MapScope_ScriptStartTypeForced(map, ACS_ST_ENTER, NULL, 0, ACSVM_AllocThreadInfo(activator), NULL);
+}
+
+/*--------------------------------------------------
+	void ACS_RunLevelStartScripts(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunLevelStartScripts(void)
+{
+	ACSVM_GlobalScope *global = NULL;
+	ACSVM_HubScope *hub = NULL;
+	ACSVM_MapScope *map = NULL;
+
+	UINT8 i;
+
+	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
+	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
+	map = ACSVM_HubScope_GetMapScope(hub, 0);
 
 	// Start OPEN scripts.
-	ACSVM_MapScope_ScriptStartType(map, 1, NULL, 0, NULL, NULL);
+	ACSVM_MapScope_ScriptStartType(map, ACS_ST_OPEN, NULL, 0, NULL, NULL);
+
+	// Start ENTER scripts.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = NULL;
+
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		player = &players[i];
+		if (player->spectator == true)
+		{
+			continue;
+		}
+
+		ACS_RunPlayerEnterScript(player);
+	}
 }
 
 /*--------------------------------------------------
