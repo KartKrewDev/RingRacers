@@ -7212,7 +7212,7 @@ static void P_SpawnScrollers(void)
 
 		//
 		// FIXME: UDMFify front+back scrollers
-		// types 507-509
+		// type 507
 		//
 
 		switch (l->special)
