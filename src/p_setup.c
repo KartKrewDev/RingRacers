@@ -6497,6 +6497,26 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = mapthings[i].angle;
 			mapthings[i].args[1] = mapthings[i].extrainfo;
 			break;
+		case 2010: // MT_ITEMCAPSULE
+			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
+
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+			{
+				// Special = +16 items (+80 for rings)
+				mapthings[i].args[1] += 16;
+			}
+
+			if (mapthings[i].options & MTF_EXTRA)
+			{
+				mapthings[i].args[2] |= TMICF_INVERTTIMEATTACK;
+			}
+
+			if (mapthings[i].options & MTF_AMBUSH)
+			{
+				mapthings[i].args[2] |= TMICF_INVERTSIZE;
+			}
+			break;
 		case 2333: // MT_BATTLECAPSULE
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			mapthings[i].args[1] = mapthings[i].angle;

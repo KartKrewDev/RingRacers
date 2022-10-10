@@ -65,6 +65,12 @@ typedef enum
 
 typedef enum
 {
+	TMICF_INVERTTIMEATTACK = 1,
+	TMICF_INVERTSIZE       = 1<<1,
+} textmapitemcapsuleflags_t;
+
+typedef enum
+{
 	TMFF_AIMLESS    = 1,
 	TMFF_STATIONARY = 1<<1,
 	TMFF_HOP        = 1<<2,

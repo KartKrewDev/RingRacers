@@ -11666,7 +11666,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	{
 		case MT_ITEMCAPSULE:
 			{
-				boolean isRingCapsule = (mthing->angle < 1 || mthing->angle == KITEM_SUPERRING || mthing->angle >= NUMKARTITEMS);
+				boolean isRingCapsule = (mthing->args[0] < 1 || mthing->args[0] == KITEM_SUPERRING || mthing->args[0] >= NUMKARTITEMS);
 
 				// don't spawn ring capsules in GTR_SPHERES gametypes
 				if (isRingCapsule && (gametyperules & GTR_SPHERES))
@@ -11675,7 +11675,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 				// in record attack, only spawn ring capsules
 				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
 				if (modeattacking
-				&& (!(mthing->options & MTF_EXTRA) == !isRingCapsule))
+				&& (!(mthing->args[2] & TMICF_INVERTTIMEATTACK) == !isRingCapsule))
 					return false;
 			}
 			break;
@@ -12624,18 +12624,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			mobj->flags |= MF_NOGRAVITY;
 
 		// Angle = item type
-		if (mthing->angle > 0 && mthing->angle < NUMKARTITEMS)
-			mobj->threshold = mthing->angle;
+		if (mthing->args[0] > 0 && mthing->args[0] < NUMKARTITEMS)
+			mobj->threshold = mthing->args[0];
 
 		// Parameter = extra items (x5 for rings)
-		mobj->movecount += mthing->extrainfo;
-
-		// Special = +16 items (+80 for rings)
-		if (mthing->options & MTF_OBJECTSPECIAL)
-			mobj->movecount += 16;
+		mobj->movecount += mthing->args[1];
 
 		// Ambush = double size (grounded) / half size (aerial)
-		if (!(mthing->options & MTF_AMBUSH) == !P_IsObjectOnGround(mobj))
+		if (!(mthing->args[2] & TMICF_INVERTSIZE) == !P_IsObjectOnGround(mobj))
 		{
 			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
 			mobj->scalespeed <<= 1;
