@@ -1570,7 +1570,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, const cha
 			break;
 		}
 
-		val = M_TokenizerRead(0);
+		val = M_TokenizerRead(1);
 		parser(num, param, val);
 	}
 
