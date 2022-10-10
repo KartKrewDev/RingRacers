@@ -105,12 +105,9 @@ extern consvar_t
 	cv_quadorbinaut,
 	cv_dualjawz;
 
-extern consvar_t cv_kartminimap;
-extern consvar_t cv_kartcheck;
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;
 extern consvar_t cv_kartfrantic;
-extern consvar_t cv_kartcomeback;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartgametypepreference;
@@ -123,7 +120,7 @@ extern consvar_t cv_kartusepwrlv;
 extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
-extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector, cv_spbtest;
+extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector, cv_spbtest;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
 extern consvar_t cv_itemfinder;

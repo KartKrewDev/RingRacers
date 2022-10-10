@@ -911,14 +911,8 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Minimap Opacity", "Changes the opacity of the minimap.",
-		NULL, {.cvar = &cv_kartminimap}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Speedometer", "Choose to what speed unit to display or toggle off the speedometer.",
 		NULL, {.cvar = &cv_kartspeedometer}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Display \"CHECK\"", "Displays an icon when a player is tailing you.",
-		NULL, {.cvar = &cv_kartcheck}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1032,9 +1026,6 @@ menuitem_t OPTIONS_Gameplay[] =
 
 	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Karma Comeback", "Enable Karma Comeback in Battle mode.",
-		NULL, {.cvar = &cv_kartcomeback}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

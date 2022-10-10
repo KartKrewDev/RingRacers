@@ -296,7 +296,6 @@ UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for e
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
 boolean franticitems; // Frantic items currently enabled?
-boolean comeback; // Battle Mode's karma comeback is on/off
 
 // Voting system
 INT16 votelevels[4][2]; // Levels that were rolled by the host

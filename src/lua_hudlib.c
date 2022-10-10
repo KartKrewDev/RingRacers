@@ -641,7 +641,7 @@ static int libd_drawOnMinimap(lua_State *L)
 
 		if (!lt_exitticker)
 			return 0;
-		minimaptrans = cv_kartminimap.value;
+		minimaptrans = 4;
 		if (lt_exitticker < length)
 			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
 		if (!minimaptrans)
