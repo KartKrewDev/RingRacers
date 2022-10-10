@@ -8857,11 +8857,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			{
 				fixed_t speed = mobj->movefactor;
 				UINT8 sequence = mobj->lastlook;
-				UINT8 num = mobj->movecount;
 				boolean backandforth = (mobj->flags2 & MF2_AMBUSH);
 				SINT8 direction = mobj->cvmem;
 				mobj_t *next = NULL;
-				thinker_t *th;
 				fixed_t dist, momx, momy, momz;
 
 				dist = P_AproxDistance(mobj->target->x - mobj->x, mobj->target->y - mobj->y);
@@ -8884,8 +8882,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 				else
 				{
-					mobj_t *mo2;
-
 					speed -= dist;
 
 					P_UnsetThingPosition(mobj);
@@ -8898,25 +8894,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->ceilingz = mobj->subsector->sector->ceilingheight;
 
 					// Onto the next waypoint!
-					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-					{
-						if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-							continue;
-
-						mo2 = (mobj_t *)th;
-
-						if (mo2->type != MT_TUBEWAYPOINT)
-							continue;
-
-						if (mo2->threshold == sequence)
-						{
-							if (mo2->health == num + direction)
-							{
-								next = mo2;
-								break;
-							}
-						}
-					}
+					next = (direction < 0) ? P_GetPreviousTubeWaypoint(mobj->target, false) : P_GetNextTubeWaypoint(mobj->target, false);
 
 					// Are we at the end of the waypoint chain?
 					// If so, search again for the first/previous waypoint (depending on settings)
@@ -8924,44 +8902,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						if (backandforth)
 						{
+							// Back and forth movement.
 							mobj->cvmem = -mobj->cvmem;
 							direction = mobj->cvmem;
+
+							next = (direction < 0) ? P_GetPreviousTubeWaypoint(mobj->target, false) : P_GetNextTubeWaypoint(mobj->target, false);
 						}
-
-						for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+						else
 						{
-							if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-								continue;
-
-							mo2 = (mobj_t *)th;
-
-							if (mo2->type != MT_TUBEWAYPOINT)
-								continue;
-
-							if (mo2->threshold == sequence)
-							{
-								if (backandforth)
-								{
-									if (mo2->health == num + direction)
-									{
-										next = mo2;
-										break;
-									}
-								}
-								else
-								{
-									if (direction < 0)
-									{
-										if (next == NULL || mo2->health > next->health)
-											next = mo2;
-									}
-									else
-									{
-										if (next == NULL || mo2->health < next->health)
-											next = mo2;
-									}
-								}
-							}
+							// Looping circular movement.
+							next = (direction < 0) ? P_GetLastTubeWaypoint(sequence) : P_GetFirstTubeWaypoint(sequence);
 						}
 					}
 

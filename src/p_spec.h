@@ -59,6 +59,12 @@ typedef enum
 
 typedef enum
 {
+	TMBCF_BACKANDFORTH = 1,
+	TMBCF_REVERSE      = 1<<1,
+} textmapbattlecapsuleflags_t;
+
+typedef enum
+{
 	TMFF_AIMLESS    = 1,
 	TMFF_STATIONARY = 1<<1,
 	TMFF_HOP        = 1<<2,

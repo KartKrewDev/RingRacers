@@ -6500,6 +6500,16 @@ static void P_ConvertBinaryThingTypes(void)
 		case 2333: // MT_BATTLECAPSULE
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			mapthings[i].args[1] = mapthings[i].angle;
+
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+			{
+				mapthings[i].args[2] |= TMBCF_REVERSE;
+			}
+
+			if (mapthings[i].options & MTF_AMBUSH)
+			{
+				mapthings[i].args[2] |= TMBCF_BACKANDFORTH;
+			}
 			break;
 		default:
 			break;
