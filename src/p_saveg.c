@@ -4665,7 +4665,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, gamespeed);
 	WRITEUINT8(save_p, numlaps);
 	WRITEUINT8(save_p, franticitems);
-	WRITEUINT8(save_p, comeback);
 
 	WRITESINT8(save_p, speedscramble);
 	WRITESINT8(save_p, encorescramble);
@@ -4825,7 +4824,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	gamespeed = READUINT8(save_p);
 	numlaps = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
-	comeback = (boolean)READUINT8(save_p);
 
 	speedscramble = READSINT8(save_p);
 	encorescramble = READSINT8(save_p);

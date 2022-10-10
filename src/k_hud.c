@@ -3329,7 +3329,7 @@ static void K_drawKartMinimap(void)
 	patch_t *AutomapPic;
 	INT32 i = 0;
 	INT32 x, y;
-	INT32 minimaptrans = cv_kartminimap.value;
+	INT32 minimaptrans = 4;
 	INT32 splitflags = 0;
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
@@ -3945,7 +3945,7 @@ static void K_drawBattleFullscreen(void)
 		else
 			K_drawKartFinish();
 	}
-	else if (stplyr->bumpers <= 0 && stplyr->karmadelay && comeback && !stplyr->spectator && drawcomebacktimer)
+	else if (stplyr->bumpers <= 0 && stplyr->karmadelay && !stplyr->spectator && drawcomebacktimer)
 	{
 		UINT16 t = stplyr->karmadelay/(10*TICRATE);
 		INT32 txoff, adjust = (r_splitscreen > 1) ? 4 : 6; // normal string is 8, kart string is 12, half of that for ease
@@ -4554,23 +4554,23 @@ static void K_drawDistributionDebugger(void)
 	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
 }
 
-static void K_drawCheckpointDebugger(void)
+static void K_DrawWaypointDebugger(void)
 {
+	if (cv_kartdebugwaypoints.value == 0)
+		return;
+
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
 
-	if (stplyr->starpostnum == numstarposts)
-		V_DrawString(8, 184, 0, va("Checkpoint: %d / %d (Can finish)", stplyr->starpostnum, numstarposts));
-	else
-		V_DrawString(8, 184, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
-}
+	V_DrawString(8, 166, 0, va("'Best' Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
+	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
-static void K_DrawWaypointDebugger(void)
-{
-	if ((cv_kartdebugwaypoints.value != 0) && (stplyr == &players[displayplayers[0]]))
+	if (numstarposts > 0)
 	{
-		V_DrawString(8, 166, 0, va("'Best' Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
-		V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
+		if (stplyr->starpostnum == numstarposts)
+			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d (Can finish)", stplyr->starpostnum, numstarposts));
+		else
+			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
 	}
 }
 
@@ -4604,14 +4604,13 @@ void K_drawKartHUD(void)
 		|| (stplyr->bumpers <= 0
 		&& stplyr->karmadelay > 0
 		&& !(stplyr->pflags & PF_ELIMINATED)
-		&& comeback == true
 		&& stplyr->playerstate == PST_LIVE)));
 
 	if (!demo.title && (!battlefullscreen || r_splitscreen))
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
-			if (cv_kartcheck.value && !splitscreen && !players[displayplayers[0]].exiting && !freecam)
+			if (!splitscreen && !players[displayplayers[0]].exiting && !freecam)
 				K_drawKartPlayerCheck();
 
 		// nametags
@@ -4625,11 +4624,8 @@ void K_drawKartHUD(void)
 				K_drawKartWanted();
 		}
 
-		if (cv_kartminimap.value)
-		{
-			if (LUA_HudEnabled(hud_minimap))
-				K_drawKartMinimap();
-		}
+		if (LUA_HudEnabled(hud_minimap))
+			K_drawKartMinimap();
 	}
 
 	if (battlefullscreen && !freecam)
@@ -4788,9 +4784,6 @@ void K_drawKartHUD(void)
 
 	if (cv_kartdebugdistribution.value)
 		K_drawDistributionDebugger();
-
-	if (cv_kartdebugcheckpoint.value)
-		K_drawCheckpointDebugger();
 
 	if (cv_kartdebugnodes.value)
 	{

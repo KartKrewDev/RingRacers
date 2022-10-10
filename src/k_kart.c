@@ -292,12 +292,9 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_quadorbinaut);
 	CV_RegisterVar(&cv_dualjawz);
 
-	CV_RegisterVar(&cv_kartminimap);
-	CV_RegisterVar(&cv_kartcheck);
 	CV_RegisterVar(&cv_kartspeed);
 	CV_RegisterVar(&cv_kartbumpers);
 	CV_RegisterVar(&cv_kartfrantic);
-	CV_RegisterVar(&cv_kartcomeback);
 	CV_RegisterVar(&cv_kartencore);
 	CV_RegisterVar(&cv_kartvoterulechanges);
 	CV_RegisterVar(&cv_kartgametypepreference);
@@ -315,7 +312,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugwaypoints);
 	CV_RegisterVar(&cv_kartdebugbotpredict);
 
-	CV_RegisterVar(&cv_kartdebugcheckpoint);
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
@@ -8280,7 +8276,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->spheres < 0)
 		player->spheres = 0;
 
-	if (comeback == false || !(gametyperules & GTR_KARMA) || (player->pflags & PF_ELIMINATED))
+	if (!(gametyperules & GTR_KARMA) || (player->pflags & PF_ELIMINATED))
 	{
 		player->karmadelay = comebacktime;
 	}
