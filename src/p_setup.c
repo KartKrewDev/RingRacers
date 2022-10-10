@@ -6586,6 +6586,9 @@ static void P_ConvertBinaryThingTypes(void)
 			else if (mapthings[i].options & MTF_EXTRA)
 				mapthings[i].args[0] = TMMA_FLIP;
 			break;
+		case 2018: // MT_PETSMOKER
+			mapthings[i].args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
 			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);

@@ -6345,7 +6345,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (!(leveltime % 10))
 		{
 			mobj_t *smok = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PETSMOKE);
-			if (mobj->spawnpoint && mobj->spawnpoint->options & MTF_OBJECTSPECIAL)
+			if (mobj->spawnpoint && mobj->spawnpoint->args[0])
 				P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 		}
 		break;
