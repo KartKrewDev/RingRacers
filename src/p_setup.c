@@ -4452,6 +4452,9 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+lumpnum_t wadnamelump = LUMPERROR;
+INT16 wadnamemap = 0; // gamemap based
+
 // Initialising map data (and catching replacements)...
 UINT8 P_InitMapData(INT32 numexistingmapheaders)
 {
@@ -4498,6 +4501,9 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			}
 
 			mapheaderinfo[i]->lumpnum = maplump;
+
+			if (maplump == wadnamelump)
+				wadnamemap = i+1;
 
 			// Get map thumbnail and minimap
 			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
