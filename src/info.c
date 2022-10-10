@@ -8315,7 +8315,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_POGOSPRING
-		-1,             // doomednum
+		2057,           // doomednum
 		S_POGOSPRING1,  // spawnstate
 		1000,           // spawnhealth
 		S_POGOSPRING2B, // seestate
@@ -23317,7 +23317,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_EGGMANITEM
-		-1,             // doomednum
+		2052,           // doomednum
 		S_EGGMANITEM1,  // spawnstate
 		2,              // spawnhealth
 		S_NULL,         // seestate
@@ -23371,7 +23371,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_BANANA
-		-1,             // doomednum
+		2051,           // doomednum
 		S_BANANA,       // spawnstate
 		2,              // spawnhealth
 		S_NULL,         // seestate
@@ -23560,7 +23560,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_SSMINE
-		-1,						// doomednum
+		2053,					// doomednum
 		S_SSMINE_AIR1,			// spawnstate
 		1,						// spawnhealth
 		S_NULL,					// seestate
@@ -23695,7 +23695,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_LANDMINE
-		-1,						// doomednum
+		2054,					// doomednum
 		S_LANDMINE,				// spawnstate
 		2,						// spawnhealth
 		S_NULL,					// seestate
@@ -23722,7 +23722,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_DROPTARGET
-		-1,             // doomednum
+		2056,           // doomednum
 		S_DROPTARGET,   // spawnstate
 		3,              // spawnhealth
 		S_NULL,         // seestate
@@ -24154,7 +24154,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_HYUDORO_CENTER
-		-1,             // doomednum
+		2055,           // doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
@@ -24420,6 +24420,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_SCENERY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DUELBOMB
+		2050,           // doomednum
+		S_SPB1,         // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		64*FRACUNIT,    // speed
+		24*FRACUNIT,    // radius
+		48*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
 		S_NULL          // raisestate
 	},
 

@@ -109,11 +109,11 @@ spawn_cloud
 
 		puff->momz = puff->scale * P_MobjFlip(puff);
 
-		P_InitAngle(puff, R_PointToAngle2(
+		puff->angle = R_PointToAngle2(
 					collectible->x,
 					collectible->y,
 					puff->x,
-					puff->y));
+					puff->y);
 
 		P_Thrust(puff, puff->angle, 3 * puff->scale);
 

@@ -83,7 +83,6 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum);
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum);
-static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum);
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum);
 static void Got_Pause(UINT8 **cp, INT32 playernum);
@@ -445,10 +444,10 @@ consvar_t cv_kartdebughuddrop = CVAR_INIT ("debugitemdrop", "Off", CV_NETVAR|CV_
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
 consvar_t cv_kartdebugwaypoints = CVAR_INIT ("debugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
 consvar_t cv_kartdebugbotpredict = CVAR_INIT ("debugbotpredict", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-
 consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
@@ -613,14 +612,13 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"ACCEPTPARTYINVITE", // XD_ACCEPTPARTYINVITE
 	"LEAVEPARTY", // XD_LEAVEPARTY
 	"CANCELPARTYINVITE", // XD_CANCELPARTYINVITE
-	"GIVEITEM", // XD_GIVEITEM
+	"CHEAT", // XD_CHEAT
 	"ADDBOT", // XD_ADDBOT
 	"DISCORD", // XD_DISCORD
 	"PLAYSOUND", // XD_PLAYSOUND
 	"SCHEDULETASK", // XD_SCHEDULETASK
 	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
 	"AUTOMATE", // XD_AUTOMATE
-	"CHEAT", // XD_CHEAT
 };
 
 // =========================================================================
@@ -666,8 +664,6 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SETUPVOTE, Got_SetupVotecmd);
 	RegisterNetXCmd(XD_MODIFYVOTE, Got_ModifyVotecmd);
 	RegisterNetXCmd(XD_PICKVOTE, Got_PickVotecmd);
-
-	RegisterNetXCmd(XD_GIVEITEM, Got_GiveItemcmd);
 
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
@@ -729,7 +725,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("downloads", Command_Downloads_f);
 
-	COM_AddCommand("kartgiveitem", Command_KartGiveItem_f);
+	COM_AddCommand("give", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -2061,6 +2057,11 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_DEVMODE:
 			COPY(WRITEUINT32, UINT32);
+			break;
+
+		case CHEAT_GIVEITEM:
+			COPY(WRITESINT8, int);
+			COPY(WRITEUINT8, unsigned int);
 			break;
 	}
 
@@ -5382,41 +5383,6 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
 	Y_SetupVoteFinish(pick, level);
 }
 
-static void Got_GiveItemcmd(UINT8 **cp, INT32 playernum)
-{
-	int item;
-	int  amt;
-
-	item = READSINT8 (*cp);
-	amt  = READUINT8 (*cp);
-
-	if (
-			( !CV_CheatsEnabled() ) ||
-			( item < KITEM_SAD || item >= NUMKARTITEMS )
-	)
-	{
-		CONS_Alert(CONS_WARNING,
-				M_GetText ("Illegal give item received from %s\n"),
-				player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	K_StripItems(&players[playernum]);
-	players[playernum].itemroulette = 0;
-
-	players[playernum].itemtype   = item;
-	players[playernum].itemamount = amt;
-
-	CV_CheaterWarning(
-		playernum,
-			(amt != 1) // FIXME: we should have actual KITEM_ name array
-			? va("kartgiveitem %s %d", cv_kartdebugitem.PossibleValue[item+1].strvalue, amt)
-			: va("kartgiveitem %s", cv_kartdebugitem.PossibleValue[item+1].strvalue)
-	);
-}
-
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum)
 {
 	char command[MAXTEXTCMD];
@@ -5676,6 +5642,35 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
+		case CHEAT_GIVEITEM: {
+			SINT8 item = READSINT8(*cp);
+			UINT8 amt = READUINT8(*cp);
+
+			item = max(item, KITEM_SAD);
+			item = min(item, NUMKARTITEMS - 1);
+
+			K_StripItems(player);
+
+			// Cancel roulette if rolling
+			player->itemroulette = 0;
+
+			player->itemtype = item;
+			player->itemamount = amt;
+
+			if (amt == 0)
+			{
+				CV_CheaterWarning(playernum, "delete my items");
+			}
+			else
+			{
+				// FIXME: we should have actual KITEM_ name array
+				const char *itemname = cv_kartdebugitem.PossibleValue[1 + item].strvalue;
+
+				CV_CheaterWarning(playernum, va("give item %s x%d", itemname, amt));
+			}
+			break;
+		}
+
 		case NUMBER_OF_CHEATS:
 			break;
 	}
@@ -5837,11 +5832,9 @@ static void Command_Archivetest_f(void)
 */
 static void Command_KartGiveItem_f(void)
 {
-	char         buf[2];
-
 	int           ac;
 	const char *name;
-	int         item;
+	INT32       item;
 
 	const char * str;
 
@@ -5853,7 +5846,7 @@ static void Command_KartGiveItem_f(void)
 		if (ac < 2)
 		{
 			CONS_Printf(
-"kartgiveitem <item> [amount]: Give yourself an item\n"
+"give <item> [amount]: Give yourself an item\n"
 			);
 		}
 		else
@@ -5868,26 +5861,33 @@ static void Command_KartGiveItem_f(void)
 			}
 			else
 			{
-				for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
+				/* first check exact match */
+				if (!CV_CompleteValue(&cv_kartdebugitem, &name, &item))
 				{
-					if (strcasecmp(name, str) == 0)
+					CONS_Printf("\x83" "Autocomplete:\n");
+
+					/* then do very loose partial matching */
+					for (i = 0; ( str = kartdebugitem_cons_t[i].strvalue ); ++i)
 					{
-						item = kartdebugitem_cons_t[i].value;
-						break;
+						if (strcasestr(str, name) != NULL)
+						{
+							CONS_Printf("\x83\t%s\n", str);
+							item = kartdebugitem_cons_t[i].value;
+						}
 					}
 				}
 			}
 
 			if (item < NUMKARTITEMS)
 			{
-				buf[0] = item;
+				INT32 amt;
 
 				if (ac > 2)
-					buf[1] = atoi(COM_Argv(2));
+					amt = atoi(COM_Argv(2));
 				else
-					buf[1] = 1;/* default to one quantity */
+					amt = (item != KITEM_NONE);/* default to one quantity, or zero, if KITEM_NONE */
 
-				SendNetXCmd(XD_GIVEITEM, buf, 2);
+				D_Cheat(consoleplayer, CHEAT_GIVEITEM, item, amt);
 			}
 			else
 			{
