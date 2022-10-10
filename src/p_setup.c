@@ -5754,6 +5754,14 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 909: //Fog wall
 			lines[i].blendmode = AST_FOG;
 			break;
+		case 2001: //Finish line
+			if (lines[i].flags & ML_NOCLIMB)
+				lines[i].args[0] |= TMCFF_FLIP;
+			break;
+		case 2004: //Respawn line
+			if (lines[i].flags & ML_NOCLIMB)
+				lines[i].args[0] |= TMCRF_FRONTONLY;
+			break;
 		default:
 			break;
 		}

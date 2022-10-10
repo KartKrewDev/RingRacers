@@ -2079,8 +2079,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 			{
 				if ((gametyperules & GTR_CIRCUIT) && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
 				{
-					if (((line->flags & (ML_NOCLIMB)) && (side == 0))
-						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
+					if (((line->args[0] & TMCFF_FLIP) && (side == 0))
+						|| (!(line->args[0] & TMCFF_FLIP) && (side == 1))) // crossed from behind to infront
 					{
 						K_HandleLapIncrement(player);
 					}
@@ -2100,7 +2100,7 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 				if
 					(
 							player->respawn.state == RESPAWNST_NONE &&
-							(!(line->flags & ML_NOCLIMB) || side == 0)
+							(!(line->args[0] & TMCRF_FRONTONLY) || side == 0)
 					)
 				{
 					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);

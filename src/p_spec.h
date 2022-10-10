@@ -484,6 +484,16 @@ typedef enum
 	TMB_MODULATE        = 4,
 } textmapblendmodes_t;
 
+typedef enum
+{
+	TMCFF_FLIP = 1,
+} textmapcrossfinishflags_t;
+
+typedef enum
+{
+	TMCRF_FRONTONLY = 1,
+} textmapcrossrespawnflags_t;
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.
