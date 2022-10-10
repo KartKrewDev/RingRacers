@@ -5893,7 +5893,7 @@ static void P_ConvertBinarySectorTypes(void)
 				CONS_Alert(CONS_WARNING, "Sneaker Panel special is deprecated. Use the TERRAIN effect!\n");
 				break;
 			case 7: //Destroy items
-				sectors[i].specialflags |= SSF_DESTROYITEMS;
+				sectors[i].specialflags |= SSF_DELETEITEMS;
 				break;
 			case 8: //Zoom tube start
 				sectors[i].specialflags |= SSF_ZOOMTUBESTART;

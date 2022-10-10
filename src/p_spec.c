@@ -4461,7 +4461,7 @@ static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 #endif
 
 	// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
-	P_DoPlayerFinish(player);
+	P_DoPlayerExit(player);
 
 	P_SetupSignExit(player);
 
