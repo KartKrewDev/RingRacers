@@ -5812,7 +5812,7 @@ const char *const ML_LIST[] = {
 	"WRAPMIDTEX",
 	"NETONLY",
 	"NONET",
-	"EFFECT6",
+	"BLOCKMONSTERS",
 	"NOTBOUNCY",
 	"TFERLINE",
 	NULL

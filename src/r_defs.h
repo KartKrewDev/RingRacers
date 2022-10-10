@@ -525,7 +525,7 @@ typedef struct line_s
 	angle_t angle; // Precalculated angle between dx and dy
 
 	// Animation related.
-	INT16 flags;
+	UINT32 flags;
 	INT16 special;
 	taglist_t tags;
 	INT32 args[NUMLINEARGS];

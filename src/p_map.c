@@ -1620,17 +1620,34 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 {
 	// missiles can cross uncrossable lines
 	if ((thing->flags & MF_MISSILE))
+	{
 		return false;
+	}
 	else
 	{
-		return
-			(
-					(ld->flags & ML_IMPASSABLE) || // block objects from moving through this linedef.
-					(thing->player && !thing->player->spectator &&
-						ld->flags & ML_BLOCKPLAYERS) || // SRB2Kart: Only block players, not items
-					((thing->flags & (MF_ENEMY|MF_BOSS)) && ld->special == 81) // case 81: block monsters only
-			);
+		if (thing->player && thing->player->spectator)
+		{
+			// Allow spectators thru blocking lines.
+			return false;
+		}
+
+		if (ld->flags & ML_IMPASSABLE)
+		{
+			// block objects from moving through this linedef.
+			return true;
+		}
+
+		if (thing->player)
+		{
+			return (ld->flags & ML_BLOCKPLAYERS);
+		}
+		else if (thing->flags & (MF_ENEMY|MF_BOSS))
+		{
+			return (ld->flags & ML_BLOCKMONSTERS);
+		}
 	}
+
+	return false;
 }
 
 boolean P_IsLineTripWire(const line_t *ld)

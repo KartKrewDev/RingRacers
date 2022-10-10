@@ -1631,8 +1631,8 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].flags |= ML_MIDSOLID;
 	else if (fastcmp(param, "wrapmidtex") && fastcmp("true", val))
 		lines[i].flags |= ML_WRAPMIDTEX;
-	/*else if (fastcmp(param, "effect6") && fastcmp("true", val))
-		lines[i].flags |= ML_EFFECT6;*/
+	else if (fastcmp(param, "blockmonsters") && fastcmp("true", val))
+		lines[i].flags |= ML_BLOCKMONSTERS;
 	else if (fastcmp(param, "nonet") && fastcmp("true", val))
 		lines[i].flags |= ML_NONET;
 	else if (fastcmp(param, "netonly") && fastcmp("true", val))
@@ -3714,7 +3714,7 @@ static void P_LinkMapData(void)
 static void P_AddBinaryMapTagsFromLine(sector_t *sector, line_t *line)
 {
 	Tag_Add(&sector->tags, Tag_FGet(&line->tags));
-	if (line->flags & ML_EFFECT6) {
+	if (line->flags & ML_BLOCKMONSTERS) {
 		if (sides[line->sidenum[0]].textureoffset)
 			Tag_Add(&sector->tags, (INT32)sides[line->sidenum[0]].textureoffset / FRACUNIT);
 		if (sides[line->sidenum[0]].rowoffset)
@@ -3756,7 +3756,7 @@ static void P_AddBinaryMapTags(void)
 		tag = Tag_FGet(&lines[i].frontsector->tags);
 		target_tag = Tag_FGet(&lines[i].tags);
 		memset(offset_tags, 0, sizeof(mtag_t)*4);
-		if (lines[i].flags & ML_EFFECT6) {
+		if (lines[i].flags & ML_BLOCKMONSTERS) {
 			offset_tags[0] = (INT32)sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
 			offset_tags[1] = (INT32)sides[lines[i].sidenum[0]].rowoffset / FRACUNIT;
 		}
@@ -3975,7 +3975,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[1] = TMP_BOTH;
 			lines[i].flags &= ~(ML_NETONLY|ML_NONET);
 
-			if (lines[i].flags & ML_EFFECT6) // Set offset through x and y texture offsets
+			if (lines[i].flags & ML_BLOCKMONSTERS) // Set offset through x and y texture offsets
 			{
 				angle_t flatangle = InvAngle(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y));
 				fixed_t xoffs = sides[lines[i].sidenum[0]].textureoffset;
@@ -4093,7 +4093,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] &= ~TMPF_INVISIBLEPLANES;
 			/*if (lines[paramline].flags & ML_WRAPMIDTEX)
 				lines[i].args[3] |= TMPF_DONTCLIPPLANES;*/
-			if (lines[paramline].flags & ML_EFFECT6)
+			if (lines[paramline].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMPF_SPLAT;
 			if (lines[paramline].flags & ML_NOCLIMB)
 				lines[i].args[3] |= TMPF_EXECUTOR;
@@ -4198,6 +4198,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = tag;
 			lines[i].args[1] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
 			break;
+		case 81: //Block enemies
+			lines[i].flags |= ML_BLOCKMONSTERS;
+			lines[i].special = 0;
+			break;
 		case 100: //FOF: solid, opaque, shadowcasting
 		case 101: //FOF: solid, opaque, non-shadowcasting
 		case 102: //FOF: solid, translucent
@@ -4229,7 +4233,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_NOPLANES;
 			if (lines[i].special != 100 && (lines[i].special != 104 || !(lines[i].flags & ML_NOCLIMB)))
 				lines[i].args[3] |= TMFA_NOSHADE;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			//Tangibility
@@ -4277,7 +4281,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFW_GOOWATER;
 
 			//Splat rendering?
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMFW_SPLAT;
 
 			lines[i].special = 120;
@@ -4312,7 +4316,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_NOPLANES;
 			if (lines[i].special != 146 && (lines[i].flags & ML_NOCLIMB))
 				lines[i].args[3] |= TMFA_NOSHADE;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			//Tangibility
@@ -4388,7 +4392,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[4] |= TMFC_AIRBOB;
 			if (lines[i].special >= 176 && lines[i].special <= 179)
 				lines[i].args[4] |= TMFC_FLOATBOB;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[4] |= TMFC_SPLAT;
 
 			if (lines[i].flags & ML_SKEWTD)
@@ -4425,7 +4429,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_INSIDES;
 			if (lines[i].special != 190 && (lines[i].special <= 193 || lines[i].flags & ML_NOCLIMB))
 				lines[i].args[3] |= TMFA_NOSHADE;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			//Tangibility
@@ -4482,7 +4486,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_INSIDES;
 			if (lines[i].special != 220 && !(lines[i].flags & ML_NOCLIMB))
 				lines[i].args[3] |= TMFA_NOSHADE;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			lines[i].special = 220;
@@ -4548,7 +4552,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			}
 			if (lines[i].special == 252 && lines[i].flags & ML_NOCLIMB)
 				lines[i].args[4] |= TMFB_ONLYBOTTOM;
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[4] |= TMFB_SPLAT;
 
 			lines[i].special = 254;
@@ -4570,7 +4574,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_SKEWTD)
 				lines[i].args[3] |= TMFL_NOBOSSES;
 			//Replicate old hack: Translucent FOFs set to full opacity cut cyan pixels
-			if (lines[i].flags & ML_EFFECT6 || lines[i].args[1] == 256)
+			if (lines[i].flags & ML_BLOCKMONSTERS || lines[i].args[1] == 256)
 				lines[i].args[3] |= TMFL_SPLAT;
 
 			break;
@@ -4580,7 +4584,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 
 			lines[i].args[0] = tag;
 			lines[i].args[3] = P_GetFOFFlags(sides[lines[i].sidenum[1]].toptexture);
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[3] |= FOF_SPLAT;
 			lines[i].args[4] = P_GetFOFBusttype(sides[lines[i].sidenum[1]].toptexture);
 			if (sides[lines[i].sidenum[1]].toptexture & FF_OLD_SHATTERBOTTOM)
@@ -5656,7 +5660,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 
 			lines[i].args[1] = tag;
 
-			if (lines[i].flags & ML_EFFECT6)
+			if (lines[i].flags & ML_BLOCKMONSTERS)
 			{
 				UINT8 side = lines[i].special >= 714;
 

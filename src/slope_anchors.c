@@ -411,7 +411,7 @@ slope_sector
 		(*slope) = new_vertex_slope(anchors, flags);
 
 		/* Effect 6 - invert slope to opposite side */
-		if (flags & ML_EFFECT6)
+		if (flags & ML_BLOCKMONSTERS)
 		{
 			(*alt) = new_vertex_slope(flip_slope(anchors, sector), flags);
 		}
@@ -446,7 +446,7 @@ make_anchored_slope
 
 		if (plane == (FLOOR|CEILING))
 		{
-			flags &= ~ML_EFFECT6;
+			flags &= ~ML_BLOCKMONSTERS;
 		}
 
 		if (plane & FLOOR)

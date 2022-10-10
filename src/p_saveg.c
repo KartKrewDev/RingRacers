@@ -1480,7 +1480,7 @@ static void ArchiveLines(void)
 			if (diff & LD_DIFF2)
 				WRITEUINT8(save_p, diff2);
 			if (diff & LD_FLAG)
-				WRITEINT16(save_p, li->flags);
+				WRITEUINT32(save_p, li->flags);
 			if (diff & LD_SPECIAL)
 				WRITEINT16(save_p, li->special);
 			if (diff & LD_CLLCOUNT)
@@ -1562,7 +1562,7 @@ static void UnArchiveLines(void)
 			diff2 = 0;
 
 		if (diff & LD_FLAG)
-			li->flags = READINT16(save_p);
+			li->flags = READUINT32(save_p);
 		if (diff & LD_SPECIAL)
 			li->special = READINT16(save_p);
 		if (diff & LD_CLLCOUNT)
