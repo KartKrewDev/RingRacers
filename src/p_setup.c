@@ -5758,7 +5758,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCFF_FLIP;
 			break;
-		case 2004: //Respawn line
+		case 2003: //Respawn line
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCRF_FRONTONLY;
 			break;
