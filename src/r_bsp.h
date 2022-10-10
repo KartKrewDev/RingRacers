@@ -42,7 +42,7 @@ void R_RenderBSPNode(INT32 bspnum);
 
 // determines when a given sector shouldn't abide by the encoremap's palette.
 // no longer a static since this is used for encore in hw_main.c as well now:
-boolean R_NoEncore(sector_t *sector, boolean ceiling);
+boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling);
 
 boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling);
 

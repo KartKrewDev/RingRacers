@@ -1494,6 +1494,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_RIPPLE_FLOOR;
 	else if (fastcmp(param, "ripple_ceiling") && fastcmp("true", val))
 		sectors[i].flags |= MSF_RIPPLE_CEILING;
+	else if (fastcmp(param, "invertencore") && fastcmp("true", val))
+		sectors[i].flags |= MSF_INVERTENCORE;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -2325,6 +2327,8 @@ static void P_WriteTextmap(void)
 			fprintf(f, "ripple_floor = true;\n");
 		if (wsectors[i].flags & MSF_RIPPLE_CEILING)
 			fprintf(f, "ripple_ceiling = true;\n");
+		if (wsectors[i].flags & MSF_INVERTENCORE)
+			fprintf(f, "invertencore = true;\n");
 		if (wsectors[i].specialflags & SSF_NOSTEPUP)
 			fprintf(f, "nostepup = true;\n");
 		if (wsectors[i].specialflags & SSF_DOUBLESTEPUP)
@@ -4026,7 +4030,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 
 				if (lines[i].flags & ML_DONTPEGTOP)
 					sectors[s].flags |= MSF_RIPPLE_FLOOR;
-
 				if (lines[i].flags & ML_DONTPEGBOTTOM)
 					sectors[s].flags |= MSF_RIPPLE_CEILING;
 			}
@@ -5788,17 +5791,22 @@ static void P_ConvertBinarySectorTypes(void)
 		switch(GETSECSPECIAL(sectors[i].special, 1))
 		{
 			case 1: //Damage
-			case 5: //Spikes
 				sectors[i].damagetype = SD_GENERIC;
 				break;
 			case 2: //Offroad (Weak)
+				CONS_Alert(CONS_WARNING, "Offroad specials will be deprecated soon. Use the TERRAIN effect!\n");
 				sectors[i].offroad = FRACUNIT;
 				break;
 			case 3: //Offroad
+				CONS_Alert(CONS_WARNING, "Offroad specials will be deprecated soon. Use the TERRAIN effect!\n");
 				sectors[i].offroad = 2*FRACUNIT;
 				break;
 			case 4: //Offroad (Strong)
+				CONS_Alert(CONS_WARNING, "Offroad specials will be deprecated soon. Use the TERRAIN effect!\n");
 				sectors[i].offroad = 3*FRACUNIT;
+				break;
+			case 5: //Spikes
+				sectors[i].damagetype = SD_GENERIC;
 				break;
 			case 6: //Death pit (camera tilt)
 			case 7: //Death pit (no camera tilt)
@@ -5807,11 +5815,8 @@ static void P_ConvertBinarySectorTypes(void)
 			case 8: //Instakill
 				sectors[i].damagetype = SD_INSTAKILL;
 				break;
-			case 11: //Special stage damage
-				//sectors[i].damagetype = SD_SPECIALSTAGE;
-				break;
-			case 12: //Space countdown
-				//sectors[i].specialflags |= SSF_OUTERSPACE;
+			case 12: //Wall sector
+				sectors[i].specialflags |= SSF_NOSTEPUP;
 				break;
 			case 13: //Ramp sector
 				sectors[i].specialflags |= SSF_DOUBLESTEPUP;
@@ -5853,12 +5858,19 @@ static void P_ConvertBinarySectorTypes(void)
 			case 8: //Check for linedef executor on FOFs
 				sectors[i].flags |= MSF_TRIGGERLINE_MOBJ;
 				break;
+			case 15: //Invert Encore
+				sectors[i].flags |= MSF_INVERTENCORE;
+				break;
 			default:
 				break;
 		}
 
 		switch(GETSECSPECIAL(sectors[i].special, 3))
 		{
+			case 1: //Trick panel
+			case 3:
+				CONS_Alert(CONS_WARNING, "Trick Panel special is deprecated. Use the TERRAIN effect!\n");
+				break;
 			case 5: //Speed pad
 				sectors[i].specialflags |= SSF_SPEEDPAD;
 				break;
@@ -5871,11 +5883,17 @@ static void P_ConvertBinarySectorTypes(void)
 			case 1: //Star post activator
 				sectors[i].specialflags |= SSF_STARPOSTACTIVATOR;
 				break;
-			case 2: //Exit/Special Stage pit/Return flag
+			case 2: //Exit
 				sectors[i].specialflags |= SSF_EXIT;
 				break;
 			case 5: //Fan sector
 				sectors[i].specialflags |= SSF_FAN;
+				break;
+			case 6: //Sneaker panel
+				CONS_Alert(CONS_WARNING, "Sneaker Panel special is deprecated. Use the TERRAIN effect!\n");
+				break;
+			case 7: //Destroy items
+				sectors[i].specialflags |= SSF_DESTROYITEMS;
 				break;
 			case 8: //Zoom tube start
 				sectors[i].specialflags |= SSF_ZOOMTUBESTART;

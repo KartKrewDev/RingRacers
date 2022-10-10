@@ -345,6 +345,8 @@ typedef enum
 	// water ripple
 	MSF_RIPPLE_FLOOR            =  1<<10,
 	MSF_RIPPLE_CEILING          =  1<<11,
+	// invert encore color remap status
+	MSF_INVERTENCORE            =  1<<12,
 } sectorflags_t;
 
 typedef enum

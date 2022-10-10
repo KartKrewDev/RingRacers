@@ -4453,22 +4453,22 @@ static void P_ProcessSpeedPad(player_t *player, sector_t *sector, sector_t *rove
 
 static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 {
-#if 1
-	(void)player;
-	(void)sectag;
-#else
 	INT32 lineindex;
 
+#if 0
 	if (!(gametyperules & GTR_ALLOWEXIT))
 		return;
+#endif
 
 	// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
 	P_DoPlayerFinish(player);
 
 	P_SetupSignExit(player);
 
+#if 0
 	if (!G_CoopGametype())
 		return;
+#endif
 
 	// Custom exit!
 	// important: use sectag on next line instead of player->mo->subsector->tag
@@ -4482,15 +4482,10 @@ static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 		return;
 	}
 
-	// Special goodies depending on emeralds collected
-	if ((lines[lineindex].args[1] & TMEF_EMERALDCHECK) && ALLCHAOSEMERALDS(emeralds))
-		nextmapoverride = (INT16)(udmf ? lines[lineindex].args[2] : lines[lineindex].frontsector->ceilingheight>>FRACBITS);
-	else
-		nextmapoverride = (INT16)(udmf ? lines[lineindex].args[0] : lines[lineindex].frontsector->floorheight>>FRACBITS);
+	nextmapoverride = (INT16)(udmf ? lines[lineindex].args[0] : lines[lineindex].frontsector->floorheight>>FRACBITS);
 
 	if (lines[lineindex].args[1] & TMEF_SKIPTALLY)
 		skipstats = 1;
-#endif
 }
 
 static void P_ProcessZoomTube(player_t *player, mtag_t sectag, boolean end)

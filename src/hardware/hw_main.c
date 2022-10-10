@@ -2871,7 +2871,7 @@ static void HWR_AddPolyObjectPlanes(void)
 			}
 			else
 			{
-				HWR_GetLevelFlat(&levelflats[polyobjsector->floorpic], R_NoEncore(polyobjsector, false));
+				HWR_GetLevelFlat(&levelflats[polyobjsector->floorpic], R_NoEncore(polyobjsector, &levelflats[polyobjsector->floorpic], false));
 				HWR_RenderPolyObjectPlane(po_ptrs[i], false, polyobjsector->floorheight, PF_Occlude,
 										(light == -1 ? gl_frontsector->lightlevel : *gl_frontsector->lightlist[light].lightlevel), &levelflats[polyobjsector->floorpic],
 										polyobjsector, 255, (light == -1 ? gl_frontsector->extra_colormap : *gl_frontsector->lightlist[light].extra_colormap));
@@ -2894,7 +2894,7 @@ static void HWR_AddPolyObjectPlanes(void)
 			}
 			else
 			{
-				HWR_GetLevelFlat(&levelflats[polyobjsector->ceilingpic], R_NoEncore(polyobjsector, true));
+				HWR_GetLevelFlat(&levelflats[polyobjsector->ceilingpic], R_NoEncore(polyobjsector, &levelflats[polyobjsector->ceilingpic], true));
 				HWR_RenderPolyObjectPlane(po_ptrs[i], true, polyobjsector->ceilingheight, PF_Occlude,
 				                          (light == -1 ? gl_frontsector->lightlevel : *gl_frontsector->lightlist[light].lightlevel), &levelflats[polyobjsector->ceilingpic],
 				                          polyobjsector, 255, (light == -1 ? gl_frontsector->extra_colormap : *gl_frontsector->lightlist[light].extra_colormap));
@@ -3031,7 +3031,7 @@ static void HWR_Subsector(size_t num)
 		{
 			if (sub->validcount != validcount)
 			{
-				HWR_GetLevelFlat(&levelflats[gl_frontsector->floorpic], R_NoEncore(gl_frontsector, false));
+				HWR_GetLevelFlat(&levelflats[gl_frontsector->floorpic], R_NoEncore(gl_frontsector, &levelflats[gl_frontsector->floorpic], false));
 				HWR_RenderPlane(sub, &extrasubsectors[num], false,
 					// Hack to make things continue to work around slopes.
 					locFloorHeight == cullFloorHeight ? locFloorHeight : gl_frontsector->floorheight,
@@ -3054,7 +3054,7 @@ static void HWR_Subsector(size_t num)
 		{
 			if (sub->validcount != validcount)
 			{
-				HWR_GetLevelFlat(&levelflats[gl_frontsector->ceilingpic], R_NoEncore(gl_frontsector, true));
+				HWR_GetLevelFlat(&levelflats[gl_frontsector->ceilingpic], R_NoEncore(gl_frontsector, &levelflats[gl_frontsector->ceilingpic], true));
 				HWR_RenderPlane(sub, &extrasubsectors[num], true,
 					// Hack to make things continue to work around slopes.
 					locCeilingHeight == cullCeilingHeight ? locCeilingHeight : gl_frontsector->ceilingheight,
@@ -3132,7 +3132,7 @@ static void HWR_Subsector(size_t num)
 				}
 				else
 				{
-					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gl_frontsector, false));
+					HWR_GetLevelFlat(&levelflats[*rover->bottompic], R_NoEncore(gl_frontsector, &levelflats[*rover->bottompic], false));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					HWR_RenderPlane(sub, &extrasubsectors[num], false, *rover->bottomheight, HWR_RippleBlend(gl_frontsector, rover, false) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->bottompic],
 					                rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
@@ -3180,7 +3180,7 @@ static void HWR_Subsector(size_t num)
 				}
 				else
 				{
-					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gl_frontsector, true));
+					HWR_GetLevelFlat(&levelflats[*rover->toppic], R_NoEncore(gl_frontsector, &levelflats[*rover->toppic], true));
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 					HWR_RenderPlane(sub, &extrasubsectors[num], true, *rover->topheight, HWR_RippleBlend(gl_frontsector, rover, true) | PF_Occlude, *gl_frontsector->lightlist[light].lightlevel, &levelflats[*rover->toppic],
 					                  rover->master->frontsector, 255, *gl_frontsector->lightlist[light].extra_colormap);
@@ -4886,7 +4886,7 @@ static void HWR_CreateDrawNodes(void)
 			gl_frontsector = NULL;
 
 			if (!(sortnode[sortindex[i]].plane->blend & PF_NoTexture))
-				HWR_GetLevelFlat(sortnode[sortindex[i]].plane->levelflat, R_NoEncore(sortnode[sortindex[i]].plane->FOFSector, sortnode[sortindex[i]].plane->isceiling));
+				HWR_GetLevelFlat(sortnode[sortindex[i]].plane->levelflat, R_NoEncore(sortnode[sortindex[i]].plane->FOFSector, sortnode[sortindex[i]].plane->levelflat, sortnode[sortindex[i]].plane->isceiling));
 			HWR_RenderPlane(NULL, sortnode[sortindex[i]].plane->xsub, sortnode[sortindex[i]].plane->isceiling, sortnode[sortindex[i]].plane->fixedheight, sortnode[sortindex[i]].plane->blend, sortnode[sortindex[i]].plane->lightlevel,
 				sortnode[sortindex[i]].plane->levelflat, sortnode[sortindex[i]].plane->FOFSector, sortnode[sortindex[i]].plane->alpha, sortnode[sortindex[i]].plane->planecolormap);
 		}
@@ -4896,7 +4896,7 @@ static void HWR_CreateDrawNodes(void)
 			gl_frontsector = NULL;
 
 			if (!(sortnode[sortindex[i]].polyplane->blend & PF_NoTexture))
-				HWR_GetLevelFlat(sortnode[sortindex[i]].polyplane->levelflat, R_NoEncore(sortnode[sortindex[i]].polyplane->FOFSector, sortnode[sortindex[i]].polyplane->isceiling));
+				HWR_GetLevelFlat(sortnode[sortindex[i]].polyplane->levelflat, R_NoEncore(sortnode[sortindex[i]].polyplane->FOFSector, sortnode[sortindex[i]].polyplane->levelflat, sortnode[sortindex[i]].polyplane->isceiling));
 			HWR_RenderPolyObjectPlane(sortnode[sortindex[i]].polyplane->polysector, sortnode[sortindex[i]].polyplane->isceiling, sortnode[sortindex[i]].polyplane->fixedheight, sortnode[sortindex[i]].polyplane->blend, sortnode[sortindex[i]].polyplane->lightlevel,
 				sortnode[sortindex[i]].polyplane->levelflat, sortnode[sortindex[i]].polyplane->FOFSector, sortnode[sortindex[i]].polyplane->alpha, sortnode[sortindex[i]].polyplane->planecolormap);
 		}

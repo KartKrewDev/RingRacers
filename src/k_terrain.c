@@ -1486,7 +1486,7 @@ static void K_ParseTerrainParameter(size_t i, const char *param, const char *val
 	}
 	else if (stricmp(param, "offroad") == 0)
 	{
-		terrain->offroad = (UINT8)get_number(val); // offroad strength enum?
+		terrain->offroad = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (stricmp(param, "damageType") == 0)
 	{

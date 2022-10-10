@@ -41,31 +41,28 @@ drawseg_t *ds_p = NULL;
 // indicates doors closed wrt automap bugfix:
 INT32 doorclosed;
 
-boolean R_NoEncore(sector_t *sector, boolean ceiling)
+boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 {
-	// FIXME: UDMFify
-	/*
-	boolean invertencore = (GETSECSPECIAL(sector->special, 2) == 15);
-#if 0 // perfect implementation
-	INT32 val = GETSECSPECIAL(sector->special, 3);
-	//if (val != 1 && val != 3 // spring panel
-#else // optimised, see #define GETSECSPECIAL(i,j) ((i >> ((j-1)*4))&15)
-	if ((!(sector->special & (1<<8)) || (sector->special & ((4|8)<<8))) // spring panel
-#endif
-		&& GETSECSPECIAL(sector->special, 4) != 6) // sneaker panel
-			return invertencore;
+	const boolean invertEncore = (sector->flags & MSF_INVERTENCORE);
+	const terrain_t *terrain = (flat != NULL ? flat->terrain : NULL);
 
-	if (invertencore)
+	if ((terrain == NULL)
+		|| (terrain->trickPanel <= 0 && !(terrain->flags & TRF_SNEAKERPANEL)))
+	{
+		return invertEncore;
+	}
+
+	if (invertEncore)
+	{
 		return false;
+	}
 
 	if (ceiling)
+	{
 		return ((boolean)(sector->flags & MSF_FLIPSPECIAL_CEILING));
-	return ((boolean)(sector->flags & MSF_FLIPSPECIAL_FLOOR));
-	*/
+	}
 
-	(void)sector;
-	(void)ceiling;
-	return false;
+	return ((boolean)(sector->flags & MSF_FLIPSPECIAL_FLOOR));
 }
 
 boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
@@ -953,7 +950,7 @@ static void R_Subsector(size_t num)
 			frontsector->floorheight, frontsector->floorpic, floorlightlevel,
 			frontsector->floor_xoffs, frontsector->floor_yoffs, frontsector->floorpic_angle,
 			floorcolormap, NULL, NULL, frontsector->f_slope,
-			R_NoEncore(frontsector, false),
+			R_NoEncore(frontsector, &levelflats[frontsector->floorpic], false),
 			R_IsRipplePlane(frontsector, NULL, false),
 			false
 		);
@@ -969,7 +966,7 @@ static void R_Subsector(size_t num)
 			frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
 			frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
 			ceilingcolormap, NULL, NULL, frontsector->c_slope,
-			R_NoEncore(frontsector, true),
+			R_NoEncore(frontsector, &levelflats[frontsector->ceilingpic], true),
 			R_IsRipplePlane(frontsector, NULL, true),
 			true
 		);
@@ -1017,7 +1014,7 @@ static void R_Subsector(size_t num)
 					*rover->bottomheight, *rover->bottompic,
 					*frontsector->lightlist[light].lightlevel, *rover->bottomxoffs,
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
-					R_NoEncore(rover->master->frontsector, true),
+					R_NoEncore(rover->master->frontsector, &levelflats[*rover->bottompic], true),
 					R_IsRipplePlane(rover->master->frontsector, rover, true),
 					true
 				);
@@ -1051,7 +1048,7 @@ static void R_Subsector(size_t num)
 					*rover->topheight, *rover->toppic,
 					*frontsector->lightlist[light].lightlevel, *rover->topxoffs, *rover->topyoffs, *rover->topangle,
 					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope,
-					R_NoEncore(rover->master->frontsector, false),
+					R_NoEncore(rover->master->frontsector, &levelflats[*rover->toppic], false),
 					R_IsRipplePlane(rover->master->frontsector, rover, false),
 					false
 				);
@@ -1101,7 +1098,7 @@ static void R_Subsector(size_t num)
 					polysec->floorpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, false),
+					R_NoEncore(polysec, &levelflats[polysec->floorpic], false),
 					false, /* TODO: wet polyobjects? */
 					true
 				);
@@ -1130,7 +1127,7 @@ static void R_Subsector(size_t num)
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, true),
+					R_NoEncore(polysec, &levelflats[polysec->ceilingpic], true),
 					false, /* TODO: wet polyobjects? */
 					false
 				);
