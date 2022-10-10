@@ -494,6 +494,13 @@ typedef enum
 	TMCRF_FRONTONLY = 1,
 } textmapcrossrespawnflags_t;
 
+typedef enum
+{
+	TMBOT_NORUBBERBAND = 1,
+	TMBOT_NOCONTROL    = 1<<1,
+	TMBOT_FORCEDIR     = 1<<2,
+} textmapbotcontroller_t;
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.

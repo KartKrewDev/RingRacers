@@ -5785,6 +5785,17 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCRF_FRONTONLY;
 			break;
+		case 2004: //Bot controller
+			botController->args[0] = sides[botController->sidenum[0]].rowoffset / FRACUNIT;
+
+			if (lines[i].flags & ML_NOCLIMB)
+				lines[i].args[1] |= TMBOT_NORUBBERBAND;
+			if (lines[i].flags & ML_NOSKEW)
+				lines[i].args[1] |= TMBOT_NOCONTROL;
+			if (lines[i].flags & ML_SKEWTD)
+				lines[i].args[1] |= TMBOT_FORCEDIR;
+
+			botController->args[2] = sides[botController->sidenum[0]].textureoffset / FRACUNIT;
 		default:
 			break;
 		}
