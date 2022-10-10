@@ -2644,7 +2644,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 		if (ld->tripwire)
 		{
 			ld->blendmode = AST_ADD;
-			ld->alpha = 0;
+			ld->alpha = 0xff;
 		}
 
 		if (udmf)
