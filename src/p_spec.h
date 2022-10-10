@@ -1119,9 +1119,12 @@ void P_CalcHeight(player_t *player);
 /* line specials */
 enum
 {
-	LT_SLOPE_ANCHORS_FLOOR   = 777,
-	LT_SLOPE_ANCHORS_CEILING = 778,
-	LT_SLOPE_ANCHORS         = 779,
+	LT_SLOPE_ANCHORS             = 777,
+
+	// binary converter
+	LT_SLOPE_ANCHORS_OLD_FLOOR   = 777,
+	LT_SLOPE_ANCHORS_OLD_CEILING = 778,
+	LT_SLOPE_ANCHORS_OLD         = 779,
 };
 
 #endif

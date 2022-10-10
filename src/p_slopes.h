@@ -48,6 +48,20 @@ typedef enum
 	TMSL_COPY      = 1<<2,
 } textmapslopeflags_t;
 
+typedef enum
+{
+	TMSA_FLOOR   = 1,
+	TMSA_CEILING = 1<<1,
+} textmapslopeanchor_t;
+
+typedef enum
+{
+	TMSAF_NOPHYSICS = 1,
+	TMSAF_DYNAMIC   = 1<<1,
+	TMSAF_BACKSIDE  = 1<<2,
+	TMSAF_MIRROR    = 1<<3,
+} textmapslopeanchorflags_t;
+
 void P_LinkSlopeThinkers (void);
 
 void P_UpdateSlopeLightOffset(pslope_t *slope);

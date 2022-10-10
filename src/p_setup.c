@@ -5751,6 +5751,29 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 799: //Set dynamic slope vertex to front sector height
 			lines[i].args[0] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
+		case LT_SLOPE_ANCHORS_OLD_FLOOR: //Slope front sector floor by 3 tagged vertices
+		case LT_SLOPE_ANCHORS_OLD_CEILING: //Slope front sector ceiling by 3 tagged vertices
+		case LT_SLOPE_ANCHORS_OLD: //Slope back sector floor by 3 tagged vertices
+		{
+			if (lines[i].special == LT_SLOPE_ANCHORS_OLD_FLOOR)
+				lines[i].args[0] = TMSA_FLOOR;
+			else if (lines[i].special == LT_SLOPE_ANCHORS_OLD_CEILING)
+				lines[i].args[0] = TMSA_CEILING;
+			else if (lines[i].special == LT_SLOPE_ANCHORS_OLD)
+				lines[i].args[0] = (TMSA_FLOOR|TMSA_CEILING);
+
+			if (lines[i].flags & ML_NETONLY)
+				lines[i].args[1] |= TMSAF_NOPHYSICS;
+			if (lines[i].flags & ML_NONET)
+				lines[i].args[1] |= TMSAF_DYNAMIC;
+			if (lines[i].flags & ML_NOCLIMB)
+				lines[i].args[1] |= TMSAF_BACKSIDE;
+			if (lines[i].flags & ML_BLOCKMONSTERS)
+				lines[i].args[1] |= TMSAF_MIRROR;
+
+			lines[i].special = LT_SLOPE_ANCHORS;
+			break;
+		}
 		case 909: //Fog wall
 			lines[i].blendmode = AST_FOG;
 			break;
@@ -6544,6 +6567,10 @@ static void P_ConvertBinaryThingTypes(void)
 			{
 				mapthings[i].args[2] |= TMBCF_BACKANDFORTH;
 			}
+			break;
+		case FLOOR_SLOPE_THING:
+		case CEILING_SLOPE_THING:
+			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);
 			break;
 		default:
 			break;
