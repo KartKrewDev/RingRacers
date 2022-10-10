@@ -2451,9 +2451,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					else
 						S_FadeMusicFromVolume(fadetarget, fadesource, postfadems);
 
-					//if (!(line->flags & ML_EFFECT3)) // FIXME: UDMFify
-						S_ShowMusicCredit();
-
 					if (position)
 						S_SetMusicPosition(position);
 				}
@@ -2478,6 +2475,9 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					S_ChangeMusicEx(mapmusname, mapmusflags, !(line->args[0] & TMM_NOLOOP), position,
 						!(line->args[0] & TMM_FADE) ? prefadems : 0,
 						!(line->args[0] & TMM_FADE) ? postfadems : 0);
+
+					if (!(line->args[0] & TMM_NOCREDIT))
+						S_ShowMusicCredit();
 
 					if ((line->args[0] & TMM_FADE) && fadetarget)
 					{

@@ -343,6 +343,7 @@ typedef enum
 	TMM_NORELOAD = 1<<3,
 	TMM_FORCERESET = 1<<4,
 	TMM_NOLOOP = 1<<5,
+	TMM_NOCREDIT = 1<<6,
 } textmapmusicflags_t;
 
 typedef enum

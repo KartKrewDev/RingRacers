@@ -4944,6 +4944,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[0] |= TMM_FORCERESET;
 			if (lines[i].flags & ML_MIDSOLID)
 				lines[i].args[0] |= TMM_NOLOOP;
+			if (lines[i].flags & ML_MIDPEG)
+				lines[i].args[0] |= TMM_NOCREDIT;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].midtexture;
 			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
