@@ -6172,6 +6172,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case 541: //Gas jet
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 543: //Balloon
 			if (mapthings[i].angle > 0)

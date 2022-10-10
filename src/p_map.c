@@ -500,7 +500,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			if (object->eflags & MFE_SPRUNG)
 				break;
 
-			if (spring->spawnpoint && spring->spawnpoint->options & MTF_OBJECTSPECIAL)
+			if (spring->spawnpoint && spring->spawnpoint->args[1])
 			{
 				if (object->player)
 				{
