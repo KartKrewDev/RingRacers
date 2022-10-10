@@ -13374,10 +13374,11 @@ void A_MayonakaArrow(mobj_t *actor)
 	if (LUA_CallAction(A_MAYONAKAARROW, (actor)))
 		return;
 
-	iswarning = actor->spawnpoint->options & MTF_OBJECTSPECIAL;	// is our object a warning sign?
+	iswarning = (actor->spawnpoint->args[0] == TMMA_WARN);	// is our object a warning sign?
+
 	// "animtimer" is replaced by "extravalue1" here.
 	actor->extravalue1 = ((actor->extravalue1) ? (actor->extravalue1+1) : (P_RandomRange(PR_DECORATION, 0, (iswarning) ? (TICRATE/2) : TICRATE*3)));
-	flip = ((actor->spawnpoint->options & 1) ? (3) : (0));	// flip adds 3 frames, which is the flipped version of the sign.
+	flip = ((actor->spawnpoint->args[0] == TMMA_FLIP) ? (3) : (0));	// flip adds 3 frames, which is the flipped version of the sign.
 	// special warning behavior:
 	if (iswarning)
 		flip = 6;

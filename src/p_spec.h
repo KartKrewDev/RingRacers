@@ -51,26 +51,6 @@ typedef enum
 
 typedef enum
 {
-	TMWPF_DISABLED   = 1,
-	TMWPF_SHORTCUT   = 1<<1,
-	TMWPF_NORESPAWN  = 1<<2,
-	TMWPF_FINISHLINE = 1<<3,
-} textmapwaypointflags_t;
-
-typedef enum
-{
-	TMBCF_BACKANDFORTH = 1,
-	TMBCF_REVERSE      = 1<<1,
-} textmapbattlecapsuleflags_t;
-
-typedef enum
-{
-	TMICF_INVERTTIMEATTACK = 1,
-	TMICF_INVERTSIZE       = 1<<1,
-} textmapitemcapsuleflags_t;
-
-typedef enum
-{
 	TMFF_AIMLESS    = 1,
 	TMFF_STATIONARY = 1<<1,
 	TMFF_HOP        = 1<<2,
@@ -140,6 +120,32 @@ typedef enum
 	TMB_NODEATHFLING = 1,
 	TMB_BARRIER      = 1<<1,
 } textmapbrakflags_t;
+
+typedef enum
+{
+	TMWPF_DISABLED   = 1,
+	TMWPF_SHORTCUT   = 1<<1,
+	TMWPF_NORESPAWN  = 1<<2,
+	TMWPF_FINISHLINE = 1<<3,
+} textmapwaypointflags_t;
+
+typedef enum
+{
+	TMBCF_BACKANDFORTH = 1,
+	TMBCF_REVERSE      = 1<<1,
+} textmapbattlecapsuleflags_t;
+
+typedef enum
+{
+	TMICF_INVERTTIMEATTACK = 1,
+	TMICF_INVERTSIZE       = 1<<1,
+} textmapitemcapsuleflags_t;
+
+typedef enum
+{
+	TMMA_WARN = 1,
+	TMMA_FLIP = 2,
+} textmapmayarrow_t;
 
 typedef enum
 {
