@@ -5356,6 +5356,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 460: //Award rings
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			lines[i].args[2] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
 		case 461: //Spawn object
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
