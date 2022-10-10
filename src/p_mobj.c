@@ -4282,7 +4282,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
 	}
-	else if (mobj->spawnpoint && (mobj->spawnpoint->options & MTF_EXTRA))
+	else if (mobj->spawnpoint && (mobj->spawnpoint->args[2] & TMICF_INVERTTIMEATTACK))
 		color = SKINCOLOR_SAPPHIRE;
 	else if (itemType == KITEM_SPB)
 		color = SKINCOLOR_JET;
