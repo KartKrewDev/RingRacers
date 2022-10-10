@@ -967,7 +967,7 @@ static void P_LoadLinedefs(UINT8 *data)
 
 	for (i = 0; i < numlines; i++, mld++, ld++)
 	{
-		ld->flags = SHORT(mld->flags);
+		ld->flags = (UINT32)(SHORT(mld->flags));
 		ld->special = SHORT(mld->special);
 		Tag_FSet(&ld->tags, SHORT(mld->tag));
 		memset(ld->args, 0, NUMLINEARGS*sizeof(*ld->args));

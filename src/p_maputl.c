@@ -576,12 +576,20 @@ P_GetMidtextureTopBottom
 
 static boolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
 {
-	if (P_IsLineTripWire(linedef) == true)
+	if (linedef->polyobj)
 	{
-		return (mobj->player && !K_TripwirePass(mobj->player));
+		// don't do anything for polyobjects! ...for now
+		return false;
 	}
 
-	return (linedef->flags & ML_MIDSOLID);
+	if (P_IsLineTripWire(linedef) == true)
+	{
+		// Tripwire behavior.
+		return (mobj->player != NULL && K_TripwirePass(mobj->player) == false);
+	}
+
+	// Determined solely by the flag.
+	return ((linedef->flags & ML_MIDSOLID) == ML_MIDSOLID);
 }
 
 void P_LineOpening(line_t *linedef, mobj_t *mobj)
@@ -692,8 +700,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	if (mobj)
 	{
 		// Check for collision with front side's midtexture if Effect 4 is set
-		if (P_MidtextureIsSolid(linedef, mobj) == true
-			&& !linedef->polyobj) // don't do anything for polyobjects! ...for now
+		if (P_MidtextureIsSolid(linedef, mobj) == true)
 		{
 			fixed_t textop, texbottom;
 			fixed_t texmid, delta1, delta2;
