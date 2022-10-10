@@ -848,6 +848,7 @@ typedef struct
 	INT32 delay;
 	INT16 tag;
 	UINT16 sound;
+	INT32 initDelay;
 } thwomp_t;
 
 typedef struct

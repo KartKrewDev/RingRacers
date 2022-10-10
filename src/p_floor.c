@@ -1058,14 +1058,18 @@ void T_ThwompSector(thwomp_t *thwomp)
 	INT32 secnum;
 	fixed_t speed;
 
+	if (thwompsactive == false)
+	{
+		// Ring Racers: Rest until Lap 2
+		return;
+	}
+
 	// SRB2kart 170217 - Thwomps are automatic.
 	// Put up a timer before you start falling down.
-	// I could of used rowoffset, but the FOF actually
-	// modifies the textures's Y offset. It doesn't with
-	// textureoffset, so Effect 4 can be ignored as usual.
-	if ((thwomp->sourceline->flags & ML_SKEWTD) // FIXME: UDMFify
-		&& leveltime < (unsigned)(sides[thwomp->sourceline->sidenum[0]].textureoffset>>FRACBITS))
-		thwomp->direction = 0;
+	if (--thwomp->initDelay > 0)
+	{
+		return;
+	}
 
 	// If you just crashed down, wait a second before coming back up.
 	if (--thwomp->delay > 0)

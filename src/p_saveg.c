@@ -2259,6 +2259,7 @@ static void SaveThwompThinker(const thinker_t *th, const UINT8 type)
 	WRITEINT32(save_p, ht->delay);
 	WRITEINT16(save_p, ht->tag);
 	WRITEUINT16(save_p, ht->sound);
+	WRITEINT32(save_p, ht->initDelay);
 }
 
 static void SaveFloatThinker(const thinker_t *th, const UINT8 type)

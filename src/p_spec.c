@@ -5469,6 +5469,7 @@ static inline void P_AddThwompThinker(sector_t *sec, line_t *sourceline, fixed_t
 	thwomp->delay = 1;
 	thwomp->tag = sourceline->args[0];
 	thwomp->sound = sound;
+	thwomp->initDelay = sourceline->args[3];
 
 	sec->floordata = thwomp;
 	sec->ceilingdata = thwomp;

@@ -4529,6 +4529,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 			}
 			if (lines[i].flags & ML_MIDSOLID)
 				P_WriteConstant(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS, &lines[i].stringargs[0]);
+			if (lines[i].flags & ML_SKEWTD) // Kart Z delay. Yes, it used the same field as the above.
+				lines[i].args[3] = (unsigned)(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS);
 			break;
 		case 252: //FOF: Shatter block
 		case 253: //FOF: Shatter block, translucent
