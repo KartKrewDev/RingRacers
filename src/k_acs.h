@@ -38,6 +38,7 @@ typedef enum
 	ACS_ST_RESPAWN		=  2, // RESPAWN: Runs when a player respawns.
 	ACS_ST_DEATH		=  3, // DEATH: Runs when a player dies.
 	ACS_ST_ENTER		=  4, // ENTER: Runs when a player enters the game; both on start of the level, and when un-spectating.
+	ACS_ST_LAP			=  5, // LAP: Runs when a player's lap increases from crossing the finish line.
 } acs_scriptType_e;
 
 //
@@ -143,6 +144,23 @@ void ACS_RunPlayerEnterScript(player_t *player);
 --------------------------------------------------*/
 
 void ACS_RunLevelStartScripts(void);
+
+
+/*--------------------------------------------------
+	void ACS_RunLapScript(mobj_t *mo, line_t *line);
+
+		Runs the map's special script for a player
+		crossing the finish line.
+
+	Input Arguments:-
+		player: The player to run the script for.
+		line: The finish line's linedef.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_RunLapScript(mobj_t *mo, line_t *line);
 
 
 /*--------------------------------------------------

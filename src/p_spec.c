@@ -45,6 +45,7 @@
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_terrain.h"
+#include "k_acs.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -2083,6 +2084,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 						|| (!(line->flags & (ML_NOCLIMB)) && (side == 1))) // crossed from behind to infront
 					{
 						K_HandleLapIncrement(player);
+
+						ACS_RunLapScript(thing, line);
 					}
 					else
 					{

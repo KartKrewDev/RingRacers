@@ -711,6 +711,31 @@ void ACS_RunLevelStartScripts(void)
 }
 
 /*--------------------------------------------------
+	void ACS_RunLapScript(mobj_t *mo, line_t *line)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunLapScript(mobj_t *mo, line_t *line)
+{
+	ACSVM_GlobalScope *global = NULL;
+	ACSVM_HubScope *hub = NULL;
+	ACSVM_MapScope *map = NULL;
+
+	acs_threadinfo_t *activator = NULL;
+
+	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
+	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
+	map = ACSVM_HubScope_GetMapScope(hub, 0);
+
+	activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+
+	P_SetTarget(&activator->mo, mo);
+	activator->line = line;
+
+	ACSVM_MapScope_ScriptStartTypeForced(map, ACS_ST_LAP, NULL, 0, ACSVM_AllocThreadInfo(activator), NULL);
+}
+
+/*--------------------------------------------------
 	void ACS_Tick(void)
 
 		See header file for description.
