@@ -70,7 +70,7 @@ boolean K_IsDuelItem(mobjtype_t type)
 
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 {
-	return (mt->options & MTF_EXTRA);
+	return !!(mt->args[0]);
 }
 
 static void K_SpawnDuelOnlyItems(void)

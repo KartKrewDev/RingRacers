@@ -12805,6 +12805,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Duel Bomb needs init to match real map thing's angle
 		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
 		Obj_DuelBombInit(mobj);
+
+		if (mthing->args[1])
+		{
+			Obj_DuelBombReverse(mobj);
+		}
+
 		*doangle = false;
 		break;
 	}

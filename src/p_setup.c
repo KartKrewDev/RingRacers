@@ -5997,6 +5997,10 @@ static void P_ConvertBinaryThingTypes(void)
 				else
 					mapthings[i].args[0] = TMP_NORMAL;
 			}
+			if (K_IsDuelItem(mobjtype) == true)
+			{
+				mapthings[i].args[0] = !!(mapthings[i].options & MTF_EXTRA);
+			}
 		}
 
 		if (mapthings[i].type >= 1 && mapthings[i].type <= 35) //Player starts
@@ -6565,6 +6569,9 @@ static void P_ConvertBinaryThingTypes(void)
 			{
 				mapthings[i].args[2] |= TMICF_INVERTSIZE;
 			}
+			break;
+		case 2050: // MT_DUELBOMB
+			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 2333: // MT_BATTLECAPSULE
 			mapthings[i].args[0] = mapthings[i].extrainfo;
