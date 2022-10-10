@@ -6549,6 +6549,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 2004: // MT_BOTHINT
 			mapthings[i].args[0] = mapthings[i].angle;
 			mapthings[i].args[1] = mapthings[i].extrainfo;
+			mapthings[i].args[2] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 2010: // MT_ITEMCAPSULE
 			mapthings[i].args[0] = mapthings[i].angle;

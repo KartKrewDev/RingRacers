@@ -12569,7 +12569,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 
 		// Steer away instead of towards
-		if (mthing->options & MTF_AMBUSH)
+		if (mthing->args[2])
 		{
 			mobj->extravalue1 = 0;
 		}
