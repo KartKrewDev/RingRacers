@@ -51,6 +51,14 @@ typedef enum
 
 typedef enum
 {
+	TMWPF_DISABLED   = 1,
+	TMWPF_SHORTCUT   = 1<<1,
+	TMWPF_NORESPAWN  = 1<<2,
+	TMWPF_FINISHLINE = 1<<3,
+} textmapwaypointflags_t;
+
+typedef enum
+{
 	TMFF_AIMLESS    = 1,
 	TMFF_STATIONARY = 1<<1,
 	TMFF_HOP        = 1<<2,

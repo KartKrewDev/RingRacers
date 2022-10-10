@@ -6456,8 +6456,8 @@ static void P_ConvertBinaryThingTypes(void)
 			INT32 firstline = Tag_FindLineSpecial(2000, (INT16)mapthings[i].angle);
 
 			Tag_FSet(&mapthings[i].tags, mapthings[i].angle);
+
 			mapthings[i].args[0] = mapthings[i].z;
-			mapthings[i].args[2] = mapthings[i].extrainfo;
 			mapthings[i].z = 0;
 
 			if (firstline != -1)
@@ -6470,6 +6470,27 @@ static void P_ConvertBinaryThingTypes(void)
 
 				mapthings[i].z = linez / FRACUNIT;
 			}
+
+			if (mapthings[i].extrainfo == 1)
+			{
+				mapthings[i].args[2] |= TMWPF_FINISHLINE;
+			}
+
+			if (mapthings[i].options & MTF_EXTRA)
+			{
+				mapthings[i].args[2] |= TMWPF_DISABLED;
+			}
+
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+			{
+				mapthings[i].args[2] |= TMWPF_SHORTCUT;
+			}
+
+			if (mapthings[i].options & MTF_AMBUSH)
+			{
+				mapthings[i].args[2] |= TMWPF_NORESPAWN;
+			}
+
 			break;
 		}
 		case 2004: // MT_BOTHINT

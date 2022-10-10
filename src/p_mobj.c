@@ -12565,7 +12565,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// extravalue2 is used for indicating the waypoint is the finishline
 		mobj->threshold = mthing->args[0];
 		mobj->movecount = tag;
-		if (mthing->options & MTF_EXTRA)
+		if (mthing->args[2] & TMWPF_DISABLED)
 		{
 			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on
 		}
@@ -12573,7 +12573,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->extravalue1 = 1;
 		}
-		if (mthing->options & MTF_OBJECTSPECIAL)
+		if (mthing->args[2] & TMWPF_SHORTCUT)
 		{
 			mobj->lastlook = 1; // the waypoint is a shortcut if objectspecial is on
 		}
@@ -12581,7 +12581,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->lastlook = 0;
 		}
-		if (mthing->options & MTF_AMBUSH)
+		if (mthing->args[2] & TMWPF_NORESPAWN)
 		{
 			mobj->reactiontime = 0; // Can't respawn at if Ambush is on
 		}
@@ -12589,7 +12589,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->reactiontime = 1;
 		}
-		if (mthing->args[2] == 1)
+		if (mthing->args[2] & TMWPF_FINISHLINE)
 		{
 			mobj->extravalue2 = 1; // args[2] of 1 means the waypoint is at the finish line
 			mobj->reactiontime = 0; // Also don't respawn at finish lines
