@@ -1490,6 +1490,10 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_HEATWAVE;
 	else if (fastcmp(param, "noclipcamera") && fastcmp("true", val))
 		sectors[i].flags |= MSF_NOCLIPCAMERA;
+	else if (fastcmp(param, "ripple_floor") && fastcmp("true", val))
+		sectors[i].flags |= MSF_RIPPLE_FLOOR;
+	else if (fastcmp(param, "ripple_ceiling") && fastcmp("true", val))
+		sectors[i].flags |= MSF_RIPPLE_CEILING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -2317,6 +2321,10 @@ static void P_WriteTextmap(void)
 			fprintf(f, "heatwave = true;\n");
 		if (wsectors[i].flags & MSF_NOCLIPCAMERA)
 			fprintf(f, "noclipcamera = true;\n");
+		if (wsectors[i].flags & MSF_RIPPLE_FLOOR)
+			fprintf(f, "ripple_floor = true;\n");
+		if (wsectors[i].flags & MSF_RIPPLE_CEILING)
+			fprintf(f, "ripple_ceiling = true;\n");
 		if (wsectors[i].specialflags & SSF_NOSTEPUP)
 			fprintf(f, "nostepup = true;\n");
 		if (wsectors[i].specialflags & SSF_DOUBLESTEPUP)
@@ -4015,6 +4023,12 @@ static void P_ConvertBinaryLinedefTypes(void)
 
 				if (lines[i].flags & ML_SKEWTD)
 					sectors[s].flags |= MSF_INVERTPRECIP;
+
+				if (lines[i].flags & ML_DONTPEGTOP)
+					sectors[s].flags |= MSF_RIPPLE_FLOOR;
+
+				if (lines[i].flags & ML_DONTPEGBOTTOM)
+					sectors[s].flags |= MSF_RIPPLE_CEILING;
 			}
 
 			if (GETSECSPECIAL(lines[i].frontsector->special, 4) != 12)
