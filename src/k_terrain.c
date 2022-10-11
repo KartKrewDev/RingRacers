@@ -505,7 +505,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		}
 		else
 		{
-			fixed_t thrustSpeed = terrain->speedPad * 16;
+			fixed_t thrustSpeed = terrain->speedPad * 80;
 			angle_t thrustAngle = terrain->speedPadAngle;
 			fixed_t playerSpeed = P_AproxDistance(player->mo->momx, player->mo->momy);
 
