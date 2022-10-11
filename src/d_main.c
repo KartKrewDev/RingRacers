@@ -1801,29 +1801,20 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			const char *masterstr = "Master";
-
-			if (!strcasecmp(masterstr, sskill))
+			for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
 			{
-				newskill = KARTGP_MASTER;
+				if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, sskill))
+				{
+					newskill = (INT16)gpdifficulty_cons_t[j].value;
+					break;
+				}
 			}
-			else
-			{
-				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				{
-					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
-					{
-						newskill = (INT16)kartspeed_cons_t[j].value;
-						break;
-					}
-				}
 
-				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-				{
-					j = atoi(sskill); // assume they gave us a skill number, which is okay too
-					if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
-						newskill = (INT16)j;
-				}
+			if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
+			{
+				j = atoi(sskill); // assume they gave us a skill number, which is okay too
+				if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
+					newskill = (INT16)j;
 			}
 
 			if (grandprixinfo.gp == true)
