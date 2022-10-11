@@ -2074,6 +2074,13 @@ void M_UnGetToken(void)
 	endPos = oldendPos;
 }
 
+/** Returns the current token's position.
+ */
+UINT32 M_GetTokenPos(void)
+{
+	return endPos;
+}
+
 #define NUMTOKENS 2
 static const char *tokenizerInput = NULL;
 static UINT32 tokenCapacity[NUMTOKENS] = {0};

@@ -1087,7 +1087,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo)
 }
 
 /*--------------------------------------------------
-	static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, const char *val)
+	static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 
 		Sets a flag to true or false depending on
 		the string input.
@@ -1100,7 +1100,7 @@ void K_UpdateTerrainOverlay(mobj_t *mo)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, const char *val)
+static void K_FlagBoolean(UINT32 *inputFlags, UINT32 newFlag, char *val)
 {
 	if (stricmp(val, "true") == 0)
 	{
@@ -1158,7 +1158,7 @@ static void K_NewSplashDefs(void)
 }
 
 /*--------------------------------------------------
-	static void K_ParseSplashParameter(size_t i, const char *param, const char *val)
+	static void K_ParseSplashParameter(size_t i, char *param, char *val)
 
 		Parser function for Splash blocks.
 
@@ -1170,7 +1170,7 @@ static void K_NewSplashDefs(void)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_ParseSplashParameter(size_t i, const char *param, const char *val)
+static void K_ParseSplashParameter(size_t i, char *param, char *val)
 {
 	t_splash_t *splash = &splashDefs[i];
 
@@ -1260,7 +1260,7 @@ static void K_NewFootstepDefs(void)
 }
 
 /*--------------------------------------------------
-	static void K_ParseFootstepParameter(size_t i, const char *param, const char *val)
+	static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 
 		Parser function for Footstep blocks.
 
@@ -1272,7 +1272,7 @@ static void K_NewFootstepDefs(void)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_ParseFootstepParameter(size_t i, const char *param, const char *val)
+static void K_ParseFootstepParameter(size_t i, char *param, char *val)
 {
 	t_footstep_t *footstep = &footstepDefs[i];
 
@@ -1367,7 +1367,7 @@ static void K_NewOverlayDefs(void)
 }
 
 /*--------------------------------------------------
-	static void K_ParseOverlayParameter(size_t i, const char *param, const char *val)
+	static void K_ParseOverlayParameter(size_t i, char *param, char *val)
 
 		Parser function for Overlay blocks.
 
@@ -1379,7 +1379,7 @@ static void K_NewOverlayDefs(void)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_ParseOverlayParameter(size_t i, const char *param, const char *val)
+static void K_ParseOverlayParameter(size_t i, char *param, char *val)
 {
 	t_overlay_t *overlay = &overlayDefs[i];
 
@@ -1449,7 +1449,7 @@ static void K_NewTerrainDefs(void)
 }
 
 /*--------------------------------------------------
-	static void K_ParseTerrainParameter(size_t i, const char *param, const char *val)
+	static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 
 		Parser function for Terrain blocks.
 
@@ -1461,7 +1461,7 @@ static void K_NewTerrainDefs(void)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_ParseTerrainParameter(size_t i, const char *param, const char *val)
+static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 {
 	terrain_t *terrain = &terrainDefs[i];
 
@@ -1486,7 +1486,7 @@ static void K_ParseTerrainParameter(size_t i, const char *param, const char *val
 	}
 	else if (stricmp(param, "offroad") == 0)
 	{
-		terrain->offroad = FLOAT_TO_FIXED(atof(val));
+		terrain->offroad = (UINT8)get_number(val); // offroad strength enum?
 	}
 	else if (stricmp(param, "damageType") == 0)
 	{
@@ -1536,7 +1536,7 @@ static void K_NewTerrainFloorDefs(void)
 }
 
 /*--------------------------------------------------
-	static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, const char *, const char *))
+	static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(UINT32, char *, char *))
 
 		Runs another parser function for the TERRAIN
 		lump, handling the nitty-gritty parts of the
@@ -1549,53 +1549,61 @@ static void K_NewTerrainFloorDefs(void)
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, const char *, const char *))
+static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, char *))
 {
-	const char *param, *val;
+	char *param, *val;
 
-	param = M_TokenizerRead(0);
+	param = M_GetToken(NULL);
 
 	if (!fastcmp(param, "{"))
 	{
+		Z_Free(param);
 		CONS_Alert(CONS_WARNING, "Invalid TERRAIN data capsule!\n");
 		return false;
 	}
 
+	Z_Free(param);
+
 	while (true)
 	{
-		param = M_TokenizerRead(0);
+		param = M_GetToken(NULL);
 
 		if (fastcmp(param, "}"))
 		{
+			Z_Free(param);
 			break;
 		}
 
-		val = M_TokenizerRead(1);
+		val = M_GetToken(NULL);
 		parser(num, param, val);
+
+		Z_Free(param);
+		Z_Free(val);
 	}
 
 	return true;
 }
 
 /*--------------------------------------------------
-	static boolean K_TERRAINLumpParser(size_t size)
+	static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 
 		Parses inputted lump data as a TERRAIN lump.
 
 	Input Arguments:-
+		data - Pointer to lump data.
 		size - The length of the lump data.
 
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_TERRAINLumpParser(size_t size)
+static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
 {
-	const char *tkn = M_TokenizerRead(0);
+	char *tkn = M_GetToken((char *)data);
 	UINT32 tknHash = 0;
 	size_t pos = 0;
 	size_t i;
 
-	while (tkn && (pos = M_TokenizerGetEndPos()) < size)
+	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
 		boolean valid = true;
 
@@ -1608,8 +1616,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		// Check for valid fields.
 		else if (stricmp(tkn, "splash") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1648,8 +1657,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "footstep") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1688,8 +1698,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "overlay") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1728,8 +1739,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "terrain") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1768,8 +1780,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "floor") == 0 || stricmp(tkn, "texture") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1777,8 +1790,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 				{
 					// "optional" is ZDoom syntax
 					// We don't use it, but we can ignore it.
-					tkn = M_TokenizerRead(0);
-					pos = M_TokenizerGetEndPos();
+					Z_Free(tkn);
+					tkn = M_GetToken(NULL);
+					pos = M_GetTokenPos();
 				}
 
 				if (tkn && pos < size)
@@ -1806,8 +1820,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 						f->textureHash = tknHash;
 					}
 
-					tkn = M_TokenizerRead(0);
-					pos = M_TokenizerGetEndPos();
+					Z_Free(tkn);
+					tkn = M_GetToken(NULL);
+					pos = M_GetTokenPos();
 
 					if (tkn && pos < size)
 					{
@@ -1844,8 +1859,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "defaultTerrain") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1882,8 +1898,9 @@ static boolean K_TERRAINLumpParser(size_t size)
 		}
 		else if (stricmp(tkn, "defaultOffroadFootstep") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -1924,14 +1941,17 @@ static boolean K_TERRAINLumpParser(size_t size)
 			valid = false;
 		}
 
+		Z_Free(tkn);
+
 		if (valid == false)
 		{
 			return false;
 		}
 
-		tkn = M_TokenizerRead(0);
+		tkn = M_GetToken(NULL);
 	}
 
+	Z_Free(tkn);
 	return true;
 }
 
@@ -1977,10 +1997,7 @@ void K_InitTerrain(UINT16 wadNum)
 			size = W_LumpLengthPwad(wadNum, lumpNum);
 
 			CONS_Printf(M_GetText("Loading TERRAIN from %s\n"), name);
-
-			M_TokenizerOpen((char *)data);
-			K_TERRAINLumpParser(size);
-			M_TokenizerClose();
+			K_TERRAINLumpParser(data, size);
 
 			free(name);
 		}

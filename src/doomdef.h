@@ -503,13 +503,17 @@ extern char liveeventbackup[256];
 void M_StartupLocale(void);
 extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
 char *va(const char *format, ...) FUNCPRINTF;
+
 char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
+UINT32 M_GetTokenPos(void);
+
 void M_TokenizerOpen(const char *inputString);
 void M_TokenizerClose(void);
 const char *M_TokenizerRead(UINT32 i);
 UINT32 M_TokenizerGetEndPos(void);
 void M_TokenizerSetEndPos(UINT32 newPos);
+
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);

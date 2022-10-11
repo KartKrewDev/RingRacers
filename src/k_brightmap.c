@@ -86,29 +86,31 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 }
 
 /*--------------------------------------------------
-	static boolean K_BRIGHTLumpParser(size_t size)
+	static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
 
 		Parses inputted lump data as a BRIGHT lump.
 
 	Input Arguments:-
+		data - Pointer to lump data.
 		size - The length of the lump data.
 
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_BRIGHTLumpParser(size_t size)
+static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
 {
-	const char *tkn = M_TokenizerRead(0);
+	char *tkn = M_GetToken((char *)data);
 	size_t pos = 0;
 
-	while (tkn && (pos = M_TokenizerGetEndPos()) < size)
+	while (tkn && (pos = M_GetTokenPos()) < size)
 	{
 		boolean valid = true;
 
 		if (stricmp(tkn, "texture") == 0)
 		{
-			tkn = M_TokenizerRead(0);
-			pos = M_TokenizerGetEndPos();
+			Z_Free(tkn);
+			tkn = M_GetToken(NULL);
+			pos = M_GetTokenPos();
 
 			if (tkn && pos < size)
 			{
@@ -121,8 +123,9 @@ static boolean K_BRIGHTLumpParser(size_t size)
 					bms->textureHash = quickncasehash(tkn, 8);
 				}
 
-				tkn = M_TokenizerRead(0);
-				pos = M_TokenizerGetEndPos();
+				Z_Free(tkn);
+				tkn = M_GetToken(NULL);
+				pos = M_GetTokenPos();
 
 				if (tkn && pos < size)
 				{
@@ -148,14 +151,17 @@ static boolean K_BRIGHTLumpParser(size_t size)
 			valid = false;
 		}
 
+		Z_Free(tkn);
+
 		if (valid == false)
 		{
 			return false;
 		}
 
-		tkn = M_TokenizerRead(0);
+		tkn = M_GetToken(NULL);
 	}
 
+	Z_Free(tkn);
 	return true;
 }
 
@@ -192,10 +198,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 			size = W_LumpLengthPwad(wadNum, lumpNum);
 
 			CONS_Printf(M_GetText("Loading BRIGHT from %s\n"), name);
-
-			M_TokenizerOpen((char *)data);
-			K_BRIGHTLumpParser(size);
-			M_TokenizerClose();
+			K_BRIGHTLumpParser(data, size);
 
 			free(name);
 			Z_Free(data);
