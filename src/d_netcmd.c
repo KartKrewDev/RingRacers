@@ -472,9 +472,9 @@ consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR, CV_YesNo, NULL)
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {0, NULL}};
-consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
+consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
-consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
+consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
 
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
@@ -4956,26 +4956,39 @@ UINT32 timelimitintics = 0;
   */
 static void TimeLimit_OnChange(void)
 {
-	// Don't allow timelimit in Single Player/Co-Op/Race!
-	if (server && Playing() && cv_timelimit.value != 0 && (bossinfo.boss || !(gametyperules & GTR_TIMELIMIT)))
+	if (K_CanChangeRules() == false)
 	{
-		CV_SetValue(&cv_timelimit, 0);
 		return;
 	}
 
-	if (cv_timelimit.value != 0)
+	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
-		CONS_Printf(M_GetText("Rounds will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
+		if (cv_timelimit.value)
+		{
+			CONS_Printf(M_GetText("Time limit has been set to %d minute%s.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Time limit has been disabled.\n"));
+		}
+
 		timelimitintics = cv_timelimit.value * (60*TICRATE);
 
-		// Note the deliberate absence of any code preventing
-		//   pointlimit and timelimit from being set simultaneously.
-		// Some people might like to use them together. It works.
-	}
-
 #ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
+		DRPC_UpdatePresence();
 #endif
+	}
+	else
+	{
+		if (cv_timelimit.value)
+		{
+			CONS_Printf(M_GetText("Time limit will be %d minute%s next round.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Time limit will be disabled next round.\n"));
+		}
+	}
 }
 
 /** Adjusts certain settings to match a changed gametype.
@@ -5002,7 +5015,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 
 	// Only do the following as the server, not as remote admin.
 	// There will always be a server, and this only needs to be done once.
-	if (server && (multiplayer || netgame))
+	if (server && multiplayer)
 	{
 		if (!cv_timelimit.changed) // user hasn't changed limits
 		{
@@ -5011,27 +5024,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 		if (!cv_pointlimit.changed)
 		{
 			CV_SetValue(&cv_pointlimit, pointlimits[gametype]);
-		}
-	}
-	/* -- no longer useful
-	else if (!multiplayer && !netgame)
-	{
-		G_SetGametype(GT_RACE);
-	}
-	*/
-
-	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
-	if (server)
-	{
-		if (!(gametyperules & GTR_TIMELIMIT))
-		{
-			if (cv_timelimit.value)
-				CV_SetValue(&cv_timelimit, 0);
-		}
-		if (!(gametyperules & GTR_POINTLIMIT))
-		{
-			if (cv_pointlimit.value)
-				CV_SetValue(&cv_pointlimit, 0);
 		}
 	}
 
@@ -6572,7 +6564,7 @@ static void NumLaps_OnChange(void)
 		return;
 	}
 
-	if (leveltime < starttime)
+	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
 		CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), cv_numlaps.value);
 		numlaps = (UINT8)cv_numlaps.value;
@@ -6590,7 +6582,7 @@ static void KartFrantic_OnChange(void)
 		return;
 	}
 
-	if (leveltime < starttime)
+	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
 		CONS_Printf(M_GetText("Frantic items has been set to %s.\n"), cv_kartfrantic.value ? M_GetText("on") : M_GetText("off"));
 		franticitems = (boolean)cv_kartfrantic.value;
@@ -6608,7 +6600,7 @@ static void KartSpeed_OnChange(void)
 		return;
 	}
 
-	if (leveltime < starttime && cv_kartspeed.value != KARTSPEED_AUTO)
+	if (gamestate == GS_LEVEL && leveltime < starttime && cv_kartspeed.value != KARTSPEED_AUTO)
 	{
 		CONS_Printf(M_GetText("Game speed has been changed to \"%s\".\n"), cv_kartspeed.string);
 		gamespeed = (UINT8)cv_kartspeed.value;

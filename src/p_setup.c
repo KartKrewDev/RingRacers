@@ -3867,6 +3867,22 @@ static void P_InitGametype(void)
 		}
 	}
 
+	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss)
+	{
+		if (K_CanChangeRules() == false)
+		{
+			timelimitintics = timelimits[gametype] * (60*TICRATE);
+		}
+		else
+		{
+			timelimitintics = cv_timelimit.value * (60*TICRATE);
+		}
+	}
+	else
+	{
+		timelimitintics = 0;
+	}
+
 	wantedcalcdelay = wantedfrequency*2;
 
 	for (i = 0; i < NUMKARTITEMS-1; i++)
