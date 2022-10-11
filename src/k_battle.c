@@ -267,7 +267,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_SPHEREBOX);
 
-	P_InitAngle(drop, angle);
+	drop->angle = angle;
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
 		P_RandomRange(PR_ITEM_ROULETTE, 4, 12) * mapobjectscale);
@@ -605,7 +605,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				mo->eflags |= MFE_VERTICALFLIP;
 			}
 
-			P_InitAngle(mo, R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90);
+			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
 			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
 
 			P_SetScale(mo, scale);

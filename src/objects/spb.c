@@ -24,8 +24,6 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 
-// #define SPB_SEEKTEST
-
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
 #define SPB_DEFAULTSPEED (FixedMul(mapobjectscale, K_GetKartSpeedFromStat(9) * 2))
@@ -107,11 +105,7 @@ static void SPBMantaRings(mobj_t *spb)
 		Obj_MantaRingCreate(
 			spb,
 			spb_owner(spb),
-#ifdef SPB_SEEKTEST
-			NULL
-#else
-			spb_chase(spb)
-#endif
+			cv_spbtest.value ? NULL : spb_chase(spb)
 		);
 	}
 }
@@ -360,8 +354,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			spb->fuse = 2*TICRATE;
 		}
 	}
-#ifndef SPB_SEEKTEST // Easy debug switch
-	else
+	else if (!cv_spbtest.value)
 	{
 		if (dist <= activeDist)
 		{
@@ -378,7 +371,6 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 			return;
 		}
 	}
-#endif
 
 	if (SPBSeekSoundPlaying(spb) == false)
 	{
@@ -441,64 +433,65 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 				if (pathfindsuccess == true)
 				{
-#ifdef SPB_SEEKTEST
-					if (pathtoplayer.numnodes > 1)
-					{
-						// Go to the next waypoint.
-						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
-					}
-					else if (destWaypoint->numnextwaypoints > 0)
-					{
-						// Run ahead.
-						curWaypoint = destWaypoint->nextwaypoints[0];
-					}
-					else
-					{
-						// Sort of wait at the player's dest waypoint.
-						circling = true;
-						curWaypoint = destWaypoint;
-					}
-#else
-					path_t reversepath = {0};
-					boolean reversesuccess = false;
-
-					huntbackwards = true;
-					reversesuccess = K_PathfindToWaypoint(
-						curWaypoint, destWaypoint,
-						&reversepath,
-						useshortcuts, huntbackwards
-					);
-
-					if (reversesuccess == true
-						&& reversepath.totaldist < pathtoplayer.totaldist)
-					{
-						// It's faster to go backwards than to chase forward.
-						// Keep curWaypoint the same, so the SPB waits around for them.
-						circling = true;
-					}
-					else if (pathtoplayer.numnodes > 1)
-					{
-						// Go to the next waypoint.
-						curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
-					}
-					else if (spb->fuse > 0 && destWaypoint->numnextwaypoints > 0)
-					{
-						// Run ahead.
-						curWaypoint = destWaypoint->nextwaypoints[0];
+					if (cv_spbtest.value) {
+						if (pathtoplayer.numnodes > 1)
+						{
+							// Go to the next waypoint.
+							curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
+						}
+						else if (destWaypoint->numnextwaypoints > 0)
+						{
+							// Run ahead.
+							curWaypoint = destWaypoint->nextwaypoints[0];
+						}
+						else
+						{
+							// Sort of wait at the player's dest waypoint.
+							circling = true;
+							curWaypoint = destWaypoint;
+						}
 					}
 					else
 					{
-						// Sort of wait at the player's dest waypoint.
-						circling = true;
-						curWaypoint = destWaypoint;
-					}
+						path_t reversepath = {0};
+						boolean reversesuccess = false;
 
-					if (reversesuccess == true)
-					{
-						Z_Free(reversepath.array);
-					}
-#endif
+						huntbackwards = true;
+						reversesuccess = K_PathfindToWaypoint(
+							curWaypoint, destWaypoint,
+							&reversepath,
+							useshortcuts, huntbackwards
+						);
 
+						if (reversesuccess == true
+							&& reversepath.totaldist < pathtoplayer.totaldist)
+						{
+							// It's faster to go backwards than to chase forward.
+							// Keep curWaypoint the same, so the SPB waits around for them.
+							circling = true;
+						}
+						else if (pathtoplayer.numnodes > 1)
+						{
+							// Go to the next waypoint.
+							curWaypoint = (waypoint_t *)pathtoplayer.array[1].nodedata;
+						}
+						else if (spb->fuse > 0 && destWaypoint->numnextwaypoints > 0)
+						{
+							// Run ahead.
+							curWaypoint = destWaypoint->nextwaypoints[0];
+						}
+						else
+						{
+							// Sort of wait at the player's dest waypoint.
+							circling = true;
+							curWaypoint = destWaypoint;
+						}
+
+						if (reversesuccess == true)
+						{
+							Z_Free(reversepath.array);
+						}
+					}
 					Z_Free(pathtoplayer.array);
 				}
 			}

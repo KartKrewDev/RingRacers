@@ -6418,6 +6418,8 @@ typedef enum mobj_type
 	MT_SINK_SHIELD,
 	MT_SINKTRAIL,
 
+	MT_DUELBOMB, // Duel mode bombs
+
 	MT_BATTLEBUMPER, // Battle Mode bumpers
 	MT_BATTLEBUMPER_DEBRIS,
 	MT_BATTLEBUMPER_BLAST,

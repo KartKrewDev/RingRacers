@@ -3575,20 +3575,17 @@ static void P_InitLevelSettings(void)
 		}
 
 		franticitems = false;
-		comeback = true;
 	}
 	else if (bossinfo.boss)
 	{
 		gamespeed = KARTSPEED_EASY;
 		franticitems = false;
-		comeback = true;
 	}
 	else if (modeattacking)
 	{
 		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
-		comeback = true;
 	}
 	else
 	{
@@ -3602,7 +3599,6 @@ static void P_InitLevelSettings(void)
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
-		comeback = (boolean)cv_kartcomeback.value;
 	}
 
 	for (i = 0; i < 4; i++)

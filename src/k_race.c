@@ -370,7 +370,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 
 				P_SetMobjState(end1, S_FINISHBEAMEND1);
 				end1->renderflags = RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
-				P_InitAngle(end1, lineangle);
+				end1->angle = lineangle;
 
 				end2 = P_SpawnMobj(
 					v->x + (8*sx),
@@ -381,7 +381,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 
 				P_SetMobjState(end2, S_FINISHBEAMEND2);
 				end2->renderflags = RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(&players[displayplayers[i]]);
-				P_InitAngle(end2, lineangle);
+				end2->angle = lineangle;
 
 				P_SetTarget(&end2->tracer, end1);
 				end2->flags2 |= MF2_LINKDRAW;

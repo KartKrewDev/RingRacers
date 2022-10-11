@@ -1221,7 +1221,7 @@ void A_StatueBurst(mobj_t *actor)
 	if (!locvar1 || !(new = P_SpawnMobjFromMobj(actor, 0, 0, 0, locvar1)))
 		return;
 
-	P_InitAngle(new, actor->angle);
+	new->angle = actor->angle;
 	P_SetTarget(&new->target, actor->target);
 	if (locvar2)
 		P_SetMobjState(new, (statenum_t)locvar2);
@@ -2504,7 +2504,7 @@ void A_LobShot(mobj_t *actor)
 
 	P_SetTarget(&shot->target, actor); // where it came from
 
-	P_InitAngle(shot, actor->angle);
+	shot->angle = actor->angle;
 	an = actor->angle >> ANGLETOFINESHIFT;
 
 	dist = P_AproxDistance(actor->target->x - shot->x, actor->target->y - shot->y);
@@ -2871,7 +2871,7 @@ void A_Boss1Laser(mobj_t *actor)
 			S_StartSound(actor, mobjinfo[locvar1].seesound);
 
 		point = P_SpawnMobj(x + P_ReturnThrustX(actor, actor->angle, actor->radius), y + P_ReturnThrustY(actor, actor->angle, actor->radius), actor->z - actor->height / 2, MT_EGGMOBILE_TARGET);
-		P_InitAngle(point, actor->angle);
+		point->angle = actor->angle;
 		point->fuse = dur+1;
 		P_SetTarget(&point->target, actor->target);
 		P_SetTarget(&actor->target, point);
@@ -2881,7 +2881,7 @@ void A_Boss1Laser(mobj_t *actor)
 
 	point = P_SpawnMobj(x, y, z, locvar1);
 	P_SetTarget(&point->target, actor);
-	P_InitAngle(point, actor->angle);
+	point->angle = actor->angle;
 	speed = point->radius;
 	point->momz = FixedMul(FINECOSINE(angle>>ANGLETOFINESHIFT), speed);
 	point->momx = FixedMul(FINESINE(angle>>ANGLETOFINESHIFT), FixedMul(FINECOSINE(point->angle>>ANGLETOFINESHIFT), speed));
@@ -2890,7 +2890,7 @@ void A_Boss1Laser(mobj_t *actor)
 	for (i = 0; i < 256; i++)
 	{
 		mobj_t *mo = P_SpawnMobj(point->x, point->y, point->z, point->type);
-		P_InitAngle(mo, point->angle);
+		mo->angle = point->angle;
 		mo->color = LASERCOLORS[((UINT8)(i + 3*dur) >> 2) % sizeof(LASERCOLORS)]; // codeing
 		P_UnsetThingPosition(mo);
 		mo->flags = MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY;
@@ -2922,7 +2922,7 @@ void A_Boss1Laser(mobj_t *actor)
 	if (z - floorz < mobjinfo[MT_EGGMOBILE_FIRE].height>>1 && dur & 1)
 	{
 		point = P_SpawnMobj(x, y, floorz, MT_EGGMOBILE_FIRE);
-		P_InitAngle(point, actor->angle);
+		point->angle = actor->angle;
 		point->destscale = actor->scale;
 		P_SetScale(point, point->destscale);
 		P_SetTarget(&point->target, actor);
@@ -3479,7 +3479,7 @@ bossjustdie:
 					P_ReturnThrustX(mo, mo->angle - ANGLE_90, 32<<FRACBITS),
 					P_ReturnThrustY(mo, mo->angle - ANGLE_90, 32<<FRACBITS),
 					32<<FRACBITS, MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_InstaThrust(mo2, mo2->angle - ANGLE_90, 4*mo2->scale);
 				P_SetObjectMomZ(mo2, 4*FRACUNIT, false);
 				P_SetMobjState(mo2, S_BOSSEGLZ1);
@@ -3488,7 +3488,7 @@ bossjustdie:
 					P_ReturnThrustX(mo, mo->angle + ANGLE_90, 32<<FRACBITS),
 					P_ReturnThrustY(mo, mo->angle + ANGLE_90, 32<<FRACBITS),
 					32<<FRACBITS, MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_InstaThrust(mo2, mo2->angle + ANGLE_90, 4*mo2->scale);
 				P_SetObjectMomZ(mo2, 4*FRACUNIT, false);
 				P_SetMobjState(mo2, S_BOSSEGLZ2);
@@ -3500,7 +3500,7 @@ bossjustdie:
 					P_ReturnThrustX(mo, mo->angle - ANGLE_90, 32<<FRACBITS),
 					P_ReturnThrustY(mo, mo->angle - ANGLE_90, 32<<FRACBITS),
 					32<<FRACBITS, MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_InstaThrust(mo2, mo2->angle - ANGLE_90, 4*mo2->scale);
 				P_SetObjectMomZ(mo2, 4*FRACUNIT, false);
 				P_SetMobjState(mo2, S_BOSSTANK1);
@@ -3509,7 +3509,7 @@ bossjustdie:
 					P_ReturnThrustX(mo, mo->angle + ANGLE_90, 32<<FRACBITS),
 					P_ReturnThrustY(mo, mo->angle + ANGLE_90, 32<<FRACBITS),
 					32<<FRACBITS, MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_InstaThrust(mo2, mo2->angle + ANGLE_90, 4*mo2->scale);
 				P_SetObjectMomZ(mo2, 4*FRACUNIT, false);
 				P_SetMobjState(mo2, S_BOSSTANK2);
@@ -3517,7 +3517,7 @@ bossjustdie:
 				mo2 = P_SpawnMobjFromMobj(mo, 0, 0,
 					mobjinfo[MT_EGGMOBILE2].height + (32<<FRACBITS),
 					MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_SetObjectMomZ(mo2, 4*FRACUNIT, false);
 				mo2->momz += mo->momz;
 				P_SetMobjState(mo2, S_BOSSSPIGOT);
@@ -3526,7 +3526,7 @@ bossjustdie:
 		case MT_EGGMOBILE3:
 			{
 				mo2 = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BOSSJUNK);
-				P_InitAngle(mo2, mo->angle);
+				mo2->angle = mo->angle;
 				P_SetMobjState(mo2, S_BOSSSEBH1);
 			}
 			break;
@@ -3578,8 +3578,8 @@ bossjustdie:
 					pole->tracer->flags |= MF_NOCLIPTHING;
 					P_SetScale(pole, (pole->destscale = 2*FRACUNIT));
 					P_SetScale(pole->tracer, (pole->tracer->destscale = 2*FRACUNIT));
-					P_InitAngle(pole, mo->tracer->angle);
-					P_InitAngle(pole->tracer, mo->tracer->angle);
+					pole->angle = mo->tracer->angle;
+					pole->tracer->angle = mo->tracer->angle;
 					pole->tracer->tracer->angle = pole->angle - ANGLE_90;
 					pole->momx = P_ReturnThrustX(pole, pole->angle, speed);
 					pole->momy = P_ReturnThrustY(pole, pole->angle, speed);
@@ -3948,7 +3948,7 @@ void A_AttractChase(mobj_t *actor)
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
-				P_InitAngle(sparkle, (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim));
+				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim);
 				actor->target->player->sparkleanim = (actor->target->player->sparkleanim+1) % 20;
 
 				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
@@ -5232,7 +5232,7 @@ void A_RockSpawn(mobj_t *actor)
 
 	mo = P_SpawnMobj(actor->x, actor->y, actor->z, MT_FALLINGROCK);
 	P_SetMobjState(mo, mobjinfo[type].spawnstate);
-	P_InitAngle(mo, R_PointToAngle2(line->v2->x, line->v2->y, line->v1->x, line->v1->y));
+	mo->angle = R_PointToAngle2(line->v2->x, line->v2->y, line->v1->x, line->v1->y);
 
 	P_InstaThrust(mo, mo->angle, dist + randomoomph);
 	mo->momz = dist + randomoomph;
@@ -6978,7 +6978,7 @@ void A_Boss3ShockThink(mobj_t *actor)
 			snew->momx = (actor->momx + snext->momx) >> 1;
 			snew->momy = (actor->momy + snext->momy) >> 1;
 			snew->momz = (actor->momz + snext->momz) >> 1; // is this really needed?
-			P_InitAngle(snew, (actor->angle + snext->angle) >> 1);
+			snew->angle = (actor->angle + snext->angle) >> 1;
 			P_SetTarget(&snew->target, actor->target);
 			snew->fuse = actor->fuse;
 
@@ -7134,7 +7134,7 @@ void A_SpawnObjectAbsolute(mobj_t *actor)
 	mo = P_SpawnMobj(x<<FRACBITS, y<<FRACBITS, z<<FRACBITS, type);
 
 	// Spawn objects with an angle matching the spawner's, rather than spawning Eastwards - Monster Iestyn
-	P_InitAngle(mo, actor->angle);
+	mo->angle = actor->angle;
 
 	if (actor->eflags & MFE_VERTICALFLIP)
 		mo->flags2 |= MF2_OBJECTFLIP;
@@ -7176,7 +7176,7 @@ void A_SpawnObjectRelative(mobj_t *actor)
 		(actor->eflags & MFE_VERTICALFLIP) ? ((actor->z + actor->height - mobjinfo[type].height) - FixedMul(z<<FRACBITS, actor->scale)) : (actor->z + FixedMul(z<<FRACBITS, actor->scale)), type);
 
 	// Spawn objects with an angle matching the spawner's, rather than spawning Eastwards - Monster Iestyn
-	P_InitAngle(mo, actor->angle);
+	mo->angle = actor->angle;
 
 	if (actor->eflags & MFE_VERTICALFLIP)
 		mo->flags2 |= MF2_OBJECTFLIP;
@@ -7886,7 +7886,7 @@ void A_BossJetFume(mobj_t *actor)
 		P_SetScale(filler, filler->destscale);
 		if (actor->eflags & MFE_VERTICALFLIP)
 			filler->flags2 |= MF2_OBJECTFLIP;
-		P_InitAngle(filler, actor->angle - ANGLE_180);
+		filler->angle = actor->angle - ANGLE_180;
 
 		P_SetTarget(&actor->tracer, filler);
 	}*/
@@ -9639,7 +9639,7 @@ void A_TrapShot(mobj_t *actor)
 		S_StartSound(missile, missile->info->seesound);
 
 	P_SetTarget(&missile->target, actor);
-	P_InitAngle(missile, actor->angle);
+	missile->angle = actor->angle;
 
 	speed = FixedMul(missile->info->speed, missile->scale);
 
@@ -10216,7 +10216,7 @@ void A_BrakLobShot(mobj_t *actor)
 		S_StartSound(shot, shot->info->seesound);
 	P_SetTarget(&shot->target, actor); // where it came from
 
-	P_InitAngle(shot, actor->angle);
+	shot->angle = actor->angle;
 
 	// Horizontal axes first. First parameter is initial horizontal impulse, second is to correct its angle.
 	shot->momx = FixedMul(FixedMul(v, FINECOSINE(theta >> ANGLETOFINESHIFT)), FINECOSINE(shot->angle >> ANGLETOFINESHIFT));
@@ -10283,7 +10283,7 @@ void A_NapalmScatter(mobj_t *actor)
 		mo = P_SpawnMobj(actor->x, actor->y, actor->z, typeOfShot);
 		P_SetTarget(&mo->target, actor->target); // Transfer target so Brak doesn't hit himself like an idiot
 
-		P_InitAngle(mo, fa << ANGLETOFINESHIFT);
+		mo->angle = fa << ANGLETOFINESHIFT;
 		mo->momx = FixedMul(FINECOSINE(fa),vx);
 		mo->momy = FixedMul(FINESINE(fa),vx);
 		mo->momz = vy;
@@ -10307,7 +10307,7 @@ void A_SpawnFreshCopy(mobj_t *actor)
 
 	newObject = P_SpawnMobjFromMobj(actor, 0, 0, 0, actor->type);
 	newObject->flags2 = actor->flags2 & MF2_AMBUSH;
-	P_InitAngle(newObject, actor->angle);
+	newObject->angle = actor->angle;
 	newObject->color = actor->color;
 	P_SetTarget(&newObject->target, actor->target);
 	P_SetTarget(&newObject->tracer, actor->tracer);
@@ -10343,7 +10343,7 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 	}
 
 	flicky = P_SpawnMobjFromMobj(actor, offsx, offsy, 0, flickytype);
-	P_InitAngle(flicky, actor->angle);
+	flicky->angle = actor->angle;
 
 	if (flickytype == MT_SEED)
 		flicky->z += P_MobjFlip(actor)*(actor->height - flicky->height)/2;
@@ -10493,7 +10493,7 @@ void A_FlickyCenter(mobj_t *actor)
 		else if (actor->flags & MF_SLIDEME) // aimless
 		{
 			actor->tracer->fuse = 0; // less than 2*TICRATE means move aimlessly.
-			P_InitAngle(actor->tracer, P_RandomKey(PR_UNDEFINED, 180)*ANG2);
+			actor->tracer->angle = P_RandomKey(PR_UNDEFINED, 180)*ANG2;
 		}
 		else //orbit
 			actor->tracer->fuse = FRACUNIT;
@@ -11190,7 +11190,7 @@ void A_ConnectToGround(mobj_t *actor)
 	{
 		work = P_SpawnMobjFromMobj(actor, 0, 0, workz, locvar1);
 		if (work)
-			P_InitAngle(work, ang);
+			work->angle = ang;
 		ang += ANGLE_90;
 		workz += workh;
 	}
@@ -11236,7 +11236,7 @@ void A_SpawnParticleRelative(mobj_t *actor)
 		(actor->eflags & MFE_VERTICALFLIP) ? ((actor->z + actor->height - mobjinfo[MT_PARTICLE].height) - FixedMul(z<<FRACBITS, actor->scale)) : (actor->z + FixedMul(z<<FRACBITS, actor->scale)), MT_PARTICLE);
 
 	// Spawn objects with an angle matching the spawner's, rather than spawning Eastwards - Monster Iestyn
-	P_InitAngle(mo, actor->angle);
+	mo->angle = actor->angle;
 
 	if (actor->eflags & MFE_VERTICALFLIP)
 		mo->flags2 |= MF2_OBJECTFLIP;
@@ -11983,7 +11983,7 @@ void A_Boss5MakeJunk(mobj_t *actor)
 			broked->fuse = TICRATE;
 		else
 			broked->fuse = (((locvar2 & 1) ? 4 : 2)*TICRATE)/3;
-		P_InitAngle(broked, ang);
+		broked->angle = ang;
 		P_InstaThrust(broked, ang, ((locvar2 & 2) ? 8 : 5)*actor->scale);
 		P_SetObjectMomZ(broked, (((locvar2) ? 4 : 0) + P_RandomRange(PR_UNDEFINED, 2, 5))<<FRACBITS, false);
 		if (locvar1 > 0)
@@ -12062,7 +12062,7 @@ static void P_DustRing(mobjtype_t mobjtype, UINT32 div, fixed_t x, fixed_t y, fi
 			mobjtype
 			);
 
-		P_InitAngle(dust, ang*i + ANGLE_90);
+		dust->angle = ang*i + ANGLE_90;
 		P_SetScale(dust, FixedMul(initscale, scale));
 		dust->destscale = FixedMul(4*FRACUNIT + P_RandomFixed(PR_UNDEFINED), scale);
 		dust->scalespeed = scale/24;
@@ -12267,7 +12267,7 @@ static mobj_t *P_TrainSeg(mobj_t *src, fixed_t x, fixed_t y, fixed_t z, angle_t 
 	s->fuse = 16*TICRATE;
 	s->sprite = spr;
 	s->frame = frame|FF_PAPERSPRITE;
-	P_InitAngle(s, ang);
+	s->angle = ang;
 	P_Thrust(s, src->angle, 7*FRACUNIT);
 	return s;
 }
@@ -12639,7 +12639,7 @@ void A_SaloonDoorSpawn(mobj_t *actor)
 
 	// One door...
 	if (!(door = P_SpawnMobjFromMobj(actor, c, s, 0, locvar1))) return;
-	P_InitAngle(door, ang + ANGLE_180);
+	door->angle = ang + ANGLE_180;
 	door->extravalue1 = AngleFixed(door->angle); // Origin angle
 	door->extravalue2 = 0; // Angular speed
 	P_SetTarget(&door->tracer, actor); // Origin door
@@ -12647,7 +12647,7 @@ void A_SaloonDoorSpawn(mobj_t *actor)
 
 	// ...two door!
 	if (!(door = P_SpawnMobjFromMobj(actor, -c, -s, 0, locvar1))) return;
-	P_InitAngle(door, ang);
+	door->angle = ang;
 	door->extravalue1 = AngleFixed(door->angle); // Origin angle
 	door->extravalue2 = 0; // Angular speed
 	P_SetTarget(&door->tracer, actor); // Origin door
@@ -12843,7 +12843,7 @@ void A_SpawnPterabytes(mobj_t *actor)
 		c = FINECOSINE(fa);
 		s = FINESINE(fa);
 		waypoint = P_SpawnMobjFromMobj(actor, FixedMul(c, rad), FixedMul(s, rad), 0, MT_PTERABYTEWAYPOINT);
-		P_InitAngle(waypoint, ang + ANGLE_90);
+		waypoint->angle = ang + ANGLE_90;
 		P_SetTarget(&waypoint->tracer, actor);
 		ptera = P_SpawnMobjFromMobj(waypoint, 0, 0, 0, MT_PTERABYTE);
 		ptera->angle = waypoint->angle;
@@ -13017,7 +13017,7 @@ void A_DragonbomberSpawn(mobj_t *actor)
 		segment = P_SpawnMobjFromMobj(mo, x, y, 0, MT_DRAGONTAIL);
 		P_SetTarget(&segment->target, mo);
 		P_SetTarget(&mo->tracer, segment);
-		P_InitAngle(segment, mo->angle);
+		segment->angle = mo->angle;
 		mo = segment;
 	}
 	for (i = 0; i < 2; i++) // spawn wings
@@ -13403,7 +13403,7 @@ void A_RandomShadowFrame(mobj_t *actor)
 		P_SetScale(fake, FRACUNIT*3/2);
 		fake->scale = FRACUNIT*3/2;
 		fake->destscale = FRACUNIT*3/2;
-		P_InitAngle(fake, actor->angle);
+		fake->angle = actor->angle;
 		fake->tics = -1;
 		actor->renderflags |= RF_DONTDRAW;
 		actor->extravalue1 = 1;
@@ -13791,8 +13791,6 @@ void A_FlameShieldPaper(mobj_t *actor)
 			paper->frame |= framea;
 		}
 
-		P_InitAngle(paper, paper->angle);
-
 		paper->extravalue1 = i;
 	}
 }
@@ -13892,11 +13890,11 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 
 		puff->momz = puff->scale * P_MobjFlip(puff);
 
-		P_InitAngle(puff, R_PointToAngle2(
+		puff->angle = R_PointToAngle2(
 					target->x,
 					target->y,
 					puff->x,
-					puff->y));
+					puff->y);
 
 		P_Thrust(puff, puff->angle, 3 * puff->scale);
 
