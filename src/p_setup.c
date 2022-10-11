@@ -1260,8 +1260,8 @@ static boolean TextmapCount(size_t size)
 
 	// Check if namespace is valid.
 	tkn = M_TokenizerRead(0);
-	if (!fastcmp(tkn, "srb2"))
-		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'srb2' is supported.\n", tkn);
+	if (!fastcmp(tkn, "ringracers"))
+		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'ringracers' is supported.\n", tkn);
 
 	while ((tkn = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < size)
 	{
@@ -2056,7 +2056,7 @@ static void P_WriteTextmap(void)
 		}
 	}
 
-	fprintf(f, "namespace = \"srb2\";\n");
+	fprintf(f, "namespace = \"ringracers\";\n");
 	for (i = 0; i < nummapthings; i++)
 	{
 		fprintf(f, "thing // %s\n", sizeu1(i));
