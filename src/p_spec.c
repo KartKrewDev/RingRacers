@@ -4368,88 +4368,6 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 	}
 }
 
-static void P_ProcessSpeedPad(player_t *player, sector_t *sector, sector_t *roversector, mtag_t sectag)
-{
-	INT32 lineindex = -1;
-	angle_t lineangle;
-	fixed_t linespeed;
-	fixed_t playerspeed;
-	fixed_t sfxnum;
-	size_t i;
-
-	(void)roversector;
-
-	// Try for lines facing the sector itself, with tag 0.
-	for (i = 0; i < sector->linecount; i++)
-	{
-		line_t *li = sector->lines[i];
-
-		if (li->frontsector != sector)
-			continue;
-
-		if (li->special != 4)
-			continue;
-
-		if (!Tag_Find(&li->tags, 0))
-			continue;
-
-		lineindex = li - lines;
-		break;
-	}
-
-	// Nothing found? Look via tag.
-	if (lineindex == -1)
-		lineindex = Tag_FindLineSpecial(4, sectag);
-
-	if (lineindex == -1)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "ERROR: Speed pad missing line special #4.\n");
-		return;
-	}
-
-	lineangle = lines[lineindex].angle;
-	linespeed = lines[lineindex].args[0] << FRACBITS;
-
-	if (linespeed == 0)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "ERROR: Speed pad (tag %d) at zero speed.\n", sectag);
-		return;
-	}
-
-	if (player->floorboost != 0)
-	{
-		player->floorboost = 2;
-		return;
-	}
-
-	playerspeed = P_AproxDistance(player->mo->momx, player->mo->momy);
-
-	// SRB2Kart: Scale the speed you get from them!
-	// This is scaled differently from other horizontal speed boosts from stuff like springs, because of how this is used for some ramp jumps.
-	if (player->mo->scale > mapobjectscale)
-	{
-		linespeed = FixedMul(linespeed, mapobjectscale + (player->mo->scale - mapobjectscale));
-	}
-
-	lineangle = K_ReflectAngle(
-		K_MomentumAngle(player->mo), lineangle,
-		playerspeed, linespeed
-	);
-
-	P_InstaThrust(player->mo, lineangle, max(linespeed, 2*playerspeed));
-
-	player->dashpadcooldown = TICRATE/3;
-	player->trickpanel = 0;
-	player->floorboost = 2;
-
-	sfxnum = lines[lineindex].stringargs[0] ? get_number(lines[lineindex].stringargs[0]) : sfx_cdfm62;
-
-	if (!sfxnum)
-		sfxnum = sfx_cdfm62;
-
-	S_StartSound(player->mo, sfxnum);
-}
-
 static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 {
 	INT32 lineindex;
@@ -4566,12 +4484,13 @@ static void P_EvaluateSpecialFlags(player_t *player, sector_t *sector, sector_t 
 {
 	mtag_t sectag = Tag_FGet(&sector->tags);
 
+	(void)roversector;
+	(void)isTouching;
+
 	if (sector->specialflags & SSF_WINDCURRENT)
 		player->onconveyor = 2;
 	if (sector->specialflags & SSF_CONVEYOR)
 		player->onconveyor = 4;
-	if ((sector->specialflags & SSF_SPEEDPAD) && isTouching)
-		P_ProcessSpeedPad(player, sector, roversector, sectag);
 	if (sector->specialflags & SSF_STARPOSTACTIVATOR)
 	{
 		mobj_t *post = P_GetObjectTypeInSectorNum(MT_STARPOST, sector - sectors);

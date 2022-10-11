@@ -1089,19 +1089,6 @@ static void P_LoadSidedefs(UINT8 *data)
 				break;
 			}
 
-			case 4: // Speed pad parameters
-			{
-				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
-				if (msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
-				{
-					char process[8+1];
-					M_Memcpy(process,msd->toptexture,8);
-					process[8] = '\0';
-					sd->toptexture = get_number(process);
-				}
-				break;
-			}
-
 			case 414: // Play SFX
 			{
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
@@ -1502,8 +1489,6 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].specialflags |= SSF_DOUBLESTEPUP;
 	else if (fastcmp(param, "nostepdown") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPDOWN;
-	else if (fastcmp(param, "speedpad") && fastcmp("true", val))
-		sectors[i].specialflags |= SSF_SPEEDPAD;
 	else if (fastcmp(param, "starpostactivator") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_STARPOSTACTIVATOR;
 	else if (fastcmp(param, "exit") && fastcmp("true", val))
@@ -2335,8 +2320,6 @@ static void P_WriteTextmap(void)
 			fprintf(f, "doublestepup = true;\n");
 		if (wsectors[i].specialflags & SSF_NOSTEPDOWN)
 			fprintf(f, "nostepdown = true;\n");
-		if (wsectors[i].specialflags & SSF_SPEEDPAD)
-			fprintf(f, "speedpad = true;\n");
 		if (wsectors[i].specialflags & SSF_STARPOSTACTIVATOR)
 			fprintf(f, "starpostactivator = true;\n");
 		if (wsectors[i].specialflags & SSF_EXIT)
@@ -3965,12 +3948,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[2] = !!(lines[i].flags & ML_MIDSOLID);
 			break;
 		case 4: //Speed pad parameters
-			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[1] |= TMSP_NOTELEPORT;
-			if (lines[i].flags & ML_WRAPMIDTEX)
-				lines[i].args[1] |= TMSP_FORCESPIN;
-			P_WriteConstant(sides[lines[i].sidenum[0]].toptexture ? sides[lines[i].sidenum[0]].toptexture : sfx_spdpad, &lines[i].stringargs[0]);
+			CONS_Alert(CONS_WARNING, "Speed Pad linedef is deprecated. Use the TERRAIN effect!\n");
 			break;
 		case 7: //Sector flat alignment
 			lines[i].args[0] = tag;
@@ -5923,7 +5901,7 @@ static void P_ConvertBinarySectorTypes(void)
 				CONS_Alert(CONS_WARNING, "Trick Panel special is deprecated. Use the TERRAIN effect!\n");
 				break;
 			case 5: //Speed pad
-				sectors[i].specialflags |= SSF_SPEEDPAD;
+				CONS_Alert(CONS_WARNING, "Speed Pad special is deprecated. Use the TERRAIN effect!\n");
 				break;
 			default:
 				break;

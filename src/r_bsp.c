@@ -47,7 +47,9 @@ boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 	const terrain_t *terrain = (flat != NULL ? flat->terrain : NULL);
 
 	if ((terrain == NULL)
-		|| (terrain->trickPanel <= 0 && !(terrain->flags & TRF_SNEAKERPANEL)))
+		|| (terrain->trickPanel <= 0
+		&& terrain->speedPad <= 0
+		&& !(terrain->flags & TRF_SNEAKERPANEL)))
 	{
 		return invertEncore;
 	}

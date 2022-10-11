@@ -114,6 +114,8 @@ typedef struct terrain_s
 	fixed_t offroad;		// The default offroad level of this texture.
 	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
 	fixed_t trickPanel;		// Trick panel strength
+	fixed_t speedPad;		// Speed pad strength
+	angle_t speedPadAngle;	// Speed pad angle
 	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;

@@ -5838,7 +5838,7 @@ const char *const SSF_LIST[] = {
 	"DOUBLESTEPUP",
 	"WINDCURRENT",
 	"CONVEYOR",
-	"SPEEDPAD",
+	"\x01",			  // free (name un-matchable)
 	"STARPOSTACTIVATOR",
 	"EXIT",
 	"\x01",			  // free (name un-matchable)
