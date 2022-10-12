@@ -3643,11 +3643,11 @@ static void G_UpdateVisited(void)
 		return;
 
 	// Update visitation flags
-	mapheaderinfo[gamemap-1]->mapvisited |= MV_BEATEN;
+	mapheaderinfo[prevmap]->mapvisited |= MV_BEATEN;
 
 	if (encoremode == true)
 	{
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_ENCORE;
+		mapheaderinfo[prevmap]->mapvisited |= MV_ENCORE;
 	}
 
 	if (modeattacking)
@@ -3694,6 +3694,7 @@ static void G_HandleSaveLevel(void)
 
 static void G_GetNextMap(void)
 {
+	boolean spec = G_IsSpecialStage(prevmap+1);
 	INT32 i;
 
 	// go to next level
@@ -3799,14 +3800,7 @@ static void G_GetNextMap(void)
 			// Didn't get a nextmap before reaching the end?
 			if (gettingresult != 2)
 			{
-				if (marathonmode)
-				{
-					nextmap = NEXTMAP_CEREMONY; // ceremonymap
-				}
-				else
-				{
-					nextmap = NEXTMAP_TITLE;
-				}
+				nextmap = NEXTMAP_CEREMONY; // ceremonymap
 			}
 		}
 		else
@@ -3834,19 +3828,39 @@ static void G_GetNextMap(void)
 			nextmap = cm;
 		}
 
-		if (!marathonmode)
+		if (K_CanChangeRules())
 		{
-			if (cv_advancemap.value == 0) // Stay on same map.
+			switch (cv_advancemap.value)
 			{
-				nextmap = prevmap;
-			}
-			else if (cv_advancemap.value == 2) // Go to random map.
-			{
-				nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
-			}
-			else if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
-			{
-				nextmap = G_GetFirstMapOfGametype(gametype);
+				case 0: // Stay on same map.
+					nextmap = prevmap;
+					break;
+				case 3: // Voting screen.
+					{
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[i])
+								continue;
+							if (players[i].spectator)
+								continue;
+							break;
+						}
+						if (i != MAXPLAYERS)
+						{
+							nextmap = NEXTMAP_VOTING;
+							break;
+						}
+					}
+					/* FALLTHRU */
+				case 2: // Go to random map.
+					nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
+					break;
+				default:
+					if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
+					{
+						nextmap = G_GetFirstMapOfGametype(gametype);
+					}
+					break;
 			}
 		}
 	}
@@ -3854,6 +3868,9 @@ static void G_GetNextMap(void)
 	// We are committed to this map now.
 	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
 		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
+
+	if (!spec)
+		lastmap = nextmap;
 }
 
 //
@@ -3862,8 +3879,6 @@ static void G_GetNextMap(void)
 static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
-	boolean spec = G_IsSpecialStage(gamemap);
-	SINT8 powertype = K_UsingPowerLevels();
 
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
@@ -3919,14 +3934,8 @@ static void G_DoCompleted(void)
 
 	if (!demo.playback)
 	{
-		G_GetNextMap();
-
-		// Remember last map for when you come out of the special stage.
-		if (!spec)
-			lastmap = nextmap;
-
 		// Set up power level gametype scrambles
-		K_SetPowerLevelScrambles(powertype);
+		K_SetPowerLevelScrambles(K_UsingPowerLevels());
 	}
 
 	// If the current gametype has no intermission screen set, then don't start it.
@@ -3937,7 +3946,6 @@ static void G_DoCompleted(void)
 		|| (intertype == int_none))
 	{
 		G_UpdateVisited();
-		G_HandleSaveLevel();
 		G_AfterIntermission();
 	}
 	else
@@ -3945,7 +3953,6 @@ static void G_DoCompleted(void)
 		G_SetGamestate(GS_INTERMISSION);
 		Y_StartIntermission();
 		G_UpdateVisited();
-		G_HandleSaveLevel();
 	}
 }
 
@@ -3979,14 +3986,17 @@ void G_AfterIntermission(void)
 		return;
 	}
 
+	if (gamestate != GS_VOTING)
+	{
+		G_GetNextMap();
+		G_HandleSaveLevel();
+	}
+
 	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[prevmap]->cutscenenum-1, false, false);
 	else
 	{
-		if (nextmap < NEXTMAP_SPECIAL)
-			G_NextLevel();
-		else
-			G_EndGame();
+		G_NextLevel();
 	}
 }
 
@@ -3998,24 +4008,14 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
-	if (gamestate != GS_VOTING)
+	if (nextmap >= NEXTMAP_SPECIAL)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
-		{
-			UINT8 i;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					gameaction = ga_startvote;
-					return;
-				}
-			}
-		}
-
-		forceresetplayers = false;
-		deferencoremode = (cv_kartencore.value == 1);
+		G_EndGame();
+		return;
 	}
+
+	forceresetplayers = false;
+	deferencoremode = (cv_kartencore.value == 1);
 
 	gameaction = ga_worlddone;
 }
@@ -4043,7 +4043,11 @@ static void G_DoWorldDone(void)
 static void G_DoStartVote(void)
 {
 	if (server)
+	{
+		if (gamestate == GS_VOTING)
+			I_Error("G_DoStartVote: NEXTMAP_VOTING causes recursive vote!");
 		D_SetupVote();
+	}
 	gameaction = ga_nothing;
 }
 
@@ -4121,8 +4125,12 @@ static void G_DoContinued(void)
 // when something new is added.
 void G_EndGame(void)
 {
-	if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
-		G_SaveDemo();
+	// Handle voting
+	if (nextmap == NEXTMAP_VOTING)
+	{
+		gameaction = ga_startvote;
+		return;
+	}
 
 	// Only do evaluation and credits in singleplayer contexts
 	if (!netgame && (gametyperules & GTR_CAMPAIGN))

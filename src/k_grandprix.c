@@ -12,6 +12,7 @@
 
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_specialstage.h"
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -710,6 +711,18 @@ boolean K_CanChangeRules(void)
 	if (bossinfo.boss == true)
 	{
 		// Don't cheat the boss!
+		return false;
+	}
+
+	if (specialStage.active == true)
+	{
+		// Don't cheat special stages!
+		return false;
+	}
+
+	if (marathonmode)
+	{
+		// Don't cheat the endurance challenge!
 		return false;
 	}
 
