@@ -1286,7 +1286,7 @@ void P_DoPlayerExit(player_t *player)
 			}
 		}
 
-		if (cv_inttime.value > 0)
+		if (!K_CanChangeRules() || cv_inttime.value > 0)
 			P_EndingMusic(player);
 
 		if (P_CheckRacers())

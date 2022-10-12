@@ -3922,7 +3922,7 @@ static void G_DoCompleted(void)
 	}
 
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
+	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules() || cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)

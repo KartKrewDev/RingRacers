@@ -806,23 +806,31 @@ void Y_StartIntermission(void)
 	powertype = K_UsingPowerLevels();
 
 	// determine the tic the intermission ends
-	if (!multiplayer || demo.playback)
+	if (!K_CanChangeRules())
 	{
-		timer = ((nump >= 2) ? 10 : 5)*TICRATE;
+		timer = 10*TICRATE;
 	}
 	else
 	{
 		timer = cv_inttime.value*TICRATE;
-
-		if (!timer)
-			timer = 1; // prevent a weird bug
 	}
 
 	// determine the tic everybody's scores/PWR starts getting sorted
 	sorttic = -1;
-	if (multiplayer || nump >= 2)
+	if (!timer)
 	{
-		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
+		// Prevent a weird bug
+		timer = 1; 
+	}
+	else if (nump < 2 && !netgame)
+	{
+		// No PWR/global score, skip it
+		timer /= 2;
+	}
+	else
+	{
+		// Minimum two seconds for match results, then two second slideover approx halfway through
+		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
 	}
 
 	if (intermissiontypes[gametype] != int_none)
@@ -841,7 +849,7 @@ void Y_StartIntermission(void)
 		case int_battle:
 		case int_battletime:
 		{
-			if (cv_inttime.value > 0)
+			if (timer > 1)
 				S_ChangeMusicInternal("racent", true); // loop it
 
 			// Calculate who won
