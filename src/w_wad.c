@@ -124,7 +124,10 @@ void W_Shutdown(void)
 		while (wad->numlumps--)
 		{
 			Z_Free(wad->lumpinfo[wad->numlumps].longname);
-			Z_Free(wad->lumpinfo[wad->numlumps].fullname);
+			if (wad->lumpinfo[wad->numlumps].fullname != wad->lumpinfo[wad->numlumps].longname)
+			{
+				Z_Free(wad->lumpinfo[wad->numlumps].fullname);
+			}
 		}
 
 		Z_Free(wad->lumpinfo);
