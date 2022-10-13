@@ -657,18 +657,8 @@ void Y_Ticker(void)
 			P_DoTeamscrambling();
 	}*/
 
-	// multiplayer uses timer (based on cv_inttime)
-	if (timer)
-	{
-		if (!--timer)
-		{
-			Y_EndIntermission();
-			G_AfterIntermission();
-			return;
-		}
-	}
-	// single player is hardcoded to go away after awhile
-	else if (intertic == endtic)
+	if ((timer && !--timer)
+		|| (intertic == endtic))
 	{
 		Y_EndIntermission();
 		G_AfterIntermission();
@@ -746,8 +736,8 @@ void Y_Ticker(void)
 					S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
 					Y_CalculateMatchData(2, Y_CompareRank);
 				}
-				else
-					endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
+				/*else -- This is how to define an endtic, but we currently use timer for both SP and MP.
+					endtic = intertic + 3*TICRATE;*/
 			}
 		}
 	}
