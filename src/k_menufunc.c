@@ -3670,7 +3670,6 @@ void M_SetGuestReplay(INT32 choice)
 void M_StartTimeAttack(INT32 choice)
 {
 	char *gpath;
-	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char nameofdemo[256];
 
 	(void)choice;
@@ -3713,10 +3712,9 @@ void M_StartTimeAttack(INT32 choice)
 			srb2home, timeattackfolder);
 	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
-	if ((gpath = malloc(glen)) == NULL)
-		I_Error("Out of memory for replay filepath\n");
+	strcat(gpath, PATHSEP);
+	strcat(gpath, G_BuildMapName(levellist.choosemap+1));
 
-	sprintf(gpath,"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(levellist.choosemap+1));
 	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_skin[0].string);
 
 	if (!cv_autorecord.value)
