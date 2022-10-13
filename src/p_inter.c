@@ -1428,27 +1428,44 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->fuse = 16;
 				target->flags |= MF_NOCLIP|MF_NOCLIPTHING;
 
+				if (inflictor)
+				{
+					P_Thrust(target,
+							R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y),
+							P_AproxDistance(inflictor->momx, inflictor->momy) / 12
+						);
+				}
+				target->momz += 8 * target->scale * P_MobjFlip(target);
+				target->flags &= ~MF_NOGRAVITY;
+
 				cur = target->hnext;
 
 				while (cur && !P_MobjWasRemoved(cur))
 				{
+					cur->momx = target->momx;
+					cur->momy = target->momy;
+					cur->momz = target->momz;
+
 					// Shoot every piece outward
 					if (!(cur->x == target->x && cur->y == target->y))
 					{
-						P_InstaThrust(cur,
+						P_Thrust(cur,
 							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
 							R_PointToDist2(target->x, target->y, cur->x, cur->y) / 12
 						);
 					}
 
-					cur->momz = 8 * target->scale * P_MobjFlip(target);
-
 					cur->flags &= ~MF_NOGRAVITY;
 					cur->tics = TICRATE;
 					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
 
+					cur->hitlag = target->hitlag;
+					cur->eflags |= MFE_DAMAGEHITLAG;
+
 					cur = cur->hnext;
 				}
+
+				S_StartSound(target, sfx_mbs60);
 
 				// All targets busted!
 				if (numtargets >= maptargets)
