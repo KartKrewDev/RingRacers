@@ -2223,6 +2223,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudfinish;
 	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
@@ -2317,6 +2318,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudfinish = 0;
 		khudcardanimation = 0;
 		starpostnum = 0;
 		xtralife = 0;
@@ -2360,7 +2362,16 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		roundscore = players[player].roundscore;
 
 		exiting = players[player].exiting;
-		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+		if (exiting > 0)
+		{
+			khudfinish = players[player].karthud[khud_finish];
+			khudcardanimation = players[player].karthud[khud_cardanimation];
+		}
+		else
+		{
+			khudfinish = 0;
+			khudcardanimation = 0;
+		}
 
 		starpostnum = players[player].starpostnum;
 
@@ -2405,6 +2416,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_finish] = khudfinish;
 	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;

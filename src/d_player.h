@@ -237,7 +237,8 @@ typedef enum
 	khud_lapanimation,	// Used to show the lap start wing logo animation
 	khud_laphand,		// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
 
-	// Start
+	// Big text
+	khud_finish,		// Set when completing a round
 	khud_fault,			// Set when faulting during the starting countdown
 
 	// Camera

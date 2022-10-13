@@ -321,6 +321,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
+	CV_RegisterVar(&cv_gptest);
 }
 
 //}
@@ -7801,7 +7802,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
-	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
+	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
 
 	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
@@ -7863,16 +7864,20 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
 	}
 
+	if (player->exiting)
+	{
+		if (player->karthud[khud_finish] <= 2*TICRATE)
+			player->karthud[khud_finish]++;
+	}
+	else
+		player->karthud[khud_finish] = 0;
+
 	if ((gametyperules & GTR_BUMPERS) && (player->exiting || player->karmadelay))
 	{
 		if (player->exiting)
 		{
-			if (player->exiting < 6*TICRATE)
+			if (exitcountdown < 6*TICRATE)
 				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
-			else if (player->exiting == 6*TICRATE)
-				player->karthud[khud_cardanimation] = 0;
-			else if (player->karthud[khud_cardanimation] < 2*TICRATE)
-				player->karthud[khud_cardanimation]++;
 		}
 		else
 		{
@@ -7886,11 +7891,6 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_cardanimation] = 164;
 		if (player->karthud[khud_cardanimation] < 0)
 			player->karthud[khud_cardanimation] = 0;
-	}
-	else if (gametype == GT_RACE && player->exiting)
-	{
-		if (player->karthud[khud_cardanimation] < 2*TICRATE)
-			player->karthud[khud_cardanimation]++;
 	}
 	else
 		player->karthud[khud_cardanimation] = 0;
