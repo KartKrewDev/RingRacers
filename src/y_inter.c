@@ -680,10 +680,10 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
 	{
-		//if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
+				// Anything with post-intermission consequences here should also occur in Y_EndIntermission.
 				K_RetireBots();
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
@@ -905,7 +905,11 @@ void Y_StartIntermission(void)
 //
 void Y_EndIntermission(void)
 {
-	K_RetireBots();
+	if (!data.rankingsmode)
+	{
+		K_RetireBots();
+	}
+
 	Y_UnloadData();
 
 	endtic = -1;
