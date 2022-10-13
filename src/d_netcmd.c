@@ -449,6 +449,7 @@ consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_gptest = CVAR_INIT ("gptest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);

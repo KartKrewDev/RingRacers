@@ -1261,9 +1261,10 @@ void P_DoPlayerExit(player_t *player)
 		K_PlayerLoseLife(player);
 	}
 
+	player->exiting = 1;
+
 	if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 	{
-		player->exiting = raceexittime+2;
 		K_KartUpdatePosition(player);
 
 		if (cv_kartvoices.value)
@@ -1289,16 +1290,20 @@ void P_DoPlayerExit(player_t *player)
 		if (!K_CanChangeRules() || cv_inttime.value > 0)
 			P_EndingMusic(player);
 
-		if (P_CheckRacers())
-			player->exiting = raceexittime+1;
+		if (P_CheckRacers() && !exitcountdown)
+			exitcountdown = raceexittime+1;
 	}
 	else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
 	{
-		player->exiting = battleexittime+1;
+		if (!exitcountdown)
+			exitcountdown = battleexittime+1;
 		P_EndingMusic(player);
 	}
-	else
-		player->exiting = raceexittime+2; // Accidental death safeguard???
+	else // Accidental death safeguard???
+	{
+		if (!exitcountdown)
+			exitcountdown = raceexittime+2;
+	}
 
 	if (grandprixinfo.gp == true)
 	{
@@ -3946,21 +3951,6 @@ void P_PlayerThink(player_t *player)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			INT32 i;
-
-			// Check if all the players in the race have finished. If so, end the level.
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST) && players[i].lives > 0)
-						break;
-				}
-			}
-
-			if (i == MAXPLAYERS && player->exiting == raceexittime+2) // finished
-				player->exiting = raceexittime+1;
-
 #if 0
 			// If 10 seconds are left on the timer,
 			// begin the drown music for countdown!
@@ -3983,22 +3973,6 @@ void P_PlayerThink(player_t *player)
 					LUA_HookPlayer(player, HOOK(PlayerThink));
 					return;
 				}
-			}
-		}
-
-		// If it is set, start subtracting
-		// Don't allow it to go back to 0
-		if (player->exiting > 1 && (player->exiting < raceexittime+2 || !(gametyperules & GTR_CIRCUIT))) // SRB2kart - "&& player->exiting > 1"
-			player->exiting--;
-
-		if (player->exiting && exitcountdown)
-			player->exiting = 99; // SRB2kart
-
-		if (player->exiting == 2 || exitcountdown == 2)
-		{
-			if (server)
-			{
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 			}
 		}
 	}

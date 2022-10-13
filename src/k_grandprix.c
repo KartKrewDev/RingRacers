@@ -651,7 +651,7 @@ void K_FakeBotResults(player_t *bot)
 	}
 
 	// hey, you "won"
-	bot->exiting = 2;
+	bot->exiting = 1;
 	bot->realtime += (bot->distancetofinish / distfactor);
 	bot->distancetofinish = 0;
 	K_IncreaseBotDifficulty(bot);

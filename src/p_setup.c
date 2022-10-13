@@ -3843,6 +3843,7 @@ static void P_InitPlayers(void)
 static void P_InitGametype(void)
 {
 	size_t i;
+	boolean canchangerules = K_CanChangeRules();
 
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
@@ -3852,24 +3853,31 @@ static void P_InitGametype(void)
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	numlaps = 0;
 	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_numlaps.value
+		if (canchangerules && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
 		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
 			numlaps = cv_numlaps.value;
+		}
+		else if (cv_gptest.value)
+		{
+			numlaps = 1;
 		}
 		else
 		{
 			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
 	}
+	else
+	{
+		numlaps = 0;
+	}
 
 	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss)
 	{
-		if (K_CanChangeRules() == false)
+		if (!canchangerules)
 		{
 			timelimitintics = timelimits[gametype] * (60*TICRATE);
 		}

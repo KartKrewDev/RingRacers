@@ -848,7 +848,7 @@ boolean P_CheckRacers(void)
 		}
 
 		// Everyone should be done playing at this point now.
-		racecountdown = exitcountdown = 0;
+		racecountdown = 0;
 		return true;
 	}
 
@@ -856,7 +856,7 @@ boolean P_CheckRacers(void)
 	{
 		// There might be bots that are still going,
 		// but all of the humans are done, so we can exit now.
-		racecountdown = exitcountdown = 0;
+		racecountdown = 0;
 		return true;
 	}
 

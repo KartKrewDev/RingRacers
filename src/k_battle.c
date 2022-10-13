@@ -133,6 +133,10 @@ void K_CheckBumpers(void)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
+				if (!playeringame[i])
+					continue;
+				if (players[i].spectator)
+					continue;
 				players[i].pflags |= PF_NOCONTEST;
 				P_DoPlayerExit(&players[i]);
 			}
@@ -144,7 +148,8 @@ void K_CheckBumpers(void)
 		if (!battlecapsules)
 		{
 			// Reset map to turn on battle capsules
-			D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+			if (server)
+				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
 		}
 		else
 		{
@@ -152,6 +157,10 @@ void K_CheckBumpers(void)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
+					if (!playeringame[i])
+						continue;
+					if (players[i].spectator)
+						continue;
 					players[i].pflags |= PF_NOCONTEST;
 					P_DoPlayerExit(&players[i]);
 				}
