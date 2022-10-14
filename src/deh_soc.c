@@ -3070,10 +3070,12 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			else if (fastcmp(word, "BONUSGAME"))
 			{
 				cup->levellist[CUPCACHE_BONUS] = Z_StrDup(word2);
+				cup->cachedlevels[CUPCACHE_BONUS] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
 				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
+				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
