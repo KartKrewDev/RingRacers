@@ -3701,14 +3701,10 @@ static void P_ResetSpawnpoints(void)
 static void P_LoadRecordGhosts(void)
 {
 	// see also k_menu.c's Nextmap_OnChange
-	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
-	char *gpath = malloc(glen);
+	char *gpath;
 	INT32 i;
 
-	if (!gpath)
-		return;
-
-	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
+	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	// Best Time ghost
 	if (cv_ghost_besttime.value)
@@ -3771,7 +3767,7 @@ static void P_LoadRecordGhosts(void)
 	}
 #endif //#ifdef STAFFGHOSTS
 
-	free(gpath);
+	Z_Free(gpath);
 }
 
 static void P_SetupCamera(UINT8 pnum, camera_t *cam)
