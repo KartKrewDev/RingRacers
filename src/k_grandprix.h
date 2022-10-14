@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#define GPEVENT_NONE 0
+#define GPEVENT_BONUS 1
+#define GPEVENT_SPECIAL 2
+
 extern struct grandprixinfo
 {
 	boolean gp;				///< If true, then we are in a Grand Prix.
@@ -26,6 +30,7 @@ extern struct grandprixinfo
 	boolean masterbots;		///< If true, all bots should be max difficulty (Master Mode)
 	boolean initalize;		///< If true, we need to initialize a new session.
 	boolean wonround;		///< If false, then we retry the map instead of going to the next.
+	UINT8 eventmode;		///< See GPEVENT_ constants
 } grandprixinfo;
 
 

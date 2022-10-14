@@ -753,21 +753,26 @@ void Y_DetermineIntermissionType(void)
 	// set to int_none initially
 	intertype = int_none;
 
-	if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
-	else if (gametype == GT_RACE)
+	if (gametype == GT_RACE)
 		intertype = int_race;
 	else if (gametype == GT_BATTLE)
 	{
-		UINT8 i = 0, nump = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (grandprixinfo.gp == true && bossinfo.boss == false)
+			intertype = int_none;
+		else
 		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			nump++;
+			UINT8 i = 0, nump = 0;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator)
+					continue;
+				nump++;
+			}
+			intertype = (nump < 2 ? int_battletime : int_battle);
 		}
-		intertype = (nump < 2 ? int_battletime : int_battle);
 	}
+	else //if (intermissiontypes[gametype] != int_none)
+		intertype = intermissiontypes[gametype];
 }
 
 //

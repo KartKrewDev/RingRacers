@@ -40,6 +40,7 @@
 #include "k_collide.h"
 #include "k_follower.h"
 #include "k_objects.h"
+#include "k_grandprix.h"
 #include "k_specialstage.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
@@ -157,6 +158,29 @@ void K_TimerInit(void)
 
 	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
 	K_BattleInit();
+
+	timelimitintics = extratimeintics = secretextratime = 0;
+	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss)
+	{
+		if (!K_CanChangeRules())
+		{
+			if (grandprixinfo.gp)
+			{
+				timelimitintics = (20*TICRATE);
+			}
+			else
+			{
+				timelimitintics = timelimits[gametype] * (60*TICRATE);
+			}
+		}
+		else
+#ifndef TESTOVERTIMEINFREEPLAY
+			if (!battlecapsules)
+#endif
+		{
+			timelimitintics = cv_timelimit.value * (60*TICRATE);
+		}
+	}
 
 	if (inDuel == true)
 	{
@@ -331,10 +355,10 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
-	if (battlecapsules && player->bumpers <= 0)
-		return true; // DNF in break the capsules
+	if (battlecapsules && numtargets == 0)
+		return true; // Didn't even TRY?
 
-	if (bossinfo.boss)
+	if (battlecapsules || bossinfo.boss)
 		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)

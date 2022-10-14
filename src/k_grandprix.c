@@ -332,6 +332,16 @@ void K_UpdateGrandPrixBots(void)
 	UINT16 newrivalscore = 0;
 	UINT8 i;
 
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || !players[i].bot)
+		{
+			continue;
+		}
+
+		players[i].spectator = (grandprixinfo.eventmode != GPEVENT_NONE);
+	}
+
 	// Find the rival.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -518,9 +528,11 @@ void K_RetireBots(void)
 
 	UINT8 i;
 
-	if (grandprixinfo.gp == true && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+	if (grandprixinfo.gp == true
+		&& ((grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+		|| grandprixinfo.eventmode != GPEVENT_NONE))
 	{
-		// Was last map, no replacement.
+		// No replacement.
 		return;
 	}
 
@@ -576,17 +588,12 @@ void K_RetireBots(void)
 	{
 		player_t *bot = NULL;
 
-		if (!playeringame[i] || !players[i].bot)
+		if (!playeringame[i] || !players[i].bot || players[i].spectator)
 		{
 			continue;
 		}
 
 		bot = &players[i];
-
-		if (bot->spectator)
-		{
-			continue;
-		}
 
 		if (bot->pflags & PF_NOCONTEST)
 		{

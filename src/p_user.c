@@ -505,7 +505,6 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
 	return num_rings;
 }
@@ -1263,75 +1262,78 @@ void P_DoPlayerExit(player_t *player)
 
 	player->exiting = 1;
 
-	if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
+	if (!player->spectator)
 	{
-		K_KartUpdatePosition(player);
-
-		if (cv_kartvoices.value)
+		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
-			if (P_IsDisplayPlayer(player))
+			K_KartUpdatePosition(player);
+
+			if (cv_kartvoices.value)
 			{
-				sfxenum_t sfx_id;
-				if (losing)
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
-				else
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
-				S_StartSound(NULL, sfx_id);
-			}
-			else
-			{
-				if (losing)
-					S_StartSound(player->mo, sfx_klose);
-				else
-					S_StartSound(player->mo, sfx_kwin);
-			}
-		}
-
-		if (!K_CanChangeRules() || cv_inttime.value > 0)
-			P_EndingMusic(player);
-
-		if (P_CheckRacers() && !exitcountdown)
-			exitcountdown = raceexittime+1;
-	}
-	else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
-	{
-		if (!exitcountdown)
-			exitcountdown = battleexittime+1;
-		P_EndingMusic(player);
-	}
-	else // Accidental death safeguard???
-	{
-		if (!exitcountdown)
-			exitcountdown = raceexittime+2;
-	}
-
-	if (grandprixinfo.gp == true)
-	{
-		if (player->bot)
-		{
-			// Bots are going to get harder... :)
-			K_IncreaseBotDifficulty(player);
-		}
-		else if (!losing)
-		{
-			const UINT8 lifethreshold = 20;
-			UINT8 extra = 0;
-
-			// YOU WIN
-			grandprixinfo.wonround = true;
-
-			// Increase your total rings
-			if (RINGTOTAL(player) > 0)
-			{
-				player->totalring += RINGTOTAL(player);
-
-				extra = player->totalring / lifethreshold;
-
-				if (extra > player->xtralife)
+				if (P_IsDisplayPlayer(player))
 				{
-					P_GivePlayerLives(player, extra - player->xtralife);
-					S_StartSound(NULL, sfx_cdfm73);
-					player->xtralife = extra;
+					sfxenum_t sfx_id;
+					if (losing)
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
+					else
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
+					S_StartSound(NULL, sfx_id);
+				}
+				else
+				{
+					if (losing)
+						S_StartSound(player->mo, sfx_klose);
+					else
+						S_StartSound(player->mo, sfx_kwin);
+				}
+			}
+
+			if (!K_CanChangeRules() || cv_inttime.value > 0)
+				P_EndingMusic(player);
+
+			if (P_CheckRacers() && !exitcountdown)
+				exitcountdown = raceexittime+1;
+		}
+		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
+		{
+			if (!exitcountdown)
+				exitcountdown = battleexittime+1;
+			P_EndingMusic(player);
+		}
+		else // Accidental death safeguard???
+		{
+			if (!exitcountdown)
+				exitcountdown = raceexittime+2;
+		}
+
+		if (grandprixinfo.gp == true)
+		{
+			if (player->bot)
+			{
+				// Bots are going to get harder... :)
+				K_IncreaseBotDifficulty(player);
+			}
+			else if (!losing)
+			{
+				const UINT8 lifethreshold = 20;
+				UINT8 extra = 0;
+
+				// YOU WIN
+				grandprixinfo.wonround = true;
+
+				// Increase your total rings
+				if (RINGTOTAL(player) > 0)
+				{
+					player->totalring += RINGTOTAL(player);
+
+					extra = player->totalring / lifethreshold;
+
+					if (extra > player->xtralife)
+					{
+						P_GivePlayerLives(player, extra - player->xtralife);
+						S_StartSound(NULL, sfx_cdfm73);
+						player->xtralife = extra;
+					}
 				}
 			}
 		}

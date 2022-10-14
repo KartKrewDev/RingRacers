@@ -182,7 +182,13 @@ void K_CheckBumpers(void)
 		K_KartUpdatePosition(&players[i]);
 
 	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
 		P_DoPlayerExit(&players[i]);
+	}
 }
 
 void K_CheckEmeralds(player_t *player)

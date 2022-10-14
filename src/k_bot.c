@@ -1261,18 +1261,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	INT32 turnamt = 0;
 	line_t *botController = NULL;
 
-	// Can't build a ticcmd if we aren't spawned...
-	if (!player->mo)
-	{
-		return;
-	}
-
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL || !player->mo || player->spectator)
 	{
-		// Not in a level.
+		// Not in the level.
 		return;
 	}
 
