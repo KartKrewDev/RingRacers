@@ -4487,17 +4487,20 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			cupheader_t *cup = kartcupheaders;
 			INT32 j;
 
-			mapheaderinfo[i]->cup = NULL;
-
 			while (cup)
 			{
 				for (j = 0; j < CUPCACHE_MAX; j++)
 				{
+					// No level in this slot?
+					if (!cup->levellist[j])
+						continue;
+
 					// Already discovered?
 					if (cup->cachedlevels[j] != NEXTMAP_INVALID)
 						continue;
 
-					if (!cup->levellist[j] || strcasecmp(cup->levellist[j], name) != 0)
+					// Not your name?
+					if (strcasecmp(cup->levellist[j], name) != 0)
 						continue;
 
 					// Only panic about back-reference for non-bonus material.
