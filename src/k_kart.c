@@ -149,7 +149,7 @@ void K_TimerInit(void)
 	}
 
 	timelimitintics = extratimeintics = secretextratime = 0;
-	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss)
+	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss && !modeattacking)
 	{
 		if (singleplayercontext)
 		{
