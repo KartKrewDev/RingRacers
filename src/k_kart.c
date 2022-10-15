@@ -11566,7 +11566,7 @@ void K_CheckSpectateStatus(void)
 				return;
 			continue;
 		}
-		else if (!(players[i].pflags & PF_WANTSTOJOIN))
+		else if (players[i].bot || !(players[i].pflags & PF_WANTSTOJOIN))
 			continue;
 
 		respawnlist[numjoiners++] = i;
