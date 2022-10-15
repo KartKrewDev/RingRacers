@@ -3861,8 +3861,6 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	player->pflags &= ~PF_HITFINISHLINE;
-
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
 		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
@@ -3874,11 +3872,6 @@ void P_PlayerThink(player_t *player)
 
 	if (player->awayviewtics && player->awayviewtics != -1)
 		player->awayviewtics--;
-
-	if (player->mo->hitlag > 0)
-	{
-		return;
-	}
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)
@@ -3980,29 +3973,6 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
-	// check water content, set stuff in mobj
-	P_MobjCheckWater(player->mo);
-
-#ifndef SECTORSPECIALSAFTERTHINK
-	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
-		player->onconveyor = 0;
-	// check special sectors : damage & secrets
-
-	if (!player->spectator)
-		P_PlayerInSpecialSector(player);
-#endif
-
-	if (player->playerstate == PST_DEAD)
-	{
-		if (player->spectator)
-			player->mo->renderflags |= RF_GHOSTLY;
-		else
-			player->mo->renderflags &= ~RF_GHOSTLYMASK;
-		P_DeathThink(player);
-		LUA_HookPlayer(player, HOOK(PlayerThink));
-		return;
-	}
-
 	// Make sure spectators always have a score and ring count of 0.
 	if (player->spectator)
 	{
@@ -4039,7 +4009,103 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
-	if ((netgame || multiplayer) && player->spectator && cmd->buttons & BT_ATTACK && !player->flashing)
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
+	}
+
+	/* ------------------------------------------ /
+	ALL ABOVE THIS BLOCK OCCURS EVEN WITH HITLAG
+	/ ------------------------------------------ */
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
+
+	/* ------------------------------------------ /
+	ALL BELOW THIS BLOCK IS STOPPED DURING HITLAG
+	/ ------------------------------------------ */
+
+	player->pflags &= ~PF_HITFINISHLINE;
+
+	// check water content, set stuff in mobj
+	P_MobjCheckWater(player->mo);
+
+#ifndef SECTORSPECIALSAFTERTHINK
+	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
+		player->onconveyor = 0;
+	// check special sectors : damage & secrets
+
+	if (!player->spectator)
+		P_PlayerInSpecialSector(player);
+#endif
+
+	if (player->playerstate == PST_DEAD)
+	{
+		if (player->spectator)
+			player->mo->renderflags |= RF_GHOSTLY;
+		else
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
+		P_DeathThink(player);
+		LUA_HookPlayer(player, HOOK(PlayerThink));
+		return;
+	}
+
+	if ((netgame || multiplayer) && player->spectator && !player->bot && cmd->buttons & BT_ATTACK && !player->flashing)
 	{
 		player->pflags ^= PF_WANTSTOJOIN;
 		player->flashing = TICRATE/2 + 1;
@@ -4119,64 +4185,6 @@ void P_PlayerThink(player_t *player)
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
-	}
-
-	if (cmd->flags & TICCMD_TYPING)
-	{
-		/*
-		typing_duration is slow to start and slow to stop.
-
-		typing_timer counts down a grace period before the player is not
-		actually considered typing anymore.
-		*/
-		if (cmd->flags & TICCMD_KEYSTROKE)
-		{
-			/* speed up if we are typing quickly! */
-			if (player->typing_duration > 0 && player->typing_timer > 12)
-			{
-				if (player->typing_duration < 16)
-				{
-					player->typing_duration = 24;
-				}
-				else
-				{
-					/* slows down a tiny bit as it approaches the next dot */
-					const UINT8 step = (((player->typing_duration + 15) & ~15) -
-							player->typing_duration) / 2;
-					player->typing_duration += max(step, 4);
-				}
-			}
-
-			player->typing_timer = 15;
-		}
-		else if (player->typing_timer > 0)
-		{
-			player->typing_timer--;
-		}
-
-		/* if we are in the grace period (including currently typing) */
-		if (player->typing_timer + player->typing_duration > 0)
-		{
-			/* always end the cycle on two dots */
-			if (player->typing_timer == 0 &&
-					(player->typing_duration < 16 || player->typing_duration == 40))
-			{
-				player->typing_duration = 0;
-			}
-			else if (player->typing_duration < 63)
-			{
-				player->typing_duration++;
-			}
-			else
-			{
-				player->typing_duration = 16;
-			}
-		}
-	}
-	else
-	{
-		player->typing_timer = 0;
-		player->typing_duration = 0;
 	}
 
 	if (player->stairjank > 0)
