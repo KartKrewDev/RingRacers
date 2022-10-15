@@ -726,7 +726,7 @@ void P_CheckPointLimit(void)
 	if (exitcountdown)
 		return;
 
-	if (!K_CanChangeRules())
+	if (!K_CanChangeRules(true))
 		return;
 
 	if (!cv_pointlimit.value)
@@ -898,7 +898,7 @@ boolean P_CheckRacers(void)
 		{
 			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
 
-			if (K_CanChangeRules() == true)
+			if (K_CanChangeRules(true) == true)
 			{
 				// Custom timer
 				countdown = cv_countdowntime.value * TICRATE;

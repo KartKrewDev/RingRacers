@@ -4032,7 +4032,7 @@ void Schedule_Run(void)
 		return;
 	}
 
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		// Don't engage in automation while in a restricted context.
 		return;
@@ -4168,7 +4168,7 @@ void Automate_Run(automateEvents_t type)
 		return;
 	}
 
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		// Don't engage in automation while in a restricted context.
 		return;
@@ -4963,7 +4963,7 @@ UINT32 secretextratime = 0;
   */
 static void TimeLimit_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		return;
 	}
@@ -6570,7 +6570,7 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void NumLaps_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		return;
 	}
@@ -6588,7 +6588,7 @@ static void NumLaps_OnChange(void)
 
 static void KartFrantic_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		return;
 	}
@@ -6606,7 +6606,7 @@ static void KartFrantic_OnChange(void)
 
 static void KartSpeed_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		return;
 	}
@@ -6624,7 +6624,7 @@ static void KartSpeed_OnChange(void)
 
 static void KartEncore_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		return;
 	}
@@ -6634,7 +6634,7 @@ static void KartEncore_OnChange(void)
 
 static void KartEliminateLast_OnChange(void)
 {
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(false) == false)
 	{
 		CV_StealthSet(&cv_karteliminatelast, cv_karteliminatelast.defaultvalue);
 	}

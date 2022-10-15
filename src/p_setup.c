@@ -3853,7 +3853,7 @@ static void P_InitGametype(void)
 
 	if (gametyperules & GTR_CIRCUIT)
 	{
-		if (K_CanChangeRules() && cv_numlaps.value
+		if (K_CanChangeRules(true) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
 		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{

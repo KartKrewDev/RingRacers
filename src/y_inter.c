@@ -801,7 +801,8 @@ void Y_StartIntermission(void)
 	powertype = K_UsingPowerLevels();
 
 	// determine the tic the intermission ends
-	if (!K_CanChangeRules())
+	// Technically cv_inttime is saved to demos... but this permits having extremely long timers for post-netgame chatting without stranding you on the intermission in netreplays.
+	if (!K_CanChangeRules(false))
 	{
 		timer = 10*TICRATE;
 	}

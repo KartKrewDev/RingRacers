@@ -697,18 +697,12 @@ void K_PlayerLoseLife(player_t *player)
 }
 
 /*--------------------------------------------------
-	boolean K_CanChangeRules(void)
+	boolean K_CanChangeRules(boolean allowdemos)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_CanChangeRules(void)
+boolean K_CanChangeRules(boolean allowdemos)
 {
-	if (demo.playback)
-	{
-		// We've already got our important settings!
-		return false;
-	}
-
 	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
 	{
 		// Don't cheat the rules of the GP!
@@ -736,6 +730,12 @@ boolean K_CanChangeRules(void)
 	if (modeattacking == true)
 	{
 		// Don't cheat the rules of Time Trials!
+		return false;
+	}
+
+	if (!allowdemos && demo.playback)
+	{
+		// We've already got our important settings!
 		return false;
 	}
 

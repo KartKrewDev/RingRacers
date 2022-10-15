@@ -4400,7 +4400,7 @@ void M_InitOptions(INT32 choice)
 
 	// enable gameplay & server options under the right circumstances.
 	if (gamestate == GS_MENU
-		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules()))
+		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules(false)))
 	{
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
@@ -5736,7 +5736,7 @@ void M_OpenPauseMenu(void)
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
-	if (K_CanChangeRules())
+	if (K_CanChangeRules(false))
 	{
 		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
 

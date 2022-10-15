@@ -127,7 +127,7 @@ void K_CheckBumpers(void)
 		winnerscoreadd -= players[i].roundscore;
 	}
 
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(true) == false)
 	{
 		if (nobumpers)
 		{
