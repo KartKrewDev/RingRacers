@@ -7824,30 +7824,33 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		player->karthud[khud_itemblink] = 0;
 	}
 
-	if (gametype == GT_RACE)
+	if (!(gametyperules & GTR_SPHERES))
 	{
-		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
-		if (player->ringboost >= 30)
-			player->karthud[khud_ringdelay] = 0;
-		else
-			player->karthud[khud_ringdelay] = ((RINGANIM_DELAYMAX+1) * (30 - player->ringboost)) / 30;
+		if (player->mo && player->mo->hitlag <= 0)
+		{
+			// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
+			if (player->ringboost >= 30)
+				player->karthud[khud_ringdelay] = 0;
+			else
+				player->karthud[khud_ringdelay] = ((RINGANIM_DELAYMAX+1) * (30 - player->ringboost)) / 30;
 
-		if (player->karthud[khud_ringframe] == 0 && player->karthud[khud_ringdelay] > RINGANIM_DELAYMAX)
-		{
-			player->karthud[khud_ringframe] = 0;
-			player->karthud[khud_ringtics] = 0;
-		}
-		else if ((player->karthud[khud_ringtics]--) <= 0)
-		{
-			if (player->karthud[khud_ringdelay] == 0) // fast spin animation
+			if (player->karthud[khud_ringframe] == 0 && player->karthud[khud_ringdelay] > RINGANIM_DELAYMAX)
 			{
-				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+2) % RINGANIM_NUMFRAMES);
+				player->karthud[khud_ringframe] = 0;
 				player->karthud[khud_ringtics] = 0;
 			}
-			else
+			else if ((player->karthud[khud_ringtics]--) <= 0)
 			{
-				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+1) % RINGANIM_NUMFRAMES);
-				player->karthud[khud_ringtics] = min(RINGANIM_DELAYMAX, player->karthud[khud_ringdelay])-1;
+				if (player->karthud[khud_ringdelay] == 0) // fast spin animation
+				{
+					player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+2) % RINGANIM_NUMFRAMES);
+					player->karthud[khud_ringtics] = 0;
+				}
+				else
+				{
+					player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+1) % RINGANIM_NUMFRAMES);
+					player->karthud[khud_ringtics] = min(RINGANIM_DELAYMAX, player->karthud[khud_ringdelay])-1;
+				}
 			}
 		}
 
@@ -8460,8 +8463,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_UpdateTripwire(player);
-
-	K_KartPlayerHUDUpdate(player);
 
 	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
 	{

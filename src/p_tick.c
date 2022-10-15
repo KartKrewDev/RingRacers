@@ -617,6 +617,7 @@ void P_Ticker(boolean run)
 			if (!PLAYERCONDITION(i))
 				continue;
 			P_PlayerThink(&players[i]);
+			K_KartPlayerHUDUpdate(&players[i]);
 		}
 #undef PLAYERCONDITION
 
