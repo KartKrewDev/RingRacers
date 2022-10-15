@@ -4912,7 +4912,12 @@ void ItemFinder_OnChange(void)
   */
 static void PointLimit_OnChange(void)
 {
-	// Don't allow pointlimit in Single Player/Co-Op/Race!
+	if (K_CanChangeRules(false) == false)
+	{
+		return;
+	}
+
+	// Don't allow pointlimit in non-pointlimited gametypes!
 	if (server && Playing() && !(gametyperules & GTR_POINTLIMIT))
 	{
 		if (cv_pointlimit.value)
@@ -4927,7 +4932,7 @@ static void PointLimit_OnChange(void)
 			cv_pointlimit.value,
 			cv_pointlimit.value > 1 ? "s" : "");
 	}
-	else if (netgame || multiplayer)
+	else
 		CONS_Printf(M_GetText("Point limit disabled\n"));
 }
 
