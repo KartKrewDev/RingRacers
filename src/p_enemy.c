@@ -4032,10 +4032,10 @@ void A_AttractChase(mobj_t *actor)
 
 			if (
 				actor->tracer->player && actor->tracer->health
-				&& (gametyperules & GTR_SPHERES)
+				&& ((gametyperules & GTR_SPHERES)
 					|| (actor->tracer->player->itemtype == KITEM_LIGHTNINGSHIELD
 					&& RINGTOTAL(actor->tracer->player) < 20
-					&& !(actor->tracer->player->pflags & PF_RINGLOCK))
+					&& !(actor->tracer->player->pflags & PF_RINGLOCK)))
 				//&& P_CheckSight(actor, actor->tracer)
 				)
 			{
