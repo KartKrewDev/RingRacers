@@ -29,6 +29,6 @@ void K_RunPaperItemSpawners(void);
 void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);
-void K_BattleInit(void);
+void K_BattleInit(boolean singleplayercontext);
 
 #endif

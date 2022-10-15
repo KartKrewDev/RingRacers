@@ -97,13 +97,15 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 3;
 	numbulbs = 1;
-	inDuel = false;
+	inDuel = rainbowstartavailable = false;
 }
 
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;//, numspec = 0;
+	UINT8 numPlayers = 0;
+	boolean singleplayercontext = ((modeattacking != ATTACKING_NONE)
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
 	if (specialStage.active == true)
 	{
@@ -111,58 +113,45 @@ void K_TimerInit(void)
 	}
 	else if (bossinfo.boss == false)
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (!singleplayercontext)
 		{
-			if (!playeringame[i])
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				continue;
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				numPlayers++;
 			}
 
-			if (players[i].spectator == true)
+			if (numPlayers < 2)
 			{
-				//numspec++;
-				continue;
+				singleplayercontext = true;
 			}
+			else
+			{
+				numbulbs = 5;
+				rainbowstartavailable = true;
 
-			numPlayers++;
-		}
+				// 1v1 activates DUEL rules!
+				inDuel = (numPlayers == 2);
 
-		// 1v1 activates DUEL rules!
-		inDuel = (numPlayers == 2);
-
-		if (numPlayers >= 2)
-		{
-			rainbowstartavailable = true;
-		}
-		else
-		{
-			rainbowstartavailable = false;
-		}
-
-		// No intro in Record Attack / 1v1
-		// Leave unset for the value in K_TimerReset
-		if (numPlayers > 2)
-		{
-			introtime = (108) + 5; // 108 for rotation, + 5 for white fade
-		}
-
-		numbulbs = 5;
-
-		if (numPlayers > 2)
-		{
-			numbulbs += (numPlayers-2);
+				if (!inDuel)
+				{
+					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+					numbulbs += (numPlayers-2); // Extra POSITION!! time
+				}
+			}
 		}
 
 		starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 	}
 
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_BattleInit();
-
 	timelimitintics = extratimeintics = secretextratime = 0;
 	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss)
 	{
-		if (!K_CanChangeRules())
+		if (singleplayercontext)
 		{
 			if (grandprixinfo.gp)
 			{
@@ -182,12 +171,12 @@ void K_TimerInit(void)
 		}
 	}
 
+	K_BattleInit(singleplayercontext);
+
 	if (inDuel == true)
 	{
 		K_SpawnDuelOnlyItems();
 	}
-
-	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)

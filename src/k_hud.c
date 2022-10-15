@@ -3814,7 +3814,7 @@ static void K_drawKartStartCountdown(void)
 	}
 	else if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
-		if (bossinfo.boss == false)
+		if (numbulbs > 1)
 			K_drawKartStartBulbs();
 	}
 	else

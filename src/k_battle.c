@@ -810,29 +810,13 @@ void K_SpawnPlayerBattleBumpers(player_t *p)
 	}
 }
 
-void K_BattleInit(void)
+void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && !battlecapsules && !bossinfo.boss)
+	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules && !bossinfo.boss)
 	{
-		mapthing_t *mt;
-		if (modeattacking != ATTACKING_CAPSULES)
-		{
-			UINT8 n = 0;
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i] || players[i].spectator)
-					continue;
-				n++;
-			}
-
-			if (n > 1)
-				goto aftercapsules;
-		}
-
-		mt = mapthings;
+		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)
 		{
 			if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
@@ -841,7 +825,6 @@ void K_BattleInit(void)
 
 		battlecapsules = true;
 	}
-aftercapsules:
 
 	if (gametyperules & GTR_BUMPERS)
 	{
