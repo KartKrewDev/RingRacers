@@ -609,6 +609,13 @@ void P_CheckTimeLimit(void)
 	if (!timelimitintics)
 		return;
 
+	if (leveltime < starttime)
+	{
+		if (secretextratime)
+			secretextratime--;
+		return;
+	}
+
 	if (secretextratime)
 	{
 		secretextratime--;
