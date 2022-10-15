@@ -4985,6 +4985,7 @@ static void TimeLimit_OnChange(void)
 		}
 
 		timelimitintics = cv_timelimit.value * (60*TICRATE);
+		extratimeintics = secretextratime = 0;
 
 #ifdef HAVE_DISCORDRPC
 		DRPC_UpdatePresence();
