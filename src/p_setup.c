@@ -3859,7 +3859,9 @@ static void P_InitGametype(void)
 		{
 			numlaps = cv_numlaps.value;
 		}
-		else if (cv_gptest.value)
+		else if ((grandprixinfo.gp == true)
+			&& (grandprixinfo.eventmode == GPEVENT_NONE)
+			&& cv_gptest.value)
 		{
 			numlaps = 1;
 		}
