@@ -76,7 +76,9 @@ static patch_t *kp_winnernum[NUMPOSFRAMES];
 static patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
+static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
+static patch_t *kp_capsuleminimap[2];
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -312,7 +314,11 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_facehighlight[i], "%s", buffer);
 	}
 
+	// Special minimap icons
+	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
+	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
+	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -3317,16 +3323,15 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	patch_t *AutomapPic;
+	patch_t *AutomapPic, *workingPic;
 	INT32 i = 0;
 	INT32 x, y;
 	INT32 minimaptrans = 4;
 	INT32 splitflags = 0;
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
-	SINT8 localplayers[4];
+	SINT8 localplayers[MAXSPLITSCREENPLAYERS];
 	SINT8 numlocalplayers = 0;
-	INT32 hyu = hyudorotime;
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
 	fixed_t interpx, interpy;
 
@@ -3403,11 +3408,8 @@ static void K_drawKartMinimap(void)
 	}
 
 	// initialize
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		localplayers[i] = -1;
-
-	if (gametype == GT_RACE)
-		hyu *= 2; // double in race
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
 	if (ghosts)
@@ -3439,8 +3441,7 @@ static void K_drawKartMinimap(void)
 		if (!stplyr->mo || stplyr->spectator || stplyr->exiting)
 			return;
 
-		localplayers[numlocalplayers] = stplyr-players;
-		numlocalplayers++;
+		localplayers[numlocalplayers++] = stplyr-players;
 	}
 	else
 	{
@@ -3448,50 +3449,55 @@ static void K_drawKartMinimap(void)
 		{
 			if (!playeringame[i])
 				continue;
-			if (!players[i].mo || players[i].spectator || players[i].exiting)
+			if (!players[i].mo || players[i].spectator || !players[i].mo->skin || players[i].exiting)
 				continue;
-
-			if (i != displayplayers[0] || r_splitscreen)
-			{
-				if (gametype == GT_BATTLE && players[i].bumpers <= 0)
-					continue;
-
-				if (players[i].hyudorotimer > 0)
-				{
-					if (!((players[i].hyudorotimer < TICRATE/2
-						|| players[i].hyudorotimer > hyu-(TICRATE/2))
-						&& !(leveltime & 1)))
-						continue;
-				}
-			}
 
 			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
-				localplayers[numlocalplayers] = i;
-				numlocalplayers++;
+				localplayers[numlocalplayers++] = i;
 				continue;
 			}
 
-			if (players[i].mo->skin)
-				skin = ((skin_t*)players[i].mo->skin)-skins;
-			else
-				skin = 0;
+			// Now we know it's not a display player, handle non-local player exceptions.
+			if ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0)
+				continue;
 
-			if (players[i].mo->color)
+			if (players[i].hyudorotimer > 0)
 			{
-				if (players[i].mo->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
-				else
-					colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+				if (!((players[i].hyudorotimer < TICRATE/2
+					|| players[i].hyudorotimer > hyudorotime-(TICRATE/2))
+					&& !(leveltime & 1)))
+					continue;
+			}
+
+			if (players[i].mo->health <= 0 && players[i].pflags & PF_NOCONTEST)
+			{
+				workingPic = kp_nocontestminimap;
+				R_GetTranslationColormap(0, players[i].mo->color, GTC_CACHE);
 			}
 			else
-				colormap = NULL;
+			{
+				skin = ((skin_t*)players[i].mo->skin)-skins;
+
+				workingPic = faceprefix[skin][FACE_MINIMAP];
+
+				if (players[i].mo->color)
+				{
+					if (players[i].mo->colorized)
+						colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
+					else
+						colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+				}
+				else
+					colormap = NULL;
+			}
 
 			interpx = R_InterpolateFixed(players[i].mo->old_x, players[i].mo->x);
 			interpy = R_InterpolateFixed(players[i].mo->old_y, players[i].mo->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+
 			// Target reticule
 			if ((gametype == GT_RACE && players[i].position == spbplace)
 				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
@@ -3501,27 +3507,48 @@ static void K_drawKartMinimap(void)
 		}
 	}
 
-	// draw SPB(s?)
+	// draw minimap-pertinent objects
 	for (mobj = kitemcap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
-		if (mobj->type == MT_SPB)
+
+		workingPic = NULL;
+		colormap = NULL;
+
+		if (mobj->health <= 0)
+			continue;
+
+		switch (mobj->type)
 		{
-			colormap = NULL;
-
-			if (mobj->target && !P_MobjWasRemoved(mobj->target))
-			{
-				if (mobj->player && mobj->player->skincolor)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->player->skincolor, GTC_CACHE);
-				else if (mobj->color)
+			case MT_SPB:
+				workingPic = kp_spbminimap;
+#if 0
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player && mobj->target->player->skincolor)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->target->player->skincolor, GTC_CACHE);
+				}
+				else
+#endif
+				if (mobj->color)
+				{
 					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
-			}
+				}
 
-			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
-			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
-
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
+				break;
+			case MT_BATTLECAPSULE:
+				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
+				break;
+			default:
+				break;
 		}
+
+		if (!workingPic)
+			continue;
+
+		interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+		interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
+
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 	}
 
 	// draw our local players here, opaque.
@@ -3560,28 +3587,38 @@ static void K_drawKartMinimap(void)
 
 	for (i = 0; i < numlocalplayers; i++)
 	{
-		if (i == -1)
+		if (localplayers[i] == -1)
 			continue; // this doesn't interest us
 
-		if (players[localplayers[i]].mo->skin)
-			skin = ((skin_t*)players[localplayers[i]].mo->skin)-skins;
-		else
-			skin = 0;
+		if ((players[i].hyudorotimer > 0) && (leveltime & 1))
+			continue;
 
-		if (players[localplayers[i]].mo->color)
+		if (players[localplayers[i]].mo->health <= 0 && players[localplayers[i]].pflags & PF_NOCONTEST)
 		{
-			if (players[localplayers[i]].mo->colorized)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, players[localplayers[i]].mo->color, GTC_CACHE);
-			else
-				colormap = R_GetTranslationColormap(skin, players[localplayers[i]].mo->color, GTC_CACHE);
+			workingPic = kp_nocontestminimap;
+			R_GetTranslationColormap(0, players[localplayers[i]].mo->color, GTC_CACHE);
 		}
 		else
-			colormap = NULL;
+		{
+			skin = ((skin_t*)players[localplayers[i]].mo->skin)-skins;
+
+			workingPic = faceprefix[skin][FACE_MINIMAP];
+
+			if (players[localplayers[i]].mo->color)
+			{
+				if (players[localplayers[i]].mo->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, players[localplayers[i]].mo->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, players[localplayers[i]].mo->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+		}
 
 		interpx = R_InterpolateFixed(players[localplayers[i]].mo->old_x, players[localplayers[i]].mo->x);
 		interpy = R_InterpolateFixed(players[localplayers[i]].mo->old_y, players[localplayers[i]].mo->y);
 
-		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 
 		// Target reticule
 		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
