@@ -1399,9 +1399,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	{
 		splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
 
-		if (bossinfo.boss == true)
-			;
-		else if (timelimitintics > 0 && (gametyperules & GTR_TIMELIMIT)) // TODO
+		if (timelimitintics > 0)
 		{
 			if (drawtime >= timelimitintics)
 			{
