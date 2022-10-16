@@ -590,9 +590,6 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 	player->starpostnum = post->health;
 }
 
-// Easily make it so that overtime works offline
-#define TESTOVERTIMEINFREEPLAY
-
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
   * timelimitintics and overtime's status will be checked here each tick.
@@ -616,34 +613,43 @@ void P_CheckTimeLimit(void)
 		return;
 	}
 
-	if (secretextratime)
+	if (leveltime < (timelimitintics + starttime))
 	{
-		secretextratime--;
-		timelimitintics++;
-	}
-	else if (extratimeintics)
-	{
-		timelimitintics++;
-		if (leveltime & 1)
-			;
-		else
+		if (secretextratime)
 		{
-			if (extratimeintics > 20)
-			{
-				extratimeintics -= 20;
-				timelimitintics += 20;
-			}
+			secretextratime--;
+			timelimitintics++;
+		}
+		else if (extratimeintics)
+		{
+			timelimitintics++;
+			if (leveltime & 1)
+				;
 			else
 			{
-				timelimitintics += extratimeintics;
-				extratimeintics = 0;
+				if (extratimeintics > 20)
+				{
+					extratimeintics -= 20;
+					timelimitintics += 20;
+				}
+				else
+				{
+					timelimitintics += extratimeintics;
+					extratimeintics = 0;
+				}
+				S_StartSound(NULL, sfx_ptally);
 			}
-			S_StartSound(NULL, sfx_ptally);
 		}
-	}
-
-	if (leveltime < (timelimitintics + starttime))
+		else
+		{
+			if (timelimitintics + starttime - leveltime <= 3*TICRATE)
+			{
+				if (((timelimitintics + starttime - leveltime) % TICRATE) == 0)
+					S_StartSound(NULL, sfx_s3ka7);
+			}			
+		}
 		return;
+	}
 
 	if (gameaction == ga_completed)
 		return;
