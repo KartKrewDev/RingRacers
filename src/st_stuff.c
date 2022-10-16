@@ -928,7 +928,7 @@ void ST_drawTitleCard(void)
 		else switch (grandprixinfo.eventmode)
 		{
 			case GPEVENT_BONUS:
-				roundico = tcroundbonus;
+				roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
 				break;
 			/*case GPEVENT_SPECIAL:
 				; // TODO: Emerald/mount
