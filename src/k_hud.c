@@ -3470,30 +3470,35 @@ static void K_drawKartMinimap(void)
 					continue;
 			}
 
-			if (players[i].mo->health <= 0 && players[i].pflags & PF_NOCONTEST)
+			mobj = players[i].mo;
+
+			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
 				workingPic = kp_nocontestminimap;
-				R_GetTranslationColormap(0, players[i].mo->color, GTC_CACHE);
+				R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+
+				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+					mobj = mobj->tracer;
 			}
 			else
 			{
-				skin = ((skin_t*)players[i].mo->skin)-skins;
+				skin = ((skin_t*)mobj->skin)-skins;
 
 				workingPic = faceprefix[skin][FACE_MINIMAP];
 
-				if (players[i].mo->color)
+				if (mobj->color)
 				{
-					if (players[i].mo->colorized)
-						colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
+					if (mobj->colorized)
+						colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
 					else
-						colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+						colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
 				}
 				else
 					colormap = NULL;
 			}
 
-			interpx = R_InterpolateFixed(players[i].mo->old_x, players[i].mo->x);
-			interpy = R_InterpolateFixed(players[i].mo->old_y, players[i].mo->y);
+			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
@@ -3592,30 +3597,35 @@ static void K_drawKartMinimap(void)
 		if ((players[i].hyudorotimer > 0) && (leveltime & 1))
 			continue;
 
-		if (players[localplayers[i]].mo->health <= 0 && players[localplayers[i]].pflags & PF_NOCONTEST)
+		mobj = players[localplayers[i]].mo;
+
+		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
 			workingPic = kp_nocontestminimap;
-			R_GetTranslationColormap(0, players[localplayers[i]].mo->color, GTC_CACHE);
+			R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+
+			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+				mobj = mobj->tracer;
 		}
 		else
 		{
-			skin = ((skin_t*)players[localplayers[i]].mo->skin)-skins;
+			skin = ((skin_t*)mobj->skin)-skins;
 
 			workingPic = faceprefix[skin][FACE_MINIMAP];
 
-			if (players[localplayers[i]].mo->color)
+			if (mobj->color)
 			{
-				if (players[localplayers[i]].mo->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, players[localplayers[i]].mo->color, GTC_CACHE);
+				if (mobj->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
 				else
-					colormap = R_GetTranslationColormap(skin, players[localplayers[i]].mo->color, GTC_CACHE);
+					colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
 			}
 			else
 				colormap = NULL;
 		}
 
-		interpx = R_InterpolateFixed(players[localplayers[i]].mo->old_x, players[localplayers[i]].mo->x);
-		interpy = R_InterpolateFixed(players[localplayers[i]].mo->old_y, players[localplayers[i]].mo->y);
+		interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+		interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
 		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 

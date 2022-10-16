@@ -1292,6 +1292,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					kart->old_x = target->old_x;
 					kart->old_y = target->old_y;
 					kart->old_z = target->old_z;
+
+					if (target->player->pflags & PF_NOCONTEST)
+						P_SetTarget(&target->tracer, kart);
 				}
 
 				if (source && !P_MobjWasRemoved(source))
