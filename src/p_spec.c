@@ -5102,8 +5102,9 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, I
 		else th = th->next;
 	}
 
-	fflr->alpha = max(0, min(0xff, alpha));
-	if (fflr->alpha < 0xff || flags & FOF_SPLAT)
+	//fflr->alpha = max(0, min(0xff, alpha));
+	fflr->alpha = alpha;
+	if (blendmode != TMB_TRANSLUCENT || fflr->alpha != 0xff || flags & FOF_SPLAT)
 	{
 		fflr->fofflags |= FOF_TRANSLUCENT;
 		fflr->spawnflags = fflr->fofflags;

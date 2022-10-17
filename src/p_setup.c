@@ -3838,10 +3838,21 @@ static void P_SetBinaryFOFAlpha(line_t *line)
 	if (sides[line->sidenum[0]].toptexture > 0)
 	{
 		line->args[1] = sides[line->sidenum[0]].toptexture;
-		if (sides[line->sidenum[0]].toptexture >= 1001)
+
+		if (line->args[1] == 901) // additive special
 		{
-			line->args[2] = (sides[line->sidenum[0]].toptexture/1000);
+			line->args[1] = 0xff;
+			line->args[2] = TMB_ADD;
+		}
+		else if (line->args[1] == 902) // subtractive special
+		{
+			line->args[1] = 0xff;
+			line->args[2] = TMB_SUBTRACT;
+		}
+		else if (line->args[1] >= 1001) // fourth digit
+		{
 			line->args[1] %= 1000;
+			line->args[2] = (sides[line->sidenum[0]].toptexture/1000) + 1; // becomes an AST
 		}
 	}
 	else
