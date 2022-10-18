@@ -3852,7 +3852,7 @@ static void P_SetBinaryFOFAlpha(line_t *line)
 		else if (line->args[1] >= 1001) // fourth digit
 		{
 			line->args[1] %= 1000;
-			line->args[2] = (sides[line->sidenum[0]].toptexture/1000) + 1; // becomes an AST
+			line->args[2] = (sides[line->sidenum[0]].toptexture/1000); // TMB_TRANSLUCNET, TMB_ADD, etc
 		}
 	}
 	else
