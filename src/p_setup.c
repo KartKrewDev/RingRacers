@@ -4506,11 +4506,13 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			if (mapheaderinfo[i]->thumbnailPic)
 			{
 				Patch_Free(mapheaderinfo[i]->thumbnailPic);
+				mapheaderinfo[i]->thumbnailPic = NULL;
 			}
 
 			if (mapheaderinfo[i]->minimapPic)
 			{
 				Patch_Free(mapheaderinfo[i]->minimapPic);
+				mapheaderinfo[i]->minimapPic = NULL;
 			}
 
 			// Now apply the new ones!
