@@ -141,7 +141,6 @@ static void SoundTest_OnChange(void);
 static void KartFrantic_OnChange(void);
 static void KartSpeed_OnChange(void);
 static void KartEncore_OnChange(void);
-static void KartComeback_OnChange(void);
 static void KartEliminateLast_OnChange(void);
 
 static void Schedule_OnChange(void);
@@ -391,24 +390,20 @@ consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, C
 consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL);
 
-static CV_PossibleValue_t kartminimap_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_kartminimap = CVAR_INIT ("kartminimap", "4", CV_SAVE, kartminimap_cons_t, NULL);
-consvar_t cv_kartcheck = CVAR_INIT ("kartcheck", "Yes", CV_SAVE, CV_YesNo, NULL);
-consvar_t cv_kartspeed = CVAR_INIT ("kartspeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
+consvar_t cv_kartspeed = CVAR_INIT ("gamespeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
-consvar_t cv_kartbumpers = CVAR_INIT ("kartbumpers", "3", CV_NETVAR, kartbumpers_cons_t, NULL);
-consvar_t cv_kartfrantic = CVAR_INIT ("kartfrantic", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
-consvar_t cv_kartcomeback = CVAR_INIT ("kartcomeback", "On", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartComeback_OnChange);
+consvar_t cv_kartbumpers = CVAR_INIT ("battlebumpers", "3", CV_NETVAR, kartbumpers_cons_t, NULL);
+consvar_t cv_kartfrantic = CVAR_INIT ("franticitems", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
 static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
-consvar_t cv_kartencore = CVAR_INIT ("kartencore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
+consvar_t cv_kartencore = CVAR_INIT ("encore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
 static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
-consvar_t cv_kartvoterulechanges = CVAR_INIT ("kartvoterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL);
+consvar_t cv_kartvoterulechanges = CVAR_INIT ("voterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL);
 static CV_PossibleValue_t kartgametypepreference_cons_t[] = {{-1, "None"}, {GT_RACE, "Race"}, {GT_BATTLE, "Battle"}, {0, NULL}};
-consvar_t cv_kartgametypepreference = CVAR_INIT ("kartgametypepreference", "None", CV_NETVAR, kartgametypepreference_cons_t, NULL);
+consvar_t cv_kartgametypepreference = CVAR_INIT ("gametypepreference", "None", CV_NETVAR, kartgametypepreference_cons_t, NULL);
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
-consvar_t cv_kartspeedometer = CVAR_INIT ("kartdisplayspeed", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
+consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
-consvar_t cv_kartvoices = CVAR_INIT ("kartvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
+consvar_t cv_kartvoices = CVAR_INIT ("tauntvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 
 static CV_PossibleValue_t kartbot_cons_t[] = {
 	{0, "Off"},
@@ -427,11 +422,11 @@ static CV_PossibleValue_t kartbot_cons_t[] = {
 	{13,"Lv.MAX"},
 	{0, NULL}
 };
-consvar_t cv_kartbot = CVAR_INIT ("kartbot", "0", CV_NETVAR, kartbot_cons_t, NULL);
+consvar_t cv_kartbot = CVAR_INIT ("bots", "0", CV_NETVAR, kartbot_cons_t, NULL);
 
-consvar_t cv_karteliminatelast = CVAR_INIT ("karteliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
+consvar_t cv_karteliminatelast = CVAR_INIT ("eliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
-consvar_t cv_kartusepwrlv = CVAR_INIT ("kartusepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
+consvar_t cv_kartusepwrlv = CVAR_INIT ("usepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] =
 {
@@ -440,20 +435,18 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 #undef  FOREACH
 	{0}
 };
-consvar_t cv_kartdebugitem = CVAR_INIT ("kartdebugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
+consvar_t cv_kartdebugitem = CVAR_INIT ("debugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
 static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
-consvar_t cv_kartdebugamount = CVAR_INIT ("kartdebugamount", "1", CV_NETVAR|CV_CHEAT, kartdebugamount_cons_t, NULL);
+consvar_t cv_kartdebugamount = CVAR_INIT ("debugitemamount", "1", CV_NETVAR|CV_CHEAT, kartdebugamount_cons_t, NULL);
 
-consvar_t cv_kartdebugdistribution = CVAR_INIT ("kartdebugdistribution", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebughuddrop = CVAR_INIT ("kartdebughuddrop", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugdistribution = CVAR_INIT ("debugitemodds", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebughuddrop = CVAR_INIT ("debugitemdrop", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
-consvar_t cv_kartdebugwaypoints = CVAR_INIT ("kartdebugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
-consvar_t cv_kartdebugbotpredict = CVAR_INIT ("kartdebugbotpredict", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-
-consvar_t cv_kartdebugcheckpoint = CVAR_INIT ("kartdebugcheckpoint", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugnodes = CVAR_INIT ("kartdebugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugcolorize = CVAR_INIT ("kartdebugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugdirector = CVAR_INIT ("kartdebugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugwaypoints = CVAR_INIT ("debugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
+consvar_t cv_kartdebugbotpredict = CVAR_INIT ("debugbotpredict", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
@@ -6627,24 +6620,6 @@ static void KartEncore_OnChange(void)
 	}
 
 	CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
-}
-
-static void KartComeback_OnChange(void)
-{
-	if (K_CanChangeRules() == false)
-	{
-		return;
-	}
-
-	if (leveltime < starttime)
-	{
-		CONS_Printf(M_GetText("Karma Comeback has been turned %s.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-		comeback = (boolean)cv_kartcomeback.value;
-	}
-	else
-	{
-		CONS_Printf(M_GetText("Karma Comeback will be turned %s next round.\n"), cv_kartcomeback.value ? M_GetText("on") : M_GetText("off"));
-	}
 }
 
 static void KartEliminateLast_OnChange(void)

@@ -3575,20 +3575,17 @@ static void P_InitLevelSettings(void)
 		}
 
 		franticitems = false;
-		comeback = true;
 	}
 	else if (bossinfo.boss)
 	{
 		gamespeed = KARTSPEED_EASY;
 		franticitems = false;
-		comeback = true;
 	}
 	else if (modeattacking)
 	{
 		// Just play it safe and set everything
 		gamespeed = KARTSPEED_HARD;
 		franticitems = false;
-		comeback = true;
 	}
 	else
 	{
@@ -3602,7 +3599,6 @@ static void P_InitLevelSettings(void)
 				gamespeed = (UINT8)cv_kartspeed.value;
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
-		comeback = (boolean)cv_kartcomeback.value;
 	}
 
 	for (i = 0; i < 4; i++)
@@ -3705,14 +3701,10 @@ static void P_ResetSpawnpoints(void)
 static void P_LoadRecordGhosts(void)
 {
 	// see also k_menu.c's Nextmap_OnChange
-	const size_t glen = strlen(srb2home)+1+strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
-	char *gpath = malloc(glen);
+	char *gpath;
 	INT32 i;
 
-	if (!gpath)
-		return;
-
-	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
+	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	// Best Time ghost
 	if (cv_ghost_besttime.value)
@@ -3775,7 +3767,7 @@ static void P_LoadRecordGhosts(void)
 	}
 #endif //#ifdef STAFFGHOSTS
 
-	free(gpath);
+	Z_Free(gpath);
 }
 
 static void P_SetupCamera(UINT8 pnum, camera_t *cam)
