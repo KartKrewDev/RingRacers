@@ -4444,6 +4444,9 @@ static lumpinfo_t* FindFolder(const char *folName, UINT16 *start, UINT16 *end, l
 	return lumpinfo;
 }
 
+lumpnum_t wadnamelump = LUMPERROR;
+INT16 wadnamemap = 0; // gamemap based
+
 // Initialising map data (and catching replacements)...
 UINT8 P_InitMapData(INT32 numexistingmapheaders)
 {
@@ -4491,6 +4494,9 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 
 			mapheaderinfo[i]->lumpnum = maplump;
 
+			if (maplump == wadnamelump)
+				wadnamemap = i+1;
+
 			// Get map thumbnail and minimap
 			virtmap = vres_GetMap(mapheaderinfo[i]->lumpnum);
 			thumbnailPic = vres_Find(virtmap, "PICTURE");
@@ -4500,11 +4506,13 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			if (mapheaderinfo[i]->thumbnailPic)
 			{
 				Patch_Free(mapheaderinfo[i]->thumbnailPic);
+				mapheaderinfo[i]->thumbnailPic = NULL;
 			}
 
 			if (mapheaderinfo[i]->minimapPic)
 			{
 				Patch_Free(mapheaderinfo[i]->minimapPic);
+				mapheaderinfo[i]->minimapPic = NULL;
 			}
 
 			// Now apply the new ones!
