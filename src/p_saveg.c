@@ -2104,6 +2104,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_TERRAIN)
 	{
 		WRITEUINT32(save_p, K_GetTerrainHeapIndex(mobj->terrain));
+		WRITEUINT32(save_p, SaveMobjnum(mobj->terrainOverlay));
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
