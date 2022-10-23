@@ -11556,6 +11556,15 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	{
 		K_DoIngameRespawn(p);
 	}
+	else
+	{
+		// This is important for spectators. If you are
+		// a spectator now, then when you enter the game,
+		// respawn back at this point.
+		p->respawn.pointx = x;
+		p->respawn.pointy = y;
+		p->respawn.pointz = z;
+	}
 
 	P_AfterPlayerSpawn(playernum);
 }
