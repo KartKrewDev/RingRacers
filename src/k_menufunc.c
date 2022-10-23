@@ -885,17 +885,11 @@ boolean M_Responder(event_t *ev)
 
 		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
 		{
-			if (chat_on)
-			{
-				HU_clearChatChars();
-				chat_on = false;
-			}
-			else
+			if (!chat_on)
 			{
 				M_StartControlPanel();
+				return true;
 			}
-
-			return true;
 		}
 
 		noFurtherInput = false; // turns out we didn't care
