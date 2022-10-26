@@ -5529,56 +5529,64 @@ boolean TryRunTics(tic_t realtics)
 
 static INT32 pingtimeout[MAXPLAYERS];
 
+#define PINGKICK_TICQUEUE 2
+#define PINGKICK_LIMIT 1
+
 static inline void PingUpdate(void)
 {
 	INT32 i;
-	boolean laggers[MAXPLAYERS];
-	UINT8 numlaggers = 0;
-	memset(laggers, 0, sizeof(boolean) * MAXPLAYERS);
+	boolean pingkick[MAXPLAYERS];
+	UINT8 nonlaggers = 0;
+	memset(pingkick, 0, sizeof(pingkick));
 
 	netbuffer->packettype = PT_PING;
 
 	//check for ping limit breakage.
 	if (cv_maxping.value)
 	{
-		for (i = 1; i < MAXPLAYERS; i++)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i]
-			&& (realpingtable[i] / pingmeasurecount > (unsigned)cv_maxping.value))
+			if (!playeringame[i] || P_IsMachineLocalPlayer(&players[i]))
 			{
-				if (players[i].jointime > 30 * TICRATE)
-					laggers[i] = true;
-				numlaggers++;
+				pingtimeout[i] = 0;
+				continue;
+			}
+
+			if ((cv_maxping.value)
+				&& (realpingtable[i] / pingmeasurecount > (unsigned)cv_maxping.value))
+			{
+				if (players[i].jointime > 10 * TICRATE)
+				{
+					pingkick[i] = true;
+				}
 			}
 			else
-				pingtimeout[i] = 0;
+			{
+				nonlaggers++;
+
+				// you aren't lagging, but you aren't free yet. In case you'll keep spiking, we just make the timer go back down. (Very unstable net must still get kicked).
+				if (pingtimeout[i] > 0)
+					pingtimeout[i]--;
+			}
 		}
 
 		//kick lagging players... unless everyone but the server's ping sucks.
 		//in that case, it is probably the server's fault.
-		if (numlaggers < D_NumPlayers() - 1)
+		if (nonlaggers > 0)
 		{
-			for (i = 1; i < MAXPLAYERS; i++)
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (playeringame[i] && laggers[i])
-				{
-					pingtimeout[i]++;
+				XBOXSTATIC char buf[2];
 
-					// ok your net has been bad for too long, you deserve to die.
-					if (pingtimeout[i] > cv_pingtimeout.value)
-					{
-						pingtimeout[i] = 0;
-						SendKick(i, KICK_MSG_PING_HIGH);
-					}
-				}
-				/*
-					you aren't lagging,
-					but you aren't free yet.
-					In case you'll keep spiking,
-					we just make the timer go back down. (Very unstable net must still get kicked).
-				*/
-				else
-					pingtimeout[i] = (pingtimeout[i] == 0 ? 0 : pingtimeout[i]-1);
+				if (!playeringame[i] || !pingkick[i])
+					continue;
+
+				// Don't kick on ping alone if we haven't reached our threshold yet.
+				if (++pingtimeout[i] < cv_pingtimeout.value)
+					continue;
+
+				pingtimeout[i] = 0;
+				SendKick(i, KICK_MSG_PING_HIGH);
 			}
 		}
 	}
