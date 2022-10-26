@@ -632,8 +632,8 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
-			demo.savemode = DSM_TITLEENTRY;
+		if (demo.savemode == DSM_NOTSAVING)
+			G_CheckDemoTitleEntry();
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
 			G_SaveDemo();

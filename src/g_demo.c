@@ -3937,3 +3937,16 @@ boolean G_DemoTitleResponder(event_t *ev)
 
 	return true;
 }
+
+boolean G_CheckDemoTitleEntry(void)
+{
+	if (menuactive || chat_on)
+		return false;
+
+	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
+		return false;
+
+	demo.savemode = DSM_TITLEENTRY;
+
+	return true;
+}
