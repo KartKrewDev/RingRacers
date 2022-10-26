@@ -1016,10 +1016,8 @@ static void ST_overlayDrawer(void)
 
 		if (renderisnewtic)
 		{
-			LUA_HUD_ClearDrawList(luahuddrawlist_game);
 			LUA_HookHUD(luahuddrawlist_game, HUD_HOOK(game));
 		}
-		LUA_HUD_DrawList(luahuddrawlist_game);
 	}
 
 	if (!hu_showscores) // hide the following if TAB is held
@@ -1195,6 +1193,10 @@ void ST_Drawer(void)
 	if (st_overlay)
 	{
 		UINT8 i;
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+		}
 		// No deadview!
 		for (i = 0; i <= r_splitscreen; i++)
 		{
@@ -1203,6 +1205,8 @@ void ST_Drawer(void)
 			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();
 		}
+
+		LUA_HUD_DrawList(luahuddrawlist_game);
 
 		// draw Midnight Channel's overlay ontop
 		if (mapheaderinfo[gamemap-1]->typeoflevel & TOL_TV)	// Very specific Midnight Channel stuff.
