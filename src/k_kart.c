@@ -486,6 +486,8 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 5, 1 }  // Jawz x2
 };
 
+// TODO: add back when this gets used
+#if 0
 static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 {
 	//M  N  O  P
@@ -519,6 +521,7 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 1, 1 }, // Orbinaut x4
 	{ 0, 0, 1, 1 }  // Jawz x2
 };
+#endif
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 #define SPBSTARTDIST (6*DISTVAR) // Distance when SPB can start appearing
