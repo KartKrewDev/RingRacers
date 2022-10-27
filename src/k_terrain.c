@@ -517,22 +517,22 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			{
 				if (player->mo->ceilingrover != NULL)
 				{
-					thrustAngle += *player->mo->ceilingrover->bottomangle;
+					thrustAngle -= *player->mo->ceilingrover->bottomangle;
 				}
 				else
 				{
-					thrustAngle += player->mo->subsector->sector->ceilingpic_angle;
+					thrustAngle -= player->mo->subsector->sector->ceilingpic_angle;
 				}
 			}
 			else
 			{
 				if (player->mo->floorrover != NULL)
 				{
-					thrustAngle += *player->mo->floorrover->topangle;
+					thrustAngle -= *player->mo->floorrover->topangle;
 				}
 				else
 				{
-					thrustAngle += player->mo->subsector->sector->floorpic_angle;
+					thrustAngle -= player->mo->subsector->sector->floorpic_angle;
 				}
 			}
 
