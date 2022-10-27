@@ -3052,7 +3052,15 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "LEVELLIST"))
 			{
-				cup->numlevels = 0;
+				while (cup->numlevels > 0)
+				{
+					cup->numlevels--;
+					Z_Free(cup->levellist[cup->numlevels]);
+					cup->levellist[cup->numlevels] = NULL;
+					if (cup->cachedlevels[cup->numlevels] == NEXTMAP_INVALID)
+						continue;
+					mapheaderinfo[cup->cachedlevels[cup->numlevels]]->cup = NULL;
+				}
 
 				tmp = strtok(word2,",");
 				do {
@@ -3069,11 +3077,15 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "BONUSGAME"))
 			{
+				Z_Free(cup->levellist[CUPCACHE_BONUS]);
 				cup->levellist[CUPCACHE_BONUS] = Z_StrDup(word2);
+				cup->cachedlevels[CUPCACHE_BONUS] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
+				Z_Free(cup->levellist[CUPCACHE_SPECIAL]);
 				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
+				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{

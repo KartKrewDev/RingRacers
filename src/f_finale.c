@@ -2386,10 +2386,8 @@ void F_EndCutScene(void)
 			F_StartGameEvaluation();
 		else if (cutnum == introtoplay-1)
 			D_StartTitle();
-		else if (nextmap < NEXTMAP_SPECIAL)
-			G_NextLevel();
 		else
-			G_EndGame();
+			G_NextLevel();
 	}
 }
 

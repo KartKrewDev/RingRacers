@@ -670,6 +670,11 @@ extern int compuncommitted;
 /// Experimental attempts at preventing MF_PAPERCOLLISION objects from getting stuck in walls.
 //#define PAPER_COLLISIONCORRECTION
 
+#ifdef DEVELOP
+// Easily make it so that overtime works offline
+#define TESTOVERTIMEINFREEPLAY
+#endif
+
 /// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
 /// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
 /// on the bright side it fixes some weird issues with translucent walls

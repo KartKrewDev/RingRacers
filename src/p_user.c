@@ -505,7 +505,6 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
 	return num_rings;
 }
@@ -1261,72 +1260,81 @@ void P_DoPlayerExit(player_t *player)
 		K_PlayerLoseLife(player);
 	}
 
-	if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
+	player->exiting = 1;
+
+	if (!player->spectator)
 	{
-		player->exiting = raceexittime+2;
-		K_KartUpdatePosition(player);
-
-		if (cv_kartvoices.value)
+		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
-			if (P_IsDisplayPlayer(player))
+			K_KartUpdatePosition(player);
+
+			if (cv_kartvoices.value)
 			{
-				sfxenum_t sfx_id;
-				if (losing)
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
-				else
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
-				S_StartSound(NULL, sfx_id);
-			}
-			else
-			{
-				if (losing)
-					S_StartSound(player->mo, sfx_klose);
-				else
-					S_StartSound(player->mo, sfx_kwin);
-			}
-		}
-
-		if (cv_inttime.value > 0)
-			P_EndingMusic(player);
-
-		if (P_CheckRacers())
-			player->exiting = raceexittime+1;
-	}
-	else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
-	{
-		player->exiting = battleexittime+1;
-		P_EndingMusic(player);
-	}
-	else
-		player->exiting = raceexittime+2; // Accidental death safeguard???
-
-	if (grandprixinfo.gp == true)
-	{
-		if (player->bot)
-		{
-			// Bots are going to get harder... :)
-			K_IncreaseBotDifficulty(player);
-		}
-		else if (!losing)
-		{
-			const UINT8 lifethreshold = 20;
-			UINT8 extra = 0;
-
-			// YOU WIN
-			grandprixinfo.wonround = true;
-
-			// Increase your total rings
-			if (RINGTOTAL(player) > 0)
-			{
-				player->totalring += RINGTOTAL(player);
-
-				extra = player->totalring / lifethreshold;
-
-				if (extra > player->xtralife)
+				if (P_IsDisplayPlayer(player))
 				{
-					P_GivePlayerLives(player, extra - player->xtralife);
-					S_StartSound(NULL, sfx_cdfm73);
-					player->xtralife = extra;
+					sfxenum_t sfx_id;
+					if (losing)
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
+					else
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
+					S_StartSound(NULL, sfx_id);
+				}
+				else
+				{
+					if (losing)
+						S_StartSound(player->mo, sfx_klose);
+					else
+						S_StartSound(player->mo, sfx_kwin);
+				}
+			}
+
+			// See Y_StartIntermission timer handling
+			if (!K_CanChangeRules(false) || cv_inttime.value > 0)
+				P_EndingMusic(player);
+
+			if (P_CheckRacers() && !exitcountdown)
+				exitcountdown = raceexittime+1;
+		}
+		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
+		{
+			if (!exitcountdown)
+				exitcountdown = battleexittime+1;
+			P_EndingMusic(player);
+		}
+		else // Accidental death safeguard???
+		{
+			if (!exitcountdown)
+				exitcountdown = raceexittime+2;
+		}
+
+		if (grandprixinfo.gp == true)
+		{
+			if (player->bot)
+			{
+				// Bots are going to get harder... :)
+				K_IncreaseBotDifficulty(player);
+			}
+			else if (!losing)
+			{
+				const UINT8 lifethreshold = 20;
+				UINT8 extra = 0;
+
+				// YOU WIN
+				grandprixinfo.wonround = true;
+
+				// Increase your total rings
+				if (RINGTOTAL(player) > 0)
+				{
+					player->totalring += RINGTOTAL(player);
+
+					extra = player->totalring / lifethreshold;
+
+					if (extra > player->xtralife)
+					{
+						P_GivePlayerLives(player, extra - player->xtralife);
+						S_StartSound(NULL, sfx_cdfm73);
+						player->xtralife = extra;
+					}
 				}
 			}
 		}
@@ -3853,8 +3861,6 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	player->pflags &= ~PF_HITFINISHLINE;
-
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
 		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
@@ -3866,11 +3872,6 @@ void P_PlayerThink(player_t *player)
 
 	if (player->awayviewtics && player->awayviewtics != -1)
 		player->awayviewtics--;
-
-	if (player->mo->hitlag > 0)
-	{
-		return;
-	}
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)
@@ -3946,21 +3947,6 @@ void P_PlayerThink(player_t *player)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			INT32 i;
-
-			// Check if all the players in the race have finished. If so, end the level.
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST) && players[i].lives > 0)
-						break;
-				}
-			}
-
-			if (i == MAXPLAYERS && player->exiting == raceexittime+2) // finished
-				player->exiting = raceexittime+1;
-
 #if 0
 			// If 10 seconds are left on the timer,
 			// begin the drown music for countdown!
@@ -3985,45 +3971,6 @@ void P_PlayerThink(player_t *player)
 				}
 			}
 		}
-
-		// If it is set, start subtracting
-		// Don't allow it to go back to 0
-		if (player->exiting > 1 && (player->exiting < raceexittime+2 || !(gametyperules & GTR_CIRCUIT))) // SRB2kart - "&& player->exiting > 1"
-			player->exiting--;
-
-		if (player->exiting && exitcountdown)
-			player->exiting = 99; // SRB2kart
-
-		if (player->exiting == 2 || exitcountdown == 2)
-		{
-			if (server)
-			{
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-			}
-		}
-	}
-
-	// check water content, set stuff in mobj
-	P_MobjCheckWater(player->mo);
-
-#ifndef SECTORSPECIALSAFTERTHINK
-	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
-		player->onconveyor = 0;
-	// check special sectors : damage & secrets
-
-	if (!player->spectator)
-		P_PlayerInSpecialSector(player);
-#endif
-
-	if (player->playerstate == PST_DEAD)
-	{
-		if (player->spectator)
-			player->mo->renderflags |= RF_GHOSTLY;
-		else
-			player->mo->renderflags &= ~RF_GHOSTLYMASK;
-		P_DeathThink(player);
-		LUA_HookPlayer(player, HOOK(PlayerThink));
-		return;
 	}
 
 	// Make sure spectators always have a score and ring count of 0.
@@ -4062,7 +4009,103 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
-	if ((netgame || multiplayer) && player->spectator && cmd->buttons & BT_ATTACK && !player->flashing)
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
+	}
+
+	/* ------------------------------------------ /
+	ALL ABOVE THIS BLOCK OCCURS EVEN WITH HITLAG
+	/ ------------------------------------------ */
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
+
+	/* ------------------------------------------ /
+	ALL BELOW THIS BLOCK IS STOPPED DURING HITLAG
+	/ ------------------------------------------ */
+
+	player->pflags &= ~PF_HITFINISHLINE;
+
+	// check water content, set stuff in mobj
+	P_MobjCheckWater(player->mo);
+
+#ifndef SECTORSPECIALSAFTERTHINK
+	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
+		player->onconveyor = 0;
+	// check special sectors : damage & secrets
+
+	if (!player->spectator)
+		P_PlayerInSpecialSector(player);
+#endif
+
+	if (player->playerstate == PST_DEAD)
+	{
+		if (player->spectator)
+			player->mo->renderflags |= RF_GHOSTLY;
+		else
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
+		P_DeathThink(player);
+		LUA_HookPlayer(player, HOOK(PlayerThink));
+		return;
+	}
+
+	if ((netgame || multiplayer) && player->spectator && !player->bot && cmd->buttons & BT_ATTACK && !player->flashing)
 	{
 		player->pflags ^= PF_WANTSTOJOIN;
 		player->flashing = TICRATE/2 + 1;
@@ -4142,64 +4185,6 @@ void P_PlayerThink(player_t *player)
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
-	}
-
-	if (cmd->flags & TICCMD_TYPING)
-	{
-		/*
-		typing_duration is slow to start and slow to stop.
-
-		typing_timer counts down a grace period before the player is not
-		actually considered typing anymore.
-		*/
-		if (cmd->flags & TICCMD_KEYSTROKE)
-		{
-			/* speed up if we are typing quickly! */
-			if (player->typing_duration > 0 && player->typing_timer > 12)
-			{
-				if (player->typing_duration < 16)
-				{
-					player->typing_duration = 24;
-				}
-				else
-				{
-					/* slows down a tiny bit as it approaches the next dot */
-					const UINT8 step = (((player->typing_duration + 15) & ~15) -
-							player->typing_duration) / 2;
-					player->typing_duration += max(step, 4);
-				}
-			}
-
-			player->typing_timer = 15;
-		}
-		else if (player->typing_timer > 0)
-		{
-			player->typing_timer--;
-		}
-
-		/* if we are in the grace period (including currently typing) */
-		if (player->typing_timer + player->typing_duration > 0)
-		{
-			/* always end the cycle on two dots */
-			if (player->typing_timer == 0 &&
-					(player->typing_duration < 16 || player->typing_duration == 40))
-			{
-				player->typing_duration = 0;
-			}
-			else if (player->typing_duration < 63)
-			{
-				player->typing_duration++;
-			}
-			else
-			{
-				player->typing_duration = 16;
-			}
-		}
-	}
-	else
-	{
-		player->typing_timer = 0;
-		player->typing_duration = 0;
 	}
 
 	if (player->stairjank > 0)

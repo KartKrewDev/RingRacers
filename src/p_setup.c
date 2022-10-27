@@ -96,8 +96,8 @@
 #include "k_boss.h"
 #include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_brightmap.h"
-#include "k_terrain.h" // TRF_TRIPWIRE
 #include "k_director.h" // K_InitDirector
+#include "k_specialstage.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -3565,7 +3565,7 @@ static void P_InitLevelSettings(void)
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
-		if (gametype == GT_BATTLE)
+		if ((gametyperules & GTR_BUMPERS))
 		{
 			gamespeed = KARTSPEED_EASY;
 		}
@@ -3584,7 +3584,10 @@ static void P_InitLevelSettings(void)
 	else if (modeattacking)
 	{
 		// Just play it safe and set everything
-		gamespeed = KARTSPEED_HARD;
+		if ((gametyperules & GTR_BUMPERS))
+			gamespeed = KARTSPEED_EASY;
+		else
+			gamespeed = KARTSPEED_HARD;
 		franticitems = false;
 	}
 	else
@@ -3848,19 +3851,28 @@ static void P_InitGametype(void)
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	numlaps = 0;
 	if (gametyperules & GTR_CIRCUIT)
 	{
-		if ((netgame || multiplayer) && cv_numlaps.value
+		if (K_CanChangeRules(true) && cv_numlaps.value
 		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
 		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
 		{
 			numlaps = cv_numlaps.value;
 		}
+		else if ((grandprixinfo.gp == true)
+			&& (grandprixinfo.eventmode == GPEVENT_NONE)
+			&& cv_gptest.value)
+		{
+			numlaps = 1;
+		}
 		else
 		{
 			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
 		}
+	}
+	else
+	{
+		numlaps = 0;
 	}
 
 	wantedcalcdelay = wantedfrequency*2;
@@ -4474,6 +4486,42 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			continue;
 		}
 
+		// Always check for cup cache reassociations.
+		// (The core assumption is that cups < headers.)
+		{
+			cupheader_t *cup = kartcupheaders;
+			INT32 j;
+
+			while (cup)
+			{
+				for (j = 0; j < CUPCACHE_MAX; j++)
+				{
+					// No level in this slot?
+					if (!cup->levellist[j])
+						continue;
+
+					// Already discovered?
+					if (cup->cachedlevels[j] != NEXTMAP_INVALID)
+						continue;
+
+					// Not your name?
+					if (strcasecmp(cup->levellist[j], name) != 0)
+						continue;
+
+					// Only panic about back-reference for non-bonus material.
+					if (j < MAXLEVELLIST)
+					{
+						if (mapheaderinfo[i]->cup)
+							I_Error("P_InitMapData: Map %s cannot appear in cups multiple times! (First in %s, now in %s)", name, mapheaderinfo[i]->cup->name, cup->name);
+						mapheaderinfo[i]->cup = cup;
+					}
+
+					cup->cachedlevels[j] = i;
+				}
+				cup = cup->next;
+			}
+		}
+
 		// No change?
 		if (mapheaderinfo[i]->lumpnum == maplump)
 			continue;
@@ -4527,37 +4575,6 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			}
 
 			vres_Free(virtmap);
-
-			// Now associate it with a cup cache.
-			// (The core assumption is that cups < headers.)
-			if (i >= numexistingmapheaders)
-			{
-				cupheader_t *cup = kartcupheaders;
-				INT32 j;
-				while (cup)
-				{
-					for (j = 0; j < CUPCACHE_MAX; j++)
-					{
-						// Already discovered?
-						if (cup->cachedlevels[j] != NEXTMAP_INVALID)
-							continue;
-
-						if (!cup->levellist[j] || strcasecmp(cup->levellist[j], name) != 0)
-							continue;
-
-						// Only panic about back-reference for non-bonus material.
-						if (j < MAXLEVELLIST || j == CUPCACHE_SPECIAL)
-						{
-							if (mapheaderinfo[i]->cup)
-								I_Error("P_InitMapData: Map %s cannot appear in cups multiple times! (First in %s, now in %s)", name, mapheaderinfo[i]->cup->name, cup->name);
-							mapheaderinfo[i]->cup = cup;
-						}
-
-						cup->cachedlevels[j] = i;
-					}
-					cup = cup->next;
-				}
-			}
 		}
 	}
 

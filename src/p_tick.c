@@ -37,6 +37,7 @@
 #include "k_boss.h"
 #include "k_waypoint.h"
 #include "k_director.h"
+#include "k_specialstage.h"
 
 tic_t leveltime;
 
@@ -594,20 +595,32 @@ void P_Ticker(boolean run)
 
 		ps_playerthink_time = I_GetPreciseTime();
 
+#define PLAYERCONDITION(i) (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_UpdateDistanceFromFinishLine(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			K_UpdateDistanceFromFinishLine(&players[i]);
+		}
 
 		// Second loop: Ensure all player positions reflect everyone's distances
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_KartUpdatePosition(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			K_KartUpdatePosition(&players[i]);
+		}
 
 		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				P_PlayerThink(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			P_PlayerThink(&players[i]);
+			K_KartPlayerHUDUpdate(&players[i]);
+		}
+#undef PLAYERCONDITION
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
@@ -690,11 +703,19 @@ void P_Ticker(boolean run)
 			racecountdown--;
 
 		if (exitcountdown > 1)
+		{
 			exitcountdown--;
+			if (server && exitcountdown == 1)
+			{
+				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			}
+		}
 
 		K_RunItemCooldowns();
 
 		K_BossInfoTicker();
+
+		K_TickSpecialStage();
 
 		if ((gametyperules & GTR_BUMPERS))
 		{

@@ -55,7 +55,7 @@ extern consvar_t cv_itemrespawn;
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
-extern UINT32 timelimitintics;
+extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern consvar_t cv_allowexitlevel;
 
 extern consvar_t cv_autobalance;
@@ -120,7 +120,8 @@ extern consvar_t cv_kartusepwrlv;
 extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
-extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector, cv_spbtest;
+extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
+extern consvar_t cv_spbtest, cv_gptest;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
 extern consvar_t cv_itemfinder;

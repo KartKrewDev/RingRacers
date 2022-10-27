@@ -2416,7 +2416,7 @@ static void HU_DrawRankings(void)
 
 	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
 	{
-		if ((gametyperules & GTR_TIMELIMIT) && cv_timelimit.value && timelimitintics > 0)
+		if ((gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
 		{
 			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
 			if (timeval > timelimitintics+1)

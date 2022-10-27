@@ -40,6 +40,8 @@
 #include "k_collide.h"
 #include "k_follower.h"
 #include "k_objects.h"
+#include "k_grandprix.h"
+#include "k_specialstage.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -95,70 +97,86 @@ void K_TimerReset(void)
 {
 	starttime = introtime = 3;
 	numbulbs = 1;
-	inDuel = false;
+	inDuel = rainbowstartavailable = false;
+	timelimitintics = extratimeintics = secretextratime = 0;
 }
 
 void K_TimerInit(void)
 {
 	UINT8 i;
-	UINT8 numPlayers = 0;//, numspec = 0;
+	UINT8 numPlayers = 0;
+	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
-	if (!bossinfo.boss)
+	if (specialStage.active == true)
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		K_InitSpecialStage();
+	}
+	else if (bossinfo.boss == false)
+	{
+		if (!domodeattack)
 		{
-			if (!playeringame[i])
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				continue;
+				if (!playeringame[i] || players[i].spectator)
+				{
+					continue;
+				}
+
+				numPlayers++;
 			}
 
-			if (players[i].spectator == true)
+			if (numPlayers < 2)
 			{
-				//numspec++;
-				continue;
+				domodeattack = true;
 			}
+			else
+			{
+				numbulbs = 5;
+				rainbowstartavailable = true;
 
-			numPlayers++;
-		}
+				// 1v1 activates DUEL rules!
+				inDuel = (numPlayers == 2);
 
-		// 1v1 activates DUEL rules!
-		inDuel = (numPlayers == 2);
-
-		if (numPlayers >= 2)
-		{
-			rainbowstartavailable = true;
-		}
-		else
-		{
-			rainbowstartavailable = false;
-		}
-
-		// No intro in Record Attack / 1v1
-		// Leave unset for the value in K_TimerReset
-		if (numPlayers > 2)
-		{
-			introtime = (108) + 5; // 108 for rotation, + 5 for white fade
-		}
-
-		numbulbs = 5;
-
-		if (numPlayers > 2)
-		{
-			numbulbs += (numPlayers-2);
+				if (!inDuel)
+				{
+					introtime = (108) + 5; // 108 for rotation, + 5 for white fade
+					numbulbs += (numPlayers-2); // Extra POSITION!! time
+				}
+			}
 		}
 
 		starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
 	}
 
-	// NOW you can try to spawn in the Battle capsules, if there's not enough players for a match
-	K_BattleInit();
+	K_BattleInit(domodeattack);
+
+	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss && !modeattacking)
+	{
+		if (!K_CanChangeRules(true))
+		{
+			if (battlecapsules)
+			{
+				timelimitintics = (20*TICRATE);
+			}
+			else
+			{
+				timelimitintics = timelimits[gametype] * (60*TICRATE);
+			}
+		}
+		else
+#ifndef TESTOVERTIMEINFREEPLAY
+			if (!battlecapsules)
+#endif
+		{
+			timelimitintics = cv_timelimit.value * (60*TICRATE);
+		}
+	}
 
 	if (inDuel == true)
 	{
 		K_SpawnDuelOnlyItems();
 	}
-
-	//CONS_Printf("numbulbs set to %d (%d players, %d spectators) on tic %d\n", numbulbs, numPlayers, numspec, leveltime);
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)
@@ -316,6 +334,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
+	CV_RegisterVar(&cv_gptest);
 }
 
 //}
@@ -325,10 +344,10 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
-	if (battlecapsules && player->bumpers <= 0)
-		return true; // DNF in break the capsules
+	if (battlecapsules && numtargets == 0)
+		return true; // Didn't even TRY?
 
-	if (bossinfo.boss)
+	if (battlecapsules || bossinfo.boss)
 		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)
@@ -465,6 +484,40 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 2, 0 }, // Orbinaut x3
 	{ 1, 1 }, // Orbinaut x4
 	{ 5, 1 }  // Jawz x2
+};
+
+static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
+{
+	//M  N  O  P
+	{ 1, 1, 0, 0 }, // Sneaker
+	{ 0, 0, 0, 0 }, // Rocket Sneaker
+	{ 0, 0, 0, 0 }, // Invincibility
+	{ 0, 0, 0, 0 }, // Banana
+	{ 0, 0, 0, 0 }, // Eggman Monitor
+	{ 1, 1, 0, 0 }, // Orbinaut
+	{ 1, 1, 0, 0 }, // Jawz
+	{ 0, 0, 0, 0 }, // Mine
+	{ 0, 0, 0, 0 }, // Land Mine
+	{ 0, 0, 0, 0 }, // Ballhog
+	{ 0, 0, 0, 1 }, // Self-Propelled Bomb
+	{ 0, 0, 0, 0 }, // Grow
+	{ 0, 0, 0, 0 }, // Shrink
+	{ 0, 0, 0, 0 }, // Lightning Shield
+	{ 0, 0, 0, 0 }, // Bubble Shield
+	{ 0, 0, 0, 0 }, // Flame Shield
+	{ 0, 0, 0, 0 }, // Hyudoro
+	{ 0, 0, 0, 0 }, // Pogo Spring
+	{ 0, 0, 0, 0 }, // Super Ring
+	{ 0, 0, 0, 0 }, // Kitchen Sink
+	{ 0, 0, 0, 0 }, // Drop Target
+	{ 0, 0, 0, 0 }, // Garden Top
+	{ 0, 1, 1, 0 }, // Sneaker x2
+	{ 0, 0, 1, 1 }, // Sneaker x3
+	{ 0, 0, 0, 0 }, // Banana x3
+	{ 0, 0, 0, 0 }, // Banana x10
+	{ 0, 1, 1, 0 }, // Orbinaut x3
+	{ 0, 0, 1, 1 }, // Orbinaut x4
+	{ 0, 0, 1, 1 }  // Jawz x2
 };
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
@@ -6449,7 +6502,8 @@ static void K_DoShrink(player_t *user)
 		{
 			next = mobj->itnext;
 
-			if (mobj->type == MT_SPB)
+			if (mobj->type == MT_SPB
+				|| mobj->type == MT_BATTLECAPSULE)
 			{
 				continue;
 			}
@@ -7762,7 +7816,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
-	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] < 2*TICRATE)
+	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
 		player->karthud[khud_fault]++;
 
 	if (player->karthud[khud_itemblink] && player->karthud[khud_itemblink]-- <= 0)
@@ -7771,30 +7825,33 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		player->karthud[khud_itemblink] = 0;
 	}
 
-	if (gametype == GT_RACE)
+	if (!(gametyperules & GTR_SPHERES))
 	{
-		// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
-		if (player->ringboost >= 30)
-			player->karthud[khud_ringdelay] = 0;
-		else
-			player->karthud[khud_ringdelay] = ((RINGANIM_DELAYMAX+1) * (30 - player->ringboost)) / 30;
+		if (player->mo && player->mo->hitlag <= 0)
+		{
+			// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
+			if (player->ringboost >= 30)
+				player->karthud[khud_ringdelay] = 0;
+			else
+				player->karthud[khud_ringdelay] = ((RINGANIM_DELAYMAX+1) * (30 - player->ringboost)) / 30;
 
-		if (player->karthud[khud_ringframe] == 0 && player->karthud[khud_ringdelay] > RINGANIM_DELAYMAX)
-		{
-			player->karthud[khud_ringframe] = 0;
-			player->karthud[khud_ringtics] = 0;
-		}
-		else if ((player->karthud[khud_ringtics]--) <= 0)
-		{
-			if (player->karthud[khud_ringdelay] == 0) // fast spin animation
+			if (player->karthud[khud_ringframe] == 0 && player->karthud[khud_ringdelay] > RINGANIM_DELAYMAX)
 			{
-				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+2) % RINGANIM_NUMFRAMES);
+				player->karthud[khud_ringframe] = 0;
 				player->karthud[khud_ringtics] = 0;
 			}
-			else
+			else if ((player->karthud[khud_ringtics]--) <= 0)
 			{
-				player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+1) % RINGANIM_NUMFRAMES);
-				player->karthud[khud_ringtics] = min(RINGANIM_DELAYMAX, player->karthud[khud_ringdelay])-1;
+				if (player->karthud[khud_ringdelay] == 0) // fast spin animation
+				{
+					player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+2) % RINGANIM_NUMFRAMES);
+					player->karthud[khud_ringtics] = 0;
+				}
+				else
+				{
+					player->karthud[khud_ringframe] = ((player->karthud[khud_ringframe]+1) % RINGANIM_NUMFRAMES);
+					player->karthud[khud_ringtics] = min(RINGANIM_DELAYMAX, player->karthud[khud_ringdelay])-1;
+				}
 			}
 		}
 
@@ -7824,16 +7881,20 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
 	}
 
+	if (player->exiting)
+	{
+		if (player->karthud[khud_finish] <= 2*TICRATE)
+			player->karthud[khud_finish]++;
+	}
+	else
+		player->karthud[khud_finish] = 0;
+
 	if ((gametyperules & GTR_BUMPERS) && (player->exiting || player->karmadelay))
 	{
 		if (player->exiting)
 		{
-			if (player->exiting < 6*TICRATE)
+			if (exitcountdown < 6*TICRATE)
 				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
-			else if (player->exiting == 6*TICRATE)
-				player->karthud[khud_cardanimation] = 0;
-			else if (player->karthud[khud_cardanimation] < 2*TICRATE)
-				player->karthud[khud_cardanimation]++;
 		}
 		else
 		{
@@ -7847,11 +7908,6 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_cardanimation] = 164;
 		if (player->karthud[khud_cardanimation] < 0)
 			player->karthud[khud_cardanimation] = 0;
-	}
-	else if (gametype == GT_RACE && player->exiting)
-	{
-		if (player->karthud[khud_cardanimation] < 2*TICRATE)
-			player->karthud[khud_cardanimation]++;
 	}
 	else
 		player->karthud[khud_cardanimation] = 0;
@@ -8408,8 +8464,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_UpdateTripwire(player);
-
-	K_KartPlayerHUDUpdate(player);
 
 	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
 	{
@@ -11513,7 +11567,7 @@ void K_CheckSpectateStatus(void)
 				return;
 			continue;
 		}
-		else if (!(players[i].pflags & PF_WANTSTOJOIN))
+		else if (players[i].bot || !(players[i].pflags & PF_WANTSTOJOIN))
 			continue;
 
 		respawnlist[numjoiners++] = i;

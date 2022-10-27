@@ -4597,6 +4597,10 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT32(save_p, starttime);
 	WRITEUINT8(save_p, numbulbs);
 
+	WRITEUINT32(save_p, timelimitintics);
+	WRITEUINT32(save_p, extratimeintics);
+	WRITEUINT32(save_p, secretextratime);
+
 	// Is it paused?
 	if (paused)
 		WRITEUINT8(save_p, 0x2f);

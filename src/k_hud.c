@@ -12,6 +12,7 @@
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_grandprix.h"
 #include "k_boss.h"
 #include "k_color.h"
 #include "k_director.h"
@@ -75,7 +76,9 @@ static patch_t *kp_winnernum[NUMPOSFRAMES];
 static patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
 
+static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
+static patch_t *kp_capsuleminimap[2];
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -311,7 +314,11 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_facehighlight[i], "%s", buffer);
 	}
 
+	// Special minimap icons
+	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
+	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
+	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -1385,33 +1392,40 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	// TIME_Y = 6;					//   6
 
 	tic_t worktime;
-	boolean dontdraw = false;
+	INT32 jitter = 0;
 
 	INT32 splitflags = 0;
 	if (!mode)
 	{
 		splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
 
-#ifndef TESTOVERTIMEINFREEPLAY
-		if (battlecapsules) // capsules override any time limit settings
-			;
-		else
-#endif
-		if (bossinfo.boss == true)
-			;
-		else if (timelimitintics > 0 && (gametyperules & GTR_TIMELIMIT)) // TODO
+		if (timelimitintics > 0)
 		{
 			if (drawtime >= timelimitintics)
 			{
-				if (((drawtime-timelimitintics)/TICRATE) & 1)
-				{
-					dontdraw = true;
-				}
+				jitter = 2;
+				if (drawtime & 2)
+					jitter = -jitter;
 				drawtime = 0;
 			}
 			else
 			{
 				drawtime = timelimitintics - drawtime;
+				if (secretextratime)
+					;
+				else if (extratimeintics)
+				{
+					jitter = 2;
+					if (leveltime & 1)
+						jitter = -jitter;
+				}
+				else if (drawtime <= 5*TICRATE)
+				{
+					jitter = ((drawtime <= 3*TICRATE) && (((drawtime-1) % TICRATE) >= TICRATE-2))
+						? 3 : 1;
+					if (drawtime & 2)
+						jitter = -jitter;
+				}
 			}
 		}
 	}
@@ -1422,57 +1436,39 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 
 	worktime = drawtime/(60*TICRATE);
 
+	if (worktime >= 100)
+	{
+		jitter = (drawtime & 1 ? 1 : -1);
+		worktime = 99;
+		drawtime = (100*(60*TICRATE))-1;
+	}
+
 	if (mode && !drawtime)
 		V_DrawKartString(TX, TY+3, splitflags, va("--'--\"--"));
-	else if (dontdraw) // overtime flash
-		;
-	else if (worktime < 100) // 99:99:99 only
+	else
 	{
-		// zero minute
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX, TY+3, splitflags, va("0"));
-			// minutes time       0 __ __
-			V_DrawKartString(TX+12, TY+3, splitflags, va("%d", worktime));
-		}
-		// minutes time       0 __ __
-		else
-			V_DrawKartString(TX, TY+3, splitflags, va("%d", worktime));
+		// minutes time      00 __ __
+		V_DrawKartString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawKartString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// apostrophe location     _'__ __
 		V_DrawKartString(TX+24, TY+3, splitflags, va("'"));
 
 		worktime = (drawtime/TICRATE % 60);
 
-		// zero second        _ 0_ __
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX+36, TY+3, splitflags, va("0"));
-		// seconds time       _ _0 __
-			V_DrawKartString(TX+48, TY+3, splitflags, va("%d", worktime));
-		}
-		// zero second        _ 00 __
-		else
-			V_DrawKartString(TX+36, TY+3, splitflags, va("%d", worktime));
+		// seconds time       _ 00 __
+		V_DrawKartString(TX+36, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawKartString(TX+48, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// quotation mark location    _ __"__
 		V_DrawKartString(TX+60, TY+3, splitflags, va("\""));
 
 		worktime = G_TicsToCentiseconds(drawtime);
 
-		// zero tick          _ __ 0_
-		if (worktime < 10)
-		{
-			V_DrawKartString(TX+72, TY+3, splitflags, va("0"));
-		// tics               _ __ _0
-			V_DrawKartString(TX+84, TY+3, splitflags, va("%d", worktime));
-		}
-		// zero tick          _ __ 00
-		else
-			V_DrawKartString(TX+72, TY+3, splitflags, va("%d", worktime));
+		// tics               _ __ 00
+		V_DrawKartString(TX+72, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawKartString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
 	}
-	else if ((drawtime/TICRATE) & 1)
-		V_DrawKartString(TX, TY+3, splitflags, va("99'59\"99"));
 
 	if (emblemmap && (modeattacking || (mode == 1)) && !demo.playback) // emblem time!
 	{
@@ -3326,16 +3322,15 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 
 static void K_drawKartMinimap(void)
 {
-	patch_t *AutomapPic;
+	patch_t *AutomapPic, *workingPic;
 	INT32 i = 0;
 	INT32 x, y;
 	INT32 minimaptrans = 4;
 	INT32 splitflags = 0;
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
-	SINT8 localplayers[4];
+	SINT8 localplayers[MAXSPLITSCREENPLAYERS];
 	SINT8 numlocalplayers = 0;
-	INT32 hyu = hyudorotime;
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
 	fixed_t interpx, interpy;
 
@@ -3412,11 +3407,8 @@ static void K_drawKartMinimap(void)
 	}
 
 	// initialize
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		localplayers[i] = -1;
-
-	if (gametype == GT_RACE)
-		hyu *= 2; // double in race
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
 	if (ghosts)
@@ -3448,8 +3440,7 @@ static void K_drawKartMinimap(void)
 		if (!stplyr->mo || stplyr->spectator || stplyr->exiting)
 			return;
 
-		localplayers[numlocalplayers] = stplyr-players;
-		numlocalplayers++;
+		localplayers[numlocalplayers++] = stplyr-players;
 	}
 	else
 	{
@@ -3457,50 +3448,60 @@ static void K_drawKartMinimap(void)
 		{
 			if (!playeringame[i])
 				continue;
-			if (!players[i].mo || players[i].spectator || players[i].exiting)
+			if (!players[i].mo || players[i].spectator || !players[i].mo->skin || players[i].exiting)
 				continue;
-
-			if (i != displayplayers[0] || r_splitscreen)
-			{
-				if (gametype == GT_BATTLE && players[i].bumpers <= 0)
-					continue;
-
-				if (players[i].hyudorotimer > 0)
-				{
-					if (!((players[i].hyudorotimer < TICRATE/2
-						|| players[i].hyudorotimer > hyu-(TICRATE/2))
-						&& !(leveltime & 1)))
-						continue;
-				}
-			}
 
 			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
-				localplayers[numlocalplayers] = i;
-				numlocalplayers++;
+				localplayers[numlocalplayers++] = i;
 				continue;
 			}
 
-			if (players[i].mo->skin)
-				skin = ((skin_t*)players[i].mo->skin)-skins;
-			else
-				skin = 0;
+			// Now we know it's not a display player, handle non-local player exceptions.
+			if ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0)
+				continue;
 
-			if (players[i].mo->color)
+			if (players[i].hyudorotimer > 0)
 			{
-				if (players[i].mo->colorized)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, players[i].mo->color, GTC_CACHE);
-				else
-					colormap = R_GetTranslationColormap(skin, players[i].mo->color, GTC_CACHE);
+				if (!((players[i].hyudorotimer < TICRATE/2
+					|| players[i].hyudorotimer > hyudorotime-(TICRATE/2))
+					&& !(leveltime & 1)))
+					continue;
+			}
+
+			mobj = players[i].mo;
+
+			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
+			{
+				workingPic = kp_nocontestminimap;
+				R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+
+				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+					mobj = mobj->tracer;
 			}
 			else
-				colormap = NULL;
+			{
+				skin = ((skin_t*)mobj->skin)-skins;
 
-			interpx = R_InterpolateFixed(players[i].mo->old_x, players[i].mo->x);
-			interpy = R_InterpolateFixed(players[i].mo->old_y, players[i].mo->y);
+				workingPic = faceprefix[skin][FACE_MINIMAP];
+
+				if (mobj->color)
+				{
+					if (mobj->colorized)
+						colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+					else
+						colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
+				}
+				else
+					colormap = NULL;
+			}
+
+			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+
 			// Target reticule
 			if ((gametype == GT_RACE && players[i].position == spbplace)
 				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
@@ -3510,27 +3511,48 @@ static void K_drawKartMinimap(void)
 		}
 	}
 
-	// draw SPB(s?)
+	// draw minimap-pertinent objects
 	for (mobj = kitemcap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
-		if (mobj->type == MT_SPB)
+
+		workingPic = NULL;
+		colormap = NULL;
+
+		if (mobj->health <= 0)
+			continue;
+
+		switch (mobj->type)
 		{
-			colormap = NULL;
-
-			if (mobj->target && !P_MobjWasRemoved(mobj->target))
-			{
-				if (mobj->player && mobj->player->skincolor)
-					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->player->skincolor, GTC_CACHE);
-				else if (mobj->color)
+			case MT_SPB:
+				workingPic = kp_spbminimap;
+#if 0
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player && mobj->target->player->skincolor)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->target->player->skincolor, GTC_CACHE);
+				}
+				else
+#endif
+				if (mobj->color)
+				{
 					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
-			}
+				}
 
-			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
-			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
-
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_spbminimap, colormap, AutomapPic);
+				break;
+			case MT_BATTLECAPSULE:
+				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
+				break;
+			default:
+				break;
 		}
+
+		if (!workingPic)
+			continue;
+
+		interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+		interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
+
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 	}
 
 	// draw our local players here, opaque.
@@ -3569,28 +3591,43 @@ static void K_drawKartMinimap(void)
 
 	for (i = 0; i < numlocalplayers; i++)
 	{
-		if (i == -1)
+		if (localplayers[i] == -1)
 			continue; // this doesn't interest us
 
-		if (players[localplayers[i]].mo->skin)
-			skin = ((skin_t*)players[localplayers[i]].mo->skin)-skins;
-		else
-			skin = 0;
+		if ((players[i].hyudorotimer > 0) && (leveltime & 1))
+			continue;
 
-		if (players[localplayers[i]].mo->color)
+		mobj = players[localplayers[i]].mo;
+
+		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
-			if (players[localplayers[i]].mo->colorized)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, players[localplayers[i]].mo->color, GTC_CACHE);
-			else
-				colormap = R_GetTranslationColormap(skin, players[localplayers[i]].mo->color, GTC_CACHE);
+			workingPic = kp_nocontestminimap;
+			R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+
+			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
+				mobj = mobj->tracer;
 		}
 		else
-			colormap = NULL;
+		{
+			skin = ((skin_t*)mobj->skin)-skins;
 
-		interpx = R_InterpolateFixed(players[localplayers[i]].mo->old_x, players[localplayers[i]].mo->x);
-		interpy = R_InterpolateFixed(players[localplayers[i]].mo->old_y, players[localplayers[i]].mo->y);
+			workingPic = faceprefix[skin][FACE_MINIMAP];
 
-		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
+			if (mobj->color)
+			{
+				if (mobj->colorized)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, mobj->color, GTC_CACHE);
+				else
+					colormap = R_GetTranslationColormap(skin, mobj->color, GTC_CACHE);
+			}
+			else
+				colormap = NULL;
+		}
+
+		interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+		interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
+
+		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 
 		// Target reticule
 		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
@@ -3598,6 +3635,60 @@ static void K_drawKartMinimap(void)
 		{
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
+	}
+}
+
+static void K_drawKartFinish(boolean finish)
+{
+	INT32 timer, minsplitstationary, pnum = 0, splitflags = V_SPLITSCREEN;
+	patch_t **kptodraw;
+
+	if (finish)
+	{
+		timer = stplyr->karthud[khud_finish];
+		kptodraw = kp_racefinish;
+		minsplitstationary = 2;
+	}
+	else
+	{
+		timer = stplyr->karthud[khud_fault];
+		kptodraw = kp_racefault;
+		minsplitstationary = 1;
+	}
+
+	if (!timer || timer > 2*TICRATE)
+		return;
+
+	if ((timer % (2*5)) / 5) // blink
+		pnum = 1;
+
+	if (r_splitscreen > 0)
+		pnum += (r_splitscreen > 1) ? 2 : 4;
+
+	if (r_splitscreen >= minsplitstationary) // 3/4p, stationary FIN
+	{
+		V_DrawScaledPatch(STCD_X - (SHORT(kptodraw[pnum]->width)/2), STCD_Y - (SHORT(kptodraw[pnum]->height)/2), splitflags, kptodraw[pnum]);
+		return;
+	}
+
+	//else -- 1/2p, scrolling FINISH
+	{
+		INT32 x, xval, ox, interpx;
+
+		x = ((vid.width<<FRACBITS)/vid.dupx);
+		xval = (SHORT(kptodraw[pnum]->width)<<FRACBITS);
+		x = ((TICRATE - timer)*(xval > x ? xval : x))/TICRATE;
+		ox = ((TICRATE - (timer - 1))*(xval > x ? xval : x))/TICRATE;
+
+		interpx = R_InterpolateFixed(ox, x);
+
+		if (r_splitscreen && stplyr == &players[displayplayers[1]])
+			interpx = -interpx;
+
+		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (xval>>1),
+			(STCD_Y<<FRACBITS) - (SHORT(kptodraw[pnum]->height)<<(FRACBITS-1)),
+			FRACUNIT,
+			splitflags, kptodraw[pnum], NULL);
 	}
 }
 
@@ -3765,39 +3856,11 @@ static void K_drawKartStartCountdown(void)
 
 	if (stplyr->karthud[khud_fault] != 0)
 	{
-		INT32 x, xval;
-
-		if (r_splitscreen > 1) // 3/4p, stationary FIN
-		{
-			pnum += 2;
-		}
-		else if (r_splitscreen == 1) // wide splitscreen
-		{
-			pnum += 4;
-		}
-
-		if ((leveltime % (2*5)) / 5) // blink
-			pnum += 1;
-
-		if (r_splitscreen == 0)
-		{
-			x = ((vid.width<<FRACBITS)/vid.dupx);
-			xval = (SHORT(kp_racefault[pnum]->width)<<FRACBITS);
-			x = ((TICRATE - stplyr->karthud[khud_fault])*(xval > x ? xval : x))/TICRATE;
-
-			V_DrawFixedPatch(x + (STCD_X<<FRACBITS) - (xval>>1),
-				(STCD_Y<<FRACBITS) - (SHORT(kp_racefault[pnum]->height)<<(FRACBITS-1)),
-				FRACUNIT,
-				V_SPLITSCREEN, kp_racefault[pnum], NULL);
-		}
-		else
-		{
-			V_DrawScaledPatch(STCD_X - (SHORT(kp_racefault[pnum]->width)/2), STCD_Y - (SHORT(kp_racefault[pnum]->height)/2), V_SPLITSCREEN, kp_racefault[pnum]);
-		}
+		K_drawKartFinish(false);
 	}
 	else if (leveltime >= introtime && leveltime < starttime-(3*TICRATE))
 	{
-		if (bossinfo.boss == false)
+		if (numbulbs > 1)
 			K_drawKartStartBulbs();
 	}
 	else
@@ -3836,47 +3899,6 @@ static void K_drawKartStartCountdown(void)
 			pnum += 10;
 
 		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN, kp_startcountdown[pnum]);
-	}
-}
-
-static void K_drawKartFinish(void)
-{
-	INT32 pnum = 0, splitflags = V_SPLITSCREEN;
-
-	if (!stplyr->karthud[khud_cardanimation] || stplyr->karthud[khud_cardanimation] >= 2*TICRATE)
-		return;
-
-	if ((stplyr->karthud[khud_cardanimation] % (2*5)) / 5) // blink
-		pnum = 1;
-
-	if (r_splitscreen > 1) // 3/4p, stationary FIN
-	{
-		pnum += 2;
-		V_DrawScaledPatch(STCD_X - (SHORT(kp_racefinish[pnum]->width)/2), STCD_Y - (SHORT(kp_racefinish[pnum]->height)/2), splitflags, kp_racefinish[pnum]);
-		return;
-	}
-
-	//else -- 1/2p, scrolling FINISH
-	{
-		INT32 x, xval, ox, interpx;
-
-		if (r_splitscreen) // wide splitscreen
-			pnum += 4;
-
-		x = ((vid.width<<FRACBITS)/vid.dupx);
-		xval = (SHORT(kp_racefinish[pnum]->width)<<FRACBITS);
-		x = ((TICRATE - stplyr->karthud[khud_cardanimation])*(xval > x ? xval : x))/TICRATE;
-		ox = ((TICRATE - (stplyr->karthud[khud_cardanimation] - 1))*(xval > x ? xval : x))/TICRATE;
-
-		interpx = R_InterpolateFixed(ox, x);
-
-		if (r_splitscreen && stplyr == &players[displayplayers[1]])
-			interpx = -interpx;
-
-		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (xval>>1),
-			(STCD_Y<<FRACBITS) - (SHORT(kp_racefinish[pnum]->height)<<(FRACBITS-1)),
-			FRACUNIT,
-			splitflags, kp_racefinish[pnum], NULL);
 	}
 }
 
@@ -3931,19 +3953,19 @@ static void K_drawBattleFullscreen(void)
 	{
 		if (stplyr == &players[displayplayers[0]])
 			V_DrawFadeScreen(0xFF00, 16);
-		if (stplyr->exiting < 6*TICRATE && !stplyr->spectator)
+		if (exitcountdown <= 6*TICRATE && !stplyr->spectator)
 		{
 			patch_t *p = kp_battlecool;
 
 			if (K_IsPlayerLosing(stplyr))
 				p = kp_battlelose;
-			else if (stplyr->position == 1)
+			else if (stplyr->position == 1 && (!battlecapsules || numtargets >= maptargets))
 				p = kp_battlewin;
 
 			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, p, NULL);
 		}
-		else
-			K_drawKartFinish();
+
+		K_drawKartFinish(true);
 	}
 	else if (stplyr->bumpers <= 0 && stplyr->karmadelay && !stplyr->spectator && drawcomebacktimer)
 	{
@@ -3985,7 +4007,7 @@ static void K_drawBattleFullscreen(void)
 		}
 	}
 
-	if (netgame && !stplyr->spectator) // FREE PLAY?
+	// FREE PLAY?
 	{
 		UINT8 i;
 
@@ -3994,11 +4016,11 @@ static void K_drawBattleFullscreen(void)
 		{
 			if (i == displayplayers[0])
 				continue;
-			if (playeringame[i] && !stplyr->spectator)
-				return;
+			if (playeringame[i] && !players[i].spectator)
+				break;
 		}
 
-		if (LUA_HudEnabled(hud_freeplay))
+		if (i != MAXPLAYERS)
 			K_drawKartFreePlay();
 	}
 }
@@ -4392,8 +4414,13 @@ static void K_drawTrickCool(void)
 
 void K_drawKartFreePlay(void)
 {
-	// no splitscreen support because it's not FREE PLAY if you have more than one player in-game
-	// (you fool, you can take splitscreen online. :V)
+	// Doesn't support splitscreens higher than 2 for real estate reasons.
+
+	if (!LUA_HudEnabled(hud_freeplay))
+		return;
+
+	if (modeattacking || grandprixinfo.gp || bossinfo.boss || stplyr->spectator)
+		return;
 
 	if (lt_exitticker < TICRATE/2)
 		return;
@@ -4402,7 +4429,7 @@ void K_drawKartFreePlay(void)
 		return;
 
 	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - 72, // mirror the laps thingy
-		LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, "FREE PLAY");
+		LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, "FREE PLAY");
 }
 
 static void
@@ -4750,7 +4777,7 @@ void K_drawKartHUD(void)
 	if (gametype == GT_RACE && !freecam)
 	{
 		if (stplyr->exiting)
-			K_drawKartFinish();
+			K_drawKartFinish(true);
 		else if (stplyr->karthud[khud_lapanimation] && !r_splitscreen)
 			K_drawLapStartAnim();
 	}
@@ -4766,11 +4793,8 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (islonesome && !modeattacking && !bossinfo.boss && !stplyr->spectator)
-	{
-		if (LUA_HudEnabled(hud_freeplay))
-			K_drawKartFreePlay();
-	}
+	if (islonesome)
+		K_drawKartFreePlay();
 
 	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))
 	{

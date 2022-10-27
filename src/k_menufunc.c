@@ -3443,9 +3443,7 @@ void M_CupSelectHandler(INT32 choice)
 			// Don't restart the server if we're already in a game lol
 			if (gamestate == GS_MENU)
 			{
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				netgame = levellist.netgame;	// ^ ditto.
+				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 			}
 
 			levelNum = grandprixinfo.cup->cachedlevels[0];
@@ -3600,9 +3598,7 @@ void M_LevelSelectHandler(INT32 choice)
 				F_WipeEndScreen();
 				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				netgame = levellist.netgame;	// ^ ditto.
+				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
 				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
 				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
@@ -3700,7 +3696,7 @@ void M_StartTimeAttack(INT32 choice)
 	F_WipeEndScreen();
 	F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-	SV_StartSinglePlayerServer();
+	SV_StartSinglePlayerServer(levellist.newgametype, false);
 
 	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
 			srb2home, timeattackfolder);
@@ -4398,7 +4394,7 @@ void M_InitOptions(INT32 choice)
 
 	// enable gameplay & server options under the right circumstances.
 	if (gamestate == GS_MENU
-		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules()))
+		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules(false)))
 	{
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
@@ -5734,7 +5730,7 @@ void M_OpenPauseMenu(void)
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
-	if (K_CanChangeRules())
+	if (K_CanChangeRules(false))
 	{
 		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
 

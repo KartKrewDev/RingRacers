@@ -5157,8 +5157,12 @@ boolean P_IsKartItem(INT32 type)
 		case MT_JAWZ_SHIELD:
 		case MT_SSMINE_SHIELD:
 		case MT_SINK_SHIELD:
-		case MT_SPB:
 		case MT_HYUDORO:
+			return true;
+
+		// Primarily for minimap data, handle with care
+		case MT_SPB:
+		case MT_BATTLECAPSULE:
 			return true;
 
 		default:
@@ -9406,6 +9410,9 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			K_HandleDirectionalInfluence(mobj->player);
 		}
+
+		if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
+			P_AddKartItem(mobj);		// add to kitem list
 
 		return;
 	}
