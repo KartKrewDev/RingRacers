@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
+#include "r_main.h"
 #include "r_fps.h"
 
 // Object place
@@ -782,6 +783,20 @@ void P_Ticker(boolean run)
 	{
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			player_t *player = &players[displayplayers[i]];
+			const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+			if (skybox)
+			{
+				R_SkyboxFrame(i);
+			}
+			R_SetupFrame(i);
+		}
 	}
 
 	P_MapEnd();
