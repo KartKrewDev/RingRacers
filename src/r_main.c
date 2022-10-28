@@ -331,7 +331,7 @@ angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
 	camera_t *cam = NULL;
 	UINT8 i;
 
-	for (i = 0; i < r_splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
