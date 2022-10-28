@@ -3474,7 +3474,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		UINT8 i = 0;
 		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		for (i = 0; i < r_splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (localplayertable[i] == (player-players))
 			{
