@@ -112,6 +112,8 @@ static void K_CreateFinishLineFromPoints(fixed_t x1, fixed_t y1, fixed_t x2, fix
 	finishBeamLine->dx = x2 - x1;
 	finishBeamLine->dy = y2 - y1;
 
+	finishBeamLine->angle = R_PointToAngle2(0, 0, finishBeamLine->dx, finishBeamLine->dy);
+
 	finishBeamLine->flags = 0;
 }
 
@@ -241,7 +243,7 @@ static void K_DrawFinishLineBeamForLine(fixed_t offset, angle_t aiming, line_t *
 
 	fixed_t linex = line->v1->x;
 	fixed_t liney = line->v1->y;
-	angle_t lineangle = R_PointToAngle2(0, 0, line->dx, line->dy) + ANGLE_90;
+	angle_t lineangle = line->angle + ANGLE_90;
 
 	UINT8 i;
 

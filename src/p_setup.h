@@ -116,7 +116,7 @@ extern INT16 wadnamemap;
 boolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
-void P_WriteThings(void);
+//void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
 boolean P_ApplyLightOffset(UINT8 baselightnum);
 boolean P_ApplyLightOffsetFine(UINT8 baselightlevel);

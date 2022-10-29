@@ -219,10 +219,12 @@ void Obj_JawzThink(mobj_t *th)
 	JawzChase(th, grounded);
 	K_DriftDustHandling(th);
 
-	if (P_MobjTouchingSectorSpecial(th, 3, 1, true))
+	/* todo: UDMFify
+	if (P_MobjTouchingSectorSpecialFlag(th, ?))
 	{
 		K_DoPogoSpring(th, 0, 1);
 	}
+	*/
 
 	if (jawz_selfdelay(th) > 0)
 	{

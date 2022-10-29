@@ -382,7 +382,7 @@ void Command_Teleport_f(void)
 
 			// Flagging a player's ambush will make them start on the ceiling
 			// Objectflip inverts
-			if (!!(mt->options & MTF_AMBUSH) ^ !!(mt->options & MTF_OBJECTFLIP))
+			if (!!(mt->args[0]) ^ !!(mt->options & MTF_OBJECTFLIP))
 				intz = ss->sector->ceilingheight - p->mo->height - offset;
 			else
 				intz = ss->sector->floorheight + offset;
@@ -807,7 +807,7 @@ static void OP_CycleThings(INT32 amt)
 		} while
 		(mobjinfo[op_currentthing].doomednum == -1
 			|| op_currentthing == MT_NIGHTSDRONE
-			|| mobjinfo[op_currentthing].flags & (MF_AMBIENT|MF_NOSECTOR)
+			|| mobjinfo[op_currentthing].flags & MF_NOSECTOR
 			|| (states[mobjinfo[op_currentthing].spawnstate].sprite == SPR_NULL
 			 && states[mobjinfo[op_currentthing].seestate].sprite == SPR_NULL)
 		);
@@ -1050,9 +1050,9 @@ void OP_ObjectplaceMovement(player_t *player)
 			return;
 
 		mt = OP_CreateNewMapThing(player, (UINT16)spawnthing, ceiling);
-		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
+		if (mt->type >= 600 && mt->type <= 611) // Placement patterns
 			P_SpawnItemPattern(mt);
-		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
+		else if (mt->type == 1713) // NiGHTS Hoops
 			P_SpawnHoop(mt);
 		else
 			P_SpawnMapThing(mt);
@@ -1064,13 +1064,13 @@ void OP_ObjectplaceMovement(player_t *player)
 //
 // Objectplace related commands.
 //
-void Command_Writethings_f(void)
+/*void Command_Writethings_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_OBJECTPLACE;
 
 	P_WriteThings();
-}
+}*/
 
 void Command_ObjectPlace_f(void)
 {

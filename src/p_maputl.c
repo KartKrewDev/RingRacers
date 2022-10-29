@@ -437,7 +437,7 @@ void P_CameraLineOpening(line_t *linedef)
 				for (rover = front->ffloors; rover; rover = rover->next)
 				{
 					fixed_t topheight, bottomheight;
-					if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_RENDERALL) || !(rover->flags & FF_EXISTS) || GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
+					if (!(rover->fofflags & FOF_BLOCKOTHERS) || !(rover->fofflags & FOF_RENDERALL) || !(rover->fofflags & FOF_EXISTS) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
 						continue;
 
 					topheight = P_CameraGetFOFTopZ(mapcampointer, front, rover, tmx, tmy, linedef);
@@ -461,7 +461,7 @@ void P_CameraLineOpening(line_t *linedef)
 				for (rover = back->ffloors; rover; rover = rover->next)
 				{
 					fixed_t topheight, bottomheight;
-					if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_RENDERALL) || !(rover->flags & FF_EXISTS) || GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
+					if (!(rover->fofflags & FOF_BLOCKOTHERS) || !(rover->fofflags & FOF_RENDERALL) || !(rover->fofflags & FOF_EXISTS) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
 						continue;
 
 					topheight = P_CameraGetFOFTopZ(mapcampointer, back, rover, tmx, tmy, linedef);
@@ -527,27 +527,39 @@ P_GetMidtextureTopBottom
 #if 0
 	// don't remove this code unless solid midtextures
 	// on non-solid polyobjects should NEVER happen in the future
-	if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT)) {
-		if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
+	if (linedef->polyobj && (linedef->polyobj->flags & POF_TESTHEIGHT))
+	{
+		if ((linedef->flags & ML_WRAPMIDTEX) && !side->repeatcnt) // "infinite" repeat
+		{
 			texbottom = back->floorheight + side->rowoffset;
 			textop = back->ceilingheight + side->rowoffset;
-		} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
+		}
+		else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_MIDPEG))
+		{
 			texbottom = back->floorheight + side->rowoffset;
 			textop = texbottom + texheight*(side->repeatcnt+1);
-		} else {
+		}
+		else
+		{
 			textop = back->ceilingheight + side->rowoffset;
 			texbottom = textop - texheight*(side->repeatcnt+1);
 		}
-	} else
+	}
+	else
 #endif
 	{
-		if (linedef->flags & ML_EFFECT5 && !side->repeatcnt) { // "infinite" repeat
+		if ((linedef->flags & ML_WRAPMIDTEX) && !side->repeatcnt) // "infinite" repeat
+		{
 			texbottom += side->rowoffset;
 			textop += side->rowoffset;
-		} else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3)) {
+		}
+		else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_MIDPEG))
+		{
 			texbottom += side->rowoffset;
 			textop = texbottom + texheight*(side->repeatcnt+1);
-		} else {
+		}
+		else
+		{
 			textop += side->rowoffset;
 			texbottom = textop - texheight*(side->repeatcnt+1);
 		}
@@ -560,6 +572,24 @@ P_GetMidtextureTopBottom
 		*return_bottom = texbottom;
 
 	return true;
+}
+
+static boolean P_MidtextureIsSolid(line_t *linedef, mobj_t *mobj)
+{
+	if (linedef->polyobj)
+	{
+		// don't do anything for polyobjects! ...for now
+		return false;
+	}
+
+	if (P_IsLineTripWire(linedef) == true)
+	{
+		// Tripwire behavior.
+		return (mobj->player != NULL && K_TripwirePass(mobj->player) == false);
+	}
+
+	// Determined solely by the flag.
+	return ((linedef->flags & ML_MIDSOLID) == ML_MIDSOLID);
 }
 
 void P_LineOpening(line_t *linedef, mobj_t *mobj)
@@ -670,9 +700,8 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	if (mobj)
 	{
 		// Check for collision with front side's midtexture if Effect 4 is set
-		if ((linedef->flags & ML_EFFECT4 || (mobj->player && P_IsLineTripWire(linedef) && !K_TripwirePass(mobj->player)))
-			&& !linedef->polyobj // don't do anything for polyobjects! ...for now
-			) {
+		if (P_MidtextureIsSolid(linedef, mobj) == true)
+		{
 			fixed_t textop, texbottom;
 			fixed_t texmid, delta1, delta2;
 
@@ -683,7 +712,9 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				delta1 = abs(mobj->z - texmid);
 				delta2 = abs(thingtop - texmid);
 
-				if (delta1 > delta2) { // Below
+				if (delta1 > delta2)
+				{
+					// Below
 					if (opentop > texbottom)
 					{
 						topedge[lo] -= ( opentop - texbottom );
@@ -692,7 +723,10 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						openceilingstep = ( thingtop    - topedge[lo] );
 						openceilingdrop = ( topedge[hi] - topedge[lo] );
 					}
-				} else { // Above
+				}
+				else
+				{
+					// Above
 					if (openbottom < textop)
 					{
 						botedge[hi] += ( textop - openbottom );
@@ -704,6 +738,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				}
 			}
 		}
+
 		if (linedef->polyobj)
 		{
 			// Treat polyobj's backsector like a 3D Floor
@@ -774,13 +809,13 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				for (rover = front->ffloors; rover; rover = rover->next)
 				{
 					fixed_t topheight, bottomheight;
-					if (!(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_EXISTS))
 						continue;
 
 					if (P_CheckSolidFFloorSurface(mobj, rover))
 						;
-					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
-						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
+					else if (!((rover->fofflags & FOF_BLOCKPLAYER && mobj->player)
+						|| (rover->fofflags & FOF_BLOCKOTHERS && !mobj->player)))
 						continue;
 
 					topheight = P_GetFOFTopZ(mobj, front, rover, tmx, tmy, linedef);
@@ -789,7 +824,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					delta1 = abs(mobj->z - (bottomheight + ((topheight - bottomheight)/2)));
 					delta2 = abs(thingtop - (bottomheight + ((topheight - bottomheight)/2)));
 
-					if (delta1 >= delta2 && (rover->flags & FF_INTANGIBLEFLATS) != FF_PLATFORM) // thing is below FOF
+					if (delta1 >= delta2 && (rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM) // thing is below FOF
 					{
 						if (bottomheight < open[FRONT].top) {
 							open[FRONT].top = bottomheight;
@@ -801,7 +836,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 							highceiling = bottomheight;
 					}
 
-					if (delta1 < delta2 && (rover->flags & FF_INTANGIBLEFLATS) != FF_REVERSEPLATFORM) // thing is above FOF
+					if (delta1 < delta2 && (rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM) // thing is above FOF
 					{
 						if (topheight > open[FRONT].bottom) {
 							open[FRONT].bottom = topheight;
@@ -818,13 +853,13 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 				for (rover = back->ffloors; rover; rover = rover->next)
 				{
 					fixed_t topheight, bottomheight;
-					if (!(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_EXISTS))
 						continue;
 
 					if (P_CheckSolidFFloorSurface(mobj, rover))
 						;
-					else if (!((rover->flags & FF_BLOCKPLAYER && mobj->player)
-						|| (rover->flags & FF_BLOCKOTHERS && !mobj->player)))
+					else if (!((rover->fofflags & FOF_BLOCKPLAYER && mobj->player)
+						|| (rover->fofflags & FOF_BLOCKOTHERS && !mobj->player)))
 						continue;
 
 					topheight = P_GetFOFTopZ(mobj, back, rover, tmx, tmy, linedef);
@@ -833,7 +868,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					delta1 = abs(mobj->z - (bottomheight + ((topheight - bottomheight)/2)));
 					delta2 = abs(thingtop - (bottomheight + ((topheight - bottomheight)/2)));
 
-					if (delta1 >= delta2 && (rover->flags & FF_INTANGIBLEFLATS) != FF_PLATFORM) // thing is below FOF
+					if (delta1 >= delta2 && (rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM) // thing is below FOF
 					{
 						if (bottomheight < open[BACK].top) {
 							open[BACK].top = bottomheight;
@@ -845,7 +880,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 							highceiling = bottomheight;
 					}
 
-					if (delta1 < delta2 && (rover->flags & FF_INTANGIBLEFLATS) != FF_REVERSEPLATFORM) // thing is above FOF
+					if (delta1 < delta2 && (rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM) // thing is above FOF
 					{
 						if (topheight > open[BACK].bottom) {
 							open[BACK].bottom = topheight;

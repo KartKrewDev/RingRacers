@@ -496,6 +496,64 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		P_InstaThrust(mo, mo->angle, speed);
 	}
 
+	// Speed pad
+	if (terrain->speedPad > 0)
+	{
+		if (player->floorboost != 0)
+		{
+			player->floorboost = 2;
+		}
+		else
+		{
+			fixed_t thrustSpeed = terrain->speedPad;
+			angle_t thrustAngle = terrain->speedPadAngle;
+			fixed_t playerSpeed = P_AproxDistance(player->mo->momx, player->mo->momy);
+
+			// FIXME: come up with a better way to get the touched
+			// texture's rotation to this function. At least this
+			// will work for 90% of scenarios...
+
+			if (player->mo->eflags & MFE_VERTICALFLIP)
+			{
+				if (player->mo->ceilingrover != NULL)
+				{
+					thrustAngle -= *player->mo->ceilingrover->bottomangle;
+				}
+				else
+				{
+					thrustAngle -= player->mo->subsector->sector->ceilingpic_angle;
+				}
+			}
+			else
+			{
+				if (player->mo->floorrover != NULL)
+				{
+					thrustAngle -= *player->mo->floorrover->topangle;
+				}
+				else
+				{
+					thrustAngle -= player->mo->subsector->sector->floorpic_angle;
+				}
+			}
+
+			// Map scale for Shrink, object scale for Grow.
+			thrustSpeed = FixedMul(thrustSpeed, max(mapobjectscale, player->mo->scale));
+
+			thrustAngle = K_ReflectAngle(
+				K_MomentumAngle(player->mo), thrustAngle,
+				playerSpeed, thrustSpeed
+			);
+
+			P_InstaThrust(player->mo, thrustAngle, max(thrustSpeed, 2*playerSpeed));
+
+			player->dashpadcooldown = TICRATE/3;
+			player->trickpanel = 0;
+			player->floorboost = 2;
+
+			S_StartSound(player->mo, sfx_cdfm62);
+		}
+	}
+
 	// Bumpy floor
 	if (terrain->flags & TRF_STAIRJANK)
 	{
@@ -1426,6 +1484,8 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->offroad = 0;
 	terrain->damageType = -1;
 	terrain->trickPanel = 0;
+	terrain->speedPad = 0;
+	terrain->speedPadAngle = 0;
 	terrain->flags = 0;
 }
 
@@ -1495,6 +1555,14 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "trickPanel") == 0)
 	{
 		terrain->trickPanel = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "speedPad") == 0)
+	{
+		terrain->speedPad = FLOAT_TO_FIXED(atof(val));
+	}
+	else if (stricmp(param, "speedPadAngle") == 0)
+	{
+		terrain->speedPadAngle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
 	}
 	else if (stricmp(param, "floorClip") == 0)
 	{

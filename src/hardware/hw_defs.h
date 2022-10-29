@@ -222,6 +222,7 @@ enum EPolyFlags
 	PF_Fog              = 0x20000000,   // Fog blocks
 	PF_NoAlphaTest      = 0x40000000,   // Disables alpha testing
 	PF_Blending         = (PF_Masked|PF_Translucent|PF_Environment|PF_Additive|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Invert|PF_Fog) & ~PF_NoAlphaTest,
+	PF_EnvironmentTrans = (PF_Translucent|PF_Additive|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative|PF_Environment),
 
 	// other flag bits
 	PF_Occlude          = 0x00000100,   // Updates the depth buffer

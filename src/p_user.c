@@ -978,20 +978,20 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec)
 			for (rover = sec->ffloors; rover; rover = rover->next)
 			{
 				// If the FOF doesn't exist, continue.
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				// If the FOF is configured to let the object through, continue.
-				if (!((rover->flags & FF_BLOCKPLAYER && mo->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mo->player)))
+				if (!((rover->fofflags & FOF_BLOCKPLAYER && mo->player)
+					|| (rover->fofflags & FOF_BLOCKOTHERS && !mo->player)))
 					continue;
 
 				// If the the platform is intangible from below, continue.
-				if (rover->flags & FF_PLATFORM)
+				if (rover->fofflags & FOF_PLATFORM)
 					continue;
 
 				// If the FOF is a water block, continue. (Unnecessary check?)
-				if (rover->flags & FF_SWIMMABLE)
+				if (rover->fofflags & FOF_SWIMMABLE)
 					continue;
 
 				// Actually check if the player is on the suitable FOF.
@@ -1012,20 +1012,20 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec)
 			for (rover = sec->ffloors; rover; rover = rover->next)
 			{
 				// If the FOF doesn't exist, continue.
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				// If the FOF is configured to let the object through, continue.
-				if (!((rover->flags & FF_BLOCKPLAYER && mo->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mo->player)))
+				if (!((rover->fofflags & FOF_BLOCKPLAYER && mo->player)
+					|| (rover->fofflags & FOF_BLOCKOTHERS && !mo->player)))
 					continue;
 
 				// If the the platform is intangible from above, continue.
-				if (rover->flags & FF_REVERSEPLATFORM)
+				if (rover->fofflags & FOF_REVERSEPLATFORM)
 					continue;
 
 				// If the FOF is a water block, continue. (Unnecessary check?)
-				if (rover->flags & FF_SWIMMABLE)
+				if (rover->fofflags & FOF_SWIMMABLE)
 					continue;
 
 				// Actually check if the player is on the suitable FOF.
@@ -1403,10 +1403,10 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_QUICKSAND))
+			if (!(rover->fofflags & FOF_QUICKSAND))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, mo->x, mo->y);
@@ -1425,6 +1425,14 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 	return false; // No sand here, Captain!
 }
 
+static boolean P_PlayerCanBust(player_t *player, ffloor_t *rover)
+{
+	// TODO: Make these act like the Lua SA2 boxes.
+	(void)player;
+	(void)rover;
+	return false;
+}
+
 static void P_CheckBustableBlocks(player_t *player)
 {
 	msecnode_t *node;
@@ -1437,8 +1445,6 @@ static void P_CheckBustableBlocks(player_t *player)
 	oldx = player->mo->x;
 	oldy = player->mo->y;
 
-	// SRB2Kart TODO: make shatter blocks the default behavior, we don't need the hundreds of other types
-
 	P_UnsetThingPosition(player->mo);
 	player->mo->x += player->mo->momx;
 	player->mo->y += player->mo->momy;
@@ -1446,90 +1452,86 @@ static void P_CheckBustableBlocks(player_t *player)
 
 	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
+		ffloor_t *rover;
+		fixed_t topheight, bottomheight;
+
 		if (!node->m_sector)
 			break;
 
-		if (node->m_sector->ffloors)
+		if (!node->m_sector->ffloors)
+			continue;
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			ffloor_t *rover;
-			fixed_t topheight, bottomheight;
+			if (!P_PlayerCanBust(player, rover))
+				continue;
 
-			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+			bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+
+			// Height checks
+			if (rover->bustflags & FB_ONLYBOTTOM)
 			{
-				if (!(rover->flags & FF_EXISTS)) continue;
+				if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+					continue;
 
-				if ((rover->flags & FF_BUSTUP)/* && rover->master->frontsector->crumblestate == CRUMBLE_NONE*/)
+				if (player->mo->z + player->mo->height > bottomheight)
+					continue;
+			}
+			else
+			{
+				switch (rover->busttype)
 				{
-					// If it's an FF_SHATTER, you can break it just by touching it.
-					if (rover->flags & FF_SHATTER)
-						goto bust;
-
-					if (rover->flags & FF_STRONGBUST)
+				case BT_TOUCH:
+					if (player->mo->z + player->mo->momz > topheight)
 						continue;
 
-				bust:
-					topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-					bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+					if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+						continue;
 
-					// Height checks
-					if (rover->flags & FF_SHATTERBOTTOM)
-					{
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
+					break;
+				case BT_SPINBUST:
+					if (player->mo->z + player->mo->momz > topheight)
+						continue;
 
-						if (player->mo->z+player->mo->height > bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SPINBUST)
-					{
-						if (player->mo->z+player->mo->momz > topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SHATTER)
-					{
-						if (player->mo->z + player->mo->momz > topheight)
-							continue;
+					break;
+				default:
+					if (player->mo->z >= topheight)
+						continue;
 
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
-					}
-					else
-					{
-						if (player->mo->z >= topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-
-					// Impede the player's fall a bit
-					if (((rover->flags & FF_SPINBUST) || (rover->flags & FF_SHATTER)) && player->mo->z >= topheight)
-						player->mo->momz >>= 1;
-					else if (rover->flags & FF_SHATTER)
-					{
-						player->mo->momx >>= 1;
-						player->mo->momy >>= 1;
-					}
-
-					//if (metalrecording)
-					//	G_RecordBustup(rover);
-
-					EV_CrumbleChain(NULL, rover); // node->m_sector
-
-					// Run a linedef executor??
-					if (rover->master->flags & ML_EFFECT5)
-						P_LinedefExecute((INT16)(P_AproxDistance(rover->master->dx, rover->master->dy)>>FRACBITS), player->mo, node->m_sector);
-
-					goto bustupdone;
+					break;
 				}
 			}
+
+			// Impede the player's fall a bit
+			if (((rover->busttype == BT_TOUCH) || (rover->busttype == BT_SPINBUST)) && player->mo->z >= topheight)
+				player->mo->momz >>= 1;
+			else if (rover->busttype == BT_TOUCH)
+			{
+				player->mo->momx >>= 1;
+				player->mo->momy >>= 1;
+			}
+
+			//if (metalrecording)
+			//	G_RecordBustup(rover);
+
+			EV_CrumbleChain(NULL, rover); // node->m_sector
+
+			// Run a linedef executor??
+			if (rover->bustflags & FB_EXECUTOR)
+				P_LinedefExecute(rover->busttag, player->mo, node->m_sector);
+
+			goto bustupdone;
 		}
 	}
-bustupdone:
 
+bustupdone:
 	P_UnsetThingPosition(player->mo);
 	player->mo->x = oldx;
 	player->mo->y = oldy;
@@ -1556,104 +1558,78 @@ static void P_CheckBouncySectors(player_t *player)
 
 	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
+		ffloor_t *rover;
+
 		if (!node->m_sector)
 			break;
 
-		if (node->m_sector->ffloors)
+		if (!node->m_sector->ffloors)
+			continue;
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			ffloor_t *rover;
-			boolean top = true;
 			fixed_t topheight, bottomheight;
 
-			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			if (!(rover->fofflags & FOF_EXISTS))
+				continue; // FOFs should not be bouncy if they don't even "exist"
+
+			// Handle deprecated bouncy FOF sector type
+			if (!udmf && GETSECSPECIAL(rover->master->frontsector->special, 1) == 15)
 			{
-				if (!(rover->flags & FF_EXISTS))
-					continue; // FOFs should not be bouncy if they don't even "exist"
-
-				if (GETSECSPECIAL(rover->master->frontsector->special, 1) != 15)
-					continue; // this sector type is required for FOFs to be bouncy
-
-				topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-				bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-
-				if (player->mo->z > topheight)
-					continue;
-
-				if (player->mo->z + player->mo->height < bottomheight)
-					continue;
-
-				if (oldz < P_GetFOFTopZ(player->mo, node->m_sector, rover, oldx, oldy, NULL)
-						&& oldz + player->mo->height > P_GetFOFBottomZ(player->mo, node->m_sector, rover, oldx, oldy, NULL))
-					top = false;
-
-				{
-					fixed_t linedist;
-
-					linedist = P_AproxDistance(rover->master->v1->x-rover->master->v2->x, rover->master->v1->y-rover->master->v2->y);
-
-					linedist = FixedDiv(linedist,100*FRACUNIT);
-
-					if (top)
-					{
-						fixed_t newmom;
-
-						pslope_t *slope;
-						if (abs(oldz - topheight) < abs(oldz + player->mo->height - bottomheight)) { // Hit top
-							slope = *rover->t_slope;
-						} else { // Hit bottom
-							slope = *rover->b_slope;
-						}
-
-						momentum.x = player->mo->momx;
-						momentum.y = player->mo->momy;
-						momentum.z = player->mo->momz*2;
-
-						if (slope)
-							P_ReverseQuantizeMomentumToSlope(&momentum, slope);
-
-						newmom = momentum.z = -FixedMul(momentum.z,linedist)/2;
-
-						if (abs(newmom) < (linedist*2))
-						{
-							goto bouncydone;
-						}
-
-						if (!(rover->master->flags & ML_NOTBOUNCY))
-						{
-							if (newmom > 0)
-							{
-								if (newmom < 8*FRACUNIT)
-									newmom = 8*FRACUNIT;
-							}
-							else if (newmom > -8*FRACUNIT && newmom != 0)
-								newmom = -8*FRACUNIT;
-						}
-
-						if (newmom > player->mo->height/2)
-							newmom = player->mo->height/2;
-						else if (newmom < -player->mo->height/2)
-							newmom = -player->mo->height/2;
-
-						momentum.z = newmom*2;
-
-						if (slope)
-							P_QuantizeMomentumToSlope(&momentum, slope);
-
-						player->mo->momx = momentum.x;
-						player->mo->momy = momentum.y;
-						player->mo->momz = momentum.z/2;
-					}
-					else
-					{
-						player->mo->momx = -FixedMul(player->mo->momx,linedist);
-						player->mo->momy = -FixedMul(player->mo->momy,linedist);
-					}
-
-					goto bouncydone;
-				}
+				rover->fofflags |= FOF_BOUNCY;
+				rover->bouncestrength = P_AproxDistance(rover->master->dx, rover->master->dy)/100;
 			}
+
+			if (!(rover->fofflags & FOF_BOUNCY))
+				continue;
+
+			topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+			bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+
+			if (player->mo->z > topheight)
+				continue;
+
+			if (player->mo->z + player->mo->height < bottomheight)
+				continue;
+
+			if (oldz < P_GetFOFTopZ(player->mo, node->m_sector, rover, oldx, oldy, NULL)
+					&& oldz + player->mo->height > P_GetFOFBottomZ(player->mo, node->m_sector, rover, oldx, oldy, NULL))
+			{
+				player->mo->momx = -FixedMul(player->mo->momx,rover->bouncestrength);
+				player->mo->momy = -FixedMul(player->mo->momy,rover->bouncestrength);
+			}
+			else
+			{
+				pslope_t *slope = (abs(oldz - topheight) < abs(oldz + player->mo->height - bottomheight)) ? *rover->t_slope : *rover->b_slope;
+
+				momentum.x = player->mo->momx;
+				momentum.y = player->mo->momy;
+				momentum.z = player->mo->momz*2;
+
+				if (slope)
+					P_ReverseQuantizeMomentumToSlope(&momentum, slope);
+
+				momentum.z = -FixedMul(momentum.z,rover->bouncestrength)/2;
+
+				if (abs(momentum.z) < (rover->bouncestrength*2))
+					goto bouncydone;
+
+				if (momentum.z > FixedMul(24*FRACUNIT, player->mo->scale)) //half of the default player height
+					momentum.z = FixedMul(24*FRACUNIT, player->mo->scale);
+				else if (momentum.z < -FixedMul(24*FRACUNIT, player->mo->scale))
+					momentum.z = -FixedMul(24*FRACUNIT, player->mo->scale);
+
+				if (slope)
+					P_QuantizeMomentumToSlope(&momentum, slope);
+
+				player->mo->momx = momentum.x;
+				player->mo->momy = momentum.y;
+				player->mo->momz = momentum.z;
+			}
+			goto bouncydone;
 		}
 	}
+
 bouncydone:
 	P_UnsetThingPosition(player->mo);
 	player->mo->x = oldx;
@@ -1673,9 +1649,9 @@ static void P_CheckQuicksand(player_t *player)
 
 	for (rover = player->mo->subsector->sector->ffloors; rover; rover = rover->next)
 	{
-		if (!(rover->flags & FF_EXISTS)) continue;
+		if (!(rover->fofflags & FOF_EXISTS)) continue;
 
-		if (!(rover->flags & FF_QUICKSAND))
+		if (!(rover->fofflags & FOF_QUICKSAND))
 			continue;
 
 		topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
@@ -3546,7 +3522,7 @@ static void P_CalcPostImg(player_t *player)
 			{
 				size_t j;
 
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
@@ -3579,7 +3555,7 @@ static void P_CalcPostImg(player_t *player)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_BLOCKPLAYER)
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE) || rover->fofflags & FOF_BLOCKPLAYER)
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);

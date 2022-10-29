@@ -199,7 +199,7 @@ get_anchor
 
 	for (i = 0; i < list->count; ++i)
 	{
-		if (list->points[i] == v && list->anchors[i]->extrainfo == tag)
+		if (list->points[i] == v && Tag_FGet(&list->anchors[i]->tags) == tag)
 		{
 			for (k = 0; k < 3; ++k)
 			{
@@ -347,12 +347,12 @@ new_vertex_slope
 		{anchors[2]->x << FRACBITS, anchors[2]->y << FRACBITS, anchors[2]->z << FRACBITS}
 	};
 
-	if (flags & ML_NETONLY)
+	if (flags & TMSAF_NOPHYSICS)
 	{
 		slope->flags |= SL_NOPHYSICS;
 	}
 
-	if (flags & ML_NONET)
+	if (flags & TMSAF_DYNAMIC)
 	{
 		slope->flags |= SL_DYNAMIC;
 	}
@@ -410,8 +410,8 @@ slope_sector
 	{
 		(*slope) = new_vertex_slope(anchors, flags);
 
-		/* Effect 6 - invert slope to opposite side */
-		if (flags & ML_EFFECT6)
+		/* invert slope to opposite side */
+		if (flags & TMSAF_MIRROR)
 		{
 			(*alt) = new_vertex_slope(flip_slope(anchors, sector), flags);
 		}
@@ -426,36 +426,30 @@ make_anchored_slope
 		const line_t * line,
 		const int      plane
 ){
-	enum
-	{
-		FLOOR   = 0x1,
-		CEILING = 0x2,
-	};
+	INT16 flags = line->args[1];
 
-	INT16 flags = line->flags;
-
-	const int side = ( flags & ML_NOCLIMB ) != 0;
+	const int side = ( flags & TMSAF_BACKSIDE ) != 0;
 
 	sector_t   *  s;
 
 	mtag_t tag = Tag_FGet(&line->tags);
 
-	if (side == 0 || flags & ML_TWOSIDED)
+	if (side == 0 || (line->flags & ML_TWOSIDED))
 	{
 		s = sides[line->sidenum[side]].sector;
 
-		if (plane == (FLOOR|CEILING))
+		if (plane == (TMSA_FLOOR|TMSA_CEILING))
 		{
-			flags &= ~ML_EFFECT6;
+			flags &= ~TMSAF_MIRROR;
 		}
 
-		if (plane & FLOOR)
+		if (plane & TMSA_FLOOR)
 		{
 			slope_sector
 				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, tag);
 		}
 
-		if (plane & CEILING)
+		if (plane & TMSA_CEILING)
 		{
 			slope_sector
 				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, tag);
@@ -469,27 +463,21 @@ static void P_BuildSlopeAnchorList (void) {
 }
 
 static void P_SetupAnchoredSlopes (void) {
-	enum
-	{
-		FLOOR   = 0x1,
-		CEILING = 0x2,
-	};
-
 	size_t i;
 
 	for (i = 0; i < numlines; ++i)
 	{
-		if (lines[i].special == LT_SLOPE_ANCHORS_FLOOR)
+		if (lines[i].special == LT_SLOPE_ANCHORS)
 		{
-			make_anchored_slope(&lines[i], FLOOR);
-		}
-		else if (lines[i].special == LT_SLOPE_ANCHORS_CEILING)
-		{
-			make_anchored_slope(&lines[i], CEILING);
-		}
-		else if (lines[i].special == LT_SLOPE_ANCHORS)
-		{
-			make_anchored_slope(&lines[i], FLOOR|CEILING);
+			int plane = (lines[i].args[0] & (TMSA_FLOOR|TMSA_CEILING));
+
+			if (plane == 0)
+			{
+				CONS_Alert(CONS_WARNING, "Slope anchor linedef %s has no planes set.\n", sizeu1(i));
+				continue;
+			}
+
+			make_anchored_slope(&lines[i], plane);
 		}
 	}
 }
