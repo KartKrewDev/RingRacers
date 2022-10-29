@@ -2573,7 +2573,9 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 	else
 		P_MovePlayerToStarpost(playernum);
 #else
-	if (leveltime > starttime)
+	// Player's first spawn should be at the "map start".
+	// I.e. level load or join mid game.
+	if (leveltime > starttime && players[playernum].jointime > 0)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
