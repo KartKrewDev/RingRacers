@@ -274,7 +274,6 @@ void G_ReadDemoExtraData(void)
 
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
-			demo_p++; // lastfakeskin
 
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
