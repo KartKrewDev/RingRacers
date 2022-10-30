@@ -4167,6 +4167,28 @@ void P_PlayerThink(player_t *player)
 	{
 		player->stairjank--;
 	}
+	// Random skin / "ironman"
+	if (((skin_t *)player->mo->skin)->flags & SF_IRONMAN)
+	{
+		if (player->mo) {
+			if (player->fakeskin != MAXSKINS)
+			{
+				SetFakePlayerSkin(player, player->fakeskin);
+			}
+			else
+			{
+				INT32 i;
+				do {
+					i = P_RandomKey(PR_RANDOMSKIN, numskins);
+				} while (skins[i].flags & SF_IRONMAN || i == player->lastfakeskin);
+
+				SetFakePlayerSkin(player, i);
+
+				S_StartSound(NULL, sfx_kc33);
+				K_SpawnDriftElectricSparks(player, player->skincolor, false);
+			}
+		}
+	}
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
 

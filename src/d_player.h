@@ -37,6 +37,7 @@ typedef enum
 {
 	SF_HIRES            = 1, // Draw the sprite at different size?
 	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
+	SF_IRONMAN			= 1<<2, // Pick a new skin during POSITION. I main Random!
 	// free up to and including 1<<31
 } skinflags_t;
 
@@ -385,6 +386,9 @@ typedef struct player_s
 
 	INT32 skin;
 	UINT32 availabilities;
+
+	UINT8 fakeskin; // ironman
+	UINT8 lastfakeskin;
 
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9

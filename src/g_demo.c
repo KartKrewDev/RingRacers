@@ -274,6 +274,7 @@ void G_ReadDemoExtraData(void)
 
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
+			demo_p++; // lastfakeskin
 
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
@@ -2110,6 +2111,7 @@ void G_BeginRecording(void)
 			// Kart speed and weight
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
 			WRITEUINT8(demo_p, skins[player->skin].kartweight);
+			WRITEUINT8(demo_p, player->lastfakeskin);
 
 			// And mobjtype_t is best with UINT32 too...
 			WRITEUINT32(demo_p, player->followitem);
@@ -2709,7 +2711,7 @@ void G_DoPlayDemo(char *defdemoname)
 	char msg[1024];
 
 	boolean spectator;
-	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], numslots = 0;
+	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], lastfakeskin[MAXPLAYERS], numslots = 0;
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
@@ -3086,6 +3088,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// Kart stats, temporarily
 		kartspeed[p] = READUINT8(demo_p);
 		kartweight[p] = READUINT8(demo_p);
+		lastfakeskin[p] = READUINT8(demo_p);
 
 		if (stricmp(skins[players[p].skin].name, skin) != 0)
 			FindClosestSkinForStats(p, kartspeed[p], kartweight[p]);
@@ -3143,6 +3146,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// it would only break the replay if we clipped them.
 		players[i].kartspeed = kartspeed[i];
 		players[i].kartweight = kartweight[i];
+		players[i].fakeskin = lastfakeskin[i];
 	}
 
 	demo.deferstart = true;
@@ -3334,6 +3338,7 @@ void G_AddGhost(char *defdemoname)
 
 	kartspeed = READUINT8(p);
 	kartweight = READUINT8(p);
+	p += 1; // lastfakeskin
 
 	p += 4; // followitem (maybe change later)
 

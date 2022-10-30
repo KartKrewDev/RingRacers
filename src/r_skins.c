@@ -334,6 +334,17 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	SetPlayerSkinByNum(playernum, 0); // not found, put in the default skin
 }
 
+// Set mo skin but not player_t skin, for ironman
+void SetFakePlayerSkin(player_t* player, INT32 skinnum)
+{
+	player->mo->skin = &skins[skinnum];
+	player->fakeskin = skinnum;
+	player->lastfakeskin = skinnum;
+	player->kartspeed = skins[skinnum].kartspeed;
+	player->kartweight = skins[skinnum].kartweight;
+	player->charflags = skins[skinnum].flags;
+}
+
 //
 // Add skins from a pwad, each skin preceded by 'S_SKIN' marker
 //
@@ -484,6 +495,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// 1, true, yes are all valid values
 	GETFLAG(HIRES)
 	GETFLAG(MACHINE)
+	GETFLAG(IRONMAN)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out

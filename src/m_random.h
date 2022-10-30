@@ -62,6 +62,8 @@ typedef enum
 
 	PR_MOVINGTARGET, // Randomised moving targets
 
+	PR_RANDOMSKIN, // Random skin select from Heavy Magician(?)
+
 	PRNUMCLASS
 } pr_class_t;
 

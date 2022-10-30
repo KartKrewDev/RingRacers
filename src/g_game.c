@@ -2233,6 +2233,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
+	UINT8 fakeskin;
+	UINT8 lastfakeskin;
 
 	tic_t jointime;
 
@@ -2278,6 +2280,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
+	fakeskin = players[player].fakeskin;
+	lastfakeskin = players[player].lastfakeskin;
 
 	// SRB2kart
 	kartspeed = players[player].kartspeed;
@@ -2430,6 +2434,12 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->botvars.diffincrease = botdiffincrease;
 	p->botvars.rival = botrival;
 	p->xtralife = xtralife;
+
+	if (betweenmaps)
+		p->fakeskin = MAXSKINS;
+	else 
+		p->fakeskin = fakeskin;
+	p->lastfakeskin = lastfakeskin;
 
 	// SRB2kart
 	p->itemroulette = itemroulette;
