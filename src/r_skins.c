@@ -357,8 +357,46 @@ void SetRandomFakePlayerSkin(player_t* player)
 
 	SetFakePlayerSkin(player, i);
 
-	S_StartSound(NULL, sfx_kc33);
-	K_SpawnDriftElectricSparks(player, player->skincolor, false);
+	if (player->mo)
+	{
+		S_StartSound(player->mo, sfx_kc33);
+		
+		mobj_t *parent = player->mo;
+		fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
+		INT32 j;
+
+		for (j = 0; j < 16; j++)
+		{
+			fixed_t hmomentum = P_RandomRange(PR_DECORATION, 3, 6) * parent->scale;
+			fixed_t vmomentum = P_RandomRange(PR_DECORATION, 1, 3) * parent->scale;
+			UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
+
+			angle_t ang = R_PointToAngle(parent->momx, parent->momy);
+			SINT8 flip = 1;
+
+			mobj_t *dust;
+
+			if (j & 1)
+				ang -= ANGLE_90;
+			else
+				ang += ANGLE_90;
+
+			dust = P_SpawnMobjFromMobj(parent,
+				FixedMul(rad, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+				FixedMul(rad, FINESINE(ang >> ANGLETOFINESHIFT)),
+				parent->height, (j%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+			);
+			flip = P_MobjFlip(dust);
+
+			dust->momx = parent->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
+			dust->momy = parent->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
+			dust->momz = vmomentum * flip;
+			dust->scale = dust->scale*4;
+			dust->frame |= FF_SUBTRACT|FF_TRANS90;
+			dust->color = color;
+			dust->colorized = true;
+		}
+	}
 }
 
 //
