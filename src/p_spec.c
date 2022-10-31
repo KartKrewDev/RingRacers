@@ -1920,7 +1920,7 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			if (skins[player->skin].flags & SF_IRONMAN)
-				SetRandomFakePlayerSkin(player);
+				SetRandomFakePlayerSkin(player, true);
 
 			if (rainbowstartavailable == true)
 			{

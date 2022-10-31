@@ -4175,10 +4175,9 @@ void P_PlayerThink(player_t *player)
 			{
 				SetFakePlayerSkin(player, player->fakeskin);
 			}
-			else
+			else if (!(gametyperules & GTR_CIRCUIT))
 			{
-				// "Don't halfass" - Oni
-				// SetRandomFakePlayerSkin(player, false);
+				SetRandomFakePlayerSkin(player, false);
 			}
 		}
 	}
