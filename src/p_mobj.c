@@ -7644,20 +7644,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			P_Thrust(mobj, mobj->angle + ANGLE_90, 32*mapobjectscale);
 			mobj->flags &= ~MF_NOGRAVITY;
 			mobj->momz += 10*mapobjectscale;
-			
-			if (mobj->cusval) // Are we the side selected to play a sound?
-			{
-				S_StartSound(mobj, sfx_kc2e);
-				S_StartSound(mobj, sfx_s3k9f);
-			}
+
+			if (!mobj->cusval) // Some stuff should only occur once per box
+				return true;
+
+			S_StartSound(mobj, sfx_kc2e);
+			S_StartSound(mobj, sfx_s3k9f);
 
 			for (j = 0; j < 16; j++)
 			{
-				fixed_t hmomentum = P_RandomRange(PR_DECORATION, 3, 6) * mobj->scale;
-				fixed_t vmomentum = P_RandomRange(PR_DECORATION, 1, 3) * mobj->scale;
+				fixed_t hmomentum = P_RandomRange(PR_DECORATION, -5, 5) * mobj->scale;
+				fixed_t vmomentum = P_RandomRange(PR_DECORATION, -5, 5) * mobj->scale;
 				UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
 
-				angle_t ang = R_PointToAngle(mobj->target->momx, mobj->target->momy);
+				fixed_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
 				SINT8 flip = 1;
 
 				mobj_t *dust;

@@ -391,11 +391,11 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 
 		for (j = 0; j < 16; j++)
 		{
-			fixed_t hmomentum = P_RandomRange(PR_DECORATION, 10, 20) * parent->scale;
-			fixed_t vmomentum = P_RandomRange(PR_DECORATION, 5, 10) * parent->scale;
+			fixed_t hmomentum = P_RandomRange(PR_DECORATION, -10, 10) * parent->scale;
+			fixed_t vmomentum = P_RandomRange(PR_DECORATION, -10, 10) * parent->scale;
 			UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
 
-			angle_t ang = R_PointToAngle(parent->momx, parent->momy);
+			angle_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
 			SINT8 flip = 1;
 
 			mobj_t *dust;
