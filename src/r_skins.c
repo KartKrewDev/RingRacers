@@ -348,7 +348,7 @@ void SetFakePlayerSkin(player_t* player, INT32 skinnum)
 }
 
 // Loudly rerandomize
-void SetRandomFakePlayerSkin(player_t* player)
+void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 {
 	INT32 i;
 	do {
@@ -364,15 +364,25 @@ void SetRandomFakePlayerSkin(player_t* player)
 		
 		mobj_t *parent = player->mo;
 		fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
+		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
 		INT32 j, k;
 
 		for (k = 0; k < 4; k++)
 		{
 			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
 			box->target = parent;
-			box->angle = ANGLE_90 * k;
-			box->extravalue1 = 1; // Rotation rate
-			box->extravalue2 = 3*TICRATE/2; // Lifetime
+			box->angle = FixedAngle((baseangle + k*90) * FRACUNIT);
+			box->flags2 |= MF2_AMBUSH;
+			if (fast)
+			{
+				box->extravalue1 = 25; // Rotation rate
+				box->extravalue2 = 3*TICRATE/4; // Lifetime
+			}
+			else
+			{
+				box->extravalue1 = 1;
+				box->extravalue2 = 3*TICRATE/2;
+			}
 			if (k == 0)
 				box->cusval = 1; // Should play sounds when disappearing
 			else

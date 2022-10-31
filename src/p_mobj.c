@@ -7610,6 +7610,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_MAGICIANBOX:
+	{
 		fixed_t destx, desty, fakeangle;
 		INT32 j;
 
@@ -7635,6 +7636,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else if (mobj->extravalue2 == TICRATE/3 && mobj->target)
 		{
 			mobj->target->renderflags &= ~RF_DONTDRAW;
+
+			mobj->momx = mobj->target->momx;
+			mobj->momy = mobj->target->momy;
+			mobj->momz = mobj->target->momz;
+
+			P_Thrust(mobj, mobj->angle + ANGLE_90, 32*mapobjectscale);
+			mobj->flags &= ~MF_NOGRAVITY;
+			mobj->momz += 10*mapobjectscale;
 			
 			if (mobj->cusval) // Are we the side selected to play a sound?
 			{
@@ -7673,6 +7682,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				dust->color = color;
 				dust->colorized = true;
 			}
+			return true;
 		}
 		else
 		{
@@ -7697,8 +7707,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
 		desty += FixedMul(mobj->radius*2, FINESINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
 
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z);
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		}
 		break;
+	}
 	case MT_LIGHTNINGSHIELD:
 	{
 		fixed_t destx, desty;

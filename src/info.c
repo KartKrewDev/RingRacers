@@ -22394,7 +22394,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-		{           // MT_MAGICIANBOX
+	{           // MT_MAGICIANBOX
 		-1,             // doomednum
 		S_MAGICIANBOX,    // spawnstate
 		1000,           // spawnhealth
@@ -22411,43 +22411,16 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		26*FRACUNIT,    // radius
-		26*FRACUNIT,    // height
+		20*FRACUNIT,    // radius
+		20*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
 		S_NULL          // raisestate
 	},
-
-		{           // MT_MAGICIANBOX_SIDE
-		-1,             // doomednum
-		S_MAGICIANBOX,    // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		0,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		26*FRACUNIT,    // radius
-		14*FRACUNIT,    // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
-		S_NULL          // raisestate
-	},
-
+	
 	{           // MT_SIGNSPARKLE
 		-1,              // doomednum
 		S_SIGNSPARK1,    // spawnstate

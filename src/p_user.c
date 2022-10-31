@@ -4177,7 +4177,8 @@ void P_PlayerThink(player_t *player)
 			}
 			else
 			{
-				SetRandomFakePlayerSkin(player);
+				// "Don't halfass" - Oni
+				// SetRandomFakePlayerSkin(player, false);
 			}
 		}
 	}
