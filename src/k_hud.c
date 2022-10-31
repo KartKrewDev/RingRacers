@@ -1700,6 +1700,7 @@ static boolean K_drawKartPositionFaces(void)
 	INT32 rankplayer[MAXPLAYERS];
 	INT32 bumperx, emeraldx, numplayersingame = 0;
 	INT32 xoff, yoff, flipflag = 0;
+	UINT8 workingskin;
 	UINT8 *colormap;
 
 	ranklines = 0;
@@ -1797,13 +1798,18 @@ static boolean K_drawKartPositionFaces(void)
 
 		if (players[rankplayer[i]].mo->color)
 		{
-			colormap = R_GetTranslationColormap(((skin_t*)players[rankplayer[i]].mo->skin) - skins, players[rankplayer[i]].mo->color, GTC_CACHE);
+			if ((skin_t*)players[rankplayer[i]].mo->skin)
+				workingskin = (skin_t*)players[rankplayer[i]].mo->skin - skins;
+			else
+				workingskin = players[rankplayer[i]].skin;
+
+			colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
 			if (players[rankplayer[i]].mo->colorized)
 				colormap = R_GetTranslationColormap(TC_RAINBOW, players[rankplayer[i]].mo->color, GTC_CACHE);
 			else
-				colormap = R_GetTranslationColormap(((skin_t*)players[rankplayer[i]].mo->skin) - skins, players[rankplayer[i]].mo->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
 
-			V_DrawMappedPatch(FACE_X + xoff, Y + yoff, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT|flipflag, faceprefix[((skin_t*)players[rankplayer[i]].mo->skin) - skins][FACE_RANK], colormap);
+			V_DrawMappedPatch(FACE_X + xoff, Y + yoff, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{

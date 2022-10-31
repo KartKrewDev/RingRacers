@@ -3145,7 +3145,7 @@ void G_DoPlayDemo(char *defdemoname)
 		// it would only break the replay if we clipped them.
 		players[i].kartspeed = kartspeed[i];
 		players[i].kartweight = kartweight[i];
-		players[i].fakeskin = lastfakeskin[i];
+		players[i].lastfakeskin = lastfakeskin[i];
 	}
 
 	demo.deferstart = true;

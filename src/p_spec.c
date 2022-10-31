@@ -1919,6 +1919,9 @@ static void K_HandleLapIncrement(player_t *player)
 				player->karthud[khud_lapanimation] = 80;
 			}
 
+			if (skins[player->skin].flags & SF_IRONMAN)
+				SetRandomFakePlayerSkin(player);
+
 			if (rainbowstartavailable == true)
 			{
 				S_StartSound(player->mo, sfx_s23c);

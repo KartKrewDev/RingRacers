@@ -27,6 +27,8 @@
 #include "p_local.h"
 #include "dehacked.h" // get_number (for thok)
 #include "m_cond.h"
+#include "k_kart.h"
+#include "m_random.h"
 #if 0
 #include "k_kart.h" // K_KartResetPlayerColor
 #endif
@@ -343,6 +345,20 @@ void SetFakePlayerSkin(player_t* player, INT32 skinnum)
 	player->kartspeed = skins[skinnum].kartspeed;
 	player->kartweight = skins[skinnum].kartweight;
 	player->charflags = skins[skinnum].flags;
+}
+
+// Loudly rerandomize
+void SetRandomFakePlayerSkin(player_t* player)
+{
+	INT32 i;
+	do {
+		i = P_RandomKey(PR_RANDOMSKIN, numskins);
+	} while (skins[i].flags & SF_IRONMAN || i == player->lastfakeskin);
+
+	SetFakePlayerSkin(player, i);
+
+	S_StartSound(NULL, sfx_kc33);
+	K_SpawnDriftElectricSparks(player, player->skincolor, false);
 }
 
 //
