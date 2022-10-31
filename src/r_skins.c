@@ -375,8 +375,8 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 			box->flags2 |= MF2_AMBUSH;
 			if (fast)
 			{
-				box->extravalue1 = 25; // Rotation rate
-				box->extravalue2 = 3*TICRATE/4; // Lifetime
+				box->extravalue1 = 10; // Rotation rate
+				box->extravalue2 = 5*TICRATE/4; // Lifetime
 			}
 			else
 			{
