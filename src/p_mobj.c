@@ -7609,6 +7609,96 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
 		break;
+	case MT_MAGICIANBOX:
+		fixed_t destx, desty, fakeangle;
+		INT32 j;
+
+		// EV1: rotation rate
+		// EV2: lifetime
+		// cusval: should play sounds (limit 1)
+
+		mobj->extravalue2--;
+
+		if (mobj->extravalue2 == 0)
+		{
+			P_RemoveMobj(mobj);
+			break;
+		}
+		else if (mobj->extravalue2 < TICRATE/3)
+		{
+			mobj->target = NULL;
+			if (mobj->extravalue2 & 1)
+				mobj->renderflags |= RF_DONTDRAW;
+			else
+				mobj->renderflags &= ~RF_DONTDRAW;
+		}
+		else if (mobj->extravalue2 == TICRATE/3 && mobj->target)
+		{
+			mobj->target->renderflags &= ~RF_DONTDRAW;
+			
+			if (mobj->cusval) // Are we the side selected to play a sound?
+			{
+				S_StartSound(mobj, sfx_kc2e);
+				S_StartSound(mobj, sfx_s3k9f);
+			}
+
+			for (j = 0; j < 16; j++)
+			{
+				fixed_t hmomentum = P_RandomRange(PR_DECORATION, 3, 6) * mobj->scale;
+				fixed_t vmomentum = P_RandomRange(PR_DECORATION, 1, 3) * mobj->scale;
+				UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
+
+				angle_t ang = R_PointToAngle(mobj->target->momx, mobj->target->momy);
+				SINT8 flip = 1;
+
+				mobj_t *dust;
+
+				if (j & 1)
+					ang -= ANGLE_90;
+				else
+					ang += ANGLE_90;
+
+				dust = P_SpawnMobjFromMobj(mobj,
+					FixedMul(mobj->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+					FixedMul(mobj->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
+					mobj->target->height, (j%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+				);
+				flip = P_MobjFlip(dust);
+
+				dust->momx = mobj->target->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
+				dust->momy = mobj->target->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
+				dust->momz = vmomentum * flip;
+				dust->scale = dust->scale*4;
+				dust->frame |= FF_SUBTRACT|FF_TRANS90;
+				dust->color = color;
+				dust->colorized = true;
+			}
+		}
+		else
+		{
+			mobj->target->renderflags |= RF_DONTDRAW;
+		}
+
+		if (!mobj->target || !mobj->target->health || !mobj->target->player) {
+			mobj->extravalue2 = min(mobj->extravalue2, TICRATE/3);
+			return true;
+		}
+
+		mobj->extravalue1 += 1;
+
+		mobj->angle += ANG1*mobj->extravalue1;
+		mobj->scale = mobj->target->scale;
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		fakeangle = (FixedInt(AngleFixed(mobj->angle)) + 90)%360; // What
+
+		destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+		desty += FixedMul(mobj->radius*2, FINESINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+
+		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		break;
 	case MT_LIGHTNINGSHIELD:
 	{
 		fixed_t destx, desty;

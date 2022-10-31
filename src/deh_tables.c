@@ -3281,6 +3281,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	//"S_ITEMCAPSULE_BOTTOM",
 	//"S_ITEMCAPSULE_INSIDE",
 
+	"S_MAGICIANBOX",
+	"S_MAGICIANBOXTOP",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -5278,6 +5281,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
 	"MT_ITEMCAPSULE_PART",
+	"MT_MAGICIANBOX",
+	"MT_MAGICIANBOX_SIDE",
 
 	"MT_SIGNSPARKLE",
 

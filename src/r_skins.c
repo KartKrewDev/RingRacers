@@ -360,15 +360,29 @@ void SetRandomFakePlayerSkin(player_t* player)
 	if (player->mo)
 	{
 		S_StartSound(player->mo, sfx_kc33);
+		S_StartSound(player->mo, sfx_cdfm44);
 		
 		mobj_t *parent = player->mo;
 		fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
-		INT32 j;
+		INT32 j, k;
+
+		for (k = 0; k < 4; k++)
+		{
+			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
+			box->target = parent;
+			box->angle = ANGLE_90 * k;
+			box->extravalue1 = 1; // Rotation rate
+			box->extravalue2 = 3*TICRATE/2; // Lifetime
+			if (k == 0)
+				box->cusval = 1; // Should play sounds when disappearing
+			else
+				box->cusval = 0;
+		}
 
 		for (j = 0; j < 16; j++)
 		{
-			fixed_t hmomentum = P_RandomRange(PR_DECORATION, 3, 6) * parent->scale;
-			fixed_t vmomentum = P_RandomRange(PR_DECORATION, 1, 3) * parent->scale;
+			fixed_t hmomentum = P_RandomRange(PR_DECORATION, 10, 20) * parent->scale;
+			fixed_t vmomentum = P_RandomRange(PR_DECORATION, 5, 10) * parent->scale;
 			UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
 
 			angle_t ang = R_PointToAngle(parent->momx, parent->momy);
