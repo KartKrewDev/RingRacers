@@ -7613,11 +7613,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	{
 		fixed_t destx, desty, fakeangle;
 		fixed_t zoff = 0;
-		INT32 j;
 
 		// EV1: rotation rate
 		// EV2: lifetime
-		// cusval: should play sounds (limit 1)
+		// cusval: responsible for disappear FX (should only happen once)
+
+		// S_MAGICANBOX: sides, starting angle is set in the spawner (SetRandomFakePlayerSkin)
+		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets  
 
 		mobj->extravalue2--;
 
@@ -7657,37 +7659,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			S_StartSound(mobj, sfx_kc2e);
 			S_StartSound(mobj, sfx_s3k9f);
 
-			for (j = 0; j < 16; j++)
-			{
-				fixed_t hmomentum = P_RandomRange(PR_DECORATION, -5, 5) * mobj->scale;
-				fixed_t vmomentum = P_RandomRange(PR_DECORATION, -5, 5) * mobj->scale;
-				UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
-
-				fixed_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
-				SINT8 flip = 1;
-
-				mobj_t *dust;
-
-				if (j & 1)
-					ang -= ANGLE_90;
-				else
-					ang += ANGLE_90;
-
-				dust = P_SpawnMobjFromMobj(mobj,
-					FixedMul(mobj->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
-					FixedMul(mobj->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
-					mobj->target->height, (j%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
-				);
-				flip = P_MobjFlip(dust);
-
-				dust->momx = mobj->target->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
-				dust->momy = mobj->target->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
-				dust->momz = vmomentum * flip;
-				dust->scale = dust->scale*4;
-				dust->frame |= FF_SUBTRACT|FF_TRANS90;
-				dust->color = color;
-				dust->colorized = true;
-			}
+			K_SpawnMagicianParticles(mobj, 5);
 			return true;
 		}
 		else

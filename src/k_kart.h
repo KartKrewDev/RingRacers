@@ -110,6 +110,7 @@ void K_SpawnBoostTrail(player_t *player);
 void K_SpawnSparkleTrail(mobj_t *mo);
 void K_SpawnWipeoutTrail(mobj_t *mo);
 void K_SpawnDraftDust(mobj_t *mo);
+void K_SpawnMagicianParticles(mobj_t *mo, int spread);
 void K_DriftDustHandling(mobj_t *spawner);
 void K_Squish(mobj_t *mo);
 mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, INT32 defaultDir, INT32 altthrow, angle_t angleOffset);

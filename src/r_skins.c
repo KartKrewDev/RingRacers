@@ -363,15 +363,14 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 		S_StartSound(player->mo, sfx_cdfm44);
 		
 		mobj_t *parent = player->mo;
-		fixed_t rad = FixedDiv(FixedHypot(parent->radius, parent->radius), parent->scale);
 		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
-		INT32 j, k;
+		INT32 j;
 
-		for (k = 0; k < 6; k++)
+		for (j = 0; j < 6; j++)	// 0-3 = sides, 4 = top, 5 = bottom
 		{
 			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
 			box->target = parent;
-			box->angle = FixedAngle((baseangle + k*90) * FRACUNIT);
+			box->angle = FixedAngle((baseangle + j*90) * FRACUNIT);
 			box->flags2 |= MF2_AMBUSH;
 			if (fast)
 			{
@@ -383,50 +382,20 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 				box->extravalue1 = 1;
 				box->extravalue2 = 3*TICRATE/2;
 			}
-			if (k == 0)
+			if (j == 0)
 				box->cusval = 1; // Should play sounds when disappearing
 			else
 				box->cusval = 0;
 			
-			if (k > 3)
+			if (j > 3)
 			{
-				P_SetMobjState(box, (k == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
+				P_SetMobjState(box, (j == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
 				box->renderflags |= RF_NOSPLATBILLBOARD;
 				box->angle = FixedAngle(baseangle*FRACUNIT);
 			}
 		}
 
-		for (j = 0; j < 16; j++)
-		{
-			fixed_t hmomentum = P_RandomRange(PR_DECORATION, -10, 10) * parent->scale;
-			fixed_t vmomentum = P_RandomRange(PR_DECORATION, -10, 10) * parent->scale;
-			UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
-
-			angle_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
-			SINT8 flip = 1;
-
-			mobj_t *dust;
-
-			if (j & 1)
-				ang -= ANGLE_90;
-			else
-				ang += ANGLE_90;
-
-			dust = P_SpawnMobjFromMobj(parent,
-				FixedMul(rad, FINECOSINE(ang >> ANGLETOFINESHIFT)),
-				FixedMul(rad, FINESINE(ang >> ANGLETOFINESHIFT)),
-				parent->height, (j%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
-			);
-			flip = P_MobjFlip(dust);
-
-			dust->momx = parent->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
-			dust->momy = parent->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
-			dust->momz = vmomentum * flip;
-			dust->scale = dust->scale*4;
-			dust->frame |= FF_SUBTRACT|FF_TRANS90;
-			dust->color = color;
-			dust->colorized = true;
-		}
+		K_SpawnMagicianParticles(player->mo, 10);
 	}
 }
 
