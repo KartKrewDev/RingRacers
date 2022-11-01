@@ -3283,6 +3283,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_MAGICIANBOX",
 	"S_MAGICIANBOXTOP",
+	"S_MAGICIANBOXBOTTOM",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",

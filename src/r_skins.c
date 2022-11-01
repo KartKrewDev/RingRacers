@@ -367,7 +367,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
 		INT32 j, k;
 
-		for (k = 0; k < 4; k++)
+		for (k = 0; k < 6; k++)
 		{
 			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
 			box->target = parent;
@@ -387,6 +387,13 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 				box->cusval = 1; // Should play sounds when disappearing
 			else
 				box->cusval = 0;
+			
+			if (k > 3)
+			{
+				P_SetMobjState(box, (k == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
+				box->renderflags |= RF_NOSPLATBILLBOARD;
+				box->angle = FixedAngle(baseangle*FRACUNIT);
+			}
 		}
 
 		for (j = 0; j < 16; j++)

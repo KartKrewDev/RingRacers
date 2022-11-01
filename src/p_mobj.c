@@ -7612,6 +7612,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_MAGICIANBOX:
 	{
 		fixed_t destx, desty, fakeangle;
+		fixed_t zoff = 0;
 		INT32 j;
 
 		// EV1: rotation rate
@@ -7635,15 +7636,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->extravalue2 == TICRATE/3 && mobj->target)
 		{
+
 			mobj->target->renderflags &= ~RF_DONTDRAW;
 
 			mobj->momx = mobj->target->momx;
 			mobj->momy = mobj->target->momy;
 			mobj->momz = mobj->target->momz;
 
-			P_Thrust(mobj, mobj->angle + ANGLE_90, 32*mapobjectscale);
+			if (mobj->state == &states[S_MAGICIANBOX]) // sides
+				P_Thrust(mobj, mobj->angle + ANGLE_90, 32*mapobjectscale);
+
 			mobj->flags &= ~MF_NOGRAVITY;
 			mobj->momz += 10*mapobjectscale;
+			if (mobj->state == &states[S_MAGICIANBOX_BOTTOM])
+				mobj->momz *= -1;
 
 			if (!mobj->cusval) // Some stuff should only occur once per box
 				return true;
@@ -7702,19 +7708,31 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		destx = mobj->target->x;
 		desty = mobj->target->y;
 
-		fakeangle = (FixedInt(AngleFixed(mobj->angle)) + 90)%360; // What
+		if (mobj->state == &states[S_MAGICIANBOX]) // sides
+		{
+			CONS_Printf("side\n");
+			fakeangle = (FixedInt(AngleFixed(mobj->angle)) + 90)%360; // What
 
-		destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
-		desty += FixedMul(mobj->radius*2, FINESINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+			destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+			desty += FixedMul(mobj->radius*2, FINESINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+		}
+		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
+		{
+			CONS_Printf("top\n");
+			zoff = mobj->radius*4;
+		}
+		else {
+			CONS_Printf("bottom\n");
+		}
 
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
-			P_SetOrigin(mobj, destx, desty, mobj->target->z);
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
 			mobj->flags2 &= ~MF2_AMBUSH;
 		}
 		else
 		{
-			P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
 		}
 		break;
 	}

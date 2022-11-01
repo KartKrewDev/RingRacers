@@ -543,6 +543,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"INVI", // Invincibility speedlines
 	"ICAP", // Item capsules
 	"MGBX", // Heavy Magician transform box
+	"MGBT", // Heavy Magician transform box top
+	"MGBB", // Heavy Magician transform box bottom
 
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
@@ -3890,7 +3892,8 @@ state_t states[NUMSTATES] =
 	//{SPR_ICAP,                 FF_FLOORSPRITE|5, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_INSIDE
 
 	{SPR_MGBX,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX
-	{SPR_MGBX,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
+	{SPR_MGBT,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
+	{SPR_MGBB,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_BOTTOM
 
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_SIGNSPARK2}, // S_SIGNSPARK1
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_SIGNSPARK3}, // S_SIGNSPARK2

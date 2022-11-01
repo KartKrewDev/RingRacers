@@ -1089,6 +1089,8 @@ typedef enum sprite
 	SPR_INVI, // Invincibility speedlines
 	SPR_ICAP, // Item capsules
 	SPR_MGBX, // Heavy Magician transform box
+	SPR_MGBT, // Heavy Magician transform box top
+	SPR_MGBB, // Heavy Magician transform box bottom
 
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
@@ -4295,6 +4297,7 @@ typedef enum state
 
 	S_MAGICIANBOX,
 	S_MAGICIANBOX_TOP,
+	S_MAGICIANBOX_BOTTOM,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
