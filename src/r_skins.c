@@ -402,9 +402,11 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 // Return to base skin from an SF_IRONMAN randomization
 void ClearFakePlayerSkin(player_t* player)
 {
-	if (player->mo)
+	if (!P_MobjWasRemoved(player->mo))
 	{
 		player->mo->skin = &skins[player->skin];
+		S_StartSound(player->mo, sfx_s3k9f);
+		K_SpawnMagicianParticles(player->mo, 5);
 	}
 }
 
