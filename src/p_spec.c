@@ -1919,9 +1919,6 @@ static void K_HandleLapIncrement(player_t *player)
 				player->karthud[khud_lapanimation] = 80;
 			}
 
-			if (skins[player->skin].flags & SF_IRONMAN)
-				SetRandomFakePlayerSkin(player, true);
-
 			if (rainbowstartavailable == true)
 			{
 				S_StartSound(player->mo, sfx_s23c);
@@ -1965,7 +1962,11 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
+			} else if (skins[player->skin].flags & SF_IRONMAN)
+			{
+				SetRandomFakePlayerSkin(player, true);
 			}
+				
 
 			if (player->laps > player->latestlap)
 			{

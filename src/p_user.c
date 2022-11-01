@@ -1264,6 +1264,8 @@ void P_DoPlayerExit(player_t *player)
 
 	if (!player->spectator)
 	{
+		ClearFakePlayerSkin(player);
+
 		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
 			K_KartUpdatePosition(player);
@@ -4168,17 +4170,25 @@ void P_PlayerThink(player_t *player)
 		player->stairjank--;
 	}
 	// Random skin / "ironman"
-	if (leveltime >= introtime && ((skin_t *)player->mo->skin)->flags & SF_IRONMAN)
+	if ((!P_MobjWasRemoved(player->mo)) & (skins[player->skin].flags & SF_IRONMAN)) // we are Heavy Magician with a mobj
 	{
-		if (player->mo) {
-			if (player->fakeskin != MAXSKINS)
+		if (((skin_t *)player->mo->skin)->flags & SF_IRONMAN) // no fakeskin yet
+		{
+			if (leveltime >= introtime && !player->exiting)
 			{
-				SetFakePlayerSkin(player, player->fakeskin);
+				if (player->fakeskin != MAXSKINS)
+				{
+					SetFakePlayerSkin(player, player->fakeskin);
+				}
+				else if (!(gametyperules & GTR_CIRCUIT))
+				{
+					SetRandomFakePlayerSkin(player, false);
+				}
 			}
-			else if (!(gametyperules & GTR_CIRCUIT))
-			{
-				SetRandomFakePlayerSkin(player, false);
-			}
+		}
+		else if (player->exiting) // wearing a fakeskin, but need to display signpost postrace etc
+		{
+			ClearFakePlayerSkin(player);
 		}
 	}
 

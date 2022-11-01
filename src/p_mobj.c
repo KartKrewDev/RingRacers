@@ -7710,7 +7710,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->state == &states[S_MAGICIANBOX]) // sides
 		{
-			CONS_Printf("side\n");
 			fakeangle = (FixedInt(AngleFixed(mobj->angle)) + 90)%360; // What
 
 			destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
@@ -7718,11 +7717,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
 		{
-			CONS_Printf("top\n");
 			zoff = mobj->radius*4;
-		}
-		else {
-			CONS_Printf("bottom\n");
 		}
 
 		if (mobj->flags2 & MF2_AMBUSH)

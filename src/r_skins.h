@@ -83,6 +83,7 @@ void SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
 void SetRandomFakePlayerSkin(player_t* player, boolean fast);
+void ClearFakePlayerSkin(player_t* player);
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum);
 UINT32 R_GetSkinAvailabilities(void);
 INT32 R_SkinAvailable(const char *name);

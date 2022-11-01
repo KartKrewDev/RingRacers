@@ -430,6 +430,15 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 	}
 }
 
+// Return to base skin from an SF_IRONMAN randomization
+void ClearFakePlayerSkin(player_t* player)
+{
+	if (player->mo)
+	{
+		player->mo->skin = &skins[player->skin];
+	}
+}
+
 //
 // Add skins from a pwad, each skin preceded by 'S_SKIN' marker
 //
