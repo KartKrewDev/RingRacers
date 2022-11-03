@@ -1089,10 +1089,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"bhurry", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // v1.0.2 Battle overtime
   {"bsnipe", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Banana sniping
   {"sploss", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Down to yellow sparks
-  {"join",   false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Player joined server
-  {"leave",  false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Player left server
-  {"requst", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Got a Discord join request
-  {"syfail", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Funny sync failure
+  {"join",    true,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Player joined server
+  {"leave",   true,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Player left server
+  {"requst",  true,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Got a Discord join request
+  {"syfail",  true,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Funny sync failure
   {"itfree", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // :shitsfree:
   {"dbgsal", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Debug notification
   {"cock",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hammer cocks, bang bang
