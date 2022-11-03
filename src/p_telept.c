@@ -17,6 +17,7 @@
 #include "r_state.h"
 #include "s_sound.h"
 #include "r_main.h"
+#include "r_fps.h"
 
 /**	\brief	The P_MixUp function
 

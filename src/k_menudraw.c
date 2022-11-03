@@ -3907,6 +3907,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 			V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
 		}
 		else if (demoref->gametype == GT_RACE)
+		{
 			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
 											G_TicsToMinutes(demoref->standings[0].timeorscore, true),
 											G_TicsToSeconds(demoref->standings[0].timeorscore),

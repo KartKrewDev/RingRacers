@@ -3343,7 +3343,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 
 	if (mobj->type == MT_SKYBOX)
 	{
-		mtag_t = mobj->movedir;
+		mtag_t tag = mobj->movedir;
 		if (tag < 0 || tag > 15)
 		{
 			CONS_Debug(DBG_GAMELOGIC, "LoadMobjThinker: Skybox ID %d of netloaded object is not between 0 and 15!\n", tag);
