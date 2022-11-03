@@ -1999,7 +1999,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			// NB: "allowcombo", "hardhit" and related checks are here to disallow HITLAG COMBOS, not loss-of-control combos
 			// DMG_EXPLODE bypasses this check to prevent blocking eggbox/SPB with spinout flashtics
-			if (!force && (type != DMG_EXPLODE) && !(inflictor && inflictor->type == MT_SPBEXPLOSION && inflictor->extravalue1 == 1))
+			if (!force && (type != DMG_EXPLODE))
 			{
 				if (gametyperules & GTR_BUMPERS)
 				{
