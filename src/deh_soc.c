@@ -224,7 +224,10 @@ void readfreeslots(MYFILE *f)
 			// TODO: Out-of-slots warnings/errors.
 			// TODO: Name too long (truncated) warnings.
 			if (fastcmp(type, "SFX"))
+			{
+				CONS_Printf("Sound sfx_%s allocated.\n",word);
 				S_AddSoundFx(word, false, 0, false);
+			}
 			else if (fastcmp(type, "SPR"))
 			{
 				for (i = SPR_FIRSTFREESLOT; i <= SPR_LASTFREESLOT; i++)
@@ -238,39 +241,54 @@ void readfreeslots(MYFILE *f)
 					// Found a free slot!
 					strncpy(sprnames[i],word,4);
 					//sprnames[i][4] = 0;
+					CONS_Printf("Sprite SPR_%s allocated.\n",word);
 					used_spr[(i-SPR_FIRSTFREESLOT)/8] |= 1<<(i%8); // Okay, this sprite slot has been named now.
 					break;
 				}
+				if (i > SPR_LASTFREESLOT)
+					I_Error("Out of Sprite Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
+
 			}
 			else if (fastcmp(type, "S"))
 			{
 				for (i = 0; i < NUMSTATEFREESLOTS; i++)
 					if (!FREE_STATES[i]) {
+						CONS_Printf("State S_%s allocated.\n",word);
 						FREE_STATES[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_STATES[i],word);
 						freeslotusage[0][0]++;
 						break;
 					}
+				if (i == NUMSTATEFREESLOTS)
+					I_Error("Out of State Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
+
 			}
 			else if (fastcmp(type, "MT"))
 			{
 				for (i = 0; i < NUMMOBJFREESLOTS; i++)
 					if (!FREE_MOBJS[i]) {
+						CONS_Printf("MobjType MT_%s allocated.\n",word);
 						FREE_MOBJS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_MOBJS[i],word);
 						freeslotusage[1][0]++;
 						break;
 					}
+				if (i == NUMMOBJFREESLOTS)
+					I_Error("Out of Mobj Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
+
 			}
 			else if (fastcmp(type, "SKINCOLOR"))
 			{
 				for (i = 0; i < NUMCOLORFREESLOTS; i++)
 					if (!FREE_SKINCOLORS[i]) {
+						CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
 						FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_SKINCOLORS[i],word);
 						M_AddMenuColor(numskincolors++);
 						break;
 					}
+				if (i == NUMCOLORFREESLOTS)
+					I_Error("Out of Skincolor Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
 			}
 			else if (fastcmp(type, "SPR2"))
 			{
@@ -287,7 +305,7 @@ void readfreeslots(MYFILE *f)
 					spr2defaults[free_spr2] = 0;
 					spr2names[free_spr2++][4] = 0;
 				} else
-					deh_warning("Ran out of free SPR2 slots!\n");
+					I_Error("Out of SPR2 Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
 			}
 			else if (fastcmp(type, "TOL"))
 			{
@@ -302,7 +320,7 @@ void readfreeslots(MYFILE *f)
 
 				// We don't, so freeslot it.
 				if (lastcustomtol == (UINT32)MAXTOL) // Unless you have way too many, since they're flags.
-					deh_warning("Ran out of free typeoflevel slots!\n");
+					I_Error("Out of Typeoflevel Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
 				else
 				{
 					G_AddTOL(lastcustomtol, word);
@@ -326,7 +344,7 @@ void readfreeslots(MYFILE *f)
 					precipprops[i].name = Z_StrDup(word);
 					precip_freeslot++;
 				} else
-					deh_warning("Ran out of free PRECIP slots!\n");
+					I_Error("Out of Precipitation Freeslots while allocating \"%s\"\nLoad less addons to fix this.", word);
 			}
 			else
 				deh_warning("Freeslots: unknown enum class '%s' for '%s_%s'", type, type, word);
