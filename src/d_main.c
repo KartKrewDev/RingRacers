@@ -1212,7 +1212,7 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 p;
+	INT32 i, p;
 
 	INT32 numbasemapheaders;
 
