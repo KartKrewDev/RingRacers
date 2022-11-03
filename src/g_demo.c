@@ -318,7 +318,7 @@ void G_ReadDemoExtraData(void)
 			{
 					if (!stricmp(Followercolor_cons_t[i].strvalue, name))
 					{
-							players[p].followercolor = i;
+							players[p].followercolor = Followercolor_cons_t[i].value;
 							break;
 					}
 			}
