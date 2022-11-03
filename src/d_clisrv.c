@@ -1483,11 +1483,8 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-#endif // ifndef NONET
-
 static void M_ConfirmConnect(void)
 {
-#ifndef NONET
 	if (G_PlayerInputDown(0, gc_a, 1) || gamekeydown[0][KEY_ENTER])
 	{
 		if (totalfilesrequestednum > 0)
