@@ -369,7 +369,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 		for (j = 0; j < 6; j++)	// 0-3 = sides, 4 = top, 5 = bottom
 		{
 			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
-			box->target = parent;
+			P_SetTarget(&box->target, parent);
 			box->angle = FixedAngle((baseangle + j*90) * FRACUNIT);
 			box->flags2 |= MF2_AMBUSH;
 			if (fast)

@@ -7630,7 +7630,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		else if (mobj->extravalue2 < TICRATE/3)
 		{
-			mobj->target = NULL;
+			P_SetTarget(&mobj->target, NULL);
 			if (mobj->extravalue2 & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 			else
