@@ -58,16 +58,17 @@ typedef enum
 //
 typedef enum
 {
-	// True if button down last tic.
-	PF_ATTACKDOWN		= 1,
-	PF_ACCELDOWN		= 1<<1,
-	PF_BRAKEDOWN		= 1<<2,
-	PF_LOOKDOWN			= 1<<3,
+	PF_GODMODE			= 1<<0, // Immortal. No lightsnake from pits either
 
-	// Accessibility and cheats
-	PF_KICKSTARTACCEL	= 1<<4, // Is accelerate in kickstart mode?
-	PF_GODMODE			= 1<<5,
-	PF_NOCLIP 			= 1<<6,
+	// free: 1<<1 and 1<<2
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	PF_GAINAX			= 1<<3,
+
+	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
+	// 1<<5 free
+	// 1<<6 free
 
 	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
 
@@ -152,7 +153,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (POGOSPRING,    18),\
 	FOREACH (SUPERRING,     19),\
 	FOREACH (KITCHENSINK,   20),\
-	FOREACH (DROPTARGET,    21)
+	FOREACH (DROPTARGET,    21),\
+	FOREACH (GARDENTOP,     22)
 
 typedef enum
 {
@@ -180,6 +182,7 @@ typedef enum
 	KSHIELD_LIGHTNING = 1,
 	KSHIELD_BUBBLE = 2,
 	KSHIELD_FLAME = 3,
+	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
 
@@ -234,7 +237,8 @@ typedef enum
 	khud_lapanimation,	// Used to show the lap start wing logo animation
 	khud_laphand,		// Lap hand gfx to use; 0 = none, 1 = :ok_hand:, 2 = :thumbs_up:, 3 = :thumps_down:
 
-	// Start
+	// Big text
+	khud_finish,		// Set when completing a round
 	khud_fault,			// Set when faulting during the starting countdown
 
 	// Camera
@@ -268,7 +272,9 @@ typedef enum
 #define TUMBLEBOUNCES 3
 #define TUMBLEGRAVITY (4*FRACUNIT)
 
-#define TRIPWIRETIME (TICRATE)
+#define TRIPWIRETIME (15)
+
+#define BALLHOGINCREMENT (7)
 
 //}
 
@@ -278,6 +284,8 @@ typedef enum
 #define ITEMSCALE_NORMAL 0
 #define ITEMSCALE_GROW 1
 #define ITEMSCALE_SHRINK 2
+
+#define GARDENTOP_MAXGRINDTIME (45)
 
 // player_t struct for all respawn variables
 typedef struct respawnvars_s
@@ -293,6 +301,7 @@ typedef struct respawnvars_s
 	UINT32 distanceleft; // How far along the course to respawn you
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
+	boolean manual; // Respawn coords were manually set, please respawn exactly there
 } respawnvars_t;
 
 // player_t struct for all bot variables
@@ -328,6 +337,7 @@ typedef struct player_s
 
 	// Caveat: ticcmd_t is ATTRPACK! Be careful what precedes it.
 	ticcmd_t cmd;
+	ticcmd_t oldcmd; // from the previous tic
 
 	playerstate_t playerstate;
 
@@ -425,6 +435,9 @@ typedef struct player_s
 	UINT8 driftboost;		// (0 to 125) - Boost you get from drifting
 	UINT8 strongdriftboost; // (0 to 125) - While active, boost from drifting gives a stronger speed increase
 
+	UINT16 gateBoost;		// Juicebox Manta Ring boosts
+	UINT8 gateSound;		// Sound effect combo
+
 	SINT8 aizdriftstrat;	// (-1 to 1) - Let go of your drift while boosting? Helper for the SICK STRATZ (sliptiding!) you have just unlocked
 	INT32 aizdrifttilt;
 	INT32 aizdriftturn;
@@ -432,7 +445,6 @@ typedef struct player_s
 	INT32 underwatertilt;
 
 	fixed_t offroad;		// In Super Mario Kart, going offroad has lee-way of about 1 second before you start losing speed
-	UINT8 waterskip;		// Water skipping counter
 
 	UINT16 tiregrease;		// Reduced friction timer after hitting a spring
 	UINT16 springstars;		// Spawn stars around a player when they hit a spring
@@ -486,9 +498,11 @@ typedef struct player_s
 	UINT16 flamemeter;	// Flame Shield dash meter left
 	UINT8 flamelength;	// Flame Shield dash meter, number of segments
 
+	UINT16 ballhogcharge;	// Ballhog charge up -- the higher this value, the more projectiles
+
 	UINT16 hyudorotimer;	// Duration of the Hyudoro offroad effect itself
 	SINT8 stealingtimer;	// if >0 you are stealing, if <0 you are being stolen from
-	mobj_t *hoverhyudoro;   // First hyudoro hovering next to player
+	mobj_t *hoverhyudoro;	// First hyudoro hovering next to player
 
 	UINT16 sneakertimer;	// Duration of a Sneaker Boost (from Sneakers or level boosters)
 	UINT8 numsneakers;		// Number of stacked sneaker effects
@@ -583,13 +597,16 @@ typedef struct player_s
 	UINT8 kickstartaccel;
 
 	UINT8 stairjank;
+	UINT8 topdriftheld;
+	UINT8 topinfirst;
+
+	UINT8 shrinkLaserDelay;
+
+	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 } player_t;
-
-// Value for infinite lives
-#define INFLIVES 0x7F
 
 #endif

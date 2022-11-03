@@ -204,6 +204,7 @@ menu_t PLAY_LevelSelectDef = {
 	NULL
 };
 
+// see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
 	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},
@@ -871,9 +872,6 @@ menuitem_t OPTIONS_Sound[] =
 	{IT_STRING | IT_CVAR, "Character Voices", "Set how often to play character voices in game.",
 		NULL, {.cvar = &cv_kartvoices}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Powerup Warning", "Set how to warn you from other player's powerups such as Invincibility.",
-		NULL, {.cvar = &cv_kartinvinsfx}, 0, 0},
-
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
@@ -913,14 +911,8 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "Minimap Opacity", "Changes the opacity of the minimap.",
-		NULL, {.cvar = &cv_kartminimap}, 0, 0},
-
 	{IT_STRING | IT_CVAR, "Speedometer", "Choose to what speed unit to display or toggle off the speedometer.",
 		NULL, {.cvar = &cv_kartspeedometer}, 0, 0},
-
-	{IT_STRING | IT_CVAR, "Display \"CHECK\"", "Displays an icon when a player is tailing you.",
-		NULL, {.cvar = &cv_kartcheck}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1035,8 +1027,11 @@ menuitem_t OPTIONS_Gameplay[] =
 	{IT_STRING | IT_CVAR, "Starting Bumpers", "Change how many bumpers player start with in Battle.",
 		NULL, {.cvar = &cv_kartbumpers}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Karma Comeback", "Enable Karma Comeback in Battle mode.",
-		NULL, {.cvar = &cv_kartcomeback}, 0, 0},
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+	
+	{IT_STRING | IT_CVAR, "Minimum Input Delay", "Practice for online play! Higher = more delay.",
+		NULL, {.cvar = &cv_mindelay}, 0, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1138,7 +1133,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Vote Mode Change", "Set how often voting proposes a different gamemode.",
 		NULL, {.cvar = &cv_kartvoterulechanges}, 0, 0},
 
-#ifndef NONET
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1167,7 +1161,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_SUBMENU, "Advanced...", "Advanced options. Be careful when messing with these!",
 		NULL, {.submenu = &OPTIONS_ServerAdvancedDef}, 0, 0},
 
-#endif
 };
 
 menu_t OPTIONS_ServerDef = {
@@ -1185,7 +1178,6 @@ menu_t OPTIONS_ServerDef = {
 	NULL,
 };
 
-#ifndef NONET
 menuitem_t OPTIONS_ServerAdvanced[] =
 {
 
@@ -1243,7 +1235,6 @@ menu_t OPTIONS_ServerAdvancedDef = {
 	NULL,
 	NULL,
 };
-#endif
 
 // data options menu -- see dopt_e
 menuitem_t OPTIONS_Data[] =

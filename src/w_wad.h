@@ -92,6 +92,7 @@ typedef struct {
 virtres_t* vres_GetMap(lumpnum_t);
 void vres_Free(virtres_t*);
 virtlump_t* vres_Find(const virtres_t*, const char*);
+void* vres_GetPatch(virtlump_t *vlump, INT32 tag);
 
 // =========================================================================
 //                         DYNAMIC WAD LOADING
@@ -154,6 +155,7 @@ const char *W_CheckNameForNum(lumpnum_t lumpnum);
 
 UINT16 W_FindNextEmptyInPwad(UINT16 wad, UINT16 startlump); // checks only in one pwad
 
+UINT16 W_CheckNumForMapPwad(const char *name, UINT32 hash, UINT16 wad, UINT16 startlump);
 UINT16 W_CheckNumForNamePwad(const char *name, UINT16 wad, UINT16 startlump); // checks only in one pwad
 UINT16 W_CheckNumForLongNamePwad(const char *name, UINT16 wad, UINT16 startlump);
 

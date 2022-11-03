@@ -31,8 +31,8 @@
 # MINGW=1, MINGW64=1 - Windows (MinGW toolchain)
 # UNIX=1 - Generic Unix like system
 # FREEBSD=1
-# SDL=1 - Use SDL backend. SDL is the only backend though
-#         and thus, always enabled.
+# SDL=1 - Use SDL backend. SDL is the only implemented backend though.
+#         If disabled, a dummy backend will be used.
 #
 # A list of supported GCC versions can be found in
 # Makefile.d/detect.mk -- search 'gcc_versions'.
@@ -64,7 +64,6 @@
 #
 # Netplay incompatible
 # --------------------
-# NONET=1 - Disable online capability.
 # NOMD5=1 - Disable MD5 checksum (validation tool).
 # NOPOSTPROCESSING=1 - ?
 # MOBJCONSISTANCY=1 - ??
@@ -195,6 +194,14 @@ passthru_opts:=
 
 # separate suffix with an underscore
 exesuffix:=$(call _,$(EXESUFFIX))
+
+# If there are uncommitted changes
+# -uno: disregard untracked files
+# Warning: this can only be accurate for comptime.c since
+# that file is always recompiled!
+ifneq ($(shell git status --porcelain -uno),)
+opts+=-DCOMPVERSION_UNCOMMITTED
+endif
 
 include Makefile.d/platform.mk
 include Makefile.d/features.mk

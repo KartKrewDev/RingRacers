@@ -12,6 +12,7 @@
 
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_specialstage.h"
 #include "doomdef.h"
 #include "d_player.h"
 #include "g_game.h"
@@ -96,14 +97,14 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
-	SINT8 K_BotDefaultSkin(void)
+	UINT8 K_BotDefaultSkin(void)
 
 		See header file for description.
 --------------------------------------------------*/
-SINT8 K_BotDefaultSkin(void)
+UINT8 K_BotDefaultSkin(void)
 {
 	const char *defaultbotskinname = "eggrobo";
-	SINT8 defaultbotskin = R_SkinAvailable(defaultbotskinname);
+	INT32 defaultbotskin = R_SkinAvailable(defaultbotskinname);
 
 	if (defaultbotskin == -1)
 	{
@@ -111,7 +112,7 @@ SINT8 K_BotDefaultSkin(void)
 		defaultbotskin = 0;
 	}
 
-	return defaultbotskin;
+	return (UINT8)defaultbotskin;
 }
 
 /*--------------------------------------------------
@@ -121,7 +122,7 @@ SINT8 K_BotDefaultSkin(void)
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const SINT8 defaultbotskin = K_BotDefaultSkin();
+	const UINT8 defaultbotskin = K_BotDefaultSkin();
 
 	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
@@ -132,7 +133,9 @@ void K_InitGrandPrixBots(void)
 	UINT8 numplayers = 0;
 	UINT8 competitors[MAXSPLITSCREENPLAYERS];
 
-	boolean skinusable[MAXSKINS];
+	UINT8 usableskins;
+	UINT8 grabskins[MAXSKINS+1];
+
 	UINT8 botskinlist[MAXPLAYERS];
 	UINT8 botskinlistpos = 0;
 
@@ -142,18 +145,12 @@ void K_InitGrandPrixBots(void)
 	memset(competitors, MAXPLAYERS, sizeof (competitors));
 	memset(botskinlist, defaultbotskin, sizeof (botskinlist));
 
-	// init usable bot skins list
-	for (i = 0; i < MAXSKINS; i++)
+	// Init usable bot skins list
+	for (usableskins = 0; usableskins < numskins; usableskins++)
 	{
-		if (i < numskins)
-		{
-			skinusable[i] = true;
-		}
-		else
-		{
-			skinusable[i] = false;
-		}
+		grabskins[usableskins] = usableskins;
 	}
+	grabskins[usableskins] = MAXSKINS;
 
 #if MAXPLAYERS != 16
 	I_Error("GP bot difficulty levels need rebalanced for the new player count!\n");
@@ -192,7 +189,7 @@ void K_InitGrandPrixBots(void)
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
-				skinusable[players[i].skin] = false;
+				grabskins[players[i].skin] = MAXSKINS;
 				numplayers++;
 			}
 			else
@@ -219,52 +216,46 @@ void K_InitGrandPrixBots(void)
 			{
 				player_t *p = &players[competitors[j]];
 				char *rivalname = skins[p->skin].rivals[i];
-				SINT8 rivalnum = R_SkinAvailable(rivalname);
+				INT32 rivalnum = R_SkinAvailable(rivalname);
 
-				if (rivalnum != -1 && skinusable[rivalnum])
+				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!
+				if (rivalnum != -1 && grabskins[(UINT8)rivalnum] != MAXSKINS)
 				{
-					botskinlist[botskinlistpos] = rivalnum;
-					skinusable[rivalnum] = false;
-					botskinlistpos++;
+					botskinlist[botskinlistpos++] = (UINT8)rivalnum;
+					grabskins[(UINT8)rivalnum] = MAXSKINS;
 				}
 			}
 		}
 	}
 
+	// Rearrange usable bot skins list to prevent gaps for randomised selection
+	for (i = 0; i < usableskins; i++)
+	{
+		if (!(grabskins[i] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+			continue;
+		while (usableskins > i && (grabskins[usableskins] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+		{
+			usableskins--;
+		}
+		grabskins[i] = grabskins[usableskins];
+		grabskins[usableskins] = MAXSKINS;
+	}
+
 	// Pad the remaining list with random skins if we need to
 	if (botskinlistpos < wantedbots)
 	{
-		for (i = botskinlistpos; i < wantedbots; i++)
+		while (botskinlistpos < wantedbots)
 		{
-			UINT8 val = M_RandomKey(numskins);
-			UINT8 loops = 0;
+			UINT8 skinnum = defaultbotskin;
 
-			while (!skinusable[val])
+			if (usableskins > 0)
 			{
-				if (loops >= numskins)
-				{
-					// no more skins
-					break;
-				}
-
-				val++;
-
-				if (val >= numskins)
-				{
-					val = 0;
-				}
-
-				loops++;
+				UINT8 index = M_RandomKey(usableskins);
+				skinnum = grabskins[index];
+				grabskins[index] = grabskins[--usableskins];
 			}
 
-			if (loops >= numskins)
-			{
-				// leave the rest of the table as the default skin
-				break;
-			}
-
-			botskinlist[i] = val;
-			skinusable[val] = false;
+			botskinlist[botskinlistpos++] = skinnum;
 		}
 	}
 
@@ -340,6 +331,16 @@ void K_UpdateGrandPrixBots(void)
 	player_t *newrival = NULL;
 	UINT16 newrivalscore = 0;
 	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || !players[i].bot)
+		{
+			continue;
+		}
+
+		players[i].spectator = (grandprixinfo.eventmode != GPEVENT_NONE);
+	}
 
 	// Find the rival.
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -519,38 +520,49 @@ void K_IncreaseBotDifficulty(player_t *bot)
 --------------------------------------------------*/
 void K_RetireBots(void)
 {
-	const SINT8 defaultbotskin = K_BotDefaultSkin();
+	const UINT8 defaultbotskin = K_BotDefaultSkin();
 	SINT8 newDifficulty;
 
-	boolean skinusable[MAXSKINS];
+	UINT8 usableskins;
+	UINT8 grabskins[MAXSKINS+1];
 
 	UINT8 i;
 
-	if (grandprixinfo.gp == true && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+	if (grandprixinfo.gp == true
+		&& ((grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+		|| grandprixinfo.eventmode != GPEVENT_NONE))
 	{
-		// Was last map, no replacement.
+		// No replacement.
 		return;
 	}
 
-	// init usable bot skins list
-	for (i = 0; i < MAXSKINS; i++)
+	// Init usable bot skins list
+	for (usableskins = 0; usableskins < numskins; usableskins++)
 	{
-		if (i < numskins)
-		{
-			skinusable[i] = true;
-		}
-		else
-		{
-			skinusable[i] = false;
-		}
+		grabskins[usableskins] = usableskins;
 	}
+	grabskins[usableskins] = MAXSKINS;
 
+	// Exclude player skins
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i] && !players[i].spectator)
-		{
-			skinusable[players[i].skin] = false;
-		}
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+
+		grabskins[players[i].skin] = MAXSKINS;
+	}
+
+	// Rearrange usable bot skins list to prevent gaps for randomised selection
+	for (i = 0; i < usableskins; i++)
+	{
+		if (!(grabskins[i] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+			continue;
+		while (usableskins > i && (grabskins[usableskins] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+			usableskins--;
+		grabskins[i] = grabskins[usableskins];
+		grabskins[usableskins] = MAXSKINS;
 	}
 
 	if (!grandprixinfo.gp) // Sure, let's let this happen all the time :)
@@ -576,48 +588,23 @@ void K_RetireBots(void)
 	{
 		player_t *bot = NULL;
 
-		if (!playeringame[i] || !players[i].bot)
+		if (!playeringame[i] || !players[i].bot || players[i].spectator)
 		{
 			continue;
 		}
 
 		bot = &players[i];
 
-		if (bot->spectator)
-		{
-			continue;
-		}
-
 		if (bot->pflags & PF_NOCONTEST)
 		{
-			UINT8 skinnum = P_RandomKey(numskins);
-			UINT8 loops = 0;
+			UINT8 skinnum = defaultbotskin;
 
-			while (!skinusable[skinnum])
+			if (usableskins > 0)
 			{
-				if (loops >= numskins)
-				{
-					// no more skins
-					break;
-				}
-
-				skinnum++;
-
-				if (skinnum >= numskins)
-				{
-					skinnum = 0;
-				}
-
-				loops++;
+				UINT8 index = P_RandomKey(PR_RULESCRAMBLE, usableskins);
+				skinnum = grabskins[index];
+				grabskins[index] = grabskins[--usableskins];
 			}
-
-			if (loops >= numskins)
-			{
-				// Use default skin
-				skinnum = defaultbotskin;
-			}
-
-			skinusable[skinnum] = false;
 
 			bot->botvars.difficulty = newDifficulty;
 			bot->botvars.diffincrease = 0;
@@ -671,7 +658,7 @@ void K_FakeBotResults(player_t *bot)
 	}
 
 	// hey, you "won"
-	bot->exiting = 2;
+	bot->exiting = 1;
 	bot->realtime += (bot->distancetofinish / distfactor);
 	bot->distancetofinish = 0;
 	K_IncreaseBotDifficulty(bot);
@@ -710,18 +697,12 @@ void K_PlayerLoseLife(player_t *player)
 }
 
 /*--------------------------------------------------
-	boolean K_CanChangeRules(void)
+	boolean K_CanChangeRules(boolean allowdemos)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_CanChangeRules(void)
+boolean K_CanChangeRules(boolean allowdemos)
 {
-	if (demo.playback)
-	{
-		// We've already got our important settings!
-		return false;
-	}
-
 	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
 	{
 		// Don't cheat the rules of the GP!
@@ -734,9 +715,27 @@ boolean K_CanChangeRules(void)
 		return false;
 	}
 
-	if (modeattacking == true)
+	if (specialStage.active == true)
+	{
+		// Don't cheat special stages!
+		return false;
+	}
+
+	if (marathonmode)
+	{
+		// Don't cheat the endurance challenge!
+		return false;
+	}
+
+	if (modeattacking != ATTACKING_NONE)
 	{
 		// Don't cheat the rules of Time Trials!
+		return false;
+	}
+
+	if (!allowdemos && demo.playback)
+	{
+		// We've already got our important settings!
 		return false;
 	}
 

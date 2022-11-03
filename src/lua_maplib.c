@@ -35,6 +35,10 @@ enum sector_e {
 	sector_floorpic,
 	sector_ceilingpic,
 	sector_lightlevel,
+	sector_floorlightlevel,
+	sector_floorlightabsolute,
+	sector_ceilinglightlevel,
+	sector_ceilinglightabsolute,
 	sector_special,
 	sector_tag,
 	sector_taglist,
@@ -44,7 +48,14 @@ enum sector_e {
 	sector_lines,
 	sector_ffloors,
 	sector_fslope,
-	sector_cslope
+	sector_cslope,
+	sector_flags,
+	sector_specialflags,
+	sector_damagetype,
+	sector_triggertag,
+	sector_triggerer,
+	sector_friction,
+	sector_gravity,
 };
 
 static const char *const sector_opt[] = {
@@ -54,6 +65,10 @@ static const char *const sector_opt[] = {
 	"floorpic",
 	"ceilingpic",
 	"lightlevel",
+	"floorlightlevel",
+	"floorlightabsolute",
+	"ceilinglightlevel",
+	"ceilinglightabsolute",
 	"special",
 	"tag",
 	"taglist",
@@ -64,6 +79,13 @@ static const char *const sector_opt[] = {
 	"ffloors",
 	"f_slope",
 	"c_slope",
+	"flags",
+	"specialflags",
+	"damagetype",
+	"triggertag",
+	"triggerer",
+	"friction",
+	"gravity",
 	NULL};
 
 enum subsector_e {
@@ -88,6 +110,7 @@ enum line_e {
 	line_v2,
 	line_dx,
 	line_dy,
+	line_angle,
 	line_flags,
 	line_special,
 	line_tag,
@@ -113,6 +136,7 @@ static const char *const line_opt[] = {
 	"v2",
 	"dx",
 	"dy",
+	"angle",
 	"flags",
 	"special",
 	"tag",
@@ -190,6 +214,7 @@ enum ffloor_e {
 	ffloor_tslope,
 	ffloor_bslope,
 	ffloor_sector,
+	ffloor_fofflags,
 	ffloor_flags,
 	ffloor_master,
 	ffloor_target,
@@ -197,6 +222,12 @@ enum ffloor_e {
 	ffloor_prev,
 	ffloor_alpha,
 	ffloor_blend,
+	ffloor_bustflags,
+	ffloor_busttype,
+	ffloor_busttag,
+	ffloor_sinkspeed,
+	ffloor_friction,
+	ffloor_bouncestrength,
 };
 
 static const char *const ffloor_opt[] = {
@@ -209,6 +240,7 @@ static const char *const ffloor_opt[] = {
 	"t_slope",
 	"b_slope",
 	"sector", // secnum pushed as control sector userdata
+	"fofflags",
 	"flags",
 	"master", // control linedef
 	"target", // target sector
@@ -216,6 +248,12 @@ static const char *const ffloor_opt[] = {
 	"prev",
 	"alpha",
 	"blend",
+	"bustflags",
+	"busttype",
+	"busttag",
+	"sinkspeed",
+	"friction",
+	"bouncestrength",
 	NULL};
 
 #ifdef HAVE_LUA_SEGS
@@ -581,6 +619,18 @@ static int sector_get(lua_State *L)
 	case sector_lightlevel:
 		lua_pushinteger(L, sector->lightlevel);
 		return 1;
+	case sector_floorlightlevel:
+		lua_pushinteger(L, sector->floorlightlevel);
+		return 1;
+	case sector_floorlightabsolute:
+		lua_pushboolean(L, sector->floorlightabsolute);
+		return 1;
+	case sector_ceilinglightlevel:
+		lua_pushinteger(L, sector->ceilinglightlevel);
+		return 1;
+	case sector_ceilinglightabsolute:
+		lua_pushboolean(L, sector->ceilinglightabsolute);
+		return 1;
 	case sector_special:
 		lua_pushinteger(L, sector->special);
 		return 1;
@@ -619,6 +669,27 @@ static int sector_get(lua_State *L)
 	case sector_cslope: // c_slope
 		LUA_PushUserdata(L, sector->c_slope, META_SLOPE);
 		return 1;
+	case sector_flags: // flags
+		lua_pushinteger(L, sector->flags);
+		return 1;
+	case sector_specialflags: // specialflags
+		lua_pushinteger(L, sector->specialflags);
+		return 1;
+	case sector_damagetype: // damagetype
+		lua_pushinteger(L, (UINT8)sector->damagetype);
+		return 1;
+	case sector_triggertag: // triggertag
+		lua_pushinteger(L, (INT16)sector->triggertag);
+		return 1;
+	case sector_triggerer: // triggerer
+		lua_pushinteger(L, (UINT8)sector->triggerer);
+		return 1;
+	case sector_friction: // friction
+		lua_pushfixed(L, sector->friction);
+		return 1;
+	case sector_gravity: // gravity
+		lua_pushfixed(L, sector->gravity);
+		return 1;
 	}
 	return 0;
 }
@@ -646,6 +717,7 @@ static int sector_set(lua_State *L)
 	case sector_ffloors: // ffloors
 	case sector_fslope: // f_slope
 	case sector_cslope: // c_slope
+	case sector_friction: // friction
 	default:
 		return luaL_error(L, "sector_t field " LUA_QS " cannot be set.", sector_opt[field]);
 	case sector_floorheight: { // floorheight
@@ -685,6 +757,18 @@ static int sector_set(lua_State *L)
 	case sector_lightlevel:
 		sector->lightlevel = (INT16)luaL_checkinteger(L, 3);
 		break;
+	case sector_floorlightlevel:
+		sector->floorlightlevel = (INT16)luaL_checkinteger(L, 3);
+		break;
+	case sector_floorlightabsolute:
+		sector->floorlightabsolute = luaL_checkboolean(L, 3);
+		break;
+	case sector_ceilinglightlevel:
+		sector->ceilinglightlevel = (INT16)luaL_checkinteger(L, 3);
+		break;
+	case sector_ceilinglightabsolute:
+		sector->ceilinglightabsolute = luaL_checkboolean(L, 3);
+		break;
 	case sector_special:
 		sector->special = (INT16)luaL_checkinteger(L, 3);
 		break;
@@ -693,6 +777,25 @@ static int sector_set(lua_State *L)
 		break;
 	case sector_taglist:
 		return LUA_ErrSetDirectly(L, "sector_t", "taglist");
+	case sector_flags:
+		sector->flags = luaL_checkinteger(L, 3);
+		CheckForReverseGravity |= (sector->flags & MSF_GRAVITYFLIP);
+		break;
+	case sector_specialflags:
+		sector->specialflags = luaL_checkinteger(L, 3);
+		break;
+	case sector_damagetype:
+		sector->damagetype = (UINT8)luaL_checkinteger(L, 3);
+		break;
+	case sector_triggertag:
+		sector->triggertag = (INT16)luaL_checkinteger(L, 3);
+		break;
+	case sector_triggerer:
+		sector->triggerer = (UINT8)luaL_checkinteger(L, 3);
+		break;
+	case sector_gravity:
+		sector->gravity = luaL_checkfixed(L, 3);
+		break;
 	}
 	return 0;
 }
@@ -822,6 +925,9 @@ static int line_get(lua_State *L)
 		return 1;
 	case line_dy:
 		lua_pushfixed(L, line->dy);
+		return 1;
+	case line_angle:
+		lua_pushangle(L, line->angle);
 		return 1;
 	case line_flags:
 		lua_pushinteger(L, line->flags);
@@ -1737,6 +1843,80 @@ static int lib_numnodes(lua_State *L)
 // ffloor_t //
 //////////////
 
+static INT32 P_GetOldFOFFlags(ffloor_t *fflr)
+{
+	INT32 result = 0;
+	if (fflr->fofflags & FOF_EXISTS)
+		result |= FF_OLD_EXISTS;
+	if (fflr->fofflags & FOF_BLOCKPLAYER)
+		result |= FF_OLD_BLOCKPLAYER;
+	if (fflr->fofflags & FOF_BLOCKOTHERS)
+		result |= FF_OLD_BLOCKOTHERS;
+	if (fflr->fofflags & FOF_RENDERSIDES)
+		result |= FF_OLD_RENDERSIDES;
+	if (fflr->fofflags & FOF_RENDERPLANES)
+		result |= FF_OLD_RENDERPLANES;
+	if (fflr->fofflags & FOF_SWIMMABLE)
+		result |= FF_OLD_SWIMMABLE;
+	if (fflr->fofflags & FOF_NOSHADE)
+		result |= FF_OLD_NOSHADE;
+	if (fflr->fofflags & FOF_CUTSOLIDS)
+		result |= FF_OLD_CUTSOLIDS;
+	if (fflr->fofflags & FOF_CUTEXTRA)
+		result |= FF_OLD_CUTEXTRA;
+	if (fflr->fofflags & FOF_CUTSPRITES)
+		result |= FF_OLD_CUTSPRITES;
+	if (fflr->fofflags & FOF_BOTHPLANES)
+		result |= FF_OLD_BOTHPLANES;
+	if (fflr->fofflags & FOF_EXTRA)
+		result |= FF_OLD_EXTRA;
+	if (fflr->fofflags & FOF_TRANSLUCENT)
+		result |= FF_OLD_TRANSLUCENT;
+	if (fflr->fofflags & FOF_FOG)
+		result |= FF_OLD_FOG;
+	if (fflr->fofflags & FOF_INVERTPLANES)
+		result |= FF_OLD_INVERTPLANES;
+	if (fflr->fofflags & FOF_ALLSIDES)
+		result |= FF_OLD_ALLSIDES;
+	if (fflr->fofflags & FOF_INVERTSIDES)
+		result |= FF_OLD_INVERTSIDES;
+	if (fflr->fofflags & FOF_DOUBLESHADOW)
+		result |= FF_OLD_DOUBLESHADOW;
+	if (fflr->fofflags & FOF_FLOATBOB)
+		result |= FF_OLD_FLOATBOB;
+	if (fflr->fofflags & FOF_NORETURN)
+		result |= FF_OLD_NORETURN;
+	if (fflr->fofflags & FOF_CRUMBLE)
+		result |= FF_OLD_CRUMBLE;
+	if (fflr->bustflags & FB_ONLYBOTTOM)
+		result |= FF_OLD_SHATTERBOTTOM;
+	if (fflr->fofflags & FOF_GOOWATER)
+		result |= FF_OLD_GOOWATER;
+	if (fflr->fofflags & FOF_MARIO)
+		result |= FF_OLD_MARIO;
+	if (fflr->fofflags & FOF_BUSTUP)
+		result |= FF_OLD_BUSTUP;
+	if (fflr->fofflags & FOF_QUICKSAND)
+		result |= FF_OLD_QUICKSAND;
+	if (fflr->fofflags & FOF_PLATFORM)
+		result |= FF_OLD_PLATFORM;
+	if (fflr->fofflags & FOF_REVERSEPLATFORM)
+		result |= FF_OLD_REVERSEPLATFORM;
+	if (fflr->fofflags & FOF_INTANGIBLEFLATS)
+		result |= FF_OLD_INTANGIBLEFLATS;
+	if (fflr->busttype == BT_TOUCH)
+		result |= FF_OLD_SHATTER;
+	if (fflr->busttype == BT_SPINBUST)
+		result |= FF_OLD_SPINBUST;
+	if (fflr->busttype == BT_STRONG)
+		result |= FF_OLD_STRONGBUST;
+	if (fflr->fofflags & FF_OLD_RIPPLE)
+		result |= FOF_RIPPLE;
+	if (fflr->fofflags & FF_OLD_COLORMAPONLY)
+		result |= FOF_COLORMAPONLY;
+	return result;
+}
+
 static int ffloor_get(lua_State *L)
 {
 	ffloor_t *ffloor = *((ffloor_t **)luaL_checkudata(L, 1, META_FFLOOR));
@@ -1791,8 +1971,11 @@ static int ffloor_get(lua_State *L)
 	case ffloor_sector:
 		LUA_PushUserdata(L, &sectors[ffloor->secnum], META_SECTOR);
 		return 1;
+	case ffloor_fofflags:
+		lua_pushinteger(L, ffloor->fofflags);
+		return 1;
 	case ffloor_flags:
-		lua_pushinteger(L, ffloor->flags);
+		lua_pushinteger(L, P_GetOldFOFFlags(ffloor));
 		return 1;
 	case ffloor_master:
 		LUA_PushUserdata(L, ffloor->master, META_LINE);
@@ -1812,8 +1995,108 @@ static int ffloor_get(lua_State *L)
 	case ffloor_blend:
 		lua_pushinteger(L, ffloor->blend);
 		return 1;
+	case ffloor_bustflags:
+		lua_pushinteger(L, ffloor->bustflags);
+		return 1;
+	case ffloor_busttype:
+		lua_pushinteger(L, ffloor->busttype);
+		return 1;
+	case ffloor_busttag:
+		lua_pushinteger(L, ffloor->busttag);
+		return 1;
+	case ffloor_sinkspeed:
+		lua_pushfixed(L, ffloor->sinkspeed);
+		return 1;
+	case ffloor_friction:
+		lua_pushfixed(L, ffloor->friction);
+		return 1;
+	case ffloor_bouncestrength:
+		lua_pushfixed(L, ffloor->bouncestrength);
+		return 1;
 	}
 	return 0;
+}
+
+static void P_SetOldFOFFlags(ffloor_t *fflr, oldffloortype_e oldflags)
+{
+	ffloortype_e originalflags = fflr->fofflags;
+	fflr->fofflags = 0;
+	if (oldflags & FF_OLD_EXISTS)
+		fflr->fofflags |= FOF_EXISTS;
+	if (oldflags & FF_OLD_BLOCKPLAYER)
+		fflr->fofflags |= FOF_BLOCKPLAYER;
+	if (oldflags & FF_OLD_BLOCKOTHERS)
+		fflr->fofflags |= FOF_BLOCKOTHERS;
+	if (oldflags & FF_OLD_RENDERSIDES)
+		fflr->fofflags |= FOF_RENDERSIDES;
+	if (oldflags & FF_OLD_RENDERPLANES)
+		fflr->fofflags |= FOF_RENDERPLANES;
+	if (oldflags & FF_OLD_SWIMMABLE)
+		fflr->fofflags |= FOF_SWIMMABLE;
+	if (oldflags & FF_OLD_NOSHADE)
+		fflr->fofflags |= FOF_NOSHADE;
+	if (oldflags & FF_OLD_CUTSOLIDS)
+		fflr->fofflags |= FOF_CUTSOLIDS;
+	if (oldflags & FF_OLD_CUTEXTRA)
+		fflr->fofflags |= FOF_CUTEXTRA;
+	if (oldflags & FF_OLD_CUTSPRITES)
+		fflr->fofflags |= FOF_CUTSPRITES;
+	if (oldflags & FF_OLD_BOTHPLANES)
+		fflr->fofflags |= FOF_BOTHPLANES;
+	if (oldflags & FF_OLD_EXTRA)
+		fflr->fofflags |= FOF_EXTRA;
+	if (oldflags & FF_OLD_TRANSLUCENT)
+		fflr->fofflags |= FOF_TRANSLUCENT;
+	if (oldflags & FF_OLD_FOG)
+		fflr->fofflags |= FOF_FOG;
+	if (oldflags & FF_OLD_INVERTPLANES)
+		fflr->fofflags |= FOF_INVERTPLANES;
+	if (oldflags & FF_OLD_ALLSIDES)
+		fflr->fofflags |= FOF_ALLSIDES;
+	if (oldflags & FF_OLD_INVERTSIDES)
+		fflr->fofflags |= FOF_INVERTSIDES;
+	if (oldflags & FF_OLD_DOUBLESHADOW)
+		fflr->fofflags |= FOF_DOUBLESHADOW;
+	if (oldflags & FF_OLD_FLOATBOB)
+		fflr->fofflags |= FOF_FLOATBOB;
+	if (oldflags & FF_OLD_NORETURN)
+		fflr->fofflags |= FOF_NORETURN;
+	if (oldflags & FF_OLD_CRUMBLE)
+		fflr->fofflags |= FOF_CRUMBLE;
+	if (oldflags & FF_OLD_GOOWATER)
+		fflr->fofflags |= FOF_GOOWATER;
+	if (oldflags & FF_OLD_MARIO)
+		fflr->fofflags |= FOF_MARIO;
+	if (oldflags & FF_OLD_BUSTUP)
+		fflr->fofflags |= FOF_BUSTUP;
+	if (oldflags & FF_OLD_QUICKSAND)
+		fflr->fofflags |= FOF_QUICKSAND;
+	if (oldflags & FF_OLD_PLATFORM)
+		fflr->fofflags |= FOF_PLATFORM;
+	if (oldflags & FF_OLD_REVERSEPLATFORM)
+		fflr->fofflags |= FOF_REVERSEPLATFORM;
+	if (oldflags & FF_OLD_RIPPLE)
+		fflr->fofflags |= FOF_RIPPLE;
+	if (oldflags & FF_OLD_COLORMAPONLY)
+		fflr->fofflags |= FOF_COLORMAPONLY;
+	if (originalflags & FOF_BOUNCY)
+		fflr->fofflags |= FOF_BOUNCY;
+	if (originalflags & FOF_SPLAT)
+		fflr->fofflags |= FOF_SPLAT;
+
+	if (oldflags & FF_OLD_SHATTER)
+		fflr->busttype = BT_TOUCH;
+	else if (oldflags & FF_OLD_SPINBUST)
+		fflr->busttype = BT_SPINBUST;
+	else if (oldflags & FF_OLD_STRONGBUST)
+		fflr->busttype = BT_STRONG;
+	else
+		fflr->busttype = BT_REGULAR;
+
+	if (oldflags & FF_OLD_SHATTERBOTTOM)
+		fflr->bustflags |= FB_ONLYBOTTOM;
+	else
+		fflr->bustflags &= ~FB_ONLYBOTTOM;
 }
 
 static int ffloor_set(lua_State *L)
@@ -1880,10 +2163,20 @@ static int ffloor_set(lua_State *L)
 	case ffloor_bottompic:
 		*ffloor->bottompic = P_AddLevelFlatRuntime(luaL_checkstring(L, 3));
 		break;
+	case ffloor_fofflags: {
+		ffloortype_e oldflags = ffloor->fofflags; // store FOF's old flags
+		ffloor->fofflags = luaL_checkinteger(L, 3);
+		if (ffloor->fofflags != oldflags)
+			ffloor->target->moved = true; // reset target sector's lightlist
+		break;
+	}
 	case ffloor_flags: {
-		ffloortype_e oldflags = ffloor->flags; // store FOF's old flags
-		ffloor->flags = luaL_checkinteger(L, 3);
-		if (ffloor->flags != oldflags)
+		ffloortype_e oldflags = ffloor->fofflags; // store FOF's old flags
+		busttype_e oldbusttype = ffloor->busttype;
+		ffloorbustflags_e oldbustflags = ffloor->bustflags;
+		oldffloortype_e newflags = luaL_checkinteger(L, 3);
+		P_SetOldFOFFlags(ffloor, newflags);
+		if (ffloor->fofflags != oldflags || ffloor->busttype != oldbusttype || ffloor->bustflags != oldbustflags)
 			ffloor->target->moved = true; // reset target sector's lightlist
 		break;
 	}
@@ -2085,8 +2378,8 @@ static int lib_getMapheaderinfo(lua_State *L)
 	lua_remove(L, 1); // dummy userdata table is unused.
 	if (lua_isnumber(L, 1))
 	{
-		size_t i = lua_tointeger(L, 1)-1;
-		if (i >= NUMMAPS)
+		INT32 i = lua_tointeger(L, 1)-1;
+		if (i < 0 || i >= nummapheaders)
 			return 0;
 		LUA_PushUserdata(L, mapheaderinfo[i], META_MAPHEADER);
 		//CONS_Printf(mapheaderinfo[i]->lvlttl);
@@ -2104,7 +2397,7 @@ static int lib_getMapheaderinfo(lua_State *L)
 
 static int lib_nummapheaders(lua_State *L)
 {
-	lua_pushinteger(L, NUMMAPS);
+	lua_pushinteger(L, nummapheaders);
 	return 1;
 }
 
@@ -2116,7 +2409,6 @@ static int mapheaderinfo_get(lua_State *L)
 {
 	mapheader_t *header = *((mapheader_t **)luaL_checkudata(L, 1, META_MAPHEADER));
 	const char *field = luaL_checkstring(L, 2);
-	INT16 i;
 	if (fastcmp(field,"lvlttl"))
 		lua_pushstring(L, header->lvlttl);
 	else if (fastcmp(field,"subttl"))
@@ -2127,10 +2419,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->actnum);
 	else if (fastcmp(field,"typeoflevel"))
 		lua_pushinteger(L, header->typeoflevel);
-	else if (fastcmp(field,"nextlevel"))
-		lua_pushinteger(L, header->nextlevel);
-	else if (fastcmp(field,"marathonnext"))
-		lua_pushinteger(L, header->marathonnext);
 	else if (fastcmp(field,"keywords"))
 		lua_pushstring(L, header->keywords);
 	else if (fastcmp(field,"musname"))
@@ -2139,22 +2427,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->mustrack);
 	else if (fastcmp(field,"muspos"))
 		lua_pushinteger(L, header->muspos);
-	else if (fastcmp(field,"musinterfadeout"))
-		lua_pushinteger(L, header->musinterfadeout);
-	else if (fastcmp(field,"musintername"))
-		lua_pushstring(L, header->musintername);
-	else if (fastcmp(field,"muspostbossname"))
-		lua_pushstring(L, header->muspostbossname);
-	else if (fastcmp(field,"muspostbosstrack"))
-		lua_pushinteger(L, header->muspostbosstrack);
-	else if (fastcmp(field,"muspostbosspos"))
-		lua_pushinteger(L, header->muspostbosspos);
-	else if (fastcmp(field,"muspostbossfadein"))
-		lua_pushinteger(L, header->muspostbossfadein);
-	else if (fastcmp(field,"musforcereset"))
-		lua_pushinteger(L, header->musforcereset);
-	else if (fastcmp(field,"forcecharacter"))
-		lua_pushstring(L, header->forcecharacter);
 	else if (fastcmp(field,"weather"))
 		lua_pushinteger(L, header->weather);
 	else if (fastcmp(field,"skytexture"))
@@ -2165,12 +2437,7 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->skybox_scaley);
 	else if (fastcmp(field,"skybox_scalez"))
 		lua_pushinteger(L, header->skybox_scalez);
-	else if (fastcmp(field,"interscreen")) {
-		for (i = 0; i < 8; i++)
-			if (!header->interscreen[i])
-				break;
-		lua_pushlstring(L, header->interscreen, i);
-	} else if (fastcmp(field,"runsoc"))
+	else if (fastcmp(field,"runsoc"))
 		lua_pushstring(L, header->runsoc);
 	else if (fastcmp(field,"scriptname"))
 		lua_pushstring(L, header->scriptname);
@@ -2178,8 +2445,6 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->precutscenenum);
 	else if (fastcmp(field,"cutscenenum"))
 		lua_pushinteger(L, header->cutscenenum);
-	else if (fastcmp(field,"countdown"))
-		lua_pushinteger(L, header->countdown);
 	else if (fastcmp(field,"palette"))
 		lua_pushinteger(L, header->palette);
 	else if (fastcmp(field,"numlaps"))
@@ -2188,31 +2453,14 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->unlockrequired);
 	else if (fastcmp(field,"levelselect"))
 		lua_pushinteger(L, header->levelselect);
-	else if (fastcmp(field,"bonustype"))
-		lua_pushinteger(L, header->bonustype);
-	else if (fastcmp(field,"ltzzpatch"))
-		lua_pushstring(L, header->ltzzpatch);
-	else if (fastcmp(field,"ltzztext"))
-		lua_pushstring(L, header->ltzztext);
-	else if (fastcmp(field,"ltactdiamond"))
-		lua_pushstring(L, header->ltactdiamond);
-	else if (fastcmp(field,"maxbonuslives"))
-		lua_pushinteger(L, header->maxbonuslives);
 	else if (fastcmp(field,"levelflags"))
 		lua_pushinteger(L, header->levelflags);
 	else if (fastcmp(field,"menuflags"))
 		lua_pushinteger(L, header->menuflags);
 	else if (fastcmp(field,"mobj_scale"))
 		lua_pushfixed(L, header->mobj_scale);
-	else if (fastcmp(field,"startrings"))
-		lua_pushinteger(L, header->startrings);
-	else if (fastcmp(field, "sstimer"))
-		lua_pushinteger(L, header->sstimer);
-	else if (fastcmp(field, "ssspheres"))
-		lua_pushinteger(L, header->ssspheres);
 	else if (fastcmp(field, "gravity"))
 		lua_pushfixed(L, header->gravity);
-	// TODO add support for reading numGradedMares and grades
 	else {
 		// Read custom vars now
 		// (note: don't include the "LUA." in your lua scripts!)

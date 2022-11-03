@@ -143,6 +143,10 @@ consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesN
 static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
 
+consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
+static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
+
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
 CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
@@ -245,7 +249,7 @@ static void Dummymenuplayer_OnChange(void)
 
 static void Dummystaff_OnChange(void)
 {
-#if 0
+#ifdef STAFFGHOSTS
 	lumpnum_t l;
 
 	dummystaffname[0] = '\0';
@@ -277,7 +281,7 @@ static void Dummystaff_OnChange(void)
 
 		sprintf(temp, " - %d", cv_dummystaff.value);
 	}
-#endif
+#endif //#ifdef STAFFGHOSTS
 }
 
 void Screenshot_option_Onchange(void)
@@ -658,14 +662,12 @@ static void M_ChangeCvar(INT32 choice)
 	}
 	else
 	{
-#ifndef NONET
 		if (cv == &cv_nettimeout || cv == &cv_jointimeout)
 			choice *= (TICRATE/7);
 		else if (cv == &cv_maxsend)
 			choice *= 512;
 		else if (cv == &cv_maxping)
 			choice *= 50;
-#endif
 
 		CV_AddValue(cv, choice);
 	}
@@ -883,17 +885,11 @@ boolean M_Responder(event_t *ev)
 
 		if (CON_Ready() == false && G_PlayerInputDown(0, gc_start, splitscreen + 1) == true)
 		{
-			if (chat_on)
-			{
-				HU_clearChatChars();
-				chat_on = false;
-			}
-			else
+			if (!chat_on)
 			{
 				M_StartControlPanel();
+				return true;
 			}
-
-			return true;
 		}
 
 		noFurtherInput = false; // turns out we didn't care
@@ -945,7 +941,13 @@ void M_StartControlPanel(void)
 		paused = false;
 		CON_ToggleOff();
 
-		S_ChangeMusicInternal("menu", true);
+		if (cv_menujam_update.value)
+		{
+			CV_AddValue(&cv_menujam, 1);
+			CV_SetValue(&cv_menujam_update, 0);
+		}
+
+		S_ChangeMusicInternal(cv_menujam.string, true);
 	}
 
 	menuactive = true;
@@ -1686,6 +1688,12 @@ void M_Init(void)
 	CV_RegisterVar(&cv_chooseskin);
 	CV_RegisterVar(&cv_autorecord);
 
+	// don't lose your position in the jam cycle
+	CV_RegisterVar(&cv_menujam_update);
+	CV_RegisterVar(&cv_menujam);
+
+	CV_RegisterVar(&cv_serversort);
+
 	if (dedicated)
 		return;
 
@@ -1712,20 +1720,6 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyaddonsearch);
 
 	M_UpdateMenuBGImage(true);
-
-#if 0
-#ifdef HWRENDER
-	// Permanently hide some options based on render mode
-	if (rendermode == render_soft)
-		OP_VideoOptionsMenu[op_video_ogl].status =
-			OP_VideoOptionsMenu[op_video_kartman].status =
-			OP_VideoOptionsMenu[op_video_md2]    .status = IT_DISABLED;
-#endif
-#endif
-
-#ifndef NONET
-	CV_RegisterVar(&cv_serversort);
-#endif
 }
 
 // ==================================================
@@ -2016,7 +2010,7 @@ void M_QuitResponse(INT32 ch)
 
 	if (ch == MA_YES)
 	{
-		if (!(netgame || cv_debug))
+		if (!(netgame || cht_debug))
 		{
 			mrand = M_RandomKey(sizeof(quitsounds) / sizeof(INT32));
 			if (quitsounds[mrand])
@@ -3178,6 +3172,8 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 {
+	UINT32 tolflag = G_TOLFlag(gt);
+
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
 		return false;
@@ -3186,48 +3182,40 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (!mapheaderinfo[mapnum]->lvlttl[0])
 		return false;
 
+	// Does the map have a LUMP?
+	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+		return false;
+
 	if (M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
+	// Check for TOL
+	if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+		return false;
+
 	// Should the map be hidden?
-	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU /*&& mapnum+1 != gamemap*/)
+	if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
 		return false;
 
 	// I don't know why, but some may have exceptions.
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	if (gt == GT_BATTLE && (mapheaderinfo[mapnum]->typeoflevel & TOL_BATTLE))
-		return true;
-
-	if (gt == GT_RACE && (mapheaderinfo[mapnum]->typeoflevel & TOL_RACE))
+	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
 	{
-		if (levellist.selectedcup && levellist.selectedcup->numlevels)
-		{
-			UINT8 i;
-
-			for (i = 0; i < levellist.selectedcup->numlevels; i++)
-			{
-				if (mapnum == levellist.selectedcup->levellist[i])
-					break;
-			}
-
-			if (i == levellist.selectedcup->numlevels)
-				return false;
-		}
-
-		return true;
+		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
+			return false;
 	}
 
-	// Hmm? Couldn't decide?
-	return false;
+	// Survived our checks.
+	return true;
 }
 
 INT16 M_CountLevelsToShowInList(UINT8 gt)
 {
 	INT16 mapnum, count = 0;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			count++;
 
@@ -3238,7 +3226,7 @@ INT16 M_GetFirstLevelInList(UINT8 gt)
 {
 	INT16 mapnum;
 
-	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 		if (M_CanShowLevelInList(mapnum, gt))
 			return mapnum;
 
@@ -3406,7 +3394,9 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		M_SetMenuDelay(pid);
 
-		if ((!newcup) || (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked))
+		if ((!newcup)
+			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3414,7 +3404,7 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-
+			INT32 levelNum;
 			UINT8 ssplayers = cv_splitplayers.value-1;
 
 			S_StartSound(NULL, sfx_s3k63);
@@ -3453,13 +3443,13 @@ void M_CupSelectHandler(INT32 choice)
 			// Don't restart the server if we're already in a game lol
 			if (gamestate == GS_MENU)
 			{
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				netgame = levellist.netgame;	// ^ ditto.
+				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 			}
 
+			levelNum = grandprixinfo.cup->cachedlevels[0];
+
 			D_MapChange(
-				grandprixinfo.cup->levellist[0] + 1,
+				levelNum + 1,
 				GT_RACE,
 				grandprixinfo.encore,
 				true,
@@ -3545,16 +3535,16 @@ void M_LevelSelectHandler(INT32 choice)
 		{
 			map++;
 
-			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < NUMMAPS)
+			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
 				map++;
 
-			if (map >= NUMMAPS)
+			if (map >= nummapheaders)
 				break;
 
 			add--;
 		}
 
-		if (map >= NUMMAPS)
+		if (map >= nummapheaders)
 		{
 			// This shouldn't happen
 			return;
@@ -3579,7 +3569,7 @@ void M_LevelSelectHandler(INT32 choice)
 				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 				// Still need to reset devmode
-				cv_debug = 0;
+				cht_debug = 0;
 
 				if (demo.playback)
 					G_StopDemo();
@@ -3608,9 +3598,7 @@ void M_LevelSelectHandler(INT32 choice)
 				F_WipeEndScreen();
 				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-				SV_StartSinglePlayerServer();
-				multiplayer = true; // yeah, SV_StartSinglePlayerServer clobbers this...
-				netgame = levellist.netgame;	// ^ ditto.
+				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 
 				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
 				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
@@ -3672,7 +3660,6 @@ void M_SetGuestReplay(INT32 choice)
 void M_StartTimeAttack(INT32 choice)
 {
 	char *gpath;
-	const size_t glen = strlen("media")+1+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char nameofdemo[256];
 
 	(void)choice;
@@ -3688,7 +3675,7 @@ void M_StartTimeAttack(INT32 choice)
 	}
 
 	// Still need to reset devmode
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 
 	if (demo.playback)
@@ -3709,16 +3696,15 @@ void M_StartTimeAttack(INT32 choice)
 	F_WipeEndScreen();
 	F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-	SV_StartSinglePlayerServer();
+	SV_StartSinglePlayerServer(levellist.newgametype, false);
 
 	gpath = va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s",
 			srb2home, timeattackfolder);
 	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
-	if ((gpath = malloc(glen)) == NULL)
-		I_Error("Out of memory for replay filepath\n");
+	strcat(gpath, PATHSEP);
+	strcat(gpath, G_BuildMapName(levellist.choosemap+1));
 
-	sprintf(gpath,"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", timeattackfolder, G_BuildMapName(levellist.choosemap+1));
 	snprintf(nameofdemo, sizeof nameofdemo, "%s-%s-last", gpath, cv_skin[0].string);
 
 	if (!cv_autorecord.value)
@@ -3876,7 +3862,7 @@ boolean M_JoinIPInputs(INT32 ch)
 		M_SetMenuDelay(pid);
 
 		// Is there an address at this part of the table?
-		if (strlen(joinedIPlist[index][0]))
+		if (*joinedIPlist[index][0])
 			M_JoinIP(joinedIPlist[index][0]);
 		else
 			S_StartSound(NULL, sfx_lose);
@@ -4097,7 +4083,6 @@ void M_RefreshServers(INT32 choice)
 
 }
 
-#ifndef NONET
 #ifdef UPDATE_ALERT
 static void M_CheckMODVersion(int id)
 {
@@ -4204,25 +4189,23 @@ void M_ServerListFillDebug(void)
 		serverlist[i].info.numberofplayer = min(i, 8);
 		serverlist[i].info.maxplayer = 8;
 
-		serverlist[i].info.avgpwrlv = P_RandomRange(500, 1500);
-		serverlist[i].info.time = P_RandomRange(16, 500);	// ping
+		serverlist[i].info.avgpwrlv = P_RandomRange(PR_UNDEFINED, 500, 1500);
+		serverlist[i].info.time = P_RandomRange(PR_UNDEFINED, 1, 8);	// ping
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
 		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
 
-		P_RandomRange(0, 5);	// change results...
-		serverlist[i].info.kartvars = P_RandomRange(0, 3) & SV_SPEEDMASK;
+		P_RandomRange(PR_UNDEFINED, 0, 5);	// change results...
+		serverlist[i].info.kartvars = P_RandomRange(PR_UNDEFINED, 0, 3) & SV_SPEEDMASK;
 
-		serverlist[i].info.modifiedgame = P_RandomRange(0, 1);
+		serverlist[i].info.modifiedgame = P_RandomRange(PR_UNDEFINED, 0, 1);
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}
 }
 
 #endif // SERVERLISTDEBUG
-
-#endif //NONET
 
 // Ascending order, not descending.
 // The casts are safe as long as the caller doesn't do anything stupid.
@@ -4263,7 +4246,6 @@ static int ServerListEntryComparator_gametypename(const void *entry1, const void
 
 void M_SortServerList(void)
 {
-#ifndef NONET
 	switch(cv_serversort.value)
 	{
 	case 0:		// Ping.
@@ -4285,7 +4267,6 @@ void M_SortServerList(void)
 		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_gametypename);
 		break;
 	}
-#endif
 }
 
 
@@ -4412,7 +4393,7 @@ void M_InitOptions(INT32 choice)
 
 	// enable gameplay & server options under the right circumstances.
 	if (gamestate == GS_MENU
-		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules()))
+		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules(false)))
 	{
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
@@ -4585,16 +4566,8 @@ void M_VideoModeMenu(INT32 choice)
 	optionsmenu.vidm_selected = 0;
 	nummodes = VID_NumModes();
 
-#ifdef _WINDOWS
-	// clean that later: skip windowed mode 0, video modes menu only shows FULL SCREEN modes
-	if (nummodes <= NUMSPECIALMODES)
-		i = 0; // unless we have nothing
-	else
-		i = NUMSPECIALMODES;
-#else
 	// DOS does not skip mode 0, because mode 0 is ALWAYS present
 	i = 0;
-#endif
 	for (; i < nummodes && optionsmenu.vidm_nummodes < MAXMODEDESCS; i++)
 	{
 		desc = VID_GetModeName(i);
@@ -5756,7 +5729,7 @@ void M_OpenPauseMenu(void)
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
-	if (K_CanChangeRules())
+	if (K_CanChangeRules(false))
 	{
 		PAUSE_Main[mpause_psetup].status = IT_STRING | IT_CALL;
 

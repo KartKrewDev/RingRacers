@@ -33,7 +33,6 @@
 #include "k_hud.h"
 #include "d_netcmd.h" // IsPlayerAdmin
 #include "k_menu.h" // Player Setup menu color stuff
-#include "m_misc.h" // M_MapNumber
 #include "p_spec.h" // P_StartQuake
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 
@@ -378,30 +377,16 @@ static int lib_pGetEffectiveFollowerColor(lua_State *L)
 	return 1;
 }
 
-// M_MISC
-//////////////
-
-static int lib_mMapNumber(lua_State *L)
-{
-	const char *arg = luaL_checkstring(L, 1);
-	size_t len = strlen(arg);
-	if (len == 2 || len == 5) {
-		char first = arg[len-2];
-		char second = arg[len-1];
-		lua_pushinteger(L, M_MapNumber(first, second));
-	} else {
-		lua_pushinteger(L, 0);
-	}
-	return 1;
-}
-
 // M_RANDOM
 //////////////
+
+// TODO: Lua needs a way to set RNG class, which will break compatibility.
+// It will be more desireable to do it when RNG classes can be freeslotted.
 
 static int lib_pRandomFixed(lua_State *L)
 {
 	NOHUD
-	lua_pushfixed(L, P_RandomFixed());
+	lua_pushfixed(L, P_RandomFixed(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -409,7 +394,7 @@ static int lib_pRandomFixed(lua_State *L)
 static int lib_pRandomByte(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_RandomByte());
+	lua_pushinteger(L, P_RandomByte(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -421,7 +406,7 @@ static int lib_pRandomKey(lua_State *L)
 	NOHUD
 	if (a > 65536)
 		LUA_UsageWarning(L, "P_RandomKey: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomKey(a));
+	lua_pushinteger(L, P_RandomKey(PR_UNDEFINED, a));
 	demo_writerng = 2;
 	return 1;
 }
@@ -439,7 +424,7 @@ static int lib_pRandomRange(lua_State *L)
 	}
 	if ((b-a+1) > 65536)
 		LUA_UsageWarning(L, "P_RandomRange: range > 65536 is undefined behavior");
-	lua_pushinteger(L, P_RandomRange(a, b));
+	lua_pushinteger(L, P_RandomRange(PR_UNDEFINED, a, b));
 	demo_writerng = 2;
 	return 1;
 }
@@ -448,7 +433,7 @@ static int lib_pRandomRange(lua_State *L)
 static int lib_pSignedRandom(lua_State *L)
 {
 	NOHUD
-	lua_pushinteger(L, P_SignedRandom());
+	lua_pushinteger(L, P_SignedRandom(PR_UNDEFINED));
 	demo_writerng = 2;
 	return 1;
 }
@@ -457,7 +442,7 @@ static int lib_pRandomChance(lua_State *L)
 {
 	fixed_t p = luaL_checkfixed(L, 1);
 	NOHUD
-	lua_pushboolean(L, P_RandomChance(p));
+	lua_pushboolean(L, P_RandomChance(PR_UNDEFINED, p));
 	demo_writerng = 2;
 	return 1;
 }
@@ -969,12 +954,15 @@ static int lib_pCheckDeathPitCollide(lua_State *L)
 
 static int lib_pCheckSolidLava(lua_State *L)
 {
+	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	ffloor_t *rover = *((ffloor_t **)luaL_checkudata(L, 2, META_FFLOOR));
 	//HUDSAFE
 	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
 	if (!rover)
 		return LUA_ErrInvalid(L, "ffloor_t");
-	lua_pushboolean(L, P_CheckSolidLava(rover));
+	lua_pushboolean(L, P_CheckSolidLava(mo, rover));
 	return 1;
 }
 
@@ -1495,6 +1483,46 @@ static int lib_pMoveOrigin(lua_State *L)
 	return 2;
 }
 
+static int lib_pSetAngle(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetAngle(thing, newValue);
+	thing->angle = thing->old_angle = newValue;
+	return 0;
+}
+
+static int lib_pSetPitch(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetPitch(thing, newValue);
+	thing->pitch = thing->old_pitch = newValue;
+	return 0;
+}
+
+static int lib_pSetRoll(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetRoll(thing, newValue);
+	thing->roll = thing->old_roll = newValue;
+	return 0;
+}
+
 static int lib_pSlideMove(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1789,15 +1817,51 @@ static int lib_pExplodeMissile(lua_State *L)
 
 static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 {
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
 	INT32 section = (INT32)luaL_checkinteger(L, 2);
 	INT32 number = (INT32)luaL_checkinteger(L, 3);
-	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number), META_SECTOR);
+	return 1;
+}
+
+static int lib_pMobjTouchingSectorSpecialFlag(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
+	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	//HUDSAFE
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecialFlag(mo, flag), META_SECTOR);
+	return 1;
+}
+
+static int lib_pPlayerTouchingSectorSpecial(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT32 section = (INT32)luaL_checkinteger(L, 2);
+	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	//HUDSAFE
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecial(player, section, number), META_SECTOR);
+	return 1;
+}
+
+static int lib_pPlayerTouchingSectorSpecialFlag(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	//HUDSAFE
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecialFlag(player, flag), META_SECTOR);
 	return 1;
 }
 
@@ -1932,32 +1996,11 @@ static int lib_pFadeLight(lua_State *L)
 	INT32 speed = (INT32)luaL_checkinteger(L, 3);
 	boolean ticbased = lua_optboolean(L, 4);
 	boolean force = lua_optboolean(L, 5);
+	boolean relative = lua_optboolean(L, 6);
 	NOHUD
 	INLEVEL
-	P_FadeLight(tag, destvalue, speed, ticbased, force);
+	P_FadeLight(tag, destvalue, speed, ticbased, force, relative);
 	return 0;
-}
-
-static int lib_pThingOnSpecial3DFloor(lua_State *L)
-{
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
-	INLEVEL
-	if (!mo)
-		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_ThingOnSpecial3DFloor(mo), META_SECTOR);
-	return 1;
-}
-
-static int lib_pIsFlagAtBase(lua_State *L)
-{
-	mobjtype_t flag = luaL_checkinteger(L, 1);
-	NOHUD
-	INLEVEL
-	if (flag >= NUMMOBJTYPES)
-		return luaL_error(L, "mobj type %d out of range (0 - %d)", flag, NUMMOBJTYPES-1);
-	lua_pushboolean(L, P_IsFlagAtBase(flag));
-	return 1;
 }
 
 static int lib_pSetupLevelSky(lua_State *L)
@@ -2499,9 +2542,8 @@ static int lib_sStopSoundByID(lua_State *L)
 
 static int lib_sChangeMusic(lua_State *L)
 {
-	UINT32 position, prefadems, fadeinms;
-
 	const char *music_name = luaL_checkstring(L, 1);
+	UINT32 position, prefadems, fadeinms;
 	boolean looping = (boolean)lua_opttrueboolean(L, 2);
 	player_t *player = NULL;
 	UINT16 music_flags = 0;
@@ -3065,12 +3107,12 @@ static int lib_gBuildMapTitle(lua_State *L)
 {
 	INT32 map = Lcheckmapnumber(L, 1, "G_BuildMapTitle");
 	char *name;
-	if (map < 1 || map > NUMMAPS)
+	if (map < 1 || map > nummapheaders)
 	{
 		return luaL_error(L,
-				"map number %d out of range (1 - %d)",
+				"map ID %d out of range (1 - %d)",
 				map,
-				NUMMAPS
+				nummapheaders
 		);
 	}
 	name = G_BuildMapTitle(map);
@@ -3512,6 +3554,16 @@ static int lib_kTumblePlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kStumblePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_StumblePlayer(player);
+	return 0;
+}
+
 static int lib_kExplodePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3651,7 +3703,7 @@ static int lib_kFindJawzTarget(lua_State *L)
 		return LUA_ErrInvalid(L, "mobj_t");
 	if (!source)
 		return LUA_ErrInvalid(L, "player_t");
-	LUA_PushUserdata(L, K_FindJawzTarget(actor, source), META_PLAYER);
+	LUA_PushUserdata(L, K_FindJawzTarget(actor, source, ANGLE_45), META_PLAYER);
 	return 1;
 }
 
@@ -3838,9 +3890,6 @@ static luaL_Reg lib[] = {
 	{"M_GetColorAfter",lib_pGetColorAfter},
 	{"M_GetColorBefore",lib_pGetColorBefore},
 
-	// m_misc
-	{"M_MapNumber",lib_mMapNumber},
-
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},
 	{"P_RandomByte",lib_pRandomByte},
@@ -3930,6 +3979,9 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
+	{"P_SetAngle",lib_pSetAngle},
+	{"P_SetPitch",lib_pSetPitch},
+	{"P_SetRoll",lib_pSetRoll},
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
@@ -3955,6 +4007,9 @@ static luaL_Reg lib[] = {
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
 	{"P_ExplodeMissile",lib_pExplodeMissile},
 	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
+	{"P_MobjTouchingSectorSpecialFlag",lib_pMobjTouchingSectorSpecialFlag},
+	{"P_PlayerTouchingSectorSpecial",lib_pPlayerTouchingSectorSpecial},
+	{"P_PlayerTouchingSectorSpecialFlag",lib_pPlayerTouchingSectorSpecialFlag},
 	{"P_FindLowestFloorSurrounding",lib_pFindLowestFloorSurrounding},
 	{"P_FindHighestFloorSurrounding",lib_pFindHighestFloorSurrounding},
 	{"P_FindNextHighestFloor",lib_pFindNextHighestFloor},
@@ -3966,8 +4021,6 @@ static luaL_Reg lib[] = {
 	{"P_LinedefExecute",lib_pLinedefExecute},
 	{"P_SpawnLightningFlash",lib_pSpawnLightningFlash},
 	{"P_FadeLight",lib_pFadeLight},
-	{"P_ThingOnSpecial3DFloor",lib_pThingOnSpecial3DFloor},
-	{"P_IsFlagAtBase",lib_pIsFlagAtBase},
 	{"P_SetupLevelSky",lib_pSetupLevelSky},
 	{"P_SetSkyboxMobj",lib_pSetSkyboxMobj},
 	{"P_StartQuake",lib_pStartQuake},
@@ -4072,6 +4125,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
+	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},

@@ -309,8 +309,8 @@ static boolean P_CrossSubsector(size_t num, register los_t *los)
 			// check front sector's FOFs first
 			for (rover = front->ffloors; rover; rover = rover->next)
 			{
-				if (!(rover->flags & FF_EXISTS)
-					|| !(rover->flags & FF_RENDERSIDES) || rover->flags & FF_TRANSLUCENT)
+				if (!(rover->fofflags & FOF_EXISTS)
+					|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
 				{
 					continue;
 				}
@@ -326,8 +326,8 @@ static boolean P_CrossSubsector(size_t num, register los_t *los)
 			// check back sector's FOFs as well
 			for (rover = back->ffloors; rover; rover = rover->next)
 			{
-				if (!(rover->flags & FF_EXISTS)
-					|| !(rover->flags & FF_RENDERSIDES) || rover->flags & FF_TRANSLUCENT)
+				if (!(rover->fofflags & FOF_EXISTS)
+					|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
 				{
 					continue;
 				}
@@ -456,8 +456,8 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 			// Allow sight through water, fog, etc.
 			/// \todo Improve by checking fog density/translucency
 			/// and setting a sight limit.
-			if (!(rover->flags & FF_EXISTS)
-				|| !(rover->flags & FF_RENDERPLANES) /*|| (rover->flags & FF_TRANSLUCENT)*/)
+			if (!(rover->fofflags & FOF_EXISTS)
+				|| !(rover->fofflags & FOF_RENDERPLANES) /*|| (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG))*/)
 			{
 				continue;
 			}
@@ -475,10 +475,10 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 				return false;
 			}
 
-			if (rover->flags & FF_SOLID)
+			if (rover->fofflags & FOF_SOLID)
 				continue; // shortcut since neither mobj can be inside the 3dfloor
 
-			if (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))
+			if (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))
 			{
 				if (los.sightzstart >= topz1 && t2->z + t2->height < topz2)
 					return false; // blocked by upper outside plane
@@ -487,7 +487,7 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 					return false; // blocked by lower outside plane
 			}
 
-			if (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES)
+			if (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES)
 			{
 				if (los.sightzstart < topz1 && t2->z >= topz2)
 					return false; // blocked by upper inside plane
@@ -752,7 +752,7 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 		tmx = tb->compareThing->x;
 		tmy = tb->compareThing->y;
 		P_LineOpening(line, tb->compareThing);
-		maxstep = P_GetThingStepUp(tb->compareThing);
+		maxstep = P_GetThingStepUp(tb->compareThing, tmx, tmy);
 
 		if ((openrange < tb->compareThing->height) // doesn't fit
 			|| (opentop - tb->compareThing->z < tb->compareThing->height) // mobj is too high

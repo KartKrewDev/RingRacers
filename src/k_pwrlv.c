@@ -57,16 +57,8 @@ SINT8 K_UsingPowerLevels(void)
 
 void K_ClearClientPowerLevels(void)
 {
-	UINT8 i, j;
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		clientPowerAdd[i] = 0;
-
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-		{
-			clientpowerlevels[i][j] = 0;
-		}
-	}
+	memset(clientpowerlevels, 0, sizeof clientpowerlevels);
+	memset(clientPowerAdd, 0, sizeof clientPowerAdd);
 }
 
 // Adapted from this: http://wiki.tockdom.com/wiki/Player_Rating
@@ -523,26 +515,26 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				{
 					case 5:
 						speed = KARTSPEED_HARD;
-						encore = P_RandomChance(FRACUNIT>>1);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 4:
-						speed = P_RandomChance((7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>1);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (7<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>1);
 						break;
 					case 3:
-						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>2);
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_HARD : KARTSPEED_NORMAL;
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>2);
 						break;
 					case 2:
 						speed = KARTSPEED_NORMAL;
-						encore = P_RandomChance(FRACUNIT>>3);
+						encore = P_RandomChance(PR_RULESCRAMBLE, FRACUNIT>>3);
 						break;
 					case 1: default:
 						speed = KARTSPEED_NORMAL;
 						encore = false;
 						break;
 					case 0:
-						speed = P_RandomChance((3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
+						speed = P_RandomChance(PR_RULESCRAMBLE, (3<<FRACBITS)/10) ? KARTSPEED_EASY : KARTSPEED_NORMAL;
 						encore = false;
 						break;
 				}

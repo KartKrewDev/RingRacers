@@ -151,12 +151,19 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
+	player->gateBoost = 0;
 
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);
 
 	// Set up respawn position if invalid
-	if (player->respawn.wp != NULL && leveltime >= starttime)
+	if (player->respawn.manual == true)
+	{
+		player->respawn.distanceleft = 0;
+		player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
+		player->respawn.manual = false; // one respawn only!
+	}
+	else if (player->respawn.wp != NULL && leveltime >= starttime)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
@@ -575,7 +582,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 			P_SetTarget(&lasermo->target, player->mo);
 
-			P_InitAngle(lasermo, stepha + ANGLE_90);
+			lasermo->angle = stepha + ANGLE_90;
 			P_SetScale(lasermo, (lasermo->destscale = player->mo->scale));
 		}
 	}
@@ -638,7 +645,7 @@ static void K_DropDashWait(player_t *player)
 
 				P_SetTarget(&laser->target, player->mo);
 
-				P_InitAngle(laser, newangle + ANGLE_90);
+				laser->angle = newangle + ANGLE_90;
 				laser->momz = (8 * player->mo->scale) * P_MobjFlip(player->mo);
 				P_SetScale(laser, (laser->destscale = player->mo->scale));
 			}

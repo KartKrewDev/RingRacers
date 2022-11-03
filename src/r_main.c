@@ -331,7 +331,7 @@ angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
 	camera_t *cam = NULL;
 	UINT8 i;
 
-	for (i = 0; i < r_splitscreen; i++)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
 		if (player == &players[displayplayers[i]])
 		{
@@ -452,7 +452,7 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 // R_DoCulling
 // Checks viewz and top/bottom heights of an item against culling planes
 // Returns true if the item is to be culled, i.e it shouldn't be drawn!
-// if ML_NOCLIMB is set, the camera view is required to be in the same area for culling to occur
+// if args[1] is set, the camera view is required to be in the same area for culling to occur
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph)
 {
 	fixed_t cullplane;
@@ -461,7 +461,7 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 		return false;
 
 	cullplane = cullheight->frontsector->floorheight;
-	if (cullheight->flags & ML_NOCLIMB) // Group culling
+	if (cullheight->args[1]) // Group culling
 	{
 		if (!viewcullheight)
 			return false;
@@ -915,39 +915,9 @@ void R_ApplyViewMorph(int s)
 
 	end = width * height;
 
-#if 0
-	if (cv_debug & DBG_VIEWMORPH)
+	for (p = 0; p < end; p++)
 	{
-		UINT8 border = 32;
-		UINT8 grid = 160;
-		INT32 ws = vid.width / 4;
-		INT32 hs = vid.width * (vid.height / 4);
-
-		memcpy(tmpscr, srcscr, vid.width*vid.height);
-		for (p = 0; p < vid.width; p++)
-		{
-			tmpscr[viewmorph.scrmap[p]] = border;
-			tmpscr[viewmorph.scrmap[p + hs]] = grid;
-			tmpscr[viewmorph.scrmap[p + hs*2]] = grid;
-			tmpscr[viewmorph.scrmap[p + hs*3]] = grid;
-			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
-		}
-		for (p = vid.width; p < end; p += vid.width)
-		{
-			tmpscr[viewmorph.scrmap[p]] = border;
-			tmpscr[viewmorph.scrmap[p + ws]] = grid;
-			tmpscr[viewmorph.scrmap[p + ws*2]] = grid;
-			tmpscr[viewmorph.scrmap[p + ws*3]] = grid;
-			tmpscr[viewmorph.scrmap[end - 1 - p]] = border;
-		}
-	}
-	else
-#endif
-	{
-		for (p = 0; p < end; p++)
-		{
-			tmpscr[p] = srcscr[viewmorph[s].scrmap[p]];
-		}
+		tmpscr[p] = srcscr[viewmorph[s].scrmap[p]];
 	}
 
 	VID_BlitLinearScreen(tmpscr, srcscr,

@@ -19,6 +19,25 @@
 #include "p_mobj.h"
 #include "command.h"
 
+typedef enum {
+	CHEAT_NOCLIP,
+	CHEAT_GOD,
+	CHEAT_SAVECHECKPOINT,
+	CHEAT_RINGS,
+	CHEAT_LIVES,
+	CHEAT_SCALE,
+	CHEAT_FLIP,
+	CHEAT_HURT,
+	CHEAT_RELATIVE_TELEPORT,
+	CHEAT_DEVMODE,
+	CHEAT_GIVEITEM,
+
+	NUMBER_OF_CHEATS
+} cheat_t;
+
+//
+// Cheat sequences
+//
 boolean cht_Responder(event_t *ev);
 void cht_Init(void);
 
@@ -26,7 +45,7 @@ void cht_Init(void);
 // ObjectPlace
 //
 void Command_ObjectPlace_f(void);
-void Command_Writethings_f(void);
+//void Command_Writethings_f(void);
 
 extern consvar_t cv_opflags, cv_ophoopflags, cv_mapthingnum, cv_speed;
 //extern consvar_t cv_snapto, cv_grid;
@@ -56,7 +75,6 @@ void Command_Teleport_f(void);
 void Command_RTeleport_f(void);
 void Command_Skynum_f(void);
 void Command_Weather_f(void);
-void Command_Toggletwod_f(void);
 #ifdef _DEBUG
 void Command_CauseCfail_f(void);
 #endif

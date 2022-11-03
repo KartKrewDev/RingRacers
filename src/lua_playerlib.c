@@ -192,6 +192,8 @@ static int player_get(lua_State *L)
 		LUA_PushUserdata(L, plr->mo, META_MOBJ);
 	else if (fastcmp(field,"cmd"))
 		LUA_PushUserdata(L, &plr->cmd, META_TICCMD);
+	else if (fastcmp(field,"oldcmd"))
+		LUA_PushUserdata(L, &plr->oldcmd, META_TICCMD);
 	else if (fastcmp(field,"respawn"))
 		LUA_PushUserdata(L, &plr->respawn, META_RESPAWN);
 	else if (fastcmp(field,"playerstate"))
@@ -250,6 +252,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->driftboost);
 	else if (fastcmp(field,"strongdriftboost"))
 		lua_pushinteger(L, plr->strongdriftboost);
+	else if (fastcmp(field,"gateBoost"))
+		lua_pushinteger(L, plr->gateBoost);
+	else if (fastcmp(field,"gateSound"))
+		lua_pushinteger(L, plr->gateSound);
 	else if (fastcmp(field,"aizdriftstraft"))
 		lua_pushinteger(L, plr->aizdriftstrat);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -258,8 +264,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->aizdriftturn);
 	else if (fastcmp(field,"offroad"))
 		lua_pushinteger(L, plr->offroad);
-	else if (fastcmp(field,"waterskip"))
-		lua_pushinteger(L, plr->waterskip);
 	else if (fastcmp(field,"tiregrease"))
 		lua_pushinteger(L, plr->tiregrease);
 	else if (fastcmp(field,"springstars"))
@@ -336,6 +340,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->flamemeter);
 	else if (fastcmp(field,"flamelength"))
 		lua_pushinteger(L, plr->flamelength);
+	else if (fastcmp(field,"ballhogcharge"))
+		lua_pushinteger(L, plr->ballhogcharge);
 	else if (fastcmp(field,"hyudorotimer"))
 		lua_pushinteger(L, plr->hyudorotimer);
 	else if (fastcmp(field,"stealingtimer"))
@@ -524,6 +530,8 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"cmd"))
 		return NOSET;
+	else if (fastcmp(field,"oldcmd"))
+		return NOSET;
 	else if (fastcmp(field,"respawn"))
 		return NOSET;
 	else if (fastcmp(field,"playerstate"))
@@ -610,6 +618,12 @@ static int player_set(lua_State *L)
 		plr->driftcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftboost"))
 		plr->driftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"strongdriftboost"))
+		plr->strongdriftboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateBoost"))
+		plr->gateBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"gateSound"))
+		plr->gateSound = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdriftstraft"))
 		plr->aizdriftstrat = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"aizdrifttilt"))
@@ -618,8 +632,6 @@ static int player_set(lua_State *L)
 		plr->aizdriftturn = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"offroad"))
 		plr->offroad = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"waterskip"))
-		plr->waterskip = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tiregrease"))
 		plr->tiregrease = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"springstars"))
@@ -696,6 +708,8 @@ static int player_set(lua_State *L)
 		plr->flamemeter = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flamelength"))
 		plr->flamelength = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ballhogcharge"))
+		plr->ballhogcharge = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"hyudorotimer"))
 		plr->hyudorotimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"stealingtimer"))

@@ -20,10 +20,6 @@
 #else
 #include <winsock.h>
 #endif
-#elif !defined (__DJGPP__)
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #endif
 
 #include "i_addrinfo.h"

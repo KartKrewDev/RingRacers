@@ -172,7 +172,7 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
 #define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
-boolean P_PlayerHitFloor(player_t *player, boolean fromAir);
+boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
@@ -194,6 +194,8 @@ void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
 void P_DoPlayerExit(player_t *player);
 void P_DoTimeOver(player_t *player);
+
+void P_ResetPlayerCheats(void);
 
 void P_InstaThrust(mobj_t *mo, angle_t angle, fixed_t move);
 fixed_t P_ReturnThrustX(mobj_t *mo, angle_t angle, fixed_t move);
@@ -315,7 +317,7 @@ fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, f
 
 boolean P_InsideANonSolidFFloor(mobj_t *mobj, ffloor_t *rover);
 boolean P_CheckDeathPitCollide(mobj_t *mo);
-boolean P_CheckSolidLava(ffloor_t *rover);
+boolean P_CheckSolidLava(mobj_t *mobj, ffloor_t *rover);
 void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype);
 
 mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zofs, mobjtype_t type);
@@ -337,8 +339,8 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 void P_Attract(mobj_t *source, mobj_t *enemy, boolean nightsgrab);
 mobj_t *P_GetClosestAxis(mobj_t *source);
 
-boolean P_CanRunOnWater(player_t *player, ffloor_t *rover);
-boolean P_CheckSolidFFloorSurface(player_t *player, ffloor_t *rover);
+boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover);
+boolean P_CheckSolidFFloorSurface(mobj_t *mobj, ffloor_t *rover);
 
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot);
 
@@ -369,7 +371,7 @@ void P_NewChaseDir(mobj_t *actor);
 boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed_t dist);
 
 mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz, boolean lookforplayers, SINT8 moveforward);
-void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo);
+void P_InternalFlickySetColor(mobj_t *actor, UINT8 color);
 #define P_IsFlickyCenter(type) (type > MT_FLICKY_01 && type < MT_SEED && (type - MT_FLICKY_01) % 2 ? 1 : 0)
 void P_InternalFlickyBubble(mobj_t *actor);
 void P_InternalFlickyFly(mobj_t *actor, fixed_t flyspeed, fixed_t targetdist, fixed_t chasez);
@@ -412,14 +414,11 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
 boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 fixed_t P_BaseStepUp(void);
-fixed_t P_GetThingStepUp(mobj_t *thing);
+fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY);
 boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
-void P_InitAngle(mobj_t *thing, angle_t newValue);
-void P_InitPitch(mobj_t *thing, angle_t newValue);
-void P_InitRoll(mobj_t *thing, angle_t newValue);
 void P_SlideMove(mobj_t *mo);
 void P_BouncePlayerMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);

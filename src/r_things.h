@@ -47,8 +47,8 @@ extern fixed_t windowtop;
 extern fixed_t windowbottom;
 extern INT32 lengthcol;
 
-void R_DrawMaskedColumn(column_t *column, column_t *brightmap);
-void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap);
+void R_DrawMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip);
+void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 baseclip);
 
 // ----------------
 // SPRITE RENDERING
@@ -171,7 +171,7 @@ typedef struct vissprite_s
 	fixed_t paperoffset, paperdistance; // for paper sprites, offset/dist relative to the angle
 	fixed_t xiscale; // negative if flipped
 
-	angle_t centerangle; // for paper sprites
+	angle_t centerangle; // for paper sprites / splats
 
 	// for floor sprites
 	struct {
@@ -217,6 +217,8 @@ typedef struct vissprite_s
 	INT16 clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
 
 	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
+
+	fixed_t floorclip; // Cut off your tires in tall grass
 } vissprite_t;
 
 extern UINT32 visspritecount;

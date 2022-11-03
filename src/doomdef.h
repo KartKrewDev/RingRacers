@@ -55,13 +55,6 @@
 #endif
 #endif
 
-#ifdef _WINDOWS
-#define NONET
-#if !defined (HWRENDER) && !defined (NOHW)
-#define HWRENDER
-#endif
-#endif
-
 #ifdef _WIN32
 #define ASMCALL __cdecl
 #else
@@ -100,7 +93,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 
-#if defined (_WIN32) || defined (__DJGPP__)
+#ifdef _WIN32
 #include <io.h>
 #endif
 
@@ -122,7 +115,7 @@ extern char logfilename[1024];
 #endif
 
 /* A mod name to further distinguish versions. */
-#define SRB2APPLICATION "SRB2Kart"
+#define SRB2APPLICATION "RingRacers"
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
@@ -146,7 +139,7 @@ extern char logfilename[1024];
 #define VERSIONSTRINGW WSTRING (VERSIONSTRING)
 
 /* A custom URL protocol for server links. */
-#define SERVER_URL_PROTOCOL "srb2kart://"
+#define SERVER_URL_PROTOCOL "ringracers://"
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
@@ -430,7 +423,7 @@ extern skincolor_t skincolors[MAXSKINCOLORS];
 
 #define PUSHACCEL (2*FRACUNIT) // Acceleration for MF2_SLIDEPUSH items.
 
-// Special linedef executor tag numbers!
+// Special linedef executor tag numbers! Binary map format only (UDMF has other ways of doing these things).
 enum {
 	LE_PINCHPHASE      =    -2, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
 	LE_ALLBOSSESDEAD   =    -3, // All bosses in the map are dead (Egg capsule raise)
@@ -487,7 +480,7 @@ typedef enum
 
 void CONS_Printf(const char *fmt, ...) FUNCPRINTF;
 void CONS_Alert(alerttype_t level, const char *fmt, ...) FUNCDEBUG;
-void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
+void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // For help debugging functions.
 #define POTENTIALLYUNUSED CONS_Alert(CONS_WARNING, "(%s:%d) Unused code appears to be used.\n", __FILE__, __LINE__)
@@ -510,10 +503,17 @@ extern char liveeventbackup[256];
 void M_StartupLocale(void);
 extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
 char *va(const char *format, ...) FUNCPRINTF;
+
 char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
 UINT32 M_GetTokenPos(void);
-void M_SetTokenPos(UINT32 newPos);
+
+void M_TokenizerOpen(const char *inputString);
+void M_TokenizerClose(void);
+const char *M_TokenizerRead(UINT32 i);
+UINT32 M_TokenizerGetEndPos(void);
+void M_TokenizerSetEndPos(UINT32 newPos);
+
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);
@@ -523,24 +523,47 @@ char *sizeu5(size_t num);
 // d_main.c
 extern int    VERSION;
 extern int SUBVERSION;
-extern boolean devparm; // development mode (-debug)
-// d_netcmd.c
-extern INT32 cv_debug;
 
-#define DBG_BASIC       0x0001
-#define DBG_DETAILED    0x0002
-#define DBG_PLAYER      0x0004
-#define DBG_RENDER      0x0008
-#define DBG_NIGHTSBASIC 0x0010
-#define DBG_NIGHTS      0x0020
-#define DBG_POLYOBJ     0x0040
-#define DBG_GAMELOGIC   0x0080
-#define DBG_NETPLAY     0x0100
-#define DBG_MEMORY      0x0200
-#define DBG_SETUP       0x0400
-#define DBG_LUA         0x0800
-#define DBG_RANDOMIZER  0x1000
-#define DBG_VIEWMORPH   0x2000
+#ifdef DEVELOP
+// 4 bytes handles 8 characters of a git object SHA. At
+// around 20k commits, we only need 6 characters for a unique
+// abbreviation. Maybe in another 20k commits, more than 8
+// characters will be required! =P
+// P.S. 8 is also what comptime generates
+#define GIT_SHA_ABBREV (4)
+extern UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
+#endif
+
+extern boolean devparm; // development mode (-debug)
+
+// m_cheat.c
+extern UINT32 cht_debug;
+
+typedef enum
+{
+	DBG_NONE			= 0x00000000,
+	DBG_BASIC			= 0x00000001,
+	DBG_DETAILED		= 0x00000002,
+	DBG_PLAYER			= 0x00000004,
+	DBG_RENDER			= 0x00000008,
+	//DBG_NIGHTSBASIC	= 0x00000010, // free
+	//DBG_NIGHTS		= 0x00000020, // free
+	DBG_POLYOBJ			= 0x00000040,
+	DBG_GAMELOGIC		= 0x00000080,
+	DBG_NETPLAY			= 0x00000100,
+	DBG_MEMORY			= 0x00000200,
+	DBG_SETUP			= 0x00000400,
+	DBG_LUA				= 0x00000800,
+	DBG_RNG				= 0x00001000,
+} debugFlags_t;
+
+struct debugFlagNames_s
+{
+	const char *str;
+	debugFlags_t flag;
+};
+
+extern struct debugFlagNames_s const debug_flag_names[];
 
 // =======================
 // Misc stuff for later...
@@ -620,16 +643,11 @@ UINT32 quickncasehash (const char *p, size_t n)
 
 // Compile date and time and revision.
 extern const char *compdate, *comptime, *comprevision, *compbranch;
+extern int compuncommitted;
 
 // Disabled code and code under testing
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
-
-///	Allows the use of devmode in multiplayer. AKA "fishcake"
-//#define NETGAME_DEVMODE
-
-///	Allows gravity changes in netgames, no questions asked.
-//#define NETGAME_GRAVITY
 
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
@@ -658,6 +676,11 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// Experimental attempts at preventing MF_PAPERCOLLISION objects from getting stuck in walls.
 //#define PAPER_COLLISIONCORRECTION
+
+#ifdef DEVELOP
+// Easily make it so that overtime works offline
+#define TESTOVERTIMEINFREEPLAY
+#endif
 
 /// FINALLY some real clipping that doesn't make walls dissappear AND speeds the game up
 /// (that was the original comment from SRB2CB, sadly it is a lie and actually slows game down)
@@ -692,21 +715,17 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #define USER_VOLUME_SCALE 2
 #define MAX_VOLUME ( 100 * VOLUME_DIVIDER / USER_VOLUME_SCALE )
 
-#if defined (HAVE_CURL) && ! defined (NONET)
+#ifdef HAVE_CURL
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT
 #endif
 
-#if defined (HAVE_CURL) && ! defined (NONET)
+#ifdef HAVE_CURL
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT
 #endif
-
-/// - SRB2Kart options -
-/// Camera always has noclip.
-#define NOCLIPCAM
 
 /// Other karma comeback modes
 //#define OTHERKARMAMODES

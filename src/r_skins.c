@@ -191,12 +191,6 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum)
 		return true;
 	}
 
-	if (Playing() && (R_SkinAvailable(mapheaderinfo[gamemap-1]->forcecharacter) == skinnum))
-	{
-		// Being forced to play as this character by the level
-		return true;
-	}
-
 	if (netgame && (cv_forceskin.value == skinnum))
 	{
 		// Being forced to play as this character by the server
@@ -298,7 +292,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 		player->kartweight = skin->kartweight;
 
 #if 0
-		if (!(cv_debug || devparm) && !(netgame || multiplayer || demo.playback))
+		if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
 		{
 			for (i = 0; i <= r_splitscreen; i++)
 			{

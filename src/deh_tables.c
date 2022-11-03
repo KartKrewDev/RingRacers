@@ -32,17 +32,6 @@ char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
-const char NIGHTSGRADE_LIST[] = {
-	'F', // GRADE_F
-	'E', // GRADE_E
-	'D', // GRADE_D
-	'C', // GRADE_C
-	'B', // GRADE_B
-	'A', // GRADE_A
-	'S', // GRADE_S
-	'\0'
-};
-
 struct flickytypes_s FLICKYTYPES[] = {
 	{"BLUEBIRD", MT_FLICKY_01}, // Flicky (Flicky)
 	{"RABBIT",   MT_FLICKY_02}, // Pocky (1)
@@ -179,6 +168,7 @@ actionpointer_t actionpointers[] =
 	{{A_Boss3Path},              "A_BOSS3PATH"},
 	{{A_Boss3ShockThink},        "A_BOSS3SHOCKTHINK"},
 	{{A_LinedefExecute},         "A_LINEDEFEXECUTE"},
+	{{A_LinedefExecuteFromArg},  "A_LINEDEFEXECUTEFROMARG"},
 	{{A_PlaySeeSound},           "A_PLAYSEESOUND"},
 	{{A_PlayAttackSound},        "A_PLAYATTACKSOUND"},
 	{{A_PlayActiveSound},        "A_PLAYACTIVESOUND"},
@@ -320,9 +310,7 @@ actionpointer_t actionpointers[] =
 
 	// SRB2Kart
 	{{A_ItemPop},                "A_ITEMPOP"},
-	{{A_JawzChase},              "A_JAWZCHASE"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
-	{{A_SPBChase},               "A_SPBCHASE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
@@ -337,6 +325,7 @@ actionpointer_t actionpointers[] =
 	{{A_ReaperThinker},          "A_REAPERTHINKER"},
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
+	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 
 	{{NULL},                     "NONE"},
 
@@ -3277,6 +3266,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEMPOP4",
 	//}
 
+	"S_ITEM_DEBRIS",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER1",
+	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
+
 	"S_ITEMICON",
 
 	// Item capsules
@@ -3519,14 +3512,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JAWZ6",
 	"S_JAWZ7",
 	"S_JAWZ8",
-	"S_JAWZ_DUD1",
-	"S_JAWZ_DUD2",
-	"S_JAWZ_DUD3",
-	"S_JAWZ_DUD4",
-	"S_JAWZ_DUD5",
-	"S_JAWZ_DUD6",
-	"S_JAWZ_DUD7",
-	"S_JAWZ_DUD8",
 	"S_JAWZ_SHIELD1",
 	"S_JAWZ_SHIELD2",
 	"S_JAWZ_SHIELD3",
@@ -3647,6 +3632,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPB20",
 	"S_SPB_DEAD",
 
+	// Juicebox for SPB
+	"S_MANTA1",
+	"S_MANTA2",
+
 	// Lightning Shield
 	"S_LIGHTNINGSHIELD1",
 	"S_LIGHTNINGSHIELD2",
@@ -3752,8 +3741,37 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FLAMESHIELDLINE3",
 	"S_FLAMESHIELDFLASH",
 
+	// Marble Garden Zone Spinning Top
+	"S_GARDENTOP_FLOATING",
+	"S_GARDENTOP_SINKING1",
+	"S_GARDENTOP_SINKING2",
+	"S_GARDENTOP_SINKING3",
+	"S_GARDENTOP_DEAD",
+	"S_GARDENTOPSPARK",
+
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
+
+	// Grow
+	"S_GROW_PARTICLE",
+
+	// Shrink
+	"S_SHRINK_POHBEE",
+	"S_SHRINK_POHBEE2",
+	"S_SHRINK_POHBEE3",
+	"S_SHRINK_POHBEE4",
+	"S_SHRINK_POHBEE5",
+	"S_SHRINK_POHBEE6",
+	"S_SHRINK_POHBEE7",
+	"S_SHRINK_POHBEE8",
+
+	"S_SHRINK_CHAIN",
+
+	"S_SHRINK_GUN",
+	"S_SHRINK_GUN_OVERLAY",
+
+	"S_SHRINK_LASER",
+	"S_SHRINK_PARTICLE",
 
 	// The legend
 	"S_SINK",
@@ -3810,6 +3828,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_TRIPWIREBOOST_BOTTOM",
 	"S_TRIPWIREBOOST_BLAST_TOP",
 	"S_TRIPWIREBOOST_BLAST_BOTTOM",
+
+	"S_SMOOTHLANDING",
 
 	// DEZ respawn laser
 	"S_DEZLASER",
@@ -5106,17 +5126,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FINISHFLAG", // Finish flag
 
 	// Ambient Sounds
-	"MT_AWATERA", // Ambient Water Sound 1
-	"MT_AWATERB", // Ambient Water Sound 2
-	"MT_AWATERC", // Ambient Water Sound 3
-	"MT_AWATERD", // Ambient Water Sound 4
-	"MT_AWATERE", // Ambient Water Sound 5
-	"MT_AWATERF", // Ambient Water Sound 6
-	"MT_AWATERG", // Ambient Water Sound 7
-	"MT_AWATERH", // Ambient Water Sound 8
-	"MT_RANDOMAMBIENT",
-	"MT_RANDOMAMBIENT2",
-	"MT_MACHINEAMBIENCE",
+	"MT_AMBIENT",
 
 	"MT_CORK",
 	"MT_LHRT",
@@ -5220,7 +5230,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_CRUMBLEOBJ", // Sound generator for crumbling platform
 	"MT_TUBEWAYPOINT",
 	"MT_PUSH",
-	"MT_PULL",
 	"MT_GHOST",
 	"MT_OVERLAY",
 	"MT_ANGLEMAN",
@@ -5288,6 +5297,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BRAKEDRIFT",
 	"MT_BRAKEDUST",
 	"MT_DRIFTDUST",
+	"MT_ITEM_DEBRIS",
+	"MT_ITEM_DEBRIS_CLOUD_SPAWNER",
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
@@ -5304,7 +5315,6 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_ORBINAUT_SHIELD",
 
 	"MT_JAWZ", // Jawz stuff
-	"MT_JAWZ_DUD",
 	"MT_JAWZ_SHIELD",
 
 	"MT_PLAYERRETICULE", // Jawz reticule
@@ -5326,6 +5336,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SPB", // Self-Propelled Bomb
 	"MT_SPBEXPLOSION",
+	"MT_MANTARING", // Juicebox for SPB
 
 	"MT_LIGHTNINGSHIELD", // Shields
 	"MT_BUBBLESHIELD",
@@ -5333,19 +5344,33 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLAMESHIELDUNDERLAY",
 	"MT_FLAMESHIELDPAPER",
 	"MT_BUBBLESHIELDTRAP",
+	"MT_GARDENTOP",
+	"MT_GARDENTOPSPARK",
 
 	"MT_HYUDORO",
 	"MT_HYUDORO_CENTER",
 
+	"MT_GROW_PARTICLE",
+
+	"MT_SHRINK_POHBEE",
+	"MT_SHRINK_GUN",
+	"MT_SHRINK_CHAIN",
+	"MT_SHRINK_LASER",
+	"MT_SHRINK_PARTICLE",
+
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
 	"MT_SINKTRAIL",
+
+	"MT_DUELBOMB", // Duel mode bombs
 
 	"MT_BATTLEBUMPER", // Battle Mode bumper
 	"MT_BATTLEBUMPER_DEBRIS",
 	"MT_BATTLEBUMPER_BLAST",
 
 	"MT_TRIPWIREBOOST",
+
+	"MT_SMOOTHLANDING",
 
 	"MT_DEZLASER",
 
@@ -5612,7 +5637,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"SCENERY",
 	"PAIN",
 	"STICKY",
-	"NIGHTSITEM",
+	"APPLYTERRAIN",
 	"NOCLIPTHING",
 	"GRENADEBOUNCE",
 	"RUNSPAWNFUNC",
@@ -5626,7 +5651,7 @@ const char *const MOBJFLAG_LIST[] = {
 // \tMF2_(\S+).*// (.+) --> \t"\1", // \2
 const char *const MOBJFLAG2_LIST[] = {
 	"AXIS",			  // It's a NiGHTS axis! (For faster checking)
-	"TWOD",			  // Moves like it's in a 2D level
+	"\x01",			  // free: 1<<1 (name un-matchable)
 	"DONTRESPAWN",	  // Don't respawn this object!
 	"\x01",			  // free: 1<<3 (name un-matchable)
 	"AUTOMATIC",	  // Thrown ring has automatic properties
@@ -5685,11 +5710,15 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 };
 
 const char *const PLAYERFLAG_LIST[] = {
-	// True if button down last tic.
-	"ATTACKDOWN",
-	"ACCELDOWN",
-	"BRAKEDOWN",
-	"LOOKDOWN",
+	"GODMODE",
+
+	// free: 1<<1 and 1<<2 (name un-matchable)
+	"\x01",
+	"\x01",
+
+	// Look back VFX has been spawned
+	// TODO: Is there a better way to track this?
+	"GAINAX",
 
 	// Accessibility and cheats
 	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
@@ -5769,23 +5798,79 @@ const char *const GAMETYPERULE_LIST[] = {
 };
 
 // Linedef flags
-const char *const ML_LIST[16] = {
+const char *const ML_LIST[] = {
 	"IMPASSABLE",
 	"BLOCKPLAYERS",
 	"TWOSIDED",
 	"DONTPEGTOP",
 	"DONTPEGBOTTOM",
-	"EFFECT1",
+	"SKEWTD",
 	"NOCLIMB",
-	"EFFECT2",
-	"EFFECT3",
-	"EFFECT4",
-	"EFFECT5",
-	"NOSONIC",
-	"NOTAILS",
-	"NOKNUX",
-	"BOUNCY",
-	"TFERLINE"
+	"NOSKEW",
+	"MIDPEG",
+	"MIDSOLID",
+	"WRAPMIDTEX",
+	"NETONLY",
+	"NONET",
+	"BLOCKMONSTERS",
+	"NOTBOUNCY",
+	"TFERLINE",
+	NULL
+};
+
+// Sector flags
+const char *const MSF_LIST[] = {
+	"FLIPSPECIAL_FLOOR",
+	"FLIPSPECIAL_CEILING",
+	"TRIGGERSPECIAL_TOUCH",
+	"TRIGGERSPECIAL_HEADBUMP",
+	"TRIGGERLINE_PLANE",
+	"TRIGGERLINE_MOBJ",
+	"GRAVITYFLIP",
+	"HEATWAVE",
+	"NOCLIPCAMERA",
+	NULL
+};
+
+// Sector special flags
+const char *const SSF_LIST[] = {
+	"DELETEITEMS",
+	"DOUBLESTEPUP",
+	"WINDCURRENT",
+	"CONVEYOR",
+	"\x01",			  // free (name un-matchable)
+	"STARPOSTACTIVATOR",
+	"EXIT",
+	"\x01",			  // free (name un-matchable)
+	"\x01",			  // free (name un-matchable)
+	"\x01",			  // free (name un-matchable)
+	"\x01",			  // free (name un-matchable)
+	"FAN",
+	"\x01",			  // free (name un-matchable)
+	"\x01",			  // free (name un-matchable)
+	"ZOOMTUBESTART",
+	"ZOOMTUBEEND",
+	"\x01",			  // free (name un-matchable)
+	"\x01",			  // free (name un-matchable)
+	NULL
+};
+
+// Sector damagetypes
+const char *const SD_LIST[] = {
+	"NONE",
+	"GENERIC",
+	"LAVA",
+	"DEATHPIT",
+	"INSTAKILL",
+	NULL
+};
+
+// Sector triggerer
+const char *const TO_LIST[] = {
+	"PLAYER",
+	"ALLPLAYERS",
+	"MOBJ",
+	NULL
 };
 
 const char *COLOR_ENUMS[] = {
@@ -6133,6 +6218,7 @@ struct int_const_s const INT_CONST[] = {
 	{"AST_REVERSESUBTRACT",AST_REVERSESUBTRACT},
 	{"AST_MODULATE",AST_MODULATE},
 	{"AST_OVERLAY",AST_OVERLAY},
+	{"AST_FOG",AST_FOG},
 
 	// Render flags
 	{"RF_HORIZONTALFLIP",RF_HORIZONTALFLIP},
@@ -6320,9 +6406,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PA_DRIFT",PA_DRIFT},
 	{"PA_HURT",PA_HURT},
 
-	// Value for infinite lives
-	{"INFLIVES",INFLIVES},
-
 	// Got Flags, for player->gotflag!
 	// Used to be MF_ for some stupid reason, now they're GF_ to stop them looking like mobjflags
 	{"GF_REDFLAG",GF_REDFLAG},
@@ -6364,44 +6447,92 @@ struct int_const_s const INT_CONST[] = {
 	{"SKSKPOWR",SKSKPOWR}, // Power item taunt
 
 	// 3D Floor/Fake Floor/FOF/whatever flags
-	{"FF_EXISTS",FF_EXISTS},                   ///< Always set, to check for validity.
-	{"FF_BLOCKPLAYER",FF_BLOCKPLAYER},         ///< Solid to player, but nothing else
-	{"FF_BLOCKOTHERS",FF_BLOCKOTHERS},         ///< Solid to everything but player
-	{"FF_SOLID",FF_SOLID},                     ///< Clips things.
-	{"FF_RENDERSIDES",FF_RENDERSIDES},         ///< Renders the sides.
-	{"FF_RENDERPLANES",FF_RENDERPLANES},       ///< Renders the floor/ceiling.
-	{"FF_RENDERALL",FF_RENDERALL},             ///< Renders everything.
-	{"FF_SWIMMABLE",FF_SWIMMABLE},             ///< Is a water block.
-	{"FF_NOSHADE",FF_NOSHADE},                 ///< Messes with the lighting?
-	{"FF_CUTSOLIDS",FF_CUTSOLIDS},             ///< Cuts out hidden solid pixels.
-	{"FF_CUTEXTRA",FF_CUTEXTRA},               ///< Cuts out hidden translucent pixels.
-	{"FF_CUTLEVEL",FF_CUTLEVEL},               ///< Cuts out all hidden pixels.
-	{"FF_CUTSPRITES",FF_CUTSPRITES},           ///< Final step in making 3D water.
-	{"FF_BOTHPLANES",FF_BOTHPLANES},           ///< Render inside and outside planes.
-	{"FF_EXTRA",FF_EXTRA},                     ///< Gets cut by ::FF_CUTEXTRA.
-	{"FF_TRANSLUCENT",FF_TRANSLUCENT},         ///< See through!
-	{"FF_FOG",FF_FOG},                         ///< Fog "brush."
-	{"FF_INVERTPLANES",FF_INVERTPLANES},       ///< Only render inside planes.
-	{"FF_ALLSIDES",FF_ALLSIDES},               ///< Render inside and outside sides.
-	{"FF_INVERTSIDES",FF_INVERTSIDES},         ///< Only render inside sides.
-	{"FF_DOUBLESHADOW",FF_DOUBLESHADOW},       ///< Make two lightlist entries to reset light?
-	{"FF_FLOATBOB",FF_FLOATBOB},               ///< Floats on water and bobs if you step on it.
-	{"FF_NORETURN",FF_NORETURN},               ///< Used with ::FF_CRUMBLE. Will not return to its original position after falling.
-	{"FF_CRUMBLE",FF_CRUMBLE},                 ///< Falls 2 seconds after being stepped on, and randomly brings all touching crumbling 3dfloors down with it, providing their master sectors share the same tag (allows crumble platforms above or below, to also exist).
-	{"FF_SHATTERBOTTOM",FF_SHATTERBOTTOM},     ///< Used with ::FF_BUSTUP. Like FF_SHATTER, but only breaks from the bottom. Good for springing up through rubble.
-	{"FF_MARIO",FF_MARIO},                     ///< Acts like a question block when hit from underneath. Goodie spawned at top is determined by master sector.
-	{"FF_BUSTUP",FF_BUSTUP},                   ///< You can spin through/punch this block and it will crumble!
-	{"FF_QUICKSAND",FF_QUICKSAND},             ///< Quicksand!
-	{"FF_PLATFORM",FF_PLATFORM},               ///< You can jump up through this to the top.
-	{"FF_REVERSEPLATFORM",FF_REVERSEPLATFORM}, ///< A fall-through floor in normal gravity, a platform in reverse gravity.
-	{"FF_INTANGIBLEFLATS",FF_INTANGIBLEFLATS}, ///< Both flats are intangible, but the sides are still solid.
-	{"FF_INTANGABLEFLATS",FF_INTANGIBLEFLATS}, ///< Both flats are intangable, but the sides are still solid.
-	{"FF_SHATTER",FF_SHATTER},                 ///< Used with ::FF_BUSTUP. Bustable on mere touch.
-	{"FF_SPINBUST",FF_SPINBUST},               ///< Used with ::FF_BUSTUP. Also bustable if you're in your spinning frames.
-	{"FF_STRONGBUST",FF_STRONGBUST},           ///< Used with ::FF_BUSTUP. Only bustable by "strong" characters (Knuckles) and abilities (bouncing, twinspin, melee).
-	{"FF_RIPPLE",FF_RIPPLE},                   ///< Ripple the flats
-	{"FF_COLORMAPONLY",FF_COLORMAPONLY},       ///< Only copy the colormap, not the lightlevel
-	{"FF_GOOWATER",FF_GOOWATER},               ///< Used with ::FF_SWIMMABLE. Makes thick bouncey goop.
+	{"FOF_EXISTS",FOF_EXISTS},                   ///< Always set, to check for validity.
+	{"FOF_BLOCKPLAYER",FOF_BLOCKPLAYER},         ///< Solid to player, but nothing else
+	{"FOF_BLOCKOTHERS",FOF_BLOCKOTHERS},         ///< Solid to everything but player
+	{"FOF_SOLID",FOF_SOLID},                     ///< Clips things.
+	{"FOF_RENDERSIDES",FOF_RENDERSIDES},         ///< Renders the sides.
+	{"FOF_RENDERPLANES",FOF_RENDERPLANES},       ///< Renders the floor/ceiling.
+	{"FOF_RENDERALL",FOF_RENDERALL},             ///< Renders everything.
+	{"FOF_SWIMMABLE",FOF_SWIMMABLE},             ///< Is a water block.
+	{"FOF_NOSHADE",FOF_NOSHADE},                 ///< Messes with the lighting?
+	{"FOF_CUTSOLIDS",FOF_CUTSOLIDS},             ///< Cuts out hidden solid pixels.
+	{"FOF_CUTEXTRA",FOF_CUTEXTRA},               ///< Cuts out hidden translucent pixels.
+	{"FOF_CUTLEVEL",FOF_CUTLEVEL},               ///< Cuts out all hidden pixels.
+	{"FOF_CUTSPRITES",FOF_CUTSPRITES},           ///< Final step in making 3D water.
+	{"FOF_BOTHPLANES",FOF_BOTHPLANES},           ///< Render inside and outside planes.
+	{"FOF_EXTRA",FOF_EXTRA},                     ///< Gets cut by ::FOF_CUTEXTRA.
+	{"FOF_TRANSLUCENT",FOF_TRANSLUCENT},         ///< See through!
+	{"FOF_FOG",FOF_FOG},                         ///< Fog "brush."
+	{"FOF_INVERTPLANES",FOF_INVERTPLANES},       ///< Only render inside planes.
+	{"FOF_ALLSIDES",FOF_ALLSIDES},               ///< Render inside and outside sides.
+	{"FOF_INVERTSIDES",FOF_INVERTSIDES},         ///< Only render inside sides.
+	{"FOF_DOUBLESHADOW",FOF_DOUBLESHADOW},       ///< Make two lightlist entries to reset light?
+	{"FOF_FLOATBOB",FOF_FLOATBOB},               ///< Floats on water and bobs if you step on it.
+	{"FOF_NORETURN",FOF_NORETURN},               ///< Used with ::FOF_CRUMBLE. Will not return to its original position after falling.
+	{"FOF_CRUMBLE",FOF_CRUMBLE},                 ///< Falls 2 seconds after being stepped on, and randomly brings all touching crumbling 3dfloors down with it, providing their master sectors share the same tag (allows crumble platforms above or below, to also exist).
+	{"FOF_GOOWATER",FOF_GOOWATER},               ///< Used with ::FOF_SWIMMABLE. Makes thick bouncey goop.
+	{"FOF_MARIO",FOF_MARIO},                     ///< Acts like a question block when hit from underneath. Goodie spawned at top is determined by master sector.
+	{"FOF_BUSTUP",FOF_BUSTUP},                   ///< You can spin through/punch this block and it will crumble!
+	{"FOF_QUICKSAND",FOF_QUICKSAND},             ///< Quicksand!
+	{"FOF_PLATFORM",FOF_PLATFORM},               ///< You can jump up through this to the top.
+	{"FOF_REVERSEPLATFORM",FOF_REVERSEPLATFORM}, ///< A fall-through floor in normal gravity, a platform in reverse gravity.
+	{"FOF_INTANGIBLEFLATS",FOF_INTANGIBLEFLATS}, ///< Both flats are intangible, but the sides are still solid.
+	{"FOF_RIPPLE",FOF_RIPPLE},                   ///< Ripple the flats
+	{"FOF_COLORMAPONLY",FOF_COLORMAPONLY},       ///< Only copy the colormap, not the lightlevel
+	{"FOF_BOUNCY",FOF_BOUNCY},                   ///< Bounces players
+	{"FOF_SPLAT",FOF_SPLAT},                     ///< Use splat flat renderer (treat cyan pixels as invisible)
+
+	// Old FOF flags for backwards compatibility
+	{"FF_EXISTS",FF_OLD_EXISTS},
+	{"FF_BLOCKPLAYER",FF_OLD_BLOCKPLAYER},
+	{"FF_BLOCKOTHERS",FF_OLD_BLOCKOTHERS},
+	{"FF_SOLID",FF_OLD_SOLID},
+	{"FF_RENDERSIDES",FF_OLD_RENDERSIDES},
+	{"FF_RENDERPLANES",FF_OLD_RENDERPLANES},
+	{"FF_RENDERALL",FF_OLD_RENDERALL},
+	{"FF_SWIMMABLE",FF_OLD_SWIMMABLE},
+	{"FF_NOSHADE",FF_OLD_NOSHADE},
+	{"FF_CUTSOLIDS",FF_OLD_CUTSOLIDS},
+	{"FF_CUTEXTRA",FF_OLD_CUTEXTRA},
+	{"FF_CUTLEVEL",FF_OLD_CUTLEVEL},
+	{"FF_CUTSPRITES",FF_OLD_CUTSPRITES},
+	{"FF_BOTHPLANES",FF_OLD_BOTHPLANES},
+	{"FF_EXTRA",FF_OLD_EXTRA},
+	{"FF_TRANSLUCENT",FF_OLD_TRANSLUCENT},
+	{"FF_FOG",FF_OLD_FOG},
+	{"FF_INVERTPLANES",FF_OLD_INVERTPLANES},
+	{"FF_ALLSIDES",FF_OLD_ALLSIDES},
+	{"FF_INVERTSIDES",FF_OLD_INVERTSIDES},
+	{"FF_DOUBLESHADOW",FF_OLD_DOUBLESHADOW},
+	{"FF_FLOATBOB",FF_OLD_FLOATBOB},
+	{"FF_NORETURN",FF_OLD_NORETURN},
+	{"FF_CRUMBLE",FF_OLD_CRUMBLE},
+	{"FF_SHATTERBOTTOM",FF_OLD_SHATTERBOTTOM},
+	{"FF_GOOWATER",FF_OLD_GOOWATER},
+	{"FF_MARIO",FF_OLD_MARIO},
+	{"FF_BUSTUP",FF_OLD_BUSTUP},
+	{"FF_QUICKSAND",FF_OLD_QUICKSAND},
+	{"FF_PLATFORM",FF_OLD_PLATFORM},
+	{"FF_REVERSEPLATFORM",FF_OLD_REVERSEPLATFORM},
+	{"FF_INTANGIBLEFLATS",FF_OLD_INTANGIBLEFLATS},
+	{"FF_INTANGABLEFLATS",FF_OLD_INTANGIBLEFLATS},
+	{"FF_SHATTER",FF_OLD_SHATTER},
+	{"FF_SPINBUST",FF_OLD_SPINBUST},
+	{"FF_STRONGBUST",FF_OLD_STRONGBUST},
+	{"FF_RIPPLE",FF_OLD_RIPPLE},
+	{"FF_COLORMAPONLY",FF_OLD_COLORMAPONLY},
+
+	// FOF bustable flags
+	{"FB_PUSHABLES",FB_PUSHABLES},
+	{"FB_EXECUTOR",FB_EXECUTOR},
+	{"FB_ONLYBOTTOM",FB_ONLYBOTTOM},
+
+	// Bustable FOF type
+	{"BT_TOUCH",BT_TOUCH},
+	{"BT_SPINBUST",BT_SPINBUST},
+	{"BT_REGULAR",BT_REGULAR},
+	{"BT_STRONG",BT_STRONG},
 
 	// PolyObject flags
 	{"POF_CLIPLINES",POF_CLIPLINES},               ///< Test against lines for collision
@@ -6642,6 +6773,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KSHIELD_LIGHTNING",KSHIELD_LIGHTNING},
 	{"KSHIELD_BUBBLE",KSHIELD_BUBBLE},
 	{"KSHIELD_FLAME",KSHIELD_FLAME},
+	{"KSHIELD_TOP",KSHIELD_TOP},
 	{"NUMKARTSHIELDS",NUMKARTSHIELDS},
 
 	// kartspinoutflags_t

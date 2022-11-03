@@ -56,6 +56,9 @@ void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
 UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 UINT8 GetColorLUTDirect(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
 
+// Loads the correct palette into memory
+void V_ReloadPalette(void);
+
 // Set the current RGB palette lookup to use for palettized graphics
 void V_SetPalette(INT32 palettenum);
 
@@ -80,6 +83,9 @@ void V_CubeApply(RGBA_t *input);
 
 // Bottom 8 bits are used for parameter (screen or character)
 #define V_PARAMMASK          0x000000FF
+
+// strings/characters only
+#define V_STRINGDANCE        0x00000002
 
 // flags hacked in scrn (not supported by all functions (see src))
 // patch scaling uses bits 9 and 10
@@ -217,6 +223,8 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color);
 #define V__IntegerStringWidth( scale,option,font,string ) \
 	(V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
 
+INT32 V_DanceYOffset(INT32 counter);
+
 // draw a single character
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
 // draw a single character, but for the chat
@@ -314,7 +322,7 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 
 // Draw ping numbers. Used by the scoreboard and that one ping option. :P
 // This is a separate function because IMO lua should have access to it as well.
-void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap);
+INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap);
 
 void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 

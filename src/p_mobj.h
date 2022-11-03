@@ -118,7 +118,7 @@ typedef enum
 	// Don't apply gravity (every tic); object will float, keeping current height
 	//  or changing it actively.
 	MF_NOGRAVITY        = 1<<9,
-	// This object is an ambient sound.
+	// This object is an ambient sound. Obsolete, but keep this around for backwards compatibility.
 	MF_AMBIENT          = 1<<10,
 	// Slide this object when it hits a wall.
 	MF_SLIDEME          = 1<<11,
@@ -147,8 +147,8 @@ typedef enum
 	MF_PAIN             = 1<<22,
 	// This mobj will stick to any surface or solid object it touches.
 	MF_STICKY           = 1<<23,
-	// NiGHTS hidden item. Goes to seestate and turns MF_SPECIAL when paralooped.
-	MF_NIGHTSITEM       = 1<<24,
+	// Object uses terrain effects. (Overlays, footsteps, etc)
+	MF_APPLYTERRAIN     = 1<<24,
 	// for chase camera, don't be blocked by things (partial clipping)
 	MF_NOCLIPTHING      = 1<<25,
 	// Missile bounces like a grenade.
@@ -169,7 +169,7 @@ typedef enum
 typedef enum
 {
 	MF2_AXIS           = 1,     // It's a NiGHTS axis! (For faster checking)
-	MF2_TWOD           = 1<<1,  // Moves like it's in a 2D level
+	// free: 1<<1
 	MF2_DONTRESPAWN    = 1<<2,  // Don't respawn this object!
 	// free: 1<<3
 	MF2_AUTOMATIC      = 1<<4,  // Thrown ring has automatic properties
@@ -406,7 +406,10 @@ typedef struct mobj_s
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 
 	struct terrain_s *terrain; // Terrain definition of the floor this object last hit. NULL when in the air.
+	struct mobj_s *terrainOverlay; // Overlay sprite object for terrain
+
 	INT32 hitlag; // Sal-style hit lag, straight from Captain Fetch's jowls
+	UINT8 waterskip; // Water skipping counter
 
 	INT32 dispoffset;
 
@@ -497,7 +500,9 @@ void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
 // kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
+boolean P_IsKartFieldItem(INT32 type);
 boolean P_IsKartItem(INT32 type);
+boolean P_CanDeleteKartItem(INT32 type);
 void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
 void P_RunKartItems(void);
 

@@ -74,6 +74,8 @@
 #include "k_grandprix.h"
 #include "k_boss.h"
 #include "doomstat.h"
+#include "m_random.h" // P_ClearRandom
+#include "k_specialstage.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -85,10 +87,6 @@
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
 
-#ifdef _WINDOWS
-#include "win32/win_main.h" // I_DoStartupMouse
-#endif
-
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
 #endif
@@ -98,6 +96,10 @@
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
+
+#ifdef DEVELOP
+UINT8 comprevision_abbrev_bin[GIT_SHA_ABBREV];
+#endif
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -353,7 +355,7 @@ static void D_Display(void)
 			if (gamestate != GS_LEVEL && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
-				R_ReInitColormaps(0, LUMPERROR);
+				R_ReInitColormaps(0, NULL, 0);
 			}
 
 			F_WipeStartScreen();
@@ -714,11 +716,6 @@ void D_SRB2Loop(void)
 
 	// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
-#ifdef _WINDOWS
-	CONS_Printf("I_StartupMouse()...\n");
-	I_DoStartupMouse();
-#endif
-
 	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
@@ -879,7 +876,8 @@ void D_SRB2Loop(void)
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
-		S_UpdateClosedCaptions();
+		if (realtics > 0 || singletics)
+			S_UpdateClosedCaptions();
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();
@@ -939,20 +937,16 @@ void D_StartTitle(void)
 
 	if (netgame)
 	{
-		if (gametyperules & GTR_CAMPAIGN)
+		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+
+		if (server)
 		{
-			G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+			i = G_GetFirstMapOfGametype(gametype)+1;
 
-			if (server)
-			{
-				char mapname[6];
+			if (i > nummapheaders)
+				I_Error("D_StartTitle: No valid map ID found!?");
 
-				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof (mapname));
-				strlwr(mapname);
-				mapname[5] = '\0';
-
-				COM_BufAddText(va("map %s\n", mapname));
-			}
+			COM_BufAddText(va("map %s\n", G_BuildMapName(i)));
 		}
 
 		return;
@@ -974,7 +968,7 @@ void D_StartTitle(void)
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
-	cv_debug = 0;
+	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 	lastmaploaded = 0;
@@ -989,6 +983,9 @@ void D_StartTitle(void)
 
 	// Reset boss info
 	K_ResetBossInfo();
+
+	// Reset Special Stage
+	K_ResetSpecialStage();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
@@ -1187,6 +1184,20 @@ static void IdentifyVersion(void)
 #endif
 }
 
+#ifdef DEVELOP
+static void
+D_AbbrevCommit (void)
+{
+	UINT8 i;
+
+	for (i = 0; i < GIT_SHA_ABBREV; ++i)
+	{
+		sscanf(&comprevision[i * 2], "%2hhx",
+				&comprevision_abbrev_bin[i]);
+	}
+}
+#endif
+
 static void
 D_ConvertVersionNumbers (void)
 {
@@ -1201,18 +1212,19 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 i;
-	UINT16 wadnum;
-	lumpinfo_t *lumpinfo;
-	char *name;
-
 	INT32 p;
+
+	INT32 numbasemapheaders;
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
+
+#ifdef DEVELOP
+	D_AbbrevCommit();
+#endif
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
@@ -1236,6 +1248,11 @@ void D_SRB2Main(void)
 
 	// initialise locale code
 	M_StartupLocale();
+
+	// This will be done more properly on
+	// level load, but for now at least make
+	// sure that it is initalized at all
+	P_ClearRandom(0);
 
 	// get parameters from a response file (eg: srb2 @parms.txt)
 	M_FindResponseFile();
@@ -1263,9 +1280,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
-#endif
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
@@ -1450,31 +1465,16 @@ void D_SRB2Main(void)
 
 #endif //ifndef DEVELOP
 
-	//
-	// search for maps
-	//
-	for (wadnum = 0; wadnum <= mainwads; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
+	// Do it before P_InitMapData because PNG patch
+	// conversion sometimes needs the palette
+	V_ReloadPalette();
 
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
+	//
+	// search for mainwad maps
+	//
+	P_InitMapData(0);
 
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
-			}
-		}
-	}
+	numbasemapheaders = nummapheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1483,37 +1483,9 @@ void D_SRB2Main(void)
 	D_CleanFile(startuppwads);
 
 	//
-	// search for maps... again.
+	// search for pwad maps
 	//
-	for (wadnum = mainwads+1; wadnum < numwadfiles; wadnum++)
-	{
-		lumpinfo = wadfiles[wadnum]->lumpinfo;
-		for (i = 0; i < wadfiles[wadnum]->numlumps; i++, lumpinfo++)
-		{
-			name = lumpinfo->name;
-
-			if (name[0] == 'M' && name[1] == 'A' && name[2] == 'P') // Ignore the headers
-			{
-				INT16 num;
-				if (name[5] != '\0')
-					continue;
-				num = (INT16)M_MapNumber(name[3], name[4]);
-
-				// we want to record whether this map exists. if it doesn't have a header, we can assume it's not relephant
-				if (num <= NUMMAPS && mapheaderinfo[num - 1])
-				{
-					if (mapheaderinfo[num - 1]->alreadyExists != false)
-					{
-						G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
-					}
-
-					mapheaderinfo[num - 1]->alreadyExists = true;
-				}
-
-				CONS_Printf("%s\n", name);
-			}
-		}
-	}
+	P_InitMapData(numbasemapheaders);
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
@@ -1578,6 +1550,12 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-noupload"))
 		COM_BufAddText("downloading 0\n");
 
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
+	{
+		// Moved from G_LoadGameData itself, as it would cause some crazy
+		// confusion issues when loading mods.
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
+	}
 	G_LoadGameData();
 
 	wipegamestate = gamestate;
@@ -1653,15 +1631,25 @@ void D_SRB2Main(void)
 	{
 		const char *word = M_GetNextParm();
 
-		pstartmap = G_FindMapByNameOrCode(word, 0);
-
-		if (! pstartmap)
-			I_Error("Cannot find a map remotely named '%s'\n", word);
+		if (WADNAMECHECK(word))
+		{
+			if (!(pstartmap = wadnamemap))
+				I_Error("Bad '%s' level warp.\n"
+#if defined (_WIN32)
+				"Are you using MSDOS 8.3 filenames in Zone Builder?\n"
+#endif
+				, word);
+		}
 		else
+		{
+			if (!(pstartmap = G_FindMapByNameOrCode(word, 0)))
+				I_Error("Cannot find a map remotely named '%s'\n", word);
+		}
+
 		{
 			if (!M_CheckParm("-server"))
 			{
-				G_SetGameModified(true, true);
+				G_SetUsedCheats();
 
 				// Start up a "minor" grand prix session
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
@@ -1770,14 +1758,23 @@ void D_SRB2Main(void)
 	// rei/miru: bootmap (Idea: starts the game on a predefined map)
 	if (bootmap && !(M_CheckParm("-warp") && M_IsNextParm()))
 	{
-		pstartmap = bootmap;
+		pstartmap = G_MapNumber(bootmap)+1;
 
-		if (pstartmap < 1 || pstartmap > NUMMAPS)
-			I_Error("Cannot warp to map %d (out of range)\n", pstartmap);
-		else
+		if (pstartmap > nummapheaders)
 		{
-			autostart = true;
+			I_Error("Cannot warp to map %s (not found)\n", bootmap);
 		}
+
+		autostart = true;
+	}
+
+	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
+	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
+	PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
+	for (i = 1; i < cv_splitplayers.value; i++)
+	{
+		PR_ApplyProfile(cv_lastprofile[i].value, i);
 	}
 
 	if (autostart || netgame)
@@ -1785,16 +1782,6 @@ void D_SRB2Main(void)
 		gameaction = ga_nothing;
 
 		CV_ClearChangedFlags();
-
-		// Has to be done before anything else so skin, color, etc in command buffer has an affect.
-		// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
-		PR_ApplyProfile(cv_ttlprofilen.value, 0);
-		{
-			for (i = 1; i < cv_splitplayers.value; i++)
-			{
-				PR_ApplyProfile(cv_lastprofile[i].value, i);
-			}
-		}
 
 		// Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts
 		// as having been modified for the first game.
@@ -1834,29 +1821,20 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			const char *masterstr = "Master";
-
-			if (!strcasecmp(masterstr, sskill))
+			for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
 			{
-				newskill = KARTGP_MASTER;
+				if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, sskill))
+				{
+					newskill = (INT16)gpdifficulty_cons_t[j].value;
+					break;
+				}
 			}
-			else
-			{
-				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				{
-					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
-					{
-						newskill = (INT16)kartspeed_cons_t[j].value;
-						break;
-					}
-				}
 
-				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-				{
-					j = atoi(sskill); // assume they gave us a skill number, which is okay too
-					if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
-						newskill = (INT16)j;
-				}
+			if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
+			{
+				j = atoi(sskill); // assume they gave us a skill number, which is okay too
+				if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
+					newskill = (INT16)j;
 			}
 
 			if (grandprixinfo.gp == true)
@@ -1880,27 +1858,24 @@ void D_SRB2Main(void)
 
 		if (server && !M_CheckParm("+map"))
 		{
-			// Prevent warping to nonexistent levels
-			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
-				I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
-			// Prevent warping to locked levels
-			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-			// lives hell.
-			else if (!dedicated && M_MapLocked(pstartmap))
-				I_Error("You need to unlock this level before you can warp to it!\n");
-			else
+			if (M_MapLocked(pstartmap))
 			{
-				D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
+				G_SetUsedCheats();
 			}
+
+			D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
 	else if (M_CheckParm("-skipintro"))
 	{
 		F_StartTitleScreen();
+		CV_StealthSetValue(&cv_currprofile, -1);
 	}
 	else
+	{
 		F_StartIntro(); // Tails 03-03-2002
+		CV_StealthSetValue(&cv_currprofile, -1);
+	}
 
 	CON_ToggleOff();
 

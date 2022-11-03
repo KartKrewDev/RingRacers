@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
+#include "r_main.h"
 #include "r_fps.h"
 
 // Object place
@@ -36,12 +37,21 @@
 #include "k_boss.h"
 #include "k_waypoint.h"
 #include "k_director.h"
+#include "k_specialstage.h"
 
 tic_t leveltime;
 
 INT32 P_AltFlip(INT32 n, tic_t tics)
 {
 	return leveltime % (2 * tics) < tics ? n : -(n);
+}
+
+// Please read p_tick.h
+INT32 P_LerpFlip(INT32 n, tic_t tics)
+{
+	const tic_t w = 2 * tics;
+
+	return P_AltFlip(((leveltime % w) - tics) * n, w);
 }
 
 //
@@ -585,20 +595,32 @@ void P_Ticker(boolean run)
 
 		ps_playerthink_time = I_GetPreciseTime();
 
+#define PLAYERCONDITION(i) (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 		// First loop: Ensure all players' distance to the finish line are all accurate
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_UpdateDistanceFromFinishLine(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			K_UpdateDistanceFromFinishLine(&players[i]);
+		}
 
 		// Second loop: Ensure all player positions reflect everyone's distances
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_KartUpdatePosition(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			K_KartUpdatePosition(&players[i]);
+		}
 
 		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				P_PlayerThink(&players[i]);
+		{
+			if (!PLAYERCONDITION(i))
+				continue;
+			P_PlayerThink(&players[i]);
+			K_KartPlayerHUDUpdate(&players[i]);
+		}
+#undef PLAYERCONDITION
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
@@ -681,12 +703,19 @@ void P_Ticker(boolean run)
 			racecountdown--;
 
 		if (exitcountdown > 1)
+		{
 			exitcountdown--;
+			if (server && exitcountdown == 1)
+			{
+				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			}
+		}
 
-		if (indirectitemcooldown > 0)
-			indirectitemcooldown--;
+		K_RunItemCooldowns();
 
 		K_BossInfoTicker();
+
+		K_TickSpecialStage();
 
 		if ((gametyperules & GTR_BUMPERS))
 		{
@@ -721,8 +750,8 @@ void P_Ticker(boolean run)
 			G_WriteAllGhostTics();
 
 			if (cv_recordmultiplayerdemos.value && (demo.savemode == DSM_NOTSAVING || demo.savemode == DSM_WILLAUTOSAVE))
-				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
-					demo.savemode = DSM_TITLEENTRY;
+				if (demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
+					G_CheckDemoTitleEntry();
 		}
 		else if (demo.playback) // Use Ghost data for consistency checks.
 		{
@@ -754,6 +783,20 @@ void P_Ticker(boolean run)
 	{
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			player_t *player = &players[displayplayers[i]];
+			const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+			if (skybox)
+			{
+				R_SkyboxFrame(i);
+			}
+			R_SetupFrame(i);
+		}
 	}
 
 	P_MapEnd();
@@ -766,6 +809,11 @@ void P_Ticker(boolean run)
 		// The values needed to set this properly are not correct at map load,
 		// so we have to do it at the second tick instead...
 		K_TimerInit();
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
 	}
 
 //	Z_CheckMemCleanup();

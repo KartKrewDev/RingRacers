@@ -402,7 +402,7 @@ static line_t *K_FindBotController(mobj_t *mo)
 		{
 			sector_t *rs = NULL;
 
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 			{
 				continue;
 			}
@@ -510,8 +510,8 @@ fixed_t K_BotRubberband(player_t *player)
 
 		if (botController != NULL)
 		{
-			// No Climb Flag: Disable rubberbanding
-			if (botController->flags & ML_NOCLIMB)
+			// Disable rubberbanding
+			if (botController->args[1] & TMBOT_NORUBBERBAND)
 			{
 				return FRACUNIT;
 			}
@@ -657,7 +657,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
 	const INT32 maxDist = startDist * 4; // This function gets very laggy when it goes far distances, and going too far isn't very helpful anyway.
-	const INT32 distance = min(((speed / FRACUNIT) * futuresight) + startDist, maxDist);
+	const INT32 distance = min(((speed / FRACUNIT) * (INT32)futuresight) + startDist, maxDist);
 
 	// Halves radius when encountering a wall on your way to your destination.
 	fixed_t radreduce = FRACUNIT;
@@ -921,7 +921,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+static void K_BotTrick(player_t *player, ticcmd_t *cmd, const line_t *botController)
 {
 	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
 	if (botController == NULL)
@@ -931,7 +931,7 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 
 	if (player->trickpanel == 1)
 	{
-		INT32 type = (sides[botController->sidenum[0]].rowoffset / FRACUNIT);
+		INT32 type = botController->args[0];
 
 		// Y Offset: Trick type
 		switch (type)
@@ -950,6 +950,55 @@ static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
 				break;
 		}
 	}
+}
+
+/*--------------------------------------------------
+	static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+
+		Calculates a new destination angle while in the air,
+		to be able to successfully smooth land.
+
+	Input Arguments:-
+		player - Bot player to check.
+		destangle - Previous destination angle.
+
+	Return:-
+		New destination angle.
+--------------------------------------------------*/
+static angle_t K_BotSmoothLanding(player_t *player, angle_t destangle)
+{
+	angle_t newAngle = destangle;
+	boolean air = !P_IsObjectOnGround(player->mo);
+	angle_t steepVal = air ? STUMBLE_STEEP_VAL_AIR : STUMBLE_STEEP_VAL;
+	angle_t slopeSteep = max(AngleDelta(player->mo->pitch, 0), AngleDelta(player->mo->roll, 0));
+
+	if (slopeSteep > steepVal)
+	{
+		fixed_t pitchMul = -FINESINE(destangle >> ANGLETOFINESHIFT);
+		fixed_t rollMul = FINECOSINE(destangle >> ANGLETOFINESHIFT);
+		angle_t testAngles[2];
+		angle_t testDeltas[2];
+		UINT8 i;
+
+		testAngles[0] = R_PointToAngle2(0, 0, rollMul, pitchMul);
+		testAngles[1] = R_PointToAngle2(0, 0, -rollMul, -pitchMul);
+
+		for (i = 0; i < 2; i++)
+		{
+			testDeltas[i] = AngleDelta(testAngles[i], destangle);
+		}
+
+		if (testDeltas[1] < testDeltas[0])
+		{
+			return testAngles[1];
+		}
+		else
+		{
+			return testAngles[0];
+		}
+	}
+
+	return newAngle;
 }
 
 /*--------------------------------------------------
@@ -974,6 +1023,8 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	INT32 anglediff;
 
 	I_Assert(predict != NULL);
+
+	destangle = K_BotSmoothLanding(player, destangle);
 
 	moveangle = player->mo->angle;
 	anglediff = AngleDeltaSigned(moveangle, destangle);
@@ -1105,6 +1156,8 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 		}
 	}
 
+	destangle = K_BotSmoothLanding(player, destangle);
+
 	// Calculate turn direction first.
 	moveangle = player->mo->angle;
 	angle = (moveangle - destangle);
@@ -1206,20 +1259,14 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
-	line_t *botController = NULL;
-
-	// Can't build a ticcmd if we aren't spawned...
-	if (!player->mo)
-	{
-		return;
-	}
+	const line_t *botController = player->botvars.controller != UINT16_MAX ? &lines[player->botvars.controller] : NULL;
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL || !player->mo || player->spectator)
 	{
-		// Not in a level.
+		// Not in the level.
 		return;
 	}
 
@@ -1245,18 +1292,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	botController = K_FindBotController(player->mo);
-	if (botController == NULL)
-	{
-		player->botvars.controller = UINT16_MAX;
-	}
-	else
-	{
-		player->botvars.controller = botController - lines;
-	}
-
-	player->botvars.rubberband = K_UpdateRubberband(player);
-
 	if (player->trickpanel != 0)
 	{
 		K_BotTrick(player, cmd, botController);
@@ -1265,7 +1300,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (botController != NULL && (botController->flags & ML_EFFECT2))
+	if (botController != NULL && (botController->args[1] & TMBOT_NOCONTROL)) // FIXME: UDMF-ify
 	{
 		// Disable bot controls entirely.
 		return;
@@ -1273,12 +1308,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	destangle = player->mo->angle;
 
-	if (botController != NULL && (botController->flags & ML_EFFECT1))
+	if (botController != NULL && (botController->args[1] & TMBOT_FORCEDIR)) // FIXME: UDMF-ify
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
 
 		// X Offset: Movement direction
-		destangle = FixedAngle(sides[botController->sidenum[0]].textureoffset);
+		destangle = FixedAngle(botController->args[2] * FRACUNIT);
 
 		// Overwritten prediction
 		predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
@@ -1483,4 +1518,25 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		Z_Free(predict);
 	}
+}
+
+/*--------------------------------------------------
+	void K_UpdateBotGameplayVars(player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdateBotGameplayVars(player_t *player)
+{
+	const line_t *botController;
+
+	if (gamestate != GS_LEVEL || !player->mo)
+	{
+		// Not in the level.
+		return;
+	}
+
+	botController = K_FindBotController(player->mo);
+
+	player->botvars.controller = botController ? (botController - lines) : UINT16_MAX;
+	player->botvars.rubberband = K_UpdateRubberband(player);
 }

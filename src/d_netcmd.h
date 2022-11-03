@@ -55,7 +55,7 @@ extern consvar_t cv_itemrespawn;
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
-extern UINT32 timelimitintics;
+extern UINT32 timelimitintics, extratimeintics, secretextratime;
 extern consvar_t cv_allowexitlevel;
 
 extern consvar_t cv_autobalance;
@@ -72,22 +72,42 @@ extern consvar_t cv_pause;
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
-extern consvar_t cv_superring, cv_sneaker, cv_rocketsneaker, cv_invincibility, cv_banana;
-extern consvar_t cv_eggmanmonitor, cv_orbinaut, cv_jawz, cv_mine, cv_landmine, cv_droptarget;
-extern consvar_t cv_ballhog, cv_selfpropelledbomb, cv_grow, cv_shrink;
-extern consvar_t cv_lightningshield, cv_bubbleshield, cv_flameshield;
-extern consvar_t cv_hyudoro, cv_pogospring, cv_kitchensink;
+extern consvar_t
+	cv_sneaker,
+	cv_rocketsneaker,
+	cv_invincibility,
+	cv_banana,
+	cv_eggmanmonitor,
+	cv_orbinaut,
+	cv_jawz,
+	cv_mine,
+	cv_landmine,
+	cv_ballhog,
+	cv_selfpropelledbomb,
+	cv_grow,
+	cv_shrink,
+	cv_lightningshield,
+	cv_bubbleshield,
+	cv_flameshield,
+	cv_hyudoro,
+	cv_pogospring,
+	cv_superring,
+	cv_kitchensink,
+	cv_droptarget,
+	cv_gardentop;
 
-extern consvar_t cv_dualsneaker, cv_triplesneaker, cv_triplebanana, cv_decabanana;
-extern consvar_t cv_tripleorbinaut, cv_quadorbinaut, cv_dualjawz;
+extern consvar_t
+	cv_dualsneaker,
+	cv_triplesneaker,
+	cv_triplebanana,
+	cv_decabanana,
+	cv_tripleorbinaut,
+	cv_quadorbinaut,
+	cv_dualjawz;
 
-extern consvar_t cv_kartminimap;
-extern consvar_t cv_kartcheck;
-extern consvar_t cv_kartinvinsfx;
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;
 extern consvar_t cv_kartfrantic;
-extern consvar_t cv_kartcomeback;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartvoterulechanges;
 extern consvar_t cv_kartgametypepreference;
@@ -99,8 +119,9 @@ extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
 
-extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartallowgiveitem, cv_kartdebugshrink, cv_kartdebugdistribution, cv_kartdebughuddrop;
-extern consvar_t cv_kartdebugcheckpoint, cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
+extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
+extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
+extern consvar_t cv_spbtest, cv_gptest;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
 extern consvar_t cv_itemfinder;
@@ -118,6 +139,7 @@ extern consvar_t cv_maxping;
 extern consvar_t cv_lagless;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
+extern consvar_t cv_pingmeasurement;
 extern consvar_t cv_showviewpointtext;
 
 extern consvar_t cv_skipmapcheck;
@@ -127,6 +149,10 @@ extern consvar_t cv_sleep;
 extern consvar_t cv_perfstats;
 
 extern consvar_t cv_director;
+
+extern consvar_t cv_schedule;
+
+extern consvar_t cv_livestudioaudience;
 
 extern char timedemo_name[256];
 extern boolean timedemo_csv;
@@ -168,9 +194,13 @@ typedef enum
 	XD_ACCEPTPARTYINVITE, // 29
 	XD_LEAVEPARTY,  // 30
 	XD_CANCELPARTYINVITE, // 31
-	XD_GIVEITEM,    // 32
+	XD_CHEAT,       // 32
 	XD_ADDBOT,      // 33
 	XD_DISCORD,     // 34
+	XD_PLAYSOUND,   // 35
+	XD_SCHEDULETASK, // 36
+	XD_SCHEDULECLEAR, // 37
+	XD_AUTOMATE,    // 38
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -222,7 +252,9 @@ void D_RegisterServerCommands(void);
 void D_RegisterClientCommands(void);
 void CleanupPlayerName(INT32 playernum, const char *newname);
 boolean EnsurePlayerNameIsGood(char *name, INT32 playernum);
-void SendWeaponPref(UINT8 n);
+void WeaponPref_Send(UINT8 ssplayer);
+void WeaponPref_Save(UINT8 **cp, INT32 playernum);
+void WeaponPref_Parse(UINT8 **cp, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
@@ -239,7 +271,41 @@ void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 
+typedef struct
+{
+	UINT16 basetime;
+	UINT16 timer;
+	char *command;
+} scheduleTask_t;
+
+extern scheduleTask_t **schedule;
+extern size_t schedule_size;
+extern size_t schedule_len;
+
+void Schedule_Run(void);
+void Schedule_Insert(scheduleTask_t *addTask);
+void Schedule_Add(INT16 basetime, INT16 timeleft, const char *command);
+void Schedule_Clear(void);
+
+typedef enum
+{
+	AEV_ROUNDSTART,
+	AEV_INTERMISSIONSTART,
+	AEV_VOTESTART,
+	AEV__MAX
+} automateEvents_t;
+
+void Automate_Run(automateEvents_t type);
+void Automate_Set(automateEvents_t type, const char *command);
+void Automate_Clear(void);
+
+extern UINT32 livestudioaudience_timer;
+void LiveStudioAudience(void);
+
+void D_Cheat(INT32 playernum, INT32 cheat, ...);
+
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);
+boolean CanChangeSkinWhilePlaying(INT32 playernum);
 
 #endif

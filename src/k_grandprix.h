@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#define GPEVENT_NONE 0
+#define GPEVENT_BONUS 1
+#define GPEVENT_SPECIAL 2
+
 extern struct grandprixinfo
 {
 	boolean gp;				///< If true, then we are in a Grand Prix.
@@ -26,6 +30,7 @@ extern struct grandprixinfo
 	boolean masterbots;		///< If true, all bots should be max difficulty (Master Mode)
 	boolean initalize;		///< If true, we need to initialize a new session.
 	boolean wonround;		///< If false, then we retry the map instead of going to the next.
+	UINT8 eventmode;		///< See GPEVENT_ constants
 } grandprixinfo;
 
 
@@ -63,13 +68,13 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------
-	SINT8 K_BotDefaultSkin(void);
+	UINT8 K_BotDefaultSkin(void);
 
 		Returns the skin number of the skin the game
 		uses as a fallback option.
 --------------------------------------------------*/
 
-SINT8 K_BotDefaultSkin(void);
+UINT8 K_BotDefaultSkin(void);
 
 
 /*--------------------------------------------------
@@ -147,18 +152,18 @@ void K_PlayerLoseLife(player_t *player);
 
 
 /*--------------------------------------------------
-	boolean K_CanChangeRules(void);
+	boolean K_CanChangeRules(boolean allowdemos);
 
 		Returns whenver or not the server is allowed
 		to change the game rules.
 
 	Input Arguments:-
-		None
+		allowdemos - permits this behavior during demo playback
 
 	Return:-
 		true if can change important gameplay rules, otherwise false.
 --------------------------------------------------*/
 
-boolean K_CanChangeRules(void);
+boolean K_CanChangeRules(boolean allowdemos);
 
 #endif

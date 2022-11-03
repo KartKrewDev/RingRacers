@@ -41,30 +41,36 @@ drawseg_t *ds_p = NULL;
 // indicates doors closed wrt automap bugfix:
 INT32 doorclosed;
 
-boolean R_NoEncore(sector_t *sector, boolean ceiling)
+boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 {
-	boolean invertencore = (GETSECSPECIAL(sector->special, 2) == 15);
-#if 0 // perfect implementation
-	INT32 val = GETSECSPECIAL(sector->special, 3);
-	//if (val != 1 && val != 3 // spring panel
-#else // optimised, see #define GETSECSPECIAL(i,j) ((i >> ((j-1)*4))&15)
-	if ((!(sector->special & (1<<8)) || (sector->special & ((4|8)<<8))) // spring panel
-#endif
-		&& GETSECSPECIAL(sector->special, 4) != 6) // sneaker panel
-			return invertencore;
+	const boolean invertEncore = (sector->flags & MSF_INVERTENCORE);
+	const terrain_t *terrain = (flat != NULL ? flat->terrain : NULL);
 
-	if (invertencore)
+	if ((terrain == NULL)
+		|| (terrain->trickPanel <= 0
+		&& terrain->speedPad <= 0
+		&& !(terrain->flags & TRF_SNEAKERPANEL)))
+	{
+		return invertEncore;
+	}
+
+	if (invertEncore)
+	{
 		return false;
+	}
 
 	if (ceiling)
-		return ((boolean)(sector->flags & SF_FLIPSPECIAL_CEILING));
-	return ((boolean)(sector->flags & SF_FLIPSPECIAL_FLOOR));
+	{
+		return ((boolean)(sector->flags & MSF_FLIPSPECIAL_CEILING));
+	}
+
+	return ((boolean)(sector->flags & MSF_FLIPSPECIAL_FLOOR));
 }
 
 boolean R_IsRipplePlane(sector_t *sector, ffloor_t *rover, int ceiling)
 {
-	return rover ? rover->flags & FF_RIPPLE :
-		sector->flags & (SF_RIPPLE_FLOOR << ceiling);
+	return rover ? (rover->fofflags & FOF_RIPPLE) :
+		(sector->flags & (MSF_RIPPLE_FLOOR << ceiling));
 }
 
 //
@@ -265,11 +271,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 {
 	if (floorlightlevel)
 		*floorlightlevel = sec->floorlightsec == -1 ?
-			sec->lightlevel : sectors[sec->floorlightsec].lightlevel;
+			(sec->floorlightabsolute ? sec->floorlightlevel : max(0, min(255, sec->lightlevel + sec->floorlightlevel))) : sectors[sec->floorlightsec].lightlevel;
 
 	if (ceilinglightlevel)
 		*ceilinglightlevel = sec->ceilinglightsec == -1 ?
-			sec->lightlevel : sectors[sec->ceilinglightsec].lightlevel;
+			(sec->ceilinglightabsolute ? sec->ceilinglightlevel : max(0, min(255, sec->lightlevel + sec->ceilinglightlevel))) : sectors[sec->ceilinglightsec].lightlevel;
 
 	// if (sec->midmap != -1)
 	//	mapnum = sec->midmap;
@@ -335,11 +341,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 			tempsec->lightlevel = s->lightlevel;
 
 			if (floorlightlevel)
-				*floorlightlevel = s->floorlightsec == -1 ? s->lightlevel
+				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : max(0, min(255, s->lightlevel + s->floorlightlevel)))
 					: sectors[s->floorlightsec].lightlevel;
 
 			if (ceilinglightlevel)
-				*ceilinglightlevel = s->ceilinglightsec == -1 ? s->lightlevel
+				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : max(0, min(255, s->lightlevel + s->ceilinglightlevel)))
 					: sectors[s->ceilinglightsec].lightlevel;
 		}
 		else if (heightsec != -1 && viewz >= sectors[heightsec].ceilingheight
@@ -373,12 +379,12 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 			tempsec->lightlevel = s->lightlevel;
 
 			if (floorlightlevel)
-				*floorlightlevel = s->floorlightsec == -1 ? s->lightlevel :
-			sectors[s->floorlightsec].lightlevel;
+				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : max(0, min(255, s->lightlevel + s->floorlightlevel)))
+					: sectors[s->floorlightsec].lightlevel;
 
 			if (ceilinglightlevel)
-				*ceilinglightlevel = s->ceilinglightsec == -1 ? s->lightlevel :
-			sectors[s->ceilinglightsec].lightlevel;
+				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : max(0, min(255, s->lightlevel + s->ceilinglightlevel)))
+					: sectors[s->ceilinglightsec].lightlevel;
 		}
 		sec = tempsec;
 	}
@@ -404,6 +410,10 @@ boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 		&& back->ceiling_yoffs == front->ceiling_yoffs
 		&& back->ceilingpic_angle == front->ceilingpic_angle
 		// Consider altered lighting.
+		&& back->floorlightlevel == front->floorlightlevel
+		&& back->floorlightabsolute == front->floorlightabsolute
+		&& back->ceilinglightlevel == front->ceilinglightlevel
+		&& back->ceilinglightabsolute == front->ceilinglightabsolute
 		&& back->floorlightsec == front->floorlightsec
 		&& back->ceilinglightsec == front->ceilinglightsec
 		// Consider colormaps
@@ -923,12 +933,12 @@ static void R_Subsector(size_t num)
 		}
 
 		light = R_GetPlaneLight(frontsector, floorcenterz, false);
-		if (frontsector->floorlightsec == -1)
-			floorlightlevel = *frontsector->lightlist[light].lightlevel;
+		if (frontsector->floorlightsec == -1 && !frontsector->floorlightabsolute)
+			floorlightlevel = max(0, min(255, *frontsector->lightlist[light].lightlevel + frontsector->floorlightlevel));
 		floorcolormap = *frontsector->lightlist[light].extra_colormap;
 		light = R_GetPlaneLight(frontsector, ceilingcenterz, false);
-		if (frontsector->ceilinglightsec == -1)
-			ceilinglightlevel = *frontsector->lightlist[light].lightlevel;
+		if (frontsector->ceilinglightsec == -1 && !frontsector->ceilinglightabsolute)
+			ceilinglightlevel = max(0, min(255, *frontsector->lightlist[light].lightlevel + frontsector->ceilinglightlevel));
 		ceilingcolormap = *frontsector->lightlist[light].extra_colormap;
 	}
 
@@ -942,7 +952,7 @@ static void R_Subsector(size_t num)
 			frontsector->floorheight, frontsector->floorpic, floorlightlevel,
 			frontsector->floor_xoffs, frontsector->floor_yoffs, frontsector->floorpic_angle,
 			floorcolormap, NULL, NULL, frontsector->f_slope,
-			R_NoEncore(frontsector, false),
+			R_NoEncore(frontsector, &levelflats[frontsector->floorpic], false),
 			R_IsRipplePlane(frontsector, NULL, false),
 			false
 		);
@@ -958,7 +968,7 @@ static void R_Subsector(size_t num)
 			frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
 			frontsector->ceiling_xoffs, frontsector->ceiling_yoffs, frontsector->ceilingpic_angle,
 			ceilingcolormap, NULL, NULL, frontsector->c_slope,
-			R_NoEncore(frontsector, true),
+			R_NoEncore(frontsector, &levelflats[frontsector->ceilingpic], true),
 			R_IsRipplePlane(frontsector, NULL, true),
 			true
 		);
@@ -976,7 +986,7 @@ static void R_Subsector(size_t num)
 
 		for (rover = frontsector->ffloors; rover && numffloors < MAXFFLOORS; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
 				continue;
 
 			if (frontsector->cullheight)
@@ -996,8 +1006,8 @@ static void R_Subsector(size_t num)
 			planecenterz = P_GetFFloorBottomZAt(rover, frontsector->soundorg.x, frontsector->soundorg.y);
 			if (planecenterz <= ceilingcenterz
 				&& planecenterz >= floorcenterz
-				&& ((viewz < heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
-				|| (viewz > heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+				&& ((viewz < heightcheck && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES)))
+				|| (viewz > heightcheck && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
 				light = R_GetPlaneLight(frontsector, planecenterz,
 					viewz < heightcheck);
@@ -1006,7 +1016,7 @@ static void R_Subsector(size_t num)
 					*rover->bottomheight, *rover->bottompic,
 					*frontsector->lightlist[light].lightlevel, *rover->bottomxoffs,
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
-					R_NoEncore(rover->master->frontsector, true),
+					R_NoEncore(rover->master->frontsector, &levelflats[*rover->bottompic], true),
 					R_IsRipplePlane(rover->master->frontsector, rover, true),
 					true
 				);
@@ -1031,8 +1041,8 @@ static void R_Subsector(size_t num)
 			planecenterz = P_GetFFloorTopZAt(rover, frontsector->soundorg.x, frontsector->soundorg.y);
 			if (planecenterz >= floorcenterz
 				&& planecenterz <= ceilingcenterz
-				&& ((viewz > heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
-				|| (viewz < heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+				&& ((viewz > heightcheck && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES)))
+				|| (viewz < heightcheck && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
 				light = R_GetPlaneLight(frontsector, planecenterz, viewz < heightcheck);
 
@@ -1040,7 +1050,7 @@ static void R_Subsector(size_t num)
 					*rover->topheight, *rover->toppic,
 					*frontsector->lightlist[light].lightlevel, *rover->topxoffs, *rover->topyoffs, *rover->topangle,
 					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope,
-					R_NoEncore(rover->master->frontsector, false),
+					R_NoEncore(rover->master->frontsector, &levelflats[*rover->toppic], false),
 					R_IsRipplePlane(rover->master->frontsector, rover, false),
 					false
 				);
@@ -1090,7 +1100,7 @@ static void R_Subsector(size_t num)
 					polysec->floorpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, false),
+					R_NoEncore(polysec, &levelflats[polysec->floorpic], false),
 					false, /* TODO: wet polyobjects? */
 					true
 				);
@@ -1119,7 +1129,7 @@ static void R_Subsector(size_t num)
 					(light == -1 ? frontsector->lightlevel : *frontsector->lightlist[light].lightlevel), polysec->ceiling_xoffs, polysec->ceiling_yoffs, polysec->ceilingpic_angle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
 					NULL, // will ffloors be slopable eventually?
-					R_NoEncore(polysec, true),
+					R_NoEncore(polysec, &levelflats[polysec->ceilingpic], true),
 					false, /* TODO: wet polyobjects? */
 					false
 				);
@@ -1185,11 +1195,11 @@ void R_Prep3DFloors(sector_t *sector)
 	count = 1;
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
-		if ((rover->flags & FF_EXISTS) && (!(rover->flags & FF_NOSHADE)
-			|| (rover->flags & FF_CUTLEVEL) || (rover->flags & FF_CUTSPRITES)))
+		if ((rover->fofflags & FOF_EXISTS) && (!(rover->fofflags & FOF_NOSHADE)
+			|| (rover->fofflags & FOF_CUTLEVEL) || (rover->fofflags & FOF_CUTSPRITES)))
 		{
 			count++;
-			if (rover->flags & FF_DOUBLESHADOW)
+			if (rover->fofflags & FOF_DOUBLESHADOW)
 				count++;
 		}
 	}
@@ -1220,8 +1230,8 @@ void R_Prep3DFloors(sector_t *sector)
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
 			rover->lastlight = 0;
-			if (!(rover->flags & FF_EXISTS) || (rover->flags & FF_NOSHADE
-				&& !(rover->flags & FF_CUTLEVEL) && !(rover->flags & FF_CUTSPRITES)))
+			if (!(rover->fofflags & FOF_EXISTS) || (rover->fofflags & FOF_NOSHADE
+				&& !(rover->fofflags & FOF_CUTLEVEL) && !(rover->fofflags & FOF_CUTSPRITES)))
 			continue;
 
 			heighttest = P_GetFFloorTopZAt(rover, sector->soundorg.x, sector->soundorg.y);
@@ -1233,7 +1243,7 @@ void R_Prep3DFloors(sector_t *sector)
 				bestslope = *rover->t_slope;
 				continue;
 			}
-			if (rover->flags & FF_DOUBLESHADOW) {
+			if (rover->fofflags & FOF_DOUBLESHADOW) {
 				heighttest = P_GetFFloorBottomZAt(rover, sector->soundorg.x, sector->soundorg.y);
 
 				if (heighttest > bestheight
@@ -1254,16 +1264,16 @@ void R_Prep3DFloors(sector_t *sector)
 
 		sector->lightlist[i].height = maxheight = bestheight;
 		sector->lightlist[i].caster = best;
-		sector->lightlist[i].flags = best->flags;
+		sector->lightlist[i].flags = best->fofflags;
 		sector->lightlist[i].slope = bestslope;
 		sec = &sectors[best->secnum];
 
-		if (best->flags & FF_NOSHADE)
+		if (best->fofflags & FOF_NOSHADE)
 		{
 			sector->lightlist[i].lightlevel = sector->lightlist[i-1].lightlevel;
 			sector->lightlist[i].extra_colormap = sector->lightlist[i-1].extra_colormap;
 		}
-		else if (best->flags & FF_COLORMAPONLY)
+		else if (best->fofflags & FOF_COLORMAPONLY)
 		{
 			sector->lightlist[i].lightlevel = sector->lightlist[i-1].lightlevel;
 			sector->lightlist[i].extra_colormap = &sec->extra_colormap;
@@ -1274,7 +1284,7 @@ void R_Prep3DFloors(sector_t *sector)
 			sector->lightlist[i].extra_colormap = &sec->extra_colormap;
 		}
 
-		if (best->flags & FF_DOUBLESHADOW)
+		if (best->fofflags & FOF_DOUBLESHADOW)
 		{
 			heighttest = P_GetFFloorBottomZAt(best, sector->soundorg.x, sector->soundorg.y);
 			if (bestheight == heighttest) ///TODO: do this in a more efficient way -Red

@@ -574,6 +574,7 @@ static int libd_drawStretched(lua_State *L)
 }
 
 // KART: draw patch on minimap from x, y coordinates on the map
+// Sal: Let's please just merge the relevant info into the actual function, and have Lua call that...
 static int libd_drawOnMinimap(lua_State *L)
 {
 	fixed_t x, y, scale;	// coordinates of the object
@@ -583,7 +584,6 @@ static int libd_drawOnMinimap(lua_State *L)
 	huddrawlist_h list;
 
 	// variables used to replicate k_kart's mmap drawer:
-	INT32 lumpnum;
 	patch_t *AutomapPic;
 	INT32 mx, my;
 	INT32 splitflags, minimaptrans;
@@ -641,7 +641,7 @@ static int libd_drawOnMinimap(lua_State *L)
 
 		if (!lt_exitticker)
 			return 0;
-		minimaptrans = cv_kartminimap.value;
+		minimaptrans = 4;
 		if (lt_exitticker < length)
 			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
 		if (!minimaptrans)
@@ -669,12 +669,12 @@ static int libd_drawOnMinimap(lua_State *L)
 	if (stplyr != &players[displayplayers[0]])
 		return 0;
 
-	lumpnum = W_CheckNumForName(va("%sR", G_BuildMapName(gamemap)));
+	AutomapPic = mapheaderinfo[gamemap-1]->minimapPic;
 
-	if (lumpnum != -1)
-		AutomapPic = W_CachePatchName(va("%sR", G_BuildMapName(gamemap)), PU_HUDGFX);
-	else
+	if (!AutomapPic)
+	{
 		return 0; // no pic, just get outta here
+	}
 
 	mx = MM_X - (AutomapPic->width/2);
 	my = MM_Y - (AutomapPic->height/2);

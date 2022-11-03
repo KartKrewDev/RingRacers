@@ -99,19 +99,24 @@ extern mapthing_t *mapthings;
 extern UINT16 p_adding_file;
 
 void P_SetupLevelSky(const char *skytexname, boolean global);
-#ifdef SCANTHINGS
-void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
-#endif
 void P_RespawnThings(void);
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
 #ifdef HWRENDER
 void HWR_LoadLevel(void);
 #endif
 boolean P_AddWadFile(const char *wadfilename);
+
+#define MAPRET_ADDED (1)
+#define MAPRET_CURRENTREPLACED (1<<1)
+UINT8 P_InitMapData(INT32 numexistingmapheaders);
+extern lumpnum_t wadnamelump;
+extern INT16 wadnamemap;
+#define WADNAMECHECK(name) (!strncmp(name, "WADNAME", 7))
+
 boolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
-void P_WriteThings(void);
+//void P_WriteThings(void);
 void P_UpdateSegLightOffset(seg_t *li);
 boolean P_ApplyLightOffset(UINT8 baselightnum);
 boolean P_ApplyLightOffsetFine(UINT8 baselightlevel);
@@ -123,10 +128,5 @@ void P_DeleteFlickies(INT16 i);
 
 // Needed for NiGHTS
 void P_ReloadRings(void);
-void P_DeleteGrades(INT16 i);
-void P_AddGradesForMare(INT16 i, UINT8 mare, char *gtext);
-UINT8 P_GetGrade(UINT32 pscore, INT16 map, UINT8 mare);
-UINT8 P_HasGrades(INT16 map, UINT8 mare);
-UINT32 P_GetScoreForGrade(INT16 map, UINT8 mare, UINT8 grade);
 
 #endif

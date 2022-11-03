@@ -36,6 +36,7 @@
 
 // SRB2Kart
 #include "k_hud.h"
+#include "i_time.h"
 
 // Each screen is [vid.width*vid.height];
 UINT8 *screens[5];
@@ -404,7 +405,7 @@ const char *GetPalette(void)
 	return "PLAYPAL";
 }
 
-static void LoadMapPalette(void)
+void V_ReloadPalette(void)
 {
 	LoadPalette(GetPalette());
 }
@@ -416,7 +417,7 @@ static void LoadMapPalette(void)
 void V_SetPalette(INT32 palettenum)
 {
 	if (!pLocalPalette)
-		LoadMapPalette();
+		V_ReloadPalette();
 
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
@@ -449,7 +450,7 @@ void V_SetPaletteLump(const char *pal)
 static void CV_palette_OnChange(void)
 {
 	// reload palette
-	LoadMapPalette();
+	V_ReloadPalette();
 	V_SetPalette(0);
 }
 
@@ -1236,19 +1237,19 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 	{
 		case 4194304: // 2048x2048 lump
 			lflatsize = 2048;
-			flatshift = 10;
+			flatshift = 11;
 			break;
 		case 1048576: // 1024x1024 lump
 			lflatsize = 1024;
-			flatshift = 9;
+			flatshift = 10;
 			break;
 		case 262144:// 512x512 lump
 			lflatsize = 512;
-			flatshift = 8;
+			flatshift = 9;
 			break;
 		case 65536: // 256x256 lump
 			lflatsize = 256;
-			flatshift = 7;
+			flatshift = 8;
 			break;
 		case 16384: // 128x128 lump
 			lflatsize = 128;
@@ -1257,6 +1258,14 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 		case 1024: // 32x32 lump
 			lflatsize = 32;
 			flatshift = 5;
+			break;
+		case 256: // 16x16 lump
+			lflatsize = 16;
+			flatshift = 4;
+			break;
+		case 64: // 8x8 lump
+			lflatsize = 8;
+			flatshift = 3;
 			break;
 		default: // 64x64 lump
 			lflatsize = 64;
@@ -1626,6 +1635,14 @@ UINT8 *V_GetStringColormap(INT32 colorflags)
 		return NULL;
 	return (purplemap+((colorflags-1)<<8));
 #endif
+}
+
+INT32 V_DanceYOffset(INT32 counter)
+{
+	const INT32 duration = 16;
+	const INT32 step = (I_GetTime() + counter) % duration;
+
+	return abs(step - (duration / 2)) - (duration / 4);
 }
 
 // Writes a single character (draw WHITE if bit 7 set)
@@ -2036,9 +2053,13 @@ void V_DrawStringScaled(
 	boolean uppercase;
 	boolean notcolored;
 
+	boolean   dance;
+	boolean nodanceoverride;
+	INT32     dancecounter;
+
 	fixed_t cx, cy;
 
-	fixed_t cxoff;
+	fixed_t cxoff, cyoff;
 	fixed_t cw;
 
 	INT32     spacing;
@@ -2048,6 +2069,14 @@ void V_DrawStringScaled(
 
 	uppercase  = !( flags & V_ALLOWLOWERCASE );
 	flags	&= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	dance           = (flags & V_STRINGDANCE) != 0;
+	nodanceoverride = !dance;
+	dancecounter    = 0;
+
+	/* Some of these flags get overloaded in this function so
+	   don't pass them on. */
+	flags &= ~(V_PARAMMASK);
 
 	if (colormap == NULL)
 	{
@@ -2239,8 +2268,9 @@ void V_DrawStringScaled(
 
 	cx = x;
 	cy = y;
+	cyoff = 0;
 
-	for (; ( c = *s ); ++s)
+	for (; ( c = *s ); ++s, ++dancecounter)
 	{
 		switch (c)
 		{
@@ -2259,18 +2289,29 @@ void V_DrawStringScaled(
 								( ( c & 0x7f )<< V_CHARCOLORSHIFT )&
 								V_CHARCOLORMASK);
 					}
+					if (nodanceoverride)
+					{
+						dance = false;
+					}
+				}
+				else if (c == V_STRINGDANCE)
+				{
+					dance = true;
 				}
 				else if (cx < right)
 				{
 					if (uppercase)
 						c = toupper(c);
 
+					if (dance)
+						cyoff = V_DanceYOffset(dancecounter) * FRACUNIT;
+
 					c -= font->start;
 					if (c >= 0 && c < font->size && font->font[c])
 					{
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*dim_fn)(scale, chw, hchw, dupx, &cw);
-						V_DrawFixedPatch(cx + cxoff, cy, scale,
+						V_DrawFixedPatch(cx + cxoff, cy + cyoff, scale,
 								flags, font->font[c], colormap);
 						cx += cw;
 					}
@@ -2560,6 +2601,30 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 	V_DrawThinStringAtFixed(x, y, option, string);
 }
 
+// Draws a number using the PING font thingy.
+// TODO: Merge number drawing functions into one with "font name" selection.
+
+INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
+{
+	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
+
+	if (flags & V_NOSCALESTART)
+		w *= vid.dupx;
+
+	if (num < 0)
+		num = -num;
+
+	// draw the number
+	do
+	{
+		x -= (w-1);	// Oni wanted their outline to intersect.
+		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
+		num /= 10;
+	} while (num);
+
+	return x;
+}
+
 void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
 {
 	x -= V_KartStringWidth(string, option)/2;
@@ -2681,28 +2746,6 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num)
 		V_DrawScaledPatch(x, y, flags, fontv[PROFNUM_FONT].font[num % 10]);
 		num /= 10;
 	} while (--digits);
-}
-
-// Draws a number using the PING font thingy.
-// TODO: Merge number drawing functions into one with "font name" selection.
-
-void V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
-{
-	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
-
-	if (flags & V_NOSCALESTART)
-		w *= vid.dupx;
-
-	if (num < 0)
-		num = -num;
-
-	// draw the number
-	do
-	{
-		x -= (w-1);	// Oni wanted their outline to intersect.
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
-		num /= 10;
-	} while (num);
 }
 
 // Find max height of the string
@@ -2969,8 +3012,6 @@ void V_Init(void)
 	INT32 i;
 	UINT8 *base = vid.buffer;
 	const INT32 screensize = vid.rowbytes * vid.height;
-
-	LoadMapPalette();
 
 	for (i = 0; i < NUMSCREENS; i++)
 		screens[i] = NULL;

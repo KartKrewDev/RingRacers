@@ -72,8 +72,6 @@ typedef off_t off64_t;
 #else
 #define PRIdS "u"
 #endif
-#elif defined (DJGPP)
-#define PRIdS "u"
 #else
 #define PRIdS "zu"
 #endif
@@ -181,8 +179,8 @@ boolean takescreenshot = false; // Take a screenshot this tic
 
 moviemode_t moviemode = MM_OFF;
 
-char joinedIPlist[NUMLOGIP][2][255];
-char joinedIP[255];
+char joinedIPlist[NUMLOGIP][2][MAX_LOGIP];
+char joinedIP[MAX_LOGIP];
 
 // This initializes the above array to have NULL evrywhere it should.
 void M_InitJoinedIPArray(void)
@@ -197,58 +195,30 @@ void M_InitJoinedIPArray(void)
 // This adds an entry to the above array
 void M_AddToJoinedIPs(char *address, char *servname)
 {
-
 	UINT8 i = 0;
-	UINT8 dupeindex = 0;
 
 	// Check for dupes...
-	for (; i < NUMLOGIP && !dupeindex; i++)
+	for (i = 0; i < NUMLOGIP-1; i++) // intentionally not < NUMLOGIP
 	{
-		// I don't care about the server name (this is broken anyway...) but definitely check the addresses
+		// Check the addresses
 		if (strcmp(joinedIPlist[i][0], address) == 0)
-			dupeindex = i;
+		{
+			break;
+		}
 	}
 
 	CONS_Printf("Adding %s (%s) to list of manually joined IPs\n", servname, address);
 
 	// Start by moving every IP up 1 slot (dropping the last IP in the table)
-	// If we found duplicates, start here instead and pull the rest up.
-	i = dupeindex ? dupeindex : NUMLOGIP;
 	for (; i; i--)
 	{
-		strcpy(joinedIPlist[i][0], joinedIPlist[i-1][0]);
-		strcpy(joinedIPlist[i][1], joinedIPlist[i-1][1]);
+		strlcpy(joinedIPlist[i][0], joinedIPlist[i-1][0], MAX_LOGIP);
+		strlcpy(joinedIPlist[i][1], joinedIPlist[i-1][1], MAX_LOGIP);
 	}
 
 	// and add the new IP at the start of the table!
-	strcpy(joinedIPlist[0][0], address);
-	strcpy(joinedIPlist[0][1], servname);
-}
-
-/** Returns the map number for a map identified by the last two characters in
-  * its name.
-  *
-  * \param first  The first character after MAP.
-  * \param second The second character after MAP.
-  * \return The map number, or 0 if no map corresponds to these characters.
-  * \sa G_BuildMapName
-  */
-INT32 M_MapNumber(char first, char second)
-{
-	if (isdigit(first))
-	{
-		if (isdigit(second))
-			return ((INT32)first - '0') * 10 + ((INT32)second - '0');
-		return 0;
-	}
-
-	if (!isalpha(first))
-		return 0;
-	if (!isalnum(second))
-		return 0;
-
-	return 100 + ((INT32)tolower(first) - 'a') * 36 + (isdigit(second) ? ((INT32)second - '0') :
-		((INT32)tolower(second) - 'a') + 10);
+	strlcpy(joinedIPlist[0][0], address, MAX_LOGIP);
+	strlcpy(joinedIPlist[0][1], servname, MAX_LOGIP);
 }
 
 // ==========================================================================
@@ -501,34 +471,24 @@ void M_SaveJoinedIPs(void)
 {
 	FILE *f = NULL;
 	UINT8 i;
-	char *filepath;
+	const char *filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
 
-	if (!strlen(joinedIPlist[0][0]))
+	if (!*joinedIPlist[0][0])
 		return;	// Don't bother, there's nothing to save.
-
-	// append srb2home to beginning of filename
-	// but check if srb2home isn't already there, first
-	if (!strstr(IPLOGFILE, srb2home))
-		filepath = va(pandf,srb2home, IPLOGFILE);
-	else
-		filepath = Z_StrDup(IPLOGFILE);
 
 	f = fopen(filepath, "w");
 
-	if (f == NULL)
-		return;	// Uh I guess you don't have disk space?????????
-
-	for (i=0; i < NUMLOGIP; i++)
+	if (!f)
 	{
-		if (strlen(joinedIPlist[i][0]))
-		{
-			char savestring[MAXSTRINGLENGTH];
-			strcpy(savestring, joinedIPlist[i][0]);
-			strcat(savestring, IPLOGFILESEP);
-			strcat(savestring, joinedIPlist[i][1]);
+		CONS_Alert(CONS_WARNING, "Could not save recent IP list into %s\n", IPLOGFILE);
+		return;
+	}
 
-			fputs(savestring, f);
-			fputs("\n", f);	// Because this won't do it automatically now will it...
+	for (i = 0; i < NUMLOGIP; i++)
+	{
+		if (*joinedIPlist[i][0])
+		{
+			fprintf(f, "%s%s%s\n", joinedIPlist[i][0], IPLOGFILESEP, joinedIPlist[i][1]);
 		}
 	}
 
@@ -543,7 +503,7 @@ void M_LoadJoinedIPs(void)
 	UINT8 i = 0;
 	char *filepath;
 	char *s;
-	char content[255];	// 255 is more than long enough!
+	char buffer[2*(MAX_LOGIP+1)];
 
 	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
 	f = fopen(filepath, "r");
@@ -551,32 +511,33 @@ void M_LoadJoinedIPs(void)
 	if (f == NULL)
 		return;	// File doesn't exist? sure, just do nothing then.
 
-	while (fgets(content, 255, f) && i < NUMLOGIP && content[0] && content[0] != '\n')	// Don't let us write more than we can chew!
+	for (i = 0; fgets(buffer, (int)sizeof(buffer), f); i++)	// Don't let us write more than we can chew!
 	{
+		if (i >= NUMLOGIP)
+			break;
 
-		// Now we have garbage under the form of "address;string"
-		// Now you might ask yourself, but what do we do if the player fucked with their file and now there's a bunch of garbage?
-		// ...Well that's not my problem lol.
+		if (!*buffer || *buffer == '\n')
+			break;
 
-		s = strtok(content, IPLOGFILESEP);	// We got the address
-		strcpy(joinedIPlist[i][0], s);
+		s = strtok(buffer, IPLOGFILESEP);	// We got the address
+		strlcpy(joinedIPlist[i][0], s, MAX_LOGIP);
 
 		s = strtok(NULL, IPLOGFILESEP);	// Let's get rid of this awful \n while we're here!
 
 		if (s)
 		{
+			UINT16 j = 1;
 			//strcpy(joinedIPlist[i][1], s); -- get rid of \n too...
 			char *c = joinedIPlist[i][1];
-			while (*s && *s != '\n')
+			while (*s && *s != '\n' && j < MAX_LOGIP)
 			{
 				*c = *s;
 				s++;
 				c++;
+				j++;
 			}
 			*c = '\0';
 		}
-
-		i++;
 	}
 	fclose(f);	// We're done here
 }
@@ -937,8 +898,6 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char interfacetxt[] =
 #ifdef HAVE_SDL
 	 "SDL";
-#elif defined (_WINDOWS)
-	 "DirectX";
 #else
 	 "Unknown";
 #endif
@@ -963,9 +922,11 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 			break;
 	}
 
+#if 0
 	if (gamestate == GS_LEVEL)
 		snprintf(maptext, 8, "%s", G_BuildMapName(gamemap));
 	else
+#endif
 		snprintf(maptext, 8, "Unknown");
 
 	if (gamestate == GS_LEVEL && mapheaderinfo[gamemap-1]->lvlttl[0] != '\0')
@@ -2120,11 +2081,168 @@ UINT32 M_GetTokenPos(void)
 	return endPos;
 }
 
-/** Sets the current token's position.
- */
-void M_SetTokenPos(UINT32 newPos)
+#define NUMTOKENS 2
+static const char *tokenizerInput = NULL;
+static UINT32 tokenCapacity[NUMTOKENS] = {0};
+static char *tokenizerToken[NUMTOKENS] = {NULL};
+static UINT32 tokenizerStartPos = 0;
+static UINT32 tokenizerEndPos = 0;
+static UINT32 tokenizerInputLength = 0;
+static UINT8 tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
+
+void M_TokenizerOpen(const char *inputString)
 {
-	endPos = newPos;
+	size_t i;
+
+	tokenizerInput = inputString;
+	for (i = 0; i < NUMTOKENS; i++)
+	{
+		tokenCapacity[i] = 1024;
+		tokenizerToken[i] = (char*)Z_Malloc(tokenCapacity[i] * sizeof(char), PU_STATIC, NULL);
+	}
+	tokenizerInputLength = strlen(tokenizerInput);
+}
+
+void M_TokenizerClose(void)
+{
+	size_t i;
+
+	tokenizerInput = NULL;
+	for (i = 0; i < NUMTOKENS; i++)
+		Z_Free(tokenizerToken[i]);
+	tokenizerStartPos = 0;
+	tokenizerEndPos = 0;
+	tokenizerInComment = 0;
+}
+
+static void M_DetectComment(UINT32 *pos)
+{
+	if (tokenizerInComment)
+		return;
+
+	if (*pos >= tokenizerInputLength - 1)
+		return;
+
+	if (tokenizerInput[*pos] != '/')
+		return;
+
+	//Single-line comment start
+	if (tokenizerInput[*pos + 1] == '/')
+		tokenizerInComment = 1;
+	//Multi-line comment start
+	else if (tokenizerInput[*pos + 1] == '*')
+		tokenizerInComment = 2;
+}
+
+static void M_ReadTokenString(UINT32 i)
+{
+	UINT32 tokenLength = tokenizerEndPos - tokenizerStartPos;
+	if (tokenLength + 1 > tokenCapacity[i])
+	{
+		tokenCapacity[i] = tokenLength + 1;
+		// Assign the memory. Don't forget an extra byte for the end of the string!
+		tokenizerToken[i] = (char *)Z_Malloc(tokenCapacity[i] * sizeof(char), PU_STATIC, NULL);
+	}
+	// Copy the string.
+	M_Memcpy(tokenizerToken[i], tokenizerInput + tokenizerStartPos, (size_t)tokenLength);
+	// Make the final character NUL.
+	tokenizerToken[i][tokenLength] = '\0';
+}
+
+const char *M_TokenizerRead(UINT32 i)
+{
+	if (!tokenizerInput)
+		return NULL;
+
+	tokenizerStartPos = tokenizerEndPos;
+
+	// Try to detect comments now, in case we're pointing right at one
+	M_DetectComment(&tokenizerStartPos);
+
+	// Find the first non-whitespace char, or else the end of the string trying
+	while ((tokenizerInput[tokenizerStartPos] == ' '
+			|| tokenizerInput[tokenizerStartPos] == '\t'
+			|| tokenizerInput[tokenizerStartPos] == '\r'
+			|| tokenizerInput[tokenizerStartPos] == '\n'
+			|| tokenizerInput[tokenizerStartPos] == '\0'
+			|| tokenizerInput[tokenizerStartPos] == '=' || tokenizerInput[tokenizerStartPos] == ';' // UDMF TEXTMAP.
+			|| tokenizerInComment != 0)
+			&& tokenizerStartPos < tokenizerInputLength)
+	{
+		// Try to detect comment endings now
+		if (tokenizerInComment == 1	&& tokenizerInput[tokenizerStartPos] == '\n')
+			tokenizerInComment = 0; // End of line for a single-line comment
+		else if (tokenizerInComment == 2
+			&& tokenizerStartPos < tokenizerInputLength - 1
+			&& tokenizerInput[tokenizerStartPos] == '*'
+			&& tokenizerInput[tokenizerStartPos+1] == '/')
+		{
+			// End of multi-line comment
+			tokenizerInComment = 0;
+			tokenizerStartPos++; // Make damn well sure we're out of the comment ending at the end of it all
+		}
+
+		tokenizerStartPos++;
+		M_DetectComment(&tokenizerStartPos);
+	}
+
+	// If the end of the string is reached, no token is to be read
+	if (tokenizerStartPos == tokenizerInputLength) {
+		tokenizerEndPos = tokenizerInputLength;
+		return NULL;
+	}
+	// Else, if it's one of these three symbols, capture only this one character
+	else if (tokenizerInput[tokenizerStartPos] == ','
+			|| tokenizerInput[tokenizerStartPos] == '{'
+			|| tokenizerInput[tokenizerStartPos] == '}')
+	{
+		tokenizerEndPos = tokenizerStartPos + 1;
+		tokenizerToken[i][0] = tokenizerInput[tokenizerStartPos];
+		tokenizerToken[i][1] = '\0';
+		return tokenizerToken[i];
+	}
+	// Return entire string within quotes, except without the quotes.
+	else if (tokenizerInput[tokenizerStartPos] == '"')
+	{
+		tokenizerEndPos = ++tokenizerStartPos;
+		while (tokenizerInput[tokenizerEndPos] != '"' && tokenizerEndPos < tokenizerInputLength)
+			tokenizerEndPos++;
+
+		M_ReadTokenString(i);
+		tokenizerEndPos++;
+		return tokenizerToken[i];
+	}
+
+	// Now find the end of the token. This includes several additional characters that are okay to capture as one character, but not trailing at the end of another token.
+	tokenizerEndPos = tokenizerStartPos + 1;
+	while ((tokenizerInput[tokenizerEndPos] != ' '
+			&& tokenizerInput[tokenizerEndPos] != '\t'
+			&& tokenizerInput[tokenizerEndPos] != '\r'
+			&& tokenizerInput[tokenizerEndPos] != '\n'
+			&& tokenizerInput[tokenizerEndPos] != ','
+			&& tokenizerInput[tokenizerEndPos] != '{'
+			&& tokenizerInput[tokenizerEndPos] != '}'
+			&& tokenizerInput[tokenizerEndPos] != '=' && tokenizerInput[tokenizerEndPos] != ';' // UDMF TEXTMAP.
+			&& tokenizerInComment == 0)
+			&& tokenizerEndPos < tokenizerInputLength)
+	{
+		tokenizerEndPos++;
+		// Try to detect comment starts now; if it's in a comment, we don't want it in this token
+		M_DetectComment(&tokenizerEndPos);
+	}
+
+	M_ReadTokenString(i);
+	return tokenizerToken[i];
+}
+
+UINT32 M_TokenizerGetEndPos(void)
+{
+	return tokenizerEndPos;
+}
+
+void M_TokenizerSetEndPos(UINT32 newPos)
+{
+	tokenizerEndPos = newPos;
 }
 
 /** Count bits in a number.
