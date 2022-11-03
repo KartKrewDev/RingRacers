@@ -7611,7 +7611,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_MAGICIANBOX:
 	{
-		fixed_t destx, desty, fakeangle;
+		fixed_t destx, desty;
 		fixed_t zoff = 0;
 
 		// EV1: rotation rate
@@ -7682,10 +7682,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->state == &states[S_MAGICIANBOX]) // sides
 		{
-			fakeangle = (FixedInt(AngleFixed(mobj->angle)) + 90)%360; // What
-
-			destx += FixedMul(mobj->radius*2, FINECOSINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
-			desty += FixedMul(mobj->radius*2, FINESINE(FixedAngle(fakeangle*FRACUNIT) >> ANGLETOFINESHIFT));
+			destx += FixedMul(mobj->radius*2, FINECOSINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+			desty += FixedMul(mobj->radius*2, FINESINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
 		}
 		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
 		{
