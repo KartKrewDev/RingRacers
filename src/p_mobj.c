@@ -13327,6 +13327,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		mobj->reactiontime++;
 		break;
 	}
+	case MT_LOOPCENTERPOINT:
+	{
+		Obj_InitLoopCenter(mobj);
+		break;
+	}
 	default:
 		break;
 	}

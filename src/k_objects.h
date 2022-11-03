@@ -92,6 +92,10 @@ boolean Obj_ItemSpotIsAvailable(const mobj_t *spot);
 void Obj_ItemSpotAssignMonitor(mobj_t *spot, mobj_t *monitor);
 void Obj_ItemSpotUpdate(mobj_t *spot);
 
+/* Loops */
+void Obj_InitLoopCenter(mobj_t *center);
+void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
