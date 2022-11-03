@@ -46,6 +46,7 @@ typedef enum
 
 	PR_PLAYERSTARTS, // Player starts
 	PR_VOICES, // Player voice sounds
+	PR_RANDOMSKIN, // Random skin select from Heavy Magician(?)
 
 	PR_RULESCRAMBLE, // Rule scrambing events
 
@@ -61,8 +62,6 @@ typedef enum
 	PR_SPARKLE, // Endsign and/or Emerald
 
 	PR_MOVINGTARGET, // Randomised moving targets
-
-	PR_RANDOMSKIN, // Random skin select from Heavy Magician(?)
 
 	PRNUMCLASS
 } pr_class_t;
