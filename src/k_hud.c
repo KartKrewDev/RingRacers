@@ -1791,8 +1791,8 @@ static boolean K_drawKartPositionFaces(void)
 			&& !P_MobjWasRemoved(players[rankplayer[i]].mo)
 			&& !(((skin_t*)players[rankplayer[i]].mo->skin)->flags & SF_IRONMAN) )
 		{
-			flipflag = V_FLIP;
-			xoff = 16;
+			flipflag = V_FLIP|V_VFLIP; // blonic flip
+			xoff = yoff = 16;
 		} else 
 		{
 			flipflag = 0;

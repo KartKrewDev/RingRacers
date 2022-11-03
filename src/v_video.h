@@ -81,11 +81,14 @@ void V_CubeApply(RGBA_t *input);
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
 #define V_GetMasterColor(color) (pMasterPalette[color&0xFF])
 
-// Bottom 8 bits are used for parameter (screen or character)
+// Bottom 8 bits are used for parameter (character)
 #define V_PARAMMASK          0x000000FF
 
-// strings/characters only
-#define V_STRINGDANCE        0x00000002
+// Bottom bit is used for screen (patches)
+#define V_SCREENMASK          0x0000000F
+
+#define V_STRINGDANCE        0x00000002 // (strings/characters only) funny undertale
+#define V_VFLIP              0x00000010 // (patches only) Vertical flip
 
 // flags hacked in scrn (not supported by all functions (see src))
 // patch scaling uses bits 9 and 10
