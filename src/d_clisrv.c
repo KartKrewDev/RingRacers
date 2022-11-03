@@ -3937,7 +3937,7 @@ static void HandleConnect(SINT8 node)
 	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 connectedplayers = 0;
 
-	for (UINT8 i = dedicated ? 1 : 0; i < MAXPLAYERS; i++)
+	for (i = dedicated ? 1 : 0; i < MAXPLAYERS; i++)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
 			connectedplayers++;
 
