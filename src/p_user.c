@@ -4169,12 +4169,13 @@ void P_PlayerThink(player_t *player)
 	{
 		player->stairjank--;
 	}
+
 	// Random skin / "ironman"
-	if ((!P_MobjWasRemoved(player->mo)) & (skins[player->skin].flags & SF_IRONMAN)) // we are Heavy Magician with a mobj
+	if ((!P_MobjWasRemoved(player->mo)) && (skins[player->skin].flags & SF_IRONMAN)) // we are Heavy Magician with a mobj
 	{
 		if (((skin_t *)player->mo->skin)->flags & SF_IRONMAN) // no fakeskin yet
 		{
-			if (leveltime >= introtime && !player->exiting)
+			if (leveltime >= starttime && !player->exiting)
 			{
 				if (player->fakeskin != MAXSKINS)
 				{
