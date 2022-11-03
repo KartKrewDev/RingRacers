@@ -24,6 +24,7 @@
 #include "lua_hook.h"
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
+#include "i_video.h" // rendermode
 #include "r_main.h"
 #include "r_fps.h"
 
