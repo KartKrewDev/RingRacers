@@ -999,6 +999,17 @@ static void P_NetUnArchiveTubeWaypoints(void)
 #define SD_TAGLIST   0x01
 #define SD_COLORMAP  0x02
 #define SD_CRUMBLESTATE 0x04
+#define SD_FLOORLIGHT 0x08
+#define SD_CEILLIGHT 0x10
+#define SD_FLAG      0x20
+#define SD_SPECIALFLAG 0x40
+#define SD_DIFF4     0x80
+
+//diff4 flags
+#define SD_DAMAGETYPE 0x01
+#define SD_TRIGGERTAG 0x02
+#define SD_TRIGGERER 0x04
+#define SD_GRAVITY   0x08
 
 #define LD_FLAG     0x01
 #define LD_SPECIAL  0x02
@@ -1053,7 +1064,7 @@ static boolean CheckFFloorDiff(const sector_t *ss)
 
 	for (rover = ss->ffloors; rover; rover = rover->next)
 	{
-		if (rover->flags != rover->spawnflags
+		if (rover->fofflags != rover->spawnflags
 		|| rover->alpha != rover->spawnalpha)
 			{
 				return true; // we found an FOF that changed!
@@ -1073,7 +1084,7 @@ static void ArchiveFFloors(const sector_t *ss)
 	for (rover = ss->ffloors; rover; rover = rover->next)
 	{
 		fflr_diff = 0; // reset diff flags
-		if (rover->flags != rover->spawnflags)
+		if (rover->fofflags != rover->spawnflags)
 			fflr_diff |= FD_FLAGS;
 		if (rover->alpha != rover->spawnalpha)
 			fflr_diff |= FD_ALPHA;
@@ -1083,7 +1094,7 @@ static void ArchiveFFloors(const sector_t *ss)
 			WRITEUINT16(save_p, j); // save ffloor "number"
 			WRITEUINT8(save_p, fflr_diff);
 			if (fflr_diff & FD_FLAGS)
-				WRITEUINT32(save_p, rover->flags);
+				WRITEUINT32(save_p, rover->fofflags);
 			if (fflr_diff & FD_ALPHA)
 				WRITEINT16(save_p, rover->alpha);
 		}
@@ -1121,7 +1132,7 @@ static void UnArchiveFFloors(const sector_t *ss)
 		fflr_diff = READUINT8(save_p);
 
 		if (fflr_diff & FD_FLAGS)
-			rover->flags = READUINT32(save_p);
+			rover->fofflags = READUINT32(save_p);
 		if (fflr_diff & FD_ALPHA)
 			rover->alpha = READINT16(save_p);
 
@@ -1137,11 +1148,11 @@ static void ArchiveSectors(void)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3;
+	UINT8 diff, diff2, diff3, diff4;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
-		diff = diff2 = diff3 = 0;
+		diff = diff2 = diff3 = diff4 = 0;
 		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != spawnss->ceilingheight)
@@ -1180,8 +1191,28 @@ static void ArchiveSectors(void)
 		if (ss->crumblestate)
 			diff3 |= SD_CRUMBLESTATE;
 
+		if (ss->floorlightlevel != spawnss->floorlightlevel || ss->floorlightabsolute != spawnss->floorlightabsolute)
+			diff3 |= SD_FLOORLIGHT;
+		if (ss->ceilinglightlevel != spawnss->ceilinglightlevel || ss->ceilinglightabsolute != spawnss->ceilinglightabsolute)
+			diff3 |= SD_CEILLIGHT;
+		if (ss->flags != spawnss->flags)
+			diff3 |= SD_FLAG;
+		if (ss->specialflags != spawnss->specialflags)
+			diff3 |= SD_SPECIALFLAG;
+		if (ss->damagetype != spawnss->damagetype)
+			diff4 |= SD_DAMAGETYPE;
+		if (ss->triggertag != spawnss->triggertag)
+			diff4 |= SD_TRIGGERTAG;
+		if (ss->triggerer != spawnss->triggerer)
+			diff4 |= SD_TRIGGERER;
+		if (ss->gravity != spawnss->gravity)
+			diff4 |= SD_GRAVITY;
+
 		if (ss->ffloors && CheckFFloorDiff(ss))
 			diff |= SD_FFLOORS;
+
+		if (diff4)
+			diff3 |= SD_DIFF4;
 
 		if (diff3)
 			diff2 |= SD_DIFF3;
@@ -1197,6 +1228,8 @@ static void ArchiveSectors(void)
 				WRITEUINT8(save_p, diff2);
 			if (diff2 & SD_DIFF3)
 				WRITEUINT8(save_p, diff3);
+			if (diff3 & SD_DIFF4)
+				WRITEUINT8(save_p, diff4);
 			if (diff & SD_FLOORHT)
 				WRITEFIXED(save_p, ss->floorheight);
 			if (diff & SD_CEILHT)
@@ -1233,6 +1266,28 @@ static void ArchiveSectors(void)
 					// returns existing index if already added, or appends to net_colormaps and returns new index
 			if (diff3 & SD_CRUMBLESTATE)
 				WRITEINT32(save_p, ss->crumblestate);
+			if (diff3 & SD_FLOORLIGHT)
+			{
+				WRITEINT16(save_p, ss->floorlightlevel);
+				WRITEUINT8(save_p, ss->floorlightabsolute);
+			}
+			if (diff3 & SD_CEILLIGHT)
+			{
+				WRITEINT16(save_p, ss->ceilinglightlevel);
+				WRITEUINT8(save_p, ss->ceilinglightabsolute);
+			}
+			if (diff3 & SD_FLAG)
+				WRITEUINT32(save_p, ss->flags);
+			if (diff3 & SD_SPECIALFLAG)
+				WRITEUINT32(save_p, ss->specialflags);
+			if (diff4 & SD_DAMAGETYPE)
+				WRITEUINT8(save_p, ss->damagetype);
+			if (diff4 & SD_TRIGGERTAG)
+				WRITEINT16(save_p, ss->triggertag);
+			if (diff4 & SD_TRIGGERER)
+				WRITEUINT8(save_p, ss->triggerer);
+			if (diff4 & SD_GRAVITY)
+				WRITEFIXED(save_p, ss->gravity);
 			if (diff & SD_FFLOORS)
 				ArchiveFFloors(ss);
 		}
@@ -1244,7 +1299,7 @@ static void ArchiveSectors(void)
 static void UnArchiveSectors(void)
 {
 	UINT16 i, j;
-	UINT8 diff, diff2, diff3;
+	UINT8 diff, diff2, diff3, diff4;
 	for (;;)
 	{
 		i = READUINT16(save_p);
@@ -1264,6 +1319,10 @@ static void UnArchiveSectors(void)
 			diff3 = READUINT8(save_p);
 		else
 			diff3 = 0;
+		if (diff3 & SD_DIFF4)
+			diff4 = READUINT8(save_p);
+		else
+			diff4 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(save_p);
@@ -1324,6 +1383,31 @@ static void UnArchiveSectors(void)
 			sectors[i].extra_colormap = GetNetColormapFromList(READUINT32(save_p));
 		if (diff3 & SD_CRUMBLESTATE)
 			sectors[i].crumblestate = READINT32(save_p);
+		if (diff3 & SD_FLOORLIGHT)
+		{
+			sectors[i].floorlightlevel = READINT16(save_p);
+			sectors[i].floorlightabsolute = READUINT8(save_p);
+		}
+		if (diff3 & SD_CEILLIGHT)
+		{
+			sectors[i].ceilinglightlevel = READINT16(save_p);
+			sectors[i].ceilinglightabsolute = READUINT8(save_p);
+		}
+		if (diff3 & SD_FLAG)
+		{
+			sectors[i].flags = READUINT32(save_p);
+			CheckForReverseGravity |= (sectors[i].flags & MSF_GRAVITYFLIP);
+		}
+		if (diff3 & SD_SPECIALFLAG)
+			sectors[i].specialflags = READUINT32(save_p);
+		if (diff4 & SD_DAMAGETYPE)
+			sectors[i].damagetype = READUINT8(save_p);
+		if (diff4 & SD_TRIGGERTAG)
+			sectors[i].triggertag = READINT16(save_p);
+		if (diff4 & SD_TRIGGERER)
+			sectors[i].triggerer = READUINT8(save_p);
+		if (diff4 & SD_GRAVITY)
+			sectors[i].gravity = READFIXED(save_p);
 
 		if (diff & SD_FFLOORS)
 			UnArchiveFFloors(&sectors[i]);
@@ -1396,7 +1480,7 @@ static void ArchiveLines(void)
 			if (diff & LD_DIFF2)
 				WRITEUINT8(save_p, diff2);
 			if (diff & LD_FLAG)
-				WRITEINT16(save_p, li->flags);
+				WRITEUINT32(save_p, li->flags);
 			if (diff & LD_SPECIAL)
 				WRITEINT16(save_p, li->special);
 			if (diff & LD_CLLCOUNT)
@@ -1478,7 +1562,7 @@ static void UnArchiveLines(void)
 			diff2 = 0;
 
 		if (diff & LD_FLAG)
-			li->flags = READINT16(save_p);
+			li->flags = READUINT32(save_p);
 		if (diff & LD_SPECIAL)
 			li->special = READINT16(save_p);
 		if (diff & LD_CLLCOUNT)
@@ -2104,6 +2188,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_TERRAIN)
 	{
 		WRITEUINT32(save_p, K_GetTerrainHeapIndex(mobj->terrain));
+		WRITEUINT32(save_p, SaveMobjnum(mobj->terrainOverlay));
 	}
 
 	WRITEUINT32(save_p, mobj->mobjnum);
@@ -2175,6 +2260,7 @@ static void SaveThwompThinker(const thinker_t *th, const UINT8 type)
 	WRITEINT32(save_p, ht->delay);
 	WRITEINT16(save_p, ht->tag);
 	WRITEUINT16(save_p, ht->sound);
+	WRITEINT32(save_p, ht->initDelay);
 }
 
 static void SaveFloatThinker(const thinker_t *th, const UINT8 type)
@@ -2195,7 +2281,6 @@ static void SaveEachTimeThinker(const thinker_t *th, const UINT8 type)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		WRITECHAR(save_p, ht->playersInArea[i]);
-		WRITECHAR(save_p, ht->playersOnArea[i]);
 	}
 	WRITECHAR(save_p, ht->triggerOnExit);
 }
@@ -2223,14 +2308,12 @@ static void SaveCeilingThinker(const thinker_t *th, const UINT8 type)
 	WRITEFIXED(save_p, ht->bottomheight);
 	WRITEFIXED(save_p, ht->topheight);
 	WRITEFIXED(save_p, ht->speed);
-	WRITEFIXED(save_p, ht->oldspeed);
 	WRITEFIXED(save_p, ht->delay);
 	WRITEFIXED(save_p, ht->delaytimer);
 	WRITEUINT8(save_p, ht->crush);
 	WRITEINT32(save_p, ht->texture);
 	WRITEINT32(save_p, ht->direction);
-	WRITEINT32(save_p, ht->tag);
-	WRITEINT32(save_p, ht->olddirection);
+	WRITEINT16(save_p, ht->tag);
 	WRITEFIXED(save_p, ht->origspeed);
 	WRITEFIXED(save_p, ht->sourceline);
 }
@@ -2249,6 +2332,8 @@ static void SaveFloormoveThinker(const thinker_t *th, const UINT8 type)
 	WRITEFIXED(save_p, ht->origspeed);
 	WRITEFIXED(save_p, ht->delay);
 	WRITEFIXED(save_p, ht->delaytimer);
+	WRITEINT16(save_p, ht->tag);
+	WRITEFIXED(save_p, ht->sourceline);
 }
 
 static void SaveLightflashThinker(const thinker_t *th, const UINT8 type)
@@ -2266,8 +2351,8 @@ static void SaveStrobeThinker(const thinker_t *th, const UINT8 type)
 	WRITEUINT8(save_p, type);
 	WRITEUINT32(save_p, SaveSector(ht->sector));
 	WRITEINT32(save_p, ht->count);
-	WRITEINT32(save_p, ht->minlight);
-	WRITEINT32(save_p, ht->maxlight);
+	WRITEINT16(save_p, ht->minlight);
+	WRITEINT16(save_p, ht->maxlight);
 	WRITEINT32(save_p, ht->darktime);
 	WRITEINT32(save_p, ht->brighttime);
 }
@@ -2277,10 +2362,10 @@ static void SaveGlowThinker(const thinker_t *th, const UINT8 type)
 	const glow_t *ht = (const void *)th;
 	WRITEUINT8(save_p, type);
 	WRITEUINT32(save_p, SaveSector(ht->sector));
-	WRITEINT32(save_p, ht->minlight);
-	WRITEINT32(save_p, ht->maxlight);
-	WRITEINT32(save_p, ht->direction);
-	WRITEINT32(save_p, ht->speed);
+	WRITEINT16(save_p, ht->minlight);
+	WRITEINT16(save_p, ht->maxlight);
+	WRITEINT16(save_p, ht->direction);
+	WRITEINT16(save_p, ht->speed);
 }
 
 static inline void SaveFireflickerThinker(const thinker_t *th, const UINT8 type)
@@ -2290,8 +2375,8 @@ static inline void SaveFireflickerThinker(const thinker_t *th, const UINT8 type)
 	WRITEUINT32(save_p, SaveSector(ht->sector));
 	WRITEINT32(save_p, ht->count);
 	WRITEINT32(save_p, ht->resetcount);
-	WRITEINT32(save_p, ht->maxlight);
-	WRITEINT32(save_p, ht->minlight);
+	WRITEINT16(save_p, ht->maxlight);
+	WRITEINT16(save_p, ht->minlight);
 }
 
 static void SaveElevatorThinker(const thinker_t *th, const UINT8 type)
@@ -2365,13 +2450,9 @@ static inline void SavePusherThinker(const thinker_t *th, const UINT8 type)
 	const pusher_t *ht = (const void *)th;
 	WRITEUINT8(save_p, type);
 	WRITEUINT8(save_p, ht->type);
-	WRITEINT32(save_p, ht->x_mag);
-	WRITEINT32(save_p, ht->y_mag);
-	WRITEINT32(save_p, ht->magnitude);
-	WRITEINT32(save_p, ht->radius);
-	WRITEINT32(save_p, ht->x);
-	WRITEINT32(save_p, ht->y);
-	WRITEINT32(save_p, ht->z);
+	WRITEFIXED(save_p, ht->x_mag);
+	WRITEFIXED(save_p, ht->y_mag);
+	WRITEFIXED(save_p, ht->z_mag);
 	WRITEINT32(save_p, ht->affectee);
 	WRITEUINT8(save_p, ht->roverpusher);
 	WRITEINT32(save_p, ht->referrer);
@@ -2469,18 +2550,30 @@ static void SavePlaneDisplaceThinker(const thinker_t *th, const UINT8 type)
 	WRITEUINT8(save_p, ht->type);
 }
 
-static inline void SaveDynamicSlopeThinker(const thinker_t *th, const UINT8 type)
+static inline void SaveDynamicLineSlopeThinker(const thinker_t *th, const UINT8 type)
 {
-	const dynplanethink_t* ht = (const void*)th;
+	const dynlineplanethink_t* ht = (const void*)th;
 
 	WRITEUINT8(save_p, type);
 	WRITEUINT8(save_p, ht->type);
 	WRITEUINT32(save_p, SaveSlope(ht->slope));
 	WRITEUINT32(save_p, SaveLine(ht->sourceline));
 	WRITEFIXED(save_p, ht->extent);
+}
 
-	WRITEMEM(save_p, ht->tags, sizeof(ht->tags));
+static inline void SaveDynamicVertexSlopeThinker(const thinker_t *th, const UINT8 type)
+{
+	size_t i;
+	const dynvertexplanethink_t* ht = (const void*)th;
+
+	WRITEUINT8(save_p, type);
+	WRITEUINT32(save_p, SaveSlope(ht->slope));
+	for (i = 0; i < 3; i++)
+		WRITEUINT32(save_p, SaveSector(ht->secs[i]));
 	WRITEMEM(save_p, ht->vex, sizeof(ht->vex));
+	WRITEMEM(save_p, ht->origsecheights, sizeof(ht->origsecheights));
+	WRITEMEM(save_p, ht->origvecheights, sizeof(ht->origvecheights));
+	WRITEUINT8(save_p, ht->relative);
 }
 
 static inline void SavePolyrotatetThinker(const thinker_t *th, const UINT8 type)
@@ -2805,12 +2898,12 @@ static void P_NetArchiveThinkers(void)
 			}
 			else if (th->function.acp1 == (actionf_p1)T_DynamicSlopeLine)
 			{
-				SaveDynamicSlopeThinker(th, tc_dynslopeline);
+				SaveDynamicLineSlopeThinker(th, tc_dynslopeline);
 				continue;
 			}
 			else if (th->function.acp1 == (actionf_p1)T_DynamicSlopeVert)
 			{
-				SaveDynamicSlopeThinker(th, tc_dynslopevert);
+				SaveDynamicVertexSlopeThinker(th, tc_dynslopevert);
 				continue;
 			}
 #ifdef PARANOIA
@@ -2968,7 +3061,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	{
 		UINT16 spawnpointnum = READUINT16(save_p);
 
-		if (mapthings[spawnpointnum].type == 1705 || mapthings[spawnpointnum].type == 1713) // NiGHTS Hoop special case
+		if (mapthings[spawnpointnum].type == 1713) // NiGHTS Hoop special case
 		{
 			P_SpawnHoop(&mapthings[spawnpointnum]);
 			return NULL;
@@ -3379,7 +3472,6 @@ static thinker_t* LoadEachTimeThinker(actionf_p1 thinker)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		ht->playersInArea[i] = READCHAR(save_p);
-		ht->playersOnArea[i] = READCHAR(save_p);
 	}
 	ht->triggerOnExit = READCHAR(save_p);
 	return &ht->thinker;
@@ -3409,14 +3501,12 @@ static thinker_t* LoadCeilingThinker(actionf_p1 thinker)
 	ht->bottomheight = READFIXED(save_p);
 	ht->topheight = READFIXED(save_p);
 	ht->speed = READFIXED(save_p);
-	ht->oldspeed = READFIXED(save_p);
 	ht->delay = READFIXED(save_p);
 	ht->delaytimer = READFIXED(save_p);
 	ht->crush = READUINT8(save_p);
 	ht->texture = READINT32(save_p);
 	ht->direction = READINT32(save_p);
-	ht->tag = READINT32(save_p);
-	ht->olddirection = READINT32(save_p);
+	ht->tag = READINT16(save_p);
 	ht->origspeed = READFIXED(save_p);
 	ht->sourceline = READFIXED(save_p);
 	if (ht->sector)
@@ -3438,6 +3528,8 @@ static thinker_t* LoadFloormoveThinker(actionf_p1 thinker)
 	ht->origspeed = READFIXED(save_p);
 	ht->delay = READFIXED(save_p);
 	ht->delaytimer = READFIXED(save_p);
+	ht->tag = READINT16(save_p);
+	ht->sourceline = READFIXED(save_p);
 	if (ht->sector)
 		ht->sector->floordata = ht;
 	return &ht->thinker;
@@ -3461,8 +3553,8 @@ static thinker_t* LoadStrobeThinker(actionf_p1 thinker)
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save_p));
 	ht->count = READINT32(save_p);
-	ht->minlight = READINT32(save_p);
-	ht->maxlight = READINT32(save_p);
+	ht->minlight = READINT16(save_p);
+	ht->maxlight = READINT16(save_p);
 	ht->darktime = READINT32(save_p);
 	ht->brighttime = READINT32(save_p);
 	if (ht->sector)
@@ -3475,10 +3567,10 @@ static thinker_t* LoadGlowThinker(actionf_p1 thinker)
 	glow_t *ht = Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
 	ht->thinker.function.acp1 = thinker;
 	ht->sector = LoadSector(READUINT32(save_p));
-	ht->minlight = READINT32(save_p);
-	ht->maxlight = READINT32(save_p);
-	ht->direction = READINT32(save_p);
-	ht->speed = READINT32(save_p);
+	ht->minlight = READINT16(save_p);
+	ht->maxlight = READINT16(save_p);
+	ht->direction = READINT16(save_p);
+	ht->speed = READINT16(save_p);
 	if (ht->sector)
 		ht->sector->lightingdata = ht;
 	return &ht->thinker;
@@ -3491,8 +3583,8 @@ static thinker_t* LoadFireflickerThinker(actionf_p1 thinker)
 	ht->sector = LoadSector(READUINT32(save_p));
 	ht->count = READINT32(save_p);
 	ht->resetcount = READINT32(save_p);
-	ht->maxlight = READINT32(save_p);
-	ht->minlight = READINT32(save_p);
+	ht->maxlight = READINT16(save_p);
+	ht->minlight = READINT16(save_p);
 	if (ht->sector)
 		ht->sector->lightingdata = ht;
 	return &ht->thinker;
@@ -3584,19 +3676,14 @@ static thinker_t* LoadPusherThinker(actionf_p1 thinker)
 	pusher_t *ht = Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
 	ht->thinker.function.acp1 = thinker;
 	ht->type = READUINT8(save_p);
-	ht->x_mag = READINT32(save_p);
-	ht->y_mag = READINT32(save_p);
-	ht->magnitude = READINT32(save_p);
-	ht->radius = READINT32(save_p);
-	ht->x = READINT32(save_p);
-	ht->y = READINT32(save_p);
-	ht->z = READINT32(save_p);
+	ht->x_mag = READFIXED(save_p);
+	ht->y_mag = READFIXED(save_p);
+	ht->z_mag = READFIXED(save_p);
 	ht->affectee = READINT32(save_p);
 	ht->roverpusher = READUINT8(save_p);
 	ht->referrer = READINT32(save_p);
 	ht->exclusive = READINT32(save_p);
 	ht->slider = READINT32(save_p);
-	ht->source = P_GetPushThing(ht->affectee);
 	return &ht->thinker;
 }
 
@@ -3720,17 +3807,31 @@ static inline thinker_t* LoadPlaneDisplaceThinker(actionf_p1 thinker)
 	return &ht->thinker;
 }
 
-static inline thinker_t* LoadDynamicSlopeThinker(actionf_p1 thinker)
+static inline thinker_t* LoadDynamicLineSlopeThinker(actionf_p1 thinker)
 {
-	dynplanethink_t* ht = Z_Malloc(sizeof(*ht), PU_LEVSPEC, NULL);
+	dynlineplanethink_t* ht = Z_Malloc(sizeof(*ht), PU_LEVSPEC, NULL);
 	ht->thinker.function.acp1 = thinker;
 
 	ht->type = READUINT8(save_p);
 	ht->slope = LoadSlope(READUINT32(save_p));
 	ht->sourceline = LoadLine(READUINT32(save_p));
 	ht->extent = READFIXED(save_p);
-	READMEM(save_p, ht->tags, sizeof(ht->tags));
+	return &ht->thinker;
+}
+
+static inline thinker_t* LoadDynamicVertexSlopeThinker(actionf_p1 thinker)
+{
+	size_t i;
+	dynvertexplanethink_t* ht = Z_Malloc(sizeof(*ht), PU_LEVSPEC, NULL);
+	ht->thinker.function.acp1 = thinker;
+
+	ht->slope = LoadSlope(READUINT32(save_p));
+	for (i = 0; i < 3; i++)
+		ht->secs[i] = LoadSector(READUINT32(save_p));
 	READMEM(save_p, ht->vex, sizeof(ht->vex));
+	READMEM(save_p, ht->origsecheights, sizeof(ht->origsecheights));
+	READMEM(save_p, ht->origvecheights, sizeof(ht->origvecheights));
+	ht->relative = READUINT8(save_p);
 	return &ht->thinker;
 }
 
@@ -4043,11 +4144,11 @@ static void P_NetUnArchiveThinkers(void)
 					break;
 
 				case tc_dynslopeline:
-					th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeLine);
+					th = LoadDynamicLineSlopeThinker((actionf_p1)T_DynamicSlopeLine);
 					break;
 
 				case tc_dynslopevert:
-					th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeVert);
+					th = LoadDynamicVertexSlopeThinker((actionf_p1)T_DynamicSlopeVert);
 					break;
 
 				case tc_scroll:
@@ -4565,7 +4666,6 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, gamespeed);
 	WRITEUINT8(save_p, numlaps);
 	WRITEUINT8(save_p, franticitems);
-	WRITEUINT8(save_p, comeback);
 
 	WRITESINT8(save_p, speedscramble);
 	WRITESINT8(save_p, encorescramble);
@@ -4591,10 +4691,15 @@ static void P_NetArchiveMisc(boolean resending)
 	WRITEUINT8(save_p, lastLowestLap);
 	WRITESINT8(save_p, spbplace);
 	WRITEUINT8(save_p, rainbowstartavailable);
+	WRITEUINT8(save_p, inDuel);
 
 	WRITEUINT32(save_p, introtime);
 	WRITEUINT32(save_p, starttime);
 	WRITEUINT8(save_p, numbulbs);
+
+	WRITEUINT32(save_p, timelimitintics);
+	WRITEUINT32(save_p, extratimeintics);
+	WRITEUINT32(save_p, secretextratime);
 
 	// Is it paused?
 	if (paused)
@@ -4724,7 +4829,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	gamespeed = READUINT8(save_p);
 	numlaps = READUINT8(save_p);
 	franticitems = (boolean)READUINT8(save_p);
-	comeback = (boolean)READUINT8(save_p);
 
 	speedscramble = READSINT8(save_p);
 	encorescramble = READSINT8(save_p);
@@ -4750,10 +4854,15 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	lastLowestLap = READUINT8(save_p);
 	spbplace = READSINT8(save_p);
 	rainbowstartavailable = (boolean)READUINT8(save_p);
+	inDuel = (boolean)READUINT8(save_p);
 
 	introtime = READUINT32(save_p);
 	starttime = READUINT32(save_p);
 	numbulbs = READUINT8(save_p);
+
+	timelimitintics = READUINT32(save_p);
+	extratimeintics = READUINT32(save_p);
+	secretextratime = READUINT32(save_p);
 
 	// Is it paused?
 	if (READUINT8(save_p) == 0x2f)

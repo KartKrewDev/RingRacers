@@ -356,6 +356,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				Obj_SPBTouch(special, toucher);
 				return;
 			}
+		case MT_DUELBOMB:
+			{
+				Obj_DuelBombTouch(special, toucher);
+				return;
+			}
 		case MT_EMERALD:
 			if (!P_CanPickupItem(player, 0))
 				return;
@@ -511,7 +516,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_STARPOST:
-			P_TouchStarPost(special, player, special->spawnpoint && (special->spawnpoint->options & MTF_OBJECTSPECIAL));
+			P_TouchStarPost(special, player, special->spawnpoint && special->spawnpoint->args[1]);
 			return;
 
 		case MT_BIGTUMBLEWEED:
@@ -585,14 +590,9 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 	player->starpostnum = post->health;
 }
 
-// Easily make it so that overtime works offline
-#define TESTOVERTIMEINFREEPLAY
-
 /** Checks if the level timer is over the timelimit and the round should end,
   * unless you are in overtime. In which case leveltime may stretch out beyond
   * timelimitintics and overtime's status will be checked here each tick.
-  * Verify that the value of ::cv_timelimit is greater than zero before
-  * calling this function.
   *
   * \sa cv_timelimit, P_CheckPointLimit, P_UpdateSpecials
   */
@@ -600,27 +600,61 @@ void P_CheckTimeLimit(void)
 {
 	INT32 i;
 
-	if (!cv_timelimit.value)
+	if (exitcountdown)
 		return;
 
-#ifndef TESTOVERTIMEINFREEPLAY
-	if (battlecapsules) // capsules override any time limit settings
-		return;
-#endif
-
-	if (!(gametyperules & GTR_TIMELIMIT))
+	if (!timelimitintics)
 		return;
 
-	if (bossinfo.boss == true)
+	if (leveltime < starttime)
+	{
+		if (secretextratime)
+			secretextratime--;
 		return;
+	}
 
 	if (leveltime < (timelimitintics + starttime))
+	{
+		if (secretextratime)
+		{
+			secretextratime--;
+			timelimitintics++;
+		}
+		else if (extratimeintics)
+		{
+			timelimitintics++;
+			if (leveltime & 1)
+				;
+			else
+			{
+				if (extratimeintics > 20)
+				{
+					extratimeintics -= 20;
+					timelimitintics += 20;
+				}
+				else
+				{
+					timelimitintics += extratimeintics;
+					extratimeintics = 0;
+				}
+				S_StartSound(NULL, sfx_ptally);
+			}
+		}
+		else
+		{
+			if (timelimitintics + starttime - leveltime <= 3*TICRATE)
+			{
+				if (((timelimitintics + starttime - leveltime) % TICRATE) == 0)
+					S_StartSound(NULL, sfx_s3ka7);
+			}			
+		}
 		return;
+	}
 
 	if (gameaction == ga_completed)
 		return;
 
-	if ((cv_overtime.value) && (gametyperules & GTR_OVERTIME))
+	if ((grandprixinfo.gp == false) && (cv_overtime.value) && (gametyperules & GTR_OVERTIME))
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
 		boolean foundone = false; // Overtime is used for closing off down to a specific item.
@@ -695,8 +729,6 @@ void P_CheckTimeLimit(void)
 }
 
 /** Checks if a player's score is over the pointlimit and the round should end.
-  * Verify that the value of ::cv_pointlimit is greater than zero before
-  * calling this function.
   *
   * \sa cv_pointlimit, P_CheckTimeLimit, P_UpdateSpecials
   */
@@ -704,16 +736,19 @@ void P_CheckPointLimit(void)
 {
 	INT32 i;
 
-	if (!cv_pointlimit.value)
+	if (exitcountdown)
 		return;
 
-	if (!(multiplayer || netgame))
+	if (!K_CanChangeRules(true))
+		return;
+
+	if (!cv_pointlimit.value)
 		return;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 		return;
 
-	if (bossinfo.boss == true)
+	if (battlecapsules)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
@@ -847,7 +882,7 @@ boolean P_CheckRacers(void)
 		}
 
 		// Everyone should be done playing at this point now.
-		racecountdown = exitcountdown = 0;
+		racecountdown = 0;
 		return true;
 	}
 
@@ -855,7 +890,7 @@ boolean P_CheckRacers(void)
 	{
 		// There might be bots that are still going,
 		// but all of the humans are done, so we can exit now.
-		racecountdown = exitcountdown = 0;
+		racecountdown = 0;
 		return true;
 	}
 
@@ -876,7 +911,7 @@ boolean P_CheckRacers(void)
 		{
 			tic_t countdown = 30*TICRATE; // 30 seconds left to finish, get going!
 
-			if (K_CanChangeRules() == true)
+			if (K_CanChangeRules(true) == true)
 			{
 				// Custom timer
 				countdown = cv_countdowntime.value * TICRATE;
@@ -1012,7 +1047,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				target->fuse = 2;
 			}
-			else
+			else if (inDuel == false)
 			{
 				UINT8 i;
 
@@ -1184,7 +1219,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					mo->angle = FixedAngle((P_RandomKey(PR_UNDEFINED, 36)*10)<<FRACBITS);
 
 					mo2 = P_SpawnMobjFromMobj(mo, 0, 0, 0, MT_BOSSJUNK);
-					P_InitAngle(mo2, mo->angle);
+					mo2->angle = mo->angle;
 					P_SetMobjState(mo2, S_BOSSSEBH2);
 
 					if (++i == 2) // we've already removed 2 of these, let's stop now
@@ -1257,6 +1292,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					kart->old_x = target->old_x;
 					kart->old_y = target->old_y;
 					kart->old_z = target->old_z;
+
+					if (target->player->pflags & PF_NOCONTEST)
+						P_SetTarget(&target->tracer, kart);
 				}
 
 				if (source && !P_MobjWasRemoved(source))
@@ -1328,7 +1366,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			for (i = 0; i < 2; i++)
 			{
 				mobj_t *blast = P_SpawnMobjFromMobj(target, 0, 0, target->info->height >> 1, MT_BATTLEBUMPER_BLAST);
-				P_InitAngle(blast, angle + i*ANGLE_90);
+				blast->angle = angle + i*ANGLE_90;
 				P_SetScale(blast, 2*blast->scale/3);
 				blast->destscale = 2*blast->scale;
 			}
@@ -1421,40 +1459,94 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_BATTLECAPSULE:
 			{
+				UINT8 i;
 				mobj_t *cur;
+				angle_t dir = 0;
 
-				numtargets++;
 				target->fuse = 16;
 				target->flags |= MF_NOCLIP|MF_NOCLIPTHING;
+
+				if (inflictor)
+				{
+					dir = R_PointToAngle2(inflictor->x, inflictor->y, target->x, target->y);
+					P_Thrust(target, dir, P_AproxDistance(inflictor->momx, inflictor->momy)/12);
+				}
+				else if (source)
+					dir = R_PointToAngle2(source->x, source->y, target->x, target->y);
+
+				target->momz += 8 * target->scale * P_MobjFlip(target);
+				target->flags &= ~MF_NOGRAVITY;
 
 				cur = target->hnext;
 
 				while (cur && !P_MobjWasRemoved(cur))
 				{
+					cur->momx = target->momx;
+					cur->momy = target->momy;
+					cur->momz = target->momz;
+
 					// Shoot every piece outward
 					if (!(cur->x == target->x && cur->y == target->y))
 					{
-						P_InstaThrust(cur,
+						P_Thrust(cur,
 							R_PointToAngle2(target->x, target->y, cur->x, cur->y),
 							R_PointToDist2(target->x, target->y, cur->x, cur->y) / 12
 						);
 					}
 
-					cur->momz = 8 * target->scale * P_MobjFlip(target);
-
 					cur->flags &= ~MF_NOGRAVITY;
 					cur->tics = TICRATE;
 					cur->frame &= ~FF_ANIMATE; // Stop animating the propellers
 
+					cur->hitlag = target->hitlag;
+					cur->eflags |= MFE_DAMAGEHITLAG;
+
 					cur = cur->hnext;
 				}
 
-				// All targets busted!
-				if (numtargets >= maptargets)
+				S_StartSound(target, sfx_mbs60);
+
+				if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
 				{
-					UINT8 i;
+					/*mobj_t * ring;
+					for (i = 0; i < 2; i++)
+					{
+						dir += (ANGLE_MAX/3);
+						ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
+						ring->angle = dir;
+						P_InstaThrust(ring, dir, 16*ring->scale);
+						ring->momz = 8 * target->scale * P_MobjFlip(target);
+						P_SetTarget(&ring->tracer, source);
+						source->player->pickuprings++;
+					}*/
+
+					P_AddPlayerScore(source->player, 1);
+					K_SpawnBattlePoints(source->player, NULL, 1);
+				}
+
+				// All targets busted!
+				if (++numtargets >= maptargets)
+				{
+					boolean givelife = false;
 					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[i] || players[i].spectator)
+							continue;
 						P_DoPlayerExit(&players[i]);
+						if (!grandprixinfo.gp)
+							continue;
+						P_GivePlayerLives(&players[i], 1);
+						givelife = true;
+					}
+
+					if (givelife)
+						S_StartSound(NULL, sfx_cdfm73);
+				}
+				else if (timelimitintics)
+				{
+					S_StartSound(NULL, sfx_s221);
+					extratimeintics += 10*TICRATE;
+					secretextratime = TICRATE/2;
 				}
 			}
 			break;
@@ -1558,7 +1650,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_SPIKE);\
 			P_SetMobjState(chunk, target->info->xdeathstate);\
 			chunk->health = 0;\
-			P_InitAngle(chunk, angtweak);\
+			chunk->angle = angtweak;\
 			P_UnsetThingPosition(chunk);\
 			chunk->flags = MF_NOCLIP;\
 			chunk->x += xmov;\
@@ -1580,7 +1672,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_SPIKE);
 		P_SetMobjState(chunk, target->info->deathstate);
 		chunk->health = 0;
-		P_InitAngle(chunk, ang + ANGLE_180);
+		chunk->angle = ang + ANGLE_180;
 		P_UnsetThingPosition(chunk);
 		chunk->flags = MF_NOCLIP;
 		chunk->x -= xoffs;
@@ -1626,7 +1718,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			chunk = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_WALLSPIKE);\
 			P_SetMobjState(chunk, target->info->xdeathstate);\
 			chunk->health = 0;\
-			P_InitAngle(chunk, target->angle);\
+			chunk->angle = target->angle;\
 			P_UnsetThingPosition(chunk);\
 			chunk->flags = MF_NOCLIP;\
 			chunk->x += xmov - forwardxoffs;\
@@ -1652,7 +1744,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		P_SetMobjState(chunk, target->info->deathstate);
 		chunk->health = 0;
-		P_InitAngle(chunk, target->angle);
+		chunk->angle = target->angle;
 		P_UnsetThingPosition(chunk);
 		chunk->flags = MF_NOCLIP;
 		chunk->x += forwardxoffs - xoffs;
@@ -1776,7 +1868,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 			boom = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_FZEROBOOM);
 			boom->scale = player->mo->scale;
-			P_InitAngle(boom, player->mo->angle);
+			boom->angle = player->mo->angle;
 			P_SetTarget(&boom->target, player->mo);
 		}
 

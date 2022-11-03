@@ -437,6 +437,7 @@ static patch_t *tcol2;
 
 static patch_t *tcroundbar;
 static patch_t *tcround;
+static patch_t *tcbonus;
 
 static patch_t *tccircletop;
 static patch_t *tccirclebottom;
@@ -446,6 +447,8 @@ static patch_t *tcbanner;
 static patch_t *tcbanner2;
 
 static patch_t *tcroundnum[10];
+static patch_t *tcroundbonus;
+
 static patch_t *tcactnum[10];
 static patch_t *tcact;
 
@@ -495,6 +498,7 @@ static void ST_cacheLevelTitle(void)
 
 	tcroundbar = 	(patch_t *)W_CachePatchName("TCBB0", PU_HUDGFX);
 	tcround = 		(patch_t *)W_CachePatchName("TCROUND", PU_HUDGFX);
+	tcbonus = 		(patch_t *)W_CachePatchName("TCBONUS", PU_HUDGFX);
 
 	tccircletop = 	(patch_t *)W_CachePatchName("TCSN1", PU_HUDGFX);
 	tccirclebottom =(patch_t *)W_CachePatchName("TCSN2", PU_HUDGFX);
@@ -514,6 +518,7 @@ static void ST_cacheLevelTitle(void)
 		sprintf(buf, "TT_RND%d", i);
 		tcroundnum[i-1] = (patch_t *)W_CachePatchName(buf, PU_HUDGFX);
 	}
+	tcroundbonus =	(patch_t *)W_CachePatchName("TT_RNDB", PU_HUDGFX);
 
 	// Cache act #
 	for (i=0; i < 10; i++)
@@ -579,7 +584,7 @@ void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
 	INT32 auxticker;
-	boolean gp = (grandprixinfo.gp && grandprixinfo.roundnum);	// check whether we're in grandprix
+	boolean gp = (marathonmode || (grandprixinfo.gp && grandprixinfo.roundnum));
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -764,7 +769,7 @@ void ST_drawTitleCard(void)
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-	boolean gp = (grandprixinfo.gp && grandprixinfo.roundnum);
+	boolean gp = (marathonmode || (grandprixinfo.gp && grandprixinfo.roundnum));
 
 	INT32 acttimer;
 	fixed_t actscale;
@@ -895,7 +900,9 @@ void ST_drawTitleCard(void)
 	V_DrawFixedPatch(roundx*FRACUNIT, ((-32) + (lt_ticker%32))*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcroundbar, NULL);
 	// Draw ROUND text
 	if (gp)
-		V_DrawFixedPatch((roundx+10)*FRACUNIT, roundy*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcround, NULL);
+		V_DrawFixedPatch((roundx+10)*FRACUNIT, roundy*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT,
+			((grandprixinfo.gp && grandprixinfo.eventmode) ? tcbonus : tcround),
+			NULL);
 
 	// round num background
 	V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebg, NULL);
@@ -912,9 +919,31 @@ void ST_drawTitleCard(void)
 		}
 	}
 
-	// If possible, draw round number
-	if (gp && grandprixinfo.roundnum > 0 && grandprixinfo.roundnum < 11)	// Check boundaries JUST IN CASE.
-		V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tcroundnum[grandprixinfo.roundnum-1], NULL);
+	// If possible, draw round number/icon
+	if (gp)
+	{
+		patch_t *roundico = NULL;
+		if (marathonmode)
+			; // TODO: Ruby
+		else switch (grandprixinfo.eventmode)
+		{
+			case GPEVENT_BONUS:
+				roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
+				break;
+			/*case GPEVENT_SPECIAL:
+				; // TODO: Emerald/mount
+				break;*/
+			case GPEVENT_NONE:
+				if (grandprixinfo.roundnum > 0 && grandprixinfo.roundnum < 11)	// Check boundaries JUST IN CASE.
+					roundico = tcroundnum[grandprixinfo.roundnum-1];
+				break;
+			default:
+				break;
+		}
+
+		if (roundico)
+			V_DrawFixedPatch(roundnumx*FRACUNIT, roundnumy*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, roundico, NULL);
+	}
 
 	// Draw both halves of the egg
 	V_DrawFixedPatch(eggx1*FRACUNIT, eggy1*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccircletop, NULL);
@@ -1016,10 +1045,8 @@ static void ST_overlayDrawer(void)
 
 		if (renderisnewtic)
 		{
-			LUA_HUD_ClearDrawList(luahuddrawlist_game);
 			LUA_HookHUD(luahuddrawlist_game, HUD_HOOK(game));
 		}
-		LUA_HUD_DrawList(luahuddrawlist_game);
 	}
 
 	if (!hu_showscores) // hide the following if TAB is held
@@ -1195,6 +1222,10 @@ void ST_Drawer(void)
 	if (st_overlay)
 	{
 		UINT8 i;
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+		}
 		// No deadview!
 		for (i = 0; i <= r_splitscreen; i++)
 		{
@@ -1203,6 +1234,8 @@ void ST_Drawer(void)
 			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();
 		}
+
+		LUA_HUD_DrawList(luahuddrawlist_game);
 
 		// draw Midnight Channel's overlay ontop
 		if (mapheaderinfo[gamemap-1]->typeoflevel & TOL_TV)	// Very specific Midnight Channel stuff.

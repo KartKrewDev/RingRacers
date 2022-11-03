@@ -75,6 +75,7 @@
 #include "k_boss.h"
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
+#include "k_specialstage.h"
 #include "k_acs.h"
 
 #ifdef CMAKECONFIG
@@ -876,7 +877,8 @@ void D_SRB2Loop(void)
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
-		S_UpdateClosedCaptions();
+		if (realtics > 0 || singletics)
+			S_UpdateClosedCaptions();
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();
@@ -982,6 +984,9 @@ void D_StartTitle(void)
 
 	// Reset boss info
 	K_ResetBossInfo();
+
+	// Reset Special Stage
+	K_ResetSpecialStage();
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
@@ -1626,11 +1631,21 @@ void D_SRB2Main(void)
 	{
 		const char *word = M_GetNextParm();
 
-		pstartmap = G_FindMapByNameOrCode(word, 0);
-
-		if (! pstartmap)
-			I_Error("Cannot find a map remotely named '%s'\n", word);
+		if (WADNAMECHECK(word))
+		{
+			if (!(pstartmap = wadnamemap))
+				I_Error("Bad '%s' level warp.\n"
+#if defined (_WIN32)
+				"Are you using MSDOS 8.3 filenames in Zone Builder?\n"
+#endif
+				, word);
+		}
 		else
+		{
+			if (!(pstartmap = G_FindMapByNameOrCode(word, 0)))
+				I_Error("Cannot find a map remotely named '%s'\n", word);
+		}
+
 		{
 			if (!M_CheckParm("-server"))
 			{
@@ -1801,29 +1816,20 @@ void D_SRB2Main(void)
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
-			const char *masterstr = "Master";
-
-			if (!strcasecmp(masterstr, sskill))
+			for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
 			{
-				newskill = KARTGP_MASTER;
+				if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, sskill))
+				{
+					newskill = (INT16)gpdifficulty_cons_t[j].value;
+					break;
+				}
 			}
-			else
-			{
-				for (j = 0; kartspeed_cons_t[j].strvalue; j++)
-				{
-					if (!strcasecmp(kartspeed_cons_t[j].strvalue, sskill))
-					{
-						newskill = (INT16)kartspeed_cons_t[j].value;
-						break;
-					}
-				}
 
-				if (!kartspeed_cons_t[j].strvalue) // reached end of the list with no match
-				{
-					j = atoi(sskill); // assume they gave us a skill number, which is okay too
-					if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
-						newskill = (INT16)j;
-				}
+			if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
+			{
+				j = atoi(sskill); // assume they gave us a skill number, which is okay too
+				if (j >= KARTSPEED_EASY && j <= KARTGP_MASTER)
+					newskill = (INT16)j;
 			}
 
 			if (grandprixinfo.gp == true)

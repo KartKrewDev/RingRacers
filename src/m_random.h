@@ -48,7 +48,7 @@ typedef enum
 	PR_PLAYERSTARTS, // Player starts
 	PR_VOICES, // Player voice sounds
 
-	PR_RULESCRAMBLE, // Netgame rule scrambing events
+	PR_RULESCRAMBLE, // Rule scrambing events
 
 	PR_ITEM_ROULETTE, // Item results
 	PR_ITEM_RINGS, // Flung ring/bumper/player (on death)

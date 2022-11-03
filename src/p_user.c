@@ -388,7 +388,7 @@ void P_GiveFinishFlags(player_t *player)
 		fixed_t xoffs = FINECOSINE(fa);
 		fixed_t yoffs = FINESINE(fa);
 		mobj_t* flag = P_SpawnMobjFromMobj(player->mo, xoffs, yoffs, 0, MT_FINISHFLAG);
-		P_InitAngle(flag, angle);
+		flag->angle = angle;
 		angle += FixedAngle(120*FRACUNIT);
 
 		P_SetTarget(&flag->target, player->mo);
@@ -505,7 +505,6 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 		num_rings -= (test+20);
 
 	player->rings += num_rings;
-	//player->totalring += num_rings; // Used for GP lives later -- maybe you might want to move this earlier to discourage ring debt...
 
 	return num_rings;
 }
@@ -979,20 +978,20 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec)
 			for (rover = sec->ffloors; rover; rover = rover->next)
 			{
 				// If the FOF doesn't exist, continue.
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				// If the FOF is configured to let the object through, continue.
-				if (!((rover->flags & FF_BLOCKPLAYER && mo->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mo->player)))
+				if (!((rover->fofflags & FOF_BLOCKPLAYER && mo->player)
+					|| (rover->fofflags & FOF_BLOCKOTHERS && !mo->player)))
 					continue;
 
 				// If the the platform is intangible from below, continue.
-				if (rover->flags & FF_PLATFORM)
+				if (rover->fofflags & FOF_PLATFORM)
 					continue;
 
 				// If the FOF is a water block, continue. (Unnecessary check?)
-				if (rover->flags & FF_SWIMMABLE)
+				if (rover->fofflags & FOF_SWIMMABLE)
 					continue;
 
 				// Actually check if the player is on the suitable FOF.
@@ -1013,20 +1012,20 @@ boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec)
 			for (rover = sec->ffloors; rover; rover = rover->next)
 			{
 				// If the FOF doesn't exist, continue.
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				// If the FOF is configured to let the object through, continue.
-				if (!((rover->flags & FF_BLOCKPLAYER && mo->player)
-					|| (rover->flags & FF_BLOCKOTHERS && !mo->player)))
+				if (!((rover->fofflags & FOF_BLOCKPLAYER && mo->player)
+					|| (rover->fofflags & FOF_BLOCKOTHERS && !mo->player)))
 					continue;
 
 				// If the the platform is intangible from above, continue.
-				if (rover->flags & FF_REVERSEPLATFORM)
+				if (rover->fofflags & FOF_REVERSEPLATFORM)
 					continue;
 
 				// If the FOF is a water block, continue. (Unnecessary check?)
-				if (rover->flags & FF_SWIMMABLE)
+				if (rover->fofflags & FOF_SWIMMABLE)
 					continue;
 
 				// Actually check if the player is on the suitable FOF.
@@ -1261,72 +1260,81 @@ void P_DoPlayerExit(player_t *player)
 		K_PlayerLoseLife(player);
 	}
 
-	if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
+	player->exiting = 1;
+
+	if (!player->spectator)
 	{
-		player->exiting = raceexittime+2;
-		K_KartUpdatePosition(player);
-
-		if (cv_kartvoices.value)
+		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
-			if (P_IsDisplayPlayer(player))
+			K_KartUpdatePosition(player);
+
+			if (cv_kartvoices.value)
 			{
-				sfxenum_t sfx_id;
-				if (losing)
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
-				else
-					sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
-				S_StartSound(NULL, sfx_id);
-			}
-			else
-			{
-				if (losing)
-					S_StartSound(player->mo, sfx_klose);
-				else
-					S_StartSound(player->mo, sfx_kwin);
-			}
-		}
-
-		if (cv_inttime.value > 0)
-			P_EndingMusic(player);
-
-		if (P_CheckRacers())
-			player->exiting = raceexittime+1;
-	}
-	else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
-	{
-		player->exiting = battleexittime+1;
-		P_EndingMusic(player);
-	}
-	else
-		player->exiting = raceexittime+2; // Accidental death safeguard???
-
-	if (grandprixinfo.gp == true)
-	{
-		if (player->bot)
-		{
-			// Bots are going to get harder... :)
-			K_IncreaseBotDifficulty(player);
-		}
-		else if (!losing)
-		{
-			const UINT8 lifethreshold = 20;
-			UINT8 extra = 0;
-
-			// YOU WIN
-			grandprixinfo.wonround = true;
-
-			// Increase your total rings
-			if (RINGTOTAL(player) > 0)
-			{
-				player->totalring += RINGTOTAL(player);
-
-				extra = player->totalring / lifethreshold;
-
-				if (extra > player->xtralife)
+				if (P_IsDisplayPlayer(player))
 				{
-					P_GivePlayerLives(player, extra - player->xtralife);
-					S_StartSound(NULL, sfx_cdfm73);
-					player->xtralife = extra;
+					sfxenum_t sfx_id;
+					if (losing)
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
+					else
+						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
+					S_StartSound(NULL, sfx_id);
+				}
+				else
+				{
+					if (losing)
+						S_StartSound(player->mo, sfx_klose);
+					else
+						S_StartSound(player->mo, sfx_kwin);
+				}
+			}
+
+			// See Y_StartIntermission timer handling
+			if (!K_CanChangeRules(false) || cv_inttime.value > 0)
+				P_EndingMusic(player);
+
+			if (P_CheckRacers() && !exitcountdown)
+				exitcountdown = raceexittime+1;
+		}
+		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
+		{
+			if (!exitcountdown)
+				exitcountdown = battleexittime+1;
+			P_EndingMusic(player);
+		}
+		else // Accidental death safeguard???
+		{
+			if (!exitcountdown)
+				exitcountdown = raceexittime+2;
+		}
+
+		if (grandprixinfo.gp == true)
+		{
+			if (player->bot)
+			{
+				// Bots are going to get harder... :)
+				K_IncreaseBotDifficulty(player);
+			}
+			else if (!losing)
+			{
+				const UINT8 lifethreshold = 20;
+				UINT8 extra = 0;
+
+				// YOU WIN
+				grandprixinfo.wonround = true;
+
+				// Increase your total rings
+				if (RINGTOTAL(player) > 0)
+				{
+					player->totalring += RINGTOTAL(player);
+
+					extra = player->totalring / lifethreshold;
+
+					if (extra > player->xtralife)
+					{
+						P_GivePlayerLives(player, extra - player->xtralife);
+						S_StartSound(NULL, sfx_cdfm73);
+						player->xtralife = extra;
+					}
 				}
 			}
 		}
@@ -1395,10 +1403,10 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_QUICKSAND))
+			if (!(rover->fofflags & FOF_QUICKSAND))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, mo->x, mo->y);
@@ -1417,6 +1425,14 @@ boolean P_InQuicksand(mobj_t *mo) // Returns true if you are in quicksand
 	return false; // No sand here, Captain!
 }
 
+static boolean P_PlayerCanBust(player_t *player, ffloor_t *rover)
+{
+	// TODO: Make these act like the Lua SA2 boxes.
+	(void)player;
+	(void)rover;
+	return false;
+}
+
 static void P_CheckBustableBlocks(player_t *player)
 {
 	msecnode_t *node;
@@ -1429,8 +1445,6 @@ static void P_CheckBustableBlocks(player_t *player)
 	oldx = player->mo->x;
 	oldy = player->mo->y;
 
-	// SRB2Kart TODO: make shatter blocks the default behavior, we don't need the hundreds of other types
-
 	P_UnsetThingPosition(player->mo);
 	player->mo->x += player->mo->momx;
 	player->mo->y += player->mo->momy;
@@ -1438,90 +1452,86 @@ static void P_CheckBustableBlocks(player_t *player)
 
 	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
+		ffloor_t *rover;
+		fixed_t topheight, bottomheight;
+
 		if (!node->m_sector)
 			break;
 
-		if (node->m_sector->ffloors)
+		if (!node->m_sector->ffloors)
+			continue;
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			ffloor_t *rover;
-			fixed_t topheight, bottomheight;
+			if (!P_PlayerCanBust(player, rover))
+				continue;
 
-			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+			bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+
+			// Height checks
+			if (rover->bustflags & FB_ONLYBOTTOM)
 			{
-				if (!(rover->flags & FF_EXISTS)) continue;
+				if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+					continue;
 
-				if ((rover->flags & FF_BUSTUP)/* && rover->master->frontsector->crumblestate == CRUMBLE_NONE*/)
+				if (player->mo->z + player->mo->height > bottomheight)
+					continue;
+			}
+			else
+			{
+				switch (rover->busttype)
 				{
-					// If it's an FF_SHATTER, you can break it just by touching it.
-					if (rover->flags & FF_SHATTER)
-						goto bust;
-
-					if (rover->flags & FF_STRONGBUST)
+				case BT_TOUCH:
+					if (player->mo->z + player->mo->momz > topheight)
 						continue;
 
-				bust:
-					topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-					bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+					if (player->mo->z + player->mo->momz + player->mo->height < bottomheight)
+						continue;
 
-					// Height checks
-					if (rover->flags & FF_SHATTERBOTTOM)
-					{
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
+					break;
+				case BT_SPINBUST:
+					if (player->mo->z + player->mo->momz > topheight)
+						continue;
 
-						if (player->mo->z+player->mo->height > bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SPINBUST)
-					{
-						if (player->mo->z+player->mo->momz > topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-					else if (rover->flags & FF_SHATTER)
-					{
-						if (player->mo->z + player->mo->momz > topheight)
-							continue;
+					break;
+				default:
+					if (player->mo->z >= topheight)
+						continue;
 
-						if (player->mo->z+player->mo->momz + player->mo->height < bottomheight)
-							continue;
-					}
-					else
-					{
-						if (player->mo->z >= topheight)
-							continue;
+					if (player->mo->z + player->mo->height < bottomheight)
+						continue;
 
-						if (player->mo->z + player->mo->height < bottomheight)
-							continue;
-					}
-
-					// Impede the player's fall a bit
-					if (((rover->flags & FF_SPINBUST) || (rover->flags & FF_SHATTER)) && player->mo->z >= topheight)
-						player->mo->momz >>= 1;
-					else if (rover->flags & FF_SHATTER)
-					{
-						player->mo->momx >>= 1;
-						player->mo->momy >>= 1;
-					}
-
-					//if (metalrecording)
-					//	G_RecordBustup(rover);
-
-					EV_CrumbleChain(NULL, rover); // node->m_sector
-
-					// Run a linedef executor??
-					if (rover->master->flags & ML_EFFECT5)
-						P_LinedefExecute((INT16)(P_AproxDistance(rover->master->dx, rover->master->dy)>>FRACBITS), player->mo, node->m_sector);
-
-					goto bustupdone;
+					break;
 				}
 			}
+
+			// Impede the player's fall a bit
+			if (((rover->busttype == BT_TOUCH) || (rover->busttype == BT_SPINBUST)) && player->mo->z >= topheight)
+				player->mo->momz >>= 1;
+			else if (rover->busttype == BT_TOUCH)
+			{
+				player->mo->momx >>= 1;
+				player->mo->momy >>= 1;
+			}
+
+			//if (metalrecording)
+			//	G_RecordBustup(rover);
+
+			EV_CrumbleChain(NULL, rover); // node->m_sector
+
+			// Run a linedef executor??
+			if (rover->bustflags & FB_EXECUTOR)
+				P_LinedefExecute(rover->busttag, player->mo, node->m_sector);
+
+			goto bustupdone;
 		}
 	}
-bustupdone:
 
+bustupdone:
 	P_UnsetThingPosition(player->mo);
 	player->mo->x = oldx;
 	player->mo->y = oldy;
@@ -1548,104 +1558,78 @@ static void P_CheckBouncySectors(player_t *player)
 
 	for (node = player->mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
+		ffloor_t *rover;
+
 		if (!node->m_sector)
 			break;
 
-		if (node->m_sector->ffloors)
+		if (!node->m_sector->ffloors)
+			continue;
+
+		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			ffloor_t *rover;
-			boolean top = true;
 			fixed_t topheight, bottomheight;
 
-			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			if (!(rover->fofflags & FOF_EXISTS))
+				continue; // FOFs should not be bouncy if they don't even "exist"
+
+			// Handle deprecated bouncy FOF sector type
+			if (!udmf && GETSECSPECIAL(rover->master->frontsector->special, 1) == 15)
 			{
-				if (!(rover->flags & FF_EXISTS))
-					continue; // FOFs should not be bouncy if they don't even "exist"
-
-				if (GETSECSPECIAL(rover->master->frontsector->special, 1) != 15)
-					continue; // this sector type is required for FOFs to be bouncy
-
-				topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-				bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
-
-				if (player->mo->z > topheight)
-					continue;
-
-				if (player->mo->z + player->mo->height < bottomheight)
-					continue;
-
-				if (oldz < P_GetFOFTopZ(player->mo, node->m_sector, rover, oldx, oldy, NULL)
-						&& oldz + player->mo->height > P_GetFOFBottomZ(player->mo, node->m_sector, rover, oldx, oldy, NULL))
-					top = false;
-
-				{
-					fixed_t linedist;
-
-					linedist = P_AproxDistance(rover->master->v1->x-rover->master->v2->x, rover->master->v1->y-rover->master->v2->y);
-
-					linedist = FixedDiv(linedist,100*FRACUNIT);
-
-					if (top)
-					{
-						fixed_t newmom;
-
-						pslope_t *slope;
-						if (abs(oldz - topheight) < abs(oldz + player->mo->height - bottomheight)) { // Hit top
-							slope = *rover->t_slope;
-						} else { // Hit bottom
-							slope = *rover->b_slope;
-						}
-
-						momentum.x = player->mo->momx;
-						momentum.y = player->mo->momy;
-						momentum.z = player->mo->momz*2;
-
-						if (slope)
-							P_ReverseQuantizeMomentumToSlope(&momentum, slope);
-
-						newmom = momentum.z = -FixedMul(momentum.z,linedist)/2;
-
-						if (abs(newmom) < (linedist*2))
-						{
-							goto bouncydone;
-						}
-
-						if (!(rover->master->flags & ML_NOTBOUNCY))
-						{
-							if (newmom > 0)
-							{
-								if (newmom < 8*FRACUNIT)
-									newmom = 8*FRACUNIT;
-							}
-							else if (newmom > -8*FRACUNIT && newmom != 0)
-								newmom = -8*FRACUNIT;
-						}
-
-						if (newmom > player->mo->height/2)
-							newmom = player->mo->height/2;
-						else if (newmom < -player->mo->height/2)
-							newmom = -player->mo->height/2;
-
-						momentum.z = newmom*2;
-
-						if (slope)
-							P_QuantizeMomentumToSlope(&momentum, slope);
-
-						player->mo->momx = momentum.x;
-						player->mo->momy = momentum.y;
-						player->mo->momz = momentum.z/2;
-					}
-					else
-					{
-						player->mo->momx = -FixedMul(player->mo->momx,linedist);
-						player->mo->momy = -FixedMul(player->mo->momy,linedist);
-					}
-
-					goto bouncydone;
-				}
+				rover->fofflags |= FOF_BOUNCY;
+				rover->bouncestrength = P_AproxDistance(rover->master->dx, rover->master->dy)/100;
 			}
+
+			if (!(rover->fofflags & FOF_BOUNCY))
+				continue;
+
+			topheight = P_GetFOFTopZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+			bottomheight = P_GetFOFBottomZ(player->mo, node->m_sector, rover, player->mo->x, player->mo->y, NULL);
+
+			if (player->mo->z > topheight)
+				continue;
+
+			if (player->mo->z + player->mo->height < bottomheight)
+				continue;
+
+			if (oldz < P_GetFOFTopZ(player->mo, node->m_sector, rover, oldx, oldy, NULL)
+					&& oldz + player->mo->height > P_GetFOFBottomZ(player->mo, node->m_sector, rover, oldx, oldy, NULL))
+			{
+				player->mo->momx = -FixedMul(player->mo->momx,rover->bouncestrength);
+				player->mo->momy = -FixedMul(player->mo->momy,rover->bouncestrength);
+			}
+			else
+			{
+				pslope_t *slope = (abs(oldz - topheight) < abs(oldz + player->mo->height - bottomheight)) ? *rover->t_slope : *rover->b_slope;
+
+				momentum.x = player->mo->momx;
+				momentum.y = player->mo->momy;
+				momentum.z = player->mo->momz*2;
+
+				if (slope)
+					P_ReverseQuantizeMomentumToSlope(&momentum, slope);
+
+				momentum.z = -FixedMul(momentum.z,rover->bouncestrength)/2;
+
+				if (abs(momentum.z) < (rover->bouncestrength*2))
+					goto bouncydone;
+
+				if (momentum.z > FixedMul(24*FRACUNIT, player->mo->scale)) //half of the default player height
+					momentum.z = FixedMul(24*FRACUNIT, player->mo->scale);
+				else if (momentum.z < -FixedMul(24*FRACUNIT, player->mo->scale))
+					momentum.z = -FixedMul(24*FRACUNIT, player->mo->scale);
+
+				if (slope)
+					P_QuantizeMomentumToSlope(&momentum, slope);
+
+				player->mo->momx = momentum.x;
+				player->mo->momy = momentum.y;
+				player->mo->momz = momentum.z;
+			}
+			goto bouncydone;
 		}
 	}
+
 bouncydone:
 	P_UnsetThingPosition(player->mo);
 	player->mo->x = oldx;
@@ -1665,9 +1649,9 @@ static void P_CheckQuicksand(player_t *player)
 
 	for (rover = player->mo->subsector->sector->ffloors; rover; rover = rover->next)
 	{
-		if (!(rover->flags & FF_EXISTS)) continue;
+		if (!(rover->fofflags & FOF_EXISTS)) continue;
 
-		if (!(rover->flags & FF_QUICKSAND))
+		if (!(rover->fofflags & FOF_QUICKSAND))
 			continue;
 
 		topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
@@ -3466,7 +3450,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		UINT8 i = 0;
 		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
 
-		for (i = 0; i < r_splitscreen; i++)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
 			if (localplayertable[i] == (player-players))
 			{
@@ -3538,7 +3522,7 @@ static void P_CalcPostImg(player_t *player)
 			{
 				size_t j;
 
-				if (!(rover->flags & FF_EXISTS))
+				if (!(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
@@ -3571,7 +3555,7 @@ static void P_CalcPostImg(player_t *player)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_BLOCKPLAYER)
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE) || rover->fofflags & FOF_BLOCKPLAYER)
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, player->mo->x, player->mo->y);
@@ -3853,8 +3837,6 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	player->pflags &= ~PF_HITFINISHLINE;
-
 	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
 	{
 		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
@@ -3866,11 +3848,6 @@ void P_PlayerThink(player_t *player)
 
 	if (player->awayviewtics && player->awayviewtics != -1)
 		player->awayviewtics--;
-
-	if (player->mo->hitlag > 0)
-	{
-		return;
-	}
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)
@@ -3946,21 +3923,6 @@ void P_PlayerThink(player_t *player)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			INT32 i;
-
-			// Check if all the players in the race have finished. If so, end the level.
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST) && players[i].lives > 0)
-						break;
-				}
-			}
-
-			if (i == MAXPLAYERS && player->exiting == raceexittime+2) // finished
-				player->exiting = raceexittime+1;
-
 #if 0
 			// If 10 seconds are left on the timer,
 			// begin the drown music for countdown!
@@ -3985,45 +3947,6 @@ void P_PlayerThink(player_t *player)
 				}
 			}
 		}
-
-		// If it is set, start subtracting
-		// Don't allow it to go back to 0
-		if (player->exiting > 1 && (player->exiting < raceexittime+2 || !(gametyperules & GTR_CIRCUIT))) // SRB2kart - "&& player->exiting > 1"
-			player->exiting--;
-
-		if (player->exiting && exitcountdown)
-			player->exiting = 99; // SRB2kart
-
-		if (player->exiting == 2 || exitcountdown == 2)
-		{
-			if (server)
-			{
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-			}
-		}
-	}
-
-	// check water content, set stuff in mobj
-	P_MobjCheckWater(player->mo);
-
-#ifndef SECTORSPECIALSAFTERTHINK
-	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
-		player->onconveyor = 0;
-	// check special sectors : damage & secrets
-
-	if (!player->spectator)
-		P_PlayerInSpecialSector(player);
-#endif
-
-	if (player->playerstate == PST_DEAD)
-	{
-		if (player->spectator)
-			player->mo->renderflags |= RF_GHOSTLY;
-		else
-			player->mo->renderflags &= ~RF_GHOSTLYMASK;
-		P_DeathThink(player);
-		LUA_HookPlayer(player, HOOK(PlayerThink));
-		return;
 	}
 
 	// Make sure spectators always have a score and ring count of 0.
@@ -4062,7 +3985,103 @@ void P_PlayerThink(player_t *player)
 		}
 	}
 
-	if ((netgame || multiplayer) && player->spectator && cmd->buttons & BT_ATTACK && !player->flashing)
+	if (cmd->flags & TICCMD_TYPING)
+	{
+		/*
+		typing_duration is slow to start and slow to stop.
+
+		typing_timer counts down a grace period before the player is not
+		actually considered typing anymore.
+		*/
+		if (cmd->flags & TICCMD_KEYSTROKE)
+		{
+			/* speed up if we are typing quickly! */
+			if (player->typing_duration > 0 && player->typing_timer > 12)
+			{
+				if (player->typing_duration < 16)
+				{
+					player->typing_duration = 24;
+				}
+				else
+				{
+					/* slows down a tiny bit as it approaches the next dot */
+					const UINT8 step = (((player->typing_duration + 15) & ~15) -
+							player->typing_duration) / 2;
+					player->typing_duration += max(step, 4);
+				}
+			}
+
+			player->typing_timer = 15;
+		}
+		else if (player->typing_timer > 0)
+		{
+			player->typing_timer--;
+		}
+
+		/* if we are in the grace period (including currently typing) */
+		if (player->typing_timer + player->typing_duration > 0)
+		{
+			/* always end the cycle on two dots */
+			if (player->typing_timer == 0 &&
+					(player->typing_duration < 16 || player->typing_duration == 40))
+			{
+				player->typing_duration = 0;
+			}
+			else if (player->typing_duration < 63)
+			{
+				player->typing_duration++;
+			}
+			else
+			{
+				player->typing_duration = 16;
+			}
+		}
+	}
+	else
+	{
+		player->typing_timer = 0;
+		player->typing_duration = 0;
+	}
+
+	/* ------------------------------------------ /
+	ALL ABOVE THIS BLOCK OCCURS EVEN WITH HITLAG
+	/ ------------------------------------------ */
+
+	if (player->mo->hitlag > 0)
+	{
+		return;
+	}
+
+	/* ------------------------------------------ /
+	ALL BELOW THIS BLOCK IS STOPPED DURING HITLAG
+	/ ------------------------------------------ */
+
+	player->pflags &= ~PF_HITFINISHLINE;
+
+	// check water content, set stuff in mobj
+	P_MobjCheckWater(player->mo);
+
+#ifndef SECTORSPECIALSAFTERTHINK
+	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
+		player->onconveyor = 0;
+	// check special sectors : damage & secrets
+
+	if (!player->spectator)
+		P_PlayerInSpecialSector(player);
+#endif
+
+	if (player->playerstate == PST_DEAD)
+	{
+		if (player->spectator)
+			player->mo->renderflags |= RF_GHOSTLY;
+		else
+			player->mo->renderflags &= ~RF_GHOSTLYMASK;
+		P_DeathThink(player);
+		LUA_HookPlayer(player, HOOK(PlayerThink));
+		return;
+	}
+
+	if ((netgame || multiplayer) && player->spectator && !player->bot && cmd->buttons & BT_ATTACK && !player->flashing)
 	{
 		player->pflags ^= PF_WANTSTOJOIN;
 		player->flashing = TICRATE/2 + 1;
@@ -4142,64 +4161,6 @@ void P_PlayerThink(player_t *player)
 			player->mo->renderflags |= RF_DONTDRAW;
 		else
 			player->mo->renderflags &= ~RF_DONTDRAW;
-	}
-
-	if (cmd->flags & TICCMD_TYPING)
-	{
-		/*
-		typing_duration is slow to start and slow to stop.
-
-		typing_timer counts down a grace period before the player is not
-		actually considered typing anymore.
-		*/
-		if (cmd->flags & TICCMD_KEYSTROKE)
-		{
-			/* speed up if we are typing quickly! */
-			if (player->typing_duration > 0 && player->typing_timer > 12)
-			{
-				if (player->typing_duration < 16)
-				{
-					player->typing_duration = 24;
-				}
-				else
-				{
-					/* slows down a tiny bit as it approaches the next dot */
-					const UINT8 step = (((player->typing_duration + 15) & ~15) -
-							player->typing_duration) / 2;
-					player->typing_duration += max(step, 4);
-				}
-			}
-
-			player->typing_timer = 15;
-		}
-		else if (player->typing_timer > 0)
-		{
-			player->typing_timer--;
-		}
-
-		/* if we are in the grace period (including currently typing) */
-		if (player->typing_timer + player->typing_duration > 0)
-		{
-			/* always end the cycle on two dots */
-			if (player->typing_timer == 0 &&
-					(player->typing_duration < 16 || player->typing_duration == 40))
-			{
-				player->typing_duration = 0;
-			}
-			else if (player->typing_duration < 63)
-			{
-				player->typing_duration++;
-			}
-			else
-			{
-				player->typing_duration = 16;
-			}
-		}
-	}
-	else
-	{
-		player->typing_timer = 0;
-		player->typing_duration = 0;
 	}
 
 	if (player->stairjank > 0)

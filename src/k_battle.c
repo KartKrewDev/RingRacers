@@ -18,6 +18,7 @@
 #include "m_random.h"
 #include "r_sky.h" // skyflatnum
 #include "k_grandprix.h" // K_CanChangeRules
+#include "p_spec.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -127,12 +128,16 @@ void K_CheckBumpers(void)
 		winnerscoreadd -= players[i].roundscore;
 	}
 
-	if (K_CanChangeRules() == false)
+	if (K_CanChangeRules(true) == false)
 	{
 		if (nobumpers)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
+				if (!playeringame[i])
+					continue;
+				if (players[i].spectator)
+					continue;
 				players[i].pflags |= PF_NOCONTEST;
 				P_DoPlayerExit(&players[i]);
 			}
@@ -144,7 +149,8 @@ void K_CheckBumpers(void)
 		if (!battlecapsules)
 		{
 			// Reset map to turn on battle capsules
-			D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
+			if (server)
+				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
 		}
 		else
 		{
@@ -152,6 +158,10 @@ void K_CheckBumpers(void)
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
+					if (!playeringame[i])
+						continue;
+					if (players[i].spectator)
+						continue;
 					players[i].pflags |= PF_NOCONTEST;
 					P_DoPlayerExit(&players[i]);
 				}
@@ -173,7 +183,13 @@ void K_CheckBumpers(void)
 		K_KartUpdatePosition(&players[i]);
 
 	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
 		P_DoPlayerExit(&players[i]);
+	}
 }
 
 void K_CheckEmeralds(player_t *player)
@@ -267,7 +283,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_SPHEREBOX);
 
-	P_InitAngle(drop, angle);
+	drop->angle = angle;
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
 		P_RandomRange(PR_ITEM_ROULETTE, 4, 12) * mapobjectscale);
@@ -605,7 +621,7 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 				mo->eflags |= MFE_VERTICALFLIP;
 			}
 
-			P_InitAngle(mo, R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90);
+			mo->angle = R_PointToAngle2(mo->x, mo->y, battleovertime.x, battleovertime.y) + ANGLE_90;
 			mo->renderflags |= (RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player)));
 
 			P_SetScale(mo, scale);
@@ -701,44 +717,18 @@ void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 {
 	UINT8 sequence = mt->args[0] - 1;
 	fixed_t speed = (FRACUNIT >> 3) * mt->args[1];
-	boolean backandforth = (mt->options & MTF_AMBUSH);
-	boolean reverse = (mt->options & MTF_OBJECTSPECIAL);
-	mobj_t *mo2;
+	boolean backandforth = (mt->args[2] & TMBCF_BACKANDFORTH);
+	boolean reverse = (mt->args[2] & TMBCF_REVERSE);
 	mobj_t *target = NULL;
-	thinker_t *th;
-
-	// TODO: This and the movement stuff in the thinker should both be using
-	// 2.2's new optimized functions for doing things with tube waypoints
 
 	// Find the inital target
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	if (reverse)
 	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mo2 = (mobj_t *)th;
-
-		if (mo2->type != MT_TUBEWAYPOINT)
-			continue;
-
-		if (mo2->threshold == sequence)
-		{
-			if (reverse) // Use the highest waypoint number as first
-			{
-				if (mo2->health != 0)
-				{
-					if (target == NULL)
-						target = mo2;
-					else if (mo2->health > target->health)
-						target = mo2;
-				}
-			}
-			else // Use the lowest waypoint number as first
-			{
-				if (mo2->health == 0)
-					target = mo2;
-			}
-		}
+		target = P_GetLastTubeWaypoint(sequence);
+	}
+	else
+	{
+		target = P_GetFirstTubeWaypoint(sequence);
 	}
 
 	if (!target)
@@ -795,29 +785,13 @@ void K_SpawnPlayerBattleBumpers(player_t *p)
 	}
 }
 
-void K_BattleInit(void)
+void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && !battlecapsules && !bossinfo.boss)
+	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules && !bossinfo.boss)
 	{
-		mapthing_t *mt;
-		if (modeattacking != ATTACKING_CAPSULES)
-		{
-			UINT8 n = 0;
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i] || players[i].spectator)
-					continue;
-				n++;
-			}
-
-			if (n > 1)
-				goto aftercapsules;
-		}
-
-		mt = mapthings;
+		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)
 		{
 			if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
@@ -826,7 +800,6 @@ void K_BattleInit(void)
 
 		battlecapsules = true;
 	}
-aftercapsules:
 
 	if (gametyperules & GTR_BUMPERS)
 	{

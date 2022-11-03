@@ -1483,6 +1483,46 @@ static int lib_pMoveOrigin(lua_State *L)
 	return 2;
 }
 
+static int lib_pSetAngle(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetAngle(thing, newValue);
+	thing->angle = thing->old_angle = newValue;
+	return 0;
+}
+
+static int lib_pSetPitch(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetPitch(thing, newValue);
+	thing->pitch = thing->old_pitch = newValue;
+	return 0;
+}
+
+static int lib_pSetRoll(lua_State *L)
+{
+	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	angle_t newValue = luaL_checkangle(L, 2);
+	NOHUD
+	INLEVEL
+	if (!thing)
+		return LUA_ErrInvalid(L, "mobj_t");
+	//P_SetRoll(thing, newValue);
+	thing->roll = thing->old_roll = newValue;
+	return 0;
+}
+
 static int lib_pSlideMove(lua_State *L)
 {
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -1777,15 +1817,51 @@ static int lib_pExplodeMissile(lua_State *L)
 
 static int lib_pMobjTouchingSectorSpecial(lua_State *L)
 {
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
 	INT32 section = (INT32)luaL_checkinteger(L, 2);
 	INT32 number = (INT32)luaL_checkinteger(L, 3);
-	boolean touchground = lua_optboolean(L, 4);
 	//HUDSAFE
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number, touchground), META_SECTOR);
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecial(mo, section, number), META_SECTOR);
+	return 1;
+}
+
+static int lib_pMobjTouchingSectorSpecialFlag(lua_State *L)
+{
+	mobj_t *mo = *((mobj_t**)luaL_checkudata(L, 1, META_MOBJ));
+	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	//HUDSAFE
+	INLEVEL
+	if (!mo)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, P_MobjTouchingSectorSpecialFlag(mo, flag), META_SECTOR);
+	return 1;
+}
+
+static int lib_pPlayerTouchingSectorSpecial(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	INT32 section = (INT32)luaL_checkinteger(L, 2);
+	INT32 number = (INT32)luaL_checkinteger(L, 3);
+	//HUDSAFE
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecial(player, section, number), META_SECTOR);
+	return 1;
+}
+
+static int lib_pPlayerTouchingSectorSpecialFlag(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	sectorspecialflags_t flag = (INT32)luaL_checkinteger(L, 2);
+	//HUDSAFE
+	INLEVEL
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	LUA_PushUserdata(L, P_PlayerTouchingSectorSpecialFlag(player, flag), META_SECTOR);
 	return 1;
 }
 
@@ -1920,32 +1996,11 @@ static int lib_pFadeLight(lua_State *L)
 	INT32 speed = (INT32)luaL_checkinteger(L, 3);
 	boolean ticbased = lua_optboolean(L, 4);
 	boolean force = lua_optboolean(L, 5);
+	boolean relative = lua_optboolean(L, 6);
 	NOHUD
 	INLEVEL
-	P_FadeLight(tag, destvalue, speed, ticbased, force);
+	P_FadeLight(tag, destvalue, speed, ticbased, force, relative);
 	return 0;
-}
-
-static int lib_pThingOnSpecial3DFloor(lua_State *L)
-{
-	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	NOHUD
-	INLEVEL
-	if (!mo)
-		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_PushUserdata(L, P_ThingOnSpecial3DFloor(mo), META_SECTOR);
-	return 1;
-}
-
-static int lib_pIsFlagAtBase(lua_State *L)
-{
-	mobjtype_t flag = luaL_checkinteger(L, 1);
-	NOHUD
-	INLEVEL
-	if (flag >= NUMMOBJTYPES)
-		return luaL_error(L, "mobj type %d out of range (0 - %d)", flag, NUMMOBJTYPES-1);
-	lua_pushboolean(L, P_IsFlagAtBase(flag));
-	return 1;
 }
 
 static int lib_pSetupLevelSky(lua_State *L)
@@ -3499,6 +3554,16 @@ static int lib_kTumblePlayer(lua_State *L)
 	return 0;
 }
 
+static int lib_kStumblePlayer(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_StumblePlayer(player);
+	return 0;
+}
+
 static int lib_kExplodePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -3914,6 +3979,9 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
+	{"P_SetAngle",lib_pSetAngle},
+	{"P_SetPitch",lib_pSetPitch},
+	{"P_SetRoll",lib_pSetRoll},
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
@@ -3939,6 +4007,9 @@ static luaL_Reg lib[] = {
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
 	{"P_ExplodeMissile",lib_pExplodeMissile},
 	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
+	{"P_MobjTouchingSectorSpecialFlag",lib_pMobjTouchingSectorSpecialFlag},
+	{"P_PlayerTouchingSectorSpecial",lib_pPlayerTouchingSectorSpecial},
+	{"P_PlayerTouchingSectorSpecialFlag",lib_pPlayerTouchingSectorSpecialFlag},
 	{"P_FindLowestFloorSurrounding",lib_pFindLowestFloorSurrounding},
 	{"P_FindHighestFloorSurrounding",lib_pFindHighestFloorSurrounding},
 	{"P_FindNextHighestFloor",lib_pFindNextHighestFloor},
@@ -3950,8 +4021,6 @@ static luaL_Reg lib[] = {
 	{"P_LinedefExecute",lib_pLinedefExecute},
 	{"P_SpawnLightningFlash",lib_pSpawnLightningFlash},
 	{"P_FadeLight",lib_pFadeLight},
-	{"P_ThingOnSpecial3DFloor",lib_pThingOnSpecial3DFloor},
-	{"P_IsFlagAtBase",lib_pIsFlagAtBase},
 	{"P_SetupLevelSky",lib_pSetupLevelSky},
 	{"P_SetSkyboxMobj",lib_pSetSkyboxMobj},
 	{"P_StartQuake",lib_pStartQuake},
@@ -4056,6 +4125,7 @@ static luaL_Reg lib[] = {
 	{"K_SpawnBattlePoints",lib_kSpawnBattlePoints},
 	{"K_SpinPlayer",lib_kSpinPlayer},
 	{"K_TumblePlayer",lib_kTumblePlayer},
+	{"K_StumblePlayer",lib_kStumblePlayer},
 	{"K_ExplodePlayer",lib_kExplodePlayer},
 	{"K_TakeBumpersFromPlayer",lib_kTakeBumpersFromPlayer},
 	{"K_SpawnMineExplosion",lib_kSpawnMineExplosion},

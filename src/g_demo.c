@@ -3379,7 +3379,7 @@ void G_AddGhost(char *defdemoname)
 		gh->mo->angle = FixedAngle(mthing->angle << FRACBITS);
 		f = gh->mo->floorz;
 		c = gh->mo->ceilingz - mobjinfo[MT_PLAYER].height;
-		if (!!(mthing->options & MTF_AMBUSH) ^ !!(mthing->options & MTF_OBJECTFLIP))
+		if (!!(mthing->args[0]) ^ !!(mthing->options & MTF_OBJECTFLIP))
 		{
 			z = c - offset;
 			if (z < f)
@@ -3934,6 +3934,19 @@ boolean G_DemoTitleResponder(event_t *ev)
 				demo.titlename[len-1] = 0;
 		}
 	}
+
+	return true;
+}
+
+boolean G_CheckDemoTitleEntry(void)
+{
+	if (menuactive || chat_on)
+		return false;
+
+	if (!G_PlayerInputDown(0, gc_b, 0) && !G_PlayerInputDown(0, gc_x, 0))
+		return false;
+
+	demo.savemode = DSM_TITLEENTRY;
 
 	return true;
 }

@@ -205,7 +205,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, redscore);
 		return 1;
 	} else if (fastcmp(word,"timelimit")) {
-		lua_pushinteger(L, cv_timelimit.value);
+		lua_pushinteger(L, timelimitintics);
 		return 1;
 	} else if (fastcmp(word,"pointlimit")) {
 		lua_pushinteger(L, cv_pointlimit.value);
@@ -350,9 +350,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	} else if (fastcmp(word,"franticitems")) {
 		lua_pushboolean(L, franticitems);
-		return 1;
-	} else if (fastcmp(word,"comeback")) {
-		lua_pushboolean(L, comeback);
 		return 1;
 	} else if (fastcmp(word,"wantedcalcdelay")) {
 		lua_pushinteger(L, wantedcalcdelay);

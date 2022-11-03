@@ -518,6 +518,7 @@ enum TypeOfLevel
 	TOL_RACE	= 0x0001, ///< Race
 	TOL_BATTLE	= 0x0002, ///< Battle
 	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
+	TOL_SPECIAL	= 0x0008, ///< Special Stage (variant of race, but forbidden)
 
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
@@ -659,7 +660,6 @@ extern UINT8 numlaps;
 extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
-extern boolean comeback;
 
 extern SINT8 battlewanted[4];
 extern tic_t wantedcalcdelay;
@@ -669,6 +669,7 @@ extern boolean thwompsactive;
 extern UINT8 lastLowestLap;
 extern SINT8 spbplace;
 extern boolean rainbowstartavailable;
+extern boolean inDuel;
 
 extern tic_t bombflashtimer;	// Used to avoid causing seizures if multiple mines explode close to you :)
 extern boolean legitimateexit;

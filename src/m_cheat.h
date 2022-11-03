@@ -30,6 +30,7 @@ typedef enum {
 	CHEAT_HURT,
 	CHEAT_RELATIVE_TELEPORT,
 	CHEAT_DEVMODE,
+	CHEAT_GIVEITEM,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -44,7 +45,7 @@ void cht_Init(void);
 // ObjectPlace
 //
 void Command_ObjectPlace_f(void);
-void Command_Writethings_f(void);
+//void Command_Writethings_f(void);
 
 extern consvar_t cv_opflags, cv_ophoopflags, cv_mapthingnum, cv_speed;
 //extern consvar_t cv_snapto, cv_grid;

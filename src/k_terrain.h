@@ -27,7 +27,7 @@ typedef struct t_splash_s
 	// Splash definition.
 	// These are particles spawned when hitting the floor.
 
-	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
 	UINT32 hash;					// Lookup name's hash.
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
@@ -48,7 +48,7 @@ typedef struct t_footstep_s
 	// Footstep definition.
 	// These are particles spawned when moving fast enough on a floor.
 
-	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
 	UINT32 hash;					// Lookup name's hash.
 
 	UINT16 mobjType;		// Thing type. MT_NULL to not spawn anything.
@@ -80,7 +80,7 @@ typedef struct t_overlay_s
 	// Overlay definition.
 	// These are sprites displayed on top of the base object.
 
-	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
 	UINT32 hash;					// Lookup name's hash.
 
 	UINT16 states[TOV__MAX]; // State to use when the object is still.
@@ -103,7 +103,7 @@ typedef struct terrain_s
 	// Terrain definition.
 	// These are all of the properties that the floor gets.
 
-	char name[TERRAIN_NAME_LEN];	// Lookup name.
+	char name[TERRAIN_NAME_LEN+1];	// Lookup name.
 	UINT32 hash;					// Lookup name's hash.
 
 	size_t splashID;		// Splash defintion ID.
@@ -111,9 +111,11 @@ typedef struct terrain_s
 	size_t overlayID;		// Overlay defintion ID.
 
 	fixed_t friction;		// The default friction of this texture.
-	UINT8 offroad;			// The default offroad level of this texture.
+	fixed_t offroad;		// The default offroad level of this texture.
 	INT16 damageType;		// The default damage type of this texture. (Negative means no damage).
-	UINT8 trickPanel;		// Trick panel strength
+	fixed_t trickPanel;		// Trick panel strength
+	fixed_t speedPad;		// Speed pad strength
+	angle_t speedPadAngle;	// Speed pad angle
 	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 } terrain_t;
@@ -123,7 +125,7 @@ typedef struct t_floor_s
 	// Terrain floor definition.
 	// Ties a texture name to a terrain definition.
 
-	char textureName[8];	// Floor texture name.
+	char textureName[9];	// Floor texture name.
 	UINT32 textureHash;		// Floor texture hash.
 	size_t terrainID;		// Terrain definition ID.
 } t_floor_t;

@@ -189,4 +189,6 @@ void G_SaveDemo(void);
 
 boolean G_DemoTitleResponder(event_t *ev);
 
+boolean G_CheckDemoTitleEntry(void);
+
 #endif // __G_DEMO__

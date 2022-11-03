@@ -632,8 +632,8 @@ void Y_Ticker(void)
 
 	if (demo.recording)
 	{
-		if (demo.savemode == DSM_NOTSAVING && !menuactive && (G_PlayerInputDown(0, gc_b, 0) || G_PlayerInputDown(0, gc_x, 0)))
-			demo.savemode = DSM_TITLEENTRY;
+		if (demo.savemode == DSM_NOTSAVING)
+			G_CheckDemoTitleEntry();
 
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
 			G_SaveDemo();
@@ -657,18 +657,8 @@ void Y_Ticker(void)
 			P_DoTeamscrambling();
 	}*/
 
-	// multiplayer uses timer (based on cv_inttime)
-	if (timer)
-	{
-		if (!--timer)
-		{
-			Y_EndIntermission();
-			G_AfterIntermission();
-			return;
-		}
-	}
-	// single player is hardcoded to go away after awhile
-	else if (intertic == endtic)
+	if ((timer && !--timer)
+		|| (intertic == endtic))
 	{
 		Y_EndIntermission();
 		G_AfterIntermission();
@@ -680,10 +670,10 @@ void Y_Ticker(void)
 
 	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
 	{
-		//if (!(multiplayer && demo.playback)) // Don't advance to rankings in replays
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
 			{
+				// Anything with post-intermission consequences here should also occur in Y_EndIntermission.
 				K_RetireBots();
 				Y_CalculateMatchData(1, Y_CompareRank);
 			}
@@ -746,8 +736,8 @@ void Y_Ticker(void)
 					S_StartSound(NULL, (kaching ? sfx_chchng : sfx_ptally));
 					Y_CalculateMatchData(2, Y_CompareRank);
 				}
-				else
-					endtic = intertic + 3*TICRATE; // 3 second pause after end of tally
+				/*else -- This is how to define an endtic, but we currently use timer for both SP and MP.
+					endtic = intertic + 3*TICRATE;*/
 			}
 		}
 	}
@@ -763,21 +753,26 @@ void Y_DetermineIntermissionType(void)
 	// set to int_none initially
 	intertype = int_none;
 
-	if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
-	else if (gametype == GT_RACE)
+	if (gametype == GT_RACE)
 		intertype = int_race;
 	else if (gametype == GT_BATTLE)
 	{
-		UINT8 i = 0, nump = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (grandprixinfo.gp == true && bossinfo.boss == false)
+			intertype = int_none;
+		else
 		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			nump++;
+			UINT8 i = 0, nump = 0;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator)
+					continue;
+				nump++;
+			}
+			intertype = (nump < 2 ? int_battletime : int_battle);
 		}
-		intertype = (nump < 2 ? int_battletime : int_battle);
 	}
+	else //if (intermissiontypes[gametype] != int_none)
+		intertype = intermissiontypes[gametype];
 }
 
 //
@@ -806,23 +801,32 @@ void Y_StartIntermission(void)
 	powertype = K_UsingPowerLevels();
 
 	// determine the tic the intermission ends
-	if (!multiplayer || demo.playback)
+	// Technically cv_inttime is saved to demos... but this permits having extremely long timers for post-netgame chatting without stranding you on the intermission in netreplays.
+	if (!K_CanChangeRules(false))
 	{
-		timer = ((nump >= 2) ? 10 : 5)*TICRATE;
+		timer = 10*TICRATE;
 	}
 	else
 	{
 		timer = cv_inttime.value*TICRATE;
-
-		if (!timer)
-			timer = 1; // prevent a weird bug
 	}
 
 	// determine the tic everybody's scores/PWR starts getting sorted
 	sorttic = -1;
-	if (multiplayer || nump >= 2)
+	if (!timer)
 	{
-		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE); // 8 second pause after match results
+		// Prevent a weird bug
+		timer = 1; 
+	}
+	else if (nump < 2 && !netgame)
+	{
+		// No PWR/global score, skip it
+		timer /= 2;
+	}
+	else
+	{
+		// Minimum two seconds for match results, then two second slideover approx halfway through
+		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
 	}
 
 	if (intermissiontypes[gametype] != int_none)
@@ -841,7 +845,7 @@ void Y_StartIntermission(void)
 		case int_battle:
 		case int_battletime:
 		{
-			if (cv_inttime.value > 0)
+			if (timer > 1)
 				S_ChangeMusicInternal("racent", true); // loop it
 
 			// Calculate who won
@@ -897,7 +901,11 @@ void Y_StartIntermission(void)
 //
 void Y_EndIntermission(void)
 {
-	K_RetireBots();
+	if (!data.rankingsmode)
+	{
+		K_RetireBots();
+	}
+
 	Y_UnloadData();
 
 	endtic = -1;

@@ -124,10 +124,12 @@ void Obj_OrbinautThink(mobj_t *th)
 		P_Thrust(th, th->angle, thrustamount);
 	}
 
-	if (P_MobjTouchingSectorSpecial(th, 3, 1, true))
+	/* todo: UDMFify
+	if (P_MobjTouchingSectorSpecialFlag(th, ?))
 	{
 		K_DoPogoSpring(th, 0, 1);
 	}
+	*/
 
 	if (orbinaut_selfdelay(th) > 0)
 	{

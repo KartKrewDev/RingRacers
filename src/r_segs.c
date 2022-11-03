@@ -130,12 +130,15 @@ static void R_Render2sidedMultiPatchColumn(column_t *column, column_t *brightmap
 	}
 }
 
-transnum_t R_GetLinedefTransTable(line_t *ldef)
+transnum_t R_GetLinedefTransTable(fixed_t alpha)
 {
 	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
-	fixed_t alpha = ldef->alpha;
+
 	if (alpha > 0 && alpha < FRACUNIT)
+	{
 		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+	}
+
 	return transnum;
 }
 
@@ -172,40 +175,26 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	if (!ldef->alpha)
 		return;
 
-	transtable = R_GetLinedefTransTable(ldef);
-	if (ldef->special == 910 || P_IsLineTripWire(ldef))
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_ADD;
-	}
-	else if (ldef->special == 911)
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_SUBTRACT;
-	}
-	else if (ldef->special == 912)
-	{
-		if (transtable == NUMTRANSMAPS)
-			transtable = 0;
-		blendmode = AST_REVERSESUBTRACT;
-	}
-	else if (ldef->special == 913)
+	transtable = R_GetLinedefTransTable(ldef->alpha);
+	blendmode = ldef->blendmode;
+
+	if (transtable == NUMTRANSMAPS
+		|| blendmode == AST_MODULATE
+		|| blendmode == AST_FOG)
 	{
 		transtable = 0;
-		blendmode = AST_MODULATE;
 	}
-	if (transtable != NUMTRANSMAPS && (blendmode || transtable))
-	{
-		dc_transmap = R_GetBlendTable(blendmode, transtable);
-		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
-	}
-	else if (ldef->special == 909)
+
+	if (blendmode == AST_FOG)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
 		windowtop = frontsector->ceilingheight;
 		windowbottom = frontsector->floorheight;
+	}
+	else if (transtable != NUMTRANSMAPS && (blendmode || transtable))
+	{
+		dc_transmap = R_GetBlendTable(blendmode, transtable);
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
 	}
 	else
 	{
@@ -281,7 +270,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			rlight->flags = light->flags;
 
 			if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
-				|| (rlight->flags & FF_FOG)
+				|| (rlight->flags & FOF_FOG)
 				|| (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
 				lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
 			else
@@ -334,7 +323,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 
 	if (ds->curline->sidedef->repeatcnt)
 		repeats = 1 + ds->curline->sidedef->repeatcnt;
-	else if (ldef->flags & ML_EFFECT5)
+	else if (ldef->flags & ML_WRAPMIDTEX)
 	{
 		fixed_t high, low;
 
@@ -378,7 +367,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		{
 			dc_texturemid = ds->maskedtextureheight[dc_x];
 
-			if (!!(curline->linedef->flags & ML_DONTPEGBOTTOM) ^ !!(curline->linedef->flags & ML_EFFECT3))
+			if (curline->linedef->flags & ML_MIDPEG)
 				dc_texturemid += (textureheight[texnum])*times + textureheight[texnum];
 			else
 				dc_texturemid -= (textureheight[texnum])*times;
@@ -421,7 +410,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 					{
 						rlight = &dc_lightlist[i];
 
-						if ((rlight->flags & FF_NOSHADE))
+						if ((rlight->flags & FOF_NOSHADE))
 							continue;
 
 						if (rlight->lightnum < 0)
@@ -602,7 +591,7 @@ static boolean R_IsFFloorTranslucent(visffloor_t *pfloor)
 
 	// Polyobjects have no ffloors, and they're handled in the conditional above.
 	if (pfloor->ffloor != NULL)
-		return (pfloor->ffloor->flags & (FF_TRANSLUCENT|FF_FOG));
+		return (pfloor->ffloor->fofflags & (FOF_TRANSLUCENT|FOF_FOG));
 
 	return false;
 }
@@ -659,7 +648,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		bmnum = R_GetTextureBrightmap(texnum);
 	}
 
-	if (pfloor->flags & FF_TRANSLUCENT)
+	if (pfloor->fofflags & FOF_TRANSLUCENT)
 	{
 		boolean fuzzy = true;
 
@@ -678,7 +667,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
 		}
 	}
-	else if (pfloor->flags & FF_FOG)
+	else if (pfloor->fofflags & FOF_FOG)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
 	}
@@ -743,7 +732,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			else                                      rlight->heightstep = CLAMPMIN;
 			rlight->heightstep = (rlight->heightstep-rlight->height)/(range);
 			rlight->flags = light->flags;
-			if (light->flags & FF_CUTLEVEL)
+			if (light->flags & FOF_CUTLEVEL)
 			{
 				SLOPEPARAMS(*light->caster->b_slope, leftheight, rightheight, *light->caster->bottomheight)
 #undef SLOPEPARAMS
@@ -767,12 +756,12 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			rlight->extra_colormap = *light->extra_colormap;
 
 			// Check if the current light effects the colormap/lightlevel
-			if (pfloor->flags & FF_FOG)
+			if (pfloor->fofflags & FOF_FOG)
 				rlight->lightnum = (pfloor->master->frontsector->lightlevel >> LIGHTSEGSHIFT);
 			else
 				rlight->lightnum = (rlight->lightlevel >> LIGHTSEGSHIFT);
 
-			if (pfloor->flags & FF_FOG || rlight->flags & FF_FOG || (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
+			if (pfloor->fofflags & FOF_FOG || rlight->flags & FOF_FOG || (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
 				;
 			else if (P_ApplyLightOffset(rlight->lightnum))
 				rlight->lightnum += curline->lightOffset;
@@ -787,7 +776,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		// Get correct light level!
 		if ((frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
-		else if (pfloor->flags & FF_FOG)
+		else if (pfloor->fofflags & FOF_FOG)
 			lightnum = (pfloor->master->frontsector->lightlevel >> LIGHTSEGSHIFT);
 		else if (R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == true)
 			lightnum = LIGHTLEVELS-1;
@@ -795,7 +784,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			lightnum = R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)
 				->lightlevel >> LIGHTSEGSHIFT;
 
-		if (pfloor->flags & FF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
+		if (pfloor->fofflags & FOF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			;
 		else if (P_ApplyLightOffset(lightnum))
 			lightnum += curline->lightOffset;
@@ -821,10 +810,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	skewslope = *pfloor->t_slope; // skew using top slope by default
 	if (newline)
 	{
-		if (newline->flags & ML_DONTPEGTOP)
+		if (newline->flags & ML_SKEWTD)
 			slopeskew = true;
 	}
-	else if (pfloor->master->flags & ML_DONTPEGTOP)
+	else if (pfloor->master->flags & ML_SKEWTD)
 		slopeskew = true;
 
 	if (slopeskew)
@@ -859,7 +848,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 	if (slopeskew)
 	{
-		angle_t lineangle = R_PointToAngle2(curline->v1->x, curline->v1->y, curline->v2->x, curline->v2->y);
+		angle_t lineangle = curline->angle;
 
 		if (skewslope)
 			ffloortextureslide = FixedMul(skewslope->zdelta, FINECOSINE((lineangle-skewslope->xydirection)>>ANGLETOFINESHIFT));
@@ -943,7 +932,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					{
 						rlight = &dc_lightlist[i];
 						rlight->height += rlight->heightstep;
-						if (rlight->flags & FF_CUTLEVEL)
+						if (rlight->flags & FOF_CUTLEVEL)
 							rlight->botheight += rlight->botheightstep;
 					}
 				}
@@ -971,7 +960,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				{
 					// Check if the current light effects the colormap/lightlevel
 					rlight = &dc_lightlist[i];
-					lighteffect = !(dc_lightlist[i].flags & FF_NOSHADE);
+					lighteffect = !(dc_lightlist[i].flags & FOF_NOSHADE);
 					if (lighteffect)
 					{
 						lightnum = rlight->lightnum;
@@ -988,7 +977,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						if (pindex >= MAXLIGHTSCALE)
 							pindex = MAXLIGHTSCALE-1;
 
-						if (pfloor->flags & FF_FOG)
+						if (pfloor->fofflags & FOF_FOG)
 						{
 							if (pfloor->master->frontsector->extra_colormap)
 								rlight->rcolormap = pfloor->master->frontsector->extra_colormap->colormap + (xwalllights[pindex] - colormaps);
@@ -1007,15 +996,15 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 					solid = 0; // don't carry over solid-cutting flag from the previous light
 
 					// Check if the current light can cut the current 3D floor.
-					if (rlight->flags & FF_CUTSOLIDS && !(pfloor->flags & FF_EXTRA))
+					if (rlight->flags & FOF_CUTSOLIDS && !(pfloor->fofflags & FOF_EXTRA))
 						solid = 1;
-					else if (rlight->flags & FF_CUTEXTRA && pfloor->flags & FF_EXTRA)
+					else if (rlight->flags & FOF_CUTEXTRA && pfloor->fofflags & FOF_EXTRA)
 					{
-						if (rlight->flags & FF_EXTRA)
+						if (rlight->flags & FOF_EXTRA)
 						{
 							// The light is from an extra 3D floor... Check the flags so
 							// there are no undesired cuts.
-							if ((rlight->flags & (FF_FOG|FF_SWIMMABLE)) == (pfloor->flags & (FF_FOG|FF_SWIMMABLE)))
+							if ((rlight->flags & (FOF_FOG|FOF_SWIMMABLE)) == (pfloor->fofflags & (FOF_FOG|FOF_SWIMMABLE)))
 								solid = 1;
 						}
 						else
@@ -1060,7 +1049,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						{
 							rlight = &dc_lightlist[i];
 							rlight->height += rlight->heightstep;
-							if (rlight->flags & FF_CUTLEVEL)
+							if (rlight->flags & FOF_CUTLEVEL)
 								rlight->botheight += rlight->botheightstep;
 						}
 						continue;
@@ -1106,7 +1095,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				dc_fullbright += COLORMAP_REMAPOFFSET;
 			}
 
-			if (pfloor->flags & FF_FOG && pfloor->master->frontsector->extra_colormap)
+			if (pfloor->fofflags & FOF_FOG && pfloor->master->frontsector->extra_colormap)
 				dc_colormap = pfloor->master->frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
 			else if (frontsector->extra_colormap)
 				dc_colormap = frontsector->extra_colormap->colormap + (dc_colormap - colormaps);
@@ -1548,9 +1537,9 @@ static void R_RenderSegLoop (void)
 			maskedtexturecol[rw_x] = (INT16)texturecolumn;
 
 			if (maskedtextureheight != NULL) {
-				maskedtextureheight[rw_x] = (!!(curline->linedef->flags & ML_DONTPEGBOTTOM) ^ !!(curline->linedef->flags & ML_EFFECT3) ?
+				maskedtextureheight[rw_x] = (curline->linedef->flags & ML_MIDPEG) ?
 											max(rw_midtexturemid, rw_midtextureback) :
-											min(rw_midtexturemid, rw_midtextureback));
+											min(rw_midtexturemid, rw_midtextureback);
 			}
 		}
 
@@ -1559,7 +1548,7 @@ static void R_RenderSegLoop (void)
 			for (i = 0; i < dc_numlights; i++)
 			{
 				dc_lightlist[i].height += dc_lightlist[i].heightstep;
-				if (dc_lightlist[i].flags & FF_CUTSOLIDS)
+				if (dc_lightlist[i].flags & FOF_CUTSOLIDS)
 					dc_lightlist[i].botheight += dc_lightlist[i].botheightstep;
 			}
 		}
@@ -1837,7 +1826,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	ceilingfrontslide = floorfrontslide = ceilingbackslide = floorbackslide = 0;
 
 	{
-		angle_t lineangle = R_PointToAngle2(curline->v1->x, curline->v1->y, curline->v2->x, curline->v2->y);
+		angle_t lineangle = curline->angle;
 
 		if (frontsector->f_slope)
 			floorfrontslide = FixedMul(frontsector->f_slope->zdelta, FINECOSINE((lineangle-frontsector->f_slope->xydirection)>>ANGLETOFINESHIFT));
@@ -1861,7 +1850,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		texheight = textureheight[midtexture];
 		// a single sided line is terminal, so it must mark ends
 		markfloor = markceiling = true;
-		if (linedef->flags & ML_EFFECT2) {
+		if (linedef->flags & ML_NOSKEW) {
 			if (linedef->flags & ML_DONTPEGBOTTOM)
 				rw_midtexturemid = frontsector->floorheight + texheight - viewz;
 			else
@@ -2017,18 +2006,20 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		else if (worldlow != worldbottom
 			|| worldlowslope != worldbottomslope
 			|| backsector->f_slope != frontsector->f_slope
-		    || backsector->floorpic != frontsector->floorpic
-		    || backsector->lightlevel != frontsector->lightlevel
-		    //SoM: 3/22/2000: Check floor x and y offsets.
-		    || backsector->floor_xoffs != frontsector->floor_xoffs
-		    || backsector->floor_yoffs != frontsector->floor_yoffs
-		    || backsector->floorpic_angle != frontsector->floorpic_angle
-		    //SoM: 3/22/2000: Prevents bleeding.
-		    || (frontsector->heightsec != -1 && frontsector->floorpic != skyflatnum)
-		    || backsector->floorlightsec != frontsector->floorlightsec
-		    //SoM: 4/3/2000: Check for colormaps
-		    || frontsector->extra_colormap != backsector->extra_colormap
-		    || (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
+			|| backsector->floorpic != frontsector->floorpic
+			|| backsector->lightlevel != frontsector->lightlevel
+			//SoM: 3/22/2000: Check floor x and y offsets.
+			|| backsector->floor_xoffs != frontsector->floor_xoffs
+			|| backsector->floor_yoffs != frontsector->floor_yoffs
+			|| backsector->floorpic_angle != frontsector->floorpic_angle
+			//SoM: 3/22/2000: Prevents bleeding.
+			|| (frontsector->heightsec != -1 && frontsector->floorpic != skyflatnum)
+			|| backsector->floorlightlevel != frontsector->floorlightlevel
+			|| backsector->floorlightabsolute != frontsector->floorlightabsolute
+			|| backsector->floorlightsec != frontsector->floorlightsec
+			//SoM: 4/3/2000: Check for colormaps
+			|| frontsector->extra_colormap != backsector->extra_colormap
+			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
 		{
 			markfloor = true;
 		}
@@ -2048,18 +2039,20 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		else if (worldhigh != worldtop
 			|| worldhighslope != worldtopslope
 			|| backsector->c_slope != frontsector->c_slope
-		    || backsector->ceilingpic != frontsector->ceilingpic
-		    || backsector->lightlevel != frontsector->lightlevel
-		    //SoM: 3/22/2000: Check floor x and y offsets.
-		    || backsector->ceiling_xoffs != frontsector->ceiling_xoffs
-		    || backsector->ceiling_yoffs != frontsector->ceiling_yoffs
-		    || backsector->ceilingpic_angle != frontsector->ceilingpic_angle
-		    //SoM: 3/22/2000: Prevents bleeding.
-		    || (frontsector->heightsec != -1 && frontsector->ceilingpic != skyflatnum)
-		    || backsector->ceilinglightsec != frontsector->ceilinglightsec
-		    //SoM: 4/3/2000: Check for colormaps
-		    || frontsector->extra_colormap != backsector->extra_colormap
-		    || (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
+			|| backsector->ceilingpic != frontsector->ceilingpic
+			|| backsector->lightlevel != frontsector->lightlevel
+			//SoM: 3/22/2000: Check floor x and y offsets.
+			|| backsector->ceiling_xoffs != frontsector->ceiling_xoffs
+			|| backsector->ceiling_yoffs != frontsector->ceiling_yoffs
+			|| backsector->ceilingpic_angle != frontsector->ceilingpic_angle
+			//SoM: 3/22/2000: Prevents bleeding.
+			|| (frontsector->heightsec != -1 && frontsector->ceilingpic != skyflatnum)
+			|| backsector->ceilinglightlevel != frontsector->ceilinglightlevel
+			|| backsector->ceilinglightabsolute != frontsector->ceilinglightabsolute
+			|| backsector->ceilinglightsec != frontsector->ceilinglightsec
+			//SoM: 4/3/2000: Check for colormaps
+			|| frontsector->extra_colormap != backsector->extra_colormap
+			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
 		{
 				markceiling = true;
 		}
@@ -2085,26 +2078,13 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		{
 			fixed_t texheight;
 			// top texture
-			if ((linedef->flags & (ML_DONTPEGTOP) && (linedef->flags & ML_DONTPEGBOTTOM))
-				&& linedef->sidenum[1] != 0xffff)
-			{
-				// Special case... use offsets from 2nd side but only if it has a texture.
-				side_t *def = &sides[linedef->sidenum[1]];
-				toptexture = R_GetTextureNum(def->toptexture);
+			toptexture = R_GetTextureNum(sidedef->toptexture);
+			topbrightmap = R_GetTextureBrightmap(toptexture);
+			texheight = textureheight[toptexture];
 
-				if (!toptexture) //Second side has no texture, use the first side's instead.
-					toptexture = R_GetTextureNum(sidedef->toptexture);
-
-				topbrightmap = R_GetTextureBrightmap(toptexture);
-				texheight = textureheight[toptexture];
-			}
-			else
+			if (!(linedef->flags & ML_SKEWTD))
 			{
-				toptexture = R_GetTextureNum(sidedef->toptexture);
-				topbrightmap = R_GetTextureBrightmap(toptexture);
-				texheight = textureheight[toptexture];
-			}
-			if (!(linedef->flags & ML_EFFECT1)) { // Ignore slopes for lower/upper textures unless flag is checked
+				// Ignore slopes for lower/upper textures unless flag is checked
 				if (linedef->flags & ML_DONTPEGTOP)
 					rw_toptexturemid = frontsector->ceilingheight - viewz;
 				else
@@ -2130,7 +2110,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			bottomtexture = R_GetTextureNum(sidedef->bottomtexture);
 			bottombrightmap = R_GetTextureBrightmap(bottomtexture);
 
-			if (!(linedef->flags & ML_EFFECT1)) { // Ignore slopes for lower/upper textures unless flag is checked
+			if (!(linedef->flags & ML_SKEWTD))
+			{
+				// Ignore slopes for lower/upper textures unless flag is checked
 				if (linedef->flags & ML_DONTPEGBOTTOM)
 					rw_bottomtexturemid = frontsector->floorheight - viewz;
 				else
@@ -2179,9 +2161,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 				i = 0;
 				for (rover = backsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_RENDERSIDES) || !(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_RENDERSIDES) || !(rover->fofflags & FOF_EXISTS))
 						continue;
-					if (!(rover->flags & FF_ALLSIDES) && rover->flags & FF_INVERTSIDES)
+					if (!(rover->fofflags & FOF_ALLSIDES) && rover->fofflags & FOF_INVERTSIDES)
 						continue;
 
 					if (rover->norender == leveltime)
@@ -2198,23 +2180,23 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 						if (r2->master == rover->master) // Skip if same control line.
 							break;
 
-						if (!(r2->flags & FF_EXISTS) || !(r2->flags & FF_RENDERSIDES))
+						if (!(r2->fofflags & FOF_EXISTS) || !(r2->fofflags & FOF_RENDERSIDES))
 							continue;
 
 						if (r2->norender == leveltime)
 							continue;
 
-						if (rover->flags & FF_EXTRA)
+						if (rover->fofflags & FOF_EXTRA)
 						{
-							if (!(r2->flags & FF_CUTEXTRA))
+							if (!(r2->fofflags & FOF_CUTEXTRA))
 								continue;
 
-							if (r2->flags & FF_EXTRA && (r2->flags & (FF_TRANSLUCENT|FF_FOG)) != (rover->flags & (FF_TRANSLUCENT|FF_FOG)))
+							if (r2->fofflags & FOF_EXTRA && (r2->fofflags & (FOF_TRANSLUCENT|FOF_FOG)) != (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
 								continue;
 						}
 						else
 						{
-							if (!(r2->flags & FF_CUTSOLIDS))
+							if (!(r2->fofflags & FOF_CUTSOLIDS))
 								continue;
 						}
 
@@ -2237,9 +2219,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 				for (rover = frontsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_RENDERSIDES) || !(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_RENDERSIDES) || !(rover->fofflags & FOF_EXISTS))
 						continue;
-					if (!(rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES))
+					if (!(rover->fofflags & FOF_ALLSIDES || rover->fofflags & FOF_INVERTSIDES))
 						continue;
 
 					if (rover->norender == leveltime)
@@ -2256,23 +2238,23 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 						if (r2->master == rover->master) // Skip if same control line.
 							break;
 
-						if (!(r2->flags & FF_EXISTS) || !(r2->flags & FF_RENDERSIDES))
+						if (!(r2->fofflags & FOF_EXISTS) || !(r2->fofflags & FOF_RENDERSIDES))
 							continue;
 
 						if (r2->norender == leveltime)
 							continue;
 
-						if (rover->flags & FF_EXTRA)
+						if (rover->fofflags & FOF_EXTRA)
 						{
-							if (!(r2->flags & FF_CUTEXTRA))
+							if (!(r2->fofflags & FOF_CUTEXTRA))
 								continue;
 
-							if (r2->flags & FF_EXTRA && (r2->flags & (FF_TRANSLUCENT|FF_FOG)) != (rover->flags & (FF_TRANSLUCENT|FF_FOG)))
+							if (r2->fofflags & FOF_EXTRA && (r2->fofflags & (FOF_TRANSLUCENT|FOF_FOG)) != (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
 								continue;
 						}
 						else
 						{
-							if (!(r2->flags & FF_CUTSOLIDS))
+							if (!(r2->fofflags & FOF_CUTSOLIDS))
 								continue;
 						}
 
@@ -2297,9 +2279,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = backsector->ffloors, i = 0; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_RENDERSIDES) || !(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_RENDERSIDES) || !(rover->fofflags & FOF_EXISTS))
 						continue;
-					if (!(rover->flags & FF_ALLSIDES) && rover->flags & FF_INVERTSIDES)
+					if (!(rover->fofflags & FOF_ALLSIDES) && rover->fofflags & FOF_INVERTSIDES)
 						continue;
 					if (rover->norender == leveltime)
 						continue;
@@ -2319,9 +2301,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = frontsector->ffloors, i = 0; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_RENDERSIDES) || !(rover->flags & FF_EXISTS))
+					if (!(rover->fofflags & FOF_RENDERSIDES) || !(rover->fofflags & FOF_EXISTS))
 						continue;
-					if (!(rover->flags & FF_ALLSIDES || rover->flags & FF_INVERTSIDES))
+					if (!(rover->fofflags & FOF_ALLSIDES || rover->fofflags & FOF_INVERTSIDES))
 						continue;
 					if (rover->norender == leveltime)
 						continue;
@@ -2361,7 +2343,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			if (curline->polyseg)
 			{ // use REAL front and back floors please, so midtexture rendering isn't mucked up
 				rw_midtextureslide = rw_midtexturebackslide = 0;
-				if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3))
+				if (linedef->flags & ML_MIDPEG)
 					rw_midtexturemid = rw_midtextureback = max(curline->frontsector->floorheight, curline->backsector->floorheight) - viewz;
 				else
 					rw_midtexturemid = rw_midtextureback = min(curline->frontsector->ceilingheight, curline->backsector->ceilingheight) - viewz;
@@ -2369,16 +2351,16 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			else
 			{
 				// Set midtexture starting height
-				if (linedef->flags & ML_EFFECT2)
+				if (linedef->flags & ML_NOSKEW)
 				{ // Ignore slopes when texturing
 					rw_midtextureslide = rw_midtexturebackslide = 0;
-					if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3))
+					if (linedef->flags & ML_MIDPEG)
 						rw_midtexturemid = rw_midtextureback = max(frontsector->floorheight, backsector->floorheight) - viewz;
 					else
 						rw_midtexturemid = rw_midtextureback = min(frontsector->ceilingheight, backsector->ceilingheight) - viewz;
 
 				}
-				else if (!!(linedef->flags & ML_DONTPEGBOTTOM) ^ !!(linedef->flags & ML_EFFECT3))
+				else if (linedef->flags & ML_MIDPEG)
 				{
 					rw_midtexturemid = worldbottom;
 					rw_midtextureslide = floorfrontslide;
@@ -2541,7 +2523,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			rlight->heightstep = (rlight->heightstep-rlight->height)/(range);
 			rlight->flags = light->flags;
 
-			if (light->caster && light->caster->flags & FF_CUTSOLIDS)
+			if (light->caster && light->caster->fofflags & FOF_CUTSOLIDS)
 			{
 				leftheight  = P_GetFFloorBottomZAt(light->caster,  segleft.x,  segleft.y);
 				rightheight = P_GetFFloorBottomZAt(light->caster, segright.x, segright.y);
@@ -2628,7 +2610,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = backsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
+					if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
 						continue;
 					if (rover->norender == leveltime)
 						continue;
@@ -2643,8 +2625,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					if ((roverleft>>4 <= worldhigh || roverright>>4 <= worldhighslope) &&
 					    (roverleft>>4 >= worldlow || roverright>>4 >= worldlowslope) &&
-					    ((viewz < planevistest && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-					     (viewz > planevistest && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+					    ((viewz < planevistest && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+					     (viewz > planevistest && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 					{
 						//ffloor[i].slope = *rover->b_slope;
 						ffloor[i].b_pos = roverleft;
@@ -2666,8 +2648,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					if ((roverleft>>4 <= worldhigh || roverright>>4 <= worldhighslope) &&
 					    (roverleft>>4 >= worldlow || roverright>>4 >= worldlowslope) &&
-					    ((viewz > planevistest && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-					     (viewz < planevistest && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+					    ((viewz > planevistest && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+					     (viewz < planevistest && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 					{
 						//ffloor[i].slope = *rover->t_slope;
 						ffloor[i].b_pos = roverleft;
@@ -2685,7 +2667,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = frontsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
+					if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
 						continue;
 					if (rover->norender == leveltime)
 						continue;
@@ -2700,8 +2682,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					if ((roverleft>>4 <= worldhigh || roverright>>4 <= worldhighslope) &&
 					    (roverleft>>4 >= worldlow || roverright>>4 >= worldlowslope) &&
-					    ((viewz < planevistest && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-					     (viewz > planevistest && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+					    ((viewz < planevistest && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+					     (viewz > planevistest && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 					{
 						//ffloor[i].slope = *rover->b_slope;
 						ffloor[i].b_pos = roverleft;
@@ -2723,8 +2705,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 					if ((roverleft>>4 <= worldhigh || roverright>>4 <= worldhighslope) &&
 					    (roverleft>>4 >= worldlow || roverright>>4 >= worldlowslope) &&
-					    ((viewz > planevistest && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES))) ||
-					     (viewz < planevistest && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+					    ((viewz > planevistest && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))) ||
+					     (viewz < planevistest && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 					{
 						//ffloor[i].slope = *rover->t_slope;
 						ffloor[i].b_pos = roverleft;

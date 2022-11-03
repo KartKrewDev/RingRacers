@@ -473,7 +473,7 @@ void SendKick(UINT8 playernum, UINT8 msg);
 void NetKeepAlive(void);
 void NetUpdate(void);
 
-void SV_StartSinglePlayerServer(void);
+void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame);
 boolean SV_SpawnServer(void);
 void SV_StopServer(void);
 void SV_ResetServer(void);

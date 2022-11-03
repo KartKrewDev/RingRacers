@@ -58,6 +58,7 @@
 #include "k_respawn.h"
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_specialstage.h"
 #include "k_bot.h"
 #include "doomstat.h"
 #include "k_acs.h"
@@ -297,7 +298,6 @@ UINT8 gamespeed; // Game's current speed (or difficulty, or cc, or etc); 0 for e
 boolean encoremode = false; // Encore Mode currently enabled?
 boolean prevencoremode;
 boolean franticitems; // Frantic items currently enabled?
-boolean comeback; // Battle Mode's karma comeback is on/off
 
 // Voting system
 INT16 votelevels[4][2]; // Levels that were rolled by the host
@@ -313,6 +313,7 @@ boolean thwompsactive; // Thwomps activate on lap 2
 UINT8 lastLowestLap; // Last lowest lap, for activating race lap executors
 SINT8 spbplace; // SPB exists, give the person behind better items
 boolean rainbowstartavailable; // Boolean, keeps track of if the rainbow start was gotten
+boolean inDuel; // Boolean, keeps track of if it is a 1v1
 
 // Client-sided, unsynched variables (NEVER use in anything that needs to be synced with other players)
 tic_t bombflashtimer = 0;	// Cooldown before another FlashPal can be intialized by a bomb exploding near a displayplayer. Avoids seizures.
@@ -517,7 +518,6 @@ tic_t G_GetBestLap(INT16 map)
 //
 static void G_UpdateRecordReplays(void)
 {
-	const size_t glen = strlen(srb2home)+1+strlen("media")+strlen("replay")+1+strlen(timeattackfolder)+1+strlen("MAPXX")+1;
 	char *gpath;
 	char lastdemo[256], bestdemo[256];
 	UINT8 earnedEmblems;
@@ -557,11 +557,12 @@ static void G_UpdateRecordReplays(void)
 			srb2home, timeattackfolder);
 	M_MkdirEach(gpath, M_PathParts(gpath) - 3, 0755);
 
-	if ((gpath = malloc(glen)) == NULL)
-		I_Error("Out of memory for replay filepath\n");
+	strcat(gpath, PATHSEP);
+	strcat(gpath, G_BuildMapName(gamemap));
 
-	sprintf(gpath,"%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap));
 	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_chooseskin.string);
+
+	gpath = Z_StrDup(gpath);
 
 	if (FIL_FileExists(lastdemo))
 	{
@@ -593,7 +594,8 @@ static void G_UpdateRecordReplays(void)
 
 		Z_Free(buf);
 	}
-	free(gpath);
+
+	Z_Free(gpath);
 
 	// Check emblems when level data is updated
 	if ((earnedEmblems = M_CheckLevelEmblems()))
@@ -2224,6 +2226,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	INT32 starpostnum;
 	INT32 exiting;
+	INT32 khudfinish;
 	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
@@ -2297,6 +2300,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	botdiffincrease = players[player].botvars.diffincrease;
 	botrival = players[player].botvars.rival;
 
+	totalring = players[player].totalring;
+	xtralife = players[player].xtralife;
+
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
@@ -2315,12 +2321,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = 0;
 		laps = 0;
 		latestlap = 0;
-		totalring = 0;
 		roundscore = 0;
 		exiting = 0;
+		khudfinish = 0;
 		khudcardanimation = 0;
 		starpostnum = 0;
-		xtralife = 0;
 
 		follower = NULL;
 	}
@@ -2357,15 +2362,21 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
 
-		totalring = players[player].totalring;
 		roundscore = players[player].roundscore;
 
 		exiting = players[player].exiting;
-		khudcardanimation = (exiting > 0) ? players[player].karthud[khud_cardanimation] : 0;
+		if (exiting > 0)
+		{
+			khudfinish = players[player].karthud[khud_finish];
+			khudcardanimation = players[player].karthud[khud_cardanimation];
+		}
+		else
+		{
+			khudfinish = 0;
+			khudcardanimation = 0;
+		}
 
 		starpostnum = players[player].starpostnum;
-
-		xtralife = players[player].xtralife;
 
 		follower = players[player].follower;
 
@@ -2406,6 +2417,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->starpostnum = starpostnum;
 	p->exiting = exiting;
+	p->karthud[khud_finish] = khudfinish;
 	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
@@ -2562,7 +2574,9 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 	else
 		P_MovePlayerToStarpost(playernum);
 #else
-	if (leveltime > starttime)
+	// Player's first spawn should be at the "map start".
+	// I.e. level load or join mid game.
+	if (leveltime > starttime && players[playernum].jointime > 0)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
@@ -2910,7 +2924,7 @@ void G_ExitLevel(void)
 				}
 			}
 		}
-		else if (grandprixinfo.gp == true)
+		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
 		{
 			youlost = (grandprixinfo.wonround != true);
 		}
@@ -3146,6 +3160,7 @@ tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
 	{"BOSS",TOL_BOSS},
+	{"SPECIAL",TOL_SPECIAL},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -3223,14 +3238,14 @@ boolean G_GametypeUsesLives(void)
 	if (modeattacking || metalrecording) // NOT in Record Attack
 		return false;
 
-	if (bossinfo.boss == true) // Fighting a boss?
+	if ((grandprixinfo.gp == true) // In Grand Prix
+		&& (gametype == GT_RACE) // NOT in bonus round
+		&& grandprixinfo.eventmode == GPEVENT_NONE) // NOT in bonus
 	{
 		return true;
 	}
 
-	if ((grandprixinfo.gp == true) // In Grand Prix
-		&& (gametype == GT_RACE) // NOT in bonus round
-		&& !G_IsSpecialStage(gamemap)) // NOT in special stage
+	if (bossinfo.boss == true) // Fighting a boss?
 	{
 		return true;
 	}
@@ -3645,11 +3660,11 @@ static void G_UpdateVisited(void)
 		return;
 
 	// Update visitation flags
-	mapheaderinfo[gamemap-1]->mapvisited |= MV_BEATEN;
+	mapheaderinfo[prevmap]->mapvisited |= MV_BEATEN;
 
 	if (encoremode == true)
 	{
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_ENCORE;
+		mapheaderinfo[prevmap]->mapvisited |= MV_ENCORE;
 	}
 
 	if (modeattacking)
@@ -3696,6 +3711,7 @@ static void G_HandleSaveLevel(void)
 
 static void G_GetNextMap(void)
 {
+	boolean spec = G_IsSpecialStage(prevmap+1);
 	INT32 i;
 
 	// go to next level
@@ -3712,14 +3728,94 @@ static void G_GetNextMap(void)
 		}
 		else
 		{
-			if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
+			INT32 lastgametype = gametype;
+
+			// If we're in a GP event, don't immediately follow it up with another.
+			// I also suspect this will not work with online GP so I'm gonna prevent it right now.
+			// The server might have to communicate eventmode (alongside other GP data) in XD_MAP later.
+			if (netgame || grandprixinfo.eventmode != GPEVENT_NONE)
+			{
+				grandprixinfo.eventmode = GPEVENT_NONE;
+
+				G_SetGametype(GT_RACE);
+				if (gametype != lastgametype)
+					D_GameTypeChanged(lastgametype);
+
+				specialStage.active = false;
+				bossinfo.boss = false;
+			}
+			// Special stage
+			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+			{
+				INT16 totaltotalring = 0;
+
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (!playeringame[i])
+						continue;
+					if (players[i].spectator)
+						continue;
+					if (players[i].bot)
+						continue;
+					totaltotalring += players[i].totalring;
+				}
+
+				if (totaltotalring >= 50)
+				{
+					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
+						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_SPECIAL|TOL_BOSS|TOL_BATTLE))
+					{
+						grandprixinfo.eventmode = GPEVENT_SPECIAL;
+						nextmap = cupLevelNum;
+					}
+				}
+			}
+			else if (grandprixinfo.roundnum == (grandprixinfo.cup->numlevels+1)/2) // 3 for a 5-map cup
+			{
+				// todo any other condition?
+				{
+					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS];
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
+						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
+					{
+						grandprixinfo.eventmode = GPEVENT_BONUS;
+						nextmap = cupLevelNum;
+					}
+				}
+			}
+
+			if (grandprixinfo.eventmode != GPEVENT_NONE)
+			{
+				// nextmap is set above
+				const INT32 newtol = mapheaderinfo[nextmap]->typeoflevel;
+
+				if (newtol & TOL_SPECIAL)
+				{
+					specialStage.active = true;
+					specialStage.encore = grandprixinfo.encore;
+				}
+				else //(if newtol & (TOL_BATTLE|TOL_BOSS)) -- safe to assume??
+				{
+					G_SetGametype(GT_BATTLE);
+					if (gametype != lastgametype)
+						D_GameTypeChanged(lastgametype);
+					if (newtol & TOL_BOSS)
+					{
+						K_ResetBossInfo();
+						bossinfo.boss = true;
+						bossinfo.encore = grandprixinfo.encore;
+					}
+				}
+			}
+			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
 			{
 				nextmap = NEXTMAP_CEREMONY; // ceremonymap
 			}
 			else
 			{
 				// Proceed to next map
-				const INT32 cupLevelNum =grandprixinfo.cup->cachedlevels[grandprixinfo.roundnum];
+				const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[grandprixinfo.roundnum];
 
 				if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 				{
@@ -3801,14 +3897,7 @@ static void G_GetNextMap(void)
 			// Didn't get a nextmap before reaching the end?
 			if (gettingresult != 2)
 			{
-				if (marathonmode)
-				{
-					nextmap = NEXTMAP_CEREMONY; // ceremonymap
-				}
-				else
-				{
-					nextmap = NEXTMAP_TITLE;
-				}
+				nextmap = NEXTMAP_CEREMONY; // ceremonymap
 			}
 		}
 		else
@@ -3836,19 +3925,39 @@ static void G_GetNextMap(void)
 			nextmap = cm;
 		}
 
-		if (!marathonmode)
+		if (K_CanChangeRules(true))
 		{
-			if (cv_advancemap.value == 0) // Stay on same map.
+			switch (cv_advancemap.value)
 			{
-				nextmap = prevmap;
-			}
-			else if (cv_advancemap.value == 2) // Go to random map.
-			{
-				nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
-			}
-			else if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
-			{
-				nextmap = G_GetFirstMapOfGametype(gametype);
+				case 0: // Stay on same map.
+					nextmap = prevmap;
+					break;
+				case 3: // Voting screen.
+					{
+						for (i = 0; i < MAXPLAYERS; i++)
+						{
+							if (!playeringame[i])
+								continue;
+							if (players[i].spectator)
+								continue;
+							break;
+						}
+						if (i != MAXPLAYERS)
+						{
+							nextmap = NEXTMAP_VOTING;
+							break;
+						}
+					}
+					/* FALLTHRU */
+				case 2: // Go to random map.
+					nextmap = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, false, NULL);
+					break;
+				default:
+					if (nextmap >= NEXTMAP_SPECIAL) // Loop back around
+					{
+						nextmap = G_GetFirstMapOfGametype(gametype);
+					}
+					break;
 			}
 		}
 	}
@@ -3856,6 +3965,9 @@ static void G_GetNextMap(void)
 	// We are committed to this map now.
 	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
 		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
+
+	if (!spec)
+		lastmap = nextmap;
 }
 
 //
@@ -3864,8 +3976,6 @@ static void G_GetNextMap(void)
 static void G_DoCompleted(void)
 {
 	INT32 i, j = 0;
-	boolean spec = G_IsSpecialStage(gamemap);
-	SINT8 powertype = K_UsingPowerLevels();
 
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
@@ -3908,8 +4018,9 @@ static void G_DoCompleted(void)
 		}
 	}
 
+	// See Y_StartIntermission timer handling
+	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules(false) || cv_inttime.value > 0))
 	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (cv_inttime.value > 0))
 		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)
@@ -3921,14 +4032,8 @@ static void G_DoCompleted(void)
 
 	if (!demo.playback)
 	{
-		G_GetNextMap();
-
-		// Remember last map for when you come out of the special stage.
-		if (!spec)
-			lastmap = nextmap;
-
 		// Set up power level gametype scrambles
-		K_SetPowerLevelScrambles(powertype);
+		K_SetPowerLevelScrambles(K_UsingPowerLevels());
 	}
 
 	// If the current gametype has no intermission screen set, then don't start it.
@@ -3939,7 +4044,6 @@ static void G_DoCompleted(void)
 		|| (intertype == int_none))
 	{
 		G_UpdateVisited();
-		G_HandleSaveLevel();
 		G_AfterIntermission();
 	}
 	else
@@ -3947,7 +4051,6 @@ static void G_DoCompleted(void)
 		G_SetGamestate(GS_INTERMISSION);
 		Y_StartIntermission();
 		G_UpdateVisited();
-		G_HandleSaveLevel();
 	}
 }
 
@@ -3981,14 +4084,17 @@ void G_AfterIntermission(void)
 		return;
 	}
 
+	if (gamestate != GS_VOTING)
+	{
+		G_GetNextMap();
+		G_HandleSaveLevel();
+	}
+
 	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[prevmap]->cutscenenum-1, false, false);
 	else
 	{
-		if (nextmap < NEXTMAP_SPECIAL)
-			G_NextLevel();
-		else
-			G_EndGame();
+		G_NextLevel();
 	}
 }
 
@@ -4000,24 +4106,14 @@ void G_AfterIntermission(void)
 //
 void G_NextLevel(void)
 {
-	if (gamestate != GS_VOTING)
+	if (nextmap >= NEXTMAP_SPECIAL)
 	{
-		if ((cv_advancemap.value == 3) && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking && !skipstats && (multiplayer || netgame))
-		{
-			UINT8 i;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					gameaction = ga_startvote;
-					return;
-				}
-			}
-		}
-
-		forceresetplayers = false;
-		deferencoremode = (cv_kartencore.value == 1);
+		G_EndGame();
+		return;
 	}
+
+	forceresetplayers = false;
+	deferencoremode = (cv_kartencore.value == 1);
 
 	gameaction = ga_worlddone;
 }
@@ -4045,7 +4141,11 @@ static void G_DoWorldDone(void)
 static void G_DoStartVote(void)
 {
 	if (server)
+	{
+		if (gamestate == GS_VOTING)
+			I_Error("G_DoStartVote: NEXTMAP_VOTING causes recursive vote!");
 		D_SetupVote();
+	}
 	gameaction = ga_nothing;
 }
 
@@ -4123,8 +4223,12 @@ static void G_DoContinued(void)
 // when something new is added.
 void G_EndGame(void)
 {
-	if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
-		G_SaveDemo();
+	// Handle voting
+	if (nextmap == NEXTMAP_VOTING)
+	{
+		gameaction = ga_startvote;
+		return;
+	}
 
 	// Only do evaluation and credits in singleplayer contexts
 	if (!netgame && (gametyperules & GTR_CAMPAIGN))
@@ -4713,6 +4817,7 @@ cleanup:
 void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
 	UINT16 color = SKINCOLOR_NONE;
+	INT32 dogametype;
 
 	paused = false;
 
@@ -4723,8 +4828,17 @@ void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ss
 
 	G_ResetRandMapBuffer();
 
+	if ((modeattacking == ATTACKING_CAPSULES) || (bossinfo.boss == true))
+	{
+		dogametype = GT_BATTLE;
+	}
+	else
+	{
+		dogametype = GT_RACE;
+	}
+
 	// this leave the actual game if needed
-	SV_StartSinglePlayerServer();
+	SV_StartSinglePlayerServer(dogametype, false);
 
 	if (splitscreen != ssplayers)
 	{

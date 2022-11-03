@@ -3877,31 +3877,23 @@ void SV_StopServer(void)
 }
 
 // called at singleplayer start and stopdemo
-void SV_StartSinglePlayerServer(void)
+void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame)
 {
 	INT32 lastgametype = gametype;
 	server = true;
-	netgame = false;
-	multiplayer = false;
+	multiplayer = (modeattacking == ATTACKING_NONE);
 	joinedIP[0] = '\0';	// Make sure to empty this so that we don't save garbage when we start our own game. (because yes we use this for netgames too....)
 
-	if ((modeattacking == ATTACKING_CAPSULES) || (bossinfo.boss == true))
-	{
-		G_SetGametype(GT_BATTLE);
-	}
-	else
-	{
-		G_SetGametype(GT_RACE);
-	}
+	netgame = false; // so setting timelimit works... (XD_NETVAR doesn't play nice with SV_StopServer)
 
+	G_SetGametype(dogametype);
 	if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype);
 
+	netgame = donetgame;
+
 	// no more tic the game with this settings!
 	SV_StopServer();
-
-	if (splitscreen)
-		multiplayer = true;
 }
 
 static void SV_SendRefuse(INT32 node, const char *reason)
