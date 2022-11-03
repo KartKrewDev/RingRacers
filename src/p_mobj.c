@@ -7636,11 +7636,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			else
 				mobj->renderflags &= ~RF_DONTDRAW;
 		}
-		else if (mobj->extravalue2 == TICRATE/3 && mobj->target)
+		else if (mobj->extravalue2 == TICRATE/3 && !P_MobjWasRemoved(mobj->target))
 		{
-
-			mobj->target->renderflags &= ~RF_DONTDRAW;
-
 			mobj->momx = mobj->target->momx;
 			mobj->momy = mobj->target->momy;
 			mobj->momz = mobj->target->momz;
@@ -7659,15 +7656,29 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			S_StartSound(mobj, sfx_kc2e);
 			S_StartSound(mobj, sfx_s3k9f);
 
-			K_SpawnMagicianParticles(mobj, 5);
+			if (mobj->target->player->hyudorotimer)
+			{
+				P_RemoveMobj(mobj);
+				break;
+			}
+			else
+			{
+				K_SpawnMagicianParticles(mobj, 5);
+			}
 			return true;
 		}
-		else
+		else if (mobj->target && !P_MobjWasRemoved(mobj->target))
 		{
-			mobj->target->renderflags |= RF_DONTDRAW;
+			mobj->renderflags &= ~RF_DONTDRAW;
+			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+			// NB: This depends on order of thinker execution!
+			// SetRandomFakePlayerSkin (r_skins.c) sets cusval on the bottom (last) side (i=5).
+			// This writes to the player's visibility only after every other side has ticked and inherited it.
+			if (mobj->cusval)
+				mobj->target->renderflags |= RF_DONTDRAW;
 		}
 
-		if (!mobj->target || !mobj->target->health || !mobj->target->player) {
+		if (P_MobjWasRemoved(mobj->target) || !mobj->target->health || !mobj->target->player) {
 			mobj->extravalue2 = min(mobj->extravalue2, TICRATE/3);
 			return true;
 		}

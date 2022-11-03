@@ -382,8 +382,13 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 				box->extravalue1 = 1;
 				box->extravalue2 = 3*TICRATE/2;
 			}
-			if (j == 0)
-				box->cusval = 1; // Should play sounds when disappearing
+
+			// cusval controls behavior that should run only once, like disappear FX and RF_DONTDRAW handling.
+			// NB: Order of thinker execution matters here!
+			// We want the other sides to inherit the player's "existing" RF_DONTDRAW before the last side writes to it.
+			// See the MT_MAGICIANBOX thinker in p_mobj.c.
+			if (j == 5)
+				box->cusval = 1;
 			else
 				box->cusval = 0;
 			
