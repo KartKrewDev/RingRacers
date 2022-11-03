@@ -1506,12 +1506,12 @@ static void M_ConfirmConnect(void)
 		else
 			cl_mode = CL_LOADFILES;
 
-		M_ClearMenus(true);
+		M_StopMessage(0);
 	}
 	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || gamekeydown[0][KEY_ESCAPE])
 	{
 		cl_mode = CL_ABORTED;
-		M_ClearMenus(true);
+		M_StopMessage(0);
 	}
 }
 
