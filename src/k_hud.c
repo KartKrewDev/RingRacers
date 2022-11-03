@@ -1786,7 +1786,10 @@ static boolean K_drawKartPositionFaces(void)
 		bumperx = FACE_X+19;
 		emeraldx = FACE_X+16;
 
-		if (skins[players[rankplayer[i]].skin].flags & SF_IRONMAN)
+		// Flip SF_IRONMAN portraits, but only if they're transformed
+		if (skins[players[rankplayer[i]].skin].flags & SF_IRONMAN
+			&& !P_MobjWasRemoved(players[rankplayer[i]].mo)
+			&& !(((skin_t*)players[rankplayer[i]].mo->skin)->flags & SF_IRONMAN) )
 		{
 			flipflag = V_FLIP;
 			xoff = 16;
