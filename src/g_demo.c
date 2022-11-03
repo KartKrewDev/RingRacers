@@ -266,6 +266,7 @@ void G_ReadDemoExtraData(void)
 		if (extradata & DXD_SKIN)
 		{
 			UINT8 kartspeed, kartweight;
+			UINT32 charflags;
 
 			// Skin
 			M_Memcpy(name, demo_p, 16);
@@ -274,12 +275,14 @@ void G_ReadDemoExtraData(void)
 
 			kartspeed = READUINT8(demo_p);
 			kartweight = READUINT8(demo_p);
+			charflags = READUINT32(demo_p);
 
 			if (stricmp(skins[players[p].skin].name, name) != 0)
 				FindClosestSkinForStats(p, kartspeed, kartweight);
 
 			players[p].kartspeed = kartspeed;
 			players[p].kartweight = kartweight;
+			players[p].charflags = charflags;
 		}
 		if (extradata & DXD_COLOR)
 		{
@@ -428,7 +431,7 @@ void G_WriteDemoExtraData(void)
 
 				WRITEUINT8(demo_p, skins[players[i].skin].kartspeed);
 				WRITEUINT8(demo_p, skins[players[i].skin].kartweight);
-
+				WRITEUINT32(demo_p, skins[players[i].skin].flags);
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -2111,6 +2114,7 @@ void G_BeginRecording(void)
 			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
 			WRITEUINT8(demo_p, skins[player->skin].kartweight);
 			WRITEUINT8(demo_p, player->lastfakeskin);
+			WRITEUINT32(demo_p, player->charflags);
 
 			// And mobjtype_t is best with UINT32 too...
 			WRITEUINT32(demo_p, player->followitem);
@@ -2711,6 +2715,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	boolean spectator;
 	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], lastfakeskin[MAXPLAYERS], numslots = 0;
+	UINT32 charflags[MAXPLAYERS];
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
@@ -3088,6 +3093,7 @@ void G_DoPlayDemo(char *defdemoname)
 		kartspeed[p] = READUINT8(demo_p);
 		kartweight[p] = READUINT8(demo_p);
 		lastfakeskin[p] = READUINT8(demo_p);
+		charflags[p] = READUINT32(demo_p);
 
 		if (stricmp(skins[players[p].skin].name, skin) != 0)
 			FindClosestSkinForStats(p, kartspeed[p], kartweight[p]);
@@ -3146,6 +3152,7 @@ void G_DoPlayDemo(char *defdemoname)
 		players[i].kartspeed = kartspeed[i];
 		players[i].kartweight = kartweight[i];
 		players[i].lastfakeskin = lastfakeskin[i];
+		players[i].charflags = charflags[i];
 	}
 
 	demo.deferstart = true;
@@ -3338,6 +3345,7 @@ void G_AddGhost(char *defdemoname)
 	kartspeed = READUINT8(p);
 	kartweight = READUINT8(p);
 	p += 1; // lastfakeskin
+	p += 4; // charflags
 
 	p += 4; // followitem (maybe change later)
 
