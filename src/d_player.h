@@ -35,9 +35,8 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_HIRES            = 1, // Draw the sprite at different size?
-	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
-	SF_IRONMAN			= 1<<2, // Pick a new skin during POSITION. I main Random!
+	SF_MACHINE          = 1, // Beep boop. Are you a robot?
+	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
 	// free up to and including 1<<31
 } skinflags_t;
 

@@ -1178,7 +1178,7 @@ static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, INT32 addflag
 	if (sprframe->flip & 1) // Only for first sprite
 		flags |= V_FLIP; // This sprite is left/right flipped!
 
-	if (skins[skin].flags & SF_HIRES)
+	if (skins[skin].highresscale != FRACUNIT)
 	{
 		V_DrawFixedPatch(x<<FRACBITS,
 					y<<FRACBITS,

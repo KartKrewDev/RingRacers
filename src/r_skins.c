@@ -563,7 +563,6 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// parameters for individual character flags
 	// these are uppercase so they can be concatenated with SF_
 	// 1, true, yes are all valid values
-	GETFLAG(HIRES)
 	GETFLAG(MACHINE)
 	GETFLAG(IRONMAN)
 #undef GETFLAG

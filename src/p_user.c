@@ -4169,7 +4169,7 @@ void P_PlayerThink(player_t *player)
 	{
 		player->stairjank--;
 	}
-
+	
 	// Random skin / "ironman"
 	if ((!P_MobjWasRemoved(player->mo)) && (skins[player->skin].flags & SF_IRONMAN)) // we are Heavy Magician with a mobj
 	{
