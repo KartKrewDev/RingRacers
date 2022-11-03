@@ -986,6 +986,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_bsaturation);
 	CV_RegisterVar(&cv_msaturation);
 
+	CV_RegisterVar(&cv_palette);
+	CV_RegisterVar(&cv_palettenum);
+
 	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
 	CV_RegisterVar(&cv_chatheight);
