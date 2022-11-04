@@ -921,11 +921,6 @@ void M_StartControlPanel(void)
 		menucmd[i].delay = MENUDELAYTIME;
 	}
 
-	// No instantly skipping the titlescreen.
-	// (We can change this timer later when extra animation is added.)
-	if (gamestate == GS_TITLESCREEN && finalecount < 1)
-		return;
-
 	// intro might call this repeatedly
 	if (menuactive)
 	{
@@ -935,6 +930,11 @@ void M_StartControlPanel(void)
 
 	if (gamestate == GS_TITLESCREEN) // Set up menu state
 	{
+		// No instantly skipping the titlescreen.
+		// (We can change this timer later when extra animation is added.)
+		if (finalecount < 1)
+			return;
+
 		G_SetGamestate(GS_MENU);
 
 		gameaction = ga_nothing;
@@ -954,6 +954,8 @@ void M_StartControlPanel(void)
 
 	if (!Playing())
 	{
+		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
+
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
 			// Make sure the profile data is ready now since we need to select a profile.
@@ -1807,7 +1809,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);
 	menumessage.flags = itemtype;
 	*(void**)&menumessage.routine = routine;
-	menumessage.fadetimer = 1;
+	menumessage.fadetimer = (gamestate == GS_WAITINGPLAYERS) ? 9 : 1;
 	menumessage.active = true;
 
 	start = 0;
@@ -1875,11 +1877,8 @@ void M_HandleMenuMessage(void)
 	boolean btok = M_MenuConfirmPressed(pid);
 	boolean btnok = M_MenuBackPressed(pid);
 
-	menumessage.fadetimer++;
-
-	if (menumessage.fadetimer > 9)
-		menumessage.fadetimer = 9;
-
+	if (menumessage.fadetimer < 9)
+		menumessage.fadetimer++;
 
 	switch (menumessage.flags)
 	{
@@ -3830,7 +3829,6 @@ void M_JoinIP(const char *ipa)
 	}
 
 	COM_BufAddText(va("connect \"%s\"\n", ipa));
-	M_ClearMenus(true);
 
 	// A little "please wait" message.
 	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);

@@ -433,7 +433,7 @@ static void M_DrawMenuTyping(void)
 }
 
 // Draw the message popup submenu
-static void M_DrawMenuMessage(void)
+void M_DrawMenuMessage(void)
 {
 
 	INT32 y = menumessage.y + (9-menumessage.fadetimer)*20;
@@ -442,6 +442,9 @@ static void M_DrawMenuMessage(void)
 	char string[MAXMENUMESSAGE];
 	INT32 mlines;
 	const char *msg = menumessage.message;
+
+	if (!menumessage.active)
+		return;
 
 	mlines = menumessage.m>>8;
 	max = (INT16)((UINT8)(menumessage.m & 0xFF)*8);
@@ -550,8 +553,7 @@ void M_Drawer(void)
 		}
 
 		// Draw message overlay when needed
-		if (menumessage.active)
-			 M_DrawMenuMessage();
+		M_DrawMenuMessage();
 
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
@@ -2290,7 +2292,7 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-static void M_DrawEggaChannel(void)
+void M_DrawEggaChannel(void)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
