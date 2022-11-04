@@ -4301,6 +4301,12 @@ void P_PlayerAfterThink(player_t *player)
 	// Run followers in AfterThink, after the players have moved,
 	// so a lag value of 1 is exactly attached to the player.
 	K_HandleFollower(player);
+
+
+	if (K_PlayerUsesBotMovement(player))
+	{
+		K_UpdateBotGameplayVars(player);
+	}
 }
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)

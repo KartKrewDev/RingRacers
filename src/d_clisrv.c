@@ -581,7 +581,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 		// Draw bottom box
 		M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
 
 		for (i = 0; i < 16; ++i)
 			V_DrawFill((BASEVIDWIDTH/2-128) + (i * 16), BASEVIDHEIGHT-24, 16, 8, palstart + ((animtime - i) & 15));
@@ -644,7 +644,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 checkednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
 
 			//ima just count files here
 			for (i = 0; i < fileneedednum; i++)
@@ -666,7 +666,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
 
 			//ima just count files here
 			for (i = 0; i < fileneedednum; i++)
@@ -693,7 +693,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 			// Draw the bottom box.
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-58-8, 32, 1);
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-14, V_YELLOWMAP, "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-14, V_YELLOWMAP, "Press (B) to abort");
 
 			Net_GetNetStat();
 			dldlength = (INT32)((file->currentsize/(double)file->totalsize) * 256);
@@ -757,7 +757,7 @@ static inline void CL_DrawConnectionStatus(void)
 
 			//Draw bottom box
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-24, V_YELLOWMAP, "Press (B) to abort");
 
 			for (i = 0; i < 16; ++i)
 				V_DrawFill((BASEVIDWIDTH/2-128) + (i * 16), BASEVIDHEIGHT-24, 16, 8, palstart + ((animtime - i) & 15));
@@ -1483,38 +1483,35 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static void M_ConfirmConnect(event_t *ev)
+static void M_ConfirmConnect(void)
 {
-	if (ev->type == ev_keydown)
+	if (G_PlayerInputDown(0, gc_a, 1) || gamekeydown[0][KEY_ENTER])
 	{
-		if (G_PlayerInputDown(0, gc_a, 1))
+		if (totalfilesrequestednum > 0)
 		{
-			if (totalfilesrequestednum > 0)
+#ifdef HAVE_CURL
+			if (http_source[0] == '\0' || curl_failedwebdownload)
+#endif
 			{
-#ifdef HAVE_CURL
-				if (http_source[0] == '\0' || curl_failedwebdownload)
-#endif
+				if (CL_SendFileRequest())
 				{
-					if (CL_SendFileRequest())
-					{
-						cl_mode = CL_DOWNLOADFILES;
-					}
+					cl_mode = CL_DOWNLOADFILES;
 				}
-#ifdef HAVE_CURL
-				else
-					cl_mode = CL_PREPAREHTTPFILES;
-#endif
 			}
+#ifdef HAVE_CURL
 			else
-				cl_mode = CL_LOADFILES;
+				cl_mode = CL_PREPAREHTTPFILES;
+#endif
+		}
+		else
+			cl_mode = CL_LOADFILES;
 
-			M_ClearMenus(true);
-		}
-		else if (G_PlayerInputDown(0, gc_x, 1))
-		{
-			cl_mode = CL_ABORTED;
-			M_ClearMenus(true);
-		}
+		M_StopMessage(0);
+	}
+	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || gamekeydown[0][KEY_ESCAPE])
+	{
+		cl_mode = CL_ABORTED;
+		M_StopMessage(0);
 	}
 }
 
@@ -1537,7 +1534,7 @@ static boolean CL_FinishedFileList(void)
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
 			"Please restart Ring Racers before connecting.\n\n"
-			"Press ESC\n"
+			"Press (B)\n"
 		), NULL, MM_NOTHING);
 		return false;
 	}
@@ -1552,7 +1549,7 @@ static boolean CL_FinishedFileList(void)
 			"the game and don't load any addons.\n"
 			"Ring Racers will automatically add\n"
 			"everything you need when you join.\n\n"
-			"Press ESC\n"
+			"Press (B)\n"
 		), NULL, MM_NOTHING);
 		return false;
 	}
@@ -1565,8 +1562,8 @@ static boolean CL_FinishedFileList(void)
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
 				"\n"
-				"Press ACCEL to continue or BRAKE to cancel.\n\n"
-			), FUNCPTRCAST (M_ConfirmConnect), MM_EVENTHANDLER);
+				"Press (A) to continue or (B) to cancel\n"
+			), NULL, MM_NOTHING);
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1592,7 +1589,7 @@ static boolean CL_FinishedFileList(void)
 					"with the server, not your game.)\n\n"
 					"See the console or log file\n"
 					"for additional details.\n\n"
-					"Press ESC\n"
+					"Press (B)\n"
 				), NULL, MM_NOTHING);
 				return false;
 			}
@@ -1622,18 +1619,21 @@ static boolean CL_FinishedFileList(void)
 			if (serverisfull)
 				M_StartMessage(va(M_GetText(
 					"This server is full!\n"
-					"Download of %s additional content is required to join.\n"
+					"Download of %s additional content\n"
+					"is required to join.\n"
 					"\n"
-					"You may download, load server addons, and wait for a slot.\n"
+					"You may download, load server addons,\n"
+					"and wait for a slot.\n"
 					"\n"
-					"Press ACCEL to continue or BRAKE to cancel.\n\n"
-				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
+					"Press (A) to continue or (B) to cancel\n"
+				), downloadsize), NULL, MM_NOTHING);
 			else
 				M_StartMessage(va(M_GetText(
-					"Download of %s additional content is required to join.\n"
+					"Download of %s additional content\n"
+					"is required to join.\n"
 					"\n"
-					"Press ACCEL to continue or BRAKE to cancel.\n\n"
-				), downloadsize), FUNCPTRCAST(M_ConfirmConnect), MM_EVENTHANDLER);
+					"Press (A) to continue or (B) to cancel\n"
+				), downloadsize), NULL, MM_NOTHING);
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1870,7 +1870,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 					"5 minute wait time exceeded.\n"
 					"You may retry connection.\n"
 					"\n"
-					"Press ESC\n"
+					"Press (B)\n"
 				), NULL, MM_NOTHING);
 				return false;
 			}
@@ -1921,28 +1921,40 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
+		// Needs to be updated here for M_DrawEggaChannel
+		renderdeltatics = FRACUNIT;
+		rendertimefrac = FRACUNIT;
+
 		memset(deviceResponding, false, sizeof (deviceResponding));
 
-		if (cl_mode == CL_CONFIRMCONNECT)
-		{
-			D_ProcessEvents(); //needed for menu system to receive inputs
-		}
-		else
+		if (netgame)
 		{
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+			{
 				G_MapEventsToControls(&events[eventtail]);
+			}
+
+			if (cl_mode == CL_CONFIRMCONNECT)
+			{
+				M_ConfirmConnect();
+			}
+			else
+			{
+				if (G_PlayerInputDown(0, gc_b, 1)
+					|| G_PlayerInputDown(0, gc_x, 1)
+					|| gamekeydown[0][KEY_ESCAPE])
+					cl_mode = CL_ABORTED;
+			}
 		}
 
-		if (G_PlayerInputDown(0, gc_x, 1) || cl_mode == CL_ABORTED)
+		if (cl_mode == CL_ABORTED)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress (B)\n"), NULL, MM_NOTHING);
 
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();
-			memset(gamekeydown, 0, sizeof (gamekeydown));
-			memset(deviceResponding, false, sizeof (deviceResponding));
 			return false;
 		}
 
@@ -1959,17 +1971,20 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_DOWNLOADSAVEGAME)
 			{
-				F_TitleScreenTicker(true);
-				F_TitleScreenDrawer();
+				M_DrawEggaChannel();
 			}
 			CL_DrawConnectionStatus();
+
+			if (cl_mode == CL_CONFIRMCONNECT)
+			{
 #ifdef HAVE_THREADS
-			I_lock_mutex(&k_menu_mutex);
+				I_lock_mutex(&k_menu_mutex);
 #endif
-			M_Drawer(); //Needed for drawing messageboxes on the connection screen
+				M_DrawMenuMessage();
 #ifdef HAVE_THREADS
-			I_unlock_mutex(k_menu_mutex);
+				I_unlock_mutex(k_menu_mutex);
 #endif
+			}
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)
 				M_SaveFrame();
@@ -2017,16 +2032,21 @@ static void CL_ConnectToServer(void)
 	}
 
 	if (cv_currprofile.value == -1)
+	{
 		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
+		for (i = 1; i < cv_splitplayers.value; i++)
+		{
+			PR_ApplyProfile(cv_lastprofile[i].value, i);
+		}
+	}
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission(); // clean up intermission graphics etc
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
 
 	DEBFILE(va("waiting %d nodes\n", doomcom->numnodes));
+	M_ClearMenus(true);
 	G_SetGamestate(GS_WAITINGPLAYERS);
-	if (wipegamestate == GS_MENU)
-		M_ClearMenus(true);
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
@@ -2391,33 +2411,6 @@ static void Command_connect(void)
 		CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
 		return;
 	}
-	else if (cv_currprofile.value == 0)
-	{
-		CONS_Printf(M_GetText("You cannot connect while using the Guest Profile. Use a Custom Profile to play Online.\n"));
-		return;
-	}
-	else if (cv_currprofile.value == -1)
-	{
-		// No profile set, we're attempting to connect from the title screen. (Discord RPC / connect command)
-		// Automatically apply the last profiles for every potential split player.
-		// Make sure Player 1's Profile ISN'T the guest profile even if we do that.
-
-		UINT8 i;
-
-		CONS_Printf(M_GetText("No Profile set, attempting to use last used Profiles...\n"));
-
-		for (i = 0; i < cv_splitplayers.value; i++)
-		{
-			if (cv_lastprofile[i].value || i > 0)
-				PR_ApplyProfile(cv_lastprofile[i].value, i);
-			else
-			{
-				CONS_Printf(M_GetText("Player 1's last used Profile is the Guest Profile, which cannot be used to play Online.\n"));
-				return;
-			}
-		}
-		CONS_Printf(M_GetText("Profiles have been automatically set according to the last used Profiles.\n"));
-	}
 
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
@@ -2480,7 +2473,6 @@ static void Command_connect(void)
 		SplitScreen_OnChange();
 	}
 
-	M_ClearMenus(true);
 	CL_ConnectToServer();
 }
 
@@ -3096,17 +3088,17 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		D_StartTitle();
 
 		if (msg == KICK_MSG_CON_FAIL)
-			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress ESC\n"), NULL, MM_NOTHING);
+			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
-			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress ESC\n"), NULL, MM_NOTHING);
+			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_BANNED)
-			M_StartMessage(M_GetText("You have been banned by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
+			M_StartMessage(M_GetText("You have been banned by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
-			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\n\nPress ESC\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)
-			M_StartMessage(va(M_GetText("You have been banned\n(%s)\n\nPress ESC\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else
-			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
+			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 	}
 	else if (server)
 	{
@@ -4089,7 +4081,7 @@ static void HandleShutdown(SINT8 node)
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
-	M_StartMessage(M_GetText("Server has shutdown\n\nPress Esc\n"), NULL, MM_NOTHING);
+	M_StartMessage(M_GetText("Server has shutdown\n\nPress (B)\n"), NULL, MM_NOTHING);
 }
 
 /** Called when a PT_NODETIMEOUT packet is received
@@ -4104,7 +4096,7 @@ static void HandleTimeout(SINT8 node)
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
-	M_StartMessage(M_GetText("Server Timeout\n\nPress Esc\n"), NULL, MM_NOTHING);
+	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
 }
 
 /** Called when a PT_SERVERINFO packet is received

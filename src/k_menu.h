@@ -568,6 +568,7 @@ void M_Init(void);
 extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
+void M_DrawMenuMessage(void);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
@@ -911,6 +912,8 @@ void M_HandleVideoModes(INT32 ch);
 // data stuff
 void M_HandleProfileErase(INT32 choice);
 
+// Draws the EGGA CHANNEL background.
+void M_DrawEggaChannel(void);
 
 // Extras menu:
 #define DF_ENCORE       0x40

@@ -239,6 +239,22 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd);
 
 
 /*--------------------------------------------------
+	void K_UpdateBotGameplayVars(player_t *player);
+
+		Updates gamestate affecting botvars. This must be
+		called for both client and server.
+
+	Input Arguments:-
+		player - Player to whom to update the botvars.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_UpdateBotGameplayVars(player_t *player);
+
+
+/*--------------------------------------------------
 	void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
 
 		Item usage part of ticcmd generation.

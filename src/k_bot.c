@@ -921,7 +921,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotTrick(player_t *player, ticcmd_t *cmd, line_t *botController)
+static void K_BotTrick(player_t *player, ticcmd_t *cmd, const line_t *botController)
 {
 	// Trick panel state -- do nothing until a controller line is found, in which case do a trick.
 	if (botController == NULL)
@@ -1259,7 +1259,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	angle_t destangle = 0;
 	UINT8 spindash = 0;
 	INT32 turnamt = 0;
-	line_t *botController = NULL;
+	const line_t *botController = player->botvars.controller != UINT16_MAX ? &lines[player->botvars.controller] : NULL;
 
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
@@ -1291,18 +1291,6 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
 		return;
 	}
-
-	botController = K_FindBotController(player->mo);
-	if (botController == NULL)
-	{
-		player->botvars.controller = UINT16_MAX;
-	}
-	else
-	{
-		player->botvars.controller = botController - lines;
-	}
-
-	player->botvars.rubberband = K_UpdateRubberband(player);
 
 	if (player->trickpanel != 0)
 	{
@@ -1530,4 +1518,25 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		Z_Free(predict);
 	}
+}
+
+/*--------------------------------------------------
+	void K_UpdateBotGameplayVars(player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdateBotGameplayVars(player_t *player)
+{
+	const line_t *botController;
+
+	if (gamestate != GS_LEVEL || !player->mo)
+	{
+		// Not in the level.
+		return;
+	}
+
+	botController = K_FindBotController(player->mo);
+
+	player->botvars.controller = botController ? (botController - lines) : UINT16_MAX;
+	player->botvars.rubberband = K_UpdateRubberband(player);
 }
