@@ -7007,6 +7007,9 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	}
 
 	drop->flags |= MF_NOCLIPTHING;
+	backdrop->dispoffset = 1;
+	P_SetTarget(&backdrop->tracer, drop);
+	backdrop->flags2 |= MF2_LINKDRAW;
 
 	return drop;
 }
