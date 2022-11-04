@@ -1203,8 +1203,6 @@ void D_SRB2Main(void)
 {
 	INT32 i, p;
 
-	INT32 numbasemapheaders;
-
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
@@ -1461,9 +1459,7 @@ void D_SRB2Main(void)
 	//
 	// search for mainwad maps
 	//
-	P_InitMapData(0);
-
-	numbasemapheaders = nummapheaders;
+	P_InitMapData(false);
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1474,7 +1470,7 @@ void D_SRB2Main(void)
 	//
 	// search for pwad maps
 	//
-	P_InitMapData(numbasemapheaders);
+	P_InitMapData(true);
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
