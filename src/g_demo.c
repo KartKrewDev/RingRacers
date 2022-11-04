@@ -2294,10 +2294,13 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			}
 			else
 			{
-				P_AddWadFile(filename);
+				P_PartialAddWadFile(filename);
 			}
 		}
 	}
+
+	if (P_PartialAddGetStage() >= 0)
+		P_MultiSetupWadFiles(true); // in case any partial adds were done
 }
 
 static void G_SkipDemoExtraFiles(UINT8 **pp)
