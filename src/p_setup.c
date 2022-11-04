@@ -7766,20 +7766,9 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 		name = mapheaderinfo[i]->lumpname;
 		maplump = W_CheckNumForMap(name);
 
-		// Doesn't exist?
-		if (maplump == INT16_MAX)
-		{
-#ifndef DEVELOP
-			if (!existingmapheaders)
-			{
-				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
-			}
-#endif
-			continue;
-		}
-
 		// Always check for cup cache reassociations.
 		// (The core assumption is that cups < headers.)
+		if (maplump != LUMPERROR || mapheaderinfo[i]->lumpnum != LUMPERROR)
 		{
 			cupheader_t *cup = kartcupheaders;
 			INT32 j;
@@ -7812,6 +7801,18 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 				}
 				cup = cup->next;
 			}
+		}
+
+		// Doesn't exist in this set of files?
+		if (maplump == LUMPERROR)
+		{
+#ifndef DEVELOP
+			if (!existingmapheaders)
+			{
+				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
+			}
+#endif
+			continue;
 		}
 
 		// No change?
