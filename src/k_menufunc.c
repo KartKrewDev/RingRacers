@@ -954,6 +954,8 @@ void M_StartControlPanel(void)
 
 	if (!Playing())
 	{
+		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
+
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
 			// Make sure the profile data is ready now since we need to select a profile.
@@ -1875,11 +1877,8 @@ void M_HandleMenuMessage(void)
 	boolean btok = M_MenuConfirmPressed(pid);
 	boolean btnok = M_MenuBackPressed(pid);
 
-	menumessage.fadetimer++;
-
-	if (menumessage.fadetimer > 9)
-		menumessage.fadetimer = 9;
-
+	if (menumessage.fadetimer < 9)
+		menumessage.fadetimer++;
 
 	switch (menumessage.flags)
 	{

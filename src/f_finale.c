@@ -2103,6 +2103,8 @@ luahook:
 		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
+
+	M_DrawMenuMessage();
 }
 
 // (no longer) De-Demo'd Title Screen
@@ -2113,6 +2115,9 @@ void F_TitleScreenTicker(boolean run)
 	if (run)
 	{
 		finalecount++;
+
+		if (menumessage.fadetimer < 9)
+			menumessage.fadetimer++;
 
 		if (finalecount == 1)
 		{
