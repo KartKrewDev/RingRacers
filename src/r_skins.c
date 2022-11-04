@@ -407,7 +407,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 // Return to base skin from an SF_IRONMAN randomization
 void ClearFakePlayerSkin(player_t* player)
 {
-	if (!P_MobjWasRemoved(player->mo))
+	if ((skins[player->skin].flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
 	{
 		player->mo->skin = &skins[player->skin];
 		player->fakeskin = MAXSKINS;
