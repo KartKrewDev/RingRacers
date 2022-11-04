@@ -410,6 +410,10 @@ void ClearFakePlayerSkin(player_t* player)
 	if (!P_MobjWasRemoved(player->mo))
 	{
 		player->mo->skin = &skins[player->skin];
+		player->fakeskin = MAXSKINS;
+		player->kartspeed = skins[player->skin].kartspeed;
+		player->kartweight = skins[player->skin].kartweight;
+		player->charflags = skins[player->skin].flags;
 		S_StartSound(player->mo, sfx_s3k9f);
 		K_SpawnMagicianParticles(player->mo, 5);
 	}

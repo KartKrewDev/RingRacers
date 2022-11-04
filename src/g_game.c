@@ -2441,10 +2441,17 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->botvars.rival = botrival;
 	p->xtralife = xtralife;
 
-	if (betweenmaps)
+	if (betweenmaps) 
+	{
 		p->fakeskin = MAXSKINS;
+		p->kartspeed = skins[p->skin].kartspeed;
+		p->kartweight = skins[p->skin].kartweight;
+	}
 	else 
+	{
 		p->fakeskin = fakeskin;
+	}
+
 	p->lastfakeskin = lastfakeskin;
 
 	// SRB2kart
