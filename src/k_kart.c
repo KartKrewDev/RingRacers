@@ -6924,9 +6924,14 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
+	mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
+	
+	P_SetTarget(&backdrop->target, drop);
+	P_SetMobjState(backdrop, S_ITEMBACKDROP);
+
 	P_SetScale(drop, drop->scale>>4);
 	drop->destscale = (3*drop->destscale)/2;
-
+	
 	drop->angle = angle;
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
