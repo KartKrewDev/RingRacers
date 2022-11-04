@@ -6786,6 +6786,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_FLOATINGITEM:
 	{
+		mobj->pitch = mobj->roll = 0;
 		if (mobj->flags & MF_NOCLIPTHING)
 		{
 			if (P_CheckDeathPitCollide(mobj))
