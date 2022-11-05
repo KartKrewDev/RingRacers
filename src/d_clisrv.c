@@ -5576,8 +5576,6 @@ static inline void PingUpdate(void)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				XBOXSTATIC char buf[2];
-
 				if (!playeringame[i] || !pingkick[i])
 					continue;
 
