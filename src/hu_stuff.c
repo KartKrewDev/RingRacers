@@ -347,8 +347,6 @@ patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *for
 		if (fileref < partadd_earliestfile)
 			return *user;
 
-		CONS_Printf("pe = %d, fr = %d\n", partadd_earliestfile, fileref);
-
 		lump |= (fileref << 16);
 	}
 	else
