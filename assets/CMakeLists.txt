@@ -25,6 +25,7 @@ gfx.pk3;\
 textures.pk3;\
 chars.pk3;\
 maps.pk3;\
+followers.pk3;\
 patch.pk3"
 	CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 )

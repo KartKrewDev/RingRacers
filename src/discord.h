@@ -15,7 +15,7 @@
 
 #ifdef HAVE_DISCORDRPC
 
-#include "discord_rpc.h"
+#include <discord_rpc.h>
 
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
