@@ -5883,18 +5883,19 @@ void NetUpdate(void)
 
 			hu_redownloadinggamestate = false;
 
-			firstticstosend = gametic;
-			for (i = 0; i < MAXNETNODES; i++)
-				if (nodeingame[i] && nettics[i] < firstticstosend)
-				{
-					firstticstosend = nettics[i];
-
-					if (maketic + 1 >= nettics[i] + BACKUPTICS)
-						Net_ConnectionTimeout(i);
-				}
-
 			// Don't erase tics not acknowledged
 			counts = realtics;
+
+			firstticstosend = gametic;
+			for (i = 0; i < MAXNETNODES; i++)
+			{
+				if (!nodeingame[i])
+					continue;
+				if (nettics[i] < firstticstosend)
+					firstticstosend = nettics[i];
+				if (maketic + counts >= nettics[i] + (BACKUPTICS - TICRATE))
+					Net_ConnectionTimeout(i);
+			}
 
 			if (maketic + counts >= firstticstosend + BACKUPTICS)
 				counts = firstticstosend+BACKUPTICS-maketic-1;
