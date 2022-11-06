@@ -3161,7 +3161,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
-	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
+	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
 	strcpy(followers[numfollowers].icon, "M_NORANK");
 
 	do
@@ -3215,7 +3215,20 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				followers[numfollowers].defaultcolor = get_number(word2);
+				INT32 j;
+				for (j = 0; j < numskincolors +2; j++)	// +2 because of Match and Opposite
+				{
+					if (!stricmp(Followercolor_cons_t[j].strvalue, word2))
+					{
+						followers[numfollowers].defaultcolor = Followercolor_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (j == numskincolors+2)
+				{
+					deh_warning("Follower %d: unknown follower color '%s'", numfollowers, word2);
+				}
 			}
 			else if (fastcmp(word, "SCALE"))
 			{
@@ -3372,13 +3385,6 @@ if ((signed)followers[numfollowers].field < threshold) \
 	FALLBACK(bubblescale, "BUBBLESCALE", 0, 0);	// No negative scale
 
 #undef FALLBACK
-
-	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
-	{
-		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
-		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
-	}
 
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
