@@ -1274,7 +1274,10 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 		cnum = setup_page;
 
 	skin = setup_chargrid[p->gridx][p->gridy].skinlist[cnum];
-	color = p->color;
+	if (p->mdepth < CSSTEP_COLORS)
+		color = skins[skin].prefcolor;
+	else
+		color = p->color;
 	colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
 
 	if (skin >= 0)
