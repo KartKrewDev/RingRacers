@@ -2631,6 +2631,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
+	const boolean subtractTripwire = ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM);
 
 	for (; i--; ld++)
 	{
@@ -2645,7 +2646,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 		if (ld->tripwire)
 		{
-			ld->blendmode = AST_ADD;
+			ld->blendmode = (subtractTripwire ? AST_SUBTRACT : AST_ADD);
 			ld->alpha = 0xff;
 		}
 
