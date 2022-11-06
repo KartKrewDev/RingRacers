@@ -2787,6 +2787,8 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		if (p->followern < -1)
 			p->followern = numfollowers-1;
 
+		M_GetFollowerState(p);
+
 		p->rotate = -CSROTATETICS;
 		p->delay = CSROTATETICS;
 		S_StartSound(NULL, sfx_s3kc3s);
