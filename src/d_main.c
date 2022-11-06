@@ -1205,7 +1205,7 @@ void D_SRB2Main(void)
 
 	INT32 numbasemapheaders;
 
-	INT32 pstartmap = 1;
+	INT32 pstartmap = 0;
 	boolean autostart = false;
 
 	/* break the version string into version numbers, for netplay */
@@ -1759,11 +1759,14 @@ void D_SRB2Main(void)
 
 	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
 	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
-	PR_ApplyProfile(cv_ttlprofilen.value, 0);
-
-	for (i = 1; i < cv_splitplayers.value; i++)
+	if (!dedicated)
 	{
-		PR_ApplyProfile(cv_lastprofile[i].value, i);
+		PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
+		for (i = 1; i < cv_splitplayers.value; i++)
+		{
+			PR_ApplyProfile(cv_lastprofile[i].value, i);
+		}
 	}
 
 	if (autostart || netgame)
@@ -1845,8 +1848,13 @@ void D_SRB2Main(void)
 				CV_SetValue(&cv_kartspeed, newskill);
 		}
 
-		if (server && !M_CheckParm("+map"))
+		if (server && (dedicated || !M_CheckParm("+map")))
 		{
+			if (!pstartmap && (pstartmap = G_GetFirstMapOfGametype(gametype)+1) > nummapheaders)
+			{
+				I_Error("Can't get first map of gametype\n");
+			}
+
 			if (M_MapLocked(pstartmap))
 			{
 				G_SetUsedCheats();
@@ -1867,14 +1875,6 @@ void D_SRB2Main(void)
 	}
 
 	CON_ToggleOff();
-
-	if (dedicated && server)
-	{
-		levelstarttic = gametic;
-		G_SetGamestate(GS_LEVEL);
-		if (!P_LoadLevel(false, false))
-			I_Quit(); // fail so reset game stuff
-	}
 
 #ifdef HAVE_DISCORDRPC
 	if (! dedicated)
