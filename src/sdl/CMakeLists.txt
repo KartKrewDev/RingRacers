@@ -31,14 +31,6 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 	)
 endif()
 
-if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2win)
-elseif("${CMAKE_SYSTEM_NAME}" MATCHES Linux)
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdlsrb2)
-else()
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2)
-endif()
-
 if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 	find_library(CORE_FOUNDATION_LIBRARY "CoreFoundation")
 	target_link_libraries(SRB2SDL2 PRIVATE

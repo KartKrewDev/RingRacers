@@ -129,6 +129,7 @@ set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Set EXE names so the assets CMakeLists can refer to its target
 set(SRB2_SDL2_EXE_NAME ringracers CACHE STRING "Executable binary output name")
+set(SRB2_SDL2_EXE_SUFFIX "" CACHE STRING "Optional executable suffix, separated by an underscore")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
@@ -145,3 +146,13 @@ git_working_tree_dirty(SRB2_COMP_UNCOMMITTED "${CMAKE_SOURCE_DIR}")
 set(SRB2_COMP_BRANCH "${SRB2_GIT_BRANCH}")
 set(SRB2_COMP_REVISION "${SRB2_COMP_COMMIT}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
+
+
+list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_NAME})
+if(NOT "${SRB2_GIT_BRANCH}" STREQUAL "master")
+	list(APPEND EXE_NAME_PARTS ${SRB2_GIT_BRANCH})
+endif()
+list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_SUFFIX})
+
+list(JOIN EXE_NAME_PARTS "_" EXE_NAME)
+set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME ${EXE_NAME})
