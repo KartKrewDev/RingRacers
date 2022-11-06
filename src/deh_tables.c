@@ -6756,7 +6756,7 @@ struct int_const_s const INT_CONST[] = {
 
 	// SRB2Kart
 	// kartitems_t
-#define FOREACH( name, n ) { #name, KITEM_ ## name }
+#define FOREACH( name, n ) { TOSTR (KITEM_ ## name), KITEM_ ## name }
 	KART_ITEM_ITERATOR, // Actual items (can be set for k_itemtype)
 #undef  FOREACH
 	{"NUMKARTITEMS",NUMKARTITEMS},
