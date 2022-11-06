@@ -313,11 +313,11 @@ void G_ReadDemoExtraData(void)
 			demo_p += 16;
 			for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 			{
-					if (!stricmp(Followercolor_cons_t[i].strvalue, name))
-					{
-							players[p].followercolor = i;
-							break;
-					}
+				if (!stricmp(Followercolor_cons_t[i].strvalue, name))
+				{
+					players[p].followercolor = Followercolor_cons_t[i].value;
+					break;
+				}
 			}
 		}
 		if (extradata & DXD_PLAYSTATE)
@@ -407,7 +407,7 @@ void G_ReadDemoExtraData(void)
 
 void G_WriteDemoExtraData(void)
 {
-	INT32 i;
+	INT32 i, j;
 	char name[16];
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -459,7 +459,12 @@ void G_WriteDemoExtraData(void)
 
 				// write follower color
 				memset(name, 0, 16);
-				strncpy(name, Followercolor_cons_t[(UINT16)(players[i].followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				for (j = (numskincolors+2)-1; j > 0; j--)
+				{
+					if (Followercolor_cons_t[j].value == players[i].followercolor)
+						break;
+				}
+				strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 
@@ -1951,7 +1956,7 @@ void G_RecordMetal(void)
 
 void G_BeginRecording(void)
 {
-	UINT8 i, p;
+	UINT8 i, j, p;
 	char name[MAXCOLORNAME+1];
 	player_t *player = &players[consoleplayer];
 
@@ -2097,7 +2102,12 @@ void G_BeginRecording(void)
 
 			// Save follower's colour
 			memset(name, 0, 16);
-			strncpy(name, Followercolor_cons_t[(UINT16)(player->followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			for (j = (numskincolors+2)-1; j > 0; j--)
+			{
+				if (Followercolor_cons_t[j].value == players[i].followercolor)
+					break;
+			}
+			strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 			M_Memcpy(demo_p, name, 16);
 			demo_p += 16;
 
@@ -3070,11 +3080,11 @@ void G_DoPlayDemo(char *defdemoname)
 		demo_p += 16;
 		for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 		{
-				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
-				{
-						players[p].followercolor = i;
-						break;
-				}
+			if (!stricmp(Followercolor_cons_t[i].strvalue, color))
+			{
+				players[p].followercolor = Followercolor_cons_t[i].value;
+				break;
+			}
 		}
 
 		// Score, since Kart uses this to determine where you start on the map
