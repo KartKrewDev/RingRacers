@@ -1082,7 +1082,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					patch = W_CachePatchName(fl->icon, PU_CACHE);
 
 					colormap = R_GetTranslationColormap(TC_DEFAULT,
-						K_GetEffectiveFollowerColor(p->followercolor, p->color),
+						K_GetEffectiveFollowerColor(fl->defaultcolor, p->color),
 						GTC_MENUCACHE
 					);
 				}
@@ -1154,41 +1154,40 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, INT32 addflags, UINT8 *colormap)
+static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, boolean charflip, boolean animate, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *sprpatch;
+	UINT8 rotation = (charflip ? 1 : 7);
+	UINT32 frame = animate ? setup_animcounter : 0;
 
-	UINT32 flags = 0;
-	UINT32 frame;
-
-	spr = P_GetSkinSprite2(&skins[skin], SPR2_FSTN, NULL);
+	spr = P_GetSkinSprite2(&skins[skin], SPR2_STIN, NULL);
 	sprdef = &skins[skin].sprites[spr];
 
 	if (!sprdef->numframes) // No frames ??
 		return false; // Can't render!
 
-	frame = states[S_KART_FAST].frame & FF_FRAMEMASK;
-	if (frame >= sprdef->numframes) // Walking animation missing
-		frame = 0; // Try to use standing frame
+	frame %= sprdef->numframes;
 
 	sprframe = &sprdef->spriteframes[frame];
-	sprpatch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+	sprpatch = W_CachePatchNum(sprframe->lumppat[rotation], PU_CACHE);
 
-	if (sprframe->flip & 1) // Only for first sprite
-		flags |= V_FLIP; // This sprite is left/right flipped!
+	if (sprframe->flip & (1<<rotation)) // Only for first sprite
+	{
+		addflags ^= V_FLIP; // This sprite is left/right flipped!
+	}
 
 	if (skins[skin].flags & SF_HIRES)
 	{
 		V_DrawFixedPatch(x<<FRACBITS,
 					y<<FRACBITS,
 					skins[skin].highresscale,
-					flags, sprpatch, colormap);
+					addflags, sprpatch, colormap);
 	}
 	else
-		V_DrawMappedPatch(x, y, addflags|flags, sprpatch, colormap);
+		V_DrawMappedPatch(x, y, addflags, sprpatch, colormap);
 
 	return true;
 }
@@ -1196,7 +1195,7 @@ static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, INT32 addflag
 // Returns false is the follower shouldn't be rendered.
 // 'num' can be used to directly specify the follower number, but doing this will not animate it.
 // if a setup_player_t is specified instead, its data will be used to animate the follower sprite.
-static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags, UINT16 color, setup_player_t *p)
+static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charflip, INT32 addflags, UINT16 color, setup_player_t *p)
 {
 
 	spritedef_t *sprdef;
@@ -1207,6 +1206,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 	UINT32 useframe;
 	follower_t fl;
 	UINT8 *colormap = NULL;
+	UINT8 rotation = (charflip ? 1 : 7);
 
 	if (p != NULL)
 		followernum = p->followern;
@@ -1238,14 +1238,11 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 		useframe = 0;	// frame doesn't exist, we went beyond it... what?
 
 	sprframe = &sprdef->spriteframes[useframe];
-	patch = W_CachePatchNum(sprframe->lumppat[1], PU_CACHE);
+	patch = W_CachePatchNum(sprframe->lumppat[rotation], PU_CACHE);
 
-	if (sprframe->flip & 2) // Only for first sprite
+	if (sprframe->flip & (1<<rotation)) // Only for first sprite
 	{
-		if (addflags & V_FLIP)
-			addflags &= ~V_FLIP;
-		else
-			addflags |= V_FLIP; // This sprite is left/right flipped!
+		addflags ^= V_FLIP; // This sprite is left/right flipped!
 	}
 
 	fixed_t sine = 0;
@@ -1253,35 +1250,35 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, INT32 addflags,
 	if (p != NULL)
 	{
 		sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK));
-		color = K_GetEffectiveFollowerColor(p->followercolor, p->color);
+		color = K_GetEffectiveFollowerColor(
+			(p->mdepth < CSSTEP_FOLLOWERCOLORS) ? fl.defaultcolor : p->followercolor,
+			p->color);
 	}
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
-	V_DrawFixedPatch((x)*FRACUNIT, ((y-12)*FRACUNIT) + sine - fl.zoffs, fl.scale, addflags, patch, colormap);
+	V_DrawFixedPatch((x*FRACUNIT), ((y-12)*FRACUNIT) + sine, fl.scale, addflags, patch, colormap);
 
 	return true;
 }
 
-static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y)
+static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
 	UINT8 cnum = p->clonenum;
+	INT16 skin;
+	UINT8 color;
+	UINT8 *colormap;
 
 	// for p1 alone don't try to preview things on pages that don't exist lol.
 	if (p->mdepth == CSSTEP_CHARS && setup_numplayers == 1)
 		cnum = setup_page;
 
-	INT16 skin = setup_chargrid[p->gridx][p->gridy].skinlist[cnum];
-	UINT8 color = p->color;
-	UINT8 *colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
-	INT32 flags = 0;
-
-	// Flip for left-side players
-	if (!(num & 1))
-		flags ^= V_FLIP;
+	skin = setup_chargrid[p->gridx][p->gridy].skinlist[cnum];
+	color = p->color;
+	colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
 
 	if (skin >= 0)
-		M_DrawCharacterSprite(x, y, skin, flags, colormap);
+		M_DrawCharacterSprite(x, y, skin, charflip, (p->mdepth == CSSTEP_READY), 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1289,6 +1286,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	INT16 x = 11, y = 5;
 	char letter = 'A' + num;
 	setup_player_t *p = &setup_player[num];
+	boolean charflip = !!(num & 1);
 
 	if (num & 1)
 		x += 233;
@@ -1300,26 +1298,8 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->mdepth >= CSSTEP_CHARS)
 	{
-		M_DrawCharSelectSprite(num, x+32, y+75);
-
-		if (p->mdepth >= CSSTEP_FOLLOWER)
-		{
-			M_DrawFollowerSprite(x+16, y+75, -1, !(num & 1) ? V_FLIP : 0, 0, p);
-		}
-
+		M_DrawCharSelectSprite(num, x+32, y+75, charflip);
 		M_DrawCharSelectCircle(p, x+32, y+64);
-	}
-
-	if ((setup_animcounter/10) & 1 && gamestate == GS_MENU)	// Not drawn outside of GS_MENU.
-	{
-		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
-		{
-			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
-		}
-		else if (p->mdepth >= CSSTEP_READY)
-		{
-			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
-		}
 	}
 
 	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
@@ -1332,6 +1312,23 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	else
 	{
 		V_DrawFileString(x+16, y+2, 0, "PLAYER");
+	}
+
+	if (p->mdepth >= CSSTEP_FOLLOWER)
+	{
+		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, 0, 0, p);
+	}
+
+	if ((setup_animcounter/10) & 1 && gamestate == GS_MENU)	// Not drawn outside of GS_MENU.
+	{
+		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
+		{
+			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
+		}
+		else if (p->mdepth >= CSSTEP_READY)
+		{
+			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PREADY", PU_CACHE));
+		}
 	}
 
 	// Profile selection
@@ -1549,39 +1546,38 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-
 		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
 
 		if (skinnum >= 0)
 		{
-			if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
+			if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, colormap))
 				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
-
-			if (sp->mdepth >= CSSTEP_FOLLOWER)
-			{
-				if (M_DrawFollowerSprite(x-44 +12, y+119, 0, V_FLIP, 0, sp))
-				{
-					UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, sp->color);;
-					patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
-					UINT8 *fcolormap;
-
-					fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-					V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
-				}
-			}
 		}
 
 		M_DrawCharSelectCircle(sp, x-22, y+104);
+
+		if (sp->mdepth >= CSSTEP_FOLLOWER)
+		{
+			if (M_DrawFollowerSprite(x-22 - 16, y+119, 0, false, 0, 0, sp))
+			{
+				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, sp->color);;
+				patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
+				UINT8 *fcolormap;
+
+				fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			}
+		}
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
 		UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);;
 		UINT8 fln = K_FollowerAvailable(p->follower);
 
-		if (M_DrawCharacterSprite(x-22, y+119, skinnum, V_FLIP, colormap))
+		if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, colormap))
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
 
-		if (M_DrawFollowerSprite(x-44 +12, y+119, fln, V_FLIP, col, NULL))
+		if (M_DrawFollowerSprite(x-22 - 16, y+119, fln, false, 0, col, NULL))
 		{
 			patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
 			UINT8 *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
