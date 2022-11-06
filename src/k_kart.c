@@ -9865,8 +9865,10 @@ void K_KartUpdatePosition(player_t *player)
 	if (leveltime < starttime || oldposition == 0)
 		oldposition = position;
 
-	if (oldposition != position) // Changed places?
+	if (position < oldposition) // Changed places?
+	{
 		player->positiondelay = 10; // Position number growth
+	}
 
 	/* except in FREE PLAY */
 	if (player->curshield == KSHIELD_TOP &&
