@@ -2150,6 +2150,7 @@ void M_CharacterSelectInit(void)
 	{
 		// Default to no follower / match colour.
 		setup_player[i].followern = -1;
+		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = FOLLOWERCOLOR_MATCH;
 
 		// Set default selected profile to the last used profile for each player:
@@ -2578,6 +2579,15 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->gridx /= 3;
+		p->gridx = (3*p->gridx) + 1;
+		p->gridy /= 3;
+		p->gridy = (3*p->gridy) + 1;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 
 	// try to set the clone num to the page # if possible.
 	p->clonenum = setup_page;
@@ -2692,6 +2702,14 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->clonenum = 0;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 }
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
@@ -2716,8 +2734,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_FOLLOWER;
-		M_GetFollowerState(p);
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
@@ -2733,6 +2750,17 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->skin >= 0)
+		{
+			p->color = skins[p->skin].prefcolor;
+			p->rotate = CSROTATETICS;
+			p->hitlag = true;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+			M_SetMenuDelay(num);
+		}
 	}
 }
 
@@ -2764,16 +2792,100 @@ static void M_AnimateFollower(setup_player_t *p)
 	p->follower_timer++;
 }
 
-static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
 
 	if (menucmd[num].dpad_lr > 0)
 	{
-		p->followern++;
-		if (p->followern >= numfollowers)
+		p->followercategory++;
+		if (p->followercategory >= numfollowercategories)
+			p->followercategory = -1;
+
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->followercategory--;
+		if (p->followercategory < -1)
+			p->followercategory = numfollowercategories-1;
+
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		if (p->followercategory < 0)
+		{
 			p->followern = -1;
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(p);
+			S_StartSound(NULL, sfx_s3k4e);
+		}
+		else
+		{
+			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
+			{
+				p->followern = 0;
+				while (p->followern < numfollowers && followers[p->followern].category != p->followercategory)
+					p->followern++;
+			}
+
+			if (p->followern >= numfollowers)
+			{
+				p->followern = -1;
+				S_StartSound(NULL, sfx_s3kb2);
+			}
+			else
+			{
+				M_GetFollowerState(p);
+				p->mdepth = CSSTEP_FOLLOWER;
+				S_StartSound(NULL, sfx_s3k63);
+			}
+		}
+
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuBackPressed(num))
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->followercategory = -1;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
+}
+
+static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+{
+	INT16 startfollowern = p->followern;
+
+	if (cv_splitdevice.value)
+		num = 0;
+
+	if (menucmd[num].dpad_lr > 0)
+	{
+		do
+		{
+			p->followern++;
+			if (p->followern >= numfollowers)
+				p->followern = 0;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
 
 		M_GetFollowerState(p);
 
@@ -2783,9 +2895,15 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (menucmd[num].dpad_lr < 0)
 	{
-		p->followern--;
-		if (p->followern < -1)
-			p->followern = numfollowers-1;
+		do
+		{
+			p->followern--;
+			if (p->followern < 0)
+				p->followern = numfollowers-1;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
 
 		M_GetFollowerState(p);
 
@@ -2813,7 +2931,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		p->mdepth = CSSTEP_COLORS;
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -2851,8 +2969,22 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
+		M_GetFollowerState(p);
 		p->mdepth = CSSTEP_FOLLOWER;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->followercolor == FOLLOWERCOLOR_MATCH)
+			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
+		else if (p->followercolor == followers[p->followern].defaultcolor)
+			p->followercolor = FOLLOWERCOLOR_MATCH;
+		else
+			p->followercolor = followers[p->followern].defaultcolor;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
@@ -2902,6 +3034,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_COLORS: // Select color
 					M_HandleColorRotate(p, i);
+					break;
+				case CSSTEP_FOLLOWERCATEGORY:
+					M_HandleFollowerCategoryRotate(p, i);
 					break;
 				case CSSTEP_FOLLOWER:
 					M_HandleFollowerRotate(p, i);
@@ -3006,6 +3141,8 @@ void M_CharacterSelectTick(void)
 			setup_player[i].rotate--;
 		else if (setup_player[i].rotate < 0)
 			setup_player[i].rotate++;
+		else
+			setup_player[i].hitlag = false;
 
 		if (i >= setup_numplayers)
 			continue;

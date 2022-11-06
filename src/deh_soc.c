@@ -3139,10 +3139,9 @@ void readfollower(MYFILE *f)
 	INT32 res;
 	INT32 i;
 
-	if (numfollowers > MAXSKINS)
+	if (numfollowers >= MAXSKINS)
 	{
-		deh_warning("Error: Too many followers, cannot add anymore.\n");
-		return;
+		I_Error("Out of Followers\nLoad less addons to fix this.");
 	}
 
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3162,7 +3161,8 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
-	strcpy(followers[numfollowers].icon, "M_NORANK");
+	followers[numfollowers].category = UINT8_MAX;
+	strcpy(followers[numfollowers].icon, "MISSING");
 
 	do
 	{
@@ -3200,6 +3200,23 @@ void readfollower(MYFILE *f)
 			{
 				strcpy(followers[numfollowers].icon, word2);
 				nameset = true;
+			}
+			else if (fastcmp(word, "CATEGORY"))
+			{
+				INT32 j;
+				for (j = 0; j < numfollowercategories; j++)
+				{
+					if (!stricmp(followercategories[j].name, word2))
+					{
+						followers[numfollowers].category = j;
+						break;
+					}
+				}
+
+				if (j == numfollowercategories)
+				{
+					deh_warning("Follower %d: unknown follower category '%s'", numfollowers, word2);
+				}
 			}
 			else if (fastcmp(word, "MODE"))
 			{
@@ -3406,7 +3423,79 @@ if (!followers[numfollowers].field) \
 #undef NOSTATE
 
 	CONS_Printf("Added follower '%s'\n", dname);
+	if (followers[numfollowers].category < numfollowercategories)
+		followercategories[followers[numfollowers].category].numincategory++;
 	numfollowers++; // add 1 follower
+	Z_Free(s);
+}
+
+void readfollowercategory(MYFILE *f)
+{
+	char *s;
+	char *word, *word2;
+	char *tmp;
+
+	boolean nameset;
+
+	if (numfollowercategories == MAXFOLLOWERCATEGORIES)
+	{
+		I_Error("Out of Follower categories\nLoad less addons to fix this.");
+	}
+
+	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+
+	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	strcpy(followercategories[numfollowercategories].icon, "MISSING");
+	followercategories[numfollowercategories].numincategory = 0;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			word = strtok(s, " ");
+			if (word)
+				strupr(word);
+			else
+				break;
+
+			word2 = strtok(NULL, " = ");
+
+			if (!word2)
+				break;
+
+			if (word2[strlen(word2)-1] == '\n')
+				word2[strlen(word2)-1] = '\0';
+
+			if (fastcmp(word, "NAME"))
+			{
+				strcpy(followercategories[numfollowercategories].name, word2);
+				nameset = true;
+			}
+			else if (fastcmp(word, "ICON"))
+			{
+				strcpy(followercategories[numfollowercategories].icon, word2);
+				nameset = true;
+			}
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	if (!nameset)
+	{
+		// well this is problematic.
+		strcpy(followercategories[numfollowercategories].name, va("Followercategory%d", numfollowercategories)); // this is lazy, so what
+	}
+
+	CONS_Printf("Added follower category '%s'\n", followercategories[numfollowercategories].name);
+	numfollowercategories++; // add 1 follower
 	Z_Free(s);
 }
 

@@ -15,6 +15,9 @@
 INT32 numfollowers = 0;
 follower_t followers[MAXSKINS];
 
+INT32 numfollowercategories;
+followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
+
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /*--------------------------------------------------

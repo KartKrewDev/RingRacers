@@ -599,6 +599,7 @@ typedef enum
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
+	CSSTEP_FOLLOWERCATEGORY,
 	CSSTEP_FOLLOWER,
 	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
@@ -614,6 +615,7 @@ typedef struct setup_player_s
 	UINT8 delay;
 	UINT16 color;
 	UINT8 mdepth;
+	boolean hitlag;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
@@ -622,7 +624,8 @@ typedef struct setup_player_s
 
 	UINT8 changeselect;
 
-	INT32 followern;
+	INT16 followercategory;
+	INT16 followern;
 	UINT16 followercolor;
 	tic_t follower_tics;
 	tic_t follower_timer;

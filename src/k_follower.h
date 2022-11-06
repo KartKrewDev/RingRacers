@@ -49,6 +49,8 @@ typedef struct follower_s
 	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
 	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
 
+	UINT8 category;			// Category
+
 	skincolornum_t defaultcolor;	// default color for menus.
 	followermode_t mode;			// Follower behavior modifier.
 
@@ -84,6 +86,18 @@ typedef struct follower_s
 
 extern INT32 numfollowers;
 extern follower_t followers[MAXSKINS];
+
+#define MAXFOLLOWERCATEGORIES 32
+
+typedef struct followercategory_s
+{
+	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
+	UINT8 numincategory;
+} followercategory_t;
+
+extern INT32 numfollowercategories;
+extern followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
 /*--------------------------------------------------
 	INT32 K_FollowerAvailable(const char *name)

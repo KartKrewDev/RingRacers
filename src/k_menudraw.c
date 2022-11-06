@@ -969,7 +969,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 {
 	angle_t angamt = ANGLE_MAX;
 	UINT16 i, numoptions = 0;
-	UINT16 l = 0, r = 0;
+	INT16 l = 0, r = 0;
+	INT16 subtractcheck;
 
 	switch (p->mdepth)
 	{
@@ -979,8 +980,11 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		case CSSTEP_COLORS:
 			numoptions = nummenucolors;
 			break;
+		case CSSTEP_FOLLOWERCATEGORY:
+			numoptions = numfollowercategories+1;
+			break;
 		case CSSTEP_FOLLOWER:
-			numoptions = numfollowers+1;
+			numoptions = followercategories[p->followercategory].numincategory;
 			break;
 		case CSSTEP_FOLLOWERCOLORS:
 			numoptions = nummenucolors+2;
@@ -994,17 +998,19 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 		return;
 	}
 
+	subtractcheck = 1 ^ (numoptions & 1);
+
 	angamt /= numoptions;
 
 	for (i = 0; i < numoptions; i++)
 	{
 		fixed_t cx = x << FRACBITS, cy = y << FRACBITS;
-		boolean subtract = (i & 1);
+		boolean subtract = (i & 1) == subtractcheck;
 		angle_t ang = ((i+1)/2) * angamt;
 		patch_t *patch = NULL;
 		UINT8 *colormap = NULL;
 		fixed_t radius = 28<<FRACBITS;
-		UINT16 n = 0;
+		INT16 n = 0;
 
 		switch (p->mdepth)
 		{
@@ -1017,7 +1023,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					n -= ((i+1)/2);
 				else
 					n += ((i+1)/2);
-				n %= numoptions;
+				n = (n + numoptions) % numoptions;
 
 				skin = setup_chargrid[p->gridx][p->gridy].skinlist[n];
 				patch = faceprefix[skin][FACE_RANK];
@@ -1061,16 +1067,16 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				break;
 			}
 
-			case CSSTEP_FOLLOWER:
+			case CSSTEP_FOLLOWERCATEGORY:
 			{
-				follower_t *fl = NULL;
+				followercategory_t *fc = NULL;
 
-				n = (p->followern + 1) + numoptions/2;
+				n = (p->followercategory + 1) + numoptions/2;
 				if (subtract)
 					n -= ((i+1)/2);
 				else
 					n += ((i+1)/2);
-				n %= numoptions;
+				n = (n + numoptions) % numoptions;
 
 				if (n == 0)
 				{
@@ -1078,7 +1084,67 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 				}
 				else
 				{
-					fl = &followers[n - 1];
+					fc = &followercategories[n - 1];
+					patch = W_CachePatchName(fc->icon, PU_CACHE);
+				}
+
+				radius = 24<<FRACBITS;
+
+				cx -= (SHORT(patch->width) << FRACBITS) >> 1;
+				cy -= (SHORT(patch->height) << FRACBITS) >> 1;
+				break;
+			}
+
+			case CSSTEP_FOLLOWER:
+			{
+				follower_t *fl = NULL;
+				INT16 startfollowern = p->followern;
+
+				if (i == 0)
+				{
+					n = p->followern;
+					r = (numoptions+1)/2;
+					while (r)
+					{
+						n--;
+						if (n < 0)
+							n = numfollowers-1;
+						if (n == startfollowern)
+							break;
+						if (followers[n].category == p->followercategory)
+							r--;
+					}
+					l = r = n;
+				}
+				else if (subtract)
+				{
+					do
+					{
+						l--;
+						if (l < 0)
+							l = numfollowers-1;
+						if (l == startfollowern)
+							break;
+					}
+					while (followers[l].category != p->followercategory);
+					n = l;
+				}
+				else
+				{
+					do
+					{
+						r++;
+						if (r >= numfollowers)
+							r = 0;
+						if (r == startfollowern)
+							break;
+					}
+					while (followers[r].category != p->followercategory);
+					n = r;
+				}
+
+				{
+					fl = &followers[n];
 					patch = W_CachePatchName(fl->icon, PU_CACHE);
 
 					colormap = R_GetTranslationColormap(TC_DEFAULT,
@@ -1142,7 +1208,12 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			ang = (signed)(ang - (angamt/2));
 
 		if (p->rotate)
-			ang = (signed)(ang + ((angamt / CSROTATETICS) * p->rotate));
+		{
+			SINT8 rotate = p->rotate;
+			if ((p->hitlag == true) && (setup_animcounter & 1))
+				rotate = -rotate;
+			ang = (signed)(ang + ((angamt / CSROTATETICS) * rotate));
+		}
 
 		cx += FixedMul(radius, FINECOSINE(ang >> ANGLETOFINESHIFT));
 		cy -= FixedMul(radius, FINESINE(ang >> ANGLETOFINESHIFT)) / 3;
@@ -1264,24 +1335,19 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip)
 {
 	setup_player_t *p = &setup_player[num];
-	UINT8 cnum = p->clonenum;
-	INT16 skin;
 	UINT8 color;
 	UINT8 *colormap;
 
-	// for p1 alone don't try to preview things on pages that don't exist lol.
-	if (p->mdepth == CSSTEP_CHARS && setup_numplayers == 1)
-		cnum = setup_page;
+	if (p->skin < 0)
+		return;
 
-	skin = setup_chargrid[p->gridx][p->gridy].skinlist[cnum];
 	if (p->mdepth < CSSTEP_COLORS)
-		color = skins[skin].prefcolor;
+		color = skins[p->skin].prefcolor;
 	else
 		color = p->color;
-	colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
-	if (skin >= 0)
-		M_DrawCharacterSprite(x, y, skin, charflip, (p->mdepth == CSSTEP_READY), 0, colormap);
+	M_DrawCharacterSprite(x, y, p->skin, charflip, (p->mdepth == CSSTEP_READY), 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
