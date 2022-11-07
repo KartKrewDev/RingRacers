@@ -1583,6 +1583,9 @@ void M_Ticker(void)
 {
 	INT32 i;
 
+	if (!menuactive)
+		return;
+
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
 		noFurtherInput = true;
@@ -3095,8 +3098,6 @@ static void M_MPConfirmCharacterSelection(void)
 
 	for (i = 0; i < splitscreen +1; i++)
 	{
-		char cmd[MAXSTRINGLENGTH];
-
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
@@ -3108,18 +3109,14 @@ static void M_MPConfirmCharacterSelection(void)
 		else
 			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 
-		// follower color
-		CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
-
 		// finally, call the skin[x] console command.
 		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
 
-		// This is a hack to make sure we call Skin[x]_OnChange afterwards
-		CV_StealthSetValue(&cv_skin[i], -1);
+		CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 
-		strcpy(cmd, cv_skin[i].name);
-		strcat(cmd, va(" %s", skins[setup_player[i].skin].name));
-		COM_ImmedExecute(cmd);
+		// ...actually, let's do this last - Skin_OnChange has some return-early occasions
+		// follower color
+		CV_SetValue(&cv_followercolor[i], setup_player[i].followercolor);
 
 	}
 	M_ClearMenus(true);

@@ -1499,14 +1499,11 @@ static void SendNameAndColor(UINT8 n)
 	if (!cv_followercolor[n].value)
 		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
 
-	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
-	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
-		CV_StealthSet(&cv_follower[n], "None");
-
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
-		&& !strcmp(cv_skin[n].string, skins[player->skin].name)
-		&& cv_follower[n].value == player->followerskin
+		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
+		&& !stricmp(cv_follower[n].string,
+			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
 		&& cv_followercolor[n].value == player->followercolor)
 		return;
 
@@ -6060,6 +6057,7 @@ static void Name_OnChange(void)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
 		CV_StealthSet(&cv_playername[0], player_names[consoleplayer]);
+		return;
 	}
 	else
 		SendNameAndColor(0);
@@ -6169,7 +6167,9 @@ static void Skin_OnChange(void)
 	}
 
 	if (CanChangeSkinWhilePlaying(consoleplayer))
+	{
 		SendNameAndColor(0);
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
