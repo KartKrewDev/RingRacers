@@ -2066,6 +2066,12 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
+
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+		p->followercategory = -1;
+	else
+		p->followercategory = followers[p->followern].category;
+
 	p->followercolor = pr->followercolor;
 
 	// Now position the grid for skin
@@ -2490,6 +2496,16 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 		S_StartSound(NULL, sfx_s3k63);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
+		if (p->profilen == yourprofile)
+			p->profilen = PROFILE_GUEST;
+		else
+			p->profilen = yourprofile;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 
 	return false;
 
@@ -2863,7 +2879,10 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuExtraPressed(num))
 	{
-		p->followercategory = -1;
+		if (p->followercategory >= 0 || p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+			p->followercategory = -1;
+		else
+			p->followercategory = followers[p->followern].category;
 		p->rotate = CSROTATETICS;
 		p->hitlag = true;
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
@@ -2936,6 +2955,15 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	{
 		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+		p->followercategory = -1;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
