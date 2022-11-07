@@ -86,10 +86,15 @@ static CV_PossibleValue_t constextsize_cons_t[] = {
 static void CV_constextsize_OnChange(void);
 consvar_t cv_constextsize = CVAR_INIT ("con_textsize", "Medium", CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange);
 
+consvar_t cv_palette = CVAR_INIT ("palette", "", CV_CHEAT|CV_CALL|CV_NOINIT, NULL, CV_palette_OnChange);
+consvar_t cv_palettenum = CVAR_INIT ("palettenum", "0", CV_CHEAT|CV_CALL|CV_NOINIT, CV_Unsigned, CV_palette_OnChange);
+
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;
 RGBA_t *pMasterPalette = NULL;
 RGBA_t *pGammaCorrectedPalette = NULL;
+
+static size_t currentPaletteSize;
 
 /*
 The following was an extremely helpful resource when developing my Colour Cube LUT.
@@ -311,8 +316,11 @@ UINT32 V_GammaCorrect(UINT32 input, double power)
 static void LoadPalette(const char *lumpname)
 {
 	lumpnum_t lumpnum = W_GetNumForName(lumpname);
-	size_t i, palsize = W_LumpLength(lumpnum)/3;
+	size_t i, palsize;
 	UINT8 *pal;
+
+	currentPaletteSize = W_LumpLength(lumpnum);
+	palsize = currentPaletteSize / 3;
 
 	Cubeapply = InitCube();
 
@@ -400,8 +408,24 @@ const char *R_GetPalname(UINT16 num)
 
 const char *GetPalette(void)
 {
+	const char *user = cv_palette.string;
+
+	if (user && user[0])
+	{
+		if (W_CheckNumForName(user) == LUMPERROR)
+		{
+			CONS_Alert(CONS_WARNING,
+					"cv_palette %s lump does not exist\n", user);
+		}
+		else
+		{
+			return cv_palette.string;
+		}
+	}
+
 	if (gamestate == GS_LEVEL)
 		return R_GetPalname((encoremode ? mapheaderinfo[gamemap-1]->encorepal : mapheaderinfo[gamemap-1]->palette));
+
 	return "PLAYPAL";
 }
 
@@ -419,6 +443,19 @@ void V_SetPalette(INT32 palettenum)
 	if (!pLocalPalette)
 		V_ReloadPalette();
 
+	if (palettenum == 0)
+	{
+		palettenum = cv_palettenum.value;
+
+		if (palettenum * 256U > currentPaletteSize - 256)
+		{
+			CONS_Alert(CONS_WARNING,
+					"cv_palettenum %d out of range\n",
+					palettenum);
+			palettenum = 0;
+		}
+	}
+
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 		HWR_SetPalette(&pLocalPalette[palettenum*256]);
@@ -433,23 +470,12 @@ void V_SetPalette(INT32 palettenum)
 void V_SetPaletteLump(const char *pal)
 {
 	LoadPalette(pal);
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		HWR_SetPalette(pLocalPalette);
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	else
-#endif
-#endif
-	if (rendermode != render_none)
-		I_SetPalette(pLocalPalette);
-#ifdef HASINVERT
-	R_MakeInvertmap();
-#endif
+	V_SetPalette(0);
 }
 
 static void CV_palette_OnChange(void)
 {
-	// reload palette
+	// recalculate Color Cube
 	V_ReloadPalette();
 	V_SetPalette(0);
 }
