@@ -45,8 +45,7 @@ typedef enum
 //
 typedef struct follower_s
 {
-	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
-	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+	char name[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything..
 	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
 
 	UINT8 category;			// Category

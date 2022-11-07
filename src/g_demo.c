@@ -453,7 +453,7 @@ void G_WriteDemoExtraData(void)
 				if (players[i].followerskin == -1)
 					strncpy(name, "None", 16);
 				else
-					strncpy(name, followers[players[i].followerskin].skinname, 16);
+					strncpy(name, followers[players[i].followerskin].name, 16);
 				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
 
@@ -2093,7 +2093,7 @@ void G_BeginRecording(void)
 
 			memset(name, 0, 16);
 			if (player->follower)
-				strncpy(name, followers[player->followerskin].skinname, 16);
+				strncpy(name, followers[player->followerskin].name, 16);
 			else
 				strncpy(name, "None", 16);	// Say we don't have one, then.
 

@@ -3093,9 +3093,6 @@ static void M_MPConfirmCharacterSelection(void)
 	UINT8 i;
 	INT16 col;
 
-	char commandnames[][MAXSTRINGLENGTH] = { "skin ", "skin2 ", "skin3 ", "skin4 "};
-	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
-
 	for (i = 0; i < splitscreen +1; i++)
 	{
 		char cmd[MAXSTRINGLENGTH];
@@ -3106,7 +3103,10 @@ static void M_MPConfirmCharacterSelection(void)
 		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
+		if (setup_player[i].followern < 0)
+			CV_StealthSet(&cv_follower[i], "None");
+		else
+			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 
 		// follower color
 		CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
@@ -3117,8 +3117,8 @@ static void M_MPConfirmCharacterSelection(void)
 		// This is a hack to make sure we call Skin[x]_OnChange afterwards
 		CV_StealthSetValue(&cv_skin[i], -1);
 
-		strcpy(cmd, commandnames[i]);
-		strcat(cmd, skins[setup_player[i].skin].name);
+		strcpy(cmd, cv_skin[i].name);
+		strcat(cmd, va(" %s", skins[setup_player[i].skin].name));
 		COM_ImmedExecute(cmd);
 
 	}
@@ -3173,7 +3173,7 @@ void M_CharacterSelectTick(void)
 				optionsmenu.profile->color = setup_player[0].color;
 
 				// save follower
-				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].skinname);
+				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
 				optionsmenu.profile->followercolor = setup_player[0].followercolor;
 
 				// reset setup_player
@@ -3190,7 +3190,10 @@ void M_CharacterSelectTick(void)
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
-					CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
+					if (setup_player[i].followern < 0)
+						CV_StealthSet(&cv_follower[i], "None");
+					else
+						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 					CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
 				}
 

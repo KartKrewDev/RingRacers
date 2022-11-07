@@ -3130,7 +3130,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 void readfollower(MYFILE *f)
 {
 	char *s;
-	char *word, *word2, dname[SKINNAMESIZE+1];
+	char *word, *word2;
 	char *tmp;
 	char testname[SKINNAMESIZE+1];
 
@@ -3348,10 +3348,6 @@ void readfollower(MYFILE *f)
 	// set skin name (this is just the follower's name in lowercases):
 	// but before we do, let's... actually check if another follower isn't doing the same shit...
 
-	strcpy(testname, followers[numfollowers].name);
-
-	// lower testname for skin checks...
-	strlwr(testname);
 	res = K_FollowerAvailable(testname);
 	if (res > -1)	// yikes, someone else has stolen our name already
 	{
@@ -3363,8 +3359,7 @@ void readfollower(MYFILE *f)
 		// in that case, we'll be very lazy and copy numfollowers to the end of our skin name.
 	}
 
-	strcpy(followers[numfollowers].skinname, testname);
-	strcpy(dname, followers[numfollowers].skinname);	// display name, just used for printing succesful stuff or errors later down the line.
+	strcpy(testname, followers[numfollowers].name);
 
 	// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
 	for (i = 0; followers[numfollowers].name[i]; i++)
@@ -3379,14 +3374,14 @@ void readfollower(MYFILE *f)
 	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
 	{
 		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
-		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", testname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
 	}
 
 #define FALLBACK(field, field2, threshold, set) \
 if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", testname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
@@ -3411,7 +3406,7 @@ if (!followers[numfollowers].field) \
 { \
 	followers[numfollowers].field = fallbackstate ? fallbackstate : S_INVISIBLE; \
 	if (!fallbackstate) \
-		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", dname, field2); \
+		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", testname, field2); \
 } \
 
 	NOSTATE(idlestate, "IDLESTATE");
@@ -3422,7 +3417,7 @@ if (!followers[numfollowers].field) \
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
 #undef NOSTATE
 
-	CONS_Printf("Added follower '%s'\n", dname);
+	CONS_Printf("Added follower '%s'\n", testname);
 	if (followers[numfollowers].category < numfollowercategories)
 		followercategories[followers[numfollowers].category].numincategory++;
 	numfollowers++; // add 1 follower
