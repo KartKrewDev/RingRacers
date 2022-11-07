@@ -1468,7 +1468,7 @@ static void SendNameAndColor(UINT8 n)
 	const INT32 playernum = g_localplayers[n];
 	player_t *player = &players[playernum];
 
-	char buf[MAXPLAYERNAME+9];
+	char buf[MAXPLAYERNAME+12];
 	char *p;
 
 	if (splitscreen < n)
@@ -1501,7 +1501,7 @@ static void SendNameAndColor(UINT8 n)
 
 	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
 	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
-		CV_StealthSet(&cv_follower[n], "-1");
+		CV_StealthSet(&cv_follower[n], "None");
 
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
@@ -1587,7 +1587,8 @@ static void SendNameAndColor(UINT8 n)
 	WRITEUINT32(p, (UINT32)player->availabilities);
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
-	WRITESINT8(p, (SINT8)cv_follower[n].value);
+	WRITEINT16(p, (INT16)cv_follower[n].value);
+	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
 	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
@@ -1599,7 +1600,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	char name[MAXPLAYERNAME+1];
 	UINT16 color, followercolor;
 	UINT8 skin;
-	SINT8 follower;
+	INT16 follower;
 	SINT8 localplayer = -1;
 	UINT8 i;
 
@@ -1628,7 +1629,8 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	p->availabilities = READUINT32(*cp);
 	color = READUINT16(*cp);
 	skin = READUINT8(*cp);
-	follower = READSINT8(*cp);
+	follower = READINT16(*cp);
+	//CONS_Printf("Recieved follower id %d\n", follower);
 	followercolor = READUINT16(*cp);
 
 	// set name

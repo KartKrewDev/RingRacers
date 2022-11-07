@@ -182,5 +182,19 @@ UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 
 void K_HandleFollower(player_t *player);
 
+/*--------------------------------------------------
+	void K_RemoveFollower(player_t *player)
+
+		Removes Follower object
+
+	Input Arguments:-
+		player - The player who we want to remove the follower of.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_RemoveFollower(player_t *player);
+
 
 #endif // __K_FOLLOWER__
