@@ -5257,27 +5257,8 @@ void P_RunOverlays(void)
 			continue;
 		}
 
-		if (!r_splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mo->target->x, mo->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mo->target->x, mo->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mo->target->x, mo->target->y, camera[0].x, camera[0].y);
-
-			if (!(mo->state->frame & FF_ANIMATE) && mo->state->var1)
-				viewingangle += ANGLE_180;
-			destx = mo->target->x + P_ReturnThrustX(mo->target, viewingangle, FixedMul(FRACUNIT/4, mo->scale));
-			desty = mo->target->y + P_ReturnThrustY(mo->target, viewingangle, FixedMul(FRACUNIT/4, mo->scale));
-		}
-		else
-		{
-			destx = mo->target->x;
-			desty = mo->target->y;
-		}
+		destx = mo->target->x;
+		desty = mo->target->y;
 
 		mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP) | (mo->target->eflags & MFE_VERTICALFLIP);
 		mo->scale = mo->destscale = FixedMul(mo->target->scale, mo->movefactor);
@@ -5289,12 +5270,27 @@ void P_RunOverlays(void)
 		if ((mo->flags & MF_DONTENCOREMAP) != (mo->target->flags & MF_DONTENCOREMAP))
 			mo->flags ^= MF_DONTENCOREMAP;
 
+		mo->dispoffset = mo->target->dispoffset + mo->info->dispoffset;
+
 		if (!(mo->state->frame & FF_ANIMATE))
+		{
 			zoffs = FixedMul(((signed)mo->state->var2)*FRACUNIT, mo->scale);
-		// if you're using FF_ANIMATE on an overlay,
-		// then you're on your own.
+
+			if (mo->state->var1)
+			{
+				mo->dispoffset--;
+			}
+			else
+			{
+				mo->dispoffset++;
+			}
+		}
 		else
+		{
+			// if you're using FF_ANIMATE on an overlay,
+			// then you're on your own.
 			zoffs = 0;
+		}
 
 		P_UnsetThingPosition(mo);
 		mo->x = destx;
@@ -6786,6 +6782,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_FLOATINGITEM:
 	{
+		mobj->pitch = mobj->roll = 0;
 		if (mobj->flags & MF_NOCLIPTHING)
 		{
 			if (P_CheckDeathPitCollide(mobj))

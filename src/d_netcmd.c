@@ -995,6 +995,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_bsaturation);
 	CV_RegisterVar(&cv_msaturation);
 
+	CV_RegisterVar(&cv_palette);
+	CV_RegisterVar(&cv_palettenum);
+
 	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
 	CV_RegisterVar(&cv_chatheight);
@@ -1095,6 +1098,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("rteleport", Command_RTeleport_f);
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
+	COM_AddCommand("grayscale", Command_Grayscale_f);
 	CV_RegisterVar(&cv_renderhitbox);
 
 #ifdef HAVE_DISCORDRPC
