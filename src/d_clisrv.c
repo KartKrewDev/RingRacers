@@ -5529,9 +5529,6 @@ boolean TryRunTics(tic_t realtics)
 
 static INT32 pingtimeout[MAXPLAYERS];
 
-#define PINGKICK_TICQUEUE 2
-#define PINGKICK_LIMIT 1
-
 static inline void PingUpdate(void)
 {
 	INT32 i;
