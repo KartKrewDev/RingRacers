@@ -3271,6 +3271,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_ITEM_DEBRIS_CLOUD_SPAWNER2",
 
 	"S_ITEMICON",
+	"S_ITEMBACKDROP",
 
 	// Item capsules
 	"S_ITEMCAPSULE",

@@ -2103,6 +2103,9 @@ luahook:
 		LUA_HookHUD(luahuddrawlist_title, HUD_HOOK(title));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
+
+	if (finalecount > 0)
+		M_DrawMenuMessage();
 }
 
 // (no longer) De-Demo'd Title Screen
@@ -2112,13 +2115,15 @@ void F_TitleScreenTicker(boolean run)
 
 	if (run)
 	{
-		finalecount++;
-
-		if (finalecount == 1)
+		if (finalecount == 0)
 		{
 			// Now start the music
 			S_ChangeMusicInternal("_title", looptitle);
 		}
+		else if (menumessage.fadetimer < 9)
+			menumessage.fadetimer++;
+
+		finalecount++;
 	}
 
 	// don't trigger if doing anything besides idling on title

@@ -132,7 +132,6 @@ INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 boolean sound_disabled = false;
 boolean digital_disabled = false;
 
-boolean advancedemo;
 #ifdef DEBUGFILE
 INT32 debugload = 0;
 #endif
@@ -914,15 +913,6 @@ void D_SRB2Loop(void)
 	}
 }
 
-//
-// D_AdvanceDemo
-// Called after each demo or intro demosequence finishes
-//
-void D_AdvanceDemo(void)
-{
-	advancedemo = true;
-}
-
 // =========================================================================
 // D_SRB2Main
 // =========================================================================
@@ -998,7 +988,11 @@ void D_StartTitle(void)
 	//demosequence = -1;
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
-	advancedemo = false;
+
+	// clear cmd building stuff
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	memset(deviceResponding, false, sizeof (deviceResponding));
+
 	F_StartTitleScreen();
 
 	// Reset the palette
@@ -1208,7 +1202,7 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 p;
+	INT32 i, p;
 
 	INT32 numbasemapheaders;
 
@@ -1771,6 +1765,11 @@ void D_SRB2Main(void)
 	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
 	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
 	PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
+	for (i = 1; i < cv_splitplayers.value; i++)
+	{
+		PR_ApplyProfile(cv_lastprofile[i].value, i);
+	}
 
 	if (autostart || netgame)
 	{

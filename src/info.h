@@ -1077,6 +1077,7 @@ typedef enum sprite
 	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
 	SPR_ITRI, // Item Box Debris
+	SPR_ITPA, // Paper item backdrop
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
 	SPR_DSHR, // Speed boost dust release
@@ -4282,6 +4283,7 @@ typedef enum state
 	S_ITEM_DEBRIS_CLOUD_SPAWNER2,
 
 	S_ITEMICON,
+	S_ITEMBACKDROP,
 
 	// Item capsules
 	S_ITEMCAPSULE,

@@ -433,7 +433,7 @@ static void M_DrawMenuTyping(void)
 }
 
 // Draw the message popup submenu
-static void M_DrawMenuMessage(void)
+void M_DrawMenuMessage(void)
 {
 
 	INT32 y = menumessage.y + (9-menumessage.fadetimer)*20;
@@ -442,6 +442,9 @@ static void M_DrawMenuMessage(void)
 	char string[MAXMENUMESSAGE];
 	INT32 mlines;
 	const char *msg = menumessage.message;
+
+	if (!menumessage.active)
+		return;
 
 	mlines = menumessage.m>>8;
 	max = (INT16)((UINT8)(menumessage.m & 0xFF)*8);
@@ -550,8 +553,7 @@ void M_Drawer(void)
 		}
 
 		// Draw message overlay when needed
-		if (menumessage.active)
-			 M_DrawMenuMessage();
+		M_DrawMenuMessage();
 
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
@@ -2290,7 +2292,7 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 }
 
 // Draws the EGGA CHANNEL background.
-static void M_DrawEggaChannel(void)
+void M_DrawEggaChannel(void)
 {
 	patch_t *background = W_CachePatchName("M_EGGACH", PU_CACHE);
 
@@ -3896,6 +3898,18 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		if (demoref->gametype == GT_RACE)
 		{
 			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
+		}
+		else
+		{
+			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
+		}
+
+		if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
+		{
+			V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
+		}
+		else if (demoref->gametype == GT_RACE)
+		{
 			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
 											G_TicsToMinutes(demoref->standings[0].timeorscore, true),
 											G_TicsToSeconds(demoref->standings[0].timeorscore),
@@ -3904,7 +3918,6 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		}
 		else
 		{
-			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
 			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
 		}
 
@@ -3913,7 +3926,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
 		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
 
-		if (demoref->standings[0].skin != 0xFF)
+		if (demoref->standings[0].skin < numskins)
 		{
 			patch = faceprefix[demoref->standings[0].skin][FACE_WANTED];
 			colormap = R_GetTranslationColormap(
@@ -4114,7 +4127,7 @@ void M_DrawReplayStartMenu(void)
 		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
 		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
 
-		if (demoref->standings[i].skin != 0xFF)
+		if (demoref->standings[i].skin < numskins)
 		{
 			patch = faceprefix[demoref->standings[i].skin][FACE_RANK];
 			colormap = R_GetTranslationColormap(

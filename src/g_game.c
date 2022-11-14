@@ -1341,7 +1341,13 @@ void G_DoLoadLevel(boolean resetplayer)
 		wipegamestate = -1; // force a wipe
 
 	if (cv_currprofile.value == -1)
+	{
 		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
+		for (i = 1; i < cv_splitplayers.value; i++)
+		{
+			PR_ApplyProfile(cv_lastprofile[i].value, i);
+		}
+	}
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 	if (gamestate == GS_VOTING)

@@ -531,6 +531,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SBOX", // Sphere Box (for Battle)
 	"RPOP", // Random Item Box Pop
 	"ITRI", // Item Box Debris
+	"ITPA", // Paper item backdrop
 	"SGNS", // Signpost sparkle
 	"FAST", // Speed boost trail
 	"DSHR", // Speed boost dust release
@@ -3879,6 +3880,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, 7, {A_SpawnItemDebrisCloud}, 20, 0, S_ITEM_DEBRIS_CLOUD_SPAWNER1}, // S_ITEM_DEBRIS_CLOUD_SPAWNER2
 
 	{SPR_NULL, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMICON
+	{SPR_ITPA, FF_FULLBRIGHT, -1, {NULL}, 1, 0, S_NULL}, // S_ITEMBACKDROP
 
 	{SPR_ICAP,                         FF_ADD|0, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE
 	{SPR_ICAP,                 FF_PAPERSPRITE|1, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP_SIDE
