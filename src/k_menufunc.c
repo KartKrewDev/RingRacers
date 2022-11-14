@@ -1583,6 +1583,9 @@ void M_Ticker(void)
 {
 	INT32 i;
 
+	if (!menuactive)
+		return;
+
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
 		noFurtherInput = true;
@@ -2063,6 +2066,12 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
+
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+		p->followercategory = -1;
+	else
+		p->followercategory = followers[p->followern].category;
+
 	p->followercolor = pr->followercolor;
 
 	// Now position the grid for skin
@@ -2150,6 +2159,7 @@ void M_CharacterSelectInit(void)
 	{
 		// Default to no follower / match colour.
 		setup_player[i].followern = -1;
+		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = FOLLOWERCOLOR_MATCH;
 
 		// Set default selected profile to the last used profile for each player:
@@ -2486,6 +2496,16 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 		S_StartSound(NULL, sfx_s3k63);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
+		if (p->profilen == yourprofile)
+			p->profilen = PROFILE_GUEST;
+		else
+			p->profilen = yourprofile;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 
 	return false;
 
@@ -2576,6 +2596,15 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridx < 0)
 			p->gridx = 8;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->gridx /= 3;
+		p->gridx = (3*p->gridx) + 1;
+		p->gridy /= 3;
+		p->gridy = (3*p->gridy) + 1;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 
@@ -2692,6 +2721,14 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->clonenum = 0;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 }
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
@@ -2716,8 +2753,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_FOLLOWER;
-		M_GetFollowerState(p);
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
@@ -2733,6 +2769,17 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->skin >= 0)
+		{
+			p->color = skins[p->skin].prefcolor;
+			p->rotate = CSROTATETICS;
+			p->hitlag = true;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+			M_SetMenuDelay(num);
+		}
 	}
 }
 
@@ -2764,16 +2811,103 @@ static void M_AnimateFollower(setup_player_t *p)
 	p->follower_timer++;
 }
 
-static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
 
 	if (menucmd[num].dpad_lr > 0)
 	{
-		p->followern++;
-		if (p->followern >= numfollowers)
+		p->followercategory++;
+		if (p->followercategory >= numfollowercategories)
+			p->followercategory = -1;
+
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->followercategory--;
+		if (p->followercategory < -1)
+			p->followercategory = numfollowercategories-1;
+
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		if (p->followercategory < 0)
+		{
 			p->followern = -1;
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(p);
+			S_StartSound(NULL, sfx_s3k4e);
+		}
+		else
+		{
+			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
+			{
+				p->followern = 0;
+				while (p->followern < numfollowers && followers[p->followern].category != p->followercategory)
+					p->followern++;
+			}
+
+			if (p->followern >= numfollowers)
+			{
+				p->followern = -1;
+				S_StartSound(NULL, sfx_s3kb2);
+			}
+			else
+			{
+				M_GetFollowerState(p);
+				p->mdepth = CSSTEP_FOLLOWER;
+				S_StartSound(NULL, sfx_s3k63);
+			}
+		}
+
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuBackPressed(num))
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->followercategory >= 0 || p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+			p->followercategory = -1;
+		else
+			p->followercategory = followers[p->followern].category;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
+}
+
+static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+{
+	INT16 startfollowern = p->followern;
+
+	if (cv_splitdevice.value)
+		num = 0;
+
+	if (menucmd[num].dpad_lr > 0)
+	{
+		do
+		{
+			p->followern++;
+			if (p->followern >= numfollowers)
+				p->followern = 0;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
 
 		M_GetFollowerState(p);
 
@@ -2783,9 +2917,17 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (menucmd[num].dpad_lr < 0)
 	{
-		p->followern--;
-		if (p->followern < -1)
-			p->followern = numfollowers-1;
+		do
+		{
+			p->followern--;
+			if (p->followern < 0)
+				p->followern = numfollowers-1;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
+
+		M_GetFollowerState(p);
 
 		p->rotate = -CSROTATETICS;
 		p->delay = CSROTATETICS;
@@ -2811,8 +2953,17 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		p->mdepth = CSSTEP_COLORS;
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+		p->followercategory = -1;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
@@ -2849,8 +3000,22 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
+		M_GetFollowerState(p);
 		p->mdepth = CSSTEP_FOLLOWER;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->followercolor == FOLLOWERCOLOR_MATCH)
+			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
+		else if (p->followercolor == followers[p->followern].defaultcolor)
+			p->followercolor = FOLLOWERCOLOR_MATCH;
+		else
+			p->followercolor = followers[p->followern].defaultcolor;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
@@ -2900,6 +3065,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_COLORS: // Select color
 					M_HandleColorRotate(p, i);
+					break;
+				case CSSTEP_FOLLOWERCATEGORY:
+					M_HandleFollowerCategoryRotate(p, i);
 					break;
 				case CSSTEP_FOLLOWER:
 					M_HandleFollowerRotate(p, i);
@@ -2956,33 +3124,27 @@ static void M_MPConfirmCharacterSelection(void)
 	UINT8 i;
 	INT16 col;
 
-	char commandnames[][MAXSTRINGLENGTH] = { "skin ", "skin2 ", "skin3 ", "skin4 "};
-	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
-
 	for (i = 0; i < splitscreen +1; i++)
 	{
-		char cmd[MAXSTRINGLENGTH];
-
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
 		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
-
-		// follower color
-		CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
+		if (setup_player[i].followern < 0)
+			CV_StealthSet(&cv_follower[i], "None");
+		else
+			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 
 		// finally, call the skin[x] console command.
 		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
 
-		// This is a hack to make sure we call Skin[x]_OnChange afterwards
-		CV_StealthSetValue(&cv_skin[i], -1);
+		CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 
-		strcpy(cmd, commandnames[i]);
-		strcat(cmd, skins[setup_player[i].skin].name);
-		COM_ImmedExecute(cmd);
+		// ...actually, let's do this last - Skin_OnChange has some return-early occasions
+		// follower color
+		CV_SetValue(&cv_followercolor[i], setup_player[i].followercolor);
 
 	}
 	M_ClearMenus(true);
@@ -3004,6 +3166,8 @@ void M_CharacterSelectTick(void)
 			setup_player[i].rotate--;
 		else if (setup_player[i].rotate < 0)
 			setup_player[i].rotate++;
+		else
+			setup_player[i].hitlag = false;
 
 		if (i >= setup_numplayers)
 			continue;
@@ -3034,7 +3198,7 @@ void M_CharacterSelectTick(void)
 				optionsmenu.profile->color = setup_player[0].color;
 
 				// save follower
-				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].skinname);
+				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
 				optionsmenu.profile->followercolor = setup_player[0].followercolor;
 
 				// reset setup_player
@@ -3051,7 +3215,10 @@ void M_CharacterSelectTick(void)
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
-					CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
+					if (setup_player[i].followern < 0)
+						CV_StealthSet(&cv_follower[i], "None");
+					else
+						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 					CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
 				}
 

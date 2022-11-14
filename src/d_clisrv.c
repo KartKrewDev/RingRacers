@@ -2528,6 +2528,11 @@ void CL_ClearPlayer(INT32 playernum)
 {
 	int i;
 
+	if (players[playernum].follower)
+	{	
+		K_RemoveFollower(&players[playernum]);
+	}
+
 	if (players[playernum].mo)
 	{
 		P_RemoveMobj(players[playernum].mo);

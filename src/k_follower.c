@@ -15,6 +15,9 @@
 INT32 numfollowers = 0;
 follower_t followers[MAXSKINS];
 
+INT32 numfollowercategories;
+followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
+
 CV_PossibleValue_t Followercolor_cons_t[MAXSKINCOLORS+3];	// +3 to account for "Match", "Opposite" & NULL
 
 /*--------------------------------------------------
@@ -28,7 +31,7 @@ INT32 K_FollowerAvailable(const char *name)
 
 	for (i = 0; i < numfollowers; i++)
 	{
-		if (stricmp(followers[i].skinname, name) == 0)
+		if (stricmp(followers[i].name, name) == 0)
 			return i;
 	}
 
@@ -54,7 +57,7 @@ boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 	for (i = 0; i < numfollowers; i++)
 	{
 		// search in the skin list
-		if (stricmp(followers[i].skinname, skinname) == 0)
+		if (stricmp(followers[i].name, skinname) == 0)
 		{
 			K_SetFollowerByNum(playernum, i);
 			return true;
@@ -75,6 +78,31 @@ boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 }
 
 /*--------------------------------------------------
+	void K_RemoveFollower(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_RemoveFollower(player_t *player)
+{
+	mobj_t *bub, *tmp;
+	if (player->follower && !P_MobjWasRemoved(player->follower)) // this is also called when we change colour so don't respawn the follower unless we changed skins
+	{
+		// Remove follower's possible hnext list (bubble)
+		bub = player->follower->hnext;
+
+		while (bub && !P_MobjWasRemoved(bub))
+		{
+			tmp = bub->hnext;
+			P_RemoveMobj(bub);
+			bub = tmp;
+		}
+
+		P_RemoveMobj(player->follower);
+		P_SetTarget(&player->follower, NULL);
+	}
+}
+
+/*--------------------------------------------------
 	void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 
 		See header file for description.
@@ -82,8 +110,6 @@ boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
-	mobj_t *bub;
-	mobj_t *tmp;
 
 	player->followerready = true; // we are ready to perform follower related actions in the player thinker, now.
 
@@ -94,21 +120,8 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum)
 			However, we will despawn it right here if there's any to make it easy for the player thinker to replace it or delete it.
 		*/
 
-		if (player->follower && skinnum != player->followerskin) // this is also called when we change colour so don't respawn the follower unless we changed skins
-		{
-			// Remove follower's possible hnext list (bubble)
-			bub = player->follower->hnext;
-
-			while (bub && !P_MobjWasRemoved(bub))
-			{
-				tmp = bub->hnext;
-				P_RemoveMobj(bub);
-				bub = tmp;
-			}
-
-			P_RemoveMobj(player->follower);
-			P_SetTarget(&player->follower, NULL);
-		}
+		if (skinnum != player->followerskin)
+			K_RemoveFollower(player);
 
 		player->followerskin = skinnum;
 
@@ -253,18 +266,16 @@ void K_HandleFollower(player_t *player)
 	{
 		//CONS_Printf("Follower skin invlaid. Setting to -1.\n");
 		player->followerskin = -1;
-		return;
 	}
 
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator)
+	if (player->spectator || player->followerskin < 0)
 	{
-		return;
-	}
-
-	if (player->followerskin < 0)
-	{
+		if (player->follower)
+		{
+			K_RemoveFollower(player);
+		}
 		return;
 	}
 
