@@ -727,17 +727,32 @@ typedef struct
 	// ID
 	INT16 tag;            ///< Tag of linedef executor to run when movement is done.
 	fixed_t origspeed;    ///< The original, "real" speed.
-	INT32 sourceline;     ///< Index of the source linedef
+
+	fixed_t crushHeight;  ///< Crusher height
+	fixed_t crushSpeed;   ///< Crusher speed
+	fixed_t returnHeight; ///< Crusher return height
+	fixed_t returnSpeed;  ///< Crusher return speed
 } ceiling_t;
 
 #define CEILSPEED (FRACUNIT)
 
 INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type);
+void T_MoveCeiling(ceiling_t *ceiling);
+
+boolean EV_DoRaiseCeilingToHighest(mtag_t tag);
+boolean EV_DoLowerCeilingToLowestFast(mtag_t tag);
+boolean EV_DoInstantRaiseCeiling(mtag_t tag);
+boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
+boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture);
+boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
+boolean EV_DoBounceCeiling(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
 
 INT32 EV_DoCrush(mtag_t tag, line_t *line, ceiling_e type);
 void T_CrushCeiling(ceiling_t *ceiling);
 
-void T_MoveCeiling(ceiling_t *ceiling);
+boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed);
+boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed);
+boolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed);
 
 //
 // P_FLOOR
@@ -785,7 +800,10 @@ typedef struct
 	fixed_t delay;
 	fixed_t delaytimer;
 	INT16 tag;
-	INT32 sourceline;
+	fixed_t crushHeight;
+	fixed_t crushSpeed;
+	fixed_t returnHeight;
+	fixed_t returnSpeed;
 } floormove_t;
 
 typedef struct
@@ -943,7 +961,16 @@ typedef enum
 
 result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crush,
 	boolean ceiling, INT32 direction);
+
 void EV_DoFloor(mtag_t tag, line_t *line, floor_e floortype);
+void EV_DoRaiseFloorToNearestFast(mtag_t tag);
+void EV_DoInstantLowerFloor(mtag_t tag);
+void EV_DoInstantMoveFloorByHeight(mtag_t tag, fixed_t height, INT32 texture);
+void EV_DoMoveFloorByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
+void EV_DoMoveFloorByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
+void EV_DoBounceFloor(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
+void EV_DoCrushFloorOnce(mtag_t tag, fixed_t height, fixed_t speed);
+
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
 void EV_BounceSector(sector_t *sector, fixed_t momz, line_t *sourceline);

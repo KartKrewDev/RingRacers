@@ -47,8 +47,8 @@ void T_MoveCeiling(ceiling_t *ceiling)
 	if (ceiling->type == bounceCeiling)
 	{
 		const fixed_t origspeed = FixedDiv(ceiling->origspeed, (ELEVATORSPEED/2));
-		const fixed_t fs = abs(ceiling->sector->ceilingheight - lines[ceiling->sourceline].frontsector->ceilingheight);
-		const fixed_t bs = abs(ceiling->sector->ceilingheight - lines[ceiling->sourceline].backsector->ceilingheight);
+		const fixed_t fs = abs(ceiling->sector->ceilingheight - ceiling->crushHeight);
+		const fixed_t bs = abs(ceiling->sector->ceilingheight - ceiling->returnHeight);
 		if (fs < bs)
 			ceiling->speed = FixedDiv(fs, 25*FRACUNIT) + FRACUNIT/4;
 		else
@@ -84,15 +84,15 @@ void T_MoveCeiling(ceiling_t *ceiling)
 			{
 				fixed_t dest = (ceiling->direction == 1) ? ceiling->topheight : ceiling->bottomheight;
 
-				if (dest == lines[ceiling->sourceline].frontsector->ceilingheight)
+				if (dest == ceiling->crushHeight)
 				{
-					dest = lines[ceiling->sourceline].backsector->ceilingheight;
-					ceiling->origspeed = lines[ceiling->sourceline].args[3] << (FRACBITS - 2); // return trip, use args[3]
+					dest = ceiling->returnHeight;
+					ceiling->origspeed = ceiling->returnSpeed; // return trip, use args[3]
 				}
 				else
 				{
-					dest = lines[ceiling->sourceline].frontsector->ceilingheight;
-					ceiling->origspeed = lines[ceiling->sourceline].args[2] << (FRACBITS - 2); // going frontways, use args[2]
+					dest = ceiling->crushHeight;
+					ceiling->origspeed = ceiling->crushSpeed; // going frontways, use args[2]
 				}
 
 				if (ceiling->type == bounceCeilingCrush)
@@ -144,7 +144,7 @@ void T_CrushCeiling(ceiling_t *ceiling)
 			if (res == pastdest)
 			{
 				ceiling->direction = -1;
-				ceiling->speed = lines[ceiling->sourceline].args[2] << (FRACBITS - 2);
+				ceiling->speed = ceiling->crushSpeed;
 
 				if (ceiling->type == crushCeilOnce
 					|| ceiling->type == crushBothOnce)
@@ -186,7 +186,7 @@ void T_CrushCeiling(ceiling_t *ceiling)
 				S_StartSound(mp,sfx_pstop);
 
 				ceiling->direction = 1;
-				ceiling->speed = lines[ceiling->sourceline].args[3] << (FRACBITS - 2);
+				ceiling->speed = ceiling->returnSpeed;
 			}
 			break;
 	}
@@ -207,138 +207,347 @@ void T_CrushCeiling(ceiling_t *ceiling)
   */
 INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type)
 {
-	INT32 rtn = 0, firstone = 1;
+	// This function is deprecated.
+	// Use any of the following functions directly, instead.
+
+	switch (type)
+	{
+		default:
+			return 0;
+
+		case raiseToHighest:
+			return (INT32)EV_DoRaiseCeilingToHighest(tag);
+
+		case lowerToLowestFast:
+			return (INT32)EV_DoLowerCeilingToLowestFast(tag);
+
+		case instantRaise:
+			return (INT32)EV_DoInstantRaiseCeiling(tag);
+
+		case moveCeilingByFrontSector:
+			return (INT32)EV_DoMoveCeilingByHeight(
+				tag,
+				line->frontsector->ceilingheight,
+				line->args[2] << (FRACBITS - 3),
+				(line->args[1] == TMP_CEILING) ? line->args[3] : 0,
+				line->args[4] ? line->frontsector->ceilingpic : -1
+			);
+
+		case instantMoveCeilingByFrontSector:
+			return (INT32)EV_DoInstantMoveCeilingByHeight(
+				tag,
+				line->frontsector->ceilingheight,
+				line->args[2] ? line->frontsector->ceilingpic : -1
+			);
+
+		case moveCeilingByDistance:
+			return (INT32)EV_DoMoveCeilingByDistance(
+				tag,
+				line->args[2] << FRACBITS,
+				line->args[3] << (FRACBITS - 3),
+				line->args[4]
+			);
+
+		case bounceCeiling:
+		case bounceCeilingCrush:
+			return (INT32)EV_DoBounceCeiling(
+				tag,
+				(type == bounceCeilingCrush),
+				line->frontsector->ceilingheight,
+				line->args[2] << (FRACBITS - 2),
+				line->backsector->ceilingheight,
+				line->args[3] << (FRACBITS - 2),
+				line->args[4],
+				line->args[5]
+			);
+	}
+}
+
+static ceiling_t *CreateCeilingThinker(sector_t *sec)
+{
+	ceiling_t *ceiling = NULL;
+
+	if (sec->ceilingdata)
+	{
+		return NULL;
+	}
+
+	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	P_AddThinker(THINK_MAIN, &ceiling->thinker);
+
+	sec->ceilingdata = ceiling;
+
+	ceiling->thinker.function.acp1 = (actionf_p1)T_MoveCeiling;
+	ceiling->sector = sec;
+	ceiling->crush = false;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
+
+	return ceiling;
+}
+
+boolean EV_DoRaiseCeilingToHighest(mtag_t tag)
+{
+	boolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
-	ceiling_t *ceiling;
 
 	TAG_ITER_SECTORS(tag, secnum)
 	{
+		ceiling_t *ceiling = NULL;
 		sec = &sectors[secnum];
 
-		if (sec->ceilingdata)
-			continue;
-
-		// new door thinker
-		rtn = 1;
-		ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
-		P_AddThinker(THINK_MAIN, &ceiling->thinker);
-		sec->ceilingdata = ceiling;
-		ceiling->thinker.function.acp1 = (actionf_p1)T_MoveCeiling;
-		ceiling->sector = sec;
-		ceiling->crush = false;
-		ceiling->sourceline = (INT32)(line-lines);
-
-		switch (type)
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
 		{
-			case raiseToHighest:
-				ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
-				ceiling->direction = 1;
-				ceiling->speed = CEILSPEED;
-				break;
-
-			case lowerToLowestFast:
-				ceiling->bottomheight = P_FindLowestCeilingSurrounding(sec);
-				ceiling->direction = -1;
-				ceiling->speed = 4*FRACUNIT;
-				break;
-
-			case instantRaise:
-				ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
-				ceiling->direction = 1;
-				ceiling->speed = INT32_MAX/2;
-				break;
-
-			//  Linedef executor excellence
-			case moveCeilingByFrontSector:
-				ceiling->speed = line->args[2] << (FRACBITS - 3);
-				if (line->frontsector->ceilingheight >= sec->ceilingheight) // Move up
-				{
-					ceiling->direction = 1;
-					ceiling->topheight = line->frontsector->ceilingheight;
-				}
-				else // Move down
-				{
-					ceiling->direction = -1;
-					ceiling->bottomheight = line->frontsector->ceilingheight;
-				}
-
-				// chained linedef executing ability
-				// only set it on ONE of the moving sectors (the smallest numbered)
-				// only set it if there isn't also a floor mover
-				if (line->args[3] && line->args[1] == 1)
-					ceiling->tag = firstone ? (INT16)line->args[3] : 0;
-
-				// flat changing ability
-				ceiling->texture = line->args[4] ? line->frontsector->ceilingpic : -1;
-				break;
-
-			// More linedef executor junk
-			case instantMoveCeilingByFrontSector:
-				ceiling->speed = INT32_MAX/2;
-
-				if (line->frontsector->ceilingheight >= sec->ceilingheight) // Move up
-				{
-					ceiling->direction = 1;
-					ceiling->topheight = line->frontsector->ceilingheight;
-				}
-				else // Move down
-				{
-					ceiling->direction = -1;
-					ceiling->bottomheight = line->frontsector->ceilingheight;
-				}
-
-				// If flag is set, change ceiling texture after moving
-				ceiling->texture = line->args[2] ? line->frontsector->ceilingpic : -1;
-				break;
-
-			case moveCeilingByDistance:
-				if (line->args[4])
-					ceiling->speed = INT32_MAX/2; // as above, "instant" is one tic
-				else
-					ceiling->speed = line->args[3] << (FRACBITS - 3);
-				if (line->args[2] > 0)
-				{
-					ceiling->direction = 1; // up
-					ceiling->topheight = sec->ceilingheight + (line->args[2] << FRACBITS);
-				}
-				else {
-					ceiling->direction = -1; // down
-					ceiling->bottomheight = sec->ceilingheight + (line->args[2] << FRACBITS);
-				}
-				break;
-
-			case bounceCeiling:
-			case bounceCeilingCrush:
-				ceiling->speed = line->args[2] << (FRACBITS - 2); // same speed as elevateContinuous
-				ceiling->origspeed = ceiling->speed;
-				if (line->frontsector->ceilingheight >= sec->ceilingheight) // Move up
-				{
-					ceiling->direction = 1;
-					ceiling->topheight = line->frontsector->ceilingheight;
-				}
-				else // Move down
-				{
-					ceiling->direction = -1;
-					ceiling->bottomheight = line->frontsector->ceilingheight;
-				}
-
-				// Any delay?
-				ceiling->delay = line->args[5];
-				ceiling->delaytimer = line->args[4]; // Initial delay
-				break;
-
-			default:
-				break;
-
+			continue;
 		}
 
-		ceiling->type = type;
-		firstone = 0;
+		ceiling->type = raiseToHighest;
 
-		// interpolation
-		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
+		ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
+		ceiling->direction = 1;
+		ceiling->speed = CEILSPEED;
+
+		rtn = true;
 	}
+
+	return rtn;
+}
+
+boolean EV_DoLowerCeilingToLowestFast(mtag_t tag)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = lowerToLowestFast;
+
+		ceiling->bottomheight = P_FindLowestCeilingSurrounding(sec);
+		ceiling->direction = -1;
+		ceiling->speed = 4*FRACUNIT;
+
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoInstantRaiseCeiling(mtag_t tag)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = instantRaise;
+
+		ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
+		ceiling->direction = 1;
+		ceiling->speed = INT32_MAX/2;
+
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture)
+{
+	boolean rtn = false;
+	boolean firstone = true;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = moveCeilingByFrontSector;
+
+		ceiling->speed = speed;
+		if (height >= sec->ceilingheight) // Move up
+		{
+			ceiling->direction = 1;
+			ceiling->topheight = height;
+		}
+		else // Move down
+		{
+			ceiling->direction = -1;
+			ceiling->bottomheight = height;
+		}
+
+		// chained linedef executing ability
+		// only set it on ONE of the moving sectors (the smallest numbered)
+		if (chain)
+			ceiling->tag = firstone ? (INT16)chain : 0;
+
+		// flat changing ability
+		ceiling->texture = texture;
+
+		firstone = false;
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = instantMoveCeilingByFrontSector;
+
+		ceiling->speed = INT32_MAX/2;
+		if (height >= sec->ceilingheight) // Move up
+		{
+			ceiling->direction = 1;
+			ceiling->topheight = height;
+		}
+		else // Move down
+		{
+			ceiling->direction = -1;
+			ceiling->bottomheight = height;
+		}
+
+		// flat changing ability
+		ceiling->texture = texture;
+
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = moveCeilingByDistance;
+
+		if (instant)
+			ceiling->speed = INT32_MAX/2; // as above, "instant" is one tic
+		else
+			ceiling->speed = speed;
+
+		if (distance > 0)
+		{
+			ceiling->direction = 1; // up
+			ceiling->topheight = sec->ceilingheight + distance;
+		}
+		else
+		{
+			ceiling->direction = -1; // down
+			ceiling->bottomheight = sec->ceilingheight + distance;
+		}
+
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoBounceCeiling(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCeilingThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = crush ? bounceCeilingCrush : bounceCeiling;
+
+		ceiling->crushHeight = crushHeight;
+		ceiling->crushSpeed = crushSpeed; // same speed as elevateContinuous
+
+		ceiling->returnHeight = returnHeight;
+		ceiling->returnSpeed = returnSpeed;
+
+		ceiling->speed = ceiling->crushSpeed;
+		ceiling->origspeed = ceiling->speed;
+
+		if (ceiling->crushHeight >= sec->ceilingheight) // Move up
+		{
+			ceiling->direction = 1;
+			ceiling->topheight = ceiling->crushHeight;
+		}
+		else // Move down
+		{
+			ceiling->direction = -1;
+			ceiling->bottomheight = ceiling->crushHeight;
+		}
+
+		// Any delay?
+		ceiling->delay = delay;
+		ceiling->delaytimer = delayInit; // Initial delay
+
+		rtn = true;
+	}
+
 	return rtn;
 }
 
@@ -353,59 +562,144 @@ INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type)
   */
 INT32 EV_DoCrush(mtag_t tag, line_t *line, ceiling_e type)
 {
-	INT32 rtn = 0;
+	// This function is deprecated.
+	// Use any of the following functions directly, instead.
+
+	fixed_t speed = line->args[2] << (FRACBITS - 2);
+
+	switch (type)
+	{
+		default:
+			return 0;
+
+		case raiseAndCrush:
+			return (INT32)EV_DoRaiseAndCrushCeiling(tag, speed,
+				// Retain stupid behavior for backwards compatibility
+				(!udmf && !(line->flags & ML_MIDSOLID)) ? (speed / 2)
+					: (line->args[3] << (FRACBITS - 2))
+			);
+
+		case crushBothOnce:
+			return (INT32)EV_DoCrushBothOnce(tag, speed);
+
+		case crushCeilOnce:
+			return (INT32)EV_DoCrushCeilingOnce(tag, speed);
+	}
+}
+
+static ceiling_t *CreateCrushThinker(sector_t *sec)
+{
+	ceiling_t *ceiling = NULL;
+
+	if (sec->ceilingdata)
+	{
+		return NULL;
+	}
+
+	ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
+	P_AddThinker(THINK_MAIN, &ceiling->thinker);
+
+	sec->ceilingdata = ceiling;
+
+	ceiling->thinker.function.acp1 = (actionf_p1)T_MoveCeiling;
+	ceiling->sector = sec;
+	ceiling->crush = true;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
+	R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, false);
+
+	return ceiling;
+}
+
+boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed)
+{
+	boolean rtn = false;
 	INT32 secnum = -1;
 	sector_t *sec;
-	ceiling_t *ceiling;
 
 	TAG_ITER_SECTORS(tag, secnum)
 	{
+		ceiling_t *ceiling = NULL;
 		sec = &sectors[secnum];
 
-		if (sec->ceilingdata)
-			continue;
-
-		// new door thinker
-		rtn = 1;
-		ceiling = Z_Calloc(sizeof (*ceiling), PU_LEVSPEC, NULL);
-		P_AddThinker(THINK_MAIN, &ceiling->thinker);
-		sec->ceilingdata = ceiling;
-		ceiling->thinker.function.acp1 = (actionf_p1)T_CrushCeiling;
-		ceiling->sector = sec;
-		ceiling->crush = true;
-		ceiling->sourceline = (INT32)(line-lines);
-		ceiling->speed = ceiling->origspeed = line->args[2] << (FRACBITS - 2);
-
-		switch(type)
+		ceiling = CreateCrushThinker(sec);
+		if (ceiling == NULL)
 		{
-			case raiseAndCrush: // Up and then down
-				ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
-				ceiling->direction = 1;
-				// Retain stupid behavior for backwards compatibility
-				if (!udmf && !(line->flags & ML_MIDSOLID))
-					ceiling->speed /= 2;
-				else
-					ceiling->speed = line->args[3] << (FRACBITS - 2);
-				ceiling->bottomheight = sec->floorheight + FRACUNIT;
-				break;
-			case crushBothOnce:
-				ceiling->topheight = sec->ceilingheight;
-				ceiling->bottomheight = sec->floorheight + (sec->ceilingheight-sec->floorheight)/2;
-				ceiling->direction = -1;
-				break;
-			case crushCeilOnce:
-			default: // Down and then up.
-				ceiling->topheight = sec->ceilingheight;
-				ceiling->direction = -1;
-				ceiling->bottomheight = sec->floorheight + FRACUNIT;
-				break;
+			continue;
 		}
 
-		ceiling->type = type;
+		ceiling->type = raiseAndCrush;
+		ceiling->speed = ceiling->origspeed = speed;
 
-		// interpolation
-		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, false);
-		R_CreateInterpolator_SectorPlane(&ceiling->thinker, sec, true);
+		ceiling->topheight = P_FindHighestCeilingSurrounding(sec);
+		ceiling->direction = 1;
+
+		ceiling->speed = returnSpeed;
+		ceiling->bottomheight = sec->floorheight + FRACUNIT;
+
+		rtn = true;
 	}
+
+	return rtn;
+}
+
+boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCrushThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = crushBothOnce;
+		ceiling->speed = ceiling->origspeed = speed;
+
+		ceiling->topheight = sec->ceilingheight;
+		ceiling->bottomheight = sec->floorheight + (sec->ceilingheight - sec->floorheight) / 2;
+		ceiling->direction = -1;
+
+		rtn = true;
+	}
+
+	return rtn;
+}
+
+boolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed)
+{
+	boolean rtn = false;
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		ceiling_t *ceiling = NULL;
+		sec = &sectors[secnum];
+
+		ceiling = CreateCrushThinker(sec);
+		if (ceiling == NULL)
+		{
+			continue;
+		}
+
+		ceiling->type = crushBothOnce;
+		ceiling->speed = ceiling->origspeed = speed;
+
+		ceiling->topheight = sec->ceilingheight;
+		ceiling->direction = -1;
+		ceiling->bottomheight = sec->floorheight + FRACUNIT;
+
+		rtn = true;
+	}
+
 	return rtn;
 }
