@@ -531,6 +531,7 @@ typedef enum
 	CL_SEARCHING,
 	CL_CHECKFILES,
 	CL_DOWNLOADFILES,
+	CL_DOWNLOADFAILED,
 	CL_ASKJOIN,
 	CL_LOADFILES,
 	CL_SETUPFILES,
@@ -616,6 +617,7 @@ static inline void CL_DrawConnectionStatus(void)
 				break;
 			case CL_ASKFULLFILELIST:
 			case CL_CONFIRMCONNECT:
+			case CL_DOWNLOADFAILED:
 				cltext = "";
 				break;
 			case CL_SETUPFILES:
@@ -659,8 +661,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Checking server addons...");
 			totalfileslength = (INT32)((checkednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",checkednum,fileneedednum));
 		}
@@ -681,8 +683,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",loadcompletednum,fileneedednum));
 		}
@@ -723,8 +725,10 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-30, 0,
+				va(M_GetText("%s downloading"), ((cl_mode == CL_DOWNLOADHTTPFILES) ? "\x82""HTTP" : "\x85""Direct")));
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-22, V_YELLOWMAP,
-				va(M_GetText("Downloading \"%s\""), tempname));
+				va(M_GetText("\"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
 			V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
@@ -740,8 +744,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-14, V_YELLOWMAP, "Overall Download Progress");
 			totalfileslength = (INT32)((totaldldsize/(double)totalfilesrequestedsize) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 
 			if (totalfilesrequestedsize>>20 >= 10) //display in MB if over 10MB
 				V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
@@ -1501,6 +1505,10 @@ static void M_ConfirmConnect(void)
 				{
 					cl_mode = CL_DOWNLOADFILES;
 				}
+				else
+				{
+					cl_mode = CL_DOWNLOADFAILED;
+				}
 			}
 #ifdef HAVE_CURL
 			else
@@ -1648,6 +1656,10 @@ static boolean CL_FinishedFileList(void)
 			if (CL_SendFileRequest())
 			{
 				cl_mode = CL_DOWNLOADFILES;
+			}
+			else
+			{
+				cl_mode = CL_DOWNLOADFAILED;
 			}
 		}
 #endif
@@ -1854,6 +1866,21 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			cl_mode = CL_LOADFILES;
 			break;
+		case CL_DOWNLOADFAILED:
+			{
+				CONS_Printf(M_GetText("Legacy downloader request packet failed.\n"));
+				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
+				D_QuitNetGame();
+				CL_Reset();
+				D_StartTitle();
+				M_StartMessage(M_GetText(
+					"The direct download encountered an error.\n"
+					"See the logfile for more info.\n"
+					"\n"
+					"Press (B)\n"
+				), NULL, MM_NOTHING);
+				return false;
+			}
 		case CL_LOADFILES:
 			if (CL_LoadServerFiles()) 
 				cl_mode = CL_SETUPFILES;
