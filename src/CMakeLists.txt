@@ -370,6 +370,7 @@ endif()
 
 add_subdirectory(sdl)
 add_subdirectory(objects)
+add_subdirectory(tests)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
