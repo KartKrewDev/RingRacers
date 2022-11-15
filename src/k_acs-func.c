@@ -174,7 +174,7 @@ static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 --------------------------------------------------*/
 static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
 {
-	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
 
 	if ((info != NULL)
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
@@ -394,7 +394,7 @@ bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wo
 --------------------------------------------------*/
 bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
-	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
 
 	(void)argV;
 	(void)argC;
@@ -411,7 +411,7 @@ bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word ar
 --------------------------------------------------*/
 bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
-	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
 
 	(void)argV;
 	(void)argC;
@@ -537,7 +537,7 @@ bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 --------------------------------------------------*/
 bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
-	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
 
 	ACSVM_MapScope *map = NULL;
 	ACSVM_String *str = NULL;
@@ -711,7 +711,7 @@ bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_W
 --------------------------------------------------*/
 bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
 {
-	acs_threadinfo_t *info = (acs_threadinfo_t *)ACSVM_Thread_GetInfo(thread);
+	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
 
 	mtag_t tag = 0;
 	INT32 spec = 0;

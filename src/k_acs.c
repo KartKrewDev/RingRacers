@@ -417,6 +417,85 @@ static bool ACS_EnvCheckTag(ACSVM_Environment const *env, ACSVM_Word type, ACSVM
 }
 
 /*--------------------------------------------------
+	static ACSVM_Word ACS_EnvCallSpecial(ACSVM_Environment const *env, ACSVM_Thread *thread, ACSVM_Word spec, ACSVM_Word const *argV, ACSVM_Word argC)
+
+		ACSVM Environment hook. Activates a special
+		function straight from the script rather than
+		a linedef.
+
+	Input Arguments:-
+		env - The ACS environment data.
+		thread - The thread that is executing the special.
+		spec - The special ID to execute.
+		argV - Array containing the arguments given from the script.
+		argC - The number of entries in argV.
+
+	Return:-
+		1 when successful, otherwise 0.
+--------------------------------------------------*/
+static ACSVM_Word ACS_EnvCallSpecial(ACSVM_Environment *env, ACSVM_Thread *thread, ACSVM_Word spec, ACSVM_Word const *argV, ACSVM_Word argC)
+{
+	activator_t *info = ACSVM_Thread_GetInfo(thread);
+	ACSVM_MapScope *map = ACSVM_Thread_GetScopeMap(thread);
+
+	INT32 args[NUMLINEARGS] = {0};
+	char *stringargs[NUMLINESTRINGARGS] = {0};
+	size_t numStringArgs = 0;
+	size_t i = 0;
+
+	(void)env;
+
+	// This needs manually set, as ACS just uses indicies in the
+	// compiled string table and not actual strings, and SRB2 has
+	// separate args and stringargs, so there's no way to
+	// properly distinguish them.
+	switch (spec)
+	{
+		case 442:
+			numStringArgs = 2;
+			break;
+		case 413:
+		case 414:
+		case 415:
+		case 423:
+		case 425:
+		case 443:
+		case 459:
+		case 461:
+		case 463:
+		case 469:
+			numStringArgs = 1;
+			break;
+		default:
+			break;
+	}
+
+	for (; i < numStringArgs; i++)
+	{
+		ACSVM_String *strPtr = ACSVM_MapScope_GetString(map, argV[i]);
+		const char *str = ACSVM_String_GetStr(strPtr);
+		size_t strLen = ACSVM_String_GetLen(strPtr);
+
+		stringargs[i] = Z_Malloc(strLen + 1, PU_STATIC, NULL);
+		M_Memcpy(stringargs[i], str, strLen + 1);
+	}
+
+	for (; i < min(argC, NUMLINEARGS); i++)
+	{
+		args[i - numStringArgs] = argV[i];
+	}
+
+	P_ProcessSpecial(info, spec, args, stringargs);
+
+	for (i = 0; i < numStringArgs; i++)
+	{
+		Z_Free(stringargs[i]);
+	}
+
+	return 1;
+}
+
+/*--------------------------------------------------
 	static void ACS_ThrDestruct(ACSVM_Thread *thread)
 
 		ACSVM Thread hook. Runs as the thread
@@ -430,7 +509,7 @@ static bool ACS_EnvCheckTag(ACSVM_Environment const *env, ACSVM_Word type, ACSVM
 --------------------------------------------------*/
 static void ACS_ThrDestruct(ACSVM_Thread *thread)
 {
-	acs_threadinfo_t *info = ACSVM_Thread_GetInfo(thread);
+	activator_t *info = ACSVM_Thread_GetInfo(thread);
 
 	if (info != NULL)
 	{
@@ -453,7 +532,7 @@ static void ACS_ThrDestruct(ACSVM_Thread *thread)
 --------------------------------------------------*/
 static void ACS_ThrStart(ACSVM_Thread *thread, void *data)
 {
-	acs_threadinfo_t *activator = NULL;
+	activator_t *activator = NULL;
 
 	ACSVM_Thread_SetResult(thread, 1);
 
@@ -461,11 +540,11 @@ static void ACS_ThrStart(ACSVM_Thread *thread, void *data)
 	{
 		// Create an empty one, to reduce NULL checks.
 		// Might not be necessary.
-		activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+		activator = Z_Calloc(sizeof(activator_t), PU_STATIC, NULL);
 	}
 	else
 	{
-		activator = (acs_threadinfo_t *)data;
+		activator = (activator_t *)data;
 	}
 
 	ACSVM_Thread_SetInfo(thread, activator);
@@ -512,6 +591,7 @@ void ACS_Init(void)
 	funcs.ctor = ACS_EnvConstruct;
 	funcs.loadModule = ACS_EnvLoadModule;
 	funcs.checkTag = ACS_EnvCheckTag;
+	funcs.callSpecImpl = ACS_EnvCallSpecial;
 	funcs.allocThread = ACS_EnvAllocThread;
 
 	ACSenv = ACSVM_AllocEnvironment(&funcs, NULL);
@@ -657,13 +737,13 @@ void ACS_RunPlayerEnterScript(player_t *player)
 	ACSVM_HubScope *hub = NULL;
 	ACSVM_MapScope *map = NULL;
 
-	acs_threadinfo_t *activator = NULL;
+	activator_t *activator = NULL;
 
 	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
 	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
 	map = ACSVM_HubScope_GetMapScope(hub, 0);
 
-	activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+	activator = Z_Calloc(sizeof(activator_t), PU_STATIC, NULL);
 
 	P_SetTarget(&activator->mo, player->mo);
 
@@ -721,13 +801,13 @@ void ACS_RunLapScript(mobj_t *mo, line_t *line)
 	ACSVM_HubScope *hub = NULL;
 	ACSVM_MapScope *map = NULL;
 
-	acs_threadinfo_t *activator = NULL;
+	activator_t *activator = NULL;
 
 	global = ACSVM_Environment_GetGlobalScope(ACSenv, 0);
 	hub = ACSVM_GlobalScope_GetHubScope(global, 0);
 	map = ACSVM_HubScope_GetMapScope(hub, 0);
 
-	activator = Z_Calloc(sizeof(acs_threadinfo_t), PU_STATIC, NULL);
+	activator = Z_Calloc(sizeof(activator_t), PU_STATIC, NULL);
 
 	P_SetTarget(&activator->mo, mo);
 	activator->line = line;

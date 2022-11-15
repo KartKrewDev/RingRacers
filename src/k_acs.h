@@ -55,12 +55,33 @@ typedef enum
 //
 typedef struct
 {
-	mobj_t *mo;				// Object that activated this thread.
-	line_t *line;			// Linedef that activated this thread.
-	UINT8 side;				// Front / back side of said linedef.
-	sector_t *sector;		// Sector that activated this thread.
-	polyobj_t *po;			// Polyobject that activated this thread.
-} acs_threadinfo_t;
+	mobj_t *mo;					// Object that activated this thread.
+	line_t *line;				// Linedef that activated this thread.
+	UINT8 side;					// Front / back side of said linedef.
+	sector_t *sector;			// Sector that activated this thread.
+	polyobj_t *po;				// Polyobject that activated this thread.
+	boolean fromLineSpecial;	// Called from P_ProcessLineSpecial.
+} activator_t;
+
+
+/*--------------------------------------------------
+	void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
+
+		Runs a numbered special action. Can be called
+		by both linedefs and ACS scripts.
+
+	Input Arguments:-
+		activator - Struct containing information on what activated this special.
+		special - Special ID.
+		args - Array of the args.
+		stringargs - Array of the string args.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
+
 
 /*--------------------------------------------------
 	ACSVM_Environment *ACS_GetEnvironment(void);
