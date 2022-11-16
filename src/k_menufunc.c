@@ -357,7 +357,7 @@ static void M_EraseDataResponse(INT32 ch)
 
 void M_EraseData(INT32 choice)
 {
-	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press A to confirm)\n");
+	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\nPress (A) to confirm or (B) to cancel\n");
 
 	optionsmenu.erasecontext = (UINT8)choice;
 
@@ -1517,7 +1517,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)\n"), NULL, MM_NOTHING);
 					return;
 				}
 			}
@@ -2038,7 +2038,7 @@ void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage("Are you sure you want to quit playing?\n\n(Press A to exit)", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
+	M_StartMessage("Are you sure you want to quit playing?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
 }
 
 // =========
@@ -4942,7 +4942,7 @@ void M_HandleProfileSelect(INT32 ch)
 #if 0
 				if (optionsmenu.profilen == 0)
 				{
-					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
 					return;
 				}
 #endif
@@ -5084,7 +5084,7 @@ void M_ConfirmProfile(INT32 choice)
 		}
 		else
 		{
-			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
 			M_SetMenuDelay(pid);
 		}
 	}
@@ -5290,7 +5290,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 {
 	(void)choice;
 
-	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
 	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
 
 	M_ProfileControlSaveResponse(MA_YES);
@@ -5667,7 +5667,7 @@ void M_CheckProfileData(INT32 choice)
 	if (np < 2)
 	{
 		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage("There are no custom profiles.\n\n(Press any button)", NULL, MM_NOTHING);
+		M_StartMessage("There are no custom profiles.\n\nPress (B)", NULL, MM_NOTHING);
 		return;
 	}
 
@@ -5731,9 +5731,9 @@ void M_HandleProfileErase(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
-			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 		else
-			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 
 		M_SetMenuDelay(pid);
 	}
@@ -5995,7 +5995,7 @@ void M_ConfirmEnterGame(INT32 choice)
 	(void)choice;
 	if (!cv_allowteamchange.value)
 	{
-		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\nPress a key.\n"), NULL, MM_NOTHING);
+		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\n\nPress (B)\n"), NULL, MM_NOTHING);
 		return;
 	}
 	M_QuitPauseMenu(-1);
@@ -6027,7 +6027,7 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press A to confirm)\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
 }
 
 
@@ -6209,7 +6209,7 @@ void M_ReplayHut(INT32 choice)
 	}
 	if (!preparefilemenu(false, true))
 	{
-		M_StartMessage("No replays found.\n\n(Press a key)\n", NULL, MM_NOTHING);
+		M_StartMessage("No replays found.\n\nPress (B)\n", NULL, MM_NOTHING);
 		return;
 	}
 	else if (!demo.inreplayhut)
@@ -6285,7 +6285,7 @@ void M_HandleReplayHutList(INT32 choice)
 					if (!preparefilemenu(false, true))
 					{
 						S_StartSound(NULL, sfx_s224);
-						M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 						menupath[menupathindex[++menudepthleft]] = 0;
 
 						if (!preparefilemenu(true, true))
@@ -6304,7 +6304,7 @@ void M_HandleReplayHutList(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_s26d);
-					M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+					M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 					menupath[menupathindex[menudepthleft]] = 0;
 				}
 				break;
@@ -6431,7 +6431,7 @@ void M_Addons(INT32 choice)
 
 	if (!preparefilemenu(false, false))
 	{
-		M_StartMessage(va("No files/folders found.\n\n%s\n\n(Press a key)\n", LOCATIONSTRING1),NULL,MM_NOTHING);
+		M_StartMessage(va("No files/folders found.\n\n%s\n\nPress (B)\n", LOCATIONSTRING1),NULL,MM_NOTHING);
 		return;
 	}
 	else
@@ -6464,7 +6464,7 @@ char *M_AddonsHeaderPath(void)
 
 #define UNEXIST S_StartSound(NULL, sfx_s26d);\
 		M_SetupNextMenu(MISC_AddonsDef.prevMenu, false);\
-		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\n(Press a key)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
+		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\nPress (B)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
 
 #define CLEARNAME Z_Free(refreshdirname);\
 					refreshdirname = NULL
@@ -6508,19 +6508,19 @@ void M_AddonsRefresh(void)
 		{
 			S_StartSound(NULL, sfx_s26d);
 			if (refreshdirmenu & REFRESHDIR_MAX)
-				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
-				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
 			S_StartSound(NULL, sfx_s224);
-			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
+			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 		else if (majormods && !prevmajormods)
 		{
 			S_StartSound(NULL, sfx_s221);
-			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			prevmajormods = majormods;
 		}
 
@@ -6639,7 +6639,7 @@ void M_HandleAddons(INT32 choice)
 						if (!preparefilemenu(false, false))
 						{
 							S_StartSound(NULL, sfx_s224);
-							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 							menupath[menupathindex[++menudepthleft]] = 0;
 
 							if (!preparefilemenu(true, false))
@@ -6658,7 +6658,7 @@ void M_HandleAddons(INT32 choice)
 					else
 					{
 						S_StartSound(NULL, sfx_s26d);
-						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 						menupath[menupathindex[menudepthleft]] = 0;
 					}
 					break;
@@ -6674,11 +6674,11 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_TXT:
-					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_CFG:
-					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_LUA:
