@@ -1594,6 +1594,12 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},
 
+	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
+		NULL, {.routine = M_RestartMap}, 0, 0},
+
+	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
+		NULL, {.routine = M_TryAgain}, 0, 0},
+
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
 		NULL, {NULL}, 0, 0},

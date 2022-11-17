@@ -3659,19 +3659,29 @@ void M_DrawPause(void)
 		{
 			case IT_STRING:
 			{
-
-				char iconame[9];	// 8 chars + \0
 				patch_t *pp;
 
 				if (i == itemOn)
 				{
-					strcpy(iconame, currentMenu->menuitems[i].tooltip);
-					iconame[7] = '2';	// Yes this is a stupid hack. Replace the last character with a 2 when we're selecting this graphic.
+					if (i == mpause_restartmap || i == mpause_tryagain)
+					{
+						pp = W_CachePatchName(
+							va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
+							PU_CACHE);
+					}
+					else
+					{
+						char iconame[9];	// 8 chars + \0
+						strcpy(iconame, currentMenu->menuitems[i].tooltip);
+						iconame[7] = '2';	// Yes this is a stupid hack. Replace the last character with a 2 when we're selecting this graphic.
 
-					pp = W_CachePatchName(iconame, PU_CACHE);
+						pp = W_CachePatchName(iconame, PU_CACHE);
+					}
 				}
 				else
+				{
 					pp = W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE);
+				}
 
 				// 294 - 261 = 33
 				// We need to move 33 px in 50 tics which means we move 33/50 = 0.66 px every tic = 2/3 of the offset.

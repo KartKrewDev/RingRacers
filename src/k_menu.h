@@ -410,6 +410,8 @@ typedef enum
 {
 	mpause_addons = 0,
 	mpause_switchmap,
+	mpause_restartmap,
+	mpause_tryagain,
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
@@ -978,6 +980,8 @@ extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
 
 // Bunch of funny functions for the pause menu...~
+void M_RestartMap(INT32 choice);				// Restart level (MP)
+void M_TryAgain(INT32 choice);					// Try again (SP)
 void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
 void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
 void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func

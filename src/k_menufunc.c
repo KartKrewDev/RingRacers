@@ -5870,6 +5870,8 @@ struct pausemenu_s pausemenu;
 // Pause menu!
 void M_OpenPauseMenu(void)
 {
+	INT32 i = 0;
+
 	currentMenu = &PAUSE_MainDef;
 
 	// Ready the variables
@@ -5886,6 +5888,8 @@ void M_OpenPauseMenu(void)
 
 	PAUSE_Main[mpause_addons].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
@@ -5905,7 +5909,27 @@ void M_OpenPauseMenu(void)
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
+			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
+		}
+	}
+	else if (!netgame && !demo.playback)
+	{
+		boolean retryallowed = (modeattacking != ATTACKING_NONE);
+		if (G_GametypeUsesLives())
+		{
+			for (i = 0; i <= splitscreen; i++)
+			{
+				if (players[g_localplayers[i]].lives <= 1)
+					continue;
+				retryallowed = true;
+				break;
+			}
+		}
+
+		if (retryallowed)
+		{
+			PAUSE_Main[mpause_tryagain].status = IT_STRING | IT_CALL;
 		}
 	}
 
@@ -5936,6 +5960,7 @@ void M_QuitPauseMenu(INT32 choice)
 void M_PauseTick(void)
 {
 	pausemenu.offset /= 2;
+	pausemenu.ticker++;
 
 	if (pausemenu.closing)
 	{
@@ -5982,6 +6007,37 @@ boolean M_PauseInputs(INT32 ch)
 		return true;
 	}
 	return false;
+}
+
+// Restart map
+void M_RestartMap(INT32 choice)
+{
+	(void)choice;
+	M_ClearMenus(false);
+	COM_ImmedExecute("restartlevel");
+}
+
+// Try again
+void M_TryAgain(INT32 choice)
+{
+	(void)choice;
+	if (demo.playback)
+		return;
+
+	if (netgame || !Playing())  // Should never happen!
+		return;
+
+	M_ClearMenus(false);
+
+	if (modeattacking != ATTACKING_NONE)
+	{
+		G_CheckDemoStatus(); // Cancel recording
+		M_StartTimeAttack(-1);
+	}
+	else
+	{
+		G_SetRetryFlag();
+	}
 }
 
 // Pause spectate / join functions
