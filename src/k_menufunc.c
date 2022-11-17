@@ -3528,12 +3528,7 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.x++;
 		if (cupgrid.x >= CUPMENU_COLUMNS)
-		{
 			cupgrid.x = 0;
-			cupgrid.pageno++;
-			if (cupgrid.pageno >= cupgrid.numpages)
-				cupgrid.pageno = 0;
-		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -3541,12 +3536,7 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.x--;
 		if (cupgrid.x < 0)
-		{
 			cupgrid.x = CUPMENU_COLUMNS-1;
-			cupgrid.pageno--;
-			if (cupgrid.pageno < 0)
-				cupgrid.pageno = cupgrid.numpages-1;
-		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -3555,7 +3545,12 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.y++;
 		if (cupgrid.y >= CUPMENU_ROWS)
+		{
 			cupgrid.y = 0;
+			cupgrid.pageno--;
+			if (cupgrid.pageno < 0)
+				cupgrid.pageno = cupgrid.numpages-1;
+		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
@@ -3563,7 +3558,12 @@ void M_CupSelectHandler(INT32 choice)
 	{
 		cupgrid.y--;
 		if (cupgrid.y < 0)
+		{
 			cupgrid.y = CUPMENU_ROWS-1;
+			cupgrid.pageno++;
+			if (cupgrid.pageno >= cupgrid.numpages)
+				cupgrid.pageno = 0;
+		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
