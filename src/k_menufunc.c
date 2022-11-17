@@ -1584,7 +1584,10 @@ void M_Ticker(void)
 	INT32 i;
 
 	if (!menuactive)
+	{
+		noFurtherInput = false;
 		return;
+	}
 
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
