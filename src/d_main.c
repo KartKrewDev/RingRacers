@@ -993,6 +993,7 @@ void D_StartTitle(void)
 	memset(deviceResponding, false, sizeof (deviceResponding));
 
 	F_StartTitleScreen();
+	M_ClearMenus(false);
 
 	// Reset the palette
 	if (rendermode != render_none)
