@@ -557,6 +557,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"RSHE", // Rocket sneaker
 	"FITM", // Eggman Monitor
 	"BANA", // Banana Peel
+	"BAND", // Banana Peel death particles
 	"ORBN", // Orbinaut
 	"JAWZ", // Jawz
 	"SSMN", // SS Mine
@@ -4078,6 +4079,11 @@ state_t states[NUMSTATES] =
 
 	{SPR_BANA, 0,  -1, {NULL}, 0, 0, S_NULL}, // S_BANANA
 	{SPR_BANA, 1, 175, {NULL}, 0, 0, S_NULL}, // S_BANANA_DEAD
+
+	{SPR_BAND, 0, -1, {NULL}, 0, 0, S_BANANA_SPARK2}, // S_BANANA_SPARK
+	{SPR_BAND, 1|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_BANANA_SPARK3}, // S_BANANA_SPARK2
+	{SPR_BAND, 2|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_BANANA_SPARK4}, // S_BANANA_SPARK3
+	{SPR_BAND, 3|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_BANANA_SPARK4
 
 	{SPR_ORBN,  0, 1, {NULL}, 0, 0, S_ORBINAUT2},			// S_ORBINAUT1
 	{SPR_ORBN,  1, 1, {NULL}, 0, 0, S_ORBINAUT3},			// S_ORBINAUT2
@@ -23118,6 +23124,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1,              // damage
 		sfx_None,       // activesound
 		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BANANA_SPARK
+		-1,             // doomednum
+		S_BANANA_SPARK, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_BANANA_SPARK2,// deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		4*FRACUNIT,     // radius
+		8*FRACUNIT,     // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_DONTENCOREMAP|MF_NOCLIPTHING|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 

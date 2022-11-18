@@ -6495,7 +6495,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	break;
 	case MT_BANANA:
 	{
-		angle_t spin = FixedMul(FixedDiv(mobj->momz, 8 * mobj->scale), ANGLE_67h);
+		angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_67h);
 		mobj->angle -= spin;
 		mobj->rollangle += spin;
 
@@ -6504,6 +6504,12 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+	}
+	break;
+	case MT_BANANA_SPARK:
+	{
+		angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_22h);
+		mobj->rollangle += spin;
 	}
 	break;
 	case MT_ORBINAUT:
@@ -6960,7 +6966,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		else
 		{
 			// tilt n tumble
-			angle_t spin = FixedMul(FixedDiv(mobj->momz, 8 * mobj->scale), ANGLE_67h);
+			angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_67h);
 			mobj->angle += spin;
 			mobj->rollangle -= spin;
 		}
@@ -6968,6 +6974,39 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (mobj->threshold > 0)
 			mobj->threshold--;
 		break;
+	case MT_BANANA_SPARK:
+		{
+			if (leveltime & 1)
+			{
+				mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+			}
+			else
+			{
+				if ((leveltime / 2) & 1)
+				{
+					mobj->spriteyscale = 3*FRACUNIT/2;
+				}
+				else
+				{
+					mobj->spritexscale = 3*FRACUNIT/2;
+				}
+			}
+
+			if (P_IsObjectOnGround(mobj) == true && mobj->momz * P_MobjFlip(mobj) <= 0)
+			{
+				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+
+				if (mobj->health > 0)
+				{
+					mobj->tics = 1;
+					mobj->destscale = 0;
+					mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+					mobj->health = 0;
+				}
+			}
+
+			break;
+		}
 	case MT_SPB:
 		{
 			Obj_SPBThink(mobj);
@@ -13693,6 +13732,8 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 	newmobj = P_SpawnMobj(mobj->x + xofs, mobj->y + yofs, mobj->z + zofs, type);
 	if (!newmobj)
 		return NULL;
+
+	newmobj->hitlag = mobj->hitlag;
 
 	newmobj->destscale = P_ScaleFromMap(mobj->destscale, newmobj->destscale);
 	P_SetScale(newmobj, P_ScaleFromMap(mobj->scale, newmobj->scale));
