@@ -1606,7 +1606,8 @@ static void K_DrawKartPositionNum(INT32 num)
 
 	if (stplyr->positiondelay || stplyr->exiting)
 	{
-		scale *= 2;
+		UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
+		scale += min((scale * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), scale);
 	}
 
 	// pain and suffering defined below
