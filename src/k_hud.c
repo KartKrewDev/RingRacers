@@ -1617,8 +1617,9 @@ static void K_DrawKartPositionNum(INT32 num)
 
 	if (stplyr->positiondelay || stplyr->exiting)
 	{
-		UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
-		scale += min((scale * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), scale);
+		const UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
+		const fixed_t add = (scale * 3) >> ((r_splitscreen == 1) ? 1 : 2);
+		scale += min((add * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), add);
 	}
 
 	// pain and suffering defined below
