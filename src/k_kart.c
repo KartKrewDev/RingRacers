@@ -6133,6 +6133,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		{
 			// Shoot forward
 			mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, mapthing);
+			mo->angle = player->mo->angle;
 
 			// These are really weird so let's make it a very specific case to make SURE it works...
 			if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -6147,7 +6148,6 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 			S_StartSound(player->mo, mo->info->seesound);
 
-			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
 				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (FixedDiv(player->mo->momz, mapobjectscale)*P_MobjFlip(player->mo)); // Also intentionally not player scale
@@ -6155,14 +6155,20 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
 				mo->momy = player->mo->momy + FixedMul(FINESINE(fa), PROJSPEED*dir);
+			}
 
-				mo->extravalue2 = dir;
+			mo->extravalue2 = dir;
 
-				if (mo->eflags & MFE_UNDERWATER)
-					mo->momz = (117 * mo->momz) / 200;
+			if (mo->eflags & MFE_UNDERWATER)
+				mo->momz = (117 * mo->momz) / 200;
 
-				P_SetScale(mo, finalscale);
-				mo->destscale = finalscale;
+			P_SetScale(mo, finalscale);
+			mo->destscale = finalscale;
+
+			if (mapthing == MT_BANANA)
+			{
+				mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+				mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:

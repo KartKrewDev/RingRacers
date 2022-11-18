@@ -5628,7 +5628,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"SLIDEME",
 	"NOCLIP",
 	"FLOAT",
-	"BOXICON",
+	"SLOPE",
 	"MISSILE",
 	"SPRING",
 	"MONITOR",

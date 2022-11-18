@@ -1261,6 +1261,11 @@ void P_CheckGravity(mobj_t *mo, boolean affect)
 //
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 {
+	if (!(mo->flags & MF_SLOPE))
+	{
+		return;
+	}
+
 	if (slope)
 	{
 		fixed_t tempz = slope->normal.z;
@@ -6927,11 +6932,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		if (P_IsObjectOnGround(mobj) && mobj->health > 1)
+		if (P_IsObjectOnGround(mobj))
 		{
-			S_StartSound(mobj, mobj->info->activesound);
-			mobj->momx = mobj->momy = 0;
-			mobj->health = 1;
+			//mobj->rollangle = 0;
+
+			if (mobj->health > 1)
+			{
+				S_StartSound(mobj, mobj->info->activesound);
+				mobj->momx = mobj->momy = 0;
+				mobj->health = 1;
+			}
+		}
+		else
+		{
+			// tilt n tumble
+			angle_t spin = FixedMul(FixedDiv(mobj->momz, 8 * mobj->scale), ANGLE_67h);
+			mobj->angle += spin;
+			mobj->rollangle -= spin;
 		}
 
 		if (mobj->threshold > 0)
@@ -9700,24 +9717,6 @@ void P_PushableThinker(mobj_t *mobj)
 // Quick, optimized function for scenery
 void P_SceneryThinker(mobj_t *mobj)
 {
-	if (mobj->flags & MF_BOXICON)
-	{
-		if (!(mobj->eflags & MFE_VERTICALFLIP))
-		{
-			if (mobj->z < mobj->floorz + FixedMul(mobj->info->damage, mobj->scale))
-				mobj->momz = FixedMul(mobj->info->speed, mobj->scale);
-			else
-				mobj->momz = 0;
-		}
-		else
-		{
-			if (mobj->z + FixedMul(mobj->info->height, mobj->scale) > mobj->ceilingz - FixedMul(mobj->info->damage, mobj->scale))
-				mobj->momz = -FixedMul(mobj->info->speed, mobj->scale);
-			else
-				mobj->momz = 0;
-		}
-	}
-
 	// momentum movement
 	if (mobj->momx || mobj->momy)
 	{
