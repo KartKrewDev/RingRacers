@@ -1601,8 +1601,19 @@ static void K_DrawKartPositionNum(INT32 num)
 	const tic_t counter = (leveltime / 3); // Alternate colors every three frames
 	fixed_t scale = FRACUNIT;
 	fixed_t fx = 0, fy = 0;
+	transnum_t trans = 0;
 	INT32 fflags = 0;
 	UINT8 *color = NULL;
+
+	if (leveltime < (starttime + NUMTRANSMAPS))
+	{
+		trans = max(0, (starttime + NUMTRANSMAPS) - leveltime);
+	}
+
+	if (trans >= NUMTRANSMAPS)
+	{
+		return;
+	}
 
 	if (stplyr->positiondelay || stplyr->exiting)
 	{
@@ -1656,6 +1667,11 @@ static void K_DrawKartPositionNum(INT32 num)
 
 		fx >>= 1;
 		fy >>= 1;
+	}
+
+	if (trans > 0)
+	{
+		fflags |= (trans << V_ALPHASHIFT);
 	}
 
 	if (stplyr->exiting && num == 1)
