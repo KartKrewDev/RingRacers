@@ -9865,7 +9865,7 @@ void K_KartUpdatePosition(player_t *player)
 	if (leveltime < starttime || oldposition == 0)
 		oldposition = position;
 
-	if (position < oldposition) // Changed places?
+	if (position != oldposition) // Changed places?
 	{
 		player->positiondelay = POS_DELAY_TIME + 4; // Position number growth
 	}
