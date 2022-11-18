@@ -3119,9 +3119,6 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	fixed_t surfaceheight = INT32_MAX;
 	fixed_t surfDiff = INT32_MAX;
 
-	fixed_t floorheight = INT32_MAX;
-	fixed_t floorDiff = INT32_MAX;
-
 	fixed_t mobjbottom = INT32_MAX;
 	fixed_t maxStep = INT32_MAX;
 	boolean doifit = false;
@@ -3210,16 +3207,20 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	maxStep = P_GetThingStepUp(mobj, mobj->x, mobj->y);
 
 	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
+
+	// We start water run IF we can step onto it!
 	if (surfDiff <= maxStep && surfDiff >= 0)
 	{
-		// We start water run IF we can step-down!
-		floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
-		floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
-		if (floorDiff <= maxStep && floorDiff >= 0)
+		if (ourZAng < 0)
 		{
-			// ... but NOT if real floor is in range.
-			// FIXME: Count solid FOFs in this check
-			return false;
+			fixed_t floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
+			fixed_t floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
+			if (floorDiff <= maxStep && floorDiff >= -maxStep)
+			{
+				// ... but NOT if going down and real floor is in range.
+				// FIXME: Count solid FOFs in this check
+				return false;
+			}
 		}
 
 		return true;
