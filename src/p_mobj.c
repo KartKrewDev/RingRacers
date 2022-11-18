@@ -3127,8 +3127,9 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	boolean doifit = false;
 
 	pslope_t *waterSlope = NULL;
-	angle_t ourZAng = 0;
-	angle_t waterZAng = 0;
+	angle_t moveDir = 0;
+	fixed_t ourZAng = 0;
+	fixed_t waterZAng = 0;
 
 	if (rover == NULL)
 	{
@@ -3162,20 +3163,36 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 		return false;
 	}
 
-	if (mobj->standingslope != NULL)
+	moveDir = K_MomentumAngle(mobj);
+
+	if (mobj->standingslope != NULL && mobj->standingslope->zangle != 0)
 	{
-		ourZAng = mobj->standingslope->zangle;
+		angle_t dir = mobj->standingslope->xydirection;
+		angle_t workang = mobj->standingslope->zangle;
+		if (workang >= ANGLE_180)
+		{
+			workang = InvAngle(workang);
+			dir = InvAngle(dir);
+		}
+		ourZAng = P_ReturnThrustX(mobj, dir - moveDir, AngleFixed(workang));
 	}
 
 	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
-	if (waterSlope != NULL)
+	if (waterSlope != NULL && waterSlope->zangle != 0)
 	{
-		waterZAng = waterSlope->zangle;
+		angle_t dir = waterSlope->xydirection;
+		angle_t workang = waterSlope->zangle;
+		if (workang >= ANGLE_180)
+		{
+			workang = InvAngle(workang);
+			dir = InvAngle(dir);
+		}
+		waterZAng = P_ReturnThrustX(mobj, dir - moveDir, AngleFixed(workang));
 	}
 
-	if (ourZAng != waterZAng)
+	if (abs(ourZAng - waterZAng) > 11*FRACUNIT)
 	{
-		// The surface slopes are different.
+		// The surface slopes are too different.
 		return false;
 	}
 
