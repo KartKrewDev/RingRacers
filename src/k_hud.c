@@ -950,6 +950,11 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean revers
 	h = R_PointToDist2(point->x, point->y, viewx, viewy);
 	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
 
+	if (reverse)
+	{
+		da = -(da);
+	}
+
 	// Set results relative to top left!
 	result->x = FixedMul(NEWTAN(da), fg);
 	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((viewz - point->z), 1 + FixedMul(NEWCOS(da), h))), fg);
