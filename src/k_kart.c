@@ -6670,7 +6670,7 @@ killnext:
 		S_StartSound(banana, banana->info->deathsound);
 		P_KillMobj(banana, inflictor, source, DMG_NORMAL);
 
-		P_SetObjectMomZ(banana, 8*FRACUNIT, false);
+		P_SetObjectMomZ(banana, 24*FRACUNIT, false);
 		if (inflictor)
 			P_InstaThrust(banana, R_PointToAngle2(inflictor->x, inflictor->y, banana->x, banana->y)+ANGLE_90, 16*FRACUNIT);
 	}
@@ -7071,7 +7071,7 @@ void K_DropRocketSneaker(player_t *player)
 			flingangle = ANG60;
 
 		S_StartSound(shoe, shoe->info->deathsound);
-		P_SetObjectMomZ(shoe, 8*FRACUNIT, false);
+		P_SetObjectMomZ(shoe, 24*FRACUNIT, false);
 		P_InstaThrust(shoe, R_PointToAngle2(shoe->target->x, shoe->target->y, shoe->x, shoe->y)+flingangle, 16*FRACUNIT);
 		shoe->momx += shoe->target->momx;
 		shoe->momy += shoe->target->momy;

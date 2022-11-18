@@ -1158,66 +1158,68 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd = -gravityadd;
 			}
 		}
-		else //Otherwise, sort through the other exceptions.
+
+		// Sort through the other exceptions.
+		switch (mo->type)
 		{
-			switch (mo->type)
-			{
-				case MT_FLINGRING:
-				case MT_FLINGCOIN:
-				case MT_FLINGBLUESPHERE:
-				case MT_FLINGNIGHTSCHIP:
-				case MT_BOUNCERING:
-				case MT_RAILRING:
-				case MT_INFINITYRING:
-				case MT_AUTOMATICRING:
-				case MT_EXPLOSIONRING:
-				case MT_SCATTERRING:
-				case MT_GRENADERING:
-				case MT_BOUNCEPICKUP:
-				case MT_RAILPICKUP:
-				case MT_AUTOPICKUP:
-				case MT_EXPLODEPICKUP:
-				case MT_SCATTERPICKUP:
-				case MT_GRENADEPICKUP:
-				case MT_REDFLAG:
-				case MT_BLUEFLAG:
-					if (mo->target)
+			case MT_FLINGRING:
+			case MT_FLINGCOIN:
+			case MT_FLINGBLUESPHERE:
+			case MT_FLINGNIGHTSCHIP:
+			case MT_BOUNCERING:
+			case MT_RAILRING:
+			case MT_INFINITYRING:
+			case MT_AUTOMATICRING:
+			case MT_EXPLOSIONRING:
+			case MT_SCATTERRING:
+			case MT_GRENADERING:
+			case MT_BOUNCEPICKUP:
+			case MT_RAILPICKUP:
+			case MT_AUTOPICKUP:
+			case MT_EXPLODEPICKUP:
+			case MT_SCATTERPICKUP:
+			case MT_GRENADEPICKUP:
+			case MT_REDFLAG:
+			case MT_BLUEFLAG:
+				if (mo->target)
+				{
+					// Flung items copy the gravity of their tosser.
+					if ((mo->target->eflags & MFE_VERTICALFLIP) && !(mo->eflags & MFE_VERTICALFLIP))
 					{
-						// Flung items copy the gravity of their tosser.
-						if ((mo->target->eflags & MFE_VERTICALFLIP) && !(mo->eflags & MFE_VERTICALFLIP))
-						{
-							gravityadd = -gravityadd;
-							mo->eflags |= MFE_VERTICALFLIP;
-						}
+						gravityadd = -gravityadd;
+						mo->eflags |= MFE_VERTICALFLIP;
 					}
-					break;
-				case MT_WATERDROP:
-				case MT_BATTLEBUMPER:
-					gravityadd /= 2;
-					break;
-				case MT_BANANA:
-				case MT_EGGMANITEM:
-				case MT_SSMINE:
-				case MT_LANDMINE:
-				case MT_DROPTARGET:
-				case MT_SINK:
-				case MT_EMERALD:
+				}
+				break;
+			case MT_WATERDROP:
+			case MT_BATTLEBUMPER:
+				gravityadd /= 2;
+				break;
+			case MT_BANANA:
+			case MT_EGGMANITEM:
+			case MT_SSMINE:
+			case MT_LANDMINE:
+			case MT_DROPTARGET:
+			case MT_SINK:
+			case MT_EMERALD:
+				if (mo->health > 0)
+				{
 					if (mo->extravalue2 > 0)
 					{
 						gravityadd *= mo->extravalue2;
 					}
 
 					gravityadd = (5*gravityadd)/2;
-					break;
-				case MT_KARMAFIREWORK:
-					gravityadd /= 3;
-					break;
-				case MT_ITEM_DEBRIS:
-					gravityadd *= 6;
-					break;
-				default:
-					break;
-			}
+				}
+				break;
+			case MT_KARMAFIREWORK:
+				gravityadd /= 3;
+				break;
+			case MT_ITEM_DEBRIS:
+				gravityadd *= 6;
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1769,7 +1771,7 @@ void P_XYMovement(mobj_t *mo)
 								S_StartSound(mo, mo->info->deathsound);
 								P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 
-								P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+								P_SetObjectMomZ(mo, 24*FRACUNIT, false);
 								P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
 							}
 							break;
@@ -6491,8 +6493,20 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
 	}
 	break;
-	case MT_ORBINAUT:
 	case MT_BANANA:
+	{
+		angle_t spin = FixedMul(FixedDiv(mobj->momz, 8 * mobj->scale), ANGLE_67h);
+		mobj->angle -= spin;
+		mobj->rollangle += spin;
+
+		if (P_IsObjectOnGround(mobj) && mobj->momz * P_MobjFlip(mobj) <= 0)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+	}
+	break;
+	case MT_ORBINAUT:
 	case MT_EGGMANITEM:
 	case MT_LANDMINE:
 	//case MT_DROPTARGET:
@@ -9490,7 +9504,7 @@ void P_MobjThinker(mobj_t *mobj)
 				S_StartSound(mobj, mobj->info->deathsound);
 				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 
-				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+				P_SetObjectMomZ(mobj, 24*FRACUNIT, false);
 				P_InstaThrust(mobj, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_90, 16*FRACUNIT);
 			}
 
