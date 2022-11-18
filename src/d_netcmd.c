@@ -386,7 +386,6 @@ consvar_t cv_gardentop = 			CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff,
 consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_triplebanana = 		CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_decabanana = 			CVAR_INIT ("decabanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL);

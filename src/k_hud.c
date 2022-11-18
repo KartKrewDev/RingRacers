@@ -659,7 +659,6 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISINV1" : "K_ITINV1");
 		case KITEM_BANANA:
 		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 			return (tiny ? "K_ISBANA" : "K_ITBANA");
 		case KITEM_EGGMAN:
 			return (tiny ? "K_ISEGGM" : "K_ITEGGM");
@@ -4493,7 +4492,6 @@ static void K_drawDistributionDebugger(void)
 
 		kp_sneaker[1],
 		kp_sneaker[1],
-		kp_banana[1],
 		kp_banana[1],
 		kp_orbinaut[4],
 		kp_orbinaut[4],

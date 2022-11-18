@@ -1071,7 +1071,6 @@ menuitem_t OPTIONS_GameplayItems[] =
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mines",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},

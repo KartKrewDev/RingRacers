@@ -305,7 +305,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_dualsneaker);
 	CV_RegisterVar(&cv_triplesneaker);
 	CV_RegisterVar(&cv_triplebanana);
-	CV_RegisterVar(&cv_decabanana);
 	CV_RegisterVar(&cv_tripleorbinaut);
 	CV_RegisterVar(&cv_quadorbinaut);
 	CV_RegisterVar(&cv_dualjawz);
@@ -409,7 +408,6 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_dualsneaker,
 	&cv_triplesneaker,
 	&cv_triplebanana,
-	&cv_decabanana,
 	&cv_tripleorbinaut,
 	&cv_quadorbinaut,
 	&cv_dualjawz
@@ -428,7 +426,7 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 	{ 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 	{ 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
-	{ 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
+	{ 0, 3, 3, 2, 0, 0, 0, 0 }, // Mine
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 	{ 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
 	{ 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
@@ -446,7 +444,6 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
 	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
 	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
 	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
@@ -480,7 +477,6 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
-	{ 1, 1 }, // Banana x10
 	{ 2, 0 }, // Orbinaut x3
 	{ 1, 1 }, // Orbinaut x4
 	{ 5, 1 }  // Jawz x2
@@ -516,7 +512,6 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 0, 0 }, // Banana x10
 	{ 0, 1, 1, 0 }, // Orbinaut x3
 	{ 0, 0, 1, 1 }, // Orbinaut x4
 	{ 0, 0, 1, 1 }  // Jawz x2
@@ -577,7 +572,6 @@ SINT8 K_ItemResultToType(SINT8 getitem)
 				return KITEM_SNEAKER;
 
 			case KRITEM_TRIPLEBANANA:
-			case KRITEM_TENFOLDBANANA:
 				return KITEM_BANANA;
 
 			case KRITEM_TRIPLEORBINAUT:
@@ -614,9 +608,6 @@ UINT8 K_ItemResultToAmount(SINT8 getitem)
 
 		case KITEM_BALLHOG: // Not a special result, but has a special amount
 			return 5;
-
-		case KRITEM_TENFOLDBANANA:
-			return 10;
 
 		default:
 			return 1;
@@ -891,7 +882,6 @@ INT32 K_KartGetItemOdds(
 			break;
 
 		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 			powerItem = true;
 			notNearEnd = true;
 			break;
