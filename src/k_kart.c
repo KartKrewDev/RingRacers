@@ -9867,6 +9867,12 @@ void K_KartUpdatePosition(player_t *player)
 
 	if (position != oldposition) // Changed places?
 	{
+		if (position < oldposition && P_IsDisplayPlayer(player) == true)
+		{
+			// Play sound when getting closer to 1st.
+			S_StartSound(player->mo, sfx_mbs41);
+		}
+
 		player->positiondelay = POS_DELAY_TIME + 4; // Position number growth
 	}
 
