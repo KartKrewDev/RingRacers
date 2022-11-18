@@ -3430,7 +3430,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	if (levellist.newgametype == GT_RACE)
 	{
 		cupheader_t *cup = kartcupheaders;
-		UINT8 highestid = 0, count = 0;
+		UINT8 highestid = 0;
 
 		// Make sure there's valid cups before going to this menu.
 		if (cup == NULL)
@@ -3443,11 +3443,10 @@ static void M_LevelListFromGametype(INT16 gt)
 				highestid = cup->id;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
 				{
-					cupgrid.x = count % CUPMENU_COLUMNS;
-					cupgrid.y = (count / CUPMENU_COLUMNS) % CUPMENU_ROWS;
-					cupgrid.pageno = count / (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					cupgrid.x = cup->id % CUPMENU_COLUMNS;
+					cupgrid.y = (cup->id / CUPMENU_COLUMNS) % CUPMENU_ROWS;
+					cupgrid.pageno = cup->id / (CUPMENU_COLUMNS * CUPMENU_ROWS);
 				}
-				count++;
 			}
 			cup = cup->next;
 		}
