@@ -29126,7 +29126,21 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Chaos Emerald 6", {  0, 208,  50,  32,  34,  37,  40,  44,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD6
 	{"Chaos Emerald 7", {  0, 120, 121, 140, 133, 135, 149, 156,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_CHAOSEMERALD7
 
-	{"Invinc Flash", {  0,   0,   0,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_INVINCFLASH
+	{"Invinc Flash", {  0,   0,   0,   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_INVINCFLASH
+
+	{"Position", {  8,   9,  11,  12,  14,  15,  17,  18,  20,  21,  23,  24,  26,  27,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM
+	{"Position Win 1", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_WIN1
+	{"Position Win 2", {134, 134, 135, 135, 135, 136, 136, 136, 137, 137, 138, 138, 139, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_WIN2
+	{"Position Win 3", {255, 255, 122, 122, 123, 123, 141, 141, 142, 142, 143, 143, 138, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_WIN3
+	{"Position Lose 1", { 35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  71,  46,  47,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_LOSE1
+	{"Position Lose 2", { 52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  63,  44,  45,  46,  47,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_LOSE2
+	{"Position Lose 3", { 73,  74,  75,  76,  76,  77,  77,  78,  78,  79,  79, 236, 237, 238, 239,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_LOSE3
+	{"Position Best 1", { 35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  71,  46,  47,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST1
+	{"Position Best 2", { 73,  74,  75,  76,  76,  77,  77,  78,  78,  79,  79, 236, 237, 238, 239,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST2
+	{"Position Best 3", {112, 112, 113, 114, 115, 115, 116, 116, 117, 117, 118, 118, 119, 110, 111,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST3
+	{"Position Best 4", {255, 255, 122, 122, 123, 123, 141, 141, 142, 142, 143, 143, 138, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST4
+	{"Position Best 5", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST5
+	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_POSNUM_BEST6
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.
