@@ -6568,6 +6568,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->player->tricktime = 0; // Reset post-hitlag timer
 		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false, false)) - FRACUNIT, 0)*125/100;
+		mo->player->trickboostpower = FixedMul(mo->player->trickboostpower, FixedDiv(mapobjectscale, mo->scale));
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
@@ -11361,9 +11362,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			const angle_t lr = ANGLE_45;
 			fixed_t momz = FixedDiv(player->mo->momz, mapobjectscale);	// bring momz back to scale...
+			fixed_t invertscale = FixedDiv(mapobjectscale, player->mo->scale);
 			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
-			fixed_t basespeed = K_GetKartSpeed(player, false, false);	// at WORSE, keep your normal speed when tricking.
-			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
+			fixed_t basespeed = FixedMul(invertscale, K_GetKartSpeed(player, false, false));	// at WORSE, keep your normal speed when tricking.
+			fixed_t speed = FixedMul(invertscale, FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy)));
 
 			K_trickPanelTimingVisual(player, momz);
 
@@ -11466,7 +11468,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 						//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
-						P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+						P_SetObjectMomZ(player->mo, 48*invertscale, relative);
 						player->trickpanel = 4;
 					}
 				}
