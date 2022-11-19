@@ -2256,6 +2256,9 @@ static void P_FlingBurst
 	mo->fuse = objFuse;
 	P_SetTarget(&mo->target, player->mo);
 
+	// We want everything from P_SpawnMobjFromMobj except scale.
+	objScale = FixedMul(objScale, FixedDiv(mapobjectscale, player->mo->scale));
+
 	if (objScale != FRACUNIT)
 	{
 		P_SetScale(mo, FixedMul(objScale, mo->scale));
