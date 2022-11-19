@@ -11452,14 +11452,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 					else if (cmd->throwdir < 0)
 					{
-						boolean relative = true;
-
 						player->mo->momx /= 3;
 						player->mo->momy /= 3;
 
 						if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
 						{
-							relative = false;
+							player->mo->momz = 0; // relative = false;
 						}
 
 						// Calculate speed boost decay:
@@ -11468,7 +11466,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 						//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
-						P_SetObjectMomZ(player->mo, 48*invertscale, relative);
+						player->mo->momz += P_MobjFlip(player->mo)*48*mapobjectscale;
 						player->trickpanel = 4;
 					}
 				}
