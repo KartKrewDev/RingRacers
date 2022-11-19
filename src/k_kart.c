@@ -10371,6 +10371,9 @@ boolean K_FastFallBounce(player_t *player)
 			}
 		}
 
+		if (player->mo->eflags & MFE_UNDERWATER)
+			bounce = (117 * bounce) / 200;
+
 		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
