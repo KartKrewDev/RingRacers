@@ -3420,7 +3420,7 @@ boolean K_TripwirePass(player_t *player)
 
 boolean K_MovingHorizontally(mobj_t *mobj)
 {
-	return (P_AproxDistance(mobj->momx, mobj->momy) / 5 > abs(mobj->momz));
+	return (P_AproxDistance(mobj->momx, mobj->momy) / 4 > abs(mobj->momz));
 }
 
 boolean K_WaterRun(mobj_t *mobj)
