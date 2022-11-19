@@ -6566,6 +6566,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->player->tricktime = 0; // Reset post-hitlag timer
 		// Setup the boost for potential upwards trick, at worse, make it your regular max speed. (boost = curr speed*1.25)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false, false)) - FRACUNIT, 0)*125/100;
+		mo->player->trickboostpower = FixedDiv(mo->player->trickboostpower, K_GrowShrinkSpeedMul(mo->player));
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
 	}
 
@@ -11367,9 +11368,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		{
 			const angle_t lr = ANGLE_45;
 			fixed_t momz = FixedDiv(player->mo->momz, mapobjectscale);	// bring momz back to scale...
+			fixed_t invertscale = FixedDiv(FRACUNIT, K_GrowShrinkSpeedMul(player));
 			fixed_t speedmult = max(0, FRACUNIT - abs(momz)/TRICKMOMZRAMP);				// TRICKMOMZRAMP momz is minimum speed (Should be 20)
-			fixed_t basespeed = K_GetKartSpeed(player, false, false);	// at WORSE, keep your normal speed when tricking.
-			fixed_t speed = FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy));
+			fixed_t basespeed = FixedMul(invertscale, K_GetKartSpeed(player, false, false));	// at WORSE, keep your normal speed when tricking.
+			fixed_t speed = FixedMul(invertscale, FixedMul(speedmult, P_AproxDistance(player->mo->momx, player->mo->momy)));
 
 			K_trickPanelTimingVisual(player, momz);
 
@@ -11456,14 +11458,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 					else if (cmd->throwdir < 0)
 					{
-						boolean relative = true;
-
 						player->mo->momx /= 3;
 						player->mo->momy /= 3;
 
 						if (player->mo->momz * P_MobjFlip(player->mo) <= 0)
 						{
-							relative = false;
+							player->mo->momz = 0; // relative = false;
 						}
 
 						// Calculate speed boost decay:
@@ -11472,7 +11472,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->trickboostdecay = min(TICRATE*3/4, abs(momz/FRACUNIT));
 						//CONS_Printf("decay: %d\n", player->trickboostdecay);
 
-						P_SetObjectMomZ(player->mo, 48*FRACUNIT, relative);
+						player->mo->momz += P_MobjFlip(player->mo)*48*mapobjectscale;
 						player->trickpanel = 4;
 					}
 				}
