@@ -1611,7 +1611,7 @@ static void K_DrawKartPositionNum(INT32 num)
 
 	if (leveltime < (starttime + NUMTRANSMAPS))
 	{
-		trans = max(0, (starttime + NUMTRANSMAPS) - leveltime);
+		trans = (starttime + NUMTRANSMAPS) - leveltime;
 	}
 
 	if (trans >= NUMTRANSMAPS)
