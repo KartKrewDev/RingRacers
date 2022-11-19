@@ -1585,6 +1585,32 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->fuse = 1;
 			break;
 
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		{
+			const UINT8 numParticles = 8;
+			const angle_t diff = ANGLE_MAX / numParticles;
+			UINT8 i;
+
+			for (i = 0; i < numParticles; i++)
+			{
+				mobj_t *spark = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_BANANA_SPARK);
+				spark->angle = (diff * i) - (diff / 2);
+
+				if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
+				{
+					spark->angle += K_MomentumAngle(inflictor);
+					spark->momx += inflictor->momx / 2;
+					spark->momy += inflictor->momy / 2;
+					spark->momz += inflictor->momz / 2;
+				}
+
+				P_SetObjectMomZ(spark, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * FRACUNIT, true);
+				P_Thrust(spark, spark->angle, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * spark->scale);
+			}
+			break;
+		}
+
 		default:
 			break;
 	}

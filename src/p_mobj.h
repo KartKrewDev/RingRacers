@@ -126,8 +126,8 @@ typedef enum
 	MF_NOCLIP           = 1<<12,
 	// Allow moves to any height, no gravity. For active floaters.
 	MF_FLOAT            = 1<<13,
-	// Monitor powerup icon. These rise a bit.
-	MF_BOXICON          = 1<<14,
+	// Change pitch/roll when touching slopes.
+	MF_SLOPE            = 1<<14,
 	// Don't hit same species, explode on block.
 	// Player missiles as well as fireballs of various kinds.
 	MF_MISSILE          = 1<<15,
@@ -163,7 +163,7 @@ typedef enum
 	MF_NOSQUISH         = 1<<30,
 	// Disable hitlag for this object
 	MF_NOHITLAGFORME    = (INT32)(1U<<31),
-	// no more free slots, next up I suppose we can get rid of shit like MF_BOXICON?
+	// no more free slots, gotta get rid of more crusty base SRB2 flags
 } mobjflag_t;
 
 typedef enum

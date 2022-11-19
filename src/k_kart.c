@@ -305,7 +305,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_dualsneaker);
 	CV_RegisterVar(&cv_triplesneaker);
 	CV_RegisterVar(&cv_triplebanana);
-	CV_RegisterVar(&cv_decabanana);
 	CV_RegisterVar(&cv_tripleorbinaut);
 	CV_RegisterVar(&cv_quadorbinaut);
 	CV_RegisterVar(&cv_dualjawz);
@@ -409,7 +408,6 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_dualsneaker,
 	&cv_triplesneaker,
 	&cv_triplebanana,
-	&cv_decabanana,
 	&cv_tripleorbinaut,
 	&cv_quadorbinaut,
 	&cv_dualjawz
@@ -428,7 +426,7 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 1, 2, 0, 0, 0, 0, 0, 0 }, // Eggman Monitor
 	{ 5, 5, 2, 2, 0, 0, 0, 0 }, // Orbinaut
 	{ 0, 4, 2, 1, 0, 0, 0, 0 }, // Jawz
-	{ 0, 3, 3, 1, 0, 0, 0, 0 }, // Mine
+	{ 0, 3, 3, 2, 0, 0, 0, 0 }, // Mine
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Land Mine
 	{ 0, 0, 2, 2, 0, 0, 0, 0 }, // Ballhog
 	{ 0, 0, 0, 0, 0, 2, 4, 0 }, // Self-Propelled Bomb
@@ -446,7 +444,6 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 0, 1, 0, 0, 0, 0 }, // Banana x10
 	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
 	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
 	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
@@ -480,7 +477,6 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
-	{ 1, 1 }, // Banana x10
 	{ 2, 0 }, // Orbinaut x3
 	{ 1, 1 }, // Orbinaut x4
 	{ 5, 1 }  // Jawz x2
@@ -516,7 +512,6 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
-	{ 0, 0, 0, 0 }, // Banana x10
 	{ 0, 1, 1, 0 }, // Orbinaut x3
 	{ 0, 0, 1, 1 }, // Orbinaut x4
 	{ 0, 0, 1, 1 }  // Jawz x2
@@ -577,7 +572,6 @@ SINT8 K_ItemResultToType(SINT8 getitem)
 				return KITEM_SNEAKER;
 
 			case KRITEM_TRIPLEBANANA:
-			case KRITEM_TENFOLDBANANA:
 				return KITEM_BANANA;
 
 			case KRITEM_TRIPLEORBINAUT:
@@ -614,9 +608,6 @@ UINT8 K_ItemResultToAmount(SINT8 getitem)
 
 		case KITEM_BALLHOG: // Not a special result, but has a special amount
 			return 5;
-
-		case KRITEM_TENFOLDBANANA:
-			return 10;
 
 		default:
 			return 1;
@@ -891,7 +882,6 @@ INT32 K_KartGetItemOdds(
 			break;
 
 		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 			powerItem = true;
 			notNearEnd = true;
 			break;
@@ -6133,6 +6123,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		{
 			// Shoot forward
 			mo = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z + player->mo->height/2, mapthing);
+			mo->angle = player->mo->angle;
 
 			// These are really weird so let's make it a very specific case to make SURE it works...
 			if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -6147,7 +6138,6 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 			S_StartSound(player->mo, mo->info->seesound);
 
-			if (mo)
 			{
 				angle_t fa = player->mo->angle>>ANGLETOFINESHIFT;
 				fixed_t HEIGHT = ((20 + (dir*10)) * FRACUNIT) + (FixedDiv(player->mo->momz, mapobjectscale)*P_MobjFlip(player->mo)); // Also intentionally not player scale
@@ -6155,14 +6145,20 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 				P_SetObjectMomZ(mo, HEIGHT, false);
 				mo->momx = player->mo->momx + FixedMul(FINECOSINE(fa), PROJSPEED*dir);
 				mo->momy = player->mo->momy + FixedMul(FINESINE(fa), PROJSPEED*dir);
+			}
 
-				mo->extravalue2 = dir;
+			mo->extravalue2 = dir;
 
-				if (mo->eflags & MFE_UNDERWATER)
-					mo->momz = (117 * mo->momz) / 200;
+			if (mo->eflags & MFE_UNDERWATER)
+				mo->momz = (117 * mo->momz) / 200;
 
-				P_SetScale(mo, finalscale);
-				mo->destscale = finalscale;
+			P_SetScale(mo, finalscale);
+			mo->destscale = finalscale;
+
+			if (mapthing == MT_BANANA)
+			{
+				mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+				mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
@@ -6246,6 +6242,8 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 			if (player->mo->eflags & MFE_VERTICALFLIP)
 				mo->eflags |= MFE_VERTICALFLIP;
+
+			mo->angle = newangle;
 
 			if (mapthing == MT_SSMINE)
 				mo->extravalue1 = 49; // Pads the start-up length from 21 frames to a full 2 seconds
@@ -6662,7 +6660,7 @@ killnext:
 		S_StartSound(banana, banana->info->deathsound);
 		P_KillMobj(banana, inflictor, source, DMG_NORMAL);
 
-		P_SetObjectMomZ(banana, 8*FRACUNIT, false);
+		P_SetObjectMomZ(banana, 24*FRACUNIT, false);
 		if (inflictor)
 			P_InstaThrust(banana, R_PointToAngle2(inflictor->x, inflictor->y, banana->x, banana->y)+ANGLE_90, 16*FRACUNIT);
 	}
@@ -7063,7 +7061,7 @@ void K_DropRocketSneaker(player_t *player)
 			flingangle = ANG60;
 
 		S_StartSound(shoe, shoe->info->deathsound);
-		P_SetObjectMomZ(shoe, 8*FRACUNIT, false);
+		P_SetObjectMomZ(shoe, 24*FRACUNIT, false);
 		P_InstaThrust(shoe, R_PointToAngle2(shoe->target->x, shoe->target->y, shoe->x, shoe->y)+flingangle, 16*FRACUNIT);
 		shoe->momx += shoe->target->momx;
 		shoe->momy += shoe->target->momy;
