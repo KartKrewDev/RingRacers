@@ -2618,7 +2618,7 @@ increment_move
 		if (!(thing->flags & MF_NOCLIP))
 		{
 			//All things are affected by their scale.
-			fixed_t maxstep = P_GetThingStepUp(thing, x, y);
+			fixed_t maxstep = P_GetThingStepUp(thing, tryx, tryy);
 
 			if (tmceilingz - tmfloorz < thing->height)
 			{

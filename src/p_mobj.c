@@ -1158,66 +1158,68 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd = -gravityadd;
 			}
 		}
-		else //Otherwise, sort through the other exceptions.
+
+		// Sort through the other exceptions.
+		switch (mo->type)
 		{
-			switch (mo->type)
-			{
-				case MT_FLINGRING:
-				case MT_FLINGCOIN:
-				case MT_FLINGBLUESPHERE:
-				case MT_FLINGNIGHTSCHIP:
-				case MT_BOUNCERING:
-				case MT_RAILRING:
-				case MT_INFINITYRING:
-				case MT_AUTOMATICRING:
-				case MT_EXPLOSIONRING:
-				case MT_SCATTERRING:
-				case MT_GRENADERING:
-				case MT_BOUNCEPICKUP:
-				case MT_RAILPICKUP:
-				case MT_AUTOPICKUP:
-				case MT_EXPLODEPICKUP:
-				case MT_SCATTERPICKUP:
-				case MT_GRENADEPICKUP:
-				case MT_REDFLAG:
-				case MT_BLUEFLAG:
-					if (mo->target)
+			case MT_FLINGRING:
+			case MT_FLINGCOIN:
+			case MT_FLINGBLUESPHERE:
+			case MT_FLINGNIGHTSCHIP:
+			case MT_BOUNCERING:
+			case MT_RAILRING:
+			case MT_INFINITYRING:
+			case MT_AUTOMATICRING:
+			case MT_EXPLOSIONRING:
+			case MT_SCATTERRING:
+			case MT_GRENADERING:
+			case MT_BOUNCEPICKUP:
+			case MT_RAILPICKUP:
+			case MT_AUTOPICKUP:
+			case MT_EXPLODEPICKUP:
+			case MT_SCATTERPICKUP:
+			case MT_GRENADEPICKUP:
+			case MT_REDFLAG:
+			case MT_BLUEFLAG:
+				if (mo->target)
+				{
+					// Flung items copy the gravity of their tosser.
+					if ((mo->target->eflags & MFE_VERTICALFLIP) && !(mo->eflags & MFE_VERTICALFLIP))
 					{
-						// Flung items copy the gravity of their tosser.
-						if ((mo->target->eflags & MFE_VERTICALFLIP) && !(mo->eflags & MFE_VERTICALFLIP))
-						{
-							gravityadd = -gravityadd;
-							mo->eflags |= MFE_VERTICALFLIP;
-						}
+						gravityadd = -gravityadd;
+						mo->eflags |= MFE_VERTICALFLIP;
 					}
-					break;
-				case MT_WATERDROP:
-				case MT_BATTLEBUMPER:
-					gravityadd /= 2;
-					break;
-				case MT_BANANA:
-				case MT_EGGMANITEM:
-				case MT_SSMINE:
-				case MT_LANDMINE:
-				case MT_DROPTARGET:
-				case MT_SINK:
-				case MT_EMERALD:
+				}
+				break;
+			case MT_WATERDROP:
+			case MT_BATTLEBUMPER:
+				gravityadd /= 2;
+				break;
+			case MT_BANANA:
+			case MT_EGGMANITEM:
+			case MT_SSMINE:
+			case MT_LANDMINE:
+			case MT_DROPTARGET:
+			case MT_SINK:
+			case MT_EMERALD:
+				if (mo->health > 0)
+				{
 					if (mo->extravalue2 > 0)
 					{
 						gravityadd *= mo->extravalue2;
 					}
 
 					gravityadd = (5*gravityadd)/2;
-					break;
-				case MT_KARMAFIREWORK:
-					gravityadd /= 3;
-					break;
-				case MT_ITEM_DEBRIS:
-					gravityadd *= 6;
-					break;
-				default:
-					break;
-			}
+				}
+				break;
+			case MT_KARMAFIREWORK:
+				gravityadd /= 3;
+				break;
+			case MT_ITEM_DEBRIS:
+				gravityadd *= 6;
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1261,6 +1263,11 @@ void P_CheckGravity(mobj_t *mo, boolean affect)
 //
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 {
+	if (!(mo->flags & MF_SLOPE))
+	{
+		return;
+	}
+
 	if (slope)
 	{
 		fixed_t tempz = slope->normal.z;
@@ -1764,7 +1771,7 @@ void P_XYMovement(mobj_t *mo)
 								S_StartSound(mo, mo->info->deathsound);
 								P_KillMobj(mo, NULL, NULL, DMG_NORMAL);
 
-								P_SetObjectMomZ(mo, 8*FRACUNIT, false);
+								P_SetObjectMomZ(mo, 24*FRACUNIT, false);
 								P_InstaThrust(mo, R_PointToAngle2(mo->x, mo->y, mo->x + xmove, mo->y + ymove)+ANGLE_90, 16*FRACUNIT);
 							}
 							break;
@@ -3119,16 +3126,14 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	fixed_t surfaceheight = INT32_MAX;
 	fixed_t surfDiff = INT32_MAX;
 
-	fixed_t floorheight = INT32_MAX;
-	fixed_t floorDiff = INT32_MAX;
-
 	fixed_t mobjbottom = INT32_MAX;
 	fixed_t maxStep = INT32_MAX;
 	boolean doifit = false;
 
 	pslope_t *waterSlope = NULL;
-	angle_t ourZAng = 0;
-	angle_t waterZAng = 0;
+	angle_t moveDir = 0;
+	fixed_t ourZAng = 0;
+	fixed_t waterZAng = 0;
 
 	if (rover == NULL)
 	{
@@ -3162,20 +3167,36 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 		return false;
 	}
 
-	if (mobj->standingslope != NULL)
+	moveDir = K_MomentumAngle(mobj);
+
+	if (mobj->standingslope != NULL && mobj->standingslope->zangle != 0)
 	{
-		ourZAng = mobj->standingslope->zangle;
+		angle_t dir = mobj->standingslope->xydirection;
+		angle_t workang = mobj->standingslope->zangle;
+		if (workang >= ANGLE_180)
+		{
+			workang = InvAngle(workang);
+			dir = InvAngle(dir);
+		}
+		ourZAng = P_ReturnThrustX(mobj, dir - moveDir, AngleFixed(workang));
 	}
 
 	waterSlope = (flip ? *rover->b_slope : *rover->t_slope);
-	if (waterSlope != NULL)
+	if (waterSlope != NULL && waterSlope->zangle != 0)
 	{
-		waterZAng = waterSlope->zangle;
+		angle_t dir = waterSlope->xydirection;
+		angle_t workang = waterSlope->zangle;
+		if (workang >= ANGLE_180)
+		{
+			workang = InvAngle(workang);
+			dir = InvAngle(dir);
+		}
+		waterZAng = P_ReturnThrustX(mobj, dir - moveDir, AngleFixed(workang));
 	}
 
-	if (ourZAng != waterZAng)
+	if (abs(ourZAng - waterZAng) > 11*FRACUNIT)
 	{
-		// The surface slopes are different.
+		// The surface slopes are too different.
 		return false;
 	}
 
@@ -3193,16 +3214,20 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	maxStep = P_GetThingStepUp(mobj, mobj->x, mobj->y);
 
 	surfDiff = flip ? (surfaceheight - mobjbottom) : (mobjbottom - surfaceheight);
+
+	// We start water run IF we can step onto it!
 	if (surfDiff <= maxStep && surfDiff >= 0)
 	{
-		// We start water run IF we can step-down!
-		floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
-		floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
-		if (floorDiff <= maxStep && floorDiff >= 0)
+		if (ourZAng < 0)
 		{
-			// ... but NOT if real floor is in range.
-			// FIXME: Count solid FOFs in this check
-			return false;
+			fixed_t floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
+			fixed_t floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
+			if (floorDiff <= maxStep && floorDiff >= -maxStep)
+			{
+				// ... but NOT if going down and real floor is in range.
+				// FIXME: Count solid FOFs in this check
+				return false;
+			}
 		}
 
 		return true;
@@ -6486,8 +6511,26 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		P_SetObjectMomZ(mobj, -2*FRACUNIT/3, true);
 	}
 	break;
-	case MT_ORBINAUT:
 	case MT_BANANA:
+	{
+		angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_67h);
+		mobj->angle -= spin;
+		mobj->rollangle += spin;
+
+		if (P_IsObjectOnGround(mobj) && mobj->momz * P_MobjFlip(mobj) <= 0)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+	}
+	break;
+	case MT_BANANA_SPARK:
+	{
+		angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_22h);
+		mobj->rollangle += spin;
+	}
+	break;
+	case MT_ORBINAUT:
 	case MT_EGGMANITEM:
 	case MT_LANDMINE:
 	//case MT_DROPTARGET:
@@ -6927,16 +6970,61 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		if (P_IsObjectOnGround(mobj) && mobj->health > 1)
+		if (P_IsObjectOnGround(mobj))
 		{
-			S_StartSound(mobj, mobj->info->activesound);
-			mobj->momx = mobj->momy = 0;
-			mobj->health = 1;
+			//mobj->rollangle = 0;
+
+			if (mobj->health > 1)
+			{
+				S_StartSound(mobj, mobj->info->activesound);
+				mobj->momx = mobj->momy = 0;
+				mobj->health = 1;
+			}
+		}
+		else
+		{
+			// tilt n tumble
+			angle_t spin = FixedMul(FixedDiv(abs(mobj->momz), 8 * mobj->scale), ANGLE_67h);
+			mobj->angle += spin;
+			mobj->rollangle -= spin;
 		}
 
 		if (mobj->threshold > 0)
 			mobj->threshold--;
 		break;
+	case MT_BANANA_SPARK:
+		{
+			if (leveltime & 1)
+			{
+				mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+			}
+			else
+			{
+				if ((leveltime / 2) & 1)
+				{
+					mobj->spriteyscale = 3*FRACUNIT/2;
+				}
+				else
+				{
+					mobj->spritexscale = 3*FRACUNIT/2;
+				}
+			}
+
+			if (P_IsObjectOnGround(mobj) == true && mobj->momz * P_MobjFlip(mobj) <= 0)
+			{
+				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+
+				if (mobj->health > 0)
+				{
+					mobj->tics = 1;
+					mobj->destscale = 0;
+					mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+					mobj->health = 0;
+				}
+			}
+
+			break;
+		}
 	case MT_SPB:
 		{
 			Obj_SPBThink(mobj);
@@ -9473,7 +9561,7 @@ void P_MobjThinker(mobj_t *mobj)
 				S_StartSound(mobj, mobj->info->deathsound);
 				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 
-				P_SetObjectMomZ(mobj, 8*FRACUNIT, false);
+				P_SetObjectMomZ(mobj, 24*FRACUNIT, false);
 				P_InstaThrust(mobj, R_PointToAngle2(0, 0, mobj->momx, mobj->momy) + ANGLE_90, 16*FRACUNIT);
 			}
 
@@ -9700,24 +9788,6 @@ void P_PushableThinker(mobj_t *mobj)
 // Quick, optimized function for scenery
 void P_SceneryThinker(mobj_t *mobj)
 {
-	if (mobj->flags & MF_BOXICON)
-	{
-		if (!(mobj->eflags & MFE_VERTICALFLIP))
-		{
-			if (mobj->z < mobj->floorz + FixedMul(mobj->info->damage, mobj->scale))
-				mobj->momz = FixedMul(mobj->info->speed, mobj->scale);
-			else
-				mobj->momz = 0;
-		}
-		else
-		{
-			if (mobj->z + FixedMul(mobj->info->height, mobj->scale) > mobj->ceilingz - FixedMul(mobj->info->damage, mobj->scale))
-				mobj->momz = -FixedMul(mobj->info->speed, mobj->scale);
-			else
-				mobj->momz = 0;
-		}
-	}
-
 	// momentum movement
 	if (mobj->momx || mobj->momy)
 	{
@@ -13680,6 +13750,8 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 	newmobj = P_SpawnMobj(mobj->x + xofs, mobj->y + yofs, mobj->z + zofs, type);
 	if (!newmobj)
 		return NULL;
+
+	newmobj->hitlag = mobj->hitlag;
 
 	newmobj->destscale = P_ScaleFromMap(mobj->destscale, newmobj->destscale);
 	P_SetScale(newmobj, P_ScaleFromMap(mobj->scale, newmobj->scale));

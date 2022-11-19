@@ -3130,7 +3130,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 void readfollower(MYFILE *f)
 {
 	char *s;
-	char *word, *word2, dname[SKINNAMESIZE+1];
+	char *word, *word2;
 	char *tmp;
 	char testname[SKINNAMESIZE+1];
 
@@ -3139,10 +3139,9 @@ void readfollower(MYFILE *f)
 	INT32 res;
 	INT32 i;
 
-	if (numfollowers > MAXSKINS)
+	if (numfollowers >= MAXSKINS)
 	{
-		deh_warning("Error: Too many followers, cannot add anymore.\n");
-		return;
+		I_Error("Out of Followers\nLoad less addons to fix this.");
 	}
 
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3161,8 +3160,9 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
-	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
-	strcpy(followers[numfollowers].icon, "M_NORANK");
+	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
+	followers[numfollowers].category = UINT8_MAX;
+	strcpy(followers[numfollowers].icon, "MISSING");
 
 	do
 	{
@@ -3201,6 +3201,23 @@ void readfollower(MYFILE *f)
 				strcpy(followers[numfollowers].icon, word2);
 				nameset = true;
 			}
+			else if (fastcmp(word, "CATEGORY"))
+			{
+				INT32 j;
+				for (j = 0; j < numfollowercategories; j++)
+				{
+					if (!stricmp(followercategories[j].name, word2))
+					{
+						followers[numfollowers].category = j;
+						break;
+					}
+				}
+
+				if (j == numfollowercategories)
+				{
+					deh_warning("Follower %d: unknown follower category '%s'", numfollowers, word2);
+				}
+			}
 			else if (fastcmp(word, "MODE"))
 			{
 				if (word2)
@@ -3215,7 +3232,20 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				followers[numfollowers].defaultcolor = get_number(word2);
+				INT32 j;
+				for (j = 0; j < numskincolors +2; j++)	// +2 because of Match and Opposite
+				{
+					if (!stricmp(Followercolor_cons_t[j].strvalue, word2))
+					{
+						followers[numfollowers].defaultcolor = Followercolor_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (j == numskincolors+2)
+				{
+					deh_warning("Follower %d: unknown follower color '%s'", numfollowers, word2);
+				}
 			}
 			else if (fastcmp(word, "SCALE"))
 			{
@@ -3318,10 +3348,6 @@ void readfollower(MYFILE *f)
 	// set skin name (this is just the follower's name in lowercases):
 	// but before we do, let's... actually check if another follower isn't doing the same shit...
 
-	strcpy(testname, followers[numfollowers].name);
-
-	// lower testname for skin checks...
-	strlwr(testname);
 	res = K_FollowerAvailable(testname);
 	if (res > -1)	// yikes, someone else has stolen our name already
 	{
@@ -3333,8 +3359,7 @@ void readfollower(MYFILE *f)
 		// in that case, we'll be very lazy and copy numfollowers to the end of our skin name.
 	}
 
-	strcpy(followers[numfollowers].skinname, testname);
-	strcpy(dname, followers[numfollowers].skinname);	// display name, just used for printing succesful stuff or errors later down the line.
+	strcpy(testname, followers[numfollowers].name);
 
 	// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
 	for (i = 0; followers[numfollowers].name[i]; i++)
@@ -3349,14 +3374,14 @@ void readfollower(MYFILE *f)
 	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
 	{
 		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
-		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", testname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
 	}
 
 #define FALLBACK(field, field2, threshold, set) \
 if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", testname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
@@ -3373,13 +3398,6 @@ if ((signed)followers[numfollowers].field < threshold) \
 
 #undef FALLBACK
 
-	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
-	{
-		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
-		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
-	}
-
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
 
@@ -3388,7 +3406,7 @@ if (!followers[numfollowers].field) \
 { \
 	followers[numfollowers].field = fallbackstate ? fallbackstate : S_INVISIBLE; \
 	if (!fallbackstate) \
-		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", dname, field2); \
+		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", testname, field2); \
 } \
 
 	NOSTATE(idlestate, "IDLESTATE");
@@ -3399,8 +3417,80 @@ if (!followers[numfollowers].field) \
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
 #undef NOSTATE
 
-	CONS_Printf("Added follower '%s'\n", dname);
+	CONS_Printf("Added follower '%s'\n", testname);
+	if (followers[numfollowers].category < numfollowercategories)
+		followercategories[followers[numfollowers].category].numincategory++;
 	numfollowers++; // add 1 follower
+	Z_Free(s);
+}
+
+void readfollowercategory(MYFILE *f)
+{
+	char *s;
+	char *word, *word2;
+	char *tmp;
+
+	boolean nameset;
+
+	if (numfollowercategories == MAXFOLLOWERCATEGORIES)
+	{
+		I_Error("Out of Follower categories\nLoad less addons to fix this.");
+	}
+
+	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+
+	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	strcpy(followercategories[numfollowercategories].icon, "MISSING");
+	followercategories[numfollowercategories].numincategory = 0;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			word = strtok(s, " ");
+			if (word)
+				strupr(word);
+			else
+				break;
+
+			word2 = strtok(NULL, " = ");
+
+			if (!word2)
+				break;
+
+			if (word2[strlen(word2)-1] == '\n')
+				word2[strlen(word2)-1] = '\0';
+
+			if (fastcmp(word, "NAME"))
+			{
+				strcpy(followercategories[numfollowercategories].name, word2);
+				nameset = true;
+			}
+			else if (fastcmp(word, "ICON"))
+			{
+				strcpy(followercategories[numfollowercategories].icon, word2);
+				nameset = true;
+			}
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	if (!nameset)
+	{
+		// well this is problematic.
+		strcpy(followercategories[numfollowercategories].name, va("Followercategory%d", numfollowercategories)); // this is lazy, so what
+	}
+
+	CONS_Printf("Added follower category '%s'\n", followercategories[numfollowercategories].name);
+	numfollowercategories++; // add 1 follower
 	Z_Free(s);
 }
 

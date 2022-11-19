@@ -37,10 +37,6 @@
 #include "r_fps.h"
 #include "m_random.h"
 
-#define NUMPOSNUMS 10
-#define NUMPOSFRAMES 7 // White, three blues, three reds
-#define NUMWINFRAMES 6 // Red, yellow, green, cyan, blue, purple
-
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
 
@@ -70,8 +66,7 @@ static patch_t *kp_startcountdown[20];
 static patch_t *kp_racefault[6];
 static patch_t *kp_racefinish[6];
 
-static patch_t *kp_positionnum[NUMPOSNUMS][NUMPOSFRAMES];
-static patch_t *kp_winnernum[NUMPOSFRAMES];
+static patch_t *kp_positionnum[10][2][2]; // number, overlay or underlay, splitscreen
 
 static patch_t *kp_facenum[MAXPLAYERS+1];
 static patch_t *kp_facehighlight[8];
@@ -179,7 +174,7 @@ static patch_t *kp_trickcool[2];
 
 void K_LoadKartHUDGraphics(void)
 {
-	INT32 i, j;
+	INT32 i, j, k;
 	char buffer[9];
 
 	// Null Stuff
@@ -280,23 +275,29 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_racefinish[5], "K_2PFINB");
 
 	// Position numbers
-	sprintf(buffer, "K_POSNxx");
-	for (i = 0; i < NUMPOSNUMS; i++)
+	sprintf(buffer, "KRNKxyz");
+	for (i = 0; i < 10; i++)
 	{
 		buffer[6] = '0'+i;
-		for (j = 0; j < NUMPOSFRAMES; j++)
-		{
-			//sprintf(buffer, "K_POSN%d%d", i, j);
-			buffer[7] = '0'+j;
-			HU_UpdatePatch(&kp_positionnum[i][j], "%s", buffer);
-		}
-	}
 
-	sprintf(buffer, "K_POSNWx");
-	for (i = 0; i < NUMWINFRAMES; i++)
-	{
-		buffer[7] = '0'+i;
-		HU_UpdatePatch(&kp_winnernum[i], "%s", buffer);
+		for (j = 0; j < 2; j++)
+		{
+			buffer[5] = 'A'+j;
+
+			for (k = 0; k < 2; k++)
+			{
+				if (k > 0)
+				{
+					buffer[4] = 'S';
+				}
+				else
+				{
+					buffer[4] = 'B';
+				}
+
+				HU_UpdatePatch(&kp_positionnum[i][j][k], "%s", buffer);
+			}
+		}
 	}
 
 	sprintf(buffer, "OPPRNKxx");
@@ -659,7 +660,6 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISINV1" : "K_ITINV1");
 		case KITEM_BANANA:
 		case KRITEM_TRIPLEBANANA:
-		case KRITEM_TENFOLDBANANA:
 			return (tiny ? "K_ISBANA" : "K_ITBANA");
 		case KITEM_EGGMAN:
 			return (tiny ? "K_ISEGGM" : "K_ITEGGM");
@@ -949,6 +949,11 @@ void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean revers
 	// Determine viewpoint factors.
 	h = R_PointToDist2(point->x, point->y, viewx, viewy);
 	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
+
+	if (reverse)
+	{
+		da = -(da);
+	}
 
 	// Set results relative to top left!
 	result->x = FixedMul(NEWTAN(da), fg);
@@ -1545,146 +1550,187 @@ bademblem:
 	}
 }
 
-static void K_DrawKartPositionNum(INT32 num)
+static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fixed_t y, fixed_t scale, INT32 flags)
 {
-	// POSI_X = BASEVIDWIDTH - 51;	// 269
-	// POSI_Y = BASEVIDHEIGHT- 64;	// 136
+	UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
+	fixed_t w = FRACUNIT;
+	fixed_t h = FRACUNIT;
+	INT32 overlayFlags[2];
+	INT32 i;
 
-	boolean win = (stplyr->exiting && num == 1);
-	//INT32 X = POSI_X;
-	INT32 W = SHORT(kp_positionnum[0][0]->width);
-	fixed_t scale = FRACUNIT;
-	patch_t *localpatch = kp_positionnum[0][0];
-	INT32 fx = 0, fy = 0, fflags = 0;
-	INT32 addOrSub = V_ADD;
-	boolean flipdraw = false;	// flip the order we draw it in for MORE splitscreen bs. fun.
-	boolean flipvdraw = false;	// used only for 2p splitscreen so overtaking doesn't make 1P's position fly off the screen.
-	boolean overtake = false;
+	if (num >= 10)
+	{
+		return x; // invalid input
+	}
 
 	if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
 	{
-		addOrSub = V_SUBTRACT;
+		overlayFlags[0] = V_SUBTRACT;
+		overlayFlags[1] = V_ADD;
+	}
+	else
+	{
+		overlayFlags[0] = V_ADD;
+		overlayFlags[1] = V_SUBTRACT;
+	}
+
+	w = kp_positionnum[num][0][splitIndex]->width * scale;
+	h = kp_positionnum[num][0][splitIndex]->height * scale;
+
+	if (flags & V_SNAPTORIGHT)
+	{
+		x -= w;
+	}
+
+	if (flags & V_SNAPTOBOTTOM)
+	{
+		y -= h;
+	}
+
+	for (i = 1; i >= 0; i--)
+	{
+		V_DrawFixedPatch(
+			x, y, scale,
+			flags | overlayFlags[i],
+			kp_positionnum[num][i][splitIndex],
+			color
+		);
+	}
+
+	return (x - w);
+}
+
+static void K_DrawKartPositionNum(INT32 num)
+{
+	const tic_t counter = (leveltime / 3); // Alternate colors every three frames
+	fixed_t scale = FRACUNIT;
+	fixed_t fx = 0, fy = 0;
+	transnum_t trans = 0;
+	INT32 fflags = 0;
+	UINT8 *color = NULL;
+
+	if (leveltime < (starttime + NUMTRANSMAPS))
+	{
+		trans = max(0, (starttime + NUMTRANSMAPS) - leveltime);
+	}
+
+	if (trans >= NUMTRANSMAPS)
+	{
+		return;
 	}
 
 	if (stplyr->positiondelay || stplyr->exiting)
 	{
-		scale *= 2;
-		overtake = true;	// this is used for splitscreen stuff in conjunction with flipdraw.
+		const UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
+		const fixed_t add = (scale * 3) >> ((r_splitscreen == 1) ? 1 : 2);
+		scale += min((add * (delay * delay)) / (POS_DELAY_TIME * POS_DELAY_TIME), add);
 	}
-
-	if (r_splitscreen)
-	{
-		scale /= 2;
-	}
-
-	W = FixedMul(W<<FRACBITS, scale)>>FRACBITS;
 
 	// pain and suffering defined below
 	if (!r_splitscreen)
 	{
-		fx = POSI_X;
-		fy = BASEVIDHEIGHT - 8;
-		fflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN;
+		fx = BASEVIDWIDTH << FRACBITS;
+		fy = BASEVIDHEIGHT << FRACBITS;
+		fflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
 	}
 	else if (r_splitscreen == 1)	// for this splitscreen, we'll use case by case because it's a bit different.
 	{
-		fx = POSI_X;
-		if (stplyr == &players[displayplayers[0]])	// for player 1: display this at the top right, above the minimap.
+		fx = BASEVIDWIDTH << FRACBITS;
+
+		if (stplyr == &players[displayplayers[0]])
 		{
-			fy = 30;
-			fflags = V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
-			if (overtake)
-				flipvdraw = true;	// make sure overtaking doesn't explode us
+			// for player 1: display this at the top right, above the minimap.
+			fy = 0;
+			fflags = V_SNAPTOTOP|V_SNAPTORIGHT;
 		}
-		else	// if we're not p1, that means we're p2. display this at the bottom right, below the minimap.
+		else
 		{
-			fy = (BASEVIDHEIGHT/2) - 8;
-			fflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN;
+			// if we're not p1, that means we're p2. display this at the bottom right, below the minimap.
+			fy = BASEVIDHEIGHT << FRACBITS;
+			fflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
+		}
+
+		fy >>= 1;
+	}
+	else
+	{
+		fy = BASEVIDHEIGHT << FRACBITS;
+
+		if (stplyr == &players[displayplayers[0]]
+			|| stplyr == &players[displayplayers[2]])
+		{
+			// If we are P1 or P3...
+			fx = 0;
+			fflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM;
+		}
+		else
+		{
+			// else, that means we're P2 or P4.
+			fx = BASEVIDWIDTH << FRACBITS;
+			fflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM;
+		}
+
+		fx >>= 1;
+		fy >>= 1;
+	}
+
+	if (trans > 0)
+	{
+		fflags |= (trans << V_ALPHASHIFT);
+	}
+
+	if (stplyr->exiting && num == 1)
+	{
+		// 1st place winner? You get rainbows!!
+		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_BEST1 + (counter % 6), GTC_CACHE);
+	}
+	else if (stplyr->laps >= numlaps || stplyr->exiting)
+	{
+		// On the final lap, or already won.
+		boolean useRedNums = K_IsPlayerLosing(stplyr);
+
+		if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM)
+		{
+			// Subtracting RED will look BLUE, and vice versa.
+			useRedNums = !useRedNums;
+		}
+
+		if (useRedNums == true)
+		{
+			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_LOSE1 + (counter % 3), GTC_CACHE);
+		}
+		else
+		{
+			color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM_WIN1 + (counter % 3), GTC_CACHE);
 		}
 	}
 	else
 	{
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
-		{
-			fx = POSI_X;
-			fy = POSI_Y;
-			fflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
-			flipdraw = true;
-			if (num && num >= 10)
-				fx += W;	// this seems dumb, but we need to do this in order for positions above 10 going off screen.
-		}
-		else // else, that means we're P2 or P4.
-		{
-			fx = POSI2_X;
-			fy = POSI2_Y;
-			fflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
-		}
+		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM, GTC_CACHE);
 	}
 
 	// Special case for 0
 	if (num <= 0)
 	{
-		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, scale, addOrSub|V_SLIDEIN|fflags, kp_positionnum[0][0], NULL);
+		K_DrawKartPositionNumPatch(
+			0, color,
+			fx, fy, scale, V_SLIDEIN|V_SPLITSCREEN|fflags
+		);
+
 		return;
 	}
 
 	// Draw the number
 	while (num)
 	{
-		if (win) // 1st place winner? You get rainbows!!
-		{
-			localpatch = kp_winnernum[(leveltime % (NUMWINFRAMES*3)) / 3];
-		}
-		else if (stplyr->laps >= numlaps || stplyr->exiting) // Check for the final lap, or won
-		{
-			boolean useRedNums = K_IsPlayerLosing(stplyr);
+		/*
+		
+		*/
 
-			if (addOrSub == V_SUBTRACT)
-			{
-				// Subtracting RED will look BLUE, and vice versa.
-				useRedNums = !useRedNums;
-			}
-
-			// Alternate frame every three frames
-			switch ((leveltime % 9) / 3)
-			{
-				case 0:
-					if (useRedNums == true)
-						localpatch = kp_positionnum[num % 10][4];
-					else
-						localpatch = kp_positionnum[num % 10][1];
-					break;
-				case 1:
-					if (useRedNums == true)
-						localpatch = kp_positionnum[num % 10][5];
-					else
-						localpatch = kp_positionnum[num % 10][2];
-					break;
-				case 2:
-					if (useRedNums == true)
-						localpatch = kp_positionnum[num % 10][6];
-					else
-						localpatch = kp_positionnum[num % 10][3];
-					break;
-				default:
-					localpatch = kp_positionnum[num % 10][0];
-					break;
-			}
-		}
-		else
-		{
-			localpatch = kp_positionnum[num % 10][0];
-		}
-
-		V_DrawFixedPatch(
-			(fx<<FRACBITS) + ((overtake && flipdraw) ? (SHORT(localpatch->width)*scale/2) : 0),
-			(fy<<FRACBITS) + ((overtake && flipvdraw) ? (SHORT(localpatch->height)*scale/2) : 0),
-			scale, addOrSub|V_SLIDEIN|fflags, localpatch, NULL
+		fx = K_DrawKartPositionNumPatch(
+			(num % 10), color,
+			fx, fy, scale, V_SLIDEIN|V_SPLITSCREEN|fflags
 		);
-		// ^ if we overtake as p1 or p3 in splitscren, we shift it so that it doesn't go off screen.
-		// ^ if we overtake as p1 in 2p splits, shift vertically so that this doesn't happen either.
-
-		fx -= W;
 		num /= 10;
 	}
 }
@@ -4493,7 +4539,6 @@ static void K_drawDistributionDebugger(void)
 
 		kp_sneaker[1],
 		kp_sneaker[1],
-		kp_banana[1],
 		kp_banana[1],
 		kp_orbinaut[4],
 		kp_orbinaut[4],

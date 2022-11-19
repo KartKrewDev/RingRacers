@@ -410,6 +410,8 @@ typedef enum
 {
 	mpause_addons = 0,
 	mpause_switchmap,
+	mpause_restartmap,
+	mpause_tryagain,
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
@@ -599,6 +601,7 @@ typedef enum
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
+	CSSTEP_FOLLOWERCATEGORY,
 	CSSTEP_FOLLOWER,
 	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
@@ -614,6 +617,7 @@ typedef struct setup_player_s
 	UINT8 delay;
 	UINT16 color;
 	UINT8 mdepth;
+	boolean hitlag;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
@@ -622,7 +626,8 @@ typedef struct setup_player_s
 
 	UINT8 changeselect;
 
-	INT32 followern;
+	INT16 followercategory;
+	INT16 followern;
 	UINT16 followercolor;
 	tic_t follower_tics;
 	tic_t follower_timer;
@@ -975,6 +980,8 @@ extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
 
 // Bunch of funny functions for the pause menu...~
+void M_RestartMap(INT32 choice);				// Restart level (MP)
+void M_TryAgain(INT32 choice);					// Try again (SP)
 void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
 void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
 void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
