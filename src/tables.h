@@ -27,7 +27,7 @@ extern "C" {
 #define FINEANGLES 8192
 #define FINEMASK (FINEANGLES - 1)
 #define ANGLETOFINESHIFT 19 // 0x100000000 to 0x2000
-#define FINEANGLE_C(x) ((FixedAngle((x)*FRACUNIT)>>ANGLETOFINESHIFT) & FINEMASK) // ((x*(ANGLE_45/45))>>ANGLETOFINESHIFT) & FINEMASK
+#define ANGLETOFINE(x) (((x)>>ANGLETOFINESHIFT) & FINEMASK)
 
 // Effective size is 10240.
 extern fixed_t finesine[5*FINEANGLES/4];
@@ -135,6 +135,10 @@ void FM_Rotate(matrix_t *dest, angle_t angle, fixed_t x, fixed_t y, fixed_t z);
 #define FINESINE(n) (finesine[n]>>(FINE_FRACBITS-FRACBITS))
 #define FINECOSINE(n) (finecosine[n]>>(FINE_FRACBITS-FRACBITS))
 #define FINETANGENT(n) (finetangent[n]>>(FINE_FRACBITS-FRACBITS))
+
+// FSIN(ANGLE_90) = FRACUNIT
+#define FSIN(n) FINESINE(ANGLETOFINE(n))
+#define FCOS(n) FINECOSINE(ANGLETOFINE(n))
 
 #ifdef __cplusplus
 } // extern "C"
