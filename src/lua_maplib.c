@@ -731,7 +731,7 @@ static int sector_set(lua_State *L)
 			sector->floorheight = lastpos;
 			P_CheckSector(sector, true);
 		}
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case sector_ceilingheight: { // ceilingheight
@@ -745,7 +745,7 @@ static int sector_set(lua_State *L)
 			sector->ceilingheight = lastpos;
 			P_CheckSector(sector, true);
 		}
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case sector_floorpic:
@@ -2136,7 +2136,7 @@ static int ffloor_set(lua_State *L)
 			*ffloor->topheight = lastpos;
 			P_CheckSector(sector, true);
 		}
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case ffloor_toppic:
@@ -2157,7 +2157,7 @@ static int ffloor_set(lua_State *L)
 			*ffloor->bottomheight = lastpos;
 			P_CheckSector(sector, true);
 		}
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case ffloor_bottompic:

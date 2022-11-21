@@ -415,6 +415,8 @@ typedef struct tm_s
 
 extern tm_t tm;
 
+void P_RestoreTMStruct(tm_t tmrestore);
+
 extern camera_t *mapcampointer;
 
 /* cphipps 2004/08/30 */

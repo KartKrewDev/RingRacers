@@ -522,7 +522,7 @@ static int mobj_set(lua_State *L)
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
 		mo->ceilingrover = tm.ceilingrover;
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case mobj_snext:
@@ -592,7 +592,7 @@ static int mobj_set(lua_State *L)
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
 		mo->ceilingrover = tm.ceilingrover;
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case mobj_height:
@@ -606,7 +606,7 @@ static int mobj_set(lua_State *L)
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
 		mo->ceilingrover = tm.ceilingrover;
-		tm = ptm;
+		P_RestoreTMStruct(ptm);
 		break;
 	}
 	case mobj_momx:

@@ -46,6 +46,45 @@
 
 tm_t tm = {0};
 
+void P_RestoreTMStruct(tm_t tmrestore)
+{
+	// Reference count management
+	if (tm.thing != tmrestore.thing)
+	{
+		P_SetTarget(&tm.thing, NULL);
+	}
+
+	if (tm.floorthing != tmrestore.floorthing)
+	{
+		P_SetTarget(&tm.floorthing, NULL);
+	}
+
+	if (tm.hitthing != tmrestore.hitthing)
+	{
+		P_SetTarget(&tm.hitthing, NULL);
+	}
+
+	// Restore state
+	tm = tmrestore;
+
+	// Validation
+	if (tm.thing && P_MobjWasRemoved(tm.thing) == true)
+	{
+		P_SetTarget(&tm.thing, NULL);
+	}
+
+	if (tm.floorthing && P_MobjWasRemoved(tm.floorthing) == true)
+	{
+		P_SetTarget(&tm.floorthing, NULL);
+	}
+
+	if (tm.hitthing && P_MobjWasRemoved(tm.hitthing) == true)
+	{
+		P_SetTarget(&tm.hitthing, NULL);
+	}
+}
+
+
 // Mostly re-ported from DOOM Legacy
 // Keep track of special lines as they are hit, process them when the move is valid
 static size_t *spechit = NULL;
@@ -2463,7 +2502,7 @@ BlockItReturn_t PIT_PushableMoved(mobj_t *thing)
 		P_TryMove(thing, thing->x + stand->momx, thing->y + stand->momy, true);
 
 		// Now restore EVERYTHING so the gargoyle doesn't keep the player's tmstuff and break
-		tm = oldtm;
+		P_RestoreTMStruct(oldtm);
 
 		thing->momz = stand->momz;
 	}
@@ -4880,7 +4919,7 @@ void P_CreateSecNodeList(mobj_t *thing, fixed_t x, fixed_t y)
 	* OTOH for Boom/MBF demos we have to preserve the buggy behavior.
 	*  Fun. We restore its previous value unless we're in a Boom/MBF demo.
 	*/
-	tm = ptm;
+	P_RestoreTMStruct(ptm);
 }
 
 // More crazy crap Tails 08-25-2002
@@ -4947,7 +4986,7 @@ void P_CreatePrecipSecNodeList(precipmobj_t *thing,fixed_t x,fixed_t y)
 	* OTOH for Boom/MBF demos we have to preserve the buggy behavior.
 	*  Fun. We restore its previous value unless we're in a Boom/MBF demo.
 	*/
-	tm = ptm;
+	P_RestoreTMStruct(ptm);
 }
 
 /* cphipps 2004/08/30 -
