@@ -9451,7 +9451,9 @@ void P_MobjThinker(mobj_t *mobj)
 
 	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
-	tm.floorthing = tm.hitthing = NULL;
+	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
+	P_SetTarget(&tm.floorthing, NULL);
+	P_SetTarget(&tm.hitthing, NULL);
 
 	// Sector flag MSF_TRIGGERLINE_MOBJ allows ANY mobj to trigger a linedef exec
 	P_CheckMobjTrigger(mobj, false);

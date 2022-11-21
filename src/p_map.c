@@ -1466,7 +1466,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				tm.ceilingrover = NULL;
 				tm.ceilingslope = NULL;
 				tm.ceilingpic = -1;
-				tm.floorthing = thing; // needed for side collision
+				P_SetTarget(&tm.floorthing, thing); // needed for side collision
 			}
 			else if (topz < tm.ceilingz && tm.thing->z <= thing->z+thing->height)
 			{
@@ -1474,7 +1474,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				tm.ceilingrover = NULL;
 				tm.ceilingslope = NULL;
 				tm.ceilingpic = -1;
-				tm.floorthing = thing; // thing we may stand on
+				P_SetTarget(&tm.floorthing, thing); // thing we may stand on
 			}
 		}
 		else
@@ -1510,7 +1510,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				tm.floorrover = NULL;
 				tm.floorslope = NULL;
 				tm.floorpic = -1;
-				tm.floorthing = thing; // needed for side collision
+				P_SetTarget(&tm.floorthing, thing); // needed for side collision
 			}
 			else if (topz > tm.floorz && tm.thing->z+tm.thing->height >= thing->z)
 			{
@@ -1518,7 +1518,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				tm.floorrover = NULL;
 				tm.floorslope = NULL;
 				tm.floorpic = -1;
-				tm.floorthing = thing; // thing we may stand on
+				P_SetTarget(&tm.floorthing, thing); // thing we may stand on
 			}
 		}
 	}
@@ -2052,8 +2052,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 	}
 
 	// tm.floorthing is set when tm.floorz comes from a thing's top
-	tm.floorthing = NULL;
-	tm.hitthing = NULL;
+	P_SetTarget(&tm.floorthing, NULL);
+	P_SetTarget(&tm.hitthing, NULL);
 
 	validcount++;
 
@@ -2072,9 +2072,14 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 			for (by = yl; by <= yh; by++)
 			{
 				if (!P_BlockThingsIterator(bx, by, PIT_CheckThing))
+				{
 					blockval = false;
+				}
 				else
-					tm.hitthing = tm.floorthing;
+				{
+					P_SetTarget(&tm.hitthing, tm.floorthing);
+				}
+
 				if (P_MobjWasRemoved(tm.thing))
 					return false;
 			}
@@ -2452,7 +2457,7 @@ BlockItReturn_t PIT_PushableMoved(mobj_t *thing)
 		// These are all non-static map variables that are changed for each and every single mobj
 		// See, changing player's momx/y would possibly trigger stuff as if the player were running somehow, so this must be done to keep the player standing
 		// All this so players can ride gargoyles!
-		tm_t oldtm = {0};
+		tm_t oldtm = tm;
 
 		// Move the player
 		P_TryMove(thing, thing->x + stand->momx, thing->y + stand->momy, true);
@@ -2576,8 +2581,11 @@ increment_move
 
 			if (tm.ceilingz - tm.floorz < thing->height)
 			{
-				if (tm.floorthing)
-					tm.hitthing = tm.floorthing;
+				if (tm.floorthing != NULL)
+				{
+					P_SetTarget(&tm.hitthing, tm.floorthing);
+				}
+
 				return false; // doesn't fit
 			}
 
