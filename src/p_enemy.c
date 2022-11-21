@@ -543,10 +543,10 @@ boolean P_Move(mobj_t *actor, fixed_t speed)
 
 	if (!P_TryMove(actor, tryx, tryy, false))
 	{
-		if (actor->flags & MF_FLOAT && floatok)
+		if (actor->flags & MF_FLOAT && tm.floatok)
 		{
 			// must adjust height
-			if (actor->z < tmfloorz)
+			if (actor->z < tm.floorz)
 				actor->z += FixedMul(FLOATSPEED, actor->scale);
 			else
 				actor->z -= FixedMul(FLOATSPEED, actor->scale);
@@ -10421,13 +10421,13 @@ void A_FlickyCenter(mobj_t *actor)
 		{
 			actor->extravalue2 = 1;
 		 	P_SetOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
-			tmthing = NULL;
+			P_SetTarget(&tm.thing, NULL);
 		}
 		else if(actor->extravalue2)
 		{
 			actor->extravalue2 = 0;
 			P_SetOrigin(actor, originx, originy, originz);
-			tmthing = NULL;
+			P_SetTarget(&tm.thing, NULL);
 		}
 	}
 }

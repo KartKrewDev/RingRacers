@@ -1491,12 +1491,12 @@ bustupdone:
 //
 static boolean P_CheckSkyHit(mobj_t *mo)
 {
-	if (ceilingline && ceilingline->backsector
-		&& ceilingline->backsector->ceilingpic == skyflatnum
-		&& ceilingline->frontsector
-		&& ceilingline->frontsector->ceilingpic == skyflatnum
-		&& (mo->z >= ceilingline->frontsector->ceilingheight
-		|| mo->z >= ceilingline->backsector->ceilingheight))
+	if (tm.ceilingline && tm.ceilingline->backsector
+		&& tm.ceilingline->backsector->ceilingpic == skyflatnum
+		&& tm.ceilingline->frontsector
+		&& tm.ceilingline->frontsector->ceilingpic == skyflatnum
+		&& (mo->z >= tm.ceilingline->frontsector->ceilingheight
+		|| mo->z >= tm.ceilingline->backsector->ceilingheight))
 			return true;
 	return false;
 }
@@ -1601,7 +1601,7 @@ void P_XYMovement(mobj_t *mo)
 		// blocked move
 		moved = false;
 
-		if (LUA_HookMobjMoveBlocked(mo, tmhitthing, blockingline))
+		if (LUA_HookMobjMoveBlocked(mo, tm.hitthing, tm.blockingline))
 		{
 			if (P_MobjWasRemoved(mo))
 				return;
@@ -1626,7 +1626,7 @@ void P_XYMovement(mobj_t *mo)
 			// draw damage on wall
 			//SPLAT TEST ----------------------------------------------------------
 #ifdef WALLSPLATS
-			if (blockingline && mo->type != MT_REDRING && mo->type != MT_FIREBALL
+			if (tm.blockingline && mo->type != MT_REDRING && mo->type != MT_FIREBALL
 			&& !(mo->flags2 & (MF2_AUTOMATIC|MF2_RAILRING|MF2_BOUNCERING|MF2_EXPLOSION|MF2_SCATTER)))
 				// set by last P_TryMove() that failed
 			{
@@ -1634,13 +1634,13 @@ void P_XYMovement(mobj_t *mo)
 				divline_t misl;
 				fixed_t frac;
 
-				P_MakeDivline(blockingline, &divl);
+				P_MakeDivline(tm.blockingline, &divl);
 				misl.x = mo->x;
 				misl.y = mo->y;
 				misl.dx = mo->momx;
 				misl.dy = mo->momy;
 				frac = P_InterceptVector(&divl, &misl);
-				R_AddWallSplat(blockingline, P_PointOnLineSide(mo->x,mo->y,blockingline),
+				R_AddWallSplat(tm.blockingline, P_PointOnLineSide(mo->x,mo->y,tm.blockingline),
 					"A_DMG3", mo->z, frac, SPLATDRAWMODE_SHADE);
 			}
 #endif
@@ -2371,11 +2371,11 @@ boolean P_ZMovement(mobj_t *mo)
 		if (P_MobjWasRemoved(mo)) // mobjs can be removed by P_CheckPosition -- Monster Iestyn 31/07/21
 			return false;
 
-		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tmceilingpic : tmfloorpic));
+		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingpic : tm.floorpic));
 
-		if (((mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope) && (mo->type != MT_STEAM))
+		if (((mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingslope : tm.floorslope) && (mo->type != MT_STEAM))
 		{
-			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tmceilingslope : tmfloorslope;
+			mo->standingslope = (mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingslope : tm.floorslope;
 			P_SetPitchRollFromSlope(mo, mo->standingslope);
 			P_ReverseQuantizeMomentumToSlope(&mom, mo->standingslope);
 		}
@@ -2591,11 +2591,11 @@ boolean P_ZMovement(mobj_t *mo)
 				}
 			}
 			else
-				mom.z = (tmfloorthing ? tmfloorthing->momz : 0);
+				mom.z = (tm.floorthing ? tm.floorthing->momz : 0);
 
 		}
-		else if (tmfloorthing)
-			mom.z = tmfloorthing->momz;
+		else if (tm.floorthing)
+			mom.z = tm.floorthing->momz;
 
 		if (mo->standingslope) { // MT_STEAM will never have a standingslope, see above.
 			P_QuantizeMomentumToSlope(&mom, mo->standingslope);
@@ -2834,7 +2834,7 @@ void P_PlayerZMovement(mobj_t *mo)
 			mo->z = mo->floorz;
 		}
 
-		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingpic : tmfloorpic));
+		K_UpdateMobjTerrain(mo, (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingpic : tm.floorpic));
 
 		// Get up if you fell.
 		if (mo->player->panim == PA_HURT && mo->player->spinouttimer == 0 && mo->player->tumbleBounces == 0)
@@ -2842,10 +2842,10 @@ void P_PlayerZMovement(mobj_t *mo)
 			P_SetPlayerMobjState(mo, S_KART_STILL);
 		}
 
-		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope))
+		if (!mo->standingslope && (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingslope : tm.floorslope))
 		{
 			// Handle landing on slope during Z movement
-			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? tmceilingslope : tmfloorslope));
+			P_HandleSlopeLanding(mo, (mo->eflags & MFE_VERTICALFLIP ? tm.ceilingslope : tm.floorslope));
 		}
 
 		if (P_MobjFlip(mo) * mo->momz < 0) // falling
@@ -2860,12 +2860,12 @@ void P_PlayerZMovement(mobj_t *mo)
 
 			if (clipmomz)
 			{
-				mo->momz = (tmfloorthing ? tmfloorthing->momz : 0);
+				mo->momz = (tm.floorthing ? tm.floorthing->momz : 0);
 			}
 		}
-		else if (tmfloorthing)
+		else if (tm.floorthing)
 		{
-			mo->momz = tmfloorthing->momz;
+			mo->momz = tm.floorthing->momz;
 		}
 	}
 	else
@@ -3083,9 +3083,9 @@ boolean P_SceneryZMovement(mobj_t *mo)
 		{
 			mo->eflags |= MFE_JUSTHITFLOOR; // Spin Attack
 
-			if (tmfloorthing)
-				mo->momz = tmfloorthing->momz;
-			else if (!tmfloorthing)
+			if (tm.floorthing)
+				mo->momz = tm.floorthing->momz;
+			else if (!tm.floorthing)
 				mo->momz = 0;
 		}
 	}
@@ -3801,8 +3801,8 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	}
 
 	thiscam->subsector = R_PointInSubsector(thiscam->x, thiscam->y);
-	thiscam->floorz = tmfloorz;
-	thiscam->ceilingz = tmceilingz;
+	thiscam->floorz = tm.floorz;
+	thiscam->ceilingz = tm.ceilingz;
 
 	if (thiscam->momz || player->mo->pmomz)
 	{
@@ -3960,8 +3960,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 		mobj->z += mobj->momz;
 		P_SetThingPosition(mobj);
 		P_CheckPosition(mobj, mobj->x, mobj->y);
-		mobj->floorz = tmfloorz;
-		mobj->ceilingz = tmceilingz;
+		mobj->floorz = tm.floorz;
+		mobj->ceilingz = tm.ceilingz;
 		goto animonly;
 	}
 
@@ -9451,7 +9451,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
-	tmfloorthing = tmhitthing = NULL;
+	tm.floorthing = tm.hitthing = NULL;
 
 	// Sector flag MSF_TRIGGERLINE_MOBJ allows ANY mobj to trigger a linedef exec
 	P_CheckMobjTrigger(mobj, false);
@@ -9809,10 +9809,10 @@ void P_SceneryThinker(mobj_t *mobj)
 		P_CheckPosition(mobj, mobj->x, mobj->y); // Need this to pick up objects!
 		if (P_MobjWasRemoved(mobj))
 			return;
-		mobj->floorz = tmfloorz;
-		mobj->ceilingz = tmceilingz;
-		mobj->floorrover = tmfloorrover;
-		mobj->ceilingrover = tmceilingrover;
+		mobj->floorz = tm.floorz;
+		mobj->ceilingz = tm.ceilingz;
+		mobj->floorrover = tm.floorrover;
+		mobj->ceilingrover = tm.ceilingrover;
 	}
 	else
 	{
