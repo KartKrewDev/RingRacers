@@ -517,7 +517,7 @@ static int mobj_set(lua_State *L)
 		// z doesn't cross sector bounds so it's okay.
 		tm_t ptm = tm;
 		mo->z = luaL_checkfixed(L, 3);
-		P_CheckPosition(mo, mo->x, mo->y);
+		P_CheckPosition(mo, mo->x, mo->y, NULL);
 		mo->floorz = tm.floorz;
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
@@ -587,7 +587,7 @@ static int mobj_set(lua_State *L)
 		mo->radius = luaL_checkfixed(L, 3);
 		if (mo->radius < 0)
 			mo->radius = 0;
-		P_CheckPosition(mo, mo->x, mo->y);
+		P_CheckPosition(mo, mo->x, mo->y, NULL);
 		mo->floorz = tm.floorz;
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
@@ -601,7 +601,7 @@ static int mobj_set(lua_State *L)
 		mo->height = luaL_checkfixed(L, 3);
 		if (mo->height < 0)
 			mo->height = 0;
-		P_CheckPosition(mo, mo->x, mo->y);
+		P_CheckPosition(mo, mo->x, mo->y, NULL);
 		mo->floorz = tm.floorz;
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
