@@ -167,7 +167,7 @@ angle_t FixedAngle(fixed_t fa)
 	return AngleAdj(cfa, cwf, ra);
 }
 
-INT32 AngleDelta(angle_t a1, angle_t a2)
+angle_t AngleDelta(angle_t a1, angle_t a2)
 {
 	angle_t delta = a1 - a2;
 
