@@ -357,7 +357,7 @@ static void M_EraseDataResponse(INT32 ch)
 
 void M_EraseData(INT32 choice)
 {
-	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\n(Press A to confirm)\n");
+	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\nPress (A) to confirm or (B) to cancel\n");
 
 	optionsmenu.erasecontext = (UINT8)choice;
 
@@ -1517,7 +1517,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)\n"), NULL, MM_NOTHING);
 					return;
 				}
 			}
@@ -1582,6 +1582,12 @@ static void M_HandleMenuInput(void)
 void M_Ticker(void)
 {
 	INT32 i;
+
+	if (!menuactive)
+	{
+		noFurtherInput = false;
+		return;
+	}
 
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
@@ -2035,7 +2041,7 @@ void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage("Are you sure you want to quit playing?\n\n(Press A to exit)", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
+	M_StartMessage("Are you sure you want to quit playing?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
 }
 
 // =========
@@ -2063,6 +2069,12 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
+
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+		p->followercategory = -1;
+	else
+		p->followercategory = followers[p->followern].category;
+
 	p->followercolor = pr->followercolor;
 
 	// Now position the grid for skin
@@ -2150,6 +2162,7 @@ void M_CharacterSelectInit(void)
 	{
 		// Default to no follower / match colour.
 		setup_player[i].followern = -1;
+		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = FOLLOWERCOLOR_MATCH;
 
 		// Set default selected profile to the last used profile for each player:
@@ -2486,6 +2499,16 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 
 		S_StartSound(NULL, sfx_s3k63);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		UINT8 yourprofile = min(cv_lastprofile[realnum].value, PR_GetNumProfiles());
+		if (p->profilen == yourprofile)
+			p->profilen = PROFILE_GUEST;
+		else
+			p->profilen = yourprofile;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 
 	return false;
 
@@ -2576,6 +2599,15 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		if (p->gridx < 0)
 			p->gridx = 8;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->gridx /= 3;
+		p->gridx = (3*p->gridx) + 1;
+		p->gridy /= 3;
+		p->gridy = (3*p->gridy) + 1;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 
@@ -2692,6 +2724,14 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->clonenum = 0;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
 }
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
@@ -2716,8 +2756,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_FOLLOWER;
-		M_GetFollowerState(p);
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k63);
 		M_SetMenuDelay(num);
 	}
@@ -2733,6 +2772,17 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->skin >= 0)
+		{
+			p->color = skins[p->skin].prefcolor;
+			p->rotate = CSROTATETICS;
+			p->hitlag = true;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+			M_SetMenuDelay(num);
+		}
 	}
 }
 
@@ -2764,16 +2814,103 @@ static void M_AnimateFollower(setup_player_t *p)
 	p->follower_timer++;
 }
 
-static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 {
 	if (cv_splitdevice.value)
 		num = 0;
 
 	if (menucmd[num].dpad_lr > 0)
 	{
-		p->followern++;
-		if (p->followern >= numfollowers)
+		p->followercategory++;
+		if (p->followercategory >= numfollowercategories)
+			p->followercategory = -1;
+
+		p->rotate = CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+	else if (menucmd[num].dpad_lr < 0)
+	{
+		p->followercategory--;
+		if (p->followercategory < -1)
+			p->followercategory = numfollowercategories-1;
+
+		p->rotate = -CSROTATETICS;
+		p->delay = CSROTATETICS;
+		S_StartSound(NULL, sfx_s3kc3s);
+	}
+
+	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
+	{
+		if (p->followercategory < 0)
+		{
 			p->followern = -1;
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(p);
+			S_StartSound(NULL, sfx_s3k4e);
+		}
+		else
+		{
+			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
+			{
+				p->followern = 0;
+				while (p->followern < numfollowers && followers[p->followern].category != p->followercategory)
+					p->followern++;
+			}
+
+			if (p->followern >= numfollowers)
+			{
+				p->followern = -1;
+				S_StartSound(NULL, sfx_s3kb2);
+			}
+			else
+			{
+				M_GetFollowerState(p);
+				p->mdepth = CSSTEP_FOLLOWER;
+				S_StartSound(NULL, sfx_s3k63);
+			}
+		}
+
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuBackPressed(num))
+	{
+		p->mdepth = CSSTEP_COLORS;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->followercategory >= 0 || p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
+			p->followercategory = -1;
+		else
+			p->followercategory = followers[p->followern].category;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
+		M_SetMenuDelay(num);
+	}
+}
+
+static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
+{
+	INT16 startfollowern = p->followern;
+
+	if (cv_splitdevice.value)
+		num = 0;
+
+	if (menucmd[num].dpad_lr > 0)
+	{
+		do
+		{
+			p->followern++;
+			if (p->followern >= numfollowers)
+				p->followern = 0;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
 
 		M_GetFollowerState(p);
 
@@ -2783,9 +2920,17 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (menucmd[num].dpad_lr < 0)
 	{
-		p->followern--;
-		if (p->followern < -1)
-			p->followern = numfollowers-1;
+		do
+		{
+			p->followern--;
+			if (p->followern < 0)
+				p->followern = numfollowers-1;
+			if (p->followern == startfollowern)
+				break;
+		}
+		while (followers[p->followern].category != p->followercategory);
+
+		M_GetFollowerState(p);
 
 		p->rotate = -CSROTATETICS;
 		p->delay = CSROTATETICS;
@@ -2811,8 +2956,17 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		p->mdepth = CSSTEP_COLORS;
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+		p->followercategory = -1;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
@@ -2849,8 +3003,22 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
+		M_GetFollowerState(p);
 		p->mdepth = CSSTEP_FOLLOWER;
 		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(num);
+	}
+	else if (M_MenuExtraPressed(num))
+	{
+		if (p->followercolor == FOLLOWERCOLOR_MATCH)
+			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
+		else if (p->followercolor == followers[p->followern].defaultcolor)
+			p->followercolor = FOLLOWERCOLOR_MATCH;
+		else
+			p->followercolor = followers[p->followern].defaultcolor;
+		p->rotate = CSROTATETICS;
+		p->hitlag = true;
+		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
 		M_SetMenuDelay(num);
 	}
 }
@@ -2900,6 +3068,9 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					break;
 				case CSSTEP_COLORS: // Select color
 					M_HandleColorRotate(p, i);
+					break;
+				case CSSTEP_FOLLOWERCATEGORY:
+					M_HandleFollowerCategoryRotate(p, i);
 					break;
 				case CSSTEP_FOLLOWER:
 					M_HandleFollowerRotate(p, i);
@@ -2956,33 +3127,27 @@ static void M_MPConfirmCharacterSelection(void)
 	UINT8 i;
 	INT16 col;
 
-	char commandnames[][MAXSTRINGLENGTH] = { "skin ", "skin2 ", "skin3 ", "skin4 "};
-	// ^ laziness 100 (we append a space directly so that we don't have to do it later too!!!!)
-
 	for (i = 0; i < splitscreen +1; i++)
 	{
-		char cmd[MAXSTRINGLENGTH];
-
 		// colour
 		// (convert the number that's saved to a string we can use)
 		col = setup_player[i].color;
 		CV_StealthSetValue(&cv_playercolor[i], col);
 
 		// follower
-		CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
-
-		// follower color
-		CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
+		if (setup_player[i].followern < 0)
+			CV_StealthSet(&cv_follower[i], "None");
+		else
+			CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 
 		// finally, call the skin[x] console command.
 		// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
 
-		// This is a hack to make sure we call Skin[x]_OnChange afterwards
-		CV_StealthSetValue(&cv_skin[i], -1);
+		CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 
-		strcpy(cmd, commandnames[i]);
-		strcat(cmd, skins[setup_player[i].skin].name);
-		COM_ImmedExecute(cmd);
+		// ...actually, let's do this last - Skin_OnChange has some return-early occasions
+		// follower color
+		CV_SetValue(&cv_followercolor[i], setup_player[i].followercolor);
 
 	}
 	M_ClearMenus(true);
@@ -3004,6 +3169,8 @@ void M_CharacterSelectTick(void)
 			setup_player[i].rotate--;
 		else if (setup_player[i].rotate < 0)
 			setup_player[i].rotate++;
+		else
+			setup_player[i].hitlag = false;
 
 		if (i >= setup_numplayers)
 			continue;
@@ -3034,7 +3201,7 @@ void M_CharacterSelectTick(void)
 				optionsmenu.profile->color = setup_player[0].color;
 
 				// save follower
-				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].skinname);
+				strcpy(optionsmenu.profile->follower, followers[setup_player[0].followern].name);
 				optionsmenu.profile->followercolor = setup_player[0].followercolor;
 
 				// reset setup_player
@@ -3051,7 +3218,10 @@ void M_CharacterSelectTick(void)
 					CV_StealthSet(&cv_skin[i], skins[setup_player[i].skin].name);
 					CV_StealthSetValue(&cv_playercolor[i], setup_player[i].color);
 
-					CV_StealthSetValue(&cv_follower[i], setup_player[i].followern);
+					if (setup_player[i].followern < 0)
+						CV_StealthSet(&cv_follower[i], "None");
+					else
+						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 					CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
 				}
 
@@ -3269,7 +3439,15 @@ static void M_LevelListFromGametype(INT16 gt)
 		while (cup)
 		{
 			if (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked)
+			{
 				highestid = cup->id;
+				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
+				{
+					cupgrid.x = cup->id % CUPMENU_COLUMNS;
+					cupgrid.y = (cup->id / CUPMENU_COLUMNS) % CUPMENU_ROWS;
+					cupgrid.pageno = cup->id / (CUPMENU_COLUMNS * CUPMENU_ROWS);
+				}
+			}
 			cup = cup->next;
 		}
 
@@ -4775,7 +4953,7 @@ void M_HandleProfileSelect(INT32 ch)
 #if 0
 				if (optionsmenu.profilen == 0)
 				{
-					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
 					return;
 				}
 #endif
@@ -4917,7 +5095,7 @@ void M_ConfirmProfile(INT32 choice)
 		}
 		else
 		{
-			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\n(Press A to confirm)"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
 			M_SetMenuDelay(pid);
 		}
 	}
@@ -5123,7 +5301,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 {
 	(void)choice;
 
-	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\n(Press A to confirm)"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
 	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
 
 	M_ProfileControlSaveResponse(MA_YES);
@@ -5500,7 +5678,7 @@ void M_CheckProfileData(INT32 choice)
 	if (np < 2)
 	{
 		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage("There are no custom profiles.\n\n(Press any button)", NULL, MM_NOTHING);
+		M_StartMessage("There are no custom profiles.\n\nPress (B)", NULL, MM_NOTHING);
 		return;
 	}
 
@@ -5564,9 +5742,9 @@ void M_HandleProfileErase(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
-			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 		else
-			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\n(Press A to confirm)", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
 
 		M_SetMenuDelay(pid);
 	}
@@ -5700,6 +5878,8 @@ struct pausemenu_s pausemenu;
 // Pause menu!
 void M_OpenPauseMenu(void)
 {
+	INT32 i = 0;
+
 	currentMenu = &PAUSE_MainDef;
 
 	// Ready the variables
@@ -5716,6 +5896,8 @@ void M_OpenPauseMenu(void)
 
 	PAUSE_Main[mpause_addons].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
@@ -5735,7 +5917,34 @@ void M_OpenPauseMenu(void)
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
+			for (i = 0; i < PAUSE_GamemodesDef.numitems; i++)
+			{
+				if (PAUSE_GamemodesMenu[i].mvar2 != gametype)
+					continue;
+				PAUSE_GamemodesDef.lastOn = i;
+				break;
+			}
+			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
+		}
+	}
+	else if (!netgame && !demo.playback)
+	{
+		boolean retryallowed = (modeattacking != ATTACKING_NONE);
+		if (G_GametypeUsesLives())
+		{
+			for (i = 0; i <= splitscreen; i++)
+			{
+				if (players[g_localplayers[i]].lives <= 1)
+					continue;
+				retryallowed = true;
+				break;
+			}
+		}
+
+		if (retryallowed)
+		{
+			PAUSE_Main[mpause_tryagain].status = IT_STRING | IT_CALL;
 		}
 	}
 
@@ -5766,6 +5975,7 @@ void M_QuitPauseMenu(INT32 choice)
 void M_PauseTick(void)
 {
 	pausemenu.offset /= 2;
+	pausemenu.ticker++;
 
 	if (pausemenu.closing)
 	{
@@ -5814,6 +6024,37 @@ boolean M_PauseInputs(INT32 ch)
 	return false;
 }
 
+// Restart map
+void M_RestartMap(INT32 choice)
+{
+	(void)choice;
+	M_ClearMenus(false);
+	COM_ImmedExecute("restartlevel");
+}
+
+// Try again
+void M_TryAgain(INT32 choice)
+{
+	(void)choice;
+	if (demo.playback)
+		return;
+
+	if (netgame || !Playing())  // Should never happen!
+		return;
+
+	M_ClearMenus(false);
+
+	if (modeattacking != ATTACKING_NONE)
+	{
+		G_CheckDemoStatus(); // Cancel recording
+		M_StartTimeAttack(-1);
+	}
+	else
+	{
+		G_SetRetryFlag();
+	}
+}
+
 // Pause spectate / join functions
 void M_ConfirmSpectate(INT32 choice)
 {
@@ -5828,7 +6069,7 @@ void M_ConfirmEnterGame(INT32 choice)
 	(void)choice;
 	if (!cv_allowteamchange.value)
 	{
-		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\nPress a key.\n"), NULL, MM_NOTHING);
+		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\n\nPress (B)\n"), NULL, MM_NOTHING);
 		return;
 	}
 	M_QuitPauseMenu(-1);
@@ -5860,7 +6101,7 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\n(Press A to confirm)\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
 }
 
 
@@ -6042,7 +6283,7 @@ void M_ReplayHut(INT32 choice)
 	}
 	if (!preparefilemenu(false, true))
 	{
-		M_StartMessage("No replays found.\n\n(Press a key)\n", NULL, MM_NOTHING);
+		M_StartMessage("No replays found.\n\nPress (B)\n", NULL, MM_NOTHING);
 		return;
 	}
 	else if (!demo.inreplayhut)
@@ -6118,7 +6359,7 @@ void M_HandleReplayHutList(INT32 choice)
 					if (!preparefilemenu(false, true))
 					{
 						S_StartSound(NULL, sfx_s224);
-						M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 						menupath[menupathindex[++menudepthleft]] = 0;
 
 						if (!preparefilemenu(true, true))
@@ -6137,7 +6378,7 @@ void M_HandleReplayHutList(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_s26d);
-					M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+					M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 					menupath[menupathindex[menudepthleft]] = 0;
 				}
 				break;
@@ -6264,7 +6505,7 @@ void M_Addons(INT32 choice)
 
 	if (!preparefilemenu(false, false))
 	{
-		M_StartMessage(va("No files/folders found.\n\n%s\n\n(Press a key)\n", LOCATIONSTRING1),NULL,MM_NOTHING);
+		M_StartMessage(va("No files/folders found.\n\n%s\n\nPress (B)\n", LOCATIONSTRING1),NULL,MM_NOTHING);
 		return;
 	}
 	else
@@ -6297,7 +6538,7 @@ char *M_AddonsHeaderPath(void)
 
 #define UNEXIST S_StartSound(NULL, sfx_s26d);\
 		M_SetupNextMenu(MISC_AddonsDef.prevMenu, false);\
-		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\n(Press a key)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
+		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\nPress (B)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
 
 #define CLEARNAME Z_Free(refreshdirname);\
 					refreshdirname = NULL
@@ -6341,19 +6582,19 @@ void M_AddonsRefresh(void)
 		{
 			S_StartSound(NULL, sfx_s26d);
 			if (refreshdirmenu & REFRESHDIR_MAX)
-				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
-				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
 			S_StartSound(NULL, sfx_s224);
-			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
+			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 		else if (majormods && !prevmajormods)
 		{
 			S_StartSound(NULL, sfx_s221);
-			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			prevmajormods = majormods;
 		}
 
@@ -6472,7 +6713,7 @@ void M_HandleAddons(INT32 choice)
 						if (!preparefilemenu(false, false))
 						{
 							S_StartSound(NULL, sfx_s224);
-							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 							menupath[menupathindex[++menudepthleft]] = 0;
 
 							if (!preparefilemenu(true, false))
@@ -6491,7 +6732,7 @@ void M_HandleAddons(INT32 choice)
 					else
 					{
 						S_StartSound(NULL, sfx_s26d);
-						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 						menupath[menupathindex[menudepthleft]] = 0;
 					}
 					break;
@@ -6507,11 +6748,11 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_TXT:
-					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_CFG:
-					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\n(Press A to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
 					break;
 
 				case EXT_LUA:

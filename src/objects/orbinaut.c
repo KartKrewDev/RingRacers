@@ -217,7 +217,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
 		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
@@ -254,7 +254,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
-		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t1, 24*FRACUNIT, false);
 		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 

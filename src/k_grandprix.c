@@ -676,7 +676,7 @@ void K_PlayerLoseLife(player_t *player)
 		return;
 	}
 
-	if (player->spectator || player->exiting || player->bot || (player->pflags & PF_LOSTLIFE))
+	if (player->spectator || player->exiting || player->bot || player->lives <= 0 || (player->pflags & PF_LOSTLIFE))
 	{
 		return;
 	}

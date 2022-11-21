@@ -168,7 +168,6 @@ typedef enum
 	KRITEM_DUALSNEAKER = NUMKARTITEMS,
 	KRITEM_TRIPLESNEAKER,
 	KRITEM_TRIPLEBANANA,
-	KRITEM_TENFOLDBANANA,
 	KRITEM_TRIPLEORBINAUT,
 	KRITEM_QUADORBINAUT,
 	KRITEM_DUALJAWZ,
@@ -412,7 +411,7 @@ typedef struct player_s
 	// Basic gameplay things
 	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
 	UINT8 oldposition;		// Used for taunting when you pass someone
-	UINT8 positiondelay;	// Used for position number, so it can grow when passing/being passed
+	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info

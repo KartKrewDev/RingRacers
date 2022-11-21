@@ -3488,6 +3488,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BANANA",
 	"S_BANANA_DEAD",
 
+	"S_BANANA_SPARK",
+	"S_BANANA_SPARK2",
+	"S_BANANA_SPARK3",
+	"S_BANANA_SPARK4",
+
 	//{ Orbinaut
 	"S_ORBINAUT1",
 	"S_ORBINAUT2",
@@ -5311,6 +5316,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_BANANA", // Banana Stuff
 	"MT_BANANA_SHIELD",
+	"MT_BANANA_SPARK",
 
 	"MT_ORBINAUT", // Orbinaut stuff
 	"MT_ORBINAUT_SHIELD",
@@ -5628,7 +5634,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"SLIDEME",
 	"NOCLIP",
 	"FLOAT",
-	"BOXICON",
+	"SLOPE",
 	"MISSILE",
 	"SPRING",
 	"MONITOR",
@@ -6756,14 +6762,13 @@ struct int_const_s const INT_CONST[] = {
 
 	// SRB2Kart
 	// kartitems_t
-#define FOREACH( name, n ) { #name, KITEM_ ## name }
+#define FOREACH( name, n ) { TOSTR (KITEM_ ## name), KITEM_ ## name }
 	KART_ITEM_ITERATOR, // Actual items (can be set for k_itemtype)
 #undef  FOREACH
 	{"NUMKARTITEMS",NUMKARTITEMS},
 	{"KRITEM_DUALSNEAKER",KRITEM_DUALSNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
 	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER},
 	{"KRITEM_TRIPLEBANANA",KRITEM_TRIPLEBANANA},
-	{"KRITEM_TENFOLDBANANA",KRITEM_TENFOLDBANANA},
 	{"KRITEM_TRIPLEORBINAUT",KRITEM_TRIPLEORBINAUT},
 	{"KRITEM_QUADORBINAUT",KRITEM_QUADORBINAUT},
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
