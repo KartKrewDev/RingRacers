@@ -531,8 +531,10 @@ typedef enum
 	CL_SEARCHING,
 	CL_CHECKFILES,
 	CL_DOWNLOADFILES,
+	CL_DOWNLOADFAILED,
 	CL_ASKJOIN,
 	CL_LOADFILES,
+	CL_SETUPFILES,
 	CL_WAITJOINRESPONSE,
 	CL_DOWNLOADSAVEGAME,
 	CL_CONNECTED,
@@ -615,7 +617,11 @@ static inline void CL_DrawConnectionStatus(void)
 				break;
 			case CL_ASKFULLFILELIST:
 			case CL_CONFIRMCONNECT:
+			case CL_DOWNLOADFAILED:
 				cltext = "";
+				break;
+			case CL_SETUPFILES:
+				cltext = M_GetText("Configuring addons...");
 				break;
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
@@ -655,8 +661,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Checking server addons...");
 			totalfileslength = (INT32)((checkednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",checkednum,fileneedednum));
 		}
@@ -677,8 +683,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",loadcompletednum,fileneedednum));
 		}
@@ -719,8 +725,10 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-30, 0,
+				va(M_GetText("%s downloading"), ((cl_mode == CL_DOWNLOADHTTPFILES) ? "\x82""HTTP" : "\x85""Direct")));
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-22, V_YELLOWMAP,
-				va(M_GetText("Downloading \"%s\""), tempname));
+				va(M_GetText("\"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
 			V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
@@ -736,8 +744,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-14, V_YELLOWMAP, "Overall Download Progress");
 			totalfileslength = (INT32)((totaldldsize/(double)totalfilesrequestedsize) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 
 			if (totalfilesrequestedsize>>20 >= 10) //display in MB if over 10MB
 				V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
@@ -1497,6 +1505,10 @@ static void M_ConfirmConnect(void)
 				{
 					cl_mode = CL_DOWNLOADFILES;
 				}
+				else
+				{
+					cl_mode = CL_DOWNLOADFAILED;
+				}
 			}
 #ifdef HAVE_CURL
 			else
@@ -1644,6 +1656,10 @@ static boolean CL_FinishedFileList(void)
 			if (CL_SendFileRequest())
 			{
 				cl_mode = CL_DOWNLOADFILES;
+			}
+			else
+			{
+				cl_mode = CL_DOWNLOADFAILED;
 			}
 		}
 #endif
@@ -1850,8 +1866,28 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			cl_mode = CL_LOADFILES;
 			break;
+		case CL_DOWNLOADFAILED:
+			{
+				CONS_Printf(M_GetText("Legacy downloader request packet failed.\n"));
+				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
+				D_QuitNetGame();
+				CL_Reset();
+				D_StartTitle();
+				M_StartMessage(M_GetText(
+					"The direct download encountered an error.\n"
+					"See the logfile for more info.\n"
+					"\n"
+					"Press (B)\n"
+				), NULL, MM_NOTHING);
+				return false;
+			}
 		case CL_LOADFILES:
-			if (CL_LoadServerFiles())
+			if (CL_LoadServerFiles()) 
+				cl_mode = CL_SETUPFILES;
+
+			break;
+		case CL_SETUPFILES:
+			if (P_PartialAddGetStage() < 0 || P_MultiSetupWadFiles(false))
 			{
 				*asksent = 0; //This ensure the first join ask is right away
 				firstconnectattempttime = I_GetTime();
@@ -2079,7 +2115,12 @@ static void CL_ConnectToServer(void)
 	{
 		// If the connection was aborted for some reason, leave
 		if (!CL_ServerConnectionTicker(tmpsave, &oldtic, &asksent))
+		{
+			if (P_PartialAddGetStage() >= 0)
+				P_MultiSetupWadFiles(true); // in case any partial adds were done
+
 			return;
+		}
 
 		if (server)
 		{
@@ -2486,6 +2527,11 @@ static void ResetNode(INT32 node);
 void CL_ClearPlayer(INT32 playernum)
 {
 	int i;
+
+	if (players[playernum].follower)
+	{	
+		K_RemoveFollower(&players[playernum]);
+	}
 
 	if (players[playernum].mo)
 	{
@@ -3927,6 +3973,11 @@ static void HandleConnect(SINT8 node)
 	// If a server filled out, then it'd overwrite the host and turn everyone into weird husks.....
 	// It's too much effort to legimately fix right now. Just prevent it from reaching that state.
 	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
+	UINT8 connectedplayers = 0;
+
+	for (i = dedicated ? 1 : 0; i < MAXPLAYERS; i++)
+		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
+			connectedplayers++;
 
 	if (bannednode && bannednode[node].banid != SIZE_MAX)
 	{
@@ -3984,7 +4035,7 @@ static void HandleConnect(SINT8 node)
 	{
 		SV_SendRefuse(node, M_GetText("The server is not accepting\njoins for the moment."));
 	}
-	else if (D_NumPlayers() >= maxplayers)
+	else if (connectedplayers >= maxplayers)
 	{
 		SV_SendRefuse(node, va(M_GetText("Maximum players reached: %d"), maxplayers));
 	}
@@ -3992,7 +4043,7 @@ static void HandleConnect(SINT8 node)
 	{
 		SV_SendRefuse(node, M_GetText("Too many players from\nthis node."));
 	}
-	else if (netgame && D_NumPlayers() + netbuffer->u.clientcfg.localplayers > maxplayers)
+	else if (netgame && connectedplayers + netbuffer->u.clientcfg.localplayers > maxplayers)
 	{
 		SV_SendRefuse(node, va(M_GetText("Number of local players\nwould exceed maximum: %d"), maxplayers));
 	}
@@ -5475,14 +5526,6 @@ boolean TryRunTics(tic_t realtics)
 
 	if (ticking)
 	{
-		if (advancedemo)
-		{
-			if (timedemo_quit)
-				COM_ImmedExecute("quit");
-			else
-				D_StartTitle();
-		}
-		else
 		{
 			// run the count * tics
 			while (neededtic > gametic)

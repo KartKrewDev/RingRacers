@@ -148,7 +148,7 @@ static void GrowAnimDefs(void)
 
 // A prototype; here instead of p_spec.h, so they're "private"
 void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum);
-void P_ParseAnimationDefintion(SINT8 istexture);
+void P_ParseAnimationDefintion(void);
 
 /** Sets up texture and flat animations.
   *
@@ -160,8 +160,6 @@ void P_ParseAnimationDefintion(SINT8 istexture);
   * \sa P_FindAnimatedFlat, P_SetupLevelFlatAnims
   * \author Steven McGranahan (original), Shadow Hog (had to rewrite it to handle multiple WADs), JTE (had to rewrite it to handle multiple WADs _correctly_)
   */
-
-static boolean animdeftempflats = false; // only until ANIMDEFS flats are removed
 
 void P_InitPicAnims(void)
 {
@@ -182,7 +180,6 @@ void P_InitPicAnims(void)
 
 		while (animdefsLumpNum != INT16_MAX)
 		{
-			animdeftempflats = ((p_adding_file == INT16_MAX) || p_adding_file == w);
 			P_ParseANIMDEFSLump(w, animdefsLumpNum);
 			animdefsLumpNum = W_CheckNumForNamePwad("ANIMDEFS", (UINT16)w, animdefsLumpNum + 1);
 		}
@@ -204,31 +201,14 @@ void P_InitPicAnims(void)
 	lastanim = anims;
 	for (i = 0; animdefs[i].istexture != -1; i++)
 	{
-		if (animdefs[i].istexture == 1)
-		{
-			if (R_CheckTextureNumForName(animdefs[i].startname) == -1)
-				continue;
-
-			lastanim->picnum = R_TextureNumForName(animdefs[i].endname);
-			lastanim->basepic = R_TextureNumForName(animdefs[i].startname);
-		}
-		else
-		{
-			if (animdefs[i].istexture == 2)
-			{
-				CONS_Alert(CONS_WARNING, "ANIMDEFS flats are disabled; flat support in general will be removed soon! (%s, %s)\n", animdefs[i].startname, animdefs[i].endname);
-			}
+		if (animdefs[i].istexture != 1)
 			continue;
-		}
-#if 0
-		{
-			if ((W_CheckNumForName(animdefs[i].startname)) == LUMPERROR)
-				continue;
 
-			lastanim->picnum = R_GetFlatNumForName(animdefs[i].endname);
-			lastanim->basepic = R_GetFlatNumForName(animdefs[i].startname);
-		}
-#endif
+		if (R_CheckTextureNumForName(animdefs[i].startname) == -1)
+			continue;
+
+		lastanim->picnum = R_TextureNumForName(animdefs[i].endname);
+		lastanim->basepic = R_TextureNumForName(animdefs[i].startname);
 
 		lastanim->istexture = animdefs[i].istexture;
 		lastanim->numpics = lastanim->picnum - lastanim->basepic + 1;
@@ -285,21 +265,20 @@ void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
 		if (stricmp(animdefsToken, "TEXTURE") == 0)
 		{
 			Z_Free(animdefsToken);
-			P_ParseAnimationDefintion(1);
+			P_ParseAnimationDefintion();
 		}
 		else if (stricmp(animdefsToken, "FLAT") == 0)
 		{
-			Z_Free(animdefsToken);
-			P_ParseAnimationDefintion(0);
+			I_Error("Error parsing ANIMDEFS lump: FLats are no longer supported by Ring Racers");
 		}
 		else if (stricmp(animdefsToken, "OSCILLATE") == 0)
 		{
 			// This probably came off the tail of an earlier definition. It's technically legal syntax, but we don't support it.
-			I_Error("Error parsing ANIMDEFS lump: Animation definitions utilizing \"OSCILLATE\" (the animation plays in reverse when it reaches the end) are not supported by SRB2");
+			I_Error("Error parsing ANIMDEFS lump: Animation definitions utilizing \"OSCILLATE\" (the animation plays in reverse when it reaches the end) are not supported by Ring Racers");
 		}
 		else
 		{
-			I_Error("Error parsing ANIMDEFS lump: Expected \"TEXTURE\" or \"FLAT\", got \"%s\"",animdefsToken);
+			I_Error("Error parsing ANIMDEFS lump: Expected \"TEXTURE\", got \"%s\"",animdefsToken);
 		}
 		// parse next line
 		while (*p != '\0' && *p != '\n') ++p;
@@ -310,7 +289,7 @@ void P_ParseANIMDEFSLump(INT32 wadNum, UINT16 lumpnum)
 	Z_Free((void *)animdefsText);
 }
 
-void P_ParseAnimationDefintion(SINT8 istexture)
+void P_ParseAnimationDefintion(void)
 {
 	char *animdefsToken;
 	size_t animdefsTokenLength;
@@ -353,8 +332,7 @@ void P_ParseAnimationDefintion(SINT8 istexture)
 
 	// Search for existing animdef
 	for (i = 0; i < maxanims; i++)
-		if (animdefs[i].istexture == istexture // Check if it's the same type!
-		&& stricmp(animdefsToken, animdefs[i].startname) == 0)
+		if (stricmp(animdefsToken, animdefs[i].startname) == 0)
 		{
 			//CONS_Alert(CONS_NOTICE, "Duplicate animation: %s\n", animdefsToken);
 
@@ -376,10 +354,7 @@ void P_ParseAnimationDefintion(SINT8 istexture)
 	Z_Free(animdefsToken);
 
 	// set texture type
-	if (istexture)
-		animdefs[i].istexture = 1;
-	else
-		animdefs[i].istexture = (animdeftempflats ? 2 : 0);
+	animdefs[i].istexture = 1;
 
 	// "RANGE"
 	animdefsToken = M_GetToken(NULL);
@@ -457,16 +432,6 @@ void P_ParseAnimationDefintion(SINT8 istexture)
 	}
 	animdefs[i].speed = animSpeed;
 	Z_Free(animdefsToken);
-
-#ifdef WALLFLATS
-	// hehe... uhh.....
-	if (!istexture)
-	{
-		GrowAnimDefs();
-		M_Memcpy(&animdefs[maxanims-1], &animdefs[i], sizeof(animdef_t));
-		animdefs[maxanims-1].istexture = 1;
-	}
-#endif
 }
 
 /** Checks for flats in levelflats that are part of a flat animation sequence
@@ -2391,6 +2356,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 								camera[i].y += y;
 								camera[i].z += z;
 								camera[i].subsector = R_PointInSubsector(camera[i].x, camera[i].y);
+								R_RelativeTeleportViewInterpolation(i, x, y, z, 0);
 								break;
 							}
 						}

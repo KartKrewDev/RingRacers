@@ -1324,6 +1324,7 @@ lumpnum_t W_CheckNumForMap(const char *name)
 	lumpnum_t check = INT16_MAX;
 	UINT32 uhash, hash = quickncasehash(name, LUMPNUMCACHENAME);
 	INT32 i;
+	UINT16 firstfile = (partadd_earliestfile == UINT16_MAX) ? 0 : partadd_earliestfile;
 
 	// Check the lumpnumcache first. Loop backwards so that we check
 	// most recent entries first
@@ -1339,7 +1340,7 @@ lumpnum_t W_CheckNumForMap(const char *name)
 
 	uhash = quickncasehash(name, 8); // Not a mistake, legacy system for short lumpnames
 
-	for (i = numwadfiles - 1; i >= 0; i--)
+	for (i = numwadfiles - 1; i >= firstfile; i--)
 	{
 		check = W_CheckNumForMapPwad(name, uhash, (UINT16)i, 0);
 

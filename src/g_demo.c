@@ -316,11 +316,11 @@ void G_ReadDemoExtraData(void)
 			demo_p += 16;
 			for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 			{
-					if (!stricmp(Followercolor_cons_t[i].strvalue, name))
-					{
-							players[p].followercolor = Followercolor_cons_t[i].value;
-							break;
-					}
+				if (!stricmp(Followercolor_cons_t[i].strvalue, name))
+				{
+					players[p].followercolor = Followercolor_cons_t[i].value;
+					break;
+				}
 			}
 		}
 		if (extradata & DXD_PLAYSTATE)
@@ -410,7 +410,7 @@ void G_ReadDemoExtraData(void)
 
 void G_WriteDemoExtraData(void)
 {
-	INT32 i;
+	INT32 i, j;
 	char name[16];
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -456,13 +456,18 @@ void G_WriteDemoExtraData(void)
 				if (players[i].followerskin == -1)
 					strncpy(name, "None", 16);
 				else
-					strncpy(name, followers[players[i].followerskin].skinname, 16);
+					strncpy(name, followers[players[i].followerskin].name, 16);
 				M_Memcpy(demo_p, name, 16);
 				demo_p += 16;
 
 				// write follower color
 				memset(name, 0, 16);
-				strncpy(name, Followercolor_cons_t[(UINT16)(players[i].followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+				for (j = (numskincolors+2)-1; j > 0; j--)
+				{
+					if (Followercolor_cons_t[j].value == players[i].followercolor)
+						break;
+				}
+				strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 
@@ -1954,7 +1959,7 @@ void G_RecordMetal(void)
 
 void G_BeginRecording(void)
 {
-	UINT8 i, p;
+	UINT8 i, j, p;
 	char name[MAXCOLORNAME+1];
 	player_t *player = &players[consoleplayer];
 
@@ -2009,7 +2014,7 @@ void G_BeginRecording(void)
 		if (wadfiles[i]->important)
 	{
 		nameonly(( filename = va("%s", wadfiles[i]->filename) ));
-		WRITESTRINGN(demo_p, filename, 64);
+		WRITESTRINGL(demo_p, filename, MAX_WADPATH);
 		WRITEMEM(demo_p, wadfiles[i]->md5sum, 16);
 
 		totalfiles++;
@@ -2091,7 +2096,7 @@ void G_BeginRecording(void)
 
 			memset(name, 0, 16);
 			if (player->follower)
-				strncpy(name, followers[player->followerskin].skinname, 16);
+				strncpy(name, followers[player->followerskin].name, 16);
 			else
 				strncpy(name, "None", 16);	// Say we don't have one, then.
 
@@ -2100,7 +2105,12 @@ void G_BeginRecording(void)
 
 			// Save follower's colour
 			memset(name, 0, 16);
-			strncpy(name, Followercolor_cons_t[(UINT16)(player->followercolor+2)].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			for (j = (numskincolors+2)-1; j > 0; j--)
+			{
+				if (Followercolor_cons_t[j].value == players[i].followercolor)
+					break;
+			}
+			strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
 			M_Memcpy(demo_p, name, 16);
 			demo_p += 16;
 
@@ -2299,10 +2309,13 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			}
 			else
 			{
-				P_AddWadFile(filename);
+				P_PartialAddWadFile(filename);
 			}
 		}
 	}
+
+	if (P_PartialAddGetStage() >= 0)
+		P_MultiSetupWadFiles(true); // in case any partial adds were done
 }
 
 static void G_SkipDemoExtraFiles(UINT8 **pp)
@@ -3076,11 +3089,11 @@ void G_DoPlayDemo(char *defdemoname)
 		demo_p += 16;
 		for (i = 0; i < numskincolors +2; i++)	// +2 because of Match and Opposite
 		{
-				if (!stricmp(Followercolor_cons_t[i].strvalue, color))
-				{
-						players[p].followercolor = i;
-						break;
-				}
+			if (!stricmp(Followercolor_cons_t[i].strvalue, color))
+			{
+				players[p].followercolor = Followercolor_cons_t[i].value;
+				break;
+			}
 		}
 
 		// Score, since Kart uses this to determine where you start on the map
@@ -3739,7 +3752,11 @@ static void G_StopTimingDemo(void)
 
 	if (restorecv_vidwait != cv_vidwait.value)
 		CV_SetValue(&cv_vidwait, restorecv_vidwait);
-	D_AdvanceDemo();
+
+	if (timedemo_quit)
+		COM_ImmedExecute("quit");
+	else
+		D_StartTitle();
 }
 
 // reset engine variable set for the demos
@@ -3798,10 +3815,12 @@ boolean G_CheckDemoStatus(void)
 		{
 			G_StopDemo();
 
-			if (modeattacking)
+			if (timedemo_quit)
+				COM_ImmedExecute("quit");
+			else if (modeattacking)
 				M_EndModeAttackRun();
 			else
-				D_AdvanceDemo();
+				D_StartTitle();
 		}
 
 		return true;

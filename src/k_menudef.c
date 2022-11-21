@@ -1071,7 +1071,6 @@ menuitem_t OPTIONS_GameplayItems[] =
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mines",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
@@ -1593,6 +1592,12 @@ menuitem_t PAUSE_Main[] =
 
 	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},
+
+	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
+		NULL, {.routine = M_RestartMap}, 0, 0},
+
+	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
+		NULL, {.routine = M_TryAgain}, 0, 0},
 
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",

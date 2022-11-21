@@ -4280,8 +4280,26 @@ void G_EndGame(void)
 // Sets a tad of default info we need.
 void G_LoadGameSettings(void)
 {
+	INT32 i;
+
 	// initialize free sfx slots for skin sounds
 	S_InitRuntimeSounds();
+
+	// Prepare skincolor material.
+	for (i = 0; i < MAXSKINCOLORS; i++)
+	{
+		Color_cons_t[i].value = Followercolor_cons_t[i+2].value = i;
+		Color_cons_t[i].strvalue = Followercolor_cons_t[i+2].strvalue = skincolors[i].name;
+	}
+
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
+	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
+	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
+
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 }
 
 #define GD_VERSIONCHECK 0xBA5ED444 // Change every major version, as usual

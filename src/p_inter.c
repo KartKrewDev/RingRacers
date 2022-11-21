@@ -1585,6 +1585,32 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			target->fuse = 1;
 			break;
 
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		{
+			const UINT8 numParticles = 8;
+			const angle_t diff = ANGLE_MAX / numParticles;
+			UINT8 i;
+
+			for (i = 0; i < numParticles; i++)
+			{
+				mobj_t *spark = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_BANANA_SPARK);
+				spark->angle = (diff * i) - (diff / 2);
+
+				if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
+				{
+					spark->angle += K_MomentumAngle(inflictor);
+					spark->momx += inflictor->momx / 2;
+					spark->momy += inflictor->momy / 2;
+					spark->momz += inflictor->momz / 2;
+				}
+
+				P_SetObjectMomZ(spark, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * FRACUNIT, true);
+				P_Thrust(spark, spark->angle, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * spark->scale);
+			}
+			break;
+		}
+
 		default:
 			break;
 	}
@@ -1997,9 +2023,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
-			// NB: "allowcombo", "hardhit" and related checks are here to disallow HITLAG COMBOS, not loss-of-control combos
-			// DMG_EXPLODE bypasses this check to prevent blocking eggbox/SPB with spinout flashtics
-			if (!force && (type != DMG_EXPLODE))
+			if (!force)
 			{
 				if (gametyperules & GTR_BUMPERS)
 				{
@@ -2039,7 +2063,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							allowcombo = false;
 					}
 
-					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0)
+					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
+					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -2256,6 +2281,9 @@ static void P_FlingBurst
 	mo->threshold = 10; // not useful for spikes
 	mo->fuse = objFuse;
 	P_SetTarget(&mo->target, player->mo);
+
+	// We want everything from P_SpawnMobjFromMobj except scale.
+	objScale = FixedMul(objScale, FixedDiv(mapobjectscale, player->mo->scale));
 
 	if (objScale != FRACUNIT)
 	{

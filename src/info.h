@@ -1077,6 +1077,7 @@ typedef enum sprite
 	SPR_SBOX, // Sphere Box (for Battle)
 	SPR_RPOP, // Random Item Box Pop
 	SPR_ITRI, // Item Box Debris
+	SPR_ITPA, // Paper item backdrop
 	SPR_SGNS, // Signpost sparkle
 	SPR_FAST, // Speed boost trail
 	SPR_DSHR, // Speed boost dust release
@@ -1105,6 +1106,7 @@ typedef enum sprite
 	SPR_RSHE, // Rocket sneaker
 	SPR_FITM, // Eggman Monitor
 	SPR_BANA, // Banana Peel
+	SPR_BAND, // Banana Peel death particles
 	SPR_ORBN, // Orbinaut
 	SPR_JAWZ, // Jawz
 	SPR_SSMN, // SS Mine
@@ -4285,6 +4287,7 @@ typedef enum state
 	S_ITEM_DEBRIS_CLOUD_SPAWNER2,
 
 	S_ITEMICON,
+	S_ITEMBACKDROP,
 
 	// Item capsules
 	S_ITEMCAPSULE,
@@ -4504,6 +4507,11 @@ typedef enum state
 	// Banana
 	S_BANANA,
 	S_BANANA_DEAD,
+
+	S_BANANA_SPARK,
+	S_BANANA_SPARK2,
+	S_BANANA_SPARK3,
+	S_BANANA_SPARK4,
 
 	//{ Orbinaut
 	S_ORBINAUT1,
@@ -6365,6 +6373,7 @@ typedef enum mobj_type
 
 	MT_BANANA, // Banana Stuff
 	MT_BANANA_SHIELD,
+	MT_BANANA_SPARK,
 
 	MT_ORBINAUT, // Orbinaut stuff
 	MT_ORBINAUT_SHIELD,

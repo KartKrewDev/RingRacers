@@ -1080,9 +1080,10 @@ static void COM_Toggle_f(void)
 		for (i = 2; i < COM_Argc() - 1; ++i)
 		{
 			const char *str = COM_Argv(i);
-			INT32 val;
+			INT32 val = 0;
 
-			if (CV_CompleteValue(cvar, &str, &val))
+			if (!cvar->PossibleValue ||
+					CV_CompleteValue(cvar, &str, &val))
 			{
 				if (str ? !stricmp(cvar->string, str)
 						: cvar->value == val)

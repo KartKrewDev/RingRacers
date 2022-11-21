@@ -106,10 +106,9 @@ rendermode_t chosenrendermode = render_none; // set by command line arguments
 
 boolean highcolor = false;
 
-static void Impl_SetVsync(void);
 
 // synchronize page flipping with screen refresh
-consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Impl_SetVsync);
+consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "On", CV_SAVE, CV_OnOff, NULL);
 static consvar_t cv_stretch = CVAR_INIT ("stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL);
 
@@ -184,6 +183,20 @@ static void Impl_VideoSetupBuffer(void);
 static SDL_bool Impl_CreateWindow(SDL_bool fullscreen);
 //static void Impl_SetWindowName(const char *title);
 static void Impl_SetWindowIcon(void);
+
+static void Impl_SetSoftwareVsync(int vsync)
+{
+#if SDL_VERSION_ATLEAST(2,0,18)
+	static int oldvsync = 0;
+	if (oldvsync != vsync)
+	{
+		SDL_RenderSetVSync(renderer, vsync);
+	}
+	oldvsync = vsync;
+#else
+	(void)vsync;
+#endif
+}
 
 static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool reposition)
 {
@@ -277,6 +290,7 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		}
 		SDL_PixelFormatEnumToMasks(sw_texture_format, &bpp, &rmask, &gmask, &bmask, &amask);
 		vidSurface = SDL_CreateRGBSurface(0, width, height, bpp, rmask, gmask, bmask, amask);
+		Impl_SetSoftwareVsync(cv_vidwait.value);
 	}
 }
 
@@ -1254,6 +1268,7 @@ void I_FinishUpdate(void)
 		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, &src_rect, NULL);
 		SDL_RenderPresent(renderer);
+		Impl_SetSoftwareVsync(cv_vidwait.value);
 	}
 #ifdef HWRENDER
 	else if (rendermode == render_opengl)
@@ -1478,15 +1493,6 @@ static SDL_bool Impl_CreateContext(void)
 		int flags = 0; // Use this to set SDL_RENDERER_* flags now
 		if (usesdl2soft)
 			flags |= SDL_RENDERER_SOFTWARE;
-#if 0
-		// This shit is BROKEN.
-		// - The version of SDL we're using cannot toggle VSync at runtime. We'll need a new SDL version implemented to have this work properly.
-		// - cv_vidwait is initialized before config is loaded, so it's forced to default value at runtime, and forced off when switching. The config loading code would need restructured.
-		// - With both this & frame interpolation on, I_FinishUpdate takes x10 longer. At this point, it is simpler to use a standard FPS cap.
-		// So you can probably guess why I'm kinda over this, I'm just disabling it.
-		else if (cv_vidwait.value)
-			flags |= SDL_RENDERER_PRESENTVSYNC;
-#endif
 
 		// 3 August 2022
 		// Possibly a Windows 11 issue; the default
@@ -2005,12 +2011,4 @@ UINT32 I_GetRefreshRate(void)
 	// the window around, but very slow PCs might have
 	// trouble querying mode over and over again.
 	return refresh_rate;
-}
-
-static void Impl_SetVsync(void)
-{
-#if SDL_VERSION_ATLEAST(2,0,18)
-	if (renderer)
-		SDL_RenderSetVSync(renderer, cv_vidwait.value);
-#endif
 }

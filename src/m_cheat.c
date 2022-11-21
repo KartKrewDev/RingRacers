@@ -762,6 +762,13 @@ void Command_Setlives_f(void)
 	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
+void Command_Grayscale_f(void)
+{
+	REQUIRE_CHEATS;
+
+	COM_ImmedExecute("toggle palette \"\" GRAYPAL");
+}
+
 //
 // OBJECTPLACE (and related variables)
 //

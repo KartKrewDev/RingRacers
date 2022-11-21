@@ -18,8 +18,6 @@
 #include "d_event.h"
 #include "w_wad.h"   // for MAX_WADFILES
 
-extern boolean advancedemo;
-
 // make sure not to write back the config until it's been correctly loaded
 extern tic_t rendergametic;
 
@@ -52,7 +50,6 @@ const char *D_Home(void);
 //
 // BASE LEVEL
 //
-void D_AdvanceDemo(void);
 void D_StartTitle(void);
 
 #endif //__D_MAIN__

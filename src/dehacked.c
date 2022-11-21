@@ -235,6 +235,12 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				readfollower(f);
 				continue;
 			}
+			else if (fastcmp(word, "FOLLOWERCATEGORY"))
+			{
+				// This is not a major mod.
+				readfollowercategory(f);
+				continue;
+			}
 
 			word2 = strtok(NULL, " ");
 			if (word2) {

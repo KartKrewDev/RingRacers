@@ -100,7 +100,6 @@ extern consvar_t
 	cv_dualsneaker,
 	cv_triplesneaker,
 	cv_triplebanana,
-	cv_decabanana,
 	cv_tripleorbinaut,
 	cv_quadorbinaut,
 	cv_dualjawz;
