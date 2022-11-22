@@ -97,6 +97,9 @@ static struct {
 	// EZT_KART
 	INT32 kartitem, kartamount, kartbumpers;
 
+	// EZT_IRONMAN
+	UINT8 skinid;
+
 	UINT8 desyncframes; // Don't try to resync unless we've been off for two frames, to monkeypatch a few trouble spots
 
 	// EZT_HIT
@@ -133,6 +136,7 @@ demoghost *ghosts = NULL;
 #define DEMO_SPECTATOR	0x01
 #define DEMO_KICKSTART	0x02
 #define DEMO_SHRINKME	0x04
+#define DEMO_BOT		0x08
 
 // For demos
 #define ZT_FWD		0x01
@@ -173,12 +177,13 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define GZT_FOLLOW 0x80 // Followmobj
 
 // GZT_EXTRA flags
-#define EZT_COLOR  0x001 // Changed color (Super transformation, Mario fireflowers/invulnerability, etc.)
-#define EZT_FLIP   0x002 // Reversed gravity
-#define EZT_SCALE  0x004 // Changed size
-#define EZT_HIT    0x008 // Damaged a mobj
-#define EZT_SPRITE 0x010 // Changed sprite set completely out of PLAY (NiGHTS, SOCs, whatever)
-#define EZT_KART   0x020 // SRB2Kart: Changed current held item/quantity and bumpers for battle
+#define EZT_COLOR   0x001 // Changed color (Super transformation, Mario fireflowers/invulnerability, etc.)
+#define EZT_FLIP    0x002 // Reversed gravity
+#define EZT_SCALE   0x004 // Changed size
+#define EZT_HIT     0x008 // Damaged a mobj
+#define EZT_SPRITE  0x010 // Changed sprite set completely out of PLAY (NiGHTS, SOCs, whatever)
+#define EZT_KART    0x020 // Changed current held item/quantity and bumpers for battle
+#define EZT_IRONMAN 0x040 // Changed object skin
 
 // GZT_FOLLOW flags
 #define FZT_SPAWNED 0x01 // just been spawned
@@ -206,14 +211,23 @@ void G_LoadMetal(UINT8 **buffer)
 }
 
 // Finds a skin with the closest stats if the expected skin doesn't exist.
-static INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight)
+static INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags)
 {
 	INT32 i, closest_skin = 0;
-	UINT8 closest_stats = UINT8_MAX, stat_diff;
+	UINT8 closest_stats, stat_diff;
+	boolean doflagcheck = true;
+	UINT32 flagcheck = flags;
+
+flaglessretry:
+	closest_stats = UINT8_MAX;
 
 	for (i = 0; i < numskins; i++)
 	{
 		stat_diff = abs(skins[i].kartspeed - kartspeed) + abs(skins[i].kartweight - kartweight);
+		if (doflagcheck && (skins[i].flags & flagcheck) != flagcheck)
+		{
+			continue;
+		}
 		if (stat_diff < closest_stats)
 		{
 			closest_stats = stat_diff;
@@ -221,15 +235,20 @@ static INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight)
 		}
 	}
 
+	if (stat_diff && (doflagcheck || closest_stats == UINT8_MAX))
+	{
+		// Just grab *any* SF_IRONMAN if we don't get it on the first pass.
+		if ((flagcheck & SF_IRONMAN) && (flagcheck != SF_IRONMAN))
+		{
+			flagcheck = SF_IRONMAN;
+		}
+
+		doflagcheck = false;
+
+		goto flaglessretry;
+	}
+
 	return closest_skin;
-}
-
-static void FindClosestSkinForStats(UINT32 p, UINT8 kartspeed, UINT8 kartweight)
-{
-	INT32 closest_skin = GetSkinNumClosestToStats(kartspeed, kartweight);
-
-	//CONS_Printf("Using %s instead...\n", skins[closest_skin].name);
-	SetPlayerSkinByNum(p, closest_skin);
 }
 
 void G_ReadDemoExtraData(void)
@@ -255,6 +274,64 @@ void G_ReadDemoExtraData(void)
 	{
 		extradata = READUINT8(demo_p);
 
+		if (extradata & DXD_PLAYSTATE)
+		{
+			i = READUINT8(demo_p);
+
+			if (!playeringame[p])
+			{
+				CL_ClearPlayer(p);
+				playeringame[p] = true;
+				G_AddPlayer(p);
+				players[p].spectator = true;
+			}
+
+			if ((players[p].bot = !!(i & DXD_PST_ISBOT)))
+			{
+				players[p].botvars.difficulty = READUINT8(demo_p);
+				players[p].botvars.diffincrease = READUINT8(demo_p); // needed to avoid having to duplicate logic
+				players[p].botvars.rival = (boolean)READUINT8(demo_p);
+
+				i &= ~DXD_PST_ISBOT;
+			}
+
+			switch (i) {
+			case DXD_PST_PLAYING:
+				if (players[p].bot)
+				{
+					players[p].spectator = false;
+				}
+				else
+				{
+					players[p].pflags |= PF_WANTSTOJOIN;
+				}
+				//CONS_Printf("player %s is despectating on tic %d\n", player_names[p], leveltime);
+				break;
+
+			case DXD_PST_SPECTATING:
+				players[p].pflags &= ~PF_WANTSTOJOIN; // double-fuck you
+				if (players[p].spectator != true)
+				{
+					//CONS_Printf("player %s is spectating on tic %d\n", player_names[p], leveltime);
+					players[p].spectator = true;
+					if (players[p].mo)
+						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_INSTAKILL);
+					else
+						players[p].playerstate = PST_REBORN;
+				}
+				break;
+
+			case DXD_PST_LEFT:
+				CL_RemovePlayer(p, 0);
+				break;
+			}
+
+			G_ResetViews();
+
+			// maybe these are necessary?
+			K_CheckBumpers();
+			P_CheckRacers();
+		}
 		if (extradata & DXD_RESPAWN)
 		{
 			if (players[p].mo)
@@ -265,24 +342,19 @@ void G_ReadDemoExtraData(void)
 		}
 		if (extradata & DXD_SKIN)
 		{
-			UINT8 kartspeed, kartweight;
-			UINT32 charflags;
+			UINT8 skinid;
 
 			// Skin
-			M_Memcpy(name, demo_p, 16);
-			demo_p += 16;
-			SetPlayerSkin(p, name);
 
-			kartspeed = READUINT8(demo_p);
-			kartweight = READUINT8(demo_p);
-			charflags = READUINT32(demo_p);
+			skinid = READUINT8(demo_p);
+			if (skinid >= demo.numskins)
+				skinid = 0;
+			SetPlayerSkinByNum(p, demo.skinlist[skinid].mapping);
+			demo.currentskinid[p] = skinid;
 
-			if (stricmp(skins[players[p].skin].name, name) != 0)
-				FindClosestSkinForStats(p, kartspeed, kartweight);
-
-			players[p].kartspeed = kartspeed;
-			players[p].kartweight = kartweight;
-			players[p].charflags = charflags;
+			players[p].kartspeed = demo.skinlist[skinid].kartspeed;
+			players[p].kartweight = demo.skinlist[skinid].kartweight;
+			players[p].charflags = demo.skinlist[skinid].flags;
 		}
 		if (extradata & DXD_COLOR)
 		{
@@ -323,48 +395,6 @@ void G_ReadDemoExtraData(void)
 				}
 			}
 		}
-		if (extradata & DXD_PLAYSTATE)
-		{
-			i = READUINT8(demo_p);
-
-			switch (i) {
-			case DXD_PST_PLAYING:
-				players[p].pflags |= PF_WANTSTOJOIN; // fuck you
-				//CONS_Printf("player %s is despectating on tic %d\n", player_names[p], leveltime);
-				break;
-
-			case DXD_PST_SPECTATING:
-				players[p].pflags &= ~PF_WANTSTOJOIN; // double-fuck you
-				if (!playeringame[p])
-				{
-					CL_ClearPlayer(p);
-					playeringame[p] = true;
-					G_AddPlayer(p);
-					players[p].spectator = true;
-					//CONS_Printf("player %s is joining server on tic %d\n", player_names[p], leveltime);
-				}
-				else
-				{
-					//CONS_Printf("player %s is spectating on tic %d\n", player_names[p], leveltime);
-					players[p].spectator = true;
-					if (players[p].mo)
-						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_INSTAKILL);
-					else
-						players[p].playerstate = PST_REBORN;
-				}
-				break;
-
-			case DXD_PST_LEFT:
-				CL_RemovePlayer(p, 0);
-				break;
-			}
-
-			G_ResetViews();
-
-			// maybe these are necessary?
-			K_CheckBumpers();
-			P_CheckRacers();
-		}
 		if (extradata & DXD_WEAPONPREF)
 		{
 			WeaponPref_Parse(&demo_p, p);
@@ -378,6 +408,7 @@ void G_ReadDemoExtraData(void)
 	while (p != DW_END)
 	{
 		UINT32 rng;
+		boolean storesynced = demosynced;
 
 		switch (p)
 		{
@@ -391,10 +422,11 @@ void G_ReadDemoExtraData(void)
 					P_SetRandSeed(i, rng);
 
 					if (demosynced)
-						CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (RNG)!\n"));
-					demosynced = false;
+						CONS_Alert(CONS_WARNING, "Demo playback has desynced (RNG class %d)!\n", i);
+					storesynced = false;
 				}
 			}
+			demosynced = storesynced;
 		}
 
 		p = READUINT8(demo_p);
@@ -420,18 +452,43 @@ void G_WriteDemoExtraData(void)
 			WRITEUINT8(demo_p, i);
 			WRITEUINT8(demo_p, demo_extradata[i]);
 
+			if (demo_extradata[i] & DXD_PLAYSTATE)
+			{
+				UINT8 pst = DXD_PST_PLAYING;
+
+				demo_writerng = 1;
+
+				if (!playeringame[i])
+				{
+					pst = DXD_PST_LEFT;
+				}
+				else if (
+					players[i].spectator &&
+					!(players[i].pflags & PF_WANTSTOJOIN) // <= fuck you specifically
+				)
+				{
+					pst = DXD_PST_SPECTATING;
+				}
+
+				if (players[i].bot)
+				{
+					pst |= DXD_PST_ISBOT;
+				}
+
+				WRITEUINT8(demo_p, pst);
+
+				if (pst & DXD_PST_ISBOT)
+				{
+					WRITEUINT8(demo_p, players[i].botvars.difficulty);
+					WRITEUINT8(demo_p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
+					WRITEUINT8(demo_p, (UINT8)players[i].botvars.rival);
+				}
+			}
 			//if (demo_extradata[i] & DXD_RESPAWN) has no extra data
 			if (demo_extradata[i] & DXD_SKIN)
 			{
 				// Skin
-				memset(name, 0, 16);
-				strncpy(name, skins[players[i].skin].name, 16);
-				M_Memcpy(demo_p,name,16);
-				demo_p += 16;
-
-				WRITEUINT8(demo_p, skins[players[i].skin].kartspeed);
-				WRITEUINT8(demo_p, skins[players[i].skin].kartweight);
-				WRITEUINT32(demo_p, skins[players[i].skin].flags);
+				WRITEUINT8(demo_p, players[i].skin);
 			}
 			if (demo_extradata[i] & DXD_COLOR)
 			{
@@ -471,19 +528,6 @@ void G_WriteDemoExtraData(void)
 				M_Memcpy(demo_p,name,16);
 				demo_p += 16;
 
-			}
-			if (demo_extradata[i] & DXD_PLAYSTATE)
-			{
-				demo_writerng = 1;
-				if (!playeringame[i])
-					WRITEUINT8(demo_p, DXD_PST_LEFT);
-				else if (
-					players[i].spectator &&
-					!(players[i].pflags & PF_WANTSTOJOIN) // <= fuck you specifically
-				)
-					WRITEUINT8(demo_p, DXD_PST_SPECTATING);
-				else
-					WRITEUINT8(demo_p, DXD_PST_PLAYING);
 			}
 			if (demo_extradata[i] & DXD_WEAPONPREF)
 			{
@@ -802,6 +846,14 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		ghostext[playernum].kartbumpers = ghost->player->bumpers;
 	}
 
+	if (ghost->player && (
+			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)-skins)
+		))
+	{
+		ghostext[playernum].flags |= EZT_IRONMAN;
+		ghostext[playernum].skinid = (UINT8)(((skin_t *)ghost->skin)-skins);
+	}
+
 	if (ghostext[playernum].flags)
 	{
 		ziptic |= GZT_EXTRA;
@@ -849,6 +901,8 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 			WRITEINT32(demo_p, ghostext[playernum].kartamount);
 			WRITEINT32(demo_p, ghostext[playernum].kartbumpers);
 		}
+		if (ghostext[playernum].flags & EZT_IRONMAN)
+			WRITEUINT8(demo_p,ghostext[playernum].skinid);
 
 		ghostext[playernum].flags = 0;
 	}
@@ -1025,6 +1079,12 @@ void G_ConsGhostTic(INT32 playernum)
 			ghostext[playernum].kartamount = READINT32(demo_p);
 			ghostext[playernum].kartbumpers = READINT32(demo_p);
 		}
+		if (xziptic & EZT_IRONMAN)
+		{
+			ghostext[playernum].skinid = READUINT8(demo_p);
+			if (ghostext[playernum].skinid >= demo.numskins)
+				ghostext[playernum].skinid = 0;
+		}
 	}
 
 	if (ziptic & GZT_FOLLOW)
@@ -1094,6 +1154,18 @@ void G_ConsGhostTic(INT32 playernum)
 			players[playernum].itemamount = ghostext[playernum].kartamount;
 			players[playernum].bumpers = ghostext[playernum].kartbumpers;
 		}
+
+		if (demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)-skins))
+		{
+			if (demosynced)
+				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (Character)!\n"));
+			demosynced = false;
+
+			testmo->skin = &skins[demo.skinlist[ghostext[playernum].skinid].mapping];
+			players[playernum].kartspeed = demo.skinlist[ghostext[playernum].skinid].kartspeed;
+			players[playernum].kartweight = demo.skinlist[ghostext[playernum].skinid].kartweight;
+			players[playernum].charflags = demo.skinlist[ghostext[playernum].skinid].flags;
+		}
 	}
 
 	if (*demo_p == DEMOMARKER)
@@ -1118,16 +1190,16 @@ void G_GhostTicker(void)
 			if (ziptic == 0) // Only support player 0 info for now
 			{
 				ziptic = READUINT8(g->p);
+				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
+					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
 				if (ziptic & DXD_SKIN)
-					g->p += 18; // We _could_ read this info, but it shouldn't change anything in record attack...
+					g->p++; // We _could_ read this info, but it shouldn't change anything in record attack...
 				if (ziptic & DXD_COLOR)
 					g->p += 16; // Same tbh
 				if (ziptic & DXD_NAME)
 					g->p += 16; // yea
 				if (ziptic & DXD_FOLLOWER)
 					g->p += 32; // ok (32 because there's both the skin and the colour)
-				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
-					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
 				if (ziptic & DXD_WEAPONPREF)
 					g->p++; // ditto
 			}
@@ -1204,13 +1276,6 @@ void G_GhostTicker(void)
 		g->mo->z = g->oldmo.z;
 		P_SetThingPosition(g->mo);
 		g->mo->angle = g->oldmo.angle;
-		g->mo->frame = g->oldmo.frame | tr_trans30<<FF_TRANSSHIFT;
-		if (g->fadein)
-		{
-			g->mo->frame += (((--g->fadein)/6)<<FF_TRANSSHIFT); // this calc never exceeds 9 unless g->fadein is bad, and it's only set once, so...
-			g->mo->renderflags &= ~RF_DONTDRAW;
-		}
-		g->mo->sprite2 = g->oldmo.sprite2;
 
 		if (ziptic & GZT_EXTRA)
 		{ // But wait, there's more!
@@ -1221,18 +1286,12 @@ void G_GhostTicker(void)
 				switch(g->color)
 				{
 				default:
-				case GHC_RETURNSKIN:
-					g->mo->skin = g->oldmo.skin;
-					/* FALLTHRU */
 				case GHC_NORMAL: // Go back to skin color
 					g->mo->color = g->oldmo.color;
 					break;
 				// Handled below
 				case GHC_SUPER:
 				case GHC_INVINCIBLE:
-					break;
-				case GHC_FIREFLOWER: // Fireflower
-					g->mo->color = SKINCOLOR_WHITE;
 					break;
 				}
 			}
@@ -1275,6 +1334,22 @@ void G_GhostTicker(void)
 				g->mo->sprite = READUINT16(g->p);
 			if (xziptic & EZT_KART)
 				g->p += 12; // kartitem, kartamount, kartbumpers
+			if (xziptic & EZT_IRONMAN)
+			{
+				UINT8 skinid = READUINT8(g->p);
+				if (skinid >= g->numskins)
+					skinid = 0;
+				g->mo->skin = &skins[g->skinlist[skinid].mapping];
+			}
+		}
+
+		// todo better defaulting
+		g->mo->sprite2 = g->oldmo.sprite2;
+		g->mo->frame = g->oldmo.frame | tr_trans30<<FF_TRANSSHIFT;
+		if (g->fadein)
+		{
+			g->mo->frame += (((--g->fadein)/6)<<FF_TRANSSHIFT); // this calc never exceeds 9 unless g->fadein is bad, and it's only set once, so...
+			g->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
 #define follow g->mo->tracer
@@ -1384,6 +1459,7 @@ skippedghosttic:
 				p->next = g->next;
 			else
 				ghosts = g->next;
+			Z_Free(g->skinlist);
 			Z_Free(g);
 			continue;
 		}
@@ -1957,293 +2033,24 @@ void G_RecordMetal(void)
 	metalrecording = true;
 }
 
-void G_BeginRecording(void)
+static void G_SaveDemoExtraFiles(UINT8 **pp)
 {
-	UINT8 i, j, p;
-	char name[MAXCOLORNAME+1];
-	player_t *player = &players[consoleplayer];
-
 	char *filename;
-	UINT8 totalfiles;
-	UINT8 *m;
+	UINT8 totalfiles = 0, i;
+	UINT8 *m = (*pp);/* file count */
+	(*pp)++;
 
-	if (demo_p)
-		return;
-	memset(name,0,sizeof(name));
-
-	demo_p = demobuffer;
-	demoflags = DF_GHOST|(multiplayer ? DF_MULTIPLAYER : (modeattacking<<DF_ATTACKSHIFT));
-
-	if (multiplayer && !netgame)
-		demoflags |= DF_NONETMP;
-
-	if (encoremode)
-		demoflags |= DF_ENCORE;
-
-	if (multiplayer)
-		demoflags |= DF_LUAVARS;
-
-	// Setup header.
-	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
-	WRITEUINT8(demo_p,VERSION);
-	WRITEUINT8(demo_p,SUBVERSION);
-	WRITEUINT16(demo_p,DEMOVERSION);
-
-	// Full replay title
-	demo_p += 64;
-	snprintf(demo.titlename, 64, "%s - %s", G_BuildMapTitle(gamemap), modeattacking ? "Record Attack" : connectedservername);
-
-	// demo checksum
-	demo_p += 16;
-
-	// game data
-	M_Memcpy(demo_p, "PLAY", 4); demo_p += 4;
-	WRITESTRINGN(demo_p, mapheaderinfo[gamemap-1]->lumpname, MAXMAPLUMPNAME);
-	M_Memcpy(demo_p, mapmd5, 16); demo_p += 16;
-
-	WRITEUINT8(demo_p, demoflags);
-	WRITEUINT8(demo_p, gametype & 0xFF);
-	WRITEUINT8(demo_p, numlaps);
-
-	// file list
-	m = demo_p;/* file count */
-	demo_p += 1;
-
-	totalfiles = 0;
 	for (i = mainwads; ++i < numwadfiles; )
 		if (wadfiles[i]->important)
 	{
 		nameonly(( filename = va("%s", wadfiles[i]->filename) ));
-		WRITESTRINGL(demo_p, filename, MAX_WADPATH);
-		WRITEMEM(demo_p, wadfiles[i]->md5sum, 16);
+		WRITESTRINGL((*pp), filename, MAX_WADPATH);
+		WRITEMEM((*pp), wadfiles[i]->md5sum, 16);
 
 		totalfiles++;
 	}
 
 	WRITEUINT8(m, totalfiles);
-
-	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			demotime_p = demo_p;
-			WRITEUINT32(demo_p,UINT32_MAX); // time
-			WRITEUINT32(demo_p,UINT32_MAX); // lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			demotime_p = demo_p;
-			WRITEUINT32(demo_p,UINT32_MAX); // time
-			break;
-		default: // 3
-			break;
-	}
-
-	for (i = 0; i < PRNUMCLASS; i++)
-	{
-		WRITEUINT32(demo_p, P_GetInitSeed(i));
-	}
-
-	// Reserved for extrainfo location from start of file
-	demoinfo_p = demo_p;
-	WRITEUINT32(demo_p, 0);
-
-	// Save netvar data
-	CV_SaveDemoVars(&demo_p);
-
-	// Now store some info for each in-game player
-
-	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
-	// The name will always be Player <n>, the skin sonic, the color None and the follower 0. This is only correct on subsequent games.
-	// In the case of said first game, the skin and the likes are updated with Got_NameAndColor, which are then saved in extradata for the demo with DXD_SKIN in r_things.c for instance.
-
-
-	for (p = 0; p < MAXPLAYERS; p++) {
-		if (playeringame[p]) {
-			player = &players[p];
-			WRITEUINT8(demo_p, p);
-
-			i = 0;
-			if (player->spectator)
-				i |= DEMO_SPECTATOR;
-			if (player->pflags & PF_KICKSTARTACCEL)
-				i |= DEMO_KICKSTART;
-			if (player->pflags & PF_SHRINKME)
-				i |= DEMO_SHRINKME;
-			WRITEUINT8(demo_p, i);
-
-			// Name
-			memset(name, 0, 16);
-			strncpy(name, player_names[p], 16);
-			M_Memcpy(demo_p,name,16);
-			demo_p += 16;
-
-			// Skin
-			memset(name, 0, 16);
-			strncpy(name, skins[player->skin].name, 16);
-			M_Memcpy(demo_p,name,16);
-			demo_p += 16;
-
-			// Color
-			memset(name, 0, 16);
-			strncpy(name, skincolors[player->skincolor].name, 16);
-			M_Memcpy(demo_p,name,16);
-			demo_p += 16;
-
-			// Save follower's skin name
-			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
-			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
-
-			memset(name, 0, 16);
-			if (player->follower)
-				strncpy(name, followers[player->followerskin].name, 16);
-			else
-				strncpy(name, "None", 16);	// Say we don't have one, then.
-
-			M_Memcpy(demo_p,name,16);
-			demo_p += 16;
-
-			// Save follower's colour
-			memset(name, 0, 16);
-			for (j = (numskincolors+2)-1; j > 0; j--)
-			{
-				if (Followercolor_cons_t[j].value == players[i].followercolor)
-					break;
-			}
-			strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
-			M_Memcpy(demo_p, name, 16);
-			demo_p += 16;
-
-			// Score, since Kart uses this to determine where you start on the map
-			WRITEUINT32(demo_p, player->score);
-
-			// Power Levels
-			WRITEUINT16(demo_p, clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE]);
-
-			// Kart speed and weight
-			WRITEUINT8(demo_p, skins[player->skin].kartspeed);
-			WRITEUINT8(demo_p, skins[player->skin].kartweight);
-			WRITEUINT8(demo_p, player->lastfakeskin);
-			WRITEUINT32(demo_p, player->charflags);
-
-			// And mobjtype_t is best with UINT32 too...
-			WRITEUINT32(demo_p, player->followitem);
-		}
-	}
-
-	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
-
-	// player lua vars, always saved even if empty
-	if (demoflags & DF_LUAVARS)
-		LUA_Archive(&demo_p);
-
-	memset(&oldcmd,0,sizeof(oldcmd));
-	memset(&oldghost,0,sizeof(oldghost));
-	memset(&ghostext,0,sizeof(ghostext));
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		ghostext[i].lastcolor = ghostext[i].color = GHC_NORMAL;
-		ghostext[i].lastscale = ghostext[i].scale = FRACUNIT;
-
-		if (players[i].mo)
-		{
-			oldghost[i].x = players[i].mo->x;
-			oldghost[i].y = players[i].mo->y;
-			oldghost[i].z = players[i].mo->z;
-			oldghost[i].angle = players[i].mo->angle;
-
-			// preticker started us gravity flipped
-			if (players[i].mo->eflags & MFE_VERTICALFLIP)
-				ghostext[i].flags |= EZT_FLIP;
-		}
-	}
-}
-
-void G_BeginMetal(void)
-{
-	mobj_t *mo = players[consoleplayer].mo;
-
-#if 0
-	if (demo_p)
-		return;
-#endif
-
-	demo_p = demobuffer;
-
-	// Write header.
-	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
-	WRITEUINT8(demo_p,VERSION);
-	WRITEUINT8(demo_p,SUBVERSION);
-	WRITEUINT16(demo_p,DEMOVERSION);
-
-	// demo checksum
-	demo_p += 16;
-
-	M_Memcpy(demo_p, "METL", 4); demo_p += 4;
-
-	memset(&ghostext,0,sizeof(ghostext));
-	ghostext[0].lastscale = ghostext[0].scale = FRACUNIT;
-
-	// Set up our memory.
-	memset(&oldmetal,0,sizeof(oldmetal));
-	oldmetal.x = mo->x;
-	oldmetal.y = mo->y;
-	oldmetal.z = mo->z;
-	oldmetal.angle = mo->angle>>24;
-}
-
-void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
-{
-	char temp[16];
-
-	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
-	{
-		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
-		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
-	}
-
-	WRITEUINT8(demo_p, DW_STANDING);
-	WRITEUINT8(demo_p, ranking);
-
-	// Name
-	memset(temp, 0, 16);
-	strncpy(temp, name, 16);
-	M_Memcpy(demo_p,temp,16);
-	demo_p += 16;
-
-	// Skin
-	memset(temp, 0, 16);
-	strncpy(temp, skins[skinnum].name, 16);
-	M_Memcpy(demo_p,temp,16);
-	demo_p += 16;
-
-	// Color
-	memset(temp, 0, 16);
-	strncpy(temp, skincolors[color].name, 16);
-	M_Memcpy(demo_p,temp,16);
-	demo_p += 16;
-
-	// Score/time/whatever
-	WRITEUINT32(demo_p, val);
-}
-
-void G_SetDemoTime(UINT32 ptime, UINT32 plap)
-{
-	if (!demo.recording || !demotime_p)
-		return;
-	if (demoflags & DF_TIMEATTACK)
-	{
-		WRITEUINT32(demotime_p, ptime);
-		WRITEUINT32(demotime_p, plap);
-		demotime_p = NULL;
-	}
-	else if (demoflags & DF_BREAKTHECAPSULES)
-	{
-		WRITEUINT32(demotime_p, ptime);
-		(void)plap;
-		demotime_p = NULL;
-	}
 }
 
 static void G_LoadDemoExtraFiles(UINT8 **pp)
@@ -2408,6 +2215,364 @@ static UINT8 G_CheckDemoExtraFiles(UINT8 **pp, boolean quick)
 	return error;
 }
 
+static void G_SaveDemoSkins(UINT8 **pp)
+{
+	char skin[16];
+	UINT8 i;
+
+	WRITEUINT8((*pp), numskins);
+	for (i = 0; i < numskins; i++)
+	{
+		// Skinname, for first attempt at identification.
+		memset(skin, 0, 16);
+		strncpy(skin, skins[i].name, 16);
+		WRITEMEM((*pp), skin, 16);
+
+		// Backup information for second pass.
+		WRITEUINT8((*pp), skins[i].kartspeed);
+		WRITEUINT8((*pp), skins[i].kartweight);
+		WRITEUINT32((*pp), skins[i].flags);
+	}
+}
+
+static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean getclosest)
+{
+	char skin[17];
+	UINT8 i;
+	democharlist_t *skinlist = NULL;
+
+	(*worknumskins) = READUINT8((*pp));
+	if (!(*worknumskins))
+		return NULL;
+
+	skinlist = Z_Calloc(sizeof(democharlist_t) * (*worknumskins), PU_STATIC, NULL);
+	if (!skinlist)
+	{
+		I_Error("G_LoadDemoSkins: Insufficient memory to allocate list");
+	}
+
+	skin[16] = '\0';
+
+	for (i = 0; i < (*worknumskins); i++)
+	{
+		INT32 result = -1;
+
+		READMEM((*pp), skin, 16);
+		skinlist[i].kartspeed = READUINT8((*pp));
+		skinlist[i].kartweight = READUINT8((*pp));
+		skinlist[i].flags = READUINT32((*pp));
+
+		result = R_SkinAvailable(skin);
+		if (result == -1)
+		{
+			if (!getclosest)
+			{
+				result = MAXSKINS;
+			}
+			else
+			{
+				result = GetSkinNumClosestToStats(skinlist[i].kartspeed, skinlist[i].kartweight, skinlist[i].flags);
+			}
+		}
+
+		if (result != -1)
+		{
+			skinlist[i].mapping = (UINT8)result;
+		}
+	}
+
+	return skinlist;
+}
+
+static void G_SkipDemoSkins(UINT8 **pp)
+{
+	UINT8 demonumskins;
+	UINT8 i;
+
+	demonumskins = READUINT8((*pp));
+	for (i = 0; i < demonumskins; ++i)
+	{
+		(*pp) += 16; // name
+		(*pp)++; // kartspeed
+		(*pp)++; // kartweight
+		(*pp) += 4; // flags
+	}
+}
+
+void G_BeginRecording(void)
+{
+	UINT8 i, j, p;
+	char name[MAXCOLORNAME+1];
+	player_t *player = &players[consoleplayer];
+
+	if (demo_p)
+		return;
+	memset(name,0,sizeof(name));
+
+	demo_p = demobuffer;
+	demoflags = DF_GHOST|(multiplayer ? DF_MULTIPLAYER : (modeattacking<<DF_ATTACKSHIFT));
+
+	if (multiplayer && !netgame)
+		demoflags |= DF_NONETMP;
+
+	if (encoremode)
+		demoflags |= DF_ENCORE;
+
+	if (multiplayer)
+		demoflags |= DF_LUAVARS;
+
+	// Setup header.
+	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
+	WRITEUINT8(demo_p,VERSION);
+	WRITEUINT8(demo_p,SUBVERSION);
+	WRITEUINT16(demo_p,DEMOVERSION);
+
+	// Full replay title
+	demo_p += 64;
+	snprintf(demo.titlename, 64, "%s - %s", G_BuildMapTitle(gamemap), modeattacking ? "Record Attack" : connectedservername);
+
+	// demo checksum
+	demo_p += 16;
+
+	// game data
+	M_Memcpy(demo_p, "PLAY", 4); demo_p += 4;
+	WRITESTRINGN(demo_p, mapheaderinfo[gamemap-1]->lumpname, MAXMAPLUMPNAME);
+	M_Memcpy(demo_p, mapmd5, 16); demo_p += 16;
+
+	WRITEUINT8(demo_p, demoflags);
+	WRITEUINT8(demo_p, gametype & 0xFF);
+	WRITEUINT8(demo_p, numlaps);
+
+	// file list
+	G_SaveDemoExtraFiles(&demo_p);
+
+	// character list
+	G_SaveDemoSkins(&demo_p);
+
+	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
+	{
+		case ATTACKING_NONE: // 0
+			break;
+		case ATTACKING_TIME: // 1
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			WRITEUINT32(demo_p,UINT32_MAX); // lap
+			break;
+		case ATTACKING_CAPSULES: // 2
+			demotime_p = demo_p;
+			WRITEUINT32(demo_p,UINT32_MAX); // time
+			break;
+		default: // 3
+			break;
+	}
+
+	for (i = 0; i < PRNUMCLASS; i++)
+	{
+		WRITEUINT32(demo_p, P_GetInitSeed(i));
+	}
+
+	// Reserved for extrainfo location from start of file
+	demoinfo_p = demo_p;
+	WRITEUINT32(demo_p, 0);
+
+	// Save netvar data
+	CV_SaveDemoVars(&demo_p);
+
+	// Now store some info for each in-game player
+
+	// Lat' 12/05/19: Do note that for the first game you load, everything that gets saved here is total garbage;
+	// The name will always be Player <n>, the skin sonic, the color None and the follower 0. This is only correct on subsequent games.
+	// In the case of said first game, the skin and the likes are updated with Got_NameAndColor, which are then saved in extradata for the demo with DXD_SKIN in r_things.c for instance.
+
+
+	for (p = 0; p < MAXPLAYERS; p++) {
+		if (playeringame[p]) {
+			player = &players[p];
+			WRITEUINT8(demo_p, p);
+
+			i = 0;
+			if (player->spectator == true)
+				i |= DEMO_SPECTATOR;
+			if (player->pflags & PF_KICKSTARTACCEL)
+				i |= DEMO_KICKSTART;
+			if (player->pflags & PF_SHRINKME)
+				i |= DEMO_SHRINKME;
+			if (player->bot == true)
+				i |= DEMO_BOT;
+			WRITEUINT8(demo_p, i);
+
+			if (i & DEMO_BOT)
+			{
+				WRITEUINT8(demo_p, player->botvars.difficulty);
+				WRITEUINT8(demo_p, player->botvars.diffincrease); // needed to avoid having to duplicate logic
+				WRITEUINT8(demo_p, (UINT8)player->botvars.rival);
+			}
+
+			// Name
+			memset(name, 0, 16);
+			strncpy(name, player_names[p], 16);
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Skin (now index into demo.skinlist)
+			WRITEUINT8(demo_p, player->skin);
+			WRITEUINT8(demo_p, player->lastfakeskin);
+
+			// Color
+			memset(name, 0, 16);
+			strncpy(name, skincolors[player->skincolor].name, 16);
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Save follower's skin name
+			// PS: We must check for 'follower' to determine if the followerskin is valid. It's going to be 0 if we don't have a follower, but 0 is also absolutely a valid follower!
+			// Doesn't really matter if the follower mobj is valid so long as it exists in a way or another.
+
+			memset(name, 0, 16);
+			if (player->follower)
+				strncpy(name, followers[player->followerskin].name, 16);
+			else
+				strncpy(name, "None", 16);	// Say we don't have one, then.
+
+			M_Memcpy(demo_p,name,16);
+			demo_p += 16;
+
+			// Save follower's colour
+			memset(name, 0, 16);
+			for (j = (numskincolors+2)-1; j > 0; j--)
+			{
+				if (Followercolor_cons_t[j].value == players[i].followercolor)
+					break;
+			}
+			strncpy(name, Followercolor_cons_t[j].strvalue, 16);	// Not KartColor_Names because followercolor has extra values such as "Match"
+			M_Memcpy(demo_p, name, 16);
+			demo_p += 16;
+
+			// Score, since Kart uses this to determine where you start on the map
+			WRITEUINT32(demo_p, player->score);
+
+			// Power Levels
+			j = gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE;
+			WRITEUINT16(demo_p, clientpowerlevels[p][j]);
+
+			// And mobjtype_t is best with UINT32 too...
+			WRITEUINT32(demo_p, player->followitem);
+		}
+	}
+
+	WRITEUINT8(demo_p, 0xFF); // Denote the end of the player listing
+
+	// player lua vars, always saved even if empty
+	if (demoflags & DF_LUAVARS)
+		LUA_Archive(&demo_p);
+
+	memset(&oldcmd,0,sizeof(oldcmd));
+	memset(&oldghost,0,sizeof(oldghost));
+	memset(&ghostext,0,sizeof(ghostext));
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		ghostext[i].lastcolor = ghostext[i].color = GHC_NORMAL;
+		ghostext[i].lastscale = ghostext[i].scale = FRACUNIT;
+		ghostext[i].skinid = players[i].skin;
+
+		if (players[i].mo)
+		{
+			oldghost[i].x = players[i].mo->x;
+			oldghost[i].y = players[i].mo->y;
+			oldghost[i].z = players[i].mo->z;
+			oldghost[i].angle = players[i].mo->angle;
+
+			// preticker started us gravity flipped
+			if (players[i].mo->eflags & MFE_VERTICALFLIP)
+				ghostext[i].flags |= EZT_FLIP;
+		}
+	}
+}
+
+void G_BeginMetal(void)
+{
+	mobj_t *mo = players[consoleplayer].mo;
+
+#if 0
+	if (demo_p)
+		return;
+#endif
+
+	demo_p = demobuffer;
+
+	// Write header.
+	M_Memcpy(demo_p, DEMOHEADER, 12); demo_p += 12;
+	WRITEUINT8(demo_p,VERSION);
+	WRITEUINT8(demo_p,SUBVERSION);
+	WRITEUINT16(demo_p,DEMOVERSION);
+
+	// demo checksum
+	demo_p += 16;
+
+	M_Memcpy(demo_p, "METL", 4); demo_p += 4;
+
+	memset(&ghostext,0,sizeof(ghostext));
+	ghostext[0].lastscale = ghostext[0].scale = FRACUNIT;
+
+	// Set up our memory.
+	memset(&oldmetal,0,sizeof(oldmetal));
+	oldmetal.x = mo->x;
+	oldmetal.y = mo->y;
+	oldmetal.z = mo->z;
+	oldmetal.angle = mo->angle>>24;
+}
+
+void G_WriteStanding(UINT8 ranking, char *name, INT32 skinnum, UINT16 color, UINT32 val)
+{
+	char temp[16];
+
+	if (demoinfo_p && *(UINT32 *)demoinfo_p == 0)
+	{
+		WRITEUINT8(demo_p, DEMOMARKER); // add the demo end marker
+		*(UINT32 *)demoinfo_p = demo_p - demobuffer;
+	}
+
+	WRITEUINT8(demo_p, DW_STANDING);
+	WRITEUINT8(demo_p, ranking);
+
+	// Name
+	memset(temp, 0, 16);
+	strncpy(temp, name, 16);
+	M_Memcpy(demo_p,temp,16);
+	demo_p += 16;
+
+	// Skin
+	WRITEUINT8(demo_p, skinnum);
+
+	// Color
+	memset(temp, 0, 16);
+	strncpy(temp, skincolors[color].name, 16);
+	M_Memcpy(demo_p,temp,16);
+	demo_p += 16;
+
+	// Score/time/whatever
+	WRITEUINT32(demo_p, val);
+}
+
+void G_SetDemoTime(UINT32 ptime, UINT32 plap)
+{
+	if (!demo.recording || !demotime_p)
+		return;
+	if (demoflags & DF_TIMEATTACK)
+	{
+		WRITEUINT32(demotime_p, ptime);
+		WRITEUINT32(demotime_p, plap);
+		demotime_p = NULL;
+	}
+	else if (demoflags & DF_BREAKTHECAPSULES)
+	{
+		WRITEUINT32(demotime_p, ptime);
+		(void)plap;
+		demotime_p = NULL;
+	}
+}
+
 // Returns bitfield:
 // 1 == new demo has lower time
 // 2 == new demo has higher score
@@ -2449,6 +2614,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	p++; // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
+
+	G_SkipDemoSkins(&p);
 
 	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
 	I_Assert(aflags);
@@ -2514,6 +2681,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 		return UINT8_MAX;
 	}
 
+	G_SkipDemoSkins(&p);
+
 	oldtime = READUINT32(p);
 	if (uselaps)
 		oldlap = READUINT32(p);
@@ -2545,7 +2714,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 void G_LoadDemoInfo(menudemo_t *pdemo)
 {
 	UINT8 *infobuffer, *info_p, *extrainfo_p;
-	UINT8 version, subversion, pdemoflags;
+	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
+	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
 	char mapname[MAXMAPLUMPNAME];
 	INT32 i;
@@ -2616,6 +2786,13 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
 
+	skinlist = G_LoadDemoSkins(&info_p, &worknumskins, false);
+	if (!skinlist)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("%s has an invalid skin list.\n"), pdemo->filepath);
+		goto badreplay;
+	}
+
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
 		info_p += 4; // RNG seed
@@ -2662,15 +2839,10 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		extrainfo_p += 16;
 
 		// Skin
-		M_Memcpy(temp,extrainfo_p,16);
-		extrainfo_p += 16;
-		pdemo->standings[count].skin = UINT8_MAX;
-		for (i = 0; i < numskins; i++)
-			if (stricmp(skins[i].name, temp) == 0)
-			{
-				pdemo->standings[count].skin = i;
-				break;
-			}
+		skinid = READUINT8(extrainfo_p);
+		if (skinid > worknumskins)
+			skinid = 0;
+		pdemo->standings[count].skin = skinlist[skinid].mapping;
 
 		// Color
 		M_Memcpy(temp,extrainfo_p,16);
@@ -2692,12 +2864,14 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	}
 
 	// I think that's everything we need?
+	Z_Free(skinlist);
 	Z_Free(infobuffer);
 	return;
 
 badreplay:
 	pdemo->type = MD_INVALID;
 	sprintf(pdemo->title, "INVALID REPLAY");
+	Z_Free(skinlist);
 	Z_Free(infobuffer);
 }
 
@@ -2719,16 +2893,15 @@ void G_DeferedPlayDemo(const char *name)
 
 void G_DoPlayDemo(char *defdemoname)
 {
-	UINT8 i, p;
+	UINT8 i, p, numslots = 0;
 	lumpnum_t l;
-	char skin[17],color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
+	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMCLASS];
 	char msg[1024];
 
-	boolean spectator;
-	UINT8 slots[MAXPLAYERS], kartspeed[MAXPLAYERS], kartweight[MAXPLAYERS], lastfakeskin[MAXPLAYERS], numslots = 0;
-	UINT32 charflags[MAXPLAYERS];
+	boolean spectator, bot;
+	UINT8 slots[MAXPLAYERS], lastfakeskin[MAXPLAYERS];
 
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 	boolean skiperrors = false;
@@ -2736,7 +2909,6 @@ void G_DoPlayDemo(char *defdemoname)
 
 	G_InitDemoRewind();
 
-	skin[16] = '\0';
 	follower[16] = '\0';
 	color[MAXCOLORNAME] = '\0';
 
@@ -2908,6 +3080,20 @@ void G_DoPlayDemo(char *defdemoname)
 		}
 	}
 
+	// character list
+	demo.skinlist = G_LoadDemoSkins(&demo_p, &demo.numskins, true);
+	if (!demo.skinlist)
+	{
+		snprintf(msg, 1024, M_GetText("%s has an invalid skin list and cannot be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(pdemoname);
+		Z_Free(demobuffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
+	}
+
 	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
 	demo.netgame = (multiplayer && !(demoflags & DF_NONETMP));
@@ -2946,6 +3132,8 @@ void G_DoPlayDemo(char *defdemoname)
 		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
 		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(demo.skinlist);
+		demo.skinlist = NULL;
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
 		demo.playback = false;
@@ -2962,6 +3150,8 @@ void G_DoPlayDemo(char *defdemoname)
 		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
 		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(demo.skinlist);
+		demo.skinlist = NULL;
 		Z_Free(pdemoname);
 		Z_Free(demobuffer);
 		demo.playback = false;
@@ -3006,14 +3196,17 @@ void G_DoPlayDemo(char *defdemoname)
 		UINT8 flags = READUINT8(demo_p);
 
 		spectator = !!(flags & DEMO_SPECTATOR);
+		bot = !!(flags & DEMO_BOT);
 
-		if (spectator == true)
+		if ((spectator || bot))
 		{
 			if (modeattacking)
 			{
-				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with spectators, and is thus invalid.\n"), pdemoname);
+				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with %s, and is thus invalid.\n"), pdemoname, (bot ? "bots" : "spectators"));
 				CONS_Alert(CONS_ERROR, "%s", msg);
 				M_StartMessage(msg, NULL, MM_NOTHING);
+				Z_Free(demo.skinlist);
+				demo.skinlist = NULL;
 				Z_Free(pdemoname);
 				Z_Free(demobuffer);
 				demo.playback = false;
@@ -3030,6 +3223,8 @@ void G_DoPlayDemo(char *defdemoname)
 			snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with multiple players, and is thus invalid.\n"), pdemoname);
 			CONS_Alert(CONS_ERROR, "%s", msg);
 			M_StartMessage(msg, NULL, MM_NOTHING);
+			Z_Free(demo.skinlist);
+			demo.skinlist = NULL;
 			Z_Free(pdemoname);
 			Z_Free(demobuffer);
 			demo.playback = false;
@@ -3053,21 +3248,28 @@ void G_DoPlayDemo(char *defdemoname)
 		else
 			players[p].pflags &= ~PF_SHRINKME;
 
+		if ((players[p].bot = bot) == true)
+		{
+			players[p].botvars.difficulty = READUINT8(demo_p);
+			players[p].botvars.diffincrease = READUINT8(demo_p); // needed to avoid having to duplicate logic
+			players[p].botvars.rival = (boolean)READUINT8(demo_p);
+		}
+
 		K_UpdateShrinkCheat(&players[p]);
 
 		// Name
 		M_Memcpy(player_names[p],demo_p,16);
 		demo_p += 16;
 
-		/*if (players[p].spectator)
-		{
-			CONS_Printf("player %s is spectator at start\n", player_names[p]);
-		}*/
-
 		// Skin
-		M_Memcpy(skin,demo_p,16);
-		demo_p += 16;
-		SetPlayerSkin(p, skin);
+
+		i = READUINT8(demo_p);
+		if (i >= demo.numskins)
+			i = 0;
+		SetPlayerSkinByNum(p, demo.skinlist[i].mapping);
+		demo.currentskinid[p] = ghostext[p].skinid = i;
+
+		lastfakeskin[p] = READUINT8(demo_p);
 
 		// Color
 		M_Memcpy(color,demo_p,16);
@@ -3101,15 +3303,6 @@ void G_DoPlayDemo(char *defdemoname)
 
 		// Power Levels
 		clientpowerlevels[p][gametype == GT_BATTLE ? PWRLV_BATTLE : PWRLV_RACE] = READUINT16(demo_p);
-
-		// Kart stats, temporarily
-		kartspeed[p] = READUINT8(demo_p);
-		kartweight[p] = READUINT8(demo_p);
-		lastfakeskin[p] = READUINT8(demo_p);
-		charflags[p] = READUINT32(demo_p);
-
-		if (stricmp(skins[players[p].skin].name, skin) != 0)
-			FindClosestSkinForStats(p, kartspeed[p], kartweight[p]);
 
 		// Followitem
 		players[p].followitem = READUINT32(demo_p);
@@ -3149,23 +3342,24 @@ void G_DoPlayDemo(char *defdemoname)
 
 	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < numslots; i++)
 	{
-		if (players[i].mo)
+		p = slots[i];
+		if (players[p].mo)
 		{
-			players[i].mo->color = players[i].skincolor;
-			oldghost[i].x = players[i].mo->x;
-			oldghost[i].y = players[i].mo->y;
-			oldghost[i].z = players[i].mo->z;
+			players[p].mo->color = players[p].skincolor;
+			oldghost[p].x = players[p].mo->x;
+			oldghost[p].y = players[p].mo->y;
+			oldghost[p].z = players[p].mo->z;
 		}
 
 		// Set saved attribute values
 		// No cheat checking here, because even if they ARE wrong...
 		// it would only break the replay if we clipped them.
-		players[i].kartspeed = kartspeed[i];
-		players[i].kartweight = kartweight[i];
-		players[i].lastfakeskin = lastfakeskin[i];
-		players[i].charflags = charflags[i];
+		players[p].kartspeed =  demo.skinlist[demo.currentskinid[p]].kartspeed;
+		players[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
+		players[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
+		players[p].lastfakeskin = lastfakeskin[p];
 	}
 
 	demo.deferstart = true;
@@ -3175,17 +3369,17 @@ void G_AddGhost(char *defdemoname)
 {
 	INT32 i;
 	lumpnum_t l;
-	char name[17],skin[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
+	char name[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
 	demoghost *gh;
 	UINT8 flags;
 	UINT8 *buffer,*p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
 	skin_t *ghskin = &skins[0];
-	UINT8 kartspeed = UINT8_MAX, kartweight = UINT8_MAX;
+	UINT8 worknumskins;
+	democharlist_t *skinlist = NULL;
 
 	name[16] = '\0';
-	skin[16] = '\0';
 	color[16] = '\0';
 
 	n = defdemoname+strlen(defdemoname);
@@ -3288,6 +3482,15 @@ void G_AddGhost(char *defdemoname)
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
+	skinlist = G_LoadDemoSkins(&p, &worknumskins, true);
+	if (!skinlist)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data has invalid skin list, cannot continue.\n"), pdemoname);
+		Z_Free(pdemoname);
+		Z_Free(buffer);
+		return;
+	}
+
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
 		case ATTACKING_NONE: // 0
@@ -3321,6 +3524,7 @@ void G_AddGhost(char *defdemoname)
 	if (*p == DEMOMARKER)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), pdemoname);
+		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
@@ -3329,9 +3533,10 @@ void G_AddGhost(char *defdemoname)
 	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
 
 	// any invalidating flags?
-	if ((READUINT8(p) & (DEMO_SPECTATOR)) != 0)
+	if ((READUINT8(p) & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
@@ -3342,8 +3547,10 @@ void G_AddGhost(char *defdemoname)
 	p += 16;
 
 	// Skin
-	M_Memcpy(skin, p, 16);
-	p += 16;
+	i = READUINT8(p);
+	if (i < worknumskins)
+		ghskin = &skins[skinlist[i].mapping];
+	p++; // lastfakeskin
 
 	// Color
 	M_Memcpy(color, p, 16);
@@ -3355,34 +3562,15 @@ void G_AddGhost(char *defdemoname)
 	p += 4; // score
 	p += 2; // powerlevel
 
-	kartspeed = READUINT8(p);
-	kartweight = READUINT8(p);
-	p += 1; // lastfakeskin
-	p += 4; // charflags
-
 	p += 4; // followitem (maybe change later)
 
 	if (READUINT8(p) != 0xFF)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
-	}
-
-	for (i = 0; i < numskins; i++)
-		if (!stricmp(skins[i].name,skin))
-		{
-			ghskin = &skins[i];
-			break;
-		}
-
-	if (i == numskins)
-	{
-		if (kartspeed != UINT8_MAX && kartweight != UINT8_MAX)
-			ghskin = &skins[GetSkinNumClosestToStats(kartspeed, kartweight)];
-
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Invalid character. Falling back to %s.\n"), pdemoname, ghskin->name);
 	}
 
 
@@ -3391,6 +3579,9 @@ void G_AddGhost(char *defdemoname)
 	gh->buffer = buffer;
 	M_Memcpy(gh->checksum, md5, 16);
 	gh->p = p;
+
+	gh->numskins = worknumskins;
+	gh->skinlist = skinlist;
 
 	ghosts = gh;
 
@@ -3454,6 +3645,7 @@ void G_FreeGhosts(void)
 	while (ghosts)
 	{
 		demoghost *next = ghosts->next;
+		Z_Free(ghosts->skinlist);
 		Z_Free(ghosts);
 		ghosts = next;
 	}
@@ -3512,6 +3704,8 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	p++; // Gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
+
+	G_SkipDemoSkins(&p);
 
 	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
 	{
@@ -3779,6 +3973,9 @@ void G_StopDemo(void)
 	democam.localangle = 0;
 	democam.localaiming = 0;
 	democam.keyboardlook = false;
+
+	Z_Free(demo.skinlist);
+	demo.skinlist = NULL;
 
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission(); // cleanup

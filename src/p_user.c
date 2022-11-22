@@ -4171,25 +4171,31 @@ void P_PlayerThink(player_t *player)
 	}
 	
 	// Random skin / "ironman"
-	if ((!P_MobjWasRemoved(player->mo)) && (skins[player->skin].flags & SF_IRONMAN)) // we are Heavy Magician with a mobj
 	{
-		if (((skin_t *)player->mo->skin)->flags & SF_IRONMAN) // no fakeskin yet
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[playeri]].flags
+			: skins[player->skin].flags;
+
+		if (skinflags & SF_IRONMAN) // we are Heavy Magician
 		{
-			if (leveltime >= starttime && !player->exiting)
+			if (player->charflags & SF_IRONMAN) // no fakeskin yet
 			{
-				if (player->fakeskin != MAXSKINS)
+				if (leveltime >= starttime && !player->exiting)
 				{
-					SetFakePlayerSkin(player, player->fakeskin);
-				}
-				else if (!(gametyperules & GTR_CIRCUIT))
-				{
-					SetRandomFakePlayerSkin(player, false);
+					if (player->fakeskin != MAXSKINS)
+					{
+						SetFakePlayerSkin(player, player->fakeskin);
+					}
+					else if (!(gametyperules & GTR_CIRCUIT))
+					{
+						SetRandomFakePlayerSkin(player, false);
+					}
 				}
 			}
-		}
-		else if (player->exiting) // wearing a fakeskin, but need to display signpost postrace etc
-		{
-			ClearFakePlayerSkin(player);
+			else if (player->exiting) // wearing a fakeskin, but need to display signpost postrace etc
+			{
+				ClearFakePlayerSkin(player);
+			}
 		}
 	}
 

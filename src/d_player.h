@@ -310,6 +310,8 @@ typedef struct botvars_s
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
+	// All entries above persist between rounds and must be recorded in demos
+
 	fixed_t rubberband; // Bot rubberband value
 	UINT16 controller; // Special bot controller linedef ID
 

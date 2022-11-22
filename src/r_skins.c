@@ -337,23 +337,53 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 }
 
 // Set mo skin but not player_t skin, for ironman
-void SetFakePlayerSkin(player_t* player, INT32 skinnum)
+void SetFakePlayerSkin(player_t* player, INT32 skinid)
 {
-	player->mo->skin = &skins[skinnum];
-	player->fakeskin = skinnum;
-	player->lastfakeskin = skinnum;
-	player->kartspeed = skins[skinnum].kartspeed;
-	player->kartweight = skins[skinnum].kartweight;
-	player->charflags = skins[skinnum].flags;
+	player->fakeskin = skinid;
+
+	if (demo.playback)
+	{
+		player->kartspeed = demo.skinlist[skinid].kartspeed;
+		player->kartweight = demo.skinlist[skinid].kartweight;
+		player->charflags = demo.skinlist[skinid].flags;
+		skinid = demo.skinlist[skinid].mapping;
+	}
+	else
+	{
+		player->kartspeed = skins[skinid].kartspeed;
+		player->kartweight = skins[skinid].kartweight;
+		player->charflags = skins[skinid].flags;
+	}
+
+	player->mo->skin = &skins[skinid];
 }
 
 // Loudly rerandomize
 void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 {
 	INT32 i;
-	do {
-		i = P_RandomKey(PR_RANDOMSKIN, numskins);
-	} while (skins[i].flags & SF_IRONMAN || i == player->lastfakeskin);
+	UINT8 usableskins = 0, maxskinpick;
+	UINT8 grabskins[MAXSKINS];
+
+	maxskinpick = (demo.playback ? demo.numskins : numskins);
+
+	for (i = 0; i < maxskinpick; i++)
+	{
+		if (i == player->lastfakeskin)
+			continue;
+		if (demo.playback)
+		{
+			if (demo.skinlist[i].flags & SF_IRONMAN)
+				continue;
+		}
+		else if (skins[i].flags & SF_IRONMAN)
+			continue;
+		/*if (K_SkinLocked(i))
+			continue;*/
+		grabskins[usableskins++] = i;
+	}
+
+	i = grabskins[P_RandomKey(PR_RANDOMSKIN, usableskins)];
 
 	SetFakePlayerSkin(player, i);
 
@@ -407,16 +437,28 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 // Return to base skin from an SF_IRONMAN randomization
 void ClearFakePlayerSkin(player_t* player)
 {
-	if ((skins[player->skin].flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
+	UINT8 skinid;
+	UINT32 flags;
+
+	if (demo.playback)
 	{
-		player->mo->skin = &skins[player->skin];
-		player->fakeskin = MAXSKINS;
-		player->kartspeed = skins[player->skin].kartspeed;
-		player->kartweight = skins[player->skin].kartweight;
-		player->charflags = skins[player->skin].flags;
+		skinid = demo.currentskinid[(player-players)];
+		flags = demo.skinlist[skinid].flags;
+	}
+	else
+	{
+		skinid = player->skin;
+		flags = skins[player->skin].flags;
+	}
+
+	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
+	{
+		SetFakePlayerSkin(player, skinid);
 		S_StartSound(player->mo, sfx_s3k9f);
 		K_SpawnMagicianParticles(player->mo, 5);
 	}
+
+	player->fakeskin = MAXSKINS;
 }
 
 //

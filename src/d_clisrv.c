@@ -2550,6 +2550,8 @@ void CL_ClearPlayer(INT32 playernum)
 
 	memset(&players[playernum], 0, sizeof (player_t));
 
+	players[playernum].followerskin = -1; // don't have a ghost follower
+
 	RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 }
 

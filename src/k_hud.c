@@ -1748,6 +1748,7 @@ static boolean K_drawKartPositionFaces(void)
 	INT32 xoff, yoff, flipflag = 0;
 	UINT8 workingskin;
 	UINT8 *colormap;
+	UINT32 skinflags;
 
 	ranklines = 0;
 	memset(completed, 0, sizeof (completed));
@@ -1832,10 +1833,13 @@ static boolean K_drawKartPositionFaces(void)
 		bumperx = FACE_X+19;
 		emeraldx = FACE_X+16;
 
+		skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[rankplayer[i]]].flags
+			: skins[players[rankplayer[i]].skin].flags;
+
 		// Flip SF_IRONMAN portraits, but only if they're transformed
-		if (skins[players[rankplayer[i]].skin].flags & SF_IRONMAN
-			&& !P_MobjWasRemoved(players[rankplayer[i]].mo)
-			&& !(((skin_t*)players[rankplayer[i]].mo->skin)->flags & SF_IRONMAN) )
+		if (skinflags & SF_IRONMAN
+			&& !(players[rankplayer[i]].charflags & SF_IRONMAN) )
 		{
 			flipflag = V_FLIP|V_VFLIP; // blonic flip
 			xoff = yoff = 16;

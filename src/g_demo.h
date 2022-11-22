@@ -28,6 +28,13 @@ extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality;
 
 extern tic_t demostarttime;
 
+typedef struct democharlist_s {
+	UINT8 mapping; // No, this isn't about levels. It maps to loaded character ID.
+	UINT8 kartspeed;
+	UINT8 kartweight;
+	UINT32 flags;
+} democharlist_t;
+
 // Publicly-accessible demo vars
 struct demovars_s {
 	char titlename[65];
@@ -54,6 +61,9 @@ struct demovars_s {
 
 	boolean freecam;
 
+	UINT8 numskins;
+	democharlist_t *skinlist;
+	UINT8 currentskinid[MAXPLAYERS];
 };
 
 extern struct demovars_s demo;
@@ -102,26 +112,26 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname);
 typedef enum
 {
 	GHC_NORMAL = 0,
-	GHC_SUPER,
-	GHC_FIREFLOWER,
 	GHC_INVINCIBLE,
-	GHC_RETURNSKIN // not actually a colour
+	GHC_SUPER
 } ghostcolor_t;
 
 extern UINT8 demo_extradata[MAXPLAYERS];
 extern UINT8 demo_writerng;
 
-#define DXD_RESPAWN    0x01 // "respawn" command in console
-#define DXD_SKIN       0x02 // skin changed
-#define DXD_NAME       0x04 // name changed
-#define DXD_COLOR      0x08 // color changed
-#define DXD_PLAYSTATE  0x10 // state changed between playing, spectating, or not in-game
+#define DXD_PLAYSTATE  0x01 // state changed between playing, spectating, or not in-game
+#define DXD_RESPAWN    0x02 // "respawn" command in console
+#define DXD_SKIN       0x04 // skin changed
+#define DXD_NAME       0x08 // name changed
+#define DXD_COLOR      0x10 // color changed
 #define DXD_FOLLOWER   0x20 // follower was changed
 #define DXD_WEAPONPREF 0x40 // netsynced playsim settings were changed
 
 #define DXD_PST_PLAYING    0x01
 #define DXD_PST_SPECTATING 0x02
 #define DXD_PST_LEFT       0x03
+
+#define DXD_PST_ISBOT      0x80 // extra flag
 
 // Record/playback tics
 void G_ReadDemoExtraData(void);
@@ -155,6 +165,8 @@ typedef struct demoghost {
 	UINT8 *buffer, *p, color;
 	UINT8 fadein;
 	UINT16 version;
+	UINT8 numskins;
+	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
 } demoghost;

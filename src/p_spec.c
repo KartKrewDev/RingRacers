@@ -1927,9 +1927,16 @@ static void K_HandleLapIncrement(player_t *player)
 			{
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
-			} else if (skins[player->skin].flags & SF_IRONMAN)
+			}
+			else
 			{
-				SetRandomFakePlayerSkin(player, true);
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+				if (skinflags & SF_IRONMAN)
+				{
+					SetRandomFakePlayerSkin(player, true);
+				}
 			}
 				
 
