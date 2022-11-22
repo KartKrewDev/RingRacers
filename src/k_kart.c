@@ -6716,11 +6716,17 @@ static void K_MoveHeldObjects(player_t *player)
 	}
 }
 
-player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
+mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 {
 	fixed_t best = INT32_MAX;
-	player_t *wtarg = NULL;
+	mobj_t *wtarg = NULL;
 	INT32 i;
+
+	if (specialStage.active == true)
+	{
+		// Always target the UFO.
+		return specialStage.ufo;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -6737,7 +6743,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 		player = &players[i];
 
 		// Don't target yourself, stupid.
-		if (player == source)
+		if (source != NULL && player == source)
 		{
 			continue;
 		}
@@ -6776,7 +6782,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 
 		if (gametyperules & GTR_CIRCUIT)
 		{
-			if (player->position >= source->position)
+			if (source != NULL && player->position >= source->position)
 			{
 				// Don't pay attention to people who aren't above your position
 				continue;
@@ -6818,7 +6824,7 @@ player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 
 		if (thisScore < best)
 		{
-			wtarg = player;
+			wtarg = player->mo;
 			best = thisScore;
 		}
 	}
@@ -7944,24 +7950,32 @@ void K_KartPlayerAfterThink(player_t *player)
 	// Jawz reticule (seeking)
 	if (player->itemtype == KITEM_JAWZ && (player->pflags & PF_ITEMOUT))
 	{
-		INT32 lastTargID = player->lastjawztarget;
-		player_t *lastTarg = NULL;
-		player_t *targ = NULL;
+		const INT32 lastTargID = player->lastjawztarget;
+		mobj_t *lastTarg = NULL;
+
+		INT32 targID = MAXPLAYERS;
+		mobj_t *targ = NULL;
+
 		mobj_t *ret = NULL;
 
-		if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
+		if (specialStage.active == true && lastTargID == MAXPLAYERS)
+		{
+			// Aiming at the UFO.
+			lastTarg = specialStage.ufo;
+		}
+		else if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
 			&& playeringame[lastTargID] == true)
 		{
 			if (players[lastTargID].spectator == false)
 			{
-				lastTarg = &players[lastTargID];
+				lastTarg = players[lastTargID].mo;
 			}
 		}
 
 		if (player->throwdir == -1)
 		{
 			// Backwards Jawz targets yourself.
-			targ = player;
+			targ = player->mo;
 			player->jawztargetdelay = 0;
 		}
 		else
@@ -7970,9 +7984,14 @@ void K_KartPlayerAfterThink(player_t *player)
 			targ = K_FindJawzTarget(player->mo, player, ANGLE_45);
 		}
 
-		if (targ != NULL && targ->mo != NULL && P_MobjWasRemoved(targ->mo) == false)
+		if (targ != NULL && P_MobjWasRemoved(targ) == false)
 		{
-			if (targ - players == lastTargID)
+			if (targ->player != NULL)
+			{
+				targID = targ->player - players;
+			}
+
+			if (targID == lastTargID)
 			{
 				// Increment delay.
 				if (player->jawztargetdelay < 10)
@@ -7991,33 +8010,33 @@ void K_KartPlayerAfterThink(player_t *player)
 				else
 				{
 					// Allow a swap.
-					if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ))
+					if (P_IsDisplayPlayer(player) || P_IsDisplayPlayer(targ->player))
 					{
 						S_StartSound(NULL, sfx_s3k89);
 					}
 					else
 					{
-						S_StartSound(targ->mo, sfx_s3k89);
+						S_StartSound(targ, sfx_s3k89);
 					}
 
-					player->lastjawztarget = targ - players;
+					player->lastjawztarget = targID;
 					player->jawztargetdelay = 5;
 				}
 			}
 		}
 
-		if (targ == NULL || targ->mo == NULL || P_MobjWasRemoved(targ->mo) == true)
+		if (targ == NULL || P_MobjWasRemoved(targ) == true)
 		{
 			player->lastjawztarget = -1;
 			player->jawztargetdelay = 0;
 			return;
 		}
 
-		ret = P_SpawnMobj(targ->mo->x, targ->mo->y, targ->mo->z, MT_PLAYERRETICULE);
-		ret->old_x = targ->mo->old_x;
-		ret->old_y = targ->mo->old_y;
-		ret->old_z = targ->mo->old_z;
-		P_SetTarget(&ret->target, targ->mo);
+		ret = P_SpawnMobj(targ->x, targ->y, targ->z, MT_PLAYERRETICULE);
+		ret->old_x = targ->old_x;
+		ret->old_y = targ->old_y;
+		ret->old_z = targ->old_z;
+		P_SetTarget(&ret->target, targ);
 		ret->frame |= ((leveltime % 10) / 2);
 		ret->tics = 1;
 		ret->color = player->skincolor;
