@@ -54,4 +54,8 @@ void Obj_DuelBombReverse(mobj_t *bomb);
 void Obj_DuelBombTouch(mobj_t *bomb, mobj_t *toucher);
 void Obj_DuelBombInit(mobj_t *bomb);
 
+/* Special Stage UFO */
+void Obj_SpecialUFOThinker(mobj_t *bomb);
+mobj_t *Obj_CreateSpecialUFO(void);
+
 #endif/*k_objects_H*/

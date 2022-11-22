@@ -183,6 +183,9 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 {
 	UINT32 flag = 0;
 
+	if (player == NULL)
+		return flag;
+
 	if (player == &players[displayplayers[0]])
 		flag = RF_DONTDRAWP1;
 	else if (r_splitscreen >= 1 && player == &players[displayplayers[1]])
@@ -1979,7 +1982,7 @@ static void K_UpdateOffroad(player_t *player)
 		player->offroad = 0;
 }
 
-static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t curdist, fixed_t maxdist, boolean transparent)
+static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdist, fixed_t maxdist, boolean transparent)
 {
 #define CHAOTIXBANDLEN 15
 #define CHAOTIXBANDCOLORS 9
@@ -2010,9 +2013,9 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 		c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
 	}
 
-	stepx = (victim->mo->x - player->mo->x) / CHAOTIXBANDLEN;
-	stepy = (victim->mo->y - player->mo->y) / CHAOTIXBANDLEN;
-	stepz = ((victim->mo->z + (victim->mo->height / 2)) - (player->mo->z + (player->mo->height / 2))) / CHAOTIXBANDLEN;
+	stepx = (victim->x - player->mo->x) / CHAOTIXBANDLEN;
+	stepy = (victim->y - player->mo->y) / CHAOTIXBANDLEN;
+	stepz = ((victim->z + (victim->height / 2)) - (player->mo->z + (player->mo->height / 2))) / CHAOTIXBANDLEN;
 
 	curx = player->mo->x + stepx;
 	cury = player->mo->y + stepy;
@@ -2046,7 +2049,7 @@ static void K_DrawDraftCombiring(player_t *player, player_t *victim, fixed_t cur
 			if (transparent)
 				band->renderflags |= RF_GHOSTLY;
 
-			band->renderflags |= RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player) | K_GetPlayerDontDrawFlag(victim));
+			band->renderflags |= RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(player) | K_GetPlayerDontDrawFlag(victim->player));
 		}
 
 		curx += stepx;
@@ -2071,6 +2074,129 @@ static boolean K_HasInfiniteTether(player_t *player)
 	return false;
 }
 
+static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed_t draftdistance, UINT8 leniency)
+{
+//#define EASYDRAFTTEST
+	fixed_t dist, olddraft;
+	fixed_t theirSpeed = 0;
+#ifndef EASYDRAFTTEST
+	angle_t yourangle, theirangle, diff;
+#endif
+
+#ifndef EASYDRAFTTEST
+	// Don't draft on yourself :V
+	if (dest->player && dest->player == player)
+	{
+		return false;
+	}
+#endif
+
+	if (dest->player != NULL)
+	{
+		// No tethering off of the guy who got the starting bonus :P
+		if (dest->player->startboost > 0)
+		{
+			return false;
+		}
+
+		theirSpeed = dest->player->speed;
+	}
+	else
+	{
+		theirSpeed = R_PointToDist2(0, 0, dest->momx, dest->momy);
+	}
+
+	// They're not enough speed to draft off of them.
+	if (theirSpeed < 20 * dest->scale)
+	{
+		return false;
+	}
+
+#ifndef EASYDRAFTTEST
+	yourangle = K_MomentumAngle(player->mo);
+	theirangle = K_MomentumAngle(dest);
+
+	// Not in front of this player.
+	diff = AngleDelta(R_PointToAngle2(player->mo->x, player->mo->y, dest->x, dest->y), yourangle);
+	if (diff > ANG10)
+	{
+		return false;
+	}
+
+	// Not moving in the same direction.
+	diff = AngleDelta(yourangle, theirangle);
+	if (diff > ANGLE_90)
+	{
+		return false;
+	}
+#endif
+
+	dist = P_AproxDistance(P_AproxDistance(dest->x - player->mo->x, dest->y - player->mo->y), dest->z - player->mo->z);
+
+#ifndef EASYDRAFTTEST
+	// TOO close to draft.
+	if (dist < minDist)
+	{
+		return false;
+	}
+
+	// Not close enough to draft.
+	if (dist > draftdistance && draftdistance > 0)
+	{
+		return false;
+	}
+#endif
+
+	olddraft = player->draftpower;
+
+	player->draftleeway = leniency;
+
+	if (dest->player != NULL)
+	{
+		player->lastdraft = dest->player - players;
+	}
+	else
+	{
+		player->lastdraft = MAXPLAYERS;
+	}
+
+	// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
+	// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
+	if (player->draftpower < FRACUNIT)
+	{
+		fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
+		player->draftpower += add;
+
+		if (player->bot && player->botvars.rival)
+		{
+			// Double speed for the rival!
+			player->draftpower += add;
+		}
+
+		if (gametype == GT_BATTLE)
+		{
+			// TODO: gametyperules
+			// Double speed in Battle
+			player->draftpower += add;
+		}
+	}
+
+	if (player->draftpower > FRACUNIT)
+	{
+		player->draftpower = FRACUNIT;
+	}
+
+	// Play draft finish noise
+	if (olddraft < FRACUNIT && player->draftpower >= FRACUNIT)
+	{
+		S_StartSound(player->mo, sfx_cdfm62);
+	}
+
+	// Spawn in the visual!
+	K_DrawDraftCombiring(player, dest, dist, draftdistance, false);
+	return true;
+}
+
 /**	\brief	Updates the player's drafting values once per frame
 
 	\param	player	player object passed from K_KartPlayerThink
@@ -2079,6 +2205,9 @@ static boolean K_HasInfiniteTether(player_t *player)
 */
 static void K_UpdateDraft(player_t *player)
 {
+	const boolean addUfo = ((specialStage.active == true)
+		&& (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false));
+
 	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
 	fixed_t minDist;
@@ -2116,104 +2245,43 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Not enough speed to draft.
-	if (player->speed >= 20*player->mo->scale)
+	if (player->speed >= 20 * player->mo->scale)
 	{
-//#define EASYDRAFTTEST
+		if (addUfo == true)
+		{
+			// Tether off of the UFO!
+			if (K_TryDraft(player, specialStage.ufo, minDist, draftdistance, leniency) == true)
+			{
+				return; // Finished doing our draft.
+			}
+		}
+
 		// Let's hunt for players to draft off of!
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			fixed_t dist, olddraft;
-#ifndef EASYDRAFTTEST
-			angle_t yourangle, theirangle, diff;
-#endif
+			player_t *otherPlayer = NULL;
 
-			if (!playeringame[i] || players[i].spectator || !players[i].mo)
-				continue;
-
-#ifndef EASYDRAFTTEST
-			// Don't draft on yourself :V
-			if (&players[i] == player)
-				continue;
-#endif
-
-			// Not enough speed to draft off of.
-			if (players[i].speed < 20*players[i].mo->scale)
-				continue;
-
-			// No tethering off of the guy who got the starting bonus :P
-			if (players[i].startboost > 0)
-				continue;
-
-#ifndef EASYDRAFTTEST
-			yourangle = K_MomentumAngle(player->mo);
-			theirangle = K_MomentumAngle(players[i].mo);
-
-			diff = R_PointToAngle2(player->mo->x, player->mo->y, players[i].mo->x, players[i].mo->y) - yourangle;
-			if (diff > ANGLE_180)
-				diff = InvAngle(diff);
-
-			// Not in front of this player.
-			if (diff > ANG10)
-				continue;
-
-			diff = yourangle - theirangle;
-			if (diff > ANGLE_180)
-				diff = InvAngle(diff);
-
-			// Not moving in the same direction.
-			if (diff > ANGLE_90)
-				continue;
-#endif
-
-			dist = P_AproxDistance(P_AproxDistance(players[i].mo->x - player->mo->x, players[i].mo->y - player->mo->y), players[i].mo->z - player->mo->z);
-
-#ifndef EASYDRAFTTEST
-			// TOO close to draft.
-			if (dist < minDist)
-				continue;
-
-			// Not close enough to draft.
-			if (dist > draftdistance && draftdistance > 0)
-				continue;
-#endif
-
-			olddraft = player->draftpower;
-
-			player->draftleeway = leniency;
-			player->lastdraft = i;
-
-			// Draft power is used later in K_GetKartBoostPower, ranging from 0 for normal speed and FRACUNIT for max draft speed.
-			// How much this increments every tic biases toward acceleration! (min speed gets 1.5% per tic, max speed gets 0.5% per tic)
-			if (player->draftpower < FRACUNIT)
+			if (playeringame[i] == false)
 			{
-				fixed_t add = (FRACUNIT/200) + ((9 - player->kartspeed) * ((3*FRACUNIT)/1600));;
-				player->draftpower += add;
-
-				if (player->bot && player->botvars.rival)
-				{
-					// Double speed for the rival!
-					player->draftpower += add;
-				}
-
-				if (gametype == GT_BATTLE)
-				{
-					// TODO: gametyperules
-					// Double speed in Battle
-					player->draftpower += add;
-				}
+				continue;
 			}
 
-			if (player->draftpower > FRACUNIT)
-				player->draftpower = FRACUNIT;
+			otherPlayer = &players[i];
 
-			// Play draft finish noise
-			if (olddraft < FRACUNIT && player->draftpower >= FRACUNIT)
-				S_StartSound(player->mo, sfx_cdfm62);
+			if (otherPlayer->spectator == true)
+			{
+				continue;
+			}
 
-			// Spawn in the visual!
-			K_DrawDraftCombiring(player, &players[i], dist, draftdistance, false);
+			if (otherPlayer->mo == NULL || P_MobjWasRemoved(otherPlayer->mo) == true)
+			{
+				continue;
+			}
 
-			return; // Finished doing our draft.
+			if (K_TryDraft(player, otherPlayer->mo, minDist, draftdistance, leniency) == true)
+			{
+				return; // Finished doing our draft.
+			}
 		}
 	}
 
@@ -2234,7 +2302,13 @@ static void K_UpdateDraft(player_t *player)
 		{
 			player_t *victim = &players[player->lastdraft];
 			fixed_t dist = P_AproxDistance(P_AproxDistance(victim->mo->x - player->mo->x, victim->mo->y - player->mo->y), victim->mo->z - player->mo->z);
-			K_DrawDraftCombiring(player, victim, dist, draftdistance, true);
+			K_DrawDraftCombiring(player, victim->mo, dist, draftdistance, true);
+		}
+		else if (addUfo == true)
+		{
+			// kind of a hack to not have to mess with how lastdraft works
+			fixed_t dist = P_AproxDistance(P_AproxDistance(specialStage.ufo->x - player->mo->x, specialStage.ufo->y - player->mo->y), specialStage.ufo->z - player->mo->z);
+			K_DrawDraftCombiring(player, specialStage.ufo, dist, draftdistance, true);
 		}
 	}
 	else // Remove draft speed boost.

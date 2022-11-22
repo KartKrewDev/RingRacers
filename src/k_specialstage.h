@@ -22,7 +22,7 @@ extern struct specialStage
 	boolean encore;						///< Copy of encore, just to make sure you can't cheat it with cvars
 
 	UINT32 beamDist;					///< Where the exit beam is.
-	mobj_t *capsule;					///< The Chaos Emerald capsule.
+	mobj_t *ufo;						///< The Chaos Emerald capsule.
 } specialStage;
 
 /*--------------------------------------------------

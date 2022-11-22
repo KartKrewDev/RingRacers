@@ -7176,6 +7176,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_DuelBombThink(mobj);
 		break;
 	}
+	case MT_SPECIAL_UFO:
+	{
+		Obj_SpecialUFOThinker(mobj);
+		break;
+	}
 	case MT_EMERALD:
 		{
 			if (battleovertime.enabled >= 10*TICRATE)
