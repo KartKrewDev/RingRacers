@@ -2222,6 +2222,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 	else
 	{
+		if (target->type == MT_SPECIAL_UFO)
+		{
+			return Obj_SpecialUFODamage(target, inflictor, source, damagetype);
+		}
+
 		if (damagetype & DMG_STEAL)
 		{
 			// Not a player, steal damage is intended to not do anything

@@ -7,8 +7,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  shrink.c
-/// \brief Shrink laser item code.
+/// \file  ufo.c
+/// \brief Special Stage UFO
 
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -24,11 +24,11 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 
-#define UFO_BASE_SPEED (12 * FRACUNIT) // UFO's slowest speed.
-#define UFO_SPEEDUP (FRACUNIT)
+#define UFO_BASE_SPEED (16 * FRACUNIT) // UFO's slowest speed.
+#define UFO_SPEEDUP (FRACUNIT >> 3)
 #define UFO_SLOWDOWN (FRACUNIT >> 2)
 #define UFO_SPACING (1024 * FRACUNIT)
-#define UFO_DEADZONE (512 * FRACUNIT)
+#define UFO_DEADZONE (768 * FRACUNIT)
 #define UFO_SPEEDFACTOR (FRACUNIT * 9 / 10)
 
 #define ufo_waypoint(o) ((o)->extravalue1)
@@ -47,6 +47,11 @@ static fixed_t GenericDistance(
 	fixed_t destx, fixed_t desty, fixed_t destz)
 {
 	return P_AproxDistance(P_AproxDistance(destx - curx, desty - cury), destz - curz);
+}
+
+static boolean UFOEmeraldChase(mobj_t *ufo)
+{
+	return (ufo->health <= 1);
 }
 
 static void UFOUpdateDistanceToFinish(mobj_t *ufo)
@@ -314,17 +319,86 @@ static void UFOMove(mobj_t *ufo)
 	}
 }
 
+static void UFOEmeraldVFX(mobj_t *ufo)
+{
+	if (leveltime % 3 == 0)
+	{
+		mobj_t *sparkle = P_SpawnMobjFromMobj(
+			ufo,
+			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
+			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
+			P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT,
+			MT_EMERALDSPARK
+		);
+
+		sparkle->color = ufo->color;
+		sparkle->momz += 8 * ufo->scale * P_MobjFlip(ufo);
+	}
+}
+
 void Obj_SpecialUFOThinker(mobj_t *ufo)
 {
 	UFOMove(ufo);
 	UFOUpdateAngle(ufo);
 	UFOUpdateDistanceToFinish(ufo);
 	UFOUpdateSpeed(ufo);
+
+	if (UFOEmeraldChase(ufo) == true)
+	{
+		// Spawn emerald sparkles
+		UFOEmeraldVFX(ufo);
+	}
+}
+
+static UINT8 GetUFODamage(mobj_t *inflictor)
+{
+	if (inflictor == NULL || P_MobjWasRemoved(inflictor) == true)
+	{
+		return 1;
+	}
+
+	switch (inflictor->type)
+	{
+		default:
+		{
+			return 1;
+		}
+	}
+}
+
+boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
+{
+	UINT8 damage = 1;
+
+	(void)source;
+	(void)damageType;
+
+	if (UFOEmeraldChase(ufo) == true)
+	{
+		// Damaged fully already, no need for any more.
+		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW); // Double check flags, just to be sure.
+		return false;
+	}
+
+	damage = GetUFODamage(inflictor);
+
+	if (damage >= ufo->health - 1)
+	{
+		// Turn into just an emerald, and make it collectible!
+		ufo->health = 1;
+		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
+		return true;
+	}
+
+	ufo->health -= damage;
+	K_SetHitLagForObjects(ufo, inflictor, damage * 6, true);
+	return true;
 }
 
 static mobj_t *InitSpecialUFO(waypoint_t *start)
 {
 	mobj_t *ufo = NULL;
+	mobj_t *underlay = NULL;
 
 	if (start == NULL)
 	{
@@ -342,6 +416,13 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	}
 
 	ufo_speed(ufo) = UFO_BASE_SPEED;
+
+	ufo->color = SKINCOLOR_CHAOSEMERALD1;
+
+	underlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
+	P_SetTarget(&underlay->target, ufo);
+	P_SetMobjState(underlay, S_CHAOSEMERALD_UNDER);
+	underlay->color = ufo->color;
 
 	return ufo;
 }

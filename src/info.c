@@ -28994,7 +28994,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_SPECIAL_UFO
 		-1,             // doomednum
 		S_CHAOSEMERALD1, // spawnstate
-		1000,           // spawnhealth
+		101,            // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
 		8,              // reactiontime

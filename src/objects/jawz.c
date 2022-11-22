@@ -140,17 +140,21 @@ static void JawzChase(mobj_t *th, boolean grounded)
 
 	if (jawz_chase(th) == NULL || P_MobjWasRemoved(jawz_chase(th)) == true)
 	{
+		mobj_t *newChase = NULL;
+		player_t *owner = NULL;
+
 		th->angle = K_MomentumAngle(th);
 
-		if (jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false
-			&& jawz_owner(th)->player != NULL)
+		if ((jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false)
+			&& (jawz_owner(th)->player != NULL))
 		{
-			player_t *newPlayer = K_FindJawzTarget(th, jawz_owner(th)->player, ANGLE_90);
+			owner = jawz_owner(th)->player;
+		}
 
-			if (newPlayer != NULL)
-			{
-				P_SetTarget(&jawz_chase(th), newPlayer->mo);
-			}
+		newChase = K_FindJawzTarget(th, owner, ANGLE_90);
+		if (newChase != NULL)
+		{
+			P_SetTarget(&jawz_chase(th), newChase);
 		}
 	}
 
