@@ -513,6 +513,12 @@ typedef enum
 	TMBOT_FORCEDIR     = 1<<2,
 } textmapbotcontroller_t;
 
+typedef enum
+{
+	TMLOOP_ALPHA = 0,
+	TMLOOP_BETA  = 1,
+} textmaploopendpointtype_t;
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.

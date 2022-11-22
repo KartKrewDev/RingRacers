@@ -677,10 +677,25 @@ void P_ReloadRings(void)
 	}
 }
 
+static int cmp_loopends(const void *a, const void *b)
+{
+	const mapthing_t
+		*mt1 = *(const mapthing_t*const*)a,
+		*mt2 = *(const mapthing_t*const*)b;
+
+	// weighted sorting; tag takes precedence over type
+	return
+		intsign(Tag_FGet(&mt1->tags) - Tag_FGet(&mt2->tags)) * 2 +
+		intsign(mt1->args[0] - mt2->args[0]);
+}
+
 static void P_SpawnMapThings(boolean spawnemblems)
 {
 	size_t i;
 	mapthing_t *mt;
+
+	mapthing_t **loopends;
+	size_t num_loopends = 0;
 
 	// Spawn axis points first so they are at the front of the list for fast searching.
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
@@ -690,13 +705,21 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			case 1700: // MT_AXIS
 			case 1701: // MT_AXISTRANSFER
 			case 1702: // MT_AXISTRANSFERLINE
+			case 2021: // MT_LOOPCENTERPOINT
 				mt->mobj = NULL;
 				P_SpawnMapThing(mt);
+				break;
+			case 2020: // MT_LOOPENDPOINT
+				num_loopends++;
 				break;
 			default:
 				break;
 		}
 	}
+
+	Z_Malloc(num_loopends * sizeof *loopends, PU_STATIC,
+			&loopends);
+	num_loopends = 0;
 
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
 	{
@@ -705,6 +728,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			case 1700: // MT_AXIS
 			case 1701: // MT_AXISTRANSFER
 			case 1702: // MT_AXISTRANSFERLINE
+			case 2021: // MT_LOOPCENTERPOINT
 				continue; // These were already spawned
 		}
 
@@ -716,6 +740,13 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 		mt->mobj = NULL;
 
+		if (mt->type == mobjinfo[MT_LOOPENDPOINT].doomednum)
+		{
+			loopends[num_loopends] = mt;
+			num_loopends++;
+			continue;
+		}
+
 		if (mt->type >= 600 && mt->type <= 611) // item patterns
 			P_SpawnItemPattern(mt);
 		else if (mt->type == 1713) // hoops
@@ -723,6 +754,25 @@ static void P_SpawnMapThings(boolean spawnemblems)
 		else // Everything else
 			P_SpawnMapThing(mt);
 	}
+
+	qsort(loopends, num_loopends, sizeof *loopends,
+			cmp_loopends);
+
+	for (i = 1; i < num_loopends; ++i)
+	{
+		mapthing_t
+			*mt1 = loopends[i - 1],
+			*mt2 = loopends[i];
+
+		if (Tag_FGet(&mt1->tags) == Tag_FGet(&mt2->tags) &&
+				mt1->args[0] == mt2->args[0])
+		{
+			P_SpawnItemLine(mt1, mt2);
+			i++;
+		}
+	}
+
+	Z_Free(loopends);
 }
 
 // Experimental groovy write function!
@@ -3931,6 +3981,8 @@ static void P_AddBinaryMapTags(void)
 		case 292:
 		case 294:
 		case 780:
+		case 2020: // MT_LOOPENDPOINT
+		case 2021: // MT_LOOPCENTERPOINT
 			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);
 			break;
 		default:
@@ -6735,6 +6787,17 @@ static void P_ConvertBinaryThingTypes(void)
 			{
 				mapthings[i].args[2] |= TMICF_INVERTSIZE;
 			}
+			break;
+		case 2020: // MT_LOOPENDPOINT
+		{
+			mapthings[i].args[0] =
+				mapthings[i].options & MTF_AMBUSH ?
+				TMLOOP_BETA : TMLOOP_ALPHA;
+			break;
+		}
+		case 2021: // MT_LOOPCENTERPOINT
+			mapthings[i].args[0] = (mapthings[i].options & MTF_AMBUSH) == MTF_AMBUSH;
+			mapthings[i].args[1] = mapthings[i].angle;
 			break;
 		case 2050: // MT_DUELBOMB
 			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);

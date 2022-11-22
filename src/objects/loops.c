@@ -91,6 +91,21 @@ measure_clock
 	*radius = FixedHypot(xy, dz);
 }
 
+static void
+crisscross
+(		mobj_t * anchor,
+		mobj_t ** target_p,
+		mobj_t ** other_p)
+{
+	P_SetTarget(target_p, anchor);
+
+	if (!P_MobjWasRemoved(*other_p))
+	{
+		P_SetTarget(&anchor_other(anchor), *other_p);
+		P_SetTarget(&anchor_other(*other_p), anchor);
+	}
+}
+
 static boolean
 moving_toward_gate
 (		const player_t * player,
@@ -134,6 +149,32 @@ get_binary_direction
 	}
 }
 
+mobj_t *
+Obj_FindLoopCenter (const mtag_t tag)
+{
+	INT32 i;
+
+	TAG_ITER_THINGS(tag, i)
+	{
+		mapthing_t *mt = &mapthings[i];
+
+		if (mt->type == mobjinfo[MT_LOOPCENTERPOINT].doomednum)
+		{
+			return mt->mobj;
+		}
+	}
+
+	return NULL;
+}
+
+void
+Obj_InitLoopEndpoint
+(		mobj_t * end,
+		mobj_t * anchor)
+{
+	P_SetTarget(&end_anchor(end), anchor);
+}
+
 void
 Obj_InitLoopCenter (mobj_t *center)
 {
@@ -141,6 +182,35 @@ Obj_InitLoopCenter (mobj_t *center)
 
 	center_max_revolution(center) = mt->args[1] * FRACUNIT / 360;
 	center_set_flip(center, mt->args[0]);
+}
+
+void
+Obj_LinkLoopAnchor
+(		mobj_t * anchor,
+		mobj_t * center,
+		UINT8 type)
+{
+	P_SetTarget(&anchor_center(anchor), center);
+
+	anchor_type(anchor) = type;
+
+	if (!P_MobjWasRemoved(center))
+	{
+		switch (type)
+		{
+			case TMLOOP_ALPHA:
+				crisscross(anchor,
+						&center_alpha(center),
+						&center_beta(center));
+				break;
+
+			case TMLOOP_BETA:
+				crisscross(anchor,
+						&center_beta(center),
+						&center_alpha(center));
+				break;
+		}
+	}
 }
 
 void
