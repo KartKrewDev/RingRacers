@@ -13726,6 +13726,18 @@ void P_SpawnItemPattern(mapthing_t *mthing)
 	}
 }
 
+void P_SpawnItemLine(mapthing_t *mt1, mapthing_t *mt2)
+{
+	const mobjtype_t type = P_GetMobjtype(mt1->type);
+	const fixed_t diameter = 2 * FixedMul(mobjinfo[type].radius, mapobjectscale);
+	const fixed_t dx = (mt2->x - mt1->x) * FRACUNIT;
+	const fixed_t dy = (mt2->y - mt1->y) * FRACUNIT;
+	const fixed_t dist = FixedHypot(dx, dy);
+	const angle_t angle = R_PointToAngle2(0, 0, dx, dy);
+
+	P_SpawnSingularItemRow(mt1, type, (dist / diameter) + 1, diameter, 0, AngleFixed(angle) / FRACUNIT);
+}
+
 //
 // P_CheckMissileSpawn
 // Moves the missile forward a bit and possibly explodes it right there.
