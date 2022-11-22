@@ -9743,14 +9743,6 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
-	// Set old position (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
-	mobj->old_angle = mobj->angle;
-	mobj->old_pitch = mobj->pitch;
-	mobj->old_roll = mobj->roll;
-
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 		P_SetTarget(&mobj->target, NULL);
