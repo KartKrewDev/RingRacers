@@ -2674,6 +2674,22 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 	return maxstep;
 }
 
+static boolean P_UsingStepUp(mobj_t *thing)
+{
+	if (thing->flags & MF_NOCLIP)
+	{
+		return false;
+	}
+
+	// orbits have no collision
+	if (thing->player && thing->player->loop.radius)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 static boolean
 increment_move
 (		mobj_t * thing,
@@ -2734,7 +2750,7 @@ increment_move
 		// copy into the spechitint buffer from spechit
 		spechitint_copyinto();
 
-		if (!(thing->flags & MF_NOCLIP))
+		if (P_UsingStepUp(thing))
 		{
 			// All things are affected by their scale.
 			fixed_t maxstep = P_GetThingStepUp(thing, tryx, tryy);

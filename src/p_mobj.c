@@ -3979,7 +3979,8 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 static void P_SquishThink(mobj_t *mobj)
 {
 	if (!(mobj->flags & MF_NOSQUISH) &&
-			!(mobj->eflags & MFE_SLOPELAUNCHED))
+			!(mobj->eflags & MFE_SLOPELAUNCHED) &&
+			!(mobj->player && mobj->player->loop.radius != 0))
 	{
 		K_Squish(mobj);
 	}
@@ -4002,7 +4003,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 
 	// Zoom tube
 	if ((mobj->player->carry == CR_ZOOMTUBE && mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-		|| mobj->player->respawn.state == RESPAWNST_MOVE)
+		|| mobj->player->respawn.state == RESPAWNST_MOVE
+		|| mobj->player->loop.radius != 0)
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
