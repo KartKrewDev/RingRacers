@@ -485,8 +485,6 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 5, 1 }  // Jawz x2
 };
 
-// TODO: add back when this gets used
-#if 0
 static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 {
 	//M  N  O  P
@@ -519,7 +517,6 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 1, 1 }, // Orbinaut x4
 	{ 0, 0, 1, 1 }  // Jawz x2
 };
-#endif
 
 #define DISTVAR (2048) // Magic number distance for use with item roulette tiers
 #define SPBSTARTDIST (6*DISTVAR) // Distance when SPB can start appearing
@@ -797,6 +794,11 @@ INT32 K_KartGetItemOdds(
 		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
 		newodds = K_KartItemOddsBattle[item-1][pos];
 	}
+	else if (specialStage.active == true)
+	{
+		I_Assert(pos < 4); // Ditto
+		newodds = K_KartItemOddsSpecial[item-1][pos];
+	}
 	else
 	{
 		I_Assert(pos < 8); // Ditto
@@ -902,29 +904,32 @@ INT32 K_KartGetItemOdds(
 			cooldownOnStart = true;
 			notNearEnd = true;
 
-			if (firstDist < ENDDIST*2 // No SPB when 1st is almost done
-				|| isFirst == true) // No SPB for 1st ever
+			if (specialStage.active == false)
 			{
-				newodds = 0;
-			}
-			else
-			{
-				const UINT32 dist = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
-				const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-				const UINT8 maxOdds = 20;
-				fixed_t multiplier = (dist * FRACUNIT) / distRange;
-
-				if (multiplier < 0)
+				if (firstDist < ENDDIST*2 // No SPB when 1st is almost done
+					|| isFirst == true) // No SPB for 1st ever
 				{
-					multiplier = 0;
+					newodds = 0;
 				}
-
-				if (multiplier > FRACUNIT)
+				else
 				{
-					multiplier = FRACUNIT;
-				}
+					const UINT32 dist = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
+					const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+					const UINT8 maxOdds = 20;
+					fixed_t multiplier = (dist * FRACUNIT) / distRange;
 
-				newodds = FixedMul(maxOdds * 4, multiplier);
+					if (multiplier < 0)
+					{
+						multiplier = 0;
+					}
+
+					if (multiplier > FRACUNIT)
+					{
+						multiplier = FRACUNIT;
+					}
+
+					newodds = FixedMul(maxOdds * 4, multiplier);
+				}
 			}
 			break;
 
@@ -1005,6 +1010,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	UINT8 useodds = 0;
 	UINT8 disttable[14];
 	UINT8 distlen = 0;
+	UINT8 totalsize = 0;
 	boolean oddsvalid[8];
 
 	// Unused now, oops :V
@@ -1015,10 +1021,15 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 		UINT8 j;
 		boolean available = false;
 
-		if (gametype == GT_BATTLE && i > 1)
+		if (specialStage.active == true && i > 3)
 		{
 			oddsvalid[i] = false;
-			break;
+			continue;
+		}
+		else if (gametype == GT_BATTLE && i > 1)
+		{
+			oddsvalid[i] = false;
+			continue;
 		}
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
@@ -1039,6 +1050,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	}
 
 #define SETUPDISTTABLE(odds, num) \
+	totalsize++;\
 	if (oddsvalid[odds]) \
 		for (i = num; i; --i) \
 			disttable[distlen++] = odds;
@@ -1063,26 +1075,44 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	}
 	else
 	{
-		SETUPDISTTABLE(0,1);
-		SETUPDISTTABLE(1,1);
-		SETUPDISTTABLE(2,1);
-		SETUPDISTTABLE(3,2);
-		SETUPDISTTABLE(4,2);
-		SETUPDISTTABLE(5,3);
-		SETUPDISTTABLE(6,3);
-		SETUPDISTTABLE(7,1);
+		UINT32 itotaldis = 0;
+
+		if (specialStage.active == true) // Special Stages
+		{
+			SETUPDISTTABLE(0,1);
+			SETUPDISTTABLE(1,2);
+			SETUPDISTTABLE(2,3);
+			SETUPDISTTABLE(3,1);
+		}
+		else // Race
+		{
+			SETUPDISTTABLE(0,1);
+			SETUPDISTTABLE(1,1);
+			SETUPDISTTABLE(2,1);
+			SETUPDISTTABLE(3,2);
+			SETUPDISTTABLE(4,2);
+			SETUPDISTTABLE(5,3);
+			SETUPDISTTABLE(6,3);
+			SETUPDISTTABLE(7,1);
+		}
+
+		itotaldis = DISTVAR * (((totalsize - 2) * distlen) / totalsize);
 
 		if (pdis == 0)
+		{
 			useodds = disttable[0];
-		else if (pdis > DISTVAR * ((12 * distlen) / 14))
+		}
+		else if (pdis > itotaldis)
+		{
 			useodds = disttable[distlen-1];
+		}
 		else
 		{
-			for (i = 1; i < 13; i++)
+			for (i = 1; i < totalsize-1; i++)
 			{
-				if (pdis <= DISTVAR * ((i * distlen) / 14))
+				if (pdis <= DISTVAR * ((i * distlen) / totalsize))
 				{
-					useodds = disttable[((i * distlen) / 14)];
+					useodds = disttable[((i * distlen) / totalsize)];
 					break;
 				}
 			}
@@ -1117,6 +1147,11 @@ INT32 K_GetRollingRouletteItem(player_t *player)
 		{
 			odds_row = K_KartItemOddsBattle[0];
 			odds_row_size = sizeof K_KartItemOddsBattle[0];
+		}
+		else if (specialStage.active == true)
+		{
+			odds_row = K_KartItemOddsSpecial[0];
+			odds_row_size = sizeof K_KartItemOddsSpecial[0];
 		}
 		else
 		{
@@ -1156,6 +1191,11 @@ boolean K_ForcedSPB(player_t *player)
 	}
 
 	if (!(gametyperules & GTR_CIRCUIT))
+	{
+		return false;
+	}
+
+	if (specialStage.active == true)
 	{
 		return false;
 	}
@@ -1216,6 +1256,61 @@ boolean K_ForcedSPB(player_t *player)
 	return (secondToFirst >= SPBFORCEDIST);
 }
 
+UINT32 K_GetItemRouletteDistance(player_t *player, UINT8 pingame)
+{
+	UINT32 pdis = 0;
+
+	if (specialStage.active == true)
+	{
+		UINT32 ufoDis = K_GetSpecialUFODistance();
+
+		if (player->distancetofinish <= ufoDis)
+		{
+			// You're ahead of the UFO.
+			pdis = 0;
+		}
+		else
+		{
+			// Subtract the UFO's distance from your distance!
+			pdis = player->distancetofinish - ufoDis;
+		}
+	}
+	else
+	{
+		UINT8 i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator
+				&& players[i].position == 1)
+			{
+				// This player is first! Yay!
+
+				if (player->distancetofinish <= players[i].distancetofinish)
+				{
+					// Guess you're in first / tied for first?
+					pdis = 0;
+				}
+				else
+				{
+					// Subtract 1st's distance from your distance, to get your distance from 1st!
+					pdis = player->distancetofinish - players[i].distancetofinish;
+				}
+				break;
+			}
+		}
+	}
+
+	pdis = K_ScaleItemDistance(pdis, pingame);
+
+	if (player->bot && player->botvars.rival)
+	{
+		// Rival has better odds :)
+		pdis = (15 * pdis) / 14;
+	}
+
+	return pdis;
+}
+
 static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 {
 	INT32 i;
@@ -1271,34 +1366,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 	else if (!(player->itemroulette >= (TICRATE*3)))
 		return;
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator
-			&& players[i].position == 1)
-		{
-			// This player is first! Yay!
-
-			if (player->distancetofinish <= players[i].distancetofinish)
-			{
-				// Guess you're in first / tied for first?
-				pdis = 0;
-			}
-			else
-			{
-				// Subtract 1st's distance from your distance, to get your distance from 1st!
-				pdis = player->distancetofinish - players[i].distancetofinish;
-			}
-			break;
-		}
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame);
-
-	if (player->bot && player->botvars.rival)
-	{
-		// Rival has better odds :)
-		pdis = (15 * pdis) / 14;
-	}
+	pdis = K_GetItemRouletteDistance(player, pingame);
 
 	// SPECIAL CASE No. 1:
 	// Fake Eggman items
@@ -1331,7 +1399,7 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 
 	// SPECIAL CASE No. 3:
 	// Record Attack / alone mashing behavior
-	if (modeattacking || pingame == 1)
+	if ((modeattacking || pingame == 1) && (specialStage.active == false))
 	{
 		if (gametype == GT_RACE)
 		{

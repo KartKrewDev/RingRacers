@@ -4570,25 +4570,7 @@ static void K_drawDistributionDebugger(void)
 			bestbumper = players[i].bumpers;
 	}
 
-	// lovely double loop......
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator
-			&& players[i].position == 1)
-		{
-			// This player is first! Yay!
-			pdis = stplyr->distancetofinish - players[i].distancetofinish;
-			break;
-		}
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame);
-
-	if (stplyr->bot && stplyr->botvars.rival)
-	{
-		// Rival has better odds :)
-		pdis = (15 * pdis) / 14;
-	}
+	pdis = K_GetItemRouletteDistance(stplyr, pingame);
 
 	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
 
