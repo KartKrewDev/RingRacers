@@ -60,5 +60,6 @@ mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
 /* Special Stage UFO */
 void Obj_SpecialUFOThinker(mobj_t *bomb);
 mobj_t *Obj_CreateSpecialUFO(void);
+UINT32 K_GetSpecialUFODistance(void);
 
 #endif/*k_objects_H*/

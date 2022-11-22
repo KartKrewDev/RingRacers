@@ -22,6 +22,7 @@
 #include "../g_game.h"
 #include "../z_zone.h"
 #include "../k_waypoint.h"
+#include "../k_specialstage.h"
 
 #define UFO_BASE_SPEED (12 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT)
@@ -372,4 +373,17 @@ mobj_t *Obj_CreateSpecialUFO(void)
 	}
 
 	return InitSpecialUFO(startWaypoint);
+}
+
+UINT32 K_GetSpecialUFODistance(void)
+{
+	if (specialStage.active == true)
+	{
+		if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
+		{
+			return (UINT32)ufo_distancetofinish(specialStage.ufo);
+		}
+	}
+
+	return UINT32_MAX;
 }
