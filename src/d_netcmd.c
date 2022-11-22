@@ -801,8 +801,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_pingmeasurement);
 	CV_RegisterVar(&cv_showviewpointtext);
 
-	CV_RegisterVar(&cv_director);
-
 	CV_RegisterVar(&cv_schedule);
 	CV_RegisterVar(&cv_automate);
 	CV_RegisterVar(&cv_livestudioaudience);
@@ -815,6 +813,23 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
+
+	COM_AddCommand("numthinkers", Command_Numthinkers_f);
+	COM_AddCommand("countmobjs", Command_CountMobjs_f);
+
+	CV_RegisterVar(&cv_recordmultiplayerdemos);
+	CV_RegisterVar(&cv_netdemosyncquality);
+
+	CV_RegisterVar(&cv_shoutname);
+	CV_RegisterVar(&cv_shoutcolor);
+	CV_RegisterVar(&cv_autoshout);
+
+#ifdef _DEBUG
+	COM_AddCommand("causecfail", Command_CauseCfail_f);
+#endif
+#ifdef LUA_ALLOW_BYTECODE
+	COM_AddCommand("dumplua", Command_Dumplua_f);
+#endif
 }
 
 // =========================================================================
@@ -837,9 +852,6 @@ void D_RegisterClientCommands(void)
 
 	if (dedicated)
 		return;
-
-	COM_AddCommand("numthinkers", Command_Numthinkers_f);
-	COM_AddCommand("countmobjs", Command_CountMobjs_f);
 
 	COM_AddCommand("changeteam", Command_Teamchange_f);
 	COM_AddCommand("changeteam2", Command_Teamchange2_f);
@@ -936,9 +948,6 @@ void D_RegisterClientCommands(void)
 
 	COM_AddCommand("displayplayer", Command_Displayplayer_f);
 
-	CV_RegisterVar(&cv_recordmultiplayerdemos);
-	CV_RegisterVar(&cv_netdemosyncquality);
-
 	// FIXME: not to be here.. but needs be done for config loading
 	CV_RegisterVar(&cv_globalgamma);
 	CV_RegisterVar(&cv_globalsaturation);
@@ -976,10 +985,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
-
-	CV_RegisterVar(&cv_shoutname);
-	CV_RegisterVar(&cv_shoutcolor);
-	CV_RegisterVar(&cv_autoshout);
 
 	CV_RegisterVar(&cv_songcredits);
 	CV_RegisterVar(&cv_tutorialprompt);
@@ -1028,13 +1033,14 @@ void D_RegisterClientCommands(void)
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
 	CV_RegisterVar(&cv_renderview);
-	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_vhseffect);
 	CV_RegisterVar(&cv_shittyscreen);
 	CV_RegisterVar(&cv_renderer);
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
+
+	CV_RegisterVar(&cv_director);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1056,7 +1062,7 @@ void D_RegisterClientCommands(void)
 //	CV_RegisterVar(&cv_grid);
 //	CV_RegisterVar(&cv_snapto);
 
-	// add cheat commands
+	// add cheats
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
@@ -1071,12 +1077,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
-#ifdef _DEBUG
-	COM_AddCommand("causecfail", Command_CauseCfail_f);
-#endif
-#ifdef LUA_ALLOW_BYTECODE
-	COM_AddCommand("dumplua", Command_Dumplua_f);
-#endif
+	CV_RegisterVar(&cv_renderhitbox);
 
 #ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordrp);
