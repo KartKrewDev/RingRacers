@@ -449,9 +449,10 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	profile_t *p = PR_GetProfile(profilenum);
 
 	// this CAN happen!!
-	if (p == NULL)
+	if (dedicated || p == NULL)
 	{
-		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		if (!dedicated)
+			CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
 		profilenum = 0; // make sure to set this so that the cvar is set properly.
 		p = PR_GetProfile(profilenum);
 	}
@@ -481,9 +482,10 @@ void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
 	profile_t *p = PR_GetProfile(profilenum);
 
 	// this CAN happen!!
-	if (p == NULL)
+	if (dedicated || p == NULL)
 	{
-		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		if (!dedicated)
+			CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
 		profilenum = 0; // make sure to set this so that the cvar is set properly.
 		p = PR_GetProfile(profilenum);
 	}
