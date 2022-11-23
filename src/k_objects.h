@@ -57,6 +57,7 @@ void Obj_DuelBombInit(mobj_t *bomb);
 /* Special Stage UFO */
 void Obj_SpecialUFOThinker(mobj_t *bomb);
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
+void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
 

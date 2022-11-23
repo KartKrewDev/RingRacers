@@ -378,6 +378,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 0))
 				return;
 
+			if (special->threshold > 0)
+				return;
+
+			if (toucher->hitlag > 0)
+				return;
+
 			CONS_Printf("You win!\n");
 			break;
 		/*
