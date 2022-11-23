@@ -693,7 +693,12 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	{
 		UINT8 j;
 
-		if (gametype == GT_BATTLE && i > 1)
+		if (specialStage.active == true && i > 3)
+		{
+			oddsvalid[i] = false;
+			continue;
+		}
+		else if (gametype == GT_BATTLE && i > 1)
 		{
 			oddsValid[i] = false;
 			continue;
@@ -724,7 +729,7 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	{
 		if (specialStage.active == true) // Special Stages
 		{
-			SETUPDISTTABLE(0,1);
+			SETUPDISTTABLE(0,2);
 			SETUPDISTTABLE(1,2);
 			SETUPDISTTABLE(2,3);
 			SETUPDISTTABLE(3,1);

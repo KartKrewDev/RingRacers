@@ -24,12 +24,12 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 
-#define UFO_BASE_SPEED (16 * FRACUNIT) // UFO's slowest speed.
-#define UFO_SPEEDUP (FRACUNIT >> 3)
-#define UFO_SLOWDOWN (FRACUNIT >> 2)
-#define UFO_SPACING (1024 * FRACUNIT)
-#define UFO_DEADZONE (768 * FRACUNIT)
-#define UFO_SPEEDFACTOR (FRACUNIT * 9 / 10)
+#define UFO_BASE_SPEED (24 * FRACUNIT) // UFO's slowest speed.
+#define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
+#define UFO_SLOWDOWN (FRACUNIT >> 1) // Deceleration
+#define UFO_SPACING (1024 * FRACUNIT) // How far the UFO wants to stay in front
+#define UFO_DEADZONE (2048 * FRACUNIT) // Deadzone where it won't update it's speed as much.
+#define UFO_SPEEDFACTOR (FRACUNIT * 9 / 10) // Factor of player's best speed, to make it more fair.
 
 #define ufo_waypoint(o) ((o)->extravalue1)
 #define ufo_distancetofinish(o) ((o)->extravalue2)
@@ -157,17 +157,17 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 
 		distDelta = ufo_distancetofinish(ufo) - wantedDist;
 
-		if (abs(distDelta) <= deadzone)
+		if (distDelta > 0)
 		{
-			// We're in a good spot, try to match the player.
-			wantedSpeed = max(bestSpeed >> 1, baseSpeed);
+			// Too far behind! Start speeding up!
+			wantedSpeed = max(bestSpeed << 1, baseSpeed << 2);
 		}
 		else
 		{
-			if (distDelta > 0)
+			if (abs(distDelta) < deadzone)
 			{
-				// Too far behind! Start speeding up!
-				wantedSpeed = max(bestSpeed << 1, baseSpeed << 2);
+				// We're in a good spot, try to match the player.
+				wantedSpeed = max(bestSpeed >> 1, baseSpeed);
 			}
 			else
 			{
@@ -354,14 +354,29 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 {
 	if (inflictor == NULL || P_MobjWasRemoved(inflictor) == true)
 	{
-		return 1;
+		// Default damage value.
+		return 10;
 	}
 
 	switch (inflictor->type)
 	{
+		case MT_SPB:
+		{
+			// SPB deals triple damage.
+			return 30;
+		}
+		case MT_ORBINAUT:
+		case MT_ORBINAUT_SHIELD:
+		{
+			// Orbinauts deal double damage.
+			return 20;
+		}
+		case MT_JAWZ:
+		case MT_JAWZ_SHIELD:
 		default:
 		{
-			return 1;
+			// Jawz deal minimal damage.
+			return 10;
 		}
 	}
 }
@@ -372,6 +387,9 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	(void)source;
 	(void)damageType;
+
+	// Speed up on damage!
+	ufo_speed(ufo) += FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 
 	if (UFOEmeraldChase(ufo) == true)
 	{
@@ -384,14 +402,14 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	if (damage >= ufo->health - 1)
 	{
-		// Turn into just an emerald, and make it collectible!
+		// Destroy the UFO parts, and make the emerald collectible!
 		ufo->health = 1;
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		return true;
 	}
 
 	ufo->health -= damage;
-	K_SetHitLagForObjects(ufo, inflictor, damage * 6, true);
+	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
 	return true;
 }
 
@@ -415,14 +433,17 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		UFOUpdateDistanceToFinish(ufo);
 	}
 
-	ufo_speed(ufo) = UFO_BASE_SPEED;
+	ufo_speed(ufo) = FixedMul(UFO_BASE_SPEED << 2, K_GetKartGameSpeedScalar(gamespeed));
 
+	// TODO: Adjustable Special Stage emerald color
 	ufo->color = SKINCOLOR_CHAOSEMERALD1;
 
 	underlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
 	P_SetTarget(&underlay->target, ufo);
-	P_SetMobjState(underlay, S_CHAOSEMERALD_UNDER);
 	underlay->color = ufo->color;
+
+	// TODO: Super Emeralds / Chaos Rings
+	P_SetMobjState(underlay, S_CHAOSEMERALD_UNDER);
 
 	return ufo;
 }
