@@ -62,6 +62,7 @@ UINT8 K_ItemResultToAmount(SINT8 getitem);
 tic_t K_GetItemCooldown(SINT8 itemResult);
 void K_SetItemCooldown(SINT8 itemResult, tic_t time);
 void K_RunItemCooldowns(void);
+boolean K_ItemEnabled(SINT8 item);
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
 boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj);

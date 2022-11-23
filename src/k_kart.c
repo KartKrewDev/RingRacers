@@ -651,6 +651,24 @@ void K_RunItemCooldowns(void)
 	}
 }
 
+boolean K_ItemEnabled(SINT8 item)
+{
+	if (item < 1 || item >= NUMKARTRESULTS)
+	{
+		// Not a real item.
+		return false;
+	}
+
+	if (K_CanChangeRules(true) == false)
+	{
+		// Force all items to be enabled.
+		return true;
+	}
+
+	// Allow the user preference.
+	return KartItemCVars[item - 1]->value;
+}
+
 
 /**	\brief	Item Roulette for Kart
 
@@ -760,7 +778,7 @@ INT32 K_KartGetItemOdds(
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(KartItemCVars[NUMKARTRESULTS-2] != NULL); // Make sure this exists
 
-	if (!KartItemCVars[item-1]->value && !modeattacking)
+	if (K_ItemEnabled(item) == false)
 	{
 		return 0;
 	}
@@ -837,32 +855,38 @@ INT32 K_KartGetItemOdds(
 				}
 		}
 
-		if (players[i].position == 1)
+		if (specialStage.active == false)
 		{
-			first = &players[i];
+			if (players[i].position == 1)
+			{
+				first = &players[i];
+			}
+
+			if (players[i].position == 2)
+			{
+				second = &players[i];
+			}
+		}
+	}
+
+	if (specialStage.active == false)
+	{
+		if (first != NULL) // calculate 2nd's distance from 1st, for SPB
+		{
+			firstDist = first->distancetofinish;
+			isFirst = (ourDist <= firstDist);
 		}
 
-		if (players[i].position == 2)
+		if (second != NULL)
 		{
-			second = &players[i];
+			secondDist = second->distancetofinish;
 		}
-	}
 
-	if (first != NULL) // calculate 2nd's distance from 1st, for SPB
-	{
-		firstDist = first->distancetofinish;
-		isFirst = (ourDist <= firstDist);
-	}
-
-	if (second != NULL)
-	{
-		secondDist = second->distancetofinish;
-	}
-
-	if (first != NULL && second != NULL)
-	{
-		secondToFirst = secondDist - firstDist;
-		secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame); // Reversed scaling, so 16P is like 1v1, and 1v1 is like 16P
+		if (first != NULL && second != NULL)
+		{
+			secondToFirst = secondDist - firstDist;
+			secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame); // Reversed scaling, so 16P is like 1v1, and 1v1 is like 16P
+		}
 	}
 
 	switch (item)
@@ -1050,7 +1074,7 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	}
 
 #define SETUPDISTTABLE(odds, num) \
-	totalsize++;\
+	totalsize += num;\
 	if (oddsvalid[odds]) \
 		for (i = num; i; --i) \
 			disttable[distlen++] = odds;
@@ -1075,11 +1099,9 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 	}
 	else
 	{
-		UINT32 itotaldis = 0;
-
 		if (specialStage.active == true) // Special Stages
 		{
-			SETUPDISTTABLE(0,1);
+			SETUPDISTTABLE(0,2);
 			SETUPDISTTABLE(1,2);
 			SETUPDISTTABLE(2,3);
 			SETUPDISTTABLE(3,1);
@@ -1096,25 +1118,26 @@ UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbum
 			SETUPDISTTABLE(7,1);
 		}
 
-		itotaldis = DISTVAR * (((totalsize - 2) * distlen) / totalsize);
+		for (i = 0; i < totalsize; i++)
+		{
+			fixed_t pos = 0;
+			fixed_t dist = 0;
+			UINT8 index = 0;
 
-		if (pdis == 0)
-		{
-			useodds = disttable[0];
-		}
-		else if (pdis > itotaldis)
-		{
-			useodds = disttable[distlen-1];
-		}
-		else
-		{
-			for (i = 1; i < totalsize-1; i++)
+			if (i == totalsize-1)
 			{
-				if (pdis <= DISTVAR * ((i * distlen) / totalsize))
-				{
-					useodds = disttable[((i * distlen) / totalsize)];
-					break;
-				}
+				useodds = disttable[distlen-1];
+				break;
+			}
+
+			pos = ((i << FRACBITS) * distlen) / totalsize;
+			dist = FixedMul(DISTVAR << FRACBITS, pos) >> FRACBITS;
+			index = FixedInt(FixedRound(pos));
+
+			if (pdis <= (unsigned)dist)
+			{
+				useodds = disttable[index];
+				break;
 			}
 		}
 	}
