@@ -374,6 +374,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			player->emeralds |= special->extravalue1;
 			K_CheckEmeralds(player);
 			break;
+		case MT_SPECIAL_UFO:
+			if (!P_CanPickupItem(player, 0))
+				return;
+
+			CONS_Printf("You win!\n");
+			break;
 		/*
 		case MT_EERIEFOG:
 			special->frame &= ~FF_TRANS80;
