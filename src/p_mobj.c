@@ -46,6 +46,7 @@
 #include "k_terrain.h"
 #include "k_collide.h"
 #include "k_objects.h"
+#include "k_grandprix.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -11305,13 +11306,12 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 	else if (p->bot)
 	{
-		/*
-		if (bonusgame || specialstage || boss)
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			// Bots should avoid
+			// Bots aren't supposed to be here.
 			p->spectator = true;
 		}
-		*/
+		else
 		{
 			// No point in a spectating bot!
 			p->spectator = false;
