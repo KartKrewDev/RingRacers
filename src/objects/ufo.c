@@ -227,7 +227,13 @@ static void UFOMove(mobj_t *ufo)
 	path_t pathtofinish = {0};
 	size_t pathIndex = 0;
 
-	curWaypoint = K_GetWaypointFromIndex((size_t)ufo_waypoint(ufo));
+	boolean reachedEnd = false;
+
+	if (ufo_waypoint(ufo) >= 0)
+	{
+		curWaypoint = K_GetWaypointFromIndex((size_t)ufo_waypoint(ufo));
+	}
+
 	destWaypoint = K_GetFinishLineWaypoint();
 
 	if (curWaypoint == NULL || destWaypoint == NULL)
@@ -275,6 +281,7 @@ static void UFOMove(mobj_t *ufo)
 			if (curWaypoint == destWaypoint)
 			{
 				// Reached the end.
+				reachedEnd = true;
 				break;
 			}
 
@@ -292,7 +299,7 @@ static void UFOMove(mobj_t *ufo)
 				if (pathfindsuccess == false)
 				{
 					// Path isn't valid.
-					// Just transition into the next state.
+					// Just keep going.
 					break;
 				}
 			}
@@ -302,6 +309,7 @@ static void UFOMove(mobj_t *ufo)
 			if (pathIndex >= pathtofinish.numnodes)
 			{
 				// Successfully reached the end of the path.
+				reachedEnd = true;
 				break;
 			}
 
@@ -312,6 +320,12 @@ static void UFOMove(mobj_t *ufo)
 	}
 
 	UFOMoveTo(ufo, newX, newY, newZ);
+
+	if (reachedEnd == true)
+	{
+		CONS_Printf("You lost...\n");
+		ufo_waypoint(ufo) = -1; // Invalidate
+	}
 
 	if (pathfindsuccess == true)
 	{
@@ -366,16 +380,16 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 			return 30;
 		}
 		case MT_ORBINAUT:
-		case MT_ORBINAUT_SHIELD:
 		{
-			// Orbinauts deal double damage.
+			// Thrown orbinauts deal double damage.
 			return 20;
 		}
 		case MT_JAWZ:
 		case MT_JAWZ_SHIELD:
+		case MT_ORBINAUT_SHIELD:
 		default:
 		{
-			// Jawz deal minimal damage.
+			// Jawz / shields deal regular damage.
 			return 10;
 		}
 	}
