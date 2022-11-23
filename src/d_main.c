@@ -1863,6 +1863,18 @@ void D_SRB2Main(void)
 				G_SetUsedCheats();
 			}
 
+			if (grandprixinfo.gp == true && mapheaderinfo[pstartmap-1])
+			{
+				if (mapheaderinfo[pstartmap-1]->typeoflevel & TOL_SPECIAL)
+				{
+					specialStage.active = true;
+					specialStage.encore = grandprixinfo.encore;
+					grandprixinfo.eventmode = GPEVENT_SPECIAL;
+				}
+
+				G_SetUsedCheats();
+			}
+
 			D_MapChange(pstartmap, gametype, (cv_kartencore.value == 1), true, 0, false, false);
 		}
 	}
