@@ -1348,6 +1348,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 			return BMIT_CONTINUE;
 		}
+		else if (thing->type == MT_SPECIAL_UFO)
+		{
+			if (!(thing->flags & MF_SPECIAL))
+			{
+				Obj_PlayerUFOCollide(thing, tmthing);
+				return BMIT_CONTINUE;
+			}
+		}
 		else if (thing->type == MT_BLUEROBRA_HEAD || thing->type == MT_BLUEROBRA_JOINT)
 		{
 			// see if it went over / under

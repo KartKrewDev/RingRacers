@@ -529,6 +529,10 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 	{
 		weight = 0; // This player does not cause any bump action
 	}
+	else if (against && against->type == MT_SPECIAL_UFO)
+	{
+		weight = 0;
+	}
 	else
 	{
 		// Applies rubberbanding, to prevent rubberbanding bots

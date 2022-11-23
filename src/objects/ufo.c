@@ -27,13 +27,14 @@
 #define UFO_BASE_SPEED (24 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
 #define UFO_SLOWDOWN (FRACUNIT >> 1) // Deceleration
-#define UFO_SPACING (1024 * FRACUNIT) // How far the UFO wants to stay in front
+#define UFO_SPACING (768 * FRACUNIT) // How far the UFO wants to stay in front
 #define UFO_DEADZONE (2048 * FRACUNIT) // Deadzone where it won't update it's speed as much.
-#define UFO_SPEEDFACTOR (FRACUNIT * 9 / 10) // Factor of player's best speed, to make it more fair.
+#define UFO_SPEEDFACTOR (FRACUNIT * 3 / 4) // Factor of player's best speed, to make it more fair.
 
 #define ufo_waypoint(o) ((o)->extravalue1)
 #define ufo_distancetofinish(o) ((o)->extravalue2)
 #define ufo_speed(o) ((o)->watertop)
+#define ufo_collectdelay(o) ((o)->threshold)
 
 static void UFOMoveTo(mobj_t *ufo, fixed_t destx, fixed_t desty, fixed_t destz)
 {
@@ -131,7 +132,7 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 
 			// Doesn't matter if a splitscreen player behind is moving faster behind the one most caught up.
 			bestSpeed = R_PointToDist2(0, 0, player->rmomx, player->rmomy);
-
+			bestSpeed = min(bestSpeed, K_GetKartSpeed(player, false, false)); // Don't become unfair with Sneakers.
 			bestSpeed = FixedDiv(bestSpeed, mapobjectscale); // Unscale from mapobjectscale to FRACUNIT
 			bestSpeed = FixedMul(bestSpeed, UFO_SPEEDFACTOR); // Make it a bit more lenient
 		}
@@ -160,11 +161,11 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 		if (distDelta > 0)
 		{
 			// Too far behind! Start speeding up!
-			wantedSpeed = max(bestSpeed << 1, baseSpeed << 2);
+			wantedSpeed = max(bestSpeed, baseSpeed << 2);
 		}
 		else
 		{
-			if (abs(distDelta) < deadzone)
+			if (abs(distDelta) <= deadzone)
 			{
 				// We're in a good spot, try to match the player.
 				wantedSpeed = max(bestSpeed >> 1, baseSpeed);
@@ -361,6 +362,11 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 	{
 		// Spawn emerald sparkles
 		UFOEmeraldVFX(ufo);
+		ufo_collectdelay(ufo)--;
+	}
+	else
+	{
+		ufo_collectdelay(ufo) = TICRATE;
 	}
 }
 
@@ -378,6 +384,11 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 		{
 			// SPB deals triple damage.
 			return 30;
+		}
+		case MT_PLAYER:
+		{
+			// Players deal damage relative to how many sneakers they used.
+			return 15 * inflictor->player->numsneakers;
 		}
 		case MT_ORBINAUT:
 		{
@@ -414,6 +425,13 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	damage = GetUFODamage(inflictor);
 
+	if (damage <= 0)
+	{
+		return false;
+	}
+
+	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
+
 	if (damage >= ufo->health - 1)
 	{
 		// Destroy the UFO parts, and make the emerald collectible!
@@ -423,8 +441,25 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	}
 
 	ufo->health -= damage;
-	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
 	return true;
+}
+
+void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
+{
+	if (other->player == NULL)
+	{
+		return;
+	}
+
+	if ((other->player->sneakertimer > 0)
+		&& !P_PlayerInPain(other->player)
+		&& (other->player->flashing == 0))
+	{
+		// Bump and deal damage.
+		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
+		K_KartBouncing(other, ufo);
+		other->player->sneakertimer = 0;
+	}
 }
 
 static mobj_t *InitSpecialUFO(waypoint_t *start)
