@@ -339,7 +339,12 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 // Set mo skin but not player_t skin, for ironman
 void SetFakePlayerSkin(player_t* player, INT32 skinid)
 {
-	player->fakeskin = skinid;
+	if (player->fakeskin != skinid)
+	{
+		if (player->fakeskin != MAXSKINS)
+			player->lastfakeskin = player->fakeskin;
+		player->fakeskin = skinid;
+	}
 
 	if (demo.playback)
 	{

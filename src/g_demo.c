@@ -1185,6 +1185,14 @@ void G_ConsGhostTic(INT32 playernum)
 			players[playernum].kartweight = ghostext[playernum].kartweight;
 			players[playernum].charflags = ghostext[playernum].charflags;
 
+			if (demo.skinlist[demo.currentskinid[playernum]].flags & SF_IRONMAN)
+			{
+				players[playernum].lastfakeskin = players[playernum].fakeskin;
+				players[playernum].fakeskin =
+					(ghostext[playernum].skinid == demo.currentskinid[playernum])
+					? MAXSKINS
+					: ghostext[playernum].skinid;
+			}
 		}
 	}
 
