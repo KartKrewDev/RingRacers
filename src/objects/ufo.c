@@ -506,7 +506,7 @@ mobj_t *Obj_CreateSpecialUFO(void)
 	{
 		const boolean huntbackwards = true;
 		const boolean useshortcuts = false;
-		const UINT32 traveldist = UINT32_MAX; // Go as far back as possible.
+		const UINT32 traveldist = INT32_MAX; // Go as far back as possible. Not UINT32_MAX to avoid possible overflow.
 		boolean pathfindsuccess = false;
 		path_t pathtofinish = {0};
 
