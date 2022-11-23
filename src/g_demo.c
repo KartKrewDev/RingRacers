@@ -94,11 +94,13 @@ static struct {
 	// EZT_SCALE
 	fixed_t scale, lastscale;
 
-	// EZT_KART
-	INT32 kartitem, kartamount, kartbumpers;
+	// EZT_ITEMDATA
+	SINT8 itemtype;
+	UINT8 itemamount, bumpers;
 
-	// EZT_IRONMAN
-	UINT8 skinid;
+	// EZT_STATDATA
+	UINT8 skinid, kartspeed, kartweight;
+	UINT32 charflags;
 
 	UINT8 desyncframes; // Don't try to resync unless we've been off for two frames, to monkeypatch a few trouble spots
 
@@ -176,14 +178,14 @@ static ticcmd_t oldcmd[MAXPLAYERS];
 #define GZT_EXTRA  0x40
 #define GZT_FOLLOW 0x80 // Followmobj
 
-// GZT_EXTRA flags
-#define EZT_COLOR   0x001 // Changed color (Super transformation, Mario fireflowers/invulnerability, etc.)
-#define EZT_FLIP    0x002 // Reversed gravity
-#define EZT_SCALE   0x004 // Changed size
-#define EZT_HIT     0x008 // Damaged a mobj
-#define EZT_SPRITE  0x010 // Changed sprite set completely out of PLAY (NiGHTS, SOCs, whatever)
-#define EZT_KART    0x020 // Changed current held item/quantity and bumpers for battle
-#define EZT_IRONMAN 0x040 // Changed object skin
+// GZT_EXTRA flags (currently UINT8)
+#define EZT_COLOR    0x01 // Changed color (Super transformation, Mario fireflowers/invulnerability, etc.)
+#define EZT_FLIP     0x02 // Reversed gravity
+#define EZT_SCALE    0x04 // Changed size
+#define EZT_HIT      0x08 // Damaged a mobj
+#define EZT_SPRITE   0x10 // Changed sprite set completely out of PLAY (NiGHTS, SOCs, whatever)
+#define EZT_ITEMDATA 0x20 // Changed current held item/quantity and bumpers for battle
+#define EZT_STATDATA 0x40 // Changed skin/stats
 
 // GZT_FOLLOW flags
 #define FZT_SPAWNED 0x01 // just been spawned
@@ -352,9 +354,9 @@ void G_ReadDemoExtraData(void)
 			SetPlayerSkinByNum(p, demo.skinlist[skinid].mapping);
 			demo.currentskinid[p] = skinid;
 
-			players[p].kartspeed = demo.skinlist[skinid].kartspeed;
-			players[p].kartweight = demo.skinlist[skinid].kartweight;
-			players[p].charflags = demo.skinlist[skinid].flags;
+			players[p].kartspeed = ghostext[p].kartspeed = demo.skinlist[skinid].kartspeed;
+			players[p].kartweight = ghostext[p].kartweight = demo.skinlist[skinid].kartweight;
+			players[p].charflags = ghostext[p].charflags = demo.skinlist[skinid].flags;
 		}
 		if (extradata & DXD_COLOR)
 		{
@@ -835,23 +837,29 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].kartitem != ghost->player->itemtype ||
-			ghostext[playernum].kartamount != ghost->player->itemamount ||
-			ghostext[playernum].kartbumpers != ghost->player->bumpers
+			ghostext[playernum].itemtype != ghost->player->itemtype ||
+			ghostext[playernum].itemamount != ghost->player->itemamount ||
+			ghostext[playernum].bumpers != ghost->player->bumpers
 		))
 	{
-		ghostext[playernum].flags |= EZT_KART;
-		ghostext[playernum].kartitem = ghost->player->itemtype;
-		ghostext[playernum].kartamount = ghost->player->itemamount;
-		ghostext[playernum].kartbumpers = ghost->player->bumpers;
+		ghostext[playernum].flags |= EZT_ITEMDATA;
+		ghostext[playernum].itemtype = ghost->player->itemtype;
+		ghostext[playernum].itemamount = ghost->player->itemamount;
+		ghostext[playernum].bumpers = ghost->player->bumpers;
 	}
 
 	if (ghost->player && (
-			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)-skins)
+			ghostext[playernum].skinid != (UINT8)(((skin_t *)ghost->skin)-skins) ||
+			ghostext[playernum].kartspeed != ghost->player->kartspeed ||
+			ghostext[playernum].kartweight != ghost->player->kartweight ||
+			ghostext[playernum].charflags != ghost->player->charflags
 		))
 	{
-		ghostext[playernum].flags |= EZT_IRONMAN;
+		ghostext[playernum].flags |= EZT_STATDATA;
 		ghostext[playernum].skinid = (UINT8)(((skin_t *)ghost->skin)-skins);
+		ghostext[playernum].kartspeed = ghost->player->kartspeed;
+		ghostext[playernum].kartweight = ghost->player->kartweight;
+		ghostext[playernum].charflags = ghost->player->charflags;
 	}
 
 	if (ghostext[playernum].flags)
@@ -895,14 +903,19 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		}
 		if (ghostext[playernum].flags & EZT_SPRITE)
 			WRITEUINT16(demo_p,oldghost[playernum].sprite);
-		if (ghostext[playernum].flags & EZT_KART)
+		if (ghostext[playernum].flags & EZT_ITEMDATA)
 		{
-			WRITEINT32(demo_p, ghostext[playernum].kartitem);
-			WRITEINT32(demo_p, ghostext[playernum].kartamount);
-			WRITEINT32(demo_p, ghostext[playernum].kartbumpers);
+			WRITESINT8(demo_p, ghostext[playernum].itemtype);
+			WRITEUINT8(demo_p, ghostext[playernum].itemamount);
+			WRITEUINT8(demo_p, ghostext[playernum].bumpers);
 		}
-		if (ghostext[playernum].flags & EZT_IRONMAN)
+		if (ghostext[playernum].flags & EZT_STATDATA)
+		{
 			WRITEUINT8(demo_p,ghostext[playernum].skinid);
+			WRITEUINT8(demo_p,ghostext[playernum].kartspeed);
+			WRITEUINT8(demo_p,ghostext[playernum].kartweight);
+			WRITEUINT32(demo_p, ghostext[playernum].charflags);
+		}
 
 		ghostext[playernum].flags = 0;
 	}
@@ -1073,17 +1086,20 @@ void G_ConsGhostTic(INT32 playernum)
 		}
 		if (xziptic & EZT_SPRITE)
 			demo_p += sizeof(UINT16);
-		if (xziptic & EZT_KART)
+		if (xziptic & EZT_ITEMDATA)
 		{
-			ghostext[playernum].kartitem = READINT32(demo_p);
-			ghostext[playernum].kartamount = READINT32(demo_p);
-			ghostext[playernum].kartbumpers = READINT32(demo_p);
+			ghostext[playernum].itemtype = READSINT8(demo_p);
+			ghostext[playernum].itemamount = READUINT8(demo_p);
+			ghostext[playernum].bumpers = READUINT8(demo_p);
 		}
-		if (xziptic & EZT_IRONMAN)
+		if (xziptic & EZT_STATDATA)
 		{
 			ghostext[playernum].skinid = READUINT8(demo_p);
 			if (ghostext[playernum].skinid >= demo.numskins)
 				ghostext[playernum].skinid = 0;
+			ghostext[playernum].kartspeed = READUINT8(demo_p);
+			ghostext[playernum].kartweight = READUINT8(demo_p);
+			ghostext[playernum].charflags = READUINT32(demo_p);
 		}
 	}
 
@@ -1142,29 +1158,33 @@ void G_ConsGhostTic(INT32 playernum)
 		else
 			ghostext[playernum].desyncframes = 0;
 
-		if (players[playernum].itemtype != ghostext[playernum].kartitem
-			|| players[playernum].itemamount != ghostext[playernum].kartamount
-			|| players[playernum].bumpers != ghostext[playernum].kartbumpers)
+		if (players[playernum].itemtype != ghostext[playernum].itemtype
+			|| players[playernum].itemamount != ghostext[playernum].itemamount
+			|| players[playernum].bumpers != ghostext[playernum].bumpers)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
 			demosynced = false;
 
-			players[playernum].itemtype = ghostext[playernum].kartitem;
-			players[playernum].itemamount = ghostext[playernum].kartamount;
-			players[playernum].bumpers = ghostext[playernum].kartbumpers;
+			players[playernum].itemtype = ghostext[playernum].itemtype;
+			players[playernum].itemamount = ghostext[playernum].itemamount;
+			players[playernum].bumpers = ghostext[playernum].bumpers;
 		}
 
-		if (demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)-skins))
+		if (players[playernum].kartspeed != ghostext[playernum].kartspeed
+			|| players[playernum].kartweight != ghostext[playernum].kartweight
+			|| players[playernum].charflags != ghostext[playernum].charflags ||
+			demo.skinlist[ghostext[playernum].skinid].mapping != (UINT8)(((skin_t *)testmo->skin)-skins))
 		{
 			if (demosynced)
-				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (Character)!\n"));
+				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (Character/stats)!\n"));
 			demosynced = false;
 
 			testmo->skin = &skins[demo.skinlist[ghostext[playernum].skinid].mapping];
-			players[playernum].kartspeed = demo.skinlist[ghostext[playernum].skinid].kartspeed;
-			players[playernum].kartweight = demo.skinlist[ghostext[playernum].skinid].kartweight;
-			players[playernum].charflags = demo.skinlist[ghostext[playernum].skinid].flags;
+			players[playernum].kartspeed = ghostext[playernum].kartspeed;
+			players[playernum].kartweight = ghostext[playernum].kartweight;
+			players[playernum].charflags = ghostext[playernum].charflags;
+
 		}
 	}
 
@@ -1332,14 +1352,15 @@ void G_GhostTicker(void)
 			}
 			if (xziptic & EZT_SPRITE)
 				g->mo->sprite = READUINT16(g->p);
-			if (xziptic & EZT_KART)
-				g->p += 12; // kartitem, kartamount, kartbumpers
-			if (xziptic & EZT_IRONMAN)
+			if (xziptic & EZT_ITEMDATA)
+				g->p += 3; // itemtype, itemamount, bumpers
+			if (xziptic & EZT_STATDATA)
 			{
 				UINT8 skinid = READUINT8(g->p);
 				if (skinid >= g->numskins)
 					skinid = 0;
 				g->mo->skin = &skins[g->skinlist[skinid].mapping];
+				g->p += 6; // kartspeed, kartweight, charflags
 			}
 		}
 
@@ -2475,6 +2496,9 @@ void G_BeginRecording(void)
 		ghostext[i].lastcolor = ghostext[i].color = GHC_NORMAL;
 		ghostext[i].lastscale = ghostext[i].scale = FRACUNIT;
 		ghostext[i].skinid = players[i].skin;
+		ghostext[i].kartspeed = players[i].kartspeed;
+		ghostext[i].kartweight = players[i].kartweight;
+		ghostext[i].charflags = players[i].charflags;
 
 		if (players[i].mo)
 		{
@@ -3356,9 +3380,9 @@ void G_DoPlayDemo(char *defdemoname)
 		// Set saved attribute values
 		// No cheat checking here, because even if they ARE wrong...
 		// it would only break the replay if we clipped them.
-		players[p].kartspeed =  demo.skinlist[demo.currentskinid[p]].kartspeed;
-		players[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
-		players[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
+		players[p].kartspeed = ghostext[p].kartspeed = demo.skinlist[demo.currentskinid[p]].kartspeed;
+		players[p].kartweight = ghostext[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
+		players[p].charflags = ghostext[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
 		players[p].lastfakeskin = lastfakeskin[p];
 	}
 
