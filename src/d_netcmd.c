@@ -3164,7 +3164,7 @@ static void Command_RestartLevel(void)
 		return;
 	}
 
-	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
+	D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 0, false, false);
 }
 
 static void Command_Pause(void)
