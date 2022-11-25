@@ -1057,7 +1057,7 @@ static int lib_pZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_ZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
 	P_RestoreTMStruct(ptm);
 	return 1;
 }
@@ -1071,7 +1071,7 @@ static int lib_pRingZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_RingZMovement(actor);
-	P_CheckPosition(actor, actor->x, actor->y);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
 	P_RestoreTMStruct(ptm);
 	return 0;
 }
@@ -1085,7 +1085,7 @@ static int lib_pSceneryZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_SceneryZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
 	P_RestoreTMStruct(ptm);
 	return 1;
 }
@@ -1099,7 +1099,7 @@ static int lib_pPlayerZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_PlayerZMovement(actor);
-	P_CheckPosition(actor, actor->x, actor->y);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
 	P_RestoreTMStruct(ptm);
 	return 0;
 }
@@ -1388,7 +1388,7 @@ static int lib_pCheckPosition(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_CheckPosition(thing, x, y));
+	lua_pushboolean(L, P_CheckPosition(thing, x, y, NULL));
 	LUA_PushUserdata(L, tm.thing, META_MOBJ);
 	P_RestoreTMStruct(ptm);
 	return 2;
@@ -1405,7 +1405,7 @@ static int lib_pTryMove(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_TryMove(thing, x, y, allowdropoff));
+	lua_pushboolean(L, P_TryMove(thing, x, y, allowdropoff, NULL));
 	LUA_PushUserdata(L, tm.thing, META_MOBJ);
 	P_RestoreTMStruct(ptm);
 	return 2;
@@ -1520,23 +1520,31 @@ static int lib_pSetRoll(lua_State *L)
 
 static int lib_pSlideMove(lua_State *L)
 {
+	/*
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_SlideMove(mo);
+	*/
+	LUA_UsageWarning(L, "FIXME: P_SlideMove needs updated to use result from P_TryMove");
+	(void)L;
 	return 0;
 }
 
 static int lib_pBounceMove(lua_State *L)
 {
+	/*
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_BounceMove(mo);
+	*/
+	LUA_UsageWarning(L, "FIXME: P_BounceMove needs updated to use result from P_TryMove");
+	(void)L;
 	return 0;
 }
 

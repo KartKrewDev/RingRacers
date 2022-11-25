@@ -805,7 +805,7 @@ static void Polyobj_pushThing(polyobj_t *po, line_t *line, mobj_t *mo)
 	// if object doesn't fit at desired location, possibly hurt it
 	if (po->damage && (mo->flags & MF_SHOOTABLE))
 	{
-		P_CheckPosition(mo, mo->x + momx, mo->y + momy);
+		P_CheckPosition(mo, mo->x + momx, mo->y + momy, NULL);
 		mo->floorz = tm.floorz;
 		mo->ceilingz = tm.ceilingz;
 		mo->floorrover = tm.floorrover;
@@ -851,7 +851,7 @@ static void Polyobj_slideThing(mobj_t *mo, fixed_t dx, fixed_t dy)
 
 		mo->player->onconveyor = 1;
 	} else
-		P_TryMove(mo, mo->x+dx, mo->y+dy, true);
+		P_TryMove(mo, mo->x+dx, mo->y+dy, true, NULL);
 }
 
 // Causes objects resting on top of the polyobject to 'ride' with its movement.

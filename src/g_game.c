@@ -2549,7 +2549,7 @@ static boolean G_CheckSpot(INT32 playernum, mapthing_t *mthing)
 	if (!K_CheckPlayersRespawnColliding(playernum, x, y))
 		return false;
 
-	if (!P_CheckPosition(players[playernum].mo, x, y))
+	if (!P_CheckPosition(players[playernum].mo, x, y, NULL))
 		return false;
 
 	return true;
