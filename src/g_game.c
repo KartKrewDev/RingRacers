@@ -3732,11 +3732,16 @@ static void G_GetNextMap(void)
 		else
 		{
 			INT32 lastgametype = gametype;
+			// 5 levels, 2 bonus stages: after rounds 2 and 4 (but flexible enough to accomodate other solutions)
+			UINT8 bonusmodulo = (grandprixinfo.cup->numlevels+1)/(grandprixinfo.cup->numbonus+1);
+			UINT8 bonusindex = (grandprixinfo.roundnum / bonusmodulo) - 1;
 
 			// If we're in a GP event, don't immediately follow it up with another.
 			// I also suspect this will not work with online GP so I'm gonna prevent it right now.
 			// The server might have to communicate eventmode (alongside other GP data) in XD_MAP later.
-			if (netgame || grandprixinfo.eventmode != GPEVENT_NONE)
+			if (netgame)
+				;
+			else if	(grandprixinfo.eventmode != GPEVENT_NONE)
 			{
 				grandprixinfo.eventmode = GPEVENT_NONE;
 
@@ -3774,11 +3779,13 @@ static void G_GetNextMap(void)
 					}
 				}
 			}
-			else if (grandprixinfo.roundnum == (grandprixinfo.cup->numlevels+1)/2) // 3 for a 5-map cup
+			else if ((grandprixinfo.cup->numbonus > 0)
+				&& (grandprixinfo.roundnum % bonusmodulo) == 0
+				&& bonusindex < MAXBONUSLIST)
 			{
 				// todo any other condition?
 				{
-					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS];
+					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
 						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
 					{
