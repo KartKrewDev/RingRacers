@@ -3445,6 +3445,8 @@ boolean K_WaterRun(mobj_t *mobj)
 
 		case MT_PLAYER:
 		{
+			fixed_t minspeed = 0;
+
 			if (mobj->player == NULL)
 			{
 				return false;
@@ -3455,11 +3457,18 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
+			minspeed = 2 * K_GetKartSpeed(mobj->player, false, false); // 200%
+
+			if (mobj->player->speed < minspeed / 5) // 40%
+			{
+				return false;
+			}
+
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
 				|| mobj->player->tiregrease
 				|| mobj->player->flamedash
-				|| mobj->player->speed > 2 * K_GetKartSpeed(mobj->player, false, false))
+				|| mobj->player->speed > minspeed)
 			{
 				return true;
 			}
@@ -10361,6 +10370,9 @@ boolean K_FastFallBounce(player_t *player)
 				bounce = minBounce;
 			}
 		}
+
+		if (player->mo->eflags & MFE_UNDERWATER)
+			bounce = (117 * bounce) / 200;
 
 		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);

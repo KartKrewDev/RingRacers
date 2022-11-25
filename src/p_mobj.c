@@ -3222,14 +3222,15 @@ boolean P_CanRunOnWater(mobj_t *mobj, ffloor_t *rover)
 	// We start water run IF we can step onto it!
 	if (surfDiff <= maxStep && surfDiff >= 0)
 	{
-		if (ourZAng < 0)
+		pslope_t *groundSlope = (flip ? mobj->subsector->sector->c_slope : mobj->subsector->sector->f_slope);
+		if (groundSlope != NULL && groundSlope->zangle != 0)
 		{
 			fixed_t floorheight = flip ? P_GetSectorCeilingZAt(mobj->subsector->sector, mobj->x, mobj->y) : P_GetSectorFloorZAt(mobj->subsector->sector, mobj->x, mobj->y);
 			fixed_t floorDiff = flip ? (floorheight - mobjbottom) : (mobjbottom - floorheight);
 			if (floorDiff <= maxStep && floorDiff >= -maxStep)
 			{
-				// ... but NOT if going down and real floor is in range.
-				// FIXME: Count solid FOFs in this check
+				// ... but NOT if downward-sloping real floor is in range.
+				// FIXME: Count solid FOFs in these checks
 				return false;
 			}
 		}
