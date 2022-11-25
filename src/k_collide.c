@@ -655,12 +655,12 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Counter desyncs
 		/*mobj_t *oldthing = thing;
-		mobj_t *oldtmthing = tmthing;
+		mobj_t *oldtm.thing = tm.thing;
 
-		P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+		P_Thrust(tm.thing, R_PointToAngle2(thing->x, thing->y, tm.thing->x, tm.thing->y), 4*thing->scale);
 
 		thing = oldthing;
-		P_SetTarget(&tmthing, oldtmthing);*/
+		P_SetTarget(&tm.thing, oldtm.thing);*/
 
 		if (P_PlayerInPain(t2->player)
 			|| t2->player->flashing || t2->player->hyudorotimer

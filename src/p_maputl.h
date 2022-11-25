@@ -85,8 +85,6 @@ boolean P_BlockThingsIterator(INT32 x, INT32 y, BlockItReturn_t(*func)(mobj_t *)
 
 extern divline_t trace;
 
-extern fixed_t tmbbox[4]; // p_map.c
-
 // call your user function for each line of the blockmap in the
 // bbox defined by the radius
 //boolean P_RadiusLinesCheck(fixed_t radius, fixed_t x, fixed_t y,

@@ -381,25 +381,48 @@ void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angl
 // P_MAP
 //
 
-// If "floatok" true, move would be ok
-// if within "tmfloorz - tmceilingz".
-extern boolean floatok;
-extern fixed_t tmfloorz;
-extern fixed_t tmceilingz;
-extern ffloor_t *tmfloorrover, *tmceilingrover;
-extern mobj_t *tmfloorthing, *tmhitthing, *tmthing;
+typedef struct tm_s
+{
+	mobj_t *thing;
+	fixed_t x, y;
+	fixed_t bbox[4];
+	INT32 flags;
+
+	precipmobj_t *precipthing;
+	fixed_t precipbbox[4];
+
+	// If "floatok" true, move would be ok
+	// if within "tm.floorz - tm.ceilingz".
+	boolean floatok;
+
+	fixed_t floorz, ceilingz;
+	fixed_t dropoffz, drpoffceilz; // drop-off floor/ceiling heights
+	mobj_t *floorthing; // the thing corresponding to tm.floorz or NULL if tm.floorz is from a sector
+	mobj_t *hitthing; // the solid thing you bumped into (for collisions)
+	ffloor_t *floorrover, *ceilingrover;
+	pslope_t *floorslope, *ceilingslope;
+	INT32 floorpic, ceilingpic;
+	fixed_t floorstep, ceilingstep;
+
+	// keep track of the line that lowers the ceiling,
+	// so missiles don't explode against sky hack walls
+	line_t *ceilingline;
+
+	// set by PIT_CheckLine() for any line that stopped the PIT_CheckLine()
+	// that is, for any line which is 'solid'
+	line_t *blockingline;
+} tm_t;
+
+extern tm_t tm;
+
+void P_RestoreTMStruct(tm_t tmrestore);
+
 extern camera_t *mapcampointer;
-extern fixed_t tmx;
-extern fixed_t tmy;
-extern pslope_t *tmfloorslope, *tmceilingslope;
-extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);
 extern void P_MapEnd(void);
 
-extern line_t *ceilingline;
-extern line_t *blockingline;
 extern msecnode_t *sector_list;
 
 extern mprecipsecnode_t *precipsector_list;
