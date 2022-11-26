@@ -249,6 +249,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].oldposition);
 		WRITEUINT8(save_p, players[i].positiondelay);
 		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].startboost);
@@ -548,6 +549,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].oldposition = READUINT8(save_p);
 		players[i].positiondelay = READUINT8(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
+		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 		players[i].startboost = READUINT8(save_p);
