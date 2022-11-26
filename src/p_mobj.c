@@ -7699,6 +7699,109 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
 		break;
+	case MT_MAGICIANBOX:
+	{
+		fixed_t destx, desty;
+		fixed_t zoff = 0;
+
+		// EV1: rotation rate
+		// EV2: lifetime
+		// cusval: responsible for disappear FX (should only happen once)
+
+		// S_MAGICANBOX: sides, starting angle is set in the spawner (SetRandomFakePlayerSkin)
+		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets  
+
+		mobj->extravalue2--;
+
+		if (mobj->extravalue2 == 0)
+		{
+			P_RemoveMobj(mobj);
+			break;
+		}
+		else if (mobj->extravalue2 < TICRATE/3)
+		{
+			P_SetTarget(&mobj->target, NULL);
+			if (mobj->extravalue2 & 1)
+				mobj->renderflags |= RF_DONTDRAW;
+			else
+				mobj->renderflags &= ~RF_DONTDRAW;
+		}
+		else if (mobj->extravalue2 == TICRATE/3 && !P_MobjWasRemoved(mobj->target))
+		{
+			mobj->momx = mobj->target->momx;
+			mobj->momy = mobj->target->momy;
+			mobj->momz = mobj->target->momz;
+
+			if (mobj->state == &states[S_MAGICIANBOX]) // sides
+				P_Thrust(mobj, mobj->angle + ANGLE_90, 32*mapobjectscale);
+
+			mobj->flags &= ~MF_NOGRAVITY;
+			mobj->momz += 10*mapobjectscale;
+			if (mobj->state == &states[S_MAGICIANBOX_BOTTOM])
+				mobj->momz *= -1;
+
+			if (!mobj->cusval) // Some stuff should only occur once per box
+				return true;
+
+			S_StartSound(mobj, sfx_kc2e);
+			S_StartSound(mobj, sfx_s3k9f);
+
+			if (mobj->target->player->hyudorotimer)
+			{
+				P_RemoveMobj(mobj);
+				break;
+			}
+			else
+			{
+				K_SpawnMagicianParticles(mobj, 5);
+			}
+			return true;
+		}
+		else if (mobj->target && !P_MobjWasRemoved(mobj->target))
+		{
+			mobj->renderflags &= ~RF_DONTDRAW;
+			mobj->renderflags |= (mobj->target->renderflags & RF_DONTDRAW);
+			// NB: This depends on order of thinker execution!
+			// SetRandomFakePlayerSkin (r_skins.c) sets cusval on the bottom (last) side (i=5).
+			// This writes to the player's visibility only after every other side has ticked and inherited it.
+			if (mobj->cusval)
+				mobj->target->renderflags |= RF_DONTDRAW;
+		}
+
+		if (P_MobjWasRemoved(mobj->target) || !mobj->target->health || !mobj->target->player) {
+			mobj->extravalue2 = min(mobj->extravalue2, TICRATE/3);
+			return true;
+		}
+
+		mobj->extravalue1 += 1;
+
+		mobj->angle += ANG1*mobj->extravalue1;
+		mobj->scale = mobj->target->scale;
+
+		destx = mobj->target->x;
+		desty = mobj->target->y;
+
+		if (mobj->state == &states[S_MAGICIANBOX]) // sides
+		{
+			destx += FixedMul(mobj->radius*2, FINECOSINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+			desty += FixedMul(mobj->radius*2, FINESINE((mobj->angle+ANGLE_90) >> ANGLETOFINESHIFT));
+		}
+		else if (mobj->state == &states[S_MAGICIANBOX_TOP]) // top
+		{
+			zoff = mobj->radius*4;
+		}
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
+			mobj->flags2 &= ~MF2_AMBUSH;
+		}
+		else
+		{
+			P_MoveOrigin(mobj, destx, desty, mobj->target->z + zoff);
+		}
+		break;
+	}
 	case MT_LIGHTNINGSHIELD:
 	{
 		fixed_t destx, desty;

@@ -1745,7 +1745,10 @@ static boolean K_drawKartPositionFaces(void)
 	boolean completed[MAXPLAYERS];
 	INT32 rankplayer[MAXPLAYERS];
 	INT32 bumperx, emeraldx, numplayersingame = 0;
+	INT32 xoff, yoff, flipflag = 0;
+	UINT8 workingskin;
 	UINT8 *colormap;
+	UINT32 skinflags;
 
 	ranklines = 0;
 	memset(completed, 0, sizeof (completed));
@@ -1830,15 +1833,36 @@ static boolean K_drawKartPositionFaces(void)
 		bumperx = FACE_X+19;
 		emeraldx = FACE_X+16;
 
+		skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[rankplayer[i]]].flags
+			: skins[players[rankplayer[i]].skin].flags;
+
+		// Flip SF_IRONMAN portraits, but only if they're transformed
+		if (skinflags & SF_IRONMAN
+			&& !(players[rankplayer[i]].charflags & SF_IRONMAN) )
+		{
+			flipflag = V_FLIP|V_VFLIP; // blonic flip
+			xoff = yoff = 16;
+		} else 
+		{
+			flipflag = 0;
+			xoff = yoff = 0;
+		}
+
 		if (players[rankplayer[i]].mo->color)
 		{
-			colormap = R_GetTranslationColormap(players[rankplayer[i]].skin, players[rankplayer[i]].mo->color, GTC_CACHE);
+			if ((skin_t*)players[rankplayer[i]].mo->skin)
+				workingskin = (skin_t*)players[rankplayer[i]].mo->skin - skins;
+			else
+				workingskin = players[rankplayer[i]].skin;
+
+			colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
 			if (players[rankplayer[i]].mo->colorized)
 				colormap = R_GetTranslationColormap(TC_RAINBOW, players[rankplayer[i]].mo->color, GTC_CACHE);
 			else
-				colormap = R_GetTranslationColormap(players[rankplayer[i]].skin, players[rankplayer[i]].mo->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(workingskin, players[rankplayer[i]].mo->color, GTC_CACHE);
 
-			V_DrawMappedPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, faceprefix[players[rankplayer[i]].skin][FACE_RANK], colormap);
+			V_DrawMappedPatch(FACE_X + xoff, Y + yoff, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT|flipflag, faceprefix[workingskin][FACE_RANK], colormap);
 
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{

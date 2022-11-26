@@ -945,7 +945,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
 
-	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
+	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->highresscale != FRACUNIT)
 		this_scale = FixedMul(this_scale, ((skin_t *)vis->mobj->skin)->highresscale);
 
 	if (this_scale <= 0)
@@ -1410,7 +1410,7 @@ static void R_ProjectDropShadow(
 	shadow->gzt = groundz + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
 	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	if (thing->skin && ((skin_t *)thing->skin)->highresscale != FRACUNIT)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;
 	shadow->shear.tan = shadowskew; // repurposed variable
@@ -1797,7 +1797,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	I_Assert(lump < max_spritelumps);
 
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	if (thing->skin && ((skin_t *)thing->skin)->highresscale != FRACUNIT)
 		this_scale = FixedMul(this_scale, ((skin_t *)thing->skin)->highresscale);
 
 	spr_width = spritecachedinfo[lump].width;

@@ -619,10 +619,6 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	colfrac = FixedDiv(FRACUNIT, fdup);
 	rowfrac = FixedDiv(FRACUNIT, vdup);
 
-	// So it turns out offsets aren't scaled in V_NOSCALESTART unless V_OFFSET is applied ...poo, that's terrible
-	// For now let's just at least give V_OFFSET the ability to support V_FLIP
-	// I'll probably make a better fix for 2.2 where I don't have to worry about breaking existing support for stuff
-	// -- Monster Iestyn 29/10/18
 	{
 		fixed_t offsetx = 0, offsety = 0;
 
@@ -633,15 +629,17 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 			offsetx = FixedMul(patch->leftoffset<<FRACBITS, pscale);
 
 		// top offset
-		// TODO: make some kind of vertical version of V_FLIP, maybe by deprecating V_OFFSET in future?!?
-		offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
+		if (scrn & V_VFLIP)
+			offsety = FixedMul((patch->height - patch->topoffset)<<FRACBITS, vscale) + 1;
+		else
+			offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
 
 		// Subtract the offsets from x/y positions
 		x -= offsetx;
 		y -= offsety;
 	}
 
-	desttop = screens[scrn&V_PARAMMASK];
+	desttop = screens[scrn&V_SCREENMASK];
 
 	if (!desttop)
 		return;
@@ -700,6 +698,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 			if (x+offx >= vid.width) // don't draw off the right of the screen (WRAP PREVENTION)
 				break;
 		}
+
 		column = (const column_t *)((const UINT8 *)(patch->columns) + (patch->columnofs[col>>FRACBITS]));
 
 		while (column->topdelta != 0xff)
@@ -709,17 +708,31 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 				topdelta += prevdelta;
 			prevdelta = topdelta;
 			source = (const UINT8 *)(column) + 3;
+
 			dest = desttop;
 			if (scrn & V_FLIP)
-				dest = deststart + (destend - desttop);
+				dest = deststart + (destend - dest);
 			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
 
-			for (ofs = 0; dest < deststop && (ofs>>FRACBITS) < column->length; ofs += rowfrac)
+			if (scrn & V_VFLIP)
 			{
-				if (dest >= screens[scrn&V_PARAMMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
-					*dest = patchdrawfunc(dest, source, ofs);
-				dest += vid.width;
+				for (ofs = (column->length << FRACBITS)-1; dest < deststop && ofs >= 0; ofs -= rowfrac)
+				{
+					if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
+						*dest = patchdrawfunc(dest, source, ofs);
+					dest += vid.width;
+				}
 			}
+			else
+			{
+				for (ofs = 0; dest < deststop && ofs < (column->length << FRACBITS); ofs += rowfrac)
+				{
+					if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
+						*dest = patchdrawfunc(dest, source, ofs);
+					dest += vid.width;
+				}
+			}
+
 			column = (const column_t *)((const UINT8 *)column + column->length + 4);
 		}
 	}
@@ -778,7 +791,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 	y -= FixedMul(patch->topoffset<<FRACBITS, pscale);
 	x -= FixedMul(patch->leftoffset<<FRACBITS, pscale);
 
-	desttop = screens[scrn&V_PARAMMASK];
+	desttop = screens[scrn&V_SCREENMASK];
 
 	if (!desttop)
 		return;
@@ -830,7 +843,7 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_
 
 			for (; dest < deststop && (ofs>>FRACBITS) < column->length && (((ofs>>FRACBITS) - sy) + topdelta) < h; ofs += rowfrac)
 			{
-				if (dest >= screens[scrn&V_PARAMMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
+				if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
 					*dest = patchdrawfunc(dest, source, ofs);
 				dest += vid.width;
 			}

@@ -151,6 +151,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].skincolor);
 		WRITEINT32(save_p, players[i].skin);
 		WRITEUINT32(save_p, players[i].availabilities);
+		WRITEUINT8(save_p, players[i].fakeskin);
+		WRITEUINT8(save_p, players[i].lastfakeskin);
 		WRITEUINT32(save_p, players[i].score);
 		WRITESINT8(save_p, players[i].lives);
 		WRITESINT8(save_p, players[i].xtralife);
@@ -470,6 +472,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
 		players[i].availabilities = READUINT32(save_p);
+		players[i].fakeskin = READUINT8(save_p);
+		players[i].lastfakeskin = READUINT8(save_p);
 		players[i].score = READUINT32(save_p);
 		players[i].lives = READSINT8(save_p);
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter

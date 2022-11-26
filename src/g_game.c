@@ -2239,6 +2239,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
+	UINT8 fakeskin;
+	UINT8 lastfakeskin;
 
 	tic_t jointime;
 
@@ -2285,17 +2287,27 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
 
-	// SRB2kart
-	kartspeed = players[player].kartspeed;
-	kartweight = players[player].kartweight;
+	if (betweenmaps)
+	{
+		fakeskin = MAXSKINS;
+		kartspeed = skins[players[player].skin].kartspeed;
+		kartweight = skins[players[player].skin].kartweight;
+		charflags = skins[players[player].skin].flags;
+	}
+	else
+	{
+		fakeskin = players[player].fakeskin;
+		kartspeed = players[player].kartspeed;
+		kartweight = players[player].kartweight;
+		charflags = players[player].charflags;
+	}
+	lastfakeskin = players[player].lastfakeskin;
 
 	followerready = players[player].followerready;
 	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
 
 	availabilities = players[player].availabilities;
-
-	charflags = players[player].charflags;
 
 	followitem = players[player].followitem;
 
@@ -2413,10 +2425,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// save player config truth reborn
 	p->skincolor = skincolor;
 	p->skin = skin;
+
+	p->fakeskin = fakeskin;
 	p->kartspeed = kartspeed;
 	p->kartweight = kartweight;
-	//
 	p->charflags = charflags;
+	p->lastfakeskin = lastfakeskin;
+
 	p->availabilities = availabilities;
 	p->followitem = followitem;
 
