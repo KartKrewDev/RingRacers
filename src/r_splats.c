@@ -181,7 +181,7 @@ void R_DrawFloorSplat(vissprite_t *spr)
 	splat.height = spr->patch->height;
 	splat.scale = mobj->scale;
 
-	if (mobj->skin && ((skin_t *)mobj->skin)->flags & SF_HIRES)
+	if (mobj->skin && ((skin_t *)mobj->skin)->highresscale != FRACUNIT)
 		splat.scale = FixedMul(splat.scale, ((skin_t *)mobj->skin)->highresscale);
 
 	if (spr->rotateflags & SRF_3D || renderflags & RF_NOSPLATBILLBOARD)

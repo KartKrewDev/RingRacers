@@ -188,7 +188,10 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 			offsetx = (float)(gpatch->leftoffset) * fscalew;
 
 		// top offset
-		offsety = (float)(gpatch->topoffset) * fscaleh;
+		if (option & V_VFLIP)
+			offsety = (float)(gpatch->height - gpatch->topoffset) * fscaleh;
+		else
+			offsety = (float)(gpatch->topoffset) * fscaleh;
 
 		cx -= offsetx;
 		cy -= offsety;
@@ -249,8 +252,16 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		v[2].s = v[1].s = hwrPatch->max_s;
 	}
 
-	v[0].t = v[1].t = 0.0f;
-	v[2].t = v[3].t = hwrPatch->max_t;
+	if (option & V_VFLIP)
+	{
+		v[0].t = v[1].t = hwrPatch->max_t;
+		v[2].t = v[3].t = 0.0f;
+	}
+	else
+	{
+		v[0].t = v[1].t = 0.0f;
+		v[2].t = v[3].t = hwrPatch->max_t;
+	}
 
 	flags = PF_NoDepthTest;
 

@@ -2717,6 +2717,47 @@ void K_SpawnBumpEffect(mobj_t *mo)
 		S_StartSound(mo, sfx_s3k49);
 }
 
+void K_SpawnMagicianParticles(mobj_t *mo, int spread)
+{
+	INT32 i;
+	mobj_t *target = mo->target;
+
+	if (P_MobjWasRemoved(target)) 
+		target = mo;
+
+	for (i = 0; i < 16; i++)
+	{
+		fixed_t hmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
+		fixed_t vmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
+		UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
+
+		fixed_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
+		SINT8 flip = 1;
+
+		mobj_t *dust;
+
+		if (i & 1)
+			ang -= ANGLE_90;
+		else
+			ang += ANGLE_90;
+
+		dust = P_SpawnMobjFromMobj(mo,
+			FixedMul(mo->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+			FixedMul(mo->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
+			target->height, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+		);
+		flip = P_MobjFlip(dust);
+
+		dust->momx = target->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
+		dust->momy = target->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
+		dust->momz = vmomentum * flip;
+		dust->scale = dust->scale*4;
+		dust->frame |= FF_SUBTRACT|FF_TRANS90;
+		dust->color = color;
+		dust->colorized = true;
+	}
+}
+
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
@@ -3445,6 +3486,8 @@ boolean K_WaterRun(mobj_t *mobj)
 
 		case MT_PLAYER:
 		{
+			fixed_t minspeed = 0;
+
 			if (mobj->player == NULL)
 			{
 				return false;
@@ -3455,11 +3498,18 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
+			minspeed = 2 * K_GetKartSpeed(mobj->player, false, false); // 200%
+
+			if (mobj->player->speed < minspeed / 5) // 40%
+			{
+				return false;
+			}
+
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
 				|| mobj->player->tiregrease
 				|| mobj->player->flamedash
-				|| mobj->player->speed > 2 * K_GetKartSpeed(mobj->player, false, false))
+				|| mobj->player->speed > minspeed)
 			{
 				return true;
 			}
@@ -10361,6 +10411,9 @@ boolean K_FastFallBounce(player_t *player)
 				bounce = minBounce;
 			}
 		}
+
+		if (player->mo->eflags & MFE_UNDERWATER)
+			bounce = (117 * bounce) / 200;
 
 		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);

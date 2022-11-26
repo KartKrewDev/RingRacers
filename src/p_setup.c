@@ -7465,7 +7465,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_ResetTubeWaypoints();
 
-	P_MapStart(); // tmthing can be used starting from this point
+	P_MapStart(); // tm.thing can be used starting from this point
 
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
@@ -7570,7 +7570,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_RunCachedActions();
 
-	P_MapEnd(); // tmthing is no longer needed from this point onwards
+	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)
@@ -7629,9 +7629,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
 		}
 		P_PreTicker(2);
-		P_MapStart(); // just in case MapLoad modifies tmthing
+		P_MapStart(); // just in case MapLoad modifies tm.thing
 		LUA_HookInt(gamemap, HOOK(MapLoad));
-		P_MapEnd(); // just in case MapLoad modifies tmthing
+		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
 
 	K_TimerReset();
