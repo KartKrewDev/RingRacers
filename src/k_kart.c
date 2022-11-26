@@ -8855,7 +8855,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		waypoint_t *waypoint     = K_GetBestWaypointForMobj(player->mo);
 		boolean    updaterespawn = false;
 
-		bestwaypoint = waypoint;
+		// Our current waypoint.
+		player->currentwaypoint = bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
 		// If it's generally in front, it's fine, otherwise, use the best next/previous waypoint.

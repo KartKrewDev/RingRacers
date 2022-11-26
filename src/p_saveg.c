@@ -4422,6 +4422,15 @@ static void P_RelinkPointers(void)
 				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
 			}
+			if (mobj->player->currentwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->currentwaypoint;
+				mobj->player->currentwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->currentwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on %d\n", mobj->type);
+				}
+			}
 			if (mobj->player->nextwaypoint)
 			{
 				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
