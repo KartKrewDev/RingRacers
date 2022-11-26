@@ -8848,6 +8848,7 @@ void K_KartPlayerAfterThink(player_t *player)
 --------------------------------------------------*/
 static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
+	waypoint_t *finishline = K_GetFinishLineWaypoint();
 	waypoint_t *bestwaypoint = NULL;
 
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
@@ -8864,13 +8865,15 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		// Otherwise it breaks the distance calculations.
 		if (waypoint != NULL)
 		{
-			boolean finishlinehack  = false;
 			angle_t playerangle     = player->mo->angle;
 			angle_t momangle        = K_MomentumAngle(player->mo);
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
-			angle_t angledelta      = ANGLE_MAX;
-			angle_t momdelta        = ANGLE_MAX;
+			angle_t angledelta      = ANGLE_180;
+			angle_t momdelta        = ANGLE_180;
+
+			// Remove WRONG WAY flag.
+			player->pflags &= ~PF_WRONGWAY;
 
 			angledelta = playerangle - angletowaypoint;
 			if (angledelta > ANGLE_180)
@@ -8884,31 +8887,15 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				momdelta = InvAngle(momdelta);
 			}
 
-			if (bestwaypoint == K_GetFinishLineWaypoint())
-			{
-				waypoint_t *nextwaypoint = waypoint->nextwaypoints[0];
-				angle_t angletonextwaypoint =
-					R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
-
-				// facing towards the finishline
-				if (AngleDelta(angletonextwaypoint, angletowaypoint) <= ANGLE_90)
-				{
-					finishlinehack = true;
-				}
-			}
-
 			// We're using a lot of angle calculations here, because only using facing angle or only using momentum angle both have downsides.
 			// nextwaypoints will be picked if you're facing OR moving forward.
 			// prevwaypoints will be picked if you're facing AND moving backward.
-			if (
 #if 0
-				(angledelta > ANGLE_45 || momdelta > ANGLE_45) &&
+			if (angledelta > ANGLE_45 || momdelta > ANGLE_45)
 #endif
-				(finishlinehack == false)
-				)
 			{
-				angle_t nextbestdelta = ANGLE_MAX;
-				angle_t nextbestmomdelta = ANGLE_MAX;
+				angle_t nextbestdelta = ANGLE_90;
+				angle_t nextbestmomdelta = ANGLE_90;
 				size_t i = 0U;
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
@@ -8952,10 +8939,13 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
 						{
-							if (P_TraceBlockingLines(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+							if (waypoint->nextwaypoints[i] != finishline) // Allow finish line.
 							{
-								// Save sight checks when all of the other checks pass, so we only do it if we have to
-								continue;
+								if (P_TraceWaypointTraversal(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+								{
+									// Save sight checks when all of the other checks pass, so we only do it if we have to
+									continue;
+								}
 							}
 
 							bestwaypoint = waypoint->nextwaypoints[i];
@@ -8969,8 +8959,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 								nextbestmomdelta = momdelta;
 							}
 
-							// Remove wrong way flag if we're using nextwaypoints
-							player->pflags &= ~PF_WRONGWAY;
 							updaterespawn = true;
 						}
 					}
@@ -9004,7 +8992,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta && momdelta < nextbestmomdelta)
 						{
-							if (P_TraceBlockingLines(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
+							if (P_TraceWaypointTraversal(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
 							{
 								// Save sight checks when all of the other checks pass, so we only do it if we have to
 								continue;
@@ -9043,69 +9031,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 	return bestwaypoint;
 }
-
-#if 0
-static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_t *const player)
-{
-	boolean nextiscloser = true;
-
-	if ((waypoint != NULL) && (player != NULL) && (player->mo != NULL))
-	{
-		size_t     i                   = 0U;
-		waypoint_t *currentwpcheck     = NULL;
-		angle_t    angletoplayer       = ANGLE_MAX;
-		angle_t    currentanglecheck   = ANGLE_MAX;
-		angle_t    bestangle           = ANGLE_MAX;
-
-		angletoplayer = R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y,
-			player->mo->x, player->mo->y);
-
-		for (i = 0U; i < waypoint->numnextwaypoints; i++)
-		{
-			currentwpcheck = waypoint->nextwaypoints[i];
-			currentanglecheck = R_PointToAngle2(
-				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
-
-			// Get delta angle
-			currentanglecheck = currentanglecheck - angletoplayer;
-
-			if (currentanglecheck > ANGLE_180)
-			{
-				currentanglecheck = InvAngle(currentanglecheck);
-			}
-
-			if (currentanglecheck < bestangle)
-			{
-				bestangle = currentanglecheck;
-			}
-		}
-
-		for (i = 0U; i < waypoint->numprevwaypoints; i++)
-		{
-			currentwpcheck = waypoint->prevwaypoints[i];
-			currentanglecheck = R_PointToAngle2(
-				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
-
-			// Get delta angle
-			currentanglecheck = currentanglecheck - angletoplayer;
-
-			if (currentanglecheck > ANGLE_180)
-			{
-				currentanglecheck = InvAngle(currentanglecheck);
-			}
-
-			if (currentanglecheck < bestangle)
-			{
-				bestangle = currentanglecheck;
-				nextiscloser = false;
-				break;
-			}
-		}
-	}
-
-	return nextiscloser;
-}
-#endif
 
 /*--------------------------------------------------
 	void K_UpdateDistanceFromFinishLine(player_t *const player)
@@ -9302,21 +9227,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
 				{
 					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
-
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
-
-#if 0
-					// An additional HACK, to fix looking backwards towards the finish line
-					// If the player's next waypoint is the finishline and the angle distance from player to
-					// connectin waypoints implies they're closer to a next waypoint, add a full track distance
-					if (player->nextwaypoint == finishline)
-					{
-						if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
-						{
-							player->distancetofinish += K_GetCircuitLength();
-						}
-					}
-#endif
 				}
 			}
 		}

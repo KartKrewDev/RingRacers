@@ -392,6 +392,26 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	return true;
 }
 
+static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t *los)
+{
+	line_t *line = seg->linedef;
+
+	if (P_CanTraceBlockingLine(seg, divl, los) == false)
+	{
+		// Blocked, so obviously can't traverse either.
+		return false;
+	}
+
+	if (line->special == 2001)
+	{
+		// Don't allow through the finish linedef.
+		// Causes some janky behavior.
+		return false;
+	}
+
+	return true;
+}
+
 //
 // P_CrossSubsector
 //
@@ -780,3 +800,62 @@ boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
 	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
 }
 
+boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
+{
+	const sector_t *s1, *s2;
+	size_t pnum;
+	los_t los;
+	los_funcs_t funcs;
+
+	// First check for trivial rejection.
+	if (!t1 || !t2)
+		return false;
+
+	I_Assert(!P_MobjWasRemoved(t1));
+	I_Assert(!P_MobjWasRemoved(t2));
+
+	if (!t1->subsector || !t2->subsector
+	|| !t1->subsector->sector || !t2->subsector->sector)
+		return false;
+
+	s1 = t1->subsector->sector;
+	s2 = t2->subsector->sector;
+	pnum = (s1-sectors)*numsectors + (s2-sectors);
+
+	if (rejectmatrix != NULL)
+	{
+		// Check in REJECT table.
+		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
+			return false;
+	}
+
+	// killough 11/98: shortcut for melee situations
+	// same subsector? obviously visible
+	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
+	if (!t1->subsector->polyList &&
+		t1->subsector == t2->subsector)
+		return true;
+
+	validcount++;
+
+	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
+	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
+
+	if (t1->x > t2->x)
+		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
+	else
+		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
+
+	if (t1->y > t2->y)
+		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
+	else
+		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
+
+	los.compareThing = t1;
+	los.alreadyHates = false;
+
+	funcs.validate = &P_CanWaypointTraverse;
+
+	// the head node is the last node output
+	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
+}
