@@ -8900,19 +8900,16 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			// We're using a lot of angle calculations here, because only using facing angle or only using momentum angle both have downsides.
 			// nextwaypoints will be picked if you're facing OR moving forward.
 			// prevwaypoints will be picked if you're facing AND moving backward.
-			if ((angledelta > ANGLE_45 || momdelta > ANGLE_45)
-			&& (finishlinehack == false))
+			if (
+#if 0
+				(angledelta > ANGLE_45 || momdelta > ANGLE_45) &&
+#endif
+				(finishlinehack == false)
+				)
 			{
-				angle_t nextbestdelta = angledelta;
-				angle_t nextbestmomdelta = momdelta;
+				angle_t nextbestdelta = ANGLE_MAX;
+				angle_t nextbestmomdelta = ANGLE_MAX;
 				size_t i = 0U;
-
-				if (K_PlayerUsesBotMovement(player))
-				{
-					// Try to force bots to use a next waypoint
-					nextbestdelta = ANGLE_MAX;
-					nextbestmomdelta = ANGLE_MAX;
-				}
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
 				{
@@ -9151,7 +9148,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
 		}
-		else if ((player->nextwaypoint != NULL) && (finishline != NULL))
+		else if ((player->currentwaypoint != NULL) && (player->nextwaypoint != NULL) && (finishline != NULL))
 		{
 			const boolean useshortcuts = false;
 			const boolean huntbackwards = false;
@@ -9165,17 +9162,137 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
 			if (pathfindsuccess == true)
 			{
-				// Add euclidean distance to the next waypoint to the distancetofinish
-				UINT32 adddist;
-				fixed_t disttowaypoint =
+				const boolean pathBackwardsReverse = ((player->pflags & PF_WRONGWAY) == 0);
+				boolean pathBackwardsSuccess = false;
+				path_t pathBackwards = {0};
+
+				fixed_t disttonext = 0;
+				UINT32 traveldist = 0;
+				UINT32 adddist = 0;
+
+				disttonext =
 					P_AproxDistance(
 						(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
 						(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
-				disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
+				disttonext = P_AproxDistance(disttonext, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
 
-				adddist = (UINT32)disttowaypoint;
+				traveldist = ((UINT32)disttonext) * 2;
+				pathBackwardsSuccess =
+					K_PathfindThruCircuit(player->nextwaypoint, traveldist, &pathBackwards, false, pathBackwardsReverse);
 
-				player->distancetofinish = pathtofinish.totaldist + adddist;
+				if (pathBackwardsSuccess == true)
+				{
+					if (pathBackwards.numnodes > 1)
+					{
+						// Find the closest segment, and add the distance to reach it.
+						vector3_t point;
+						size_t i;
+
+						vector3_t best;
+						fixed_t bestPoint = INT32_MAX;
+						fixed_t bestDist = INT32_MAX;
+						UINT32 bestGScore = UINT32_MAX;
+
+						point.x = player->mo->x;
+						point.y = player->mo->y;
+						point.z = player->mo->z;
+
+						best.x = point.x;
+						best.y = point.y;
+						best.z = point.z;
+
+						for (i = 1; i < pathBackwards.numnodes; i++)
+						{
+							vector3_t line[2];
+							vector3_t result;
+
+							waypoint_t *pwp = (waypoint_t *)pathBackwards.array[i - 1].nodedata;
+							waypoint_t *wp = (waypoint_t *)pathBackwards.array[i].nodedata;
+
+							fixed_t pDist = 0;
+							UINT32 g = pathBackwards.array[i - 1].gscore;
+
+							line[0].x = pwp->mobj->x;
+							line[0].y = pwp->mobj->y;
+							line[0].z = pwp->mobj->z;
+
+							line[1].x = wp->mobj->x;
+							line[1].y = wp->mobj->y;
+							line[1].z = wp->mobj->z;
+
+							P_ClosestPointOnLine3D(&point, line, &result);
+
+							pDist = P_AproxDistance(point.x - result.x, point.y - result.y);
+							pDist = P_AproxDistance(pDist, point.z - result.z);
+
+							if (pDist < bestPoint)
+							{
+								FV3_Copy(&best, &result);
+
+								bestPoint = pDist;
+
+								bestDist = 
+									P_AproxDistance(
+										(result.x >> FRACBITS) - (line[0].x >> FRACBITS),
+										(result.y >> FRACBITS) - (line[0].y >> FRACBITS));
+								bestDist = P_AproxDistance(bestDist, (result.z >> FRACBITS) - (line[0].z >> FRACBITS));
+
+								bestGScore = g + ((UINT32)bestDist);
+							}
+						}
+
+						if (cv_kartdebugwaypoints.value)
+						{
+							mobj_t *debugmobj = P_SpawnMobj(best.x, best.y, best.z, MT_SPARK);
+							P_SetMobjState(debugmobj, S_WAYPOINTORB);
+
+							debugmobj->frame &= ~FF_TRANSMASK;
+							debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
+
+							debugmobj->tics = 2;
+							debugmobj->color = SKINCOLOR_BANANA;
+						}
+
+						adddist = bestGScore;
+					}
+					/*
+					else
+					{
+						// Only one point to work with, so just add your euclidean distance to that.
+						waypoint_t *wp = (waypoint_t *)pathBackwards.array[0].nodedata;
+						fixed_t disttowaypoint =
+							P_AproxDistance(
+								(player->mo->x >> FRACBITS) - (wp->mobj->x >> FRACBITS),
+								(player->mo->y >> FRACBITS) - (wp->mobj->y >> FRACBITS));
+						disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (wp->mobj->z >> FRACBITS));
+
+						adddist = (UINT32)disttowaypoint;
+					}
+					*/
+				}
+				/*
+				else
+				{
+					// Fallback to adding euclidean distance to the next waypoint to the distancetofinish
+					adddist = (UINT32)disttonext;
+				}
+				*/
+
+				if (pathBackwardsReverse == false)
+				{
+					if (pathtofinish.totaldist > adddist)
+					{
+						player->distancetofinish = pathtofinish.totaldist - adddist;
+					}
+					else
+					{
+						player->distancetofinish = 0;
+					}
+				}
+				else
+				{
+					player->distancetofinish = pathtofinish.totaldist + adddist;
+				}
 				Z_Free(pathtofinish.array);
 
 				// distancetofinish is currently a flat distance to the finish line, but in order to be fully
