@@ -1574,8 +1574,8 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 		overlayFlags[1] = V_SUBTRACT;
 	}
 
-	w = kp_positionnum[num][0][splitIndex]->width * scale;
-	h = kp_positionnum[num][0][splitIndex]->height * scale;
+	w = SHORT(kp_positionnum[num][0][splitIndex]->width) * scale;
+	h = SHORT(kp_positionnum[num][0][splitIndex]->height) * scale;
 
 	if (flags & V_SNAPTORIGHT)
 	{
@@ -1597,7 +1597,12 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 		);
 	}
 
-	return (x - w);
+	if (!(flags & V_SNAPTORIGHT))
+	{
+		x -= w;
+	}
+
+	return x;
 }
 
 static void K_DrawKartPositionNum(INT32 num)
