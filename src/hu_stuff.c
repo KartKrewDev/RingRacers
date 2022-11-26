@@ -2075,8 +2075,18 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
+	// Closed chat
+	if (!chat_on)
+	{
+		typelines = 1;
+		chat_scrolltime = 0;
+
+		if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
+			HU_drawMiniChat(); // draw messages in a cool fashion.
+	}
+
 	if (gamestate != GS_LEVEL)
-		goto drawchat;
+		goto drawontop;
 
 	// draw multiplayer rankings
 	if (hu_showscores)
@@ -2116,22 +2126,14 @@ void HU_Drawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
 	}
 
-drawchat:
-	// draw chat string plus cursor
+drawontop:
+	// Opened chat
 	if (chat_on)
 	{
 		if (!OLDCHAT)
 			HU_DrawChat();
 		else
 			HU_DrawChat_Old();
-	}
-	else
-	{
-		typelines = 1;
-		chat_scrolltime = 0;
-
-		if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
-			HU_drawMiniChat(); // draw messages in a cool fashion.
 	}
 
 	if (cechotimer)
