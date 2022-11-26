@@ -180,6 +180,8 @@ consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2", CV_SAVE, maxportals_cons
 
 consvar_t cv_renderstats = CVAR_INIT ("renderstats", "Off", 0, CV_OnOff, NULL);
 
+consvar_t cv_drawpickups = CVAR_INIT ("drawpickups", "Yes", CV_CHEAT, CV_YesNo, NULL);
+
 void SplitScreen_OnChange(void)
 {
 	UINT8 i;
@@ -1646,4 +1648,6 @@ void R_RegisterEngineStuff(void)
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
+
+	CV_RegisterVar(&cv_drawpickups);
 }
