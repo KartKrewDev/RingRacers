@@ -358,9 +358,9 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 		cur->momy = FixedMul(FINESINE(cur->angle >> ANGLETOFINESHIFT), orbinaut_shield_dist(cur));
 		cur->flags &= ~MF_NOCLIPTHING;
 
-		if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true))
+		if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true, NULL))
 		{
-			P_SlideMove(cur);
+			P_SlideMove(cur, NULL);
 		}
 
 		if (P_IsObjectOnGround(player->mo))

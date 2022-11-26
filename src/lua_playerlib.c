@@ -410,6 +410,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->skin);
 	else if (fastcmp(field,"availabilities"))
 		lua_pushinteger(L, plr->availabilities);
+	else if (fastcmp(field,"fakeskin"))
+		lua_pushinteger(L, plr->fakeskin);
+	else if (fastcmp(field,"lastfakeskin"))
+		lua_pushinteger(L, plr->lastfakeskin);
 	else if (fastcmp(field,"score"))
 		lua_pushinteger(L, plr->score);
 	// SRB2kart
@@ -574,6 +578,10 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"skin"))
 		return NOSET;
 	else if (fastcmp(field,"availabilities"))
+		return NOSET;
+	else if (fastcmp(field,"fakeskin"))
+		return NOSET;
+	else if (fastcmp(field,"lastfakeskin"))
 		return NOSET;
 	else if (fastcmp(field,"score"))
 		plr->score = luaL_checkinteger(L, 3);

@@ -543,6 +543,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"KINF", // Invincibility flash
 	"INVI", // Invincibility speedlines
 	"ICAP", // Item capsules
+	"MGBX", // Heavy Magician transform box
+	"MGBT", // Heavy Magician transform box top
+	"MGBB", // Heavy Magician transform box bottom
 
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
@@ -3890,6 +3893,10 @@ state_t states[NUMSTATES] =
 	//{SPR_ICAP,                 FF_FLOORSPRITE|3, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP
 	//{SPR_ICAP,                 FF_FLOORSPRITE|4, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM
 	//{SPR_ICAP,                 FF_FLOORSPRITE|5, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_INSIDE
+
+	{SPR_MGBX,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX
+	{SPR_MGBT,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
+	{SPR_MGBB,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_BOTTOM
 
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_SIGNSPARK2}, // S_SIGNSPARK1
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_SIGNSPARK3}, // S_SIGNSPARK2
@@ -22398,6 +22405,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_MAGICIANBOX
+		-1,             // doomednum
+		S_MAGICIANBOX,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		20*FRACUNIT,    // radius
+		20*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+	
 	{           // MT_SIGNSPARKLE
 		-1,              // doomednum
 		S_SIGNSPARK1,    // spawnstate

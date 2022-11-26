@@ -749,10 +749,10 @@ static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t
 		}
 
 		// set openrange, opentop, openbottom
-		tmx = tb->compareThing->x;
-		tmy = tb->compareThing->y;
+		tm.x = tb->compareThing->x;
+		tm.y = tb->compareThing->y;
 		P_LineOpening(line, tb->compareThing);
-		maxstep = P_GetThingStepUp(tb->compareThing, tmx, tmy);
+		maxstep = P_GetThingStepUp(tb->compareThing, tm.x, tm.y);
 
 		if ((openrange < tb->compareThing->height) // doesn't fit
 			|| (opentop - tb->compareThing->z < tb->compareThing->height) // mobj is too high

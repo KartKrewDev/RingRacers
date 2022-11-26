@@ -3282,6 +3282,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	//"S_ITEMCAPSULE_BOTTOM",
 	//"S_ITEMCAPSULE_INSIDE",
 
+	"S_MAGICIANBOX",
+	"S_MAGICIANBOXTOP",
+	"S_MAGICIANBOXBOTTOM",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -5284,6 +5288,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
 	"MT_ITEMCAPSULE_PART",
+	"MT_MAGICIANBOX",
 
 	"MT_SIGNSPARKLE",
 
@@ -6323,8 +6328,8 @@ struct int_const_s const INT_CONST[] = {
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
 
 	// Character flags (skinflags_t)
-	{"SF_HIRES",SF_HIRES},
 	{"SF_MACHINE",SF_MACHINE},
+	{"SF_IRONMAN",SF_IRONMAN},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -6691,6 +6696,7 @@ struct int_const_s const INT_CONST[] = {
 	{"V_OVERLAY",V_OVERLAY},
 	{"V_ALLOWLOWERCASE",V_ALLOWLOWERCASE},
 	{"V_FLIP",V_FLIP},
+	{"V_VFLIP",V_VFLIP},
 	{"V_SNAPTOTOP",V_SNAPTOTOP},
 	{"V_SNAPTOBOTTOM",V_SNAPTOBOTTOM},
 	{"V_SNAPTOLEFT",V_SNAPTOLEFT},
