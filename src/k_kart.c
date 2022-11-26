@@ -8872,9 +8872,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			angle_t angledelta      = ANGLE_180;
 			angle_t momdelta        = ANGLE_180;
 
-			// Remove WRONG WAY flag.
-			player->pflags &= ~PF_WRONGWAY;
-
 			angledelta = playerangle - angletowaypoint;
 			if (angledelta > ANGLE_180)
 			{
@@ -8939,6 +8936,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
 						{
+							// Wanted to use a next waypoint, so remove WRONG WAY flag.
+							// Done here instead of when set, because of finish line
+							// hacks meaning we might not actually use this one, but
+							// we still want to acknowledge we're facing the right way.
+							player->pflags &= ~PF_WRONGWAY;
+
 							if (waypoint->nextwaypoints[i] != finishline) // Allow finish line.
 							{
 								if (P_TraceWaypointTraversal(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
@@ -9166,6 +9169,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 							}
 						}
 
+#if 0
 						if (cv_kartdebugwaypoints.value)
 						{
 							mobj_t *debugmobj = P_SpawnMobj(best.x, best.y, best.z, MT_SPARK);
@@ -9174,9 +9178,10 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 							debugmobj->frame &= ~FF_TRANSMASK;
 							debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
 
-							debugmobj->tics = 2;
+							debugmobj->tics = 1;
 							debugmobj->color = SKINCOLOR_BANANA;
 						}
+#endif
 
 						adddist = bestGScore;
 					}
