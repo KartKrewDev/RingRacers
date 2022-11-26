@@ -392,6 +392,7 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"console",
 	"talk",
 	"teamtalk",
+	"rankings",
 	"screenshot",
 	"recordgif",
 };
