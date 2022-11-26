@@ -38,11 +38,13 @@ typedef struct
 	boolean alreadyHates;				// For bot traversal, for if the bot is already in a sector it doesn't want to be
 } los_t;
 
+typedef boolean (*los_init_t)(mobj_t *, mobj_t *, register los_t *);
 typedef boolean (*los_valid_t)(seg_t *, divline_t *, register los_t *);
 typedef boolean (*los_valid_poly_t)(polyobj_t *, divline_t *, register los_t *);
 
 typedef struct
 {
+	los_init_t init;					// Initialization function. If true, we'll continue with checking across linedefs. If false, end early with failure.
 	los_valid_t validate;				// Validation function. If true, continue iterating for possible success. If false, end early with failure.
 	los_valid_poly_t validatePolyobj;	// If not NULL, then we will also check polyobject lines using this func.
 } los_funcs_t;
@@ -507,11 +509,6 @@ static boolean P_CrossSubsector(size_t num, register los_t *los, register los_fu
 
 static boolean P_CrossBSPNode(INT32 bspnum, register los_t *los, register los_funcs_t *funcs)
 {
-	if (funcs->validate == NULL)
-	{
-		return false;
-	}
-
 	while (!(bspnum & NF_SUBSECTOR))
 	{
 		register node_t *bsp = nodes + bspnum;
@@ -533,79 +530,22 @@ static boolean P_CrossBSPNode(INT32 bspnum, register los_t *los, register los_fu
 	return P_CrossSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), los, funcs);
 }
 
-//
-// P_CheckSight
-//
-// Returns true if a straight line between t1 and t2 is unobstructed.
-// Uses REJECT.
-//
-boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
+static boolean P_InitCheckSight(mobj_t *t1, mobj_t *t2, register los_t *los)
 {
 	const sector_t *s1, *s2;
-	size_t pnum;
-	los_t los;
-	los_funcs_t funcs;
-
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
 
 	// An unobstructed LOS is possible.
 	// Now look from eyes of t1 to any part of t2.
 	sightcounts[1]++;
-
-	validcount++;
-
-	los.compareThing = t1;
-	los.alreadyHates = false;
-
-	los.topslope =
-		(los.bottomslope = t2->z - (los.sightzstart =
-			t1->z + t1->height -
-			(t1->height>>2))) + t2->height;
-	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
-	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
-	else
-		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
-	else
-		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
 
 	// Prevent SOME cases of looking through 3dfloors
 	//
 	// This WILL NOT work for things like 3d stairs with monsters behind
 	// them - they will still see you! TODO: Fix.
 	//
+	s1 = t1->subsector->sector;
+	s2 = t2->subsector->sector;
+
 	if (s1 == s2) // Both sectors are the same.
 	{
 		ffloor_t *rover;
@@ -629,8 +569,8 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 			bottomz2 = P_GetFFloorBottomZAt(rover, t2->x, t2->y);
 
 			// Check for blocking floors here.
-			if ((los.sightzstart < bottomz1 && t2->z >= topz2)
-				|| (los.sightzstart >= topz1 && t2->z + t2->height < bottomz2))
+			if ((los->sightzstart < bottomz1 && t2->z >= topz2)
+				|| (los->sightzstart >= topz1 && t2->z + t2->height < bottomz2))
 			{
 				// no way to see through that
 				return false;
@@ -641,182 +581,66 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 
 			if (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))
 			{
-				if (los.sightzstart >= topz1 && t2->z + t2->height < topz2)
+				if (los->sightzstart >= topz1 && t2->z + t2->height < topz2)
 					return false; // blocked by upper outside plane
 
-				if (los.sightzstart < bottomz1 && t2->z >= bottomz2)
+				if (los->sightzstart < bottomz1 && t2->z >= bottomz2)
 					return false; // blocked by lower outside plane
 			}
 
 			if (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES)
 			{
-				if (los.sightzstart < topz1 && t2->z >= topz2)
+				if (los->sightzstart < topz1 && t2->z >= topz2)
 					return false; // blocked by upper inside plane
 
-				if (los.sightzstart >= bottomz1 && t2->z + t2->height < bottomz2)
+				if (los->sightzstart >= bottomz1 && t2->z + t2->height < bottomz2)
 					return false; // blocked by lower inside plane
 			}
 		}
 	}
 
-	funcs.validate = &P_IsVisible;
-	funcs.validatePolyobj = &P_IsVisiblePolyObj;
-
-	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
+	return true;
 }
 
-boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2)
+static boolean P_InitTraceBotTraversal(mobj_t *t1, mobj_t *t2, register los_t *los)
 {
-	const sector_t *s1, *s2;
-	size_t pnum;
-	los_t los;
-	los_funcs_t funcs;
+	(void)t2;
 
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
-
-	validcount++;
-
-	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
-	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
-	else
-		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
-	else
-		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
-
-	los.compareThing = t1;
-	los.alreadyHates = false;
-
-	funcs.validate = &P_CanTraceBlockingLine;
-
-	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
-}
-
-//
-// ANOTHER version, this time for bot traversal.
-//
-
-boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
-{
-	const sector_t *s1, *s2;
-	size_t pnum;
-	los_t los;
-	los_funcs_t funcs;
-
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
-
-	validcount++;
-
-	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
-	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
-	else
-		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
-	else
-		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
-
-	los.compareThing = t1;
 	if (t1->player != NULL)
 	{
-		los.alreadyHates = K_BotHatesThisSector(
+		los->alreadyHates = K_BotHatesThisSector(
 			t1->player, t1->subsector->sector,
 			t1->x, t1->y
 		);
 	}
 	else
 	{
-		los.alreadyHates = false;
+		los->alreadyHates = false;
 	}
 
-	funcs.validate = &P_CanBotTraverse;
-
-	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
+	return true;
 }
 
-boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
+static boolean P_CompareMobjsAcrossLines(mobj_t *t1, mobj_t *t2, register los_funcs_t *funcs)
 {
+	los_t los;
 	const sector_t *s1, *s2;
 	size_t pnum;
-	los_t los;
-	los_funcs_t funcs;
 
 	// First check for trivial rejection.
 	if (!t1 || !t2)
+	{
 		return false;
+	}
 
 	I_Assert(!P_MobjWasRemoved(t1));
 	I_Assert(!P_MobjWasRemoved(t2));
 
 	if (!t1->subsector || !t2->subsector
 	|| !t1->subsector->sector || !t2->subsector->sector)
+	{
 		return false;
+	}
 
 	s1 = t1->subsector->sector;
 	s2 = t2->subsector->sector;
@@ -826,7 +650,9 @@ boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
 	{
 		// Check in REJECT table.
 		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
+		{
 			return false;
+		}
 	}
 
 	// killough 11/98: shortcut for melee situations
@@ -834,10 +660,19 @@ boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
 	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
 	if (!t1->subsector->polyList &&
 		t1->subsector == t2->subsector)
+	{
 		return true;
+	}
 
 	validcount++;
 
+	los.compareThing = t1;
+	los.alreadyHates = false;
+
+	los.topslope =
+		(los.bottomslope = t2->z - (los.sightzstart =
+			t1->z + t1->height -
+			(t1->height>>2))) + t2->height;
 	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
 	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
 
@@ -851,11 +686,62 @@ boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
 	else
 		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
 
-	los.compareThing = t1;
-	los.alreadyHates = false;
+	if (funcs->init != NULL)
+	{
+		if (funcs->init(t1, t2, &los) == false)
+		{
+			return false;
+		}
+	}
+
+	// The only required function.
+	I_Assert(funcs->validate != NULL);
+
+	// the head node is the last node output
+	return P_CrossBSPNode((INT32)numnodes - 1, &los, funcs);
+}
+
+//
+// P_CheckSight
+//
+// Returns true if a straight line between t1 and t2 is unobstructed.
+// Uses REJECT.
+//
+boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.init = &P_InitCheckSight;
+	funcs.validate = &P_IsVisible;
+	funcs.validatePolyobj = &P_IsVisiblePolyObj;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.validate = &P_CanTraceBlockingLine;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.init = &P_InitTraceBotTraversal;
+	funcs.validate = &P_CanBotTraverse;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
 
 	funcs.validate = &P_CanWaypointTraverse;
 
-	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los, &funcs);
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
 }
