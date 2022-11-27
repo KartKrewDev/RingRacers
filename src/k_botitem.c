@@ -943,7 +943,7 @@ static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
 		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 25*TICRATE)
+	if (player->botvars.itemconfirm > 10*TICRATE || player->bananadrag >= TICRATE)
 	{
 		K_BotGenericPressItem(player, cmd, throwdir);
 	}
