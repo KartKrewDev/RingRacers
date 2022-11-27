@@ -5500,6 +5500,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_SKEWTD)
 				lines[i].args[3] |= TMPF_GHOSTFADE;
 			break;
+		case 499: //Ring Racers - Toggle waypoints
+			lines[i].args[0] = tag;
+			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
+			break;
 		case 500: //Scroll front wall left
 		case 501: //Scroll front wall right
 			lines[i].args[0] = 0;

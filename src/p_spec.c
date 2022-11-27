@@ -3719,7 +3719,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					{
 						if (thing->type == MT_WAYPOINT)
 						{
-							if (line->flags & ML_NOCLIMB)
+							if (line->args[1])
 							{
 								thing->extravalue1 = 1;
 							}
