@@ -3829,12 +3829,13 @@ void A_AttractChase(mobj_t *actor)
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
-				S_StartSound(actor->target, sfx_s1b5);
+				S_ReducedVFXSound(actor->target, sfx_s1b5, NULL);
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
 				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim);
 				actor->target->player->sparkleanim = (actor->target->player->sparkleanim+1) % 20;
+				K_ReduceVFX(sparkle, actor->target->player);
 
 				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
 				return;

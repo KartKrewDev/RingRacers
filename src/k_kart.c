@@ -195,6 +195,22 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 	return flag;
 }
 
+void K_ReduceVFX(mobj_t *mo, player_t *owner)
+{
+	if (cv_reducevfx.value == 0)
+	{
+		// Leave the visuals alone.
+		return;
+	}
+
+	mo->renderflags |= RF_DONTDRAW;
+
+	if (owner != NULL)
+	{
+		mo->renderflags &= ~K_GetPlayerDontDrawFlag(owner);
+	}
+}
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
@@ -334,6 +350,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
+
+	CV_RegisterVar(&cv_reducevfx);
 }
 
 //}
@@ -2432,6 +2450,8 @@ spawn_brake_dust
 
 	P_SetScale(spark, (spark->destscale =
 				FixedMul(scale, spark->scale)));
+
+	K_ReduceVFX(spark, master->player);
 }
 
 static void K_SpawnBrakeVisuals(player_t *player)
@@ -2474,7 +2494,7 @@ static void K_SpawnBrakeVisuals(player_t *player)
 	}
 
 	if (leveltime % 4 == 0)
-		S_StartSound(player->mo, sfx_s3k67);
+		S_ReducedVFXSound(player->mo, sfx_s3k67, player);
 
 	/* vertical shaking, scales with speed */
 	player->mo->spriteyoffset = P_RandomFlip(2 * scale);
@@ -2507,6 +2527,8 @@ void K_SpawnDriftBoostClip(player_t *player)
 	P_InstaThrust(clip, player->mo->angle +
 			P_RandomFlip(P_RandomRange(PR_DECORATION, FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
+
+	K_ReduceVFX(clip, player);
 }
 
 void K_SpawnDriftBoostClipSpark(mobj_t *clip)
@@ -2557,6 +2579,7 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	}
 
 	K_MatchGenericExtraFlags(fast, player->mo);
+	K_ReduceVFX(fast, player);
 
 	if (top)
 	{
@@ -2619,6 +2642,7 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
 	K_MatchGenericExtraFlags(fast, mo);
+	K_ReduceVFX(fast, mo->player);
 
 	fast->color = mo->color;
 	fast->colorized = true;
@@ -3667,6 +3691,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// overlay
 			water = P_SpawnMobj(x1, y1,
@@ -3678,6 +3703,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// Right
 			// Underlay
@@ -3690,6 +3716,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
@@ -3701,11 +3728,12 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			if (!S_SoundPlaying(mobj, sfx_s3kdbs))
 			{
 				const INT32 volume = (min(trailScale, FRACUNIT) * 255) / FRACUNIT;
-				S_StartSoundAtVolume(mobj, sfx_s3kdbs, volume);
+				S_ReducedVFXSoundAtVolume(mobj, sfx_s3kdbs, volume, mobj->player);
 			}
 		}
 
@@ -3714,7 +3742,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 		{
 			if (P_RandomChance(PR_BUBBLE, FRACUNIT/2) && leveltime % TICRATE == 0)
 			{
-				S_StartSound(mobj, sfx_floush);
+				S_ReducedVFXSound(mobj, sfx_floush, mobj->player);
 			}
 		}
 	}
@@ -5453,6 +5481,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 		spark->momz = mo->momz;
 		spark->color = color;
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
+		K_ReduceVFX(spark, player);
 
 		spark->spritexscale += scalefactor/3;
 		spark->spriteyscale += scalefactor/8;
@@ -5502,10 +5531,11 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 					spark->frame |= FF_ADD;
 
 				sparkangle += ANGLE_90;
+				K_ReduceVFX(spark, player);
 			}
 		}
 	}
-	S_StartSound(mo, sfx_s3k45);
+	S_ReducedVFXSound(mo, sfx_s3k45, player);
 }
 
 static void K_SpawnDriftSparks(player_t *player)
@@ -5652,6 +5682,7 @@ static void K_SpawnDriftSparks(player_t *player)
 			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
+		K_ReduceVFX(spark, player);
 	}
 
 	if (player->driftcharge >= dsthree)
@@ -9919,7 +9950,7 @@ void K_KartUpdatePosition(player_t *player)
 		if (position < oldposition && P_IsDisplayPlayer(player) == true)
 		{
 			// Play sound when getting closer to 1st.
-			S_StartSound(player->mo, sfx_mbs41);
+			S_ReducedVFXSound(player->mo, sfx_mbs41, NULL);
 		}
 
 		player->positiondelay = POS_DELAY_TIME + 4; // Position number growth
@@ -10215,6 +10246,8 @@ static void K_KartSpindashDust(mobj_t *parent)
 		dust->momx = FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
 		dust->momy = FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
 		dust->momz = vmomentum * flip;
+
+		//K_ReduceVFX(dust, parent->player);
 	}
 }
 
@@ -10239,6 +10272,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 	wind->momz = 3 * P_GetMobjZMovement(parent) / 4;
 
 	K_MatchGenericExtraFlags(wind, parent);
+	K_ReduceVFX(wind, parent->player);
 }
 
 // Time after which you get a thrust for releasing spindash
@@ -10284,13 +10318,14 @@ static void K_KartSpindash(player_t *player)
 				P_SetTarget(&grease->target, player->mo);
 				grease->angle = K_MomentumAngle(player->mo);
 				grease->extravalue1 = i;
+				K_ReduceVFX(grease, player);
 			}
 		}
 
 		player->tiregrease = 2*TICRATE;
 
 		player->spindash = 0;
-		S_StartSound(player->mo, sfx_s23c);
+		S_ReducedVFXSound(player->mo, sfx_s23c, player);
 	}
 
 
@@ -10327,7 +10362,7 @@ static void K_KartSpindash(player_t *player)
 	if (player->speed == 0 && player->steering != 0 && leveltime % 8 == 0)
 	{
 		// Rubber burn turn sfx
-		S_StartSound(player->mo, sfx_ruburn);
+		S_ReducedVFXSound(player->mo, sfx_ruburn, player);
 	}
 
 	if (player->speed < 6*player->mo->scale)
@@ -10369,7 +10404,7 @@ static void K_KartSpindash(player_t *player)
 				{
 					if (spawnOldEffect == true)
 						K_SpawnDashDustRelease(player);
-					S_StartSound(player->mo, sfx_s3kab);
+					S_ReducedVFXSound(player->mo, sfx_s3kab, player);
 				}
 			}
 			else if (chargetime < -TICRATE)
@@ -10381,7 +10416,7 @@ static void K_KartSpindash(player_t *player)
 	else
 	{
 		if (leveltime % 4 == 0)
-			S_StartSound(player->mo, sfx_kc2b);
+			S_ReducedVFXSound(player->mo, sfx_kc2b, player);
 	}
 }
 

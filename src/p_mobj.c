@@ -7408,6 +7408,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				}
 			}
 		}
+
+		K_ReduceVFX(mobj, mobj->target->player);
 		break;
 	}
 	case MT_BOOSTFLAME:
@@ -7496,6 +7498,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				S_StartSound(mobj, sfx_cdfm17);
 
 			K_MatchGenericExtraFlags(mobj, mobj->target);
+			K_ReduceVFX(mobj, mobj->target->player);
 			if (leveltime & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 		}
@@ -7698,6 +7701,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			else
 				mobj->renderflags = (mobj->renderflags & ~RF_TRANSMASK)|(trans << RF_TRANSSHIFT);
 		}
+
+		K_ReduceVFX(mobj, mobj->target->player);
 		break;
 	case MT_MAGICIANBOX:
 	{
