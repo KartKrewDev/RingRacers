@@ -1241,6 +1241,92 @@ static void K_BotItemFlame(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
+	static void K_BotItemGardenTopDeploy(player_t *player, ticcmd_t *cmd)
+
+		Item usage for deploying the Garden Top.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemGardenTopDeploy(player_t *player, ticcmd_t *cmd)
+{
+	//if (player->curshield != KSHIELD_TOP)
+	if (player->botvars.itemconfirm++ > 2*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, 0);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_BotItemGardenTop(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+
+		Item usage for Garden Top movement.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+		turnamt - How hard they currently are turning.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemGardenTop(player_t *player, ticcmd_t *cmd, INT16 turnamt)
+{
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	SINT8 throwdir = -1;
+	UINT8 snipeMul = 1;
+	player_t *target = NULL;
+
+	if (player->speed > topspeed)
+	{
+		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 2; // Confirm faster when you'll throw it with a bunch of extra speed!!
+	}
+
+	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, radius, 15, false);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
+		throwdir = 1;
+	}
+
+	if (player->topdriftheld > 0)
+	{
+		// Grinding in place.
+		// Wait until we're mostly done turning.
+		// Cancel early if we hit max thrust speed.
+		if ((abs(turnamt) >= KART_FULLTURN/8)
+			&& (player->topdriftheld <= GARDENTOP_MAXGRINDTIME))
+		{
+			cmd->buttons |= BT_DRIFT;
+		}
+	}
+	else
+	{
+		const angle_t maxDelta = ANGLE_11hh;
+		angle_t delta = AngleDelta(player->mo->angle, K_MomentumAngle(player->mo));
+
+		if (delta > maxDelta)
+		{
+			// Do we need to turn? Start grinding!
+			cmd->buttons |= BT_DRIFT;
+		}
+	}
+
+	if (player->botvars.itemconfirm > 25*TICRATE)
+	{
+		K_BotGenericPressItem(player, cmd, throwdir);
+	}
+}
+
+/*--------------------------------------------------
 	static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 
 		Item usage for rings.
@@ -1443,6 +1529,16 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						else
 						{
 							K_BotItemDropTarget(player, cmd);
+						}
+						break;
+					case KITEM_GARDENTOP:
+						if (player->curshield != KSHIELD_TOP)
+						{
+							K_BotItemGardenTopDeploy(player, cmd);
+						}
+						else
+						{
+							K_BotItemGardenTop(player, cmd, turnamt);
 						}
 						break;
 					case KITEM_LIGHTNINGSHIELD:
