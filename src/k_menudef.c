@@ -653,6 +653,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Do we even have team gamemodes?",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
+	{IT_CONTROL, "SHOW RANKINGS", "Show mid-game rankings.",
+		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
+
 	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
 		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
 
