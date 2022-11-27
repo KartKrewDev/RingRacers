@@ -710,7 +710,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
 			{
 				// If we can't get a direct path to this waypoint, predict less.
-				distanceleft -= disttonext;
+				distanceleft /= 2;
 				radreduce = FRACUNIT >> 1;
 			}
 
