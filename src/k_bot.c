@@ -745,6 +745,25 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		predict->y += P_ReturnThrustY(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
 	}
 
+	if (player->mo->standingslope != NULL)
+	{
+		const pslope_t *slope = player->mo->standingslope;
+
+		if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
+		{
+			// Displace the prediction to go against the slope physics.
+			angle_t angle = slope->xydirection;
+
+			if (P_MobjFlip(player->mo) * slope->zdelta < 0)
+			{
+				angle ^= ANGLE_180;
+			}
+
+			predict->x -= P_ReturnThrustX(NULL, angle, startDist * abs(slope->zdelta));
+			predict->y -= P_ReturnThrustY(NULL, angle, startDist * abs(slope->zdelta));
+		}
+	}
+
 	ps_bots[player - players].prediction += I_GetPreciseTime() - time;
 	return predict;
 }
@@ -875,7 +894,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 	debugMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
 	debugMobj->color = SKINCOLOR_ORANGE;
-	debugMobj->scale *= 2;
+	P_SetScale(debugMobj, debugMobj->destscale * 2);
 
 	debugMobj->tics = 2;
 
@@ -902,7 +921,7 @@ static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 		radiusMobj->frame |= FF_TRANS20|FF_FULLBRIGHT;
 
 		radiusMobj->color = SKINCOLOR_YELLOW;
-		radiusMobj->scale /= 2;
+		P_SetScale(debugMobj, debugMobj->destscale / 2);
 
 		radiusMobj->tics = 2;
 	}
