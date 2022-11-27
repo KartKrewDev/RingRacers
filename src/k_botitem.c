@@ -994,6 +994,12 @@ static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
 
 	player->botvars.itemconfirm++;
 
+	if (abs(turnamt) >= KART_FULLTURN/2)
+	{
+		player->botvars.itemconfirm += player->botvars.difficulty / 2;
+		throwdir = -1;
+	}
+
 	target = K_PlayerInCone(player, radius, 15, false);
 	if (target != NULL)
 	{
