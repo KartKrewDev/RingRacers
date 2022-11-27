@@ -785,6 +785,10 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"FLBM",
 
+	"UFOB",
+	"UFOA",
+	"UFOS",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5146,6 +5150,11 @@ state_t states[NUMSTATES] =
 	// Broly Ki Orb
 	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
 	{SPR_NULL, 0, 5*TICRATE, {A_SSMineFlash}, 0, 0, S_NULL}, // S_BROLY2
+
+	{SPR_UFOB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_POD
+	{SPR_UFOB, 1|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_SPECIAL_UFO_OVERLAY
+	{SPR_UFOA, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_ARM
+	{SPR_UFOS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_STEM
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -29058,7 +29067,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-		{           // MT_SPECIAL_UFO
+	{           // MT_SPECIAL_UFO
 		-1,             // doomednum
 		S_CHAOSEMERALD1, // spawnstate
 		101,            // spawnhealth
@@ -29075,13 +29084,40 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		72*FRACUNIT,    // radius
+		108*FRACUNIT,   // radius
 		72*FRACUNIT,    // height
 		0,              // display offset
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SHOOTABLE|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SPECIAL_UFO_PIECE
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,     // radius
+		16*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 };

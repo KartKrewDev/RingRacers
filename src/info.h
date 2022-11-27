@@ -1332,6 +1332,10 @@ typedef enum sprite
 
 	SPR_FLBM, // Finish line beam
 
+	SPR_UFOB,
+	SPR_UFOA,
+	SPR_UFOS,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5569,6 +5573,11 @@ typedef enum state
 	S_BROLY1,
 	S_BROLY2,
 
+	S_SPECIAL_UFO_POD,
+	S_SPECIAL_UFO_OVERLAY,
+	S_SPECIAL_UFO_ARM,
+	S_SPECIAL_UFO_STEM,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -6685,6 +6694,7 @@ typedef enum mobj_type
 	MT_BROLY,
 
 	MT_SPECIAL_UFO,
+	MT_SPECIAL_UFO_PIECE,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

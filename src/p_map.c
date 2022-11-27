@@ -1352,7 +1352,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			if (!(thing->flags & MF_SPECIAL))
 			{
-				Obj_PlayerUFOCollide(thing, tmthing);
+				Obj_PlayerUFOCollide(thing, tm.thing);
 				return BMIT_CONTINUE;
 			}
 		}

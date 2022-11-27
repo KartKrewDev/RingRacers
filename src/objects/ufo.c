@@ -8,7 +8,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  ufo.c
-/// \brief Special Stage UFO
+/// \brief Special Stage UFO + Emerald handler
 
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -31,10 +31,28 @@
 #define UFO_DEADZONE (2048 * FRACUNIT) // Deadzone where it won't update it's speed as much.
 #define UFO_SPEEDFACTOR (FRACUNIT * 3 / 4) // Factor of player's best speed, to make it more fair.
 
+#define UFO_NUMARMS (3)
+#define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
+
 #define ufo_waypoint(o) ((o)->extravalue1)
 #define ufo_distancetofinish(o) ((o)->extravalue2)
 #define ufo_speed(o) ((o)->watertop)
 #define ufo_collectdelay(o) ((o)->threshold)
+
+#define ufo_pieces(o) ((o)->hnext)
+
+#define ufo_piece_type(o) ((o)->extravalue1)
+
+#define ufo_piece_owner(o) ((o)->target)
+#define ufo_piece_next(o) ((o)->hnext)
+#define ufo_piece_prev(o) ((o)->hprev)
+
+enum
+{
+	UFO_PIECE_TYPE_POD,
+	UFO_PIECE_TYPE_ARM,
+	UFO_PIECE_TYPE_STEM,
+};
 
 static void UFOMoveTo(mobj_t *ufo, fixed_t destx, fixed_t desty, fixed_t destz)
 {
@@ -53,6 +71,11 @@ static fixed_t GenericDistance(
 static boolean UFOEmeraldChase(mobj_t *ufo)
 {
 	return (ufo->health <= 1);
+}
+
+static boolean UFOPieceValid(mobj_t *piece)
+{
+	return (piece != NULL && P_MobjWasRemoved(piece) == false && piece->health > 0);
 }
 
 static void UFOUpdateDistanceToFinish(mobj_t *ufo)
@@ -221,6 +244,7 @@ static void UFOMove(mobj_t *ufo)
 	fixed_t newX = ufo->x;
 	fixed_t newY = ufo->y;
 	fixed_t newZ = ufo->z;
+	const fixed_t floatHeight = 24 * ufo->scale;
 
 	const boolean useshortcuts = false;
 	const boolean huntbackwards = false;
@@ -253,7 +277,7 @@ static void UFOMove(mobj_t *ufo)
 	{
 		fixed_t wpX = curWaypoint->mobj->x;
 		fixed_t wpY = curWaypoint->mobj->y;
-		fixed_t wpZ = curWaypoint->mobj->z;
+		fixed_t wpZ = curWaypoint->mobj->z + floatHeight;
 
 		fixed_t distToNext = GenericDistance(
 			newX, newY, newZ,
@@ -336,13 +360,19 @@ static void UFOMove(mobj_t *ufo)
 
 static void UFOEmeraldVFX(mobj_t *ufo)
 {
+	const INT32 bobS = 32;
+	const angle_t bobA = (leveltime & (bobS - 1)) * (ANGLE_MAX / bobS);
+	const fixed_t bobH = 16 * ufo->scale;
+
+	ufo->sprzoff = FixedMul(bobH, FINESINE(bobA >> ANGLETOFINESHIFT));
+
 	if (leveltime % 3 == 0)
 	{
 		mobj_t *sparkle = P_SpawnMobjFromMobj(
 			ufo,
 			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
 			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-			P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT,
+			(P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT) + FixedDiv(ufo->sprzoff, ufo->scale),
 			MT_EMERALDSPARK
 		);
 
@@ -367,6 +397,65 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 	else
 	{
 		ufo_collectdelay(ufo) = TICRATE;
+	}
+}
+
+static void UFOCopyHitlagToPieces(mobj_t *ufo)
+{
+	mobj_t *piece = NULL;
+
+	piece = ufo_pieces(ufo);
+	while (UFOPieceValid(piece) == true)
+	{
+		piece->hitlag = ufo->hitlag;
+		piece->eflags = (piece->eflags & ~MFE_DAMAGEHITLAG) | (ufo->eflags & MFE_DAMAGEHITLAG);
+		piece = ufo_piece_next(piece);
+	}
+}
+
+static void UFOKillPiece(mobj_t *piece)
+{
+	angle_t dir = ANGLE_MAX;
+	fixed_t thrust = 0;
+
+	if (UFOPieceValid(piece) == false)
+	{
+		return;
+	}
+
+	piece->health = 0;
+	piece->tics = TICRATE;
+	piece->flags &= ~MF_NOGRAVITY;
+
+	switch (ufo_piece_type(piece))
+	{
+		case UFO_PIECE_TYPE_ARM:
+		{
+			dir = piece->angle;
+			thrust = 12 * piece->scale;
+			break;
+		}
+		default:
+		{
+			dir = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359) << FRACBITS);
+			thrust = 4 * piece->scale;
+			break;
+		}
+	}
+
+	P_Thrust(piece, dir, -thrust);
+	P_SetObjectMomZ(piece, 12*FRACUNIT, true);
+}
+
+static void UFOKillPieces(mobj_t *ufo)
+{
+	mobj_t *piece = NULL;
+
+	piece = ufo_pieces(ufo);
+	while (UFOPieceValid(piece) == true)
+	{
+		UFOKillPiece(piece);
+		piece = ufo_piece_next(piece);
 	}
 }
 
@@ -408,18 +497,15 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
 {
+	const fixed_t addSpeed = FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 damage = 1;
 
 	(void)source;
 	(void)damageType;
 
-	// Speed up on damage!
-	ufo_speed(ufo) += FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
-
 	if (UFOEmeraldChase(ufo) == true)
 	{
 		// Damaged fully already, no need for any more.
-		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW); // Double check flags, just to be sure.
 		return false;
 	}
 
@@ -430,13 +516,22 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		return false;
 	}
 
+	// Speed up on damage!
+	ufo_speed(ufo) += addSpeed;
+
 	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
+	UFOCopyHitlagToPieces(ufo);
 
 	if (damage >= ufo->health - 1)
 	{
 		// Destroy the UFO parts, and make the emerald collectible!
+		UFOKillPieces(ufo);
+
 		ufo->health = 1;
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
+		ufo->shadowscale = FRACUNIT/3;
+
+		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
 	}
 
@@ -462,10 +557,96 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	}
 }
 
+void Obj_UFOPieceThink(mobj_t *piece)
+{
+	mobj_t *ufo = ufo_piece_owner(piece);
+
+	if (ufo == NULL || P_MobjWasRemoved(ufo) == true)
+	{
+		P_KillMobj(piece, NULL, NULL, DMG_NORMAL);
+		return;
+	}
+
+	piece->destscale = ufo->destscale;
+	piece->scalespeed = ufo->scalespeed;
+
+	switch (ufo_piece_type(piece))
+	{
+		case UFO_PIECE_TYPE_POD:
+		{
+			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (120 * ufo->scale));
+			break;
+		}
+		case UFO_PIECE_TYPE_ARM:
+		{
+			fixed_t dis = (104 * ufo->scale);
+
+			fixed_t x = ufo->x - FixedMul(dis, FINECOSINE(piece->angle >> ANGLETOFINESHIFT));
+			fixed_t y = ufo->y - FixedMul(dis, FINESINE(piece->angle >> ANGLETOFINESHIFT));
+
+			UFOMoveTo(piece, x, y, ufo->z + (24 * ufo->scale));
+
+			piece->angle -= FixedMul(ANG2, FixedDiv(ufo_speed(ufo), UFO_BASE_SPEED));
+			break;
+		}
+		default:
+		{
+			P_KillMobj(piece, NULL, NULL, DMG_NORMAL);
+			return;
+		}
+	}
+}
+
+void Obj_UFOPieceDead(mobj_t *piece)
+{
+	piece->renderflags ^= RF_DONTDRAW;
+}
+
+void Obj_UFOPieceRemoved(mobj_t *piece)
+{
+	// Repair piece list.
+	mobj_t *ufo = ufo_piece_owner(piece);
+	mobj_t *next = ufo_piece_next(piece);
+	mobj_t *prev = ufo_piece_prev(piece);
+
+	if (prev != NULL && P_MobjWasRemoved(prev) == false)
+	{
+		P_SetTarget(
+			&ufo_piece_next(prev),
+			(next != NULL && P_MobjWasRemoved(next) == false) ? next : NULL
+		);
+	}
+
+	if (next != NULL && P_MobjWasRemoved(next) == false)
+	{
+		P_SetTarget(
+			&ufo_piece_prev(next),
+			(prev != NULL && P_MobjWasRemoved(prev) == false) ? prev : NULL
+		);
+
+		if (ufo != NULL && P_MobjWasRemoved(ufo) == false)
+		{
+			if (piece == ufo_pieces(ufo))
+			{
+				P_SetTarget(
+					&ufo_pieces(ufo),
+					next
+				);
+			}
+		}
+	}
+
+	P_SetTarget(&ufo_piece_next(piece), NULL);
+	P_SetTarget(&ufo_piece_prev(piece), NULL);
+}
+
 static mobj_t *InitSpecialUFO(waypoint_t *start)
 {
 	mobj_t *ufo = NULL;
-	mobj_t *underlay = NULL;
+	mobj_t *overlay = NULL;
+	mobj_t *piece = NULL;
+	mobj_t *prevPiece = NULL;
+	size_t i;
 
 	if (start == NULL)
 	{
@@ -487,12 +668,43 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	// TODO: Adjustable Special Stage emerald color
 	ufo->color = SKINCOLOR_CHAOSEMERALD1;
 
-	underlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
-	P_SetTarget(&underlay->target, ufo);
-	underlay->color = ufo->color;
+	overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
+	P_SetTarget(&overlay->target, ufo);
+	overlay->color = ufo->color;
 
 	// TODO: Super Emeralds / Chaos Rings
-	P_SetMobjState(underlay, S_CHAOSEMERALD_UNDER);
+	P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+
+	// Create UFO pieces.
+	// First: UFO center.
+	piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+	P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+	P_SetMobjState(piece, S_SPECIAL_UFO_POD);
+	ufo_piece_type(piece) = UFO_PIECE_TYPE_POD;
+
+	overlay = P_SpawnMobjFromMobj(piece, 0, 0, 0, MT_OVERLAY);
+	P_SetTarget(&overlay->target, piece);
+	P_SetMobjState(overlay, S_SPECIAL_UFO_OVERLAY);
+
+	P_SetTarget(&ufo_pieces(ufo), piece);
+	prevPiece = piece;
+
+	for (i = 0; i < UFO_NUMARMS; i++)
+	{
+		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+		P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+		P_SetMobjState(piece, S_SPECIAL_UFO_ARM);
+		ufo_piece_type(piece) = UFO_PIECE_TYPE_ARM;
+
+		piece->angle = UFO_ARMDELTA * i;
+
+		P_SetTarget(&ufo_piece_next(prevPiece), piece);
+		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+
+		prevPiece = piece;
+	}
 
 	return ufo;
 }

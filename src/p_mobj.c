@@ -5298,10 +5298,22 @@ void P_RunOverlays(void)
 		mo->pitch = mo->target->pitch;
 		mo->roll = mo->target->roll;
 
+		mo->spritexoffset = mo->target->spritexoffset;
+		mo->spriteyoffset = mo->target->spriteyoffset;
+		mo->spritexscale = mo->target->spritexscale;
+		mo->spriteyscale = mo->target->spriteyscale;
+
+		mo->sprxoff = mo->target->sprxoff;
+		mo->spryoff = mo->target->spryoff;
+		mo->sprzoff = mo->target->sprzoff;
+
+		mo->hitlag = mo->target->hitlag;
+		mo->eflags = (mo->eflags & ~MFE_DAMAGEHITLAG) | (mo->target->eflags & MFE_DAMAGEHITLAG);
+
 		if ((mo->flags & MF_DONTENCOREMAP) != (mo->target->flags & MF_DONTENCOREMAP))
 			mo->flags ^= MF_DONTENCOREMAP;
 
-		mo->dispoffset = mo->target->dispoffset + mo->info->dispoffset;
+		mo->dispoffset = mo->target->dispoffset;
 
 		if (!(mo->state->frame & FF_ANIMATE))
 		{
@@ -5321,6 +5333,7 @@ void P_RunOverlays(void)
 			// if you're using FF_ANIMATE on an overlay,
 			// then you're on your own.
 			zoffs = 0;
+			mo->dispoffset++;
 		}
 
 		P_UnsetThingPosition(mo);
@@ -6743,6 +6756,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 				S_StartSound(dust, sfx_s3k3d);
 		}
 		break;
+	case MT_SPECIAL_UFO_PIECE:
+	{
+		Obj_UFOPieceDead(mobj);
+		break;
+	}
 	default:
 		break;
 	}
@@ -7295,6 +7313,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_SPECIAL_UFO:
 	{
 		Obj_SpecialUFOThinker(mobj);
+		break;
+	}
+	case MT_SPECIAL_UFO_PIECE:
+	{
+		Obj_UFOPieceThink(mobj);
 		break;
 	}
 	case MT_EMERALD:
@@ -10050,6 +10073,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_PLAYER:
 		case MT_KART_LEFTOVER:
 		case MT_BATTLECAPSULE:
+		case MT_SPECIAL_UFO:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -10904,6 +10928,11 @@ void P_RemoveMobj(mobj_t *mobj)
 	if (mobj->type == MT_SHRINK_GUN)
 	{
 		Obj_ShrinkGunRemoved(mobj);
+	}
+
+	if (mobj->type == MT_SPECIAL_UFO_PIECE)
+	{
+		Obj_UFOPieceRemoved(mobj);
 	}
 
 	mobj->health = 0; // Just because
