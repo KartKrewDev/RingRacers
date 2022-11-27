@@ -904,6 +904,68 @@ static void K_BotItemOrbinaut(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
+	static void K_BotItemBallhog(player_t *player, ticcmd_t *cmd)
+
+		Item usage for Ballhog throwing.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemBallhog(player_t *player, ticcmd_t *cmd)
+{
+	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
+	fixed_t radius = FixedMul(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	SINT8 throwdir = -1;
+	boolean tryLookback = false;
+	UINT8 snipeMul = 2;
+	player_t *target = NULL;
+
+	if (player->speed > topspeed)
+	{
+		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
+		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
+	}
+
+	player->botvars.itemconfirm++;
+
+	target = K_PlayerInCone(player, radius, 15, false);
+	if (target != NULL)
+	{
+		K_ItemConfirmForTarget(player, target, player->botvars.difficulty * snipeMul);
+		throwdir = 1;
+	}
+	else
+	{
+		target = K_PlayerInCone(player, radius, 15, true);
+
+		if (target != NULL)
+		{
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty);
+			throwdir = -1;
+			tryLookback = true;
+		}
+	}
+
+	if (tryLookback == true && throwdir == -1)
+	{
+		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE)
+	{
+		// Charge up. If we lose sight of the target, then
+		// we'll just let go and do a partial-charge.
+		// Otherwise we'll go for full-charge :)
+		cmd->throwdir = KART_FULLTURN * throwdir;
+		cmd->buttons |= BT_ATTACK;
+	}
+}
+
+/*--------------------------------------------------
 	static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
 
 		Item usage for Drop Target throwing.
@@ -1343,8 +1405,6 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 							K_BotItemGenericOrbitShield(player, cmd);
 						}
 						else if (player->position != 1) // Hold onto orbiting items when in 1st :)
-						/* FALLTHRU */
-					case KITEM_BALLHOG:
 						{
 							K_BotItemOrbinaut(player, cmd);
 						}
@@ -1371,6 +1431,9 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						break;
 					case KITEM_LANDMINE:
 						K_BotItemLandmine(player, cmd, turnamt);
+						break;
+					case KITEM_BALLHOG:
+						K_BotItemBallhog(player, cmd);
 						break;
 					case KITEM_DROPTARGET:
 						if (!(player->pflags & PF_ITEMOUT))
