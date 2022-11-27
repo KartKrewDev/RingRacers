@@ -3154,6 +3154,8 @@ static void Command_RandomMap(void)
 
 static void Command_RestartLevel(void)
 {
+	boolean newencore = false;
+
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
@@ -3166,7 +3168,12 @@ static void Command_RestartLevel(void)
 		return;
 	}
 
-	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
+	if (cv_kartencore.value != 0)
+	{
+		newencore = (cv_kartencore.value == 1) || encoremode;
+	}
+
+	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
 static void Command_Pause(void)
