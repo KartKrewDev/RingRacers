@@ -966,18 +966,19 @@ static void K_BotItemBallhog(player_t *player, ticcmd_t *cmd)
 }
 
 /*--------------------------------------------------
-	static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+	static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 
 		Item usage for Drop Target throwing.
 
 	Input Arguments:-
 		player - Bot to do this for.
 		cmd - Bot's ticcmd to edit.
+		turnamt - How hard they currently are turning.
 
 	Return:-
 		None
 --------------------------------------------------*/
-static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd)
+static void K_BotItemDropTarget(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
 	const fixed_t topspeed = K_GetKartSpeed(player, false, true);
 	fixed_t radius = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
@@ -1534,7 +1535,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						}
 						else
 						{
-							K_BotItemDropTarget(player, cmd);
+							K_BotItemDropTarget(player, cmd, turnamt);
 						}
 						break;
 					case KITEM_GARDENTOP:
