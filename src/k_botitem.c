@@ -486,6 +486,12 @@ static void K_BotItemGenericOrbitShield(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 {
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		// Don't use while mid-air.
+		return;
+	}
+
 	if ((player->offroad && K_ApplyOffroad(player)) // Stuck in offroad, use it NOW
 		|| K_GetWaypointIsShortcut(player->nextwaypoint) == true // Going toward a shortcut!
 		|| player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
@@ -518,6 +524,12 @@ static void K_BotItemSneaker(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRocketSneaker(player_t *player, ticcmd_t *cmd)
 {
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		// Don't use while mid-air.
+		return;
+	}
+
 	if (player->botvars.itemconfirm > TICRATE)
 	{
 		if (player->sneakertimer == 0 && K_ItemButtonWasDown(player) == false)
@@ -1181,6 +1193,12 @@ static void K_BotItemFlame(player_t *player, ticcmd_t *cmd)
 static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 {
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
+
+	if (P_IsObjectOnGround(player->mo) == false)
+	{
+		// Don't use while mid-air.
+		return;
+	}
 
 	if (player->speed < K_GetKartSpeed(player, false, true) / 2 // Being slowed down too much
 		|| player->speedboost > (FRACUNIT/5)) // Have another type of boost (tethering)
