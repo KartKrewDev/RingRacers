@@ -9916,10 +9916,17 @@ void K_KartUpdatePosition(player_t *player)
 
 	if (position != oldposition) // Changed places?
 	{
-		if (position < oldposition && P_IsDisplayPlayer(player) == true)
+		if (player->positiondelay <= 0 && position < oldposition && P_IsDisplayPlayer(player) == true)
 		{
 			// Play sound when getting closer to 1st.
-			S_StartSound(player->mo, sfx_mbs41);
+			UINT32 soundpos = (max(0, position - 1) * MAXPLAYERS)/realplayers; // always 1-15 despite there being 16 players at max...
+#if MAXPLAYERS > 16
+			if (soundpos < 15)
+			{
+				soundpos = 15;
+			}
+#endif
+			S_StartSound(player->mo, sfx_pass02 + soundpos); // ...which is why we can start at index 2 for a lower general pitch
 		}
 
 		player->positiondelay = POS_DELAY_TIME + 4; // Position number growth

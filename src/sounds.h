@@ -1195,6 +1195,24 @@ typedef enum
 	sfx_gate04,
 	sfx_gate05,
 
+	// Passing sounds
+	sfx_pass01,
+	sfx_pass02,
+	sfx_pass03,
+	sfx_pass04,
+	sfx_pass05,
+	sfx_pass06,
+	sfx_pass07,
+	sfx_pass08,
+	sfx_pass09,
+	sfx_pass10,
+	sfx_pass11,
+	sfx_pass12,
+	sfx_pass13,
+	sfx_pass14,
+	sfx_pass15,
+	sfx_pass16,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,
