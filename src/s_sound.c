@@ -732,6 +732,27 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 		S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
+void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, void *owner)
+{
+	if (S_SoundDisabled())
+		return;
+
+	if (cv_reducevfx.value == 1)
+	{
+		if (owner == NULL)
+		{
+			return;
+		}
+
+		if (P_IsDisplayPlayer((player_t *)owner) == false)
+		{
+			return;
+		}
+	}
+
+	S_StartSoundAtVolume(origin, sfx_id, volume);
+}
+
 void S_StopSound(void *origin)
 {
 	INT32 cnum;

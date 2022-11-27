@@ -420,6 +420,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				P_SetTarget(&grease->target, object);
 				grease->angle = K_MomentumAngle(object);
 				grease->extravalue1 = i;
+				K_ReduceVFX(grease, object->player);
 			}
 		}
 
@@ -2873,8 +2874,8 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 	{
 		/* use a shorter sound if not two tics have passed
 		 * since the last step */
-		S_StartSound(thing, thing->player->stairjank
-				>= 16 ?  sfx_s23b : sfx_s268);
+		S_ReducedVFXSound(thing, thing->player->stairjank
+				>= 16 ?  sfx_s23b : sfx_s268, NULL);
 
 		if (!thing->player->stairjank)
 		{
@@ -2883,6 +2884,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, Try
 			spark->fuse = 9;
 			spark->cusval = K_StairJankFlip(ANGLE_90);
 			P_SetTarget(&spark->target, thing);
+			K_ReduceVFX(spark, thing->player);
 		}
 
 		thing->player->stairjank = 17;

@@ -139,6 +139,10 @@ void S_StartSound(const void *origin, sfxenum_t sound_id);
 // Will start a sound at a given volume.
 void S_StartSoundAtVolume(const void *origin, sfxenum_t sound_id, INT32 volume);
 
+// Will start a sound, but only if VFX reduce is off or the owner isn't a display player.
+void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, void *owner);
+#define S_ReducedVFXSound(a, b, c) S_ReducedVFXSoundAtVolume(a, b, 255, c)
+
 // Stop sound for thing at <origin>
 void S_StopSound(void *origin);
 

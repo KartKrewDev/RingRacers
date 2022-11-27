@@ -1237,6 +1237,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
 
+	K_ReduceVFX(ghost, mobj->player);
+
 	return ghost;
 }
 
