@@ -55,9 +55,12 @@ void Obj_DuelBombTouch(mobj_t *bomb, mobj_t *toucher);
 void Obj_DuelBombInit(mobj_t *bomb);
 
 /* Special Stage UFO */
-void Obj_SpecialUFOThinker(mobj_t *bomb);
+void Obj_SpecialUFOThinker(mobj_t *ufo);
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
 void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
+void Obj_UFOPieceThink(mobj_t *piece);
+void Obj_UFOPieceDead(mobj_t *piece);
+void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
 
