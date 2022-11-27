@@ -386,7 +386,7 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	if (los->compareThing->player != NULL && los->alreadyHates == false)
 	{
 		// Treat damage sectors like walls, if you're not already in a bad sector.
-		const sector_t *front, *back;
+		sector_t *front, *back;
 		vertex_t pos;
 
 		P_ClosestPointOnLine(los->compareThing->x, los->compareThing->y, line, &pos);
