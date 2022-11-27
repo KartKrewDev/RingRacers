@@ -1373,7 +1373,6 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 					case KITEM_SPB:
 					case KITEM_GROW:
 					case KITEM_SHRINK:
-					case KITEM_HYUDORO:
 					case KITEM_SUPERRING:
 						K_BotItemGenericTap(player, cmd);
 						break;
@@ -1430,6 +1429,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 						}
 						break;
 					case KITEM_LANDMINE:
+					case KITEM_HYUDORO: // Function re-use, as they have about the same usage.
 						K_BotItemLandmine(player, cmd, turnamt);
 						break;
 					case KITEM_BALLHOG:
