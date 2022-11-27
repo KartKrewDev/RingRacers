@@ -10108,11 +10108,12 @@ void K_KartEbrakeVisuals(player_t *p)
 			wave->momy = p->mo->momy;
 			wave->momz = p->mo->momz;
 			wave->standingslope = p->mo->standingslope;
+			K_ReduceVFX(wave, p);
 		}
 
 		// sound
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
-			S_StartSound(p->mo, sfx_s3kd9s);
+			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)
@@ -10134,6 +10135,7 @@ void K_KartEbrakeVisuals(player_t *p)
 			p->mo->hprev->angle = p->mo->angle;
 			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
 			K_FlipFromObject(p->mo->hprev, p->mo);
+			K_ReduceVFX(p->mo->hprev, p);
 			p->mo->hprev->sprzoff = p->mo->sprzoff;
 		}
 
@@ -10147,6 +10149,7 @@ void K_KartEbrakeVisuals(player_t *p)
 			spdl->colorized = true;
 			spdl->color = SKINCOLOR_WHITE;
 			K_MatchGenericExtraFlags(spdl, p->mo);
+			K_ReduceVFX(spdl, p);
 			P_SetScale(spdl, p->mo->scale);
 
 			// squish the player a little bit.
