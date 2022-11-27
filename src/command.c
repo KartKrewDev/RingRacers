@@ -1481,7 +1481,7 @@ boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 	{
 		v = R_SkinAvailable(valstr);
 
-		if (!R_SkinUsable(-1, v))
+		if (!R_SkinUsable(-1, v, false))
 			v = -1;
 
 		goto finish;
@@ -1984,7 +1984,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		if (var == &cv_forceskin)
 		{
 			INT32 skin = R_SkinAvailable(value);
-			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin)))
+			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin, false)))
 			{
 				CONS_Printf("Please provide a valid skin name (\"None\" disables).\n");
 				return;
@@ -2109,7 +2109,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			else if (newvalue >= numskins)
 				newvalue = -1;
 		} while ((oldvalue != newvalue)
-				&& !(R_SkinUsable(-1, newvalue)));
+				&& !(R_SkinUsable(-1, newvalue, false)));
 	}
 	else
 		newvalue = var->value + increment;

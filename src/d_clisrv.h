@@ -246,6 +246,7 @@ typedef struct
 	UINT8 localplayers;	// number of splitscreen players
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
+	UINT8 availabilities[MAXAVAILABILITY];
 } ATTRPACK clientconfig_pak;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed

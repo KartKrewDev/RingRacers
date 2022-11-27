@@ -385,7 +385,7 @@ typedef struct player_s
 	UINT16 skincolor;
 
 	INT32 skin;
-	UINT32 availabilities;
+	UINT8 availabilities[MAXAVAILABILITY];
 
 	UINT8 fakeskin; // ironman
 	UINT8 lastfakeskin;

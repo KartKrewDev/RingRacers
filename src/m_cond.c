@@ -290,11 +290,6 @@ void M_SilentUpdateUnlockablesAndEmblems(void)
 			continue;
 		unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1);
 	}
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
 }
 
 // Emblem unlocking shit
@@ -372,6 +367,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (res)
 			++somethingUnlocked;
 	}
+
 	return somethingUnlocked;
 }
 
@@ -500,6 +496,35 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 			return false;
 	}
 	return true;
+}
+
+// Gets the skin number for a SECRET_SKIN unlockable.
+INT32 M_UnlockableSkinNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_SKIN)
+	{
+		// This isn't a skin unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && strcmp(unlock->stringVar, ""))
+	{
+		// Get the skin from the string.
+		INT32 skinnum = R_SkinAvailable(unlock->stringVar);
+		if (skinnum != -1)
+		{
+			return skinnum;
+		}
+	}
+
+	if (unlock->variable >= 0 && unlock->variable < numskins)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid skin unlockable.
+	return -1;
 }
 
 // ----------------

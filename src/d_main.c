@@ -950,11 +950,6 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
-
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
@@ -1147,6 +1142,10 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+#endif
+#define UNLOCKTESTING
+#if defined(DEVELOP) && defined(UNLOCKTESTING)
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
 #endif
 ////
 #undef TEXTURESNAME
@@ -1448,6 +1447,9 @@ void D_SRB2Main(void)
 	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
 	mainwads++;	// patch.pk3
+#endif
+#ifdef UNLOCKTESTING
+	mainwads++; // unlocks.pk3
 #endif
 
 #endif //ifndef DEVELOP

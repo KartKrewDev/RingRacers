@@ -1408,6 +1408,10 @@ boolean CanChangeSkinWhilePlaying(INT32 playernum)
 static void ForceAllSkins(INT32 forcedskin)
 {
 	INT32 i;
+
+	if (demo.playback)
+		return; // DXD_SKIN should handle all changes for us
+
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (!playeringame[i])
@@ -1476,6 +1480,8 @@ static void SendNameAndColor(UINT8 n)
 	char buf[MAXPLAYERNAME+12];
 	char *p;
 
+	UINT16 i = 0;
+
 	if (splitscreen < n)
 		return; // can happen if skin4/color4/name4 changed
 
@@ -1493,9 +1499,10 @@ static void SendNameAndColor(UINT8 n)
 			CV_StealthSetValue(&cv_playercolor[n], skins[player->skin].prefcolor);
 		else if (skincolors[atoi(cv_playercolor[n].defaultvalue)].accessible)
 			CV_StealthSet(&cv_playercolor[n], cv_playercolor[n].defaultvalue);
-		else {
-			UINT16 i = 0;
-			while (i<numskincolors && !skincolors[i].accessible) i++;
+		else
+		{
+			while (i < numskincolors && !skincolors[i].accessible)
+				i++;
 			CV_StealthSetValue(&cv_playercolor[n], (i != numskincolors) ? i : SKINCOLOR_BLUE);
 		}
 	}
@@ -1511,8 +1518,6 @@ static void SendNameAndColor(UINT8 n)
 			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
 		&& cv_followercolor[n].value == player->followercolor)
 		return;
-
-	player->availabilities = R_GetSkinAvailabilities();
 
 	// We'll handle it later if we're not playing.
 	if (!Playing())
@@ -1530,7 +1535,7 @@ static void SendNameAndColor(UINT8 n)
 
 		K_KartResetPlayerColor(player);
 
-		if ((foundskin = R_SkinAvailable(cv_skin[n].string)) != -1 && R_SkinUsable(playernum, foundskin))
+		if ((foundskin = R_SkinAvailable(cv_skin[n].string)) != -1 && R_SkinUsable(playernum, foundskin, false))
 		{
 			SetPlayerSkin(playernum, cv_skin[n].string);
 			CV_StealthSet(&cv_skin[n], skins[foundskin].name);
@@ -1575,7 +1580,7 @@ static void SendNameAndColor(UINT8 n)
 	// check if player has the skin loaded (cv_skin may have
 	// the name of a skin that was available in the previous game)
 	cv_skin[n].value = R_SkinAvailable(cv_skin[n].string);
-	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value))
+	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value, false))
 	{
 		CV_StealthSet(&cv_skin[n], DEFAULTSKIN);
 		cv_skin[n].value = 0;
@@ -1590,7 +1595,6 @@ static void SendNameAndColor(UINT8 n)
 
 	// Finally write out the complete packet and send it off.
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
-	WRITEUINT32(p, (UINT32)player->availabilities);
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITEINT16(p, (INT16)cv_follower[n].value);
@@ -1632,11 +1636,9 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	}
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
-	p->availabilities = READUINT32(*cp);
 	color = READUINT16(*cp);
 	skin = READUINT8(*cp);
 	follower = READINT16(*cp);
-	//CONS_Printf("Recieved follower id %d\n", follower);
 	followercolor = READUINT16(*cp);
 
 	// set name
@@ -1657,56 +1659,20 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	{
 		boolean kick = false;
 
-		// team colors
-		if (G_GametypeHasTeams())
-		{
-			if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
-				kick = true;
-			else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
-				kick = true;
-		}
-
 		// don't allow inaccessible colors
 		if (skincolors[p->skincolor].accessible == false)
 			kick = true;
 
-		// availabilities
-		for (i = 0; i < MAXSKINS; i++)
-		{
-			UINT32 playerhasunlocked = (p->availabilities & (1 << i));
-			boolean islocked = false;
-			UINT8 j;
-
-			for (j = 0; j < MAXUNLOCKABLES; j++)
-			{
-				if (unlockables[j].type != SECRET_SKIN)
-					continue;
-
-				if (unlockables[j].variable == i)
-				{
-					islocked = true;
-					break;
-				}
-			}
-
-			if (islocked == false && playerhasunlocked == true)
-			{
-				// hacked client that enabled every bit
-				kick = true;
-				break;
-			}
-		}
-
 		if (kick)
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s (team: %d), color: %d)\n"), player_names[playernum], p->ctfteam, p->skincolor);
+			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s, color: %d)\n"), player_names[playernum], p->skincolor);
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
 	}
 
 	// set skin
-	if (cv_forceskin.value >= 0 && (netgame || multiplayer)) // Server wants everyone to use the same player
+	if (cv_forceskin.value >= 0 && K_CanChangeRules(true)) // Server wants everyone to use the same player
 	{
 		const INT32 forcedskin = cv_forceskin.value;
 		SetPlayerSkinByNum(playernum, forcedskin);
@@ -5728,11 +5694,6 @@ void Command_ExitGame_f(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
 
 	splitscreen = 0;
 	SplitScreen_OnChange();

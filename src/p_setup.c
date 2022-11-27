@@ -7559,10 +7559,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	nextmapoverride = 0;
 	skipstats = 0;
 
-	if (!(netgame || multiplayer || demo.playback) && !majormods)
+	if (!demo.playback)
+	{
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
-	else if (!demo.playback)
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_MP; // you want to record that you've been there this session, but not permanently
+
+		if (M_UpdateUnlockablesAndExtraEmblems())
+			S_StartSound(NULL, sfx_ncitem);
+		G_SaveGameData();
+	}
 
 	G_AddMapToBuffer(gamemap-1);
 
@@ -8036,8 +8040,8 @@ UINT16 P_PartialAddWadFile(const char *wadfilename)
 	//
 	// look for skins
 	//
-	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
-	R_PatchSkins(wadnum); // toast: PATCH PATCH
+	R_AddSkins(wadnum, false); // faB: wadfile index in wadfiles[]
+	R_PatchSkins(wadnum, false); // toast: PATCH PATCH
 
 	//
 	// edit music defs

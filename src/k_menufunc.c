@@ -2175,6 +2175,9 @@ void M_CharacterSelectInit(void)
 		UINT8 x = skins[i].kartspeed-1;
 		UINT8 y = skins[i].kartweight-1;
 
+		if (!R_SkinUsable(g_localplayers[0], i, false))
+			continue;
+
 		if (setup_chargrid[x][y].numskins >= MAXCLONES)
 			CONS_Alert(CONS_ERROR, "Max character alts reached for %d,%d\n", x+1, y+1);
 		else

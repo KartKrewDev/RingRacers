@@ -150,7 +150,12 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].skincolor);
 		WRITEINT32(save_p, players[i].skin);
-		WRITEUINT32(save_p, players[i].availabilities);
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			WRITEUINT8(save_p, players[i].availabilities[j]);
+		}
+
 		WRITEUINT8(save_p, players[i].fakeskin);
 		WRITEUINT8(save_p, players[i].lastfakeskin);
 		WRITEUINT32(save_p, players[i].score);
@@ -472,7 +477,12 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
-		players[i].availabilities = READUINT32(save_p);
+
+		for (j = 0; i < MAXAVAILABILITY; j++)
+		{
+			players[i].availabilities[j] = READUINT8(save_p);
+		}
+
 		players[i].fakeskin = READUINT8(save_p);
 		players[i].lastfakeskin = READUINT8(save_p);
 		players[i].score = READUINT32(save_p);

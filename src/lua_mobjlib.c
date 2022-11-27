@@ -669,7 +669,7 @@ static int mobj_set(lua_State *L)
 		for (i = 0; i < numskins; i++)
 			if (fastcmp(skins[i].name, skin))
 			{
-				if (!mo->player || R_SkinUsable(mo->player-players, i))
+				if (!mo->player || R_SkinUsable(mo->player-players, i, false))
 					mo->skin = &skins[i];
 				return 0;
 			}

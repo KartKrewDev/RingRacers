@@ -2238,7 +2238,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
-	UINT32 availabilities;
+	UINT8 availabilities[MAXAVAILABILITY];
 	UINT8 fakeskin;
 	UINT8 lastfakeskin;
 
@@ -2307,7 +2307,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
 
-	availabilities = players[player].availabilities;
+	memcpy(availabilities, players[player].availabilities, sizeof(availabilities));
 
 	followitem = players[player].followitem;
 
@@ -2432,7 +2432,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->charflags = charflags;
 	p->lastfakeskin = lastfakeskin;
 
-	p->availabilities = availabilities;
+	memcpy(players[player].availabilities, availabilities, sizeof(availabilities));
 	p->followitem = followitem;
 
 	p->starpostnum = starpostnum;
@@ -2918,7 +2918,7 @@ void G_AddPlayer(INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	p->playerstate = PST_REBORN;
-	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
+	demo_extradata[playernum] |= DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
 void G_ExitLevel(void)
@@ -3690,6 +3690,10 @@ static void G_UpdateVisited(void)
 
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+
+	if (M_UpdateUnlockablesAndExtraEmblems())
+		S_StartSound(NULL, sfx_ncitem);
+	G_SaveGameData();
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
@@ -4507,12 +4511,14 @@ void G_SaveGameData(void)
 		return;
 	}
 
+#ifndef DEVELOP
 	if (usedCheats)
 	{
 		free(savebuffer);
 		save_p = savebuffer = NULL;
 		return;
 	}
+#endif
 
 	// Version test
 

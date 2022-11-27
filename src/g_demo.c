@@ -276,10 +276,8 @@ void G_ReadDemoExtraData(void)
 	{
 		extradata = READUINT8(demo_p);
 
-		if (extradata & DXD_PLAYSTATE)
+		if (extradata & DXD_JOINDATA)
 		{
-			i = READUINT8(demo_p);
-
 			if (!playeringame[p])
 			{
 				CL_ClearPlayer(p);
@@ -288,14 +286,22 @@ void G_ReadDemoExtraData(void)
 				players[p].spectator = true;
 			}
 
-			if ((players[p].bot = !!(i & DXD_PST_ISBOT)))
+			for (i = 0; i < MAXAVAILABILITY; i++)
+			{
+				players[p].availabilities[i] = READUINT8(demo_p);
+			}
+
+			players[p].bot = !!(READUINT8(demo_p));
+			if (players[p].bot)
 			{
 				players[p].botvars.difficulty = READUINT8(demo_p);
 				players[p].botvars.diffincrease = READUINT8(demo_p); // needed to avoid having to duplicate logic
 				players[p].botvars.rival = (boolean)READUINT8(demo_p);
-
-				i &= ~DXD_PST_ISBOT;
 			}
+		}
+		if (extradata & DXD_PLAYSTATE)
+		{
+			i = READUINT8(demo_p);
 
 			switch (i) {
 			case DXD_PST_PLAYING:
@@ -333,14 +339,6 @@ void G_ReadDemoExtraData(void)
 			// maybe these are necessary?
 			K_CheckBumpers();
 			P_CheckRacers();
-		}
-		if (extradata & DXD_RESPAWN)
-		{
-			if (players[p].mo)
-			{
-				// Is this how this should work..?
-				K_DoIngameRespawn(&players[p]);
-			}
 		}
 		if (extradata & DXD_SKIN)
 		{
@@ -395,6 +393,14 @@ void G_ReadDemoExtraData(void)
 					players[p].followercolor = Followercolor_cons_t[i].value;
 					break;
 				}
+			}
+		}
+		if (extradata & DXD_RESPAWN)
+		{
+			if (players[p].mo)
+			{
+				// Is this how this should work..?
+				K_DoIngameRespawn(&players[p]);
 			}
 		}
 		if (extradata & DXD_WEAPONPREF)
@@ -454,6 +460,21 @@ void G_WriteDemoExtraData(void)
 			WRITEUINT8(demo_p, i);
 			WRITEUINT8(demo_p, demo_extradata[i]);
 
+			if (demo_extradata[i] & DXD_JOINDATA)
+			{
+				for (j = 0; j < MAXAVAILABILITY; j++)
+				{
+					WRITEUINT8(demo_p, players[i].availabilities[i]);
+				}
+
+				WRITEUINT8(demo_p, (UINT8)players[i].bot);
+				if (players[i].bot)
+				{
+					WRITEUINT8(demo_p, players[i].botvars.difficulty);
+					WRITEUINT8(demo_p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
+					WRITEUINT8(demo_p, (UINT8)players[i].botvars.rival);
+				}
+			}
 			if (demo_extradata[i] & DXD_PLAYSTATE)
 			{
 				UINT8 pst = DXD_PST_PLAYING;
@@ -472,19 +493,7 @@ void G_WriteDemoExtraData(void)
 					pst = DXD_PST_SPECTATING;
 				}
 
-				if (players[i].bot)
-				{
-					pst |= DXD_PST_ISBOT;
-				}
-
 				WRITEUINT8(demo_p, pst);
-
-				if (pst & DXD_PST_ISBOT)
-				{
-					WRITEUINT8(demo_p, players[i].botvars.difficulty);
-					WRITEUINT8(demo_p, players[i].botvars.diffincrease); // needed to avoid having to duplicate logic
-					WRITEUINT8(demo_p, (UINT8)players[i].botvars.rival);
-				}
 			}
 			//if (demo_extradata[i] & DXD_RESPAWN) has no extra data
 			if (demo_extradata[i] & DXD_SKIN)
@@ -1218,8 +1227,14 @@ void G_GhostTicker(void)
 			if (ziptic == 0) // Only support player 0 info for now
 			{
 				ziptic = READUINT8(g->p);
+				if (ziptic & DXD_JOINDATA)
+				{
+					g->p += MAXAVAILABILITY;
+					if (READUINT8(g->p) != 0)
+						I_Error("Ghost is not a record attack ghost (bot JOINDATA)");
+				}
 				if (ziptic & DXD_PLAYSTATE && READUINT8(g->p) != DXD_PST_PLAYING)
-					I_Error("Ghost is not a record attack ghost PLAYSTATE"); //@TODO lmao don't blow up like this
+					I_Error("Ghost is not a record attack ghost (has PLAYSTATE)");
 				if (ziptic & DXD_SKIN)
 					g->p++; // We _could_ read this info, but it shouldn't change anything in record attack...
 				if (ziptic & DXD_COLOR)
@@ -2248,6 +2263,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 {
 	char skin[16];
 	UINT8 i;
+	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true);
 
 	WRITEUINT8((*pp), numskins);
 	for (i = 0; i < numskins; i++)
@@ -2262,12 +2278,17 @@ static void G_SaveDemoSkins(UINT8 **pp)
 		WRITEUINT8((*pp), skins[i].kartweight);
 		WRITEUINT32((*pp), skins[i].flags);
 	}
+
+	for (i = 0; i < MAXAVAILABILITY; i++)
+	{
+		WRITEUINT8((*pp), availabilitiesbuffer[i]);
+	}
 }
 
 static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean getclosest)
 {
 	char skin[17];
-	UINT8 i;
+	UINT8 i, byte, shif;
 	democharlist_t *skinlist = NULL;
 
 	(*worknumskins) = READUINT8((*pp));
@@ -2310,6 +2331,24 @@ static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean 
 		}
 	}
 
+	for (byte = 0; byte < MAXAVAILABILITY; byte++)
+	{
+		UINT8 availabilitiesbuffer = READUINT8((*pp));
+
+		for (shif = 0; shif < 8; shif++)
+		{
+			i = (byte*8) + shif;
+
+			if (i >= (*worknumskins))
+				break;
+
+			if (availabilitiesbuffer & (1 << shif))
+			{
+				skinlist[i].unlockrequired = true;
+			}
+		}
+	}
+
 	return skinlist;
 }
 
@@ -2326,6 +2365,8 @@ static void G_SkipDemoSkins(UINT8 **pp)
 		(*pp)++; // kartweight
 		(*pp) += 4; // flags
 	}
+
+	(*pp) += MAXAVAILABILITY;
 }
 
 void G_BeginRecording(void)
@@ -2442,6 +2483,11 @@ void G_BeginRecording(void)
 			strncpy(name, player_names[p], 16);
 			M_Memcpy(demo_p,name,16);
 			demo_p += 16;
+
+			for (j = 0; j < MAXAVAILABILITY; j++)
+			{
+				WRITEUINT8(demo_p, player->availabilities[j]);
+			}
 
 			// Skin (now index into demo.skinlist)
 			WRITEUINT8(demo_p, player->skin);
@@ -2928,6 +2974,7 @@ void G_DoPlayDemo(char *defdemoname)
 	UINT8 i, p, numslots = 0;
 	lumpnum_t l;
 	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
+	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMCLASS];
 	char msg[1024];
@@ -3293,6 +3340,11 @@ void G_DoPlayDemo(char *defdemoname)
 		M_Memcpy(player_names[p],demo_p,16);
 		demo_p += 16;
 
+		for (i = 0; i < MAXAVAILABILITY; i++)
+		{
+			availabilities[p][i] = READUINT8(demo_p);
+		}
+
 		// Skin
 
 		i = READUINT8(demo_p);
@@ -3376,6 +3428,8 @@ void G_DoPlayDemo(char *defdemoname)
 
 	for (i = 0; i < numslots; i++)
 	{
+		UINT8 j;
+
 		p = slots[i];
 		if (players[p].mo)
 		{
@@ -3392,6 +3446,11 @@ void G_DoPlayDemo(char *defdemoname)
 		players[p].kartweight = ghostext[p].kartweight = demo.skinlist[demo.currentskinid[p]].kartweight;
 		players[p].charflags = ghostext[p].charflags = demo.skinlist[demo.currentskinid[p]].flags;
 		players[p].lastfakeskin = lastfakeskin[p];
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			players[p].availabilities[j] = availabilities[p][j];
+		}
 	}
 
 	demo.deferstart = true;

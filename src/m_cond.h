@@ -77,6 +77,7 @@ typedef struct
 	UINT8 sprite;    ///< emblem sprite to use, 0 - 25
 	UINT16 color;    ///< skincolor to use
 	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
+	char *stringVar; ///< String version
 	char hint[110];  ///< Hint for emblem hints menu
 	UINT8 collected; ///< Do you have this emblem?
 } emblem_t;
@@ -100,6 +101,7 @@ typedef struct
 	UINT8 showconditionset;
 	INT16 type;
 	INT16 variable;
+	char *stringVar;
 	UINT8 nocecho;
 	UINT8 nochecklist;
 	UINT8 unlocked;
@@ -176,5 +178,8 @@ const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big);
 // should be (theoretically?) slightly faster.
 UINT8 M_GotEnoughEmblems(INT32 number);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
+
+INT32 M_UnlockableSkinNum(unlockable_t *unlock);
+INT32 M_EmblemSkinNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)

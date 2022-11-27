@@ -84,11 +84,13 @@ void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
 void SetRandomFakePlayerSkin(player_t* player, boolean fast);
 void ClearFakePlayerSkin(player_t* player);
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum);
-UINT32 R_GetSkinAvailabilities(void);
+boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
+
+UINT8 *R_GetSkinAvailabilities(boolean demolock);
 INT32 R_SkinAvailable(const char *name);
-void R_PatchSkins(UINT16 wadnum);
-void R_AddSkins(UINT16 wadnum);
+
+void R_PatchSkins(UINT16 wadnum, boolean mainfile);
+void R_AddSkins(UINT16 wadnum, boolean mainfile);
 
 UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
 
