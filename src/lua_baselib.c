@@ -999,108 +999,108 @@ static int lib_pRemoveFloorSpriteSlope(lua_State *L)
 static int lib_pRailThinker(lua_State *L)
 {
 	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!mobj)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_RailThinker(mobj));
-	P_SetTarget(&tmthing, ptmthing);
+	P_RestoreTMStruct(ptm);
 	return 1;
 }
 
 static int lib_pXYMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_XYMovement(actor);
-	P_SetTarget(&tmthing, ptmthing);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
 static int lib_pRingXYMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_RingXYMovement(actor);
-	P_SetTarget(&tmthing, ptmthing);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
 static int lib_pSceneryXYMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_SceneryXYMovement(actor);
-	P_SetTarget(&tmthing, ptmthing);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
 static int lib_pZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_ZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
-	P_SetTarget(&tmthing, ptmthing);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
+	P_RestoreTMStruct(ptm);
 	return 1;
 }
 
 static int lib_pRingZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_RingZMovement(actor);
-	P_CheckPosition(actor, actor->x, actor->y);
-	P_SetTarget(&tmthing, ptmthing);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
 static int lib_pSceneryZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_SceneryZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
-	P_SetTarget(&tmthing, ptmthing);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
+	P_RestoreTMStruct(ptm);
 	return 1;
 }
 
 static int lib_pPlayerZMovement(lua_State *L)
 {
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_PlayerZMovement(actor);
-	P_CheckPosition(actor, actor->x, actor->y);
-	P_SetTarget(&tmthing, ptmthing);
+	P_CheckPosition(actor, actor->x, actor->y, NULL);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
@@ -1302,13 +1302,13 @@ static int lib_pGivePlayerLives(lua_State *L)
 static int lib_pMovePlayer(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	NOHUD
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
 	P_MovePlayer(player);
-	P_SetTarget(&tmthing, ptmthing);
+	P_RestoreTMStruct(ptm);
 	return 0;
 }
 
@@ -1380,7 +1380,7 @@ static int lib_pNukeEnemies(lua_State *L)
 
 static int lib_pCheckPosition(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
@@ -1388,15 +1388,15 @@ static int lib_pCheckPosition(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_CheckPosition(thing, x, y));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	lua_pushboolean(L, P_CheckPosition(thing, x, y, NULL));
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
 static int lib_pTryMove(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
@@ -1405,15 +1405,15 @@ static int lib_pTryMove(lua_State *L)
 	INLEVEL
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
-	lua_pushboolean(L, P_TryMove(thing, x, y, allowdropoff));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	lua_pushboolean(L, P_TryMove(thing, x, y, allowdropoff, NULL));
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
 static int lib_pMove(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t speed = luaL_checkfixed(L, 2);
 	NOHUD
@@ -1421,14 +1421,14 @@ static int lib_pMove(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_Move(actor, speed));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
 static int lib_pTeleportMove(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
@@ -1439,14 +1439,14 @@ static int lib_pTeleportMove(lua_State *L)
 		return LUA_ErrInvalid(L, "mobj_t");
 	LUA_Deprecated(L, "P_TeleportMove", "P_SetOrigin\" or \"P_MoveOrigin");
 	lua_pushboolean(L, P_MoveOrigin(thing, x, y, z));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
 static int lib_pSetOrigin(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
@@ -1456,14 +1456,14 @@ static int lib_pSetOrigin(lua_State *L)
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_SetOrigin(thing, x, y, z));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
 static int lib_pMoveOrigin(lua_State *L)
 {
-	mobj_t *ptmthing = tmthing;
+	tm_t ptm = tm;
 	mobj_t *thing = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	fixed_t x = luaL_checkfixed(L, 2);
 	fixed_t y = luaL_checkfixed(L, 3);
@@ -1473,8 +1473,8 @@ static int lib_pMoveOrigin(lua_State *L)
 	if (!thing)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_MoveOrigin(thing, x, y, z));
-	LUA_PushUserdata(L, tmthing, META_MOBJ);
-	P_SetTarget(&tmthing, ptmthing);
+	LUA_PushUserdata(L, tm.thing, META_MOBJ);
+	P_RestoreTMStruct(ptm);
 	return 2;
 }
 
@@ -1520,23 +1520,31 @@ static int lib_pSetRoll(lua_State *L)
 
 static int lib_pSlideMove(lua_State *L)
 {
+	/*
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_SlideMove(mo);
+	*/
+	LUA_UsageWarning(L, "FIXME: P_SlideMove needs updated to use result from P_TryMove");
+	(void)L;
 	return 0;
 }
 
 static int lib_pBounceMove(lua_State *L)
 {
+	/*
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	NOHUD
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
 	P_BounceMove(mo);
+	*/
+	LUA_UsageWarning(L, "FIXME: P_BounceMove needs updated to use result from P_TryMove");
+	(void)L;
 	return 0;
 }
 

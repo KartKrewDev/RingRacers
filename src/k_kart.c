@@ -195,6 +195,22 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 	return flag;
 }
 
+void K_ReduceVFX(mobj_t *mo, player_t *owner)
+{
+	if (cv_reducevfx.value == 0)
+	{
+		// Leave the visuals alone.
+		return;
+	}
+
+	mo->renderflags |= RF_DONTDRAW;
+
+	if (owner != NULL)
+	{
+		mo->renderflags &= ~K_GetPlayerDontDrawFlag(owner);
+	}
+}
+
 player_t *K_GetItemBoxPlayer(mobj_t *mobj)
 {
 	fixed_t closest = INT32_MAX;
@@ -334,6 +350,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
+
+	CV_RegisterVar(&cv_reducevfx);
 }
 
 //}
@@ -2432,6 +2450,8 @@ spawn_brake_dust
 
 	P_SetScale(spark, (spark->destscale =
 				FixedMul(scale, spark->scale)));
+
+	K_ReduceVFX(spark, master->player);
 }
 
 static void K_SpawnBrakeVisuals(player_t *player)
@@ -2474,7 +2494,7 @@ static void K_SpawnBrakeVisuals(player_t *player)
 	}
 
 	if (leveltime % 4 == 0)
-		S_StartSound(player->mo, sfx_s3k67);
+		S_ReducedVFXSound(player->mo, sfx_s3k67, player);
 
 	/* vertical shaking, scales with speed */
 	player->mo->spriteyoffset = P_RandomFlip(2 * scale);
@@ -2507,6 +2527,8 @@ void K_SpawnDriftBoostClip(player_t *player)
 	P_InstaThrust(clip, player->mo->angle +
 			P_RandomFlip(P_RandomRange(PR_DECORATION, FRACUNIT/2, FRACUNIT)),
 			FixedMul(scale, player->speed));
+
+	K_ReduceVFX(clip, player);
 }
 
 void K_SpawnDriftBoostClipSpark(mobj_t *clip)
@@ -2557,6 +2579,7 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	}
 
 	K_MatchGenericExtraFlags(fast, player->mo);
+	K_ReduceVFX(fast, player);
 
 	if (top)
 	{
@@ -2619,6 +2642,7 @@ void K_SpawnInvincibilitySpeedLines(mobj_t *mo)
 	fast->momz = 3*P_GetMobjZMovement(mo)/4;
 
 	K_MatchGenericExtraFlags(fast, mo);
+	K_ReduceVFX(fast, mo->player);
 
 	fast->color = mo->color;
 	fast->colorized = true;
@@ -2715,6 +2739,47 @@ void K_SpawnBumpEffect(mobj_t *mo)
 		S_StartSound(mo, top->info->attacksound);
 	else
 		S_StartSound(mo, sfx_s3k49);
+}
+
+void K_SpawnMagicianParticles(mobj_t *mo, int spread)
+{
+	INT32 i;
+	mobj_t *target = mo->target;
+
+	if (P_MobjWasRemoved(target)) 
+		target = mo;
+
+	for (i = 0; i < 16; i++)
+	{
+		fixed_t hmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
+		fixed_t vmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
+		UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
+
+		fixed_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
+		SINT8 flip = 1;
+
+		mobj_t *dust;
+
+		if (i & 1)
+			ang -= ANGLE_90;
+		else
+			ang += ANGLE_90;
+
+		dust = P_SpawnMobjFromMobj(mo,
+			FixedMul(mo->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+			FixedMul(mo->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
+			target->height, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+		);
+		flip = P_MobjFlip(dust);
+
+		dust->momx = target->momx + FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
+		dust->momy = target->momy + FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
+		dust->momz = vmomentum * flip;
+		dust->scale = dust->scale*4;
+		dust->frame |= FF_SUBTRACT|FF_TRANS90;
+		dust->color = color;
+		dust->colorized = true;
+	}
 }
 
 static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
@@ -3445,6 +3510,8 @@ boolean K_WaterRun(mobj_t *mobj)
 
 		case MT_PLAYER:
 		{
+			fixed_t minspeed = 0;
+
 			if (mobj->player == NULL)
 			{
 				return false;
@@ -3455,11 +3522,18 @@ boolean K_WaterRun(mobj_t *mobj)
 				return K_IsHoldingDownTop(mobj->player) == false;
 			}
 
+			minspeed = 2 * K_GetKartSpeed(mobj->player, false, false); // 200%
+
+			if (mobj->player->speed < minspeed / 5) // 40%
+			{
+				return false;
+			}
+
 			if (mobj->player->invincibilitytimer
 				|| mobj->player->sneakertimer
 				|| mobj->player->tiregrease
 				|| mobj->player->flamedash
-				|| mobj->player->speed > 2 * K_GetKartSpeed(mobj->player, false, false))
+				|| mobj->player->speed > minspeed)
 			{
 				return true;
 			}
@@ -3617,6 +3691,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// overlay
 			water = P_SpawnMobj(x1, y1,
@@ -3628,6 +3703,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// Right
 			// Underlay
@@ -3640,6 +3716,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curUnderlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			// Overlay
 			water = P_SpawnMobj(x2, y2,
@@ -3651,11 +3728,12 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 			water->momz = mobj->momz;
 			P_SetScale(water, trailScale);
 			P_SetMobjState(water, curOverlayFrame);
+			K_ReduceVFX(water, mobj->player);
 
 			if (!S_SoundPlaying(mobj, sfx_s3kdbs))
 			{
 				const INT32 volume = (min(trailScale, FRACUNIT) * 255) / FRACUNIT;
-				S_StartSoundAtVolume(mobj, sfx_s3kdbs, volume);
+				S_ReducedVFXSoundAtVolume(mobj, sfx_s3kdbs, volume, mobj->player);
 			}
 		}
 
@@ -3664,7 +3742,7 @@ void K_SpawnWaterRunParticles(mobj_t *mobj)
 		{
 			if (P_RandomChance(PR_BUBBLE, FRACUNIT/2) && leveltime % TICRATE == 0)
 			{
-				S_StartSound(mobj, sfx_floush);
+				S_ReducedVFXSound(mobj, sfx_floush, mobj->player);
 			}
 		}
 	}
@@ -5403,6 +5481,7 @@ static void K_SpawnDriftElectricity(player_t *player)
 		spark->momz = mo->momz;
 		spark->color = color;
 		K_GenericExtraFlagsNoZAdjust(spark, mo);
+		K_ReduceVFX(spark, player);
 
 		spark->spritexscale += scalefactor/3;
 		spark->spriteyscale += scalefactor/8;
@@ -5452,10 +5531,11 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave)
 					spark->frame |= FF_ADD;
 
 				sparkangle += ANGLE_90;
+				K_ReduceVFX(spark, player);
 			}
 		}
 	}
-	S_StartSound(mo, sfx_s3k45);
+	S_ReducedVFXSound(mo, sfx_s3k45, player);
 }
 
 static void K_SpawnDriftSparks(player_t *player)
@@ -5602,6 +5682,7 @@ static void K_SpawnDriftSparks(player_t *player)
 			spark->tics += trail;
 
 		K_MatchGenericExtraFlags(spark, player->mo);
+		K_ReduceVFX(spark, player);
 	}
 
 	if (player->driftcharge >= dsthree)
@@ -8839,6 +8920,7 @@ void K_KartPlayerAfterThink(player_t *player)
 --------------------------------------------------*/
 static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 {
+	waypoint_t *finishline = K_GetFinishLineWaypoint();
 	waypoint_t *bestwaypoint = NULL;
 
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
@@ -8846,7 +8928,8 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		waypoint_t *waypoint     = K_GetBestWaypointForMobj(player->mo);
 		boolean    updaterespawn = false;
 
-		bestwaypoint = waypoint;
+		// Our current waypoint.
+		player->currentwaypoint = bestwaypoint = waypoint;
 
 		// check the waypoint's location in relation to the player
 		// If it's generally in front, it's fine, otherwise, use the best next/previous waypoint.
@@ -8854,13 +8937,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 		// Otherwise it breaks the distance calculations.
 		if (waypoint != NULL)
 		{
-			boolean finishlinehack  = false;
 			angle_t playerangle     = player->mo->angle;
 			angle_t momangle        = K_MomentumAngle(player->mo);
 			angle_t angletowaypoint =
 				R_PointToAngle2(player->mo->x, player->mo->y, waypoint->mobj->x, waypoint->mobj->y);
-			angle_t angledelta      = ANGLE_MAX;
-			angle_t momdelta        = ANGLE_MAX;
+			angle_t angledelta      = ANGLE_180;
+			angle_t momdelta        = ANGLE_180;
 
 			angledelta = playerangle - angletowaypoint;
 			if (angledelta > ANGLE_180)
@@ -8874,35 +8956,16 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 				momdelta = InvAngle(momdelta);
 			}
 
-			if (bestwaypoint == K_GetFinishLineWaypoint())
-			{
-				waypoint_t *nextwaypoint = waypoint->nextwaypoints[0];
-				angle_t angletonextwaypoint =
-					R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y, nextwaypoint->mobj->x, nextwaypoint->mobj->y);
-
-				// facing towards the finishline
-				if (AngleDelta(angletonextwaypoint, angletowaypoint) <= ANGLE_90)
-				{
-					finishlinehack = true;
-				}
-			}
-
 			// We're using a lot of angle calculations here, because only using facing angle or only using momentum angle both have downsides.
 			// nextwaypoints will be picked if you're facing OR moving forward.
 			// prevwaypoints will be picked if you're facing AND moving backward.
-			if ((angledelta > ANGLE_45 || momdelta > ANGLE_45)
-			&& (finishlinehack == false))
+#if 0
+			if (angledelta > ANGLE_45 || momdelta > ANGLE_45)
+#endif
 			{
-				angle_t nextbestdelta = angledelta;
-				angle_t nextbestmomdelta = momdelta;
+				angle_t nextbestdelta = ANGLE_90;
+				angle_t nextbestmomdelta = ANGLE_90;
 				size_t i = 0U;
-
-				if (K_PlayerUsesBotMovement(player))
-				{
-					// Try to force bots to use a next waypoint
-					nextbestdelta = ANGLE_MAX;
-					nextbestmomdelta = ANGLE_MAX;
-				}
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
 				{
@@ -8945,10 +9008,19 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
 						{
-							if (P_TraceBlockingLines(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+							// Wanted to use a next waypoint, so remove WRONG WAY flag.
+							// Done here instead of when set, because of finish line
+							// hacks meaning we might not actually use this one, but
+							// we still want to acknowledge we're facing the right way.
+							player->pflags &= ~PF_WRONGWAY;
+
+							if (waypoint->nextwaypoints[i] != finishline) // Allow finish line.
 							{
-								// Save sight checks when all of the other checks pass, so we only do it if we have to
-								continue;
+								if (P_TraceWaypointTraversal(player->mo, waypoint->nextwaypoints[i]->mobj) == false)
+								{
+									// Save sight checks when all of the other checks pass, so we only do it if we have to
+									continue;
+								}
 							}
 
 							bestwaypoint = waypoint->nextwaypoints[i];
@@ -8962,8 +9034,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 								nextbestmomdelta = momdelta;
 							}
 
-							// Remove wrong way flag if we're using nextwaypoints
-							player->pflags &= ~PF_WRONGWAY;
 							updaterespawn = true;
 						}
 					}
@@ -8997,7 +9067,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta && momdelta < nextbestmomdelta)
 						{
-							if (P_TraceBlockingLines(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
+							if (P_TraceWaypointTraversal(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
 							{
 								// Save sight checks when all of the other checks pass, so we only do it if we have to
 								continue;
@@ -9036,69 +9106,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 	return bestwaypoint;
 }
-
-#if 0
-static boolean K_PlayerCloserToNextWaypoints(waypoint_t *const waypoint, player_t *const player)
-{
-	boolean nextiscloser = true;
-
-	if ((waypoint != NULL) && (player != NULL) && (player->mo != NULL))
-	{
-		size_t     i                   = 0U;
-		waypoint_t *currentwpcheck     = NULL;
-		angle_t    angletoplayer       = ANGLE_MAX;
-		angle_t    currentanglecheck   = ANGLE_MAX;
-		angle_t    bestangle           = ANGLE_MAX;
-
-		angletoplayer = R_PointToAngle2(waypoint->mobj->x, waypoint->mobj->y,
-			player->mo->x, player->mo->y);
-
-		for (i = 0U; i < waypoint->numnextwaypoints; i++)
-		{
-			currentwpcheck = waypoint->nextwaypoints[i];
-			currentanglecheck = R_PointToAngle2(
-				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
-
-			// Get delta angle
-			currentanglecheck = currentanglecheck - angletoplayer;
-
-			if (currentanglecheck > ANGLE_180)
-			{
-				currentanglecheck = InvAngle(currentanglecheck);
-			}
-
-			if (currentanglecheck < bestangle)
-			{
-				bestangle = currentanglecheck;
-			}
-		}
-
-		for (i = 0U; i < waypoint->numprevwaypoints; i++)
-		{
-			currentwpcheck = waypoint->prevwaypoints[i];
-			currentanglecheck = R_PointToAngle2(
-				waypoint->mobj->x, waypoint->mobj->y, currentwpcheck->mobj->x, currentwpcheck->mobj->y);
-
-			// Get delta angle
-			currentanglecheck = currentanglecheck - angletoplayer;
-
-			if (currentanglecheck > ANGLE_180)
-			{
-				currentanglecheck = InvAngle(currentanglecheck);
-			}
-
-			if (currentanglecheck < bestangle)
-			{
-				bestangle = currentanglecheck;
-				nextiscloser = false;
-				break;
-			}
-		}
-	}
-
-	return nextiscloser;
-}
-#endif
 
 /*--------------------------------------------------
 	void K_UpdateDistanceFromFinishLine(player_t *const player)
@@ -9141,7 +9148,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
 		}
-		else if ((player->nextwaypoint != NULL) && (finishline != NULL))
+		else if ((player->currentwaypoint != NULL) && (player->nextwaypoint != NULL) && (finishline != NULL))
 		{
 			const boolean useshortcuts = false;
 			const boolean huntbackwards = false;
@@ -9155,17 +9162,139 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			// Using shortcuts won't find a path, so distance won't be updated until the player gets back on track
 			if (pathfindsuccess == true)
 			{
-				// Add euclidean distance to the next waypoint to the distancetofinish
-				UINT32 adddist;
-				fixed_t disttowaypoint =
+				const boolean pathBackwardsReverse = ((player->pflags & PF_WRONGWAY) == 0);
+				boolean pathBackwardsSuccess = false;
+				path_t pathBackwards = {0};
+
+				fixed_t disttonext = 0;
+				UINT32 traveldist = 0;
+				UINT32 adddist = 0;
+
+				disttonext =
 					P_AproxDistance(
 						(player->mo->x >> FRACBITS) - (player->nextwaypoint->mobj->x >> FRACBITS),
 						(player->mo->y >> FRACBITS) - (player->nextwaypoint->mobj->y >> FRACBITS));
-				disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
+				disttonext = P_AproxDistance(disttonext, (player->mo->z >> FRACBITS) - (player->nextwaypoint->mobj->z >> FRACBITS));
 
-				adddist = (UINT32)disttowaypoint;
+				traveldist = ((UINT32)disttonext) * 2;
+				pathBackwardsSuccess =
+					K_PathfindThruCircuit(player->nextwaypoint, traveldist, &pathBackwards, false, pathBackwardsReverse);
 
-				player->distancetofinish = pathtofinish.totaldist + adddist;
+				if (pathBackwardsSuccess == true)
+				{
+					if (pathBackwards.numnodes > 1)
+					{
+						// Find the closest segment, and add the distance to reach it.
+						vector3_t point;
+						size_t i;
+
+						vector3_t best;
+						fixed_t bestPoint = INT32_MAX;
+						fixed_t bestDist = INT32_MAX;
+						UINT32 bestGScore = UINT32_MAX;
+
+						point.x = player->mo->x;
+						point.y = player->mo->y;
+						point.z = player->mo->z;
+
+						best.x = point.x;
+						best.y = point.y;
+						best.z = point.z;
+
+						for (i = 1; i < pathBackwards.numnodes; i++)
+						{
+							vector3_t line[2];
+							vector3_t result;
+
+							waypoint_t *pwp = (waypoint_t *)pathBackwards.array[i - 1].nodedata;
+							waypoint_t *wp = (waypoint_t *)pathBackwards.array[i].nodedata;
+
+							fixed_t pDist = 0;
+							UINT32 g = pathBackwards.array[i - 1].gscore;
+
+							line[0].x = pwp->mobj->x;
+							line[0].y = pwp->mobj->y;
+							line[0].z = pwp->mobj->z;
+
+							line[1].x = wp->mobj->x;
+							line[1].y = wp->mobj->y;
+							line[1].z = wp->mobj->z;
+
+							P_ClosestPointOnLine3D(&point, line, &result);
+
+							pDist = P_AproxDistance(point.x - result.x, point.y - result.y);
+							pDist = P_AproxDistance(pDist, point.z - result.z);
+
+							if (pDist < bestPoint)
+							{
+								FV3_Copy(&best, &result);
+
+								bestPoint = pDist;
+
+								bestDist = 
+									P_AproxDistance(
+										(result.x >> FRACBITS) - (line[0].x >> FRACBITS),
+										(result.y >> FRACBITS) - (line[0].y >> FRACBITS));
+								bestDist = P_AproxDistance(bestDist, (result.z >> FRACBITS) - (line[0].z >> FRACBITS));
+
+								bestGScore = g + ((UINT32)bestDist);
+							}
+						}
+
+#if 0
+						if (cv_kartdebugwaypoints.value)
+						{
+							mobj_t *debugmobj = P_SpawnMobj(best.x, best.y, best.z, MT_SPARK);
+							P_SetMobjState(debugmobj, S_WAYPOINTORB);
+
+							debugmobj->frame &= ~FF_TRANSMASK;
+							debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
+
+							debugmobj->tics = 1;
+							debugmobj->color = SKINCOLOR_BANANA;
+						}
+#endif
+
+						adddist = bestGScore;
+					}
+					/*
+					else
+					{
+						// Only one point to work with, so just add your euclidean distance to that.
+						waypoint_t *wp = (waypoint_t *)pathBackwards.array[0].nodedata;
+						fixed_t disttowaypoint =
+							P_AproxDistance(
+								(player->mo->x >> FRACBITS) - (wp->mobj->x >> FRACBITS),
+								(player->mo->y >> FRACBITS) - (wp->mobj->y >> FRACBITS));
+						disttowaypoint = P_AproxDistance(disttowaypoint, (player->mo->z >> FRACBITS) - (wp->mobj->z >> FRACBITS));
+
+						adddist = (UINT32)disttowaypoint;
+					}
+					*/
+				}
+				/*
+				else
+				{
+					// Fallback to adding euclidean distance to the next waypoint to the distancetofinish
+					adddist = (UINT32)disttonext;
+				}
+				*/
+
+				if (pathBackwardsReverse == false)
+				{
+					if (pathtofinish.totaldist > adddist)
+					{
+						player->distancetofinish = pathtofinish.totaldist - adddist;
+					}
+					else
+					{
+						player->distancetofinish = 0;
+					}
+				}
+				else
+				{
+					player->distancetofinish = pathtofinish.totaldist + adddist;
+				}
 				Z_Free(pathtofinish.array);
 
 				// distancetofinish is currently a flat distance to the finish line, but in order to be fully
@@ -9175,21 +9304,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 				if ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == 0U)
 				{
 					const UINT8 numfulllapsleft = ((UINT8)numlaps - player->laps);
-
 					player->distancetofinish += numfulllapsleft * K_GetCircuitLength();
-
-#if 0
-					// An additional HACK, to fix looking backwards towards the finish line
-					// If the player's next waypoint is the finishline and the angle distance from player to
-					// connectin waypoints implies they're closer to a next waypoint, add a full track distance
-					if (player->nextwaypoint == finishline)
-					{
-						if (K_PlayerCloserToNextWaypoints(player->nextwaypoint, player) == true)
-						{
-							player->distancetofinish += K_GetCircuitLength();
-						}
-					}
-#endif
 				}
 			}
 		}
@@ -9866,10 +9981,17 @@ void K_KartUpdatePosition(player_t *player)
 
 	if (position != oldposition) // Changed places?
 	{
-		if (position < oldposition && P_IsDisplayPlayer(player) == true)
+		if (player->positiondelay <= 0 && position < oldposition && P_IsDisplayPlayer(player) == true)
 		{
 			// Play sound when getting closer to 1st.
-			S_StartSound(player->mo, sfx_mbs41);
+			UINT32 soundpos = (max(0, position - 1) * MAXPLAYERS)/realplayers; // always 1-15 despite there being 16 players at max...
+#if MAXPLAYERS > 16
+			if (soundpos < 15)
+			{
+				soundpos = 15;
+			}
+#endif
+			S_ReducedVFXSound(player->mo, sfx_pass02 + soundpos, NULL); // ...which is why we can start at index 2 for a lower general pitch
 		}
 
 		player->positiondelay = POS_DELAY_TIME + 4; // Position number growth
@@ -10027,11 +10149,12 @@ void K_KartEbrakeVisuals(player_t *p)
 			wave->momy = p->mo->momy;
 			wave->momz = p->mo->momz;
 			wave->standingslope = p->mo->standingslope;
+			K_ReduceVFX(wave, p);
 		}
 
 		// sound
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
-			S_StartSound(p->mo, sfx_s3kd9s);
+			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)
@@ -10053,6 +10176,7 @@ void K_KartEbrakeVisuals(player_t *p)
 			p->mo->hprev->angle = p->mo->angle;
 			p->mo->hprev->fuse = TICRATE/2;		// When we leave spindash for any reason, make sure this bubble goes away soon after.
 			K_FlipFromObject(p->mo->hprev, p->mo);
+			K_ReduceVFX(p->mo->hprev, p);
 			p->mo->hprev->sprzoff = p->mo->sprzoff;
 		}
 
@@ -10066,6 +10190,7 @@ void K_KartEbrakeVisuals(player_t *p)
 			spdl->colorized = true;
 			spdl->color = SKINCOLOR_WHITE;
 			K_MatchGenericExtraFlags(spdl, p->mo);
+			K_ReduceVFX(spdl, p);
 			P_SetScale(spdl, p->mo->scale);
 
 			// squish the player a little bit.
@@ -10165,6 +10290,8 @@ static void K_KartSpindashDust(mobj_t *parent)
 		dust->momx = FixedMul(hmomentum, FINECOSINE(ang >> ANGLETOFINESHIFT));
 		dust->momy = FixedMul(hmomentum, FINESINE(ang >> ANGLETOFINESHIFT));
 		dust->momz = vmomentum * flip;
+
+		//K_ReduceVFX(dust, parent->player);
 	}
 }
 
@@ -10189,6 +10316,7 @@ static void K_KartSpindashWind(mobj_t *parent)
 	wind->momz = 3 * P_GetMobjZMovement(parent) / 4;
 
 	K_MatchGenericExtraFlags(wind, parent);
+	K_ReduceVFX(wind, parent->player);
 }
 
 // Time after which you get a thrust for releasing spindash
@@ -10234,13 +10362,14 @@ static void K_KartSpindash(player_t *player)
 				P_SetTarget(&grease->target, player->mo);
 				grease->angle = K_MomentumAngle(player->mo);
 				grease->extravalue1 = i;
+				K_ReduceVFX(grease, player);
 			}
 		}
 
 		player->tiregrease = 2*TICRATE;
 
 		player->spindash = 0;
-		S_StartSound(player->mo, sfx_s23c);
+		S_ReducedVFXSound(player->mo, sfx_s23c, player);
 	}
 
 
@@ -10277,7 +10406,7 @@ static void K_KartSpindash(player_t *player)
 	if (player->speed == 0 && player->steering != 0 && leveltime % 8 == 0)
 	{
 		// Rubber burn turn sfx
-		S_StartSound(player->mo, sfx_ruburn);
+		S_ReducedVFXSound(player->mo, sfx_ruburn, player);
 	}
 
 	if (player->speed < 6*player->mo->scale)
@@ -10319,7 +10448,7 @@ static void K_KartSpindash(player_t *player)
 				{
 					if (spawnOldEffect == true)
 						K_SpawnDashDustRelease(player);
-					S_StartSound(player->mo, sfx_s3kab);
+					S_ReducedVFXSound(player->mo, sfx_s3kab, player);
 				}
 			}
 			else if (chargetime < -TICRATE)
@@ -10331,7 +10460,7 @@ static void K_KartSpindash(player_t *player)
 	else
 	{
 		if (leveltime % 4 == 0)
-			S_StartSound(player->mo, sfx_kc2b);
+			S_ReducedVFXSound(player->mo, sfx_kc2b, player);
 	}
 }
 
@@ -10361,6 +10490,9 @@ boolean K_FastFallBounce(player_t *player)
 				bounce = minBounce;
 			}
 		}
+
+		if (player->mo->eflags & MFE_UNDERWATER)
+			bounce = (117 * bounce) / 200;
 
 		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);

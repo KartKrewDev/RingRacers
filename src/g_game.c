@@ -2239,6 +2239,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 skincolor;
 	INT32 skin;
 	UINT32 availabilities;
+	UINT8 fakeskin;
+	UINT8 lastfakeskin;
 
 	tic_t jointime;
 
@@ -2285,17 +2287,27 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
 
-	// SRB2kart
-	kartspeed = players[player].kartspeed;
-	kartweight = players[player].kartweight;
+	if (betweenmaps)
+	{
+		fakeskin = MAXSKINS;
+		kartspeed = skins[players[player].skin].kartspeed;
+		kartweight = skins[players[player].skin].kartweight;
+		charflags = skins[players[player].skin].flags;
+	}
+	else
+	{
+		fakeskin = players[player].fakeskin;
+		kartspeed = players[player].kartspeed;
+		kartweight = players[player].kartweight;
+		charflags = players[player].charflags;
+	}
+	lastfakeskin = players[player].lastfakeskin;
 
 	followerready = players[player].followerready;
 	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
 
 	availabilities = players[player].availabilities;
-
-	charflags = players[player].charflags;
 
 	followitem = players[player].followitem;
 
@@ -2413,10 +2425,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// save player config truth reborn
 	p->skincolor = skincolor;
 	p->skin = skin;
+
+	p->fakeskin = fakeskin;
 	p->kartspeed = kartspeed;
 	p->kartweight = kartweight;
-	//
 	p->charflags = charflags;
+	p->lastfakeskin = lastfakeskin;
+
 	p->availabilities = availabilities;
 	p->followitem = followitem;
 
@@ -2549,7 +2564,7 @@ static boolean G_CheckSpot(INT32 playernum, mapthing_t *mthing)
 	if (!K_CheckPlayersRespawnColliding(playernum, x, y))
 		return false;
 
-	if (!P_CheckPosition(players[playernum].mo, x, y))
+	if (!P_CheckPosition(players[playernum].mo, x, y, NULL))
 		return false;
 
 	return true;
@@ -3732,11 +3747,16 @@ static void G_GetNextMap(void)
 		else
 		{
 			INT32 lastgametype = gametype;
+			// 5 levels, 2 bonus stages: after rounds 2 and 4 (but flexible enough to accomodate other solutions)
+			UINT8 bonusmodulo = (grandprixinfo.cup->numlevels+1)/(grandprixinfo.cup->numbonus+1);
+			UINT8 bonusindex = (grandprixinfo.roundnum / bonusmodulo) - 1;
 
 			// If we're in a GP event, don't immediately follow it up with another.
 			// I also suspect this will not work with online GP so I'm gonna prevent it right now.
 			// The server might have to communicate eventmode (alongside other GP data) in XD_MAP later.
-			if (netgame || grandprixinfo.eventmode != GPEVENT_NONE)
+			if (netgame)
+				;
+			else if	(grandprixinfo.eventmode != GPEVENT_NONE)
 			{
 				grandprixinfo.eventmode = GPEVENT_NONE;
 
@@ -3774,11 +3794,13 @@ static void G_GetNextMap(void)
 					}
 				}
 			}
-			else if (grandprixinfo.roundnum == (grandprixinfo.cup->numlevels+1)/2) // 3 for a 5-map cup
+			else if ((grandprixinfo.cup->numbonus > 0)
+				&& (grandprixinfo.roundnum % bonusmodulo) == 0
+				&& bonusindex < MAXBONUSLIST)
 			{
 				// todo any other condition?
 				{
-					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS];
+					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
 						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
 					{

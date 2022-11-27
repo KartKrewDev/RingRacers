@@ -3095,9 +3095,25 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "BONUSGAME"))
 			{
-				Z_Free(cup->levellist[CUPCACHE_BONUS]);
-				cup->levellist[CUPCACHE_BONUS] = Z_StrDup(word2);
-				cup->cachedlevels[CUPCACHE_BONUS] = NEXTMAP_INVALID;
+				while (cup->numbonus > 0)
+				{
+					cup->numbonus--;
+					Z_Free(cup->levellist[CUPCACHE_BONUS + cup->numbonus]);
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = NULL;
+				}
+
+				tmp = strtok(word2,",");
+				do {
+					if (cup->numbonus >= MAXBONUSLIST)
+					{
+						deh_warning("%s Cup: reached max bonus list (%d)\n", cup->name, MAXBONUSLIST);
+						break;
+					}
+
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = Z_StrDup(tmp);
+					cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] = NEXTMAP_INVALID;
+					cup->numbonus++;
+				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{

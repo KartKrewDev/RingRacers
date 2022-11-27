@@ -762,7 +762,7 @@ static void Polyobj_removeFromBlockmap(polyobj_t *po)
 // Movement functions
 
 // A version of Lee's routine from p_maputl.c that accepts an mobj pointer
-// argument instead of using tmthing. Returns true if the line isn't contacted
+// argument instead of using tm.thing. Returns true if the line isn't contacted
 // and false otherwise.
 static inline boolean Polyobj_untouched(line_t *ld, mobj_t *mo)
 {
@@ -805,11 +805,11 @@ static void Polyobj_pushThing(polyobj_t *po, line_t *line, mobj_t *mo)
 	// if object doesn't fit at desired location, possibly hurt it
 	if (po->damage && (mo->flags & MF_SHOOTABLE))
 	{
-		P_CheckPosition(mo, mo->x + momx, mo->y + momy);
-		mo->floorz = tmfloorz;
-		mo->ceilingz = tmceilingz;
-		mo->floorrover = tmfloorrover;
-		mo->ceilingrover = tmceilingrover;
+		P_CheckPosition(mo, mo->x + momx, mo->y + momy, NULL);
+		mo->floorz = tm.floorz;
+		mo->ceilingz = tm.ceilingz;
+		mo->floorrover = tm.floorrover;
+		mo->ceilingrover = tm.ceilingrover;
 	}
 }
 
@@ -851,7 +851,7 @@ static void Polyobj_slideThing(mobj_t *mo, fixed_t dx, fixed_t dy)
 
 		mo->player->onconveyor = 1;
 	} else
-		P_TryMove(mo, mo->x+dx, mo->y+dy, true);
+		P_TryMove(mo, mo->x+dx, mo->y+dy, true, NULL);
 }
 
 // Causes objects resting on top of the polyobject to 'ride' with its movement.

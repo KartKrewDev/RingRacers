@@ -78,6 +78,7 @@ typedef enum
 	gc_console,
 	gc_talk,
 	gc_teamtalk,
+	gc_rankings,
 	gc_screenshot,
 	gc_recordgif,
 

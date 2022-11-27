@@ -1237,6 +1237,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
 
+	K_ReduceVFX(ghost, mobj->player);
+
 	return ghost;
 }
 
@@ -1264,6 +1266,8 @@ void P_DoPlayerExit(player_t *player)
 
 	if (!player->spectator)
 	{
+		ClearFakePlayerSkin(player);
+
 		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
 			K_KartUpdatePosition(player);
@@ -4166,6 +4170,35 @@ void P_PlayerThink(player_t *player)
 	if (player->stairjank > 0)
 	{
 		player->stairjank--;
+	}
+	
+	// Random skin / "ironman"
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[playeri]].flags
+			: skins[player->skin].flags;
+
+		if (skinflags & SF_IRONMAN) // we are Heavy Magician
+		{
+			if (player->charflags & SF_IRONMAN) // no fakeskin yet
+			{
+				if (leveltime >= starttime && !player->exiting)
+				{
+					if (player->fakeskin != MAXSKINS)
+					{
+						SetFakePlayerSkin(player, player->fakeskin);
+					}
+					else if (!(gametyperules & GTR_CIRCUIT))
+					{
+						SetRandomFakePlayerSkin(player, false);
+					}
+				}
+			}
+			else if (player->exiting) // wearing a fakeskin, but need to display signpost postrace etc
+			{
+				ClearFakePlayerSkin(player);
+			}
+		}
 	}
 
 	K_KartPlayerThink(player, cmd); // SRB2kart

@@ -559,8 +559,8 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	{
 		/* use a shorter sound if not two tics have passed
 		 * since the last step */
-		S_StartSound(mo, player->stairjank
-				>= 16 ?  sfx_s23b : sfx_s268);
+		S_ReducedVFXSound(mo, player->stairjank
+				>= 16 ?  sfx_s23b : sfx_s268, NULL);
 
 		if (player->stairjank == 0)
 		{
@@ -569,6 +569,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			spark->fuse = 9;
 			spark->cusval = K_StairJankFlip(ANGLE_90);
 			P_SetTarget(&spark->target, mo);
+			K_ReduceVFX(spark, player);
 		}
 
 		player->stairjank = 17;

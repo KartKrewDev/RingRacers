@@ -980,18 +980,27 @@ static void HU_TickSongCredits(void)
 
 void HU_Ticker(void)
 {
+	static boolean hu_holdscores = false;
+
 	if (dedicated)
 		return;
 
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
-	/*
-	if (PlayerInputDown(1, gc_scores))
-		hu_showscores = !chat_on;
+	// Rankings
+	if (G_PlayerInputDown(0, gc_rankings, 0))
+	{
+		if (!hu_holdscores)
+		{
+			hu_showscores ^= true;
+		}
+		hu_holdscores = true;
+	}
 	else
-		hu_showscores = false;
-	*/
+	{
+		hu_holdscores = false;
+	}
 
 	hu_keystrokes = false;
 
@@ -2066,18 +2075,8 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
-	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
-		V_DrawVhsEffect(demo.rewinding);
-
-	// draw chat string plus cursor
-	if (chat_on)
-	{
-		if (!OLDCHAT)
-			HU_DrawChat();
-		else
-			HU_DrawChat_Old();
-	}
-	else
+	// Closed chat
+	if (!chat_on)
 	{
 		typelines = 1;
 		chat_scrolltime = 0;
@@ -2086,15 +2085,8 @@ void HU_Drawer(void)
 			HU_drawMiniChat(); // draw messages in a cool fashion.
 	}
 
-	if (cechotimer)
-		HU_DrawCEcho();
-
-	if (!( Playing() || demo.playback )
-	 || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE
-	 || gamestate == GS_CREDITS      || gamestate == GS_EVALUATION
-	 || gamestate == GS_ENDING       || gamestate == GS_GAMEEND
-	 || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS) // SRB2kart
-		return;
+	if (gamestate != GS_LEVEL)
+		goto drawontop;
 
 	// draw multiplayer rankings
 	if (hu_showscores)
@@ -2117,12 +2109,8 @@ void HU_Drawer(void)
 		}
 	}
 
-	if (gamestate != GS_LEVEL)
-		return;
-
-	// draw song credits
-	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
-		HU_DrawSongCredits();
+	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
+		V_DrawVhsEffect(demo.rewinding);
 
 	// draw desynch text
 	if (hu_redownloadinggamestate)
@@ -2138,20 +2126,22 @@ void HU_Drawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
 	}
 
-	if (modeattacking && pausedelay > 0 && !pausebreakkey)
+drawontop:
+	// Opened chat
+	if (chat_on)
 	{
-		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
-		INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT/2; // obviously incorrect values while we scrap hudinfo
-
-		V_DrawThinString(x, y,
-			((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
-			"HOLD TO RETRY...");
-
-		if (strength > 9)
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-		else if (strength > 0)
-			V_DrawFadeScreen(0, strength);
+		if (!OLDCHAT)
+			HU_DrawChat();
+		else
+			HU_DrawChat_Old();
 	}
+
+	if (cechotimer)
+		HU_DrawCEcho();
+
+	// draw song credits
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
+		HU_DrawSongCredits();
 }
 
 //======================================================================
