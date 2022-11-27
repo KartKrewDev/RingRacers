@@ -5,6 +5,8 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" AND
 	target_link_options(SRB2SDL2 PRIVATE "-static")
 endif()
 
+set_property(TARGET SRB2SDL2 PROPERTY C_STANDARD 11)
+
 # Core sources
 target_sourcefile(c)
 target_sources(SRB2SDL2 PRIVATE comptime.c md5.c config.h.in)
@@ -220,6 +222,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wall
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
+		-pedantic
 		-Wfloat-equal
 		-Wundef
 		-Wpointer-arith
