@@ -1407,26 +1407,25 @@ boolean CanChangeSkinWhilePlaying(INT32 playernum)
 
 static void ForceAllSkins(INT32 forcedskin)
 {
-	INT32 i, j;
+	INT32 i;
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (!playeringame[i])
 			continue;
 
 		SetPlayerSkinByNum(i, forcedskin);
+	}
 
-		// If it's me (or my brother (or my sister (or my trusty pet dog))), set appropriate skin value in cv_skin
-		if (dedicated) // But don't do this for dedicated servers, of course.
+	if (dedicated)
+		return;
+
+	// If it's me (or my brother (or my sister (or my trusty pet dog))), set appropriate skin value in cv_skin
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (!playeringame[g_localplayers[i]])
 			continue;
 
-		for (j = 0; j <= splitscreen; j++)
-		{
-			if (i == g_localplayers[j])
-			{
-				CV_StealthSet(&cv_skin[j], skins[forcedskin].name);
-				break;
-			}
-		}
+		CV_StealthSet(&cv_skin[i], skins[forcedskin].name);
 	}
 }
 
