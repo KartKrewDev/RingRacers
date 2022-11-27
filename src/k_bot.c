@@ -1452,7 +1452,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (spindash == 0)
+	if (spindash == 0 && player->exiting == 0)
 	{
 		// Don't pointlessly try to use rings/sneakers while charging a spindash.
 		// TODO: Allowing projectile items like orbinaut while e-braking would be nice, maybe just pass in the spindash variable?
