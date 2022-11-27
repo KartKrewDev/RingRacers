@@ -27,7 +27,7 @@
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 1
+#define PROFILEVER 2
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0

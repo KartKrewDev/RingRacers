@@ -35,8 +35,8 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_HIRES            = 1, // Draw the sprite at different size?
-	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
+	SF_MACHINE          = 1, // Beep boop. Are you a robot?
+	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
 	// free up to and including 1<<31
 } skinflags_t;
 
@@ -310,6 +310,8 @@ typedef struct botvars_s
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
 
+	// All entries above persist between rounds and must be recorded in demos
+
 	fixed_t rubberband; // Bot rubberband value
 	UINT16 controller; // Special bot controller linedef ID
 
@@ -385,6 +387,9 @@ typedef struct player_s
 	INT32 skin;
 	UINT32 availabilities;
 
+	UINT8 fakeskin; // ironman
+	UINT8 lastfakeskin;
+
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
 
@@ -413,6 +418,7 @@ typedef struct player_s
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
+	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 			// Keep track of how long you've been in the air

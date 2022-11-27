@@ -327,8 +327,8 @@ void PR_LoadProfiles(void)
 	{
 		profilesList[i] = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
 
-		// Version.
-		profilesList[i]->version = version;
+		// Version. (We always update this on successful forward step)
+		profilesList[i]->version = PROFILEVER;
 
 		// Names.
 		READSTRINGN(save_p, profilesList[i]->profilename, PROFILENAMELEN);
@@ -382,6 +382,18 @@ void PR_LoadProfiles(void)
 		// Controls.
 		for (j = 0; j < num_gamecontrols; j++)
 		{
+#ifdef DEVELOP
+			// Profile update 1-->2: Add gc_rankings.
+			if (j == gc_rankings && version < 2)
+			{
+				for (k = 0; k < MAXINPUTMAPPING; k++)
+				{
+					profilesList[i]->controls[j][k] = gamecontroldefault[j][k];
+				}
+				continue;
+			}
+#endif
+
 			for (k = 0; k < MAXINPUTMAPPING; k++)
 			{
 				profilesList[i]->controls[j][k] = READINT32(save_p);
@@ -449,9 +461,10 @@ void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 	profile_t *p = PR_GetProfile(profilenum);
 
 	// this CAN happen!!
-	if (p == NULL)
+	if (dedicated || p == NULL)
 	{
-		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		if (!dedicated)
+			CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
 		profilenum = 0; // make sure to set this so that the cvar is set properly.
 		p = PR_GetProfile(profilenum);
 	}
@@ -481,9 +494,10 @@ void PR_ApplyProfilePretend(UINT8 profilenum, UINT8 playernum)
 	profile_t *p = PR_GetProfile(profilenum);
 
 	// this CAN happen!!
-	if (p == NULL)
+	if (dedicated || p == NULL)
 	{
-		CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
+		if (!dedicated)
+			CONS_Printf("Profile '%d' could not be loaded as it does not exist. Guest Profile will be loaded instead.\n", profilenum);
 		profilenum = 0; // make sure to set this so that the cvar is set properly.
 		p = PR_GetProfile(profilenum);
 	}

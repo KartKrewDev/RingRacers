@@ -1928,6 +1928,17 @@ static void K_HandleLapIncrement(player_t *player)
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
 			}
+			else
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+				if (skinflags & SF_IRONMAN)
+				{
+					SetRandomFakePlayerSkin(player, true);
+				}
+			}
+				
 
 			if (player->laps > player->latestlap)
 			{

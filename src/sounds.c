@@ -1130,6 +1130,24 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // Passing sounds
+  {"pass01", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass02", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass03", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass04", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass05", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass06", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass07", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass08", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass09", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass10", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass11", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass12", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass13", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass14", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass15", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass16", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

@@ -151,6 +151,8 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].skincolor);
 		WRITEINT32(save_p, players[i].skin);
 		WRITEUINT32(save_p, players[i].availabilities);
+		WRITEUINT8(save_p, players[i].fakeskin);
+		WRITEUINT8(save_p, players[i].lastfakeskin);
 		WRITEUINT32(save_p, players[i].score);
 		WRITESINT8(save_p, players[i].lives);
 		WRITESINT8(save_p, players[i].xtralife);
@@ -249,6 +251,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].oldposition);
 		WRITEUINT8(save_p, players[i].positiondelay);
 		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].startboost);
@@ -470,6 +473,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
 		players[i].availabilities = READUINT32(save_p);
+		players[i].fakeskin = READUINT8(save_p);
+		players[i].lastfakeskin = READUINT8(save_p);
 		players[i].score = READUINT32(save_p);
 		players[i].lives = READSINT8(save_p);
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
@@ -548,6 +553,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].oldposition = READUINT8(save_p);
 		players[i].positiondelay = READUINT8(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
+		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 		players[i].startboost = READUINT8(save_p);
@@ -4421,6 +4427,15 @@ static void P_RelinkPointers(void)
 				mobj->player->follower = NULL;
 				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
+			}
+			if (mobj->player->currentwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->currentwaypoint;
+				mobj->player->currentwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->currentwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on %d\n", mobj->type);
+				}
 			}
 			if (mobj->player->nextwaypoint)
 			{

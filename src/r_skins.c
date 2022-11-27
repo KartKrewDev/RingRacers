@@ -27,6 +27,8 @@
 #include "p_local.h"
 #include "dehacked.h" // get_number (for thok)
 #include "m_cond.h"
+#include "k_kart.h"
+#include "m_random.h"
 #if 0
 #include "k_kart.h" // K_KartResetPlayerColor
 #endif
@@ -334,6 +336,136 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	SetPlayerSkinByNum(playernum, 0); // not found, put in the default skin
 }
 
+// Set mo skin but not player_t skin, for ironman
+void SetFakePlayerSkin(player_t* player, INT32 skinid)
+{
+	if (player->fakeskin != skinid)
+	{
+		if (player->fakeskin != MAXSKINS)
+			player->lastfakeskin = player->fakeskin;
+		player->fakeskin = skinid;
+	}
+
+	if (demo.playback)
+	{
+		player->kartspeed = demo.skinlist[skinid].kartspeed;
+		player->kartweight = demo.skinlist[skinid].kartweight;
+		player->charflags = demo.skinlist[skinid].flags;
+		skinid = demo.skinlist[skinid].mapping;
+	}
+	else
+	{
+		player->kartspeed = skins[skinid].kartspeed;
+		player->kartweight = skins[skinid].kartweight;
+		player->charflags = skins[skinid].flags;
+	}
+
+	player->mo->skin = &skins[skinid];
+}
+
+// Loudly rerandomize
+void SetRandomFakePlayerSkin(player_t* player, boolean fast)
+{
+	INT32 i;
+	UINT8 usableskins = 0, maxskinpick;
+	UINT8 grabskins[MAXSKINS];
+
+	maxskinpick = (demo.playback ? demo.numskins : numskins);
+
+	for (i = 0; i < maxskinpick; i++)
+	{
+		if (i == player->lastfakeskin)
+			continue;
+		if (demo.playback)
+		{
+			if (demo.skinlist[i].flags & SF_IRONMAN)
+				continue;
+		}
+		else if (skins[i].flags & SF_IRONMAN)
+			continue;
+		/*if (K_SkinLocked(i))
+			continue;*/
+		grabskins[usableskins++] = i;
+	}
+
+	i = grabskins[P_RandomKey(PR_RANDOMSKIN, usableskins)];
+
+	SetFakePlayerSkin(player, i);
+
+	if (player->mo)
+	{
+		S_StartSound(player->mo, sfx_kc33);
+		S_StartSound(player->mo, sfx_cdfm44);
+		
+		mobj_t *parent = player->mo;
+		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
+		INT32 j;
+
+		for (j = 0; j < 6; j++)	// 0-3 = sides, 4 = top, 5 = bottom
+		{
+			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
+			P_SetTarget(&box->target, parent);
+			box->angle = FixedAngle((baseangle + j*90) * FRACUNIT);
+			box->flags2 |= MF2_AMBUSH;
+			if (fast)
+			{
+				box->extravalue1 = 10; // Rotation rate
+				box->extravalue2 = 5*TICRATE/4; // Lifetime
+			}
+			else
+			{
+				box->extravalue1 = 1;
+				box->extravalue2 = 3*TICRATE/2;
+			}
+
+			// cusval controls behavior that should run only once, like disappear FX and RF_DONTDRAW handling.
+			// NB: Order of thinker execution matters here!
+			// We want the other sides to inherit the player's "existing" RF_DONTDRAW before the last side writes to it.
+			// See the MT_MAGICIANBOX thinker in p_mobj.c.
+			if (j == 5)
+				box->cusval = 1;
+			else
+				box->cusval = 0;
+			
+			if (j > 3)
+			{
+				P_SetMobjState(box, (j == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
+				box->renderflags |= RF_NOSPLATBILLBOARD;
+				box->angle = FixedAngle(baseangle*FRACUNIT);
+			}
+		}
+
+		K_SpawnMagicianParticles(player->mo, 10);
+	}
+}
+
+// Return to base skin from an SF_IRONMAN randomization
+void ClearFakePlayerSkin(player_t* player)
+{
+	UINT8 skinid;
+	UINT32 flags;
+
+	if (demo.playback)
+	{
+		skinid = demo.currentskinid[(player-players)];
+		flags = demo.skinlist[skinid].flags;
+	}
+	else
+	{
+		skinid = player->skin;
+		flags = skins[player->skin].flags;
+	}
+
+	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
+	{
+		SetFakePlayerSkin(player, skinid);
+		S_StartSound(player->mo, sfx_s3k9f);
+		K_SpawnMagicianParticles(player->mo, 5);
+	}
+
+	player->fakeskin = MAXSKINS;
+}
+
 //
 // Add skins from a pwad, each skin preceded by 'S_SKIN' marker
 //
@@ -482,8 +614,8 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// parameters for individual character flags
 	// these are uppercase so they can be concatenated with SF_
 	// 1, true, yes are all valid values
-	GETFLAG(HIRES)
 	GETFLAG(MACHINE)
+	GETFLAG(IRONMAN)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out
