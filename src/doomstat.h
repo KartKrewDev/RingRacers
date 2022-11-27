@@ -343,8 +343,9 @@ typedef struct
 // Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
 #define MAXLEVELLIST 5
 #define CUPCACHE_BONUS MAXLEVELLIST
-#define CUPCACHE_SPECIAL MAXLEVELLIST+1
-#define CUPCACHE_MAX CUPCACHE_SPECIAL+1
+#define MAXBONUSLIST 2
+#define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
+#define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
 typedef struct cupheader_s
 {
@@ -354,6 +355,7 @@ typedef struct cupheader_s
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
 	UINT8 numlevels;						///< Number of levels defined in levellist
+	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
 	struct cupheader_s *next;				///< Next cup in linked list
