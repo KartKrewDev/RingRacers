@@ -923,14 +923,13 @@ static void K_BotItemBallhog(player_t *player, ticcmd_t *cmd)
 	boolean tryLookback = false;
 	UINT8 snipeMul = 2;
 	player_t *target = NULL;
+	boolean hold = false;
 
 	if (player->speed > topspeed)
 	{
 		radius = FixedMul(radius, FixedDiv(player->speed, topspeed));
 		snipeMul = 3; // Confirm faster when you'll throw it with a bunch of extra speed!!
 	}
-
-	player->botvars.itemconfirm++;
 
 	target = K_PlayerInCone(player, radius, 15, false);
 	if (target != NULL)
@@ -955,11 +954,24 @@ static void K_BotItemBallhog(player_t *player, ticcmd_t *cmd)
 		cmd->buttons |= BT_LOOKBACK;
 	}
 
-	if (player->botvars.itemconfirm > 10*TICRATE)
+	if (target != NULL)
 	{
-		// Charge up. If we lose sight of the target, then
-		// we'll just let go and do a partial-charge.
-		// Otherwise we'll go for full-charge :)
+		// Charge up!
+		hold = true;
+	}
+	else
+	{
+		// If we lose sight of the target, then we'll just
+		// let go and it'll do a partial-blast.
+
+		// If we've been waiting for too long though, then
+		// we'll go for the full charge :)
+		player->botvars.itemconfirm++;
+		hold = (player->botvars.itemconfirm > 10*TICRATE);
+	}
+
+	if (hold == true)
+	{
 		cmd->throwdir = KART_FULLTURN * throwdir;
 		cmd->buttons |= BT_ATTACK;
 	}
