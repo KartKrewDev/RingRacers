@@ -253,6 +253,52 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// Auxillary function that actually sets the skin
+static void SetSkin(player_t *player, INT32 skinnum)
+{
+	skin_t *skin = &skins[skinnum];
+
+	player->skin = skinnum;
+
+	player->followitem = skin->followitem;
+
+	player->kartspeed = skin->kartspeed;
+	player->kartweight = skin->kartweight;
+	player->charflags = skin->flags;
+
+#if 0
+	if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
+	{
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (playernum == g_localplayers[i])
+			{
+				CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
+			}
+		}
+
+		player->skincolor = skin->prefcolor;
+		K_KartResetPlayerColor(player);
+	}
+#endif
+
+	if (player->followmobj)
+	{
+		P_RemoveMobj(player->followmobj);
+		P_SetTarget(&player->followmobj, NULL);
+	}
+
+	if (player->mo)
+	{
+		player->mo->skin = skin;
+		P_SetScale(player->mo, player->mo->scale);
+		P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
+	}
+
+	// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
+	demo_extradata[playernum] |= DXD_SKIN;
+}
+
 // network code calls this when a 'skin change' is received
 void SetPlayerSkin(INT32 playernum, const char *skinname)
 {
@@ -261,7 +307,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 
 	if ((i != -1) && R_SkinUsable(playernum, i))
 	{
-		SetPlayerSkinByNum(playernum, i);
+		SetSkin(player, i);
 		return;
 	}
 
@@ -270,7 +316,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) skin '%s' not found\n"), playernum, player_names[playernum], skinname);
 
-	SetPlayerSkinByNum(playernum, 0);
+	SetSkin(player, 0);
 }
 
 // Same as SetPlayerSkin, but uses the skin #.
@@ -278,53 +324,10 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
-	skin_t *skin = &skins[skinnum];
-	//UINT16 newcolor = 0;
-	//UINT8 i;
 
 	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum)) // Make sure it exists!
 	{
-		player->skin = skinnum;
-
-		player->charflags = (UINT32)skin->flags;
-
-		player->followitem = skin->followitem;
-
-		player->kartspeed = skin->kartspeed;
-		player->kartweight = skin->kartweight;
-
-#if 0
-		if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
-		{
-			for (i = 0; i <= r_splitscreen; i++)
-			{
-				if (playernum == g_localplayers[i])
-				{
-					CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
-				}
-			}
-
-			player->skincolor = newcolor = skin->prefcolor;
-			K_KartResetPlayerColor(player);
-		}
-#endif
-
-		if (player->followmobj)
-		{
-			P_RemoveMobj(player->followmobj);
-			P_SetTarget(&player->followmobj, NULL);
-		}
-
-		if (player->mo)
-		{
-			player->mo->skin = skin;
-			P_SetScale(player->mo, player->mo->scale);
-			P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
-		}
-
-		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
-		demo_extradata[playernum] |= DXD_SKIN;
-
+		SetSkin(player, skinnum);
 		return;
 	}
 
@@ -333,7 +336,7 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 
-	SetPlayerSkinByNum(playernum, 0); // not found, put in the default skin
+	SetSkin(player, 0); // not found put the eggman skin
 }
 
 // Set mo skin but not player_t skin, for ironman
