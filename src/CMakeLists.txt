@@ -231,7 +231,6 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wcast-align # Was controlled by NOCASTALIGNWARN
 		-Wwrite-strings
 		-Wsign-compare
-		-Waggregate-return
 		-Wmissing-prototypes
 		-Wmissing-declarations
 		-Wmissing-noreturn
