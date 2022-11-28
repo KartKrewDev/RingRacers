@@ -334,6 +334,12 @@ static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_
 
 	(void)divl;
 
+	if (!(line->flags & ML_TWOSIDED))
+	{
+		// stop because it is not two sided anyway
+		return false;
+	}
+
 	if (P_IsLineBlocking(line, los->compareThing) == true)
 	{
 		// This line will always block us
@@ -380,11 +386,16 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	if (los->compareThing->player != NULL && los->alreadyHates == false)
 	{
 		// Treat damage sectors like walls, if you're not already in a bad sector.
+		sector_t *front, *back;
 		vertex_t pos;
+
 		P_ClosestPointOnLine(los->compareThing->x, los->compareThing->y, line, &pos);
 
-		if (K_BotHatesThisSector(los->compareThing->player, line->frontsector, pos.x, pos.y)
-			|| K_BotHatesThisSector(los->compareThing->player, line->backsector, pos.x, pos.y))
+		front = seg->frontsector;
+		back  = seg->backsector;
+
+		if (K_BotHatesThisSector(los->compareThing->player, front, pos.x, pos.y)
+			|| K_BotHatesThisSector(los->compareThing->player, back, pos.x, pos.y))
 		{
 			// This line does not block us, but we don't want to be in it.
 			return false;

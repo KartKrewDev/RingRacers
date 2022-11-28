@@ -361,7 +361,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			// remember: huge radius
 			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
 			{
-				if (!P_TraceBlockingLines(mobj, checkwaypoint->mobj)) // Intentionally not P_TraceWaypointTraversal
+				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
 					continue;
@@ -379,7 +379,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 			}
 			else if (checkdist < closestdist && bestfindist == INT32_MAX)
 			{
-				if (!P_TraceBlockingLines(mobj, checkwaypoint->mobj)) // Intentionally not P_TraceWaypointTraversal
+				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
 					continue;

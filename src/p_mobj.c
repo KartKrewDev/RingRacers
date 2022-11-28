@@ -4538,7 +4538,7 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 	{
 		if (playeringame[c] && !players[c].spectator)
 		{
-			if (!players[c].mo || players[c].bot)
+			if (!players[c].mo)
 				continue;
 
 			if (players[c].mo->health <= 0)
