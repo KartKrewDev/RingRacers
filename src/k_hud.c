@@ -736,6 +736,9 @@ const char *K_GetItemPatch(UINT8 item, boolean tiny)
 			return (tiny ? "K_ISDTRG" : "K_ITDTRG");
 		case KITEM_GARDENTOP:
 			return (tiny ? "K_ISGTOP" : "K_ITGTOP");
+		case KITEM_GACHABOM: // temp
+		case KRITEM_TRIPLEGACHABOM: // temp
+			return (tiny ? "K_ISSINK" : "K_ITSINK");
 		case KRITEM_TRIPLEORBINAUT:
 			return (tiny ? "K_ISORBN" : "K_ITORB3");
 		case KRITEM_QUADORBINAUT:
@@ -772,6 +775,7 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_kitchensink,
 		kp_droptarget,
 		kp_gardentop,
+		kp_kitchensink, // temp
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
@@ -1208,6 +1212,7 @@ static void K_drawKartItem(void)
 
 			default:
 				localpatch = K_GetCachedItemPatch(item, offset);
+				break;
 		}
 	}
 	else

@@ -24187,6 +24187,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_GACHABOM
+		-1,             // doomednum
+		S_ORBINAUT1,    // spawnstate
+		7,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_tossed,     // seesound
+		8,              // reactiontime
+		sfx_s3k49,      // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_ORBINAUT_DEAD,// deathstate
+		S_NULL,         // xdeathstate
+		sfx_s3k5d,      // deathsound
+		64*FRACUNIT,    // speed
+		24*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_s3k96,      // activesound
+		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_DUELBOMB
 		2050,           // doomednum
 		S_SPB1,         // spawnstate

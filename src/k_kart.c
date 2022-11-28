@@ -423,12 +423,14 @@ consvar_t *KartItemCVars[NUMKARTRESULTS-1] =
 	&cv_kitchensink,
 	&cv_droptarget,
 	&cv_gardentop,
+	&cv_gachabom,
 	&cv_dualsneaker,
 	&cv_triplesneaker,
 	&cv_triplebanana,
 	&cv_tripleorbinaut,
 	&cv_quadorbinaut,
-	&cv_dualjawz
+	&cv_dualjawz,
+	&cv_triplegachabom
 };
 
 #define NUMKARTODDS 	80
@@ -459,12 +461,14 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 3, 5, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
 	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
 	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
-	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
+	{ 0, 0, 1, 2, 1, 0, 0, 0 }, // Jawz x2
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }  // Gachabom x3
 };
 
 static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
@@ -492,12 +496,14 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
 	{ 0, 0 }, // Kitchen Sink
 	{ 2, 0 }, // Drop Target
 	{ 4, 0 }, // Garden Top
+	{ 0, 0 }, // Gachabom
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
 	{ 2, 0 }, // Orbinaut x3
 	{ 1, 1 }, // Orbinaut x4
-	{ 5, 1 }  // Jawz x2
+	{ 5, 1 }, // Jawz x2
+	{ 0, 0 }  // Gachabom x3
 };
 
 // TODO: add back when this gets used
@@ -527,12 +533,14 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }, // Kitchen Sink
 	{ 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 0 }, // Gachabom
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
 	{ 0, 1, 1, 0 }, // Orbinaut x3
 	{ 0, 0, 1, 1 }, // Orbinaut x4
-	{ 0, 0, 1, 1 }  // Jawz x2
+	{ 0, 0, 1, 1 }, // Jawz x2
+	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 #endif
 
@@ -599,6 +607,9 @@ SINT8 K_ItemResultToType(SINT8 getitem)
 			case KRITEM_DUALJAWZ:
 				return KITEM_JAWZ;
 
+			case KRITEM_TRIPLEGACHABOM:
+				return KITEM_GACHABOM;
+
 			default:
 				I_Error("Bad item cooldown redirect for result %d\n", getitem);
 				break;
@@ -619,6 +630,7 @@ UINT8 K_ItemResultToAmount(SINT8 getitem)
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEBANANA:
 		case KRITEM_TRIPLEORBINAUT:
+		case KRITEM_TRIPLEGACHABOM:
 			return 3;
 
 		case KRITEM_QUADORBINAUT:
@@ -1370,24 +1382,24 @@ static void K_KartItemRoulette(player_t *player, ticcmd_t *cmd)
 		}
 		else if (gametype == GT_BATTLE)
 		{
-			if (mashed && (modeattacking || bossinfo.boss || cv_banana.value)) // ANY mashed value? You get a banana.
+			if (mashed && (modeattacking || bossinfo.boss || cv_gachabom.value)) // ANY mashed value? You get a Gachabom.
 			{
-				K_KartGetItemResult(player, KITEM_BANANA);
+				K_KartGetItemResult(player, KITEM_GACHABOM);
 				player->karthud[khud_itemblinkmode] = 1;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolm);
 			}
 			else if (bossinfo.boss)
 			{
-				K_KartGetItemResult(player, KITEM_ORBINAUT);
+				K_KartGetItemResult(player, KITEM_ORBINAUT); // FIXME
 				player->karthud[khud_itemblinkmode] = 0;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
 			else
 			{
-				if (modeattacking || cv_tripleorbinaut.value) // Waited patiently? You get Orbinaut x3!
-					K_KartGetItemResult(player, KRITEM_TRIPLEORBINAUT);
+				if (modeattacking || cv_triplegachabom.value) // Waited patiently? You get Gachabom x3!
+					K_KartGetItemResult(player, KRITEM_TRIPLEGACHABOM);
 				else  // Default to sad if nothing's enabled...
 					K_KartGetItemResult(player, KITEM_SAD);
 				player->karthud[khud_itemblinkmode] = 0;
@@ -1550,6 +1562,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 			break;
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
+		case MT_GACHABOM:
 		case MT_DUELBOMB:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL);
@@ -5271,7 +5284,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
-	if (dir == -1 && (type == MT_ORBINAUT || type == MT_BALLHOG))
+	if (dir == -1 && (type == MT_ORBINAUT || type == MT_GACHABOM || type == MT_BALLHOG))
 	{
 		// Backwards nerfs
 		finalspeed /= 8;
@@ -5328,6 +5341,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	switch (type)
 	{
 		case MT_ORBINAUT:
+		case MT_GACHABOM:
 			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
@@ -6175,6 +6189,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			dir = defaultDir;
 	}
 
+	if (mapthing == MT_GACHABOM && dir > 0)
+	{
+		// This item is both a missile and not!
+		missile = false;
+	}
+
 	if (missile) // Shootables
 	{
 		if (dir < 0 && mapthing != MT_SPB && mapthing != MT_GARDENTOP)
@@ -6240,6 +6260,16 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			{
 				mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
 				mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+			}
+
+			if (mapthing == MT_GACHABOM)
+			{
+				// Set dropped flag
+				mo->flags2 |= MF2_AMBUSH;
+				mo->movecount = 2;
+				P_SetMobjState(mo, mo->info->deathstate);
+				mo->tics = -1;
+				mo->color = player->skincolor;
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
@@ -11416,6 +11446,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->itemamount--;
 								player->pflags &= ~PF_ITEMOUT;
 								K_UpdateHnextList(player, true);
+							}
+							break;
+						case KITEM_GACHABOM:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
+								K_PlayAttackTaunt(player->mo);
+								player->itemamount--;
+								K_UpdateHnextList(player, false);
 							}
 							break;
 						case KITEM_SAD:

@@ -94,7 +94,8 @@ extern consvar_t
 	cv_superring,
 	cv_kitchensink,
 	cv_droptarget,
-	cv_gardentop;
+	cv_gardentop,
+	cv_gachabom;
 
 extern consvar_t
 	cv_dualsneaker,
@@ -102,7 +103,8 @@ extern consvar_t
 	cv_triplebanana,
 	cv_tripleorbinaut,
 	cv_quadorbinaut,
-	cv_dualjawz;
+	cv_dualjawz,
+	cv_triplegachabom;
 
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;

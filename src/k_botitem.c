@@ -1373,6 +1373,11 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 					case KITEM_FLAMESHIELD:
 						K_BotItemFlame(player, cmd);
 						break;
+					/*
+					case KITEM_GACHABOM:
+						K_BotItemGachabom(player, cmd);
+						break;
+					*/
 				}
 			}
 		}
