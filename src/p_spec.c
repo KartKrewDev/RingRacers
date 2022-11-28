@@ -4282,7 +4282,7 @@ boolean P_IsPlayerValid(size_t playernum)
 
 boolean P_CanPlayerTrigger(size_t playernum)
 {
-	return P_IsPlayerValid(playernum) && !players[playernum].bot;
+	return P_IsPlayerValid(playernum);
 }
 
 /// \todo check continues for proper splitscreen support?
@@ -4310,7 +4310,7 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 	mobj_t *mo2;
 	INT32 i;
 
-	if (player->bot || sector->ceilingdata || sector->floordata)
+	if (sector->ceilingdata || sector->floordata)
 		return;
 
 	// Find the center of the Eggtrap and release all the pretty animals!
@@ -4517,9 +4517,6 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 
 static void P_EvaluateLinedefExecutorTrigger(player_t *player, sector_t *sector, boolean isTouching)
 {
-	if (player->bot)
-		return;
-
 	if (!sector->triggertag)
 		return;
 
