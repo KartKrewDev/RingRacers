@@ -429,6 +429,11 @@ static void UFOKillPiece(mobj_t *piece)
 
 	switch (ufo_piece_type(piece))
 	{
+		case UFO_PIECE_TYPE_STEM:
+		{
+			piece->tics = 1;
+			return;
+		}
 		case UFO_PIECE_TYPE_ARM:
 		{
 			dir = piece->angle;
@@ -589,9 +594,18 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			piece->angle -= FixedMul(ANG2, FixedDiv(ufo_speed(ufo), UFO_BASE_SPEED));
 			break;
 		}
+		case UFO_PIECE_TYPE_STEM:
+		{
+			fixed_t stemZ = ufo->z + (294 * piece->scale);
+			fixed_t sc = FixedDiv(FixedDiv(ufo->ceilingz - stemZ, piece->scale), 15 * FRACUNIT);
+
+			UFOMoveTo(piece, ufo->x, ufo->y, stemZ);
+			piece->spriteyscale = sc;
+			break;
+		}
 		default:
 		{
-			P_KillMobj(piece, NULL, NULL, DMG_NORMAL);
+			P_RemoveMobj(piece);
 			return;
 		}
 	}
@@ -690,6 +704,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 	P_SetTarget(&ufo_pieces(ufo), piece);
 	prevPiece = piece;
 
+	// Add the catcher arms.
 	for (i = 0; i < UFO_NUMARMS; i++)
 	{
 		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
@@ -702,9 +717,19 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 		P_SetTarget(&ufo_piece_next(prevPiece), piece);
 		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
-
 		prevPiece = piece;
 	}
+
+	// Add the stem.
+	piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+	P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+	P_SetMobjState(piece, S_SPECIAL_UFO_STEM);
+	ufo_piece_type(piece) = UFO_PIECE_TYPE_STEM;
+
+	P_SetTarget(&ufo_piece_next(prevPiece), piece);
+	P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+	prevPiece = piece;
 
 	return ufo;
 }
