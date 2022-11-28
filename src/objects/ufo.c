@@ -567,24 +567,24 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		return;
 	}
 
-	piece->destscale = ufo->destscale;
+	piece->destscale = 3 * ufo->destscale / 2;
 	piece->scalespeed = ufo->scalespeed;
 
 	switch (ufo_piece_type(piece))
 	{
 		case UFO_PIECE_TYPE_POD:
 		{
-			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (120 * ufo->scale));
+			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (132 * piece->scale));
 			break;
 		}
 		case UFO_PIECE_TYPE_ARM:
 		{
-			fixed_t dis = (104 * ufo->scale);
+			fixed_t dis = (88 * piece->scale);
 
 			fixed_t x = ufo->x - FixedMul(dis, FINECOSINE(piece->angle >> ANGLETOFINESHIFT));
 			fixed_t y = ufo->y - FixedMul(dis, FINESINE(piece->angle >> ANGLETOFINESHIFT));
 
-			UFOMoveTo(piece, x, y, ufo->z + (24 * ufo->scale));
+			UFOMoveTo(piece, x, y, ufo->z + (24 * piece->scale));
 
 			piece->angle -= FixedMul(ANG2, FixedDiv(ufo_speed(ufo), UFO_BASE_SPEED));
 			break;
