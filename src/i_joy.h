@@ -38,7 +38,7 @@
  actually, we need to know if it is a gamepad or analog controls
 */
 
-struct JoyType_s
+struct JoyType_t
 {
 	/*! if true, we MUST Poll() to get new joystick data,
 	that is: we NEED the DIRECTINPUTDEVICE2 ! (watchout NT compatibility) */
@@ -48,7 +48,6 @@ struct JoyType_s
 	INT32 bGamepadStyle;
 
 };
-typedef struct JoyType_s JoyType_t;
 /**	\brief Joystick info
 	for palyer[sic] 1-4's joystick/gamepad
 */

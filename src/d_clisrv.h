@@ -130,43 +130,43 @@ void Command_Numnodes(void);
 #endif
 
 // Client to server packet
-typedef struct
+struct clientcmd_pak
 {
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
 	ticcmd_t cmd;
-} ATTRPACK clientcmd_pak;
+} ATTRPACK;
 
 // Splitscreen packet
 // WARNING: must have the same format of clientcmd_pak, for more easy use
-typedef struct
+struct client2cmd_pak
 {
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
 	ticcmd_t cmd, cmd2;
-} ATTRPACK client2cmd_pak;
+} ATTRPACK;
 
 // 3P Splitscreen packet
 // WARNING: must have the same format of clientcmd_pak, for more easy use
-typedef struct
+struct client3cmd_pak
 {
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
 	ticcmd_t cmd, cmd2, cmd3;
-} ATTRPACK client3cmd_pak;
+} ATTRPACK;
 
 // 4P Splitscreen packet
 // WARNING: must have the same format of clientcmd_pak, for more easy use
-typedef struct
+struct client4cmd_pak
 {
 	UINT8 client_tic;
 	UINT8 resendfrom;
 	INT16 consistancy;
 	ticcmd_t cmd, cmd2, cmd3, cmd4;
-} ATTRPACK client4cmd_pak;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(disable :  4200)
@@ -174,15 +174,15 @@ typedef struct
 
 // Server to client packet
 // this packet is too large
-typedef struct
+struct servertics_pak
 {
 	UINT8 starttic;
 	UINT8 numtics;
 	UINT8 numslots; // "Slots filled": Highest player number in use plus one.
 	ticcmd_t cmds[45]; // Normally [BACKUPTIC][MAXPLAYERS] but too large
-} ATTRPACK servertics_pak;
+} ATTRPACK;
 
-typedef struct
+struct serverconfig_pak
 {
 	UINT8 version; // Different versions don't work
 	UINT8 subversion; // Contains build version
@@ -204,9 +204,9 @@ typedef struct
 	UINT8 maxplayer;
 	boolean allownewplayer;
 	boolean discordinvites;
-} ATTRPACK serverconfig_pak;
+} ATTRPACK;
 
-typedef struct
+struct filetx_pak
 {
 	UINT8 fileid;
 	UINT32 filesize;
@@ -214,21 +214,21 @@ typedef struct
 	UINT32 position;
 	UINT16 size;
 	UINT8 data[]; // Size is variable using hardware_MAXPACKETLENGTH
-} ATTRPACK filetx_pak;
+} ATTRPACK;
 
-typedef struct
+struct fileacksegment_t
 {
 	UINT32 start;
 	UINT32 acks;
-} ATTRPACK fileacksegment_t;
+} ATTRPACK;
 
-typedef struct
+struct fileack_pak
 {
 	UINT8 fileid;
 	UINT8 iteration;
 	UINT8 numsegments;
 	fileacksegment_t segments[];
-} ATTRPACK fileack_pak;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4200)
@@ -236,7 +236,7 @@ typedef struct
 
 #define MAXAPPLICATION 16
 
-typedef struct
+struct clientconfig_pak
 {
 	UINT8 _255;/* see serverinfo_pak */
 	UINT8 packetversion;
@@ -246,7 +246,7 @@ typedef struct
 	UINT8 localplayers;	// number of splitscreen players
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
-} ATTRPACK clientconfig_pak;
+} ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
 #define SV_DEDICATED 0x40		// server is dedicated
@@ -256,7 +256,7 @@ typedef struct
 #define MAXFILENEEDED 915
 #define MAX_MIRROR_LENGTH 256
 // This packet is too large
-typedef struct
+struct serverinfo_pak
 {
 	/*
 	In the old packet, 'version' is the first field. Now that field is set
@@ -289,27 +289,27 @@ typedef struct
 	char httpsource[MAX_MIRROR_LENGTH]; // HTTP URL to download from, always defined for compatibility
 	INT16 avgpwrlv; // Kart avg power level
 	UINT8 fileneeded[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
-} ATTRPACK serverinfo_pak;
+} ATTRPACK;
 
-typedef struct
+struct serverrefuse_pak
 {
 	char reason[255];
-} ATTRPACK serverrefuse_pak;
+} ATTRPACK;
 
-typedef struct
+struct askinfo_pak
 {
 	UINT8 version;
 	tic_t time; // used for ping evaluation
-} ATTRPACK askinfo_pak;
+} ATTRPACK;
 
-typedef struct
+struct msaskinfo_pak
 {
 	char clientaddr[22];
 	tic_t time; // used for ping evaluation
-} ATTRPACK msaskinfo_pak;
+} ATTRPACK;
 
 // Shorter player information for external use.
-typedef struct
+struct plrinfo
 {
 	UINT8 num;
 	char name[MAXPLAYERNAME+1];
@@ -319,10 +319,10 @@ typedef struct
 	UINT8 data; // Color is first four bits, hasflag, isit and issuper have one bit each, the last is unused.
 	UINT32 score;
 	UINT16 timeinserver; // In seconds.
-} ATTRPACK plrinfo;
+} ATTRPACK;
 
 // Shortest player information for join during intermission.
-typedef struct
+struct plrconfig
 {
 	char name[MAXPLAYERNAME+1];
 	UINT8 skin;
@@ -330,20 +330,20 @@ typedef struct
 	UINT32 pflags;
 	UINT32 score;
 	UINT8 ctfteam;
-} ATTRPACK plrconfig;
+} ATTRPACK;
 
-typedef struct
+struct filesneededconfig_pak
 {
 	INT32 first;
 	UINT8 num;
 	UINT8 more;
 	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
-} ATTRPACK filesneededconfig_pak;
+} ATTRPACK;
 
 //
 // Network packet data
 //
-typedef struct
+struct doomdata_t
 {
 	UINT32 checksum;
 	UINT8 ack; // If not zero the node asks for acknowledgement, the receiver must resend the ack
@@ -375,18 +375,18 @@ typedef struct
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 	} u; // This is needed to pack diff packet types data together
-} ATTRPACK doomdata_t;
+} ATTRPACK;
 
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
 
 #define MAXSERVERLIST (MAXNETNODES-1)
-typedef struct
+struct serverelem_t
 {
 	SINT8 node;
 	serverinfo_pak info;
-} serverelem_t;
+};
 
 extern serverelem_t serverlist[MAXSERVERLIST];
 extern UINT32 serverlistcount;
@@ -528,7 +528,7 @@ extern boolean hu_stopped;
 // SRB2Kart
 //
 
-typedef struct rewind_s {
+struct rewind_s {
 	UINT8 savebuffer[(768*1024)];
 	tic_t leveltime;
 	size_t demopos;
@@ -537,7 +537,7 @@ typedef struct rewind_s {
 	mobj_t oldghost[MAXPLAYERS];
 
 	struct rewind_s *next;
-} rewind_t;
+};
 
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);

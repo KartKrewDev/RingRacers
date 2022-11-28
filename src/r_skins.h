@@ -30,7 +30,7 @@
 #define DEFAULTSKIN4 "knuckles" // fourth player
 
 /// The skin_t struct
-typedef struct
+struct skin_t
 {
 	char name[SKINNAMESIZE+1]; // INT16 descriptive name of the skin
 	UINT16 wadnum;
@@ -61,7 +61,7 @@ typedef struct
 	// contains super versions too
 	spritedef_t sprites[NUMPLAYERSPRITES*2];
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
-} skin_t;
+};
 
 enum facepatches {
 	FACE_RANK = 0,

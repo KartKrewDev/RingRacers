@@ -27,7 +27,7 @@ extern struct discordInfo_s {
 	boolean everyoneCanInvite;
 } discordInfo;
 
-typedef struct discordRequest_s {
+struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
 	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
@@ -40,7 +40,7 @@ typedef struct discordRequest_s {
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
-} discordRequest_t;
+};
 
 extern discordRequest_t *discordRequestList;
 

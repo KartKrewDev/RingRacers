@@ -35,11 +35,11 @@
 // Clips the given range of columns
 // and includes it in the new clip list.
 //
-typedef struct
+struct cliprange_t
 {
 	INT32 first;
 	INT32 last;
-} cliprange_t;
+};
 
 // Silhouette, needed for clipping segs (mainly) and sprites representing things.
 #define SIL_NONE   0
@@ -57,7 +57,7 @@ typedef UINT8 lighttable_t;
 #define CMF_FOG 4
 
 // ExtraColormap type. Use for extra_colormaps from now on.
-typedef struct extracolormap_s
+struct extracolormap_s
 {
 	UINT8 fadestart, fadeend;
 	UINT8 flags;
@@ -76,7 +76,7 @@ typedef struct extracolormap_s
 
 	struct extracolormap_s *next;
 	struct extracolormap_s *prev;
-} extracolormap_t;
+};
 
 //
 // INTERNAL MAP TYPES used by play and refresh
@@ -84,12 +84,12 @@ typedef struct extracolormap_s
 
 /** Your plain vanilla vertex.
   */
-typedef struct
+struct vertex_t
 {
 	fixed_t x, y;
 	boolean floorzset, ceilingzset;
 	fixed_t floorz, ceilingz;
-} vertex_t;
+};
 
 // Forward of linedefs, for sectors.
 struct line_s;
@@ -99,13 +99,13 @@ struct line_s;
   * handle sound from moving objects (doppler), because position is probably
   * just buffered, not updated.
   */
-typedef struct
+struct degenmobj_t
 {
 	thinker_t thinker; ///< Not used for anything.
 	fixed_t x;         ///< X coordinate.
 	fixed_t y;         ///< Y coordinate.
 	fixed_t z;         ///< Z coordinate.
-} degenmobj_t;
+};
 
 #include "p_polyobj.h"
 
@@ -208,7 +208,7 @@ typedef enum
 	BT_STRONG,
 } busttype_e;
 
-typedef struct ffloor_s
+struct ffloor_s
 {
 	fixed_t *topheight;
 	INT32 *toppic;
@@ -258,13 +258,13 @@ typedef struct ffloor_s
 	INT32 spawnalpha; // alpha the 3D floor spawned with
 
 	void *fadingdata; // fading FOF thinker
-} ffloor_t;
+};
 
 
 // This struct holds information for shadows casted by 3D floors.
 // This information is contained inside the sector_t and is used as the base
 // information for casted shadows.
-typedef struct lightlist_s
+struct lightlist_t
 {
 	fixed_t height;
 	INT16 *lightlevel;
@@ -272,11 +272,11 @@ typedef struct lightlist_s
 	INT32 flags;
 	ffloor_t *caster;
 	struct pslope_s *slope; // FOF_DOUBLESHADOW makes me have to store this pointer here. Bluh bluh.
-} lightlist_t;
+};
 
 
 // This struct is used for rendering walls with shadows casted on them...
-typedef struct r_lightlist_s
+struct r_lightlist_s
 {
 	fixed_t height;
 	fixed_t heightstep;
@@ -288,7 +288,7 @@ typedef struct r_lightlist_s
 	lighttable_t *rcolormap;
 	ffloortype_e flags;
 	INT32 lightnum;
-} r_lightlist_t;
+};
 
 // Slopes
 typedef enum {
@@ -296,7 +296,7 @@ typedef enum {
 	SL_DYNAMIC = 1<<1, /// This plane slope will be assigned a thinker to make it dynamic.
 } slopeflags_t;
 
-typedef struct pslope_s
+struct pslope_s
 {
 	UINT16 id; // The number of the slope, mostly used for netgame syncing purposes
 	struct pslope_s *next; // Make a linked list of dynamic slopes, for easy reference later
@@ -323,7 +323,7 @@ typedef struct pslope_s
 #ifdef HWRENDER
 	INT16 hwLightOffset;
 #endif
-} pslope_t;
+};
 
 typedef enum
 {
@@ -399,7 +399,7 @@ typedef enum
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
 //
-typedef struct sector_s
+struct sector_s
 {
 	fixed_t floorheight;
 	fixed_t ceilingheight;
@@ -499,7 +499,7 @@ typedef struct sector_s
 
 	// colormap structure
 	extracolormap_t *spawn_extra_colormap;
-} sector_t;
+};
 
 //
 // Move clipping aid for linedefs.
@@ -517,7 +517,7 @@ typedef enum
 #define NUMLINEARGS 10
 #define NUMLINESTRINGARGS 2
 
-typedef struct line_s
+struct line_s
 {
 	// Vertices, from v1 to v2.
 	vertex_t *v1;
@@ -556,9 +556,9 @@ typedef struct line_s
 
 	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
-} line_t;
+};
 
-typedef struct
+struct side_t
 {
 	// add this to the calculated texture column
 	fixed_t textureoffset;
@@ -582,7 +582,7 @@ typedef struct
 	char *text; // a concatenation of all top, bottom, and mid texture names, for linedef specials that require a string.
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
-} side_t;
+};
 
 //
 // A subsector.
@@ -590,14 +590,14 @@ typedef struct
 // Basically, this is a list of linesegs, indicating the visible walls that define
 //  (all or some) sides of a convex BSP leaf.
 //
-typedef struct subsector_s
+struct subsector_s
 {
 	sector_t *sector;
 	INT16 numlines;
 	UINT16 firstline;
 	struct polyobj_s *polyList; // haleyjd 02/19/06: list of polyobjects
 	size_t validcount;
-} subsector_t;
+};
 
 // Sector list node showing all sectors an object appears in.
 //
@@ -613,7 +613,7 @@ typedef struct subsector_s
 //
 // For the links, NULL means top or end of list.
 
-typedef struct msecnode_s
+struct msecnode_s
 {
 	sector_t *m_sector; // a sector containing this object
 	struct mobj_s *m_thing;  // this object
@@ -622,9 +622,9 @@ typedef struct msecnode_s
 	struct msecnode_s *m_thinglist_prev;  // prev msecnode_t for this sector
 	struct msecnode_s *m_thinglist_next;  // next msecnode_t for this sector
 	boolean visited; // used in search algorithms
-} msecnode_t;
+};
 
-typedef struct mprecipsecnode_s
+struct mprecipsecnode_s
 {
 	sector_t *m_sector; // a sector containing this object
 	struct precipmobj_s *m_thing;  // this object
@@ -633,12 +633,12 @@ typedef struct mprecipsecnode_s
 	struct mprecipsecnode_s *m_thinglist_prev;  // prev msecnode_t for this sector
 	struct mprecipsecnode_s *m_thinglist_next;  // next msecnode_t for this sector
 	boolean visited; // used in search algorithms
-} mprecipsecnode_t;
+};
 
 // for now, only used in hardware mode
 // maybe later for software as well?
 // that's why it's moved here
-typedef struct light_s
+struct light_t
 {
 	UINT16 type;          // light,... (cfr #define in hwr_light.c)
 
@@ -651,19 +651,19 @@ typedef struct light_s
 	UINT32 dynamic_color;  // color of the light for dynamic lighting
 	float dynamic_radius; // radius of the light ball
 	float dynamic_sqrradius; // radius^2 of the light ball
-} light_t;
+};
 
-typedef struct lightmap_s
+struct lightmap_s
 {
 	float s[2], t[2];
 	light_t *light;
 	struct lightmap_s *next;
-} lightmap_t;
+};
 
 //
 // The lineseg.
 //
-typedef struct seg_s
+struct seg_s
 {
 	vertex_t *v1;
 	vertex_t *v2;
@@ -704,7 +704,7 @@ typedef struct seg_s
 #ifdef HWRENDER
 	INT16 hwLightOffset;
 #endif
-} seg_t;
+};
 
 //
 // BSP node.
@@ -727,11 +727,11 @@ typedef struct
 #endif
 
 // posts are runs of non masked source pixels
-typedef struct
+struct post_t
 {
 	UINT8 topdelta; // -1 is the last post in a column
 	UINT8 length;   // length data bytes follows
-} ATTRPACK post_t;
+} ATTRPACK;
 
 #if defined(_MSC_VER)
 #pragma pack()
@@ -751,7 +751,7 @@ typedef post_t column_t;
 //
 // ?
 //
-typedef struct drawseg_s
+struct drawseg_t
 {
 	seg_t *curline;
 	INT32 x1;
@@ -783,7 +783,7 @@ typedef struct drawseg_s
 	fixed_t maskedtextureheight[MAXVIDWIDTH]; // For handling sloped midtextures
 
 	vertex_t leftpos, rightpos; // Used for rendering FOF walls with slopes
-} drawseg_t;
+};
 
 typedef enum
 {
@@ -795,11 +795,11 @@ typedef enum
 } pic_mode_t;
 
 #ifdef ROTSPRITE
-typedef struct
+struct rotsprite_t
 {
 	INT32 angles;
 	void **patches;
-} rotsprite_t;
+};
 #endif
 
 // Patches.
@@ -807,7 +807,7 @@ typedef struct
 // Patches are used for sprites and all masked pictures, and we compose
 // textures from the TEXTURES list of patches.
 //
-typedef struct
+struct patch_t
 {
 	INT16 width, height;
 	INT16 leftoffset, topoffset;
@@ -821,7 +821,7 @@ typedef struct
 #ifdef ROTSPRITE
 	rotsprite_t *rotated; // Rotated patches
 #endif
-} patch_t;
+};
 
 extern patch_t *missingpat;
 extern patch_t *blanklvl;
@@ -830,7 +830,7 @@ extern patch_t *blanklvl;
 #pragma pack(1)
 #endif
 
-typedef struct
+struct softwarepatch_t
 {
 	INT16 width;          // bounding box size
 	INT16 height;
@@ -838,14 +838,14 @@ typedef struct
 	INT16 topoffset;      // pixels below the origin
 	INT32 columnofs[8];     // only [width] used
 	// the [0] is &columnofs[width]
-} ATTRPACK softwarepatch_t;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(disable :  4200)
 #endif
 
 // a pic is an unmasked block of pixels, stored in horizontal way
-typedef struct
+struct pic_t
 {
 	INT16 width;
 	UINT8 zero;       // set to 0 allow autodetection of pic_t
@@ -854,7 +854,7 @@ typedef struct
 	INT16 height;
 	INT16 reserved1; // set to 0
 	UINT8 data[];
-} ATTRPACK pic_t;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4200)
@@ -951,7 +951,7 @@ typedef enum
 // Or the right side: NNNNFR
 // Or both, mirrored: NNNNFLFR
 //
-typedef struct
+struct spriteframe_t
 {
 	// If false use 0 for any position.
 	// Note: as eight entries are available, we might as well insert the same
@@ -968,15 +968,15 @@ typedef struct
 #ifdef ROTSPRITE
 	rotsprite_t *rotated[2][16]; // Rotated patches
 #endif
-} spriteframe_t;
+};
 
 //
 // A sprite definition:  a number of animation frames.
 //
-typedef struct
+struct spritedef_t
 {
 	size_t numframes;
 	spriteframe_t *spriteframes;
-} spritedef_t;
+};
 
 #endif

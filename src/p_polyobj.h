@@ -66,7 +66,7 @@ typedef enum
 // Polyobject Structure
 //
 
-typedef struct polyobj_s
+struct polyobj_s
 {
 	mdllistitem_t link; // for subsector links; must be first
 
@@ -114,23 +114,23 @@ typedef struct polyobj_s
 	// these are saved for netgames, so do not let Lua touch these!
 	INT32 spawnflags; // Flags the polyobject originally spawned with
 	INT32 spawntrans; // Translucency the polyobject originally spawned with
-} polyobj_t;
+};
 
 //
 // Polyobject Blockmap Link Structure
 //
 
-typedef struct polymaplink_s
+struct polymaplink_t
 {
 	mdllistitem_t link; // for blockmap links
 	polyobj_t *po;      // pointer to polyobject
-} polymaplink_t;
+};
 
 //
 // Polyobject Special Thinkers
 //
 
-typedef struct polyrotate_s
+struct polyrotate_t
 {
 	thinker_t thinker; // must be first
 
@@ -138,9 +138,9 @@ typedef struct polyrotate_s
 	INT32 speed;         // speed of movement per frame
 	INT32 distance;      // distance to move
 	UINT8 turnobjs;      // turn objects? PTF_ flags
-} polyrotate_t;
+};
 
-typedef struct polymove_s
+struct polymove_t
 {
 	thinker_t thinker;  // must be first
 
@@ -150,7 +150,7 @@ typedef struct polymove_s
 	fixed_t momy;       // y component of speed along angle
 	INT32 distance;     // total distance to move
 	UINT32 angle;       // angle along which to move
-} polymove_t;
+};
 
 // PolyObject waypoint movement return behavior
 typedef enum
@@ -160,7 +160,7 @@ typedef enum
 	PWR_COMEBACK, // Repeat sequence in reverse
 } polywaypointreturn_e;
 
-typedef struct polywaypoint_s
+struct polywaypoint_t
 {
 	thinker_t thinker; // must be first
 
@@ -172,9 +172,9 @@ typedef struct polywaypoint_s
 	UINT8 returnbehavior;  // behavior after reaching the last waypoint
 	UINT8 continuous;      // continuously move - used with PWR_WRAP or PWR_COMEBACK
 	UINT8 stophere;        // Will stop after it reaches the next waypoint
-} polywaypoint_t;
+};
 
-typedef struct polyslidedoor_s
+struct polyslidedoor_t
 {
 	thinker_t thinker;      // must be first
 
@@ -191,9 +191,9 @@ typedef struct polyslidedoor_s
 	fixed_t momx;             // x component of speed along angle
 	fixed_t momy;             // y component of speed along angle
 	UINT8 closing;             // if true, is closing
-} polyslidedoor_t;
+};
 
-typedef struct polyswingdoor_s
+struct polyswingdoor_t
 {
 	thinker_t thinker; // must be first
 
@@ -205,9 +205,9 @@ typedef struct polyswingdoor_s
 	INT32 initDistance;  // initial distance to travel
 	INT32 distance;      // current distance to travel
 	UINT8 closing;        // if true, is closing
-} polyswingdoor_t;
+};
 
-typedef struct polydisplace_s
+struct polydisplace_t
 {
 	thinker_t thinker; // must be first
 
@@ -216,9 +216,9 @@ typedef struct polydisplace_s
 	fixed_t dx;
 	fixed_t dy;
 	fixed_t oldHeights;
-} polydisplace_t;
+};
 
-typedef struct polyrotdisplace_s
+struct polyrotdisplace_t
 {
 	thinker_t thinker; // must be first
 
@@ -227,9 +227,9 @@ typedef struct polyrotdisplace_s
 	fixed_t rotscale;
 	UINT8 turnobjs;
 	fixed_t oldHeights;
-} polyrotdisplace_t;
+};
 
-typedef struct polyfade_s
+struct polyfade_t
 {
 	thinker_t thinker; // must be first
 
@@ -241,7 +241,7 @@ typedef struct polyfade_s
 	boolean ticbased;
 	INT32 duration;
 	INT32 timer;
-} polyfade_t;
+};
 
 //
 // Line Activation Data Structures
@@ -261,23 +261,23 @@ typedef enum
 	PTF_OTHERS = 1<<1, // Turn other mobjs with movement
 } polyturnflags_e;
 
-typedef struct polyrotdata_s
+struct polyrotdata_t
 {
 	INT32 polyObjNum;   // numeric id of polyobject to affect
 	INT32 direction;    // direction of rotation
 	INT32 speed;        // angular speed
 	INT32 distance;     // distance to move
 	UINT8 flags;        // TMPR_ flags
-} polyrotdata_t;
+};
 
-typedef struct polymovedata_s
+struct polymovedata_t
 {
 	INT32 polyObjNum;   // numeric id of polyobject to affect
 	fixed_t distance;   // distance to move
 	fixed_t speed;      // linear speed
 	angle_t angle;      // angle of movement
 	UINT8 overRide;     // if true, will override any action on the object
-} polymovedata_t;
+};
 
 typedef enum
 {
@@ -285,14 +285,14 @@ typedef enum
 	PWF_LOOP    = 1<<1, // Loop movement (used with PWR_WRAP or PWR_COMEBACK)
 } polywaypointflags_e;
 
-typedef struct polywaypointdata_s
+struct polywaypointdata_t
 {
 	INT32 polyObjNum;     // numeric id of polyobject to affect
 	INT32 sequence;       // waypoint sequence #
 	fixed_t speed;        // linear speed
 	UINT8 returnbehavior; // behavior after reaching the last waypoint
 	UINT8 flags;          // PWF_ flags
-} polywaypointdata_t;
+};
 
 typedef enum
 {
@@ -315,7 +315,7 @@ typedef enum
 	POLY_DOOR_SWING,
 } polydoor_e;
 
-typedef struct polydoordata_s
+struct polydoordata_t
 {
 	INT32 polyObjNum;     // numeric id of polyobject to affect
 	INT32 doorType;       // polyobj door type
@@ -323,31 +323,31 @@ typedef struct polydoordata_s
 	angle_t angle;        // for slide door only, angle of motion
 	INT32 distance;       // distance to move
 	INT32 delay;          // delay time after opening
-} polydoordata_t;
+};
 
-typedef struct polydisplacedata_s
+struct polydisplacedata_t
 {
 	INT32 polyObjNum;
 	struct sector_s *controlSector;
 	fixed_t dx;
 	fixed_t dy;
-} polydisplacedata_t;
+};
 
-typedef struct polyrotdisplacedata_s
+struct polyrotdisplacedata_t
 {
 	INT32 polyObjNum;
 	struct sector_s *controlSector;
 	fixed_t rotscale;
 	UINT8 turnobjs;
-} polyrotdisplacedata_t;
+};
 
-typedef struct polyflagdata_s
+struct polyflagdata_t
 {
 	INT32 polyObjNum;
 	INT32 speed;
 	UINT32 angle;
 	fixed_t momx;
-} polyflagdata_t;
+};
 
 typedef enum
 {
@@ -358,7 +358,7 @@ typedef enum
 	TMPF_GHOSTFADE       = 1<<4,
 } textmappolyfade_t;
 
-typedef struct polyfadedata_s
+struct polyfadedata_t
 {
 	INT32 polyObjNum;
 	INT32 destvalue;
@@ -366,7 +366,7 @@ typedef struct polyfadedata_s
 	boolean doghostfade;
 	boolean ticbased;
 	INT32 speed;
-} polyfadedata_t;
+};
 
 //
 // Functions

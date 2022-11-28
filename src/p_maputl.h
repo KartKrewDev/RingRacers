@@ -20,12 +20,12 @@
 //
 // P_MAPUTL
 //
-typedef struct
+struct divline_t
 {
 	fixed_t x, y, dx, dy;
-} divline_t;
+};
 
-typedef struct
+struct intercept_t
 {
 	fixed_t frac; // along trace line
 	boolean isaline;
@@ -34,7 +34,7 @@ typedef struct
 		mobj_t *thing;
 		line_t *line;
 	} d;
-} intercept_t;
+};
 
 typedef boolean (*traverser_t)(intercept_t *in);
 

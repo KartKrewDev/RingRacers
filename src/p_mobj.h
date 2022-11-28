@@ -270,7 +270,7 @@ typedef enum {
 } precipflag_t;
 
 // Map Object definition.
-typedef struct mobj_s
+struct mobj_s
 {
 	// List: thinker links.
 	thinker_t thinker;
@@ -414,7 +414,7 @@ typedef struct mobj_s
 	INT32 dispoffset;
 
 	// WARNING: New fields must be added separately to savegame and Lua.
-} mobj_t;
+};
 
 //
 // For precipitation
@@ -423,7 +423,7 @@ typedef struct mobj_s
 // so please keep the start of the
 // structure the same.
 //
-typedef struct precipmobj_s
+struct precipmobj_s
 {
 	// List: thinker links.
 	thinker_t thinker;
@@ -480,15 +480,15 @@ typedef struct precipmobj_s
 	INT32 tics; // state tic counter
 	state_t *state;
 	UINT32 flags; // flags from mobjinfo tables
-} precipmobj_t;
+};
 
-typedef struct actioncache_s
+struct actioncache_s
 {
 	struct actioncache_s *next;
 	struct actioncache_s *prev;
 	struct mobj_s *mobj;
 	INT32 statenum;
-} actioncache_t;
+};
 
 extern actioncache_t actioncachehead;
 

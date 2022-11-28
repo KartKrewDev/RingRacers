@@ -5567,7 +5567,7 @@ typedef enum state
 	NUMSTATES
 } statenum_t;
 
-typedef struct
+struct state_t
 {
 	spritenum_t sprite;
 	UINT32 frame; // we use the upper 16 bits for translucency and other shade effects
@@ -5576,7 +5576,7 @@ typedef struct
 	INT32 var1;
 	INT32 var2;
 	statenum_t nextstate;
-} state_t;
+};
 
 extern state_t states[NUMSTATES];
 extern char sprnames[NUMSPRITES + 1][5];
@@ -6680,7 +6680,7 @@ typedef enum mobj_type
 	NUMMOBJTYPES
 } mobjtype_t;
 
-typedef struct
+struct mobjinfo_t
 {
 	INT32 doomednum;
 	statenum_t spawnstate;
@@ -6706,7 +6706,7 @@ typedef struct
 	sfxenum_t activesound;
 	UINT32 flags;
 	statenum_t raisestate;
-} mobjinfo_t;
+};
 
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
 

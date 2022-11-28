@@ -19,7 +19,6 @@
 // Flags for AA trees.
 #define AATREE_ZUSER	1		// Treat values as z_zone-allocated blocks and set their user fields
 
-typedef struct aatree_s aatree_t;
 typedef void (*aatree_iter_t)(INT32 key, void *value);
 
 aatree_t *M_AATreeAlloc(UINT32 flags);

@@ -20,7 +20,7 @@
 
 /** Portal structure for the software renderer.
  */
-typedef struct portal_s
+struct portal_s
 {
 	struct portal_s *next;
 
@@ -39,7 +39,7 @@ typedef struct portal_s
 	INT16 *ceilingclip; /**< Temporary screen top clipping array. */
 	INT16 *floorclip;	/**< Temporary screen bottom clipping array. */
 	fixed_t *frontscale;/**< Temporary screen bottom clipping array. */
-} portal_t;
+};
 
 extern portal_t* portal_base;
 extern portal_t* portal_cap;

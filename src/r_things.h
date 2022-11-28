@@ -96,13 +96,13 @@ boolean R_ThingIsFlashing(mobj_t *thing);
  * per portal to later group them in separate
  * drawnode lists.
  */
-typedef struct
+struct maskcount_t
 {
 	size_t drawsegs[2];
 	size_t vissprites[2];
 	fixed_t viewx, viewy, viewz;			/**< View z stored at the time of the BSP traversal for the view/portal. Masked sorting/drawing needs it. */
 	sector_t* viewsector;
-} maskcount_t;
+};
 
 void R_DrawMasked(maskcount_t* masks, INT32 nummasks);
 
@@ -145,7 +145,7 @@ typedef enum
 
 // A vissprite_t is a thing that will be drawn during a refresh,
 // i.e. a sprite object that is partly visible.
-typedef struct vissprite_s
+struct vissprite_s
 {
 	// Doubly linked list.
 	struct vissprite_s *prev;
@@ -219,7 +219,7 @@ typedef struct vissprite_s
 	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
 
 	fixed_t floorclip; // Cut off your tires in tall grass
-} vissprite_t;
+};
 
 extern UINT32 visspritecount;
 
@@ -236,7 +236,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
 
 // A drawnode is something that points to a 3D floor, 3D side, or masked
 // middle texture. This is used for sorting with sprites.
-typedef struct drawnode_s
+struct drawnode_s
 {
 	visplane_t *plane;
 	drawseg_t *seg;
@@ -246,7 +246,7 @@ typedef struct drawnode_s
 
 	struct drawnode_s *next;
 	struct drawnode_s *prev;
-} drawnode_t;
+};
 
 void R_InitDrawNodes(void);
 

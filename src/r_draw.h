@@ -72,9 +72,9 @@ extern UINT8 *ds_source;
 extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
 
-typedef struct {
+struct floatv3_t {
 	float x, y, z;
-} floatv3_t;
+};
 
 // Vectors for Software's tilted slope drawers
 extern floatv3_t *ds_su, *ds_sv, *ds_sz;

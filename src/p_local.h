@@ -80,7 +80,7 @@ void P_RemoveThinker(thinker_t *thinker);
 //
 // P_USER
 //
-typedef struct camera_s
+struct camera_t
 {
 	boolean chase;
 	angle_t aiming;
@@ -119,7 +119,7 @@ typedef struct camera_s
 	// Interpolation data
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
-} camera_t;
+};
 
 // demo freecam or something before i commit die
 struct demofreecam_s {
@@ -246,11 +246,11 @@ typedef enum
 	NUMJINGLES
 } jingletype_t;
 
-typedef struct
+struct jingle_t
 {
 	char musname[7];
 	boolean looping;
-} jingle_t;
+};
 
 extern jingle_t jingleinfo[NUMJINGLES];
 
@@ -381,7 +381,7 @@ void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angl
 // P_MAP
 //
 
-typedef struct tm_s
+struct tm_t
 {
 	mobj_t *thing;
 	fixed_t x, y;
@@ -411,7 +411,7 @@ typedef struct tm_s
 	// set by PIT_CheckLine() for any line that stopped the PIT_CheckLine()
 	// that is, for any line which is 'solid'
 	line_t *blockingline;
-} tm_t;
+};
 
 extern tm_t tm;
 
@@ -431,12 +431,12 @@ void P_UnsetThingPosition(mobj_t *thing);
 void P_SetThingPosition(mobj_t *thing);
 void P_SetUnderlayPosition(mobj_t *thing);
 
-typedef struct TryMoveResult_s
+struct TryMoveResult_t
 {
 	boolean success;
 	line_t *line;
 	mobj_t *mo;
-} TryMoveResult_t;
+};
 
 boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result);
 boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, TryMoveResult_t *result);
@@ -496,7 +496,7 @@ extern mobj_t **blocklinks; // for thing chains
 //
 // P_INTER
 //
-typedef struct BasicFF_s
+struct BasicFF_t
 {
 	INT32 ForceX; ///< The X of the Force's Vel
 	INT32 ForceY; ///< The Y of the Force's Vel
@@ -506,7 +506,7 @@ typedef struct BasicFF_s
 	INT32 Gain; ///< /The gain to be applied to the effect, in the range from 0 through 10,000.
 	//All, CONSTANTFORCE �10,000 to 10,000
 	INT32 Magnitude; ///< Magnitude of the effect, in the range from 0 through 10,000.
-} BasicFF_t;
+};
 
 /* Damage/death types, for P_DamageMobj and related */
 //// Damage types
