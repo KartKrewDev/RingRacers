@@ -84,7 +84,7 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 #else
 	#define VALUE "Off"
 #endif
-consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL, CV_OnOff, CV_CheatsChanged);
+consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, CV_CheatsChanged);
 #undef VALUE
 
 // SRB2kart

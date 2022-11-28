@@ -4501,6 +4501,14 @@ void G_SaveGameData(void)
 	if (!gamedataloaded)
 		return; // If never loaded (-nodata), don't save
 
+	if (usedCheats)
+	{
+#ifdef DEVELOP
+		CONS_Alert(CONS_WARNING, M_GetText("Cheats used - Gamedata will not be saved.\n"));
+#endif
+		return;
+	}
+
 	length = (4+4+4+1+(MAXEMBLEMS)+MAXEXTRAEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS+4+4);
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
@@ -4510,15 +4518,6 @@ void G_SaveGameData(void)
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 		return;
 	}
-
-#ifndef DEVELOP
-	if (usedCheats)
-	{
-		free(savebuffer);
-		save_p = savebuffer = NULL;
-		return;
-	}
-#endif
 
 	// Version test
 
