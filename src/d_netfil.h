@@ -110,7 +110,7 @@ typedef enum
 	LFTNS_SENT     // The node already has the file
 } luafiletransfernodestatus_t;
 
-struct luafiletransfer_s
+struct luafiletransfer_t
 {
 	char *filename;
 	char *realfilename;
@@ -119,7 +119,7 @@ struct luafiletransfer_s
 	boolean ongoing;
 	luafiletransfernodestatus_t nodestatus[MAXNETNODES];
 	tic_t nodetimeouts[MAXNETNODES];
-	struct luafiletransfer_s *next;
+	luafiletransfer_t *next;
 };
 
 extern luafiletransfer_t *luafiletransfers;

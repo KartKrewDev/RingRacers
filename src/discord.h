@@ -27,7 +27,7 @@ extern struct discordInfo_s {
 	boolean everyoneCanInvite;
 } discordInfo;
 
-struct discordRequest_s {
+struct discordRequest_t {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
 	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
@@ -38,8 +38,8 @@ struct discordRequest_s {
 	// Hey, wanna add ImageMagick as a dependency? :dying:
 	//patch_t *avatar;
 
-	struct discordRequest_s *next; // Next request in the list.
-	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
+	discordRequest_t *next; // Next request in the list.
+	discordRequest_t *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
 };
 
 extern discordRequest_t *discordRequestList;

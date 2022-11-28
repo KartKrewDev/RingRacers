@@ -35,10 +35,10 @@ typedef boolean(*getpathfindfinishedfunc)(void*, void*);
 
 // A pathfindnode contains information about a node from the pathfinding
 // heapindex is only used within the pathfinding algorithm itself, and is always 0 after it is completed
-struct pathfindnode_s {
+struct pathfindnode_t {
 	size_t heapindex;     // The index in the openset binary heap. Only valid while the node is in the openset.
 	void   *nodedata;
-	struct pathfindnode_s *camefrom; // should eventually be the most efficient predecessor node
+	pathfindnode_t *camefrom; // should eventually be the most efficient predecessor node
 	UINT32     gscore;    // The accumulated distance from the start to this node
 	UINT32     hscore;    // The heuristic from this node to the goal
 };
@@ -46,7 +46,7 @@ struct pathfindnode_s {
 // Contains the final created path after pathfinding is completed
 struct path_t {
 	size_t numnodes;
-	struct pathfindnode_s *array;
+	pathfindnode_t *array;
 	UINT32 totaldist;
 };
 

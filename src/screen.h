@@ -91,9 +91,9 @@ struct vesa_extra_t
 };
 // a video modes from the video modes list,
 // note: video mode 0 is always standard VGA320x200.
-struct vmode_s
+struct vmode_t
 {
-	struct vmode_s *pnext;
+	vmode_t *pnext;
 	char *name;
 	UINT32 width, height;
 	UINT32 rowbytes; // bytes per scanline
@@ -102,9 +102,9 @@ struct vmode_s
 	INT32 numpages;
 	vesa_extra_t *pextradata; // vesa mode extra data
 #ifdef _WIN32
-	INT32 (WINAPI *setmode)(viddef_t *lvid, struct vmode_s *pcurrentmode);
+	INT32 (WINAPI *setmode)(viddef_t *lvid, vmode_t *pcurrentmode);
 #else
-	INT32 (*setmode)(viddef_t *lvid, struct vmode_s *pcurrentmode);
+	INT32 (*setmode)(viddef_t *lvid, vmode_t *pcurrentmode);
 #endif
 	INT32 misc; // misc for display driver (r_opengl.dll etc)
 };

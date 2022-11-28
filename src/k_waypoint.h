@@ -20,12 +20,12 @@
 
 #define DEFAULT_WAYPOINT_RADIUS (384)
 
-struct waypoint_s
+struct waypoint_t
 {
 	mobj_t             *mobj;
 	boolean             onaline;
-	struct waypoint_s **nextwaypoints;
-	struct waypoint_s **prevwaypoints;
+	waypoint_t        **nextwaypoints;
+	waypoint_t        **prevwaypoints;
 	UINT32             *nextwaypointdistances;
 	UINT32             *prevwaypointdistances;
 	size_t              numnextwaypoints;

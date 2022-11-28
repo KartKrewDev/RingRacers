@@ -21,12 +21,12 @@ struct bheapitem_t
 {
 	size_t          heapindex;    // The index in the heap this item is
 	updateindexfunc indexchanged; // A callback function that is called when this item changes index to alert data
-	struct bheap_s  *owner;       // The heap that owns this item
+	bheap_t         *owner;       // The heap that owns this item
 	void            *data;        // data for this heap item
 	UINT32          value;        // The value of this item, the lowest value item is first in the array
 };
 
-struct bheap_s
+struct bheap_t
 {
 	size_t      capacity;   // capacity of the heap
 	size_t      count;      // number of items in the heap

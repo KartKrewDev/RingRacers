@@ -145,14 +145,14 @@ typedef enum
 
 // A vissprite_t is a thing that will be drawn during a refresh,
 // i.e. a sprite object that is partly visible.
-struct vissprite_s
+struct vissprite_t
 {
 	// Doubly linked list.
-	struct vissprite_s *prev;
-	struct vissprite_s *next;
+	vissprite_t *prev;
+	vissprite_t *next;
 
 	// Bonus linkdraw pointer.
-	struct vissprite_s *linkdraw;
+	vissprite_t *linkdraw;
 
 	mobj_t *mobj; // for easy access
 
@@ -236,7 +236,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis);
 
 // A drawnode is something that points to a 3D floor, 3D side, or masked
 // middle texture. This is used for sorting with sprites.
-struct drawnode_s
+struct drawnode_t
 {
 	visplane_t *plane;
 	drawseg_t *seg;
@@ -244,8 +244,8 @@ struct drawnode_s
 	ffloor_t *ffloor;
 	vissprite_t *sprite;
 
-	struct drawnode_s *next;
-	struct drawnode_s *prev;
+	drawnode_t *next;
+	drawnode_t *prev;
 };
 
 void R_InitDrawNodes(void);

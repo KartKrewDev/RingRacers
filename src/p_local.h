@@ -96,7 +96,7 @@ struct camera_t
 	//More drawing info: to determine current sprite.
 	angle_t angle; // orientation
 
-	struct subsector_s *subsector;
+	subsector_t *subsector;
 
 	// The closest interval over all contacted Sectors (or Things).
 	fixed_t floorz;

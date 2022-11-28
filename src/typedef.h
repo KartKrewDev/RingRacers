@@ -23,7 +23,7 @@ TYPEDEF (fline_t);
 // command.h
 TYPEDEF (vsbuf_t);
 TYPEDEF (CV_PossibleValue_t);
-TYPEDEF2 (consvar_s, consvar_t);
+TYPEDEF (consvar_t);
 
 // d_netcmd.h
 TYPEDEF (changeteam_packet_t);
@@ -31,13 +31,13 @@ TYPEDEF (changeteam_value_t);
 TYPEDEF (scheduleTask_t);
 
 // discord.h
-TYPEDEF2 (discordRequest_s, discordRequest_t);
+TYPEDEF (discordRequest_t);
 
 // d_player.h
 TYPEDEF (respawnvars_t);
 TYPEDEF (botvars_t);
 TYPEDEF (skybox_t);
-TYPEDEF2 (player_s, player_t);
+TYPEDEF (player_t);
 
 // d_clisrv.h
 TYPEDEF (clientcmd_pak);
@@ -59,7 +59,7 @@ TYPEDEF (plrconfig);
 TYPEDEF (filesneededconfig_pak);
 TYPEDEF (doomdata_t);
 TYPEDEF (serverelem_t);
-TYPEDEF2 (rewind_s, rewind_t);
+TYPEDEF (rewind_t);
 
 // d_event.h
 TYPEDEF (event_t);
@@ -67,10 +67,10 @@ TYPEDEF (event_t);
 // d_netfil.h
 TYPEDEF (fileneeded_t);
 TYPEDEF (HTTP_login);
-TYPEDEF2 (luafiletransfer_s, luafiletransfer_t);
+TYPEDEF (luafiletransfer_t);
 
 // d_think.h
-TYPEDEF2 (thinker_s, thinker_t);
+TYPEDEF (thinker_t);
 
 // d_ticcmd.h
 TYPEDEF (ticcmd_t);
@@ -105,7 +105,7 @@ TYPEDEF (mappoint_t);
 TYPEDEF (customoption_t);
 TYPEDEF (mapheader_t);
 TYPEDEF (tolinfo_t);
-TYPEDEF2 (cupheader_s, cupheader_t);
+TYPEDEF (cupheader_t);
 
 // font.h
 TYPEDEF (font_t);
@@ -142,7 +142,7 @@ TYPEDEF (mobjinfo_t);
 
 // k_bheap.h
 TYPEDEF (bheapitem_t);
-TYPEDEF2 (bheap_s, bheap_t);
+TYPEDEF (bheap_t);
 
 // k_boss.h
 TYPEDEF (weakspot_t);
@@ -161,15 +161,15 @@ TYPEDEF (followercategory_t);
 TYPEDEF (trackingResult_t);
 
 // k_menu.h
-TYPEDEF2 (menucolor_s, menucolor_t);
+TYPEDEF (menucolor_t);
 TYPEDEF (menuitem_t);
-TYPEDEF2 (menu_s, menu_t);
+TYPEDEF (menu_t);
 TYPEDEF (menucmd_t);
 TYPEDEF (setup_player_t);
 TYPEDEF (modedesc_t);
 
 // k_pathfind.h
-TYPEDEF2 (pathfindnode_s, pathfindnode_t);
+TYPEDEF (pathfindnode_t);
 TYPEDEF (path_t);
 TYPEDEF (pathfindsetup_t);
 
@@ -180,11 +180,11 @@ TYPEDEF (profile_t);
 TYPEDEF (t_splash_t);
 TYPEDEF (t_footstep_t);
 TYPEDEF (t_overlay_t);
-TYPEDEF2 (terrain_s, terrain_t);
+TYPEDEF (terrain_t);
 TYPEDEF (t_floor_t);
 
 // k_waypoint.h
-TYPEDEF2 (waypoint_s, waypoint_t);
+TYPEDEF (waypoint_t);
 
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;
@@ -200,7 +200,7 @@ TYPEDEF (extraemblem_t);
 TYPEDEF (unlockable_t);
 
 // m_dllist.h
-TYPEDEF2 (mdllistitem_s, mdllistitem_t);
+TYPEDEF (mdllistitem_t);
 
 // m_fixed.h
 TYPEDEF (vector2_t);
@@ -212,7 +212,7 @@ TYPEDEF (ps_hookinfo_t);
 TYPEDEF (ps_botinfo_t);
 
 // m_queue.h
-TYPEDEF2 (mqueueitem_s, mqueueitem_t);
+TYPEDEF (mqueueitem_t);
 TYPEDEF (mqueue_t);
 
 // mserv.h
@@ -231,12 +231,12 @@ TYPEDEF (divline_t);
 TYPEDEF (intercept_t);
 
 // p_mobj.h
-TYPEDEF2 (mobj_s, mobj_t);
-TYPEDEF2 (precipmobj_s, precipmobj_t);
-TYPEDEF2 (actioncache_s, actioncache_t);
+TYPEDEF (mobj_t);
+TYPEDEF (precipmobj_t);
+TYPEDEF (actioncache_t);
 
 // p_polyobj.h
-TYPEDEF2 (polyobj_s, polyobj_t);
+TYPEDEF (polyobj_t);
 TYPEDEF (polymaplink_t);
 TYPEDEF (polyrotate_t);
 TYPEDEF (polymove_t);
@@ -312,19 +312,19 @@ TYPEDEF (softwarepatch_t);
 TYPEDEF (pic_t);
 TYPEDEF (spriteframe_t);
 TYPEDEF (spritedef_t);
-TYPEDEF2 (extracolormap_s, extracolormap_t);
-TYPEDEF2 (ffloor_s, ffloor_t);
+TYPEDEF (extracolormap_t);
+TYPEDEF (ffloor_t);
 TYPEDEF (lightlist_t);
-TYPEDEF2 (r_lightlist_s, r_lightlist_t);
-TYPEDEF2 (pslope_s, pslope_t);
-TYPEDEF2 (sector_s, sector_t);
-TYPEDEF2 (line_s, line_t);
+TYPEDEF (r_lightlist_t);
+TYPEDEF (pslope_t);
+TYPEDEF (sector_t);
+TYPEDEF (line_t);
 TYPEDEF (side_t);
-TYPEDEF2 (subsector_s, subsector_t);
-TYPEDEF2 (msecnode_s, msecnode_t);
-TYPEDEF2 (mprecipsecnode_s, mprecipsecnode_t);
-TYPEDEF2 (lightmap_s, lightmap_t);
-TYPEDEF2 (seg_s, seg_t);
+TYPEDEF (subsector_t);
+TYPEDEF (msecnode_t);
+TYPEDEF (mprecipsecnode_t);
+TYPEDEF (lightmap_t);
+TYPEDEF (seg_t);
 
 // r_draw.h
 TYPEDEF (floatv3_t);
@@ -339,11 +339,11 @@ TYPEDEF (spriteframepivot_t);
 TYPEDEF (spriteinfo_t);
 
 // r_plane.h
-TYPEDEF2 (visplane_s, visplane_t);
+TYPEDEF (visplane_t);
 TYPEDEF (visffloor_t);
 
 // r_portal.h
-TYPEDEF2 (portal_s, portal_t);
+TYPEDEF (portal_t);
 
 // r_skins.h
 TYPEDEF (skin_t);
@@ -360,20 +360,20 @@ TYPEDEF (texture_t);
 
 // r_things.h
 TYPEDEF (maskcount_t);
-TYPEDEF2 (vissprite_s, vissprite_t);
-TYPEDEF2 (drawnode_s, drawnode_t);
+TYPEDEF (vissprite_t);
+TYPEDEF (drawnode_t);
 
 // s_sound.h
 TYPEDEF (listener_t);
 TYPEDEF (channel_t);
 TYPEDEF (caption_t);
-TYPEDEF2 (musicdef_s, musicdef_t);
-TYPEDEF2 (musicstack_s, musicstack_t);
+TYPEDEF (musicdef_t);
+TYPEDEF (musicstack_t);
 
 // screen.h
 TYPEDEF (viddef_t);
 TYPEDEF (vesa_extra_t);
-TYPEDEF2 (vmode_s, vmode_t);
+TYPEDEF (vmode_t);
 
 // sounds.h
 TYPEDEF (sfxinfo_t);

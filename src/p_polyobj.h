@@ -66,7 +66,7 @@ typedef enum
 // Polyobject Structure
 //
 
-struct polyobj_s
+struct polyobj_t
 {
 	mdllistitem_t link; // for subsector links; must be first
 
@@ -78,7 +78,7 @@ struct polyobj_s
 
 	size_t segCount;        // number of segs in polyobject
 	size_t numSegsAlloc;    // number of segs allocated
-	struct seg_s **segs; // the segs, a reallocating array.
+	seg_t **segs; // the segs, a reallocating array.
 
 	size_t numVertices;            // number of vertices (generally == segCount)
 	size_t numVerticesAlloc;       // number of vertices allocated
@@ -88,7 +88,7 @@ struct polyobj_s
 
 	size_t numLines;          // number of linedefs (generally <= segCount)
 	size_t numLinesAlloc;     // number of linedefs allocated
-	struct line_s **lines; // linedefs this polyobject must move
+	line_t **lines; // linedefs this polyobject must move
 
 	degenmobj_t spawnSpot; // location of spawn spot
 	vertex_t    centerPt;  // center point
@@ -109,7 +109,7 @@ struct polyobj_s
 	INT32 translucency; // index to translucency tables
 	INT16 triggertag;   // Tag of linedef executor to trigger on touch
 
-	struct visplane_s *visplane; // polyobject's visplane, for ease of putting into the list later
+	visplane_t *visplane; // polyobject's visplane, for ease of putting into the list later
 
 	// these are saved for netgames, so do not let Lua touch these!
 	INT32 spawnflags; // Flags the polyobject originally spawned with
@@ -212,7 +212,7 @@ struct polydisplace_t
 	thinker_t thinker; // must be first
 
 	INT32 polyObjNum;
-	struct sector_s *controlSector;
+	sector_t *controlSector;
 	fixed_t dx;
 	fixed_t dy;
 	fixed_t oldHeights;
@@ -223,7 +223,7 @@ struct polyrotdisplace_t
 	thinker_t thinker; // must be first
 
 	INT32 polyObjNum;
-	struct sector_s *controlSector;
+	sector_t *controlSector;
 	fixed_t rotscale;
 	UINT8 turnobjs;
 	fixed_t oldHeights;
@@ -328,7 +328,7 @@ struct polydoordata_t
 struct polydisplacedata_t
 {
 	INT32 polyObjNum;
-	struct sector_s *controlSector;
+	sector_t *controlSector;
 	fixed_t dx;
 	fixed_t dy;
 };
@@ -336,7 +336,7 @@ struct polydisplacedata_t
 struct polyrotdisplacedata_t
 {
 	INT32 polyObjNum;
-	struct sector_s *controlSector;
+	sector_t *controlSector;
 	fixed_t rotscale;
 	UINT8 turnobjs;
 };

@@ -170,13 +170,13 @@ boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
 boolean S_SpeedMusic(float speed);
 
 // Music credits
-struct musicdef_s
+struct musicdef_t
 {
 	char name[7];
 	//char usage[256];
 	char source[256];
 	int volume;
-	struct musicdef_s *next;
+	musicdef_t *next;
 };
 
 extern struct cursongcredit
@@ -218,7 +218,7 @@ UINT32 S_GetMusicPosition(void);
 // Music Stacking (Jingles)
 //
 
-struct musicstack_s
+struct musicstack_t
 {
 	char musname[7];
 	UINT16 musflags;
@@ -229,8 +229,8 @@ struct musicstack_s
 	lumpnum_t mlumpnum;
 	boolean noposition; // force music stack resuming from zero (like music_stack_noposition)
 
-    struct musicstack_s *prev;
-    struct musicstack_s *next;
+    musicstack_t *prev;
+    musicstack_t *next;
 };
 
 extern char music_stack_nextmusname[7];

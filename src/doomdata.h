@@ -222,7 +222,7 @@ struct mapthing_t
 	fixed_t scale;
 	INT32 args[NUMMAPTHINGARGS];
 	char *stringargs[NUMMAPTHINGSTRINGARGS];
-	struct mobj_s *mobj;
+	mobj_t *mobj;
 };
 
 #define ZSHIFT 4

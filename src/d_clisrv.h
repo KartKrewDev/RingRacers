@@ -528,7 +528,7 @@ extern boolean hu_stopped;
 // SRB2Kart
 //
 
-struct rewind_s {
+struct rewind_t {
 	UINT8 savebuffer[(768*1024)];
 	tic_t leveltime;
 	size_t demopos;
@@ -536,7 +536,7 @@ struct rewind_s {
 	ticcmd_t oldcmd[MAXPLAYERS];
 	mobj_t oldghost[MAXPLAYERS];
 
-	struct rewind_s *next;
+	rewind_t *next;
 };
 
 void CL_ClearRewinds(void);

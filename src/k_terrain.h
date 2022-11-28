@@ -98,7 +98,7 @@ typedef enum
 	TRF_TRIPWIRE = 1<<3 // Texture is a tripwire when used as a midtexture
 } terrain_flags_t;
 
-struct terrain_s
+struct terrain_t
 {
 	// Terrain definition.
 	// These are all of the properties that the floor gets.

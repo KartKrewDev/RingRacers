@@ -47,7 +47,7 @@ extern UINT8 *dc_transmap;
 
 extern UINT8 *dc_translation;
 
-extern struct r_lightlist_s *dc_lightlist;
+extern struct r_lightlist_t *dc_lightlist;
 extern INT32 dc_numlights, dc_maxlights;
 
 //Fix TUTIFRUTI

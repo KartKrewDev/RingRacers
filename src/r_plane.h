@@ -28,9 +28,9 @@
 // Now what is a visplane, anyway?
 // Simple: kinda floor/ceiling polygon optimised for SRB2 rendering.
 //
-struct visplane_s
+struct visplane_t
 {
-	struct visplane_s *next;
+	visplane_t *next;
 
 	fixed_t height;
 	fixed_t viewx, viewy, viewz;
@@ -50,7 +50,7 @@ struct visplane_s
 
 	fixed_t xoffs, yoffs; // Scrolling flats.
 
-	struct ffloor_s *ffloor;
+	ffloor_t *ffloor;
 	polyobj_t *polyobj;
 	pslope_t *slope;
 
@@ -119,9 +119,9 @@ struct visffloor_t
 	fixed_t f_pos_slope;
 	fixed_t b_pos_slope;
 
-	struct pslope_s *slope;
+	pslope_t *slope;
 
-	struct ffloor_s *ffloor;
+	ffloor_t *ffloor;
 	polyobj_t *polyobj;
 };
 

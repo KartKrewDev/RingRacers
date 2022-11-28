@@ -101,15 +101,15 @@ extern M_waiting_mode_t m_waiting_mode;
 
 typedef union
 {
-	struct menu_s *submenu;      // IT_SUBMENU
+	menu_t *submenu;      // IT_SUBMENU
 	consvar_t *cvar;             // IT_CVAR
 	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
 } itemaction_t;
 
 // Player Setup menu colors linked list
-struct menucolor_s {
-	struct menucolor_s *next;
-	struct menucolor_s *prev;
+struct menucolor_t {
+	menucolor_t *next;
+	menucolor_t *prev;
 	UINT16 color;
 };
 
@@ -136,10 +136,10 @@ struct menuitem_t
 	INT32 mvar2;
 };
 
-struct menu_s
+struct menu_t
 {
 	INT16          numitems;           // # of menu items
-	struct menu_s *prevMenu;           // previous menu
+	menu_t        *prevMenu;           // previous menu
 
 	INT16          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
@@ -537,8 +537,8 @@ extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
-	struct menu_s *startmenu;
-	struct menu_s *endmenu;
+	menu_t *startmenu;
+	menu_t *endmenu;
 	boolean in;
 } menutransition;
 

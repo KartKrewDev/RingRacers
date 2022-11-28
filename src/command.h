@@ -133,7 +133,7 @@ struct CV_PossibleValue_t
 	const char *strvalue;
 };
 
-struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
+struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 {
 	const char *name;
 	const char *defaultvalue;
@@ -157,7 +157,7 @@ struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 	UINT16 netid; // used internaly : netid for send end receive
 	                      // used only with CV_NETVAR
 	char changed;         // has variable been changed by the user? 0 = no, 1 = yes
-	struct consvar_s *next;
+	consvar_t *next;
 };
 
 /* name, defaultvalue, flags, PossibleValue, func */

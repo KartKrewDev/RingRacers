@@ -20,9 +20,9 @@
 
 /** Portal structure for the software renderer.
  */
-struct portal_s
+struct portal_t
 {
-	struct portal_s *next;
+	portal_t *next;
 
 	// Viewport.
 	fixed_t viewx;

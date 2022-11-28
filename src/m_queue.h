@@ -13,9 +13,9 @@
 #ifndef M_QUEUE_H
 #define M_QUEUE_H
 
-struct mqueueitem_s
+struct mqueueitem_t
 {
-	struct mqueueitem_s *next;
+	mqueueitem_t *next;
 };
 
 struct mqueue_t

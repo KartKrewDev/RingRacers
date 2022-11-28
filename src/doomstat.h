@@ -347,7 +347,7 @@ struct customoption_t
 #define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
 #define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
-struct cupheader_s
+struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
 	char name[15];							///< Cup title (14 chars)
@@ -358,7 +358,7 @@ struct cupheader_s
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
 	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
-	struct cupheader_s *next;				///< Next cup in linked list
+	cupheader_t *next;						///< Next cup in linked list
 };
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list

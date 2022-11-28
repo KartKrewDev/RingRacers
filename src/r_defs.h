@@ -57,7 +57,7 @@ typedef UINT8 lighttable_t;
 #define CMF_FOG 4
 
 // ExtraColormap type. Use for extra_colormaps from now on.
-struct extracolormap_s
+struct extracolormap_t
 {
 	UINT8 fadestart, fadeend;
 	UINT8 flags;
@@ -74,8 +74,8 @@ struct extracolormap_s
 	char lumpname[9]; // for netsyncing
 #endif
 
-	struct extracolormap_s *next;
-	struct extracolormap_s *prev;
+	extracolormap_t *next;
+	extracolormap_t *prev;
 };
 
 //
@@ -90,9 +90,6 @@ struct vertex_t
 	boolean floorzset, ceilingzset;
 	fixed_t floorz, ceilingz;
 };
-
-// Forward of linedefs, for sectors.
-struct line_s;
 
 /** Degenerate version of ::mobj_t, storing only a location.
   * Used for sound origins in sectors, hoop centers, and the like. Does not
@@ -208,7 +205,7 @@ typedef enum
 	BT_STRONG,
 } busttype_e;
 
-struct ffloor_s
+struct ffloor_t
 {
 	fixed_t *topheight;
 	INT32 *toppic;
@@ -224,17 +221,17 @@ struct ffloor_s
 	angle_t *bottomangle;
 
 	// Pointers to pointers. Yup.
-	struct pslope_s **t_slope;
-	struct pslope_s **b_slope;
+	pslope_t **t_slope;
+	pslope_t **b_slope;
 
 	size_t secnum;
 	ffloortype_e fofflags;
-	struct line_s *master;
+	line_t *master;
 
-	struct sector_s *target;
+	sector_t *target;
 
-	struct ffloor_s *next;
-	struct ffloor_s *prev;
+	ffloor_t *next;
+	ffloor_t *prev;
 
 	INT32 lastlight;
 	INT32 alpha;
@@ -271,12 +268,12 @@ struct lightlist_t
 	extracolormap_t **extra_colormap; // pointer-to-a-pointer, so we can react to colormap changes
 	INT32 flags;
 	ffloor_t *caster;
-	struct pslope_s *slope; // FOF_DOUBLESHADOW makes me have to store this pointer here. Bluh bluh.
+	pslope_t *slope; // FOF_DOUBLESHADOW makes me have to store this pointer here. Bluh bluh.
 };
 
 
 // This struct is used for rendering walls with shadows casted on them...
-struct r_lightlist_s
+struct r_lightlist_t
 {
 	fixed_t height;
 	fixed_t heightstep;
@@ -296,10 +293,10 @@ typedef enum {
 	SL_DYNAMIC = 1<<1, /// This plane slope will be assigned a thinker to make it dynamic.
 } slopeflags_t;
 
-struct pslope_s
+struct pslope_t
 {
 	UINT16 id; // The number of the slope, mostly used for netgame syncing purposes
-	struct pslope_s *next; // Make a linked list of dynamic slopes, for easy reference later
+	pslope_t *next; // Make a linked list of dynamic slopes, for easy reference later
 
 	// The plane's definition.
 	vector3_t o;		/// Plane origin.
@@ -399,7 +396,7 @@ typedef enum
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
 //
-struct sector_s
+struct sector_t
 {
 	fixed_t floorheight;
 	fixed_t ceilingheight;
@@ -445,10 +442,10 @@ struct sector_s
 
 	// list of mobjs that are at least partially in the sector
 	// thinglist is a subset of touching_thinglist
-	struct msecnode_s *touching_thinglist;
+	msecnode_t *touching_thinglist;
 
 	size_t linecount;
-	struct line_s **lines; // [linecount] size
+	line_t **lines; // [linecount] size
 
 	// Improved fake floor hack
 	ffloor_t *ffloors;
@@ -480,14 +477,14 @@ struct sector_s
 	fixed_t friction;
 
 	// Sprite culling feature
-	struct line_s *cullheight;
+	line_t *cullheight;
 
 	// Current speed of ceiling/floor. For Knuckles to hold onto stuff.
 	fixed_t floorspeed, ceilspeed;
 
 	// list of precipitation mobjs in sector
 	precipmobj_t *preciplist;
-	struct mprecipsecnode_s *touching_preciplist;
+	mprecipsecnode_t *touching_preciplist;
 
 	// Eternity engine slope
 	pslope_t *f_slope; // floor slope
@@ -517,7 +514,7 @@ typedef enum
 #define NUMLINEARGS 10
 #define NUMLINESTRINGARGS 2
 
-struct line_s
+struct line_t
 {
 	// Vertices, from v1 to v2.
 	vertex_t *v1;
@@ -590,12 +587,12 @@ struct side_t
 // Basically, this is a list of linesegs, indicating the visible walls that define
 //  (all or some) sides of a convex BSP leaf.
 //
-struct subsector_s
+struct subsector_t
 {
 	sector_t *sector;
 	INT16 numlines;
 	UINT16 firstline;
-	struct polyobj_s *polyList; // haleyjd 02/19/06: list of polyobjects
+	polyobj_t *polyList; // haleyjd 02/19/06: list of polyobjects
 	size_t validcount;
 };
 
@@ -613,25 +610,25 @@ struct subsector_s
 //
 // For the links, NULL means top or end of list.
 
-struct msecnode_s
+struct msecnode_t
 {
 	sector_t *m_sector; // a sector containing this object
-	struct mobj_s *m_thing;  // this object
-	struct msecnode_s *m_sectorlist_prev;  // prev msecnode_t for this thing
-	struct msecnode_s *m_sectorlist_next;  // next msecnode_t for this thing
-	struct msecnode_s *m_thinglist_prev;  // prev msecnode_t for this sector
-	struct msecnode_s *m_thinglist_next;  // next msecnode_t for this sector
+	mobj_t *m_thing;  // this object
+	msecnode_t *m_sectorlist_prev;  // prev msecnode_t for this thing
+	msecnode_t *m_sectorlist_next;  // next msecnode_t for this thing
+	msecnode_t *m_thinglist_prev;  // prev msecnode_t for this sector
+	msecnode_t *m_thinglist_next;  // next msecnode_t for this sector
 	boolean visited; // used in search algorithms
 };
 
-struct mprecipsecnode_s
+struct mprecipsecnode_t
 {
 	sector_t *m_sector; // a sector containing this object
-	struct precipmobj_s *m_thing;  // this object
-	struct mprecipsecnode_s *m_sectorlist_prev;  // prev msecnode_t for this thing
-	struct mprecipsecnode_s *m_sectorlist_next;  // next msecnode_t for this thing
-	struct mprecipsecnode_s *m_thinglist_prev;  // prev msecnode_t for this sector
-	struct mprecipsecnode_s *m_thinglist_next;  // next msecnode_t for this sector
+	precipmobj_t *m_thing;  // this object
+	mprecipsecnode_t *m_sectorlist_prev;  // prev msecnode_t for this thing
+	mprecipsecnode_t *m_sectorlist_next;  // next msecnode_t for this thing
+	mprecipsecnode_t *m_thinglist_prev;  // prev msecnode_t for this sector
+	mprecipsecnode_t *m_thinglist_next;  // next msecnode_t for this sector
 	boolean visited; // used in search algorithms
 };
 
@@ -653,17 +650,17 @@ struct light_t
 	float dynamic_sqrradius; // radius^2 of the light ball
 };
 
-struct lightmap_s
+struct lightmap_t
 {
 	float s[2], t[2];
 	light_t *light;
-	struct lightmap_s *next;
+	lightmap_t *next;
 };
 
 //
 // The lineseg.
 //
-struct seg_s
+struct seg_t
 {
 	vertex_t *v1;
 	vertex_t *v2;
@@ -771,9 +768,9 @@ struct drawseg_t
 	INT16 *sprbottomclip;
 	INT16 *maskedtexturecol;
 
-	struct visplane_s *ffloorplanes[MAXFFLOORS];
+	visplane_t *ffloorplanes[MAXFFLOORS];
 	INT32 numffloorplanes;
-	struct ffloor_s *thicksides[MAXFFLOORS];
+	ffloor_t *thicksides[MAXFFLOORS];
 	INT16 *thicksidecol;
 	INT32 numthicksides;
 	fixed_t frontscale[MAXVIDWIDTH];
