@@ -303,7 +303,7 @@ TYPEDEF (cliprange_t);
 TYPEDEF (vertex_t);
 TYPEDEF (degenmobj_t);
 TYPEDEF (light_t);
-//TYPEDEF (node_t);
+TYPEDEF (node_t);
 TYPEDEF (post_t);
 TYPEDEF (drawseg_t);
 TYPEDEF (rotsprite_t);

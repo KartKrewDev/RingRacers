@@ -709,7 +709,7 @@ struct seg_s
 //
 // BSP node.
 //
-typedef struct
+struct node_t
 {
 	// Partition line.
 	fixed_t x, y;
@@ -720,7 +720,7 @@ typedef struct
 
 	// If NF_SUBSECTOR its a subsector.
 	UINT16 children[2];
-} node_t;
+};
 
 #if defined(_MSC_VER)
 #pragma pack(1)
