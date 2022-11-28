@@ -28,6 +28,8 @@ typedef struct trackingResult_s
 	fixed_t x, y;
 	fixed_t scale;
 	boolean onScreen;
+	INT32 angle, pitch;
+	fixed_t fov;
 } trackingResult_t;
 
 void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse);
