@@ -80,7 +80,7 @@ write netcode into the sound code, OKAY?
 #endif
 
 #ifdef HAVE_GME
-#include "gme/gme.h"
+#include <gme/gme.h>
 #define GME_TREBLE 5.0f
 #define GME_BASS 1.0f
 #endif // HAVE_GME

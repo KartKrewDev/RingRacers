@@ -66,7 +66,7 @@ char logfilename[1024];
 #endif
 
 #if defined (_WIN32)
-#include "exchndl.h"
+#include <exchndl.h>
 #endif
 
 #if defined (_WIN32)
