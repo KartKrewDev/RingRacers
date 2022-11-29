@@ -11,15 +11,6 @@
 
 #ifdef CMAKECONFIG
 
-#define ASSET_HASH_MAIN_KART     "${SRB2_ASSET_main.kart_HASH}"
-#define ASSET_HASH_GFX_PK3       "${SRB2_ASSET_gfx.pk3_HASH}"
-#define ASSET_HASH_TEXTURES_PK3  "${SRB2_ASSET_textures.pk3_HASH}"
-#define ASSET_HASH_CHARS_PK3     "${SRB2_ASSET_chars.pk3_HASH}"
-#define ASSET_HASH_MAPS_PK3      "${SRB2_ASSET_maps.pk3_HASH}"
-#ifdef USE_PATCH_FILE
-#define ASSET_HASH_PATCH_PK3     "${SRB2_ASSET_patch.pk3_HASH}"
-#endif
-
 #define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH         "${SRB2_COMP_BRANCH}"
 // This is done with configure_file instead of defines in order to avoid
@@ -29,9 +20,7 @@
 #define COMPVERSION_UNCOMMITTED
 #endif
 
-#define CMAKE_ASSETS_DIR         "${CMAKE_SOURCE_DIR}/assets"
-
-#else
+#endif
 
 /* Manually defined asset hashes for non-CMake builds
  * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
@@ -47,5 +36,4 @@
 #define ASSET_HASH_PATCH_PK3     "00000000000000000000000000000000"
 #endif
 
-#endif
 #endif
