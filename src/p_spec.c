@@ -1497,12 +1497,12 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 
 				if ((modifiedgame && !savemoddata) || (netgame || multiplayer))
 					return false;
-				else if (unlockid < 0 || unlockid >= MAXUNLOCKABLES) // limited by unlockable count
+				else if (unlockid <= 0 || unlockid > MAXUNLOCKABLES) // limited by unlockable count
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Unlockable check (sidedef %hu): bad unlockable ID %d\n", triggerline->sidenum[0], unlockid);
 					return false;
 				}
-				else if (!(unlockables[unlockid-1].unlocked))
+				else if (!(unlockables[unlockid].unlocked))
 					return false;
 			}
 			break;
