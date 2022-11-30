@@ -6831,7 +6831,10 @@ void M_ChallengesTick(void)
 	if (challengesmenu.pending && challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
 		if ((challengesmenu.currentunlock = M_GetNextAchievedUnlock(true)) >= MAXUNLOCKABLES)
+		{
 			challengesmenu.pending = false;
+			G_SaveGameData();
+		}
 	}
 	else if (challengesmenu.unlockanim >= UNLOCKTIME)
 	{
