@@ -775,6 +775,20 @@ static boolean M_PrevOpt(void)
 	return true;
 }
 
+ static menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
+{
+	M_UpdateUnlockablesAndExtraEmblems(false);
+
+	if (M_GetNextAchievedUnlock(false) < MAXUNLOCKABLES)
+	{
+		challengesmenu.pending = true;
+		challengesmenu.currentunlock = MAXUNLOCKABLES;
+		return &MISC_ChallengesDef;
+	}
+
+	return desiredmenu;
+}
+
 //
 // M_Responder
 //
@@ -981,7 +995,7 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			currentMenu = &MainDef;
+			currentMenu = M_InterruptMenuWithChallenges(&MainDef);
 		}
 	}
 	else
@@ -4811,7 +4825,7 @@ static void M_FirstPickProfile(INT32 c)
 		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
-		M_SetupNextMenu(&MainDef, false);
+		M_SetupNextMenu(M_InterruptMenuWithChallenges(&MainDef), false);
 
 		// Tell the game this is the last profile we picked.
 		CV_StealthSetValue(&cv_ttlprofilen, optionsmenu.profilen);
@@ -6806,4 +6820,54 @@ void M_Manual(INT32 choice)
 
 	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
 	M_SetupNextMenu(&MISC_ManualDef, true);
+}
+
+struct challengesmenu_s challengesmenu;
+
+void M_ChallengesTick(void)
+{
+	challengesmenu.ticker++;
+
+	if (challengesmenu.pending && challengesmenu.currentunlock >= MAXUNLOCKABLES)
+	{
+		if ((challengesmenu.currentunlock = M_GetNextAchievedUnlock(true)) >= MAXUNLOCKABLES)
+			challengesmenu.pending = false;
+	}
+	else if (challengesmenu.unlockanim >= UNLOCKTIME)
+	{
+		;
+	}
+	else
+	{
+		challengesmenu.unlockanim++;
+	}
+}
+
+boolean M_ChallengesInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	boolean start = M_MenuButtonPressed(pid, MBT_START);
+	(void) ch;
+
+	if (challengesmenu.unlockanim < UNLOCKTIME)
+	{
+		;
+	}
+	else if (challengesmenu.pending)
+	{
+		if ((M_MenuConfirmPressed(pid) || start))
+		{
+			challengesmenu.currentunlock = MAXUNLOCKABLES;
+			challengesmenu.unlockanim = 0;
+		}
+		return true;
+	}
+	else if (M_MenuBackPressed(pid) || start)
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+		return true;
+	}
+
+	return true;
 }

@@ -398,12 +398,15 @@ extern menu_t EXTRAS_ReplayStartDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+// EXTRAS
+extern menuitem_t MISC_Manual[];
+extern menu_t MISC_ManualDef;
+
 extern menuitem_t MISC_Addons[];
 extern menu_t MISC_AddonsDef;
 
-// MANUAL
-extern menuitem_t MISC_Manual[];
-extern menu_t MISC_ManualDef;
+extern menuitem_t MISC_Challenges[];
+extern menu_t MISC_ChallengesDef;
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
@@ -1075,6 +1078,25 @@ void M_DrawReplayStartMenu(void);
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
 #define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
 void M_DrawAddons(void);
+
+// Challenges menu:
+#define UNLOCKTIME 35
+
+// Keep track of some pause menu data for visual goodness.
+extern struct challengesmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	UINT8 currentunlock;
+	tic_t unlockanim;
+
+	boolean pending;
+} challengesmenu;
+
+void M_DrawChallenges(void);
+void M_ChallengesTick(void);
+boolean M_ChallengesInputs(INT32 ch);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

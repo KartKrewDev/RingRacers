@@ -261,12 +261,12 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 			continue;
 		}
 
-		if ((gamedata->unlocked[i] = M_Achieved(unlockables[i].conditionset - 1)) == false)
+		if (gamedata->unlocked[i] == true)
 		{
 			continue;
 		}
 
-		if (unlockables[i].nocecho)
+		if (M_Achieved(unlockables[i].conditionset - 1) == false)
 		{
 			continue;
 		}
@@ -281,6 +281,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	// Announce
 	if (cechoLines && loud)
 	{
+		strcat(cechoText, "Return to main menu to see");
 #ifdef DEVELOP
 		// todo make debugmode
 		CONS_Printf("%s\n", cechoText);
@@ -288,6 +289,39 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		return true;
 	}
 	return false;
+}
+
+UINT8 M_GetNextAchievedUnlock(boolean set)
+{
+	UINT8 i;
+
+	// Go through unlockables
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (gamedata->unlocked[i] == true)
+		{
+			continue;
+		}
+
+		if (M_Achieved(unlockables[i].conditionset - 1) == false)
+		{
+			continue;
+		}
+
+		if (set)
+		{
+			gamedata->unlocked[i] = true;
+		}
+
+		return i;
+	}
+
+	return MAXUNLOCKABLES;
 }
 
 // Emblem unlocking shit

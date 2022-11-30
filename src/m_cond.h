@@ -182,6 +182,7 @@ void M_ClearSecrets(void);
 void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean silent);
+UINT8 M_GetNextAchievedUnlock(boolean set);
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 

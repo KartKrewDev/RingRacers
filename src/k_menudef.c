@@ -1744,3 +1744,24 @@ menu_t MISC_AddonsDef = {
 	NULL,
 	NULL
 };
+
+// Challenges.
+menuitem_t MISC_ChallengesMenu[] =
+{
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
+};
+
+menu_t MISC_ChallengesDef = {
+	sizeof (MISC_ChallengesMenu)/sizeof (menuitem_t),
+	&MainDef,
+	0,
+	MISC_ChallengesMenu,
+	48, 80,
+	0, 0,
+	98, 0,
+	M_DrawChallenges,
+	M_ChallengesTick,
+	NULL,
+	NULL,
+	M_ChallengesInputs,
+};

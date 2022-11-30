@@ -4457,3 +4457,28 @@ void M_DrawAddons(void)
 }
 
 #undef addonsseperation
+
+void M_DrawChallenges(void)
+{
+	INT32 x, y;
+
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+	{
+		V_DrawThinString(currentMenu->x, currentMenu->y, V_ALLOWLOWERCASE, unlockables[challengesmenu.currentunlock].name);
+
+		if (challengesmenu.unlockanim >= UNLOCKTIME)
+			V_DrawThinString(currentMenu->x, currentMenu->y + 10, V_ALLOWLOWERCASE, "Press (A)");
+	}
+	else
+	{
+		V_DrawThinString(currentMenu->x, currentMenu->y, V_ALLOWLOWERCASE, va("pending = %c", challengesmenu.pending ? 'T' : 'F'));
+
+		if (challengesmenu.unlockanim >= UNLOCKTIME)
+			V_DrawThinString(currentMenu->x, currentMenu->y + 10, V_ALLOWLOWERCASE, "Press (B)");
+	}
+}
