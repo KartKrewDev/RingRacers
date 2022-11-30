@@ -3699,7 +3699,6 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	INT16 newplayernum;
 	UINT8 i, skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
-	UINT8 availabilitiesbuffer[MAXAVAILABILITY];
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
