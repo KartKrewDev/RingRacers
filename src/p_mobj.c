@@ -6825,6 +6825,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_EMBLEM:
+		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
+		{
+			mobj->frame |= (tr_trans50 << FF_TRANSSHIFT);
+		}
+		else
+		{
+			mobj->frame &= ~FF_TRANSMASK;
+		}
 		if (mobj->flags2 & MF2_NIGHTSPULL)
 			P_NightsItemChase(mobj);
 		break;
@@ -11969,24 +11977,13 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	emcolor = M_GetEmblemColor(&emblemlocations[j]); // workaround for compiler complaint about bad function casting
 	mobj->color = (UINT16)emcolor;
 
-	if (gamedata->collected[j])
-	{
-		P_UnsetThingPosition(mobj);
-		mobj->flags |= MF_NOCLIP;
-		mobj->flags &= ~MF_SPECIAL;
-		mobj->flags |= MF_NOBLOCKMAP;
-		mobj->frame |= (tr_trans50 << FF_TRANSSHIFT);
-		P_SetThingPosition(mobj);
-	}
-	else
-	{
-		mobj->frame &= ~FF_TRANSMASK;
+	mobj->frame &= ~FF_TRANSMASK;
 
-		if (emblemlocations[j].type == ET_GLOBAL)
-		{
-			mobj->reactiontime = emblemlocations[j].var;
-		}
+	if (emblemlocations[j].type == ET_GLOBAL)
+	{
+		mobj->reactiontime = emblemlocations[j].var;
 	}
+
 	return true;
 }
 

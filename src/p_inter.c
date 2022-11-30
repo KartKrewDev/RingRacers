@@ -156,6 +156,40 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	return true;
 }
 
+boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= MAXEMBLEMS)
+	{
+		// Invalid emblem ID, can't pickup.
+		return false;
+	}
+
+	if (demo.playback)
+	{
+		// Never collect emblems in replays.
+		return false;
+	}
+
+	if (player->bot)
+	{
+		// Your nefarious opponent puppy can't grab these for you.
+		return false;
+	}
+
+	return true;
+}
+
+boolean P_EmblemWasCollected(INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= numemblems)
+	{
+		// Invalid emblem ID, can't pickup.
+		return true;
+	}
+
+	return gamedata->collected[emblemID];
+}
+
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
   * Actually, this just checks a few things (heights, toucher->player, no
   * objectplace, no dead or disappearing things)
@@ -501,12 +535,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback || special->health > MAXEMBLEMS)
+				boolean gotcollected = false;
+
+				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				gamedata->collected[special->health-1] = true;
-				M_UpdateUnlockablesAndExtraEmblems(true);
-				G_SaveGameData();
+				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
+				{
+					gamedata->collected[special->health-1] = gotcollected = true;
+					M_UpdateUnlockablesAndExtraEmblems(true);
+					G_SaveGameData();
+				}
+
+				if (netgame)
+				{
+					// Don't delete the object in netgames, just fade it.
+					return;
+				}
+
 				break;
 			}
 
