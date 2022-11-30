@@ -9528,13 +9528,38 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 	P_RemoveMobj(mobj); // make sure they disappear
 }
 
+static boolean P_CanFlickerFuse(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SNAPPER_HEAD:
+		case MT_SNAPPER_LEG:
+		case MT_MINECARTSEG:
+			return true;
+
+		case MT_RANDOMITEM:
+		case MT_EGGMANITEM:
+		case MT_FALLINGROCK:
+			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return false;
+
+}
+
 static boolean P_FuseThink(mobj_t *mobj)
 {
-	if (mobj->type == MT_SNAPPER_HEAD || mobj->type == MT_SNAPPER_LEG || mobj->type == MT_MINECARTSEG)
+	if (P_CanFlickerFuse(mobj))
+	{
 		mobj->renderflags ^= RF_DONTDRAW;
-
-	if (mobj->fuse <= TICRATE && (mobj->type == MT_RANDOMITEM || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
-		mobj->renderflags ^= RF_DONTDRAW;
+	}
 
 	mobj->fuse--;
 
