@@ -866,7 +866,7 @@ boolean F_CreditResponder(event_t *event)
 		return false;
 	}
 
-	/*if (!(timesBeaten) && !(netgame || multiplayer) && !cht_debug)
+	/*if (!(gamedata->timesBeaten) && !(netgame || multiplayer) && !cht_debug)
 		return false;*/
 
 	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
@@ -1024,31 +1024,6 @@ void F_GameEvaluationDrawer(void)
 
 	V_DrawCreditString((BASEVIDWIDTH - V_CreditStringWidth(endingtext))<<(FRACBITS-1), (BASEVIDHEIGHT-100)<<(FRACBITS-1), 0, endingtext);
 
-#if 0 // the following looks like hot garbage the more unlockables we add, and we now have a lot of unlockables
-	if (finalecount >= 5*TICRATE)
-	{
-		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
-
-		if (!usedCheats)
-		{
-			INT32 startcoord = 32;
-
-			for (i = 0; i < MAXUNLOCKABLES; i++)
-			{
-				if (unlockables[i].conditionset && unlockables[i].conditionset < MAXCONDITIONSETS
-					&& unlockables[i].type && !unlockables[i].nocecho)
-				{
-					if (unlockables[i].unlocked)
-						V_DrawString(8, startcoord, 0, unlockables[i].name);
-					startcoord += 8;
-				}
-			}
-		}
-		else
-			V_DrawString(8, 96, V_YELLOWMAP, "Cheated games\ncan't unlock\nextras!");
-	}
-#endif
-
 	if (marathonmode)
 	{
 		const char *rtatext, *cuttext;
@@ -1101,9 +1076,9 @@ void F_GameEvaluationTicker(void)
 	{
 		if (!usedCheats)
 		{
-			++timesBeaten;
+			++gamedata->timesBeaten;
 
-			if (M_UpdateUnlockablesAndExtraEmblems())
+			if (M_UpdateUnlockablesAndExtraEmblems(true))
 				S_StartSound(NULL, sfx_s3k68);
 
 			G_SaveGameData();
@@ -1611,7 +1586,7 @@ void F_EndingDrawer(void)
 			//colset(linkmap,  164, 165, 169); -- the ideal purple colour to represent a clicked in-game link, but not worth it just for a soundtest-controlled secret
 			V_DrawCenteredString(BASEVIDWIDTH/2, 8, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), str);
 			V_DrawCharacter(32, BASEVIDHEIGHT-16, '>'|(trans<<V_ALPHASHIFT), false);
-			V_DrawString(40, ((finalecount == STOPPINGPOINT-(20+TICRATE)) ? 1 : 0)+BASEVIDHEIGHT-16, ((timesBeaten || finalecount >= STOPPINGPOINT-TICRATE) ? V_PURPLEMAP : V_BLUEMAP)|(trans<<V_ALPHASHIFT), " [S] ===>");
+			V_DrawString(40, ((finalecount == STOPPINGPOINT-(20+TICRATE)) ? 1 : 0)+BASEVIDHEIGHT-16, ((gamedata->timesBeaten || finalecount >= STOPPINGPOINT-TICRATE) ? V_PURPLEMAP : V_BLUEMAP)|(trans<<V_ALPHASHIFT), " [S] ===>");
 		}
 
 		if (finalecount > STOPPINGPOINT-(20+(2*TICRATE)))

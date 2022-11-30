@@ -1377,6 +1377,8 @@ void D_SRB2Main(void)
 	Z_Init();
 	CON_SetLoadingProgress(LOADED_ZINIT);
 
+	M_NewGameDataStruct();
+
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 

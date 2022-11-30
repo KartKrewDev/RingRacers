@@ -1494,7 +1494,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 						static boolean canplaysound = true;
 						tic_t timetoreach = emblem->var;
 
-						if (emblem->collected)
+						if (gamedata->collected[(emblem-emblemlocations)])
 						{
 							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE);
 							emblemcol[curemb] = R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE);

@@ -343,8 +343,8 @@ static void M_EraseDataResponse(INT32 ch)
 	if (optionsmenu.erasecontext == 2)
 	{
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
-		totalplaytime = 0;
-		matchesplayed = 0;
+		gamedata->totalplaytime = 0;
+		gamedata->matchesplayed = 0;
 	}
 	if (optionsmenu.erasecontext != 1)
 		G_ClearRecords();
@@ -3441,7 +3441,7 @@ static void M_LevelListFromGametype(INT16 gt)
 
 		while (cup)
 		{
-			if (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked)
+			if (cup->unlockrequired == -1 || gamedata->unlocked[cup->unlockrequired])
 			{
 				highestid = cup->id;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
@@ -3575,7 +3575,7 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 
 		if ((!newcup)
-			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (newcup && newcup->unlockrequired != -1 && !gamedata->unlocked[newcup->unlockrequired])
 			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);

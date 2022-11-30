@@ -24,6 +24,8 @@
 #include "k_pwrlv.h"
 #include "k_profiles.h"
 
+gamedata_t *gamedata = NULL;
+
 // Map triggers for linedef executors
 // 32 triggers, one bit each
 UINT32 unlocktriggers;
@@ -43,6 +45,14 @@ unlockable_t unlockables[MAXUNLOCKABLES];
 // Number of emblems and extra emblems
 INT32 numemblems = 0;
 INT32 numextraemblems = 0;
+
+// Create a new gamedata_t, for start-up
+void M_NewGameDataStruct(void)
+{
+	gamedata = Z_Calloc(sizeof (gamedata_t), PU_STATIC, NULL);
+	M_ClearSecrets();
+	G_ClearRecords();
+}
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
 {
@@ -73,7 +83,7 @@ void M_ClearConditionSet(UINT8 set)
 		conditionSets[set - 1].condition = NULL;
 		conditionSets[set - 1].numconditions = 0;
 	}
-	conditionSets[set - 1].achieved = false;
+	gamedata->achieved[set - 1] = false;
 }
 
 // Clear ALL secrets.
@@ -87,18 +97,18 @@ void M_ClearSecrets(void)
 	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
-		emblemlocations[i].collected = false;
+		gamedata->collected[i] = false;
 	for (i = 0; i < MAXEXTRAEMBLEMS; ++i)
-		extraemblems[i].collected = false;
+		gamedata->extraCollected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		unlockables[i].unlocked = false;
+		gamedata->unlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		conditionSets[i].achieved = false;
+		gamedata->achieved[i] = false;
 
-	timesBeaten = 0;
+	gamedata->timesBeaten = 0;
 
 	// Re-unlock any always unlocked things
-	M_SilentUpdateUnlockablesAndEmblems();
+	M_UpdateUnlockablesAndExtraEmblems(false);
 }
 
 // ----------------------
@@ -109,9 +119,9 @@ UINT8 M_CheckCondition(condition_t *cn)
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-			return (totalplaytime >= (unsigned)cn->requirement);
+			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return (matchesplayed >= (unsigned)cn->requirement);
+			return (gamedata->matchesplayed >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 		{
 			UINT8 i;
@@ -128,7 +138,7 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return false;
 		}
 		case UC_GAMECLEAR: // Requires game beaten >= x times
-			return (timesBeaten >= (unsigned)cn->requirement);
+			return (gamedata->timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return (M_GotLowEnoughTime(cn->requirement));
 		case UC_MAPVISITED: // Requires map x to be visited
@@ -152,9 +162,9 @@ UINT8 M_CheckCondition(condition_t *cn)
 		case UC_TOTALEMBLEMS: // Requires number of emblems >= x
 			return (M_GotEnoughEmblems(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
-			return emblemlocations[cn->requirement-1].collected;
+			return gamedata->collected[cn->requirement-1];
 		case UC_EXTRAEMBLEM: // Requires extra emblem x to be obtained
-			return extraemblems[cn->requirement-1].collected;
+			return gamedata->extraCollected[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
 	}
@@ -196,14 +206,14 @@ void M_CheckUnlockConditions(void)
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
 		c = &conditionSets[i];
-		if (!c->numconditions || c->achieved)
+		if (!c->numconditions || gamedata->achieved[i])
 			continue;
 
-		c->achieved = (M_CheckConditionSet(c));
+		gamedata->achieved[i] = (M_CheckConditionSet(c));
 	}
 }
 
-UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 {
 	INT32 i;
 	char cechoText[992] = "";
@@ -211,16 +221,31 @@ UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
 
 	M_CheckUnlockConditions();
 
+	if (!loud)
+	{
+		// Just in case they aren't to sync
+		M_CheckLevelEmblems();
+		M_CompletionEmblems();
+	}
+
 	// Go through extra emblems
 	for (i = 0; i < numextraemblems; ++i)
 	{
-		if (extraemblems[i].collected || !extraemblems[i].conditionset)
-			continue;
-		if ((extraemblems[i].collected = M_Achieved(extraemblems[i].conditionset - 1)) != false)
+		if (gamedata->extraCollected[i] || !extraemblems[i].conditionset)
 		{
-			strcat(cechoText, va(M_GetText("Got \"%s\" medal!\\"), extraemblems[i].name));
-			++cechoLines;
+			continue;
 		}
+
+		if ((gamedata->extraCollected[i] = M_Achieved(extraemblems[i].conditionset - 1)) == false)
+		{
+			continue;
+		}
+
+		if (loud)
+		{
+			strcat(cechoText, va("Got \"%s\" medal!\n", extraemblems[i].name));
+		}
+		++cechoLines;
 	}
 
 	// Fun part: if any of those unlocked we need to go through the
@@ -231,65 +256,38 @@ UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].unlocked || !unlockables[i].conditionset)
-			continue;
-		if ((unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1)) != false)
+		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
 		{
-			if (unlockables[i].nocecho)
-				continue;
-			strcat(cechoText, va(M_GetText("\"%s\" unlocked!\\"), unlockables[i].name));
-			++cechoLines;
+			continue;
 		}
+
+		if ((gamedata->unlocked[i] = M_Achieved(unlockables[i].conditionset - 1)) == false)
+		{
+			continue;
+		}
+
+		if (unlockables[i].nocecho)
+		{
+			continue;
+		}
+
+		if (loud)
+		{
+			strcat(cechoText, va("\"%s\" unlocked!\n", unlockables[i].name));
+		}
+		++cechoLines;
 	}
 
 	// Announce
-	if (cechoLines)
+	if (cechoLines && loud)
 	{
-		char slashed[1024] = "";
-		for (i = 0; (i < 19) && (i < 24 - cechoLines); ++i)
-			slashed[i] = '\\';
-		slashed[i] = 0;
-
-		strcat(slashed, cechoText);
-
-		HU_SetCEchoFlags(V_YELLOWMAP);
-		HU_SetCEchoDuration(6);
-		HU_DoCEcho(slashed);
+#ifdef DEVELOP
+		// todo make debugmode
+		CONS_Printf("%s\n", cechoText);
+#endif
 		return true;
 	}
 	return false;
-}
-
-// Used when loading gamedata to make sure all unlocks are synched with conditions
-void M_SilentUpdateUnlockablesAndEmblems(void)
-{
-	INT32 i;
-	boolean checkAgain = false;
-
-	// Just in case they aren't to sync
-	M_CheckUnlockConditions();
-	M_CheckLevelEmblems();
-
-	// Go through extra emblems
-	for (i = 0; i < numextraemblems; ++i)
-	{
-		if (extraemblems[i].collected || !extraemblems[i].conditionset)
-			continue;
-		if ((extraemblems[i].collected = M_Achieved(extraemblems[i].conditionset - 1)) != false)
-			checkAgain = true;
-	}
-
-	// check again if extra emblems unlocked, blah blah, etc
-	if (checkAgain)
-		M_CheckUnlockConditions();
-
-	// Go through unlockables
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
-	{
-		if (unlockables[i].unlocked || !unlockables[i].conditionset)
-			continue;
-		unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1);
-	}
 }
 
 // Emblem unlocking shit
@@ -306,7 +304,7 @@ UINT8 M_CheckLevelEmblems(void)
 	{
 		INT32 checkLevel;
 
-		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
+		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
 		checkLevel = G_MapNumber(emblemlocations[i].level);
@@ -326,7 +324,7 @@ UINT8 M_CheckLevelEmblems(void)
 				continue;
 		}
 
-		emblemlocations[i].collected = res;
+		gamedata->collected[i] = res;
 		if (res)
 			++somethingUnlocked;
 	}
@@ -346,7 +344,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 	{
 		INT32 checkLevel;
 
-		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
+		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
 		checkLevel = G_MapNumber(emblemlocations[i].level);
@@ -363,7 +361,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
 
-		emblemlocations[i].collected = res;
+		gamedata->collected[i] = res;
 		if (res)
 			++somethingUnlocked;
 	}
@@ -385,7 +383,7 @@ UINT8 M_AnySecretUnlocked(void)
 	
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (!unlockables[i].nocecho && unlockables[i].unlocked)
+		if (!unlockables[i].nocecho && gamedata->unlocked[i])
 			return true;
 	}
 	return false;
@@ -412,7 +410,7 @@ UINT8 M_SecretUnlocked(INT32 type)
 
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type == type && unlockables[i].unlocked != CHADYES)
+		if (unlockables[i].type == type && gamedata->unlocked[i] != CHADYES)
 			return !CHADYES;
 	}
 	return CHADYES;
@@ -435,7 +433,7 @@ UINT8 M_MapLocked(INT32 mapnum)
 	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
 		return false;
 
-	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)
+	if (!gamedata->unlocked[mapheaderinfo[mapnum-1]->unlockrequired])
 		return true;
 
 	return false;
@@ -447,12 +445,12 @@ INT32 M_CountEmblems(void)
 	INT32 found = 0, i;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].collected)
+		if (gamedata->collected[i])
 			found++;
 	}
 	for (i = 0; i < numextraemblems; ++i)
 	{
-		if (extraemblems[i].collected)
+		if (gamedata->extraCollected[i])
 			found++;
 	}
 	return found;
@@ -469,12 +467,12 @@ UINT8 M_GotEnoughEmblems(INT32 number)
 	INT32 i, gottenemblems = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].collected)
+		if (gamedata->collected[i])
 			if (++gottenemblems >= number) return true;
 	}
 	for (i = 0; i < numextraemblems; ++i)
 	{
-		if (extraemblems[i].collected)
+		if (gamedata->extraCollected[i])
 			if (++gottenemblems >= number) return true;
 	}
 	return false;

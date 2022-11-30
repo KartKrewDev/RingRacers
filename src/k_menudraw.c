@@ -1908,7 +1908,7 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
-	if (cup && (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked))
+	if (cup && (cup->unlockrequired == -1 || gamedata->unlocked[cup->unlockrequired]))
 	{
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
 		while (x < BASEVIDWIDTH + pad)
@@ -1946,7 +1946,7 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 
 	if (cup)
 	{
-		boolean unlocked = (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked);
+		boolean unlocked = (cup->unlockrequired == -1 || gamedata->unlocked[cup->unlockrequired]);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 		patch_t *icon = W_CachePatchName(cup->icon, PU_CACHE);
 		const char *str = (unlocked ? va("%s Cup", cup->name) : "???");
@@ -2014,7 +2014,7 @@ void M_DrawCupSelect(void)
 
 			V_DrawScaledPatch(x, y, 0, patch);
 
-			if (iconcup->unlockrequired != -1 && !unlockables[iconcup->unlockrequired].unlocked)
+			if (iconcup->unlockrequired != -1 && !gamedata->unlocked[iconcup->unlockrequired])
 			{
 				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 				V_DrawScaledPatch(x + 8, y + icony, 0, st);

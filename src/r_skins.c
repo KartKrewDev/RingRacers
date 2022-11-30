@@ -171,7 +171,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock)
 		if (unlockables[i].type != SECRET_SKIN)
 			continue;
 
-		if (unlockables[i].unlocked != true && !demolock)
+		if (gamedata->unlocked[i] != true && !demolock)
 			continue;
 
 		skinid = M_UnlockableSkinNum(&unlockables[i]);
@@ -250,7 +250,7 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	}
 
 	// Use the unlockables table directly
-	return (boolean)(unlockables[i].unlocked);
+	return (boolean)(gamedata->unlocked[i]);
 }
 
 // returns true if the skin name is found (loaded from pwad)

@@ -11969,7 +11969,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	emcolor = M_GetEmblemColor(&emblemlocations[j]); // workaround for compiler complaint about bad function casting
 	mobj->color = (UINT16)emcolor;
 
-	if (emblemlocations[j].collected)
+	if (gamedata->collected[j])
 	{
 		P_UnsetThingPosition(mobj);
 		mobj->flags |= MF_NOCLIP;

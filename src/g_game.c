@@ -189,7 +189,8 @@ struct quake quake;
 
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};
-INT32 nummapheaders, mapallocsize = 0;
+INT32 nummapheaders = 0;
+INT32 mapallocsize = 0;
 
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
@@ -207,10 +208,6 @@ UINT32 token; // Number of tokens collected in a level
 UINT32 tokenlist; // List of tokens collected
 boolean gottoken; // Did you get a token? Used for end of act
 INT32 tokenbits; // Used for setting token bits
-
-tic_t totalplaytime;
-UINT32 matchesplayed; // SRB2Kart
-boolean gamedataloaded = false;
 
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;
@@ -339,9 +336,6 @@ static void G_ResetRandMapBuffer(void)
 		randmaps.mapbuffer[i] = -1;
 	//intentionally not resetting randmaps.counttogametype here
 }
-
-// Grading
-UINT32 timesBeaten;
 
 typedef struct joystickvector2_s
 {
@@ -600,7 +594,7 @@ static void G_UpdateRecordReplays(void)
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems())
+	if (M_UpdateUnlockablesAndExtraEmblems(true))
 		S_StartSound(NULL, sfx_ncitem);
 
 	// SRB2Kart - save here so you NEVER lose your earned times/medals.
@@ -2194,8 +2188,8 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	{
 		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 		{
-			matchesplayed++;
-			if (M_UpdateUnlockablesAndExtraEmblems())
+			gamedata->matchesplayed++;
+			if (M_UpdateUnlockablesAndExtraEmblems(true))
 				S_StartSound(NULL, sfx_ncitem);
 			G_SaveGameData();
 		}
@@ -3691,7 +3685,7 @@ static void G_UpdateVisited(void)
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems())
+	if (M_UpdateUnlockablesAndExtraEmblems(true))
 		S_StartSound(NULL, sfx_ncitem);
 	G_SaveGameData();
 }
@@ -3876,7 +3870,7 @@ static void G_GetNextMap(void)
 			while (cup)
 			{
 				// Not unlocked? Grab the next result afterwards
-				if (!marathonmode && cup->unlockrequired != -1 && !unlockables[cup->unlockrequired].unlocked)
+				if (!marathonmode && cup->unlockrequired != -1 && !gamedata->unlocked[cup->unlockrequired])
 				{
 					cup = cup->next;
 					gettingresult = 1;
@@ -4326,15 +4320,15 @@ void G_LoadGameData(void)
 	UINT32 numgamedatamapheaders;
 
 	// Stop saving, until we successfully load it again.
-	gamedataloaded = false;
+	gamedata->loaded = false;
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
-	G_ClearRecords(); // main and nights records
+	G_ClearRecords(); // records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
 
-	totalplaytime = 0; // total play time (separate from all)
-	matchesplayed = 0; // SRB2Kart: matches played & finished
+	gamedata->totalplaytime = 0; // total play time (separate from all)
+	gamedata->matchesplayed = 0; // SRB2Kart: matches played & finished
 
 	if (M_CheckParm("-nodata"))
 	{
@@ -4345,7 +4339,7 @@ void G_LoadGameData(void)
 	if (M_CheckParm("-resetdata"))
 	{
 		// Don't load, but do save. (essentially, reset)
-		gamedataloaded = true;
+		gamedata->loaded = true;
 		return; 
 	}
 
@@ -4353,7 +4347,7 @@ void G_LoadGameData(void)
 	if (!length)
 	{
 		// No gamedata. We can save a new one.
-		gamedataloaded = true;
+		gamedata->loaded = true;
 		return;
 	}
 
@@ -4372,8 +4366,8 @@ void G_LoadGameData(void)
 		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
-	totalplaytime = READUINT32(save_p);
-	matchesplayed = READUINT32(save_p);
+	gamedata->totalplaytime = READUINT32(save_p);
+	gamedata->matchesplayed = READUINT32(save_p);
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
@@ -4392,32 +4386,32 @@ void G_LoadGameData(void)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
-			emblemlocations[j+i].collected = ((rtemp >> j) & 1);
+			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXEXTRAEMBLEMS;)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			extraemblems[j+i].collected = ((rtemp >> j) & 1);
+			gamedata->extraCollected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
-			unlockables[j+i].unlocked = ((rtemp >> j) & 1);
+			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXCONDITIONSETS;)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
-			conditionSets[j+i].achieved = ((rtemp >> j) & 1);
+			gamedata->achieved[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 
-	timesBeaten = READUINT32(save_p);
+	gamedata->timesBeaten = READUINT32(save_p);
 
 	// Main records
 	numgamedatamapheaders = READUINT32(save_p);
@@ -4469,10 +4463,10 @@ void G_LoadGameData(void)
 	// It used to do this much earlier, but this would cause the gamedata to
 	// save over itself when it I_Errors from the corruption landing point below,
 	// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-	gamedataloaded = true;
+	gamedata->loaded = true;
 
 	// Silent update unlockables in case they're out of sync with conditions
-	M_SilentUpdateUnlockablesAndEmblems();
+	M_UpdateUnlockablesAndExtraEmblems(false);
 
 	return;
 
@@ -4498,7 +4492,7 @@ void G_SaveGameData(void)
 	INT32 i, j;
 	UINT8 btemp;
 
-	if (!gamedataloaded)
+	if (!gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
 
 	if (usedCheats)
@@ -4522,8 +4516,8 @@ void G_SaveGameData(void)
 	// Version test
 
 	WRITEUINT32(save_p, GD_VERSIONCHECK); // 4
-	WRITEUINT32(save_p, totalplaytime); // 4
-	WRITEUINT32(save_p, matchesplayed); // 4
+	WRITEUINT32(save_p, gamedata->totalplaytime); // 4
+	WRITEUINT32(save_p, gamedata->matchesplayed); // 4
 	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag
@@ -4531,7 +4525,7 @@ void G_SaveGameData(void)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
-			btemp |= (emblemlocations[j+i].collected << j);
+			btemp |= (gamedata->collected[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
@@ -4539,7 +4533,7 @@ void G_SaveGameData(void)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			btemp |= (extraemblems[j+i].collected << j);
+			btemp |= (gamedata->extraCollected[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
@@ -4547,7 +4541,7 @@ void G_SaveGameData(void)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
-			btemp |= (unlockables[j+i].unlocked << j);
+			btemp |= (gamedata->unlocked[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
@@ -4555,12 +4549,12 @@ void G_SaveGameData(void)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
-			btemp |= (conditionSets[j+i].achieved << j);
+			btemp |= (gamedata->achieved[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
 
-	WRITEUINT32(save_p, timesBeaten); // 4
+	WRITEUINT32(save_p, gamedata->timesBeaten); // 4
 
 	// Main records
 	WRITEUINT32(save_p, nummapheaders); // 4

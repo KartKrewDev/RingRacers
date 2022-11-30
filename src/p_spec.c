@@ -1502,7 +1502,7 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 					CONS_Debug(DBG_GAMELOGIC, "Unlockable check (sidedef %hu): bad unlockable ID %d\n", triggerline->sidenum[0], unlockid);
 					return false;
 				}
-				else if (!(unlockables[unlockid].unlocked))
+				else if (!(gamedata->unlocked[unlockid]))
 					return false;
 			}
 			break;
@@ -2763,7 +2763,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					unlocktriggers |= 1 << trigid;
 
 					// Unlocked something?
-					if (M_UpdateUnlockablesAndExtraEmblems())
+					if (M_UpdateUnlockablesAndExtraEmblems(true))
 					{
 						S_StartSound(NULL, sfx_s3k68);
 						G_SaveGameData(); // only save if unlocked something

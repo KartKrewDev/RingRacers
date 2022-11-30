@@ -52,8 +52,6 @@ typedef struct
 {
 	UINT32 numconditions;   /// <- number of conditions.
 	condition_t *condition; /// <- All conditionals to be checked.
-	UINT8 achieved;         /// <- Whether this conditional has been achieved already or not.
-	                        ///    (Conditional checking is skipped if true -- it's assumed you can't relock an unlockable)
 } conditionset_t;
 
 // Emblem information
@@ -79,7 +77,6 @@ typedef struct
 	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
 	char *stringVar; ///< String version
 	char hint[110];  ///< Hint for emblem hints menu
-	UINT8 collected; ///< Do you have this emblem?
 } emblem_t;
 typedef struct
 {
@@ -89,7 +86,6 @@ typedef struct
 	UINT8 showconditionset; ///< Condition set that shows this emblem.
 	UINT8 sprite;           ///< emblem sprite to use, 0 - 25
 	UINT16 color;           ///< skincolor to use
-	UINT8 collected;        ///< Do you have this emblem?
 } extraemblem_t;
 
 // Unlockable information
@@ -104,7 +100,6 @@ typedef struct
 	char *stringVar;
 	UINT8 nocecho;
 	UINT8 nochecklist;
-	UINT8 unlocked;
 } unlockable_t;
 
 #define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
@@ -135,6 +130,35 @@ typedef struct
 #define MAXEXTRAEMBLEMS   16
 #define MAXUNLOCKABLES    32
 
+// GAMEDATA STRUCTURE
+// Everything that would get saved in gamedata.dat
+typedef struct
+{
+	// WHENEVER OR NOT WE'RE READY TO SAVE
+	boolean loaded;
+
+	// CONDITION SETS ACHIEVED
+	boolean achieved[MAXCONDITIONSETS];
+
+	// EMBLEMS COLLECTED
+	boolean collected[MAXEMBLEMS];
+
+	// EXTRA EMBLEMS COLLECTED
+	boolean extraCollected[MAXEXTRAEMBLEMS];
+
+	// UNLOCKABLES UNLOCKED
+	boolean unlocked[MAXUNLOCKABLES];
+
+	// # OF TIMES THE GAME HAS BEEN BEATEN
+	UINT32 timesBeaten;
+
+	// PLAY TIME
+	UINT32 totalplaytime;
+	UINT32 matchesplayed;
+} gamedata_t;
+
+extern gamedata_t *gamedata;
+
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
 extern extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
@@ -144,6 +168,8 @@ extern INT32 numemblems;
 extern INT32 numextraemblems;
 
 extern UINT32 unlocktriggers;
+
+void M_NewGameDataStruct(void);
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
@@ -155,8 +181,7 @@ void M_ClearSecrets(void);
 // Updating conditions and unlockables
 void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
-UINT8 M_UpdateUnlockablesAndExtraEmblems(void);
-void M_SilentUpdateUnlockablesAndEmblems(void);
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean silent);
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 
@@ -182,4 +207,4 @@ UINT8 M_GotLowEnoughTime(INT32 tictime);
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 
-#define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)
+#define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])

@@ -76,16 +76,16 @@ static UINT8 cheatf_warp(void)
 	{
 		if (!unlockables[i].conditionset)
 			continue;
-		if (!unlockables[i].unlocked)
+		if (!gamedata->unlocked[i])
 		{
-			unlockables[i].unlocked = true;
+			gamedata->unlocked[i] = true;
 			success = true;
 		}
 	}
 
 	if (success)
 	{
-		G_SaveGameData(); //G_SetUsedCheats();
+		G_SetUsedCheats();
 		S_StartSound(0, sfx_kc42);
 	}
 
@@ -111,7 +111,7 @@ static UINT8 cheatf_devmode(void)
 	// Just unlock all the things and turn on -debug and console devmode.
 	G_SetUsedCheats();
 	for (i = 0; i < MAXUNLOCKABLES; i++)
-		unlockables[i].unlocked = true;
+		gamedata->unlocked[i] = true;
 	devparm = true;
 	cht_debug |= 0x8000;
 

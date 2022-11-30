@@ -504,8 +504,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (demo.playback || special->health > MAXEMBLEMS)
 					return;
 
-				emblemlocations[special->health-1].collected = true;
-				M_UpdateUnlockablesAndExtraEmblems();
+				gamedata->collected[special->health-1] = true;
+				M_UpdateUnlockablesAndExtraEmblems(true);
 				G_SaveGameData();
 				break;
 			}

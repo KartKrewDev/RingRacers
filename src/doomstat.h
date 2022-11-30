@@ -186,8 +186,6 @@ extern INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 extern INT32 viewwindowx, viewwindowy;
 extern INT32 viewwidth, scaledviewwidth;
 
-extern boolean gamedataloaded;
-
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
@@ -538,9 +536,6 @@ typedef struct
 extern tolinfo_t TYPEOFLEVEL[NUMTOLNAMES];
 extern UINT32 lastcustomtol;
 
-extern tic_t totalplaytime;
-extern UINT32 matchesplayed;
-
 extern UINT8 stagefailed;
 
 // Emeralds stored as bits to throw savegame hackers off.
@@ -681,8 +676,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-extern UINT32 timesBeaten; // # of times the game has been beaten.
 
 // ===========================
 // Internal parameters, fixed.
