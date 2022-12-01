@@ -107,6 +107,11 @@ void M_PopulateChallengeGrid(void)
 		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
 		PU_STATIC, NULL);
 
+	if (!gamedata->challengegrid)
+	{
+		I_Error("M_PopulateChallengeGrid: was not able to allocate grid");
+	}
+
 	memset(gamedata->challengegrid,
 		MAXUNLOCKABLES,
 		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)));
