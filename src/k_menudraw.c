@@ -4461,7 +4461,7 @@ void M_DrawAddons(void)
 void M_DrawChallenges(void)
 {
 	INT32 x = 20, y = 20;
-	UINT8 i, j, num;
+	UINT8 i, j, id, num, work;
 	unlockable_t *ref = NULL;
 
 	{
@@ -4487,43 +4487,32 @@ void M_DrawChallenges(void)
 	x = currentMenu->x;
 	y = currentMenu->y;
 
+	if (!gamedata->challengegrid)
+	{
+		V_DrawString(x, y, V_REDMAP, "No challenges available!?");
+		return;
+	}
+
 	for (i = 0; i < gamedata->challengegridwidth; i++)
 	{
 		y = currentMenu->y-16;
 		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
 		{
 			y += 16;
-			num = gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + j];
+			id = (i * CHALLENGEGRIDHEIGHT) + j;
+
+			if (challengesmenu.extradata[id] == CHE_DONTDRAW)
+			{
+				continue;
+			}
+
+			num = gamedata->challengegrid[id];
 
 			// Empty spots in the grid are always unconnected.
 			if (num >= MAXUNLOCKABLES)
 			{
 				V_DrawFill(x, y, 16, 16, 27);
 				continue;
-			}
-
-			// Is the spot above me also me?
-			if (j > 0 && gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + (j - 1)] == num)
-			{
-				continue;
-			}
-
-			// Is the spot to the left of me also me?
-			if (i > 0)
-			{
-				// Standard
-				if (gamedata->challengegrid[((i - 1) * CHALLENGEGRIDHEIGHT) + j] == num)
-				{
-					continue;
-				}
-			}
-			else if (gamedata->challengegridwidth > 2)
-			{
-				// Conditional modulo
-				if (gamedata->challengegrid[((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j] == num)
-				{
-					continue;
-				}
 			}
 
 			// Okay, this is what we want to draw.
@@ -4533,9 +4522,10 @@ void M_DrawChallenges(void)
 			if ((gamedata->unlocked[num] == false)
 				|| (num == challengesmenu.currentunlock && challengesmenu.unlockanim < UNLOCKTIME/2))
 			{
-				num = (ref->majorunlock) ? 2 : 1;
-				V_DrawFill(x, y, 16*num, 16*num,
-					((i & num) != (j & num) ? 12 : 14) + (num-1)*4); // funny checkerboard pattern
+				work = (ref->majorunlock) ? 2 : 1;
+				V_DrawFill(x, y, 16*work, 16*work,
+					((challengesmenu.extradata[id] == CHE_HINT) ? 130 : 12)
+					+ ((i & work) != (j & work) ? 0 : 2) + (work-1)); // funny checkerboard pattern
 				continue;
 			}
 

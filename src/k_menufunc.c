@@ -6837,6 +6837,8 @@ void M_ChallengesTick(void)
 			challengesmenu.pending = false;
 			G_SaveGameData();
 		}
+		Z_Free(challengesmenu.extradata);
+		challengesmenu.extradata = M_ChallengeGridExtraData();
 	}
 	else if (challengesmenu.unlockanim >= UNLOCKTIME)
 	{
@@ -6865,6 +6867,8 @@ boolean M_ChallengesInputs(INT32 ch)
 		gamedata->challengegrid = NULL;
 		gamedata->challengegridwidth = 0;
 		M_PopulateChallengeGrid();
+		Z_Free(challengesmenu.extradata);
+		challengesmenu.extradata = M_ChallengeGridExtraData();
 		challengesmenu.unlockanim = 0;
 		return true;
 	}
@@ -6882,6 +6886,10 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		M_GoBack(0);
 		M_SetMenuDelay(pid);
+
+		Z_Free(challengesmenu.extradata);
+		challengesmenu.extradata = NULL;
+
 		return true;
 	}
 

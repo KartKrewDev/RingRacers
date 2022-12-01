@@ -1091,6 +1091,8 @@ extern struct challengesmenu_s {
 	UINT8 currentunlock;
 	tic_t unlockanim;
 
+	UINT8 *extradata;
+
 	boolean pending;
 } challengesmenu;
 

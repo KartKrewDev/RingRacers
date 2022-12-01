@@ -233,6 +233,170 @@ quickcheckagain:
 	}
 }
 
+UINT8 *M_ChallengeGridExtraData(void)
+{
+	UINT8 i, j, num, id, tempid, work;
+	UINT8 *extradata;
+	boolean idchange;
+
+	if (!gamedata->challengegrid)
+	{
+		return NULL;
+	}
+
+	extradata = Z_Malloc(
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		PU_STATIC, NULL);
+
+	if (!extradata)
+	{
+		I_Error("M_ChallengeGridExtraData: was not able to allocate extradata");
+	}
+
+	//CONS_Printf(" --- \n");
+
+	for (i = 0; i < gamedata->challengegridwidth; i++)
+	{
+		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
+		{
+			id = (i * CHALLENGEGRIDHEIGHT) + j;
+			num = gamedata->challengegrid[id];
+			idchange = false;
+
+			extradata[id] = CHE_NONE;
+
+			// Empty spots in the grid are always unconnected.
+			if (num >= MAXUNLOCKABLES)
+			{
+				continue;
+			}
+
+			// Check the spot above.
+			if (j > 0)
+			{
+				tempid = (i * CHALLENGEGRIDHEIGHT) + (j - 1);
+				work = gamedata->challengegrid[tempid];
+				if (work == num)
+				{
+					extradata[id] = CHE_DONTDRAW;
+
+					// Get the id to write extra hint data to.
+					// This check is safe because extradata's order of population
+					if (extradata[tempid] == CHE_DONTDRAW)
+					{
+						//CONS_Printf(" %d - %d above %d is invalid, check to left\n", num, tempid, id);
+						if (i > 0)
+						{
+							tempid -= CHALLENGEGRIDHEIGHT;
+						}
+						else
+						{
+							tempid = ((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j - 1;
+						}
+					}
+					/*else
+						CONS_Printf(" %d - %d above %d is valid\n", num, tempid, id);*/
+
+					id = tempid;
+					idchange = true;
+
+					if (extradata[id] == CHE_HINT)
+					{
+						continue;
+					}
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+				}
+			}
+
+			// Check the spot to the left.
+			{
+				if (i > 0)
+				{
+					tempid = ((i - 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				else
+				{
+					tempid = ((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					if (!idchange && (i > 0 || gamedata->challengegridwidth > 2))
+					{
+						//CONS_Printf(" %d - %d to left of %d is valid\n", work, tempid, id);
+						// If we haven't already updated our id, it's the one to our left.
+						if (extradata[id] == CHE_HINT)
+						{
+							extradata[tempid] = CHE_HINT;
+						}
+						extradata[id] = CHE_DONTDRAW;
+						id = tempid;
+					}
+					/*else
+						CONS_Printf(" %d - %d to left of %d is invalid\n", work, tempid, id);*/
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+
+			// Since we're not modifying id past this point, the conditions become much simpler.
+			if (extradata[id] == CHE_HINT)
+			{
+				continue;
+			}
+
+			// Check the spot below.
+			if (j < CHALLENGEGRIDHEIGHT-1)
+			{
+				tempid = (i * CHALLENGEGRIDHEIGHT) + (j + 1);
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					;
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+
+			// Check the spot to the right.
+			{
+				if (i < (gamedata->challengegridwidth - 1))
+				{
+					tempid = ((i + 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				else
+				{
+					tempid = j;
+				}
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					;
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+		}
+	}
+
+	return extradata;
+}
+
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
 {
 	condition_t *cond;
