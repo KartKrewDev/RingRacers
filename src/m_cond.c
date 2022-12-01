@@ -11,6 +11,7 @@
 /// \brief Unlockable condition system for SRB2 version 2.1
 
 #include "m_cond.h"
+#include "m_random.h" // M_RandomKey
 #include "doomstat.h"
 #include "z_zone.h"
 
@@ -52,6 +53,179 @@ void M_NewGameDataStruct(void)
 	gamedata = Z_Calloc(sizeof (gamedata_t), PU_STATIC, NULL);
 	M_ClearSecrets();
 	G_ClearRecords();
+}
+
+void M_PopulateChallengeGrid(void)
+{
+	UINT16 i, j;
+	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
+	UINT8 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+
+	if (gamedata->challengegrid != NULL)
+	{
+		// todo tweak your grid if unlocks are changed
+		return;
+	}
+
+	// Go through unlockables
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (unlockables[i].majorunlock)
+		{
+			selection[1][nummajorunlocks++] = i;
+			//CONS_Printf(" found %d (LARGE)\n", selection[1][nummajorunlocks-1]);
+			continue;
+		}
+
+		selection[0][numunlocks++] = i;
+		//CONS_Printf(" found %d\n", selection[0][numunlocks-1]);
+	}
+
+	if (numunlocks + nummajorunlocks == 0)
+	{
+		gamedata->challengegridwidth = 0;
+		return;
+	}
+
+	gamedata->challengegridwidth = (numunlocks + (nummajorunlocks * 4) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+
+	if (nummajorunlocks)
+	{
+		// Getting the number of 2-highs you can fit into two adjacent columns.
+		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
+		majorpad = (nummajorunlocks/majorpad)+1;
+		if (gamedata->challengegridwidth < majorpad*2)
+			gamedata->challengegridwidth = majorpad*2;
+	}
+
+	gamedata->challengegrid = Z_Malloc(
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		PU_STATIC, NULL);
+
+	memset(gamedata->challengegrid,
+		MAXUNLOCKABLES,
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)));
+
+	// Attempt to place all large tiles first.
+	if (nummajorunlocks)
+	{
+		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
+		UINT16 numspots = gamedata->challengegridwidth * (CHALLENGEGRIDHEIGHT-1);
+		// 0 is row, 1 is column
+		UINT8 quickcheck[numspots][2];
+
+		// Prepare the easy-grab spots.
+		for (i = 0; i < numspots; i++)
+		{
+			quickcheck[i][0] = i%(CHALLENGEGRIDHEIGHT-1);
+			quickcheck[i][1] = i/(CHALLENGEGRIDHEIGHT-1);
+		}
+
+		// Place in random valid locations.
+		while (nummajorunlocks > 0 && numspots > 0)
+		{
+			UINT8 row, col;
+			j = M_RandomKey(numspots);
+			row = quickcheck[j][0];
+			col =  quickcheck[j][1];
+
+			// We always take from selection[1][] in order, but the PLACEMENT is still random.
+			nummajorunlocks--;
+
+			//CONS_Printf("--- %d (LARGE) placed at (%d, %d)\n", selection[1][nummajorunlocks], row, col);
+
+			i = row + (col * CHALLENGEGRIDHEIGHT);
+			gamedata->challengegrid[i] = gamedata->challengegrid[i+1] = selection[1][nummajorunlocks];
+			if (col == gamedata->challengegridwidth-1)
+			{
+				i = row;
+			}
+			else
+			{
+				i += CHALLENGEGRIDHEIGHT;
+			}
+			gamedata->challengegrid[i] = gamedata->challengegrid[i+1] = selection[1][nummajorunlocks];
+	
+			if (nummajorunlocks == 0)
+			{
+				break;
+			}
+
+			for (i = 0; i < numspots; i++)
+			{
+quickcheckagain:
+				if (abs(((signed)quickcheck[i][0]) - ((signed)row)) <= 1 // Row distance 
+					|| abs(((signed)quickcheck[i][1]) - ((signed)col)) <= 1 // Column distance
+					|| (quickcheck[i][1] == 0 && col == gamedata->challengegridwidth-1) // Wraparounds l->r
+					|| (quickcheck[i][1] == gamedata->challengegridwidth-1 && col == 0)) // Wraparounds r->l
+				{
+					numspots--;  // Remove from possible indicies
+					if (i == numspots)
+						break;
+					// Shuffle remaining so we can keep on using M_RandomKey
+					quickcheck[i][0] = quickcheck[numspots][0];
+					quickcheck[i][1] = quickcheck[numspots][1];
+					// Woah there - we've gotta check the one that just got put in our place.
+					goto quickcheckagain;
+				}
+				continue;
+			}
+		}
+
+		if (nummajorunlocks > 0)
+		{
+			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles", nummajorunlocks);
+		}
+	}
+
+	// Space out empty entries to pepper into unlock list
+	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
+	{
+		if (gamedata->challengegrid[i] != MAXUNLOCKABLES)
+		{
+			continue;
+		}
+
+		numempty++;
+	}
+
+	if (numunlocks > numempty)
+	{
+		I_Error("M_PopulateChallengeGrid: %d small unlocks vs %d empty spaces (%d gap)", numunlocks, numempty, (numunlocks-numempty));
+	}
+
+	//CONS_Printf(" %d unlocks vs %d empty spaces\n", numunlocks, numempty);
+
+	while (numunlocks < numempty)
+	{
+		//CONS_Printf(" adding empty)\n");
+		selection[0][numunlocks++] = MAXUNLOCKABLES;
+	}
+
+	// Fill the remaining spots with random ordinary unlocks (and empties).
+	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
+	{
+		if (gamedata->challengegrid[i] != MAXUNLOCKABLES)
+		{
+			continue;
+		}
+
+		j = M_RandomKey(numunlocks); // Get an entry
+		gamedata->challengegrid[i] = selection[0][j]; // Set that entry
+		//CONS_Printf(" %d placed at (%d, %d)\n", selection[0][j], i/CHALLENGEGRIDHEIGHT, i%CHALLENGEGRIDHEIGHT);
+		numunlocks--; // Remove from possible indicies
+		selection[0][j] = selection[0][numunlocks]; // Shuffle remaining so we can keep on using M_RandomKey
+
+		if (numunlocks == 0)
+		{
+			break;
+		}
+	}
 }
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
@@ -104,6 +278,10 @@ void M_ClearSecrets(void)
 		gamedata->unlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		gamedata->achieved[i] = false;
+
+	Z_Free(gamedata->challengegrid);
+	gamedata->challengegrid = NULL;
+	gamedata->challengegridwidth = 0;
 
 	gamedata->timesBeaten = 0;
 
@@ -406,22 +584,6 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 // -------------------
 // Quick unlock checks
 // -------------------
-UINT8 M_AnySecretUnlocked(void)
-{
-	INT32 i;
-
-#ifdef DEVELOP
-	if (1)
-		return true;	
-#endif	
-	
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
-	{
-		if (!unlockables[i].nocecho && gamedata->unlocked[i])
-			return true;
-	}
-	return false;
-}
 
 UINT8 M_SecretUnlocked(INT32 type)
 {
@@ -455,10 +617,6 @@ UINT8 M_SecretUnlocked(INT32 type)
 
 UINT8 M_MapLocked(INT32 mapnum)
 {
-#ifdef DEVELOP
-	(void)mapnum;
-	return false;
-#else
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
 	if (dedicated)
@@ -471,7 +629,6 @@ UINT8 M_MapLocked(INT32 mapnum)
 		return true;
 
 	return false;
-#endif
 }
 
 INT32 M_CountEmblems(void)

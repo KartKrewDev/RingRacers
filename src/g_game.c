@@ -4411,6 +4411,23 @@ void G_LoadGameData(void)
 		i += j;
 	}
 
+	gamedata->challengegridwidth = READUINT16(save_p);
+	Z_Free(gamedata->challengegrid);
+	if (gamedata->challengegridwidth)
+	{
+		gamedata->challengegrid = Z_Malloc(
+			(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+			PU_STATIC, NULL);
+		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+		{
+			gamedata->challengegrid[i] = READUINT8(save_p);
+		}
+	}
+	else
+	{
+		gamedata->challengegrid = NULL;
+	}
+
 	gamedata->timesBeaten = READUINT32(save_p);
 
 	// Main records
@@ -4552,6 +4569,19 @@ void G_SaveGameData(void)
 			btemp |= (gamedata->achieved[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
+	}
+
+	if (gamedata->challengegrid)
+	{
+		WRITEUINT16(save_p, gamedata->challengegridwidth);
+		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+		{
+			WRITEUINT8(save_p, gamedata->challengegrid[i]);
+		}
+	}
+	else
+	{
+		WRITEUINT16(save_p, 0);
 	}
 
 	WRITEUINT32(save_p, gamedata->timesBeaten); // 4

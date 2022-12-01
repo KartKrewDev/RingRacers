@@ -4460,7 +4460,8 @@ void M_DrawAddons(void)
 
 void M_DrawChallenges(void)
 {
-	INT32 x, y;
+	INT32 x = 20, y = 20;
+	UINT8 i, j, unlock;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
@@ -4469,16 +4470,34 @@ void M_DrawChallenges(void)
 
 	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 	{
-		V_DrawThinString(currentMenu->x, currentMenu->y, V_ALLOWLOWERCASE, unlockables[challengesmenu.currentunlock].name);
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE, unlockables[challengesmenu.currentunlock].name);
 
 		if (challengesmenu.unlockanim >= UNLOCKTIME)
-			V_DrawThinString(currentMenu->x, currentMenu->y + 10, V_ALLOWLOWERCASE, "Press (A)");
+			V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, "Press (A)");
 	}
 	else
 	{
-		V_DrawThinString(currentMenu->x, currentMenu->y, V_ALLOWLOWERCASE, va("pending = %c", challengesmenu.pending ? 'T' : 'F'));
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE, va("pending = %c", challengesmenu.pending ? 'T' : 'F'));
 
 		if (challengesmenu.unlockanim >= UNLOCKTIME)
-			V_DrawThinString(currentMenu->x, currentMenu->y + 10, V_ALLOWLOWERCASE, "Press (B)");
+			V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, "Press (B)");
+	}
+
+	x = currentMenu->x;
+	y = currentMenu->y;
+
+	for (i = 0; i < gamedata->challengegridwidth; i++)
+	{
+		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
+		{
+			unlock = gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + j];
+			// very WIP render of tilegrid
+			if (unlock >= MAXUNLOCKABLES)
+				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, ".");
+			else if (gamedata->unlocked[unlock] == false)
+				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, "?");
+			else
+				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, va("%c", unlockables[unlock].name[0]));
+		}
 	}
 }

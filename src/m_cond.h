@@ -94,12 +94,10 @@ typedef struct
 	char name[64];
 	char objective[64];
 	UINT8 conditionset;
-	UINT8 showconditionset;
 	INT16 type;
 	INT16 variable;
 	char *stringVar;
-	UINT8 nocecho;
-	UINT8 nochecklist;
+	UINT8 majorunlock;
 } unlockable_t;
 
 #define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
@@ -130,6 +128,8 @@ typedef struct
 #define MAXEXTRAEMBLEMS   16
 #define MAXUNLOCKABLES    32
 
+#define CHALLENGEGRIDHEIGHT 5
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 typedef struct
@@ -148,6 +148,10 @@ typedef struct
 
 	// UNLOCKABLES UNLOCKED
 	boolean unlocked[MAXUNLOCKABLES];
+
+	// CHALLENGE GRID
+	UINT16 challengegridwidth;
+	UINT8 *challengegrid;
 
 	// # OF TIMES THE GAME HAS BEEN BEATEN
 	UINT32 timesBeaten;
@@ -170,6 +174,7 @@ extern INT32 numextraemblems;
 extern UINT32 unlocktriggers;
 
 void M_NewGameDataStruct(void);
+void M_PopulateChallengeGrid(void);
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
@@ -187,7 +192,6 @@ UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 
 // Checking unlockable status
-UINT8 M_AnySecretUnlocked(void);
 UINT8 M_SecretUnlocked(INT32 type);
 UINT8 M_MapLocked(INT32 mapnum);
 INT32 M_CountEmblems(void);

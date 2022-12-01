@@ -781,8 +781,10 @@ static boolean M_PrevOpt(void)
 
 	if (M_GetNextAchievedUnlock(false) < MAXUNLOCKABLES)
 	{
+		MISC_ChallengesDef.prevMenu = desiredmenu;
 		challengesmenu.pending = true;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
+		M_PopulateChallengeGrid();
 		return &MISC_ChallengesDef;
 	}
 
@@ -6856,6 +6858,17 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		;
 	}
+#ifdef DEVELOP
+	else if (M_MenuExtraPressed(pid)) // debugging
+	{
+		Z_Free(gamedata->challengegrid);
+		gamedata->challengegrid = NULL;
+		gamedata->challengegridwidth = 0;
+		M_PopulateChallengeGrid();
+		challengesmenu.unlockanim = 0;
+		return true;
+	}
+#endif
 	else if (challengesmenu.pending)
 	{
 		if ((M_MenuConfirmPressed(pid) || start))
