@@ -4461,7 +4461,8 @@ void M_DrawAddons(void)
 void M_DrawChallenges(void)
 {
 	INT32 x = 20, y = 20;
-	UINT8 i, j, unlock;
+	UINT8 i, j, num;
+	unlockable_t *ref = NULL;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
@@ -4488,16 +4489,79 @@ void M_DrawChallenges(void)
 
 	for (i = 0; i < gamedata->challengegridwidth; i++)
 	{
+		y = currentMenu->y-16;
 		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
 		{
-			unlock = gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + j];
-			// very WIP render of tilegrid
-			if (unlock >= MAXUNLOCKABLES)
-				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, ".");
-			else if (gamedata->unlocked[unlock] == false)
-				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, "?");
-			else
-				V_DrawString(x + 10*i, y + 10*j, V_ALLOWLOWERCASE, va("%c", unlockables[unlock].name[0]));
+			y += 16;
+			num = gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + j];
+
+			// Empty spots in the grid are always unconnected.
+			if (num >= MAXUNLOCKABLES)
+			{
+				V_DrawFill(x, y, 16, 16, 27);
+				continue;
+			}
+
+			// Is the spot above me also me?
+			if (j > 0 && gamedata->challengegrid[(i * CHALLENGEGRIDHEIGHT) + (j - 1)] == num)
+			{
+				continue;
+			}
+
+			// Is the spot to the left of me also me?
+			if (i > 0)
+			{
+				// Standard
+				if (gamedata->challengegrid[((i - 1) * CHALLENGEGRIDHEIGHT) + j] == num)
+				{
+					continue;
+				}
+			}
+			else if (gamedata->challengegridwidth > 2)
+			{
+				// Conditional modulo
+				if (gamedata->challengegrid[((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j] == num)
+				{
+					continue;
+				}
+			}
+
+			// Okay, this is what we want to draw.
+			ref = &unlockables[num];
+
+			// ...unless we simply aren't unlocked yet.
+			if ((gamedata->unlocked[num] == false)
+				|| (num == challengesmenu.currentunlock && challengesmenu.unlockanim < UNLOCKTIME/2))
+			{
+				num = (ref->majorunlock) ? 2 : 1;
+				V_DrawFill(x, y, 16*num, 16*num,
+					((i & num) != (j & num) ? 12 : 14) + (num-1)*4); // funny checkerboard pattern
+				continue;
+			}
+
+			switch (ref->type)
+			{
+				case SECRET_SKIN:
+				{
+					INT32 skin = M_UnlockableSkinNum(ref);
+					if (skin != -1)
+					{
+						UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+						UINT8 size = (ref->majorunlock) ? FACE_WANTED : FACE_RANK;
+						V_DrawMappedPatch(x, y, 0, faceprefix[skin][size], colormap);
+					}
+					else
+					{
+						V_DrawPatch(x, y, 0, missingpat);
+					}
+
+					break;
+				}
+				default:
+					V_DrawString(x, y, V_ALLOWLOWERCASE, va("%c", ref->name[0]));
+					break;
+			}
 		}
+		x += 16;
 	}
 }
