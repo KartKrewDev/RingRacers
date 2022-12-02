@@ -1496,13 +1496,13 @@ menuitem_t EXTRAS_Main[] =
 	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
 		NULL, {.routine = M_Addons}, 0, 0},
 
+	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
+		NULL, {.routine = M_Challenges}, 0, 0},
+
 	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
 		NULL, {.routine = M_ReplayHut}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
-		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_TRANSTEXT, "Extras Checklist", "View the requirement for some of the secret content you can unlock!",
 		NULL, {NULL}, 0, 0},
 };
 

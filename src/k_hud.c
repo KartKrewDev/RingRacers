@@ -69,7 +69,7 @@ static patch_t *kp_racefinish[6];
 static patch_t *kp_positionnum[10][2][2]; // number, overlay or underlay, splitscreen
 
 static patch_t *kp_facenum[MAXPLAYERS+1];
-static patch_t *kp_facehighlight[8];
+patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;

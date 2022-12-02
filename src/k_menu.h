@@ -1091,11 +1091,15 @@ extern struct challengesmenu_s {
 	UINT8 currentunlock;
 	tic_t unlockanim;
 
+	UINT8 row, col, hilix, hiliy;
+
 	UINT8 *extradata;
 
 	boolean pending;
 } challengesmenu;
 
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
+void M_Challenges(INT32 choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);

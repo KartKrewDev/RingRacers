@@ -176,9 +176,11 @@ extern UINT32 unlocktriggers;
 void M_NewGameDataStruct(void);
 void M_PopulateChallengeGrid(void);
 UINT8 *M_ChallengeGridExtraData(void);
-#define CHE_NONE     0
-#define CHE_HINT     1
-#define CHE_DONTDRAW 2
+#define CHE_NONE          0
+#define CHE_HINT          1
+#define CHE_CONNECTEDLEFT 2
+#define CHE_CONNECTEDUP   4
+#define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);

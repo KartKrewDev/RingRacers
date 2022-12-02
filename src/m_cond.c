@@ -278,12 +278,13 @@ UINT8 *M_ChallengeGridExtraData(void)
 				work = gamedata->challengegrid[tempid];
 				if (work == num)
 				{
-					extradata[id] = CHE_DONTDRAW;
+					extradata[id] = CHE_CONNECTEDUP;
 
 					// Get the id to write extra hint data to.
 					// This check is safe because extradata's order of population
-					if (extradata[tempid] == CHE_DONTDRAW)
+					if (extradata[tempid] & CHE_CONNECTEDLEFT)
 					{
+						extradata[id] |= CHE_CONNECTEDLEFT;
 						//CONS_Printf(" %d - %d above %d is invalid, check to left\n", num, tempid, id);
 						if (i > 0)
 						{
@@ -333,7 +334,7 @@ UINT8 *M_ChallengeGridExtraData(void)
 						{
 							extradata[tempid] = CHE_HINT;
 						}
-						extradata[id] = CHE_DONTDRAW;
+						extradata[id] = CHE_CONNECTEDLEFT;
 						id = tempid;
 					}
 					/*else

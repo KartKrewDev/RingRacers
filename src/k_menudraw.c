@@ -600,10 +600,10 @@ static void M_DrawMenuTooltips(void)
 // Used for the secrets menu, to hide yet-to-be-unlocked stuff.
 static const char *M_CreateSecretMenuOption(const char *str)
 {
-	static char qbuf[32];
+	static char qbuf[64];
 	int i;
 
-	for (i = 0; i < 31; ++i)
+	for (i = 0; i < 63; ++i)
 	{
 		if (!str[i])
 		{
@@ -616,7 +616,7 @@ static const char *M_CreateSecretMenuOption(const char *str)
 			qbuf[i] = ' ';
 	}
 
-	qbuf[31] = '\0';
+	qbuf[63] = '\0';
 	return qbuf;
 }
 
@@ -4471,18 +4471,20 @@ void M_DrawChallenges(void)
 
 	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 	{
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE, unlockables[challengesmenu.currentunlock].name);
-
-		if (challengesmenu.unlockanim >= UNLOCKTIME)
-			V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, "Press (A)");
+		const char *str = unlockables[challengesmenu.currentunlock].name;
+		if (!gamedata->unlocked[challengesmenu.currentunlock])
+		{
+			str = "???"; //M_CreateSecretMenuOption(str);
+		}
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE, str);
 	}
 	else
 	{
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE, va("pending = %c", challengesmenu.pending ? 'T' : 'F'));
-
-		if (challengesmenu.unlockanim >= UNLOCKTIME)
-			V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, "Press (B)");
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE, "---");
 	}
+
+	if (challengesmenu.unlockanim >= UNLOCKTIME)
+		V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, va("Press (%c)", challengesmenu.pending ? 'A' : 'B'));
 
 	x = currentMenu->x;
 	y = currentMenu->y;
@@ -4501,7 +4503,7 @@ void M_DrawChallenges(void)
 			y += 16;
 			id = (i * CHALLENGEGRIDHEIGHT) + j;
 
-			if (challengesmenu.extradata[id] == CHE_DONTDRAW)
+			if (challengesmenu.extradata[id] & CHE_DONTDRAW)
 			{
 				continue;
 			}
@@ -4512,7 +4514,8 @@ void M_DrawChallenges(void)
 			if (num >= MAXUNLOCKABLES)
 			{
 				V_DrawFill(x, y, 16, 16, 27);
-				continue;
+				ref = NULL;
+				goto drawborder;
 			}
 
 			// Okay, this is what we want to draw.
@@ -4526,7 +4529,7 @@ void M_DrawChallenges(void)
 				V_DrawFill(x, y, 16*work, 16*work,
 					((challengesmenu.extradata[id] == CHE_HINT) ? 130 : 12)
 					+ ((i & work) != (j & work) ? 0 : 2) + (work-1)); // funny checkerboard pattern
-				continue;
+				goto drawborder;
 			}
 
 			switch (ref->type)
@@ -4551,6 +4554,19 @@ void M_DrawChallenges(void)
 					V_DrawString(x, y, V_ALLOWLOWERCASE, va("%c", ref->name[0]));
 					break;
 			}
+
+drawborder:
+			if (i != challengesmenu.hilix)
+				continue;
+			if (j != challengesmenu.hiliy)
+				continue;
+
+			V_DrawFixedPatch(
+				x*FRACUNIT, y*FRACUNIT,
+				((ref != NULL && ref->majorunlock) ? FRACUNIT*2 : FRACUNIT),
+				0, kp_facehighlight[(challengesmenu.ticker / 4) % 8],
+				NULL
+			);
 		}
 		x += 16;
 	}

@@ -775,22 +775,6 @@ static boolean M_PrevOpt(void)
 	return true;
 }
 
- static menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
-{
-	M_UpdateUnlockablesAndExtraEmblems(false);
-
-	if (M_GetNextAchievedUnlock(false) < MAXUNLOCKABLES)
-	{
-		MISC_ChallengesDef.prevMenu = desiredmenu;
-		challengesmenu.pending = true;
-		challengesmenu.currentunlock = MAXUNLOCKABLES;
-		M_PopulateChallengeGrid();
-		return &MISC_ChallengesDef;
-	}
-
-	return desiredmenu;
-}
-
 //
 // M_Responder
 //
@@ -6826,19 +6810,122 @@ void M_Manual(INT32 choice)
 
 struct challengesmenu_s challengesmenu;
 
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
+{
+	M_UpdateUnlockablesAndExtraEmblems(false);
+
+	if (M_GetNextAchievedUnlock(false) < MAXUNLOCKABLES)
+	{
+		challengesmenu.pending = true;
+		MISC_ChallengesDef.prevMenu = desiredmenu;
+	}
+
+	if (challengesmenu.pending || desiredmenu == NULL)
+	{
+		challengesmenu.currentunlock = MAXUNLOCKABLES;
+		M_PopulateChallengeGrid();
+		return &MISC_ChallengesDef;
+	}
+
+	return desiredmenu;
+}
+
+void M_Challenges(INT32 choice)
+{
+	UINT8 i;
+	(void)choice;
+
+	M_InterruptMenuWithChallenges(NULL);
+	MISC_ChallengesDef.prevMenu = currentMenu;
+
+	if (gamedata->challengegrid)
+	{
+		UINT8 selection[MAXUNLOCKABLES];
+		UINT8 numunlocks = 0;
+
+		// Get a random available unlockable.
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			selection[numunlocks++] = i;
+		}
+
+		if (!numunlocks)
+		{
+			// ...OK, get a random unlockable.
+			for (i = 0; i < MAXUNLOCKABLES; i++)
+			{
+				if (!unlockables[i].conditionset)
+				{
+					continue;
+				}
+
+				selection[numunlocks++] = i;
+			}
+		}
+
+		challengesmenu.currentunlock = selection[M_RandomKey(numunlocks)];
+
+		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+		{
+			if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
+			{
+				continue;
+			}
+
+			challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
+			challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+			break;
+		}
+	}
+
+	M_SetupNextMenu(&MISC_ChallengesDef, false);
+}
+
 void M_ChallengesTick(void)
 {
+	UINT8 i, newunlock = MAXUNLOCKABLES;
+
 	challengesmenu.ticker++;
 
 	if (challengesmenu.pending && challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
-		if ((challengesmenu.currentunlock = M_GetNextAchievedUnlock(true)) >= MAXUNLOCKABLES)
+		if ((newunlock = M_GetNextAchievedUnlock(true)) < MAXUNLOCKABLES)
+		{
+			challengesmenu.currentunlock = newunlock;
+			challengesmenu.unlockanim = 0;
+
+			if (gamedata->challengegrid)
+			{
+				for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+				{
+					if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
+					{
+						continue;
+					}
+
+					challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
+					challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+					break;
+				}
+			}
+		}
+		else
 		{
 			challengesmenu.pending = false;
 			G_SaveGameData();
 		}
 		Z_Free(challengesmenu.extradata);
-		challengesmenu.extradata = M_ChallengeGridExtraData();
+		challengesmenu.extradata = NULL;
 	}
 	else if (challengesmenu.unlockanim >= UNLOCKTIME)
 	{
@@ -6848,14 +6935,25 @@ void M_ChallengesTick(void)
 	{
 		challengesmenu.unlockanim++;
 	}
+
+	if (challengesmenu.extradata == NULL)
+	{
+		challengesmenu.extradata = M_ChallengeGridExtraData();
+	}
 }
 
 boolean M_ChallengesInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
-	boolean start = M_MenuButtonPressed(pid, MBT_START);
+	UINT8 i;
+	const boolean start = M_MenuButtonPressed(pid, MBT_START);
+	const boolean move = (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr);
 	(void) ch;
 
+	if (!challengesmenu.extradata)
+	{
+		;
+	}
 	if (challengesmenu.unlockanim < UNLOCKTIME)
 	{
 		;
@@ -6870,6 +6968,21 @@ boolean M_ChallengesInputs(INT32 ch)
 		Z_Free(challengesmenu.extradata);
 		challengesmenu.extradata = M_ChallengeGridExtraData();
 		challengesmenu.unlockanim = 0;
+
+		if (challengesmenu.currentunlock != MAXUNLOCKABLES)
+		{
+			for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+			{
+				if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
+				{
+					continue;
+				}
+
+				challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
+				challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+				break;
+			}
+		}
 		return true;
 	}
 #endif
@@ -6878,19 +6991,142 @@ boolean M_ChallengesInputs(INT32 ch)
 		if ((M_MenuConfirmPressed(pid) || start))
 		{
 			challengesmenu.currentunlock = MAXUNLOCKABLES;
-			challengesmenu.unlockanim = 0;
 		}
 		return true;
 	}
-	else if (M_MenuBackPressed(pid) || start)
+	else
 	{
-		M_GoBack(0);
-		M_SetMenuDelay(pid);
+		if (M_MenuBackPressed(pid) || start)
+		{
+			M_GoBack(0);
+			M_SetMenuDelay(pid);
 
-		Z_Free(challengesmenu.extradata);
-		challengesmenu.extradata = NULL;
+			Z_Free(challengesmenu.extradata);
+			challengesmenu.extradata = NULL;
 
-		return true;
+			return true;
+		}
+
+		// Determine movement around the grid
+		if (move)
+		{
+			if (menucmd[pid].dpad_ud > 0)
+			{
+				i = 2;
+				while (i > 0)
+				{
+					if (challengesmenu.row < CHALLENGEGRIDHEIGHT-1)
+					{
+						challengesmenu.row++;
+					}
+					else
+					{
+						challengesmenu.row = 0;
+					}
+					if (!(challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDUP))
+					{
+						break;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+			else if (menucmd[pid].dpad_ud < 0)
+			{
+				i = (challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDUP) ? 2 : 1;
+				while (i > 0)
+				{
+					if (challengesmenu.row > 0)
+					{
+						challengesmenu.row--;
+					}
+					else
+					{
+						challengesmenu.row = CHALLENGEGRIDHEIGHT-1;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+
+			if (menucmd[pid].dpad_lr > 0)
+			{
+				i = 2;
+				while (i > 0)
+				{
+					if (challengesmenu.col < gamedata->challengegridwidth-1)
+					{
+						challengesmenu.col++;
+					}
+					else
+					{
+						challengesmenu.col = 0;
+					}
+					if (!(challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDLEFT))
+					{
+						break;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+			else if (menucmd[pid].dpad_lr < 0)
+			{
+				i = (challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDLEFT) ? 2 : 1;
+				while (i > 0)
+				{
+					if (challengesmenu.col > 0)
+					{
+						challengesmenu.col--;
+					}
+					else
+					{
+						challengesmenu.col = gamedata->challengegridwidth-1;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+
+			// After movement has been determined, figure out the current selection.
+			i = (challengesmenu.col * CHALLENGEGRIDHEIGHT) + challengesmenu.row;
+			challengesmenu.currentunlock = (gamedata->challengegrid[i]);
+
+			challengesmenu.hilix = challengesmenu.col;
+			challengesmenu.hiliy = challengesmenu.row;
+			if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
+			{
+				challengesmenu.hiliy--;
+			}
+
+			if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
+			{
+				if (challengesmenu.hilix > 0)
+				{
+					challengesmenu.hilix--;
+				}
+				else
+				{
+					challengesmenu.hilix = gamedata->challengegridwidth-1;
+				}
+			}
+		}
 	}
 
 	return true;
