@@ -98,7 +98,7 @@ void M_PopulateChallengeGrid(void)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
 		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
-		majorpad = (nummajorunlocks/majorpad)+1;
+		majorpad = (nummajorunlocks+1)/majorpad;
 		if (gamedata->challengegridwidth < majorpad*2)
 			gamedata->challengegridwidth = majorpad*2;
 	}
@@ -122,7 +122,7 @@ void M_PopulateChallengeGrid(void)
 		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
 		UINT16 numspots = gamedata->challengegridwidth * (CHALLENGEGRIDHEIGHT-1);
 		// 0 is row, 1 is column
-		UINT8 quickcheck[numspots][2];
+		INT16 quickcheck[numspots][2];
 
 		// Prepare the easy-grab spots.
 		for (i = 0; i < numspots; i++)
@@ -134,7 +134,7 @@ void M_PopulateChallengeGrid(void)
 		// Place in random valid locations.
 		while (nummajorunlocks > 0 && numspots > 0)
 		{
-			UINT8 row, col;
+			INT16 row, col;
 			j = M_RandomKey(numspots);
 			row = quickcheck[j][0];
 			col =  quickcheck[j][1];
@@ -164,10 +164,10 @@ void M_PopulateChallengeGrid(void)
 			for (i = 0; i < numspots; i++)
 			{
 quickcheckagain:
-				if (abs(((signed)quickcheck[i][0]) - ((signed)row)) <= 1 // Row distance 
-					|| abs(((signed)quickcheck[i][1]) - ((signed)col)) <= 1 // Column distance
+				if (abs((quickcheck[i][0]) - (row)) <= 1 // Row distance
+					&& (abs((quickcheck[i][1]) - (col)) <= 1 // Column distance
 					|| (quickcheck[i][1] == 0 && col == gamedata->challengegridwidth-1) // Wraparounds l->r
-					|| (quickcheck[i][1] == gamedata->challengegridwidth-1 && col == 0)) // Wraparounds r->l
+					|| (quickcheck[i][1] == gamedata->challengegridwidth-1 && col == 0))) // Wraparounds r->l
 				{
 					numspots--;  // Remove from possible indicies
 					if (i == numspots)
@@ -184,7 +184,7 @@ quickcheckagain:
 
 		if (nummajorunlocks > 0)
 		{
-			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles", nummajorunlocks);
+			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, gamedata->challengegridwidth);
 		}
 	}
 
