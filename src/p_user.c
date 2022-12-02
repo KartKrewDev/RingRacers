@@ -478,6 +478,12 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = 0;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+
+	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
+	{
+		player->mo->pitch = 0;
+		player->mo->roll = 0;
+	}
 }
 
 //
