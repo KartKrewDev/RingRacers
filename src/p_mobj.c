@@ -9177,8 +9177,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					|| state == S_BATTLECAPSULE_SUPPORTFLY
 					|| state == S_KARMAWHEEL)
 				{
-					fixed_t offx = mobj->radius;
-					fixed_t offy = mobj->radius;
+					fixed_t offx = 28 * mobj->scale;
+					fixed_t offy = 28 * mobj->scale;
 
 					if (cur->extravalue1 & 1)
 						offx = -offx;
