@@ -625,7 +625,7 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 	}
 #endif
 
-	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
+	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_VOLTAGE|DMG_CANTHURTSELF|DMG_WOMBO);
 	return BMIT_CONTINUE;
 }
 
