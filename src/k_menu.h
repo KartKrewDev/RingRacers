@@ -653,9 +653,9 @@ extern UINT8 setup_maxpage;
 #define CSEXPLOSIONS 48
 
 extern struct setup_explosions_s {
-	UINT8 x, y;
+	UINT16 x, y;
 	UINT8 tics;
-	UINT8 color;
+	UINT16 color;
 } setup_explosions[CSEXPLOSIONS];
 
 typedef enum

@@ -2229,10 +2229,12 @@ void M_CharacterSelect(INT32 choice)
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
 
-static void M_SetupReadyExplosions(setup_player_t *p)
+static void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color)
 {
 	UINT8 i, j;
 	UINT8 e = 0;
+	UINT16 maxx = (charsel ? 9 : gamedata->challengegridwidth);
+	UINT16 maxy = (charsel ? 9 : CHALLENGEGRIDHEIGHT);
 
 	while (setup_explosions[e].tics)
 	{
@@ -2248,7 +2250,7 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 
 		for (j = 0; j < 4; j++)
 		{
-			SINT8 x = p->gridx, y = p->gridy;
+			INT16 x = basex, y = basey;
 
 			switch (j)
 			{
@@ -2258,11 +2260,27 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 				case 3: y -= offset; break;
 			}
 
-			if ((x < 0 || x > 8) || (y < 0 || y > 8))
+			if ((y < 0 || y >= maxy))
 				continue;
 
+			if (/*charsel &&*/ (x < 0 || x >= maxx)) 
+				continue;
+
+			/*if (!charsel)
+			{
+				while (x < 0)
+				{
+					x += maxx;
+				}
+
+				while (x >= maxx)
+				{
+					x -= maxx;
+				}
+			}*/
+
 			setup_explosions[e].tics = t;
-			setup_explosions[e].color = p->color;
+			setup_explosions[e].color = color;
 			setup_explosions[e].x = x;
 			setup_explosions[e].y = y;
 
@@ -2550,7 +2568,7 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 			p->delay = TICRATE;
 
 			S_StartSound(NULL, sfx_s3k4e);
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 		}
 		else
 		{
@@ -2850,7 +2868,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 			p->followern = -1;
 			p->mdepth = CSSTEP_READY;
 			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 			S_StartSound(NULL, sfx_s3k4e);
 		}
 		else
@@ -2951,7 +2969,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		{
 			p->mdepth = CSSTEP_READY;
 			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 			S_StartSound(NULL, sfx_s3k4e);
 		}
 
@@ -3000,7 +3018,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
-		M_SetupReadyExplosions(p);
+		M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 		S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
@@ -6822,6 +6840,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if (challengesmenu.pending || desiredmenu == NULL)
 	{
+		memset(setup_explosions, 0, sizeof(setup_explosions));
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		M_PopulateChallengeGrid();
 		return &MISC_ChallengesDef;
@@ -6842,6 +6861,8 @@ void M_Challenges(INT32 choice)
 	{
 		UINT8 selection[MAXUNLOCKABLES];
 		UINT8 numunlocks = 0;
+
+		challengesmenu.extradata = M_ChallengeGridExtraData();
 
 		// Get a random available unlockable.
 		for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -6882,6 +6903,11 @@ void M_Challenges(INT32 choice)
 				continue;
 			}
 
+			if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
+			{
+				continue;
+			}
+
 			challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 			challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 			break;
@@ -6897,6 +6923,12 @@ void M_ChallengesTick(void)
 
 	challengesmenu.ticker++;
 
+	for (i = 0; i < CSEXPLOSIONS; i++)
+	{
+		if (setup_explosions[i].tics > 0)
+			setup_explosions[i].tics--;
+	}
+
 	if (challengesmenu.pending && challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
 		if ((newunlock = M_GetNextAchievedUnlock(true)) < MAXUNLOCKABLES)
@@ -6906,9 +6938,17 @@ void M_ChallengesTick(void)
 
 			if (gamedata->challengegrid)
 			{
+				Z_Free(challengesmenu.extradata);
+				challengesmenu.extradata = M_ChallengeGridExtraData();
+
 				for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 				{
 					if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
+					{
+						continue;
+					}
+
+					if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
 					{
 						continue;
 					}
@@ -6917,6 +6957,16 @@ void M_ChallengesTick(void)
 					challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 					break;
 				}
+
+				S_StartSound(NULL, sfx_s3k4e);
+				M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
+				if (unlockables[challengesmenu.currentunlock].majorunlock)
+				{
+					UINT8 temp = challengesmenu.col+1;
+					if (temp == gamedata->challengegridwidth)
+						temp = 0;
+					M_SetupReadyExplosions(false, temp, challengesmenu.row+1, SKINCOLOR_KETCHUP);
+				}
 			}
 		}
 		else
@@ -6924,8 +6974,6 @@ void M_ChallengesTick(void)
 			challengesmenu.pending = false;
 			G_SaveGameData();
 		}
-		Z_Free(challengesmenu.extradata);
-		challengesmenu.extradata = NULL;
 	}
 	else if (challengesmenu.unlockanim >= UNLOCKTIME)
 	{
@@ -6934,11 +6982,6 @@ void M_ChallengesTick(void)
 	else
 	{
 		challengesmenu.unlockanim++;
-	}
-
-	if (challengesmenu.extradata == NULL)
-	{
-		challengesmenu.extradata = M_ChallengeGridExtraData();
 	}
 }
 
@@ -6978,9 +7021,24 @@ boolean M_ChallengesInputs(INT32 ch)
 					continue;
 				}
 
+				if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
+				{
+					continue;
+				}
+
 				challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 				challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 				break;
+			}
+
+			S_StartSound(NULL, sfx_s3k4e);
+			M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
+			if (unlockables[challengesmenu.currentunlock].majorunlock)
+			{
+				UINT8 temp = challengesmenu.col+1;
+				if (temp == gamedata->challengegridwidth)
+					temp = 0;
+				M_SetupReadyExplosions(false, temp, challengesmenu.row+1, SKINCOLOR_KETCHUP);
 			}
 		}
 		return true;

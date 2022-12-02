@@ -1481,13 +1481,13 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	}
 }
 
-static void M_DrawCharSelectExplosions(void)
+static void M_DrawCharSelectExplosions(boolean charsel, UINT16 basex, UINT16 basey)
 {
 	UINT8 i;
+	INT16 quadx = 0, quady = 0;
 
 	for (i = 0; i < CSEXPLOSIONS; i++)
 	{
-		INT16 quadx, quady;
 		UINT8 *colormap;
 		UINT8 frame;
 
@@ -1496,14 +1496,17 @@ static void M_DrawCharSelectExplosions(void)
 
 		frame = 6 - setup_explosions[i].tics;
 
-		quadx = 4 * (setup_explosions[i].x / 3);
-		quady = 4 * (setup_explosions[i].y / 3);
+		if (charsel)
+		{
+			quadx = 4 * (setup_explosions[i].x / 3);
+			quady = 4 * (setup_explosions[i].y / 3);
+		}
 
 		colormap = R_GetTranslationColormap(TC_DEFAULT, setup_explosions[i].color, GTC_MENUCACHE);
 
 		V_DrawMappedPatch(
-			82 + (setup_explosions[i].x*16) + quadx - 6,
-			22 + (setup_explosions[i].y*16) + quady - 6,
+			basex + (setup_explosions[i].x*16) + quadx - 6,
+			basey + (setup_explosions[i].y*16) + quady - 6,
 			0, W_CachePatchName(va("CHCNFRM%d", frame), PU_CACHE),
 			colormap
 		);
@@ -1742,7 +1745,7 @@ void M_DrawCharacterSelect(void)
 	}
 
 	// Explosions when you've made your final selection
-	M_DrawCharSelectExplosions();
+	M_DrawCharSelectExplosions(true, 82, 22);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -4523,7 +4526,7 @@ void M_DrawChallenges(void)
 
 			// ...unless we simply aren't unlocked yet.
 			if ((gamedata->unlocked[num] == false)
-				|| (num == challengesmenu.currentunlock && challengesmenu.unlockanim < UNLOCKTIME/2))
+				|| (num == challengesmenu.currentunlock && challengesmenu.unlockanim < 2))
 			{
 				work = (ref->majorunlock) ? 2 : 1;
 				V_DrawFill(x, y, 16*work, 16*work,
@@ -4570,4 +4573,6 @@ drawborder:
 		}
 		x += 16;
 	}
+
+	M_DrawCharSelectExplosions(false, currentMenu->x, currentMenu->y);
 }
