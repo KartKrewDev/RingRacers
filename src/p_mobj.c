@@ -9156,9 +9156,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			// Move each piece to the proper position
 			while (cur && !P_MobjWasRemoved(cur))
 			{
-				fixed_t newx = mobj->x;
-				fixed_t newy = mobj->y;
-				fixed_t newz = bottom;
+				fixed_t newx = mobj->x + mobj->momx;
+				fixed_t newy = mobj->y + mobj->momy;
+				fixed_t newz = bottom + mobj->momz;
 				statenum_t state = (statenum_t)(cur->state-states);
 
 				cur->scale = mobj->scale;
@@ -9202,7 +9202,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					cur->angle = angle + ANGLE_90;
 				}
 
-				P_MoveOrigin(cur, newx, newy, newz);
+				cur->momx = newx - cur->x;
+				cur->momy = newy - cur->y;
+				cur->momz = newz - cur->z;
 
 				cur = cur->hnext;
 			}
