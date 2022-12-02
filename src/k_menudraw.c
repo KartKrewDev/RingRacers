@@ -4463,8 +4463,10 @@ void M_DrawAddons(void)
 
 void M_DrawChallenges(void)
 {
-	INT32 x = 20, y = 20;
+	INT32 x = currentMenu->x, y = currentMenu->y;
 	UINT8 i, j, id, num, work;
+	const char *str;
+	INT16 offset;
 	unlockable_t *ref = NULL;
 
 	{
@@ -4472,30 +4474,10 @@ void M_DrawChallenges(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
-	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
-	{
-		const char *str = unlockables[challengesmenu.currentunlock].name;
-		if (!gamedata->unlocked[challengesmenu.currentunlock])
-		{
-			str = "???"; //M_CreateSecretMenuOption(str);
-		}
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE, str);
-	}
-	else
-	{
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE, "---");
-	}
-
-	if (challengesmenu.unlockanim >= UNLOCKTIME)
-		V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, va("Press (%c)", challengesmenu.pending ? 'A' : 'B'));
-
-	x = currentMenu->x;
-	y = currentMenu->y;
-
 	if (!gamedata->challengegrid)
 	{
 		V_DrawString(x, y, V_REDMAP, "No challenges available!?");
-		return;
+		goto challengedesc;
 	}
 
 	for (i = 0; i < gamedata->challengegridwidth; i++)
@@ -4575,4 +4557,27 @@ drawborder:
 	}
 
 	M_DrawCharSelectExplosions(false, currentMenu->x, currentMenu->y);
+
+challengedesc:
+	y = 120;
+	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
+
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+	{
+		str = unlockables[challengesmenu.currentunlock].name;
+		if (!gamedata->unlocked[challengesmenu.currentunlock])
+		{
+			str = "???"; //M_CreateSecretMenuOption(str);
+		}
+	}
+	else
+	{
+		str = "---";
+	}
+
+	offset = V_LSTitleLowStringWidth(str, 0) / 2;
+	V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+
+	if (challengesmenu.unlockanim >= UNLOCKTIME)
+		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, va("Press (%c)", challengesmenu.pending ? 'A' : 'B'));
 }
