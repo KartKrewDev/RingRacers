@@ -6832,9 +6832,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
 	M_UpdateUnlockablesAndExtraEmblems(false);
 
-	if (M_GetNextAchievedUnlock(false) < MAXUNLOCKABLES)
+	if ((challengesmenu.pending = challengesmenu.requestnew = (M_GetNextAchievedUnlock() < MAXUNLOCKABLES)))
 	{
-		challengesmenu.pending = true;
 		MISC_ChallengesDef.prevMenu = desiredmenu;
 	}
 
@@ -6843,6 +6842,10 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		memset(setup_explosions, 0, sizeof(setup_explosions));
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		M_PopulateChallengeGrid();
+
+		if (gamedata->challengegrid)
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+
 		return &MISC_ChallengesDef;
 	}
 
@@ -6861,8 +6864,6 @@ void M_Challenges(INT32 choice)
 	{
 		UINT8 selection[MAXUNLOCKABLES];
 		UINT8 numunlocks = 0;
-
-		challengesmenu.extradata = M_ChallengeGridExtraData();
 
 		// Get a random available unlockable.
 		for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -6929,18 +6930,15 @@ void M_ChallengesTick(void)
 			setup_explosions[i].tics--;
 	}
 
-	if (challengesmenu.pending && challengesmenu.currentunlock >= MAXUNLOCKABLES)
+	if (challengesmenu.pending && challengesmenu.requestnew)
 	{
-		if ((newunlock = M_GetNextAchievedUnlock(true)) < MAXUNLOCKABLES)
+		if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
 		{
 			challengesmenu.currentunlock = newunlock;
 			challengesmenu.unlockanim = 0;
 
 			if (gamedata->challengegrid)
 			{
-				Z_Free(challengesmenu.extradata);
-				challengesmenu.extradata = M_ChallengeGridExtraData();
-
 				for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 				{
 					if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
@@ -6957,16 +6955,6 @@ void M_ChallengesTick(void)
 					challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 					break;
 				}
-
-				S_StartSound(NULL, sfx_s3k4e);
-				M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
-				if (unlockables[challengesmenu.currentunlock].majorunlock)
-				{
-					UINT8 temp = challengesmenu.col+1;
-					if (temp == gamedata->challengegridwidth)
-						temp = 0;
-					M_SetupReadyExplosions(false, temp, challengesmenu.row+1, SKINCOLOR_KETCHUP);
-				}
 			}
 		}
 		else
@@ -6975,14 +6963,35 @@ void M_ChallengesTick(void)
 			G_SaveGameData();
 		}
 	}
-	else if (challengesmenu.unlockanim >= UNLOCKTIME)
+	else if (challengesmenu.unlockanim >= MAXUNLOCKTIME)
 	{
 		;
 	}
 	else
 	{
 		challengesmenu.unlockanim++;
+		if (challengesmenu.pending
+			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& challengesmenu.unlockanim == UNLOCKTIME)
+		{
+			gamedata->unlocked[challengesmenu.currentunlock] = true;
+
+			Z_Free(challengesmenu.extradata);
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+
+			S_StartSound(NULL, sfx_s3k4e);
+			M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
+			if (unlockables[challengesmenu.currentunlock].majorunlock)
+			{
+				i = challengesmenu.col+1;
+				if (i == gamedata->challengegridwidth)
+					i = 0;
+				M_SetupReadyExplosions(false, i, challengesmenu.row+1, SKINCOLOR_KETCHUP);
+			}
+		}
 	}
+
+	challengesmenu.requestnew = false;
 }
 
 boolean M_ChallengesInputs(INT32 ch)
@@ -6994,10 +7003,6 @@ boolean M_ChallengesInputs(INT32 ch)
 	(void) ch;
 
 	if (!challengesmenu.extradata)
-	{
-		;
-	}
-	if (challengesmenu.unlockanim < UNLOCKTIME)
 	{
 		;
 	}
@@ -7031,24 +7036,20 @@ boolean M_ChallengesInputs(INT32 ch)
 				break;
 			}
 
-			S_StartSound(NULL, sfx_s3k4e);
-			M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
-			if (unlockables[challengesmenu.currentunlock].majorunlock)
-			{
-				UINT8 temp = challengesmenu.col+1;
-				if (temp == gamedata->challengegridwidth)
-					temp = 0;
-				M_SetupReadyExplosions(false, temp, challengesmenu.row+1, SKINCOLOR_KETCHUP);
-			}
+			challengesmenu.pending = true;
 		}
 		return true;
 	}
 #endif
 	else if (challengesmenu.pending)
 	{
-		if ((M_MenuConfirmPressed(pid) || start))
+		if (challengesmenu.unlockanim < MAXUNLOCKTIME)
 		{
-			challengesmenu.currentunlock = MAXUNLOCKABLES;
+			;
+		}
+		else if ((M_MenuConfirmPressed(pid) || start))
+		{
+			challengesmenu.requestnew = true;
 		}
 		return true;
 	}

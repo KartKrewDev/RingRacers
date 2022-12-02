@@ -4508,7 +4508,7 @@ void M_DrawChallenges(void)
 
 			// ...unless we simply aren't unlocked yet.
 			if ((gamedata->unlocked[num] == false)
-				|| (num == challengesmenu.currentunlock && challengesmenu.unlockanim < 2))
+				|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
 			{
 				work = (ref->majorunlock) ? 2 : 1;
 				V_DrawFill(x, y, 16*work, 16*work,
@@ -4530,14 +4530,18 @@ void M_DrawChallenges(void)
 					}
 					else
 					{
-						V_DrawPatch(x, y, 0, missingpat);
+						V_DrawMappedPatch(x, y, 0, missingpat, NULL);
 					}
 
 					break;
 				}
 				default:
-					V_DrawString(x, y, V_ALLOWLOWERCASE, va("%c", ref->name[0]));
+				{
+					patch_t *pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
+					V_DrawMappedPatch(x, y, 0, pat, NULL);
+					//V_DrawString(x, y, V_ALLOWLOWERCASE, va("%c", ref->name[0]));
 					break;
+				}
 			}
 
 drawborder:
@@ -4578,6 +4582,6 @@ challengedesc:
 	offset = V_LSTitleLowStringWidth(str, 0) / 2;
 	V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 
-	if (challengesmenu.unlockanim >= UNLOCKTIME)
+	if (challengesmenu.unlockanim >= MAXUNLOCKTIME)
 		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, va("Press (%c)", challengesmenu.pending ? 'A' : 'B'));
 }

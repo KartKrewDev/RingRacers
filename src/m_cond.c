@@ -639,7 +639,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	return false;
 }
 
-UINT8 M_GetNextAchievedUnlock(boolean set)
+UINT8 M_GetNextAchievedUnlock(void)
 {
 	UINT8 i;
 
@@ -659,11 +659,6 @@ UINT8 M_GetNextAchievedUnlock(boolean set)
 		if (M_Achieved(unlockables[i].conditionset - 1) == false)
 		{
 			continue;
-		}
-
-		if (set)
-		{
-			gamedata->unlocked[i] = true;
 		}
 
 		return i;

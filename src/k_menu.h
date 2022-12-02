@@ -1080,7 +1080,8 @@ void M_DrawReplayStartMenu(void);
 void M_DrawAddons(void);
 
 // Challenges menu:
-#define UNLOCKTIME 35
+#define UNLOCKTIME 5
+#define MAXUNLOCKTIME 35
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
@@ -1096,6 +1097,7 @@ extern struct challengesmenu_s {
 	UINT8 *extradata;
 
 	boolean pending;
+	boolean requestnew;
 } challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
