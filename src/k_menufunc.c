@@ -6860,7 +6860,7 @@ void M_Challenges(INT32 choice)
 	M_InterruptMenuWithChallenges(NULL);
 	MISC_ChallengesDef.prevMenu = currentMenu;
 
-	if (gamedata->challengegrid)
+	if (gamedata->challengegrid && !challengesmenu.pending)
 	{
 		UINT8 selection[MAXUNLOCKABLES];
 		UINT8 numunlocks = 0;
