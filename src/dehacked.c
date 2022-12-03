@@ -479,7 +479,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 					else if (i > 0 && i <= MAXCONDITIONSETS)
-						readconditionset(f, (UINT8)i);
+						readconditionset(f, (UINT8)(i-1));
 					else
 					{
 						deh_warning("Condition set number %d out of range (1 - %d)", i, MAXCONDITIONSETS);

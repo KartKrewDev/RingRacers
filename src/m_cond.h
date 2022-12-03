@@ -123,10 +123,10 @@ typedef struct
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
-#define MAXCONDITIONSETS 128
+#define MAXCONDITIONSETS UINT8_MAX
 #define MAXEMBLEMS       512
 #define MAXEXTRAEMBLEMS   16
-#define MAXUNLOCKABLES    32
+#define MAXUNLOCKABLES    (MAXCONDITIONSETS-MAXEXTRAEMBLEMS)
 
 #define CHALLENGEGRIDHEIGHT 5
 

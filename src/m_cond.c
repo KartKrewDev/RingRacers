@@ -191,7 +191,7 @@ quickcheckagain:
 	// Space out empty entries to pepper into unlock list
 	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
 	{
-		if (gamedata->challengegrid[i] != MAXUNLOCKABLES)
+		if (gamedata->challengegrid[i] < MAXUNLOCKABLES)
 		{
 			continue;
 		}
@@ -215,7 +215,7 @@ quickcheckagain:
 	// Fill the remaining spots with random ordinary unlocks (and empties).
 	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
 	{
-		if (gamedata->challengegrid[i] != MAXUNLOCKABLES)
+		if (gamedata->challengegrid[i] < MAXUNLOCKABLES)
 		{
 			continue;
 		}
@@ -405,12 +405,12 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 
 	I_Assert(set && set <= MAXCONDITIONSETS);
 
-	wnum = conditionSets[set - 1].numconditions;
-	num = ++conditionSets[set - 1].numconditions;
+	wnum = conditionSets[set].numconditions;
+	num = ++conditionSets[set].numconditions;
 
-	conditionSets[set - 1].condition = Z_Realloc(conditionSets[set - 1].condition, sizeof(condition_t)*num, PU_STATIC, 0);
+	conditionSets[set].condition = Z_Realloc(conditionSets[set].condition, sizeof(condition_t)*num, PU_STATIC, 0);
 
-	cond = conditionSets[set - 1].condition;
+	cond = conditionSets[set].condition;
 
 	cond[wnum].id = id;
 	cond[wnum].type = c;
@@ -421,13 +421,13 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 
 void M_ClearConditionSet(UINT8 set)
 {
-	if (conditionSets[set - 1].numconditions)
+	if (conditionSets[set].numconditions)
 	{
-		Z_Free(conditionSets[set - 1].condition);
-		conditionSets[set - 1].condition = NULL;
-		conditionSets[set - 1].numconditions = 0;
+		Z_Free(conditionSets[set].condition);
+		conditionSets[set].condition = NULL;
+		conditionSets[set].numconditions = 0;
 	}
-	gamedata->achieved[set - 1] = false;
+	gamedata->achieved[set] = false;
 }
 
 // Clear ALL secrets.

@@ -165,7 +165,7 @@ void clear_conditionsets(void)
 {
 	UINT8 i;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		M_ClearConditionSet(i+1);
+		M_ClearConditionSet(i);
 }
 
 void clear_levels(void)
@@ -2415,7 +2415,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 	if (!params[0])
 	{
-		deh_warning("condition line is empty for condition ID %d", id);
+		deh_warning("condition line is empty for condition ID %d", id+1);
 		return;
 	}
 
@@ -2435,7 +2435,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
 		{
-			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id);
+			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id+1);
 			return;
 		}
 	}
@@ -2459,7 +2459,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re >= nummapheaders)
 		{
-			deh_warning("Invalid level %s for condition ID %d", params[1], id);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
 			return;
 		}
 	}
@@ -2472,7 +2472,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 >= nummapheaders)
 		{
-			deh_warning("Invalid level %s for condition ID %d", params[1], id);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
 			return;
 		}
 	}
@@ -2485,7 +2485,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		// constrained by 32 bits
 		if (re < 0 || re > 31)
 		{
-			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id);
+			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
 			return;
 		}
 	}
@@ -2503,7 +2503,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXEMBLEMS)
 		{
-			deh_warning("Emblem %d out of range (1 - %d) for condition ID %d", re, MAXEMBLEMS, id);
+			deh_warning("Emblem %d out of range (1 - %d) for condition ID %d", re, MAXEMBLEMS, id+1);
 			return;
 		}
 	}
@@ -2515,7 +2515,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXEXTRAEMBLEMS)
 		{
-			deh_warning("Extra emblem %d out of range (1 - %d) for condition ID %d", re, MAXEXTRAEMBLEMS, id);
+			deh_warning("Extra emblem %d out of range (1 - %d) for condition ID %d", re, MAXEXTRAEMBLEMS, id+1);
 			return;
 		}
 	}
@@ -2527,13 +2527,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXCONDITIONSETS)
 		{
-			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id);
+			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id+1);
 			return;
 		}
 	}
 	else
 	{
-		deh_warning("Invalid condition name %s for condition ID %d", params[0], id);
+		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);
 		return;
 	}
 
@@ -2586,13 +2586,13 @@ void readconditionset(MYFILE *f, UINT8 setnum)
 				id = (UINT8)atoi(word + 9);
 				if (id == 0)
 				{
-					deh_warning("Condition set %d: unknown word '%s'", setnum, word);
+					deh_warning("Condition set %d: unknown word '%s'", setnum+1, word);
 					continue;
 				}
 				else if (previd > id)
 				{
 					// out of order conditions can cause problems, so enforce proper order
-					deh_warning("Condition set %d: conditions are out of order, ignoring this line", setnum);
+					deh_warning("Condition set %d: conditions are out of order, ignoring this line", setnum+1);
 					continue;
 				}
 				previd = id;

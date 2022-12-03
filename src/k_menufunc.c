@@ -7017,7 +7017,7 @@ boolean M_ChallengesInputs(INT32 ch)
 		challengesmenu.extradata = M_ChallengeGridExtraData();
 		challengesmenu.unlockanim = 0;
 
-		if (challengesmenu.currentunlock != MAXUNLOCKABLES)
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
 			for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 			{
