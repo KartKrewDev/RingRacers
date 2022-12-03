@@ -1202,7 +1202,7 @@ UINT16 W_CheckNumForFullNamePK3(const char *name, UINT16 wad, UINT16 startlump)
 lumpnum_t W_CheckNumForName(const char *name)
 {
 	lumpnum_t check = INT16_MAX;
-	UINT32 hash = quickncasehash(name, 8);
+	UINT32 hash = name ? quickncasehash(name, 8) : 0;
 	INT32 i;
 
 	if (name == NULL)
@@ -1258,7 +1258,7 @@ lumpnum_t W_CheckNumForName(const char *name)
 lumpnum_t W_CheckNumForLongName(const char *name)
 {
 	lumpnum_t check = INT16_MAX;
-	UINT32 hash = quickncasehash(name, LUMPNUMCACHENAME);
+	UINT32 hash = name ? quickncasehash(name, LUMPNUMCACHENAME) : 0;
 	INT32 i;
 
 	if (name == NULL)
