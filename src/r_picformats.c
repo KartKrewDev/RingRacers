@@ -1474,9 +1474,10 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 	size_t sprinfoTokenLength;
 	char *frameChar = NULL;
 	UINT8 frameFrame = 0xFF;
-	INT16 frameXPivot = 0;
-	INT16 frameYPivot = 0;
+	INT16 frameXPivot = INT16_MIN;
+	INT16 frameYPivot = INT16_MIN;
 	rotaxis_t frameRotAxis = 0;
+	char *bright = NULL;
 
 	if (all)
 	{
@@ -1541,6 +1542,11 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 					else if ((stricmp(sprinfoToken, "Z")==0) || (stricmp(sprinfoToken, "ZAXIS")==0) || (stricmp(sprinfoToken, "YAW")==0))
 						frameRotAxis = ROTAXIS_Z;
 				}
+				else if (stricmp(sprinfoToken, "BRIGHTMAP")==0)
+				{
+					Z_Free(bright);
+					bright = M_GetToken(NULL);
+				}
 				Z_Free(sprinfoToken);
 
 				sprinfoToken = M_GetToken(NULL);
@@ -1557,8 +1563,13 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 	parser->info->pivot[frameFrame].x = frameXPivot;
 	parser->info->pivot[frameFrame].y = frameYPivot;
 	parser->info->pivot[frameFrame].rotaxis = frameRotAxis;
+	Z_Free(parser->info->bright[frameFrame]);
+	parser->info->bright[frameFrame] = bright;
 
-	set_bit_array(parser->info->available, frameFrame);
+	if (frameXPivot != INT16_MIN || frameYPivot != INT16_MIN)
+	{
+		set_bit_array(parser->info->available, frameFrame);
+	}
 
 	if (parser->spr2)
 	{
