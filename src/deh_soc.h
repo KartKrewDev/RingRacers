@@ -60,7 +60,6 @@ void readwipes(MYFILE *f);
 void readmaincfg(MYFILE *f);
 void readconditionset(MYFILE *f, UINT8 setnum);
 void readunlockable(MYFILE *f, INT32 num);
-void readextraemblemdata(MYFILE *f, INT32 num);
 void reademblemdata(MYFILE *f, INT32 num);
 void readsound(MYFILE *f, INT32 num);
 void readframe(MYFILE *f, INT32 num);

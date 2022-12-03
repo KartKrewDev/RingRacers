@@ -37,15 +37,11 @@ conditionset_t conditionSets[MAXCONDITIONSETS];
 // Emblem locations
 emblem_t emblemlocations[MAXEMBLEMS];
 
-// Extra emblems
-extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
-
 // Unlockables
 unlockable_t unlockables[MAXUNLOCKABLES];
 
-// Number of emblems and extra emblems
+// Number of emblems
 INT32 numemblems = 0;
-INT32 numextraemblems = 0;
 
 // Create a new gamedata_t, for start-up
 void M_NewGameDataStruct(void)
@@ -442,8 +438,6 @@ void M_ClearSecrets(void)
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		gamedata->collected[i] = false;
-	for (i = 0; i < MAXEXTRAEMBLEMS; ++i)
-		gamedata->extraCollected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 		gamedata->unlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
@@ -511,8 +505,8 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return (M_GotEnoughEmblems(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
 			return gamedata->collected[cn->requirement-1];
-		case UC_EXTRAEMBLEM: // Requires extra emblem x to be obtained
-			return gamedata->extraCollected[cn->requirement-1];
+		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
+			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
 	}
@@ -574,32 +568,11 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		// Just in case they aren't to sync
 		M_CheckLevelEmblems();
 		M_CompletionEmblems();
-	}
 
-	// Go through extra emblems
-	for (i = 0; i < numextraemblems; ++i)
-	{
-		if (gamedata->extraCollected[i] || !extraemblems[i].conditionset)
-		{
-			continue;
-		}
-
-		if ((gamedata->extraCollected[i] = M_Achieved(extraemblems[i].conditionset - 1)) == false)
-		{
-			continue;
-		}
-
-		if (loud)
-		{
-			strcat(cechoText, va("Got \"%s\" medal!\n", extraemblems[i].name));
-		}
-		++cechoLines;
-	}
-
-	// Fun part: if any of those unlocked we need to go through the
-	// unlock conditions AGAIN just in case an emblem reward was reached
-	if (cechoLines)
+		// Fun part: if any of those unlocked we need to go through the
+		// unlock conditions AGAIN just in case an emblem reward was reached
 		M_CheckUnlockConditions();
+	}
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -642,6 +615,8 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 UINT8 M_GetNextAchievedUnlock(void)
 {
 	UINT8 i;
+
+	M_CheckUnlockConditions();
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -801,13 +776,17 @@ INT32 M_CountEmblems(void)
 	INT32 found = 0, i;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (gamedata->collected[i])
-			found++;
+		if (!gamedata->collected[i])
+			continue;
+		found++;
 	}
-	for (i = 0; i < numextraemblems; ++i)
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (gamedata->extraCollected[i])
-			found++;
+		if (unlockables[i].type != SECRET_EXTRAEMBLEM)
+			continue;
+		if (!gamedata->unlocked[i])
+			continue;
+		found++;
 	}
 	return found;
 }
@@ -823,13 +802,21 @@ UINT8 M_GotEnoughEmblems(INT32 number)
 	INT32 i, gottenemblems = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (gamedata->collected[i])
-			if (++gottenemblems >= number) return true;
+		if (!gamedata->collected[i])
+			continue;
+		if (++gottenemblems < number)
+			continue;
+		return true;
 	}
-	for (i = 0; i < numextraemblems; ++i)
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (gamedata->extraCollected[i])
-			if (++gottenemblems >= number) return true;
+		if (unlockables[i].type != SECRET_EXTRAEMBLEM)
+			continue;
+		if (!gamedata->unlocked[i])
+			continue;
+		if (++gottenemblems < number)
+			continue;
+		return true;
 	}
 	return false;
 }
@@ -921,32 +908,6 @@ skincolornum_t M_GetEmblemColor(emblem_t *em)
 }
 
 const char *M_GetEmblemPatch(emblem_t *em, boolean big)
-{
-	static char pnamebuf[7];
-
-	if (!big)
-		strcpy(pnamebuf, "GOTITn");
-	else
-		strcpy(pnamebuf, "EMBMn0");
-
-	I_Assert(em->sprite >= 'A' && em->sprite <= 'Z');
-
-	if (!big)
-		pnamebuf[5] = em->sprite;
-	else
-		pnamebuf[4] = em->sprite;
-
-	return pnamebuf;
-}
-
-skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em)
-{
-	if (!em || em->color >= numskincolors)
-		return SKINCOLOR_NONE;
-	return em->color;
-}
-
-const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big)
 {
 	static char pnamebuf[7];
 

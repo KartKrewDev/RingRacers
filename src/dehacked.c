@@ -278,32 +278,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				}
 				continue;
 			}
-			else if (fastcmp(word, "EXTRAEMBLEM"))
-			{
-				if (!mainfile && !gamedataadded)
-				{
-					deh_warning("You must define a custom gamedata to use \"%s\"", word);
-					ignorelines(f);
-				}
-				else
-				{
-					if (!word2)
-						i = numextraemblems + 1;
-
-					if (i > 0 && i <= MAXEXTRAEMBLEMS)
-					{
-						if (numextraemblems < i)
-							numextraemblems = i;
-						readextraemblemdata(f, i);
-					}
-					else
-					{
-						deh_warning("Extra emblem number %d out of range (1 - %d)", i, MAXEXTRAEMBLEMS);
-						ignorelines(f);
-					}
-				}
-				continue;
-			}
 			if (word2)
 			{
 				if (fastcmp(word, "THING") || fastcmp(word, "MOBJ") || fastcmp(word, "OBJECT"))
@@ -591,12 +565,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					if (clearall || fastcmp(word2, "EMBLEMS"))
 					{
 						clear_emblems();
-					}
-
-					if (clearall || fastcmp(word2, "EXTRAEMBLEMS"))
-					{
-						memset(&extraemblems, 0, sizeof(extraemblems));
-						numextraemblems = 0;
 					}
 
 					if (clearall || fastcmp(word2, "CONDITIONSETS"))

@@ -4468,6 +4468,9 @@ void M_DrawChallenges(void)
 	const char *str;
 	INT16 offset;
 	unlockable_t *ref = NULL;
+	patch_t *pat;
+	UINT8 *colormap;
+	fixed_t siz;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
@@ -4517,49 +4520,50 @@ void M_DrawChallenges(void)
 				goto drawborder;
 			}
 
+			pat = missingpat;
+			colormap = NULL;
 			if (ref->icon != NULL)
 			{
-				patch_t *pat = W_CachePatchName(ref->icon, PU_CACHE);
-				fixed_t siz = (SHORT(pat->width) << FRACBITS);
-
-				siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
-
-				V_DrawFixedPatch(
-					x*FRACUNIT, y*FRACUNIT,
-					siz,
-					0, pat,
-					NULL
-				);
-
-				goto drawborder;
+				pat = W_CachePatchName(ref->icon, PU_CACHE);
+				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+				{
+					colormap = R_GetTranslationColormap(TC_DEFAULT, ref->color, GTC_MENUCACHE);
+				}
 			}
-
-			switch (ref->type)
+			else switch (ref->type)
 			{
+				// add all SECRET_ENCORE, etc up here before SECRET_SKIN
 				case SECRET_SKIN:
 				{
 					INT32 skin = M_UnlockableSkinNum(ref);
 					if (skin != -1)
 					{
-						UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-						UINT8 size = (ref->majorunlock) ? FACE_WANTED : FACE_RANK;
-						V_DrawMappedPatch(x, y, 0, faceprefix[skin][size], colormap);
+						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+						pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
 					}
-					else
-					{
-						V_DrawMappedPatch(x, y, 0, missingpat, NULL);
-					}
-
 					break;
 				}
 				default:
 				{
-					patch_t *pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
-					V_DrawMappedPatch(x, y, 0, pat, NULL);
-					//V_DrawString(x, y, V_ALLOWLOWERCASE, va("%c", ref->name[0]));
+					pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
+					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+					{
+						CONS_Printf(" color for %d is %s\n", num, skincolors[unlockables[num].color].name);
+						colormap = R_GetTranslationColormap(TC_RAINBOW, ref->color, GTC_MENUCACHE);
+					}
 					break;
 				}
 			}
+
+			siz = (SHORT(pat->width) << FRACBITS);
+			siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
+
+			V_DrawFixedPatch(
+				x*FRACUNIT, y*FRACUNIT,
+				siz,
+				0, pat,
+				colormap
+			);
 
 drawborder:
 			if (i != challengesmenu.hilix)

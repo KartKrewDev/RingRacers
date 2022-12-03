@@ -2203,88 +2203,6 @@ void reademblemdata(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-void readextraemblemdata(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word = s;
-	char *word2;
-	char *tmp;
-	INT32 value;
-
-	memset(&extraemblems[num-1], 0, sizeof(extraemblem_t));
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			// First remove trailing newline, if there is one
-			tmp = strchr(s, '\n');
-			if (tmp)
-				*tmp = '\0';
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			// Get the part before the " = "
-			tmp = strchr(s, '=');
-			if (tmp)
-				*(tmp-1) = '\0';
-			else
-				break;
-			strupr(word);
-
-			// Now get the part after
-			word2 = tmp += 2;
-
-			value = atoi(word2); // used for numerical settings
-
-			if (fastcmp(word, "NAME"))
-				deh_strlcpy(extraemblems[num-1].name, word2,
-					sizeof (extraemblems[num-1].name), va("Extra emblem %d: name", num));
-			else if (fastcmp(word, "OBJECTIVE"))
-				deh_strlcpy(extraemblems[num-1].description, word2,
-					sizeof (extraemblems[num-1].description), va("Extra emblem %d: objective", num));
-			else if (fastcmp(word, "CONDITIONSET"))
-				extraemblems[num-1].conditionset = (UINT8)value;
-			else if (fastcmp(word, "SHOWCONDITIONSET"))
-				extraemblems[num-1].showconditionset = (UINT8)value;
-			else
-			{
-				strupr(word2);
-				if (fastcmp(word, "SPRITE"))
-				{
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						value = word2[0];
-					else
-						value += 'A'-1;
-
-					if (value < 'A' || value > 'Z')
-						deh_warning("Emblem %d: sprite must be from A - Z (1 - 26)", num);
-					else
-						extraemblems[num-1].sprite = (UINT8)value;
-				}
-				else if (fastcmp(word, "COLOR"))
-					extraemblems[num-1].color = get_number(word2);
-				else
-					deh_warning("Extra emblem %d: unknown word '%s'", num, word);
-			}
-		}
-	} while (!myfeof(f));
-
-	if (!extraemblems[num-1].sprite)
-		extraemblems[num-1].sprite = 'C';
-	if (!extraemblems[num-1].color)
-		extraemblems[num-1].color = SKINCOLOR_RED;
-
-	Z_Free(s);
-}
-
 void readunlockable(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -2294,7 +2212,6 @@ void readunlockable(MYFILE *f, INT32 num)
 	INT32 i;
 
 	memset(&unlockables[num], 0, sizeof(unlockable_t));
-	unlockables[num].objective[0] = '/';
 
 	do
 	{
@@ -2329,10 +2246,7 @@ void readunlockable(MYFILE *f, INT32 num)
 
 			if (fastcmp(word, "NAME"))
 				deh_strlcpy(unlockables[num].name, word2,
-					sizeof (unlockables[num].name), va("Unlockable %d: name", num));
-			else if (fastcmp(word, "OBJECTIVE"))
-				deh_strlcpy(unlockables[num].objective, word2,
-					sizeof (unlockables[num].objective), va("Unlockable %d: objective", num));
+					sizeof (unlockables[num].name), va("Unlockable %d: name", num+1));
 			else
 			{
 				strupr(word2);
@@ -2351,8 +2265,6 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_SKIN;
 					else if (fastcmp(word2, "WARP"))
 						unlockables[num].type = SECRET_WARP;
-					else if (fastcmp(word2, "LEVELSELECT"))
-						unlockables[num].type = SECRET_LEVELSELECT;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))
@@ -2386,6 +2298,11 @@ void readunlockable(MYFILE *f, INT32 num)
 				{
 					Z_Free(unlockables[num].icon);
 					unlockables[num].icon = Z_StrDup(word2);
+				}
+				else if (fastcmp(word, "COLOR"))
+				{
+					unlockables[num].color = get_number(word2);
+					CONS_Printf("%d+1 has color %s\n",num+1, skincolors[unlockables[num].color].name);
 				}
 				else
 					deh_warning("Unlockable %d: unknown word '%s'", num+1, word);
@@ -2515,15 +2432,15 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "EXTRAEMBLEM"))
+	else if (fastcmp(params[0], "UNLOCKABLE"))
 	{
 		PARAMCHECK(1);
-		ty = UC_EXTRAEMBLEM;
+		ty = UC_UNLOCKABLE;
 		re = atoi(params[1]);
 
-		if (re <= 0 || re > MAXEXTRAEMBLEMS)
+		if (re <= 0 || re > MAXUNLOCKABLES)
 		{
-			deh_warning("Extra emblem %d out of range (1 - %d) for condition ID %d", re, MAXEXTRAEMBLEMS, id+1);
+			deh_warning("Unlockable %d out of range (1 - %d) for condition ID %d", re, MAXUNLOCKABLES, id+1);
 			return;
 		}
 	}

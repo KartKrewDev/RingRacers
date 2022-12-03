@@ -4389,13 +4389,6 @@ void G_LoadGameData(void)
 			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXEXTRAEMBLEMS;)
-	{
-		rtemp = READUINT8(save_p);
-		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			gamedata->extraCollected[j+i] = ((rtemp >> j) & 1);
-		i += j;
-	}
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
 		rtemp = READUINT8(save_p);
@@ -4520,7 +4513,7 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	length = (4+4+4+1+(MAXEMBLEMS)+MAXEXTRAEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS+4+4);
+	length = (4+4+4+1+(MAXEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS)+4+4);
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
 	save_p = savebuffer = (UINT8 *)malloc(length);
@@ -4543,14 +4536,6 @@ void G_SaveGameData(void)
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
 			btemp |= (gamedata->collected[j+i] << j);
-		WRITEUINT8(save_p, btemp);
-		i += j;
-	}
-	for (i = 0; i < MAXEXTRAEMBLEMS;) // MAXEXTRAEMBLEMS * 1;
-	{
-		btemp = 0;
-		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			btemp |= (gamedata->extraCollected[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}

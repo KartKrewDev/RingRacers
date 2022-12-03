@@ -32,7 +32,7 @@ typedef enum
 	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALEMBLEMS,	// TOTALEMBLEMS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
-	UC_EXTRAEMBLEM,		// EXTRAEMBLEM [extra emblem number]
+	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 } conditiontype_t;
 
@@ -78,22 +78,13 @@ typedef struct
 	char *stringVar; ///< String version
 	char hint[110];  ///< Hint for emblem hints menu
 } emblem_t;
-typedef struct
-{
-	char name[20];          ///< Name of the goal (used in the "emblem awarded" cecho)
-	char description[40];   ///< Description of goal (used in statistics)
-	UINT8 conditionset;     ///< Condition set that awards this emblem.
-	UINT8 showconditionset; ///< Condition set that shows this emblem.
-	UINT8 sprite;           ///< emblem sprite to use, 0 - 25
-	UINT16 color;           ///< skincolor to use
-} extraemblem_t;
 
 // Unlockable information
 typedef struct
 {
 	char name[64];
-	char objective[64];
 	char *icon;
+	UINT16 color;
 	UINT8 conditionset;
 	INT16 type;
 	INT16 variable;
@@ -105,8 +96,9 @@ typedef struct
 #define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
 
 #define SECRET_SKIN			 2 // Allow this character to be selected
-#define SECRET_WARP			 3 // Selectable warp
-#define SECRET_LEVELSELECT	 4 // Selectable level select
+#define SECRET_WARP			 3 // Selectable warp (todo Followers)
+
+#define SECRET_EXTRAEMBLEM	 4 // Extra Emblems (formerly extraemblem_t)
 
 #define SECRET_TIMEATTACK	 5 // Enables Time Attack on the main menu
 #define SECRET_BREAKTHECAPSULES	6 // Enables Break the Capsules on the main menu
@@ -126,8 +118,7 @@ typedef struct
 // you seriously need to get a life.
 #define MAXCONDITIONSETS UINT8_MAX
 #define MAXEMBLEMS       512
-#define MAXEXTRAEMBLEMS   16
-#define MAXUNLOCKABLES    (MAXCONDITIONSETS-MAXEXTRAEMBLEMS)
+#define MAXUNLOCKABLES   MAXCONDITIONSETS
 
 #define CHALLENGEGRIDHEIGHT 5
 
@@ -143,9 +134,6 @@ typedef struct
 
 	// EMBLEMS COLLECTED
 	boolean collected[MAXEMBLEMS];
-
-	// EXTRA EMBLEMS COLLECTED
-	boolean extraCollected[MAXEXTRAEMBLEMS];
 
 	// UNLOCKABLES UNLOCKED
 	boolean unlocked[MAXUNLOCKABLES];
@@ -166,11 +154,9 @@ extern gamedata_t *gamedata;
 
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
-extern extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
 
 extern INT32 numemblems;
-extern INT32 numextraemblems;
 
 extern UINT32 unlocktriggers;
 
@@ -207,8 +193,6 @@ INT32 M_CountEmblems(void);
 emblem_t *M_GetLevelEmblems(INT32 mapnum);
 skincolornum_t M_GetEmblemColor(emblem_t *em);
 const char *M_GetEmblemPatch(emblem_t *em, boolean big);
-skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em);
-const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big);
 
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
