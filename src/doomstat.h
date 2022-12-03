@@ -355,7 +355,7 @@ typedef struct cupheader_s
 	UINT8 numlevels;						///< Number of levels defined in levellist
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
-	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
+	UINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
 	struct cupheader_s *next;				///< Next cup in linked list
 } cupheader_t;
 
@@ -391,7 +391,7 @@ typedef struct
 	// Selection metadata
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
-	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
+	UINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
 	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
 	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
 

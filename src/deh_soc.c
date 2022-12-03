@@ -1183,8 +1183,10 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->numlaps = (UINT8)i;
 			else if (fastcmp(word, "UNLOCKABLE"))
 			{
-				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					mapheaderinfo[num]->unlockrequired = (SINT8)i - 1;
+				if (i == 0 || word2[0] == 'F' || word2[0] == 'N')
+					mapheaderinfo[num]->unlockrequired = MAXUNLOCKABLES;
+				else if (i > 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
+					mapheaderinfo[num]->unlockrequired = (UINT8)(i-1);
 				else
 					deh_warning("Level header %d: invalid unlockable number %d", num, i);
 			}
@@ -3087,8 +3089,10 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "UNLOCKABLE"))
 			{
-				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					cup->unlockrequired = (SINT8)i - 1;
+				if (i == 0 || word2[0] == 'F' || word2[0] == 'N')
+					cup->unlockrequired = MAXUNLOCKABLES;
+				else if (i > 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
+					cup->unlockrequired = (UINT8)(i-1);
 				else
 					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
 			}

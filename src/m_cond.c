@@ -761,11 +761,23 @@ UINT8 M_MapLocked(INT32 mapnum)
 	// That just makes hosts' lives hell.
 	if (dedicated)
 		return false;
+
+	// No skipping over any part of your marathon.
+	if (marathonmode)
+		return false;
 	
-	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
+	if (!mapheaderinfo[mapnum-1])
 		return false;
 
-	if (!gamedata->unlocked[mapheaderinfo[mapnum-1]->unlockrequired])
+	if (mapheaderinfo[mapnum-1]->cup)
+	{
+		if ((mapheaderinfo[mapnum-1]->cup->unlockrequired < MAXUNLOCKABLES)
+			&& (!gamedata->unlocked[mapheaderinfo[mapnum-1]->cup->unlockrequired]))
+			return true;
+	}
+
+	if ((mapheaderinfo[mapnum-1]->unlockrequired < MAXUNLOCKABLES)
+		&& (!gamedata->unlocked[mapheaderinfo[mapnum-1]->unlockrequired]))
 		return true;
 
 	return false;

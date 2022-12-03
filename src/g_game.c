@@ -3870,7 +3870,7 @@ static void G_GetNextMap(void)
 			while (cup)
 			{
 				// Not unlocked? Grab the next result afterwards
-				if (!marathonmode && cup->unlockrequired != -1 && !gamedata->unlocked[cup->unlockrequired])
+				if (!marathonmode && cup->unlockrequired < MAXUNLOCKABLES && !gamedata->unlocked[cup->unlockrequired])
 				{
 					cup = cup->next;
 					gettingresult = 1;

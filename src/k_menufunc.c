@@ -3459,7 +3459,7 @@ static void M_LevelListFromGametype(INT16 gt)
 
 		while (cup)
 		{
-			if (cup->unlockrequired == -1 || gamedata->unlocked[cup->unlockrequired])
+			if (cup->unlockrequired >= MAXUNLOCKABLES || gamedata->unlocked[cup->unlockrequired])
 			{
 				highestid = cup->id;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
@@ -3593,7 +3593,7 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 
 		if ((!newcup)
-			|| (newcup && newcup->unlockrequired != -1 && !gamedata->unlocked[newcup->unlockrequired])
+			|| (newcup && newcup->unlockrequired < MAXUNLOCKABLES && !gamedata->unlocked[newcup->unlockrequired])
 			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);

@@ -400,7 +400,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->palette = UINT16_MAX;
 	mapheaderinfo[num]->encorepal = UINT16_MAX;
 	mapheaderinfo[num]->numlaps = NUMLAPS_DEFAULT;
-	mapheaderinfo[num]->unlockrequired = -1;
+	mapheaderinfo[num]->unlockrequired = MAXUNLOCKABLES;
 	mapheaderinfo[num]->levelselect = 0;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
