@@ -156,6 +156,9 @@ void clear_unlockables(void)
 	{
 		Z_Free(unlockables[i].stringVar);
 		unlockables[i].stringVar = NULL;
+
+		Z_Free(unlockables[i].icon);
+		unlockables[i].icon = NULL;
 	}
 
 	memset(&unlockables, 0, sizeof(unlockables));
@@ -2378,6 +2381,11 @@ void readunlockable(MYFILE *f, INT32 num)
 					Z_Free(unlockables[num].stringVar);
 					unlockables[num].stringVar = Z_StrDup(word2);
 					unlockables[num].variable = (INT16)i;
+				}
+				else if (fastcmp(word, "ICON"))
+				{
+					Z_Free(unlockables[num].icon);
+					unlockables[num].icon = Z_StrDup(word2);
 				}
 				else
 					deh_warning("Unlockable %d: unknown word '%s'", num+1, word);

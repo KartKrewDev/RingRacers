@@ -4517,6 +4517,23 @@ void M_DrawChallenges(void)
 				goto drawborder;
 			}
 
+			if (ref->icon != NULL)
+			{
+				patch_t *pat = W_CachePatchName(ref->icon, PU_CACHE);
+				fixed_t siz = (SHORT(pat->width) << FRACBITS);
+
+				siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
+
+				V_DrawFixedPatch(
+					x*FRACUNIT, y*FRACUNIT,
+					siz,
+					0, pat,
+					NULL
+				);
+
+				goto drawborder;
+			}
+
 			switch (ref->type)
 			{
 				case SECRET_SKIN:
