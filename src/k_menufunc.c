@@ -7125,16 +7125,16 @@ boolean M_ChallengesInputs(INT32 ch)
 #ifdef DEVELOP
 	else if (M_MenuExtraPressed(pid)) // debugging
 	{
-		Z_Free(gamedata->challengegrid);
-		gamedata->challengegrid = NULL;
-		gamedata->challengegridwidth = 0;
-		M_PopulateChallengeGrid();
-		Z_Free(challengesmenu.extradata);
-		challengesmenu.extradata = M_ChallengeGridExtraData();
-		challengesmenu.unlockanim = 0;
-
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
+			Z_Free(gamedata->challengegrid);
+			gamedata->challengegrid = NULL;
+			gamedata->challengegridwidth = 0;
+			M_PopulateChallengeGrid();
+			Z_Free(challengesmenu.extradata);
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+			challengesmenu.unlockanim = 0;
+
 			for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
 			{
 				if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
