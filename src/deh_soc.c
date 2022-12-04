@@ -2265,8 +2265,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_HEADER;
 					else if (fastcmp(word2, "SKIN"))
 						unlockables[num].type = SECRET_SKIN;
-					else if (fastcmp(word2, "WARP"))
-						unlockables[num].type = SECRET_WARP;
+					else if (fastcmp(word2, "FOLLOWER"))
+						unlockables[num].type = SECRET_FOLLOWER;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))

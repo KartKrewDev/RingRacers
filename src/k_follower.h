@@ -116,6 +116,22 @@ INT32 K_FollowerAvailable(const char *name);
 
 
 /*--------------------------------------------------
+	boolean K_FollowerUsable(INT32 followernum);
+
+		Check if a follower is usable or not.
+
+	Input Arguments:-
+		skinnum - The follower's skin ID
+
+	Return:-
+		true if it was a valid follower,
+		otherwise false.
+--------------------------------------------------*/
+
+boolean K_FollowerUsable(INT32 skinnum);
+
+
+/*--------------------------------------------------
 	boolean K_SetFollowerByName(INT32 playernum, const char *skinname)
 
 		Updates a player's follower type via a named value.

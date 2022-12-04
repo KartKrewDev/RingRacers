@@ -505,6 +505,51 @@ void ClearFakePlayerSkin(player_t* player)
 	player->fakeskin = MAXSKINS;
 }
 
+// Finds a skin with the closest stats if the expected skin doesn't exist.
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock)
+{
+	INT32 i, closest_skin = 0;
+	UINT8 closest_stats, stat_diff;
+	boolean doflagcheck = true;
+	UINT32 flagcheck = flags;
+
+flaglessretry:
+	closest_stats = stat_diff = UINT8_MAX;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!unlock && !R_SkinUsable(-1, i, false))
+		{
+			continue;
+		}
+		stat_diff = abs(skins[i].kartspeed - kartspeed) + abs(skins[i].kartweight - kartweight);
+		if (doflagcheck && (skins[i].flags & flagcheck) != flagcheck)
+		{
+			continue;
+		}
+		if (stat_diff < closest_stats)
+		{
+			closest_stats = stat_diff;
+			closest_skin = i;
+		}
+	}
+
+	if (stat_diff && (doflagcheck || closest_stats == UINT8_MAX))
+	{
+		// Just grab *any* SF_IRONMAN if we don't get it on the first pass.
+		if ((flagcheck & SF_IRONMAN) && (flagcheck != SF_IRONMAN))
+		{
+			flagcheck = SF_IRONMAN;
+		}
+
+		doflagcheck = false;
+
+		goto flaglessretry;
+	}
+
+	return closest_skin;
+}
+
 //
 // Add skins from a pwad, each skin preceded by 'S_SKIN' marker
 //

@@ -596,6 +596,9 @@ extern struct setup_chargrid_s {
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
+extern UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+extern UINT8 setup_numfollowercategories;
+
 typedef enum
 {
 	CSSTEP_NONE = 0,

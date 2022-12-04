@@ -85,6 +85,7 @@ void SetFakePlayerSkin(player_t* player, INT32 skinnum);
 void SetRandomFakePlayerSkin(player_t* player, boolean fast);
 void ClearFakePlayerSkin(player_t* player);
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
 
 UINT8 *R_GetSkinAvailabilities(boolean demolock);
 INT32 R_SkinAvailable(const char *name);

@@ -212,47 +212,6 @@ void G_LoadMetal(UINT8 **buffer)
 	metal_p = metalbuffer + READUINT32(*buffer);
 }
 
-// Finds a skin with the closest stats if the expected skin doesn't exist.
-static INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags)
-{
-	INT32 i, closest_skin = 0;
-	UINT8 closest_stats, stat_diff;
-	boolean doflagcheck = true;
-	UINT32 flagcheck = flags;
-
-flaglessretry:
-	closest_stats = UINT8_MAX;
-
-	for (i = 0; i < numskins; i++)
-	{
-		stat_diff = abs(skins[i].kartspeed - kartspeed) + abs(skins[i].kartweight - kartweight);
-		if (doflagcheck && (skins[i].flags & flagcheck) != flagcheck)
-		{
-			continue;
-		}
-		if (stat_diff < closest_stats)
-		{
-			closest_stats = stat_diff;
-			closest_skin = i;
-		}
-	}
-
-	if (stat_diff && (doflagcheck || closest_stats == UINT8_MAX))
-	{
-		// Just grab *any* SF_IRONMAN if we don't get it on the first pass.
-		if ((flagcheck & SF_IRONMAN) && (flagcheck != SF_IRONMAN))
-		{
-			flagcheck = SF_IRONMAN;
-		}
-
-		doflagcheck = false;
-
-		goto flaglessretry;
-	}
-
-	return closest_skin;
-}
-
 void G_ReadDemoExtraData(void)
 {
 	INT32 p, extradata, i;
@@ -2321,7 +2280,7 @@ static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean 
 			}
 			else
 			{
-				result = GetSkinNumClosestToStats(skinlist[i].kartspeed, skinlist[i].kartweight, skinlist[i].flags);
+				result = GetSkinNumClosestToStats(skinlist[i].kartspeed, skinlist[i].kartweight, skinlist[i].flags, true);
 			}
 		}
 

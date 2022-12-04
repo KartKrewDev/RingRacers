@@ -1535,7 +1535,8 @@ static void SendNameAndColor(UINT8 n)
 
 		K_KartResetPlayerColor(player);
 
-		if ((foundskin = R_SkinAvailable(cv_skin[n].string)) != -1 && R_SkinUsable(playernum, foundskin, false))
+		foundskin = R_SkinAvailable(cv_skin[n].string);
+		if (foundskin != -1 && R_SkinUsable(playernum, foundskin, false))
 		{
 			SetPlayerSkin(playernum, cv_skin[n].string);
 			CV_StealthSet(&cv_skin[n], skins[foundskin].name);
@@ -1553,6 +1554,8 @@ static void SendNameAndColor(UINT8 n)
 
 		// Update follower for local games:
 		foundskin = K_FollowerAvailable(cv_follower[n].string);
+		if (!K_FollowerUsable(foundskin))
+			foundskin = -1;
 		CV_StealthSet(&cv_follower[n], (foundskin == -1) ? "None" : followers[foundskin].name);
 		cv_follower[n].value = foundskin;
 		K_SetFollowerByNum(playernum, foundskin);
@@ -1587,7 +1590,7 @@ static void SendNameAndColor(UINT8 n)
 	}
 
 	cv_follower[n].value = K_FollowerAvailable(cv_follower[n].string);
-	if (cv_follower[n].value < 0)
+	if (cv_follower[n].value < 0 || !K_FollowerUsable(cv_follower[n].value))
 	{
 		CV_StealthSet(&cv_follower[n], "None");
 		cv_follower[n].value = -1;

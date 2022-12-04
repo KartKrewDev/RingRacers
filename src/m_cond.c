@@ -20,6 +20,7 @@
 
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
+#include "k_follower.h"
 #include "r_draw.h" // R_GetColorByName
 
 #include "k_pwrlv.h"
@@ -860,7 +861,7 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 		return -1;
 	}
 
-	if (unlock->stringVar && strcmp(unlock->stringVar, ""))
+	if (unlock->stringVar && unlock->stringVar[0])
 	{
 		// Get the skin from the string.
 		INT32 skinnum = R_SkinAvailable(unlock->stringVar);
@@ -877,6 +878,35 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 	}
 
 	// Invalid skin unlockable.
+	return -1;
+}
+
+// Gets the skin number for a SECRET_FOLLOWER unlockable.
+INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_FOLLOWER)
+	{
+		// This isn't a follower unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		// Get the skin from the string.
+		INT32 skinnum = K_FollowerAvailable(unlock->stringVar);
+		if (skinnum != -1)
+		{
+			return skinnum;
+		}
+	}
+
+	if (unlock->variable >= 0 && unlock->variable < numfollowers)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid follower unlockable.
 	return -1;
 }
 

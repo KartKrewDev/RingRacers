@@ -96,7 +96,7 @@ typedef struct
 #define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
 
 #define SECRET_SKIN			 2 // Allow this character to be selected
-#define SECRET_WARP			 3 // Selectable warp (todo Followers)
+#define SECRET_FOLLOWER		 3 // Allow this follower to be selected
 
 #define SECRET_EXTRAEMBLEM	 4 // Extra Emblems (formerly extraemblem_t)
 
@@ -201,6 +201,7 @@ UINT8 M_GotEnoughEmblems(INT32 number);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
+INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])

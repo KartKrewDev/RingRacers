@@ -2053,7 +2053,10 @@ void M_QuitSRB2(INT32 choice)
 
 struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
-struct setup_explosions_s setup_explosions[48];
+struct setup_explosions_s setup_explosions[CSEXPLOSIONS];
+
+UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+UINT8 setup_numfollowercategories;
 
 UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
@@ -2065,64 +2068,61 @@ UINT8 setup_maxpage = 0;	// For charsel page to identify alts easier...
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
 	profile_t *pr = PR_GetProfile(p->profilen);
-	INT32 i;
+	INT32 i = R_SkinAvailable(pr->skinname);
+	INT32 alt = 0;	// Hey it's my character's name!
 
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
-		p->followercategory = -1;
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
+		p->followercategory = p->followern = -1;
 	else
 		p->followercategory = followers[p->followern].category;
 
 	p->followercolor = pr->followercolor;
 
-	// Now position the grid for skin
-	for (i = 0; i < numskins; i++)
+	if (!R_SkinUsable(g_localplayers[0], i, false))
 	{
-		if (!(strcmp(pr->skinname, skins[i].name)))
-		{
-			INT32 alt = 0;	// Hey it's my character's name!
-			p->gridx = skins[i].kartspeed-1;
-			p->gridy = skins[i].kartweight-1;
-
-			// Now this put our cursor on the good alt
-			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
-				alt++;
-
-			p->clonenum = alt;
-			p->color = PR_GetProfileColor(pr);
-			return;	// we're done here
-		}
+		i = GetSkinNumClosestToStats(skins[i].kartspeed, skins[i].kartweight, skins[i].flags, false);
 	}
+
+	// Now position the grid for skin
+	p->gridx = skins[i].kartspeed-1;
+	p->gridy = skins[i].kartweight-1;
+
+	// Now this put our cursor on the good alt
+	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+		alt++;
+
+	p->clonenum = alt;
+	p->color = PR_GetProfileColor(pr);
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 {
-	INT32 i;
+	INT32 i = R_SkinAvailable(cv_skin[num].zstring);
+	INT32 alt = 0;	// Hey it's my character's name!
 
 	// While we're here, read follower values.
 	p->followern = cv_follower[num].value;
 	p->followercolor = cv_followercolor[num].value;
 
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
+		p->followercategory = p->followern = -1;
+	else
+		p->followercategory = followers[p->followern].category;
+
 	// Now position the grid for skin
-	for (i = 0; i < numskins; i++)
-	{
-		if (!(strcmp(cv_skin[num].zstring, skins[i].name)))
-		{
-			INT32 alt = 0;	// Hey it's my character's name!
-			p->gridx = skins[i].kartspeed-1;
-			p->gridy = skins[i].kartweight-1;
+	p->gridx = skins[i].kartspeed-1;
+	p->gridy = skins[i].kartweight-1;
 
-			// Now this put our cursor on the good alt
-			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
-				alt++;
+	// Now this put our cursor on the good alt
+	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+		alt++;
 
-			p->clonenum = alt;
-			p->color = cv_playercolor[num].value;
-			return;	// we're done here
-		}
-	}
+	p->clonenum = alt;
+	p->color = cv_playercolor[num].value;
+	return;	// we're done here
 }
 
 
@@ -2217,6 +2217,32 @@ void M_CharacterSelectInit(void)
 				}
 			}
 		}
+	}
+
+	setup_numfollowercategories = 0;
+	for (i = 0; i < numfollowercategories; i++)
+	{
+		if (followercategories[i].numincategory == 0)
+			continue;
+
+		setup_followercategories[setup_numfollowercategories][0] = 0;
+
+		for (j = 0; j < numfollowers; j++)
+		{
+			if (followers[j].category != i)
+				continue;
+
+			if (!K_FollowerUsable(j))
+				continue;
+
+			setup_followercategories[setup_numfollowercategories][0]++;
+			setup_followercategories[setup_numfollowercategories][1] = i;
+		}
+
+		if (!setup_followercategories[setup_numfollowercategories][0])
+			continue;
+
+		setup_numfollowercategories++;
 	}
 
 	setup_page = 0;
@@ -2843,7 +2869,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->followercategory++;
-		if (p->followercategory >= numfollowercategories)
+		if (p->followercategory >= setup_numfollowercategories)
 			p->followercategory = -1;
 
 		p->rotate = CSROTATETICS;
@@ -2854,7 +2880,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	{
 		p->followercategory--;
 		if (p->followercategory < -1)
-			p->followercategory = numfollowercategories-1;
+			p->followercategory = setup_numfollowercategories-1;
 
 		p->rotate = -CSROTATETICS;
 		p->delay = CSROTATETICS;
@@ -2876,7 +2902,9 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
 			{
 				p->followern = 0;
-				while (p->followern < numfollowers && followers[p->followern].category != p->followercategory)
+				while (p->followern < numfollowers
+					&& (followers[p->followern].category != setup_followercategories[p->followercategory][1]
+					|| !K_FollowerUsable(p->followern)))
 					p->followern++;
 			}
 
@@ -2931,7 +2959,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 			if (p->followern == startfollowern)
 				break;
 		}
-		while (followers[p->followern].category != p->followercategory);
+		while (followers[p->followern].category != setup_followercategories[p->followercategory][1] || !K_FollowerUsable(p->followern));
 
 		M_GetFollowerState(p);
 
@@ -2949,7 +2977,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 			if (p->followern == startfollowern)
 				break;
 		}
-		while (followers[p->followern].category != p->followercategory);
+		while (followers[p->followern].category != setup_followercategories[p->followercategory][1] || !K_FollowerUsable(p->followern));
 
 		M_GetFollowerState(p);
 
