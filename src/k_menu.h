@@ -656,7 +656,7 @@ extern UINT8 setup_maxpage;
 #define CSEXPLOSIONS 48
 
 extern struct setup_explosions_s {
-	UINT16 x, y;
+	INT16 x, y;
 	UINT8 tics;
 	UINT16 color;
 } setup_explosions[CSEXPLOSIONS];
@@ -1084,7 +1084,7 @@ void M_DrawAddons(void);
 
 // Challenges menu:
 #define UNLOCKTIME 5
-#define MAXUNLOCKTIME 35
+#define MAXUNLOCKTIME TICRATE
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
@@ -1092,6 +1092,7 @@ extern struct challengesmenu_s {
 	tic_t ticker;		// How long the menu's been open for
 	INT16 offset;		// To make the icons move smoothly when we transition!
 
+	UINT8 fade;
 	UINT8 currentunlock;
 	tic_t unlockanim;
 

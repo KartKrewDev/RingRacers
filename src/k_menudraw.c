@@ -1480,7 +1480,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 	}
 }
 
-static void M_DrawCharSelectExplosions(boolean charsel, UINT16 basex, UINT16 basey)
+static void M_DrawCharSelectExplosions(boolean charsel, INT16 basex, INT16 basey)
 {
 	UINT8 i;
 	INT16 quadx = 0, quady = 0;
@@ -4480,16 +4480,123 @@ void M_DrawAddons(void)
 
 #undef addonsseperation
 
-void M_DrawChallenges(void)
+#define challengesbordercolor 8
+
+static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
-	INT32 x = currentMenu->x, y = currentMenu->y;
-	UINT8 i, j, id, num, work;
-	const char *str;
-	INT16 offset;
 	unlockable_t *ref = NULL;
 	patch_t *pat;
 	UINT8 *colormap;
 	fixed_t siz;
+	UINT8 id, num, work;
+
+	id = (i * CHALLENGEGRIDHEIGHT) + j;
+	num = gamedata->challengegrid[id];
+
+	// Empty spots in the grid are always unconnected.
+	if (num >= MAXUNLOCKABLES)
+	{
+		V_DrawFill(x, y, 16, 16, 27);
+		ref = NULL;
+		goto drawborder;
+	}
+
+	// Okay, this is what we want to draw.
+	ref = &unlockables[num];
+
+	// ...unless we simply aren't unlocked yet.
+	if ((gamedata->unlocked[num] == false)
+		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
+	{
+		work = (ref->majorunlock) ? 2 : 1;
+		V_DrawFill(x, y, 16*work, 16*work,
+			((challengesmenu.extradata[id] == CHE_HINT) ? 134 : 12));
+		goto drawborder;
+	}
+
+	pat = missingpat;
+	colormap = NULL;
+	if (ref->icon != NULL && ref->icon[0])
+	{
+		pat = W_CachePatchName(ref->icon, PU_CACHE);
+		if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, ref->color, GTC_MENUCACHE);
+		}
+	}
+	else switch (ref->type)
+	{
+		case SECRET_SKIN:
+		{
+			INT32 skin = M_UnlockableSkinNum(ref);
+			if (skin != -1)
+			{
+				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+				pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
+			}
+			break;
+		}
+		case SECRET_FOLLOWER:
+		{
+			INT32 skin = M_UnlockableFollowerNum(ref);
+			if (skin != -1)
+			{
+				UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+				colormap = R_GetTranslationColormap(skin, col, GTC_MENUCACHE);
+				pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
+			}
+			break;
+		}
+		default:
+		{
+			pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
+			if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+			{
+				//CONS_Printf(" color for %d is %s\n", num, skincolors[unlockables[num].color].name);
+				colormap = R_GetTranslationColormap(TC_RAINBOW, ref->color, GTC_MENUCACHE);
+			}
+			break;
+		}
+	}
+
+	siz = (SHORT(pat->width) << FRACBITS);
+	siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
+
+	V_DrawFixedPatch(
+		x*FRACUNIT, y*FRACUNIT,
+		siz,
+		0, pat,
+		colormap
+	);
+
+drawborder:
+	if (!hili)
+	{
+		work = 16 * ((ref && ref->majorunlock) ? 2 : 1);
+		// Horizontal
+		V_DrawFill(x, y         , work, 1, challengesbordercolor);
+		V_DrawFill(x, y + work-1, work, 1, challengesbordercolor);
+		// Vertical
+		V_DrawFill(x         , y+1, 1, work-2, challengesbordercolor);
+		V_DrawFill(x + work-1, y+1, 1, work-2, challengesbordercolor);
+		return;
+	}
+
+	V_DrawFixedPatch(
+		x*FRACUNIT, y*FRACUNIT,
+		((ref != NULL && ref->majorunlock) ? FRACUNIT*2 : FRACUNIT),
+		0, kp_facehighlight[(challengesmenu.ticker / 4) % 8],
+		NULL
+	);
+}
+
+void M_DrawChallenges(void)
+{
+	INT32 x = currentMenu->x, explodex, selectx;
+	INT32 y = currentMenu->y;
+	INT16 i, j;
+	const char *str;
+	INT16 offset;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
@@ -4498,119 +4605,79 @@ void M_DrawChallenges(void)
 
 	if (!gamedata->challengegrid)
 	{
-		V_DrawString(x, y, V_REDMAP, "No challenges available!?");
+		V_DrawCenteredString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;
 	}
 
-	for (i = 0; i < gamedata->challengegridwidth; i++)
+	x -= 16;
+
+	if (challengegridloops)
+	{
+		i = challengesmenu.col;
+		explodex = x - (i*16);
+
+		while (x < BASEVIDWIDTH-16)
+		{
+			i = (i + 1) % gamedata->challengegridwidth;
+			x += 16;
+		}
+	}
+	else
+	{
+		if (gamedata->challengegridwidth & 1)
+			x += 8;
+
+		i = gamedata->challengegridwidth-1;
+		explodex = x - (i*16)/2;
+		x += (i*16)/2;
+
+		V_DrawFill(0, currentMenu->y, explodex, (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
+		V_DrawFill((x+16), currentMenu->y, BASEVIDWIDTH - (x+16), (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
+	}
+
+	selectx = explodex + (challengesmenu.hilix*16);
+
+	V_DrawFill(0, (currentMenu->y)-1                         , BASEVIDWIDTH, 1, challengesbordercolor);
+	V_DrawFill(0, (currentMenu->y) + (CHALLENGEGRIDHEIGHT*16), BASEVIDWIDTH, 1, challengesbordercolor);
+	while (i >= 0 && x >= -32)
 	{
 		y = currentMenu->y-16;
 		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
 		{
 			y += 16;
-			id = (i * CHALLENGEGRIDHEIGHT) + j;
 
-			if (challengesmenu.extradata[id] & CHE_DONTDRAW)
+			if (challengesmenu.extradata[(i * CHALLENGEGRIDHEIGHT) + j] & CHE_DONTDRAW)
 			{
 				continue;
 			}
 
-			num = gamedata->challengegrid[id];
-
-			// Empty spots in the grid are always unconnected.
-			if (num >= MAXUNLOCKABLES)
+			if (x == selectx && j == challengesmenu.hiliy)
 			{
-				V_DrawFill(x, y, 16, 16, 27);
-				ref = NULL;
-				goto drawborder;
-			}
-
-			// Okay, this is what we want to draw.
-			ref = &unlockables[num];
-
-			// ...unless we simply aren't unlocked yet.
-			if ((gamedata->unlocked[num] == false)
-				|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
-			{
-				work = (ref->majorunlock) ? 2 : 1;
-				V_DrawFill(x, y, 16*work, 16*work,
-					((challengesmenu.extradata[id] == CHE_HINT) ? 130 : 12)
-					+ ((i & work) != (j & work) ? 0 : 2) + (work-1)); // funny checkerboard pattern
-				goto drawborder;
-			}
-
-			pat = missingpat;
-			colormap = NULL;
-			if (ref->icon != NULL)
-			{
-				pat = W_CachePatchName(ref->icon, PU_CACHE);
-				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
-				{
-					colormap = R_GetTranslationColormap(TC_DEFAULT, ref->color, GTC_MENUCACHE);
-				}
-			}
-			else switch (ref->type)
-			{
-				case SECRET_SKIN:
-				{
-					INT32 skin = M_UnlockableSkinNum(ref);
-					if (skin != -1)
-					{
-						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-						pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
-					}
-					break;
-				}
-				case SECRET_FOLLOWER:
-				{
-					INT32 skin = M_UnlockableFollowerNum(ref);
-					if (skin != -1)
-					{
-						UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
-						colormap = R_GetTranslationColormap(skin, col, GTC_MENUCACHE);
-						pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
-					}
-					break;
-				}
-				default:
-				{
-					pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
-					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
-					{
-						CONS_Printf(" color for %d is %s\n", num, skincolors[unlockables[num].color].name);
-						colormap = R_GetTranslationColormap(TC_RAINBOW, ref->color, GTC_MENUCACHE);
-					}
-					break;
-				}
-			}
-
-			siz = (SHORT(pat->width) << FRACBITS);
-			siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
-
-			V_DrawFixedPatch(
-				x*FRACUNIT, y*FRACUNIT,
-				siz,
-				0, pat,
-				colormap
-			);
-
-drawborder:
-			if (i != challengesmenu.hilix)
 				continue;
-			if (j != challengesmenu.hiliy)
-				continue;
+			}
 
-			V_DrawFixedPatch(
-				x*FRACUNIT, y*FRACUNIT,
-				((ref != NULL && ref->majorunlock) ? FRACUNIT*2 : FRACUNIT),
-				0, kp_facehighlight[(challengesmenu.ticker / 4) % 8],
-				NULL
-			);
+			M_DrawChallengeTile(i, j, x, y, false);
 		}
-		x += 16;
+
+		x -= 16;
+		i--;
+		if (challengegridloops && i < 0)
+		{
+			i = (i + gamedata->challengegridwidth)
+				% gamedata->challengegridwidth;
+		}
 	}
 
-	M_DrawCharSelectExplosions(false, currentMenu->x, currentMenu->y);
+	if (challengesmenu.fade)
+		V_DrawFadeScreen(31, challengesmenu.fade);
+
+	M_DrawChallengeTile(
+		challengesmenu.hilix,
+		challengesmenu.hiliy,
+		selectx,
+		currentMenu->y + (challengesmenu.hiliy*16),
+		true);
+	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
 challengedesc:
 	y = 120;
@@ -4632,6 +4699,6 @@ challengedesc:
 	offset = V_LSTitleLowStringWidth(str, 0) / 2;
 	V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 
-	if (challengesmenu.unlockanim >= MAXUNLOCKTIME)
-		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, va("Press (%c)", challengesmenu.pending ? 'A' : 'B'));
+	if (!challengesmenu.fade)
+		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, "Press (B)");
 }

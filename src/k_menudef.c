@@ -1756,7 +1756,7 @@ menu_t MISC_ChallengesDef = {
 	&MainDef,
 	0,
 	MISC_ChallengesMenu,
-	14, 32,
+	BASEVIDWIDTH/2, 32,
 	0, 0,
 	98, 0,
 	M_DrawChallenges,

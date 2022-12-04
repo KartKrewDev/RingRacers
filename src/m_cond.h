@@ -121,6 +121,12 @@ typedef struct
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
 #define CHALLENGEGRIDHEIGHT 5
+#ifdef DEVELOP
+#define CHALLENGEGRIDLOOPWIDTH 3
+#else
+#define CHALLENGEGRIDLOOPWIDTH (BASEVIDWIDTH/16)
+#endif
+#define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat

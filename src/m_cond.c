@@ -117,7 +117,9 @@ void M_PopulateChallengeGrid(void)
 	if (nummajorunlocks)
 	{
 		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
-		UINT16 numspots = gamedata->challengegridwidth * (CHALLENGEGRIDHEIGHT-1);
+		// You lose one from the width if it doesn't loop.
+		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : 1))
+				* (CHALLENGEGRIDHEIGHT-1);
 		// 0 is row, 1 is column
 		INT16 quickcheck[numspots][2];
 
@@ -323,7 +325,7 @@ UINT8 *M_ChallengeGridExtraData(void)
 
 				if (work == num)
 				{
-					if (!idchange && (i > 0 || gamedata->challengegridwidth > 2))
+					if (!idchange && (i > 0 || challengegridloops))
 					{
 						//CONS_Printf(" %d - %d to left of %d is valid\n", work, tempid, id);
 						// If we haven't already updated our id, it's the one to our left.

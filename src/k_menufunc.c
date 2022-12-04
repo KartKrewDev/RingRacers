@@ -2289,21 +2289,11 @@ static void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, 
 			if ((y < 0 || y >= maxy))
 				continue;
 
-			if (/*charsel &&*/ (x < 0 || x >= maxx)) 
-				continue;
-
-			/*if (!charsel)
+			if (charsel || !challengegridloops)
 			{
-				while (x < 0)
-				{
-					x += maxx;
-				}
-
-				while (x >= maxx)
-				{
-					x -= maxx;
-				}
-			}*/
+				if (x < 0 || x >= maxx)
+					continue;
+			}
 
 			setup_explosions[e].tics = t;
 			setup_explosions[e].color = color;
@@ -6960,6 +6950,7 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.pending && challengesmenu.requestnew)
 	{
+		challengesmenu.requestnew = false;
 		if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
 		{
 			challengesmenu.currentunlock = newunlock;
@@ -6991,15 +6982,14 @@ void M_ChallengesTick(void)
 			G_SaveGameData();
 		}
 	}
-	else if (challengesmenu.unlockanim >= MAXUNLOCKTIME)
+	else if (challengesmenu.pending && challengesmenu.fade < 5)
+		challengesmenu.fade++;
+	else if (challengesmenu.pending)
 	{
-		;
-	}
-	else
-	{
-		challengesmenu.unlockanim++;
-		if (challengesmenu.pending
-			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+		if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
+			challengesmenu.requestnew = true;
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
 			&& challengesmenu.unlockanim == UNLOCKTIME)
 		{
 			gamedata->unlocked[challengesmenu.currentunlock] = true;
@@ -7008,18 +6998,54 @@ void M_ChallengesTick(void)
 			challengesmenu.extradata = M_ChallengeGridExtraData();
 
 			S_StartSound(NULL, sfx_s3k4e);
-			M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row, SKINCOLOR_KETCHUP);
-			if (unlockables[challengesmenu.currentunlock].majorunlock)
 			{
-				i = challengesmenu.col+1;
-				if (i == gamedata->challengegridwidth)
-					i = 0;
-				M_SetupReadyExplosions(false, i, challengesmenu.row+1, SKINCOLOR_KETCHUP);
+				unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+				UINT16 bombcolor = SKINCOLOR_NONE;
+
+				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+				{
+					bombcolor = ref->color;
+				}
+				else switch (ref->type)
+				{
+					case SECRET_SKIN:
+					{
+						INT32 skin = M_UnlockableSkinNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = skins[skin].prefcolor;
+						}
+						break;
+					}
+					case SECRET_FOLLOWER:
+					{
+						INT32 skin = M_UnlockableFollowerNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+						}
+						break;
+					}
+					default:
+						break;
+				}
+
+				if (bombcolor == SKINCOLOR_NONE)
+				{
+					bombcolor = cv_playercolor[0].value;
+				}
+
+				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
+				M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row+i, bombcolor);
+				if (ref->majorunlock)
+				{
+					M_SetupReadyExplosions(false, challengesmenu.col+1, challengesmenu.row+(1-i), bombcolor);
+				}
 			}
 		}
 	}
-
-	challengesmenu.requestnew = false;
+	else if (challengesmenu.fade > 0)
+		challengesmenu.fade--;
 }
 
 boolean M_ChallengesInputs(INT32 ch)
@@ -7069,18 +7095,8 @@ boolean M_ChallengesInputs(INT32 ch)
 		return true;
 	}
 #endif
-	else if (challengesmenu.pending)
-	{
-		if (challengesmenu.unlockanim < MAXUNLOCKTIME)
-		{
-			;
-		}
-		else if ((M_MenuConfirmPressed(pid) || start))
-		{
-			challengesmenu.requestnew = true;
-		}
-		return true;
-	}
+	else if (challengesmenu.fade)
+		;
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)
