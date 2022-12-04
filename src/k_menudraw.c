@@ -4611,9 +4611,13 @@ void M_DrawChallenges(void)
 
 	x -= 16;
 
+	x += challengesmenu.offset;
+
 	if (challengegridloops)
 	{
-		i = challengesmenu.col;
+		if (!challengesmenu.col && challengesmenu.hilix)
+			x -= gamedata->challengegridwidth*16;
+		i = challengesmenu.col + challengesmenu.focusx;
 		explodex = x - (i*16);
 
 		while (x < BASEVIDWIDTH-16)

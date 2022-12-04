@@ -6929,6 +6929,12 @@ void M_Challenges(INT32 choice)
 
 			challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 			challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+			challengesmenu.focusx = 0;
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES
+				&& !unlockables[challengesmenu.currentunlock].majorunlock
+				&& M_RandomChance(FRACUNIT/2))
+					challengesmenu.focusx--;
 			break;
 		}
 	}
@@ -6939,6 +6945,8 @@ void M_Challenges(INT32 choice)
 void M_ChallengesTick(void)
 {
 	UINT8 i, newunlock = MAXUNLOCKABLES;
+	SINT8 work;
+	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
 	challengesmenu.ticker++;
 
@@ -6970,8 +6978,60 @@ void M_ChallengesTick(void)
 						continue;
 					}
 
+					work = (challengesmenu.col + challengesmenu.focusx);
+
 					challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 					challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+					if (fresh)
+					{
+						challengesmenu.focusx = 0;
+						if (!unlockables[challengesmenu.currentunlock].majorunlock
+							&& M_RandomChance(FRACUNIT/2))
+								challengesmenu.focusx--;
+					}
+					else
+					{
+						work -= challengesmenu.col;
+						if (work <= -gamedata->challengegridwidth/2)
+							work += gamedata->challengegridwidth;
+						else if (work >= gamedata->challengegridwidth/2)
+							work -= gamedata->challengegridwidth;
+
+						if (work > 0)
+						{
+							if (work > LEFTUNLOCKSCROLL)
+							{
+								work -= LEFTUNLOCKSCROLL;
+								challengesmenu.focusx = LEFTUNLOCKSCROLL;
+							}
+							else
+							{
+								challengesmenu.focusx = work;
+								work = 0;
+							}
+						}
+						else if (work < 0)
+						{
+							if (work < -RIGHTUNLOCKSCROLL)
+							{
+								challengesmenu.focusx = -RIGHTUNLOCKSCROLL;
+								work += RIGHTUNLOCKSCROLL;
+							}
+							else
+							{
+								challengesmenu.focusx = work;
+								work = 0;
+							}
+						}
+						else
+						{
+							challengesmenu.focusx = 0;
+						}
+
+						challengesmenu.offset = -work*16;
+					}
+
 					break;
 				}
 			}
@@ -7046,6 +7106,8 @@ void M_ChallengesTick(void)
 	}
 	else if (challengesmenu.fade > 0)
 		challengesmenu.fade--;
+
+	challengesmenu.offset /= 2;
 }
 
 boolean M_ChallengesInputs(INT32 ch)
@@ -7087,6 +7149,12 @@ boolean M_ChallengesInputs(INT32 ch)
 
 				challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 				challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+				challengesmenu.focusx = 0;
+				if (!unlockables[challengesmenu.currentunlock].majorunlock
+					&& M_RandomChance(FRACUNIT/2))
+						challengesmenu.focusx--;
+
 				break;
 			}
 
@@ -7165,6 +7233,8 @@ boolean M_ChallengesInputs(INT32 ch)
 				i = 2;
 				while (i > 0)
 				{
+					if (challengesmenu.focusx > -RIGHTUNLOCKSCROLL)
+						challengesmenu.focusx--;
 					if (challengesmenu.col < gamedata->challengegridwidth-1)
 					{
 						challengesmenu.col++;
@@ -7193,6 +7263,8 @@ boolean M_ChallengesInputs(INT32 ch)
 						& CHE_CONNECTEDLEFT) ? 2 : 1;
 				while (i > 0)
 				{
+					if (challengesmenu.focusx < LEFTUNLOCKSCROLL)
+						challengesmenu.focusx++;
 					if (challengesmenu.col > 0)
 					{
 						challengesmenu.col--;
@@ -7213,20 +7285,25 @@ boolean M_ChallengesInputs(INT32 ch)
 
 			challengesmenu.hilix = challengesmenu.col;
 			challengesmenu.hiliy = challengesmenu.row;
-			if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
-			{
-				challengesmenu.hiliy--;
-			}
 
-			if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES
+				&& unlockables[challengesmenu.currentunlock].majorunlock)
 			{
-				if (challengesmenu.hilix > 0)
+				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
 				{
-					challengesmenu.hilix--;
+					challengesmenu.hiliy--;
 				}
-				else
+
+				if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
 				{
-					challengesmenu.hilix = gamedata->challengegridwidth-1;
+					if (challengesmenu.hilix > 0)
+					{
+						challengesmenu.hilix--;
+					}
+					else
+					{
+						challengesmenu.hilix = gamedata->challengegridwidth-1;
+					}
 				}
 			}
 		}

@@ -1085,6 +1085,8 @@ void M_DrawAddons(void);
 // Challenges menu:
 #define UNLOCKTIME 5
 #define MAXUNLOCKTIME TICRATE
+#define RIGHTUNLOCKSCROLL 3
+#define LEFTUNLOCKSCROLL (RIGHTUNLOCKSCROLL-1)
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
@@ -1092,16 +1094,18 @@ extern struct challengesmenu_s {
 	tic_t ticker;		// How long the menu's been open for
 	INT16 offset;		// To make the icons move smoothly when we transition!
 
-	UINT8 fade;
 	UINT8 currentunlock;
 	tic_t unlockanim;
 
-	UINT8 row, col, hilix, hiliy;
+	SINT8 row, hilix, focusx;
+	UINT8 col, hiliy;
 
 	UINT8 *extradata;
 
 	boolean pending;
 	boolean requestnew;
+
+	UINT8 fade;
 } challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
