@@ -1034,14 +1034,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Vertically sheared sprite
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, dc_texturemid -= vis->shear.tan)
 		{
-#ifdef RANGECHECK
 			texturecolumn = frac>>FRACBITS;
+
+#ifdef RANGECHECK
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
 				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end", vis->x2 - dc_x);
-			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
-#else
-			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
+			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
 			sprtopscreen = (centeryfrac - FixedMul(dc_texturemid, spryscale));
 			localcolfunc (column, NULL, baseclip);
@@ -1056,14 +1055,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Non-paper drawing loop
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
-#ifdef RANGECHECK
 			texturecolumn = frac>>FRACBITS;
+
+#ifdef RANGECHECK
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
 				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end", vis->x2 - dc_x);
-			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
-#else
-			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
 #endif
+			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 			localcolfunc (column, NULL, baseclip);
 		}
 	}
@@ -1079,9 +1077,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 {
 	column_t *column;
-#ifdef RANGECHECK
 	INT32 texturecolumn;
-#endif
 	fixed_t frac;
 	patch_t *patch;
 	fixed_t this_scale = vis->thingscale;
@@ -1128,16 +1124,15 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale)
 	{
-#ifdef RANGECHECK
 		texturecolumn = frac>>FRACBITS;
 
+#ifdef RANGECHECK
 		if (texturecolumn < 0 || texturecolumn >= patch->width)
 			I_Error("R_DrawPrecipitationSpriteRange: bad texturecolumn");
+#endif
 
 		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
-#else
-		column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[frac>>FRACBITS]));
-#endif
+
 		R_DrawMaskedColumn(column, NULL, -1);
 	}
 
