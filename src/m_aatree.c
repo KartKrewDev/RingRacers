@@ -27,7 +27,7 @@ typedef struct aatree_node_s
 	struct aatree_node_s *left, *right;
 } aatree_node_t;
 
-struct aatree_s
+struct aatree_t
 {
 	aatree_node_t	*root;
 	UINT32		flags;

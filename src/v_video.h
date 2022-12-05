@@ -46,12 +46,12 @@ void V_Recalc(void);
 // Color look-up table
 #define CLUTINDEX(r, g, b) (((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)
 
-typedef struct
+struct colorlookup_t
 {
 	boolean init;
 	RGBA_t palette[256];
 	UINT16 table[0xFFFF];
-} colorlookup_t;
+};
 
 void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
 UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);

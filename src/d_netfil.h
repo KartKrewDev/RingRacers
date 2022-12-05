@@ -37,7 +37,7 @@ typedef enum
 	FS_FALLBACK, // HTTP failed
 } filestatus_t;
 
-typedef struct
+struct fileneeded_t
 {
 	UINT8 willsend; // Is the server willing to send it?
 	char filename[MAX_WADPATH];
@@ -54,7 +54,7 @@ typedef struct
 	UINT32 currentsize;
 	UINT32 totalsize;
 	UINT32 ackresendposition; // Used when resuming downloads
-} fileneeded_t;
+};
 
 extern INT32 fileneedednum;
 extern fileneeded_t fileneeded[MAX_WADFILES];
@@ -70,8 +70,6 @@ extern UINT32 totalfilesrequestedsize;
 extern boolean curl_failedwebdownload;
 extern boolean curl_running;
 extern INT32 curl_transfers;
-
-typedef struct HTTP_login HTTP_login;
 
 extern struct HTTP_login
 {
@@ -112,7 +110,7 @@ typedef enum
 	LFTNS_SENT     // The node already has the file
 } luafiletransfernodestatus_t;
 
-typedef struct luafiletransfer_s
+struct luafiletransfer_t
 {
 	char *filename;
 	char *realfilename;
@@ -121,8 +119,8 @@ typedef struct luafiletransfer_s
 	boolean ongoing;
 	luafiletransfernodestatus_t nodestatus[MAXNETNODES];
 	tic_t nodetimeouts[MAXNETNODES];
-	struct luafiletransfer_s *next;
-} luafiletransfer_t;
+	luafiletransfer_t *next;
+};
 
 extern luafiletransfer_t *luafiletransfers;
 extern boolean waitingforluafiletransfer;

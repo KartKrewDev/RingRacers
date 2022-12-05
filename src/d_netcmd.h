@@ -217,22 +217,22 @@ extern const char *netxcmdnames[MAXNETXCMD - 1];
 //Packet composition for Command_TeamChange_f() ServerTeamChange, etc.
 //bitwise structs make packing bits a little easier, but byte alignment harder?
 //todo: decide whether to make the other netcommands conform, or just get rid of this experiment.
-typedef struct {
+struct changeteam_packet_t {
 	UINT32 playernum    : 5;  // value 0 to 31
 	UINT32 newteam      : 5;  // value 0 to 31
 	UINT32 verification : 1;  // value 0 to 1
 	UINT32 autobalance  : 1;  // value 0 to 1
 	UINT32 scrambled    : 1;  // value 0 to 1
-} ATTRPACK changeteam_packet_t;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4214)
 #endif
 
-typedef struct {
+struct changeteam_value_t {
 	UINT16 l; // liitle endian
 	UINT16 b; // big enian
-} ATTRPACK changeteam_value_t;
+} ATTRPACK;
 
 //Since we do not want other files/modules to know about this data buffer we union it here with a Short Int.
 //Other files/modules will hand the INT16 back to us and we will decode it here.
@@ -270,12 +270,12 @@ void RemoveAdminPlayer(INT32 playernum);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 
-typedef struct
+struct scheduleTask_t
 {
 	UINT16 basetime;
 	UINT16 timer;
 	char *command;
-} scheduleTask_t;
+};
 
 extern scheduleTask_t **schedule;
 extern size_t schedule_size;

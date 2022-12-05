@@ -40,7 +40,7 @@ extern INT32 net_bandwidth; // in byte/s
 #pragma pack(1)
 #endif
 
-typedef struct
+struct doomcom_t
 {
 	/// Supposed to be DOOMCOM_ID
 	INT32 id;
@@ -77,14 +77,14 @@ typedef struct
 
 	/// The packet data to be sent.
 	char data[MAXPACKETLENGTH];
-} ATTRPACK doomcom_t;
+} ATTRPACK;
 
-typedef struct
+struct holepunch_t
 {
 	INT32 magic;
 	INT32 addr;
 	INT16 port;
-} ATTRPACK holepunch_t;
+} ATTRPACK;
 
 #if defined(_MSC_VER)
 #pragma pack()
@@ -172,11 +172,11 @@ extern boolean (*I_SetBanUsername) (const char *username);
 extern boolean (*I_SetBanReason) (const char *reason);
 extern boolean (*I_SetUnbanTime) (time_t timestamp);
 
-typedef struct
+struct bannednode_t
 {
 	size_t banid;
 	time_t timeleft;
-} bannednode_t;
+};
 extern bannednode_t *bannednode;
 
 /// \brief Called by D_SRB2Main to be defined by extern network driver

@@ -210,7 +210,7 @@ extern char logfilename[1024];
 // Master Server compatibility ONLY
 #define MSCOMPAT_MAXPLAYERS (32)
 
-typedef struct skincolor_s
+struct skincolor_t
 {
 	char name[MAXCOLORNAME+1];  // Skincolor name
 	UINT8 ramp[COLORRAMPSIZE];  // Colormap ramp
@@ -218,7 +218,7 @@ typedef struct skincolor_s
 	UINT8 invshade;             // Signpost color shade
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
-} skincolor_t;
+};
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)

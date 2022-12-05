@@ -135,7 +135,7 @@ struct searchdim
 	UINT8 siz;
 };
 
-typedef struct
+struct mapsearchfreq_t
 {
 	INT16  mapnum;
 	UINT8  matchc;
@@ -143,8 +143,7 @@ typedef struct
 	UINT8  keywhc;
 	struct searchdim *keywhd;/* ...in KEYWORD */
 	UINT8  total;/* total hits */
-}
-mapsearchfreq_t;
+};
 
 INT32 G_FindMap(const char *query, char **foundmapnamep,
 		mapsearchfreq_t **freqp, INT32 *freqc);
