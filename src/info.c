@@ -543,6 +543,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"KINF", // Invincibility flash
 	"INVI", // Invincibility speedlines
 	"ICAP", // Item capsules
+	"IMON", // Item Monitor
 	"MGBX", // Heavy Magician transform box
 	"MGBT", // Heavy Magician transform box top
 	"MGBB", // Heavy Magician transform box bottom

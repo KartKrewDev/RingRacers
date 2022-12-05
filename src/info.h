@@ -1089,6 +1089,7 @@ typedef enum sprite
 	SPR_KINF, // Invincibility flash
 	SPR_INVI, // Invincibility speedlines
 	SPR_ICAP, // Item capsules
+	SPR_IMON, // Item Monitor
 	SPR_MGBX, // Heavy Magician transform box
 	SPR_MGBT, // Heavy Magician transform box top
 	SPR_MGBB, // Heavy Magician transform box bottom
