@@ -2824,6 +2824,11 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
 	}
 
+	// -- Grand Prix / Time Attack --
+	// Order: Race->DM->CTF
+	else if (grandprixinfo.gp || modeattacking)
+		spawnpoint = G_FindRaceStartOrFallback(playernum);
+
 	// -- CTF --
 	// Order: CTF->DM->Race
 	else if ((gametyperules & GTR_TEAMSTARTS) && players[playernum].ctfteam)

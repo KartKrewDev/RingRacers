@@ -28647,7 +28647,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_BATTLECAPSULE
 	    2333,           // doomednum
-	    S_INVISIBLE,    // spawnstate
+	    S_SHADOW,       // spawnstate
 	    1,              // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
@@ -28662,8 +28662,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    28<<FRACBITS,   // radius
-	    112<<FRACBITS,  // height
+	    64<<FRACBITS,   // radius
+	    144<<FRACBITS,  // height
 	    0,              // display offset
 	    100,            // mass
 	    0,              // damage
