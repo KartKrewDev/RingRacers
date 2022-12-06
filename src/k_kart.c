@@ -6658,6 +6658,9 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
 
+	mo->pitch = 0;
+	mo->roll = 0;
+
 	if (sound)
 	{
 		S_StartSound(mo, (sound == 1 ? sfx_kc2f : sfx_kpogos));
