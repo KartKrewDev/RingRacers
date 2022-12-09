@@ -565,18 +565,15 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	char cechoText[992] = "";
 	UINT8 cechoLines = 0;
 
-	M_CheckUnlockConditions();
-
 	if (!loud)
 	{
 		// Just in case they aren't to sync
+		// Done first so that emblems are ready before check
 		M_CheckLevelEmblems();
 		M_CompletionEmblems();
-
-		// Fun part: if any of those unlocked we need to go through the
-		// unlock conditions AGAIN just in case an emblem reward was reached
-		M_CheckUnlockConditions();
 	}
+
+	M_CheckUnlockConditions();
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
