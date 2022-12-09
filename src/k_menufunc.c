@@ -3362,7 +3362,7 @@ void M_SetupDifficultySelect(INT32 choice)
 		PLAY_RaceDifficultyDef.lastOn = drace_cupselect;	// Select cup select by default.
 	}
 
-	if (M_SecretUnlocked(SECRET_ENCORE))
+	if (M_SecretUnlocked(SECRET_ENCORE, false))
 	{
 		PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 	}
@@ -3477,7 +3477,7 @@ static void M_LevelListFromGametype(INT16 gt)
 
 		while (cup)
 		{
-			if (cup->unlockrequired >= MAXUNLOCKABLES || gamedata->unlocked[cup->unlockrequired])
+			if (cup->unlockrequired >= MAXUNLOCKABLES || M_CheckNetUnlockByID(cup->unlockrequired))
 			{
 				highestid = cup->id;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
@@ -3611,7 +3611,7 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 
 		if ((!newcup)
-			|| (newcup && newcup->unlockrequired < MAXUNLOCKABLES && !gamedata->unlocked[newcup->unlockrequired])
+			|| (newcup->unlockrequired < MAXUNLOCKABLES && !M_CheckNetUnlockByID(newcup->unlockrequired))
 			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
@@ -4614,7 +4614,7 @@ void M_InitOptions(INT32 choice)
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_GameplayDef.menuitems[gopt_encore].status =
-			(M_SecretUnlocked(SECRET_ENCORE) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
+			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
 	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU

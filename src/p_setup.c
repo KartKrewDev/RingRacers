@@ -6807,7 +6807,6 @@ static void P_InitLevelSettings(void)
 	modulothing = 0;
 
 	// special stage tokens, emeralds, and ring total
-	tokenbits = 0;
 	runemeraldmanager = false;
 	emeraldspawndelay = 60*TICRATE;
 

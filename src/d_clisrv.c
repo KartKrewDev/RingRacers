@@ -57,6 +57,7 @@
 #include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
+#include "m_cond.h" // netUnlocked
 
 // cl loading screen
 #include "v_video.h"
@@ -3462,6 +3463,11 @@ void SV_ResetServer(void)
 	memset(server_context, '-', 8);
 
 	CV_RevertNetVars();
+
+	// Copy our unlocks to a place where net material can grab at/overwrite them safely.
+	// (permits all unlocks in dedicated)
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+		netUnlocked[i] = (dedicated || gamedata->unlocked[i]);
 
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }

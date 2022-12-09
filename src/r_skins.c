@@ -171,6 +171,7 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock)
 		if (unlockables[i].type != SECRET_SKIN)
 			continue;
 
+		// NEVER EVER EVER M_CheckNetUnlockByID
 		if (gamedata->unlocked[i] != true && !demolock)
 			continue;
 
@@ -250,6 +251,7 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	}
 
 	// Use the unlockables table directly
+	// NOTE: M_CheckNetUnlockByID would be correct in many circumstances... but not all. TODO figure out how to discern.
 	return (boolean)(gamedata->unlocked[i]);
 }
 

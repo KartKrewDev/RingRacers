@@ -79,6 +79,7 @@ boolean K_FollowerUsable(INT32 skinnum)
 	}
 
 	// Use the unlockables table directly
+	// DEFINITELY not M_CheckNetUnlockByID
 	return (boolean)(gamedata->unlocked[i]);
 }
 

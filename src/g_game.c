@@ -204,10 +204,6 @@ UINT8 stagefailed; // Used for GEMS BONUS? Also to see if you beat the stage.
 
 UINT16 emeralds;
 INT32 luabanks[NUM_LUABANKS];
-UINT32 token; // Number of tokens collected in a level
-UINT32 tokenlist; // List of tokens collected
-boolean gottoken; // Did you get a token? Used for end of act
-INT32 tokenbits; // Used for setting token bits
 
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;
@@ -3309,7 +3305,7 @@ INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 	// Most of the gametype references in this condition are intentionally not prefgametype.
 	// This is so a server CAN continue playing a gametype if they like the taste of it.
 	// The encore check needs prefgametype so can't use G_RaceGametype...
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1)
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
 		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
 	UINT8 encoremodifier = 0;
 
@@ -3870,7 +3866,7 @@ static void G_GetNextMap(void)
 			while (cup)
 			{
 				// Not unlocked? Grab the next result afterwards
-				if (!marathonmode && cup->unlockrequired < MAXUNLOCKABLES && !gamedata->unlocked[cup->unlockrequired])
+				if (!marathonmode && M_CheckNetUnlockByID(cup->unlockrequired))
 				{
 					cup = cup->next;
 					gettingresult = 1;
@@ -4217,10 +4213,6 @@ static void G_DoContinued(void)
 
 	// Reset score
 	pl->score = 0;
-
-	// Allow tokens to come back
-	tokenlist = 0;
-	token = 0;
 
 	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && !usedCheats && cursaveslot > 0)
 		G_SaveGameOver((UINT32)cursaveslot, true);

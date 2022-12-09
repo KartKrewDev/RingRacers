@@ -158,6 +158,9 @@ typedef struct
 
 extern gamedata_t *gamedata;
 
+// Netsynced functional alternative to gamedata->unlocked
+extern boolean netUnlocked[MAXUNLOCKABLES];
+
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
@@ -191,8 +194,9 @@ UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 
 // Checking unlockable status
-UINT8 M_SecretUnlocked(INT32 type);
-UINT8 M_MapLocked(INT32 mapnum);
+boolean M_CheckNetUnlockByID(UINT8 unlockid);
+boolean M_SecretUnlocked(INT32 type, boolean local);
+boolean M_MapLocked(INT32 mapnum);
 INT32 M_CountEmblems(void);
 
 // Emblem shit

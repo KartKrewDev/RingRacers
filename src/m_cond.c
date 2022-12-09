@@ -27,6 +27,7 @@
 #include "k_profiles.h"
 
 gamedata_t *gamedata = NULL;
+boolean netUnlocked[MAXUNLOCKABLES];
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -442,7 +443,7 @@ void M_ClearSecrets(void)
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		gamedata->collected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		gamedata->unlocked[i] = false;
+		gamedata->unlocked[i] = netUnlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		gamedata->achieved[i] = false;
 
@@ -728,12 +729,24 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 // Quick unlock checks
 // -------------------
 
-UINT8 M_SecretUnlocked(INT32 type)
+boolean M_CheckNetUnlockByID(UINT8 unlockid)
+{
+	if (unlockid >= MAXUNLOCKABLES)
+	{
+		return true; // default permit
+	}
+
+	if (netgame)
+	{
+		return netUnlocked[unlockid];
+	}
+
+	return gamedata->unlocked[unlockid];
+}
+
+boolean M_SecretUnlocked(INT32 type, boolean local)
 {
 	INT32 i;
-
-	if (dedicated)
-		return true;
 
 #if 0
 	(void)type;
@@ -741,24 +754,22 @@ UINT8 M_SecretUnlocked(INT32 type)
 	return false; // for quick testing
 #else
 
-#ifdef DEVELOP
-#define CHADYES true
-#else
-#define CHADYES false
-#endif
-
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type == type && gamedata->unlocked[i] != CHADYES)
-			return !CHADYES;
+		if (unlockables[i].type != type)
+			continue;
+		if ((local && gamedata->unlocked[i])
+			|| M_CheckNetUnlockByID(i))
+			continue;
+		return false;
 	}
-	return CHADYES;
 
-#undef CHADYES
+	return true;
+
 #endif //if 0
 }
 
-UINT8 M_MapLocked(INT32 mapnum)
+boolean M_MapLocked(INT32 mapnum)
 {
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
@@ -774,16 +785,11 @@ UINT8 M_MapLocked(INT32 mapnum)
 
 	if (mapheaderinfo[mapnum-1]->cup)
 	{
-		if ((mapheaderinfo[mapnum-1]->cup->unlockrequired < MAXUNLOCKABLES)
-			&& (!gamedata->unlocked[mapheaderinfo[mapnum-1]->cup->unlockrequired]))
+		if (!M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->cup->unlockrequired))
 			return true;
 	}
 
-	if ((mapheaderinfo[mapnum-1]->unlockrequired < MAXUNLOCKABLES)
-		&& (!gamedata->unlocked[mapheaderinfo[mapnum-1]->unlockrequired]))
-		return true;
-
-	return false;
+	return !M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->unlockrequired);
 }
 
 INT32 M_CountEmblems(void)

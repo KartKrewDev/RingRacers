@@ -1966,13 +1966,13 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 			return;
 		}
 
-		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE))
+		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE, false))
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
 		}
 
-		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED))
+		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED, false))
 		{
 			if (!stricmp(value, "Hard") || atoi(value) >= KARTSPEED_HARD)
 			{
@@ -2227,7 +2227,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				|| var->PossibleValue == dummykartspeed_cons_t
 				|| var->PossibleValue == gpdifficulty_cons_t)
 			{
-				if (!M_SecretUnlocked(SECRET_HARDSPEED))
+				if (!M_SecretUnlocked(SECRET_HARDSPEED, false))
 				{
 					max = KARTSPEED_NORMAL+1;
 					if (var->PossibleValue == kartspeed_cons_t)
