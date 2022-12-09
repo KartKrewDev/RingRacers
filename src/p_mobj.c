@@ -5886,7 +5886,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			K_MatchGenericExtraFlags(smoke, mobj);
 			smoke->scale = mobj->scale * 2;
 			smoke->destscale = mobj->scale * 6;
-			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*FRACUNIT*P_MobjFlip(smoke);
+			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*mobj->scale*P_MobjFlip(smoke);
 		}
 		break;
 	case MT_BOOMPARTICLE:
