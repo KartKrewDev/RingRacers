@@ -210,6 +210,8 @@ extern char * bootmap; //bootmap for loading a map on startup
 extern char * tutorialmap; // map to load for tutorial
 extern boolean tutorialmode; // are we in a tutorial right now?
 
+extern char * podiummap; // map to load for podium
+
 extern boolean looptitle;
 
 // CTF colors.

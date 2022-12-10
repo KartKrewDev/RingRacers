@@ -223,6 +223,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);
 		return 1;
+	} else if (fastcmp(word,"podiummap")) {
+		lua_pushstring(L, podiummap);
+		return 1;
 	// end map vars
 	// begin CTF colors
 	} else if (fastcmp(word,"skincolor_redteam")) {

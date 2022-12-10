@@ -51,6 +51,19 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+boolean K_PodiumSequence(void)
+{
+	// FIXME: Cache so we don't have to iterate all map headers every time
+	INT32 podiumMapNum = nummapheaders;
+
+	if (podiummap && ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders))
+	{
+		return (gamemap == podiumMapNum+1);
+	}
+
+	return false;
+}
+
 boolean K_IsDuelItem(mobjtype_t type)
 {
 	switch (type)
@@ -353,6 +366,12 @@ boolean K_IsPlayerLosing(player_t *player)
 {
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
+
+	if (K_PodiumSequence() == true)
+	{
+		// Need to be in top 3 to win.
+		return (player->position > 3);
+	}
 
 	if (player->pflags & PF_NOCONTEST)
 		return true;
@@ -8449,6 +8468,59 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	return bestwaypoint;
 }
 
+static void K_UpdatePodiumWaypoint(player_t *const player, waypoint_t *const waypoint)
+{
+	// Set the new waypoint.
+	player->currentwaypoint = waypoint;
+
+	if ((waypoint == NULL)
+		|| (waypoint->nextwaypoints == NULL)
+		|| (waypoint->numnextwaypoints == 0U))
+	{
+		// No waypoint, or no next waypoint.
+		player->nextwaypoint = NULL;
+		return;
+	}
+
+	// Simply use the first available next waypoint.
+	// No need for split paths in these cutscenes.
+	player->nextwaypoint = waypoint->nextwaypoints[0];
+}
+
+static void K_UpdatePodiumWaypoints(player_t *const player)
+{
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		if ((player->currentwaypoint == NULL)
+			&& (player->position > 0 && player->position <= MAXPLAYERS)
+			&& (leveltime <= 2))
+		{
+			// Initialize our first waypoint to the one that
+			// matches our position.
+			K_UpdatePodiumWaypoint(player, K_GetWaypointFromID(player->position));
+		}
+
+		if (player->currentwaypoint != NULL)
+		{
+			const fixed_t xydist = P_AproxDistance(
+				player->mo->x - player->currentwaypoint->mobj->x,
+				player->mo->y - player->currentwaypoint->mobj->y
+			);
+			const fixed_t xyzdist = P_AproxDistance(
+				xydist,
+				player->mo->z - player->currentwaypoint->mobj->z
+			);
+			//const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+
+			if (xyzdist <= player->mo->radius + player->currentwaypoint->mobj->radius)
+			{
+				// Reached waypoint, go to the next waypoint.
+				K_UpdatePodiumWaypoint(player, player->nextwaypoint);
+			}
+		}
+	}
+}
+
 /*--------------------------------------------------
 	void K_UpdateDistanceFromFinishLine(player_t *const player)
 
@@ -8462,6 +8534,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 --------------------------------------------------*/
 void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
+	if (K_PodiumSequence() == true)
+	{
+		K_UpdatePodiumWaypoints(player);
+		return;
+	}
+
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
@@ -9261,7 +9339,28 @@ void K_KartUpdatePosition(player_t *player)
 
 		realplayers++;
 
-		if (gametyperules & GTR_CIRCUIT)
+		if (K_PodiumSequence() == true)
+		{
+			if (players[i].score > player->score)
+			{
+				// Final score is the important part.
+				position++;
+			}
+			else if (players[i].score == player->score)
+			{
+				if (players[i].bot == false && player->bot == true)
+				{
+					// Bots are never as important as players.
+					position++;
+				}
+				else if (i < player - players)
+				{
+					// Port priority is the final tie breaker.
+					position++;
+				}
+			}
+		}
+		else if (gametyperules & GTR_CIRCUIT)
 		{
 			if (player->exiting) // End of match standings
 			{

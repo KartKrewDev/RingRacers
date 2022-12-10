@@ -164,6 +164,8 @@ char * bootmap = NULL; //bootmap for loading a map on startup
 char * tutorialmap = NULL; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
 
+char * podiummap = NULL; // map to load for podium
+
 boolean looptitle = true;
 
 UINT16 skincolor_redteam = SKINCOLOR_RED;

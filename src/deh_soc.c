@@ -2842,6 +2842,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			{
 				tutorialmap = Z_StrDup(word2);
 			}
+			else if (fastcmp(word, "PODIUMMAP"))
+			{
+				podiummap = Z_StrDup(word2);
+			}
 			else
 				deh_warning("Maincfg: unknown word '%s'", word);
 		}
