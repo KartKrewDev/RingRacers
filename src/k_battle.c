@@ -221,6 +221,29 @@ void K_CheckEmeralds(player_t *player)
 	K_CheckBumpers();
 }
 
+UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
+{
+	switch (emeraldType)
+	{
+		case EMERALD_CHAOS1:
+			return SKINCOLOR_CHAOSEMERALD1;
+		case EMERALD_CHAOS2:
+			return SKINCOLOR_CHAOSEMERALD2;
+		case EMERALD_CHAOS3:
+			return SKINCOLOR_CHAOSEMERALD3;
+		case EMERALD_CHAOS4:
+			return SKINCOLOR_CHAOSEMERALD4;
+		case EMERALD_CHAOS5:
+			return SKINCOLOR_CHAOSEMERALD5;
+		case EMERALD_CHAOS6:
+			return SKINCOLOR_CHAOSEMERALD6;
+		case EMERALD_CHAOS7:
+			return SKINCOLOR_CHAOSEMERALD7;
+		default:
+			return SKINCOLOR_NONE;
+	}
+}
+
 mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
 	boolean validEmerald = true;
@@ -240,25 +263,13 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	switch (emeraldType)
 	{
 		case EMERALD_CHAOS1:
-			emerald->color = SKINCOLOR_CHAOSEMERALD1;
-			break;
 		case EMERALD_CHAOS2:
-			emerald->color = SKINCOLOR_CHAOSEMERALD2;
-			break;
 		case EMERALD_CHAOS3:
-			emerald->color = SKINCOLOR_CHAOSEMERALD3;
-			break;
 		case EMERALD_CHAOS4:
-			emerald->color = SKINCOLOR_CHAOSEMERALD4;
-			break;
 		case EMERALD_CHAOS5:
-			emerald->color = SKINCOLOR_CHAOSEMERALD5;
-			break;
 		case EMERALD_CHAOS6:
-			emerald->color = SKINCOLOR_CHAOSEMERALD6;
-			break;
 		case EMERALD_CHAOS7:
-			emerald->color = SKINCOLOR_CHAOSEMERALD7;
+			emerald->color = K_GetChaosEmeraldColor(emeraldType);
 			break;
 		default:
 			CONS_Printf("Invalid emerald type %d\n", emeraldType);
