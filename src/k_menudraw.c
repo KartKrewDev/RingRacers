@@ -4603,7 +4603,7 @@ void M_DrawChallenges(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
-	if (!gamedata->challengegrid)
+	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
 	{
 		V_DrawCenteredString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;

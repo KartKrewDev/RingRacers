@@ -6870,6 +6870,106 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 	return desiredmenu;
 }
 
+static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
+{
+	UINT8 i;
+	SINT8 work;
+
+	if (unlockid >= MAXUNLOCKABLES)
+		return;
+
+	challengesmenu.currentunlock = unlockid;
+	challengesmenu.unlockanim = 0;
+
+	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
+		return;
+
+	for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+	{
+		if (gamedata->challengegrid[i] != unlockid)
+		{
+			// Not what we're looking for.
+			continue;
+		}
+
+		if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT)
+		{
+			// no need to check for CHE_CONNECTEDUP in linear iteration
+			continue;
+		}
+
+		// Helper calculation for non-fresh scrolling.
+		work = (challengesmenu.col + challengesmenu.focusx);
+
+		challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
+		challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+		if (fresh)
+		{
+			// We're just entering the menu. Immediately jump to the desired position...
+			challengesmenu.focusx = 0;
+			// ...and since the menu is even-width, randomly select whether it's left or right of center.
+			if (!unlockables[unlockid].majorunlock
+				&& M_RandomChance(FRACUNIT/2))
+					challengesmenu.focusx--;
+		}
+		else
+		{
+			// We're jumping between multiple unlocks in sequence. Get the difference (looped from -range/2 < work <= range/2).
+			work -= challengesmenu.col;
+			if (work <= -gamedata->challengegridwidth/2)
+				work += gamedata->challengegridwidth;
+			else if (work >= gamedata->challengegridwidth/2)
+				work -= gamedata->challengegridwidth;
+
+			if (work > 0)
+			{
+				// Offset left, scroll right?
+				if (work > LEFTUNLOCKSCROLL)
+				{
+					work -= LEFTUNLOCKSCROLL;
+					challengesmenu.focusx = LEFTUNLOCKSCROLL;
+				}
+				else
+				{
+					challengesmenu.focusx = work;
+					work = 0;
+				}
+			}
+			else if (work < 0)
+			{
+				// We only need to scroll as far as the rightward edge.
+				if (unlockables[unlockid].majorunlock)
+				{
+					work++;
+				}
+
+				// Offset right, scroll left?
+				if (work < -RIGHTUNLOCKSCROLL)
+				{
+					challengesmenu.focusx = -RIGHTUNLOCKSCROLL;
+					work += RIGHTUNLOCKSCROLL;
+				}
+				else
+				{
+					challengesmenu.focusx = work;
+					work = 0;
+				}
+			}
+			else
+			{
+				// We're right where we want to be.
+				challengesmenu.focusx = 0;
+			}
+
+			// And put the pixel-based scrolling in play, too.
+			challengesmenu.offset = -work*16;
+		}
+
+		break;
+	}
+}
+
 void M_Challenges(INT32 choice)
 {
 	UINT8 i;
@@ -6878,7 +6978,7 @@ void M_Challenges(INT32 choice)
 	M_InterruptMenuWithChallenges(NULL);
 	MISC_ChallengesDef.prevMenu = currentMenu;
 
-	if (gamedata->challengegrid && !challengesmenu.pending)
+	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
 	{
 		UINT8 selection[MAXUNLOCKABLES];
 		UINT8 numunlocks = 0;
@@ -6913,30 +7013,7 @@ void M_Challenges(INT32 choice)
 			}
 		}
 
-		challengesmenu.currentunlock = selection[M_RandomKey(numunlocks)];
-
-		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
-		{
-			if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
-			{
-				continue;
-			}
-
-			if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
-			{
-				continue;
-			}
-
-			challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
-			challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
-
-			challengesmenu.focusx = 0;
-			if (challengesmenu.currentunlock < MAXUNLOCKABLES
-				&& !unlockables[challengesmenu.currentunlock].majorunlock
-				&& M_RandomChance(FRACUNIT/2))
-					challengesmenu.focusx--;
-			break;
-		}
+		M_ChallengesAutoFocus(selection[M_RandomKey(numunlocks)], true);
 	}
 
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
@@ -6945,169 +7022,113 @@ void M_Challenges(INT32 choice)
 void M_ChallengesTick(void)
 {
 	UINT8 i, newunlock = MAXUNLOCKABLES;
-	SINT8 work;
 	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
+	// Ticking
 	challengesmenu.ticker++;
-
+	challengesmenu.offset /= 2;
 	for (i = 0; i < CSEXPLOSIONS; i++)
 	{
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
 
-	if (challengesmenu.pending && challengesmenu.requestnew)
+	if (challengesmenu.pending)
 	{
-		challengesmenu.requestnew = false;
-		if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
+		// Pending mode.
+
+		if (challengesmenu.requestnew)
 		{
-			challengesmenu.currentunlock = newunlock;
-			challengesmenu.unlockanim = 0;
-
-			if (gamedata->challengegrid)
+			// The menu apparatus is requesting a new unlock.
+			challengesmenu.requestnew = false;
+			if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
 			{
-				for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
-				{
-					if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
-					{
-						continue;
-					}
-
-					if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
-					{
-						continue;
-					}
-
-					work = (challengesmenu.col + challengesmenu.focusx);
-
-					challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
-					challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
-
-					if (fresh)
-					{
-						challengesmenu.focusx = 0;
-						if (!unlockables[challengesmenu.currentunlock].majorunlock
-							&& M_RandomChance(FRACUNIT/2))
-								challengesmenu.focusx--;
-					}
-					else
-					{
-						work -= challengesmenu.col;
-						if (work <= -gamedata->challengegridwidth/2)
-							work += gamedata->challengegridwidth;
-						else if (work >= gamedata->challengegridwidth/2)
-							work -= gamedata->challengegridwidth;
-
-						if (work > 0)
-						{
-							if (work > LEFTUNLOCKSCROLL)
-							{
-								work -= LEFTUNLOCKSCROLL;
-								challengesmenu.focusx = LEFTUNLOCKSCROLL;
-							}
-							else
-							{
-								challengesmenu.focusx = work;
-								work = 0;
-							}
-						}
-						else if (work < 0)
-						{
-							if (work < -RIGHTUNLOCKSCROLL)
-							{
-								challengesmenu.focusx = -RIGHTUNLOCKSCROLL;
-								work += RIGHTUNLOCKSCROLL;
-							}
-							else
-							{
-								challengesmenu.focusx = work;
-								work = 0;
-							}
-						}
-						else
-						{
-							challengesmenu.focusx = 0;
-						}
-
-						challengesmenu.offset = -work*16;
-					}
-
-					break;
-				}
+				// We got one!
+				M_ChallengesAutoFocus(newunlock, fresh);
 			}
+			else
+			{
+				// All done! Let's save the unlocks we've busted open.
+				challengesmenu.pending = false;
+				G_SaveGameData();
+			}
+		}
+		else if (challengesmenu.fade < 5)
+		{
+			// Fade increase.
+			challengesmenu.fade++;
 		}
 		else
 		{
-			challengesmenu.pending = false;
-			G_SaveGameData();
-		}
-	}
-	else if (challengesmenu.pending && challengesmenu.fade < 5)
-		challengesmenu.fade++;
-	else if (challengesmenu.pending)
-	{
-		if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
-			challengesmenu.requestnew = true;
+			// Unlock sequence.
 
-		if (challengesmenu.currentunlock < MAXUNLOCKABLES
-			&& challengesmenu.unlockanim == UNLOCKTIME)
-		{
-			gamedata->unlocked[challengesmenu.currentunlock] = true;
-
-			Z_Free(challengesmenu.extradata);
-			challengesmenu.extradata = M_ChallengeGridExtraData();
-
-			S_StartSound(NULL, sfx_s3k4e);
+			if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
 			{
-				unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
-				UINT16 bombcolor = SKINCOLOR_NONE;
+				challengesmenu.requestnew = true;
+			}
 
-				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES
+				&& challengesmenu.unlockanim == UNLOCKTIME)
+			{
+				// Unlock animation... also tied directly to the actual unlock!
+				gamedata->unlocked[challengesmenu.currentunlock] = true;
+
+				Z_Free(challengesmenu.extradata);
+				if ((challengesmenu.extradata = M_ChallengeGridExtraData()))
 				{
-					bombcolor = ref->color;
-				}
-				else switch (ref->type)
-				{
-					case SECRET_SKIN:
+					unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+					UINT16 bombcolor = SKINCOLOR_NONE;
+
+					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
 					{
-						INT32 skin = M_UnlockableSkinNum(ref);
-						if (skin != -1)
-						{
-							bombcolor = skins[skin].prefcolor;
-						}
-						break;
+						bombcolor = ref->color;
 					}
-					case SECRET_FOLLOWER:
+					else switch (ref->type)
 					{
-						INT32 skin = M_UnlockableFollowerNum(ref);
-						if (skin != -1)
+						case SECRET_SKIN:
 						{
-							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+							INT32 skin = M_UnlockableSkinNum(ref);
+							if (skin != -1)
+							{
+								bombcolor = skins[skin].prefcolor;
+							}
+							break;
 						}
-						break;
+						case SECRET_FOLLOWER:
+						{
+							INT32 skin = M_UnlockableFollowerNum(ref);
+							if (skin != -1)
+							{
+								bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+							}
+							break;
+						}
+						default:
+							break;
 					}
-					default:
-						break;
-				}
 
-				if (bombcolor == SKINCOLOR_NONE)
-				{
-					bombcolor = cv_playercolor[0].value;
-				}
+					if (bombcolor == SKINCOLOR_NONE)
+					{
+						bombcolor = cv_playercolor[0].value;
+					}
 
-				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
-				M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row+i, bombcolor);
-				if (ref->majorunlock)
-				{
-					M_SetupReadyExplosions(false, challengesmenu.col+1, challengesmenu.row+(1-i), bombcolor);
+					i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
+					M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row+i, bombcolor);
+					if (ref->majorunlock)
+					{
+						M_SetupReadyExplosions(false, challengesmenu.col+1, challengesmenu.row+(1-i), bombcolor);
+					}
+
+					S_StartSound(NULL, sfx_s3k4e);
 				}
 			}
 		}
 	}
 	else if (challengesmenu.fade > 0)
+	{
+		// Fade decrease.
 		challengesmenu.fade--;
-
-	challengesmenu.offset /= 2;
+	}
 }
 
 boolean M_ChallengesInputs(INT32 ch)
@@ -7115,15 +7136,15 @@ boolean M_ChallengesInputs(INT32 ch)
 	const UINT8 pid = 0;
 	UINT8 i;
 	const boolean start = M_MenuButtonPressed(pid, MBT_START);
-	const boolean move = (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr);
+	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
 
-	if (!challengesmenu.extradata)
+	if (challengesmenu.fade)
 	{
 		;
 	}
 #ifdef DEVELOP
-	else if (M_MenuExtraPressed(pid)) // debugging
+	else if (M_MenuExtraPressed(pid) && challengesmenu.extradata) // debugging
 	{
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
@@ -7133,38 +7154,14 @@ boolean M_ChallengesInputs(INT32 ch)
 			M_PopulateChallengeGrid();
 			Z_Free(challengesmenu.extradata);
 			challengesmenu.extradata = M_ChallengeGridExtraData();
-			challengesmenu.unlockanim = 0;
 
-			for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
-			{
-				if (gamedata->challengegrid[i] != challengesmenu.currentunlock)
-				{
-					continue;
-				}
-
-				if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT) // no need to check for CHE_CONNECTEDUP in linear iteration
-				{
-					continue;
-				}
-
-				challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
-				challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
-
-				challengesmenu.focusx = 0;
-				if (!unlockables[challengesmenu.currentunlock].majorunlock
-					&& M_RandomChance(FRACUNIT/2))
-						challengesmenu.focusx--;
-
-				break;
-			}
+			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
 
 			challengesmenu.pending = true;
 		}
 		return true;
 	}
 #endif
-	else if (challengesmenu.fade)
-		;
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)
@@ -7178,9 +7175,12 @@ boolean M_ChallengesInputs(INT32 ch)
 			return true;
 		}
 
-		// Determine movement around the grid
-		if (move)
+		if (challengesmenu.extradata != NULL && move)
 		{
+			// Determine movement around the grid
+			// For right/down movement, we can pre-determine the number of steps based on extradata.
+			// For left/up movement, we can't - we have to be ready to iterate twice, and break early if we don't run into a large tile.
+
 			if (menucmd[pid].dpad_ud > 0)
 			{
 				i = 2;
@@ -7233,8 +7233,13 @@ boolean M_ChallengesInputs(INT32 ch)
 				i = 2;
 				while (i > 0)
 				{
+					// Slide the focus counter to movement, if we can.
 					if (challengesmenu.focusx > -RIGHTUNLOCKSCROLL)
+					{
 						challengesmenu.focusx--;
+					}
+
+					// Step the actual column right.
 					if (challengesmenu.col < gamedata->challengegridwidth-1)
 					{
 						challengesmenu.col++;
@@ -7243,6 +7248,7 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						challengesmenu.col = 0;
 					}
+
 					if (!(challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
 							+ challengesmenu.row]
@@ -7250,6 +7256,7 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						break;
 					}
+
 					i--;
 				}
 				S_StartSound(NULL, sfx_s3k5b);
@@ -7263,8 +7270,13 @@ boolean M_ChallengesInputs(INT32 ch)
 						& CHE_CONNECTEDLEFT) ? 2 : 1;
 				while (i > 0)
 				{
+					// Slide the focus counter to movement, if we can.
 					if (challengesmenu.focusx < LEFTUNLOCKSCROLL)
+					{
 						challengesmenu.focusx++;
+					}
+
+					// Step the actual column left.
 					if (challengesmenu.col > 0)
 					{
 						challengesmenu.col--;
@@ -7273,6 +7285,7 @@ boolean M_ChallengesInputs(INT32 ch)
 					{
 						challengesmenu.col = gamedata->challengegridwidth-1;
 					}
+
 					i--;
 				}
 				S_StartSound(NULL, sfx_s3k5b);
@@ -7289,6 +7302,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			if (challengesmenu.currentunlock < MAXUNLOCKABLES
 				&& unlockables[challengesmenu.currentunlock].majorunlock)
 			{
+				// Adjust highlight coordinates up/to the left for large tiles.
+
 				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
 				{
 					challengesmenu.hiliy--;
