@@ -24,8 +24,6 @@
 extern "C" {
 #endif
 
-typedef struct huddrawlist_s *huddrawlist_h;
-
 // Create a new drawlist. Returns a handle to it.
 huddrawlist_h LUA_HUD_CreateDrawList(void);
 // Clears the draw list.

@@ -40,15 +40,15 @@ typedef union
 typedef actionf_t think_t;
 
 // Doubly linked list of actors.
-typedef struct thinker_s
+struct thinker_t
 {
-	struct thinker_s *prev;
-	struct thinker_s *next;
+	thinker_t *prev;
+	thinker_t *next;
 	think_t function;
 
 	// killough 11/98: count of how many other objects reference
 	// this one using pointers. Used for garbage collection.
 	INT32 references;
-} thinker_t;
+};
 
 #endif

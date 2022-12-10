@@ -13,17 +13,17 @@
 #ifndef M_QUEUE_H
 #define M_QUEUE_H
 
-typedef struct mqueueitem_s
+struct mqueueitem_t
 {
-	struct mqueueitem_s *next;
-} mqueueitem_t;
+	mqueueitem_t *next;
+};
 
-typedef struct mqueue_s
+struct mqueue_t
 {
 	mqueueitem_t head;
 	mqueueitem_t *tail;
 	mqueueitem_t *rover;
-} mqueue_t;
+};
 
 void M_QueueInit(mqueue_t *queue);
 void M_QueueInsert(mqueueitem_t *item, mqueue_t *queue);

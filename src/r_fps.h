@@ -40,7 +40,7 @@ extern enum viewcontext_e viewcontext;
 
 #define R_GetViewNumber() ((viewcontext - VIEWCONTEXT_PLAYER1) & 3)
 
-typedef struct {
+struct viewvars_t {
 	fixed_t x;
 	fixed_t y;
 	fixed_t z;
@@ -54,11 +54,11 @@ typedef struct {
 	fixed_t cos;
 	fixed_t sin;
 	mobj_t *mobj;
-} viewvars_t;
+};
 
 extern viewvars_t *newview;
 
-typedef struct {
+struct interpmobjstate_t {
 	fixed_t x;
 	fixed_t y;
 	fixed_t z;
@@ -69,7 +69,7 @@ typedef struct {
 	fixed_t spriteyscale;
 	fixed_t spritexoffset;
 	fixed_t spriteyoffset;
-} interpmobjstate_t;
+};
 
 // Level interpolators
 
@@ -83,7 +83,7 @@ typedef enum {
 } levelinterpolator_type_e;
 
 // Tagged union of a level interpolator
-typedef struct levelinterpolator_s {
+struct levelinterpolator_t {
 	levelinterpolator_type_e type;
 	thinker_t *thinker;
 	union {
@@ -116,7 +116,7 @@ typedef struct levelinterpolator_s {
 			fixed_t oldzdelta, bakzdelta;
 		} dynslope;
 	};
-} levelinterpolator_t;
+};
 
 // Interpolates the current view variables (r_state.h) against the selected view context in R_SetViewContext
 void R_InterpolateView(fixed_t frac);

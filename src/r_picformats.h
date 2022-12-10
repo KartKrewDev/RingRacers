@@ -92,18 +92,18 @@ typedef enum
 	ROTAXIS_Z  // Yaw
 } rotaxis_t;
 
-typedef struct
+struct spriteframepivot_t
 {
 	INT32 x, y;
 	rotaxis_t rotaxis;
-} spriteframepivot_t;
+};
 
-typedef struct
+struct spriteinfo_t
 {
 	spriteframepivot_t pivot[64 + 1];
 #define SPRINFO_DEFAULT_PIVOT (64)
 	UINT8 available[BIT_ARRAY_SIZE(64 + 1)]; // 1 extra for default_pivot
-} spriteinfo_t;
+};
 
 // Portable Network Graphics
 #define PNG_HEADER_SIZE (8)

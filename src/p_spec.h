@@ -578,17 +578,17 @@ UINT16 P_GetFFloorID(ffloor_t *fflr);
 ffloor_t *P_GetFFloorByID(sector_t *sec, UINT16 id);
 
 // Use this when you don't know the type of your thinker data struct but need to access its thinker.
-typedef struct
+struct thinkerdata_t
 {
 	thinker_t thinker;
-} thinkerdata_t;
+};
 
 //
 // P_LIGHTS
 //
 /** Fire flicker action structure.
   */
-typedef struct
+struct fireflicker_t
 {
 	thinker_t thinker; ///< The thinker in use for the effect.
 	sector_t *sector;  ///< The sector where action is taking place.
@@ -596,29 +596,29 @@ typedef struct
 	INT32 resetcount;
 	INT16 maxlight;    ///< The brightest light level to use.
 	INT16 minlight;    ///< The darkest light level to use.
-} fireflicker_t;
+};
 
-typedef struct
+struct lightflash_t
 {
 	thinker_t thinker;
 	sector_t *sector;
 	INT32 maxlight;
 	INT32 minlight;
-} lightflash_t;
+};
 
 /** Laser block thinker.
   */
-typedef struct
+struct laserthink_t
 {
 	thinker_t thinker; ///< Thinker structure for laser.
 	INT16 tag;
 	line_t *sourceline;
 	UINT8 nobosses;
-} laserthink_t;
+};
 
 /** Strobe light action structure..
   */
-typedef struct
+struct strobe_t
 {
 	thinker_t thinker; ///< The thinker in use for the effect.
 	sector_t *sector;  ///< The sector where the action is taking place.
@@ -627,9 +627,9 @@ typedef struct
 	INT16 maxlight;    ///< The maximum light level to use.
 	INT32 darktime;    ///< How INT32 to use minlight.
 	INT32 brighttime;  ///< How INT32 to use maxlight.
-} strobe_t;
+};
 
-typedef struct
+struct glow_t
 {
 	thinker_t thinker;
 	sector_t *sector;
@@ -637,11 +637,11 @@ typedef struct
 	INT16 maxlight;
 	INT16 direction;
 	INT16 speed;
-} glow_t;
+};
 
 /** Thinker struct for fading lights.
   */
-typedef struct
+struct lightlevel_t
 {
 	thinker_t thinker;		///< Thinker in use for the effect.
 	sector_t *sector;		///< Sector where action is taking place.
@@ -652,7 +652,7 @@ typedef struct
 	fixed_t fixedpertic;	///< Fixed point for increment per tic.
 	// The reason for those two above to be fixed point is to deal with decimal values that would otherwise get trimmed away.
 	INT32 timer;			///< Internal timer.
-} lightlevel_t;
+};
 
 #define GLOWSPEED 8
 #define STROBEBRIGHT 5
@@ -709,7 +709,7 @@ typedef enum
 
 /** Ceiling movement structure.
   */
-typedef struct
+struct ceiling_t
 {
 	thinker_t thinker;    ///< Thinker for the type of movement.
 	ceiling_e type;       ///< Type of movement.
@@ -728,7 +728,7 @@ typedef struct
 	INT16 tag;            ///< Tag of linedef executor to run when movement is done.
 	fixed_t origspeed;    ///< The original, "real" speed.
 	INT32 sourceline;     ///< Index of the source linedef
-} ceiling_t;
+};
 
 #define CEILSPEED (FRACUNIT)
 
@@ -771,7 +771,7 @@ typedef enum
 	bridgeFall,
 } elevator_e;
 
-typedef struct
+struct floormove_t
 {
 	thinker_t thinker;
 	floor_e type;
@@ -786,9 +786,9 @@ typedef struct
 	fixed_t delaytimer;
 	INT16 tag;
 	INT32 sourceline;
-} floormove_t;
+};
 
-typedef struct
+struct elevator_t
 {
 	thinker_t thinker;
 	elevator_e type;
@@ -807,7 +807,7 @@ typedef struct
 	fixed_t floorwasheight; // Height the floor WAS at
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
 	line_t *sourceline;
-} elevator_t;
+};
 
 typedef enum
 {
@@ -816,7 +816,7 @@ typedef enum
 	CF_REVERSE  = 1<<2, // Reverse gravity
 } crumbleflag_t;
 
-typedef struct
+struct crumble_t
 {
 	thinker_t thinker;
 	line_t *sourceline;
@@ -830,15 +830,15 @@ typedef struct
 	fixed_t floorwasheight; // Height the floor WAS at
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
 	UINT8 flags;
-} crumble_t;
+};
 
-typedef struct
+struct noenemies_t
 {
 	thinker_t thinker;
 	line_t *sourceline; // Source line of the thinker
-} noenemies_t;
+};
 
-typedef struct
+struct continuousfall_t
 {
 	thinker_t thinker;
 	sector_t *sector;
@@ -847,9 +847,9 @@ typedef struct
 	fixed_t floorstartheight;
 	fixed_t ceilingstartheight;
 	fixed_t destheight;
-} continuousfall_t;
+};
 
-typedef struct
+struct bouncecheese_t
 {
 	thinker_t thinker;
 	line_t *sourceline;
@@ -859,9 +859,9 @@ typedef struct
 	fixed_t floorwasheight;
 	fixed_t ceilingwasheight;
 	boolean low;
-} bouncecheese_t;
+};
 
-typedef struct
+struct mariothink_t
 {
 	thinker_t thinker;
 	sector_t *sector;
@@ -870,16 +870,16 @@ typedef struct
 	fixed_t floorstartheight;
 	fixed_t ceilingstartheight;
 	INT16 tag;
-} mariothink_t;
+};
 
-typedef struct
+struct mariocheck_t
 {
 	thinker_t thinker;
 	line_t *sourceline;
 	sector_t *sector;
-} mariocheck_t;
+};
 
-typedef struct
+struct thwomp_t
 {
 	thinker_t thinker;
 	line_t *sourceline;
@@ -893,23 +893,23 @@ typedef struct
 	INT16 tag;
 	UINT16 sound;
 	INT32 initDelay;
-} thwomp_t;
+};
 
-typedef struct
+struct floatthink_t
 {
 	thinker_t thinker;
 	line_t *sourceline;
 	sector_t *sector;
 	INT16 tag;
-} floatthink_t;
+};
 
-typedef struct
+struct eachtime_t
 {
 	thinker_t thinker;
 	line_t *sourceline; // Source line of the thinker
 	boolean playersInArea[MAXPLAYERS];
 	boolean triggerOnExit;
-} eachtime_t;
+};
 
 typedef enum
 {
@@ -918,7 +918,7 @@ typedef enum
 	RF_DYNAMIC  = 1<<2, //Dynamically sinking platform
 } raiseflag_t;
 
-typedef struct
+struct raise_t
 {
 	thinker_t thinker;
 	INT16 tag;
@@ -929,7 +929,7 @@ typedef struct
 	fixed_t extraspeed; //For dynamically sinking platform
 	UINT8 shaketimer; //For dynamically sinking platform
 	UINT8 flags;
-} raise_t;
+};
 
 #define ELEVATORSPEED (FRACUNIT*4)
 #define FLOORSPEED (FRACUNIT)
@@ -971,20 +971,20 @@ void T_EachTimeThinker(eachtime_t *eachtime);
 void T_CameraScanner(elevator_t *elevator);
 void T_RaiseSector(raise_t *raise);
 
-typedef struct
+struct executor_t
 {
 	thinker_t thinker; // Thinker for linedef executor delay
 	line_t *line;      // Pointer to line that is waiting.
 	mobj_t *caller;    // Pointer to calling mobj
 	sector_t *sector;  // Pointer to triggering sector
 	INT32 timer;       // Delay timer
-} executor_t;
+};
 
 void T_ExecutorDelay(executor_t *e);
 
 /** Generalized scroller.
   */
-typedef struct
+struct scroll_t
 {
 	thinker_t thinker;   ///< Thinker structure for scrolling.
 	fixed_t dx, dy;      ///< (dx,dy) scroll speeds.
@@ -1004,14 +1004,14 @@ typedef struct
 		sc_carry,        ///< Carry objects on floor.
 		sc_carry_ceiling,///< Carry objects on ceiling (for 3Dfloor conveyors).
 	} type;
-} scroll_t;
+};
 
 void T_Scroll(scroll_t *s);
 void T_LaserFlash(laserthink_t *flash);
 
 /** Friction for ice/sludge effects.
   */
-typedef struct
+struct friction_t
 {
 	thinker_t thinker;   ///< Thinker structure for friction.
 	INT32 friction;      ///< Friction value, 0xe800 = normal.
@@ -1019,7 +1019,7 @@ typedef struct
 	INT32 affectee;      ///< Number of affected sector.
 	INT32 referrer;      ///< If roverfriction == true, then this will contain the sector # of the control sector where the effect was applied.
 	UINT8 roverfriction;  ///< flag for whether friction originated from a FOF or not
-} friction_t;
+};
 
 // Friction defines.
 #define ORIG_FRICTION          (0xF5 << (FRACBITS-8)) ///< Original value.
@@ -1033,7 +1033,7 @@ typedef enum
 } pushertype_e;
 
 // Model for pushers for push/pull effects
-typedef struct
+struct pusher_t
 {
 	thinker_t thinker;  ///< Thinker structure for pusher effect.
 	pushertype_e type;  ///< Type of pusher effect.
@@ -1045,10 +1045,10 @@ typedef struct
 	INT32 referrer;     ///< If roverpusher == true, then this will contain the sector # of the control sector where the effect was applied.
 	INT32 exclusive;    /// < Once this affect has been applied to a mobj, no other pushers may affect it.
 	INT32 slider;       /// < Should the player go into an uncontrollable slide?
-} pusher_t;
+};
 
 // Model for disappearing/reappearing FOFs
-typedef struct
+struct disappear_t
 {
 	thinker_t thinker;  ///< Thinker structure for effect.
 	tic_t appeartime;   ///< Tics to be appeared for
@@ -1058,12 +1058,12 @@ typedef struct
 	INT32 affectee;     ///< Number of affected line
 	INT32 sourceline;   ///< Number of source line
 	INT32 exists;       ///< Exists toggle
-} disappear_t;
+};
 
 void T_Disappear(disappear_t *d);
 
 // Model for fading FOFs
-typedef struct
+struct fade_t
 {
 	thinker_t thinker;  ///< Thinker structure for effect.
 	ffloor_t *rover;    ///< Target ffloor
@@ -1084,13 +1084,13 @@ typedef struct
 	boolean docollision; ///< Handle interactive flags
 	boolean doghostfade; ///< No interactive flags during fading
 	boolean exactalpha; ///< Use exact alpha values (opengl)
-} fade_t;
+};
 
 void T_Fade(fade_t *d);
 
 // Model for fading colormaps
 
-typedef struct
+struct fadecolormap_t
 {
 	thinker_t thinker;          ///< Thinker structure for effect.
 	sector_t *sector;           ///< Sector where action is taking place.
@@ -1099,7 +1099,7 @@ typedef struct
 	boolean ticbased;           ///< Tic-based timing
 	INT32 duration;             ///< Total duration for tic-based logic (OR: speed increment)
 	INT32 timer;                ///< Timer for tic-based logic (OR: internal speed counter)
-} fadecolormap_t;
+};
 
 void T_FadeColormap(fadecolormap_t *d);
 
@@ -1107,7 +1107,7 @@ void T_FadeColormap(fadecolormap_t *d);
 void T_Pusher(pusher_t *p);
 
 // Plane displacement
-typedef struct
+struct planedisplace_t
 {
 	thinker_t thinker;   ///< Thinker structure for plane displacement effect.
 	INT32 affectee;      ///< Number of affected sector.
@@ -1123,7 +1123,7 @@ typedef struct
 		pd_ceiling,      ///< Displace ceiling.
 		pd_both,         ///< Displace both floor AND ceiling.
 	} type;
-} planedisplace_t;
+};
 
 void T_PlaneDisplace(planedisplace_t *pd);
 

@@ -37,7 +37,7 @@ typedef enum
 } conditiontype_t;
 
 // Condition Set information
-typedef struct
+struct condition_t
 {
 	UINT32 id;           /// <- The ID of this condition.
 	                     ///    In an unlock condition, all conditions with the same ID
@@ -47,12 +47,12 @@ typedef struct
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
-} condition_t;
-typedef struct
+};
+struct conditionset_t
 {
 	UINT32 numconditions;   /// <- number of conditions.
 	condition_t *condition; /// <- All conditionals to be checked.
-} conditionset_t;
+};
 
 // Emblem information
 #define ET_GLOBAL  0 // Emblem with a position in space
@@ -67,7 +67,7 @@ typedef struct
 // Map emblem flags
 #define ME_ENCORE 1
 
-typedef struct
+struct emblem_t
 {
 	UINT8 type;      ///< Emblem type
 	INT16 tag;       ///< Tag of emblem mapthing
@@ -77,10 +77,10 @@ typedef struct
 	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
 	char *stringVar; ///< String version
 	char hint[110];  ///< Hint for emblem hints menu
-} emblem_t;
+};
 
 // Unlockable information
-typedef struct
+struct unlockable_t
 {
 	char name[64];
 	char *icon;
@@ -90,7 +90,7 @@ typedef struct
 	INT16 variable;
 	char *stringVar;
 	UINT8 majorunlock;
-} unlockable_t;
+};
 
 #define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
 #define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
@@ -130,7 +130,7 @@ typedef struct
 
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
-typedef struct
+struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
@@ -154,7 +154,7 @@ typedef struct
 	// PLAY TIME
 	UINT32 totalplaytime;
 	UINT32 matchesplayed;
-} gamedata_t;
+};
 
 extern gamedata_t *gamedata;
 

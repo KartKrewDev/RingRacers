@@ -1508,7 +1508,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		weight = (mobj->player->kartweight) * FRACUNIT;
 
 		if (mobj->player->speed > spd)
-			weight += (mobj->player->speed - spd) / 8;
+			weight += FixedDiv((mobj->player->speed - spd), 8 * mapobjectscale);
 
 		if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
 			weight += 9*FRACUNIT;
@@ -6657,6 +6657,9 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	{
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
+
+	mo->pitch = 0;
+	mo->roll = 0;
 
 	if (sound)
 	{

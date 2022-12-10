@@ -15,9 +15,7 @@
 
 #define MAX_FONTS 32
 
-typedef struct font font_t;
-
-struct font
+struct font_t
 {
 	patch_t **font;
 
