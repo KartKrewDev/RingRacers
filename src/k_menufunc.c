@@ -6924,7 +6924,16 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 
 			if (work > 0)
 			{
-				// Offset left, scroll right?
+				// We only need to scroll as far as the rightward edge.
+				if (unlockables[unlockid].majorunlock)
+				{
+					work--;
+					challengesmenu.col++;
+					if (challengesmenu.col >= gamedata->challengegridwidth)
+						challengesmenu.col = 0;
+				}
+
+				// Offset right, scroll left?
 				if (work > LEFTUNLOCKSCROLL)
 				{
 					work -= LEFTUNLOCKSCROLL;
@@ -6938,13 +6947,7 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 			}
 			else if (work < 0)
 			{
-				// We only need to scroll as far as the rightward edge.
-				if (unlockables[unlockid].majorunlock)
-				{
-					work++;
-				}
-
-				// Offset right, scroll left?
+				// Offset left, scroll right?
 				if (work < -RIGHTUNLOCKSCROLL)
 				{
 					challengesmenu.focusx = -RIGHTUNLOCKSCROLL;
@@ -7113,10 +7116,10 @@ void M_ChallengesTick(void)
 					}
 
 					i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
-					M_SetupReadyExplosions(false, challengesmenu.col, challengesmenu.row+i, bombcolor);
+					M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
 					if (ref->majorunlock)
 					{
-						M_SetupReadyExplosions(false, challengesmenu.col+1, challengesmenu.row+(1-i), bombcolor);
+						M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
 					}
 
 					S_StartSound(NULL, sfx_s3k4e);

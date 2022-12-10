@@ -4615,8 +4615,8 @@ void M_DrawChallenges(void)
 
 	if (challengegridloops)
 	{
-		if (!challengesmenu.col && challengesmenu.hilix)
-			x -= gamedata->challengegridwidth*16;
+		//if (!challengesmenu.col && challengesmenu.hilix)
+			//x -= gamedata->challengegridwidth*16;
 		i = challengesmenu.col + challengesmenu.focusx;
 		explodex = x - (i*16);
 
