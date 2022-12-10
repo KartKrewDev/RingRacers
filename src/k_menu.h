@@ -1088,6 +1088,12 @@ void M_DrawAddons(void);
 #define RIGHTUNLOCKSCROLL 3
 #define LEFTUNLOCKSCROLL (RIGHTUNLOCKSCROLL-1)
 
+#define CC_TOTAL 0
+#define CC_UNLOCKED 1
+#define CC_TALLY 2
+#define CC_ANIM 3
+#define CC_MAX 4
+
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
 
@@ -1104,6 +1110,8 @@ extern struct challengesmenu_s {
 
 	boolean pending;
 	boolean requestnew;
+
+	UINT8 unlockcount[CC_MAX];
 
 	UINT8 fade;
 } challengesmenu;

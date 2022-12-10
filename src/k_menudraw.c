@@ -4684,24 +4684,37 @@ void M_DrawChallenges(void)
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
 challengedesc:
-	y = 120;
-	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
-	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+	// Tally
 	{
-		str = unlockables[challengesmenu.currentunlock].name;
-		if (!gamedata->unlocked[challengesmenu.currentunlock])
+		str = va("%d/%d",
+			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
+			challengesmenu.unlockcount[CC_TOTAL]
+			);
+		V_DrawRightAlignedKartString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+	}
+
+	// Name bar
+	{
+		y = 120;
+		V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
-			str = "???"; //M_CreateSecretMenuOption(str);
+			str = unlockables[challengesmenu.currentunlock].name;
+			if (!gamedata->unlocked[challengesmenu.currentunlock])
+			{
+				str = "???"; //M_CreateSecretMenuOption(str);
+			}
 		}
-	}
-	else
-	{
-		str = "---";
-	}
+		else
+		{
+			str = "---";
+		}
 
-	offset = V_LSTitleLowStringWidth(str, 0) / 2;
-	V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+		offset = V_LSTitleLowStringWidth(str, 0) / 2;
+		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+	}
 
 	if (!challengesmenu.fade)
 		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, "Press (B)");

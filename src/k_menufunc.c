@@ -6848,6 +6848,8 @@ struct challengesmenu_s challengesmenu;
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
+	UINT8 i;
+
 	M_UpdateUnlockablesAndExtraEmblems(false);
 
 	if ((challengesmenu.pending = challengesmenu.requestnew = (M_GetNextAchievedUnlock() < MAXUNLOCKABLES)))
@@ -6863,6 +6865,24 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		if (gamedata->challengegrid)
 			challengesmenu.extradata = M_ChallengeGridExtraData();
+
+		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_TOTAL]++;
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+		}
 
 		return &MISC_ChallengesDef;
 	}
@@ -7035,6 +7055,8 @@ void M_ChallengesTick(void)
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
+	if (challengesmenu.unlockcount[CC_ANIM] > 0)
+		challengesmenu.unlockcount[CC_ANIM]--;
 
 	if (challengesmenu.pending)
 	{
@@ -7075,6 +7097,8 @@ void M_ChallengesTick(void)
 			{
 				// Unlock animation... also tied directly to the actual unlock!
 				gamedata->unlocked[challengesmenu.currentunlock] = true;
+				challengesmenu.unlockcount[CC_TALLY]++;
+				challengesmenu.unlockcount[CC_ANIM]++;
 
 				Z_Free(challengesmenu.extradata);
 				if ((challengesmenu.extradata = M_ChallengeGridExtraData()))
@@ -7127,10 +7151,22 @@ void M_ChallengesTick(void)
 			}
 		}
 	}
-	else if (challengesmenu.fade > 0)
+	else
 	{
-		// Fade decrease.
-		challengesmenu.fade--;
+
+		// Tick down the tally. (currently not visible)
+		/*if ((challengesmenu.ticker & 1)
+			&& challengesmenu.unlockcount[CC_TALLY] > 0)
+		{
+			challengesmenu.unlockcount[CC_TALLY]--;
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+		}*/
+
+		if (challengesmenu.fade > 0)
+		{
+			// Fade decrease.
+			challengesmenu.fade--;
+		}
 	}
 }
 
