@@ -4480,7 +4480,7 @@ void M_DrawAddons(void)
 
 #undef addonsseperation
 
-#define challengesbordercolor 8
+#define challengesbordercolor 27
 
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
@@ -4496,7 +4496,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	// Empty spots in the grid are always unconnected.
 	if (num >= MAXUNLOCKABLES)
 	{
-		V_DrawFill(x, y, 16, 16, 27);
+		V_DrawFill(x, y, 16, 16, challengesbordercolor);
 		ref = NULL;
 		goto drawborder;
 	}
@@ -4510,7 +4510,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	{
 		work = (ref->majorunlock) ? 2 : 1;
 		V_DrawFill(x, y, 16*work, 16*work,
-			((challengesmenu.extradata[id] == CHE_HINT) ? 134 : 12));
+			((challengesmenu.extradata[id] == CHE_HINT) ? 132 : 11));
 		goto drawborder;
 	}
 
