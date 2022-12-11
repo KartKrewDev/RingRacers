@@ -4485,8 +4485,8 @@ void M_DrawAddons(void)
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
 	unlockable_t *ref = NULL;
-	patch_t *pat;
-	UINT8 *colormap;
+	patch_t *pat = missingpat;
+	UINT8 *colormap = NULL;
 	fixed_t siz;
 	UINT8 id, num, work;
 
@@ -4497,7 +4497,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	if (num >= MAXUNLOCKABLES)
 	{
 		V_DrawFill(x, y, 16, 16, challengesbordercolor);
-		ref = NULL;
 		goto drawborder;
 	}
 
@@ -4514,8 +4513,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		goto drawborder;
 	}
 
-	pat = missingpat;
-	colormap = NULL;
 	if (ref->icon != NULL && ref->icon[0])
 	{
 		pat = W_CachePatchName(ref->icon, PU_CACHE);
