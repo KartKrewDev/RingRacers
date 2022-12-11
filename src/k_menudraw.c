@@ -4569,13 +4569,16 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 drawborder:
 	if (!hili)
 	{
-		work = 16 * ((ref && ref->majorunlock) ? 2 : 1);
-		// Horizontal
-		V_DrawFill(x, y         , work, 1, challengesbordercolor);
-		V_DrawFill(x, y + work-1, work, 1, challengesbordercolor);
-		// Vertical
-		V_DrawFill(x         , y+1, 1, work-2, challengesbordercolor);
-		V_DrawFill(x + work-1, y+1, 1, work-2, challengesbordercolor);
+		if (ref != NULL)
+		{
+			work = 16 * (ref->majorunlock ? 2 : 1);
+			// Horizontal
+			V_DrawFill(x, y         , work, 1, challengesbordercolor);
+			V_DrawFill(x, y + work-1, work, 1, challengesbordercolor);
+			// Vertical
+			V_DrawFill(x         , y+1, 1, work-2, challengesbordercolor);
+			V_DrawFill(x + work-1, y+1, 1, work-2, challengesbordercolor);
+		}
 		return;
 	}
 
