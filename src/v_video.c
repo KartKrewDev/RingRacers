@@ -630,7 +630,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 static cliprect_t cliprect;
 
-cliprect_t *V_GetClipRect(void)
+const cliprect_t *V_GetClipRect(void)
 {
 	if (cliprect.enabled == false)
 	{
@@ -705,10 +705,10 @@ void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags)
 		h = 0;
 	}
 
-	cliprect.l = x;
-	cliprect.t = y;
-	cliprect.r = x + w;
-	cliprect.b = y + h;
+	cliprect.left = x;
+	cliprect.top = y;
+	cliprect.right = x + w;
+	cliprect.bottom = y + h;
 	cliprect.flags = flags;
 	cliprect.enabled = true;
 
@@ -760,7 +760,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	fixed_t pwidth; // patch width
 	fixed_t offx = 0; // x offset
 
-	cliprect_t *const clip = V_GetClipRect();
+	const cliprect_t *clip = V_GetClipRect();
 
 	if (rendermode == render_none)
 		return;
@@ -895,16 +895,16 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 
 		if (scrn & V_FLIP) // offx is measured from right edge instead of left
 		{
-			if (x+pwidth-offx < (clip ? clip->l : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
+			if (x+pwidth-offx < (clip ? clip->left : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
 				break;
-			if (x+pwidth-offx >= (clip ? clip->r : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
+			if (x+pwidth-offx >= (clip ? clip->right : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
 				continue;
 		}
 		else
 		{
-			if (x+offx < (clip ? clip->l : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
+			if (x+offx < (clip ? clip->left : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
 				continue;
-			if (x+offx >= (clip ? clip->r : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
+			if (x+offx >= (clip ? clip->right : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
 				break;
 		}
 
@@ -934,13 +934,13 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 					{
 						const INT32 cy = y + topdelta - offy;
 
-						if (cy < clip->t) // don't draw off the top of the clip rect
+						if (cy < clip->top) // don't draw off the top of the clip rect
 						{
 							dest += vid.width;
 							continue;
 						}
 
-						if (cy > clip->b) // don't draw off the bottom of the clip rect
+						if (cy > clip->bottom) // don't draw off the bottom of the clip rect
 						{
 							dest += vid.width;
 							continue;
@@ -961,13 +961,13 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 					{
 						const INT32 cy = y + topdelta + offy;
 
-						if (cy < clip->t) // don't draw off the top of the clip rect
+						if (cy < clip->top) // don't draw off the top of the clip rect
 						{
 							dest += vid.width;
 							continue;
 						}
 
-						if (cy > clip->b) // don't draw off the bottom of the clip rect
+						if (cy > clip->bottom) // don't draw off the bottom of the clip rect
 						{
 							dest += vid.width;
 							continue;

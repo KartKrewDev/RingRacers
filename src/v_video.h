@@ -172,12 +172,12 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 struct cliprect_t
 {
-	fixed_t l, r, t, b;
+	fixed_t left, right, top, bottom;
 	INT32 flags;
 	boolean enabled;
 };
 
-cliprect_t *V_GetClipRect(void);
+const cliprect_t *V_GetClipRect(void);
 void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags);
 void V_ClearClipRect(void);
 
