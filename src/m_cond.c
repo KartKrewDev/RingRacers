@@ -756,7 +756,7 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 		if (unlockables[i].type != type)
 			continue;
 		if ((local && gamedata->unlocked[i])
-			|| M_CheckNetUnlockByID(i))
+			|| (!local && M_CheckNetUnlockByID(i)))
 			continue;
 		return false;
 	}
