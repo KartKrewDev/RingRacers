@@ -143,6 +143,7 @@ struct gamedata_t
 
 	// UNLOCKABLES UNLOCKED
 	boolean unlocked[MAXUNLOCKABLES];
+	boolean unlockpending[MAXUNLOCKABLES];
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;
@@ -188,7 +189,7 @@ void M_ClearSecrets(void);
 // Updating conditions and unlockables
 void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean silent);
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
 UINT8 M_GetNextAchievedUnlock(void);
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);

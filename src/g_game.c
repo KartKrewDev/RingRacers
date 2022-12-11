@@ -590,10 +590,7 @@ static void G_UpdateRecordReplays(void)
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems(true))
-		S_StartSound(NULL, sfx_ncitem);
-
-	// SRB2Kart - save here so you NEVER lose your earned times/medals.
+	M_UpdateUnlockablesAndExtraEmblems(true);
 	G_SaveGameData();
 }
 
@@ -2185,8 +2182,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 		{
 			gamedata->matchesplayed++;
-			if (M_UpdateUnlockablesAndExtraEmblems(true))
-				S_StartSound(NULL, sfx_ncitem);
+			M_UpdateUnlockablesAndExtraEmblems(true);
 			G_SaveGameData();
 		}
 
@@ -3686,8 +3682,7 @@ static void G_UpdateVisited(void)
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems(true))
-		S_StartSound(NULL, sfx_ncitem);
+	M_UpdateUnlockablesAndExtraEmblems(true);
 	G_SaveGameData();
 }
 
@@ -4393,6 +4388,13 @@ void G_LoadGameData(void)
 			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		rtemp = READUINT8(save_p);
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			gamedata->unlockpending[j+i] = ((rtemp >> j) & 1);
+		i += j;
+	}
 	for (i = 0; i < MAXCONDITIONSETS;)
 	{
 		rtemp = READUINT8(save_p);
@@ -4510,7 +4512,11 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	length = (4+4+4+1+(MAXEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS)+4+4);
+	length = (4+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	if (gamedata->challengegrid)
+	{
+		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
+	}
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
 	save_p = savebuffer = (UINT8 *)malloc(length);
@@ -4536,7 +4542,9 @@ void G_SaveGameData(void)
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;) // MAXUNLOCKABLES * 1;
+
+	// MAXUNLOCKABLES * 2;
+	for (i = 0; i < MAXUNLOCKABLES;)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
@@ -4544,6 +4552,15 @@ void G_SaveGameData(void)
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			btemp |= (gamedata->unlockpending[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
+
 	for (i = 0; i < MAXCONDITIONSETS;) // MAXCONDITIONSETS * 1;
 	{
 		btemp = 0;
@@ -4553,7 +4570,7 @@ void G_SaveGameData(void)
 		i += j;
 	}
 
-	if (gamedata->challengegrid)
+	if (gamedata->challengegrid) // 2 + gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT
 	{
 		WRITEUINT16(save_p, gamedata->challengegridwidth);
 		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
@@ -4561,7 +4578,7 @@ void G_SaveGameData(void)
 			WRITEUINT8(save_p, gamedata->challengegrid[i]);
 		}
 	}
-	else
+	else // 2
 	{
 		WRITEUINT16(save_p, 0);
 	}

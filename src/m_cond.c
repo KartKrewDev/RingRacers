@@ -22,6 +22,7 @@
 #include "r_skins.h" // numskins
 #include "k_follower.h"
 #include "r_draw.h" // R_GetColorByName
+#include "s_sound.h" // S_StartSound
 
 #include "k_pwrlv.h"
 #include "k_profiles.h"
@@ -443,7 +444,7 @@ void M_ClearSecrets(void)
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		gamedata->collected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		gamedata->unlocked[i] = netUnlocked[i] = false;
+		gamedata->unlocked[i] = gamedata->unlockpending[i] = netUnlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		gamedata->achieved[i] = false;
 
@@ -562,8 +563,7 @@ void M_CheckUnlockConditions(void)
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 {
 	INT32 i;
-	char cechoText[992] = "";
-	UINT8 cechoLines = 0;
+	UINT8 response = 0;
 
 	if (!loud)
 	{
@@ -583,7 +583,8 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 			continue;
 		}
 
-		if (gamedata->unlocked[i] == true)
+		if (gamedata->unlocked[i] == true
+			|| gamedata->unlockpending[i] == true)
 		{
 			continue;
 		}
@@ -593,21 +594,17 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 			continue;
 		}
 
-		if (loud)
-		{
-			strcat(cechoText, va("\"%s\" unlocked!\n", unlockables[i].name));
-		}
-		++cechoLines;
+		gamedata->unlockpending[i] = true;
+		response++;
 	}
 
 	// Announce
-	if (cechoLines && loud)
+	if (response)
 	{
-		strcat(cechoText, "Return to main menu to see");
-#ifdef DEVELOP
-		// todo make debugmode
-		CONS_Printf("%s\n", cechoText);
-#endif
+		if (loud)
+		{
+			S_StartSound(NULL, sfx_ncitem);
+		}
 		return true;
 	}
 	return false;
@@ -616,8 +613,6 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 UINT8 M_GetNextAchievedUnlock(void)
 {
 	UINT8 i;
-
-	M_CheckUnlockConditions();
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -632,7 +627,7 @@ UINT8 M_GetNextAchievedUnlock(void)
 			continue;
 		}
 
-		if (M_Achieved(unlockables[i].conditionset - 1) == false)
+		if (gamedata->unlockpending[i] == false)
 		{
 			continue;
 		}

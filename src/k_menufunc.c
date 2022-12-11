@@ -7097,6 +7097,8 @@ void M_ChallengesTick(void)
 			{
 				// Unlock animation... also tied directly to the actual unlock!
 				gamedata->unlocked[challengesmenu.currentunlock] = true;
+				M_UpdateUnlockablesAndExtraEmblems(true);
+
 				challengesmenu.unlockcount[CC_TALLY]++;
 				challengesmenu.unlockcount[CC_ANIM]++;
 

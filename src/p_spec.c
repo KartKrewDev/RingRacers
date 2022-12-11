@@ -2765,7 +2765,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					// Unlocked something?
 					if (M_UpdateUnlockablesAndExtraEmblems(true))
 					{
-						S_StartSound(NULL, sfx_s3k68);
 						G_SaveGameData(); // only save if unlocked something
 					}
 				}

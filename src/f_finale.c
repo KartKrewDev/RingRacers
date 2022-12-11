@@ -1078,9 +1078,7 @@ void F_GameEvaluationTicker(void)
 		{
 			++gamedata->timesBeaten;
 
-			if (M_UpdateUnlockablesAndExtraEmblems(true))
-				S_StartSound(NULL, sfx_s3k68);
-
+			M_UpdateUnlockablesAndExtraEmblems(true);
 			G_SaveGameData();
 		}
 		else
