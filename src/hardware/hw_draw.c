@@ -207,7 +207,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 			INT32 intx, inty;
 			intx = (INT32)cx;
 			inty = (INT32)cy;
-			K_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
+			V_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
 			cx = (float)intx;
 			cy = (float)inty;
 		}
@@ -1011,7 +1011,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 
 		intx = (INT32)fx;
 		inty = (INT32)fy;
-		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
 	}
@@ -1102,7 +1102,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 		intx = (INT32)fx;
 		inty = (INT32)fy;
-		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
 	}

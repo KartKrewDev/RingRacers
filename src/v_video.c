@@ -36,6 +36,7 @@
 
 // SRB2Kart
 #include "k_hud.h"
+#include "k_boss.h"
 #include "i_time.h"
 
 // Each screen is [vid.width*vid.height];
@@ -517,6 +518,211 @@ void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT3
 #endif
 }
 
+void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
+{
+	// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx
+	INT32 screenwidth = vid.width;
+	INT32 screenheight = vid.height;
+	INT32 basewidth = BASEVIDWIDTH * dupx;
+	INT32 baseheight = BASEVIDHEIGHT * dupy;
+	SINT8 player = -1;
+	UINT8 i;
+
+	if (options & V_SPLITSCREEN)
+	{
+		if (r_splitscreen > 0)
+		{
+			screenheight /= 2;
+			baseheight /= 2;
+		}
+
+		if (r_splitscreen > 1)
+		{
+			screenwidth /= 2;
+			basewidth /= 2;
+		}
+	}
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		if (stplyr == &players[displayplayers[i]])
+		{
+			player = i;
+			break;
+		}
+	}
+
+	if (vid.width != (BASEVIDWIDTH * dupx))
+	{
+		if (options & V_SNAPTORIGHT)
+			*x += (screenwidth - basewidth);
+		else if (!(options & V_SNAPTOLEFT))
+			*x += (screenwidth - basewidth) / 2;
+	}
+
+	if (vid.height != (BASEVIDHEIGHT * dupy))
+	{
+		if (options & V_SNAPTOBOTTOM)
+			*y += (screenheight - baseheight);
+		else if (!(options & V_SNAPTOTOP))
+			*y += (screenheight - baseheight) / 2;
+	}
+
+	if (options & V_SPLITSCREEN)
+	{
+		if (r_splitscreen == 1)
+		{
+			if (player == 1)
+				*y += screenheight;
+		}
+		else if (r_splitscreen > 1)
+		{
+			if (player == 1 || player == 3)
+				*x += screenwidth;
+
+			if (player == 2 || player == 3)
+				*y += screenheight;
+		}
+	}
+
+	if (options & V_SLIDEIN)
+	{
+		const tic_t length = TICRATE/4;
+		tic_t timer = lt_exitticker;
+		if (bossinfo.boss == true)
+		{
+			if (leveltime <= 3)
+				timer = 0;
+			else
+				timer = leveltime-3;
+		}
+
+		if (timer < length)
+		{
+			boolean slidefromright = false;
+
+			const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
+			fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
+
+			offset += FixedMul(offsetAmount, renderdeltatics);
+			offset /= FRACUNIT;
+
+			if (r_splitscreen > 1)
+			{
+				if (stplyr == &players[displayplayers[1]] || stplyr == &players[displayplayers[3]])
+					slidefromright = true;
+			}
+
+			if (options & V_SNAPTORIGHT)
+				slidefromright = true;
+			else if (options & V_SNAPTOLEFT)
+				slidefromright = false;
+
+			if (slidefromright == true)
+			{
+				offset = -offset;
+			}
+
+			*x -= offset;
+		}
+	}
+}
+
+static cliprect_t cliprect;
+
+cliprect_t *V_GetClipRect(void)
+{
+	if (cliprect.enabled == false)
+	{
+		return NULL;
+	}
+
+	return &cliprect;
+}
+
+void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags)
+{
+	// Adjust position.
+	if (!(flags & V_NOSCALESTART))
+	{
+		fixed_t dupx = vid.dupx;
+		fixed_t dupy = vid.dupy;
+
+		if (flags & V_SCALEPATCHMASK)
+		{
+			switch ((flags & V_SCALEPATCHMASK) >> V_SCALEPATCHSHIFT)
+			{
+				case 1: // V_NOSCALEPATCH
+					dupx = dupy = 1;
+					break;
+				case 2: // V_SMALLSCALEPATCH
+					dupx = vid.smalldupx;
+					dupy = vid.smalldupy;
+					break;
+				case 3: // V_MEDSCALEPATCH
+					dupx = vid.meddupx;
+					dupy = vid.meddupy;
+					break;
+				default:
+					break;
+			}
+		}
+
+		dupx = dupy = (dupx < dupy ? dupx : dupy);
+
+		x = FixedMul(x, dupx);
+		y = FixedMul(y, dupy);
+		w = FixedMul(w, dupx);
+		h = FixedMul(h, dupy);
+
+		if (!(flags & V_SCALEPATCHMASK))
+		{
+			V_AdjustXYWithSnap(&x, &y, flags, dupx, dupy);
+		}
+	}
+
+	if (x < 0)
+	{
+		w += x;
+		x = 0;
+	}
+
+	if (y < 0)
+	{
+		h += y;
+		y = 0;
+	}
+
+	if (x > vid.width)
+	{
+		x = vid.width;
+		w = 0;
+	}
+
+	if (y > vid.height)
+	{
+		y = vid.height;
+		h = 0;
+	}
+
+	cliprect.l = x;
+	cliprect.t = y;
+	cliprect.r = x + w;
+	cliprect.b = y + h;
+	cliprect.flags = flags;
+	cliprect.enabled = true;
+
+	/*
+	V_DrawFill(cliprect.l, cliprect.t, cliprect.r - cliprect.l, cliprect.b - cliprect.t, V_NOSCALESTART);
+	CONS_Printf("[(%d, %d), (%d, %d)]\n", cliprect.l, cliprect.t, cliprect.r, cliprect.b);
+	*/
+}
+
+void V_ClearClipRect(void)
+{
+	cliprect.enabled = false;
+}
+
 static UINT8 hudplusalpha[11]  = { 10,  8,  6,  4,  2,  0,  0,  0,  0,  0,  0};
 static UINT8 hudminusalpha[11] = { 10,  9,  9,  8,  8,  7,  7,  6,  6,  5,  5};
 
@@ -553,6 +759,8 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	const UINT8 *source, *deststop;
 	fixed_t pwidth; // patch width
 	fixed_t offx = 0; // x offset
+
+	cliprect_t *const clip = V_GetClipRect();
 
 	if (rendermode == render_none)
 		return;
@@ -662,7 +870,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		// Center it if necessary
 		if (!(scrn & V_SCALEPATCHMASK))
 		{
-			K_AdjustXYWithSnap(&x, &y, scrn, dupx, dupy);
+			V_AdjustXYWithSnap(&x, &y, scrn, dupx, dupy);
 		}
 
 		desttop += (y*vid.width) + x;
@@ -684,18 +892,19 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	for (col = 0; (col>>FRACBITS) < patch->width; col += colfrac, ++offx, desttop++)
 	{
 		INT32 topdelta, prevdelta = -1;
+
 		if (scrn & V_FLIP) // offx is measured from right edge instead of left
 		{
-			if (x+pwidth-offx < 0) // don't draw off the left of the screen (WRAP PREVENTION)
+			if (x+pwidth-offx < (clip ? clip->l : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
 				break;
-			if (x+pwidth-offx >= vid.width) // don't draw off the right of the screen (WRAP PREVENTION)
+			if (x+pwidth-offx >= (clip ? clip->r : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
 				continue;
 		}
 		else
 		{
-			if (x+offx < 0) // don't draw off the left of the screen (WRAP PREVENTION)
+			if (x+offx < (clip ? clip->l : 0)) // don't draw off the left of the screen (WRAP PREVENTION)
 				continue;
-			if (x+offx >= vid.width) // don't draw off the right of the screen (WRAP PREVENTION)
+			if (x+offx >= (clip ? clip->r : vid.width)) // don't draw off the right of the screen (WRAP PREVENTION)
 				break;
 		}
 
@@ -703,6 +912,8 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 
 		while (column->topdelta != 0xff)
 		{
+			fixed_t offy = 0;
+
 			topdelta = column->topdelta;
 			if (topdelta <= prevdelta)
 				topdelta += prevdelta;
@@ -712,23 +923,60 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 			dest = desttop;
 			if (scrn & V_FLIP)
 				dest = deststart + (destend - dest);
-			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
+			topdelta = FixedInt(FixedMul(topdelta << FRACBITS, vdup));
+			dest += topdelta * vid.width;
 
 			if (scrn & V_VFLIP)
 			{
-				for (ofs = (column->length << FRACBITS)-1; dest < deststop && ofs >= 0; ofs -= rowfrac)
+				for (ofs = (column->length << FRACBITS)-1; dest < deststop && ofs >= 0; ofs -= rowfrac, ++offy)
 				{
+					if (clip != NULL)
+					{
+						const INT32 cy = y + topdelta - offy;
+
+						if (cy < clip->t) // don't draw off the top of the clip rect
+						{
+							dest += vid.width;
+							continue;
+						}
+
+						if (cy > clip->b) // don't draw off the bottom of the clip rect
+						{
+							dest += vid.width;
+							continue;
+						}
+					}
+
 					if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
 						*dest = patchdrawfunc(dest, source, ofs);
+
 					dest += vid.width;
 				}
 			}
 			else
 			{
-				for (ofs = 0; dest < deststop && ofs < (column->length << FRACBITS); ofs += rowfrac)
+				for (ofs = 0; dest < deststop && ofs < (column->length << FRACBITS); ofs += rowfrac, ++offy)
 				{
+					if (clip != NULL)
+					{
+						const INT32 cy = y + topdelta + offy;
+
+						if (cy < clip->t) // don't draw off the top of the clip rect
+						{
+							dest += vid.width;
+							continue;
+						}
+
+						if (cy > clip->b) // don't draw off the bottom of the clip rect
+						{
+							dest += vid.width;
+							continue;
+						}
+					}
+
 					if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
 						*dest = patchdrawfunc(dest, source, ofs);
+
 					dest += vid.width;
 				}
 			}
@@ -741,115 +989,16 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 // Draws a patch cropped and scaled to arbitrary size.
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, INT32 scrn, patch_t *patch, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h)
 {
-	UINT8 (*patchdrawfunc)(const UINT8*, const UINT8*, fixed_t);
-	UINT32 alphalevel, blendmode;
-	// boolean flip = false;
+	cliprect_t oldClip = cliprect;
 
-	fixed_t col, ofs, colfrac, rowfrac, fdup;
-	INT32 dupx, dupy;
-	const column_t *column;
-	UINT8 *desttop, *dest;
-	const UINT8 *source, *deststop;
+	V_SetClipRect(x, y, w, h, scrn);
 
-	if (rendermode == render_none)
-		return;
+	x -= sx;
+	y -= sy;
 
-#ifdef HWRENDER
-	//if (rendermode != render_soft && !con_startup)		// Not this again
-	if (rendermode == render_opengl)
-	{
-		HWR_DrawCroppedPatch(patch,x,y,pscale,scrn,sx,sy,w,h);
-		return;
-	}
-#endif
+	V_DrawStretchyFixedPatch(x, y, pscale, pscale, scrn, patch, NULL);
 
-	patchdrawfunc = standardpdraw;
-
-	if ((blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT)))
-		blendmode++; // realign to constants
-	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
-	{
-		if (alphalevel == 10) // V_HUDTRANSHALF
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 11) // V_HUDTRANS
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
-			alphalevel = hudplusalpha[st_translucency];
-
-		if (alphalevel >= 10) // Still inelegible to render?
-			return;
-	}
-	if ((v_translevel = R_GetBlendTable(blendmode, alphalevel)))
-		patchdrawfunc = translucentpdraw;
-
-	// only use one dup, to avoid stretching (har har)
-	dupx = dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	fdup = FixedMul(dupx<<FRACBITS, pscale);
-	colfrac = FixedDiv(FRACUNIT, fdup);
-	rowfrac = FixedDiv(FRACUNIT, fdup);
-
-	y -= FixedMul(patch->topoffset<<FRACBITS, pscale);
-	x -= FixedMul(patch->leftoffset<<FRACBITS, pscale);
-
-	desttop = screens[scrn&V_SCREENMASK];
-
-	if (!desttop)
-		return;
-
-	deststop = desttop + vid.rowbytes * vid.height;
-
-	if (scrn & V_NOSCALESTART) {
-		x >>= FRACBITS;
-		y >>= FRACBITS;
-		desttop += (y*vid.width) + x;
-	}
-	else
-	{
-		x = FixedMul(x,dupx<<FRACBITS);
-		y = FixedMul(y,dupy<<FRACBITS);
-		x >>= FRACBITS;
-		y >>= FRACBITS;
-
-		// Center it if necessary
-		// adjustxy
-
-		desttop += (y*vid.width) + x;
-	}
-
-	for (col = sx<<FRACBITS; (col>>FRACBITS) < patch->width && ((col>>FRACBITS) - sx) < w; col += colfrac, ++x, desttop++)
-	{
-		INT32 topdelta, prevdelta = -1;
-		if (x < 0) // don't draw off the left of the screen (WRAP PREVENTION)
-			continue;
-		if (x >= vid.width) // don't draw off the right of the screen (WRAP PREVENTION)
-			break;
-		column = (const column_t *)((const UINT8 *)(patch->columns) + (patch->columnofs[col>>FRACBITS]));
-
-		while (column->topdelta != 0xff)
-		{
-			topdelta = column->topdelta;
-			if (topdelta <= prevdelta)
-				topdelta += prevdelta;
-			prevdelta = topdelta;
-			source = (const UINT8 *)(column) + 3;
-			dest = desttop;
-			if (topdelta-sy > 0)
-			{
-				dest += FixedInt(FixedMul((topdelta-sy)<<FRACBITS,fdup))*vid.width;
-				ofs = 0;
-			}
-			else
-				ofs = (sy-topdelta)<<FRACBITS;
-
-			for (; dest < deststop && (ofs>>FRACBITS) < column->length && (((ofs>>FRACBITS) - sy) + topdelta) < h; ofs += rowfrac)
-			{
-				if (dest >= screens[scrn&V_SCREENMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
-					*dest = patchdrawfunc(dest, source, ofs);
-				dest += vid.width;
-			}
-			column = (const column_t *)((const UINT8 *)column + column->length + 4);
-		}
-	}
+	cliprect = oldClip;
 }
 
 //
@@ -927,7 +1076,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		h *= dupy;
 
 		// Center it if necessary
-		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
+		V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -1039,7 +1188,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		h *= dupy;
 
 		// Center it if necessary
-		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
+		V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
@@ -1126,7 +1275,7 @@ void V_DrawDiag(INT32 x, INT32 y, INT32 wh, INT32 c)
 		wh *= dupx;
 
 		// Center it if necessary
-		K_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
+		V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
