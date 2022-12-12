@@ -339,6 +339,7 @@ struct itemroulette_t
 	size_t itemListLen;
 	SINT8 *itemList;
 
+	UINT8 useOdds;
 	size_t index;
 	UINT8 sound;
 

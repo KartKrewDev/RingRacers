@@ -4468,13 +4468,7 @@ K_drawMiniPing (void)
 
 static void K_drawDistributionDebugger(void)
 {
-#if 1
-	// TODO: Create a roulette struct and initialize it,
-	// and use that to draw the data, instead of recalculating
-	// most of it.
-	return;
-#else
-	patch_t *items[NUMKARTRESULTS] = {
+	patch_t *patches[NUMKARTRESULTS] = {
 		kp_sadface[1],
 		kp_sneaker[1],
 		kp_rocketsneaker[1],
@@ -4506,87 +4500,47 @@ static void K_drawDistributionDebugger(void)
 		kp_orbinaut[4],
 		kp_jawz[1]
 	};
-	UINT8 useodds = 0;
-	UINT8 pingame = 0, bestbumper = 0;
-	UINT32 pdis = 0;
-	INT32 i;
-	INT32 x = -9, y = -9;
+
+	itemroulette_t rouletteData = {0};
+
+	const INT32 space = 32;
+	const INT32 pad = 9;
+
+	INT32 x = -pad, y = -pad;
+	size_t i;
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
-		return;
-
-	if (K_ForcedSPB(stplyr) == true)
 	{
-		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[KITEM_SPB]);
-		V_DrawThinString(x+11, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, "EX");
 		return;
 	}
 
-	// The only code duplication from the Kart, just to avoid the actual item function from calculating pingame twice
-	for (i = 0; i < MAXPLAYERS; i++)
+	K_StartItemRoulette(stplyr, &rouletteData);
+
+	for (i = 0; i < rouletteData.itemListLen; i++)
 	{
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-		pingame++;
-		if (players[i].bumpers > bestbumper)
-			bestbumper = players[i].bumpers;
-	}
+		const kartitems_t item = rouletteData.itemList[i];
+		UINT8 amount = 1;
 
-	// lovely double loop......
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] && !players[i].spectator
-			&& players[i].position == 1)
-		{
-			// This player is first! Yay!
-			pdis = stplyr->distancetofinish - players[i].distancetofinish;
-			break;
-		}
-	}
-
-	pdis = K_ScaleItemDistance(pdis, pingame);
-
-	if (stplyr->bot && stplyr->botvars.rival)
-	{
-		// Rival has better odds :)
-		pdis = (15 * pdis) / 14;
-	}
-
-	useodds = K_FindUseodds(stplyr, pdis);
-
-	for (i = 1; i < NUMKARTRESULTS; i++)
-	{
-		INT32 itemodds = K_KartGetItemOdds(
-			useodds, i,
-			stplyr->distancetofinish,
-			0,
-			stplyr->bot, (stplyr->bot && stplyr->botvars.rival)
-		);
-		INT32 amount = 1;
-
-		if (itemodds <= 0)
-			continue;
-
-		V_DrawScaledPatch(x, y, V_SNAPTOTOP, items[i]);
-		V_DrawThinString(x+11, y+31, V_SNAPTOTOP, va("%d", itemodds));
+		V_DrawScaledPatch(x, y, V_SNAPTOTOP, patches[item]);
 
 		// Display amount for multi-items
-		amount = K_ItemResultToAmount(i);
+		amount = K_ItemResultToAmount(item);
 		if (amount > 1)
 		{
 			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
 		}
 
-		x += 32;
-		if (x >= 297)
+		y += space;
+		if (y > BASEVIDHEIGHT - space - pad)
 		{
-			x = -9;
-			y += 32;
+			x += space;
+			y = -pad;
 		}
 	}
 
-	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
-#endif
+	V_DrawString(0, 0, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("Table #%d", rouletteData.useOdds));
+
+	Z_Free(rouletteData.itemList);
 }
 
 static void K_DrawWaypointDebugger(void)

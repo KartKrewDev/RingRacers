@@ -736,9 +736,11 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 
 	roulette->itemListLen = 0;
 	roulette->index = 0;
+	roulette->useOdds = UINT8_MAX;
 
 	roulette->elapsed = 0;
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST; // Some default speed
+
 	roulette->active = true;
 	roulette->eggman = false;
 }
@@ -828,7 +830,6 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 	UINT8 playing = 0;
 	UINT32 playerDist = UINT32_MAX;
 
-	UINT8 useOdds = 0;
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
 	size_t rngRoll = 0;
@@ -903,12 +904,12 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	playerDist = K_GetItemRouletteDistance(player, playing);
 
-	useOdds = K_FindUseodds(player, playerDist);
+	roulette->useOdds = K_FindUseodds(player, playerDist);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
 		INT32 thisItemsOdds = K_KartGetItemOdds(
-			useOdds, i,
+			roulette->useOdds, i,
 			player->distancetofinish,
 			player->bot, (player->bot && player->botvars.rival)
 		);
