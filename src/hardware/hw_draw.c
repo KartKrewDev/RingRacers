@@ -145,6 +145,11 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 //  0--1
 	float dupx, dupy, fscalew, fscaleh, fwidth, fheight;
 
+	const cliprect_t *clip = V_GetClipRect();
+
+	float s_min, s_max;
+	float t_min, t_max;
+
 	// make patch ready in hardware cache
 	if (!colormap)
 		HWR_GetPatch(gpatch);
@@ -224,6 +229,41 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 		fheight = (float)(gpatch->height) * dupy;
 	}
 
+	s_min = t_min = 0.0f;
+	s_max = hwrPatch->max_s;
+	t_max = hwrPatch->max_t;
+
+	if (clip)
+	{
+		if (cx < clip->left)
+		{
+			s_min = ((clip->left - cx) / fwidth) * s_max;
+			cx = clip->left;
+		}
+
+		if (cy < clip->top)
+		{
+			t_min = ((clip->top - cy) / fheight) * t_max;
+			cy = clip->top;
+		}
+
+		if ((cx + fwidth) > clip->right)
+		{
+			const float n = (clip->right - clip->left);
+
+			s_max = (s_min + ((n / fwidth) * s_max));
+			fwidth = n;
+		}
+
+		if ((cy + fheight) > clip->bottom)
+		{
+			const float n = (clip->bottom - clip->top);
+
+			t_max = (t_min + ((n / fheight) * t_max));
+			fheight = n;
+		}
+	}
+
 	// positions of the cx, cy, are between 0 and vid.width/vid.height now, we need them to be between -1 and 1
 	cx = -1 + (cx / (vid.width/2));
 	cy = 1 - (cy / (vid.height/2));
@@ -243,24 +283,24 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 	if (option & V_FLIP)
 	{
-		v[0].s = v[3].s = hwrPatch->max_s;
-		v[2].s = v[1].s = 0.0f;
+		v[0].s = v[3].s = s_max;
+		v[2].s = v[1].s = s_min;
 	}
 	else
 	{
-		v[0].s = v[3].s = 0.0f;
-		v[2].s = v[1].s = hwrPatch->max_s;
+		v[0].s = v[3].s = s_min;
+		v[2].s = v[1].s = s_max;
 	}
 
 	if (option & V_VFLIP)
 	{
-		v[0].t = v[1].t = hwrPatch->max_t;
-		v[2].t = v[3].t = 0.0f;
+		v[0].t = v[1].t = t_max;
+		v[2].t = v[3].t = t_min;
 	}
 	else
 	{
-		v[0].t = v[1].t = 0.0f;
-		v[2].t = v[3].t = hwrPatch->max_t;
+		v[0].t = v[1].t = t_min;
+		v[2].t = v[3].t = t_max;
 	}
 
 	flags = PF_NoDepthTest;
