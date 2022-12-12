@@ -772,8 +772,8 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		else
 			max += 8;
 
-		// Start trying to wrap if presumed length exceeds the screen width.
-		if (max >= BASEVIDWIDTH && start > 0)
+		// Start trying to wrap if presumed length exceeds the space we have on-screen.
+		if (max >= DESCRIPTIONWIDTH && start > 0)
 		{
 			message[start] = '\n';
 			max -= (start-strlines)*8;

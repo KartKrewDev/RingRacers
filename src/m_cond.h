@@ -175,12 +175,13 @@ void M_NewGameDataStruct(void);
 // Challenges menu stuff
 void M_PopulateChallengeGrid(void);
 UINT8 *M_ChallengeGridExtraData(void);
-char *M_BuildConditionSetString(UINT8 unlockid);
 #define CHE_NONE          0
 #define CHE_HINT          1
 #define CHE_CONNECTEDLEFT (1<<1)
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+char *M_BuildConditionSetString(UINT8 unlockid);
+#define DESCRIPTIONWIDTH 170
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);

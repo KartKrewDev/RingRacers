@@ -4594,6 +4594,65 @@ drawborder:
 	);
 }
 
+static void M_DrawChallengePreview(INT32 x, INT32 y)
+{
+	unlockable_t *ref = NULL;
+	UINT8 *colormap = NULL;
+	
+	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
+	{
+		return;
+	}
+
+	// Okay, this is what we want to draw.
+	ref = &unlockables[challengesmenu.currentunlock];
+
+	if (!gamedata->unlocked[challengesmenu.currentunlock])
+	{
+		// todo draw some sort of question mark?
+		return;
+	}
+
+	switch (ref->type)
+	{
+		case SECRET_SKIN:
+		{
+			INT32 skin = M_UnlockableSkinNum(ref);
+			// Draw our character!
+			if (skin != -1)
+			{
+				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+				M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+			}
+			break;
+		}
+		case SECRET_FOLLOWER:
+		{
+			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			INT32 fskin = M_UnlockableFollowerNum(ref);
+
+			// Draw proximity reference for character
+			if (skin == -1)
+				skin = 0;
+			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
+			M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+
+			// Draw follower next to them
+			if (fskin != -1)
+			{
+				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, cv_playercolor[0].value);
+				colormap = R_GetTranslationColormap(fskin, col, GTC_MENUCACHE);
+				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
+			}
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+}
+
 void M_DrawChallenges(void)
 {
 	INT32 x = currentMenu->x, explodex, selectx;
@@ -4723,6 +4782,13 @@ challengedesc:
 	// Conditions for unlock
 	if (challengesmenu.unlockcondition != NULL)
 	{
-		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
+		V_DrawCenteredString(BASEVIDWIDTH/2, y + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
 	}
+
+	// Derived from M_DrawCharSelectPreview
+	x = 40;
+	y = BASEVIDHEIGHT-16;
+
+	// Unlock preview
+	M_DrawChallengePreview(x, y);
 }
