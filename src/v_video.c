@@ -940,7 +940,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 							continue;
 						}
 
-						if (cy > clip->bottom) // don't draw off the bottom of the clip rect
+						if (cy >= clip->bottom) // don't draw off the bottom of the clip rect
 						{
 							dest += vid.width;
 							continue;
@@ -967,7 +967,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 							continue;
 						}
 
-						if (cy > clip->bottom) // don't draw off the bottom of the clip rect
+						if (cy >= clip->bottom) // don't draw off the bottom of the clip rect
 						{
 							dest += vid.width;
 							continue;
