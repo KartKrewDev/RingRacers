@@ -5632,12 +5632,12 @@ void M_HandleItemToggles(INT32 choice)
 		else
 		if (currentMenu->menuitems[itemOn].mvar1 == 0)
 		{
-			INT32 v = cv_sneaker.value;
+			INT32 v = cv_items[0].value;
 			S_StartSound(NULL, sfx_s1b4);
 			for (i = 0; i < NUMKARTRESULTS-1; i++)
 			{
-				if (KartItemCVars[i]->value == v)
-					CV_AddValue(KartItemCVars[i], 1);
+				if (cv_items[i].value == v)
+					CV_AddValue(&cv_items[i], 1);
 			}
 		}
 		else
@@ -5650,7 +5650,7 @@ void M_HandleItemToggles(INT32 choice)
 			{
 				S_StartSound(NULL, sfx_s1ba);
 			}
-			CV_AddValue(KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1], 1);
+			CV_AddValue(&cv_items[currentMenu->menuitems[itemOn].mvar1-1], 1);
 		}
 	}
 

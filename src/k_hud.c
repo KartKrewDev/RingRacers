@@ -36,6 +36,7 @@
 #include "r_things.h"
 #include "r_fps.h"
 #include "m_random.h"
+#include "k_roulette.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -1146,12 +1147,14 @@ static void K_drawKartItem(void)
 	UINT8 *colmap = NULL;
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
 
-	if (stplyr->itemroulette)
+	if (stplyr->itemRoulette.active == true)
 	{
-		const INT32 item = K_GetRollingRouletteItem(stplyr);
+		const SINT8 item = K_ItemResultToType(stplyr->itemRoulette.itemList[ stplyr->itemRoulette.index ]);
 
 		if (stplyr->skincolor)
+		{
 			localcolor = stplyr->skincolor;
+		}
 
 		switch (item)
 		{
@@ -1165,6 +1168,7 @@ static void K_drawKartItem(void)
 
 			default:
 				localpatch = K_GetCachedItemPatch(item, offset);
+				break;
 		}
 	}
 	else
@@ -1223,7 +1227,7 @@ static void K_drawKartItem(void)
 			if (stplyr->itemamount <= 0)
 				return;
 
-			switch(stplyr->itemtype)
+			switch (stplyr->itemtype)
 			{
 				case KITEM_INVINCIBILITY:
 					localpatch = localinv;
@@ -1302,7 +1306,7 @@ static void K_drawKartItem(void)
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
 
 	// Then, the numbers:
-	if (stplyr->itemamount >= numberdisplaymin && !stplyr->itemroulette)
+	if (stplyr->itemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
 	{
 		V_DrawScaledPatch(fx + (flipamount ? 48 : 0), fy, V_HUDTRANS|V_SLIDEIN|fflags|(flipamount ? V_FLIP : 0), kp_itemmulsticker[offset]); // flip this graphic for p2 and p4 in split and shift it.
 		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch, colmap);
@@ -4541,6 +4545,12 @@ K_drawMiniPing (void)
 
 static void K_drawDistributionDebugger(void)
 {
+#if 1
+	// TODO: Create a roulette struct and initialize it,
+	// and use that to draw the data, instead of recalculating
+	// most of it.
+	return;
+#else
 	patch_t *items[NUMKARTRESULTS] = {
 		kp_sadface[1],
 		kp_sneaker[1],
@@ -4619,7 +4629,7 @@ static void K_drawDistributionDebugger(void)
 		pdis = (15 * pdis) / 14;
 	}
 
-	useodds = K_FindUseodds(stplyr, 0, pdis, bestbumper);
+	useodds = K_FindUseodds(stplyr, pdis);
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
@@ -4653,6 +4663,7 @@ static void K_drawDistributionDebugger(void)
 	}
 
 	V_DrawString(0, 0, V_SNAPTOTOP, va("USEODDS %d", useodds));
+#endif
 }
 
 static void K_DrawWaypointDebugger(void)

@@ -131,6 +131,7 @@ Do with it whatever you want.
 Run this macro, then #undef FOREACH afterward
 */
 #define KART_ITEM_ITERATOR \
+	FOREACH (EGGEXPLODE,    -2),\
 	FOREACH (SAD,           -1),\
 	FOREACH (NONE,           0),\
 	FOREACH (SNEAKER,        1),\
@@ -329,6 +330,25 @@ struct skybox_t {
 	mobj_t * centerpoint;
 };
 
+// player_t struct for item roulette variables
+struct itemroulette_t
+{
+	boolean active;
+
+	size_t itemListCap;
+	size_t itemListLen;
+	SINT8 *itemList;
+
+	size_t index;
+	UINT8 sound;
+
+	tic_t speed;
+	tic_t tics;
+	tic_t elapsed;
+
+	boolean eggman;
+};
+
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
@@ -477,8 +497,7 @@ struct player_t
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
-	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+	itemroulette_t itemRoulette;	// Item roulette data
 
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number

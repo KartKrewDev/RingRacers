@@ -310,9 +310,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
-		WRITEUINT16(save_p, players[i].itemroulette);
-		WRITEUINT8(save_p, players[i].roulettetype);
-
 		WRITESINT8(save_p, players[i].itemtype);
 		WRITEUINT8(save_p, players[i].itemamount);
 		WRITESINT8(save_p, players[i].throwdir);
@@ -410,6 +407,19 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 		WRITEUINT32(save_p, players[i].botvars.spindashconfirm);
+
+		// itemroulette_t
+		WRITEUINT8(save_p, players[i].itemRoulette.active);
+		WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
+		WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+		for (j = 0; (unsigned)j < players[i].itemRoulette.itemListLen; j++)
+		{
+			WRITESINT8(save_p, players[i].itemRoulette.itemList[j]);
+		}
+		WRITEUINT32(save_p, players[i].itemRoulette.index);
+		WRITEUINT32(save_p, players[i].itemRoulette.speed);
+		WRITEUINT32(save_p, players[i].itemRoulette.tics);
+		WRITEUINT32(save_p, players[i].itemRoulette.elapsed);
 	}
 }
 
@@ -612,9 +622,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
 
-		players[i].itemroulette = READUINT16(save_p);
-		players[i].roulettetype = READUINT8(save_p);
-
 		players[i].itemtype = READSINT8(save_p);
 		players[i].itemamount = READUINT8(save_p);
 		players[i].throwdir = READSINT8(save_p);
@@ -712,6 +719,39 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
 		players[i].botvars.spindashconfirm = READUINT32(save_p);
+
+		// itemroulette_t
+		players[i].itemRoulette.active = READUINT8(save_p);
+		players[i].itemRoulette.itemListCap = READUINT32(save_p);
+		players[i].itemRoulette.itemListLen = READUINT32(save_p);
+
+		if (players[i].itemRoulette.itemList == NULL)
+		{
+			players[i].itemRoulette.itemList = Z_Calloc(
+				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+				PU_LEVEL,
+				&players[i].itemRoulette.itemList
+			);
+		}
+		else
+		{
+			players[i].itemRoulette.itemList = Z_Realloc(
+				players[i].itemRoulette.itemList,
+				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+				PU_LEVEL,
+				&players[i].itemRoulette.itemList
+			);
+		}
+
+		for (j = 0; (unsigned)j < players[i].itemRoulette.itemListLen; j++)
+		{
+			players[i].itemRoulette.itemList[j] = READSINT8(save_p);
+		}
+
+		players[i].itemRoulette.index = READUINT32(save_p);
+		players[i].itemRoulette.speed = READUINT32(save_p);
+		players[i].itemRoulette.tics = READUINT32(save_p);
+		players[i].itemRoulette.elapsed = READUINT32(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

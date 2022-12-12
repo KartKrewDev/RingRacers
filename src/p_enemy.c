@@ -34,6 +34,7 @@
 #include "k_respawn.h"
 #include "k_collide.h"
 #include "k_objects.h"
+#include "k_roulette.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -13042,9 +13043,13 @@ void A_ItemPop(mobj_t *actor)
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
+	{
 		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	}
 	else if (locvar1 == 0)
-		actor->target->player->itemroulette = 1;
+	{
+		K_StartItemRoulette(actor->target->player, &actor->target->player->itemRoulette);
+	}
 
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
