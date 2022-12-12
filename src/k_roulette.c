@@ -67,7 +67,7 @@
 // Consistent seed used for item reels
 #define ITEM_REEL_SEED (0x22D5FAA8)
 
-#define ROULETTE_SPEED_SLOWEST (12)
+#define ROULETTE_SPEED_SLOWEST (20)
 #define ROULETTE_SPEED_FASTEST (2)
 #define ROULETTE_SPEED_DIST (224*DISTVAR)
 
