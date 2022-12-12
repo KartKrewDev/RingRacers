@@ -4503,10 +4503,12 @@ static void K_drawDistributionDebugger(void)
 
 	itemroulette_t rouletteData = {0};
 
-	const INT32 space = 32;
-	const INT32 pad = 9;
+	const fixed_t scale = (FRACUNIT >> 1);
+	const fixed_t space = 24 * scale;
+	const fixed_t pad = 9 * scale;
 
-	INT32 x = -pad, y = -pad;
+	fixed_t x = -pad;
+	fixed_t y = -pad;
 	size_t i;
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
@@ -4521,24 +4523,33 @@ static void K_drawDistributionDebugger(void)
 		const kartitems_t item = rouletteData.itemList[i];
 		UINT8 amount = 1;
 
-		V_DrawScaledPatch(x, y, V_SNAPTOTOP, patches[item]);
+		if (y > (BASEVIDHEIGHT << FRACBITS) - space - pad)
+		{
+			x += space;
+			y = -pad;
+		}
+
+		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP, patches[item], NULL);
 
 		// Display amount for multi-items
 		amount = K_ItemResultToAmount(item);
 		if (amount > 1)
 		{
-			V_DrawString(x+24, y+31, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("x%d", amount));
+			V_DrawStringScaled(
+				x + (18 * scale),
+				y + (23 * scale),
+				scale, FRACUNIT, FRACUNIT,
+				V_ALLOWLOWERCASE|V_SNAPTOTOP,
+				NULL, HU_FONT,
+				va("x%d", amount)
+			);
 		}
 
 		y += space;
-		if (y > BASEVIDHEIGHT - space - pad)
-		{
-			x += space;
-			y = -pad;
-		}
 	}
 
-	V_DrawString(0, 0, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("Table #%d", rouletteData.useOdds));
+	V_DrawString((x >> FRACBITS) + 20, 2, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
+	V_DrawString((x >> FRACBITS) + 20, 10, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
 	Z_Free(rouletteData.itemList);
 }
