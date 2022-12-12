@@ -1925,28 +1925,24 @@ void M_DrawRaceDifficulty(void)
 static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 {
 	UINT8 i;
-	const INT16 pad = ((vid.width/vid.dupx) - BASEVIDWIDTH)/2;
-	INT16 x = -(cupgrid.previewanim % 82) - pad;
+	INT16 x = -(cupgrid.previewanim % 82);
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
 	if (cup && (cup->unlockrequired >= MAXUNLOCKABLES || M_CheckNetUnlockByID(cup->unlockrequired)))
 	{
 		i = (cupgrid.previewanim / 82) % cup->numlevels;
-		while (x < BASEVIDWIDTH + pad)
+		while (x < BASEVIDWIDTH)
 		{
 			INT32 cupLevelNum = cup->cachedlevels[i];
-			patch_t *PictureOfLevel = NULL;
 
-			if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
-			{
-				PictureOfLevel = mapheaderinfo[cupLevelNum]->thumbnailPic;
-			}
+			K_DrawMapThumbnail(
+				(x+1)<<FRACBITS, (y+2)<<FRACBITS,
+				80<<FRACBITS,
+				0,
+				cupLevelNum,
+				NULL);
 
-			if (!PictureOfLevel)
-				PictureOfLevel = blanklvl;
-
-			V_DrawSmallScaledPatch(x + 1, y+2, 0, PictureOfLevel);
 			i = (i+1) % cup->numlevels;
 			x += 82;
 		}
@@ -2164,26 +2160,22 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink, boolean greyscale)
 {
-	patch_t *PictureOfLevel = NULL;
 	UINT8 *colormap = NULL;
 
 	if (greyscale)
 		colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
-
-	if (mapheaderinfo[map])
-	{
-		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
-	}
-
-	if (!PictureOfLevel)
-		PictureOfLevel = blanklvl;
 
 	if (redblink)
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL2", PU_CACHE));
 	else
 		V_DrawScaledPatch(3+x, y, 0, W_CachePatchName("LVLSEL", PU_CACHE));
 
-	V_DrawSmallMappedPatch(9+x, y+6, 0, PictureOfLevel, colormap);
+	K_DrawMapThumbnail(
+		(9+x)<<FRACBITS, (y+6)<<FRACBITS,
+		80<<FRACBITS,
+		0,
+		map,
+		colormap);
 	M_DrawHighLowLevelTitle(98+x, y+8, map);
 }
 
@@ -3915,7 +3907,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 {
 	patch_t *patch = NULL;
 	UINT8 *colormap;
-	INT32 x, y, w, h;
+	INT32 x, y;
 
 	switch (demoref->type)
 	{
@@ -3937,34 +3929,19 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		// Draw level stuff
 		x = 15; y = 15;
 
-		//  A 160x100 image of the level as entry MAPxxP
-		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
-		{
-			patch = mapheaderinfo[demoref->map]->thumbnailPic;
-			if (!patch)
-			{
-				patch = blanklvl;
-			}
-		}
-		else
-		{
-			patch = W_CachePatchName("M_NOLVL", PU_CACHE);
-		}
+		K_DrawMapThumbnail(
+			x<<FRACBITS, y<<FRACBITS,
+			80<<FRACBITS,
+			V_SNAPTOTOP|((demoref->kartspeed & DF_ENCORE) ? V_FLIP : 0),
+			demoref->map,
+			NULL);
 
-		if (!(demoref->kartspeed & DF_ENCORE))
-			V_DrawSmallScaledPatch(x, y, V_SNAPTOTOP, patch);
-		else
+		if (demoref->kartspeed & DF_ENCORE)
 		{
-			w = SHORT(patch->width);
-			h = SHORT(patch->height);
-			V_DrawSmallScaledPatch(x+(w>>1), y, V_SNAPTOTOP|V_FLIP, patch);
-
-			{
-				static angle_t rubyfloattime = 0;
-				const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-				V_DrawFixedPatch((x+(w>>2))<<FRACBITS, ((y+(h>>2))<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
-				rubyfloattime += (ANGLE_MAX/NEWTICRATE);
-			}
+			static angle_t rubyfloattime = 0;
+			const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
+			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+50)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
+			rubyfloattime += (ANGLE_MAX/NEWTICRATE);
 		}
 
 		x += 85;

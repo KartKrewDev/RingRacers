@@ -1124,6 +1124,35 @@ static void K_initKartHUD(void)
 	}
 }
 
+void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap)
+{
+	patch_t *PictureOfLevel = NULL;
+
+	if (map >= nummapheaders || !mapheaderinfo[map])
+	{
+		PictureOfLevel = W_CachePatchName("M_NOLVL", PU_CACHE);
+	}
+	else if (!mapheaderinfo[map]->thumbnailPic)
+	{
+		PictureOfLevel = blanklvl;
+	}
+	else
+	{
+		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
+	}
+
+	if (flags & V_FLIP)
+		x += width;
+
+	V_DrawFixedPatch(
+		x, y,
+		FixedDiv(width, (SHORT(PictureOfLevel->width) << FRACBITS)),
+		flags,
+		PictureOfLevel,
+		colormap
+	);
+}
+
 // see also MT_PLAYERARROW mobjthinker in p_mobj.c
 static void K_drawKartItem(void)
 {

@@ -42,6 +42,7 @@
 
 #include "m_random.h" // M_RandomKey
 #include "g_input.h" // G_PlayerInputDown
+#include "k_hud.h" // K_DrawMapThumbnail
 #include "k_battle.h"
 #include "k_boss.h"
 #include "k_pwrlv.h"
@@ -1006,34 +1007,11 @@ void Y_VoteDrawer(void)
 	y = (200-height)/2;
 	for (i = 0; i < 4; i++)
 	{
-		const char *str;
-		patch_t *pic;
 		UINT8 j, color;
-
-		if (i == 3)
-		{
-			str = "RANDOM";
-			pic = randomlvl;
-		}
-		else
-		{
-			str = levelinfo[i].str;
-
-			pic = NULL;
-
-			if (mapheaderinfo[votelevels[i][0]])
-			{
-				pic = mapheaderinfo[votelevels[i][0]]->thumbnailPic;
-			}
-
-			if (!pic)
-			{
-				pic = blanklvl;
-			}
-		}
 
 		if (selected[i])
 		{
+			const char *str;
 			UINT8 sizeadd = selected[i];
 
 			for (j = 0; j <= splitscreen; j++) // another loop for drawing the selection backgrounds in the right order, grumble grumble..
@@ -1093,11 +1071,24 @@ void Y_VoteDrawer(void)
 				sizeadd--;
 			}
 
-			if (!levelinfo[i].encore)
-				V_DrawSmallScaledPatch(BASEVIDWIDTH-100, y, V_SNAPTORIGHT, pic);
+			if (i == 3)
+			{
+				str = "RANDOM";
+				V_DrawSmallScaledPatch(BASEVIDWIDTH-100, y, V_SNAPTORIGHT, randomlvl);
+			}
 			else
 			{
-				V_DrawFixedPatch((BASEVIDWIDTH-20)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/2, V_FLIP|V_SNAPTORIGHT, pic, 0);
+				str = levelinfo[i].str;
+				K_DrawMapThumbnail(
+					(BASEVIDWIDTH-100)<<FRACBITS, (y)<<FRACBITS,
+					80<<FRACBITS,
+					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
+					votelevels[i][0],
+					NULL);
+			}
+
+			if (levelinfo[i].encore)
+			{
 				V_DrawFixedPatch((BASEVIDWIDTH-60)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTORIGHT, rubyicon, NULL);
 			}
 
@@ -1117,11 +1108,22 @@ void Y_VoteDrawer(void)
 		}
 		else
 		{
-			if (!levelinfo[i].encore)
-				V_DrawTinyScaledPatch(BASEVIDWIDTH-60, y, V_SNAPTORIGHT, pic);
+			if (i == 3)
+			{
+				V_DrawTinyScaledPatch(BASEVIDWIDTH-60, y, V_SNAPTORIGHT, randomlvl);
+			}
 			else
 			{
-				V_DrawFixedPatch((BASEVIDWIDTH-20)<<FRACBITS, y<<FRACBITS, FRACUNIT/4, V_FLIP|V_SNAPTORIGHT, pic, 0);
+				K_DrawMapThumbnail(
+					(BASEVIDWIDTH-60)<<FRACBITS, (y)<<FRACBITS,
+					40<<FRACBITS,
+					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
+					votelevels[i][0],
+					NULL);
+			}
+
+			if (levelinfo[i].encore)
+			{
 				V_DrawFixedPatch((BASEVIDWIDTH-40)<<FRACBITS, (y<<FRACBITS) + (25<<(FRACBITS-1)) - rubyheight, FRACUNIT/2, V_SNAPTORIGHT, rubyicon, NULL);
 			}
 
@@ -1146,27 +1148,6 @@ void Y_VoteDrawer(void)
 
 		if ((playeringame[i] && !players[i].spectator) && votes[i] != -1)
 		{
-			patch_t *pic;
-
-			if (votes[i] >= 3 && (i != pickedvote || voteendtic == -1))
-			{
-				pic = randomlvl;
-			}
-			else
-			{
-				pic = NULL;
-
-				if (mapheaderinfo[votelevels[votes[i]][0]])
-				{
-					pic = mapheaderinfo[votelevels[votes[i]][0]]->thumbnailPic;
-				}
-
-				if (!pic)
-				{
-					pic = blanklvl;
-				}
-			}
-
 			if (!timer && i == voteclient.ranim)
 			{
 				V_DrawScaledPatch(x-18, y+9, V_SNAPTOLEFT, cursor);
@@ -1176,11 +1157,22 @@ void Y_VoteDrawer(void)
 					V_DrawFill(x-1, y-1, 42, 27, levelinfo[votes[i]].gtc|V_SNAPTOLEFT);
 			}
 
-			if (!levelinfo[votes[i]].encore)
-				V_DrawTinyScaledPatch(x, y, V_SNAPTOLEFT, pic);
+			if (votes[i] >= 3 && (i != pickedvote || voteendtic == -1))
+			{
+				V_DrawTinyScaledPatch(x, y, V_SNAPTOLEFT, randomlvl);
+			}
 			else
 			{
-				V_DrawFixedPatch((x+40)<<FRACBITS, (y)<<FRACBITS, FRACUNIT/4, V_SNAPTOLEFT|V_FLIP, pic, 0);
+				K_DrawMapThumbnail(
+					(x)<<FRACBITS, (y)<<FRACBITS,
+					40<<FRACBITS,
+					V_SNAPTOLEFT|(levelinfo[votes[i]].encore ? V_FLIP : 0),
+					votelevels[votes[i]][0],
+					NULL);
+			}
+
+			if (levelinfo[votes[i]].encore)
+			{
 				V_DrawFixedPatch((x+20)<<FRACBITS, (y<<FRACBITS) + (25<<(FRACBITS-1)) - rubyheight, FRACUNIT/2, V_SNAPTOLEFT, rubyicon, NULL);
 			}
 
