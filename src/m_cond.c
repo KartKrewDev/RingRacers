@@ -59,6 +59,7 @@ void M_PopulateChallengeGrid(void)
 	UINT16 i, j;
 	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
 	UINT8 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 majorcompact = 2;
 
 	if (gamedata->challengegrid != NULL)
 	{
@@ -85,21 +86,37 @@ void M_PopulateChallengeGrid(void)
 		//CONS_Printf(" found %d\n", selection[0][numunlocks-1]);
 	}
 
+	gamedata->challengegridwidth = 0;
+
 	if (numunlocks + nummajorunlocks == 0)
 	{
-		gamedata->challengegridwidth = 0;
 		return;
 	}
-
-	gamedata->challengegridwidth = (numunlocks + (nummajorunlocks * 4) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
 
 	if (nummajorunlocks)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
 		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
 		majorpad = (nummajorunlocks+1)/majorpad;
-		if (gamedata->challengegridwidth < majorpad*2)
-			gamedata->challengegridwidth = majorpad*2;
+
+		gamedata->challengegridwidth = majorpad*2;
+
+#if (CHALLENGEGRIDHEIGHT % 2)
+		// One empty per column.
+		numempty = gamedata->challengegridwidth;
+#endif
+	}
+
+	if (numunlocks > numempty)
+	{
+		// Getting the number of extra columns to store normal unlocks
+		gamedata->challengegridwidth += ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+		majorcompact = 1;
+	}
+	else if (challengegridloops)
+	{
+		// Another case where offset large tiles are permitted.
+		majorcompact = 1;
 	}
 
 	gamedata->challengegrid = Z_Malloc(
@@ -120,8 +137,9 @@ void M_PopulateChallengeGrid(void)
 	{
 		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
 		// You lose one from the width if it doesn't loop.
-		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : 1))
-				* (CHALLENGEGRIDHEIGHT-1);
+		// You divide by two if the grid is so compacted that large tiles can't be in offset columns.
+		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : majorcompact))
+				* ((CHALLENGEGRIDHEIGHT-1) / majorcompact);
 		// 0 is row, 1 is column
 		INT16 quickcheck[numspots][2];
 
@@ -129,7 +147,7 @@ void M_PopulateChallengeGrid(void)
 		for (i = 0; i < numspots; i++)
 		{
 			quickcheck[i][0] = i%(CHALLENGEGRIDHEIGHT-1);
-			quickcheck[i][1] = i/(CHALLENGEGRIDHEIGHT-1);
+			quickcheck[i][1] = majorcompact * i/(CHALLENGEGRIDHEIGHT-1);
 		}
 
 		// Place in random valid locations.
@@ -189,6 +207,7 @@ quickcheckagain:
 		}
 	}
 
+	numempty = 0;
 	// Space out empty entries to pepper into unlock list
 	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
 	{
