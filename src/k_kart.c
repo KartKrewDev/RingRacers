@@ -6940,6 +6940,11 @@ void K_KartPlayerHUDUpdate(player_t *player)
 		player->karthud[khud_itemblink] = 0;
 	}
 
+	if (player->karthud[khud_rouletteoffset] != 0)
+	{
+		player->karthud[khud_rouletteoffset] = FixedMul(player->karthud[khud_rouletteoffset], FRACUNIT*3/4);
+	}
+
 	if (!(gametyperules & GTR_SPHERES))
 	{
 		if (player->mo && player->mo->hitlag <= 0)

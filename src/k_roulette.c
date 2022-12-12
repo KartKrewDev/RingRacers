@@ -146,14 +146,12 @@ static kartitems_t K_KartItemReelBreakTheCapsules[] =
 	KITEM_NONE
 };
 
-#if 0
 static kartitems_t K_KartItemReelBoss[] =
 {
 	KITEM_ORBINAUT,
 	KITEM_BANANA,
 	KITEM_NONE
 };
-#endif
 
 boolean K_ItemEnabled(SINT8 item)
 {
@@ -809,7 +807,16 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	// SPECIAL CASE No. 2:
 	// Use a special, pre-determined item reel for Time Attack / Free Play
-	if (modeattacking || playing <= 1)
+	if (bossinfo.boss == true)
+	{
+		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
+		{
+			K_PushToRouletteItemList(roulette, K_KartItemReelBoss[i]);
+		}
+
+		return;
+	}
+	else if (modeattacking || playing <= 1)
 	{
 		switch (gametype)
 		{
@@ -819,7 +826,6 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 				for (i = 0; K_KartItemReelTimeAttack[i] != KITEM_NONE; i++)
 				{
 					K_PushToRouletteItemList(roulette, K_KartItemReelTimeAttack[i]);
-					CONS_Printf("Added %d\n", K_KartItemReelTimeAttack[i]);
 				}
 				break;
 			}
@@ -828,7 +834,6 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 				for (i = 0; K_KartItemReelBreakTheCapsules[i] != KITEM_NONE; i++)
 				{
 					K_PushToRouletteItemList(roulette, K_KartItemReelBreakTheCapsules[i]);
-					CONS_Printf("Added %d\n", K_KartItemReelBreakTheCapsules[i]);
 				}
 				break;
 			}
@@ -875,7 +880,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 	{
 		rngRoll = P_RandomKey(PR_ITEM_ROULETTE, totalSpawnChance);
 
-		for (i = 0; i < NUMKARTRESULTS && spawnChance[i] <= rngRoll; i++)
+		for (i = 1; i < NUMKARTRESULTS && spawnChance[i] <= rngRoll; i++)
 		{
 			continue;
 		}
@@ -924,6 +929,14 @@ static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 	player->itemamount = K_ItemResultToAmount(getitem);
 }
 
+fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+{
+	const fixed_t curTic = (roulette->tics << FRACBITS) - renderDelta;
+	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
+
+	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), ROULETTE_SPACING);
+}
+
 void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
@@ -970,6 +983,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			//player->karthud[khud_itemblink] = TICRATE;
 			//player->karthud[khud_itemblinkmode] = 1;
+			//player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
 			if (P_IsDisplayPlayer(player) && !demo.freecam)
 			{
@@ -984,6 +998,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			player->karthud[khud_itemblink] = TICRATE;
 			player->karthud[khud_itemblinkmode] = 0;
+			player->karthud[khud_rouletteoffset] = K_GetRouletteOffset(roulette, FRACUNIT);
 
 			if (P_IsDisplayPlayer(player) && !demo.freecam)
 			{

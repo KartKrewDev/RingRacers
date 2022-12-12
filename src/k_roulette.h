@@ -30,6 +30,9 @@ boolean K_ForcedSPB(player_t *const player);
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette);
 void K_StartEggmanRoulette(player_t *const player);
 
+#define ROULETTE_SPACING (36 << FRACBITS)
+fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
 
 #endif // __K_ROULETTE_H__

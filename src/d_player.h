@@ -225,6 +225,7 @@ typedef enum
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
 	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
+	khud_rouletteoffset,// Roulette stop height
 
 	// Rings
 	khud_ringframe,		// Ring spin frame
