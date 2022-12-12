@@ -171,12 +171,15 @@ extern INT32 numemblems;
 extern UINT32 unlocktriggers;
 
 void M_NewGameDataStruct(void);
+
+// Challenges menu stuff
 void M_PopulateChallengeGrid(void);
 UINT8 *M_ChallengeGridExtraData(void);
+char *M_BuildConditionSetString(UINT8 unlockid);
 #define CHE_NONE          0
 #define CHE_HINT          1
-#define CHE_CONNECTEDLEFT 2
-#define CHE_CONNECTEDUP   4
+#define CHE_CONNECTEDLEFT (1<<1)
+#define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
 
 // Condition set setup
@@ -187,7 +190,6 @@ void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
 
 // Updating conditions and unlockables
-void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
 UINT8 M_GetNextAchievedUnlock(void);

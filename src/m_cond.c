@@ -480,6 +480,8 @@ void M_ClearSecrets(void)
 // ----------------------
 // Condition set checking
 // ----------------------
+
+// See also M_GetConditionString
 UINT8 M_CheckCondition(condition_t *cn)
 {
 	switch (cn->type)
@@ -564,7 +566,226 @@ static UINT8 M_CheckConditionSet(conditionset_t *c)
 	return achievedSoFar;
 }
 
-void M_CheckUnlockConditions(void)
+// See also M_CheckCondition
+static const char *M_GetConditionString(condition_t *cn)
+{
+	INT32 i;
+	char *title = NULL;
+	const char *work = NULL;
+
+#define BUILDCONDITIONTITLE(i) (M_MapLocked(i+1) ? Z_StrDup("???") : G_BuildMapTitle(i+1))
+
+	switch (cn->type)
+	{
+		case UC_PLAYTIME: // Requires total playing time >= x
+			return va("Play for %i:%02i:%02i",
+				G_TicsToHours(cn->requirement),
+				G_TicsToMinutes(cn->requirement, false),
+				G_TicsToSeconds(cn->requirement));
+		case UC_MATCHESPLAYED: // Requires any level completed >= x times
+			return va("Play %d matches", cn->requirement);
+		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
+			return va("Get a PWR of %d in %s", cn->requirement,
+				(cn->extrainfo1 == PWRLV_RACE)
+				? "Race"
+				: "Battle");
+		case UC_GAMECLEAR: // Requires game beaten >= x times
+			if (cn->requirement > 1)
+				return va("Beat game %d times", cn->requirement);
+			else
+				return va("Beat the game");
+		case UC_OVERALLTIME: // Requires overall time <= x
+			return va("Get overall time of %i:%02i:%02i",
+				G_TicsToHours(cn->requirement),
+				G_TicsToMinutes(cn->requirement, false),
+				G_TicsToSeconds(cn->requirement));
+		case UC_MAPVISITED: // Requires map x to be visited
+		case UC_MAPBEATEN: // Requires map x to be beaten
+		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		{
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("%s %s%s",
+				(cn->type == UC_MAPVISITED) ? "Visit" : "Beat",
+				title,
+				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
+			Z_Free(title);
+			return work;
+		}
+		case UC_MAPTIME: // Requires time on map <= x
+		{
+			if (cn->extrainfo1 >= nummapheaders || !mapheaderinfo[cn->extrainfo1])
+				return va("INVALID MAP CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->extrainfo1);
+			work = va("Beat %s in %i:%02i.%02i", title,
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+
+			Z_Free(title);
+			return work;
+		}
+		case UC_TOTALEMBLEMS: // Requires number of emblems >= x
+			return va("Get %d medals", cn->requirement);
+		case UC_EMBLEM: // Requires emblem x to be obtained
+		{
+			INT32 checkLevel;
+
+			i = cn->requirement-1;
+			checkLevel = G_MapNumber(emblemlocations[i].level);
+
+			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
+
+			title = BUILDCONDITIONTITLE(checkLevel);
+			switch (emblemlocations[i].type)
+			{
+				case ET_MAP:
+					work = va("Beat %s", title);
+					break;
+				case ET_TIME:
+					if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)
+					{
+						Z_Free(title);
+						return va("INVALID MEDAL COLOR \"%d:%d\"", cn->requirement, checkLevel);
+					}
+					work = va("Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
+					break;
+				case ET_GLOBAL:
+				default:
+					work = va("Find a secret in %s", title);
+					break;
+			}
+
+			Z_Free(title);
+			return work;
+		}
+		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
+			return va("Get \"%s\"",
+				gamedata->unlocked[cn->requirement-1]
+				? unlockables[cn->requirement-1].name
+				: "???");
+		default:
+			break;
+	}
+	// UC_MAPTRIGGER and UC_CONDITIONSET are explicitly very hard to support proper descriptions for
+	return va("UNSUPPORTED CONDITION \"%d\"", cn->type);
+
+#undef BUILDCONDITIONTITLE
+}
+
+//#define ACHIEVEDBRITE
+
+char *M_BuildConditionSetString(UINT8 unlockid)
+{
+	conditionset_t *c = NULL;
+	UINT32 lastID = 0;
+	condition_t *cn;
+#ifdef ACHIEVEDBRITE
+	boolean achieved = false;
+#endif
+	size_t len = 1024, worklen;
+	static char message[1024] = "";
+	const char *work = NULL;
+	size_t max = 0, start = 0, strlines = 0, i;
+
+	message[0] = '\0';
+
+	if (unlockid >= MAXUNLOCKABLES)
+	{
+		return NULL;
+	}
+
+	if (!unlockables[unlockid].conditionset)
+	{
+		return NULL;
+	}
+
+	c = &conditionSets[unlockables[unlockid].conditionset-1];
+
+	for (i = 0; i < c->numconditions; ++i)
+	{
+		cn = &c->condition[i];
+
+		if (i > 0)
+		{
+			worklen = 3;
+			if (lastID == cn->id)
+			{
+				strncat(message, "\n& ", len);
+			}
+			else
+			{
+				strncat(message, "\nOR ", len);
+				worklen++;
+			}
+			len -= worklen;
+		}
+		lastID = cn->id;
+
+#ifdef ACHIEVEDBRITE
+		achieved = M_CheckCondition(cn);
+
+		if (achieved)
+		{
+			strncat(message, "\0x82", len);
+			len--;
+		}
+#endif
+
+		work = M_GetConditionString(cn);
+		worklen = strlen(work);
+
+		strncat(message, work, len);
+		len -= worklen;
+
+#ifdef ACHIEVEDBRITE
+		if (achieved)
+		{
+			strncat(message, "\0x80", len);
+			len--;
+		}
+#endif
+	}
+
+	// Rudementary word wrapping.
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
+	for (i = 0; message[i]; i++)
+	{
+		if (message[i] == ' ')
+		{
+			start = i;
+			max += 4;
+		}
+		else if (message[i] == '\n')
+		{
+			strlines = i;
+			start = 0;
+			max = 0;
+			continue;
+		}
+		else if (message[i] & 0x80)
+			continue;
+		else
+			max += 8;
+
+		// Start trying to wrap if presumed length exceeds the screen width.
+		if (max >= BASEVIDWIDTH && start > 0)
+		{
+			message[start] = '\n';
+			max -= (start-strlines)*8;
+			strlines = start;
+			start = 0;
+		}
+	}
+
+	return message;
+}
+
+static void M_CheckUnlockConditions(void)
 {
 	INT32 i;
 	conditionset_t *c;

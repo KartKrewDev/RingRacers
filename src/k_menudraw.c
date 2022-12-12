@@ -4720,6 +4720,9 @@ challengedesc:
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 	}
 
-	if (!challengesmenu.fade)
-		V_DrawThinString(20, 120 + 60, V_ALLOWLOWERCASE, "Press (B)");
+	// Conditions for unlock
+	if (challengesmenu.unlockcondition != NULL)
+	{
+		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
+	}
 }

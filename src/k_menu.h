@@ -1101,6 +1101,8 @@ extern struct challengesmenu_s {
 	INT16 offset;		// To make the icons move smoothly when we transition!
 
 	UINT8 currentunlock;
+	char *unlockcondition;
+
 	tic_t unlockanim;
 
 	SINT8 row, hilix, focusx;

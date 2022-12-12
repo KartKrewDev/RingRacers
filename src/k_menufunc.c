@@ -1776,15 +1776,14 @@ static inline size_t M_StringHeight(const char *string)
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
 {
 	const UINT8 pid = 0;
-	size_t max = 0, start = 0, i, strlines;
+	size_t max = 0, start = 0, strlines = 0, i;
 	static char *message = NULL;
 	Z_Free(message);
 	message = Z_StrDup(string);
 	DEBFILE(message);
 
 	// Rudementary word wrapping.
-	// Simple and effective. Does not handle nonuniform letter sizes, colors, etc. but who cares.
-	strlines = 0;
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
 	for (i = 0; message[i]; i++)
 	{
 		if (message[i] == ' ')
@@ -1799,6 +1798,8 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 			max = 0;
 			continue;
 		}
+		else if (message[i] & 0x80)
+			continue;
 		else
 			max += 8;
 
@@ -6859,13 +6860,14 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if (challengesmenu.pending || desiredmenu == NULL)
 	{
-		memset(setup_explosions, 0, sizeof(setup_explosions));
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
-		M_PopulateChallengeGrid();
+		challengesmenu.unlockcondition = NULL;
 
+		M_PopulateChallengeGrid();
 		if (gamedata->challengegrid)
 			challengesmenu.extradata = M_ChallengeGridExtraData();
 
+		memset(setup_explosions, 0, sizeof(setup_explosions));
 		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
 		for (i = 0; i < MAXUNLOCKABLES; i++)
 		{
@@ -6899,6 +6901,7 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 		return;
 
 	challengesmenu.currentunlock = unlockid;
+	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 	challengesmenu.unlockanim = 0;
 
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
@@ -7099,6 +7102,9 @@ void M_ChallengesTick(void)
 				gamedata->unlocked[challengesmenu.currentunlock] = true;
 				M_UpdateUnlockablesAndExtraEmblems(true);
 
+				// Update shown description just in case..?
+				challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+
 				challengesmenu.unlockcount[CC_TALLY]++;
 				challengesmenu.unlockcount[CC_ANIM]++;
 
@@ -7212,6 +7218,8 @@ boolean M_ChallengesInputs(INT32 ch)
 
 			Z_Free(challengesmenu.extradata);
 			challengesmenu.extradata = NULL;
+
+			challengesmenu.unlockcondition = NULL;
 
 			return true;
 		}
@@ -7336,6 +7344,7 @@ boolean M_ChallengesInputs(INT32 ch)
 			// After movement has been determined, figure out the current selection.
 			i = (challengesmenu.col * CHALLENGEGRIDHEIGHT) + challengesmenu.row;
 			challengesmenu.currentunlock = (gamedata->challengegrid[i]);
+			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 
 			challengesmenu.hilix = challengesmenu.col;
 			challengesmenu.hiliy = challengesmenu.row;
