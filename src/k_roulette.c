@@ -62,10 +62,14 @@
 #define SPBFORCEDIST (14*DISTVAR)
 
 // Distance when the game stops giving you bananas
-#define ENDDIST (12*DISTVAR)
+#define ENDDIST (18*DISTVAR)
 
 // Consistent seed used for item reels
 #define ITEM_REEL_SEED (0x22D5FAA8)
+
+#define ROULETTE_SPEED_SLOWEST (12)
+#define ROULETTE_SPEED_FASTEST (2)
+#define ROULETTE_SPEED_DIST (224*DISTVAR)
 
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
@@ -759,17 +763,66 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 	roulette->itemListLen++;
 }
 
-static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *const roulette, UINT8 playing)
+static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *const roulette)
 {
 	// TODO: Change speed based on two factors:
 	// - Get faster when your distancetofinish is closer to 1st place's distancetofinish. (winning)
 	// - Get faster based on overall distancetofinish (race progress)
 	// Slowest speed should be 12 tics, fastest should be 3 tics.
 
-	(void)player;
-	(void)playing;
+	fixed_t frontRun = 0;
+	fixed_t progress = 0;
+	fixed_t total = 0;
 
-	roulette->tics = roulette->speed = 7;
+	UINT8 playing = 0;
+
+	UINT32 firstDist = UINT32_MAX;
+	UINT32 ourDist = UINT32_MAX;
+
+	size_t i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		playing++;
+
+		if (players[i].position == 1)
+		{
+			firstDist = players[i].distancetofinish;
+		}
+	}
+
+	ourDist = K_ScaleItemDistance(player->distancetofinish, playing);
+	firstDist = K_ScaleItemDistance(firstDist, playing);
+
+	if (ourDist > ENDDIST)
+	{
+		// Being farther in the course makes your roulette faster.
+		progress = min(FRACUNIT, FixedDiv(ourDist - ENDDIST, ROULETTE_SPEED_DIST));
+	}
+
+	if (ourDist > firstDist)
+	{
+		// Frontrunning makes your roulette faster.
+		frontRun = min(FRACUNIT, FixedDiv(ourDist - firstDist, ENDDIST));
+	}
+
+	// Combine our two factors together.
+	total = min(FRACUNIT, (frontRun / 2) + (progress / 2));
+
+	if (leveltime < starttime + 20*TICRATE)
+	{
+		// Don't impact as much at the start.
+		// This makes it so that everyone gets to enjoy the lowest speed at the start.
+		fixed_t lerp = FRACUNIT - FixedDiv(max(0, leveltime - starttime), 10*TICRATE);
+		total += FixedMul(lerp, FRACUNIT - total);
+	}
+
+	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
 }
 
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
@@ -785,18 +838,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 	size_t i;
 
 	K_InitRoulette(roulette);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] == false || players[i].spectator == true)
-		{
-			continue;
-		}
-
-		playing++;
-	}
-
-	K_CalculateRouletteSpeed(player, roulette, playing);
+	K_CalculateRouletteSpeed(player, roulette);
 
 	// SPECIAL CASE No. 1:
 	// Give only the debug item if specified
@@ -808,6 +850,16 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	// SPECIAL CASE No. 2:
 	// Use a special, pre-determined item reel for Time Attack / Free Play
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		playing++;
+	}
+
 	if (bossinfo.boss == true)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
