@@ -733,7 +733,7 @@ static void P_NetUnArchivePlayers(void)
 			players[i].itemRoulette.itemList = Z_Calloc(
 				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
 				PU_LEVEL,
-				NULL
+				&players[i].itemRoulette.itemList
 			);
 		}
 		else
@@ -742,7 +742,7 @@ static void P_NetUnArchivePlayers(void)
 				players[i].itemRoulette.itemList,
 				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
 				PU_LEVEL,
-				NULL
+				&players[i].itemRoulette.itemList
 			);
 		}
 
