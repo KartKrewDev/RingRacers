@@ -99,7 +99,7 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
 };
 
-static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS][2] =
+static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 {
 	//K  L
 	{ 2, 1 }, // Sneaker
@@ -309,7 +309,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 	INT32 shieldType = KSHIELD_NONE;
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
-	I_Assert(cv_items[NUMKARTRESULTS-2] != NULL); // Make sure this exists
+	I_Assert(item < NUMKARTRESULTS);
 
 	if (K_ItemEnabled(item) == false)
 	{
@@ -554,7 +554,8 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 		newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(pingame));
 	}
 
-	return FixedInt(FixedRound(newOdds));
+	newOdds = FixedInt(FixedRound(newOdds));
+	return newOdds;
 }
 
 //{ SRB2kart Roulette Code - Distance Based, yes waypoints
@@ -575,7 +576,7 @@ UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist)
 		if (gametype == GT_BATTLE && i > 1)
 		{
 			oddsValid[i] = false;
-			break;
+			continue;
 		}
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
@@ -856,7 +857,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		UINT8 thisItemsOdds = K_KartGetItemOdds(
+		INT32 thisItemsOdds = K_KartGetItemOdds(
 			useOdds, i,
 			player->distancetofinish,
 			player->bot, (player->bot && player->botvars.rival)
@@ -879,7 +880,6 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 	while (totalSpawnChance > 0)
 	{
 		rngRoll = P_RandomKey(PR_ITEM_ROULETTE, totalSpawnChance);
-
 		for (i = 1; i < NUMKARTRESULTS && spawnChance[i] <= rngRoll; i++)
 		{
 			continue;
@@ -896,7 +896,15 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 			K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
 		}
 
-		spawnChance[i]--;
+		for (; i < NUMKARTRESULTS; i++)
+		{
+			// Be sure to fix the remaining items' odds too.
+			if (spawnChance[i] > 0)
+			{
+				spawnChance[i]--;
+			}
+		}
+
 		totalSpawnChance--;
 	}
 }
