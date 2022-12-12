@@ -945,9 +945,9 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 		// If we're in ring debt, pad out the reel with
 		// a BUNCH of Super Rings.
-		if (K_ItemEnabled(KITEM_SUPERRING)
-			&& player->rings < 0
-			&& !(gametyperules & GTR_SPHERES))
+		if (K_ItemEnabled(KITEM_SUPERRING) == true
+			&& player->rings <= 0
+			&& (gametyperules & GTR_SPHERES) == 0)
 		{
 			K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
 		}
