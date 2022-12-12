@@ -3970,7 +3970,11 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		x += 85;
 
 		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
-			V_DrawString(x, y, V_SNAPTOTOP, G_BuildMapTitle(demoref->map+1));
+		{
+			char *title = G_BuildMapTitle(demoref->map+1);
+			V_DrawString(x, y, V_SNAPTOTOP, title);
+			Z_Free(title);
+		}
 		else
 			V_DrawString(x, y, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
 

@@ -2358,7 +2358,11 @@ void G_BeginRecording(void)
 
 	// Full replay title
 	demo_p += 64;
-	snprintf(demo.titlename, 64, "%s - %s", G_BuildMapTitle(gamemap), modeattacking ? "Record Attack" : connectedservername);
+	{
+		char *title = G_BuildMapTitle(gamemap);
+		snprintf(demo.titlename, 64, "%s - %s", title, modeattacking ? "Record Attack" : connectedservername);
+		Z_Free(title);
+	}
 
 	// demo checksum
 	demo_p += 16;
