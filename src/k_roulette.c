@@ -823,6 +823,10 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 	}
 
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
+
+	// Make them select their item after a little while.
+	// One of the few instances of bot RNG, would be nice to remove it.
+	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
 }
 
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)

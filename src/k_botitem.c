@@ -1394,27 +1394,15 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
-	boolean mash = false;
-
 	if (K_ItemButtonWasDown(player) == true)
 	{
 		return;
 	}
 
-	if (player->rings < 0 && K_ItemEnabled(KITEM_SUPERRING) == true)
-	{
-		// Uh oh, we need a loan!
-		// It'll be better in the long run for bots to lose an item set for 10 free rings.
-		mash = true;
-	}
+	// TODO: Would be nice to implement smarter behavior
+	// for selecting items.
 
-	// TODO: Mash based on how far behind you are, when items are
-	// almost garantueed to be in your favor.
-
-	if (mash == true)
-	{
-		cmd->buttons |= BT_ATTACK;
-	}
+	cmd->buttons |= BT_ATTACK;
 }
 
 /*--------------------------------------------------
