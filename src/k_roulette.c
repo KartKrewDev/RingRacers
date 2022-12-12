@@ -764,11 +764,6 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 
 static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *const roulette)
 {
-	// TODO: Change speed based on two factors:
-	// - Get faster when your distancetofinish is closer to 1st place's distancetofinish. (winning)
-	// - Get faster based on overall distancetofinish (race progress)
-	// Slowest speed should be 12 tics, fastest should be 3 tics.
-
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;
 	fixed_t total = 0;
