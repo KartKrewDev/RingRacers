@@ -131,7 +131,6 @@ Do with it whatever you want.
 Run this macro, then #undef FOREACH afterward
 */
 #define KART_ITEM_ITERATOR \
-	FOREACH (EGGEXPLODE,    -2),\
 	FOREACH (SAD,           -1),\
 	FOREACH (NONE,           0),\
 	FOREACH (SNEAKER,        1),\

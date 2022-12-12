@@ -738,6 +738,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	roulette->elapsed = 0;
 	roulette->tics = roulette->speed = 3; // Some default speed
 	roulette->active = true;
+	roulette->eggman = false;
 }
 
 static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
@@ -898,9 +899,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 void K_StartEggmanRoulette(player_t *const player)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
-
-	K_InitRoulette(roulette);
-	K_PushToRouletteItemList(roulette, KITEM_EGGEXPLODE);
+	K_StartItemRoulette(player, roulette);
 	roulette->eggman = true;
 }
 
@@ -964,14 +963,32 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 	// Finally, if you get past this check, now you can actually start calculating what item you get.
 	if (confirmItem == true && (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT|PF_USERINGS)) == 0)
 	{
-		kartitems_t finalItem = roulette->itemList[ roulette->index ];
-
-		K_KartGetItemResult(player, finalItem);
-		player->karthud[khud_itemblink] = TICRATE;
-
-		if (P_IsDisplayPlayer(player) && !demo.freecam)
+		if (roulette->eggman == true)
 		{
-			S_StartSound(NULL, sfx_itrolf);
+			// FATASS JUMPSCARE instead of your actual item
+			player->eggmanexplode = 4*TICRATE;
+
+			//player->karthud[khud_itemblink] = TICRATE;
+			//player->karthud[khud_itemblinkmode] = 1;
+
+			if (P_IsDisplayPlayer(player) && !demo.freecam)
+			{
+				S_StartSound(NULL, sfx_itrole);
+			}
+		}
+		else
+		{
+			kartitems_t finalItem = roulette->itemList[ roulette->index ];
+
+			K_KartGetItemResult(player, finalItem);
+
+			player->karthud[khud_itemblink] = TICRATE;
+			player->karthud[khud_itemblinkmode] = 0;
+
+			if (P_IsDisplayPlayer(player) && !demo.freecam)
+			{
+				S_StartSound(NULL, sfx_itrolf);
+			}
 		}
 
 		// We're done, disable the roulette
