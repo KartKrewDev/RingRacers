@@ -2360,6 +2360,12 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[1]);
 		x1 = atoi(params[2]);
 
+		if (re < PWRLVRECORD_MIN || re > PWRLVRECORD_MAX)
+		{
+			deh_warning("Power level requirement %d out of range (%d - %d) for condition ID %d", re, PWRLVRECORD_MIN, PWRLVRECORD_MAX, id+1);
+			return;
+		}
+
 		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
 		{
 			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id+1);
