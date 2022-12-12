@@ -730,16 +730,15 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		roulette->itemList = Z_Calloc(
 			sizeof(SINT8) * roulette->itemListCap,
 			PU_LEVEL,
-			&roulette->itemList
+			NULL
 		);
 	}
 
-	memset(roulette->itemList, KITEM_NONE, sizeof(SINT8) * roulette->itemListCap);
 	roulette->itemListLen = 0;
-
 	roulette->index = 0;
+
 	roulette->elapsed = 0;
-	roulette->tics = roulette->speed = 3; // Some default speed
+	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST; // Some default speed
 	roulette->active = true;
 	roulette->eggman = false;
 }
@@ -755,7 +754,7 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 			roulette->itemList,
 			sizeof(SINT8) * roulette->itemListCap,
 			PU_LEVEL,
-			&roulette->itemList
+			NULL
 		);
 	}
 
