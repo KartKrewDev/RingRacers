@@ -1001,8 +1001,38 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 #endif //if 0
 }
 
+boolean M_CupLocked(cupheader_t *cup)
+{
+	UINT8 i;
+
+	// Don't lock maps in dedicated servers.
+	// That just makes hosts' lives hell.
+	if (dedicated)
+		return false;
+
+	// No skipping over any part of your marathon.
+	if (marathonmode)
+		return false;
+
+	if (!cup)
+		return false;
+
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (unlockables[i].type != SECRET_CUP)
+			continue;
+		if (M_UnlockableCup(&unlockables[i]) != cup)
+			continue;
+		return !M_CheckNetUnlockByID(i);
+	}
+
+	return false;
+}
+
 boolean M_MapLocked(INT32 mapnum)
 {
+	UINT8 i;
+
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
 	if (dedicated)
@@ -1017,11 +1047,21 @@ boolean M_MapLocked(INT32 mapnum)
 
 	if (mapheaderinfo[mapnum-1]->cup)
 	{
-		if (!M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->cup->unlockrequired))
-			return true;
+		return M_CupLocked(mapheaderinfo[mapnum-1]->cup);
 	}
 
-	return !M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->unlockrequired);
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (unlockables[i].type != SECRET_CUP)
+			continue;
+		if (!unlockables[i].stringVar || !unlockables[i].stringVar[0])
+			continue;
+		if (G_MapNumber(unlockables[i].stringVar) != mapnum-1)
+			continue;
+		return !M_CheckNetUnlockByID(i);
+	}
+
+	return false;
 }
 
 INT32 M_CountMedals(boolean all)
@@ -1148,6 +1188,40 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 
 	// Invalid follower unlockable.
 	return -1;
+}
+
+cupheader_t *M_UnlockableCup(unlockable_t *unlock)
+{
+	cupheader_t *cup = kartcupheaders;
+
+	if (unlock->type != SECRET_CUP)
+	{
+		// This isn't a cup unlockable...
+		return NULL;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		// Get the cup from the string.
+		while (cup)
+		{
+			if (!strcmp(cup->name, unlock->stringVar))
+				break;
+			cup = cup->next;
+		}
+	}
+	else
+	{
+		// Use the number directly.
+		while (cup)
+		{
+			if (cup->id == unlock->variable)
+				break;
+			cup = cup->next;
+		}
+	}
+
+	return cup;
 }
 
 // ----------------

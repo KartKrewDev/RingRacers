@@ -1181,15 +1181,6 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->encorepal = (UINT16)i;
 			else if (fastcmp(word, "NUMLAPS"))
 				mapheaderinfo[num]->numlaps = (UINT8)i;
-			else if (fastcmp(word, "UNLOCKABLE"))
-			{
-				if (i == 0 || word2[0] == 'F' || word2[0] == 'N')
-					mapheaderinfo[num]->unlockrequired = MAXUNLOCKABLES;
-				else if (i > 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					mapheaderinfo[num]->unlockrequired = (UINT8)(i-1);
-				else
-					deh_warning("Level header %d: invalid unlockable number %d", num, i);
-			}
 			else if (fastcmp(word, "SKYBOXSCALE"))
 				mapheaderinfo[num]->skybox_scalex = mapheaderinfo[num]->skybox_scaley = mapheaderinfo[num]->skybox_scalez = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEX"))
@@ -3090,15 +3081,6 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->emeraldnum = (UINT8)i;
 				else
 					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
-			}
-			else if (fastcmp(word, "UNLOCKABLE"))
-			{
-				if (i == 0 || word2[0] == 'F' || word2[0] == 'N')
-					cup->unlockrequired = MAXUNLOCKABLES;
-				else if (i > 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					cup->unlockrequired = (UINT8)(i-1);
-				else
-					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);

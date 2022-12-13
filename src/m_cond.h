@@ -99,7 +99,7 @@ typedef enum
 	// One step above bragging rights
 	SECRET_EXTRAMEDAL,			// Extra medal for your counter
 
-	// Level restrictions (TODO)
+	// Level restrictions
 	SECRET_CUP,					// Permit access to entire cup (overrides SECRET_MAP)
 	SECRET_MAP,					// Permit access to single map
 
@@ -207,6 +207,7 @@ UINT8 M_CompletionEmblems(void);
 // Checking unlockable status
 boolean M_CheckNetUnlockByID(UINT8 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
+boolean M_CupLocked(cupheader_t *cup);
 boolean M_MapLocked(INT32 mapnum);
 INT32 M_CountMedals(boolean all);
 
@@ -223,6 +224,8 @@ UINT8 M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
+cupheader_t *M_UnlockableCup(unlockable_t *unlock);
+
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])

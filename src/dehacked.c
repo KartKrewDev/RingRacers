@@ -486,7 +486,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					{
 						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
 						cup->id = numkartcupheaders;
-						cup->unlockrequired = MAXUNLOCKABLES;
 						deh_strlcpy(cup->name, word2,
 							sizeof(cup->name), va("Cup header %s: name", word2));
 						if (prev != NULL)

@@ -3866,7 +3866,7 @@ static void G_GetNextMap(void)
 			while (cup)
 			{
 				// Not unlocked? Grab the next result afterwards
-				if (!marathonmode && M_CheckNetUnlockByID(cup->unlockrequired))
+				if (!marathonmode && M_CupLocked(cup))
 				{
 					cup = cup->next;
 					gettingresult = 1;
