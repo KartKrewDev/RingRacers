@@ -4882,7 +4882,14 @@ challengedesc:
 	M_DrawChallengePreview(x, y);
 
 	// Conditions for unlock
-	if (challengesmenu.unlockcondition != NULL)
+	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+
+	if (challengesmenu.unlockcondition != NULL
+	&& ((gamedata->unlocked[challengesmenu.currentunlock] == true)
+		|| ((challengesmenu.extradata != NULL)
+		&& (challengesmenu.extradata[i] & CHE_HINT))
+		)
+	)
 	{
 		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
 	}
