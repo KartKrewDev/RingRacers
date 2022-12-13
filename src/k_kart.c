@@ -6942,7 +6942,16 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->karthud[khud_rouletteoffset] != 0)
 	{
-		player->karthud[khud_rouletteoffset] = FixedMul(player->karthud[khud_rouletteoffset], FRACUNIT*3/4);
+		if (abs(player->karthud[khud_rouletteoffset]) < (FRACUNIT >> 1))
+		{
+			// Snap to 0, since the change is getting very small.
+			player->karthud[khud_rouletteoffset] = 0;
+		}
+		else
+		{
+			// Lerp to 0.
+			player->karthud[khud_rouletteoffset] = FixedMul(player->karthud[khud_rouletteoffset], FRACUNIT*3/4);
+		}
 	}
 
 	if (!(gametyperules & GTR_SPHERES))

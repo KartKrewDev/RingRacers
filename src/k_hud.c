@@ -1023,7 +1023,7 @@ static void K_drawKartItem(void)
 	// Why write V_DrawScaledPatch calls over and over when they're all the same?
 	// Set to 'no item' just in case.
 	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
-	patch_t *localpatch[3] = {kp_nodraw};
+	patch_t *localpatch[3] = { kp_nodraw };
 	patch_t *localbg = ((offset) ? kp_itembg[2] : kp_itembg[0]);
 	patch_t *localinv = ((offset) ? kp_invincibility[((leveltime % (6*3)) / 3) + 7] : kp_invincibility[(leveltime % (7*3)) / 3]);
 	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
@@ -1031,24 +1031,17 @@ static void K_drawKartItem(void)
 	INT32 itembar = 0;
 	INT32 maxl = 0; // itembar's normal highest value
 	const INT32 barlength = (r_splitscreen > 1 ? 12 : 26);
-	UINT16 localcolor = SKINCOLOR_NONE;
-	SINT8 colormode = TC_RAINBOW;
-	UINT8 *colmap = NULL;
+	UINT16 localcolor[3] = { stplyr->skincolor };
+	SINT8 colormode[3] = { TC_RAINBOW };
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
 
 	fixed_t rouletteOffset = 0;
 	const INT32 rouletteBox = 36;
 	INT32 i;
 
-	if (stplyr->itemRoulette.active == true)
+	if (stplyr->itemRoulette.itemListLen > 0)
 	{
-		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
-
-		if (stplyr->skincolor)
-		{
-			localcolor = stplyr->skincolor;
-		}
-
+		// Init with item roulette stuff.
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
@@ -1074,6 +1067,11 @@ static void K_drawKartItem(void)
 			}
 		}
 	}
+
+	if (stplyr->itemRoulette.active == true)
+	{
+		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
+	}
 	else
 	{
 		// I'm doing this a little weird and drawing mostly in reverse order
@@ -1081,25 +1079,26 @@ static void K_drawKartItem(void)
 		// This shouldn't have any actual baring over how it functions
 		// Hyudoro is first, because we're drawing it on top of the player's current item
 
+		localcolor[1] = SKINCOLOR_NONE;
 		rouletteOffset = stplyr->karthud[khud_rouletteoffset];
 
 		if (stplyr->stealingtimer < 0)
 		{
 			if (leveltime & 2)
-				localpatch[0] = kp_hyudoro[offset];
+				localpatch[1] = kp_hyudoro[offset];
 			else
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 		else if ((stplyr->stealingtimer > 0) && (leveltime & 2))
 		{
-			localpatch[0] = kp_hyudoro[offset];
+			localpatch[1] = kp_hyudoro[offset];
 		}
 		else if (stplyr->eggmanexplode > 1)
 		{
 			if (leveltime & 1)
-				localpatch[0] = kp_eggman[offset];
+				localpatch[1] = kp_eggman[offset];
 			else
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 		else if (stplyr->ballhogcharge > 0)
 		{
@@ -1107,9 +1106,9 @@ static void K_drawKartItem(void)
 			maxl = (((stplyr->itemamount-1) * BALLHOGINCREMENT) + 1);
 
 			if (leveltime & 1)
-				localpatch[0] = kp_ballhog[offset];
+				localpatch[1] = kp_ballhog[offset];
 			else
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 		else if (stplyr->rocketsneakertimer > 1)
 		{
@@ -1117,16 +1116,16 @@ static void K_drawKartItem(void)
 			maxl = (itemtime*3) - barlength;
 
 			if (leveltime & 1)
-				localpatch[0] = kp_rocketsneaker[offset];
+				localpatch[1] = kp_rocketsneaker[offset];
 			else
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 		else if (stplyr->sadtimer > 0)
 		{
 			if (leveltime & 2)
-				localpatch[0] = kp_sadface[offset];
+				localpatch[1] = kp_sadface[offset];
 			else
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 		else
 		{
@@ -1136,12 +1135,12 @@ static void K_drawKartItem(void)
 			switch (stplyr->itemtype)
 			{
 				case KITEM_INVINCIBILITY:
-					localpatch[0] = localinv;
+					localpatch[1] = localinv;
 					localbg = kp_itembg[offset+1];
 					break;
 
 				case KITEM_ORBINAUT:
-					localpatch[0] = kp_orbinaut[(offset ? 4 : min(stplyr->itemamount-1, 3))];
+					localpatch[1] = kp_orbinaut[(offset ? 4 : min(stplyr->itemamount-1, 3))];
 					break;
 
 				case KITEM_SPB:
@@ -1152,33 +1151,40 @@ static void K_drawKartItem(void)
 					/*FALLTHRU*/
 
 				default:
-					localpatch[0] = K_GetCachedItemPatch(stplyr->itemtype, offset);
+					localpatch[1] = K_GetCachedItemPatch(stplyr->itemtype, offset);
 
-					if (localpatch[0] == NULL)
-						localpatch[0] = kp_nodraw; // diagnose underflows
+					if (localpatch[1] == NULL)
+						localpatch[1] = kp_nodraw; // diagnose underflows
 					break;
 			}
 
 			if ((stplyr->pflags & PF_ITEMOUT) && !(leveltime & 1))
-				localpatch[0] = kp_nodraw;
+				localpatch[1] = kp_nodraw;
 		}
 
 		if (stplyr->karthud[khud_itemblink] && (leveltime & 1))
 		{
-			colormode = TC_BLINK;
+			colormode[1] = TC_BLINK;
 
 			switch (stplyr->karthud[khud_itemblinkmode])
 			{
 				case 2:
-					localcolor = K_RainbowColor(leveltime);
+					localcolor[1] = K_RainbowColor(leveltime);
 					break;
 				case 1:
-					localcolor = SKINCOLOR_RED;
+					localcolor[1] = SKINCOLOR_RED;
 					break;
 				default:
-					localcolor = SKINCOLOR_WHITE;
+					localcolor[1] = SKINCOLOR_WHITE;
 					break;
 			}
+		}
+		else
+		{
+			// Hide the other items.
+			// Effectively lets the other roulette items
+			// show flicker away after you select.
+			localpatch[0] = localpatch[2] = kp_nodraw;
 		}
 	}
 
@@ -1206,45 +1212,77 @@ static void K_drawKartItem(void)
 		}
 	}
 
-	if (localcolor != SKINCOLOR_NONE)
-		colmap = R_GetTranslationColormap(colormode, localcolor, GTC_CACHE);
-
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
+
+	// Need to draw these in a particular order, for sorting.
+	V_SetClipRect(
+		(fx + 7) << FRACBITS, (fy + 7) << FRACBITS,
+		rouletteBox << FRACBITS, rouletteBox << FRACBITS,
+		V_SLIDEIN|fflags
+	);
+
+	V_DrawFixedPatch(
+		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + ROULETTE_SPACING,
+		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+		localpatch[0], (localcolor[0] ? R_GetTranslationColormap(colormode[0], localcolor[0], GTC_CACHE) : NULL)
+	);
+	V_DrawFixedPatch(
+		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset - ROULETTE_SPACING,
+		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+		localpatch[2], (localcolor[2] ? R_GetTranslationColormap(colormode[2], localcolor[2], GTC_CACHE) : NULL)
+	);
 
 	if (stplyr->itemRoulette.active == true)
 	{
-		V_SetClipRect((fx + 7) << FRACBITS, (fy + 7) << FRACBITS, rouletteBox << FRACBITS, rouletteBox << FRACBITS, V_HUDTRANS|V_SLIDEIN|fflags);
-
-		// Need to draw these in a particular order, for sorting.
-		V_DrawFixedPatch(fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + ROULETTE_SPACING, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch[0], colmap);
-		V_DrawFixedPatch(fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset - ROULETTE_SPACING, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch[2], colmap);
-		V_DrawFixedPatch(fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch[1], NULL);
-
+		// Draw the item underneath the box.
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+		);
 		V_ClearClipRect();
-	}
-	else if (stplyr->itemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
-	{
-		// Then, the numbers:
-		V_DrawScaledPatch(fx + (flipamount ? 48 : 0), fy, V_HUDTRANS|V_SLIDEIN|fflags|(flipamount ? V_FLIP : 0), kp_itemmulsticker[offset]); // flip this graphic for p2 and p4 in split and shift it.
-
-		V_DrawFixedPatch(fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch[0], colmap);
-
-		if (offset)
-		{
-			if (flipamount) // reminder that this is for 3/4p's right end of the screen.
-				V_DrawString(fx+2, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
-			else
-				V_DrawString(fx+24, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
-		}
-		else
-		{
-			V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
-			V_DrawKartString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
-		}
 	}
 	else
 	{
-		V_DrawFixedPatch(fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch[0], colmap);
+		// Draw the item above the box.
+		V_ClearClipRect();
+
+		if (stplyr->itemamount >= numberdisplaymin && stplyr->itemRoulette.active == false)
+		{
+			// Then, the numbers:
+			V_DrawScaledPatch(
+				fx + (flipamount ? 48 : 0), fy,
+				V_HUDTRANS|V_SLIDEIN|fflags|(flipamount ? V_FLIP : 0),
+				kp_itemmulsticker[offset]
+			); // flip this graphic for p2 and p4 in split and shift it.
+
+			V_DrawFixedPatch(
+				fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+				FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+				localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+			);
+
+			if (offset)
+			{
+				if (flipamount) // reminder that this is for 3/4p's right end of the screen.
+					V_DrawString(fx+2, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+				else
+					V_DrawString(fx+24, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+			}
+			else
+			{
+				V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
+				V_DrawKartString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
+			}
+		}
+		else
+		{
+			V_DrawFixedPatch(
+				fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+				FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+				localpatch[1], (localcolor[1] ? R_GetTranslationColormap(colormode[1], localcolor[1], GTC_CACHE) : NULL)
+			);
+		}
 	}
 
 	// Extensible meter, currently only used for rocket sneaker...
