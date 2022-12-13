@@ -89,6 +89,7 @@ struct unlockable_t
 	INT16 type;
 	INT16 variable;
 	char *stringVar;
+	INT16 stringVarCache;
 	UINT8 majorunlock;
 };
 
@@ -225,6 +226,7 @@ UINT8 M_GotLowEnoughTime(INT32 tictime);
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
 cupheader_t *M_UnlockableCup(unlockable_t *unlock);
+INT16 M_UnlockableMapNum(unlockable_t *unlock);
 
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 

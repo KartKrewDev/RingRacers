@@ -4650,16 +4650,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MAP:
 		{
-			if (ref->stringVar && ref->stringVar[0])
-			{
-				UINT16 mapnum = G_MapNumber(ref->stringVar);
-				K_DrawMapThumbnail(
-					(x-30)<<FRACBITS, (y)<<FRACBITS,
-					60<<FRACBITS,
-					0,
-					mapnum,
-					NULL);
-			}
+			UINT16 mapnum = M_UnlockableMapNum(ref);
+			K_DrawMapThumbnail(
+				(x-30)<<FRACBITS, (y)<<FRACBITS,
+				60<<FRACBITS,
+				0,
+				mapnum,
+				NULL);
 			break;
 		}
 		default:

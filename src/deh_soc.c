@@ -2278,11 +2278,13 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_ITEMFINDER;
 					else
 						unlockables[num].type = (INT16)i;
+					unlockables[num].stringVarCache = -1;
 				}
 				else if (fastcmp(word, "VAR"))
 				{
 					Z_Free(unlockables[num].stringVar);
 					unlockables[num].stringVar = Z_StrDup(word2);
+					unlockables[num].stringVarCache = -1;
 					unlockables[num].variable = (INT16)i;
 				}
 				else if (fastcmp(word, "ICON"))

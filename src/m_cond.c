@@ -1054,9 +1054,7 @@ boolean M_MapLocked(INT32 mapnum)
 	{
 		if (unlockables[i].type != SECRET_CUP)
 			continue;
-		if (!unlockables[i].stringVar || !unlockables[i].stringVar[0])
-			continue;
-		if (G_MapNumber(unlockables[i].stringVar) != mapnum-1)
+		if (M_UnlockableMapNum(&unlockables[i]) != mapnum-1)
 			continue;
 		return !M_CheckNetUnlockByID(i);
 	}
@@ -1143,10 +1141,18 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock)
 
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
+		INT32 skinnum;
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
 		// Get the skin from the string.
-		INT32 skinnum = R_SkinAvailable(unlock->stringVar);
+		skinnum = R_SkinAvailable(unlock->stringVar);
 		if (skinnum != -1)
 		{
+			unlock->stringVarCache = skinnum;
 			return skinnum;
 		}
 	}
@@ -1172,10 +1178,18 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
+		INT32 skinnum;
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
 		// Get the skin from the string.
-		INT32 skinnum = K_FollowerAvailable(unlock->stringVar);
+		skinnum = K_FollowerAvailable(unlock->stringVar);
 		if (skinnum != -1)
 		{
+			unlock->stringVarCache = skinnum;
 			return skinnum;
 		}
 	}
@@ -1193,6 +1207,7 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 {
 	cupheader_t *cup = kartcupheaders;
+	INT16 val = unlock->variable-1;
 
 	if (unlock->type != SECRET_CUP)
 	{
@@ -1202,26 +1217,60 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
-		// Get the cup from the string.
-		while (cup)
+		if (unlock->stringVarCache == -1)
 		{
-			if (!strcmp(cup->name, unlock->stringVar))
-				break;
-			cup = cup->next;
+			// Get the cup from the string.
+			while (cup)
+			{
+				if (!strcmp(cup->name, unlock->stringVar))
+					break;
+				cup = cup->next;
+			}
+
+			if (cup)
+			{
+				unlock->stringVarCache = cup->id;
+			}
+			return cup;
 		}
+
+		val = unlock->stringVarCache;
 	}
-	else
+	else if (val == -1)
 	{
-		// Use the number directly.
-		while (cup)
-		{
-			if (cup->id == unlock->variable)
-				break;
-			cup = cup->next;
-		}
+		return NULL;
+	}
+
+	// Use the number directly.
+	while (cup)
+	{
+		if (cup->id == val)
+			break;
+		cup = cup->next;
 	}
 
 	return cup;
+}
+
+INT16 M_UnlockableMapNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_MAP)
+	{
+		// This isn't a map unlockable...
+		return NEXTMAP_INVALID;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		if (unlock->stringVarCache == -1)
+		{
+			unlock->stringVarCache = G_MapNumber(unlock->stringVar);
+		}
+
+		return unlock->stringVarCache;
+	}
+
+	return NEXTMAP_INVALID;
 }
 
 // ----------------
