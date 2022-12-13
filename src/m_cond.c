@@ -1181,14 +1181,25 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 	if (unlock->stringVar && unlock->stringVar[0])
 	{
 		INT32 skinnum;
+		size_t i;
+		char testname[SKINNAMESIZE+1];
 
 		if (unlock->stringVarCache != -1)
 		{
 			return unlock->stringVarCache;
 		}
 
+		// match deh_soc readfollower()
+		for (i = 0; unlock->stringVar[i]; i++)
+		{
+			testname[i] = unlock->stringVar[i];
+			if (unlock->stringVar[i] == '_')
+				testname[i] = ' ';
+		}
+		testname[i] = '\0';
+
 		// Get the skin from the string.
-		skinnum = K_FollowerAvailable(unlock->stringVar);
+		skinnum = K_FollowerAvailable(testname);
 		if (skinnum != -1)
 		{
 			unlock->stringVarCache = skinnum;
