@@ -70,6 +70,7 @@
 #define ROULETTE_SPEED_SLOWEST (20)
 #define ROULETTE_SPEED_FASTEST (2)
 #define ROULETTE_SPEED_DIST (224*DISTVAR)
+#define ROULETTE_SPEED_TIMEATTACK (9)
 
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
@@ -797,6 +798,10 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 
 	size_t i;
 
+	// Make them select their item after a little while.
+	// One of the few instances of bot RNG, would be nice to remove it.
+	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)
@@ -810,6 +815,13 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 		{
 			firstDist = players[i].distancetofinish;
 		}
+	}
+
+	if (modeattacking || playing <= 1)
+	{
+		// Time Attack rules; use a consistent speed.
+		roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK;
+		return;
 	}
 
 	ourDist = K_ScaleItemDistance(player->distancetofinish, playing);
@@ -834,15 +846,18 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 	{
 		// Don't impact as much at the start.
 		// This makes it so that everyone gets to enjoy the lowest speed at the start.
-		fixed_t lerp = FRACUNIT - FixedDiv(max(0, leveltime - starttime), 20*TICRATE);
-		total += FixedMul(lerp, FRACUNIT - total);
+		if (leveltime < starttime)
+		{
+			total = FRACUNIT;
+		}
+		else
+		{
+			const fixed_t lerp = FixedDiv(leveltime - starttime, 20*TICRATE);
+			total = FRACUNIT + FixedMul(lerp, total - FRACUNIT);
+		}
 	}
 
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
-
-	// Make them select their item after a little while.
-	// One of the few instances of bot RNG, would be nice to remove it.
-	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
 }
 
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
