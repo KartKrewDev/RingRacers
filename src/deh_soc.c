@@ -2261,32 +2261,30 @@ void readunlockable(MYFILE *f, INT32 num)
 				{
 					if (fastcmp(word2, "NONE"))
 						unlockables[num].type = SECRET_NONE;
-					else if (fastcmp(word2, "HEADER"))
-						unlockables[num].type = SECRET_HEADER;
+					else if (fastcmp(word2, "EXTRAMEDAL"))
+						unlockables[num].type = SECRET_EXTRAMEDAL;
+					else if (fastcmp(word2, "CUP"))
+						unlockables[num].type = SECRET_CUP;
+					else if (fastcmp(word2, "MAP"))
+						unlockables[num].type = SECRET_MAP;
 					else if (fastcmp(word2, "SKIN"))
 						unlockables[num].type = SECRET_SKIN;
 					else if (fastcmp(word2, "FOLLOWER"))
 						unlockables[num].type = SECRET_FOLLOWER;
+					else if (fastcmp(word2, "HARDSPEED"))
+						unlockables[num].type = SECRET_HARDSPEED;
+					else if (fastcmp(word2, "ENCORE"))
+						unlockables[num].type = SECRET_ENCORE;
+					else if (fastcmp(word2, "LEGACYBOXRUMMAGE"))
+						unlockables[num].type = SECRET_LEGACYBOXRUMMAGE;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))
 						unlockables[num].type = SECRET_BREAKTHECAPSULES;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
-					else if (fastcmp(word2, "CREDITS"))
-						unlockables[num].type = SECRET_CREDITS;
 					else if (fastcmp(word2, "ITEMFINDER"))
 						unlockables[num].type = SECRET_ITEMFINDER;
-					else if (fastcmp(word2, "EMBLEMHINTS"))
-						unlockables[num].type = SECRET_EMBLEMHINTS;
-					else if (fastcmp(word2, "ENCORE"))
-						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "HARDSPEED"))
-						unlockables[num].type = SECRET_HARDSPEED;
-					else if (fastcmp(word2, "HELLATTACK"))
-						unlockables[num].type = SECRET_HELLATTACK;
-					else if (fastcmp(word2, "PANDORA"))
-						unlockables[num].type = SECRET_PANDORA;
 					else
 						unlockables[num].type = (INT16)i;
 				}
@@ -2422,10 +2420,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "TOTALEMBLEMS"))
+	else if (fastcmp(params[0], "TOTALMEDALS"))
 	{
 		PARAMCHECK(1);
-		ty = UC_TOTALEMBLEMS;
+		ty = UC_TOTALMEDALS;
 		re = atoi(params[1]);
 	}
 	else if (fastcmp(params[0], "EMBLEM"))

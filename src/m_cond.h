@@ -30,7 +30,7 @@ typedef enum
 	UC_MAPENCORE,		// MAPENCORE [map number]
 	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
 	UC_TRIGGER,			// TRIGGER [trigger number]
-	UC_TOTALEMBLEMS,	// TOTALEMBLEMS [number of emblems]
+	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
@@ -92,27 +92,34 @@ struct unlockable_t
 	UINT8 majorunlock;
 };
 
-#define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
-#define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
+typedef enum
+{
+	SECRET_NONE = 0,			// Does nil, useful as a default only
 
-#define SECRET_SKIN			 2 // Allow this character to be selected
-#define SECRET_FOLLOWER		 3 // Allow this follower to be selected
+	// One step above bragging rights
+	SECRET_EXTRAMEDAL,			// Extra medal for your counter
 
-#define SECRET_EXTRAEMBLEM	 4 // Extra Emblems (formerly extraemblem_t)
+	// Level restrictions (TODO)
+	SECRET_CUP,					// Permit access to entire cup (overrides SECRET_MAP)
+	SECRET_MAP,					// Permit access to single map
 
-#define SECRET_TIMEATTACK	 5 // Enables Time Attack on the main menu
-#define SECRET_BREAKTHECAPSULES	6 // Enables Break the Capsules on the main menu
-#define SECRET_SOUNDTEST	 7 // Sound Test
-#define SECRET_CREDITS		 8 // Enables Credits
+	// Player restrictions
+	SECRET_SKIN,				// Permit this character
+	SECRET_FOLLOWER,			// Permit this follower
 
-#define SECRET_ITEMFINDER	 9 // Enables Item Finder/Emblem Radar
-#define SECRET_EMBLEMHINTS	10 // Enables Emblem Hints
+	// Difficulty restrictions
+	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_ENCORE,				// Permit Encore option
+	SECRET_LEGACYBOXRUMMAGE,	// Permit the Legacy Box for record attack, etc
 
-#define SECRET_ENCORE		11 // Enables Encore mode cvar
-#define SECRET_HARDSPEED	12 // Enables Hard gamespeed
-#define SECRET_HELLATTACK	13 // Map Hell in record attack
+	// Menu restrictions
+	SECRET_TIMEATTACK,			// Permit Time attack
+	SECRET_BREAKTHECAPSULES,	// Permit SP Capsules
+	SECRET_SOUNDTEST,			// Permit Sound Test
 
-#define SECRET_PANDORA		14 // Enables Pandora's Box
+	// Assist restrictions
+	SECRET_ITEMFINDER,			// Permit locating in-level secrets
+} secrettype_t;
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
@@ -201,7 +208,7 @@ UINT8 M_CompletionEmblems(void);
 boolean M_CheckNetUnlockByID(UINT8 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
 boolean M_MapLocked(INT32 mapnum);
-INT32 M_CountEmblems(void);
+INT32 M_CountMedals(boolean all);
 
 // Emblem shit
 emblem_t *M_GetLevelEmblems(INT32 mapnum);
@@ -211,7 +218,7 @@ const char *M_GetEmblemPatch(emblem_t *em, boolean big);
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
-UINT8 M_GotEnoughEmblems(INT32 number);
+UINT8 M_GotEnoughMedals(INT32 number);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);

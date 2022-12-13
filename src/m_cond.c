@@ -527,8 +527,8 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 		case UC_TRIGGER: // requires map trigger set
 			return !!(unlocktriggers & (1 << cn->requirement));
-		case UC_TOTALEMBLEMS: // Requires number of emblems >= x
-			return (M_GotEnoughEmblems(cn->requirement));
+		case UC_TOTALMEDALS: // Requires number of emblems >= x
+			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
 			return gamedata->collected[cn->requirement-1];
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
@@ -628,7 +628,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		}
-		case UC_TOTALEMBLEMS: // Requires number of emblems >= x
+		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return va("Get %d medals", cn->requirement);
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
@@ -1024,20 +1024,20 @@ boolean M_MapLocked(INT32 mapnum)
 	return !M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->unlockrequired);
 }
 
-INT32 M_CountEmblems(void)
+INT32 M_CountMedals(boolean all)
 {
 	INT32 found = 0, i;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (!gamedata->collected[i])
+		if (!all && !gamedata->collected[i])
 			continue;
 		found++;
 	}
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type != SECRET_EXTRAEMBLEM)
+		if (unlockables[i].type != SECRET_EXTRAMEDAL)
 			continue;
-		if (!gamedata->unlocked[i])
+		if (!all && !gamedata->unlocked[i])
 			continue;
 		found++;
 	}
@@ -1048,26 +1048,26 @@ INT32 M_CountEmblems(void)
 // Quick functions for calculating things
 // --------------------------------------
 
-// Theoretically faster than using M_CountEmblems()
-// Stops when it reaches the target number of emblems.
-UINT8 M_GotEnoughEmblems(INT32 number)
+// Theoretically faster than using M_CountMedals()
+// Stops when it reaches the target number of medals.
+UINT8 M_GotEnoughMedals(INT32 number)
 {
-	INT32 i, gottenemblems = 0;
+	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
 		if (!gamedata->collected[i])
 			continue;
-		if (++gottenemblems < number)
+		if (++gottenmedals < number)
 			continue;
 		return true;
 	}
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type != SECRET_EXTRAEMBLEM)
+		if (unlockables[i].type != SECRET_EXTRAMEDAL)
 			continue;
 		if (!gamedata->unlocked[i])
 			continue;
-		if (++gottenemblems < number)
+		if (++gottenmedals < number)
 			continue;
 		return true;
 	}
