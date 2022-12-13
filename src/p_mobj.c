@@ -6931,17 +6931,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_EMBLEM:
+	{
+		INT32 trans = 0;
+
+		mobj->frame &= ~FF_TRANSMASK;
+		mobj->renderflags &= ~RF_TRANSMASK;
+
 		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
 		{
-			mobj->frame |= (tr_trans50 << FF_TRANSSHIFT);
+			trans = tr_trans50;
+			mobj->renderflags |= (tr_trans50 << RF_TRANSSHIFT);
 		}
-		else
+
+		if (mobj->reactiontime > 0
+			&& leveltime > starttime)
 		{
-			mobj->frame &= ~FF_TRANSMASK;
+			INT32 diff = mobj->reactiontime - (signed)(leveltime - starttime);
+			if (diff < 10)
+			{
+				if (diff <= 0)
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				trans = max(trans, 10-diff);
+			}
 		}
-		if (mobj->flags2 & MF2_NIGHTSPULL)
-			P_NightsItemChase(mobj);
+
+		mobj->renderflags |= (trans << RF_TRANSSHIFT);
+
 		break;
+	}
 	case MT_FLOATINGITEM:
 	{
 		mobj->pitch = mobj->roll = 0;
@@ -12008,7 +12029,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 	if (!emblem)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
+		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
 		return false;
 	}
 
@@ -12023,7 +12044,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 	mobj->frame &= ~FF_TRANSMASK;
 
-	if (emblemlocations[j].type == ET_GLOBAL)
+	if (emblemlocations[j].flags & GE_TIMED)
 	{
 		mobj->reactiontime = emblemlocations[j].var;
 	}
@@ -12471,7 +12492,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_EMBLEM:
 	{
 		if (!P_SetupEmblem(mthing, mobj))
+		{
+			P_RemoveMobj(mobj);
 			return false;
+		}
 		break;
 	}
 	case MT_SKYBOX:

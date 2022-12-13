@@ -655,6 +655,42 @@ static const char *M_GetConditionString(condition_t *cn)
 					work = va("Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
 					break;
 				case ET_GLOBAL:
+				{
+					const char *astr, *colorstr, *medalstr;
+
+					if (emblemlocations[i].flags & GE_NOTMEDAL)
+					{
+						astr = "a ";
+						colorstr = "";
+						medalstr = "secret";
+					}
+					else if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)
+					{
+						Z_Free(title);
+						return va("INVALID MEDAL COLOR \"%d:%d:%d\"", cn->requirement, emblemlocations[i].tag, checkLevel);
+					}
+					else
+					{
+						astr = "the ";
+						colorstr = skincolors[emblemlocations[i].color].name;
+						medalstr = " Medal";
+					}
+
+					if (emblemlocations[i].flags & GE_TIMED)
+					{
+						work = va("Find %s%s%s in %s before %i:%02i.%02i",
+							astr, colorstr, medalstr, title,
+							G_TicsToMinutes(emblemlocations[i].var, true),
+							G_TicsToSeconds(emblemlocations[i].var),
+							G_TicsToCentiseconds(emblemlocations[i].var));
+					}
+					else
+					{
+						work = va("Find %s%s%s in %s",
+							astr, colorstr, medalstr, title);
+					}
+					break;
+				}
 				default:
 					work = va("Find a secret in %s", title);
 					break;
@@ -941,7 +977,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 			continue;
 
 		levelnum = checkLevel;
-		embtype = emblemlocations[i].var;
+		embtype = emblemlocations[i].flags;
 		flags = MV_BEATEN;
 
 		if (embtype & ME_ENCORE)
@@ -1067,7 +1103,8 @@ INT32 M_CountMedals(boolean all)
 	INT32 found = 0, i;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].notMedal)
+		if ((emblemlocations[i].type == ET_GLOBAL)
+			&& (emblemlocations[i].flags & GE_NOTMEDAL))
 			continue;
 		if (!all && !gamedata->collected[i])
 			continue;

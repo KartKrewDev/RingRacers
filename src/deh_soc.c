@@ -2164,8 +2164,8 @@ void reademblemdata(MYFILE *f, INT32 num)
 
 				emblemlocations[num-1].var = get_number(word2);
 			}
-			else if (fastcmp(word, "NOTMEDAL"))
-				emblemlocations[num-1].notMedal = (boolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');
+			else if (fastcmp(word, "FLAGS"))
+				emblemlocations[num-1].flags = get_number(word2);
 			else
 				deh_warning("Emblem %d: unknown word '%s'", num, word);
 		}

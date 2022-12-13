@@ -55,17 +55,17 @@ struct conditionset_t
 };
 
 // Emblem information
-#define ET_GLOBAL  0 // Emblem with a position in space
-#define ET_MAP     1 // Beat the map
-#define ET_TIME    2 // Get the time
+#define ET_GLOBAL		0	// Emblem with a position in space
+#define ET_MAP			1	// Beat the map
+#define ET_TIME			2	// Get the time
 //#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
 
 // Global emblem flags
-// (N/A to Kart yet)
-//#define GE_OH 1
+#define GE_NOTMEDAL		1	// Doesn't count towards number of medals
+#define GE_TIMED		2	// Disappears after var time
 
 // Map emblem flags
-#define ME_ENCORE 1
+#define ME_ENCORE		1	// Achieve in Encore
 
 struct emblem_t
 {
@@ -74,9 +74,9 @@ struct emblem_t
 	char * level;		///< Level on which this emblem can be found.
 	UINT8 sprite;		///< emblem sprite to use, 0 - 25
 	UINT16 color;		///< skincolor to use
-	INT32 var;			///< If needed, specifies information on the target amount to achieve (or target skin)
+	INT32 flags;		///< GE or ME constants
+	INT32 var;			///< If needed, specifies extra information
 	char *stringVar;	///< String version
-	boolean notMedal;	///< Not a Medal?
 };
 
 // Unlockable information
