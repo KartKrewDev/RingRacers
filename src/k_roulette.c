@@ -814,7 +814,7 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 	{
 		// Don't impact as much at the start.
 		// This makes it so that everyone gets to enjoy the lowest speed at the start.
-		fixed_t lerp = FRACUNIT - FixedDiv(max(0, leveltime - starttime), 10*TICRATE);
+		fixed_t lerp = FRACUNIT - FixedDiv(max(0, leveltime - starttime), 20*TICRATE);
 		total += FixedMul(lerp, FRACUNIT - total);
 	}
 
