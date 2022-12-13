@@ -2525,7 +2525,7 @@ void readconditionset(MYFILE *f, UINT8 setnum)
 	Z_Free(s);
 }
 
-void readmaincfg(MYFILE *f)
+void readmaincfg(MYFILE *f, boolean mainfile)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char *word = s;
@@ -2565,7 +2565,49 @@ void readmaincfg(MYFILE *f)
 
 			value = atoi(word2); // used for numerical settings
 
-			if (fastcmp(word, "EXECCFG"))
+			if (fastcmp(word, "GAMEDATA"))
+			{
+				size_t filenamelen;
+
+				// Check the data filename so that mods
+				// can't write arbitrary files.
+				if (!GoodDataFileName(word2))
+					I_Error("Maincfg: bad data file name '%s'\n", word2);
+
+				G_SaveGameData();
+				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
+				strlwr(gamedatafilename);
+				savemoddata = true;
+				majormods = false;
+
+				// Also save a time attack folder
+				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
+				filenamelen = min(filenamelen, sizeof (timeattackfolder));
+				strncpy(timeattackfolder, gamedatafilename, filenamelen);
+				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
+
+				strcpy(savegamename, timeattackfolder);
+				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
+				// can't use sprintf since there is %u in savegamename
+				strcatbf(savegamename, srb2home, PATHSEP);
+
+				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
+				strcatbf(liveeventbackup, srb2home, PATHSEP);
+
+				refreshdirmenu |= REFRESHDIR_GAMEDATA;
+				gamedataadded = true;
+				titlechanged = true;
+
+				clear_unlockables();
+				clear_conditionsets();
+				clear_emblems();
+				//clear_levels();
+			}
+			else if (!mainfile && !gamedataadded)
+			{
+				deh_warning("You must define a custom gamedata to use \"%s\"", word);
+			}
+			else if (fastcmp(word, "EXECCFG"))
 			{
 				if (strchr(word2, '.'))
 					COM_BufAddText(va("exec %s\n", word2));
@@ -2749,40 +2791,6 @@ void readmaincfg(MYFILE *f)
 			else if (fastcmp(word, "MAXXTRALIFE"))
 			{
 				maxXtraLife = (UINT8)get_number(word2);
-			}
-
-			else if (fastcmp(word, "GAMEDATA"))
-			{
-				size_t filenamelen;
-
-				// Check the data filename so that mods
-				// can't write arbitrary files.
-				if (!GoodDataFileName(word2))
-					I_Error("Maincfg: bad data file name '%s'\n", word2);
-
-				G_SaveGameData();
-				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
-				strlwr(gamedatafilename);
-				savemoddata = true;
-				majormods = false;
-
-				// Also save a time attack folder
-				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
-				filenamelen = min(filenamelen, sizeof (timeattackfolder));
-				strncpy(timeattackfolder, gamedatafilename, filenamelen);
-				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
-
-				strcpy(savegamename, timeattackfolder);
-				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-				// can't use sprintf since there is %u in savegamename
-				strcatbf(savegamename, srb2home, PATHSEP);
-
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
-
-				refreshdirmenu |= REFRESHDIR_GAMEDATA;
-				gamedataadded = true;
-				titlechanged = true;
 			}
 			else if (fastcmp(word, "RESETDATA"))
 			{

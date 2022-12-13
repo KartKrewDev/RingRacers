@@ -217,7 +217,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "MAINCFG"))
 			{
 				G_SetGameModified(multiplayer, true);
-				readmaincfg(f);
+				readmaincfg(f, mainfile);
 				continue;
 			}
 			else if (fastcmp(word, "WIPES"))
@@ -548,28 +548,13 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				// (then again, modifiedgame will prevent game data saving anyway)
 				else if (fastcmp(word, "CLEAR"))
 				{
-					boolean clearall = (fastcmp(word2, "ALL"));
-
 					if (!mainfile && !gamedataadded)
 					{
 						deh_warning("You must define a custom gamedata to use \"%s\"", word);
 						continue;
 					}
 
-					if (clearall || fastcmp(word2, "UNLOCKABLES"))
-					{
-						clear_unlockables();
-					}
-
-					if (clearall || fastcmp(word2, "EMBLEMS"))
-					{
-						clear_emblems();
-					}
-
-					if (clearall || fastcmp(word2, "CONDITIONSETS"))
-						clear_conditionsets();
-
-					if (clearall || fastcmp(word2, "LEVELS"))
+					if (fastcmp(word2, "LEVELS"))
 						clear_levels();
 				}
 				else
