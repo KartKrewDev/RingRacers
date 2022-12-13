@@ -999,7 +999,8 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 boolean M_CheckNetUnlockByID(UINT8 unlockid)
 {
-	if (unlockid >= MAXUNLOCKABLES)
+	if (unlockid >= MAXUNLOCKABLES
+		|| !unlockables[unlockid].conditionset)
 	{
 		return true; // default permit
 	}
