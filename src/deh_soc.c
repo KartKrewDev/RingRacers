@@ -2124,14 +2124,6 @@ void reademblemdata(MYFILE *f, INT32 num)
 			word2 = tmp += 2;
 			value = atoi(word2); // used for numerical settings
 
-			// Up here to allow lowercase in hints
-			if (fastcmp(word, "HINT"))
-			{
-				while ((tmp = strchr(word2, '\\')))
-					*tmp = '\n';
-				deh_strlcpy(emblemlocations[num-1].hint, word2, sizeof (emblemlocations[num-1].hint), va("Emblem %d: hint", num));
-				continue;
-			}
 			strupr(word2);
 
 			if (fastcmp(word, "TYPE"))
@@ -2172,6 +2164,8 @@ void reademblemdata(MYFILE *f, INT32 num)
 
 				emblemlocations[num-1].var = get_number(word2);
 			}
+			else if (fastcmp(word, "NOTMEDAL"))
+				emblemlocations[num-1].notMedal = (boolean)(i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 			else
 				deh_warning("Emblem %d: unknown word '%s'", num, word);
 		}

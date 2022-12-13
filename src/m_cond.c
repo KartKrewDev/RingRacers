@@ -1067,6 +1067,8 @@ INT32 M_CountMedals(boolean all)
 	INT32 found = 0, i;
 	for (i = 0; i < numemblems; ++i)
 	{
+		if (emblemlocations[i].notMedal)
+			continue;
 		if (!all && !gamedata->collected[i])
 			continue;
 		found++;
