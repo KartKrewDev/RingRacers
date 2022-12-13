@@ -412,9 +412,16 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].itemRoulette.active);
 		WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
 		WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
-		for (j = 0; (unsigned)j < players[i].itemRoulette.itemListLen; j++)
+		for (j = 0; j < (signed)players[i].itemRoulette.itemListLen; j++)
 		{
-			WRITESINT8(save_p, players[i].itemRoulette.itemList[j]);
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				WRITESINT8(save_p, KITEM_NONE);
+			}
+			else
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[j]);
+			}
 		}
 		WRITEUINT8(save_p, players[i].itemRoulette.useOdds);
 		WRITEUINT32(save_p, players[i].itemRoulette.index);
@@ -728,27 +735,34 @@ static void P_NetUnArchivePlayers(void)
 		players[i].itemRoulette.itemListCap = (size_t)READUINT32(save_p);
 		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
 
-		if (players[i].itemRoulette.itemList == NULL)
+		if (players[i].itemRoulette.itemListCap > 0)
 		{
-			players[i].itemRoulette.itemList = Z_Calloc(
-				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
-				PU_LEVEL,
-				&players[i].itemRoulette.itemList
-			);
-		}
-		else
-		{
-			players[i].itemRoulette.itemList = Z_Realloc(
-				players[i].itemRoulette.itemList,
-				sizeof(SINT8) * players[i].itemRoulette.itemListCap,
-				PU_LEVEL,
-				&players[i].itemRoulette.itemList
-			);
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				players[i].itemRoulette.itemList = Z_Calloc(
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
+			else
+			{
+				players[i].itemRoulette.itemList = Z_Realloc(
+					players[i].itemRoulette.itemList,
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
 		}
 
-		for (j = 0; (unsigned)j < players[i].itemRoulette.itemListLen; j++)
+		for (j = 0; j < (signed)players[i].itemRoulette.itemListLen; j++)
 		{
-			players[i].itemRoulette.itemList[j] = READSINT8(save_p);
+			SINT8 item = READSINT8(save_p);
+			if (players[i].itemRoulette.itemList != NULL)
+			{
+				players[i].itemRoulette.itemList[j] = item;
+			}
 		}
 
 		players[i].itemRoulette.useOdds = READUINT8(save_p);

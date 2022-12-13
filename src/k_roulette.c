@@ -729,7 +729,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		roulette->itemListCap = 8;
 		roulette->itemList = Z_Calloc(
 			sizeof(SINT8) * roulette->itemListCap,
-			PU_LEVEL,
+			PU_STATIC,
 			&roulette->itemList
 		);
 	}
@@ -755,7 +755,7 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 		roulette->itemList = Z_Realloc(
 			roulette->itemList,
 			sizeof(SINT8) * roulette->itemListCap,
-			PU_LEVEL,
+			PU_STATIC,
 			&roulette->itemList
 		);
 	}
