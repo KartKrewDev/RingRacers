@@ -1052,7 +1052,7 @@ boolean M_MapLocked(INT32 mapnum)
 
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type != SECRET_CUP)
+		if (unlockables[i].type != SECRET_MAP)
 			continue;
 		if (M_UnlockableMapNum(&unlockables[i]) != mapnum-1)
 			continue;
