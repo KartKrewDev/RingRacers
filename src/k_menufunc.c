@@ -3295,17 +3295,25 @@ void M_SetupGametypeMenu(INT32 choice)
 
 	PLAY_GamemodesDef.prevMenu = currentMenu;
 
-	if (cv_splitplayers.value <= 1)
+	// Battle and Capsules disabled
+	PLAY_GamemodesMenu[1].status = IT_DISABLED;
+	PLAY_GamemodesMenu[2].status = IT_DISABLED;
+
+	if (cv_splitplayers.value > 1)
 	{
-		// Remove Battle, add Capsules
-		PLAY_GamemodesMenu[1].status = IT_DISABLED;
+		// Re-add Battle
+		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
+	}
+	else if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
+	{
+		// Re-add Capsules
 		PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
 	}
 	else
 	{
-		// Add Battle, remove Capsules
-		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
-		PLAY_GamemodesMenu[2].status = IT_DISABLED;
+		// Only one non-Back entry, let's skip straight to Race.
+		M_SetupRaceMenu(-1);
+		return;
 	}
 
 	M_SetupNextMenu(&PLAY_GamemodesDef, false);
@@ -3317,14 +3325,14 @@ void M_SetupRaceMenu(INT32 choice)
 
 	PLAY_RaceGamemodesDef.prevMenu = currentMenu;
 
+	// Time Attack disabled
+	PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
+
 	// Time Attack is 1P only
-	if (cv_splitplayers.value <= 1)
+	if (cv_splitplayers.value <= 1
+	 && M_SecretUnlocked(SECRET_TIMEATTACK, true))
 	{
 		PLAY_RaceGamemodesMenu[2].status = IT_STRING | IT_CALL;
-	}
-	else
-	{
-		PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
 	}
 
 	M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
