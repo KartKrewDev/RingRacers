@@ -4520,7 +4520,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			if (skin != -1)
 			{
 				UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
-				colormap = R_GetTranslationColormap(skin, col, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
 			}
 			break;
@@ -4624,7 +4624,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (fskin != -1)
 			{
 				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, cv_playercolor[0].value);
-				colormap = R_GetTranslationColormap(fskin, col, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 			}
 			break;
