@@ -4623,6 +4623,45 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			}
 			break;
 		}
+		case SECRET_CUP:
+		{
+			cupheader_t *cup = M_UnlockableCup(ref);
+#if 0 // First attempt
+			UINT8 i = cup->numlevels;
+
+			x = 4;
+			y = (BASEVIDHEIGHT-4) - 38;
+
+			while (i > 0)
+			{
+				i--;
+				K_DrawMapThumbnail(
+					(x+(i*2))<<FRACBITS,
+					(y-(i*6))<<FRACBITS,
+					60<<FRACBITS,
+					0,
+					cup->cachedlevels[i],
+					NULL);
+			}
+#else
+			M_DrawCupPreview(146, cup);
+#endif
+			break;
+		}
+		case SECRET_MAP:
+		{
+			if (ref->stringVar && ref->stringVar[0])
+			{
+				UINT16 mapnum = G_MapNumber(ref->stringVar);
+				K_DrawMapThumbnail(
+					(x-30)<<FRACBITS, (y)<<FRACBITS,
+					60<<FRACBITS,
+					0,
+					mapnum,
+					NULL);
+			}
+			break;
+		}
 		default:
 		{
 			break;
@@ -4756,16 +4795,16 @@ challengedesc:
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 	}
 
-	// Conditions for unlock
-	if (challengesmenu.unlockcondition != NULL)
-	{
-		V_DrawCenteredString(BASEVIDWIDTH/2, y + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
-	}
-
 	// Derived from M_DrawCharSelectPreview
 	x = 40;
 	y = BASEVIDHEIGHT-16;
 
 	// Unlock preview
 	M_DrawChallengePreview(x, y);
+
+	// Conditions for unlock
+	if (challengesmenu.unlockcondition != NULL)
+	{
+		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
+	}
 }

@@ -7060,6 +7060,7 @@ void M_ChallengesTick(void)
 	}
 	if (challengesmenu.unlockcount[CC_ANIM] > 0)
 		challengesmenu.unlockcount[CC_ANIM]--;
+	M_CupSelectTick();
 
 	if (challengesmenu.pending)
 	{
