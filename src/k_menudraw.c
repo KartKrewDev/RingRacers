@@ -3940,8 +3940,8 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		{
 			static angle_t rubyfloattime = 0;
 			const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+50)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
-			rubyfloattime += (ANGLE_MAX/NEWTICRATE);
+			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
+			rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
 		}
 
 		x += 85;
@@ -4575,9 +4575,11 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
 	UINT8 *colormap = NULL;
+	UINT16 specialmap = NEXTMAP_INVALID;
 	
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
+		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 		return;
 	}
 
@@ -4587,8 +4589,12 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
 	{
 		// todo draw some sort of question mark?
+		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 		return;
 	}
+
+	if (ref->type != SECRET_CUP)
+		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 
 	switch (ref->type)
 	{
@@ -4652,17 +4658,93 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			UINT16 mapnum = M_UnlockableMapNum(ref);
 			K_DrawMapThumbnail(
-				(x-30)<<FRACBITS, (y)<<FRACBITS,
+				(x-30)<<FRACBITS, (146+2)<<FRACBITS,
 				60<<FRACBITS,
 				0,
 				mapnum,
 				NULL);
 			break;
 		}
+		case SECRET_ENCORE:
+		{
+			static UINT16 encoremapcache = NEXTMAP_INVALID;
+			if (encoremapcache > nummapheaders)
+			{
+				encoremapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+			}
+			specialmap = encoremapcache;
+			break;
+		}
+		case SECRET_TIMEATTACK:
+		{
+			static UINT16 tamapcache = NEXTMAP_INVALID;
+			if (tamapcache > nummapheaders)
+			{
+				tamapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+			}
+			specialmap = tamapcache;
+			break;
+		}
+		case SECRET_BREAKTHECAPSULES:
+		{
+			static UINT16 btcmapcache = NEXTMAP_INVALID;
+			if (btcmapcache > nummapheaders)
+			{
+				btcmapcache = G_RandMap(G_TOLFlag(GT_BATTLE), -1, 2, 0, false, NULL);
+			}
+			specialmap = btcmapcache;
+			break;
+		}
+		case SECRET_HARDSPEED:
+		{
+			static UINT16 hardmapcache = NEXTMAP_INVALID;
+			if (hardmapcache > nummapheaders)
+			{
+				hardmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+			}
+			specialmap = hardmapcache;
+			break;
+		}
 		default:
 		{
 			break;
 		}
+	}
+
+	if (specialmap == NEXTMAP_INVALID || !ref)
+		return;
+
+	x -= 50;
+	y = 146+2;
+
+	K_DrawMapThumbnail(
+		(x)<<FRACBITS, (y)<<FRACBITS,
+		80<<FRACBITS,
+		(ref->type == SECRET_ENCORE) ? V_FLIP : 0,
+		specialmap,
+		NULL);
+
+	if (ref->type == SECRET_ENCORE)
+	{
+		static angle_t rubyfloattime = 0;
+		const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
+		V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, 0, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
+		rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
+	}
+	else if (ref->type == SECRET_HARDSPEED)
+	{
+		V_DrawFixedPatch((x+40-25)<<FRACBITS, ((y+25-25)<<FRACBITS),
+			FRACUNIT, 0,
+			W_CachePatchName(K_GetItemPatch(KITEM_ROCKETSNEAKER, false), PU_CACHE),
+			NULL);
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+		V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS),
+			FRACUNIT/2, 0,
+			W_CachePatchName("K_LAPE02", PU_CACHE),
+			colormap);
 	}
 }
 
