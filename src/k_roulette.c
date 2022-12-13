@@ -724,6 +724,7 @@ boolean K_ForcedSPB(player_t *const player)
 
 static void K_InitRoulette(itemroulette_t *const roulette)
 {
+#ifndef ITEM_LIST_SIZE
 	if (roulette->itemList == NULL)
 	{
 		roulette->itemListCap = 8;
@@ -732,7 +733,13 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			PU_STATIC,
 			&roulette->itemList
 		);
+
+		if (roulette->itemList == NULL)
+		{
+			I_Error("Not enough memory for item roulette list\n");
+		}
 	}
+#endif
 
 	roulette->itemListLen = 0;
 	roulette->index = 0;
@@ -747,6 +754,13 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 
 static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
 {
+#ifdef ITEM_LIST_SIZE
+	if (roulette->itemListLen >= ITEM_LIST_SIZE)
+	{
+		I_Error("Out of space for item reel! Go and make ITEM_LIST_SIZE bigger I guess?\n");
+		return;
+	}
+#else
 	I_Assert(roulette->itemList != NULL);
 
 	if (roulette->itemListLen >= roulette->itemListCap)
@@ -758,7 +772,13 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 			PU_STATIC,
 			&roulette->itemList
 		);
+
+		if (roulette->itemList == NULL)
+		{
+			I_Error("Not enough memory for item roulette list\n");
+		}
 	}
+#endif
 
 	roulette->itemList[ roulette->itemListLen ] = item;
 	roulette->itemListLen++;
@@ -1008,7 +1028,11 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		return;
 	}
 
-	if (roulette->itemList == NULL || roulette->itemListLen == 0)
+	if (roulette->itemListLen == 0
+#ifndef ITEM_LIST_SIZE
+		|| roulette->itemList == NULL
+#endif
+		)
 	{
 		// Invalid roulette setup.
 		// Escape before we run into issues.

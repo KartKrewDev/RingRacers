@@ -331,13 +331,23 @@ struct skybox_t {
 };
 
 // player_t struct for item roulette variables
+
+// Doing this the right way is causing problems.
+// so FINE, it's a static length now.
+#define ITEM_LIST_SIZE (NUMKARTRESULTS * 20)
+
 struct itemroulette_t
 {
 	boolean active;
 
+#ifdef ITEM_LIST_SIZE
+	size_t itemListLen;
+	SINT8 itemList[ITEM_LIST_SIZE];
+#else
 	size_t itemListCap;
 	size_t itemListLen;
 	SINT8 *itemList;
+#endif
 
 	UINT8 useOdds;
 	size_t index;

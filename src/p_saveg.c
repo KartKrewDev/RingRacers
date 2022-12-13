@@ -96,7 +96,7 @@ static void P_NetArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
-//	size_t q;
+	size_t q;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_PLAYERS);
 
@@ -410,19 +410,39 @@ static void P_NetArchivePlayers(void)
 
 		// itemroulette_t
 		WRITEUINT8(save_p, players[i].itemRoulette.active);
-		WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
+
+#ifdef ITEM_LIST_SIZE
 		WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
-		for (j = 0; j < (signed)players[i].itemRoulette.itemListLen; j++)
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
 		{
-			if (players[i].itemRoulette.itemList == NULL)
+			if (q >= players[i].itemRoulette.itemListLen)
 			{
 				WRITESINT8(save_p, KITEM_NONE);
 			}
 			else
 			{
-				WRITESINT8(save_p, players[i].itemRoulette.itemList[j]);
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
 			}
 		}
+#else
+		if (players[i].itemRoulette.itemList == NULL)
+		{
+			WRITEUINT32(save_p, 0);
+			WRITEUINT32(save_p, 0);
+		}
+		else
+		{
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
+			}
+		}
+#endif
+
 		WRITEUINT8(save_p, players[i].itemRoulette.useOdds);
 		WRITEUINT32(save_p, players[i].itemRoulette.index);
 		WRITEUINT8(save_p, players[i].itemRoulette.sound);
@@ -437,6 +457,7 @@ static void P_NetUnArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
+	size_t q;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_PLAYERS)
 		I_Error("Bad $$$.sav at archive block Players");
@@ -732,6 +753,15 @@ static void P_NetUnArchivePlayers(void)
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save_p);
+
+#ifdef ITEM_LIST_SIZE
+		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
+		{
+			players[i].itemRoulette.itemList[q] = READSINT8(save_p);
+		}
+#else
 		players[i].itemRoulette.itemListCap = (size_t)READUINT32(save_p);
 		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
 
@@ -754,16 +784,18 @@ static void P_NetUnArchivePlayers(void)
 					&players[i].itemRoulette.itemList
 				);
 			}
-		}
 
-		for (j = 0; j < (signed)players[i].itemRoulette.itemListLen; j++)
-		{
-			SINT8 item = READSINT8(save_p);
-			if (players[i].itemRoulette.itemList != NULL)
+			if (players[i].itemRoulette.itemList == NULL)
 			{
-				players[i].itemRoulette.itemList[j] = item;
+				I_Error("Not enough memory for item roulette list\n");
+			}
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				players[i].itemRoulette.itemList[q] = READSINT8(save_p);
 			}
 		}
+#endif
 
 		players[i].itemRoulette.useOdds = READUINT8(save_p);
 		players[i].itemRoulette.index = (size_t)READUINT32(save_p);
