@@ -1252,7 +1252,7 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 	return cup;
 }
 
-INT16 M_UnlockableMapNum(unlockable_t *unlock)
+UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 {
 	if (unlock->type != SECRET_MAP)
 	{
