@@ -5122,7 +5122,7 @@ void K_MineFlashScreen(mobj_t *source)
 }
 
 // Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 {
 	INT32 i, radius, height;
 	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
@@ -5130,10 +5130,9 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	mobj_t *truc;
 	INT32 speed, speed2;
 
-	K_MineFlashScreen(source);
-
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
+	smoldering->hitlag += delay;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;
 
@@ -5151,6 +5150,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		dust->destscale = source->scale*10;
 		dust->scalespeed = source->scale/12;
 		P_InstaThrust(dust, dust->angle, FixedMul(20*FRACUNIT, source->scale));
+		dust->hitlag += delay;
+		dust->renderflags |= RF_DONTDRAW;
 
 		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
 			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
@@ -5167,6 +5168,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		if (truc->eflags & MFE_UNDERWATER)
 			truc->momz = (117 * truc->momz) / 200;
 		truc->color = color;
+		truc->hitlag += delay;
+		truc->renderflags |= RF_DONTDRAW;
 	}
 
 	for (i = 0; i < 16; i++)
@@ -5180,6 +5183,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		dust->scalespeed = source->scale/12;
 		dust->tics = 30;
 		dust->momz = P_RandomRange(PR_EXPLOSION, FixedMul(3*FRACUNIT, source->scale)>>FRACBITS, FixedMul(7*FRACUNIT, source->scale)>>FRACBITS)*FRACUNIT;
+		dust->hitlag += delay;
+		dust->renderflags |= RF_DONTDRAW;
 
 		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
 			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
@@ -5200,7 +5205,38 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			truc->momz = (117 * truc->momz) / 200;
 		truc->tics = TICRATE*2;
 		truc->color = color;
+		truc->hitlag += delay;
+		truc->renderflags |= RF_DONTDRAW;
 	}
+}
+
+void K_SpawnBrolyKi(mobj_t *source, tic_t duration)
+{
+	mobj_t *x;
+
+	if (duration == 0)
+	{
+		return;
+	}
+
+	x = P_SpawnMobjFromMobj(source, 0, 0, 0, MT_THOK);
+
+	// Shrink into center of source object.
+	x->z = (source->z + source->height / 2);
+	x->height = 0;
+
+	P_SetMobjState(x, S_BROLY1);
+	x->hitlag = 0; // do not copy source hitlag
+
+	P_SetScale(x, 64 * mapobjectscale);
+	x->scalespeed = x->scale / duration;
+
+	// The last tic doesn't actually get rendered so in order
+	// to show scale = destscale, add one buffer tic.
+	x->tics = (duration + 1);
+	x->destscale = 1; // 0 also doesn't work
+
+	K_ReduceVFX(x, NULL);
 }
 
 #undef MINEQUAKEDIST

@@ -495,6 +495,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BOM3", // Boss Explosion 2
 	"BOM4", // Underwater Explosion
 	"BMNB", // Mine Explosion
+	"LSSJ", // My ki is overflowing!!
 
 	// Crumbly rocks
 	"ROIA",
@@ -5141,6 +5142,10 @@ state_t states[NUMSTATES] =
 	{SPR_JANK, FF_PAPERSPRITE|FF_FULLBRIGHT|FF_ANIMATE, 4, {NULL}, 3, 1, S_JANKSPARK3}, // S_JANKSPARK2
 	{SPR_JANK, 0, 0, {A_SetCustomValue}, -1, 5, S_JANKSPARK4}, // S_JANKSPARK3
 	{SPR_JANK, 0, 0, {A_ChangeAngleRelative}, 180, 180, S_JANKSPARK2}, // S_JANKSPARK4
+
+	// Broly Ki Orb
+	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
+	{SPR_NULL, 0, 1, {A_SSMineFlash}, 0, 0, S_NULL}, // S_BROLY2
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
