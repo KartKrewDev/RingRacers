@@ -1301,7 +1301,7 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	if (mapnum > 0)
 	{
-		map = mapnum;
+		map = mapnum-1;
 		i = numemblems;
 	}
 
@@ -1312,8 +1312,10 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
-		if (checkLevel == map)
-			return &emblemlocations[i];
+		if (checkLevel != map)
+			continue;
+
+		return &emblemlocations[i];
 	}
 	return NULL;
 }
