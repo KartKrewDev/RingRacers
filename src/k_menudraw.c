@@ -4884,6 +4884,6 @@ challengedesc:
 	// Conditions for unlock
 	if (challengesmenu.unlockcondition != NULL)
 	{
-		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 40, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
+		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
 	}
 }
