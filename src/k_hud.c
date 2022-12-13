@@ -4551,7 +4551,9 @@ static void K_drawDistributionDebugger(void)
 	V_DrawString((x >> FRACBITS) + 20, 2, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
 	V_DrawString((x >> FRACBITS) + 20, 10, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
+#ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);
+#endif
 }
 
 static void K_DrawWaypointDebugger(void)

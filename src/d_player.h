@@ -334,7 +334,7 @@ struct skybox_t {
 
 // Doing this the right way is causing problems.
 // so FINE, it's a static length now.
-#define ITEM_LIST_SIZE (NUMKARTRESULTS * 20)
+#define ITEM_LIST_SIZE (NUMKARTRESULTS << 2)
 
 struct itemroulette_t
 {
