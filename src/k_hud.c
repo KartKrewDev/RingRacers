@@ -1130,7 +1130,7 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 
 	if (map >= nummapheaders || !mapheaderinfo[map])
 	{
-		PictureOfLevel = W_CachePatchName("M_NOLVL", PU_CACHE);
+		PictureOfLevel = nolvl;
 	}
 	else if (!mapheaderinfo[map]->thumbnailPic)
 	{
@@ -1141,14 +1141,19 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
 	}
 
+	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
+}
+
+void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap)
+{
 	if (flags & V_FLIP)
 		x += width;
 
 	V_DrawFixedPatch(
 		x, y,
-		FixedDiv(width, (SHORT(PictureOfLevel->width) << FRACBITS)),
+		FixedDiv(width, (320 << FRACBITS)),
 		flags,
-		PictureOfLevel,
+		patch,
 		colormap
 	);
 }

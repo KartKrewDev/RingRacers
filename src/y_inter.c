@@ -1074,7 +1074,13 @@ void Y_VoteDrawer(void)
 			if (i == 3)
 			{
 				str = "RANDOM";
-				V_DrawSmallScaledPatch(BASEVIDWIDTH-100, y, V_SNAPTORIGHT, randomlvl);
+				K_DrawLikeMapThumbnail(
+					(BASEVIDWIDTH-100)<<FRACBITS, (y)<<FRACBITS,
+					80<<FRACBITS,
+					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
+					randomlvl,
+					NULL
+				);
 			}
 			else
 			{
@@ -1110,7 +1116,13 @@ void Y_VoteDrawer(void)
 		{
 			if (i == 3)
 			{
-				V_DrawTinyScaledPatch(BASEVIDWIDTH-60, y, V_SNAPTORIGHT, randomlvl);
+				K_DrawLikeMapThumbnail(
+					(BASEVIDWIDTH-60)<<FRACBITS, (y)<<FRACBITS,
+					40<<FRACBITS,
+					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
+					randomlvl,
+					NULL
+				);
 			}
 			else
 			{
@@ -1159,7 +1171,13 @@ void Y_VoteDrawer(void)
 
 			if (votes[i] >= 3 && (i != pickedvote || voteendtic == -1))
 			{
-				V_DrawTinyScaledPatch(x, y, V_SNAPTOLEFT, randomlvl);
+				K_DrawLikeMapThumbnail(
+					(x)<<FRACBITS, (y)<<FRACBITS,
+					40<<FRACBITS,
+					V_SNAPTOLEFT|(levelinfo[votes[i]].encore ? V_FLIP : 0),
+					randomlvl,
+					NULL
+				);
 			}
 			else
 			{
