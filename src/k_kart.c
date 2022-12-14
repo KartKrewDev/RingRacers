@@ -8640,6 +8640,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
+				eggsexplode->height = 2 * player->mo->height;
+
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
 				&& playeringame[player->eggmanblame]
