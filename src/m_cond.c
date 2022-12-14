@@ -566,6 +566,27 @@ static UINT8 M_CheckConditionSet(conditionset_t *c)
 	return achievedSoFar;
 }
 
+static char *M_BuildConditionTitle(UINT16 map)
+{
+	char *title, *ref;
+
+	if (M_MapLocked(map+1))
+		return Z_StrDup("???");
+
+	title = ref = G_BuildMapTitle(map+1);
+
+	if (!title)
+		I_Error("M_BuildConditionTitle: out of memory");
+
+	while (*ref != '\0')
+	{
+		*ref = toupper(*ref);
+		ref++;
+	}
+
+	return title;
+}
+
 // See also M_CheckCondition
 static const char *M_GetConditionString(condition_t *cn)
 {
@@ -573,7 +594,7 @@ static const char *M_GetConditionString(condition_t *cn)
 	char *title = NULL;
 	const char *work = NULL;
 
-#define BUILDCONDITIONTITLE(i) (M_MapLocked(i+1) ? Z_StrDup("???") : G_BuildMapTitle(i+1))
+#define BUILDCONDITIONTITLE(i) (M_BuildConditionTitle(i))
 
 	switch (cn->type)
 	{
