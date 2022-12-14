@@ -5226,6 +5226,8 @@ void K_SpawnBrolyKi(mobj_t *source, tic_t duration)
 	x->height = 0;
 
 	P_SetMobjState(x, S_BROLY1);
+	x->colorized = true;
+	x->color = source->color;
 	x->hitlag = 0; // do not copy source hitlag
 
 	P_SetScale(x, 64 * mapobjectscale);
@@ -8641,6 +8643,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
 				eggsexplode->height = 2 * player->mo->height;
+				eggsexplode->color = player->mo->color;
 
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
