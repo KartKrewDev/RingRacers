@@ -2289,7 +2289,6 @@ void readunlockable(MYFILE *f, INT32 num)
 				else if (fastcmp(word, "COLOR"))
 				{
 					unlockables[num].color = get_number(word2);
-					CONS_Printf("%d+1 has color %s\n",num+1, skincolors[unlockables[num].color].name);
 				}
 				else
 					deh_warning("Unlockable %d: unknown word '%s'", num+1, word);
