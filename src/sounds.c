@@ -750,7 +750,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"cdfm71", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm72", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm73", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"cdfm74", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cdfm74", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Broly ki
   {"cdfm75", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm76", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm77", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

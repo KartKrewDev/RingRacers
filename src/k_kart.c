@@ -5239,6 +5239,8 @@ void K_SpawnBrolyKi(mobj_t *source, tic_t duration)
 	x->destscale = 1; // 0 also doesn't work
 
 	K_ReduceVFX(x, NULL);
+
+	S_StartSound(x, sfx_cdfm74);
 }
 
 #undef MINEQUAKEDIST
