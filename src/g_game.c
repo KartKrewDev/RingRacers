@@ -4297,7 +4297,8 @@ void G_LoadGameSettings(void)
 	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 }
 
-#define GD_VERSIONCHECK 0xBA5ED444 // Change every major version, as usual
+#define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
+#define GD_VERSIONMINOR 0 // Change every format update
 
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
@@ -4306,6 +4307,7 @@ void G_LoadGameData(void)
 	size_t length;
 	UINT32 i, j;
 	UINT32 versionID;
+	UINT8 versionMinor;
 	UINT8 rtemp;
 
 	//For records
@@ -4356,6 +4358,14 @@ void G_LoadGameData(void)
 		Z_Free(savebuffer);
 		save_p = NULL;
 		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
+	}
+
+	versionMinor = READUINT8(save_p);
+	if (versionMinor > GD_VERSIONMINOR)
+	{
+		Z_Free(savebuffer);
+		save_p = NULL;
+		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
 	}
 
 	gamedata->totalplaytime = READUINT32(save_p);
@@ -4512,7 +4522,7 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	length = (4+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4529,6 +4539,7 @@ void G_SaveGameData(void)
 	// Version test
 
 	WRITEUINT32(save_p, GD_VERSIONCHECK); // 4
+	WRITEUINT8(save_p, GD_VERSIONMINOR); // 1
 	WRITEUINT32(save_p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save_p, gamedata->matchesplayed); // 4
 	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
