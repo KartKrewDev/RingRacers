@@ -2142,6 +2142,7 @@ void reademblemdata(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "MAPNAME"))
 			{
 				emblemlocations[num-1].level = Z_StrDup(word2);
+				emblemlocations[num-1].levelCache = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "SPRITE"))
 			{

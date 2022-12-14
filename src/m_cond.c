@@ -656,7 +656,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			INT32 checkLevel;
 
 			i = cn->requirement-1;
-			checkLevel = G_MapNumber(emblemlocations[i].level);
+			checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
@@ -952,7 +952,7 @@ UINT8 M_CheckLevelEmblems(void)
 		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
-		checkLevel = G_MapNumber(emblemlocations[i].level);
+		checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
@@ -992,7 +992,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
-		checkLevel = G_MapNumber(emblemlocations[i].level);
+		checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
@@ -1339,7 +1339,12 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 	{
 		if (unlock->stringVarCache == -1)
 		{
-			unlock->stringVarCache = G_MapNumber(unlock->stringVar);
+			INT32 result = G_MapNumber(unlock->stringVar);
+
+			if (result >= nummapheaders)
+				return result;
+
+			unlock->stringVarCache = result;
 		}
 
 		return unlock->stringVarCache;
@@ -1351,6 +1356,21 @@ UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 // ----------------
 // Misc Emblem shit
 // ----------------
+
+UINT16 M_EmblemMapNum(emblem_t *emblem)
+{
+	if (emblem->levelCache == NEXTMAP_INVALID)
+	{
+		UINT16 result = G_MapNumber(emblem->level);
+
+		if (result >= nummapheaders)
+			return result;
+
+		emblem->levelCache = result;
+	}
+
+	return emblem->levelCache;
+}
 
 // Returns pointer to an emblem if an emblem exists for that level.
 // Pass -1 mapnum to continue from last emblem.
@@ -1369,7 +1389,7 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	while (--i >= 0)
 	{
-		INT32 checkLevel = G_MapNumber(emblemlocations[i].level);
+		INT32 checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;

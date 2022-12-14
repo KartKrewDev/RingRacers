@@ -71,7 +71,8 @@ struct emblem_t
 {
 	UINT8 type;			///< Emblem type
 	INT16 tag;			///< Tag of emblem mapthing
-	char * level;		///< Level on which this emblem can be found.
+	char *level;		///< Level on which this emblem can be found.
+	INT16 levelCache;	///< Stored G_MapNumber()+1 result
 	UINT8 sprite;		///< emblem sprite to use, 0 - 25
 	UINT16 color;		///< skincolor to use
 	INT32 flags;		///< GE or ME constants
@@ -229,5 +230,6 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock);
 UINT16 M_UnlockableMapNum(unlockable_t *unlock);
 
 INT32 M_EmblemSkinNum(emblem_t *emblem);
+UINT16 M_EmblemMapNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
