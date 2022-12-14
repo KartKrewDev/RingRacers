@@ -1777,7 +1777,14 @@ static void F_CacheTitleScreen(void)
 			break; // idk do we still want this?
 
 		case TTMODE_RINGRACERS:
-			kts_bumper = W_CachePatchName("KTSBUMPR1", PU_PATCH_LOWPRIORITY);
+			if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
+			{
+				CV_StealthSetValue(&cv_alttitle, 0);
+			}
+
+			kts_bumper = W_CachePatchName(
+				(cv_alttitle.value ? "KTSJUMPR1" : "KTSBUMPR1"),
+				PU_PATCH_LOWPRIORITY);
 			kts_eggman = W_CachePatchName("KTSEGG01", PU_PATCH_LOWPRIORITY);
 			kts_tails = W_CachePatchName("KTSTAL01", PU_PATCH_LOWPRIORITY);
 			kts_tails_tails = W_CachePatchName("KTSTAL02", PU_PATCH_LOWPRIORITY);

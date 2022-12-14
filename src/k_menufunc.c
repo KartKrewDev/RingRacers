@@ -7382,6 +7382,26 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 				}
 			}
+
+			return true;
+		}
+
+		if (M_MenuConfirmPressed(pid)
+			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& gamedata->unlocked[challengesmenu.currentunlock])
+		{
+			switch (unlockables[challengesmenu.currentunlock].type)
+			{
+				case SECRET_ALTTITLE:
+					CV_AddValue(&cv_alttitle, 1);
+					S_StartSound(NULL, sfx_s3kc3s);
+					M_SetMenuDelay(pid);
+					break;
+				default:
+					break;
+			}
+
+			return true;
 		}
 	}
 

@@ -123,7 +123,7 @@ extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_spbtest, cv_gptest, cv_reducevfx;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
-extern consvar_t cv_itemfinder;
+extern consvar_t cv_alttitle, cv_itemfinder;
 
 extern consvar_t cv_inttime, cv_advancemap;
 extern consvar_t cv_overtime;
@@ -267,6 +267,7 @@ boolean IsPlayerAdmin(INT32 playernum);
 void SetAdminPlayer(INT32 playernum);
 void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
+void AltTitle_OnChange(void);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 

@@ -4707,6 +4707,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = hardmapcache;
 			break;
 		}
+		case SECRET_ALTTITLE:
+		{
+			x = 8;
+			y = BASEVIDHEIGHT-16;
+			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
+			V_DrawThinString(x, y, V_ALLOWLOWERCASE|highlightflags, "Press (A) to toggle");
+		}
 		default:
 		{
 			break;

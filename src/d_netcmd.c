@@ -466,6 +466,7 @@ consvar_t cv_autobalance = CVAR_INIT ("autobalance", "Off", CV_SAVE|CV_NETVAR|CV
 consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
 consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", CV_SAVE|CV_NETVAR, teamscramble_cons_t, NULL);
 
+consvar_t cv_alttitle = CVAR_INIT ("alttitle", "Off", CV_CALL|CV_NOSHOWHELP|CV_NOINIT|CV_SAVE, CV_OnOff, AltTitle_OnChange);
 consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
@@ -938,6 +939,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_mindelay);
 
 	// HUD
+	CV_RegisterVar(&cv_alttitle);
 	CV_RegisterVar(&cv_itemfinder);
 	CV_RegisterVar(&cv_showinputjoy);
 
@@ -4841,6 +4843,19 @@ FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 {
 	LUA_HookBool(true, HOOK(GameQuit));
 	I_Quit();
+}
+
+void AltTitle_OnChange(void)
+{
+	if (!cv_alttitle.value)
+		return; // it's fine.
+
+	if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
+	{
+		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
+		CV_StealthSetValue(&cv_itemfinder, 0);
+		return;
+	}
 }
 
 void ItemFinder_OnChange(void)

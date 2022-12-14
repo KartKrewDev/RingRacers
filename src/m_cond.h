@@ -118,6 +118,7 @@ typedef enum
 	SECRET_TIMEATTACK,			// Permit Time attack
 	SECRET_BREAKTHECAPSULES,	// Permit SP Capsules
 	SECRET_SOUNDTEST,			// Permit Sound Test
+	SECRET_ALTTITLE,			// Permit alternate titlescreen
 
 	// Assist restrictions
 	SECRET_ITEMFINDER,			// Permit locating in-level secrets
