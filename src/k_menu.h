@@ -405,8 +405,9 @@ extern menu_t MISC_ManualDef;
 extern menuitem_t MISC_Addons[];
 extern menu_t MISC_AddonsDef;
 
-extern menuitem_t MISC_Challenges[];
+extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
+extern menu_t MISC_StatisticsDef;
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
@@ -1123,6 +1124,17 @@ void M_Challenges(INT32 choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);
+
+extern struct statisticsmenu_s {
+	INT32 location;
+	INT32 nummaps;
+	INT32 maxscroll;
+	UINT16 *maplist;
+} statisticsmenu;
+
+void M_Statistics(INT32 choice);
+void M_DrawStatistics(void);
+boolean M_StatisticsInputs(INT32 ch);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

@@ -1123,17 +1123,20 @@ boolean M_MapLocked(INT32 mapnum)
 	return false;
 }
 
-INT32 M_CountMedals(boolean all)
+INT32 M_CountMedals(boolean all, boolean extraonly)
 {
 	INT32 found = 0, i;
-	for (i = 0; i < numemblems; ++i)
+	if (!extraonly)
 	{
-		if ((emblemlocations[i].type == ET_GLOBAL)
-			&& (emblemlocations[i].flags & GE_NOTMEDAL))
-			continue;
-		if (!all && !gamedata->collected[i])
-			continue;
-		found++;
+		for (i = 0; i < numemblems; ++i)
+		{
+			if ((emblemlocations[i].type == ET_GLOBAL)
+				&& (emblemlocations[i].flags & GE_NOTMEDAL))
+				continue;
+			if (!all && !gamedata->collected[i])
+				continue;
+			found++;
+		}
 	}
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
@@ -1404,8 +1407,8 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 skincolornum_t M_GetEmblemColor(emblem_t *em)
 {
-	if (!em || em->color >= numskincolors)
-		return SKINCOLOR_NONE;
+	if (!em || !em->color || em->color >= numskincolors)
+		return SKINCOLOR_GOLD;
 	return em->color;
 }
 

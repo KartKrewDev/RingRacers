@@ -211,7 +211,7 @@ boolean M_CheckNetUnlockByID(UINT8 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
 boolean M_CupLocked(cupheader_t *cup);
 boolean M_MapLocked(INT32 mapnum);
-INT32 M_CountMedals(boolean all);
+INT32 M_CountMedals(boolean all, boolean extraonly);
 
 // Emblem shit
 emblem_t *M_GetLevelEmblems(INT32 mapnum);

@@ -4461,6 +4461,8 @@ void M_DrawAddons(void)
 
 #undef addonsseperation
 
+// Challenges Menu
+
 #define challengesbordercolor 27
 
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
@@ -4894,3 +4896,228 @@ challengedesc:
 		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
 	}
 }
+
+// Statistics menu
+
+#define STATSSTEP 10
+
+static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
+{
+	UINT8 lasttype = UINT8_MAX, curtype;
+	emblem_t *emblem = M_GetLevelEmblems(mapnum);
+
+	while (emblem)
+	{
+		switch (emblem->type)
+		{
+			case ET_TIME:
+				curtype = 1;
+				break;
+			case ET_GLOBAL:
+			{
+				if (emblem->flags & GE_NOTMEDAL)
+				{
+					emblem = M_GetLevelEmblems(-1);
+					continue;
+				}
+				curtype = 2;
+				break;
+			}
+			default:
+				curtype = 0;
+				break;
+		}
+
+		// Shift over if emblem is of a different discipline
+		if (lasttype != UINT8_MAX && lasttype != curtype)
+			x -= 4;
+		lasttype = curtype;
+
+		if (gamedata->collected[emblem-emblemlocations])
+			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
+			                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
+		else
+			V_DrawSmallScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+
+		emblem = M_GetLevelEmblems(-1);
+		x -= 8;
+	}
+}
+
+static void M_DrawStatsMaps(void)
+{
+	INT32 y = 80, i = -1;
+	INT16 mnum;
+	boolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	INT32 location = statisticsmenu.location;
+
+	if (location)
+		V_DrawCharacter(10, y-(skullAnimCounter/5),
+			'\x1A' | highlightflags, false); // up arrow
+
+	while (statisticsmenu.maplist[++i] != NEXTMAP_INVALID)
+	{
+		if (location)
+		{
+			--location;
+			continue;
+		}
+		else if (dotopname)
+		{
+			V_DrawThinString(20,  y, highlightflags, "LEVEL NAME");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, highlightflags, "MEDALS");
+			y += STATSSTEP;
+			dotopname = false;
+		}
+
+		mnum = statisticsmenu.maplist[i]+1;
+		M_DrawMapMedals(mnum, 291, y);
+
+		{
+			char *title = G_BuildMapTitle(mnum);
+			V_DrawThinString(20, y, 0, title);
+			Z_Free(title);
+		}
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+	if (dotopname && !location)
+	{
+		V_DrawString(20,  y, highlightflags, "LEVEL NAME");
+		V_DrawString(256, y, highlightflags, "MEDALS");
+		y += STATSSTEP;
+	}
+	else if (location)
+		--location;
+
+	// Extra Emblem headers
+	for (i = 0; i < 2; ++i)
+	{
+		if (i == 1)
+		{
+			V_DrawThinString(20, y, highlightflags, "EXTRA MEDALS");
+			if (location)
+			{
+				y += STATSSTEP;
+				location++;
+			}
+		}
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+
+	// Extra Emblems
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (unlockables[i].type != SECRET_EXTRAMEDAL)
+		{
+			continue;
+		}
+
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		if (i >= 0)
+		{
+			if (gamedata->unlocked[i])
+			{
+				UINT16 color = min(unlockables[i].color, numskincolors-1);
+				if (!color)
+					color = SKINCOLOR_GOLD;
+				V_DrawSmallMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				                       R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE));
+			}
+			else
+			{
+				V_DrawSmallScaledPatch(291, y+1, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+			}
+
+			V_DrawThinString(20, y, 0, va("%s", unlockables[i].name));
+		}
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawCharacter(10, y-STATSSTEP + (skullAnimCounter/5),
+			'\x1B' | highlightflags, false); // down arrow
+}
+
+void M_DrawStatistics(void)
+{
+	char beststr[40];
+
+	tic_t besttime = 0;
+
+	INT32 i;
+	INT32 mapsunfinished = 0;
+
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
+	V_DrawThinString(20, 22, V_ALLOWLOWERCASE|highlightflags, "Total Play Time:");
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, 32, 0,
+							va("%i hours, %i minutes, %i seconds",
+	                         G_TicsToHours(gamedata->totalplaytime),
+	                         G_TicsToMinutes(gamedata->totalplaytime, false),
+	                         G_TicsToSeconds(gamedata->totalplaytime)));
+	V_DrawThinString(20, 42, V_ALLOWLOWERCASE|highlightflags, "Total Matches:");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, va("%i played", gamedata->matchesplayed));
+
+	if (!statisticsmenu.maplist)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, V_ALLOWLOWERCASE, "No maps!?");
+		return;
+	}
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+			continue;
+
+		if (!mapheaderinfo[i]->mainrecord || mapheaderinfo[i]->mainrecord->time <= 0)
+		{
+			mapsunfinished++;
+			continue;
+		}
+
+		besttime += mapheaderinfo[i]->mainrecord->time;
+	}
+
+	V_DrawThinString(20, 60, V_ALLOWLOWERCASE, "Combined time records:");
+
+	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, V_ALLOWLOWERCASE|(mapsunfinished ? V_REDMAP : 0), beststr);
+
+	if (mapsunfinished)
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_ALLOWLOWERCASE|V_REDMAP, va("(%d unfinished)", mapsunfinished));
+	else
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_ALLOWLOWERCASE, "(complete)");
+
+	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
+	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
+
+	M_DrawStatsMaps();
+}
+
+#undef STATSSTEP
