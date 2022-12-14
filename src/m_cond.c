@@ -1099,6 +1099,9 @@ boolean M_MapLocked(INT32 mapnum)
 	// No skipping over any part of your marathon.
 	if (marathonmode)
 		return false;
+
+	if (!mapnum || mapnum > nummapheaders)
+		return false;
 	
 	if (!mapheaderinfo[mapnum-1])
 		return false;
