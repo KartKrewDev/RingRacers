@@ -5145,7 +5145,7 @@ state_t states[NUMSTATES] =
 
 	// Broly Ki Orb
 	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
-	{SPR_NULL, 0, 1, {A_SSMineFlash}, 0, 0, S_NULL}, // S_BROLY2
+	{SPR_NULL, 0, 5*TICRATE, {A_SSMineFlash}, 0, 0, S_NULL}, // S_BROLY2
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =

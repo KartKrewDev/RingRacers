@@ -5100,6 +5100,8 @@ void K_MineFlashScreen(mobj_t *source)
 	INT32 pnum;
 	player_t *p;
 
+	S_StartSound(source, sfx_s3k4e);
+
 	// check for potential display players near the source so we can have a sick earthquake / flashpal.
 	for (pnum = 0; pnum < MAXPLAYERS; pnum++)
 	{
@@ -5135,8 +5137,6 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 	smoldering->hitlag += delay;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;
-
-	S_StartSound(smoldering, sfx_s3k4e);
 
 	if (!color)
 		color = SKINCOLOR_KETCHUP;
