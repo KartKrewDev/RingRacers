@@ -27,6 +27,8 @@
 #include "d_netcmd.h" // for cv_perfstats
 #include "i_system.h" // I_GetPreciseTime
 
+#include "v_video.h" // V_ClearClipRect
+
 /* =========================================================================
                                   ABSTRACTION
    ========================================================================= */
@@ -641,8 +643,13 @@ void LUA_HookHUD(huddrawlist_h list, int hook_type)
 		LUA_SetHudHook(hook_type, list);
 
 		hud_running = true; // local hook
+
+		// Catch runaway clipping rectangles.
+		V_ClearClipRect();
+
 		init_hook_call(&hook, 0, res_none);
 		call_mapped(&hook, map);
+
 		hud_running = false;
 	}
 }

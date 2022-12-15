@@ -762,117 +762,6 @@ INT32 POSI2_X, POSI2_Y;
 // trick "cool"
 INT32 TCOOL_X, TCOOL_Y;
 
-
-void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy)
-{
-	// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx
-	INT32 screenwidth = vid.width;
-	INT32 screenheight = vid.height;
-	INT32 basewidth = BASEVIDWIDTH * dupx;
-	INT32 baseheight = BASEVIDHEIGHT * dupy;
-	SINT8 player = -1;
-	UINT8 i;
-
-	if (options & V_SPLITSCREEN)
-	{
-		if (r_splitscreen > 0)
-		{
-			screenheight /= 2;
-			baseheight /= 2;
-		}
-
-		if (r_splitscreen > 1)
-		{
-			screenwidth /= 2;
-			basewidth /= 2;
-		}
-	}
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (stplyr == &players[displayplayers[i]])
-		{
-			player = i;
-			break;
-		}
-	}
-
-	if (vid.width != (BASEVIDWIDTH * dupx))
-	{
-		if (options & V_SNAPTORIGHT)
-			*x += (screenwidth - basewidth);
-		else if (!(options & V_SNAPTOLEFT))
-			*x += (screenwidth - basewidth) / 2;
-	}
-
-	if (vid.height != (BASEVIDHEIGHT * dupy))
-	{
-		if (options & V_SNAPTOBOTTOM)
-			*y += (screenheight - baseheight);
-		else if (!(options & V_SNAPTOTOP))
-			*y += (screenheight - baseheight) / 2;
-	}
-
-	if (options & V_SPLITSCREEN)
-	{
-		if (r_splitscreen == 1)
-		{
-			if (player == 1)
-				*y += screenheight;
-		}
-		else if (r_splitscreen > 1)
-		{
-			if (player == 1 || player == 3)
-				*x += screenwidth;
-
-			if (player == 2 || player == 3)
-				*y += screenheight;
-		}
-	}
-
-	if (options & V_SLIDEIN)
-	{
-		const tic_t length = TICRATE/4;
-		tic_t timer = lt_exitticker;
-		if (bossinfo.boss == true)
-		{
-			if (leveltime <= 3)
-				timer = 0;
-			else
-				timer = leveltime-3;
-		}
-
-		if (timer < length)
-		{
-			boolean slidefromright = false;
-
-			const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
-			fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
-
-			offset += FixedMul(offsetAmount, renderdeltatics);
-			offset /= FRACUNIT;
-
-			if (r_splitscreen > 1)
-			{
-				if (stplyr == &players[displayplayers[1]] || stplyr == &players[displayplayers[3]])
-					slidefromright = true;
-			}
-
-			if (options & V_SNAPTORIGHT)
-				slidefromright = true;
-			else if (options & V_SNAPTOLEFT)
-				slidefromright = false;
-
-			if (slidefromright == true)
-			{
-				offset = -offset;
-			}
-
-			*x -= offset;
-		}
-	}
-}
-
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
 void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse)
 {
@@ -1301,6 +1190,8 @@ static void K_drawKartItem(void)
 
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
 
+	//V_SetClipRect((fx + 10) << FRACBITS, (fy + 10) << FRACBITS, 30 << FRACBITS, 30 << FRACBITS, V_HUDTRANS|V_SLIDEIN|fflags);
+
 	// Then, the numbers:
 	if (stplyr->itemamount >= numberdisplaymin && !stplyr->itemroulette)
 	{
@@ -1319,6 +1210,8 @@ static void K_drawKartItem(void)
 	}
 	else
 		V_DrawFixedPatch(fx<<FRACBITS, fy<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags, localpatch, colmap);
+
+	//V_ClearClipRect();
 
 	// Extensible meter, currently only used for rocket sneaker...
 	if (itembar)
