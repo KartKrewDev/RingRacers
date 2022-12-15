@@ -22,10 +22,10 @@
 extern "C" {
 #endif
 
-typedef struct timestate_s {
+struct timestate_t {
 	tic_t time;
 	fixed_t timefrac;
-} timestate_t;
+};
 
 extern timestate_t g_time;
 extern consvar_t cv_timescale;

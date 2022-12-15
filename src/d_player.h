@@ -289,7 +289,7 @@ typedef enum
 #define GARDENTOP_MAXGRINDTIME (45)
 
 // player_t struct for all respawn variables
-typedef struct respawnvars_s
+struct respawnvars_t
 {
 	UINT8 state; // see RESPAWNST_ constants in k_respawn.h
 	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
@@ -303,10 +303,10 @@ typedef struct respawnvars_s
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
-} respawnvars_t;
+};
 
 // player_t struct for all bot variables
-typedef struct botvars_s
+struct botvars_t
 {
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
@@ -323,18 +323,18 @@ typedef struct botvars_s
 	SINT8 turnconfirm; // Confirm turn direction
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
-} botvars_t;
+};
 
 // player_t struct for all skybox variables
-typedef struct {
+struct skybox_t {
 	mobj_t * viewpoint;
 	mobj_t * centerpoint;
-} skybox_t;
+};
 
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
-typedef struct player_s
+struct player_t
 {
 	mobj_t *mo;
 
@@ -614,6 +614,6 @@ typedef struct player_s
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
-} player_t;
+};
 
 #endif

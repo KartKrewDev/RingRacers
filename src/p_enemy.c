@@ -315,6 +315,7 @@ void A_ItemPop(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
+void A_SSMineFlash(mobj_t *actor);
 void A_LandMineExplode(mobj_t *actor);
 void A_BallhogExplode(mobj_t *actor);
 void A_LightningFollowPlayer(mobj_t *actor);
@@ -749,9 +750,6 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed
 
 		if (player->mo->health <= 0)
 			continue; // dead
-
-		if (player->bot)
-			continue; // ignore bots
 
 		if (dist > 0
 			&& P_AproxDistance(P_AproxDistance(player->mo->x - actor->x, player->mo->y - actor->y), player->mo->z - actor->z) > dist)
@@ -13120,14 +13118,21 @@ void A_SSMineExplode(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 
+	tic_t delay;
+
 	if (LUA_CallAction(A_SSMINEEXPLODE, actor))
 		return;
 
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP);
-	K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
+	delay = K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
+	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP, delay);
+}
+
+void A_SSMineFlash(mobj_t *actor)
+{
+	K_MineFlashScreen(actor);
 }
 
 void A_LandMineExplode(mobj_t *actor)
@@ -13138,8 +13143,15 @@ void A_LandMineExplode(mobj_t *actor)
 	INT32 i;
 	mobj_t *smoldering;
 
+	tic_t delay = actor->reactiontime;
+
 	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
 		return;
+
+	if (delay == 0)
+	{
+		delay = 8;
+	}
 
 	// we'll base the explosion "timer" off of some stupid variable like uh... cvmem!
 	// Yeah let's use cvmem since nobody uses that
@@ -13147,12 +13159,11 @@ void A_LandMineExplode(mobj_t *actor)
 	if (actor->target && !P_MobjWasRemoved(actor->target))
 		colour = actor->target->color;
 
-	K_MineFlashScreen(actor);
-
 	// Spawn smoke remains:
 	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
 	P_SetScale(smoldering, actor->scale);
 	smoldering->tics = TICRATE*3;
+	smoldering->hitlag = delay;
 
 	actor->fuse = actor->tics;	// disappear when this state ends.
 
@@ -13162,6 +13173,8 @@ void A_LandMineExplode(mobj_t *actor)
 		expl = P_SpawnMobj(actor->x, actor->y, actor->z + actor->scale, MT_BOOMEXPLODE);
 		expl->color = colour;
 		expl->tics = (i+1);
+		expl->hitlag = delay;
+		expl->renderflags |= RF_DONTDRAW;
 
 		//K_MatchGenericExtraFlags(expl, actor);
 		P_SetScale(expl, actor->scale*4);
@@ -13172,6 +13185,8 @@ void A_LandMineExplode(mobj_t *actor)
 		// 100/45 = 2.22 fu/t
 		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
 	}
+
+	K_SpawnBrolyKi(actor, delay);
 }
 
 void A_BallhogExplode(mobj_t *actor)

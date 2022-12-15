@@ -373,6 +373,9 @@ static void D_Display(void)
 	if (dedicated) //bail out after wipe logic
 		return;
 
+	// Catch runaway clipping rectangles.
+	V_ClearClipRect();
+
 	// do buffered drawing
 	switch (gamestate)
 	{
@@ -1203,7 +1206,11 @@ D_ConvertVersionNumbers (void)
 void D_SRB2Main(void)
 {
 	INT32 i, p;
-	INT32 pstartmap = 0;
+#ifdef DEVELOP
+	INT32 pstartmap = 1; // default to first loaded map (Test Run)
+#else
+	INT32 pstartmap = 0; // default to random map (0 is not a valid map number)
+#endif
 	boolean autostart = false;
 
 	/* break the version string into version numbers, for netplay */

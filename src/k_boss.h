@@ -26,14 +26,14 @@ typedef enum
 #define NUMWEAKSPOTS 8
 #define WEAKSPOTANIMTIME (3*TICRATE)
 
-typedef struct weakspot_t
+struct weakspot_t
 {
 	mobj_t *spot;
 	spottype_t type;
 	tic_t time;
 	UINT16 color;
 	boolean minimap;
-} weakspot_t;
+};
 
 #define BOSSHEALTHBARLEN 110
 

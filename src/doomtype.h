@@ -406,4 +406,6 @@ typedef UINT64 precise_t;
 #define FUNCPTRCAST(p) ((union{void(*f)(void);void*v;})\
 		{(void(*)(void))p}).v
 
+#include "typedef.h"
+
 #endif //__DOOMTYPE__

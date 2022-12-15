@@ -495,6 +495,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"BOM3", // Boss Explosion 2
 	"BOM4", // Underwater Explosion
 	"BMNB", // Mine Explosion
+	"LSSJ", // My ki is overflowing!!
 
 	// Crumbly rocks
 	"ROIA",
@@ -543,6 +544,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"KINF", // Invincibility flash
 	"INVI", // Invincibility speedlines
 	"ICAP", // Item capsules
+	"IMON", // Item Monitor
 	"MGBX", // Heavy Magician transform box
 	"MGBT", // Heavy Magician transform box top
 	"MGBB", // Heavy Magician transform box bottom
@@ -5140,6 +5142,10 @@ state_t states[NUMSTATES] =
 	{SPR_JANK, FF_PAPERSPRITE|FF_FULLBRIGHT|FF_ANIMATE, 4, {NULL}, 3, 1, S_JANKSPARK3}, // S_JANKSPARK2
 	{SPR_JANK, 0, 0, {A_SetCustomValue}, -1, 5, S_JANKSPARK4}, // S_JANKSPARK3
 	{SPR_JANK, 0, 0, {A_ChangeAngleRelative}, 180, 180, S_JANKSPARK2}, // S_JANKSPARK4
+
+	// Broly Ki Orb
+	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
+	{SPR_NULL, 0, 5*TICRATE, {A_SSMineFlash}, 0, 0, S_NULL}, // S_BROLY2
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -23341,7 +23347,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,				// deathsound
 		0,						// speed
 		16*FRACUNIT,			// radius
-		24*FRACUNIT,			// height
+		56*FRACUNIT,			// height
 		0,						// display offset
 		100,					// mass
 		1,						// damage
@@ -28673,7 +28679,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_BATTLECAPSULE
 	    2333,           // doomednum
-	    S_INVISIBLE,    // spawnstate
+	    S_SHADOW,       // spawnstate
 	    1,              // spawnhealth
 	    S_NULL,         // seestate
 	    sfx_None,       // seesound
@@ -28688,8 +28694,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    S_NULL,         // xdeathstate
 	    sfx_None,       // deathsound
 	    0,              // speed
-	    28<<FRACBITS,   // radius
-	    112<<FRACBITS,  // height
+	    64<<FRACBITS,   // radius
+	    144<<FRACBITS,  // height
 	    0,              // display offset
 	    100,            // mass
 	    0,              // damage

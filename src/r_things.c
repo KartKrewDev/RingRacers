@@ -3454,6 +3454,7 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_SPHEREBOX:
 			case MT_ITEMCAPSULE:
 			case MT_ITEMCAPSULE_PART:
+			case MT_OVERLAY: // mostly capsule numbers :)))
 			case MT_BATTLECAPSULE:
 			case MT_BATTLECAPSULE_PIECE:
 				return false;

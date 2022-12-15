@@ -1464,6 +1464,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		}
 	}
 
+	// This code is causing conflicts for Ring Racers,
+	// as solid objects cause bumping. If you need to
+	// bring back this code for a moving platform-style
+	// object, separate it properly.
+#if 0
 	if ((tm.thing->flags & MF_SPRING || tm.thing->type == MT_STEAM || tm.thing->type == MT_SPIKE || tm.thing->type == MT_WALLSPIKE) && (thing->player))
 		; // springs, gas jets and springs should never be able to step up onto a player
 	// z checking at last
@@ -1562,6 +1567,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			}
 		}
 	}
+#endif
 
 	// not solid not blocked
 	return BMIT_CONTINUE;

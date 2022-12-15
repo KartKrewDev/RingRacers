@@ -29,11 +29,11 @@
 #pragma warning(disable : 4706)
 #endif
 
-typedef struct mdllistitem_s
+struct mdllistitem_t
 {
-	struct mdllistitem_s *next;
-	struct mdllistitem_s **prev;
-} mdllistitem_t;
+	mdllistitem_t *next;
+	mdllistitem_t **prev;
+};
 
 FUNCINLINE static ATTRINLINE void M_DLListInsert(mdllistitem_t *item, mdllistitem_t **head)
 {

@@ -37,7 +37,7 @@ typedef enum
 } conditiontype_t;
 
 // Condition Set information
-typedef struct
+struct condition_t
 {
 	UINT32 id;           /// <- The ID of this condition.
 	                     ///    In an unlock condition, all conditions with the same ID
@@ -47,14 +47,14 @@ typedef struct
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
-} condition_t;
-typedef struct
+};
+struct conditionset_t
 {
 	UINT32 numconditions;   /// <- number of conditions.
 	condition_t *condition; /// <- All conditionals to be checked.
 	UINT8 achieved;         /// <- Whether this conditional has been achieved already or not.
 	                        ///    (Conditional checking is skipped if true -- it's assumed you can't relock an unlockable)
-} conditionset_t;
+};
 
 // Emblem information
 #define ET_GLOBAL  0 // Emblem with a position in space
@@ -69,7 +69,7 @@ typedef struct
 // Map emblem flags
 #define ME_ENCORE 1
 
-typedef struct
+struct emblem_t
 {
 	UINT8 type;      ///< Emblem type
 	INT16 tag;       ///< Tag of emblem mapthing
@@ -79,8 +79,8 @@ typedef struct
 	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
 	char hint[110];  ///< Hint for emblem hints menu
 	UINT8 collected; ///< Do you have this emblem?
-} emblem_t;
-typedef struct
+};
+struct extraemblem_t
 {
 	char name[20];          ///< Name of the goal (used in the "emblem awarded" cecho)
 	char description[40];   ///< Description of goal (used in statistics)
@@ -89,10 +89,10 @@ typedef struct
 	UINT8 sprite;           ///< emblem sprite to use, 0 - 25
 	UINT16 color;           ///< skincolor to use
 	UINT8 collected;        ///< Do you have this emblem?
-} extraemblem_t;
+};
 
 // Unlockable information
-typedef struct
+struct unlockable_t
 {
 	char name[64];
 	char objective[64];
@@ -103,7 +103,7 @@ typedef struct
 	UINT8 nocecho;
 	UINT8 nochecklist;
 	UINT8 unlocked;
-} unlockable_t;
+};
 
 #define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
 #define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu

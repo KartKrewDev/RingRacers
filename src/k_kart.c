@@ -1520,7 +1520,7 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		weight = (mobj->player->kartweight) * FRACUNIT;
 
 		if (mobj->player->speed > spd)
-			weight += (mobj->player->speed - spd) / 8;
+			weight += FixedDiv((mobj->player->speed - spd), 8 * mapobjectscale);
 
 		if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
 			weight += 9*FRACUNIT;
@@ -5113,6 +5113,8 @@ void K_MineFlashScreen(mobj_t *source)
 	INT32 pnum;
 	player_t *p;
 
+	S_StartSound(source, sfx_s3k4e);
+
 	// check for potential display players near the source so we can have a sick earthquake / flashpal.
 	for (pnum = 0; pnum < MAXPLAYERS; pnum++)
 	{
@@ -5135,7 +5137,7 @@ void K_MineFlashScreen(mobj_t *source)
 }
 
 // Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
+void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 {
 	INT32 i, radius, height;
 	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
@@ -5143,14 +5145,11 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 	mobj_t *truc;
 	INT32 speed, speed2;
 
-	K_MineFlashScreen(source);
-
 	K_MatchGenericExtraFlags(smoldering, source);
 	smoldering->tics = TICRATE*3;
+	smoldering->hitlag += delay;
 	radius = source->radius>>FRACBITS;
 	height = source->height>>FRACBITS;
-
-	S_StartSound(smoldering, sfx_s3k4e);
 
 	if (!color)
 		color = SKINCOLOR_KETCHUP;
@@ -5164,6 +5163,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		dust->destscale = source->scale*10;
 		dust->scalespeed = source->scale/12;
 		P_InstaThrust(dust, dust->angle, FixedMul(20*FRACUNIT, source->scale));
+		dust->hitlag += delay;
+		dust->renderflags |= RF_DONTDRAW;
 
 		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
 			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
@@ -5180,6 +5181,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		if (truc->eflags & MFE_UNDERWATER)
 			truc->momz = (117 * truc->momz) / 200;
 		truc->color = color;
+		truc->hitlag += delay;
+		truc->renderflags |= RF_DONTDRAW;
 	}
 
 	for (i = 0; i < 16; i++)
@@ -5193,6 +5196,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 		dust->scalespeed = source->scale/12;
 		dust->tics = 30;
 		dust->momz = P_RandomRange(PR_EXPLOSION, FixedMul(3*FRACUNIT, source->scale)>>FRACBITS, FixedMul(7*FRACUNIT, source->scale)>>FRACBITS)*FRACUNIT;
+		dust->hitlag += delay;
+		dust->renderflags |= RF_DONTDRAW;
 
 		truc = P_SpawnMobj(source->x + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
 			source->y + P_RandomRange(PR_EXPLOSION, -radius, radius)*FRACUNIT,
@@ -5213,7 +5218,42 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color)
 			truc->momz = (117 * truc->momz) / 200;
 		truc->tics = TICRATE*2;
 		truc->color = color;
+		truc->hitlag += delay;
+		truc->renderflags |= RF_DONTDRAW;
 	}
+}
+
+void K_SpawnBrolyKi(mobj_t *source, tic_t duration)
+{
+	mobj_t *x;
+
+	if (duration == 0)
+	{
+		return;
+	}
+
+	x = P_SpawnMobjFromMobj(source, 0, 0, 0, MT_THOK);
+
+	// Shrink into center of source object.
+	x->z = (source->z + source->height / 2);
+	x->height = 0;
+
+	P_SetMobjState(x, S_BROLY1);
+	x->colorized = true;
+	x->color = source->color;
+	x->hitlag = 0; // do not copy source hitlag
+
+	P_SetScale(x, 64 * mapobjectscale);
+	x->scalespeed = x->scale / duration;
+
+	// The last tic doesn't actually get rendered so in order
+	// to show scale = destscale, add one buffer tic.
+	x->tics = (duration + 1);
+	x->destscale = 1; // 0 also doesn't work
+
+	K_ReduceVFX(x, NULL);
+
+	S_StartSound(x, sfx_cdfm74);
 }
 
 #undef MINEQUAKEDIST
@@ -6687,6 +6727,9 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 	{
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
+
+	mo->pitch = 0;
+	mo->roll = 0;
 
 	if (sound)
 	{
@@ -8631,6 +8674,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 				//player->flashing = 0;
 				eggsexplode = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_SPBEXPLOSION);
+				eggsexplode->height = 2 * player->mo->height;
+				eggsexplode->color = player->mo->color;
+
 				if (player->eggmanblame >= 0
 				&& player->eggmanblame < MAXPLAYERS
 				&& playeringame[player->eggmanblame]
@@ -9097,6 +9143,11 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 						if (angledelta < nextbestdelta && momdelta < nextbestmomdelta)
 						{
+							if (waypoint->prevwaypoints[i] == finishline) // NEVER allow finish line.
+							{
+								continue;
+							}
+
 							if (P_TraceWaypointTraversal(player->mo, waypoint->prevwaypoints[i]->mobj) == false)
 							{
 								// Save sight checks when all of the other checks pass, so we only do it if we have to

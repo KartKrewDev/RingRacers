@@ -21,9 +21,7 @@
 
 #define POS_DELAY_TIME 10
 
-void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
-
-typedef struct trackingResult_s
+struct trackingResult_t
 {
 	fixed_t x, y;
 	fixed_t scale;

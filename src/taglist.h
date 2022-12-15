@@ -21,11 +21,11 @@ typedef INT16 mtag_t;
 #define MTAG_GLOBAL -1
 
 /// Multitag list. Each taggable element will have its own taglist.
-typedef struct
+struct taglist_t
 {
 	mtag_t* tags;
 	UINT16 count;
-} taglist_t;
+};
 
 void Tag_Add (taglist_t* list, const mtag_t tag);
 void Tag_Remove (taglist_t* list, const mtag_t tag);
@@ -40,12 +40,12 @@ void Tag_SectorRemove (const size_t id, const mtag_t tag);
 void Tag_SectorFSet (const size_t id, const mtag_t tag);
 
 /// Taggroup list. It is essentially just an element id list.
-typedef struct
+struct taggroup_t
 {
 	size_t *elements;
 	size_t count;
 	size_t capacity;
-} taggroup_t;
+};
 
 extern bitarray_t tags_available[];
 

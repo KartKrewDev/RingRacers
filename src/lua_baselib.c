@@ -3601,10 +3601,11 @@ static int lib_kSpawnMineExplosion(lua_State *L)
 {
 	mobj_t *source = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
 	UINT8 color = (UINT8)luaL_optinteger(L, 2, SKINCOLOR_KETCHUP);
+	tic_t delay = (tic_t)luaL_optinteger(L, 3, 0);
 	NOHUD
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
-	K_SpawnMineExplosion(source, color);
+	K_SpawnMineExplosion(source, color, delay);
 	return 0;
 }
 

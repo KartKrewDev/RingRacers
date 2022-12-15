@@ -149,7 +149,7 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 		return true;
 	}
 
-	if (sec->offroad > FRACUNIT) // Only care about strong offroad.
+	if (sec->offroad > 0)
 	{
 		return !K_BotCanTakeCut(player);
 	}

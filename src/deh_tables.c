@@ -313,6 +313,7 @@ actionpointer_t actionpointers[] =
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_SSMineFlash},            "A_SSMINEFLASH"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
@@ -4529,6 +4530,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JANKSPARK2",
 	"S_JANKSPARK3",
 	"S_JANKSPARK4",
+
+	// Broly Ki Orb
+	"S_BROLY1",
+	"S_BROLY2",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -6371,6 +6376,7 @@ struct int_const_s const INT_CONST[] = {
 	{"DMG_TUMBLE",DMG_TUMBLE},
 	{"DMG_STING",DMG_STING},
 	{"DMG_KARMA",DMG_KARMA},
+	{"DMG_VOLTAGE",DMG_VOLTAGE},
 	//// Death types
 	{"DMG_INSTAKILL",DMG_INSTAKILL},
 	{"DMG_DEATHPIT",DMG_DEATHPIT},

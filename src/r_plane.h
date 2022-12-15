@@ -28,9 +28,9 @@
 // Now what is a visplane, anyway?
 // Simple: kinda floor/ceiling polygon optimised for SRB2 rendering.
 //
-typedef struct visplane_s
+struct visplane_t
 {
-	struct visplane_s *next;
+	visplane_t *next;
 
 	fixed_t height;
 	fixed_t viewx, viewy, viewz;
@@ -50,13 +50,13 @@ typedef struct visplane_s
 
 	fixed_t xoffs, yoffs; // Scrolling flats.
 
-	struct ffloor_s *ffloor;
+	ffloor_t *ffloor;
 	polyobj_t *polyobj;
 	pslope_t *slope;
 
 	boolean noencore;
 	boolean ripple;
-} visplane_t;
+};
 
 extern visplane_t *visplanes[MAXVISPLANES];
 extern visplane_t *floorplane;
@@ -104,7 +104,7 @@ void R_CalculateSlopeVectors(void);
 // Sets the slope vector pointers for the current tilted span.
 void R_SetTiltedSpan(INT32 span);
 
-typedef struct planemgr_s
+struct visffloor_t
 {
 	visplane_t *plane;
 	fixed_t height;
@@ -119,11 +119,11 @@ typedef struct planemgr_s
 	fixed_t f_pos_slope;
 	fixed_t b_pos_slope;
 
-	struct pslope_s *slope;
+	pslope_t *slope;
 
-	struct ffloor_s *ffloor;
+	ffloor_t *ffloor;
 	polyobj_t *polyobj;
-} visffloor_t;
+};
 
 extern visffloor_t ffloor[MAXFFLOORS];
 extern INT32 numffloors;
