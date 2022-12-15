@@ -1030,13 +1030,14 @@ static void K_drawKartItem(void)
 	const INT32 numberdisplaymin = ((!offset && stplyr->itemtype == KITEM_ORBINAUT) ? 5 : 2);
 	INT32 itembar = 0;
 	INT32 maxl = 0; // itembar's normal highest value
-	const INT32 barlength = (r_splitscreen > 1 ? 12 : 26);
+	const INT32 barlength = (offset ? 12 : 26);
 	UINT16 localcolor[3] = { stplyr->skincolor };
 	SINT8 colormode[3] = { TC_RAINBOW };
 	boolean flipamount = false;	// Used for 3P/4P splitscreen to flip item amount stuff
 
 	fixed_t rouletteOffset = 0;
-	const INT32 rouletteBox = 36;
+	fixed_t rouletteSpace = ROULETTE_SPACING;
+	vector2_t rouletteCrop = {7, 7};
 	INT32 i;
 
 	if (stplyr->itemRoulette.itemListLen > 0)
@@ -1189,13 +1190,7 @@ static void K_drawKartItem(void)
 	}
 
 	// pain and suffering defined below
-	if (r_splitscreen < 2) // don't change shit for THIS splitscreen.
-	{
-		fx = ITEM_X;
-		fy = ITEM_Y;
-		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
-	}
-	else // now we're having a fun game.
+	if (offset)
 	{
 		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
 		{
@@ -1210,24 +1205,35 @@ static void K_drawKartItem(void)
 			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
 			flipamount = true;
 		}
+
+		rouletteSpace = ROULETTE_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(ROULETTE_SPACING_SPLITSCREEN, ROULETTE_SPACING));
+		rouletteCrop.x = 16;
+		rouletteCrop.y = 15;
+	}
+	else
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
 	}
 
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
 
 	// Need to draw these in a particular order, for sorting.
 	V_SetClipRect(
-		(fx + 7) << FRACBITS, (fy + 7) << FRACBITS,
-		rouletteBox << FRACBITS, rouletteBox << FRACBITS,
+		(fx + rouletteCrop.x) << FRACBITS, (fy + rouletteCrop.y) << FRACBITS,
+		rouletteSpace, rouletteSpace,
 		V_SLIDEIN|fflags
 	);
 
 	V_DrawFixedPatch(
-		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + ROULETTE_SPACING,
+		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset + rouletteSpace,
 		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
 		localpatch[0], (localcolor[0] ? R_GetTranslationColormap(colormode[0], localcolor[0], GTC_CACHE) : NULL)
 	);
 	V_DrawFixedPatch(
-		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset - ROULETTE_SPACING,
+		fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset - rouletteSpace,
 		FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
 		localpatch[2], (localcolor[2] ? R_GetTranslationColormap(colormode[2], localcolor[2], GTC_CACHE) : NULL)
 	);

@@ -25,6 +25,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 void K_StartEggmanRoulette(player_t *const player);
 
 #define ROULETTE_SPACING (36 << FRACBITS)
+#define ROULETTE_SPACING_SPLITSCREEN (16 << FRACBITS)
 fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
