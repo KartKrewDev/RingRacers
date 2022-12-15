@@ -5210,39 +5210,6 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 	}
 }
 
-void K_SpawnBrolyKi(mobj_t *source, tic_t duration)
-{
-	mobj_t *x;
-
-	if (duration == 0)
-	{
-		return;
-	}
-
-	x = P_SpawnMobjFromMobj(source, 0, 0, 0, MT_THOK);
-
-	// Shrink into center of source object.
-	x->z = (source->z + source->height / 2);
-	x->height = 0;
-
-	P_SetMobjState(x, S_BROLY1);
-	x->colorized = true;
-	x->color = source->color;
-	x->hitlag = 0; // do not copy source hitlag
-
-	P_SetScale(x, 64 * mapobjectscale);
-	x->scalespeed = x->scale / duration;
-
-	// The last tic doesn't actually get rendered so in order
-	// to show scale = destscale, add one buffer tic.
-	x->tics = (duration + 1);
-	x->destscale = 1; // 0 also doesn't work
-
-	K_ReduceVFX(x, NULL);
-
-	S_StartSound(x, sfx_cdfm74);
-}
-
 #undef MINEQUAKEDIST
 
 fixed_t K_ItemScaleForPlayer(player_t *player)

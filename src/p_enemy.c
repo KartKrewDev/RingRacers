@@ -13186,7 +13186,7 @@ void A_LandMineExplode(mobj_t *actor)
 		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
 	}
 
-	K_SpawnBrolyKi(actor, delay);
+	Obj_SpawnBrolyKi(actor, delay);
 }
 
 void A_BallhogExplode(mobj_t *actor)
