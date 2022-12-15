@@ -251,9 +251,14 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	return distance;
 }
 
-static UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 numPlayers)
+static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 {
 	UINT32 pdis = 0;
+
+	if (player == NULL)
+	{
+		return 0;
+	}
 
 #if 0
 	if (specialStage.active == true)
@@ -316,7 +321,7 @@ static UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 numPlayers
 	\return	void
 */
 
-INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
+INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 {
 	boolean bot = false;
 	boolean rival = false;
@@ -329,7 +334,7 @@ INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, 
 	boolean notNearEnd = false;
 
 	fixed_t newOdds = 0;
-	size_t i, j;
+	size_t i;
 
 	I_Assert(roulette != NULL);
 
@@ -396,29 +401,6 @@ INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, 
 				{
 					// Don't allow more than one of each shield type at a time
 					return 0;
-				}
-			}
-		}
-	}
-
-	if (K_ItemSingularity(item) == true)
-	{
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] == false || players[i].spectator == true)
-			{
-				continue;
-			}
-
-			if (players[i].itemRoulette.active == true)
-			{
-				for (j = 0; j < players[i].itemRoulette.itemListLen; j++)
-				{
-					if (players[i].itemRoulette.itemList[j] == item)
-					{
-						// Don't add if someone is already rolling for it.
-						return 0;
-					}
 				}
 			}
 		}
@@ -587,7 +569,7 @@ INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, 
 	return newOdds;
 }
 
-static UINT8 K_FindUseodds(player_t *const player, itemroulette_t *const roulette)
+static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulette)
 {
 	UINT8 i;
 	UINT8 useOdds = 0;
@@ -667,7 +649,7 @@ static UINT8 K_FindUseodds(player_t *const player, itemroulette_t *const roulett
 	return useOdds;
 }
 
-static boolean K_ForcedSPB(player_t *const player, itemroulette_t *const roulette)
+static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulette)
 {
 	if (K_ItemEnabled(KITEM_SPB) == false)
 	{
@@ -675,6 +657,11 @@ static boolean K_ForcedSPB(player_t *const player, itemroulette_t *const roulett
 	}
 
 	if (!(gametyperules & GTR_CIRCUIT))
+	{
+		return false;
+	}
+
+	if (player == NULL)
 	{
 		return false;
 	}
@@ -805,9 +792,14 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 	roulette->itemListLen++;
 }
 
-static void K_AddItemToReel(player_t *const player, itemroulette_t *const roulette, kartitems_t item)
+static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulette, kartitems_t item)
 {
 	K_PushToRouletteItemList(roulette, item);
+
+	if (player == NULL)
+	{
+		return;
+	}
 
 	// If we're in ring debt, pad out the reel with
 	// a BUNCH of Super Rings.
@@ -819,15 +811,11 @@ static void K_AddItemToReel(player_t *const player, itemroulette_t *const roulet
 	}
 }
 
-static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *const roulette)
+static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 {
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;
 	fixed_t total = 0;
-
-	// Make them select their item after a little while.
-	// One of the few instances of bot RNG, would be nice to remove it.
-	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
 
 	if (modeattacking || roulette->playing <= 1)
 	{
@@ -869,7 +857,7 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_SLOWEST - ROULETTE_SPEED_FASTEST, total);
 }
 
-void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -882,9 +870,11 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	K_InitRoulette(roulette);
 
-	roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
-
-	K_CalculateRouletteSpeed(player, roulette);
+	if (player != NULL)
+	{
+		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
+		K_CalculateRouletteSpeed(roulette);
+	}
 
 	// SPECIAL CASE No. 1:
 	// Give only the debug item if specified
@@ -1010,10 +1000,33 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 	}
 }
 
+void K_StartItemRoulette(player_t *const player)
+{
+	itemroulette_t *const roulette = &player->itemRoulette;
+	size_t i;
+
+	K_FillItemRouletteData(player, roulette);
+
+	// Make the bots select their item after a little while.
+	// One of the few instances of bot RNG, would be nice to remove it.
+	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
+
+	// Prevent further duplicates of items that
+	// are intended to only have one out at a time.
+	for (i = 0; i < roulette->itemListLen; i++)
+	{
+		kartitems_t item = roulette->itemList[i];
+		if (K_ItemSingularity(item) == true)
+		{
+			K_SetItemCooldown(item, TICRATE<<4);
+		}
+	}
+}
+
 void K_StartEggmanRoulette(player_t *const player)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
-	K_StartItemRoulette(player, roulette);
+	K_StartItemRoulette(player);
 	roulette->eggman = true;
 }
 

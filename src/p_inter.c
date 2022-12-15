@@ -412,7 +412,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 				return;
 
-			K_StartItemRoulette(player, &player->itemRoulette);
+			K_StartItemRoulette(player);
 
 			// Karma fireworks
 			for (i = 0; i < 5; i++)

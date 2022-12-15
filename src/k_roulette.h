@@ -19,9 +19,10 @@
 boolean K_ItemEnabled(SINT8 item);
 boolean K_ItemSingularity(kartitems_t item);
 
-INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette);
 
-void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette);
+void K_StartItemRoulette(player_t *const player);
 void K_StartEggmanRoulette(player_t *const player);
 
 #define ROULETTE_SPACING (36 << FRACBITS)

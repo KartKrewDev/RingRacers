@@ -6063,7 +6063,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 
 		useodds = amount;
 
-		K_StartItemRoulette(stplyr, &rouletteData);
+		K_FillItemRouletteData(NULL, &rouletteData);
 
 		for (i = 1; i < NUMKARTRESULTS; i++)
 		{

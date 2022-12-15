@@ -4560,7 +4560,7 @@ static void K_drawDistributionDebugger(void)
 		return;
 	}
 
-	K_StartItemRoulette(stplyr, &rouletteData);
+	K_FillItemRouletteData(stplyr, &rouletteData);
 
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{

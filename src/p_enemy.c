@@ -13048,7 +13048,7 @@ void A_ItemPop(mobj_t *actor)
 	}
 	else if (locvar1 == 0)
 	{
-		K_StartItemRoulette(actor->target->player, &actor->target->player->itemRoulette);
+		K_StartItemRoulette(actor->target->player);
 	}
 
 	// Here at mapload in battle?
