@@ -5889,6 +5889,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*mobj->scale*P_MobjFlip(smoke);
 		}
 		break;
+	case MT_SMOKE:
+	case MT_BOOMEXPLODE:
+		mobj->renderflags &= ~(RF_DONTDRAW);
+		break;
 	case MT_BOOMPARTICLE:
 		{
 			fixed_t x = P_RandomRange(PR_EXPLOSION, -16, 16)*mobj->scale;
