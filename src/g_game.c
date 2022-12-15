@@ -2322,8 +2322,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
+	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
+	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
 	if (betweenmaps || leveltime < introtime)
 	{
+		itemRoulette.active = false;
+
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
@@ -2399,9 +2404,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		// Obliterate follower from existence (if valid memory)
 		P_SetTarget(&players[player].follower, NULL);
 	}
-
-	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
-	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
 
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
