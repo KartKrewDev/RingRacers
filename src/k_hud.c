@@ -4589,6 +4589,13 @@ static void K_drawDistributionDebugger(void)
 	V_DrawString((x >> FRACBITS) + 20, 2, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
 	V_DrawString((x >> FRACBITS) + 20, 10, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
+	V_DrawString((x >> FRACBITS) + 20, 22, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
+	V_DrawString((x >> FRACBITS) + 20, 30, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
+
+	V_DrawString((x >> FRACBITS) + 20, 42, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
+	V_DrawString((x >> FRACBITS) + 20, 50, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
+	V_DrawString((x >> FRACBITS) + 20, 58, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);
 #endif

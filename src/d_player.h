@@ -334,7 +334,7 @@ struct skybox_t {
 
 // Doing this the right way is causing problems.
 // so FINE, it's a static length now.
-#define ITEM_LIST_SIZE (NUMKARTRESULTS << 2)
+#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
 
 struct itemroulette_t
 {
@@ -350,6 +350,11 @@ struct itemroulette_t
 #endif
 
 	UINT8 useOdds;
+	UINT8 playing, exiting;
+	UINT32 dist, baseDist;
+	UINT32 firstDist, secondDist;
+	UINT32 secondToFirst;
+
 	size_t index;
 	UINT8 sound;
 

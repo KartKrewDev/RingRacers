@@ -59,17 +59,19 @@
 #define SPBSTARTDIST (8*DISTVAR)
 
 // Distance when SPB is forced onto the next person who rolls an item
-#define SPBFORCEDIST (14*DISTVAR)
+#define SPBFORCEDIST (16*DISTVAR)
 
 // Distance when the game stops giving you bananas
-#define ENDDIST (18*DISTVAR)
+#define ENDDIST (14*DISTVAR)
 
 // Consistent seed used for item reels
 #define ITEM_REEL_SEED (0x22D5FAA8)
 
+#define FRANTIC_ITEM_SCALE (FRACUNIT*6/5)
+
 #define ROULETTE_SPEED_SLOWEST (20)
 #define ROULETTE_SPEED_FASTEST (2)
-#define ROULETTE_SPEED_DIST (224*DISTVAR)
+#define ROULETTE_SPEED_DIST (150*DISTVAR)
 #define ROULETTE_SPEED_TIMEATTACK (9)
 
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
@@ -176,7 +178,23 @@ boolean K_ItemEnabled(SINT8 item)
 	return cv_items[item - 1].value;
 }
 
-fixed_t K_ItemOddsScale(UINT8 playerCount)
+boolean K_ItemSingularity(kartitems_t item)
+{
+	switch (item)
+	{
+		case KITEM_SPB:
+		case KITEM_SHRINK:
+		{
+			return true;
+		}
+		default:
+		{
+			return false;
+		}
+	}
+}
+
+static fixed_t K_ItemOddsScale(UINT8 playerCount)
 {
 	const UINT8 basePlayer = 8; // The player count we design most of the game around.
 	fixed_t playerScaling = 0;
@@ -205,18 +223,23 @@ fixed_t K_ItemOddsScale(UINT8 playerCount)
 	return playerScaling;
 }
 
-UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+static UINT32 K_UndoMapScaling(UINT32 distance)
 {
 	if (mapobjectscale != FRACUNIT)
 	{
 		// Bring back to normal scale.
-		distance = FixedDiv(distance, mapobjectscale);
+		return FixedDiv(distance, mapobjectscale);
 	}
 
+	return distance;
+}
+
+static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
+{
 	if (franticitems == true)
 	{
 		// Frantic items pretends everyone's farther apart, for crazier items.
-		distance = (15 * distance) / 14;
+		distance = FixedMul(distance, FRANTIC_ITEM_SCALE);
 	}
 
 	// Items get crazier with the fewer players that you have.
@@ -228,7 +251,7 @@ UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	return distance;
 }
 
-UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 pingame)
+static UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 numPlayers)
 {
 	UINT32 pdis = 0;
 
@@ -274,12 +297,13 @@ UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 pingame)
 		}
 	}
 
-	pdis = K_ScaleItemDistance(pdis, pingame);
+	pdis = K_UndoMapScaling(pdis);
+	pdis = K_ScaleItemDistance(pdis, numPlayers);
 
 	if (player->bot && player->botvars.rival)
 	{
 		// Rival has better odds :)
-		pdis = (15 * pdis) / 14;
+		pdis = FixedMul(pdis, FRANTIC_ITEM_SCALE);
 	}
 
 	return pdis;
@@ -292,29 +316,32 @@ UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 pingame)
 	\return	void
 */
 
-INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, boolean rival)
+INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 {
-	fixed_t newOdds;
-	INT32 i;
+	boolean bot = false;
+	boolean rival = false;
+	UINT8 position = 0;
 
-	UINT8 pingame = 0, pexiting = 0;
-
-	player_t *first = NULL;
-	player_t *second = NULL;
-
-	UINT32 firstDist = UINT32_MAX;
-	UINT32 secondDist = UINT32_MAX;
-	UINT32 secondToFirst = 0;
-	boolean isFirst = false;
+	INT32 shieldType = KSHIELD_NONE;
 
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
 	boolean notNearEnd = false;
 
-	INT32 shieldType = KSHIELD_NONE;
+	fixed_t newOdds = 0;
+	size_t i, j;
+
+	I_Assert(roulette != NULL);
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(item < NUMKARTRESULTS);
+
+	if (player != NULL)
+	{
+		bot = player->bot;
+		rival = (bot == true && player->botvars.rival == true);
+		position = player->position;
+	}
 
 	if (K_ItemEnabled(item) == false)
 	{
@@ -345,6 +372,58 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 	*/
 	(void)bot;
 
+	shieldType = K_GetShieldFromItem(item);
+	switch (shieldType)
+	{
+		case KSHIELD_NONE:
+			/* Marble Garden Top is not REALLY
+				a Sonic 3 shield */
+		case KSHIELD_TOP:
+		{
+			break;
+		}
+
+		default:
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] == false || players[i].spectator == true)
+				{
+					continue;
+				}
+
+				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
+				{
+					// Don't allow more than one of each shield type at a time
+					return 0;
+				}
+			}
+		}
+	}
+
+	if (K_ItemSingularity(item) == true)
+	{
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] == false || players[i].spectator == true)
+			{
+				continue;
+			}
+
+			if (players[i].itemRoulette.active == true)
+			{
+				for (j = 0; j < players[i].itemRoulette.itemListLen; j++)
+				{
+					if (players[i].itemRoulette.itemList[j] == item)
+					{
+						// Don't add if someone is already rolling for it.
+						return 0;
+					}
+				}
+			}
+		}
+	}
+
 	if (gametype == GT_BATTLE)
 	{
 		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
@@ -357,73 +436,6 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 	}
 
 	newOdds <<= FRACBITS;
-
-	shieldType = K_GetShieldFromItem(item);
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (!(gametyperules & GTR_BUMPERS) || players[i].bumpers)
-		{
-			pingame++;
-		}
-
-		if (players[i].exiting)
-		{
-			pexiting++;
-		}
-
-		switch (shieldType)
-		{
-			case KSHIELD_NONE:
-				/* Marble Garden Top is not REALLY
-					a Sonic 3 shield */
-			case KSHIELD_TOP:
-			{
-				break;
-			}
-
-			default:
-			{
-				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
-				{
-					// Don't allow more than one of each shield type at a time
-					return 0;
-				}
-			}
-		}
-
-		if (players[i].position == 1)
-		{
-			first = &players[i];
-		}
-
-		if (players[i].position == 2)
-		{
-			second = &players[i];
-		}
-	}
-
-	if (first != NULL) // calculate 2nd's distance from 1st, for SPB
-	{
-		firstDist = first->distancetofinish;
-		isFirst = (ourDist <= firstDist);
-	}
-
-	if (second != NULL)
-	{
-		secondDist = second->distancetofinish;
-	}
-
-	if (first != NULL && second != NULL)
-	{
-		secondToFirst = secondDist - firstDist;
-		secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame); // Reversed scaling, so 16P is like 1v1, and 1v1 is like 16P
-	}
 
 	switch (item)
 	{
@@ -440,7 +452,6 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 		case KITEM_LANDMINE:
 		case KITEM_DROPTARGET:
 		case KITEM_BALLHOG:
-		case KITEM_HYUDORO:
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEORBINAUT:
 		case KRITEM_QUADORBINAUT:
@@ -450,6 +461,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 			break;
 		}
 
+		case KITEM_HYUDORO:
 		case KRITEM_TRIPLEBANANA:
 		{
 			powerItem = true;
@@ -473,17 +485,23 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 			cooldownOnStart = true;
 			notNearEnd = true;
 
-			if (firstDist < ENDDIST*2 // No SPB when 1st is almost done
-				|| isFirst == true) // No SPB for 1st ever
+			if ((gametyperules & GTR_CIRCUIT) == 0)
 			{
-				newOdds = 0;
+				// Needs to be a race.
+				return 0;
+			}
+
+			if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
+				|| position == 1) // No SPB for 1st ever
+			{
+				return 0;
 			}
 			else
 			{
-				const UINT32 dist = max(0, ((signed)secondToFirst) - SPBSTARTDIST);
+				const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
 				const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-				const UINT8 maxOdds = 20;
-				fixed_t multiplier = (dist * FRACUNIT) / distRange;
+				const fixed_t maxOdds = 20 << FRACBITS;
+				fixed_t multiplier = FixedDiv(dist, distRange);
 
 				if (multiplier < 0)
 				{
@@ -495,34 +513,40 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 					multiplier = FRACUNIT;
 				}
 
-				newOdds = FixedMul(maxOdds << FRACBITS, multiplier);
+				newOdds = FixedMul(maxOdds, multiplier);
 			}
 			break;
 		}
 
 		case KITEM_SHRINK:
+		{
 			cooldownOnStart = true;
 			powerItem = true;
 			notNearEnd = true;
 
-			if (pingame-1 <= pexiting)
+			if (roulette->playing - 1 <= roulette->exiting)
 			{
-				newOdds = 0;
+				return 0;
 			}
 			break;
+		}
 
 		case KITEM_LIGHTNINGSHIELD:
+		{
 			cooldownOnStart = true;
 			powerItem = true;
 
 			if (spbplace != -1)
 			{
-				newOdds = 0;
+				return 0;
 			}
 			break;
+		}
 
 		default:
+		{
 			break;
+		}
 	}
 
 	if (newOdds == 0)
@@ -536,7 +560,7 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
 		newOdds = 0;
 	}
-	else if ((notNearEnd == true) && (ourDist < ENDDIST))
+	else if ((notNearEnd == true) && (roulette->baseDist < ENDDIST))
 	{
 		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
 		newOdds = 0;
@@ -556,16 +580,14 @@ INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, bool
 			newOdds *= 2;
 		}
 
-		newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(pingame));
+		newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
 	}
 
 	newOdds = FixedInt(FixedRound(newOdds));
 	return newOdds;
 }
 
-//{ SRB2kart Roulette Code - Distance Based, yes waypoints
-
-UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist)
+static UINT8 K_FindUseodds(player_t *const player, itemroulette_t *const roulette)
 {
 	UINT8 i;
 	UINT8 useOdds = 0;
@@ -586,11 +608,7 @@ UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist)
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
-			if (K_KartGetItemOdds(
-					i, j,
-					player->distancetofinish,
-					player->bot, (player->bot && player->botvars.rival)
-				) > 0)
+			if (K_KartGetItemOdds(player, roulette, i, j) > 0)
 			{
 				break;
 			}
@@ -636,7 +654,7 @@ UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist)
 			dist = FixedMul(DISTVAR << FRACBITS, pos) >> FRACBITS;
 			index = FixedInt(FixedRound(pos));
 
-			if (playerDist <= (unsigned)dist)
+			if (roulette->dist <= (unsigned)dist)
 			{
 				useOdds = distTable[index];
 				break;
@@ -649,14 +667,8 @@ UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist)
 	return useOdds;
 }
 
-boolean K_ForcedSPB(player_t *const player)
+static boolean K_ForcedSPB(player_t *const player, itemroulette_t *const roulette)
 {
-	player_t *first = NULL;
-	player_t *second = NULL;
-	UINT32 secondToFirst = UINT32_MAX;
-	UINT8 pingame = 0;
-	UINT8 i;
-
 	if (K_ItemEnabled(KITEM_SPB) == false)
 	{
 		return false;
@@ -682,49 +694,20 @@ boolean K_ForcedSPB(player_t *const player)
 		return false;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (players[i].exiting)
-		{
-			return false;
-		}
-
-		pingame++;
-
-		if (players[i].position == 1)
-		{
-			first = &players[i];
-		}
-
-		if (players[i].position == 2)
-		{
-			second = &players[i];
-		}
-	}
-
 #if 0
-	if (pingame <= 2)
+	if (roulette->playing <= 2)
 	{
 		return false;
 	}
 #endif
 
-	if (first != NULL && second != NULL)
-	{
-		secondToFirst = second->distancetofinish - first->distancetofinish;
-		secondToFirst = K_ScaleItemDistance(secondToFirst, 16 - pingame);
-	}
-
-	return (secondToFirst >= SPBFORCEDIST);
+	return (roulette->secondToFirst >= SPBFORCEDIST);
 }
 
 static void K_InitRoulette(itemroulette_t *const roulette)
 {
+	size_t i;
+
 #ifndef ITEM_LIST_SIZE
 	if (roulette->itemList == NULL)
 	{
@@ -744,13 +727,50 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 
 	roulette->itemListLen = 0;
 	roulette->index = 0;
+
 	roulette->useOdds = UINT8_MAX;
+	roulette->baseDist = roulette->dist = 0;
+	roulette->playing = roulette->exiting = 0;
+	roulette->firstDist = roulette->secondDist = UINT32_MAX;
+	roulette->secondToFirst = 0;
 
 	roulette->elapsed = 0;
 	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST; // Some default speed
 
 	roulette->active = true;
 	roulette->eggman = false;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		roulette->playing++;
+
+		if (players[i].exiting)
+		{
+			roulette->exiting++;
+		}
+
+		if (players[i].position == 1)
+		{
+			roulette->firstDist = K_UndoMapScaling(players[i].distancetofinish);
+		}
+
+		if (players[i].position == 2)
+		{
+			roulette->secondDist = K_UndoMapScaling(players[i].distancetofinish);
+		}
+	}
+
+	// Calculate 2nd's distance from 1st, for SPB
+	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX)
+	{
+		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
+		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
+	}
 }
 
 static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
@@ -785,58 +805,47 @@ static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t
 	roulette->itemListLen++;
 }
 
+static void K_AddItemToReel(player_t *const player, itemroulette_t *const roulette, kartitems_t item)
+{
+	K_PushToRouletteItemList(roulette, item);
+
+	// If we're in ring debt, pad out the reel with
+	// a BUNCH of Super Rings.
+	if (K_ItemEnabled(KITEM_SUPERRING) == true
+		&& player->rings <= 0
+		&& (gametyperules & GTR_SPHERES) == 0)
+	{
+		K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
+	}
+}
+
 static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *const roulette)
 {
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;
 	fixed_t total = 0;
 
-	UINT8 playing = 0;
-
-	UINT32 firstDist = UINT32_MAX;
-	UINT32 ourDist = UINT32_MAX;
-
-	size_t i;
-
 	// Make them select their item after a little while.
 	// One of the few instances of bot RNG, would be nice to remove it.
 	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] == false || players[i].spectator == true)
-		{
-			continue;
-		}
-
-		playing++;
-
-		if (players[i].position == 1)
-		{
-			firstDist = players[i].distancetofinish;
-		}
-	}
-
-	if (modeattacking || playing <= 1)
+	if (modeattacking || roulette->playing <= 1)
 	{
 		// Time Attack rules; use a consistent speed.
 		roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK;
 		return;
 	}
 
-	ourDist = K_ScaleItemDistance(player->distancetofinish, playing);
-	firstDist = K_ScaleItemDistance(firstDist, playing);
-
-	if (ourDist > ENDDIST)
+	if (roulette->baseDist > ENDDIST)
 	{
 		// Being farther in the course makes your roulette faster.
-		progress = min(FRACUNIT, FixedDiv(ourDist - ENDDIST, ROULETTE_SPEED_DIST));
+		progress = min(FRACUNIT, FixedDiv(roulette->baseDist - ENDDIST, ROULETTE_SPEED_DIST));
 	}
 
-	if (ourDist > firstDist)
+	if (roulette->baseDist > roulette->firstDist)
 	{
 		// Frontrunning makes your roulette faster.
-		frontRun = min(FRACUNIT, FixedDiv(ourDist - firstDist, ENDDIST));
+		frontRun = min(FRACUNIT, FixedDiv(roulette->baseDist - roulette->firstDist, ENDDIST));
 	}
 
 	// Combine our two factors together.
@@ -862,16 +871,19 @@ static void K_CalculateRouletteSpeed(player_t *const player, itemroulette_t *con
 
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 {
-	UINT8 playing = 0;
-	UINT32 playerDist = UINT32_MAX;
-
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
 	size_t rngRoll = 0;
 
+	UINT8 numItems = 0;
+	kartitems_t singleItem = KITEM_SAD;
+
 	size_t i;
 
 	K_InitRoulette(roulette);
+
+	roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
+
 	K_CalculateRouletteSpeed(player, roulette);
 
 	// SPECIAL CASE No. 1:
@@ -884,16 +896,6 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	// SPECIAL CASE No. 2:
 	// Use a special, pre-determined item reel for Time Attack / Free Play
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (playeringame[i] == false || players[i].spectator == true)
-		{
-			continue;
-		}
-
-		playing++;
-	}
-
 	if (bossinfo.boss == true)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
@@ -903,7 +905,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 		return;
 	}
-	else if (modeattacking || playing <= 1)
+	else if (modeattacking || roulette->playing <= 1)
 	{
 		switch (gametype)
 		{
@@ -931,36 +933,58 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 
 	// SPECIAL CASE No. 3:
 	// Only give the SPB if conditions are right
-	if (K_ForcedSPB(player) == true)
+	if (K_ForcedSPB(player, roulette) == true)
 	{
-		K_PushToRouletteItemList(roulette, KITEM_SPB);
+		K_AddItemToReel(player, roulette, KITEM_SPB);
 		return;
-	}
-
-	playerDist = K_GetItemRouletteDistance(player, playing);
-
-	roulette->useOdds = K_FindUseodds(player, playerDist);
-
-	for (i = 1; i < NUMKARTRESULTS; i++)
-	{
-		INT32 thisItemsOdds = K_KartGetItemOdds(
-			roulette->useOdds, i,
-			player->distancetofinish,
-			player->bot, (player->bot && player->botvars.rival)
-		);
-
-		spawnChance[i] = (totalSpawnChance += thisItemsOdds);
 	}
 
 	// SPECIAL CASE No. 4:
-	// All items are off, so give a placeholder item
-	if (totalSpawnChance == 0)
+	// If only one item is enabled, always use it
+	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
-		K_PushToRouletteItemList(roulette, KITEM_SAD);
+		if (K_ItemEnabled(i) == true)
+		{
+			numItems++;
+			if (numItems > 1)
+			{
+				break;
+			}
+
+			singleItem = i;
+		}
+	}
+
+	if (numItems < 2)
+	{
+		// singleItem = KITEM_SAD by default,
+		// so it will be used when all items are turned off.
+		K_AddItemToReel(player, roulette, singleItem);
 		return;
 	}
 
-	// We always want the same result when making the same item reel.
+	// Special cases are all handled, we can now
+	// actually calculate actual item reels.
+	roulette->dist = K_GetItemRouletteDistance(player, roulette->playing);
+	roulette->useOdds = K_FindUseodds(player, roulette);
+
+	for (i = 1; i < NUMKARTRESULTS; i++)
+	{
+		spawnChance[i] = (
+			totalSpawnChance += K_KartGetItemOdds(player, roulette, roulette->useOdds, i)
+		);
+	}
+
+	if (totalSpawnChance == 0)
+	{
+		// This shouldn't happen, but if it does, early exit.
+		// Maybe can happen if you enable multiple items for
+		// another gametype, so we give the singleItem as a fallback.
+		K_AddItemToReel(player, roulette, singleItem);
+		return;
+	}
+
+	// Create the same item reel given the same inputs.
 	P_SetRandSeed(PR_ITEM_ROULETTE, ITEM_REEL_SEED);
 
 	while (totalSpawnChance > 0)
@@ -971,16 +995,7 @@ void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette)
 			continue;
 		}
 
-		K_PushToRouletteItemList(roulette, i);
-
-		// If we're in ring debt, pad out the reel with
-		// a BUNCH of Super Rings.
-		if (K_ItemEnabled(KITEM_SUPERRING) == true
-			&& player->rings <= 0
-			&& (gametyperules & GTR_SPHERES) == 0)
-		{
-			K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
-		}
+		K_AddItemToReel(player, roulette, i);
 
 		for (; i < NUMKARTRESULTS; i++)
 		{
@@ -1011,7 +1026,7 @@ void K_StartEggmanRoulette(player_t *const player)
 */
 static void K_KartGetItemResult(player_t *const player, kartitems_t getitem)
 {
-	if (getitem == KITEM_SPB || getitem == KITEM_SHRINK)
+	if (K_ItemSingularity(getitem) == true)
 	{
 		K_SetItemCooldown(getitem, 20*TICRATE);
 	}

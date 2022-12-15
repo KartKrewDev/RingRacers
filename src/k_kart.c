@@ -6053,6 +6053,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 
 	if (type == 0)
 	{
+		itemroulette_t rouletteData = {0};
 		UINT8 useodds = 0;
 		INT32 spawnchance[NUMKARTRESULTS];
 		INT32 totalspawnchance = 0;
@@ -6062,12 +6063,12 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 
 		useodds = amount;
 
+		K_StartItemRoulette(stplyr, &rouletteData);
+
 		for (i = 1; i < NUMKARTRESULTS; i++)
 		{
-			spawnchance[i] = (totalspawnchance += K_KartGetItemOdds(
-				useodds, i,
-				UINT32_MAX,
-				false, false)
+			spawnchance[i] = (
+				totalspawnchance += K_KartGetItemOdds(NULL, &rouletteData, useodds, i)
 			);
 		}
 
@@ -10498,8 +10499,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (spbplace == -1 || player->position != spbplace)
 			player->pflags &= ~PF_RINGLOCK; // reset ring lock
 
-		if (player->itemtype == KITEM_SPB
-			|| player->itemtype == KITEM_SHRINK)
+		if (K_ItemSingularity(player->itemtype) == true)
 		{
 			K_SetItemCooldown(player->itemtype, 20*TICRATE);
 		}

@@ -444,6 +444,7 @@ static void P_NetArchivePlayers(void)
 #endif
 
 		WRITEUINT8(save_p, players[i].itemRoulette.useOdds);
+		WRITEUINT32(save_p, players[i].itemRoulette.dist);
 		WRITEUINT32(save_p, players[i].itemRoulette.index);
 		WRITEUINT8(save_p, players[i].itemRoulette.sound);
 		WRITEUINT32(save_p, players[i].itemRoulette.speed);
@@ -798,6 +799,7 @@ static void P_NetUnArchivePlayers(void)
 #endif
 
 		players[i].itemRoulette.useOdds = READUINT8(save_p);
+		players[i].itemRoulette.dist = READUINT32(save_p);
 		players[i].itemRoulette.index = (size_t)READUINT32(save_p);
 		players[i].itemRoulette.sound = READUINT8(save_p);
 		players[i].itemRoulette.speed = (tic_t)READUINT32(save_p);

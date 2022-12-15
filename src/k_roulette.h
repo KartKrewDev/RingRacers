@@ -17,15 +17,9 @@
 #include "d_player.h"
 
 boolean K_ItemEnabled(SINT8 item);
+boolean K_ItemSingularity(kartitems_t item);
 
-fixed_t K_ItemOddsScale(UINT8 playerCount);
-UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers);
-UINT32 K_GetItemRouletteDistance(player_t *const player, UINT8 pingame);
-
-INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, boolean bot, boolean rival);
-UINT8 K_FindUseodds(player_t *const player, UINT32 playerDist);
-
-boolean K_ForcedSPB(player_t *const player);
+INT32 K_KartGetItemOdds(player_t *const player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
 
 void K_StartItemRoulette(player_t *const player, itemroulette_t *const roulette);
 void K_StartEggmanRoulette(player_t *const player);
