@@ -4712,7 +4712,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			x = 8;
 			y = BASEVIDHEIGHT-16;
 			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
-			V_DrawThinString(x, y, V_ALLOWLOWERCASE|highlightflags, "Press (A) to toggle");
+			V_DrawThinString(x, y, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Press (A)");
 		}
 		default:
 		{
@@ -4971,8 +4971,8 @@ static void M_DrawStatsMaps(void)
 		}
 		else if (dotopname)
 		{
-			V_DrawThinString(20,  y, highlightflags, "LEVEL NAME");
-			V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, highlightflags, "MEDALS");
+			V_DrawThinString(20,  y, V_6WIDTHSPACE|highlightflags, "LEVEL NAME");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
 			y += STATSSTEP;
 			dotopname = false;
 		}
@@ -4982,7 +4982,7 @@ static void M_DrawStatsMaps(void)
 
 		{
 			char *title = G_BuildMapTitle(mnum);
-			V_DrawThinString(20, y, 0, title);
+			V_DrawThinString(20, y, V_6WIDTHSPACE, title);
 			Z_Free(title);
 		}
 
@@ -4993,8 +4993,8 @@ static void M_DrawStatsMaps(void)
 	}
 	if (dotopname && !location)
 	{
-		V_DrawString(20,  y, highlightflags, "LEVEL NAME");
-		V_DrawString(256, y, highlightflags, "MEDALS");
+		V_DrawString(20,  y, V_6WIDTHSPACE|highlightflags, "LEVEL NAME");
+		V_DrawString(256, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
 		y += STATSSTEP;
 	}
 	else if (location)
@@ -5005,7 +5005,7 @@ static void M_DrawStatsMaps(void)
 	{
 		if (i == 1)
 		{
-			V_DrawThinString(20, y, highlightflags, "EXTRA MEDALS");
+			V_DrawThinString(20, y, V_6WIDTHSPACE|highlightflags, "EXTRA MEDALS");
 			if (location)
 			{
 				y += STATSSTEP;
@@ -5045,15 +5045,15 @@ static void M_DrawStatsMaps(void)
 				UINT16 color = min(unlockables[i].color, numskincolors-1);
 				if (!color)
 					color = SKINCOLOR_GOLD;
-				V_DrawSmallMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				V_DrawSmallMappedPatch(291, y+1, V_6WIDTHSPACE, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE));
 			}
 			else
 			{
-				V_DrawSmallScaledPatch(291, y+1, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+				V_DrawSmallScaledPatch(291, y+1, V_6WIDTHSPACE, W_CachePatchName("NEEDIT", PU_CACHE));
 			}
 
-			V_DrawThinString(20, y, 0, va("%s", unlockables[i].name));
+			V_DrawThinString(20, y, V_6WIDTHSPACE, va("%s", unlockables[i].name));
 		}
 
 		y += STATSSTEP;
@@ -5081,18 +5081,18 @@ void M_DrawStatistics(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
-	V_DrawThinString(20, 22, V_ALLOWLOWERCASE|highlightflags, "Total Play Time:");
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, 32, 0,
+	V_DrawThinString(20, 22, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Play Time:");
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, 32, V_6WIDTHSPACE,
 							va("%i hours, %i minutes, %i seconds",
 	                         G_TicsToHours(gamedata->totalplaytime),
 	                         G_TicsToMinutes(gamedata->totalplaytime, false),
 	                         G_TicsToSeconds(gamedata->totalplaytime)));
-	V_DrawThinString(20, 42, V_ALLOWLOWERCASE|highlightflags, "Total Matches:");
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, va("%i played", gamedata->matchesplayed));
+	V_DrawThinString(20, 42, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Matches:");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, V_6WIDTHSPACE, va("%i played", gamedata->matchesplayed));
 
 	if (!statisticsmenu.maplist)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, V_ALLOWLOWERCASE, "No maps!?");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "No maps!?");
 		return;
 	}
 
@@ -5110,17 +5110,17 @@ void M_DrawStatistics(void)
 		besttime += mapheaderinfo[i]->mainrecord->time;
 	}
 
-	V_DrawThinString(20, 60, V_ALLOWLOWERCASE, "Combined time records:");
+	V_DrawThinString(20, 60, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "Combined time records:");
 
 	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, V_ALLOWLOWERCASE|(mapsunfinished ? V_REDMAP : 0), beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, V_6WIDTHSPACE|V_ALLOWLOWERCASE|(mapsunfinished ? V_REDMAP : 0), beststr);
 
 	if (mapsunfinished)
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_ALLOWLOWERCASE|V_REDMAP, va("(%d unfinished)", mapsunfinished));
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_REDMAP, va("(%d unfinished)", mapsunfinished));
 	else
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_ALLOWLOWERCASE, "(complete)");
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "(complete)");
 
-	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
+	V_DrawThinString(32, 70, V_6WIDTHSPACE, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
 	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
