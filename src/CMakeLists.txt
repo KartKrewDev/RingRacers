@@ -5,7 +5,7 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" AND
 	target_link_options(SRB2SDL2 PRIVATE "-static")
 endif()
 
-set_property(TARGET SRB2SDL2 PROPERTY C_STANDARD 11)
+target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 
 # Core sources
 target_sourcefile(c)
@@ -370,6 +370,7 @@ endif()
 
 add_subdirectory(sdl)
 add_subdirectory(objects)
+add_subdirectory(tests)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
