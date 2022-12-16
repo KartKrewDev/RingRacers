@@ -50,14 +50,6 @@ void K_ReduceVFX(mobj_t *mo, player_t *owner);
 boolean K_IsPlayerLosing(player_t *player);
 fixed_t K_GetKartGameSpeedScalar(SINT8 value);
 
-extern consvar_t *KartItemCVars[NUMKARTRESULTS-1];
-
-UINT8 K_FindUseodds(player_t *player, fixed_t mashed, UINT32 pdis, UINT8 bestbumper);
-fixed_t K_ItemOddsScale(UINT8 numPlayers);
-UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers);
-INT32 K_KartGetItemOdds(UINT8 pos, SINT8 item, UINT32 ourDist, fixed_t mashed, boolean bot, boolean rival);
-INT32 K_GetRollingRouletteItem(player_t *player);
-boolean K_ForcedSPB(player_t *player);
 INT32 K_GetShieldFromItem(INT32 item);
 SINT8 K_ItemResultToType(SINT8 getitem);
 UINT8 K_ItemResultToAmount(SINT8 getitem);

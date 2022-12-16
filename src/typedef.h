@@ -37,6 +37,7 @@ TYPEDEF (discordRequest_t);
 TYPEDEF (respawnvars_t);
 TYPEDEF (botvars_t);
 TYPEDEF (skybox_t);
+TYPEDEF (itemroulette_t);
 TYPEDEF (player_t);
 
 // d_clisrv.h

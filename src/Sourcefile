@@ -125,3 +125,4 @@ k_director.c
 k_follower.c
 k_profiles.c
 k_specialstage.c
+k_roulette.c
