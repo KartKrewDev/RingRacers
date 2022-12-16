@@ -129,6 +129,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_follower.c
 	k_profiles.c
 	k_specialstage.c
+	k_roulette.c
 )
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" AND NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")

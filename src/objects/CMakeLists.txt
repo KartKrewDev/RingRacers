@@ -8,4 +8,5 @@ target_sources(SRB2SDL2 PRIVATE
 	orbinaut.c
 	jawz.c
 	duel-bomb.c
+	broly.c
 )
