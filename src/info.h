@@ -549,6 +549,7 @@ void A_ItemPop();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_SSMineFlash();
 void A_LandMineExplode();
 void A_LandMineExplode();
 void A_BallhogExplode();
@@ -1041,6 +1042,7 @@ typedef enum sprite
 	SPR_BOM3, // Boss Explosion 2
 	SPR_BOM4, // Underwater Explosion
 	SPR_BMNB, // Mine Explosion
+	SPR_LSSJ, // My ki is overflowing!!
 
 	// Crumbly rocks
 	SPR_ROIA,
@@ -1089,6 +1091,7 @@ typedef enum sprite
 	SPR_KINF, // Invincibility flash
 	SPR_INVI, // Invincibility speedlines
 	SPR_ICAP, // Item capsules
+	SPR_IMON, // Item Monitor
 	SPR_MGBX, // Heavy Magician transform box
 	SPR_MGBT, // Heavy Magician transform box top
 	SPR_MGBB, // Heavy Magician transform box bottom
@@ -5562,12 +5565,16 @@ typedef enum state
 	S_JANKSPARK3,
 	S_JANKSPARK4,
 
+	// Broly Ki Orb
+	S_BROLY1,
+	S_BROLY2,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
 } statenum_t;
 
-typedef struct
+struct state_t
 {
 	spritenum_t sprite;
 	UINT32 frame; // we use the upper 16 bits for translucency and other shade effects
@@ -5576,7 +5583,7 @@ typedef struct
 	INT32 var1;
 	INT32 var2;
 	statenum_t nextstate;
-} state_t;
+};
 
 extern state_t states[NUMSTATES];
 extern char sprnames[NUMSPRITES + 1][5];
@@ -6675,12 +6682,14 @@ typedef enum mobj_type
 
 	MT_BEAMPOINT,
 
+	MT_BROLY,
+
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
 	NUMMOBJTYPES
 } mobjtype_t;
 
-typedef struct
+struct mobjinfo_t
 {
 	INT32 doomednum;
 	statenum_t spawnstate;
@@ -6706,7 +6715,7 @@ typedef struct
 	sfxenum_t activesound;
 	UINT32 flags;
 	statenum_t raisestate;
-} mobjinfo_t;
+};
 
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
 

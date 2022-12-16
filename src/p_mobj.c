@@ -5886,8 +5886,12 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			K_MatchGenericExtraFlags(smoke, mobj);
 			smoke->scale = mobj->scale * 2;
 			smoke->destscale = mobj->scale * 6;
-			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*FRACUNIT*P_MobjFlip(smoke);
+			smoke->momz = P_RandomRange(PR_SMOLDERING, 4, 9)*mobj->scale*P_MobjFlip(smoke);
 		}
+		break;
+	case MT_SMOKE:
+	case MT_BOOMEXPLODE:
+		mobj->renderflags &= ~(RF_DONTDRAW);
 		break;
 	case MT_BOOMPARTICLE:
 		{
@@ -6124,7 +6128,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		break;
 
 	// see also K_drawKartItem in k_hud.c
-	case MT_PLAYERARROW:
+	case MT_PLAYERARROW: // FIXME: Delete this object, attach to name tags instead.
 		if (mobj->target && mobj->target->health
 			&& mobj->target->player && !mobj->target->player->spectator
 			&& mobj->target->health && mobj->target->player->playerstate != PST_DEAD
@@ -6178,7 +6182,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			}
 
 			// Do this in an easy way
-			if (mobj->target->player->itemroulette)
+			if (mobj->target->player->itemRoulette.active)
 			{
 				mobj->tracer->color = mobj->target->player->skincolor;
 				mobj->tracer->colorized = true;
@@ -6194,11 +6198,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				const INT32 numberdisplaymin = ((mobj->target->player->itemtype == KITEM_ORBINAUT) ? 5 : 2);
 
 				// Set it to use the correct states for its condition
-				if (mobj->target->player->itemroulette)
+				if (mobj->target->player->itemRoulette.active)
 				{
 					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
 					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = K_GetRollingRouletteItem(mobj->target->player) | FF_FULLBRIGHT;
+					mobj->tracer->frame = 1 | FF_FULLBRIGHT;
 					mobj->tracer->renderflags &= ~RF_DONTDRAW;
 				}
 				else if (mobj->target->player->stealingtimer < 0)
@@ -6384,15 +6388,121 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		break;
 	case MT_BATTLECAPSULE_PIECE:
 		if (mobj->extravalue2)
+		{
 			mobj->frame |= FF_VERTICALFLIP;
+		}
 		else
+		{
 			mobj->frame &= ~FF_VERTICALFLIP;
+		}
 
 		if (mobj->flags2 & MF2_OBJECTFLIP)
+		{
 			mobj->eflags |= MFE_VERTICALFLIP;
+		}
 
 		if (mobj->tics > 0)
+		{
+			// Despawning.
 			mobj->renderflags ^= RF_DONTDRAW;
+		}
+		else
+		{
+			statenum_t state = (statenum_t)(mobj->state - states);
+			mobj_t *owner = mobj->target;
+			fixed_t newx, newy, newz;
+			SINT8 flip;
+
+			if (owner == NULL || P_MobjWasRemoved(owner) == true)
+			{
+				// Exit early.
+				break;
+			}
+
+			newx = owner->x;
+			newy = owner->y;
+			newz = P_GetMobjFeet(owner);
+
+			flip = P_MobjFlip(owner); // Flying capsules needs flipped sprites, but not flipped gravity
+			if (owner->extravalue1)
+			{
+				flip = -flip;
+				newz += owner->height;
+			}
+
+			mobj->scale = owner->scale;
+			mobj->destscale = owner->destscale;
+			mobj->scalespeed = owner->scalespeed;
+
+			mobj->extravalue2 = owner->extravalue1;
+
+			mobj->flags2 = (mobj->flags2 & ~MF2_OBJECTFLIP) | (owner->flags2 & MF2_OBJECTFLIP);
+
+			switch (state)
+			{
+				case S_BATTLECAPSULE_TOP:
+				{
+					newz += (80 * owner->scale * flip);
+					break;
+				}
+
+				case S_BATTLECAPSULE_BUTTON:
+				{
+					newz += (120 * owner->scale * flip);
+					break;
+				}
+
+				case S_BATTLECAPSULE_SUPPORT:
+				case S_BATTLECAPSULE_SUPPORTFLY:
+				case S_KARMAWHEEL:
+				{
+					fixed_t offx = 36 * owner->scale;
+					fixed_t offy = 36 * owner->scale;
+
+					if (mobj->extravalue1 & 1)
+					{
+						offx = -offx;
+					}
+
+					if (mobj->extravalue1 > 1)
+					{
+						offy = -offy;
+					}
+
+					newx += offx;
+					newy += offy;
+					break;
+				}
+
+				case S_BATTLECAPSULE_SIDE1:
+				case S_BATTLECAPSULE_SIDE2:
+				{
+#define inradius 3797355 // Precalculated
+#ifndef inradius
+					fixed_t inradius = FixedDiv(48 << FRACBITS, 2 * FINETANGENT((((ANGLE_180 / 8) + ANGLE_90) >> ANGLETOFINESHIFT) & 4095));
+#endif
+					fixed_t offset = FixedMul(inradius, owner->scale);
+					angle_t angle = (ANGLE_45 * mobj->extravalue1);
+
+					newx += FixedMul(offset, FINECOSINE(angle >> ANGLETOFINESHIFT));
+					newy += FixedMul(offset, FINESINE(angle >> ANGLETOFINESHIFT));
+					newz += (12 * owner->scale * flip);
+
+					mobj->angle = angle + ANGLE_90;
+					break;
+#undef inradius
+				}
+
+				default:
+				{
+					break;
+				}
+			}
+
+			mobj->momx = newx - mobj->x;
+			mobj->momy = newy - mobj->y;
+			mobj->momz = newz - mobj->z;
+		}
 		break;
 	case MT_SPINDASHWIND:
 	case MT_DRIFTELECTRICSPARK:
@@ -9039,8 +9149,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			SINT8 realflip = P_MobjFlip(mobj);
 			SINT8 flip = realflip; // Flying capsules needs flipped sprites, but not flipped gravity
-			fixed_t bottom;
-			mobj_t *cur;
 
 			if (mobj->extravalue1)
 			{
@@ -9144,67 +9252,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						P_SetTarget(&mobj->target, NULL);
 					}
 				}
-			}
-
-			if (flip == -1)
-				bottom = mobj->z + mobj->height;
-			else
-				bottom = mobj->z;
-
-			cur = mobj->hnext;
-
-			// Move each piece to the proper position
-			while (cur && !P_MobjWasRemoved(cur))
-			{
-				fixed_t newx = mobj->x;
-				fixed_t newy = mobj->y;
-				fixed_t newz = bottom;
-				statenum_t state = (statenum_t)(cur->state-states);
-
-				cur->scale = mobj->scale;
-				cur->destscale = mobj->destscale;
-				cur->scalespeed = mobj->scalespeed;
-
-				cur->extravalue2 = mobj->extravalue1;
-
-				cur->flags2 = (cur->flags2 & ~MF2_OBJECTFLIP)|(mobj->flags2 & MF2_OBJECTFLIP);
-
-				if (state == S_BATTLECAPSULE_TOP)
-					newz += (80 * mobj->scale * flip);
-				else if (state == S_BATTLECAPSULE_BUTTON)
-					newz += (108 * mobj->scale * flip);
-				else if (state == S_BATTLECAPSULE_SUPPORT
-					|| state == S_BATTLECAPSULE_SUPPORTFLY
-					|| state == S_KARMAWHEEL)
-				{
-					fixed_t offx = mobj->radius;
-					fixed_t offy = mobj->radius;
-
-					if (cur->extravalue1 & 1)
-						offx = -offx;
-
-					if (cur->extravalue1 > 1)
-						offy = -offy;
-
-					newx += offx;
-					newy += offy;
-				}
-				else if (state == S_BATTLECAPSULE_SIDE1
-					|| state == S_BATTLECAPSULE_SIDE2)
-				{
-					fixed_t offset = 48 * mobj->scale;
-					angle_t angle = (ANGLE_45 * cur->extravalue1);
-
-					newx += FixedMul(offset, FINECOSINE(angle >> ANGLETOFINESHIFT));
-					newy += FixedMul(offset, FINESINE(angle >> ANGLETOFINESHIFT));
-					newz += (12 * mobj->scale * flip);
-
-					cur->angle = angle + ANGLE_90;
-				}
-
-				P_MoveOrigin(cur, newx, newy, newz);
-
-				cur = cur->hnext;
 			}
 		}
 		break;
@@ -9996,6 +10043,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 	{
 		case MT_PLAYER:
 		case MT_KART_LEFTOVER:
+		case MT_BATTLECAPSULE:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:

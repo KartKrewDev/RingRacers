@@ -54,4 +54,7 @@ void Obj_DuelBombReverse(mobj_t *bomb);
 void Obj_DuelBombTouch(mobj_t *bomb, mobj_t *toucher);
 void Obj_DuelBombInit(mobj_t *bomb);
 
+/* Broly Ki */
+mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
+
 #endif/*k_objects_H*/

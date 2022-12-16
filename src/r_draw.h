@@ -47,7 +47,7 @@ extern UINT8 *dc_transmap;
 
 extern UINT8 *dc_translation;
 
-extern struct r_lightlist_s *dc_lightlist;
+extern struct r_lightlist_t *dc_lightlist;
 extern INT32 dc_numlights, dc_maxlights;
 
 //Fix TUTIFRUTI
@@ -72,9 +72,9 @@ extern UINT8 *ds_source;
 extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
 
-typedef struct {
+struct floatv3_t {
 	float x, y, z;
-} floatv3_t;
+};
 
 // Vectors for Software's tilted slope drawers
 extern floatv3_t *ds_su, *ds_sv, *ds_sz;

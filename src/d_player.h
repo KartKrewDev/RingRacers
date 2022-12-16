@@ -225,6 +225,7 @@ typedef enum
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
 	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
+	khud_rouletteoffset,// Roulette stop height
 
 	// Rings
 	khud_ringframe,		// Ring spin frame
@@ -287,7 +288,7 @@ typedef enum
 #define GARDENTOP_MAXGRINDTIME (45)
 
 // player_t struct for all respawn variables
-typedef struct respawnvars_s
+struct respawnvars_t
 {
 	UINT8 state; // see RESPAWNST_ constants in k_respawn.h
 	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
@@ -301,10 +302,10 @@ typedef struct respawnvars_s
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
-} respawnvars_t;
+};
 
 // player_t struct for all bot variables
-typedef struct botvars_s
+struct botvars_t
 {
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
@@ -321,18 +322,53 @@ typedef struct botvars_s
 	SINT8 turnconfirm; // Confirm turn direction
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
-} botvars_t;
+};
 
 // player_t struct for all skybox variables
-typedef struct {
+struct skybox_t {
 	mobj_t * viewpoint;
 	mobj_t * centerpoint;
-} skybox_t;
+};
+
+// player_t struct for item roulette variables
+
+// Doing this the right way is causing problems.
+// so FINE, it's a static length now.
+#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+
+struct itemroulette_t
+{
+	boolean active;
+
+#ifdef ITEM_LIST_SIZE
+	size_t itemListLen;
+	SINT8 itemList[ITEM_LIST_SIZE];
+#else
+	size_t itemListCap;
+	size_t itemListLen;
+	SINT8 *itemList;
+#endif
+
+	UINT8 useOdds;
+	UINT8 playing, exiting;
+	UINT32 dist, baseDist;
+	UINT32 firstDist, secondDist;
+	UINT32 secondToFirst;
+
+	size_t index;
+	UINT8 sound;
+
+	tic_t speed;
+	tic_t tics;
+	tic_t elapsed;
+
+	boolean eggman;
+};
 
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
-typedef struct player_s
+struct player_t
 {
 	mobj_t *mo;
 
@@ -477,8 +513,7 @@ typedef struct player_s
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
-	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+	itemroulette_t itemRoulette;	// Item roulette data
 
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number
@@ -612,6 +647,6 @@ typedef struct player_s
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
-} player_t;
+};
 
 #endif

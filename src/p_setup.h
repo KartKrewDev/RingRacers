@@ -45,7 +45,7 @@ enum
 //
 // MAP used flats lookup table
 //
-typedef struct
+struct levelflat_t
 {
 	char name[9]; // resource name from wad
 
@@ -85,7 +85,7 @@ typedef struct
 	void *mipmap;
 	void *mippic;
 #endif
-} levelflat_t;
+};
 
 extern size_t numlevelflats;
 extern levelflat_t *levelflats;

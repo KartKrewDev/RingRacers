@@ -81,12 +81,12 @@ extern char english_shiftxform[];
 //        sorted player lines
 //------------------------------------
 
-typedef struct
+struct playersort_t
 {
 	UINT32 count;
 	INT32 num;
 	const char *name;
-} playersort_t;
+};
 
 //------------------------------------
 //           chat stuff

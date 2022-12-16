@@ -57,30 +57,53 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		VERSION 1.2.13
 		URL "https://github.com/madler/zlib/archive/refs/tags/v1.2.13.zip"
 		EXCLUDE_FROM_ALL
-		OPTIONS
-			# The assembly optimizations are unmaintained and slated to be removed
-			"ASM686 Off"
-			"AMD64 Off"
-			"SKIP_INSTALL_ALL ON"
+		DOWNLOAD_ONLY YES
 	)
-	file(MAKE_DIRECTORY "${zlib_BINARY_DIR}/include")
-	file(COPY "${zlib_SOURCE_DIR}/zlib.h" DESTINATION "${zlib_BINARY_DIR}/include")
-	file(COPY "${zlib_BINARY_DIR}/zconf.h" DESTINATION "${zlib_BINARY_DIR}/include")
-	# honestly this should probably be built like png is
-	set_target_properties(zlib PROPERTIES EXCLUDE_FROM_ALL ON)
-	set_target_properties(minigzip PROPERTIES EXCLUDE_FROM_ALL ON)
-	set_target_properties(example PROPERTIES EXCLUDE_FROM_ALL ON)
-	# zlib cmake also adds these 64 targets separately
-	if(HAVE_OFF64_T)
-		set_target_properties(minigzip64 PROPERTIES EXCLUDE_FROM_ALL ON)
-		set_target_properties(example64 PROPERTIES EXCLUDE_FROM_ALL ON)
-	endif()
-	target_include_directories(zlib INTERFACE "${zlib_BINARY_DIR}/include")
-	target_include_directories(zlibstatic INTERFACE "${zlib_BINARY_DIR}/include")
-	if(SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES)
-		add_library(ZLIB::ZLIB ALIAS zlib)
-	else()
-		add_library(ZLIB::ZLIB ALIAS zlibstatic)
+	if(ZLIB_ADDED)
+		set(ZLIB_SRCS
+			crc32.h
+			deflate.h
+			gzguts.h
+			inffast.h
+			inffixed.h
+			inflate.h
+			inftrees.h
+			trees.h
+			zutil.h
+
+			adler32.c
+			compress.c
+			crc32.c
+			deflate.c
+			gzclose.c
+			gzlib.c
+			gzread.c
+			gzwrite.c
+			inflate.c
+			infback.c
+			inftrees.c
+			inffast.c
+			trees.c
+			uncompr.c
+			zutil.c
+		)
+		list(TRANSFORM ZLIB_SRCS PREPEND "${ZLIB_SOURCE_DIR}/")
+		
+		configure_file("${ZLIB_SOURCE_DIR}/zlib.pc.cmakein" "${ZLIB_BINARY_DIR}/zlib.pc" @ONLY)
+		configure_file("${ZLIB_SOURCE_DIR}/zconf.h.cmakein" "${ZLIB_BINARY_DIR}/include/zconf.h" @ONLY)
+		configure_file("${ZLIB_SOURCE_DIR}/zlib.h" "${ZLIB_BINARY_DIR}/include/zlib.h" @ONLY)
+
+		add_library(ZLIB ${SRB2_INTERNAL_LIBRARY_TYPE} ${ZLIB_SRCS})
+		set_target_properties(ZLIB PROPERTIES
+			VERSION 1.2.13
+			OUTPUT_NAME "z"
+		)
+		target_include_directories(ZLIB PRIVATE "${ZLIB_SOURCE_DIR}")
+		target_include_directories(ZLIB PUBLIC "${ZLIB_BINARY_DIR}/include")
+		if(MSVC)
+			target_compile_definitions(ZLIB PRIVATE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
+		endif()
+		add_library(ZLIB::ZLIB ALIAS ZLIB)
 	endif()
 endif()
 
@@ -151,8 +174,8 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		target_include_directories(png PUBLIC "${png_BINARY_DIR}/include")
 
 		# ... and these also need to be present only for png build
-		target_include_directories(png PRIVATE "${zlib_SOURCE_DIR}")
-		target_include_directories(png PRIVATE "${zlib_BINARY_DIR}")
+		target_include_directories(png PRIVATE "${ZLIB_SOURCE_DIR}")
+		target_include_directories(png PRIVATE "${ZLIB_BINARY_DIR}")
 		target_include_directories(png PRIVATE "${png_BINARY_DIR}")
 
 		target_link_libraries(png PRIVATE ZLIB::ZLIB)
@@ -473,8 +496,8 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU OR "${CMAKE_C_COMPILER_ID}" STREQUAL Clang OR "${CMAKE_C_COMPILER_ID}" STREQUAL AppleClang)
 			target_compile_options(openmpt PRIVATE "-g0")
 		endif()
-		if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows)
-			target_link_libraries(openmpt PRIVATE rpcrt4)
+		if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND "${CMAKE_C_COMPILER_ID}" STREQUAL MSVC)
+			target_link_libraries(openmpt PRIVATE Rpcrt4)
 		endif()
 		target_compile_features(openmpt PRIVATE cxx_std_11)
 		target_compile_definitions(openmpt PRIVATE -DLIBOPENMPT_BUILD)
@@ -499,6 +522,7 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		OPTIONS
 			"BUILD_SHARED_LIBS ${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}"
 			"ENABLE_UBSAN OFF"
+			"GME_YM2612_EMU MAME"
 	)
 	target_compile_features(gme PRIVATE cxx_std_11)
 	target_link_libraries(gme PRIVATE ZLIB::ZLIB)

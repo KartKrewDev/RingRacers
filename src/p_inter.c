@@ -38,6 +38,7 @@
 #include "k_respawn.h"
 #include "p_spec.h"
 #include "k_objects.h"
+#include "k_roulette.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -130,7 +131,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				return false;
 
 			// Already have fake
-			if (player->roulettetype == 2
+			if (player->itemRoulette.eggman == true
 				|| player->eggmanexplode)
 				return false;
 		}
@@ -143,7 +144,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				return false;
 
 			// Item slot already taken up
-			if (player->itemroulette
+			if (player->itemRoulette.active == true
 				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
@@ -411,8 +412,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 				return;
 
-			player->itemroulette = 1;
-			player->roulettetype = 1;
+			K_StartItemRoulette(player);
 
 			// Karma fireworks
 			for (i = 0; i < 5; i++)
@@ -1449,8 +1449,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				player->karthud[khud_itemblink] = TICRATE;
 				player->karthud[khud_itemblinkmode] = 0;
-				player->itemroulette = 0;
-				player->roulettetype = 0;
+				player->itemRoulette.active = false;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
@@ -2180,6 +2179,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;
+				case DMG_VOLTAGE:
 				case DMG_NORMAL:
 				default:
 					K_SpinPlayer(player, inflictor, source, KSPIN_SPINOUT);

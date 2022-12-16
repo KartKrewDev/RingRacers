@@ -96,7 +96,7 @@ static void P_NetArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
-//	size_t q;
+	size_t q;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_PLAYERS);
 
@@ -310,9 +310,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
 
-		WRITEUINT16(save_p, players[i].itemroulette);
-		WRITEUINT8(save_p, players[i].roulettetype);
-
 		WRITESINT8(save_p, players[i].itemtype);
 		WRITEUINT8(save_p, players[i].itemamount);
 		WRITESINT8(save_p, players[i].throwdir);
@@ -410,6 +407,50 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 		WRITEUINT32(save_p, players[i].botvars.spindashconfirm);
+
+		// itemroulette_t
+		WRITEUINT8(save_p, players[i].itemRoulette.active);
+
+#ifdef ITEM_LIST_SIZE
+		WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
+		{
+			if (q >= players[i].itemRoulette.itemListLen)
+			{
+				WRITESINT8(save_p, KITEM_NONE);
+			}
+			else
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
+			}
+		}
+#else
+		if (players[i].itemRoulette.itemList == NULL)
+		{
+			WRITEUINT32(save_p, 0);
+			WRITEUINT32(save_p, 0);
+		}
+		else
+		{
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
+			}
+		}
+#endif
+
+		WRITEUINT8(save_p, players[i].itemRoulette.useOdds);
+		WRITEUINT32(save_p, players[i].itemRoulette.dist);
+		WRITEUINT32(save_p, players[i].itemRoulette.index);
+		WRITEUINT8(save_p, players[i].itemRoulette.sound);
+		WRITEUINT32(save_p, players[i].itemRoulette.speed);
+		WRITEUINT32(save_p, players[i].itemRoulette.tics);
+		WRITEUINT32(save_p, players[i].itemRoulette.elapsed);
+		WRITEUINT8(save_p, players[i].itemRoulette.eggman);
 	}
 }
 
@@ -417,6 +458,7 @@ static void P_NetUnArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
+	size_t q;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_PLAYERS)
 		I_Error("Bad $$$.sav at archive block Players");
@@ -612,9 +654,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
 
-		players[i].itemroulette = READUINT16(save_p);
-		players[i].roulettetype = READUINT8(save_p);
-
 		players[i].itemtype = READSINT8(save_p);
 		players[i].itemamount = READUINT8(save_p);
 		players[i].throwdir = READSINT8(save_p);
@@ -712,6 +751,61 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
 		players[i].botvars.spindashconfirm = READUINT32(save_p);
+
+		// itemroulette_t
+		players[i].itemRoulette.active = (boolean)READUINT8(save_p);
+
+#ifdef ITEM_LIST_SIZE
+		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
+		{
+			players[i].itemRoulette.itemList[q] = READSINT8(save_p);
+		}
+#else
+		players[i].itemRoulette.itemListCap = (size_t)READUINT32(save_p);
+		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
+
+		if (players[i].itemRoulette.itemListCap > 0)
+		{
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				players[i].itemRoulette.itemList = Z_Calloc(
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
+			else
+			{
+				players[i].itemRoulette.itemList = Z_Realloc(
+					players[i].itemRoulette.itemList,
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
+
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				I_Error("Not enough memory for item roulette list\n");
+			}
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				players[i].itemRoulette.itemList[q] = READSINT8(save_p);
+			}
+		}
+#endif
+
+		players[i].itemRoulette.useOdds = READUINT8(save_p);
+		players[i].itemRoulette.dist = READUINT32(save_p);
+		players[i].itemRoulette.index = (size_t)READUINT32(save_p);
+		players[i].itemRoulette.sound = READUINT8(save_p);
+		players[i].itemRoulette.speed = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.tics = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.eggman = (boolean)READUINT8(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

@@ -101,17 +101,17 @@ extern M_waiting_mode_t m_waiting_mode;
 
 typedef union
 {
-	struct menu_s *submenu;      // IT_SUBMENU
+	menu_t *submenu;      // IT_SUBMENU
 	consvar_t *cvar;             // IT_CVAR
 	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
 } itemaction_t;
 
 // Player Setup menu colors linked list
-typedef struct menucolor_s {
-	struct menucolor_s *next;
-	struct menucolor_s *prev;
+struct menucolor_t {
+	menucolor_t *next;
+	menucolor_t *prev;
 	UINT16 color;
-} menucolor_t;
+};
 
 extern menucolor_t *menucolorhead, *menucolortail;
 
@@ -121,7 +121,7 @@ extern CV_PossibleValue_t gametype_cons_t[];
 // MENU TYPEDEFS
 //
 
-typedef struct menuitem_s
+struct menuitem_t
 {
 	UINT16 status; // show IT_xxx
 
@@ -134,12 +134,12 @@ typedef struct menuitem_s
 	// extra variables
 	INT32 mvar1;
 	INT32 mvar2;
-} menuitem_t;
+};
 
-typedef struct menu_s
+struct menu_t
 {
 	INT16          numitems;           // # of menu items
-	struct menu_s *prevMenu;           // previous menu
+	menu_t        *prevMenu;           // previous menu
 
 	INT16          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
@@ -155,7 +155,7 @@ typedef struct menu_s
 	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
 	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
-} menu_t;
+};
 
 typedef enum
 {
@@ -522,7 +522,7 @@ typedef enum
 	MBT_START = 1<<8
 } menuButtonCode_t;
 
-typedef struct menucmd_s
+struct menucmd_t
 {
 	SINT8 dpad_ud; // up / down dpad
 	SINT8 dpad_lr; // left / right
@@ -530,15 +530,15 @@ typedef struct menucmd_s
 	UINT32 buttonsHeld; // prev frame's buttons
 	UINT16 delay; // menu wait
 	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
-} menucmd_t;
+};
 
 extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
-	struct menu_s *startmenu;
-	struct menu_s *endmenu;
+	menu_t *startmenu;
+	menu_t *endmenu;
 	boolean in;
 } menutransition;
 
@@ -607,7 +607,7 @@ typedef enum
 	CSSTEP_READY
 } setup_mdepth_t;
 
-typedef struct setup_player_s
+struct setup_player_t
 {
 	SINT8 gridx, gridy;
 	UINT8 profilen;
@@ -633,7 +633,7 @@ typedef struct setup_player_s
 	tic_t follower_timer;
 	UINT8 follower_frame;
 	state_t *follower_state;
-} setup_player_t;
+};
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
@@ -800,12 +800,12 @@ void M_ServerListFillDebug(void);
 // Options menu:
 
 // mode descriptions for video mode menu
-typedef struct
+struct modedesc_t
 {
 	INT32 modenum; // video mode number in the vidmodes list
 	const char *desc;  // XXXxYYY
 	UINT8 goodratio; // aspect correct if 1
-} modedesc_t;
+};
 
 
 #define MAXCOLUMNMODES   12     //max modes displayed in one column

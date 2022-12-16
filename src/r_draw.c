@@ -103,7 +103,7 @@ UINT8 *dc_transmap; // one of the translucency tables
 */
 UINT8 *dc_translation;
 
-struct r_lightlist_s *dc_lightlist = NULL;
+struct r_lightlist_t *dc_lightlist = NULL;
 INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
 
 // =========================================================================

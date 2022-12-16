@@ -3455,7 +3455,7 @@ void M_DrawItemToggles(void)
 				continue;
 			}
 
-			cv = KartItemCVars[currentMenu->menuitems[thisitem].mvar1-1];
+			cv = &cv_items[currentMenu->menuitems[thisitem].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[thisitem].mvar1);
@@ -3502,7 +3502,7 @@ void M_DrawItemToggles(void)
 		}
 		else
 		{
-			cv = KartItemCVars[currentMenu->menuitems[itemOn].mvar1-1];
+			cv = &cv_items[currentMenu->menuitems[itemOn].mvar1-1];
 			translucent = (cv->value ? 0 : V_TRANSLUCENT);
 
 			drawnum = K_ItemResultToAmount(currentMenu->menuitems[itemOn].mvar1);

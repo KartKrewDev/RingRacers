@@ -46,12 +46,12 @@ void V_Recalc(void);
 // Color look-up table
 #define CLUTINDEX(r, g, b) (((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)
 
-typedef struct
+struct colorlookup_t
 {
 	boolean init;
 	RGBA_t palette[256];
 	UINT16 table[0xFFFF];
-} colorlookup_t;
+};
 
 void InitColorLUT(colorlookup_t *lut, RGBA_t *palette, boolean makecolors);
 UINT8 GetColorLUT(colorlookup_t *lut, UINT8 r, UINT8 g, UINT8 b);
@@ -167,6 +167,19 @@ void V_CubeApply(RGBA_t *input);
 
 #define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
 #define V_SPLITSCREEN        0x80000000 // Add half of screen width or height automatically depending on player number
+
+void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
+
+struct cliprect_t
+{
+	fixed_t left, right, top, bottom;
+	INT32 flags;
+	boolean enabled;
+};
+
+const cliprect_t *V_GetClipRect(void);
+void V_SetClipRect(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 flags);
+void V_ClearClipRect(void);
 
 // defines for old functions
 #define V_DrawPatch(x,y,s,p) V_DrawFixedPatch((x)<<FRACBITS, (y)<<FRACBITS, FRACUNIT, s|V_NOSCALESTART|V_NOSCALEPATCH, p, NULL)

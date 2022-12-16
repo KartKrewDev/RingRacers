@@ -23,12 +23,12 @@
 #endif
 
 // Store lists of lumps for F_START/F_END etc.
-typedef struct
+struct lumplist_t
 {
 	UINT16 wadfile;
 	UINT16 firstlump;
 	size_t numlumps;
-} lumplist_t;
+};
 
 UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha);
 UINT32 ASTBlendTexturePixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alpha);

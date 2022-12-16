@@ -79,14 +79,14 @@ void COM_Init(void);
 // Variable sized buffers
 // ======================
 
-typedef struct vsbuf_s
+struct vsbuf_t
 {
 	boolean allowoverflow; // if false, do a I_Error
 	boolean overflowed; // set to true if the buffer size failed
 	UINT8 *data;
 	size_t maxsize;
 	size_t cursize;
-} vsbuf_t;
+};
 
 void VS_Alloc(vsbuf_t *buf, size_t initsize);
 void VS_Free(vsbuf_t *buf);
@@ -127,13 +127,13 @@ typedef enum
 	CV_NOLUA = 4096,/* don't let this be called from Lua */
 } cvflags_t;
 
-typedef struct CV_PossibleValue_s
+struct CV_PossibleValue_t
 {
 	INT32 value;
 	const char *strvalue;
-} CV_PossibleValue_t;
+};
 
-typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
+struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 {
 	const char *name;
 	const char *defaultvalue;
@@ -157,8 +157,8 @@ typedef struct consvar_s //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NUL
 	UINT16 netid; // used internaly : netid for send end receive
 	                      // used only with CV_NETVAR
 	char changed;         // has variable been changed by the user? 0 = no, 1 = yes
-	struct consvar_s *next;
-} consvar_t;
+	consvar_t *next;
+};
 
 /* name, defaultvalue, flags, PossibleValue, func */
 #define CVAR_INIT( ... ) \

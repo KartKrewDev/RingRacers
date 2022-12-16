@@ -62,9 +62,8 @@ typedef enum
 //
 // SoundFX struct.
 //
-typedef struct sfxinfo_struct sfxinfo_t;
 
-struct sfxinfo_struct
+struct sfxinfo_t
 {
 	// up to 6-character name
 	const char *name;

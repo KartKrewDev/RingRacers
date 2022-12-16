@@ -22,7 +22,7 @@
 
 #define TERRAIN_NAME_LEN 32
 
-typedef struct t_splash_s
+struct t_splash_t
 {
 	// Splash definition.
 	// These are particles spawned when hitting the floor.
@@ -41,9 +41,9 @@ typedef struct t_splash_s
 	angle_t cone;			// Randomized angle of the push-out.
 
 	UINT8 numParticles;		// Number of particles to spawn.
-} t_splash_t;
+};
 
-typedef struct t_footstep_s
+struct t_footstep_t
 {
 	// Footstep definition.
 	// These are particles spawned when moving fast enough on a floor.
@@ -64,7 +64,7 @@ typedef struct t_footstep_s
 	tic_t sfxFreq;			// How frequently to play the sound.
 	tic_t frequency;		// How frequently to spawn the particles.
 	fixed_t requiredSpeed;	// Speed percentage you need to be at to trigger the particles.
-} t_footstep_t;
+};
 
 typedef enum
 {
@@ -75,7 +75,7 @@ typedef enum
 	TOV__MAX
 } t_overlay_action_t;
 
-typedef struct t_overlay_s
+struct t_overlay_t
 {
 	// Overlay definition.
 	// These are sprites displayed on top of the base object.
@@ -87,7 +87,7 @@ typedef struct t_overlay_s
 	fixed_t scale;			// Thing scale multiplier.
 	UINT16 color;			// Colorize effect. SKINCOLOR_NONE has no colorize.
 	fixed_t speed;			// Speed-up based on object speed. 0 plays the animation at a constant rate.
-} t_overlay_t;
+};
 
 typedef enum
 {
@@ -98,7 +98,7 @@ typedef enum
 	TRF_TRIPWIRE = 1<<3 // Texture is a tripwire when used as a midtexture
 } terrain_flags_t;
 
-typedef struct terrain_s
+struct terrain_t
 {
 	// Terrain definition.
 	// These are all of the properties that the floor gets.
@@ -118,9 +118,9 @@ typedef struct terrain_s
 	angle_t speedPadAngle;	// Speed pad angle
 	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
-} terrain_t;
+};
 
-typedef struct t_floor_s
+struct t_floor_t
 {
 	// Terrain floor definition.
 	// Ties a texture name to a terrain definition.
@@ -128,7 +128,7 @@ typedef struct t_floor_s
 	char textureName[9];	// Floor texture name.
 	UINT32 textureHash;		// Floor texture hash.
 	size_t terrainID;		// Terrain definition ID.
-} t_floor_t;
+};
 
 
 /*--------------------------------------------------
