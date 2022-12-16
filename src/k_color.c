@@ -24,11 +24,12 @@
 --------------------------------------------------*/
 UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
 {
-	UINT32 redweight = 1063 * r;
-	UINT32 greenweight = 3576 * g;
-	UINT32 blueweight = 361 * b;
-	UINT32 brightness = (redweight + greenweight + blueweight) / 5000;
-	return min(brightness, UINT8_MAX);
+	// These are the BT.601 coefficents
+	// See also: https://en.wikipedia.org/wiki/Rec._601
+	UINT32 redweight = 299 * r;
+	UINT32 greenweight = 587 * g;
+	UINT32 blueweight = 114 * b;
+	return min((redweight + greenweight + blueweight) / 1000, UINT8_MAX);
 }
 
 /*--------------------------------------------------
