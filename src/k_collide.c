@@ -403,6 +403,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
+			K_SetHitLagForObjects(t2, t1, 3, false);
 		}
 		else
 		{

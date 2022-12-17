@@ -4341,6 +4341,12 @@ void P_PlayerAfterThink(player_t *player)
 	// so a lag value of 1 is exactly attached to the player.
 	K_HandleFollower(player);
 
+	if (P_MobjWasRemoved(player->mo) || (player->mo->eflags & MFE_PAUSED) == 0)
+	{
+		player->timeshitprev = player->timeshit;
+		player->timeshit = 0;
+	}
+
 
 	if (K_PlayerUsesBotMovement(player))
 	{

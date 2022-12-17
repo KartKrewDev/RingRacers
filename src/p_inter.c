@@ -2015,7 +2015,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
+		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
 			return false;
 	}
 
@@ -2038,6 +2038,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
+		{
+			const INT32 oldtimeshit = player->timeshit;
+
+			player->timeshit++;
+
+			// overflow prevention
+			if (player->timeshit < oldtimeshit)
+			{
+				player->timeshit = oldtimeshit;
+			}
+		}
+
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -2092,6 +2104,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
 				{
+					const INT32	oldhitlag = target->hitlag;
+
+					laglength = max(laglength / 2, 1);
+					K_SetHitLagForObjects(target, inflictor, laglength, false);
+
+					player->invulnhitlag += (target->hitlag - oldhitlag);
+
 					// Full invulnerability
 					K_DoInstashield(player);
 					return false;
