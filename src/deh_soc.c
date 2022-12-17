@@ -3078,6 +3078,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					if (cup->cachedlevels[cup->numlevels] == NEXTMAP_INVALID)
 						continue;
 					mapheaderinfo[cup->cachedlevels[cup->numlevels]]->cup = NULL;
+					cup->cachedlevels[cup->numlevels] = NEXTMAP_INVALID;
 				}
 
 				tmp = strtok(word2,",");
@@ -3100,6 +3101,10 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->numbonus--;
 					Z_Free(cup->levellist[CUPCACHE_BONUS + cup->numbonus]);
 					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = NULL;
+					if (cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] == NEXTMAP_INVALID)
+						continue;
+					mapheaderinfo[cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus]]->cup = NULL;
+					cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] = NEXTMAP_INVALID;
 				}
 
 				tmp = strtok(word2,",");

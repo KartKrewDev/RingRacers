@@ -3891,6 +3891,12 @@ static void G_GetNextMap(void)
 						|| (!marathonmode && M_MapLocked(cm+1)))
 						continue;
 
+					// If the map is in multiple cups, only consider the first one valid.
+					if (mapheaderinfo[cm]->cup != cup)
+					{
+						continue;
+					}
+
 					// Grab the first valid after the map you're on
 					if (gettingresult)
 					{
