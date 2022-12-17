@@ -1477,10 +1477,8 @@ ReadMusicDefFields
 			textline = value;
 
 			/* based ignored lumps */
-			if (!stricmp(stoken, "usage")) {
-#if 0 // Ignore for now
-				STRBUFCPY(def->usage, textline);
-#endif
+			if (!stricmp(stoken, "title")) {
+				STRBUFCPY(def->title, textline);
 			} else if (!stricmp(stoken, "source")) {
 				STRBUFCPY(def->source, textline);
 			} else if (!stricmp(stoken, "volume")) {
@@ -1609,13 +1607,15 @@ void S_ShowMusicCredit(void)
 		if (!stricmp(def->name, music_name))
 		{
 			cursongcredit.def = def;
+			Z_Free(cursongcredit.text);
+			cursongcredit.text = Z_StrDup(va("\x1F"" %s - %s", def->title, def->source));
 			cursongcredit.anim = 5*TICRATE;
-			cursongcredit.x = cursongcredit.old_x =0;
+			cursongcredit.x = cursongcredit.old_x = 0;
 			cursongcredit.trans = NUMTRANSMAPS;
 			return;
 		}
-		else
-			def = def->next;
+
+		def = def->next;
 	}
 }
 
