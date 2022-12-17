@@ -502,12 +502,12 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	else if (specialStage.active == true)
 	{
 		I_Assert(pos < 4); // Ditto
-		newodds = K_KartItemOddsSpecial[item-1][pos];
+		newOdds = K_KartItemOddsSpecial[item-1][pos];
 	}
 	else
 	{
 		I_Assert(pos < 8); // Ditto
-		newodds = K_KartItemOddsRace[item-1][pos];
+		newOdds = K_KartItemOddsRace[item-1][pos];
 	}
 
 	newOdds <<= FRACBITS;
@@ -693,12 +693,12 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	{
 		UINT8 j;
 
-		if (specialStage.active == true && i > 3)
+		if (gametype == GT_BATTLE && i > 1)
 		{
-			oddsvalid[i] = false;
+			oddsValid[i] = false;
 			continue;
 		}
-		else if (gametype == GT_BATTLE && i > 1)
+		else if (specialStage.active == true && i > 3)
 		{
 			oddsValid[i] = false;
 			continue;
@@ -1016,7 +1016,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	fixed_t progress = 0;
 	fixed_t total = 0;
 
-	if (modeattacking || roulette->playing <= 1)
+	if (K_TimeAttackRules() == true)
 	{
 		// Time Attack rules; use a consistent speed.
 		roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK;
@@ -1099,7 +1099,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		return;
 	}
-	else if (modeattacking || roulette->playing <= 1)
+	else if (K_TimeAttackRules() == true)
 	{
 		switch (gametype)
 		{

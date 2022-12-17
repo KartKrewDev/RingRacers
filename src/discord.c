@@ -547,7 +547,7 @@ void DRPC_UpdatePresence(void)
 		if (gamestate == GS_LEVEL && Playing())
 		{
 			const time_t currentTime = time(NULL);
-			const time_t mapTimeStart = currentTime - ((leveltime + (modeattacking ? starttime : 0)) / TICRATE);
+			const time_t mapTimeStart = currentTime - ((leveltime + starttime) / TICRATE);
 
 			discordPresence.startTimestamp = mapTimeStart;
 

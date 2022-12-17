@@ -1367,7 +1367,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (modeattacking) // no respawns
+			if (K_TimeAttackRules() == true) // no respawns
 				;
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;
@@ -2212,7 +2212,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(target, source);
 
-			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);
 			}

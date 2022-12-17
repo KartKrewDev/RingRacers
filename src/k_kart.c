@@ -506,6 +506,43 @@ void K_RunItemCooldowns(void)
 	}
 }
 
+boolean K_TimeAttackRules(void)
+{
+	UINT8 playing = 0;
+	UINT8 i;
+
+	if (specialStage.active == true)
+	{
+		// Kind of a hack -- Special Stages
+		// are expected to be 1-player, so
+		// we won't use the Time Attack changes
+		return false;
+	}
+
+	if (modeattacking != ATTACKING_NONE)
+	{
+		// Time Attack obviously uses Time Attack rules :p
+		return true;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		playing++;
+		if (playing > 1)
+		{
+			break;
+		}
+	}
+
+	// Use Time Attack gameplay rules with only 1P.
+	return (playing <= 1);
+}
+
 //}
 
 //{ SRB2kart p_user.c Stuff
@@ -3208,7 +3245,7 @@ boolean K_PlayerShrinkCheat(player_t *player)
 	return (
 		(player->pflags & PF_SHRINKACTIVE)
 		&& (player->bot == false)
-		&& (modeattacking == false) // Anyone want to make another record attack category?
+		&& (modeattacking == ATTACKING_NONE) // Anyone want to make another record attack category?
 	);
 }
 
