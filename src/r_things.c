@@ -889,6 +889,13 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL) return; // ditto
 	}
 
+	// Prevent an out of bounds error
+	if (bmpatch && (bmpatch->width != patch->width ||
+				bmpatch->height != patch->height))
+	{
+		return;
+	}
+
 	R_SetColumnFunc(BASEDRAWFUNC, false); // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
 	dc_fullbright = colormaps;
