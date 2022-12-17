@@ -28,7 +28,7 @@ struct trackingResult_t
 	boolean onScreen;
 	INT32 angle, pitch;
 	fixed_t fov;
-} trackingResult_t;
+};
 
 void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse);
 
