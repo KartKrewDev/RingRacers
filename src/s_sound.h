@@ -173,8 +173,10 @@ boolean S_SpeedMusic(float speed);
 struct musicdef_t
 {
 	char name[7];
-	char title[256];
-	char source[256];
+	char *title;
+	char *author;
+	char *source;
+	char *composers;
 	int volume;
 	musicdef_t *next;
 };
