@@ -897,19 +897,36 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			roulette->exiting++;
 		}
 
-		if (players[i].position == 1)
+		if (specialStage.active == true)
 		{
-			roulette->firstDist = K_UndoMapScaling(players[i].distancetofinish);
+			UINT32 dis = K_UndoMapScaling(players[i].distancetofinish);
+			if (dis < roulette->secondDist)
+			{
+				roulette->secondDist = dis;
+			}
 		}
-
-		if (players[i].position == 2)
+		else
 		{
-			roulette->secondDist = K_UndoMapScaling(players[i].distancetofinish);
+			if (players[i].position == 1)
+			{
+				roulette->firstDist = K_UndoMapScaling(players[i].distancetofinish);
+			}
+
+			if (players[i].position == 2)
+			{
+				roulette->secondDist = K_UndoMapScaling(players[i].distancetofinish);
+			}
 		}
 	}
 
+	if (specialStage.active == true)
+	{
+		roulette->firstDist = K_UndoMapScaling(K_GetSpecialUFODistance());
+	}
+
 	// Calculate 2nd's distance from 1st, for SPB
-	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX)
+	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX
+		&& roulette->secondDist > roulette->firstDist)
 	{
 		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
 		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
