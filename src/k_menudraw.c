@@ -1991,14 +1991,7 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j;
-	cupheader_t *cup = kartcupheaders;
-
-	while (cup)
-	{
-		if (cup->id == CUPMENU_CURSORID)
-			break;
-		cup = cup->next;
-	}
+	cupheader_t *cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
