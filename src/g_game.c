@@ -3861,7 +3861,7 @@ static void G_GetNextMap(void)
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		if (gametyperules & GTR_CAMPAIGN)
+		if (!(gametyperules & GTR_NOCUPSELECT))
 		{
 			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
 			UINT8 gettingresult = 0;
