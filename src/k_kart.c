@@ -7732,7 +7732,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
-	K_KartEbrakeVisuals(player);
+	if (player->spectator == false)
+	{
+		K_KartEbrakeVisuals(player);
+	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
 			P_IsObjectOnGround(player->mo) &&
