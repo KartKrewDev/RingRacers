@@ -3453,7 +3453,7 @@ INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
 	else
 	{
 		map++;
-		while (!M_CanShowLevelInList(map, levellist.typeoflevel) && map < nummapheaders)
+		while (!M_CanShowLevelInList(map, tol) && map < nummapheaders)
 			map++;
 	}
 
