@@ -6837,6 +6837,7 @@ static void P_InitLevelSettings(void)
 	memset(&quake,0,sizeof(struct quake));
 
 	// song credit init
+	Z_Free(cursongcredit.text);
 	memset(&cursongcredit,0,sizeof(struct cursongcredit));
 	cursongcredit.trans = NUMTRANSMAPS;
 
