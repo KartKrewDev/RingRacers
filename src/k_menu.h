@@ -679,8 +679,10 @@ void M_SetupRaceMenu(INT32 choice);
 
 extern struct cupgrid_s {
 	SINT8 x, y;
-	SINT8 pageno;
-	UINT8 numpages;
+	size_t pageno;
+	cupheader_t **builtgrid;
+	size_t numpages;
+	size_t cappages;
 	tic_t previewanim;
 	boolean grandprix; 	// Setup grand prix server after picking
 	boolean netgame;	// Start the game in an actual server
@@ -693,13 +695,16 @@ extern struct levellist_s {
 	cupheader_t *selectedcup;
 	INT16 choosemap;
 	UINT8 newgametype;
+	UINT32 typeoflevel;
+	boolean cupmode;
 	boolean timeattack; // Setup time attack menu after picking
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
-boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt);
-INT16 M_CountLevelsToShowInList(UINT8 gt);
-INT16 M_GetFirstLevelInList(UINT8 gt);
+boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol);
+INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
+INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
+INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);

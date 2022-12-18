@@ -3339,9 +3339,10 @@ void M_SetupDifficultySelect(INT32 choice)
 // Determines whether to show a given map in the various level-select lists.
 // Set gt = -1 to ignore gametype.
 //
-boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
+boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol)
 {
-	UINT32 tolflag = G_TOLFlag(gt);
+	if (mapnum >= nummapheaders)
+		return false;
 
 	// Does the map exist?
 	if (!mapheaderinfo[mapnum])
@@ -3359,7 +3360,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 		return false; // not unlocked
 
 	// Check for TOL
-	if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
+	if (!(mapheaderinfo[mapnum]->typeoflevel & tol))
 		return false;
 
 	// Should the map be hidden?
@@ -3370,36 +3371,93 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt)
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
+#if 0
 	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
 	{
 		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
 			return false;
 	}
+#else
+	// Don't permit cups if not cupmode
+	if (!levellist.cupmode && (mapheaderinfo[mapnum]->cup != NULL))
+		return false;
+#endif
 
 	// Survived our checks.
 	return true;
 }
 
-INT16 M_CountLevelsToShowInList(UINT8 gt)
+INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 {
-	INT16 mapnum, count = 0;
+	INT16 i, count = 0;
 
-	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
-		if (M_CanShowLevelInList(mapnum, gt))
+	if (cup)
+	{
+		for (i = 0; i < CUPCACHE_MAX; i++)
+		{
+			if (!M_CanShowLevelInList(cup->cachedlevels[i], tol))
+				continue;
+			count++;
+		}
+
+		return count;
+	}
+
+	for (i = 0; i < nummapheaders; i++)
+		if (M_CanShowLevelInList(i, tol))
 			count++;
 
 	return count;
 }
 
-INT16 M_GetFirstLevelInList(UINT8 gt)
+INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
 {
-	INT16 mapnum;
+	INT16 mapnum = NEXTMAP_INVALID;
 
-	for (mapnum = 0; mapnum < nummapheaders; mapnum++)
-		if (M_CanShowLevelInList(mapnum, gt))
-			return mapnum;
+	if (cup)
+	{
+		*i = 0;
+		mapnum = NEXTMAP_INVALID;
+		for (; *i < CUPCACHE_MAX; (*i)++)
+		{
+			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol))
+				continue;
+			mapnum = cup->cachedlevels[*i];
+			break;
+		}
+	}
+	else
+	{
+		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
+			if (M_CanShowLevelInList(mapnum, tol))
+				break;
+	}
 
-	return 0;
+	return mapnum;
+}
+
+INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
+{
+	if (cup)
+	{
+		map = NEXTMAP_INVALID;
+		(*i)++;
+		for (; *i < CUPCACHE_MAX; (*i)++)
+		{
+			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol))
+				continue;
+			map = cup->cachedlevels[*i];
+			break;
+		}
+	}
+	else
+	{
+		map++;
+		while (!M_CanShowLevelInList(map, levellist.typeoflevel) && map < nummapheaders)
+			map++;
+	}
+
+	return map;
 }
 
 struct cupgrid_s cupgrid;
@@ -3407,7 +3465,7 @@ struct levellist_s levellist;
 
 static void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(levellist.newgametype)-1;
+	UINT16 m = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup)-1;
 
 	levellist.dest = (6*levellist.cursor);
 
@@ -3421,26 +3479,61 @@ static void M_LevelSelectScrollDest(void)
 //  Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
 static void M_LevelListFromGametype(INT16 gt)
 {
-	levellist.newgametype = gt;
+	static boolean first = true;
+	if (first || gt != levellist.newgametype)
+	{
+		levellist.newgametype = gt;
+		levellist.typeoflevel = G_TOLFlag(gt);
+		levellist.cupmode = true; // todo some way to choose going direct to a long consecutive list..?
+		levellist.selectedcup = NULL;
+		first = false;
+	}
+
 	PLAY_CupSelectDef.prevMenu = currentMenu;
 
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
 
-	if (levellist.newgametype == GT_RACE)
+	if (levellist.cupmode)
 	{
 		cupheader_t *cup = kartcupheaders;
-		UINT8 highestid = 0;
+		size_t currentid = 0, highestunlockedid = 0;
 
 		// Make sure there's valid cups before going to this menu.
 		if (cup == NULL)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
 
+		if (!cupgrid.builtgrid)
+		{
+			cupgrid.cappages = 2;
+			cupgrid.builtgrid = Z_Calloc(
+				sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS),
+				PU_STATIC, NULL);
+		}
+		memset(cupgrid.builtgrid, 0, sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS));
+
 		while (cup)
 		{
+			if (!M_CountLevelsToShowInList(levellist.typeoflevel, cup))
+			{
+				// No valid maps, skip.
+				cup = cup->next;
+				continue;
+			}
+
+			if (((currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1) >= cupgrid.cappages)
+			{
+				cupgrid.cappages *= 2;
+				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
+					sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS),
+					PU_STATIC, NULL);
+			}
+
+			cupgrid.builtgrid[currentid] = cup;
+
 			if (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked)
 			{
-				highestid = cup->id;
+				highestunlockedid = currentid;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
 				{
 					cupgrid.x = cup->id % CUPMENU_COLUMNS;
@@ -3448,10 +3541,12 @@ static void M_LevelListFromGametype(INT16 gt)
 					cupgrid.pageno = cup->id / (CUPMENU_COLUMNS * CUPMENU_ROWS);
 				}
 			}
+
+			currentid++;
 			cup = cup->next;
 		}
 
-		cupgrid.numpages = (highestid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
+		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
 
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
@@ -3504,24 +3599,14 @@ void M_LevelSelectInit(INT32 choice)
 			return;
 	}
 
-	levellist.newgametype = currentMenu->menuitems[itemOn].mvar2;
-
-	M_LevelListFromGametype(levellist.newgametype);
+	M_LevelListFromGametype(currentMenu->menuitems[itemOn].mvar2);
 }
 
 void M_CupSelectHandler(INT32 choice)
 {
-	cupheader_t *newcup = kartcupheaders;
 	const UINT8 pid = 0;
 
 	(void)choice;
-
-	while (newcup)
-	{
-		if (newcup->id == CUPMENU_CURSORID)
-			break;
-		newcup = newcup->next;
-	}
 
 	if (menucmd[pid].dpad_lr > 0)
 	{
@@ -3542,9 +3627,10 @@ void M_CupSelectHandler(INT32 choice)
 		if (cupgrid.x < 0)
 		{
 			cupgrid.x = CUPMENU_COLUMNS-1;
-			cupgrid.pageno--;
-			if (cupgrid.pageno < 0)
+			if (cupgrid.pageno == 0)
 				cupgrid.pageno = cupgrid.numpages-1;
+			else
+				cupgrid.pageno--;
 		}
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
@@ -3569,6 +3655,8 @@ void M_CupSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
+		cupheader_t *newcup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
 		M_SetMenuDelay(pid);
 
 		if ((!newcup)
@@ -3640,7 +3728,7 @@ void M_CupSelectHandler(INT32 choice)
 		else
 		{
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (!levellist.selectedcup || newcup->id != levellist.selectedcup->id)
+			if (levellist.selectedcup != newcup)
 			{
 				levellist.cursor = 0;
 				levellist.selectedcup = newcup;
@@ -3671,8 +3759,7 @@ void M_CupSelectTick(void)
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
-	INT16 maxlevels = M_CountLevelsToShowInList(levellist.newgametype);
+	INT16 maxlevels = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup);
 	const UINT8 pid = 0;
 
 	(void)choice;
@@ -3703,20 +3790,20 @@ void M_LevelSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
-		INT16 map = start;
+		UINT8 i = 0;
+		INT16 map = M_GetFirstLevelInList(&i, levellist.typeoflevel, levellist.selectedcup);
 		INT16 add = levellist.cursor;
 
 		M_SetMenuDelay(pid);
 
 		while (add > 0)
 		{
-			map++;
-
-			while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
-				map++;
+			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, levellist.selectedcup);
 
 			if (map >= nummapheaders)
+			{
 				break;
+			}
 
 			add--;
 		}
