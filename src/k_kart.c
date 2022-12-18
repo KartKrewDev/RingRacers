@@ -2824,8 +2824,8 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
-	// Tails = 2s, Knuckles = 2.6s, Metal = 3.2s
-	return (player->kartspeed + 8) * (TICRATE/5);
+	// Tails = 1.7s, Knuckles = 2.2s, Metal = 2.7s
+	return ((player->kartspeed + 8) * TICRATE) / 6;
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
