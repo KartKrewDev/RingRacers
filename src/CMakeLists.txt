@@ -134,7 +134,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" AND NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
 	# On MinGW with internal libraries, link the standard library statically
-	target_link_options(SRB2SDL2 PRIVATE "-static")
+	target_link_options(SRB2SDL2 PRIVATE "-static" "-Wl,--disable-dynamicbase")
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
