@@ -12,6 +12,7 @@
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
 #include "k_objects.h"
+#include "k_roulette.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -158,10 +159,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			K_DropItems(t2->player); //K_StripItems(t2->player);
-			//K_StripOther(t2->player);
-			t2->player->itemroulette = 1;
-			t2->player->roulettetype = 2;
+			K_StartEggmanRoulette(t2->player);
 		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
@@ -206,6 +204,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 static mobj_t *grenade;
 static fixed_t explodedist;
 static boolean explodespin;
+static tic_t minehitlag;
 
 static inline boolean PIT_SSMineChecks(mobj_t *thing)
 {
@@ -284,17 +283,22 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
 
-	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
+	if (P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE)))
+	{
+		minehitlag = thing->hitlag;
+	}
+
 	return BMIT_CONTINUE;
 }
 
-void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
+tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 {
 	INT32 bx, by, xl, xh, yl, yh;
 
 	explodespin = spin;
 	explodedist = FixedMul(size, actor->scale);
 	grenade = actor;
+	minehitlag = 0;
 
 	// Use blockmap to check for nearby shootables
 	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
@@ -310,6 +314,15 @@ void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 
 	// Set this flag to ensure that the inital action won't be triggered twice.
 	actor->flags2 |= MF2_DEBRIS;
+
+	if (!spin)
+	{
+		Obj_SpawnBrolyKi(actor, minehitlag);
+
+		return minehitlag;
+	}
+
+	return 0;
 }
 
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
@@ -330,7 +343,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
-			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_EXPLODE2]))
 		{
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}
@@ -396,6 +409,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_TUMBLE);
 		}
 
+		t1->reactiontime = t2->hitlag;
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
@@ -419,6 +433,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
+		t1->reactiontime = t2->hitlag;
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
@@ -431,6 +446,8 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+
+		t1->reactiontime = t2->hitlag;
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 

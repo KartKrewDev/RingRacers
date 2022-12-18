@@ -126,10 +126,10 @@ extern char logfilename[1024];
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
 #ifdef BETAVERSION
-#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
+#define VERSIONSTRING "v" SRB2VERSION " " BETAVERSION
 #define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "v"SRB2VERSION
+#define VERSIONSTRING "v" SRB2VERSION
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
@@ -615,11 +615,13 @@ UINT32 quickncasehash (const char *p, size_t n)
 	return x;
 }
 
+#ifndef __cplusplus
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
+#endif
 #endif
 
 // Max gamepad/joysticks that can be detected/used.

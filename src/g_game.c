@@ -2246,11 +2246,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	SINT8 xtralife;
 
 	// SRB2kart
+	itemroulette_t itemRoulette;
 	respawnvars_t respawn;
 	INT32 itemtype;
 	INT32 itemamount;
-	INT32 itemroulette;
-	INT32 roulettetype;
 	INT32 growshrinktimer;
 	INT32 bumper;
 	boolean songcredit = false;
@@ -2309,10 +2308,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
+	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
+	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
 	if (betweenmaps || leveltime < introtime)
 	{
-		itemroulette = 0;
-		roulettetype = 0;
+		itemRoulette.active = false;
+
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
@@ -2334,9 +2336,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		itemroulette = (players[player].itemroulette > 0 ? 1 : 0);
-		roulettetype = players[player].roulettetype;
-
 		if (players[player].pflags & PF_ITEMOUT)
 		{
 			itemtype = 0;
@@ -2392,8 +2391,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		P_SetTarget(&players[player].follower, NULL);
 	}
 
-	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
-
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
@@ -2439,8 +2436,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	// SRB2kart
-	p->itemroulette = itemroulette;
-	p->roulettetype = roulettetype;
 	p->itemtype = itemtype;
 	p->itemamount = itemamount;
 	p->growshrinktimer = growshrinktimer;
@@ -2456,6 +2451,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
 
+	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	if (follower)
@@ -2466,7 +2462,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->followercolor = followercolor;
 	//p->follower = NULL;	// respawn a new one with you, it looks better.
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
-
 
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation

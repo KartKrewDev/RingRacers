@@ -549,6 +549,7 @@ void A_ItemPop();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_SSMineFlash();
 void A_LandMineExplode();
 void A_LandMineExplode();
 void A_BallhogExplode();
@@ -1041,6 +1042,7 @@ typedef enum sprite
 	SPR_BOM3, // Boss Explosion 2
 	SPR_BOM4, // Underwater Explosion
 	SPR_BMNB, // Mine Explosion
+	SPR_LSSJ, // My ki is overflowing!!
 
 	// Crumbly rocks
 	SPR_ROIA,
@@ -5563,6 +5565,10 @@ typedef enum state
 	S_JANKSPARK3,
 	S_JANKSPARK4,
 
+	// Broly Ki Orb
+	S_BROLY1,
+	S_BROLY2,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -6675,6 +6681,8 @@ typedef enum mobj_type
 	MT_PAPERITEMSPOT,
 
 	MT_BEAMPOINT,
+
+	MT_BROLY,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

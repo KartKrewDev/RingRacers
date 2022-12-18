@@ -37,6 +37,7 @@ TYPEDEF (discordRequest_t);
 TYPEDEF (respawnvars_t);
 TYPEDEF (botvars_t);
 TYPEDEF (skybox_t);
+TYPEDEF (itemroulette_t);
 TYPEDEF (player_t);
 
 // d_clisrv.h
@@ -384,6 +385,7 @@ TYPEDEF (taggroup_t);
 
 // v_video.h
 TYPEDEF (colorlookup_t);
+TYPEDEF (cliprect_t);
 
 // w_wad.h
 TYPEDEF (filelump_t);

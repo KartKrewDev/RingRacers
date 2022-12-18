@@ -360,35 +360,36 @@ consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
 #endif
 
 // SRB2kart
-consvar_t cv_sneaker = 				CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_rocketsneaker = 		CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_invincibility = 		CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_banana = 				CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_eggmanmonitor = 		CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_shrink = 				CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_lightningshield = 		CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_bubbleshield = 		CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_flameshield = 			CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_hyudoro = 				CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_pogospring = 			CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_kitchensink = 			CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_gardentop = 			CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL);
-
-consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_triplebanana = 		CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_items[NUMKARTRESULTS-1] = {
+	CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL)
+};
 
 consvar_t cv_kartspeed = CVAR_INIT ("gamespeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
@@ -5642,7 +5643,7 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			K_StripItems(player);
 
 			// Cancel roulette if rolling
-			player->itemroulette = 0;
+			player->itemRoulette.active = false;
 
 			player->itemtype = item;
 			player->itemamount = amt;

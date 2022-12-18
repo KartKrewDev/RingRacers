@@ -373,6 +373,9 @@ static void D_Display(void)
 	if (dedicated) //bail out after wipe logic
 		return;
 
+	// Catch runaway clipping rectangles.
+	V_ClearClipRect();
+
 	// do buffered drawing
 	switch (gamestate)
 	{
