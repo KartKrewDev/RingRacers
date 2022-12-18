@@ -3523,10 +3523,13 @@ static void M_LevelListFromGametype(INT16 gt)
 
 			if (((currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1) >= cupgrid.cappages)
 			{
-				cupgrid.cappages *= 2;
+				// Double the size of the buffer, and clear the other stuff.
+				size_t firstlen = sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
-					sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS),
+					firstlen * 2,
 					PU_STATIC, NULL);
+				memset(cupgrid.builtgrid + firstlen, 0, firstlen);
+				cupgrid.cappages *= 2;
 			}
 
 			cupgrid.builtgrid[currentid] = cup;
