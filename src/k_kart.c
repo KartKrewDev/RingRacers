@@ -10277,10 +10277,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									if (player->throwdir == -1)
 									{
+										const angle_t angle = P_IsObjectOnGround(player->mo) ?
+											player->mo->angle : K_MomentumAngle(player->mo);
+
 										mobj_t *top = Obj_GardenTopDestroy(player);
 
 										// Fly off the Top at high speed
-										P_Thrust(player->mo, K_MomentumAngle(player->mo), 80 * mapobjectscale);
+										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
 										top->momx = player->mo->momx;
