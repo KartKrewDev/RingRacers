@@ -3099,9 +3099,9 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (gametype == GT_BATTLE && player->bumpers <= 0)
 		k_accel *= 2;
 
-	// Marble Garden Top gets 800% accel
+	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
-		k_accel *= 8;
+		k_accel *= 12;
 
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
