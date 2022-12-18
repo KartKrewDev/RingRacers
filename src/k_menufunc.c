@@ -3502,6 +3502,11 @@ static void M_LevelListFromGametype(INT16 gt)
 				cupgrid.cappages * unitlen,
 				PU_STATIC,
 				cupgrid.builtgrid);
+
+			if (!cupgrid.builtgrid)
+			{
+				I_Error("M_LevelListFromGametype: Not enough memory to allocate builtgrid");
+			}
 		}
 		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
 
@@ -3521,6 +3526,12 @@ static void M_LevelListFromGametype(INT16 gt)
 				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
 					firstlen * 2,
 					PU_STATIC, NULL);
+
+				if (!cupgrid.builtgrid)
+				{
+					I_Error("M_LevelListFromGametype: Not enough memory to reallocate builtgrid");
+				}
+
 				memset(cupgrid.builtgrid + firstlen, 0, firstlen);
 				cupgrid.cappages *= 2;
 			}
