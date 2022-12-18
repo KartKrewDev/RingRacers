@@ -3099,9 +3099,9 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (gametype == GT_BATTLE && player->bumpers <= 0)
 		k_accel *= 2;
 
-	// Marble Garden Top gets 800% accel
+	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
-		k_accel *= 8;
+		k_accel *= 12;
 
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
@@ -10280,10 +10280,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									if (player->throwdir == -1)
 									{
+										const angle_t angle = P_IsObjectOnGround(player->mo) ?
+											player->mo->angle : K_MomentumAngle(player->mo);
+
 										mobj_t *top = Obj_GardenTopDestroy(player);
 
 										// Fly off the Top at high speed
-										P_Thrust(player->mo, K_MomentumAngle(player->mo), 80 * mapobjectscale);
+										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
 										top->momx = player->mo->momx;
