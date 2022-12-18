@@ -343,7 +343,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
-			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_EXPLODE2]))
 		{
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}
