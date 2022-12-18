@@ -678,7 +678,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		UFOUpdateDistanceToFinish(ufo);
 	}
 
-	ufo_speed(ufo) = FixedMul(UFO_BASE_SPEED << 2, K_GetKartGameSpeedScalar(gamespeed));
+	ufo_speed(ufo) = FixedMul(UFO_BASE_SPEED << 1, K_GetKartGameSpeedScalar(gamespeed));
 
 	// TODO: Adjustable Special Stage emerald color
 	ufo->color = SKINCOLOR_CHAOSEMERALD1;
