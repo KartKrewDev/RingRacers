@@ -3378,7 +3378,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 	return true;
 }
 
-INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
+UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 {
 	INT16 i, count = 0;
 
@@ -3401,7 +3401,7 @@ INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 	return count;
 }
 
-INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
 {
 	INT16 mapnum = NEXTMAP_INVALID;
 
@@ -3427,7 +3427,7 @@ INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
 	return mapnum;
 }
 
-INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
 {
 	if (cup)
 	{

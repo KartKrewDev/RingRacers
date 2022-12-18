@@ -702,9 +702,9 @@ extern struct levellist_s {
 } levellist;
 
 boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup);
-INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
-INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
-INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);
+UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
+UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
+UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
