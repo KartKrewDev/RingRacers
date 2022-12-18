@@ -24,7 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 
-#define UFO_BASE_SPEED (24 * FRACUNIT) // UFO's slowest speed.
+#define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
 #define UFO_SLOWDOWN (FRACUNIT >> 1) // Deceleration
 #define UFO_SPACING (768 * FRACUNIT) // How far the UFO wants to stay in front
