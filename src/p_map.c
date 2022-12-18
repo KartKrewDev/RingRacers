@@ -406,7 +406,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		K_TumbleInterrupt(object->player);
 		P_ResetPlayer(object->player);
 
-		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
+		object->player->springstars = max(abs(vertispeed), horizspeed) / FRACUNIT / 2;
 		object->player->springcolor = starcolor;
 
 		// Less friction when hitting springs
