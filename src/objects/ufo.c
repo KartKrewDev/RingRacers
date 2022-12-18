@@ -475,6 +475,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 	switch (inflictor->type)
 	{
 		case MT_SPB:
+		case MT_BANANA:
 		{
 			// SPB deals triple damage.
 			return 30;
