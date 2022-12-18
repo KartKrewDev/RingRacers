@@ -3475,7 +3475,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	{
 		levellist.newgametype = gt;
 		levellist.typeoflevel = G_TOLFlag(gt);
-		levellist.cupmode = true; // todo some way to choose going direct to a long consecutive list..?
+		levellist.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
 		levellist.selectedcup = NULL;
 		first = false;
 	}

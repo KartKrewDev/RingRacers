@@ -3416,28 +3416,25 @@ UINT32 G_TOLFlag(INT32 pgametype)
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
+	UINT8 i = 0;
 	INT16 mapnum = NEXTMAP_INVALID;
+	UINT32 tol = G_TOLFlag(pgametype);
 
-	if ((gametypedefaultrules[pgametype] & GTR_CAMPAIGN) && kartcupheaders)
-	{
-		mapnum = kartcupheaders->cachedlevels[0];
-	}
+	levellist.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	levellist.timeattack = false;
 
-	if (mapnum >= nummapheaders)
+	if (levellist.cupmode)
 	{
-		UINT32 tolflag = G_TOLFlag(pgametype);
-		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
+		cupheader_t *cup = kartcupheaders;
+		while (cup && mapnum >= nummapheaders)
 		{
-			if (!mapheaderinfo[mapnum])
-				continue;
-			if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
-				continue;
-			if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
-				continue;
-			if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
-				continue;
-			break;
+			mapnum = M_GetFirstLevelInList(&i, tol, cup);
+			i = 0;
 		}
+	}
+	else
+	{
+		mapnum = M_GetFirstLevelInList(&i, tol, NULL);
 	}
 
 	return mapnum;
