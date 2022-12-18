@@ -3370,8 +3370,8 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-	// Don't permit cup when no cup requested
-	if (levellist.cupmode && !cup && mapheaderinfo[mapnum]->cup)
+	// Don't permit cup when no cup requested (also no dupes in time attack)
+	if (levellist.cupmode && (levellist.timeattack || !cup) && mapheaderinfo[mapnum]->cup != cup)
 		return false;
 
 	// Survived our checks.
