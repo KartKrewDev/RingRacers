@@ -3489,6 +3489,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	{
 		cupheader_t *cup = kartcupheaders;
 		size_t currentid = 0, highestunlockedid = 0;
+		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 
 		// Make sure there's valid cups before going to this menu.
 		if (cup == NULL)
@@ -3498,10 +3499,11 @@ static void M_LevelListFromGametype(INT16 gt)
 		{
 			cupgrid.cappages = 2;
 			cupgrid.builtgrid = Z_Calloc(
-				sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS),
-				PU_STATIC, NULL);
+				cupgrid.cappages * unitlen,
+				PU_STATIC,
+				cupgrid.builtgrid);
 		}
-		memset(cupgrid.builtgrid, 0, sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS));
+		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
 
 		while (cup)
 		{
@@ -3512,10 +3514,10 @@ static void M_LevelListFromGametype(INT16 gt)
 				continue;
 			}
 
-			if (((currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1) >= cupgrid.cappages)
+			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * unitlen)
 			{
 				// Double the size of the buffer, and clear the other stuff.
-				size_t firstlen = sizeof(cupheader_t*) * cupgrid.cappages * (CUPMENU_COLUMNS * CUPMENU_ROWS);
+				const size_t firstlen = cupgrid.cappages * unitlen;
 				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
 					firstlen * 2,
 					PU_STATIC, NULL);
