@@ -277,6 +277,12 @@ P_DoSpringEx
 		angle_t finalAngle,
 		UINT16 starcolor)
 {
+	if (horizspeed < 0)
+	{
+		horizspeed = -(horizspeed);
+		finalAngle += ANGLE_180;
+	}
+
 	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
 	object->terrain = NULL;
 
