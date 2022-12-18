@@ -701,7 +701,7 @@ extern struct levellist_s {
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol);
+boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup);
 INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
 INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
 INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);

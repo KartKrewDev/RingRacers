@@ -3337,9 +3337,8 @@ void M_SetupDifficultySelect(INT32 choice)
 // M_CanShowLevelInList
 //
 // Determines whether to show a given map in the various level-select lists.
-// Set gt = -1 to ignore gametype.
 //
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol)
+boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 {
 	if (mapnum >= nummapheaders)
 		return false;
@@ -3371,17 +3370,9 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol)
 	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
-#if 0
-	if (gametypedefaultrules[gt] & GTR_CAMPAIGN && levellist.selectedcup)
-	{
-		if (mapheaderinfo[mapnum]->cup != levellist.selectedcup)
-			return false;
-	}
-#else
-	// Don't permit cups if not cupmode
-	if (!levellist.cupmode && (mapheaderinfo[mapnum]->cup != NULL))
+	// Don't permit cup when no cup requested
+	if (levellist.cupmode && !cup && mapheaderinfo[mapnum]->cup)
 		return false;
-#endif
 
 	// Survived our checks.
 	return true;
@@ -3395,7 +3386,7 @@ INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 	{
 		for (i = 0; i < CUPCACHE_MAX; i++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[i], tol))
+			if (!M_CanShowLevelInList(cup->cachedlevels[i], tol, cup))
 				continue;
 			count++;
 		}
@@ -3404,7 +3395,7 @@ INT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 	}
 
 	for (i = 0; i < nummapheaders; i++)
-		if (M_CanShowLevelInList(i, tol))
+		if (M_CanShowLevelInList(i, tol, NULL))
 			count++;
 
 	return count;
@@ -3420,7 +3411,7 @@ INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
 		mapnum = NEXTMAP_INVALID;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol))
+			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
 				continue;
 			mapnum = cup->cachedlevels[*i];
 			break;
@@ -3429,7 +3420,7 @@ INT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
 	else
 	{
 		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
-			if (M_CanShowLevelInList(mapnum, tol))
+			if (M_CanShowLevelInList(mapnum, tol, NULL))
 				break;
 	}
 
@@ -3444,7 +3435,7 @@ INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
 		(*i)++;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol))
+			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
 				continue;
 			map = cup->cachedlevels[*i];
 			break;
@@ -3453,7 +3444,7 @@ INT16 M_GetNextLevelInList(INT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
 	else
 	{
 		map++;
-		while (!M_CanShowLevelInList(map, tol) && map < nummapheaders)
+		while (!M_CanShowLevelInList(map, tol, NULL) && map < nummapheaders)
 			map++;
 	}
 
