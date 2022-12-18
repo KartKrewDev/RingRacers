@@ -1129,14 +1129,14 @@ static void IdentifyVersion(void)
 ////
 #define TEXTURESNAME "MISC_TEXTURES.pk3"
 #define MAPSNAME "MISC_MAPS.pk3"
-#define PATCHNAME "MISC_PATCH.pk3"
+#define PATCHNAME "MISC_SCRIPTS.pk3"
 #define MUSICNAME "MISC_MUSIC.PK3"
 ////
 #else
 ////
 #define TEXTURESNAME "textures.pk3"
 #define MAPSNAME "maps.pk3"
-#define PATCHNAME "patch.pk3"
+#define PATCHNAME "scripts.pk3"
 #define MUSICNAME "music.pk3"
 ////
 #endif
@@ -1454,7 +1454,7 @@ void D_SRB2Main(void)
 	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
-	mainwads++;	// patch.pk3
+	mainwads++;	// scripts.pk3
 #endif
 
 #endif //ifndef DEVELOP
