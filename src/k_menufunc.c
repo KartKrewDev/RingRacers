@@ -3554,6 +3554,10 @@ static void M_LevelListFromGametype(INT16 gt)
 		}
 
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
+		if (cupgrid.pageno >= cupgrid.numpages)
+		{
+			cupgrid.pageno = 0;
+		}
 
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
