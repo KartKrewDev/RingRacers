@@ -6508,6 +6508,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
+	case MT_BROLY:
+		Obj_BrolyKiThink(mobj);
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{

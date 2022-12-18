@@ -1023,7 +1023,7 @@ static void K_drawKartItem(void)
 	// Why write V_DrawScaledPatch calls over and over when they're all the same?
 	// Set to 'no item' just in case.
 	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
-	patch_t *localpatch[3] = { kp_nodraw };
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
 	patch_t *localbg = ((offset) ? kp_itembg[2] : kp_itembg[0]);
 	patch_t *localinv = ((offset) ? kp_invincibility[((leveltime % (6*3)) / 3) + 7] : kp_invincibility[(leveltime % (7*3)) / 3]);
 	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...

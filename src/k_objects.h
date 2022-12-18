@@ -56,5 +56,6 @@ void Obj_DuelBombInit(mobj_t *bomb);
 
 /* Broly Ki */
 mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
+void Obj_BrolyKiThink(mobj_t *ki);
 
 #endif/*k_objects_H*/

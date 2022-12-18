@@ -249,7 +249,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 		if ((cx + fwidth) > clip->right)
 		{
-			const float n = (clip->right - clip->left);
+			const float n = (clip->right - cx);
 
 			s_max = (s_min + ((n / fwidth) * s_max));
 			fwidth = n;
@@ -257,7 +257,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 		if ((cy + fheight) > clip->bottom)
 		{
-			const float n = (clip->bottom - clip->top);
+			const float n = (clip->bottom - cy);
 
 			t_max = (t_min + ((n / fheight) * t_max));
 			fheight = n;
