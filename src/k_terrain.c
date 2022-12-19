@@ -557,6 +557,8 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	// Spring
 	if (terrain->springStrength)
 	{
+		sector_t *sector = player->mo->subsector->sector;
+
 		const pslope_t *slope;
 		angle_t angle = 0;
 
@@ -575,7 +577,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			}
 			else
 			{
-				slope = player->mo->subsector->sector->c_slope;
+				slope = sector->c_slope;
 			}
 		}
 		else
@@ -586,7 +588,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 			}
 			else
 			{
-				slope = player->mo->subsector->sector->f_slope;
+				slope = sector->f_slope;
 			}
 		}
 
@@ -605,8 +607,8 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 				FixedMul(terrain->springStrength, si),
 				angle, terrain->springStarColor);
 
-		// FIXME: this sound shouldn't move with the player
-		S_StartSound(player->mo, sfx_s3kb1);
+		sector->soundorg.z = player->mo->z;
+		S_StartSound(&sector->soundorg, sfx_s3kb1);
 	}
 
 	// Bumpy floor
