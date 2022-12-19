@@ -30,6 +30,8 @@
 #define UFO_SPACING (768 * FRACUNIT) // How far the UFO wants to stay in front
 #define UFO_DEADZONE (2048 * FRACUNIT) // Deadzone where it won't update it's speed as much.
 #define UFO_SPEEDFACTOR (FRACUNIT * 3 / 4) // Factor of player's best speed, to make it more fair.
+#define UFO_DAMAGED_SPEED (UFO_BASE_SPEED >> 1) // Speed to add when UFO takes damage.
+#define UFO_START_SPEED (UFO_BASE_SPEED << 1) // Speed when the map starts.
 
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
@@ -503,7 +505,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor)
 
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType)
 {
-	const fixed_t addSpeed = FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
+	const fixed_t addSpeed = FixedMul(UFO_DAMAGED_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 damage = 1;
 
 	(void)source;
@@ -678,7 +680,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		UFOUpdateDistanceToFinish(ufo);
 	}
 
-	ufo_speed(ufo) = FixedMul(UFO_BASE_SPEED << 1, K_GetKartGameSpeedScalar(gamespeed));
+	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 
 	// TODO: Adjustable Special Stage emerald color
 	ufo->color = SKINCOLOR_CHAOSEMERALD1;
