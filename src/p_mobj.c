@@ -6137,7 +6137,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		break;
 
 	// see also K_drawKartItem in k_hud.c
-	case MT_PLAYERARROW:
+	case MT_PLAYERARROW: // FIXME: Delete this object, attach to name tags instead.
 		if (mobj->target && mobj->target->health
 			&& mobj->target->player && !mobj->target->player->spectator
 			&& mobj->target->health && mobj->target->player->playerstate != PST_DEAD
@@ -6191,7 +6191,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			}
 
 			// Do this in an easy way
-			if (mobj->target->player->itemroulette)
+			if (mobj->target->player->itemRoulette.active)
 			{
 				mobj->tracer->color = mobj->target->player->skincolor;
 				mobj->tracer->colorized = true;
@@ -6207,11 +6207,11 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				const INT32 numberdisplaymin = ((mobj->target->player->itemtype == KITEM_ORBINAUT) ? 5 : 2);
 
 				// Set it to use the correct states for its condition
-				if (mobj->target->player->itemroulette)
+				if (mobj->target->player->itemRoulette.active)
 				{
 					P_SetMobjState(mobj, S_PLAYERARROW_BOX);
 					mobj->tracer->sprite = SPR_ITEM;
-					mobj->tracer->frame = K_GetRollingRouletteItem(mobj->target->player) | FF_FULLBRIGHT;
+					mobj->tracer->frame = 1 | FF_FULLBRIGHT;
 					mobj->tracer->renderflags &= ~RF_DONTDRAW;
 				}
 				else if (mobj->target->player->stealingtimer < 0)
@@ -6516,6 +6516,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_SPINDASHWIND:
 	case MT_DRIFTELECTRICSPARK:
 		mobj->renderflags ^= RF_DONTDRAW;
+		break;
+	case MT_BROLY:
+		Obj_BrolyKiThink(mobj);
 		break;
 	case MT_VWREF:
 	case MT_VWREB:

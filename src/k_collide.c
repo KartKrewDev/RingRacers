@@ -12,6 +12,7 @@
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
 #include "k_objects.h"
+#include "k_roulette.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -158,10 +159,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			K_DropItems(t2->player); //K_StripItems(t2->player);
-			//K_StripOther(t2->player);
-			t2->player->itemroulette = 1;
-			t2->player->roulettetype = 2;
+			K_StartEggmanRoulette(t2->player);
 		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
@@ -319,7 +317,7 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 
 	if (!spin)
 	{
-		K_SpawnBrolyKi(actor, minehitlag);
+		Obj_SpawnBrolyKi(actor, minehitlag);
 
 		return minehitlag;
 	}
@@ -345,7 +343,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
-			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_EXPLODE2]))
 		{
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}

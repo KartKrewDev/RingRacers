@@ -304,10 +304,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwirePass);
 	else if (fastcmp(field,"tripwireLeniency"))
 		lua_pushinteger(L, plr->tripwireLeniency);
+	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
-	else if (fastcmp(field,"roulettetype"))
-		lua_pushinteger(L, plr->roulettetype);
+	*/
 	else if (fastcmp(field,"itemtype"))
 		lua_pushinteger(L, plr->itemtype);
 	else if (fastcmp(field,"itemamount"))
@@ -680,10 +680,10 @@ static int player_set(lua_State *L)
 		plr->tripwirePass = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireLeniency"))
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
+	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"roulettetype"))
-		plr->roulettetype = luaL_checkinteger(L, 3);
+	*/
 	else if (fastcmp(field,"itemtype"))
 		plr->itemtype = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"itemamount"))

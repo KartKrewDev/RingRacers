@@ -938,8 +938,7 @@ static void HU_TickSongCredits(void)
 
 	if (cursongcredit.anim > 0)
 	{
-		char *str = va("\x1F"" %s", cursongcredit.def->source);
-		INT32 len = V_ThinStringWidth(str, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+		INT32 len = V_ThinStringWidth(cursongcredit.text, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
 		fixed_t destx = (len+7) * FRACUNIT;
 
 		if (cursongcredit.trans > 0)
@@ -2045,29 +2044,28 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	char *str;
 	fixed_t x;
 	fixed_t y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
 	INT32 bgt;
 
-	if (!cursongcredit.def) // No def
+	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
 
-	str = va("\x1F"" %s", cursongcredit.def->source);
 	bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 	x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
 
 	if (bgt < NUMTRANSMAPS)
 	{
-		V_DrawFixedPatch(x, y - (2 * FRACUNIT), FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT), songcreditbg, NULL);
+		V_DrawFixedPatch(x, y - (2 * FRACUNIT),
+			FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT),
+			songcreditbg, NULL);
 	}
 
-	if (cursongcredit.trans < NUMTRANSMAPS)
-	{
-		V_DrawRightAlignedThinStringAtFixed(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT), str);
-	}
+	V_DrawRightAlignedThinStringAtFixed(x, y,
+		V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT),
+		cursongcredit.text);
 }
 
 

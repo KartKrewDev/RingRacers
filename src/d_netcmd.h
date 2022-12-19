@@ -16,6 +16,7 @@
 #define __D_NETCMD__
 
 #include "command.h"
+#include "d_player.h"
 
 // console vars
 extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
@@ -72,39 +73,7 @@ extern consvar_t cv_pause;
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
-extern consvar_t
-	cv_sneaker,
-	cv_rocketsneaker,
-	cv_invincibility,
-	cv_banana,
-	cv_eggmanmonitor,
-	cv_orbinaut,
-	cv_jawz,
-	cv_mine,
-	cv_landmine,
-	cv_ballhog,
-	cv_selfpropelledbomb,
-	cv_grow,
-	cv_shrink,
-	cv_lightningshield,
-	cv_bubbleshield,
-	cv_flameshield,
-	cv_hyudoro,
-	cv_pogospring,
-	cv_superring,
-	cv_kitchensink,
-	cv_droptarget,
-	cv_gardentop,
-	cv_gachabom;
-
-extern consvar_t
-	cv_dualsneaker,
-	cv_triplesneaker,
-	cv_triplebanana,
-	cv_tripleorbinaut,
-	cv_quadorbinaut,
-	cv_dualjawz,
-	cv_triplegachabom;
+extern consvar_t cv_items[NUMKARTRESULTS-1];
 
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;

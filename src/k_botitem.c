@@ -26,6 +26,7 @@
 #include "d_ticcmd.h"
 #include "m_random.h"
 #include "r_things.h" // numskins
+#include "k_roulette.h"
 
 /*--------------------------------------------------
 	static inline boolean K_ItemButtonWasDown(player_t *player)
@@ -739,7 +740,7 @@ static void K_BotItemEggman(player_t *player, ticcmd_t *cmd)
 		tryLookback = true;
 	}
 
-	if (stealth > 1 || player->itemroulette > 0)
+	if (stealth > 1 || player->itemRoulette.active == true)
 	{
 		player->botvars.itemconfirm += player->botvars.difficulty * 4;
 		throwdir = -1;
@@ -1393,27 +1394,15 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
-	boolean mash = false;
-
 	if (K_ItemButtonWasDown(player) == true)
 	{
 		return;
 	}
 
-	if (player->rings < 0 && cv_superring.value)
-	{
-		// Uh oh, we need a loan!
-		// It'll be better in the long run for bots to lose an item set for 10 free rings.
-		mash = true;
-	}
+	// TODO: Would be nice to implement smarter behavior
+	// for selecting items.
 
-	// TODO: Mash based on how far behind you are, when items are
-	// almost garantueed to be in your favor.
-
-	if (mash == true)
-	{
-		cmd->buttons |= BT_ATTACK;
-	}
+	cmd->buttons |= BT_ATTACK;
 }
 
 /*--------------------------------------------------
@@ -1441,7 +1430,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 			return;
 		}
 
-		if (player->itemroulette)
+		if (player->itemRoulette.active == true)
 		{
 			// Mashing behaviors
 			K_BotItemRouletteMash(player, cmd);

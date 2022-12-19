@@ -63,6 +63,7 @@ option(
 	"Link dependencies using CMake's find_package and do not use internal builds"
 	${SRB2_CONFIG_SYSTEM_LIBRARIES_DEFAULT}
 )
+option(SRB2_CONFIG_ENABLE_TESTS "Build the test suite" ON)
 # This option isn't recommended for distribution builds and probably won't work (yet).
 cmake_dependent_option(
 	SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES
@@ -80,6 +81,25 @@ option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
+
+if(SRB2_CONFIG_ENABLE_TESTS)
+	# https://github.com/catchorg/Catch2
+	CPMAddPackage(
+		NAME Catch2
+		VERSION 3.1.1
+		GITHUB_REPOSITORY catchorg/Catch2
+		OPTIONS
+			"CATCH_INSTALL_DOCS OFF"
+	)
+	list(APPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/extras")
+	include(CTest)
+	include(Catch)
+	add_executable(srb2tests)
+	# To add tests, use target_sources to add individual test files to the target in subdirs.
+	target_link_libraries(srb2tests PRIVATE Catch2::Catch2 Catch2::Catch2WithMain)
+	target_compile_features(srb2tests PRIVATE c_std_11 cxx_std_17)
+	catch_discover_tests(srb2tests)
+endif()
 
 # Enable CCache
 # (Set USE_CCACHE=ON to use, CCACHE_OPTIONS for options)
@@ -124,13 +144,6 @@ endif()
 if ((${SRB2_USE_CCACHE}) AND (${CMAKE_C_COMPILER} MATCHES "clang"))
 	message(WARNING "Using clang and CCache: You may want to set environment variable CCACHE_CPP2=yes to prevent include errors during compile.")
 endif()
-
-# Add sources from Sourcefile
-function(target_sourcefile type)
-	file(STRINGS Sourcefile list
-		REGEX "[-0-9A-Za-z_]+\.${type}")
-	target_sources(SRB2SDL2 PRIVATE ${list})
-endfunction()
 
 # bitness check
 set(SRB2_SYSTEM_BITS 0)

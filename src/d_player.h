@@ -227,6 +227,7 @@ typedef enum
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
 	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
+	khud_rouletteoffset,// Roulette stop height
 
 	// Rings
 	khud_ringframe,		// Ring spin frame
@@ -329,6 +330,41 @@ struct botvars_t
 struct skybox_t {
 	mobj_t * viewpoint;
 	mobj_t * centerpoint;
+};
+
+// player_t struct for item roulette variables
+
+// Doing this the right way is causing problems.
+// so FINE, it's a static length now.
+#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+
+struct itemroulette_t
+{
+	boolean active;
+
+#ifdef ITEM_LIST_SIZE
+	size_t itemListLen;
+	SINT8 itemList[ITEM_LIST_SIZE];
+#else
+	size_t itemListCap;
+	size_t itemListLen;
+	SINT8 *itemList;
+#endif
+
+	UINT8 useOdds;
+	UINT8 playing, exiting;
+	UINT32 dist, baseDist;
+	UINT32 firstDist, secondDist;
+	UINT32 secondToFirst;
+
+	size_t index;
+	UINT8 sound;
+
+	tic_t speed;
+	tic_t tics;
+	tic_t elapsed;
+
+	boolean eggman;
 };
 
 // ========================================================================
@@ -479,8 +515,7 @@ struct player_t
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
-	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+	itemroulette_t itemRoulette;	// Item roulette data
 
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number
