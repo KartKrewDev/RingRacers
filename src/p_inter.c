@@ -352,11 +352,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				special->target->player->karmadelay = comebacktime;
 			}
 			return;
-		case MT_SPB:
-			{
-				Obj_SPBTouch(special, toucher);
-				return;
-			}
 		case MT_DUELBOMB:
 			{
 				Obj_DuelBombTouch(special, toucher);

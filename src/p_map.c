@@ -751,6 +751,53 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //{
 
+	if (thing->type == MT_SPB)
+	{
+		if (tm.thing->type != MT_PLAYER
+			&& thing->tracer != tm.thing)
+		{
+			// Needs to be a player or the
+			// thing that we're chasing.
+			return BMIT_CONTINUE;
+		}
+
+		if (tm.thing->z > thing->z + thing->height)
+		{
+			return BMIT_CONTINUE; // overhead
+		}
+
+		if (tm.thing->z + tm.thing->height < thing->z)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
+		Obj_SPBTouch(thing, tm.thing);
+		return BMIT_CONTINUE;
+	}
+	else if (tm.thing->type == MT_SPB)
+	{
+		if (thing->type != MT_PLAYER
+			&& tm.thing->tracer != thing)
+		{
+			// Needs to be a player or the
+			// thing that we're chasing.
+			return BMIT_CONTINUE;
+		}
+
+		if (tm.thing->z > thing->z + thing->height)
+		{
+			return BMIT_CONTINUE; // overhead
+		}
+
+		if (tm.thing->z + tm.thing->height < thing->z)
+		{
+			return BMIT_CONTINUE; // underneath
+		}
+
+		Obj_SPBTouch(tm.thing, thing);
+		return BMIT_CONTINUE;
+	}
+
 	if (thing->type == MT_SHRINK_GUN || thing->type == MT_SHRINK_PARTICLE)
 	{
 		if (tm.thing->type != MT_PLAYER)

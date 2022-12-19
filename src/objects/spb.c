@@ -23,6 +23,7 @@
 #include "../z_zone.h"
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
+#include "../k_specialstage.h"
 
 #define SPB_SLIPTIDEDELTA (ANG1 * 3)
 #define SPB_STEERDELTA (ANGLE_90 - ANG10)
@@ -292,7 +293,7 @@ static boolean SPBSeekSoundPlaying(mobj_t *spb)
 		|| S_SoundPlaying(spb, sfx_spbskc));
 }
 
-static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
+static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 {
 	const fixed_t desiredSpeed = SPB_DEFAULTSPEED;
 
@@ -321,16 +322,15 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 	spb_lastplayer(spb) = -1; // Just make sure this is reset
 
-	if (bestPlayer == NULL
-		|| bestPlayer->mo == NULL
-		|| P_MobjWasRemoved(bestPlayer->mo) == true
-		|| bestPlayer->mo->health <= 0
-		|| (bestPlayer->respawn.state != RESPAWNST_NONE))
+	if (bestMobj == NULL
+		|| P_MobjWasRemoved(bestMobj) == true
+		|| bestMobj->health <= 0
+		|| (bestMobj->player != NULL && bestMobj->player->respawn.state != RESPAWNST_NONE))
 	{
 		// No one there? Completely STOP.
 		spb->momx = spb->momy = spb->momz = 0;
 
-		if (bestPlayer == NULL)
+		if (bestMobj == NULL)
 		{
 			spbplace = -1;
 		}
@@ -339,8 +339,16 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	}
 
 	// Found someone, now get close enough to initiate the slaughter...
-	P_SetTarget(&spb_chase(spb), bestPlayer->mo);
-	spbplace = bestPlayer->position;
+	P_SetTarget(&spb_chase(spb), bestMobj);
+
+	if (bestMobj->player != NULL)
+	{
+		spbplace = bestMobj->player->position;
+	}
+	else
+	{
+		spbplace = 1;
+	}
 
 	dist = SPBDist(spb, spb_chase(spb));
 	activeDist = FixedMul(SPB_ACTIVEDIST, spb_chase(spb)->scale);
@@ -400,7 +408,18 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 		curWaypoint = K_GetWaypointFromIndex( (size_t)spb_curwaypoint(spb) );
 	}
 
-	destWaypoint = bestPlayer->nextwaypoint;
+	if (bestMobj->player != NULL)
+	{
+		destWaypoint = bestMobj->player->nextwaypoint;
+	}
+	else if (bestMobj->type == MT_SPECIAL_UFO)
+	{
+		destWaypoint = K_GetSpecialUFOWaypoint(bestMobj);
+	}
+	else
+	{
+		destWaypoint = K_GetBestWaypointForMobj(bestMobj);
+	}
 
 	if (curWaypoint != NULL)
 	{
@@ -433,7 +452,8 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 				if (pathfindsuccess == true)
 				{
-					if (cv_spbtest.value) {
+					if (cv_spbtest.value)
+					{
 						if (pathtoplayer.numnodes > 1)
 						{
 							// Go to the next waypoint.
@@ -529,45 +549,48 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 
 	SetSPBSpeed(spb, xySpeed, zSpeed);
 
-	// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
-	steerDist = 1536 * mapobjectscale;
-
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (specialStage.active == false)
 	{
-		fixed_t ourDist = INT32_MAX;
-		INT32 ourDelta = INT32_MAX;
+		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
+		steerDist = 1536 * mapobjectscale;
 
-		if (playeringame[i] == false || players[i].spectator == true)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			// Not in-game
-			continue; 
+			fixed_t ourDist = INT32_MAX;
+			INT32 ourDelta = INT32_MAX;
+
+			if (playeringame[i] == false || players[i].spectator == true)
+			{
+				// Not in-game
+				continue; 
+			}
+
+			if (players[i].mo == NULL || P_MobjWasRemoved(players[i].mo) == true)
+			{
+				// Invalid mobj
+				continue;
+			}
+
+			ourDelta = AngleDelta(spb->angle, R_PointToAngle2(spb->x, spb->y, players[i].mo->x, players[i].mo->y));
+			if (ourDelta > SPB_STEERDELTA)
+			{
+				// Check if the angle wouldn't make us LOSE speed.
+				continue;
+			}
+
+			ourDist = R_PointToDist2(spb->x, spb->y, players[i].mo->x, players[i].mo->y);
+			if (ourDist < steerDist)
+			{
+				steerDist = ourDist;
+				steerMobj = players[i].mo; // it doesn't matter if we override this guy now.
+			}
 		}
 
-		if (players[i].mo == NULL || P_MobjWasRemoved(players[i].mo) == true)
+		// different player from our main target, try and ram into em~!
+		if (steerMobj != NULL && steerMobj != spb_chase(spb))
 		{
-			// Invalid mobj
-			continue;
+			P_Thrust(spb, R_PointToAngle2(spb->x, spb->y, steerMobj->x, steerMobj->y), spb_speed(spb) / 4);
 		}
-
-		ourDelta = AngleDelta(spb->angle, R_PointToAngle2(spb->x, spb->y, players[i].mo->x, players[i].mo->y));
-		if (ourDelta > SPB_STEERDELTA)
-		{
-			// Check if the angle wouldn't make us LOSE speed.
-			continue;
-		}
-
-		ourDist = R_PointToDist2(spb->x, spb->y, players[i].mo->x, players[i].mo->y);
-		if (ourDist < steerDist)
-		{
-			steerDist = ourDist;
-			steerMobj = players[i].mo; // it doesn't matter if we override this guy now.
-		}
-	}
-
-	// different player from our main target, try and ram into em~!
-	if (steerMobj != NULL && steerMobj != spb_chase(spb))
-	{
-		P_Thrust(spb, R_PointToAngle2(spb->x, spb->y, steerMobj->x, steerMobj->y), spb_speed(spb) / 4);
 	}
 
 	if (sliptide != 0)
@@ -593,7 +616,7 @@ static void SPBSeek(mobj_t *spb, player_t *bestPlayer)
 	}
 }
 
-static void SPBChase(mobj_t *spb, player_t *bestPlayer)
+static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 {
 	fixed_t baseSpeed = 0;
 	fixed_t maxSpeed = 0;
@@ -642,8 +665,8 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 		S_StartSound(spb, spb->info->activesound);
 	}
 
-	// Maybe we want SPB to target an object later? IDK lol
 	chasePlayer = chase->player;
+
 	if (chasePlayer != NULL)
 	{
 		UINT8 fracmax = 32;
@@ -679,7 +702,8 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 		cy = chasePlayer->cmomy;
 
 		// Switch targets if you're no longer 1st for long enough
-		if (bestPlayer != NULL && chasePlayer->position <= bestPlayer->position)
+		if (bestMobj != NULL
+			&& (bestMobj->player == NULL || chasePlayer->position <= bestMobj->player->position))
 		{
 			spb_modetimer(spb) = SPB_HOTPOTATO;
 		}
@@ -696,6 +720,12 @@ static void SPBChase(mobj_t *spb, player_t *bestPlayer)
 				spb_intangible(spb) = SPB_FLASHING;
 			}
 		}
+	}
+	else
+	{
+		spb_lastplayer(spb) = -1;
+		spbplace = 1;
+		spb_modetimer(spb) = SPB_HOTPOTATO;
 	}
 
 	dist = P_AproxDistance(P_AproxDistance(spb->x - chase->x, spb->y - chase->y), spb->z - chase->z);
@@ -807,7 +837,7 @@ static void SPBWait(mobj_t *spb)
 void Obj_SPBThink(mobj_t *spb)
 {
 	mobj_t *ghost = NULL;
-	player_t *bestPlayer = NULL;
+	mobj_t *bestMobj = NULL;
 	UINT8 bestRank = UINT8_MAX;
 	size_t i;
 
@@ -844,6 +874,15 @@ void Obj_SPBThink(mobj_t *spb)
 	}
 	else
 	{
+		if (specialStage.active == true)
+		{
+			if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
+			{
+				bestRank = 1;
+				bestMobj = specialStage.ufo;
+			}
+		}
+
 		// Find the player with the best rank
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -886,7 +925,7 @@ void Obj_SPBThink(mobj_t *spb)
 			if (player->position < bestRank)
 			{
 				bestRank = player->position;
-				bestPlayer = player;
+				bestMobj = player->mo;
 			}
 		}
 
@@ -894,11 +933,11 @@ void Obj_SPBThink(mobj_t *spb)
 		{
 			case SPB_MODE_SEEK:
 			default:
-				SPBSeek(spb, bestPlayer);
+				SPBSeek(spb, bestMobj);
 				break;
 
 			case SPB_MODE_CHASE:
-				SPBChase(spb, bestPlayer);
+				SPBChase(spb, bestMobj);
 				break;
 
 			case SPB_MODE_WAIT:
@@ -970,14 +1009,18 @@ void Obj_SPBExplode(mobj_t *spb)
 
 void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher)
 {
-	player_t *player = toucher->player;
+	player_t *const player = toucher->player;
+	mobj_t *owner = NULL;
+	mobj_t *chase = NULL;
 
 	if (spb_intangible(spb) > 0)
 	{
 		return;
 	}
 
-	if ((spb_owner(spb) == toucher || spb_owner(spb) == toucher->target)
+	owner = spb_owner(spb);
+
+	if ((owner == toucher || owner == toucher->target)
 		&& (spb_nothink(spb) > 0))
 	{
 		return;
@@ -988,30 +1031,34 @@ void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher)
 		return;
 	}
 
-	if (player->spectator == true)
+	if (player != NULL)
 	{
-		return;
+		if (player->spectator == true)
+		{
+			return;
+		}
+
+		if (player->bubbleblowup > 0)
+		{
+			// Stun the SPB, and remove the shield.
+			K_DropHnextList(player, false);
+			spb_mode(spb) = SPB_MODE_WAIT;
+			spb_modetimer(spb) = 55; // Slightly over the respawn timer length
+			return;
+		}
 	}
 
-	if (player->bubbleblowup > 0)
-	{
-		// Stun the SPB, and remove the shield.
-		K_DropHnextList(player, false);
-		spb_mode(spb) = SPB_MODE_WAIT;
-		spb_modetimer(spb) = 55; // Slightly over the respawn timer length
-		return;
-	}
-
-	if (spb_chase(spb) != NULL && P_MobjWasRemoved(spb_chase(spb)) == false
-		&& toucher == spb_chase(spb))
+	chase = spb_chase(spb);
+	if (chase != NULL && P_MobjWasRemoved(chase) == false
+		&& toucher == chase)
 	{
 		// Cause the explosion.
 		Obj_SPBExplode(spb);
 		return;
 	}
-	else
+	else if (toucher->flags & MF_SHOOTABLE)
 	{
 		// Regular spinout, please.
-		P_DamageMobj(toucher, spb, spb_owner(spb), 1, DMG_NORMAL);
+		P_DamageMobj(toucher, spb, owner, 1, DMG_NORMAL);
 	}
 }

@@ -237,6 +237,25 @@ static void UFOUpdateAngle(mobj_t *ufo)
 	ufo->angle += delta >> 2;
 }
 
+waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
+{
+	if ((ufo == NULL) && (specialStage.active == true))
+	{
+		ufo = specialStage.ufo;
+	}
+
+	if (ufo != NULL && P_MobjWasRemoved(ufo) == false
+		&& ufo->type == MT_SPECIAL_UFO)
+	{
+		if (ufo_waypoint(ufo) >= 0)
+		{
+			return K_GetWaypointFromIndex((size_t)ufo_waypoint(ufo));
+		}
+	}
+
+	return NULL;
+}
+
 static void UFOMove(mobj_t *ufo)
 {
 	waypoint_t *curWaypoint = NULL;
@@ -256,11 +275,7 @@ static void UFOMove(mobj_t *ufo)
 
 	boolean reachedEnd = false;
 
-	if (ufo_waypoint(ufo) >= 0)
-	{
-		curWaypoint = K_GetWaypointFromIndex((size_t)ufo_waypoint(ufo));
-	}
-
+	curWaypoint = K_GetSpecialUFOWaypoint(ufo);
 	destWaypoint = K_GetFinishLineWaypoint();
 
 	if (curWaypoint == NULL || destWaypoint == NULL)
@@ -466,39 +481,73 @@ static void UFOKillPieces(mobj_t *ufo)
 	}
 }
 
-static UINT8 GetUFODamage(mobj_t *inflictor)
+static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 {
-	if (inflictor == NULL || P_MobjWasRemoved(inflictor) == true)
+	if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
 	{
-		// Default damage value.
-		return 10;
+		switch (inflictor->type)
+		{
+			case MT_JAWZ:
+			case MT_JAWZ_SHIELD:
+			case MT_ORBINAUT_SHIELD:
+			{
+				// Jawz / shields deal regular damage.
+				return 10;
+			}
+			case MT_ORBINAUT:
+			{
+				// Thrown orbinauts deal double damage.
+				return 20;
+			}
+			case MT_SPB:
+			{
+				// SPB deals triple damage.
+				return 30;
+			}
+			case MT_BANANA:
+			{
+				// Banana snipes deal triple damage,
+				// laid down bananas deal regular damage.
+				if (inflictor->health > 1)
+				{
+					return 30;
+				}
+
+				return 10;
+			}
+			case MT_PLAYER:
+			{
+				// Players deal damage relative to how many sneakers they used.
+				return 15 * max(1, inflictor->player->numsneakers);
+			}
+			default:
+			{
+				break;
+			}
+		}
 	}
 
-	switch (inflictor->type)
+	// Guess from damage type.
+	switch (damageType & DMG_TYPEMASK)
 	{
-		case MT_SPB:
-		case MT_BANANA:
-		{
-			// SPB deals triple damage.
-			return 30;
-		}
-		case MT_PLAYER:
-		{
-			// Players deal damage relative to how many sneakers they used.
-			return 15 * inflictor->player->numsneakers;
-		}
-		case MT_ORBINAUT:
-		{
-			// Thrown orbinauts deal double damage.
-			return 20;
-		}
-		case MT_JAWZ:
-		case MT_JAWZ_SHIELD:
-		case MT_ORBINAUT_SHIELD:
+		case DMG_NORMAL:
+		case DMG_STING:
 		default:
 		{
-			// Jawz / shields deal regular damage.
 			return 10;
+		}
+		case DMG_WIPEOUT:
+		{
+			return 20;
+		}
+		case DMG_EXPLODE:
+		case DMG_TUMBLE:
+		{
+			return 30;
+		}
+		case DMG_VOLTAGE:
+		{
+			return 15;
 		}
 	}
 }
@@ -509,7 +558,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	UINT8 damage = 1;
 
 	(void)source;
-	(void)damageType;
 
 	if (UFOEmeraldChase(ufo) == true)
 	{
@@ -517,7 +565,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		return false;
 	}
 
-	damage = GetUFODamage(inflictor);
+	damage = GetUFODamage(inflictor, damageType);
 
 	if (damage <= 0)
 	{

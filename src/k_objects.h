@@ -59,6 +59,7 @@ mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
 void Obj_BrolyKiThink(mobj_t *ki);
 
 /* Special Stage UFO */
+waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);
 void Obj_SpecialUFOThinker(mobj_t *ufo);
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
 void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
