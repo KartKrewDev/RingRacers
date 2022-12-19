@@ -542,21 +542,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				{
 					deh_warning("Patch is only compatible with base SRB2.");
 				}
-				// Clear all data in certain locations (mostly for unlocks)
-				// Unless you REALLY want to piss people off,
-				// define a custom gamedata /before/ doing this!!
-				// (then again, modifiedgame will prevent game data saving anyway)
-				else if (fastcmp(word, "CLEAR"))
-				{
-					if (!mainfile && !gamedataadded)
-					{
-						deh_warning("You must define a custom gamedata to use \"%s\"", word);
-						continue;
-					}
-
-					if (fastcmp(word2, "LEVELS"))
-						clear_levels();
-				}
 				else
 					deh_warning("Unknown word: %s", word);
 			}

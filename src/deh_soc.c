@@ -2534,6 +2534,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 	char *word2;
 	char *tmp;
 	INT32 value;
+	boolean doClearLevels = false;
 
 	do
 	{
@@ -2604,10 +2605,15 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				clear_conditionsets();
 				clear_emblems();
 				//clear_levels();
+				doClearLevels = true;
 			}
 			else if (!mainfile && !gamedataadded)
 			{
 				deh_warning("You must define a custom gamedata to use \"%s\"", word);
+			}
+			else if (fastcmp(word, "CLEARLEVELS"))
+			{
+				doClearLevels = (UINT8)(value == 0 || word2[0] == 'F' || word2[0] == 'N');
 			}
 			else if (fastcmp(word, "EXECCFG"))
 			{
@@ -2817,6 +2823,11 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				deh_warning("Maincfg: unknown word '%s'", word);
 		}
 	} while (!myfeof(f));
+
+	if (doClearLevels)
+	{
+		clear_levels();
+	}
 
 	Z_Free(s);
 }
