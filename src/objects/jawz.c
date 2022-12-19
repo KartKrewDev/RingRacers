@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 #include "../k_collide.h"
+#include "../k_specialstage.h"
 
 #define MAX_JAWZ_TURN (ANGLE_90 / 15) // We can turn a maximum of 6 degrees per frame at regular max speed
 
@@ -185,6 +186,16 @@ static void JawzChase(mobj_t *th, boolean grounded)
 	}
 }
 
+static boolean JawzSteersBetter(void)
+{
+	if (specialStage.active == true)
+	{
+		return true;
+	}
+
+	return !!!(gametyperules & GTR_CIRCUIT);
+}
+
 void Obj_JawzThink(mobj_t *th)
 {
 	mobj_t *ghost = P_SpawnGhostMobj(th);
@@ -215,7 +226,7 @@ void Obj_JawzThink(mobj_t *th)
 		ghost->colorized = true;
 	}
 
-	if (!(gametyperules & GTR_CIRCUIT))
+	if (JawzSteersBetter() == true)
 	{
 		th->friction = max(0, 3 * th->friction / 4);
 	}
