@@ -98,12 +98,14 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 3, 5, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
 	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
 	{ 0, 0, 0, 2, 0, 0, 0, 0 }, // Orbinaut x4
-	{ 0, 0, 1, 2, 1, 0, 0, 0 }  // Jawz x2
+	{ 0, 0, 1, 2, 1, 0, 0, 0 }, // Jawz x2
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }  // Gachabom x3
 };
 
 static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
@@ -131,12 +133,14 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{ 0, 0 }, // Kitchen Sink
 	{ 2, 0 }, // Drop Target
 	{ 4, 0 }, // Garden Top
+	{ 0, 0 }, // Gachabom
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
 	{ 2, 0 }, // Orbinaut x3
 	{ 1, 1 }, // Orbinaut x4
-	{ 5, 1 }  // Jawz x2
+	{ 5, 1 }, // Jawz x2
+	{ 0, 0 }  // Gachabom x3
 };
 
 static kartitems_t K_KartItemReelTimeAttack[] =
