@@ -554,6 +554,63 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		}
 	}
 
+	// Spring
+	if (terrain->springStrength)
+	{
+		sector_t *sector = player->mo->subsector->sector;
+
+		const pslope_t *slope;
+		angle_t angle = 0;
+
+		fixed_t co = FRACUNIT;
+		fixed_t si = 0;
+
+		// FIXME: come up with a better way to get the touched
+		// texture's slope to this function. At least this
+		// will work for 90% of scenarios...
+
+		if (player->mo->eflags & MFE_VERTICALFLIP)
+		{
+			if (player->mo->ceilingrover != NULL)
+			{
+				slope = *player->mo->ceilingrover->b_slope;
+			}
+			else
+			{
+				slope = sector->c_slope;
+			}
+		}
+		else
+		{
+			if (player->mo->floorrover != NULL)
+			{
+				slope = *player->mo->ceilingrover->t_slope;
+			}
+			else
+			{
+				slope = sector->f_slope;
+			}
+		}
+
+		if (slope)
+		{
+			const angle_t fa = (slope->zangle >> ANGLETOFINESHIFT);
+
+			co = FINECOSINE(fa) * P_MobjFlip(player->mo);
+			si = -(FINESINE(fa));
+
+			angle = slope->xydirection;
+		}
+
+		P_DoSpringEx(player->mo, mapobjectscale,
+				FixedMul(terrain->springStrength, co),
+				FixedMul(terrain->springStrength, si),
+				angle, terrain->springStarColor);
+
+		sector->soundorg.z = player->mo->z;
+		S_StartSound(&sector->soundorg, sfx_s3kb1);
+	}
+
 	// Bumpy floor
 	if (terrain->flags & TRF_STAIRJANK)
 	{
@@ -1487,6 +1544,8 @@ static void K_TerrainDefaults(terrain_t *terrain)
 	terrain->trickPanel = 0;
 	terrain->speedPad = 0;
 	terrain->speedPadAngle = 0;
+	terrain->springStrength = 0;
+	terrain->springStarColor = SKINCOLOR_NONE;
 	terrain->flags = 0;
 }
 
@@ -1564,6 +1623,27 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "speedPadAngle") == 0)
 	{
 		terrain->speedPadAngle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
+	}
+	else if (stricmp(param, "springStrength") == 0)
+	{
+		const double fval = atof(val);
+
+		if (fpclassify(fval) == FP_ZERO)
+		{
+			terrain->springStrength = 0;
+		}
+		else
+		{
+			// Springs increase in stength by 1.6 times the
+			// previous strength. Grey spring is 25 and
+			// 25/1.6 = 15.625
+			terrain->springStrength =
+				FLOAT_TO_FIXED(15.625 * pow(1.6, fval));
+		}
+	}
+	else if (stricmp(param, "springStarColor") == 0)
+	{
+		terrain->springStarColor = get_number(val);
 	}
 	else if (stricmp(param, "floorClip") == 0)
 	{

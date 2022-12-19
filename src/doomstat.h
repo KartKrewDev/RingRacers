@@ -502,6 +502,8 @@ enum GameTypeRules
 	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
 	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
+	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
+
 	// free: to and including 1<<31
 };
 

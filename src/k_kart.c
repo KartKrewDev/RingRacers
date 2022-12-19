@@ -2829,16 +2829,16 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
-	// Tails = 2s, Knuckles = 2.6s, Metal = 3.2s
-	return (player->kartspeed + 8) * (TICRATE/5);
+	// Tails = 1.7s, Knuckles = 2.2s, Metal = 2.7s
+	return ((player->kartspeed + 8) * TICRATE) / 6;
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
 	// more speed for higher weight & speed
-	// Tails = +18.75%, Fang = +46.88%, Mighty = +46.88%, Metal = +56.25%
+	// Tails = +16.94%, Fang = +34.94%, Mighty = +34.94%, Metal = +43.61%
 	// (can be higher than this value when overcharged)
-	const fixed_t val = ((player->kartspeed + player->kartweight) + 2) * (FRACUNIT/32);
+	const fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
 
 	// TODO: gametyperules
 	return (gametype == GT_BATTLE) ? (4 * val) : val;
@@ -3104,9 +3104,9 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (gametype == GT_BATTLE && player->bumpers <= 0)
 		k_accel *= 2;
 
-	// Marble Garden Top gets 800% accel
+	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
-		k_accel *= 8;
+		k_accel *= 12;
 
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
@@ -7754,7 +7754,10 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
-	K_KartEbrakeVisuals(player);
+	if (player->spectator == false)
+	{
+		K_KartEbrakeVisuals(player);
+	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
 			P_IsObjectOnGround(player->mo) &&
@@ -10299,10 +10302,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									if (player->throwdir == -1)
 									{
+										const angle_t angle = P_IsObjectOnGround(player->mo) ?
+											player->mo->angle : K_MomentumAngle(player->mo);
+
 										mobj_t *top = Obj_GardenTopDestroy(player);
 
 										// Fly off the Top at high speed
-										P_Thrust(player->mo, K_MomentumAngle(player->mo), 80 * mapobjectscale);
+										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
 										top->momx = player->mo->momx;
