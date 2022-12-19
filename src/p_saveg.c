@@ -190,6 +190,9 @@ static void P_NetArchivePlayers(void)
 
 		WRITEINT32(save_p, players[i].onconveyor);
 
+		WRITEUINT8(save_p, players[i].timeshit);
+		WRITEUINT8(save_p, players[i].timeshitprev);
+
 		WRITEUINT32(save_p, players[i].jointime);
 
 		WRITEUINT8(save_p, players[i].splitscreenindex);
@@ -266,6 +269,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].spinouttimer);
 		WRITEUINT8(save_p, players[i].spinouttype);
 		WRITEUINT8(save_p, players[i].instashield);
+		WRITEINT32(save_p, players[i].invulnhitlag);
 		WRITEUINT8(save_p, players[i].wipeoutslow);
 		WRITEUINT8(save_p, players[i].justbumped);
 		WRITEUINT8(save_p, players[i].tumbleBounces);
@@ -557,6 +561,9 @@ static void P_NetUnArchivePlayers(void)
 		players[i].lastsidehit = READINT16(save_p);
 		players[i].lastlinehit = READINT16(save_p);
 
+		players[i].timeshit = READUINT8(save_p);
+		players[i].timeshitprev = READUINT8(save_p);
+
 		players[i].onconveyor = READINT32(save_p);
 
 		players[i].jointime = READUINT32(save_p);
@@ -615,6 +622,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spinouttimer = READUINT16(save_p);
 		players[i].spinouttype = READUINT8(save_p);
 		players[i].instashield = READUINT8(save_p);
+		players[i].invulnhitlag = READINT32(save_p);
 		players[i].wipeoutslow = READUINT8(save_p);
 		players[i].justbumped = READUINT8(save_p);
 		players[i].tumbleBounces = READUINT8(save_p);
