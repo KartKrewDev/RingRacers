@@ -2824,16 +2824,16 @@ static fixed_t K_FlameShieldDashVar(INT32 val)
 INT16 K_GetSpindashChargeTime(player_t *player)
 {
 	// more charge time for higher speed
-	// Tails = 2s, Knuckles = 2.6s, Metal = 3.2s
-	return (player->kartspeed + 8) * (TICRATE/5);
+	// Tails = 1.7s, Knuckles = 2.2s, Metal = 2.7s
+	return ((player->kartspeed + 8) * TICRATE) / 6;
 }
 
 fixed_t K_GetSpindashChargeSpeed(player_t *player)
 {
 	// more speed for higher weight & speed
-	// Tails = +18.75%, Fang = +46.88%, Mighty = +46.88%, Metal = +56.25%
+	// Tails = +16.94%, Fang = +34.94%, Mighty = +34.94%, Metal = +43.61%
 	// (can be higher than this value when overcharged)
-	const fixed_t val = ((player->kartspeed + player->kartweight) + 2) * (FRACUNIT/32);
+	const fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
 
 	// TODO: gametyperules
 	return (gametype == GT_BATTLE) ? (4 * val) : val;
