@@ -153,6 +153,10 @@ set(SRB2_CONFIG_YASM OFF CACHE BOOL
 	"Use YASM in place of NASM.")
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 	"Compile a development build of SRB2Kart.")
+set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
+	"Compile a build for testers.")
+set(SRB2_CONFIG_HOSTTESTERS OFF CACHE BOOL
+	"Compile a build to host netgames for testers builds.")
 
 add_subdirectory(blua)
 
