@@ -152,13 +152,14 @@ static kartitems_t K_KartItemReelTimeAttack[] =
 
 static kartitems_t K_KartItemReelBreakTheCapsules[] =
 {
-	KRITEM_TRIPLEORBINAUT,
-	KITEM_BANANA,
+	KITEM_GACHABOM,
+	KRITEM_TRIPLEGACHABOM,
 	KITEM_NONE
 };
 
 static kartitems_t K_KartItemReelBoss[] =
 {
+	// FIXME: gachabom...?
 	KITEM_ORBINAUT,
 	KITEM_BANANA,
 	KITEM_NONE
