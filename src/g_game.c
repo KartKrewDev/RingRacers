@@ -3416,28 +3416,25 @@ UINT32 G_TOLFlag(INT32 pgametype)
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
+	UINT8 i = 0;
 	INT16 mapnum = NEXTMAP_INVALID;
+	UINT32 tol = G_TOLFlag(pgametype);
 
-	if ((gametypedefaultrules[pgametype] & GTR_CAMPAIGN) && kartcupheaders)
-	{
-		mapnum = kartcupheaders->cachedlevels[0];
-	}
+	levellist.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	levellist.timeattack = false;
 
-	if (mapnum >= nummapheaders)
+	if (levellist.cupmode)
 	{
-		UINT32 tolflag = G_TOLFlag(pgametype);
-		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
+		cupheader_t *cup = kartcupheaders;
+		while (cup && mapnum >= nummapheaders)
 		{
-			if (!mapheaderinfo[mapnum])
-				continue;
-			if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
-				continue;
-			if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
-				continue;
-			if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
-				continue;
-			break;
+			mapnum = M_GetFirstLevelInList(&i, tol, cup);
+			i = 0;
 		}
+	}
+	else
+	{
+		mapnum = M_GetFirstLevelInList(&i, tol, NULL);
 	}
 
 	return mapnum;
@@ -3864,7 +3861,7 @@ static void G_GetNextMap(void)
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		if (gametyperules & GTR_CAMPAIGN)
+		if (!(gametyperules & GTR_NOCUPSELECT))
 		{
 			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
 			UINT8 gettingresult = 0;
@@ -3890,6 +3887,12 @@ static void G_GetNextMap(void)
 						|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
 						|| (!marathonmode && M_MapLocked(cm+1)))
 						continue;
+
+					// If the map is in multiple cups, only consider the first one valid.
+					if (mapheaderinfo[cm]->cup != cup)
+					{
+						continue;
+					}
 
 					// Grab the first valid after the map you're on
 					if (gettingresult)

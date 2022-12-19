@@ -878,7 +878,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	roulette->secondToFirst = 0;
 
 	roulette->elapsed = 0;
-	roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST; // Some default speed
+	roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK; // Some default speed
 
 	roulette->active = true;
 	roulette->eggman = false;
@@ -1055,7 +1055,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	// Combine our two factors together.
 	total = min(FRACUNIT, (frontRun / 2) + (progress / 2));
 
-	if (leveltime < starttime + 20*TICRATE)
+	if (leveltime < starttime + 30*TICRATE)
 	{
 		// Don't impact as much at the start.
 		// This makes it so that everyone gets to enjoy the lowest speed at the start.
@@ -1065,7 +1065,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 		}
 		else
 		{
-			const fixed_t lerp = FixedDiv(leveltime - starttime, 20*TICRATE);
+			const fixed_t lerp = FixedDiv(leveltime - starttime, 30*TICRATE);
 			total = FRACUNIT + FixedMul(lerp, total - FRACUNIT);
 		}
 	}

@@ -268,6 +268,96 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 	return linedefcrossspecial;
 }
 
+void
+P_DoSpringEx
+(		mobj_t * object,
+		fixed_t scaleVal,
+		fixed_t vertispeed,
+		fixed_t horizspeed,
+		angle_t finalAngle,
+		UINT16 starcolor)
+{
+	if (horizspeed < 0)
+	{
+		horizspeed = -(horizspeed);
+		finalAngle += ANGLE_180;
+	}
+
+	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
+	object->terrain = NULL;
+
+	object->eflags |= MFE_SPRUNG; // apply this flag asap!
+
+	if ((vertispeed < 0) ^ P_IsObjectFlipped(object))
+		vertispeed *= 2;
+
+	if (vertispeed)
+	{
+		object->momz = FixedMul(vertispeed, scaleVal);
+	}
+
+	if (horizspeed)
+	{
+		fixed_t finalSpeed = FixedMul(horizspeed, scaleVal);
+		fixed_t objectSpeed;
+
+		if (object->player)
+			objectSpeed = object->player->speed;
+		else
+			objectSpeed = R_PointToDist2(0, 0, object->momx, object->momy);
+
+		if (!vertispeed)
+		{
+			// Scale to gamespeed
+			finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
+
+			// Reflect your momentum angle against the surface of horizontal springs.
+			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
+			if (object->momx || object->momy)
+			{
+				finalAngle = K_ReflectAngle(
+					R_PointToAngle2(0, 0, object->momx, object->momy), finalAngle,
+					objectSpeed, finalSpeed
+				);
+			}
+		}
+
+		// Horizontal speed is used as a minimum thrust, not a direct replacement
+		finalSpeed = max(objectSpeed, finalSpeed);
+
+		P_InstaThrust(object, finalAngle, finalSpeed);
+	}
+
+	if (object->player)
+	{
+		K_TumbleInterrupt(object->player);
+		P_ResetPlayer(object->player);
+
+		object->player->springstars = max(abs(vertispeed), horizspeed) / FRACUNIT / 2;
+		object->player->springcolor = starcolor;
+
+		// Less friction when hitting springs
+		if (!object->player->tiregrease)
+		{
+			UINT8 i;
+			for (i = 0; i < 2; i++)
+			{
+				mobj_t *grease;
+				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
+				P_SetTarget(&grease->target, object);
+				grease->angle = K_MomentumAngle(object);
+				grease->extravalue1 = i;
+				K_ReduceVFX(grease, object->player);
+			}
+		}
+
+		if (object->player->tiregrease < greasetics)
+		{
+			object->player->tiregrease = greasetics;
+		}
+	}
+}
+
 //
 // P_DoSpring
 //
@@ -282,8 +372,8 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
-	fixed_t savemomx = 0;
-	fixed_t savemomy = 0;
+	fixed_t savemomx = object->momx;
+	fixed_t savemomy = object->momy;
 	statenum_t raisestate = spring->info->raisestate;
 
 	// Object was already sprung this tic
@@ -312,17 +402,10 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		return false;
 	}
 
-	object->standingslope = NULL; // Okay, now we know it's not going to be relevant - no launching off at silly angles for you.
-	object->terrain = NULL;
-
-	object->eflags |= MFE_SPRUNG; // apply this flag asap!
 	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
 
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
-
-	if ((spring->eflags ^ object->eflags) & MFE_VERTICALFLIP)
-		vertispeed *= 2;
 
 	// Vertical springs teleport you on TOP of them.
 	if (vertispeed > 0)
@@ -355,43 +438,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		P_TryMove(object, spring->x + offx, spring->y + offy, true, NULL);
 	}
 
-	if (vertispeed)
-	{
-		object->momz = FixedMul(vertispeed, scaleVal);
-	}
+	object->momx = savemomx;
+	object->momy = savemomy;
 
-	if (horizspeed)
-	{
-		angle_t finalAngle = spring->angle;
-		fixed_t finalSpeed = FixedMul(horizspeed, scaleVal);
-		fixed_t objectSpeed;
-
-		if (object->player)
-			objectSpeed = object->player->speed;
-		else
-			objectSpeed = R_PointToDist2(0, 0, savemomx, savemomy);
-
-		if (!vertispeed)
-		{
-			// Scale to gamespeed
-			finalSpeed = FixedMul(finalSpeed, K_GetKartGameSpeedScalar(gamespeed));
-
-			// Reflect your momentum angle against the surface of horizontal springs.
-			// This makes it a bit more interesting & unique than just being a speed boost in a pre-defined direction
-			if (savemomx || savemomy)
-			{
-				finalAngle = K_ReflectAngle(
-					R_PointToAngle2(0, 0, savemomx, savemomy), finalAngle,
-					objectSpeed, finalSpeed
-				);
-			}
-		}
-
-		// Horizontal speed is used as a minimum thrust, not a direct replacement
-		finalSpeed = max(objectSpeed, finalSpeed);
-
-		P_InstaThrust(object, finalAngle, finalSpeed);
-	}
+	P_DoSpringEx(object, scaleVal, vertispeed, horizspeed,
+			spring->angle, starcolor);
 
 	// Re-solidify
 	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
@@ -401,32 +452,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		if (spring->flags & MF_ENEMY) // Spring shells
 		{
 			P_SetTarget(&spring->target, object);
-		}
-
-		K_TumbleInterrupt(object->player);
-		P_ResetPlayer(object->player);
-
-		object->player->springstars = max(vertispeed, horizspeed) / FRACUNIT / 2;
-		object->player->springcolor = starcolor;
-
-		// Less friction when hitting springs
-		if (!object->player->tiregrease)
-		{
-			UINT8 i;
-			for (i = 0; i < 2; i++)
-			{
-				mobj_t *grease;
-				grease = P_SpawnMobj(object->x, object->y, object->z, MT_TIREGREASE);
-				P_SetTarget(&grease->target, object);
-				grease->angle = K_MomentumAngle(object);
-				grease->extravalue1 = i;
-				K_ReduceVFX(grease, object->player);
-			}
-		}
-
-		if (object->player->tiregrease < greasetics)
-		{
-			object->player->tiregrease = greasetics;
 		}
 
 		if (spring->type == MT_POGOSPRING)

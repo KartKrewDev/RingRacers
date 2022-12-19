@@ -131,7 +131,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				return false;
 
 			// Already have fake
-			if (player->itemRoulette.eggman == true
+			if ((player->itemRoulette.active && player->itemRoulette.eggman) == true
 				|| player->eggmanexplode)
 				return false;
 		}
