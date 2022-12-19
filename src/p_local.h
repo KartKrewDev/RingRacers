@@ -170,7 +170,7 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
-#define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
+#define P_IsObjectFlipped(o) (((o)->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
@@ -473,6 +473,7 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 BlockItReturn_t PIT_PushableMoved(mobj_t *thing);
 
+void P_DoSpringEx(mobj_t *object, fixed_t scaleVal, fixed_t vertispeed, fixed_t horizspeed, angle_t finalAngle, UINT16 starcolor);
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
 
 fixed_t P_GetFOFTopZAt (ffloor_t *rover, fixed_t x, fixed_t y);

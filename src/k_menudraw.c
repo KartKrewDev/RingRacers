@@ -1924,27 +1924,48 @@ void M_DrawRaceDifficulty(void)
 
 static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 {
-	UINT8 i;
+	UINT8 i = 0;
+	INT16 maxlevels = M_CountLevelsToShowInList(levellist.typeoflevel, cup);
 	INT16 x = -(cupgrid.previewanim % 82);
+	INT16 add;
+	INT16 map, start = M_GetFirstLevelInList(&i, levellist.typeoflevel, cup);
+	UINT8 starti = i;
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
 	if (cup && !M_CupLocked(cup))
 	{
-		i = (cupgrid.previewanim / 82) % cup->numlevels;
+		add = (cupgrid.previewanim / 82) % maxlevels;
+		map = start;
+		while (add > 0)
+		{
+			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, cup);
+
+			if (map >= nummapheaders)
+			{
+				break;
+			}
+
+			add--;
+		}
 		while (x < BASEVIDWIDTH)
 		{
-			INT32 cupLevelNum = cup->cachedlevels[i];
+			if (map >= nummapheaders)
+			{
+				map = start;
+				i = starti;
+			}
 
 			K_DrawMapThumbnail(
 				(x+1)<<FRACBITS, (y+2)<<FRACBITS,
 				80<<FRACBITS,
 				0,
-				cupLevelNum,
+				map,
 				NULL);
 
-			i = (i+1) % cup->numlevels;
 			x += 82;
+
+			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, cup);
 		}
 	}
 	else
@@ -1988,31 +2009,17 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j;
-	cupheader_t *cup = kartcupheaders;
-
-	while (cup)
-	{
-		if (cup->id == CUPMENU_CURSORID)
-			break;
-		cup = cup->next;
-	}
+	cupheader_t *cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
 		for (j = 0; j < CUPMENU_ROWS; j++)
 		{
-			UINT8 id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
-			cupheader_t *iconcup = kartcupheaders;
+			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
+			cupheader_t *iconcup = cupgrid.builtgrid[id];
 			patch_t *patch = NULL;
 			INT16 x, y;
 			INT16 icony = 7;
-
-			while (iconcup)
-			{
-				if (iconcup->id == id)
-					break;
-				iconcup = iconcup->next;
-			}
 
 			if (!iconcup)
 				break;
@@ -2181,9 +2188,9 @@ static void M_DrawLevelSelectBlock(INT16 x, INT16 y, INT16 map, boolean redblink
 
 void M_DrawLevelSelect(void)
 {
-	INT16 i;
-	INT16 start = M_GetFirstLevelInList(levellist.newgametype);
-	INT16 map = start;
+	INT16 i = 0;
+	UINT8 j = 0;
+	INT16 map = M_GetFirstLevelInList(&j, levellist.typeoflevel, levellist.selectedcup);
 	INT16 t = (64*menutransition.tics), tay = 0;
 	INT16 y = 80 - (12 * levellist.y);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
@@ -2194,12 +2201,9 @@ void M_DrawLevelSelect(void)
 		tay = t/2;
 	}
 
-	for (i = 0; i < M_CountLevelsToShowInList(levellist.newgametype); i++)
+	while (true)
 	{
 		INT16 lvlx = t, lvly = y;
-
-		while (!M_CanShowLevelInList(map, levellist.newgametype) && map < nummapheaders)
-			map++;
 
 		if (map >= nummapheaders)
 			break;
@@ -2216,7 +2220,8 @@ void M_DrawLevelSelect(void)
 		);
 
 		y += 72;
-		map++;
+		i++;
+		map = M_GetNextLevelInList(map, &j, levellist.typeoflevel, levellist.selectedcup);
 	}
 
 	M_DrawCupTitle(tay, levellist.selectedcup);
