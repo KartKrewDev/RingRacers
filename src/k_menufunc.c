@@ -3386,8 +3386,11 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 // Determines whether to show a given map in the various level-select lists.
 //
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
+boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 {
+	if (!levelsearch)
+		return false;
+
 	if (mapnum >= nummapheaders)
 		return false;
 
@@ -3403,11 +3406,11 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	if (M_MapLocked(mapnum+1))
+	if (levelsearch->checklocked && M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
 	// Check for TOL
-	if (!(mapheaderinfo[mapnum]->typeoflevel & tol))
+	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
 	// Should the map be hidden?
@@ -3415,26 +3418,31 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 		return false;
 
 	// I don't know why, but some may have exceptions.
-	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
+	if (levelsearch->timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
 	// Don't permit cup when no cup requested (also no dupes in time attack)
-	if (levellist.cupmode && (levellist.timeattack || !cup) && mapheaderinfo[mapnum]->cup != cup)
+	if (levelsearch->cupmode
+		&& (levelsearch->timeattack || !levelsearch->cup)
+		&& mapheaderinfo[mapnum]->cup != levelsearch->cup)
 		return false;
 
 	// Survived our checks.
 	return true;
 }
 
-UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
+UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 {
 	INT16 i, count = 0;
 
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
 		for (i = 0; i < CUPCACHE_MAX; i++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
 				continue;
 			count++;
 		}
@@ -3443,60 +3451,66 @@ UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 	}
 
 	for (i = 0; i < nummapheaders; i++)
-		if (M_CanShowLevelInList(i, tol, NULL))
+		if (M_CanShowLevelInList(i, levelsearch))
 			count++;
 
 	return count;
 }
 
-UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 {
 	INT16 mapnum = NEXTMAP_INVALID;
 
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
-			mapnum = cup->cachedlevels[*i];
+			mapnum = levelsearch->cup->cachedlevels[*i];
 			break;
 		}
 	}
 	else
 	{
 		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
-			if (M_CanShowLevelInList(mapnum, tol, NULL))
+			if (M_CanShowLevelInList(mapnum, levelsearch))
 				break;
 	}
 
 	return mapnum;
 }
 
-UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 {
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
-		map = NEXTMAP_INVALID;
+		mapnum = NEXTMAP_INVALID;
 		(*i)++;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
-			map = cup->cachedlevels[*i];
+			mapnum = levelsearch->cup->cachedlevels[*i];
 			break;
 		}
 	}
 	else
 	{
-		map++;
-		while (!M_CanShowLevelInList(map, tol, NULL) && map < nummapheaders)
-			map++;
+		mapnum++;
+		while (!M_CanShowLevelInList(mapnum, levelsearch) && mapnum < nummapheaders)
+			mapnum++;
 	}
 
-	return map;
+	return mapnum;
 }
 
 struct cupgrid_s cupgrid;
@@ -3504,7 +3518,7 @@ struct levellist_s levellist;
 
 static void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup)-1;
+	UINT16 m = M_CountLevelsToShowInList(&levellist.levelsearch)-1;
 
 	levellist.dest = (6*levellist.cursor);
 
@@ -3522,9 +3536,9 @@ static void M_LevelListFromGametype(INT16 gt)
 	if (first || gt != levellist.newgametype)
 	{
 		levellist.newgametype = gt;
-		levellist.typeoflevel = G_TOLFlag(gt);
-		levellist.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
-		levellist.selectedcup = NULL;
+		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
+		levellist.levelsearch.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
+		levellist.levelsearch.cup = NULL;
 		first = false;
 	}
 
@@ -3533,14 +3547,17 @@ static void M_LevelListFromGametype(INT16 gt)
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
 
-	if (levellist.cupmode)
+	if (levellist.levelsearch.cupmode)
 	{
-		cupheader_t *cup = kartcupheaders;
+		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 
+		templevelsearch.cup = kartcupheaders;
+		templevelsearch.checklocked = false;
+
 		// Make sure there's valid cups before going to this menu.
-		if (cup == NULL)
+		if (templevelsearch.cup == NULL)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
 
 		if (!cupgrid.builtgrid)
@@ -3558,12 +3575,12 @@ static void M_LevelListFromGametype(INT16 gt)
 		}
 		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
 
-		while (cup)
+		while (templevelsearch.cup)
 		{
-			if (!M_CountLevelsToShowInList(levellist.typeoflevel, cup))
+			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
 				// No valid maps, skip.
-				cup = cup->next;
+				templevelsearch.cup = templevelsearch.cup->next;
 				continue;
 			}
 
@@ -3584,21 +3601,21 @@ static void M_LevelListFromGametype(INT16 gt)
 				cupgrid.cappages *= 2;
 			}
 
-			cupgrid.builtgrid[currentid] = cup;
+			cupgrid.builtgrid[currentid] = templevelsearch.cup;
 
-			if (!M_CupLocked(cup))
+			if (!M_CupLocked(templevelsearch.cup))
 			{
 				highestunlockedid = currentid;
-				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
+				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
 				{
-					cupgrid.x = cup->id % CUPMENU_COLUMNS;
-					cupgrid.y = (cup->id / CUPMENU_COLUMNS) % CUPMENU_ROWS;
-					cupgrid.pageno = cup->id / (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					cupgrid.x = currentid % CUPMENU_COLUMNS;
+					cupgrid.y = (currentid / CUPMENU_COLUMNS) % CUPMENU_ROWS;
+					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS);
 				}
 			}
 
 			currentid++;
-			cup = cup->next;
+			templevelsearch.cup = templevelsearch.cup->next;
 		}
 
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
@@ -3614,10 +3631,10 @@ static void M_LevelListFromGametype(INT16 gt)
 	}
 
 	// Reset position properly if you go back & forth between gametypes
-	if (levellist.selectedcup)
+	if (levellist.levelsearch.cup)
 	{
 		levellist.cursor = 0;
-		levellist.selectedcup = NULL;
+		levellist.levelsearch.cup = NULL;
 	}
 
 	M_LevelSelectScrollDest();
@@ -3636,22 +3653,24 @@ void M_LevelSelectInit(INT32 choice)
 {
 	(void)choice;
 
-	levellist.netgame = false;	// Make sure this is reset as we'll only be using this function for offline games!
-	cupgrid.netgame = false;	// Ditto
+	// Make sure this is reset as we'll only be using this function for offline games!
+	cupgrid.netgame = false;
+	levellist.netgame = false;
+	levellist.levelsearch.checklocked = true;
 
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
 		case 0:
 			cupgrid.grandprix = false;
-			levellist.timeattack = false;
+			levellist.levelsearch.timeattack = false;
 			break;
 		case 1:
 			cupgrid.grandprix = false;
-			levellist.timeattack = true;
+			levellist.levelsearch.timeattack = true;
 			break;
 		case 2:
 			cupgrid.grandprix = true;
-			levellist.timeattack = false;
+			levellist.levelsearch.timeattack = false;
 			break;
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
@@ -3787,10 +3806,10 @@ void M_CupSelectHandler(INT32 choice)
 		else
 		{
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (levellist.selectedcup != newcup)
+			if (levellist.levelsearch.cup != newcup)
 			{
 				levellist.cursor = 0;
-				levellist.selectedcup = newcup;
+				levellist.levelsearch.cup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
@@ -3818,7 +3837,7 @@ void M_CupSelectTick(void)
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 maxlevels = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup);
+	INT16 maxlevels = M_CountLevelsToShowInList(&levellist.levelsearch);
 	const UINT8 pid = 0;
 
 	(void)choice;
@@ -3850,14 +3869,14 @@ void M_LevelSelectHandler(INT32 choice)
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		UINT8 i = 0;
-		INT16 map = M_GetFirstLevelInList(&i, levellist.typeoflevel, levellist.selectedcup);
+		INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
 		INT16 add = levellist.cursor;
 
 		M_SetMenuDelay(pid);
 
 		while (add > 0)
 		{
-			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, levellist.selectedcup);
+			map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
 
 			if (map >= nummapheaders)
 			{
@@ -3875,7 +3894,7 @@ void M_LevelSelectHandler(INT32 choice)
 
 		levellist.choosemap = map;
 
-		if (levellist.timeattack)
+		if (levellist.levelsearch.timeattack)
 		{
 			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 			S_StartSound(NULL, sfx_s3k63);
@@ -4106,10 +4125,13 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	INT16 gt = GT_RACE;
 	(void)choice;
 
-	levellist.netgame = true;		// Yep, we'll be starting a netgame.
-	cupgrid.netgame = true;			// Ditto
-	levellist.timeattack = false;	// Make sure we reset those
-	cupgrid.grandprix = false;	// Ditto
+	// Yep, we'll be starting a netgame.
+	levellist.netgame = true;
+	cupgrid.netgame = true;
+	// Make sure we reset those
+	levellist.levelsearch.timeattack = false;
+	levellist.levelsearch.checklocked = true;
+	cupgrid.grandprix = false;
 
 	// In case we ever want to add new gamemodes there somehow, have at it!
 	switch (cv_dummygametype.value)

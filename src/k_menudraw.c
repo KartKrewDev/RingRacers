@@ -1922,24 +1922,24 @@ void M_DrawRaceDifficulty(void)
 
 // LEVEL SELECT
 
-static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
+static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 {
 	UINT8 i = 0;
-	INT16 maxlevels = M_CountLevelsToShowInList(levellist.typeoflevel, cup);
+	INT16 maxlevels = M_CountLevelsToShowInList(levelsearch);
 	INT16 x = -(cupgrid.previewanim % 82);
 	INT16 add;
-	INT16 map, start = M_GetFirstLevelInList(&i, levellist.typeoflevel, cup);
+	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
-	if (cup && !M_CupLocked(cup))
+	if (levelsearch->cup && !M_CupLocked(levelsearch->cup))
 	{
 		add = (cupgrid.previewanim / 82) % maxlevels;
 		map = start;
 		while (add > 0)
 		{
-			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, cup);
+			map = M_GetNextLevelInList(map, &i, levelsearch);
 
 			if (map >= nummapheaders)
 			{
@@ -1965,7 +1965,7 @@ static void M_DrawCupPreview(INT16 y, cupheader_t *cup)
 
 			x += 82;
 
-			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, cup);
+			map = M_GetNextLevelInList(map, &i, levelsearch);
 		}
 	}
 	else
@@ -2009,7 +2009,8 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j;
-	cupheader_t *cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
+	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
@@ -2057,8 +2058,8 @@ void M_DrawCupSelect(void)
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
-	M_DrawCupPreview(146 + (24*menutransition.tics), cup);
-	M_DrawCupTitle(120 - (24*menutransition.tics), cup);
+	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
+	M_DrawCupTitle(120 - (24*menutransition.tics), templevelsearch.cup);
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -2190,7 +2191,7 @@ void M_DrawLevelSelect(void)
 {
 	INT16 i = 0;
 	UINT8 j = 0;
-	INT16 map = M_GetFirstLevelInList(&j, levellist.typeoflevel, levellist.selectedcup);
+	INT16 map = M_GetFirstLevelInList(&j, &levellist.levelsearch);
 	INT16 t = (64*menutransition.tics), tay = 0;
 	INT16 y = 80 - (12 * levellist.y);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
@@ -2221,10 +2222,10 @@ void M_DrawLevelSelect(void)
 
 		y += 72;
 		i++;
-		map = M_GetNextLevelInList(map, &j, levellist.typeoflevel, levellist.selectedcup);
+		map = M_GetNextLevelInList(map, &j, &levellist.levelsearch);
 	}
 
-	M_DrawCupTitle(tay, levellist.selectedcup);
+	M_DrawCupTitle(tay, levellist.levelsearch.cup);
 }
 
 void M_DrawTimeAttack(void)
@@ -4638,27 +4639,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_CUP:
 		{
-			cupheader_t *cup = M_UnlockableCup(ref);
-#if 0 // First attempt
-			UINT8 i = cup->numlevels;
+			levelsearch_t templevelsearch;
 
-			x = 4;
-			y = (BASEVIDHEIGHT-4) - 38;
+			templevelsearch.cup = M_UnlockableCup(ref);
+			templevelsearch.typeoflevel = G_TOLFlag(GT_RACE)|G_TOLFlag(GT_BATTLE);
+			templevelsearch.cupmode = true;
+			templevelsearch.timeattack = false;
+			templevelsearch.checklocked = false;
 
-			while (i > 0)
-			{
-				i--;
-				K_DrawMapThumbnail(
-					(x+(i*2))<<FRACBITS,
-					(y-(i*6))<<FRACBITS,
-					60<<FRACBITS,
-					0,
-					cup->cachedlevels[i],
-					NULL);
-			}
-#else
-			M_DrawCupPreview(146, cup);
-#endif
+			M_DrawCupPreview(146, &templevelsearch);
+
 			break;
 		}
 		case SECRET_MAP:

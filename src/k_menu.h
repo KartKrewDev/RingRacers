@@ -695,23 +695,28 @@ extern struct cupgrid_s {
 	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
+typedef struct levelsearch_s {
+	UINT32 typeoflevel;
+	cupheader_t *cup;
+	boolean timeattack;
+	boolean cupmode;
+	boolean checklocked;
+} levelsearch_t;
+
 extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
-	cupheader_t *selectedcup;
 	INT16 choosemap;
 	UINT8 newgametype;
-	UINT32 typeoflevel;
-	boolean cupmode;
-	boolean timeattack; // Setup time attack menu after picking
+	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup);
-UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
-UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
-UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);
+boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
+UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
+UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
+UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);

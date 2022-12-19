@@ -3404,23 +3404,27 @@ INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
 	UINT8 i = 0;
 	INT16 mapnum = NEXTMAP_INVALID;
-	UINT32 tol = G_TOLFlag(pgametype);
+	levelsearch_t templevelsearch;
 
-	levellist.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
-	levellist.timeattack = false;
+	templevelsearch.cup = NULL;
+	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
+	templevelsearch.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	templevelsearch.timeattack = false;
+	templevelsearch.checklocked = true;
 
-	if (levellist.cupmode)
+	if (templevelsearch.cupmode)
 	{
-		cupheader_t *cup = kartcupheaders;
-		while (cup && mapnum >= nummapheaders)
+		templevelsearch.cup = kartcupheaders;
+		while (templevelsearch.cup && mapnum >= nummapheaders)
 		{
-			mapnum = M_GetFirstLevelInList(&i, tol, cup);
+			mapnum = M_GetFirstLevelInList(&i, &templevelsearch);
 			i = 0;
+			templevelsearch.cup = templevelsearch.cup->next;
 		}
 	}
 	else
 	{
-		mapnum = M_GetFirstLevelInList(&i, tol, NULL);
+		mapnum = M_GetFirstLevelInList(&i, &templevelsearch);
 	}
 
 	return mapnum;
