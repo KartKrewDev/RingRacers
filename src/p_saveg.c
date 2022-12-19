@@ -35,6 +35,7 @@
 #include "p_polyobj.h"
 #include "lua_script.h"
 #include "p_slopes.h"
+#include "m_cond.h" // netUnlocked
 
 // SRB2Kart
 #include "k_battle.h"
@@ -150,7 +151,12 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].skincolor);
 		WRITEINT32(save_p, players[i].skin);
-		WRITEUINT32(save_p, players[i].availabilities);
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			WRITEUINT8(save_p, players[i].availabilities[j]);
+		}
+
 		WRITEUINT8(save_p, players[i].fakeskin);
 		WRITEUINT8(save_p, players[i].lastfakeskin);
 		WRITEUINT32(save_p, players[i].score);
@@ -514,7 +520,12 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
-		players[i].availabilities = READUINT32(save_p);
+
+		for (j = 0; i < MAXAVAILABILITY; j++)
+		{
+			players[i].availabilities[j] = READUINT8(save_p);
+		}
+
 		players[i].fakeskin = READUINT8(save_p);
 		players[i].lastfakeskin = READUINT8(save_p);
 		players[i].score = READUINT32(save_p);
@@ -4684,9 +4695,6 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
 
-	tokenlist = 0;
-	token = 0;
-
 	savedata.emeralds = READUINT16(save_p)-357;
 
 	READSTRINGN(save_p, testname, sizeof(testname));
@@ -4705,7 +4713,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	size_t i;
+	size_t i, j;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4726,7 +4734,14 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, tokenlist);
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		UINT8 btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			btemp |= (netUnlocked[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
 
 	WRITEUINT8(save_p, encoremode);
 
@@ -4755,7 +4770,6 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, globools);
 	}
 
-	WRITEUINT32(save_p, token);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4851,7 +4865,7 @@ static void P_NetArchiveMisc(boolean resending)
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	size_t i;
+	size_t i, j;
 	size_t numTasks;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
@@ -4885,7 +4899,13 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	tokenlist = READUINT32(save_p);
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		UINT8 rtemp = READUINT8(save_p);
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			netUnlocked[j+i] = ((rtemp >> j) & 1);
+		i += j;
+	}
 
 	encoremode = (boolean)READUINT8(save_p);
 
@@ -4918,7 +4938,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		stoppedclock = !!(globools & (1<<1));
 	}
 
-	token = READUINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 

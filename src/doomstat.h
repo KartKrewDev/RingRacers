@@ -186,8 +186,6 @@ extern INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 extern INT32 viewwindowx, viewwindowy;
 extern INT32 viewwidth, scaledviewwidth;
 
-extern boolean gamedataloaded;
-
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
@@ -357,7 +355,6 @@ struct cupheader_t
 	UINT8 numlevels;						///< Number of levels defined in levellist
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
-	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
 	cupheader_t *next;						///< Next cup in linked list
 };
 
@@ -393,7 +390,6 @@ struct mapheader_t
 	// Selection metadata
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
-	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
 	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
 	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
 
@@ -540,9 +536,6 @@ struct tolinfo_t
 extern tolinfo_t TYPEOFLEVEL[NUMTOLNAMES];
 extern UINT32 lastcustomtol;
 
-extern tic_t totalplaytime;
-extern UINT32 matchesplayed;
-
 extern UINT8 stagefailed;
 
 // Emeralds stored as bits to throw savegame hackers off.
@@ -580,10 +573,6 @@ extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
 
-extern UINT32 token; ///< Number of tokens collected in a level
-extern UINT32 tokenlist; ///< List of tokens collected
-extern boolean gottoken; ///< Did you get a token? Used for end of act
-extern INT32 tokenbits; ///< Used for setting token bits
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
 
@@ -683,8 +672,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-extern UINT32 timesBeaten; // # of times the game has been beaten.
 
 // ===========================
 // Internal parameters, fixed.

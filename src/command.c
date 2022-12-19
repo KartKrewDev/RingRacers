@@ -84,7 +84,7 @@ CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 #else
 	#define VALUE "Off"
 #endif
-consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL, CV_OnOff, CV_CheatsChanged);
+consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, CV_CheatsChanged);
 #undef VALUE
 
 // SRB2kart
@@ -1481,7 +1481,7 @@ boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 	{
 		v = R_SkinAvailable(valstr);
 
-		if (!R_SkinUsable(-1, v))
+		if (!R_SkinUsable(-1, v, false))
 			v = -1;
 
 		goto finish;
@@ -1966,13 +1966,13 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 			return;
 		}
 
-		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE))
+		if (var == &cv_kartencore && !M_SecretUnlocked(SECRET_ENCORE, false))
 		{
 			CONS_Printf(M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
 		}
 
-		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED))
+		if (var == &cv_kartspeed && !M_SecretUnlocked(SECRET_HARDSPEED, false))
 		{
 			if (!stricmp(value, "Hard") || atoi(value) >= KARTSPEED_HARD)
 			{
@@ -1984,7 +1984,7 @@ static void CV_SetCVar(consvar_t *var, const char *value, boolean stealth)
 		if (var == &cv_forceskin)
 		{
 			INT32 skin = R_SkinAvailable(value);
-			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin)))
+			if ((stricmp(value, "None")) && ((skin == -1) || !R_SkinUsable(-1, skin, false)))
 			{
 				CONS_Printf("Please provide a valid skin name (\"None\" disables).\n");
 				return;
@@ -2109,7 +2109,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 			else if (newvalue >= numskins)
 				newvalue = -1;
 		} while ((oldvalue != newvalue)
-				&& !(R_SkinUsable(-1, newvalue)));
+				&& !(R_SkinUsable(-1, newvalue, false)));
 	}
 	else
 		newvalue = var->value + increment;
@@ -2227,7 +2227,7 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				|| var->PossibleValue == dummykartspeed_cons_t
 				|| var->PossibleValue == gpdifficulty_cons_t)
 			{
-				if (!M_SecretUnlocked(SECRET_HARDSPEED))
+				if (!M_SecretUnlocked(SECRET_HARDSPEED, false))
 				{
 					max = KARTSPEED_NORMAL+1;
 					if (var->PossibleValue == kartspeed_cons_t)

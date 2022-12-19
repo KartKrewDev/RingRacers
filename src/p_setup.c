@@ -400,7 +400,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->palette = UINT16_MAX;
 	mapheaderinfo[num]->encorepal = UINT16_MAX;
 	mapheaderinfo[num]->numlaps = NUMLAPS_DEFAULT;
-	mapheaderinfo[num]->unlockrequired = -1;
 	mapheaderinfo[num]->levelselect = 0;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
@@ -6807,7 +6806,6 @@ static void P_InitLevelSettings(void)
 	modulothing = 0;
 
 	// special stage tokens, emeralds, and ring total
-	tokenbits = 0;
 	runemeraldmanager = false;
 	emeraldspawndelay = 60*TICRATE;
 
@@ -7564,10 +7562,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	nextmapoverride = 0;
 	skipstats = 0;
 
-	if (!(netgame || multiplayer || demo.playback) && !majormods)
+	if (!demo.playback)
+	{
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
-	else if (!demo.playback)
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_MP; // you want to record that you've been there this session, but not permanently
+
+		M_UpdateUnlockablesAndExtraEmblems(true);
+		G_SaveGameData();
+	}
 
 	G_AddMapToBuffer(gamemap-1);
 
@@ -8037,8 +8038,8 @@ UINT16 P_PartialAddWadFile(const char *wadfilename)
 	//
 	// look for skins
 	//
-	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
-	R_PatchSkins(wadnum); // toast: PATCH PATCH
+	R_AddSkins(wadnum, false); // faB: wadfile index in wadfiles[]
+	R_PatchSkins(wadnum, false); // toast: PATCH PATCH
 
 	//
 	// edit music defs

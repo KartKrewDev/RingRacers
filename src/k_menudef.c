@@ -1496,14 +1496,14 @@ menuitem_t EXTRAS_Main[] =
 	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
 		NULL, {.routine = M_Addons}, 0, 0},
 
+	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
+		NULL, {.routine = M_Challenges}, 0, 0},
+
 	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
 		NULL, {.routine = M_ReplayHut}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
-		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_TRANSTEXT, "Extras Checklist", "View the requirement for some of the secret content you can unlock!",
-		NULL, {NULL}, 0, 0},
+		NULL, {.routine = M_Statistics}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff
@@ -1743,4 +1743,40 @@ menu_t MISC_AddonsDef = {
 	NULL,
 	NULL,
 	NULL
+};
+
+// Challenges.
+menuitem_t MISC_ChallengesStatsDummyMenu[] =
+{
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
+};
+
+menu_t MISC_ChallengesDef = {
+	sizeof (MISC_ChallengesStatsDummyMenu)/sizeof (menuitem_t),
+	&MainDef,
+	0,
+	MISC_ChallengesStatsDummyMenu,
+	BASEVIDWIDTH/2, 32,
+	0, 0,
+	98, 0,
+	M_DrawChallenges,
+	M_ChallengesTick,
+	NULL,
+	NULL,
+	M_ChallengesInputs,
+};
+
+menu_t MISC_StatisticsDef = {
+	sizeof (MISC_ChallengesStatsDummyMenu)/sizeof (menuitem_t),
+	&MainDef,
+	0,
+	MISC_ChallengesStatsDummyMenu,
+	280, 185,
+	0, 0,
+	98, 0,
+	M_DrawStatistics,
+	NULL,
+	NULL,
+	NULL,
+	M_StatisticsInputs,
 };

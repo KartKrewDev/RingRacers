@@ -11,6 +11,7 @@
 /// \brief Unlockable condition system for SRB2 version 2.1
 
 #include "m_cond.h"
+#include "m_random.h" // M_RandomKey
 #include "doomstat.h"
 #include "z_zone.h"
 
@@ -19,10 +20,15 @@
 
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
+#include "k_follower.h"
 #include "r_draw.h" // R_GetColorByName
+#include "s_sound.h" // S_StartSound
 
 #include "k_pwrlv.h"
 #include "k_profiles.h"
+
+gamedata_t *gamedata = NULL;
+boolean netUnlocked[MAXUNLOCKABLES];
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -34,15 +40,383 @@ conditionset_t conditionSets[MAXCONDITIONSETS];
 // Emblem locations
 emblem_t emblemlocations[MAXEMBLEMS];
 
-// Extra emblems
-extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
-
 // Unlockables
 unlockable_t unlockables[MAXUNLOCKABLES];
 
-// Number of emblems and extra emblems
+// Number of emblems
 INT32 numemblems = 0;
-INT32 numextraemblems = 0;
+
+// Create a new gamedata_t, for start-up
+void M_NewGameDataStruct(void)
+{
+	gamedata = Z_Calloc(sizeof (gamedata_t), PU_STATIC, NULL);
+	M_ClearSecrets();
+	G_ClearRecords();
+}
+
+void M_PopulateChallengeGrid(void)
+{
+	UINT16 i, j;
+	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
+	UINT8 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 majorcompact = 2;
+
+	if (gamedata->challengegrid != NULL)
+	{
+		// todo tweak your grid if unlocks are changed
+		return;
+	}
+
+	// Go through unlockables
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (unlockables[i].majorunlock)
+		{
+			selection[1][nummajorunlocks++] = i;
+			//CONS_Printf(" found %d (LARGE)\n", selection[1][nummajorunlocks-1]);
+			continue;
+		}
+
+		selection[0][numunlocks++] = i;
+		//CONS_Printf(" found %d\n", selection[0][numunlocks-1]);
+	}
+
+	gamedata->challengegridwidth = 0;
+
+	if (numunlocks + nummajorunlocks == 0)
+	{
+		return;
+	}
+
+	if (nummajorunlocks)
+	{
+		// Getting the number of 2-highs you can fit into two adjacent columns.
+		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
+		majorpad = (nummajorunlocks+1)/majorpad;
+
+		gamedata->challengegridwidth = majorpad*2;
+
+#if (CHALLENGEGRIDHEIGHT % 2)
+		// One empty per column.
+		numempty = gamedata->challengegridwidth;
+#endif
+	}
+
+	if (numunlocks > numempty)
+	{
+		// Getting the number of extra columns to store normal unlocks
+		gamedata->challengegridwidth += ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+		majorcompact = 1;
+	}
+	else if (challengegridloops)
+	{
+		// Another case where offset large tiles are permitted.
+		majorcompact = 1;
+	}
+
+	gamedata->challengegrid = Z_Malloc(
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		PU_STATIC, NULL);
+
+	if (!gamedata->challengegrid)
+	{
+		I_Error("M_PopulateChallengeGrid: was not able to allocate grid");
+	}
+
+	memset(gamedata->challengegrid,
+		MAXUNLOCKABLES,
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)));
+
+	// Attempt to place all large tiles first.
+	if (nummajorunlocks)
+	{
+		// You lose one from CHALLENGEGRIDHEIGHT because it is impossible to place a 2-high tile on the bottom row.
+		// You lose one from the width if it doesn't loop.
+		// You divide by two if the grid is so compacted that large tiles can't be in offset columns.
+		UINT16 numspots = (gamedata->challengegridwidth - (challengegridloops ? 0 : majorcompact))
+				* ((CHALLENGEGRIDHEIGHT-1) / majorcompact);
+		// 0 is row, 1 is column
+		INT16 quickcheck[numspots][2];
+
+		// Prepare the easy-grab spots.
+		for (i = 0; i < numspots; i++)
+		{
+			quickcheck[i][0] = i%(CHALLENGEGRIDHEIGHT-1);
+			quickcheck[i][1] = majorcompact * i/(CHALLENGEGRIDHEIGHT-1);
+		}
+
+		// Place in random valid locations.
+		while (nummajorunlocks > 0 && numspots > 0)
+		{
+			INT16 row, col;
+			j = M_RandomKey(numspots);
+			row = quickcheck[j][0];
+			col =  quickcheck[j][1];
+
+			// We always take from selection[1][] in order, but the PLACEMENT is still random.
+			nummajorunlocks--;
+
+			//CONS_Printf("--- %d (LARGE) placed at (%d, %d)\n", selection[1][nummajorunlocks], row, col);
+
+			i = row + (col * CHALLENGEGRIDHEIGHT);
+			gamedata->challengegrid[i] = gamedata->challengegrid[i+1] = selection[1][nummajorunlocks];
+			if (col == gamedata->challengegridwidth-1)
+			{
+				i = row;
+			}
+			else
+			{
+				i += CHALLENGEGRIDHEIGHT;
+			}
+			gamedata->challengegrid[i] = gamedata->challengegrid[i+1] = selection[1][nummajorunlocks];
+	
+			if (nummajorunlocks == 0)
+			{
+				break;
+			}
+
+			for (i = 0; i < numspots; i++)
+			{
+quickcheckagain:
+				if (abs((quickcheck[i][0]) - (row)) <= 1 // Row distance
+					&& (abs((quickcheck[i][1]) - (col)) <= 1 // Column distance
+					|| (quickcheck[i][1] == 0 && col == gamedata->challengegridwidth-1) // Wraparounds l->r
+					|| (quickcheck[i][1] == gamedata->challengegridwidth-1 && col == 0))) // Wraparounds r->l
+				{
+					numspots--;  // Remove from possible indicies
+					if (i == numspots)
+						break;
+					// Shuffle remaining so we can keep on using M_RandomKey
+					quickcheck[i][0] = quickcheck[numspots][0];
+					quickcheck[i][1] = quickcheck[numspots][1];
+					// Woah there - we've gotta check the one that just got put in our place.
+					goto quickcheckagain;
+				}
+				continue;
+			}
+		}
+
+		if (nummajorunlocks > 0)
+		{
+			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, gamedata->challengegridwidth);
+		}
+	}
+
+	numempty = 0;
+	// Space out empty entries to pepper into unlock list
+	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
+	{
+		if (gamedata->challengegrid[i] < MAXUNLOCKABLES)
+		{
+			continue;
+		}
+
+		numempty++;
+	}
+
+	if (numunlocks > numempty)
+	{
+		I_Error("M_PopulateChallengeGrid: %d small unlocks vs %d empty spaces (%d gap)", numunlocks, numempty, (numunlocks-numempty));
+	}
+
+	//CONS_Printf(" %d unlocks vs %d empty spaces\n", numunlocks, numempty);
+
+	while (numunlocks < numempty)
+	{
+		//CONS_Printf(" adding empty)\n");
+		selection[0][numunlocks++] = MAXUNLOCKABLES;
+	}
+
+	// Fill the remaining spots with random ordinary unlocks (and empties).
+	for (i = 0; i < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; i++)
+	{
+		if (gamedata->challengegrid[i] < MAXUNLOCKABLES)
+		{
+			continue;
+		}
+
+		j = M_RandomKey(numunlocks); // Get an entry
+		gamedata->challengegrid[i] = selection[0][j]; // Set that entry
+		//CONS_Printf(" %d placed at (%d, %d)\n", selection[0][j], i/CHALLENGEGRIDHEIGHT, i%CHALLENGEGRIDHEIGHT);
+		numunlocks--; // Remove from possible indicies
+		selection[0][j] = selection[0][numunlocks]; // Shuffle remaining so we can keep on using M_RandomKey
+
+		if (numunlocks == 0)
+		{
+			break;
+		}
+	}
+}
+
+UINT8 *M_ChallengeGridExtraData(void)
+{
+	UINT8 i, j, num, id, tempid, work;
+	UINT8 *extradata;
+	boolean idchange;
+
+	if (!gamedata->challengegrid)
+	{
+		return NULL;
+	}
+
+	extradata = Z_Malloc(
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		PU_STATIC, NULL);
+
+	if (!extradata)
+	{
+		I_Error("M_ChallengeGridExtraData: was not able to allocate extradata");
+	}
+
+	//CONS_Printf(" --- \n");
+
+	for (i = 0; i < gamedata->challengegridwidth; i++)
+	{
+		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
+		{
+			id = (i * CHALLENGEGRIDHEIGHT) + j;
+			num = gamedata->challengegrid[id];
+			idchange = false;
+
+			extradata[id] = CHE_NONE;
+
+			// Empty spots in the grid are always unconnected.
+			if (num >= MAXUNLOCKABLES)
+			{
+				continue;
+			}
+
+			// Check the spot above.
+			if (j > 0)
+			{
+				tempid = (i * CHALLENGEGRIDHEIGHT) + (j - 1);
+				work = gamedata->challengegrid[tempid];
+				if (work == num)
+				{
+					extradata[id] = CHE_CONNECTEDUP;
+
+					// Get the id to write extra hint data to.
+					// This check is safe because extradata's order of population
+					if (extradata[tempid] & CHE_CONNECTEDLEFT)
+					{
+						extradata[id] |= CHE_CONNECTEDLEFT;
+						//CONS_Printf(" %d - %d above %d is invalid, check to left\n", num, tempid, id);
+						if (i > 0)
+						{
+							tempid -= CHALLENGEGRIDHEIGHT;
+						}
+						else
+						{
+							tempid = ((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j - 1;
+						}
+					}
+					/*else
+						CONS_Printf(" %d - %d above %d is valid\n", num, tempid, id);*/
+
+					id = tempid;
+					idchange = true;
+
+					if (extradata[id] == CHE_HINT)
+					{
+						continue;
+					}
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+				}
+			}
+
+			// Check the spot to the left.
+			{
+				if (i > 0)
+				{
+					tempid = ((i - 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				else
+				{
+					tempid = ((gamedata->challengegridwidth - 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					if (!idchange && (i > 0 || challengegridloops))
+					{
+						//CONS_Printf(" %d - %d to left of %d is valid\n", work, tempid, id);
+						// If we haven't already updated our id, it's the one to our left.
+						if (extradata[id] == CHE_HINT)
+						{
+							extradata[tempid] = CHE_HINT;
+						}
+						extradata[id] = CHE_CONNECTEDLEFT;
+						id = tempid;
+					}
+					/*else
+						CONS_Printf(" %d - %d to left of %d is invalid\n", work, tempid, id);*/
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+
+			// Since we're not modifying id past this point, the conditions become much simpler.
+			if (extradata[id] == CHE_HINT)
+			{
+				continue;
+			}
+
+			// Check the spot below.
+			if (j < CHALLENGEGRIDHEIGHT-1)
+			{
+				tempid = (i * CHALLENGEGRIDHEIGHT) + (j + 1);
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					;
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+
+			// Check the spot to the right.
+			{
+				if (i < (gamedata->challengegridwidth - 1))
+				{
+					tempid = ((i + 1) * CHALLENGEGRIDHEIGHT) + j;
+				}
+				else
+				{
+					tempid = j;
+				}
+				work = gamedata->challengegrid[tempid];
+
+				if (work == num)
+				{
+					;
+				}
+				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				{
+					extradata[id] = CHE_HINT;
+					continue;
+				}
+			}
+		}
+	}
+
+	return extradata;
+}
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
 {
@@ -51,12 +425,12 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 
 	I_Assert(set && set <= MAXCONDITIONSETS);
 
-	wnum = conditionSets[set - 1].numconditions;
-	num = ++conditionSets[set - 1].numconditions;
+	wnum = conditionSets[set].numconditions;
+	num = ++conditionSets[set].numconditions;
 
-	conditionSets[set - 1].condition = Z_Realloc(conditionSets[set - 1].condition, sizeof(condition_t)*num, PU_STATIC, 0);
+	conditionSets[set].condition = Z_Realloc(conditionSets[set].condition, sizeof(condition_t)*num, PU_STATIC, 0);
 
-	cond = conditionSets[set - 1].condition;
+	cond = conditionSets[set].condition;
 
 	cond[wnum].id = id;
 	cond[wnum].type = c;
@@ -67,13 +441,13 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 
 void M_ClearConditionSet(UINT8 set)
 {
-	if (conditionSets[set - 1].numconditions)
+	if (conditionSets[set].numconditions)
 	{
-		Z_Free(conditionSets[set - 1].condition);
-		conditionSets[set - 1].condition = NULL;
-		conditionSets[set - 1].numconditions = 0;
+		Z_Free(conditionSets[set].condition);
+		conditionSets[set].condition = NULL;
+		conditionSets[set].numconditions = 0;
 	}
-	conditionSets[set - 1].achieved = false;
+	gamedata->achieved[set] = false;
 }
 
 // Clear ALL secrets.
@@ -87,31 +461,35 @@ void M_ClearSecrets(void)
 	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
-		emblemlocations[i].collected = false;
-	for (i = 0; i < MAXEXTRAEMBLEMS; ++i)
-		extraemblems[i].collected = false;
+		gamedata->collected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		unlockables[i].unlocked = false;
+		gamedata->unlocked[i] = gamedata->unlockpending[i] = netUnlocked[i] = false;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		conditionSets[i].achieved = false;
+		gamedata->achieved[i] = false;
 
-	timesBeaten = 0;
+	Z_Free(gamedata->challengegrid);
+	gamedata->challengegrid = NULL;
+	gamedata->challengegridwidth = 0;
+
+	gamedata->timesBeaten = 0;
 
 	// Re-unlock any always unlocked things
-	M_SilentUpdateUnlockablesAndEmblems();
+	M_UpdateUnlockablesAndExtraEmblems(false);
 }
 
 // ----------------------
 // Condition set checking
 // ----------------------
+
+// See also M_GetConditionString
 UINT8 M_CheckCondition(condition_t *cn)
 {
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-			return (totalplaytime >= (unsigned)cn->requirement);
+			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return (matchesplayed >= (unsigned)cn->requirement);
+			return (gamedata->matchesplayed >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 		{
 			UINT8 i;
@@ -128,7 +506,7 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return false;
 		}
 		case UC_GAMECLEAR: // Requires game beaten >= x times
-			return (timesBeaten >= (unsigned)cn->requirement);
+			return (gamedata->timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return (M_GotLowEnoughTime(cn->requirement));
 		case UC_MAPVISITED: // Requires map x to be visited
@@ -149,12 +527,12 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 		case UC_TRIGGER: // requires map trigger set
 			return !!(unlocktriggers & (1 << cn->requirement));
-		case UC_TOTALEMBLEMS: // Requires number of emblems >= x
-			return (M_GotEnoughEmblems(cn->requirement));
+		case UC_TOTALMEDALS: // Requires number of emblems >= x
+			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
-			return emblemlocations[cn->requirement-1].collected;
-		case UC_EXTRAEMBLEM: // Requires extra emblem x to be obtained
-			return extraemblems[cn->requirement-1].collected;
+			return gamedata->collected[cn->requirement-1];
+		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
+			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
 	}
@@ -188,7 +566,283 @@ static UINT8 M_CheckConditionSet(conditionset_t *c)
 	return achievedSoFar;
 }
 
-void M_CheckUnlockConditions(void)
+static char *M_BuildConditionTitle(UINT16 map)
+{
+	char *title, *ref;
+
+	if (M_MapLocked(map+1))
+		return Z_StrDup("???");
+
+	title = ref = G_BuildMapTitle(map+1);
+
+	if (!title)
+		I_Error("M_BuildConditionTitle: out of memory");
+
+	while (*ref != '\0')
+	{
+		*ref = toupper(*ref);
+		ref++;
+	}
+
+	return title;
+}
+
+// See also M_CheckCondition
+static const char *M_GetConditionString(condition_t *cn)
+{
+	INT32 i;
+	char *title = NULL;
+	const char *work = NULL;
+
+#define BUILDCONDITIONTITLE(i) (M_BuildConditionTitle(i))
+
+	switch (cn->type)
+	{
+		case UC_PLAYTIME: // Requires total playing time >= x
+			return va("Play for %i:%02i:%02i",
+				G_TicsToHours(cn->requirement),
+				G_TicsToMinutes(cn->requirement, false),
+				G_TicsToSeconds(cn->requirement));
+		case UC_MATCHESPLAYED: // Requires any level completed >= x times
+			return va("Play %d matches", cn->requirement);
+		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
+			return va("Get a PWR of %d in %s", cn->requirement,
+				(cn->extrainfo1 == PWRLV_RACE)
+				? "Race"
+				: "Battle");
+		case UC_GAMECLEAR: // Requires game beaten >= x times
+			if (cn->requirement > 1)
+				return va("Beat game %d times", cn->requirement);
+			else
+				return va("Beat the game");
+		case UC_OVERALLTIME: // Requires overall time <= x
+			return va("Get overall time of %i:%02i:%02i",
+				G_TicsToHours(cn->requirement),
+				G_TicsToMinutes(cn->requirement, false),
+				G_TicsToSeconds(cn->requirement));
+		case UC_MAPVISITED: // Requires map x to be visited
+		case UC_MAPBEATEN: // Requires map x to be beaten
+		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		{
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("%s %s%s",
+				(cn->type == UC_MAPVISITED) ? "Visit" : "Beat",
+				title,
+				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
+			Z_Free(title);
+			return work;
+		}
+		case UC_MAPTIME: // Requires time on map <= x
+		{
+			if (cn->extrainfo1 >= nummapheaders || !mapheaderinfo[cn->extrainfo1])
+				return va("INVALID MAP CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->extrainfo1);
+			work = va("Beat %s in %i:%02i.%02i", title,
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+
+			Z_Free(title);
+			return work;
+		}
+		case UC_TOTALMEDALS: // Requires number of emblems >= x
+			return va("Get %d medals", cn->requirement);
+		case UC_EMBLEM: // Requires emblem x to be obtained
+		{
+			INT32 checkLevel;
+
+			i = cn->requirement-1;
+			checkLevel = M_EmblemMapNum(&emblemlocations[i]);
+
+			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
+
+			title = BUILDCONDITIONTITLE(checkLevel);
+			switch (emblemlocations[i].type)
+			{
+				case ET_MAP:
+					work = va("Beat %s", title);
+					break;
+				case ET_TIME:
+					if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)
+					{
+						Z_Free(title);
+						return va("INVALID MEDAL COLOR \"%d:%d\"", cn->requirement, checkLevel);
+					}
+					work = va("Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
+					break;
+				case ET_GLOBAL:
+				{
+					const char *astr, *colorstr, *medalstr;
+
+					if (emblemlocations[i].flags & GE_NOTMEDAL)
+					{
+						astr = "a ";
+						colorstr = "";
+						medalstr = "secret";
+					}
+					else if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)
+					{
+						Z_Free(title);
+						return va("INVALID MEDAL COLOR \"%d:%d:%d\"", cn->requirement, emblemlocations[i].tag, checkLevel);
+					}
+					else
+					{
+						astr = "the ";
+						colorstr = skincolors[emblemlocations[i].color].name;
+						medalstr = " Medal";
+					}
+
+					if (emblemlocations[i].flags & GE_TIMED)
+					{
+						work = va("Find %s%s%s in %s before %i:%02i.%02i",
+							astr, colorstr, medalstr, title,
+							G_TicsToMinutes(emblemlocations[i].var, true),
+							G_TicsToSeconds(emblemlocations[i].var),
+							G_TicsToCentiseconds(emblemlocations[i].var));
+					}
+					else
+					{
+						work = va("Find %s%s%s in %s",
+							astr, colorstr, medalstr, title);
+					}
+					break;
+				}
+				default:
+					work = va("Find a secret in %s", title);
+					break;
+			}
+
+			Z_Free(title);
+			return work;
+		}
+		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
+			return va("Get \"%s\"",
+				gamedata->unlocked[cn->requirement-1]
+				? unlockables[cn->requirement-1].name
+				: "???");
+		default:
+			break;
+	}
+	// UC_MAPTRIGGER and UC_CONDITIONSET are explicitly very hard to support proper descriptions for
+	return va("UNSUPPORTED CONDITION \"%d\"", cn->type);
+
+#undef BUILDCONDITIONTITLE
+}
+
+//#define ACHIEVEDBRITE
+
+char *M_BuildConditionSetString(UINT8 unlockid)
+{
+	conditionset_t *c = NULL;
+	UINT32 lastID = 0;
+	condition_t *cn;
+#ifdef ACHIEVEDBRITE
+	boolean achieved = false;
+#endif
+	size_t len = 1024, worklen;
+	static char message[1024] = "";
+	const char *work = NULL;
+	size_t max = 0, start = 0, strlines = 0, i;
+
+	message[0] = '\0';
+
+	if (unlockid >= MAXUNLOCKABLES)
+	{
+		return NULL;
+	}
+
+	if (!unlockables[unlockid].conditionset)
+	{
+		return NULL;
+	}
+
+	c = &conditionSets[unlockables[unlockid].conditionset-1];
+
+	for (i = 0; i < c->numconditions; ++i)
+	{
+		cn = &c->condition[i];
+
+		if (i > 0)
+		{
+			worklen = 3;
+			if (lastID == cn->id)
+			{
+				strncat(message, "\n& ", len);
+			}
+			else
+			{
+				strncat(message, "\nOR ", len);
+				worklen++;
+			}
+			len -= worklen;
+		}
+		lastID = cn->id;
+
+#ifdef ACHIEVEDBRITE
+		achieved = M_CheckCondition(cn);
+
+		if (achieved)
+		{
+			strncat(message, "\0x82", len);
+			len--;
+		}
+#endif
+
+		work = M_GetConditionString(cn);
+		worklen = strlen(work);
+
+		strncat(message, work, len);
+		len -= worklen;
+
+#ifdef ACHIEVEDBRITE
+		if (achieved)
+		{
+			strncat(message, "\0x80", len);
+			len--;
+		}
+#endif
+	}
+
+	// Rudementary word wrapping.
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
+	for (i = 0; message[i]; i++)
+	{
+		if (message[i] == ' ')
+		{
+			start = i;
+			max += 4;
+		}
+		else if (message[i] == '\n')
+		{
+			strlines = i;
+			start = 0;
+			max = 0;
+			continue;
+		}
+		else if (message[i] & 0x80)
+			continue;
+		else
+			max += 8;
+
+		// Start trying to wrap if presumed length exceeds the space we have on-screen.
+		if (max >= DESCRIPTIONWIDTH && start > 0)
+		{
+			message[start] = '\n';
+			max -= (start-strlines)*8;
+			strlines = start;
+			start = 0;
+		}
+	}
+
+	return message;
+}
+
+static void M_CheckUnlockConditions(void)
 {
 	INT32 i;
 	conditionset_t *c;
@@ -196,105 +850,89 @@ void M_CheckUnlockConditions(void)
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
 		c = &conditionSets[i];
-		if (!c->numconditions || c->achieved)
+		if (!c->numconditions || gamedata->achieved[i])
 			continue;
 
-		c->achieved = (M_CheckConditionSet(c));
+		gamedata->achieved[i] = (M_CheckConditionSet(c));
 	}
 }
 
-UINT8 M_UpdateUnlockablesAndExtraEmblems(void)
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 {
 	INT32 i;
-	char cechoText[992] = "";
-	UINT8 cechoLines = 0;
+	UINT8 response = 0;
 
-	M_CheckUnlockConditions();
-
-	// Go through extra emblems
-	for (i = 0; i < numextraemblems; ++i)
+	if (!loud)
 	{
-		if (extraemblems[i].collected || !extraemblems[i].conditionset)
-			continue;
-		if ((extraemblems[i].collected = M_Achieved(extraemblems[i].conditionset - 1)) != false)
-		{
-			strcat(cechoText, va(M_GetText("Got \"%s\" medal!\\"), extraemblems[i].name));
-			++cechoLines;
-		}
+		// Just in case they aren't to sync
+		// Done first so that emblems are ready before check
+		M_CheckLevelEmblems();
+		M_CompletionEmblems();
 	}
 
-	// Fun part: if any of those unlocked we need to go through the
-	// unlock conditions AGAIN just in case an emblem reward was reached
-	if (cechoLines)
-		M_CheckUnlockConditions();
+	M_CheckUnlockConditions();
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].unlocked || !unlockables[i].conditionset)
-			continue;
-		if ((unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1)) != false)
+		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
 		{
-			if (unlockables[i].nocecho)
-				continue;
-			strcat(cechoText, va(M_GetText("\"%s\" unlocked!\\"), unlockables[i].name));
-			++cechoLines;
+			continue;
 		}
+
+		if (gamedata->unlocked[i] == true
+			|| gamedata->unlockpending[i] == true)
+		{
+			continue;
+		}
+
+		if (M_Achieved(unlockables[i].conditionset - 1) == false)
+		{
+			continue;
+		}
+
+		gamedata->unlockpending[i] = true;
+		response++;
 	}
 
 	// Announce
-	if (cechoLines)
+	if (response)
 	{
-		char slashed[1024] = "";
-		for (i = 0; (i < 19) && (i < 24 - cechoLines); ++i)
-			slashed[i] = '\\';
-		slashed[i] = 0;
-
-		strcat(slashed, cechoText);
-
-		HU_SetCEchoFlags(V_YELLOWMAP);
-		HU_SetCEchoDuration(6);
-		HU_DoCEcho(slashed);
+		if (loud)
+		{
+			S_StartSound(NULL, sfx_ncitem);
+		}
 		return true;
 	}
 	return false;
 }
 
-// Used when loading gamedata to make sure all unlocks are synched with conditions
-void M_SilentUpdateUnlockablesAndEmblems(void)
+UINT8 M_GetNextAchievedUnlock(void)
 {
-	INT32 i;
-	boolean checkAgain = false;
-
-	// Just in case they aren't to sync
-	M_CheckUnlockConditions();
-	M_CheckLevelEmblems();
-
-	// Go through extra emblems
-	for (i = 0; i < numextraemblems; ++i)
-	{
-		if (extraemblems[i].collected || !extraemblems[i].conditionset)
-			continue;
-		if ((extraemblems[i].collected = M_Achieved(extraemblems[i].conditionset - 1)) != false)
-			checkAgain = true;
-	}
-
-	// check again if extra emblems unlocked, blah blah, etc
-	if (checkAgain)
-		M_CheckUnlockConditions();
+	UINT8 i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].unlocked || !unlockables[i].conditionset)
+		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
+		{
 			continue;
-		unlockables[i].unlocked = M_Achieved(unlockables[i].conditionset - 1);
+		}
+
+		if (gamedata->unlocked[i] == true)
+		{
+			continue;
+		}
+
+		if (gamedata->unlockpending[i] == false)
+		{
+			continue;
+		}
+
+		return i;
 	}
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
+	return MAXUNLOCKABLES;
 }
 
 // Emblem unlocking shit
@@ -311,10 +949,10 @@ UINT8 M_CheckLevelEmblems(void)
 	{
 		INT32 checkLevel;
 
-		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
+		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
-		checkLevel = G_MapNumber(emblemlocations[i].level);
+		checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
@@ -331,7 +969,7 @@ UINT8 M_CheckLevelEmblems(void)
 				continue;
 		}
 
-		emblemlocations[i].collected = res;
+		gamedata->collected[i] = res;
 		if (res)
 			++somethingUnlocked;
 	}
@@ -351,16 +989,16 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 	{
 		INT32 checkLevel;
 
-		if (emblemlocations[i].type < ET_TIME || emblemlocations[i].collected)
+		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
 			continue;
 
-		checkLevel = G_MapNumber(emblemlocations[i].level);
+		checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
 		levelnum = checkLevel;
-		embtype = emblemlocations[i].var;
+		embtype = emblemlocations[i].flags;
 		flags = MV_BEATEN;
 
 		if (embtype & ME_ENCORE)
@@ -368,39 +1006,37 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 
 		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
 
-		emblemlocations[i].collected = res;
+		gamedata->collected[i] = res;
 		if (res)
 			++somethingUnlocked;
 	}
+
 	return somethingUnlocked;
 }
 
 // -------------------
 // Quick unlock checks
 // -------------------
-UINT8 M_AnySecretUnlocked(void)
-{
-	INT32 i;
 
-#ifdef DEVELOP
-	if (1)
-		return true;	
-#endif	
-	
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
+boolean M_CheckNetUnlockByID(UINT8 unlockid)
+{
+	if (unlockid >= MAXUNLOCKABLES
+		|| !unlockables[unlockid].conditionset)
 	{
-		if (!unlockables[i].nocecho && unlockables[i].unlocked)
-			return true;
+		return true; // default permit
 	}
-	return false;
+
+	if (netgame)
+	{
+		return netUnlocked[unlockid];
+	}
+
+	return gamedata->unlocked[unlockid];
 }
 
-UINT8 M_SecretUnlocked(INT32 type)
+boolean M_SecretUnlocked(INT32 type, boolean local)
 {
 	INT32 i;
-
-	if (dedicated)
-		return true;
 
 #if 0
 	(void)type;
@@ -408,56 +1044,107 @@ UINT8 M_SecretUnlocked(INT32 type)
 	return false; // for quick testing
 #else
 
-#ifdef DEVELOP
-#define CHADYES true
-#else
-#define CHADYES false
-#endif
-
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (unlockables[i].type == type && unlockables[i].unlocked != CHADYES)
-			return !CHADYES;
+		if (unlockables[i].type != type)
+			continue;
+		if ((local && gamedata->unlocked[i])
+			|| (!local && M_CheckNetUnlockByID(i)))
+			continue;
+		return false;
 	}
-	return CHADYES;
 
-#undef CHADYES
+	return true;
+
 #endif //if 0
 }
 
-UINT8 M_MapLocked(INT32 mapnum)
+boolean M_CupLocked(cupheader_t *cup)
 {
-#ifdef DEVELOP
-	(void)mapnum;
-	return false;
-#else
+	UINT8 i;
+
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
 	if (dedicated)
 		return false;
-	
-	if (!mapheaderinfo[mapnum-1] || mapheaderinfo[mapnum-1]->unlockrequired < 0)
+
+	// No skipping over any part of your marathon.
+	if (marathonmode)
 		return false;
 
-	if (!unlockables[mapheaderinfo[mapnum-1]->unlockrequired].unlocked)
-		return true;
+	if (!cup)
+		return false;
+
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (unlockables[i].type != SECRET_CUP)
+			continue;
+		if (M_UnlockableCup(&unlockables[i]) != cup)
+			continue;
+		return !M_CheckNetUnlockByID(i);
+	}
 
 	return false;
-#endif
 }
 
-INT32 M_CountEmblems(void)
+boolean M_MapLocked(INT32 mapnum)
+{
+	UINT8 i;
+
+	// Don't lock maps in dedicated servers.
+	// That just makes hosts' lives hell.
+	if (dedicated)
+		return false;
+
+	// No skipping over any part of your marathon.
+	if (marathonmode)
+		return false;
+
+	if (!mapnum || mapnum > nummapheaders)
+		return false;
+	
+	if (!mapheaderinfo[mapnum-1])
+		return false;
+
+	if (mapheaderinfo[mapnum-1]->cup)
+	{
+		return M_CupLocked(mapheaderinfo[mapnum-1]->cup);
+	}
+
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (unlockables[i].type != SECRET_MAP)
+			continue;
+		if (M_UnlockableMapNum(&unlockables[i]) != mapnum-1)
+			continue;
+		return !M_CheckNetUnlockByID(i);
+	}
+
+	return false;
+}
+
+INT32 M_CountMedals(boolean all, boolean extraonly)
 {
 	INT32 found = 0, i;
-	for (i = 0; i < numemblems; ++i)
+	if (!extraonly)
 	{
-		if (emblemlocations[i].collected)
+		for (i = 0; i < numemblems; ++i)
+		{
+			if ((emblemlocations[i].type == ET_GLOBAL)
+				&& (emblemlocations[i].flags & GE_NOTMEDAL))
+				continue;
+			if (!all && !gamedata->collected[i])
+				continue;
 			found++;
+		}
 	}
-	for (i = 0; i < numextraemblems; ++i)
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (extraemblems[i].collected)
-			found++;
+		if (unlockables[i].type != SECRET_EXTRAMEDAL)
+			continue;
+		if (!all && !gamedata->unlocked[i])
+			continue;
+		found++;
 	}
 	return found;
 }
@@ -466,20 +1153,28 @@ INT32 M_CountEmblems(void)
 // Quick functions for calculating things
 // --------------------------------------
 
-// Theoretically faster than using M_CountEmblems()
-// Stops when it reaches the target number of emblems.
-UINT8 M_GotEnoughEmblems(INT32 number)
+// Theoretically faster than using M_CountMedals()
+// Stops when it reaches the target number of medals.
+UINT8 M_GotEnoughMedals(INT32 number)
 {
-	INT32 i, gottenemblems = 0;
+	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
 	{
-		if (emblemlocations[i].collected)
-			if (++gottenemblems >= number) return true;
+		if (!gamedata->collected[i])
+			continue;
+		if (++gottenmedals < number)
+			continue;
+		return true;
 	}
-	for (i = 0; i < numextraemblems; ++i)
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (extraemblems[i].collected)
-			if (++gottenemblems >= number) return true;
+		if (unlockables[i].type != SECRET_EXTRAMEDAL)
+			continue;
+		if (!gamedata->unlocked[i])
+			continue;
+		if (++gottenmedals < number)
+			continue;
+		return true;
 	}
 	return false;
 }
@@ -502,9 +1197,183 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 	return true;
 }
 
+// Gets the skin number for a SECRET_SKIN unlockable.
+INT32 M_UnlockableSkinNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_SKIN)
+	{
+		// This isn't a skin unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		INT32 skinnum;
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
+		// Get the skin from the string.
+		skinnum = R_SkinAvailable(unlock->stringVar);
+		if (skinnum != -1)
+		{
+			unlock->stringVarCache = skinnum;
+			return skinnum;
+		}
+	}
+
+	if (unlock->variable >= 0 && unlock->variable < numskins)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid skin unlockable.
+	return -1;
+}
+
+// Gets the skin number for a SECRET_FOLLOWER unlockable.
+INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_FOLLOWER)
+	{
+		// This isn't a follower unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		INT32 skinnum;
+		size_t i;
+		char testname[SKINNAMESIZE+1];
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
+		// match deh_soc readfollower()
+		for (i = 0; unlock->stringVar[i]; i++)
+		{
+			testname[i] = unlock->stringVar[i];
+			if (unlock->stringVar[i] == '_')
+				testname[i] = ' ';
+		}
+		testname[i] = '\0';
+
+		// Get the skin from the string.
+		skinnum = K_FollowerAvailable(testname);
+		if (skinnum != -1)
+		{
+			unlock->stringVarCache = skinnum;
+			return skinnum;
+		}
+	}
+
+	if (unlock->variable >= 0 && unlock->variable < numfollowers)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid follower unlockable.
+	return -1;
+}
+
+cupheader_t *M_UnlockableCup(unlockable_t *unlock)
+{
+	cupheader_t *cup = kartcupheaders;
+	INT16 val = unlock->variable-1;
+
+	if (unlock->type != SECRET_CUP)
+	{
+		// This isn't a cup unlockable...
+		return NULL;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		if (unlock->stringVarCache == -1)
+		{
+			// Get the cup from the string.
+			while (cup)
+			{
+				if (!strcmp(cup->name, unlock->stringVar))
+					break;
+				cup = cup->next;
+			}
+
+			if (cup)
+			{
+				unlock->stringVarCache = cup->id;
+			}
+			return cup;
+		}
+
+		val = unlock->stringVarCache;
+	}
+	else if (val == -1)
+	{
+		return NULL;
+	}
+
+	// Use the number directly.
+	while (cup)
+	{
+		if (cup->id == val)
+			break;
+		cup = cup->next;
+	}
+
+	return cup;
+}
+
+UINT16 M_UnlockableMapNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_MAP)
+	{
+		// This isn't a map unlockable...
+		return NEXTMAP_INVALID;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		if (unlock->stringVarCache == -1)
+		{
+			INT32 result = G_MapNumber(unlock->stringVar);
+
+			if (result >= nummapheaders)
+				return result;
+
+			unlock->stringVarCache = result;
+		}
+
+		return unlock->stringVarCache;
+	}
+
+	return NEXTMAP_INVALID;
+}
+
 // ----------------
 // Misc Emblem shit
 // ----------------
+
+UINT16 M_EmblemMapNum(emblem_t *emblem)
+{
+	if (emblem->levelCache == NEXTMAP_INVALID)
+	{
+		UINT16 result = G_MapNumber(emblem->level);
+
+		if (result >= nummapheaders)
+			return result;
+
+		emblem->levelCache = result;
+	}
+
+	return emblem->levelCache;
+}
 
 // Returns pointer to an emblem if an emblem exists for that level.
 // Pass -1 mapnum to continue from last emblem.
@@ -517,57 +1386,33 @@ emblem_t *M_GetLevelEmblems(INT32 mapnum)
 
 	if (mapnum > 0)
 	{
-		map = mapnum;
+		map = mapnum-1;
 		i = numemblems;
 	}
 
 	while (--i >= 0)
 	{
-		INT32 checkLevel = G_MapNumber(emblemlocations[i].level);
+		INT32 checkLevel = M_EmblemMapNum(&emblemlocations[i]);
 
 		if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 			continue;
 
-		if (checkLevel == map)
-			return &emblemlocations[i];
+		if (checkLevel != map)
+			continue;
+
+		return &emblemlocations[i];
 	}
 	return NULL;
 }
 
 skincolornum_t M_GetEmblemColor(emblem_t *em)
 {
-	if (!em || em->color >= numskincolors)
-		return SKINCOLOR_NONE;
+	if (!em || !em->color || em->color >= numskincolors)
+		return SKINCOLOR_GOLD;
 	return em->color;
 }
 
 const char *M_GetEmblemPatch(emblem_t *em, boolean big)
-{
-	static char pnamebuf[7];
-
-	if (!big)
-		strcpy(pnamebuf, "GOTITn");
-	else
-		strcpy(pnamebuf, "EMBMn0");
-
-	I_Assert(em->sprite >= 'A' && em->sprite <= 'Z');
-
-	if (!big)
-		pnamebuf[5] = em->sprite;
-	else
-		pnamebuf[4] = em->sprite;
-
-	return pnamebuf;
-}
-
-skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em)
-{
-	if (!em || em->color >= numskincolors)
-		return SKINCOLOR_NONE;
-	return em->color;
-}
-
-const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big)
 {
 	static char pnamebuf[7];
 

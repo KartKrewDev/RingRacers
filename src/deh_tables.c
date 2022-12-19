@@ -6348,7 +6348,8 @@ struct int_const_s const INT_CONST[] = {
 	{"SF_X2AWAYSOUND",SF_X2AWAYSOUND},
 
 	// Global emblem var flags
-	// none in kart yet
+	{"GE_NOTMEDAL", GE_NOTMEDAL},
+	{"GE_TIMED", GE_TIMED},
 
 	// Map emblem var flags
 	{"ME_ENCORE",ME_ENCORE},

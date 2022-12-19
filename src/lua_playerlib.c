@@ -408,8 +408,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->skincolor);
 	else if (fastcmp(field,"skin"))
 		lua_pushinteger(L, plr->skin);
-	else if (fastcmp(field,"availabilities"))
-		lua_pushinteger(L, plr->availabilities);
 	else if (fastcmp(field,"fakeskin"))
 		lua_pushinteger(L, plr->fakeskin);
 	else if (fastcmp(field,"lastfakeskin"))
@@ -576,8 +574,6 @@ static int player_set(lua_State *L)
 		plr->skincolor = newcolor;
 	}
 	else if (fastcmp(field,"skin"))
-		return NOSET;
-	else if (fastcmp(field,"availabilities"))
 		return NOSET;
 	else if (fastcmp(field,"fakeskin"))
 		return NOSET;

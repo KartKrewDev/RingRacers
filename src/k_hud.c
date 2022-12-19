@@ -70,7 +70,7 @@ static patch_t *kp_racefinish[6];
 static patch_t *kp_positionnum[10][2][2]; // number, overlay or underlay, splitscreen
 
 static patch_t *kp_facenum[MAXPLAYERS+1];
-static patch_t *kp_facehighlight[8];
+patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
@@ -1014,6 +1014,40 @@ static void K_initKartHUD(void)
 	}
 }
 
+void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap)
+{
+	patch_t *PictureOfLevel = NULL;
+
+	if (map >= nummapheaders || !mapheaderinfo[map])
+	{
+		PictureOfLevel = nolvl;
+	}
+	else if (!mapheaderinfo[map]->thumbnailPic)
+	{
+		PictureOfLevel = blanklvl;
+	}
+	else
+	{
+		PictureOfLevel = mapheaderinfo[map]->thumbnailPic;
+	}
+
+	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
+}
+
+void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap)
+{
+	if (flags & V_FLIP)
+		x += width;
+
+	V_DrawFixedPatch(
+		x, y,
+		FixedDiv(width, (320 << FRACBITS)),
+		flags,
+		patch,
+		colormap
+	);
+}
+
 // see also MT_PLAYERARROW mobjthinker in p_mobj.c
 static void K_drawKartItem(void)
 {
@@ -1465,7 +1499,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 						static boolean canplaysound = true;
 						tic_t timetoreach = emblem->var;
 
-						if (emblem->collected)
+						if (gamedata->collected[(emblem-emblemlocations)])
 						{
 							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE);
 							emblemcol[curemb] = R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE);
