@@ -2083,6 +2083,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
+				boolean invincible = true;
+				sfxenum_t sfx = sfx_None;
+
 				if (gametyperules & GTR_BUMPERS)
 				{
 					if (player->bumpers <= 0 && player->karmadelay)
@@ -2102,7 +2105,22 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0)
+				{
+					sfx= sfx_invind;
+				}
+				else if (K_IsBigger(target, inflictor) == true)
+				{
+					sfx = sfx_grownd;
+				}
+				else if (player->hyudorotimer > 0)
+					;
+				else
+				{
+					invincible = false;
+				}
+
+				if (invincible)
 				{
 					const INT32	oldhitlag = target->hitlag;
 
@@ -2110,6 +2128,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
 
 					player->invulnhitlag += (target->hitlag - oldhitlag);
+
+					if (player->timeshit > player->timeshitprev)
+					{
+						S_StartSound(target, sfx);
+					}
 
 					// Full invulnerability
 					K_DoInstashield(player);

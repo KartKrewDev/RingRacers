@@ -1212,6 +1212,10 @@ typedef enum
 	sfx_pass15,
 	sfx_pass16,
 
+	// Blocked damage SFX
+	sfx_grownd,
+	sfx_invind,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,
