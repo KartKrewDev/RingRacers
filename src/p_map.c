@@ -874,7 +874,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	// Bubble Shield reflect
 	if (((thing->type == MT_BUBBLESHIELD && thing->target->player && thing->target->player->bubbleblowup)
 		|| (thing->player && thing->player->bubbleblowup))
-		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ
+		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
 		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
@@ -890,7 +890,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 	else if (((tm.thing->type == MT_BUBBLESHIELD && tm.thing->target->player && tm.thing->target->player->bubbleblowup)
 		|| (tm.thing->player && tm.thing->player->bubbleblowup))
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
@@ -911,7 +911,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 	// Droptarget reflect
 	if ((thing->type == MT_DROPTARGET || thing->type == MT_DROPTARGET_SHIELD)
-		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ
+		&& (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
 		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
@@ -926,7 +926,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return K_DropTargetCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 	else if ((tm.thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET_SHIELD)
-		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
+		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
@@ -946,7 +946,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_DROPTARGET_SHIELD || tm.thing->type == MT_DROPTARGET_SHIELD)
 		return BMIT_CONTINUE;
 
-	if (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ
+	if (tm.thing->type == MT_ORBINAUT || tm.thing->type == MT_JAWZ || tm.thing->type == MT_GACHABOM
 		|| tm.thing->type == MT_ORBINAUT_SHIELD || tm.thing->type == MT_JAWZ_SHIELD
 		|| tm.thing->type == MT_GARDENTOP)
 	{
@@ -958,7 +958,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 
 		return Obj_OrbinautJawzCollide(tm.thing, thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
-	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ
+	else if (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_ORBINAUT_SHIELD || thing->type == MT_JAWZ_SHIELD
 		|| thing->type == MT_GARDENTOP)
 	{

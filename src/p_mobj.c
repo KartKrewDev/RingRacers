@@ -1195,6 +1195,13 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_BATTLEBUMPER:
 				gravityadd /= 2;
 				break;
+			case MT_GACHABOM:
+				if (!(mo->flags2 & MF2_AMBUSH))
+				{
+					// Use normal gravity, unless if it was tossed.
+					break;
+				}
+				/*FALLTHRU*/
 			case MT_BANANA:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
@@ -1742,7 +1749,7 @@ void P_XYMovement(mobj_t *mo)
 
 					//{ SRB2kart - Orbinaut, Ballhog
 					// Bump sparks
-					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG)
+					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG || mo->type == MT_GACHABOM)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -1756,6 +1763,7 @@ void P_XYMovement(mobj_t *mo)
 					switch (mo->type)
 					{
 						case MT_ORBINAUT: // Orbinaut speed decreasing
+						case MT_GACHABOM:
 						case MT_GARDENTOP:
 							if (mo->health > 1)
 							{
@@ -5174,6 +5182,7 @@ boolean P_IsKartFieldItem(INT32 type)
 		case MT_SINK:
 		case MT_DROPTARGET:
 		case MT_DUELBOMB:
+		case MT_GACHABOM:
 			return true;
 
 		default:
@@ -6653,6 +6662,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_LANDMINE:
 	//case MT_DROPTARGET:
 	case MT_SPB:
+	case MT_GACHABOM:
 		if (P_IsObjectOnGround(mobj))
 		{
 			P_RemoveMobj(mobj);
@@ -7077,6 +7087,39 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_GACHABOM:
+	{
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			mobj->friction = ORIG_FRICTION/4;
+
+			if (mobj->momx || mobj->momy)
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
+			if (P_IsObjectOnGround(mobj))
+			{
+				if (mobj->movecount > 1)
+				{
+					S_StartSound(mobj, mobj->info->activesound);
+					mobj->momx = mobj->momy = 0;
+					mobj->movecount = 1;
+				}
+			}
+
+			if (mobj->threshold > 0)
+				mobj->threshold--;
+			break;
+		}
+	}
+	/* FALLTHRU */
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);
@@ -9822,6 +9865,7 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_CANNONBALLDECOR
 		|| mobj->type == MT_FALLINGROCK
 		|| mobj->type == MT_ORBINAUT
+		|| mobj->type == MT_GACHABOM
 		|| mobj->type == MT_JAWZ
 		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime))
 	{
@@ -10100,6 +10144,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
 		case MT_DUELBOMB:
+		case MT_GACHABOM:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:

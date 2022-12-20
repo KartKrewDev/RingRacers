@@ -5379,6 +5379,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SINK_SHIELD",
 	"MT_SINKTRAIL",
 
+	"MT_GACHABOM",
+
 	"MT_DUELBOMB", // Duel mode bombs
 
 	"MT_BATTLEBUMPER", // Battle Mode bumper
@@ -6787,6 +6789,7 @@ struct int_const_s const INT_CONST[] = {
 	{"KRITEM_TRIPLEORBINAUT",KRITEM_TRIPLEORBINAUT},
 	{"KRITEM_QUADORBINAUT",KRITEM_QUADORBINAUT},
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
+	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
 
 	// kartshields_t
