@@ -31,7 +31,6 @@ struct specialStage specialStage;
 --------------------------------------------------*/
 void K_ResetSpecialStage(void)
 {
-	P_SetTarget(&specialStage.ufo, NULL);
 	memset(&specialStage, 0, sizeof(struct specialStage));
 }
 
