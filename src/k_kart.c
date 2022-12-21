@@ -525,6 +525,14 @@ boolean K_TimeAttackRules(void)
 		return true;
 	}
 
+	if (battlecapsules == true)
+	{
+		// Break the Capsules always uses Time Attack
+		// rules, since you can bring 2-4 players in
+		// via Grand Prix.
+		return true;
+	}
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)
