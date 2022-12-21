@@ -2881,7 +2881,7 @@ static void Command_Map_f(void)
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
-			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BATTLE) ? GT_BATTLE : GT_RACE;
+			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & (TOL_BATTLE|TOL_BOSS)) ? GT_BATTLE : GT_RACE;
 		}
 	}
 
