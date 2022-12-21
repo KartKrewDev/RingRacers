@@ -487,12 +487,16 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 	{
 		switch (inflictor->type)
 		{
-			case MT_JAWZ:
 			case MT_JAWZ_SHIELD:
 			case MT_ORBINAUT_SHIELD:
 			{
-				// Jawz / shields deal regular damage.
+				// Shields deal chip damage.
 				return 10;
+			}
+			case MT_JAWZ:
+			{
+				// Thrown Jawz deal a bit extra.
+				return 15;
 			}
 			case MT_ORBINAUT:
 			{

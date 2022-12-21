@@ -188,11 +188,6 @@ static void JawzChase(mobj_t *th, boolean grounded)
 
 static boolean JawzSteersBetter(void)
 {
-	if (specialStage.active == true)
-	{
-		return true;
-	}
-
 	return !!!(gametyperules & GTR_CIRCUIT);
 }
 
