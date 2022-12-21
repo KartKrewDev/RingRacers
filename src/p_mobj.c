@@ -5298,6 +5298,7 @@ void P_RunOverlays(void)
 		mo->pitch = mo->target->pitch;
 		mo->roll = mo->target->roll;
 
+#if 0
 		mo->spritexoffset = mo->target->spritexoffset;
 		mo->spriteyoffset = mo->target->spriteyoffset;
 		mo->spritexscale = mo->target->spritexscale;
@@ -5306,6 +5307,7 @@ void P_RunOverlays(void)
 		mo->sprxoff = mo->target->sprxoff;
 		mo->spryoff = mo->target->spryoff;
 		mo->sprzoff = mo->target->sprzoff;
+#endif
 
 		mo->hitlag = mo->target->hitlag;
 		mo->eflags = (mo->eflags & ~MFE_DAMAGEHITLAG) | (mo->target->eflags & MFE_DAMAGEHITLAG);
