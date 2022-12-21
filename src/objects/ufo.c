@@ -688,16 +688,16 @@ void Obj_UFOPieceRemoved(mobj_t *piece)
 			&ufo_piece_prev(next),
 			(prev != NULL && P_MobjWasRemoved(prev) == false) ? prev : NULL
 		);
+	}
 
-		if (ufo != NULL && P_MobjWasRemoved(ufo) == false)
+	if (ufo != NULL && P_MobjWasRemoved(ufo) == false)
+	{
+		if (piece == ufo_pieces(ufo))
 		{
-			if (piece == ufo_pieces(ufo))
-			{
-				P_SetTarget(
-					&ufo_pieces(ufo),
-					next
-				);
-			}
+			P_SetTarget(
+				&ufo_pieces(ufo),
+				(next != NULL && P_MobjWasRemoved(next) == false) ? next : NULL
+			);
 		}
 	}
 
