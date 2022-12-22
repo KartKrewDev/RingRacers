@@ -2015,7 +2015,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
+		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
 			return false;
 	}
 
@@ -2038,6 +2038,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
+		{
+			const INT32 oldtimeshit = player->timeshit;
+
+			player->timeshit++;
+
+			// overflow prevention
+			if (player->timeshit < oldtimeshit)
+			{
+				player->timeshit = oldtimeshit;
+			}
+		}
+
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -2071,6 +2083,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
+				boolean invincible = true;
+				sfxenum_t sfx = sfx_None;
+
 				if (gametyperules & GTR_BUMPERS)
 				{
 					if (player->bumpers <= 0 && player->karmadelay)
@@ -2090,8 +2105,35 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0)
 				{
+					sfx= sfx_invind;
+				}
+				else if (K_IsBigger(target, inflictor) == true)
+				{
+					sfx = sfx_grownd;
+				}
+				else if (player->hyudorotimer > 0)
+					;
+				else
+				{
+					invincible = false;
+				}
+
+				if (invincible)
+				{
+					const INT32	oldhitlag = target->hitlag;
+
+					laglength = max(laglength / 2, 1);
+					K_SetHitLagForObjects(target, inflictor, laglength, false);
+
+					player->invulnhitlag += (target->hitlag - oldhitlag);
+
+					if (player->timeshit > player->timeshitprev)
+					{
+						S_StartSound(target, sfx);
+					}
+
 					// Full invulnerability
 					K_DoInstashield(player);
 					return false;

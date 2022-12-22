@@ -1148,6 +1148,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"pass15", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"pass16", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  // SRB2Kart - Blocked damage
+  {"grownd", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+  {"invind", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

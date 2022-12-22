@@ -255,7 +255,8 @@ typedef enum
 	MFE_DAMAGEHITLAG      = 1<<13,
 	// Slope physics sent you airborne
 	MFE_SLOPELAUNCHED     = 1<<14,
-	// free: to and including 1<<15
+	// Thinker is paused due to hitlag
+	MFE_PAUSED            = 1<<15,
 } mobjeflag_t;
 
 //
