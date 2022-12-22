@@ -9665,6 +9665,7 @@ void P_MobjThinker(mobj_t *mobj)
 	// Don't run any thinker code while in hitlag
 	if (mobj->hitlag > 0)
 	{
+		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
 
 		if (mobj->type == MT_DROPTARGET && mobj->reactiontime > 0 && mobj->hitlag == 2)
@@ -9684,7 +9685,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED|MFE_PAUSED);
 
 	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
 	P_SetTarget(&tm.floorthing, NULL);
