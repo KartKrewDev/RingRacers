@@ -4867,6 +4867,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	size_t i, j;
 	size_t numTasks;
+	UINT8 *old_save_p;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4909,11 +4910,16 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	encoremode = (boolean)READUINT8(save_p);
 
+	// FIXME: save_p should not be global!!!
+	old_save_p = save_p;
+
 	if (!P_LoadLevel(true, reloading))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
 	}
+
+	save_p = old_save_p;
 
 	// get the time
 	leveltime = READUINT32(save_p);
