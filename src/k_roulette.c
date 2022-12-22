@@ -166,12 +166,14 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }, // Kitchen Sink
 	{ 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 0 }, // Gachabom
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
 	{ 0, 1, 1, 0 }, // Orbinaut x3
 	{ 0, 0, 1, 1 }, // Orbinaut x4
-	{ 0, 0, 1, 1 }  // Jawz x2
+	{ 0, 0, 1, 1 }, // Jawz x2
+	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
 static kartitems_t K_KartItemReelTimeAttack[] =
