@@ -28,13 +28,13 @@
 #include "p_tick.h"
 #include "p_local.h"
 
-#include "CAPI/BinaryIO.h"
-#include "CAPI/Environment.h"
-#include "CAPI/Module.h"
-#include "CAPI/PrintBuf.h"
-#include "CAPI/Scope.h"
-#include "CAPI/String.h"
-#include "CAPI/Thread.h"
+#include <CAPI/BinaryIO.h>
+#include <CAPI/Environment.h>
+#include <CAPI/Module.h>
+#include <CAPI/PrintBuf.h>
+#include <CAPI/Scope.h>
+#include <CAPI/String.h>
+#include <CAPI/Thread.h>
 
 static ACSVM_Environment *ACSenv = NULL;
 

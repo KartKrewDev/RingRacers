@@ -34,6 +34,19 @@
 #include "s_sound.h"
 #include "r_textures.h"
 
+ACSVM_String *ACSVM_MapScope_GetString(ACSVM_MapScope *map, ACSVM_Word index)
+{
+	(void)map;
+	(void)index;
+	return NULL;
+}
+
+ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *activator)
+{
+	(void)activator;
+	return NULL;
+}
+
 /*--------------------------------------------------
 	static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 

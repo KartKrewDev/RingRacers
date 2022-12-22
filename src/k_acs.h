@@ -21,13 +21,17 @@
 #include "p_polyobj.h"
 #include "d_player.h"
 
-#include "CAPI/BinaryIO.h"
-#include "CAPI/Environment.h"
-#include "CAPI/Module.h"
-#include "CAPI/PrintBuf.h"
-#include "CAPI/Scope.h"
-#include "CAPI/String.h"
-#include "CAPI/Thread.h"
+#include <CAPI/BinaryIO.h>
+#include <CAPI/Environment.h>
+#include <CAPI/Module.h>
+#include <CAPI/PrintBuf.h>
+#include <CAPI/Scope.h>
+#include <CAPI/String.h>
+#include <CAPI/Thread.h>
+
+// Temp
+ACSVM_String *ACSVM_MapScope_GetString(ACSVM_MapScope *map, ACSVM_Word index);
+ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *activator);
 
 //
 // Special global script types.

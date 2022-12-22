@@ -135,6 +135,7 @@ if("${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	find_package(OPENMPT REQUIRED)
 	find_package(GME REQUIRED)
 	find_package(DiscordRPC REQUIRED)
+	find_package(acsvm REQUIRED)
 endif()
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
