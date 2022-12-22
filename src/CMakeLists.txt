@@ -152,7 +152,11 @@ set(SRB2_CONFIG_USEASM OFF CACHE BOOL
 set(SRB2_CONFIG_YASM OFF CACHE BOOL
 	"Use YASM in place of NASM.")
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
-	"Compile a development build of SRB2Kart.")
+	"Compile a development build of Dr Robotnik's Ring Racers.")
+set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
+	"Compile a build for testers.")
+set(SRB2_CONFIG_HOSTTESTERS OFF CACHE BOOL
+	"Compile a build to host netgames for testers builds.")
 
 add_subdirectory(blua)
 
@@ -236,7 +240,7 @@ if(${SRB2_CONFIG_HAVE_ZLIB})
 		set(SRB2_HAVE_ZLIB ON)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
 	else()
-		message(WARNING "You have specified that ZLIB is available but it was not found. SRB2Kart may not compile correctly.")
+		message(WARNING "You have specified that ZLIB is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 	endif()
 endif()
 
@@ -259,7 +263,7 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 			target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
 			target_sources(SRB2SDL2 PRIVATE apng.c)
 		else()
-			message(WARNING "You have specified that PNG is available but it was not found. SRB2Kart may not compile correctly.")
+			message(WARNING "You have specified that PNG is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 		endif()
 	endif()
 endif()
@@ -484,6 +488,12 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 # Misc. build options from Makefiles
 if(SRB2_CONFIG_DEBUGMODE)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
+endif()
+if(SRB2_CONFIG_TESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DTESTERS)
+endif()
+if(SRB2_CONFIG_HOSTTESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHOSTTESTERS)
 endif()
 if(SRB2_CONFIG_MOBJCONSISTANCY)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMOBJCONSISTANCY)
