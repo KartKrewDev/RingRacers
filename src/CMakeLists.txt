@@ -132,9 +132,12 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_roulette.c
 )
 
-if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows" AND NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
-	# On MinGW with internal libraries, link the standard library statically
-	target_link_options(SRB2SDL2 PRIVATE "-static")
+if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
+	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+		# On MinGW with internal libraries, link the standard library statically
+		target_link_options(SRB2SDL2 PRIVATE "-static")
+	endif()
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
@@ -149,7 +152,11 @@ set(SRB2_CONFIG_USEASM OFF CACHE BOOL
 set(SRB2_CONFIG_YASM OFF CACHE BOOL
 	"Use YASM in place of NASM.")
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
-	"Compile a development build of SRB2Kart.")
+	"Compile a development build of Dr Robotnik's Ring Racers.")
+set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
+	"Compile a build for testers.")
+set(SRB2_CONFIG_HOSTTESTERS OFF CACHE BOOL
+	"Compile a build to host netgames for testers builds.")
 
 add_subdirectory(blua)
 
@@ -233,7 +240,7 @@ if(${SRB2_CONFIG_HAVE_ZLIB})
 		set(SRB2_HAVE_ZLIB ON)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
 	else()
-		message(WARNING "You have specified that ZLIB is available but it was not found. SRB2Kart may not compile correctly.")
+		message(WARNING "You have specified that ZLIB is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 	endif()
 endif()
 
@@ -256,7 +263,7 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 			target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
 			target_sources(SRB2SDL2 PRIVATE apng.c)
 		else()
-			message(WARNING "You have specified that PNG is available but it was not found. SRB2Kart may not compile correctly.")
+			message(WARNING "You have specified that PNG is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 		endif()
 	endif()
 endif()
@@ -481,6 +488,12 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 # Misc. build options from Makefiles
 if(SRB2_CONFIG_DEBUGMODE)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
+endif()
+if(SRB2_CONFIG_TESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DTESTERS)
+endif()
+if(SRB2_CONFIG_HOSTTESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHOSTTESTERS)
 endif()
 if(SRB2_CONFIG_MOBJCONSISTANCY)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMOBJCONSISTANCY)

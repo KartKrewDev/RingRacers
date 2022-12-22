@@ -436,6 +436,9 @@ SINT8 K_ItemResultToType(SINT8 getitem)
 			case KRITEM_DUALJAWZ:
 				return KITEM_JAWZ;
 
+			case KRITEM_TRIPLEGACHABOM:
+				return KITEM_GACHABOM;
+
 			default:
 				I_Error("Bad item cooldown redirect for result %d\n", getitem);
 				break;
@@ -456,6 +459,7 @@ UINT8 K_ItemResultToAmount(SINT8 getitem)
 		case KRITEM_TRIPLESNEAKER:
 		case KRITEM_TRIPLEBANANA:
 		case KRITEM_TRIPLEORBINAUT:
+		case KRITEM_TRIPLEGACHABOM:
 			return 3;
 
 		case KRITEM_QUADORBINAUT:
@@ -629,6 +633,7 @@ fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against)
 			break;
 		case MT_ORBINAUT:
 		case MT_ORBINAUT_SHIELD:
+		case MT_GACHABOM:
 		case MT_DUELBOMB:
 			if (against->player)
 				weight = K_PlayerWeight(against, NULL);
@@ -4428,7 +4433,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
-	if (dir == -1 && (type == MT_ORBINAUT || type == MT_BALLHOG))
+	if (dir == -1 && (type == MT_ORBINAUT || type == MT_GACHABOM || type == MT_BALLHOG))
 	{
 		// Backwards nerfs
 		finalspeed /= 8;
@@ -4485,6 +4490,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	switch (type)
 	{
 		case MT_ORBINAUT:
+		case MT_GACHABOM:
 			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
@@ -5332,6 +5338,12 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			dir = defaultDir;
 	}
 
+	if (mapthing == MT_GACHABOM && dir > 0)
+	{
+		// This item is both a missile and not!
+		missile = false;
+	}
+
 	if (missile) // Shootables
 	{
 		if (dir < 0 && mapthing != MT_SPB && mapthing != MT_GARDENTOP)
@@ -5397,6 +5409,16 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 			{
 				mo->angle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
 				mo->rollangle = FixedAngle(P_RandomRange(PR_DECORATION, -180, 180) << FRACBITS);
+			}
+
+			if (mapthing == MT_GACHABOM)
+			{
+				// Set dropped flag
+				mo->flags2 |= MF2_AMBUSH;
+				mo->movecount = 2;
+				P_SetMobjState(mo, mo->info->deathstate);
+				mo->tics = -1;
+				mo->color = player->skincolor;
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
@@ -8103,6 +8125,32 @@ void K_KartPlayerAfterThink(player_t *player)
 	{
 		K_LookForRings(player->mo);
 	}
+
+	if (player->invulnhitlag > 0)
+	{
+		// Hitlag from what would normally be damage but the
+		// player was invulnerable.
+		//
+		// If we're constantly getting hit the same number of
+		// times, we're probably standing on a damage floor.
+		//
+		// Checking if we're hit more than before ensures
+		// that:
+		//
+		// 1) repeating damage doesn't count
+		// 2) new damage sources still count
+
+		if (player->timeshit <= player->timeshitprev)
+		{
+			if (!P_MobjWasRemoved(player->mo))
+			{
+				player->mo->hitlag -= player->invulnhitlag;
+				player->mo->eflags &= ~(MFE_DAMAGEHITLAG);
+			}
+		}
+
+		player->invulnhitlag = 0;
+	}
 }
 
 /*--------------------------------------------------
@@ -10621,6 +10669,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								player->itemamount--;
 								player->pflags &= ~PF_ITEMOUT;
 								K_UpdateHnextList(player, true);
+							}
+							break;
+						case KITEM_GACHABOM:
+							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							{
+								K_ThrowKartItem(player, true, MT_GACHABOM, 0, 0, 0);
+								K_PlayAttackTaunt(player->mo);
+								player->itemamount--;
+								K_UpdateHnextList(player, false);
 							}
 							break;
 						case KITEM_SAD:

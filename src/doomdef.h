@@ -201,7 +201,8 @@ extern char logfilename[1024];
 #define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
 #define MAXSKINS UINT8_MAX
-#define SKINNAMESIZE 16	// Moved from r_skins.h as including that particular header causes issues later down the line.
+#define SKINNAMESIZE 16
+#define MAXAVAILABILITY ((MAXSKINS + 7)/8)
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32

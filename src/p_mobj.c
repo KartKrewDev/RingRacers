@@ -1196,6 +1196,13 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_BATTLEBUMPER:
 				gravityadd /= 2;
 				break;
+			case MT_GACHABOM:
+				if (!(mo->flags2 & MF2_AMBUSH))
+				{
+					// Use normal gravity, unless if it was tossed.
+					break;
+				}
+				/*FALLTHRU*/
 			case MT_BANANA:
 			case MT_EGGMANITEM:
 			case MT_SSMINE:
@@ -1743,7 +1750,7 @@ void P_XYMovement(mobj_t *mo)
 
 					//{ SRB2kart - Orbinaut, Ballhog
 					// Bump sparks
-					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG)
+					if (mo->type == MT_ORBINAUT || mo->type == MT_BALLHOG || mo->type == MT_GACHABOM)
 					{
 						mobj_t *fx;
 						fx = P_SpawnMobj(mo->x, mo->y, mo->z, MT_BUMP);
@@ -1757,6 +1764,7 @@ void P_XYMovement(mobj_t *mo)
 					switch (mo->type)
 					{
 						case MT_ORBINAUT: // Orbinaut speed decreasing
+						case MT_GACHABOM:
 						case MT_GARDENTOP:
 							if (mo->health > 1)
 							{
@@ -5175,6 +5183,7 @@ boolean P_IsKartFieldItem(INT32 type)
 		case MT_SINK:
 		case MT_DROPTARGET:
 		case MT_DUELBOMB:
+		case MT_GACHABOM:
 			return true;
 
 		default:
@@ -6669,6 +6678,7 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_LANDMINE:
 	//case MT_DROPTARGET:
 	case MT_SPB:
+	case MT_GACHABOM:
 		if (P_IsObjectOnGround(mobj))
 		{
 			P_RemoveMobj(mobj);
@@ -6959,9 +6969,38 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_EMBLEM:
-		if (mobj->flags2 & MF2_NIGHTSPULL)
-			P_NightsItemChase(mobj);
+	{
+		INT32 trans = 0;
+
+		mobj->frame &= ~FF_TRANSMASK;
+		mobj->renderflags &= ~RF_TRANSMASK;
+
+		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
+		{
+			trans = tr_trans50;
+			mobj->renderflags |= (tr_trans50 << RF_TRANSSHIFT);
+		}
+
+		if (mobj->reactiontime > 0
+			&& leveltime > starttime)
+		{
+			INT32 diff = mobj->reactiontime - (signed)(leveltime - starttime);
+			if (diff < 10)
+			{
+				if (diff <= 0)
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				trans = max(trans, 10-diff);
+			}
+		}
+
+		mobj->renderflags |= (trans << RF_TRANSSHIFT);
+
 		break;
+	}
 	case MT_FLOATINGITEM:
 	{
 		mobj->pitch = mobj->roll = 0;
@@ -7069,6 +7108,39 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_GACHABOM:
+	{
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			mobj->friction = ORIG_FRICTION/4;
+
+			if (mobj->momx || mobj->momy)
+			{
+				mobj_t *ghost = P_SpawnGhostMobj(mobj);
+
+				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
+				{
+					ghost->color = mobj->target->player->skincolor;
+					ghost->colorized = true;
+				}
+			}
+
+			if (P_IsObjectOnGround(mobj))
+			{
+				if (mobj->movecount > 1)
+				{
+					S_StartSound(mobj, mobj->info->activesound);
+					mobj->momx = mobj->momy = 0;
+					mobj->movecount = 1;
+				}
+			}
+
+			if (mobj->threshold > 0)
+				mobj->threshold--;
+			break;
+		}
+	}
+	/* FALLTHRU */
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);
@@ -9624,6 +9696,7 @@ void P_MobjThinker(mobj_t *mobj)
 	// Don't run any thinker code while in hitlag
 	if (mobj->hitlag > 0)
 	{
+		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
 
 		if (mobj->type == MT_DROPTARGET && mobj->reactiontime > 0 && mobj->hitlag == 2)
@@ -9643,7 +9716,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED|MFE_PAUSED);
 
 	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
 	P_SetTarget(&tm.floorthing, NULL);
@@ -9824,6 +9897,7 @@ void P_MobjThinker(mobj_t *mobj)
 		|| mobj->type == MT_CANNONBALLDECOR
 		|| mobj->type == MT_FALLINGROCK
 		|| mobj->type == MT_ORBINAUT
+		|| mobj->type == MT_GACHABOM
 		|| mobj->type == MT_JAWZ
 		|| (mobj->type == MT_DROPTARGET && mobj->reactiontime))
 	{
@@ -10103,6 +10177,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_ROCKETSNEAKER:
 		case MT_SPB:
 		case MT_DUELBOMB:
+		case MT_GACHABOM:
 			thing->shadowscale = 3*FRACUNIT/2;
 			break;
 		case MT_BANANA_SHIELD:
@@ -11424,7 +11499,7 @@ void P_RespawnSpecials(void)
 		}
 		else if (pcount > 1)
 		{
-			time = (120 - ((pcount-2) * 20)) * TICRATE;
+			time = (120 * TICRATE) / (pcount - 1);
 
 			// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
 			// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
@@ -12043,7 +12118,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 	if (!emblem)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
+		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
 		return false;
 	}
 
@@ -12056,24 +12131,13 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	emcolor = M_GetEmblemColor(&emblemlocations[j]); // workaround for compiler complaint about bad function casting
 	mobj->color = (UINT16)emcolor;
 
-	if (emblemlocations[j].collected)
-	{
-		P_UnsetThingPosition(mobj);
-		mobj->flags |= MF_NOCLIP;
-		mobj->flags &= ~MF_SPECIAL;
-		mobj->flags |= MF_NOBLOCKMAP;
-		mobj->frame |= (tr_trans50 << FF_TRANSSHIFT);
-		P_SetThingPosition(mobj);
-	}
-	else
-	{
-		mobj->frame &= ~FF_TRANSMASK;
+	mobj->frame &= ~FF_TRANSMASK;
 
-		if (emblemlocations[j].type == ET_GLOBAL)
-		{
-			mobj->reactiontime = emblemlocations[j].var;
-		}
+	if (emblemlocations[j].flags & GE_TIMED)
+	{
+		mobj->reactiontime = emblemlocations[j].var;
 	}
+
 	return true;
 }
 
@@ -12517,7 +12581,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_EMBLEM:
 	{
 		if (!P_SetupEmblem(mthing, mobj))
+		{
+			P_RemoveMobj(mobj);
 			return false;
+		}
 		break;
 	}
 	case MT_SKYBOX:

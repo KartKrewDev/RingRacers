@@ -197,8 +197,8 @@ TYPEDEF (aatree_t);
 TYPEDEF (condition_t);
 TYPEDEF (conditionset_t);
 TYPEDEF (emblem_t);
-TYPEDEF (extraemblem_t);
 TYPEDEF (unlockable_t);
+TYPEDEF (gamedata_t);
 
 // m_dllist.h
 TYPEDEF (mdllistitem_t);

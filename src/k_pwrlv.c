@@ -418,11 +418,7 @@ void K_CashInPowerLevels(void)
 			{
 				pr->powerlevels[powerType] = clientpowerlevels[i][powerType];
 
-				if (M_UpdateUnlockablesAndExtraEmblems())
-				{
-					S_StartSound(NULL, sfx_ncitem);
-				}
-
+				M_UpdateUnlockablesAndExtraEmblems(true);
 				G_SaveGameData();
 			}
 		}
@@ -642,11 +638,7 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 	{
 		pr->powerlevels[powerType] = yourPower + inc;
 
-		if (M_UpdateUnlockablesAndExtraEmblems())
-		{
-			S_StartSound(NULL, sfx_ncitem);
-		}
-
+		M_UpdateUnlockablesAndExtraEmblems(true);
 		G_SaveGameData();
 	}
 }

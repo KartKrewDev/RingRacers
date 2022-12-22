@@ -14,7 +14,7 @@
 
 #include "doomdef.h"
 #include "doomtype.h"
-#include "doomstat.h" // totalplaytime
+#include "m_cond.h" // gamedata->totalplaytime
 
 #include "m_random.h"
 #include "m_fixed.h"
@@ -372,5 +372,5 @@ void P_ClearRandom(UINT32 seed)
   */
 UINT32 M_RandomizedSeed(void)
 {
-	return ((totalplaytime & 0xFFFF) << 16) | M_RandomFixed();
+	return ((gamedata->totalplaytime & 0xFFFF) << 16) | M_RandomFixed();
 }

@@ -154,7 +154,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (SUPERRING,     19),\
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
-	FOREACH (GARDENTOP,     22)
+	FOREACH (GARDENTOP,     22),\
+	FOREACH (GACHABOM,      23)
 
 typedef enum
 {
@@ -171,6 +172,7 @@ typedef enum
 	KRITEM_TRIPLEORBINAUT,
 	KRITEM_QUADORBINAUT,
 	KRITEM_DUALJAWZ,
+	KRITEM_TRIPLEGACHABOM,
 
 	NUMKARTRESULTS
 } kartitems_t;
@@ -421,7 +423,7 @@ struct player_t
 	UINT16 skincolor;
 
 	INT32 skin;
-	UINT32 availabilities;
+	UINT8 availabilities[MAXAVAILABILITY];
 
 	UINT8 fakeskin; // ironman
 	UINT8 lastfakeskin;
@@ -464,6 +466,7 @@ struct player_t
 	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
 	UINT8 spinouttype;		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
 	UINT8 instashield;		// Instashield no-damage animation timer
+	INT32 invulnhitlag;		// Numbers of tics of hitlag added this tic for "potential" damage -- not real damage
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
@@ -613,7 +616,12 @@ struct player_t
 
 	INT16 lastsidehit, lastlinehit;
 
-	//UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam
+	// These track how many things tried to damage you, not
+	// whether you actually took damage.
+	UINT8 timeshit; // times hit this tic
+	UINT8 timeshitprev; // times hit before
+	// That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam
+	// No longer in memoriam =P -jart
 
 	INT32 onconveyor; // You are on a conveyor belt if nonzero
 

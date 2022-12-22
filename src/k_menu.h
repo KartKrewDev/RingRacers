@@ -398,12 +398,16 @@ extern menu_t EXTRAS_ReplayStartDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+// EXTRAS
+extern menuitem_t MISC_Manual[];
+extern menu_t MISC_ManualDef;
+
 extern menuitem_t MISC_Addons[];
 extern menu_t MISC_AddonsDef;
 
-// MANUAL
-extern menuitem_t MISC_Manual[];
-extern menu_t MISC_ManualDef;
+extern menuitem_t MISC_ChallengesStatsDummyMenu[];
+extern menu_t MISC_ChallengesDef;
+extern menu_t MISC_StatisticsDef;
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
@@ -593,6 +597,9 @@ extern struct setup_chargrid_s {
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
+extern UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+extern UINT8 setup_numfollowercategories;
+
 typedef enum
 {
 	CSSTEP_NONE = 0,
@@ -650,9 +657,9 @@ extern UINT8 setup_maxpage;
 #define CSEXPLOSIONS 48
 
 extern struct setup_explosions_s {
-	UINT8 x, y;
+	INT16 x, y;
 	UINT8 tics;
-	UINT8 color;
+	UINT16 color;
 } setup_explosions[CSEXPLOSIONS];
 
 typedef enum
@@ -688,23 +695,28 @@ extern struct cupgrid_s {
 	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
+typedef struct levelsearch_s {
+	UINT32 typeoflevel;
+	cupheader_t *cup;
+	boolean timeattack;
+	boolean cupmode;
+	boolean checklocked;
+} levelsearch_t;
+
 extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
-	cupheader_t *selectedcup;
 	INT16 choosemap;
 	UINT8 newgametype;
-	UINT32 typeoflevel;
-	boolean cupmode;
-	boolean timeattack; // Setup time attack menu after picking
+	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup);
-UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup);
-UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup);
-UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup);
+boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
+UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
+UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
+UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
@@ -1080,6 +1092,59 @@ void M_DrawReplayStartMenu(void);
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
 #define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
 void M_DrawAddons(void);
+
+// Challenges menu:
+#define UNLOCKTIME 5
+#define MAXUNLOCKTIME TICRATE
+#define RIGHTUNLOCKSCROLL 3
+#define LEFTUNLOCKSCROLL (RIGHTUNLOCKSCROLL-1)
+
+#define CC_TOTAL 0
+#define CC_UNLOCKED 1
+#define CC_TALLY 2
+#define CC_ANIM 3
+#define CC_MAX 4
+
+// Keep track of some pause menu data for visual goodness.
+extern struct challengesmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	UINT8 currentunlock;
+	char *unlockcondition;
+
+	tic_t unlockanim;
+
+	SINT8 row, hilix, focusx;
+	UINT8 col, hiliy;
+
+	UINT8 *extradata;
+
+	boolean pending;
+	boolean requestnew;
+
+	UINT8 unlockcount[CC_MAX];
+
+	UINT8 fade;
+} challengesmenu;
+
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
+void M_Challenges(INT32 choice);
+void M_DrawChallenges(void);
+void M_ChallengesTick(void);
+boolean M_ChallengesInputs(INT32 ch);
+
+extern struct statisticsmenu_s {
+	INT32 location;
+	INT32 nummaps;
+	INT32 maxscroll;
+	UINT16 *maplist;
+} statisticsmenu;
+
+void M_Statistics(INT32 choice);
+void M_DrawStatistics(void);
+boolean M_StatisticsInputs(INT32 ch);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

@@ -232,6 +232,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spinouttimer);
 	else if (fastcmp(field,"instashield"))
 		lua_pushinteger(L, plr->instashield);
+	else if (fastcmp(field,"invulnhitlag"))
+		lua_pushinteger(L, plr->invulnhitlag);
 	else if (fastcmp(field,"wipeoutslow"))
 		lua_pushinteger(L, plr->wipeoutslow);
 	else if (fastcmp(field,"justbumped"))
@@ -408,8 +410,6 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->skincolor);
 	else if (fastcmp(field,"skin"))
 		lua_pushinteger(L, plr->skin);
-	else if (fastcmp(field,"availabilities"))
-		lua_pushinteger(L, plr->availabilities);
 	else if (fastcmp(field,"fakeskin"))
 		lua_pushinteger(L, plr->fakeskin);
 	else if (fastcmp(field,"lastfakeskin"))
@@ -474,6 +474,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->lastsidehit);
 	else if (fastcmp(field,"lastlinehit"))
 		lua_pushinteger(L, plr->lastlinehit);
+	else if (fastcmp(field,"timeshit"))
+		lua_pushinteger(L, plr->timeshit);
+	else if (fastcmp(field,"timeshitprev"))
+		lua_pushinteger(L, plr->timeshitprev);
 	else if (fastcmp(field,"onconveyor"))
 		lua_pushinteger(L, plr->onconveyor);
 	else if (fastcmp(field,"awayviewmobj"))
@@ -577,8 +581,6 @@ static int player_set(lua_State *L)
 	}
 	else if (fastcmp(field,"skin"))
 		return NOSET;
-	else if (fastcmp(field,"availabilities"))
-		return NOSET;
 	else if (fastcmp(field,"fakeskin"))
 		return NOSET;
 	else if (fastcmp(field,"lastfakeskin"))
@@ -608,6 +610,8 @@ static int player_set(lua_State *L)
 		plr->spinouttimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instashield"))
 		plr->instashield = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"invulnhitlag"))
+		plr->invulnhitlag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wipeoutslow"))
 		plr->wipeoutslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justbumped"))
@@ -834,6 +838,10 @@ static int player_set(lua_State *L)
 		plr->lastsidehit = (INT16)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"lastlinehit"))
 		plr->lastlinehit = (INT16)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"timeshit"))
+		plr->timeshit = (UINT8)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"timeshitprev"))
+		plr->timeshitprev = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"onconveyor"))
 		plr->onconveyor = (INT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"awayviewmobj"))

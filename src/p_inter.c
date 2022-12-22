@@ -157,6 +157,40 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	return true;
 }
 
+boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= MAXEMBLEMS)
+	{
+		// Invalid emblem ID, can't pickup.
+		return false;
+	}
+
+	if (demo.playback)
+	{
+		// Never collect emblems in replays.
+		return false;
+	}
+
+	if (player->bot)
+	{
+		// Your nefarious opponent puppy can't grab these for you.
+		return false;
+	}
+
+	return true;
+}
+
+boolean P_EmblemWasCollected(INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= numemblems)
+	{
+		// Invalid emblem ID, can't pickup.
+		return true;
+	}
+
+	return gamedata->collected[emblemID];
+}
+
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
   * Actually, this just checks a few things (heights, toucher->player, no
   * objectplace, no dead or disappearing things)
@@ -508,12 +542,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback || special->health > MAXEMBLEMS)
+				boolean gotcollected = false;
+
+				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				emblemlocations[special->health-1].collected = true;
-				M_UpdateUnlockablesAndExtraEmblems();
-				G_SaveGameData();
+				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
+				{
+					gamedata->collected[special->health-1] = gotcollected = true;
+					M_UpdateUnlockablesAndExtraEmblems(true);
+					G_SaveGameData();
+				}
+
+				if (netgame)
+				{
+					// Don't delete the object in netgames, just fade it.
+					return;
+				}
+
 				break;
 			}
 
@@ -962,7 +1008,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
 		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
-		 || target->type == MT_BALLHOG || target->type == MT_SPB)) // kart dead items
+		 || target->type == MT_BALLHOG || target->type == MT_SPB
+		 || target->type == MT_GACHABOM)) // kart dead items
 		target->flags |= MF_NOGRAVITY; // Don't drop Tails 03-08-2000
 	else
 		target->flags &= ~MF_NOGRAVITY; // lose it if you for whatever reason have it, I'm looking at you shields
@@ -1975,7 +2022,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
+		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
 			return false;
 	}
 
@@ -1998,6 +2045,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
+		{
+			const INT32 oldtimeshit = player->timeshit;
+
+			player->timeshit++;
+
+			// overflow prevention
+			if (player->timeshit < oldtimeshit)
+			{
+				player->timeshit = oldtimeshit;
+			}
+		}
+
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -2031,6 +2090,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
+				boolean invincible = true;
+				sfxenum_t sfx = sfx_None;
+
 				if (gametyperules & GTR_BUMPERS)
 				{
 					if (player->bumpers <= 0 && player->karmadelay)
@@ -2050,8 +2112,35 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0)
 				{
+					sfx= sfx_invind;
+				}
+				else if (K_IsBigger(target, inflictor) == true)
+				{
+					sfx = sfx_grownd;
+				}
+				else if (player->hyudorotimer > 0)
+					;
+				else
+				{
+					invincible = false;
+				}
+
+				if (invincible)
+				{
+					const INT32	oldhitlag = target->hitlag;
+
+					laglength = max(laglength / 2, 1);
+					K_SetHitLagForObjects(target, inflictor, laglength, false);
+
+					player->invulnhitlag += (target->hitlag - oldhitlag);
+
+					if (player->timeshit > player->timeshitprev)
+					{
+						S_StartSound(target, sfx);
+					}
+
 					// Full invulnerability
 					K_DoInstashield(player);
 					return false;

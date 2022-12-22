@@ -343,8 +343,8 @@ static void M_EraseDataResponse(INT32 ch)
 	if (optionsmenu.erasecontext == 2)
 	{
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
-		totalplaytime = 0;
-		matchesplayed = 0;
+		gamedata->totalplaytime = 0;
+		gamedata->matchesplayed = 0;
 	}
 	if (optionsmenu.erasecontext != 1)
 		G_ClearRecords();
@@ -981,7 +981,7 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			currentMenu = &MainDef;
+			currentMenu = M_InterruptMenuWithChallenges(&MainDef);
 		}
 	}
 	else
@@ -1776,15 +1776,14 @@ static inline size_t M_StringHeight(const char *string)
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
 {
 	const UINT8 pid = 0;
-	size_t max = 0, start = 0, i, strlines;
+	size_t max = 0, start = 0, strlines = 0, i;
 	static char *message = NULL;
 	Z_Free(message);
 	message = Z_StrDup(string);
 	DEBFILE(message);
 
 	// Rudementary word wrapping.
-	// Simple and effective. Does not handle nonuniform letter sizes, colors, etc. but who cares.
-	strlines = 0;
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
 	for (i = 0; message[i]; i++)
 	{
 		if (message[i] == ' ')
@@ -1799,6 +1798,8 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 			max = 0;
 			continue;
 		}
+		else if (message[i] & 0x80)
+			continue;
 		else
 			max += 8;
 
@@ -2053,7 +2054,10 @@ void M_QuitSRB2(INT32 choice)
 
 struct setup_chargrid_s setup_chargrid[9][9];
 setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
-struct setup_explosions_s setup_explosions[48];
+struct setup_explosions_s setup_explosions[CSEXPLOSIONS];
+
+UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+UINT8 setup_numfollowercategories;
 
 UINT8 setup_numplayers = 0; // This variable is very important, it was extended to determine how many players exist in ALL menus.
 tic_t setup_animcounter = 0;
@@ -2065,64 +2069,61 @@ UINT8 setup_maxpage = 0;	// For charsel page to identify alts easier...
 static void M_SetupProfileGridPos(setup_player_t *p)
 {
 	profile_t *pr = PR_GetProfile(p->profilen);
-	INT32 i;
+	INT32 i = R_SkinAvailable(pr->skinname);
+	INT32 alt = 0;	// Hey it's my character's name!
 
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
 
-	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories)
-		p->followercategory = -1;
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
+		p->followercategory = p->followern = -1;
 	else
 		p->followercategory = followers[p->followern].category;
 
 	p->followercolor = pr->followercolor;
 
-	// Now position the grid for skin
-	for (i = 0; i < numskins; i++)
+	if (!R_SkinUsable(g_localplayers[0], i, false))
 	{
-		if (!(strcmp(pr->skinname, skins[i].name)))
-		{
-			INT32 alt = 0;	// Hey it's my character's name!
-			p->gridx = skins[i].kartspeed-1;
-			p->gridy = skins[i].kartweight-1;
-
-			// Now this put our cursor on the good alt
-			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
-				alt++;
-
-			p->clonenum = alt;
-			p->color = PR_GetProfileColor(pr);
-			return;	// we're done here
-		}
+		i = GetSkinNumClosestToStats(skins[i].kartspeed, skins[i].kartweight, skins[i].flags, false);
 	}
+
+	// Now position the grid for skin
+	p->gridx = skins[i].kartspeed-1;
+	p->gridy = skins[i].kartweight-1;
+
+	// Now this put our cursor on the good alt
+	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+		alt++;
+
+	p->clonenum = alt;
+	p->color = PR_GetProfileColor(pr);
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 {
-	INT32 i;
+	INT32 i = R_SkinAvailable(cv_skin[num].zstring);
+	INT32 alt = 0;	// Hey it's my character's name!
 
 	// While we're here, read follower values.
 	p->followern = cv_follower[num].value;
 	p->followercolor = cv_followercolor[num].value;
 
+	if (p->followern < 0 || p->followern >= numfollowers || followers[p->followern].category >= numfollowercategories || !K_FollowerUsable(p->followern))
+		p->followercategory = p->followern = -1;
+	else
+		p->followercategory = followers[p->followern].category;
+
 	// Now position the grid for skin
-	for (i = 0; i < numskins; i++)
-	{
-		if (!(strcmp(cv_skin[num].zstring, skins[i].name)))
-		{
-			INT32 alt = 0;	// Hey it's my character's name!
-			p->gridx = skins[i].kartspeed-1;
-			p->gridy = skins[i].kartweight-1;
+	p->gridx = skins[i].kartspeed-1;
+	p->gridy = skins[i].kartweight-1;
 
-			// Now this put our cursor on the good alt
-			while (setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
-				alt++;
+	// Now this put our cursor on the good alt
+	while (alt < setup_chargrid[p->gridx][p->gridy].numskins && setup_chargrid[p->gridx][p->gridy].skinlist[alt] != i)
+		alt++;
 
-			p->clonenum = alt;
-			p->color = cv_playercolor[num].value;
-			return;	// we're done here
-		}
-	}
+	p->clonenum = alt;
+	p->color = cv_playercolor[num].value;
+	return;	// we're done here
 }
 
 
@@ -2175,6 +2176,9 @@ void M_CharacterSelectInit(void)
 		UINT8 x = skins[i].kartspeed-1;
 		UINT8 y = skins[i].kartweight-1;
 
+		if (!R_SkinUsable(g_localplayers[0], i, false))
+			continue;
+
 		if (setup_chargrid[x][y].numskins >= MAXCLONES)
 			CONS_Alert(CONS_ERROR, "Max character alts reached for %d,%d\n", x+1, y+1);
 		else
@@ -2216,6 +2220,32 @@ void M_CharacterSelectInit(void)
 		}
 	}
 
+	setup_numfollowercategories = 0;
+	for (i = 0; i < numfollowercategories; i++)
+	{
+		if (followercategories[i].numincategory == 0)
+			continue;
+
+		setup_followercategories[setup_numfollowercategories][0] = 0;
+
+		for (j = 0; j < numfollowers; j++)
+		{
+			if (followers[j].category != i)
+				continue;
+
+			if (!K_FollowerUsable(j))
+				continue;
+
+			setup_followercategories[setup_numfollowercategories][0]++;
+			setup_followercategories[setup_numfollowercategories][1] = i;
+		}
+
+		if (!setup_followercategories[setup_numfollowercategories][0])
+			continue;
+
+		setup_numfollowercategories++;
+	}
+
 	setup_page = 0;
 }
 
@@ -2226,10 +2256,12 @@ void M_CharacterSelect(INT32 choice)
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
 
-static void M_SetupReadyExplosions(setup_player_t *p)
+static void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color)
 {
 	UINT8 i, j;
 	UINT8 e = 0;
+	UINT16 maxx = (charsel ? 9 : gamedata->challengegridwidth);
+	UINT16 maxy = (charsel ? 9 : CHALLENGEGRIDHEIGHT);
 
 	while (setup_explosions[e].tics)
 	{
@@ -2245,7 +2277,7 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 
 		for (j = 0; j < 4; j++)
 		{
-			SINT8 x = p->gridx, y = p->gridy;
+			INT16 x = basex, y = basey;
 
 			switch (j)
 			{
@@ -2255,11 +2287,17 @@ static void M_SetupReadyExplosions(setup_player_t *p)
 				case 3: y -= offset; break;
 			}
 
-			if ((x < 0 || x > 8) || (y < 0 || y > 8))
+			if ((y < 0 || y >= maxy))
 				continue;
 
+			if (charsel || !challengegridloops)
+			{
+				if (x < 0 || x >= maxx)
+					continue;
+			}
+
 			setup_explosions[e].tics = t;
-			setup_explosions[e].color = p->color;
+			setup_explosions[e].color = color;
 			setup_explosions[e].x = x;
 			setup_explosions[e].y = y;
 
@@ -2547,7 +2585,7 @@ static void M_HandleCharAskChange(setup_player_t *p, UINT8 num)
 			p->delay = TICRATE;
 
 			S_StartSound(NULL, sfx_s3k4e);
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 		}
 		else
 		{
@@ -2822,7 +2860,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	if (menucmd[num].dpad_lr > 0)
 	{
 		p->followercategory++;
-		if (p->followercategory >= numfollowercategories)
+		if (p->followercategory >= setup_numfollowercategories)
 			p->followercategory = -1;
 
 		p->rotate = CSROTATETICS;
@@ -2833,7 +2871,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	{
 		p->followercategory--;
 		if (p->followercategory < -1)
-			p->followercategory = numfollowercategories-1;
+			p->followercategory = setup_numfollowercategories-1;
 
 		p->rotate = -CSROTATETICS;
 		p->delay = CSROTATETICS;
@@ -2847,7 +2885,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 			p->followern = -1;
 			p->mdepth = CSSTEP_READY;
 			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 			S_StartSound(NULL, sfx_s3k4e);
 		}
 		else
@@ -2855,7 +2893,9 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 			if (p->followern < 0 || followers[p->followern].category != p->followercategory)
 			{
 				p->followern = 0;
-				while (p->followern < numfollowers && followers[p->followern].category != p->followercategory)
+				while (p->followern < numfollowers
+					&& (followers[p->followern].category != setup_followercategories[p->followercategory][1]
+					|| !K_FollowerUsable(p->followern)))
 					p->followern++;
 			}
 
@@ -2910,7 +2950,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 			if (p->followern == startfollowern)
 				break;
 		}
-		while (followers[p->followern].category != p->followercategory);
+		while (followers[p->followern].category != setup_followercategories[p->followercategory][1] || !K_FollowerUsable(p->followern));
 
 		M_GetFollowerState(p);
 
@@ -2928,7 +2968,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 			if (p->followern == startfollowern)
 				break;
 		}
-		while (followers[p->followern].category != p->followercategory);
+		while (followers[p->followern].category != setup_followercategories[p->followercategory][1] || !K_FollowerUsable(p->followern));
 
 		M_GetFollowerState(p);
 
@@ -2948,7 +2988,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		{
 			p->mdepth = CSSTEP_READY;
 			p->delay = TICRATE;
-			M_SetupReadyExplosions(p);
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 			S_StartSound(NULL, sfx_s3k4e);
 		}
 
@@ -2997,7 +3037,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	{
 		p->mdepth = CSSTEP_READY;
 		p->delay = TICRATE;
-		M_SetupReadyExplosions(p);
+		M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
 		S_StartSound(NULL, sfx_s3k4e);
 		M_SetMenuDelay(num);
 	}
@@ -3255,17 +3295,25 @@ void M_SetupGametypeMenu(INT32 choice)
 
 	PLAY_GamemodesDef.prevMenu = currentMenu;
 
-	if (cv_splitplayers.value <= 1)
+	// Battle and Capsules disabled
+	PLAY_GamemodesMenu[1].status = IT_DISABLED;
+	PLAY_GamemodesMenu[2].status = IT_DISABLED;
+
+	if (cv_splitplayers.value > 1)
 	{
-		// Remove Battle, add Capsules
-		PLAY_GamemodesMenu[1].status = IT_DISABLED;
+		// Re-add Battle
+		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
+	}
+	else if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
+	{
+		// Re-add Capsules
 		PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
 	}
 	else
 	{
-		// Add Battle, remove Capsules
-		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
-		PLAY_GamemodesMenu[2].status = IT_DISABLED;
+		// Only one non-Back entry, let's skip straight to Race.
+		M_SetupRaceMenu(-1);
+		return;
 	}
 
 	M_SetupNextMenu(&PLAY_GamemodesDef, false);
@@ -3277,14 +3325,14 @@ void M_SetupRaceMenu(INT32 choice)
 
 	PLAY_RaceGamemodesDef.prevMenu = currentMenu;
 
+	// Time Attack disabled
+	PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
+
 	// Time Attack is 1P only
-	if (cv_splitplayers.value <= 1)
+	if (cv_splitplayers.value <= 1
+	 && M_SecretUnlocked(SECRET_TIMEATTACK, true))
 	{
 		PLAY_RaceGamemodesMenu[2].status = IT_STRING | IT_CALL;
-	}
-	else
-	{
-		PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
 	}
 
 	M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
@@ -3323,7 +3371,7 @@ void M_SetupDifficultySelect(INT32 choice)
 		PLAY_RaceDifficultyDef.lastOn = drace_cupselect;	// Select cup select by default.
 	}
 
-	if (M_SecretUnlocked(SECRET_ENCORE))
+	if (M_SecretUnlocked(SECRET_ENCORE, false))
 	{
 		PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 	}
@@ -3338,8 +3386,11 @@ void M_SetupDifficultySelect(INT32 choice)
 //
 // Determines whether to show a given map in the various level-select lists.
 //
-boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
+boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 {
+	if (!levelsearch)
+		return false;
+
 	if (mapnum >= nummapheaders)
 		return false;
 
@@ -3355,11 +3406,11 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	if (M_MapLocked(mapnum+1))
+	if (levelsearch->checklocked && M_MapLocked(mapnum+1))
 		return false; // not unlocked
 
 	// Check for TOL
-	if (!(mapheaderinfo[mapnum]->typeoflevel & tol))
+	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
 	// Should the map be hidden?
@@ -3367,26 +3418,31 @@ boolean M_CanShowLevelInList(INT16 mapnum, UINT32 tol, cupheader_t *cup)
 		return false;
 
 	// I don't know why, but some may have exceptions.
-	if (levellist.timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
+	if (levelsearch->timeattack && (mapheaderinfo[mapnum]->menuflags & LF2_NOTIMEATTACK))
 		return false;
 
 	// Don't permit cup when no cup requested (also no dupes in time attack)
-	if (levellist.cupmode && (levellist.timeattack || !cup) && mapheaderinfo[mapnum]->cup != cup)
+	if (levelsearch->cupmode
+		&& (levelsearch->timeattack || !levelsearch->cup)
+		&& mapheaderinfo[mapnum]->cup != levelsearch->cup)
 		return false;
 
 	// Survived our checks.
 	return true;
 }
 
-UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
+UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 {
 	INT16 i, count = 0;
 
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
 		for (i = 0; i < CUPCACHE_MAX; i++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
 				continue;
 			count++;
 		}
@@ -3395,60 +3451,66 @@ UINT16 M_CountLevelsToShowInList(UINT32 tol, cupheader_t *cup)
 	}
 
 	for (i = 0; i < nummapheaders; i++)
-		if (M_CanShowLevelInList(i, tol, NULL))
+		if (M_CanShowLevelInList(i, levelsearch))
 			count++;
 
 	return count;
 }
 
-UINT16 M_GetFirstLevelInList(UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 {
 	INT16 mapnum = NEXTMAP_INVALID;
 
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
-			mapnum = cup->cachedlevels[*i];
+			mapnum = levelsearch->cup->cachedlevels[*i];
 			break;
 		}
 	}
 	else
 	{
 		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
-			if (M_CanShowLevelInList(mapnum, tol, NULL))
+			if (M_CanShowLevelInList(mapnum, levelsearch))
 				break;
 	}
 
 	return mapnum;
 }
 
-UINT16 M_GetNextLevelInList(UINT16 map, UINT8 *i, UINT32 tol, cupheader_t *cup)
+UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 {
-	if (cup)
+	if (!levelsearch)
+		return false;
+
+	if (levelsearch->cup)
 	{
-		map = NEXTMAP_INVALID;
+		mapnum = NEXTMAP_INVALID;
 		(*i)++;
 		for (; *i < CUPCACHE_MAX; (*i)++)
 		{
-			if (!M_CanShowLevelInList(cup->cachedlevels[*i], tol, cup))
+			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[*i], levelsearch))
 				continue;
-			map = cup->cachedlevels[*i];
+			mapnum = levelsearch->cup->cachedlevels[*i];
 			break;
 		}
 	}
 	else
 	{
-		map++;
-		while (!M_CanShowLevelInList(map, tol, NULL) && map < nummapheaders)
-			map++;
+		mapnum++;
+		while (!M_CanShowLevelInList(mapnum, levelsearch) && mapnum < nummapheaders)
+			mapnum++;
 	}
 
-	return map;
+	return mapnum;
 }
 
 struct cupgrid_s cupgrid;
@@ -3456,7 +3518,7 @@ struct levellist_s levellist;
 
 static void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup)-1;
+	UINT16 m = M_CountLevelsToShowInList(&levellist.levelsearch)-1;
 
 	levellist.dest = (6*levellist.cursor);
 
@@ -3474,9 +3536,9 @@ static void M_LevelListFromGametype(INT16 gt)
 	if (first || gt != levellist.newgametype)
 	{
 		levellist.newgametype = gt;
-		levellist.typeoflevel = G_TOLFlag(gt);
-		levellist.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
-		levellist.selectedcup = NULL;
+		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
+		levellist.levelsearch.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
+		levellist.levelsearch.cup = NULL;
 		first = false;
 	}
 
@@ -3485,14 +3547,17 @@ static void M_LevelListFromGametype(INT16 gt)
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
 
-	if (levellist.cupmode)
+	if (levellist.levelsearch.cupmode)
 	{
-		cupheader_t *cup = kartcupheaders;
+		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 
+		templevelsearch.cup = kartcupheaders;
+		templevelsearch.checklocked = false;
+
 		// Make sure there's valid cups before going to this menu.
-		if (cup == NULL)
+		if (templevelsearch.cup == NULL)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
 
 		if (!cupgrid.builtgrid)
@@ -3510,12 +3575,12 @@ static void M_LevelListFromGametype(INT16 gt)
 		}
 		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
 
-		while (cup)
+		while (templevelsearch.cup)
 		{
-			if (!M_CountLevelsToShowInList(levellist.typeoflevel, cup))
+			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
 				// No valid maps, skip.
-				cup = cup->next;
+				templevelsearch.cup = templevelsearch.cup->next;
 				continue;
 			}
 
@@ -3536,21 +3601,21 @@ static void M_LevelListFromGametype(INT16 gt)
 				cupgrid.cappages *= 2;
 			}
 
-			cupgrid.builtgrid[currentid] = cup;
+			cupgrid.builtgrid[currentid] = templevelsearch.cup;
 
-			if (cup->unlockrequired == -1 || unlockables[cup->unlockrequired].unlocked)
+			if (!M_CupLocked(templevelsearch.cup))
 			{
 				highestunlockedid = currentid;
-				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == cup)
+				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
 				{
-					cupgrid.x = cup->id % CUPMENU_COLUMNS;
-					cupgrid.y = (cup->id / CUPMENU_COLUMNS) % CUPMENU_ROWS;
-					cupgrid.pageno = cup->id / (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					cupgrid.x = currentid % CUPMENU_COLUMNS;
+					cupgrid.y = (currentid / CUPMENU_COLUMNS) % CUPMENU_ROWS;
+					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS);
 				}
 			}
 
 			currentid++;
-			cup = cup->next;
+			templevelsearch.cup = templevelsearch.cup->next;
 		}
 
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
@@ -3566,10 +3631,10 @@ static void M_LevelListFromGametype(INT16 gt)
 	}
 
 	// Reset position properly if you go back & forth between gametypes
-	if (levellist.selectedcup)
+	if (levellist.levelsearch.cup)
 	{
 		levellist.cursor = 0;
-		levellist.selectedcup = NULL;
+		levellist.levelsearch.cup = NULL;
 	}
 
 	M_LevelSelectScrollDest();
@@ -3588,22 +3653,24 @@ void M_LevelSelectInit(INT32 choice)
 {
 	(void)choice;
 
-	levellist.netgame = false;	// Make sure this is reset as we'll only be using this function for offline games!
-	cupgrid.netgame = false;	// Ditto
+	// Make sure this is reset as we'll only be using this function for offline games!
+	cupgrid.netgame = false;
+	levellist.netgame = false;
+	levellist.levelsearch.checklocked = true;
 
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
 		case 0:
 			cupgrid.grandprix = false;
-			levellist.timeattack = false;
+			levellist.levelsearch.timeattack = false;
 			break;
 		case 1:
 			cupgrid.grandprix = false;
-			levellist.timeattack = true;
+			levellist.levelsearch.timeattack = true;
 			break;
 		case 2:
 			cupgrid.grandprix = true;
-			levellist.timeattack = false;
+			levellist.levelsearch.timeattack = false;
 			break;
 		default:
 			CONS_Alert(CONS_WARNING, "Bad level select init\n");
@@ -3671,7 +3738,7 @@ void M_CupSelectHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 
 		if ((!newcup)
-			|| (newcup && newcup->unlockrequired != -1 && !unlockables[newcup->unlockrequired].unlocked)
+			|| (M_CupLocked(newcup))
 			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
@@ -3739,10 +3806,10 @@ void M_CupSelectHandler(INT32 choice)
 		else
 		{
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (levellist.selectedcup != newcup)
+			if (levellist.levelsearch.cup != newcup)
 			{
 				levellist.cursor = 0;
-				levellist.selectedcup = newcup;
+				levellist.levelsearch.cup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
@@ -3770,7 +3837,7 @@ void M_CupSelectTick(void)
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 maxlevels = M_CountLevelsToShowInList(levellist.typeoflevel, levellist.selectedcup);
+	INT16 maxlevels = M_CountLevelsToShowInList(&levellist.levelsearch);
 	const UINT8 pid = 0;
 
 	(void)choice;
@@ -3802,14 +3869,14 @@ void M_LevelSelectHandler(INT32 choice)
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		UINT8 i = 0;
-		INT16 map = M_GetFirstLevelInList(&i, levellist.typeoflevel, levellist.selectedcup);
+		INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
 		INT16 add = levellist.cursor;
 
 		M_SetMenuDelay(pid);
 
 		while (add > 0)
 		{
-			map = M_GetNextLevelInList(map, &i, levellist.typeoflevel, levellist.selectedcup);
+			map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
 
 			if (map >= nummapheaders)
 			{
@@ -3827,7 +3894,7 @@ void M_LevelSelectHandler(INT32 choice)
 
 		levellist.choosemap = map;
 
-		if (levellist.timeattack)
+		if (levellist.levelsearch.timeattack)
 		{
 			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 			S_StartSound(NULL, sfx_s3k63);
@@ -4058,10 +4125,13 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	INT16 gt = GT_RACE;
 	(void)choice;
 
-	levellist.netgame = true;		// Yep, we'll be starting a netgame.
-	cupgrid.netgame = true;			// Ditto
-	levellist.timeattack = false;	// Make sure we reset those
-	cupgrid.grandprix = false;	// Ditto
+	// Yep, we'll be starting a netgame.
+	levellist.netgame = true;
+	cupgrid.netgame = true;
+	// Make sure we reset those
+	levellist.levelsearch.timeattack = false;
+	levellist.levelsearch.checklocked = true;
+	cupgrid.grandprix = false;
 
 	// In case we ever want to add new gamemodes there somehow, have at it!
 	switch (cv_dummygametype.value)
@@ -4673,7 +4743,7 @@ void M_InitOptions(INT32 choice)
 		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
 		OPTIONS_GameplayDef.menuitems[gopt_encore].status =
-			(M_SecretUnlocked(SECRET_ENCORE) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
+			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
 	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU
@@ -4906,7 +4976,7 @@ static void M_FirstPickProfile(INT32 c)
 		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
-		M_SetupNextMenu(&MainDef, false);
+		M_SetupNextMenu(M_InterruptMenuWithChallenges(&MainDef), false);
 
 		// Tell the game this is the last profile we picked.
 		CV_StealthSetValue(&cv_ttlprofilen, optionsmenu.profilen);
@@ -6901,4 +6971,646 @@ void M_Manual(INT32 choice)
 
 	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
 	M_SetupNextMenu(&MISC_ManualDef, true);
+}
+
+// Challenges menu
+
+struct challengesmenu_s challengesmenu;
+
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
+{
+	UINT8 i;
+
+	M_UpdateUnlockablesAndExtraEmblems(false);
+
+	if ((challengesmenu.pending = challengesmenu.requestnew = (M_GetNextAchievedUnlock() < MAXUNLOCKABLES)))
+	{
+		MISC_ChallengesDef.prevMenu = desiredmenu;
+	}
+
+	if (challengesmenu.pending || desiredmenu == NULL)
+	{
+		challengesmenu.currentunlock = MAXUNLOCKABLES;
+		challengesmenu.unlockcondition = NULL;
+
+		M_PopulateChallengeGrid();
+		if (gamedata->challengegrid)
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+
+		memset(setup_explosions, 0, sizeof(setup_explosions));
+		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_TOTAL]++;
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+		}
+
+		return &MISC_ChallengesDef;
+	}
+
+	return desiredmenu;
+}
+
+static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
+{
+	UINT8 i;
+	SINT8 work;
+
+	if (unlockid >= MAXUNLOCKABLES)
+		return;
+
+	challengesmenu.currentunlock = unlockid;
+	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+	challengesmenu.unlockanim = 0;
+
+	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
+		return;
+
+	for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+	{
+		if (gamedata->challengegrid[i] != unlockid)
+		{
+			// Not what we're looking for.
+			continue;
+		}
+
+		if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT)
+		{
+			// no need to check for CHE_CONNECTEDUP in linear iteration
+			continue;
+		}
+
+		// Helper calculation for non-fresh scrolling.
+		work = (challengesmenu.col + challengesmenu.focusx);
+
+		challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
+		challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+		if (fresh)
+		{
+			// We're just entering the menu. Immediately jump to the desired position...
+			challengesmenu.focusx = 0;
+			// ...and since the menu is even-width, randomly select whether it's left or right of center.
+			if (!unlockables[unlockid].majorunlock
+				&& M_RandomChance(FRACUNIT/2))
+					challengesmenu.focusx--;
+		}
+		else
+		{
+			// We're jumping between multiple unlocks in sequence. Get the difference (looped from -range/2 < work <= range/2).
+			work -= challengesmenu.col;
+			if (work <= -gamedata->challengegridwidth/2)
+				work += gamedata->challengegridwidth;
+			else if (work >= gamedata->challengegridwidth/2)
+				work -= gamedata->challengegridwidth;
+
+			if (work > 0)
+			{
+				// We only need to scroll as far as the rightward edge.
+				if (unlockables[unlockid].majorunlock)
+				{
+					work--;
+					challengesmenu.col++;
+					if (challengesmenu.col >= gamedata->challengegridwidth)
+						challengesmenu.col = 0;
+				}
+
+				// Offset right, scroll left?
+				if (work > LEFTUNLOCKSCROLL)
+				{
+					work -= LEFTUNLOCKSCROLL;
+					challengesmenu.focusx = LEFTUNLOCKSCROLL;
+				}
+				else
+				{
+					challengesmenu.focusx = work;
+					work = 0;
+				}
+			}
+			else if (work < 0)
+			{
+				// Offset left, scroll right?
+				if (work < -RIGHTUNLOCKSCROLL)
+				{
+					challengesmenu.focusx = -RIGHTUNLOCKSCROLL;
+					work += RIGHTUNLOCKSCROLL;
+				}
+				else
+				{
+					challengesmenu.focusx = work;
+					work = 0;
+				}
+			}
+			else
+			{
+				// We're right where we want to be.
+				challengesmenu.focusx = 0;
+			}
+
+			// And put the pixel-based scrolling in play, too.
+			challengesmenu.offset = -work*16;
+		}
+
+		break;
+	}
+}
+
+void M_Challenges(INT32 choice)
+{
+	UINT8 i;
+	(void)choice;
+
+	M_InterruptMenuWithChallenges(NULL);
+	MISC_ChallengesDef.prevMenu = currentMenu;
+
+	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
+	{
+		UINT8 selection[MAXUNLOCKABLES];
+		UINT8 numunlocks = 0;
+
+		// Get a random available unlockable.
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			selection[numunlocks++] = i;
+		}
+
+		if (!numunlocks)
+		{
+			// ...OK, get a random unlockable.
+			for (i = 0; i < MAXUNLOCKABLES; i++)
+			{
+				if (!unlockables[i].conditionset)
+				{
+					continue;
+				}
+
+				selection[numunlocks++] = i;
+			}
+		}
+
+		M_ChallengesAutoFocus(selection[M_RandomKey(numunlocks)], true);
+	}
+
+	M_SetupNextMenu(&MISC_ChallengesDef, false);
+}
+
+void M_ChallengesTick(void)
+{
+	UINT8 i, newunlock = MAXUNLOCKABLES;
+	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
+
+	// Ticking
+	challengesmenu.ticker++;
+	challengesmenu.offset /= 2;
+	for (i = 0; i < CSEXPLOSIONS; i++)
+	{
+		if (setup_explosions[i].tics > 0)
+			setup_explosions[i].tics--;
+	}
+	if (challengesmenu.unlockcount[CC_ANIM] > 0)
+		challengesmenu.unlockcount[CC_ANIM]--;
+	M_CupSelectTick();
+
+	if (challengesmenu.pending)
+	{
+		// Pending mode.
+
+		if (challengesmenu.requestnew)
+		{
+			// The menu apparatus is requesting a new unlock.
+			challengesmenu.requestnew = false;
+			if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
+			{
+				// We got one!
+				M_ChallengesAutoFocus(newunlock, fresh);
+			}
+			else
+			{
+				// All done! Let's save the unlocks we've busted open.
+				challengesmenu.pending = false;
+				G_SaveGameData();
+			}
+		}
+		else if (challengesmenu.fade < 5)
+		{
+			// Fade increase.
+			challengesmenu.fade++;
+		}
+		else
+		{
+			// Unlock sequence.
+
+			if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
+			{
+				challengesmenu.requestnew = true;
+			}
+
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES
+				&& challengesmenu.unlockanim == UNLOCKTIME)
+			{
+				// Unlock animation... also tied directly to the actual unlock!
+				gamedata->unlocked[challengesmenu.currentunlock] = true;
+				M_UpdateUnlockablesAndExtraEmblems(true);
+
+				// Update shown description just in case..?
+				challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+
+				challengesmenu.unlockcount[CC_TALLY]++;
+				challengesmenu.unlockcount[CC_ANIM]++;
+
+				Z_Free(challengesmenu.extradata);
+				if ((challengesmenu.extradata = M_ChallengeGridExtraData()))
+				{
+					unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
+					UINT16 bombcolor = SKINCOLOR_NONE;
+
+					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+					{
+						bombcolor = ref->color;
+					}
+					else switch (ref->type)
+					{
+						case SECRET_SKIN:
+						{
+							INT32 skin = M_UnlockableSkinNum(ref);
+							if (skin != -1)
+							{
+								bombcolor = skins[skin].prefcolor;
+							}
+							break;
+						}
+						case SECRET_FOLLOWER:
+						{
+							INT32 skin = M_UnlockableFollowerNum(ref);
+							if (skin != -1)
+							{
+								bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+							}
+							break;
+						}
+						default:
+							break;
+					}
+
+					if (bombcolor == SKINCOLOR_NONE)
+					{
+						bombcolor = cv_playercolor[0].value;
+					}
+
+					i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
+					M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
+					if (ref->majorunlock)
+					{
+						M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
+					}
+
+					S_StartSound(NULL, sfx_s3k4e);
+				}
+			}
+		}
+	}
+	else
+	{
+
+		// Tick down the tally. (currently not visible)
+		/*if ((challengesmenu.ticker & 1)
+			&& challengesmenu.unlockcount[CC_TALLY] > 0)
+		{
+			challengesmenu.unlockcount[CC_TALLY]--;
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+		}*/
+
+		if (challengesmenu.fade > 0)
+		{
+			// Fade decrease.
+			challengesmenu.fade--;
+		}
+	}
+}
+
+boolean M_ChallengesInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	UINT8 i;
+	const boolean start = M_MenuButtonPressed(pid, MBT_START);
+	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
+	(void) ch;
+
+	if (challengesmenu.fade)
+	{
+		;
+	}
+#ifdef DEVELOP
+	else if (M_MenuExtraPressed(pid) && challengesmenu.extradata) // debugging
+	{
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+		{
+			Z_Free(gamedata->challengegrid);
+			gamedata->challengegrid = NULL;
+			gamedata->challengegridwidth = 0;
+			M_PopulateChallengeGrid();
+			Z_Free(challengesmenu.extradata);
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+
+			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+
+			challengesmenu.pending = true;
+		}
+		return true;
+	}
+#endif
+	else
+	{
+		if (M_MenuBackPressed(pid) || start)
+		{
+			M_GoBack(0);
+			M_SetMenuDelay(pid);
+
+			Z_Free(challengesmenu.extradata);
+			challengesmenu.extradata = NULL;
+
+			challengesmenu.unlockcondition = NULL;
+
+			return true;
+		}
+
+		if (challengesmenu.extradata != NULL && move)
+		{
+			// Determine movement around the grid
+			// For right/down movement, we can pre-determine the number of steps based on extradata.
+			// For left/up movement, we can't - we have to be ready to iterate twice, and break early if we don't run into a large tile.
+
+			if (menucmd[pid].dpad_ud > 0)
+			{
+				i = 2;
+				while (i > 0)
+				{
+					if (challengesmenu.row < CHALLENGEGRIDHEIGHT-1)
+					{
+						challengesmenu.row++;
+					}
+					else
+					{
+						challengesmenu.row = 0;
+					}
+					if (!(challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDUP))
+					{
+						break;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+			else if (menucmd[pid].dpad_ud < 0)
+			{
+				i = (challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDUP) ? 2 : 1;
+				while (i > 0)
+				{
+					if (challengesmenu.row > 0)
+					{
+						challengesmenu.row--;
+					}
+					else
+					{
+						challengesmenu.row = CHALLENGEGRIDHEIGHT-1;
+					}
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+
+			if (menucmd[pid].dpad_lr > 0)
+			{
+				i = 2;
+				while (i > 0)
+				{
+					// Slide the focus counter to movement, if we can.
+					if (challengesmenu.focusx > -RIGHTUNLOCKSCROLL)
+					{
+						challengesmenu.focusx--;
+					}
+
+					// Step the actual column right.
+					if (challengesmenu.col < gamedata->challengegridwidth-1)
+					{
+						challengesmenu.col++;
+					}
+					else
+					{
+						challengesmenu.col = 0;
+					}
+
+					if (!(challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDLEFT))
+					{
+						break;
+					}
+
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+			else if (menucmd[pid].dpad_lr < 0)
+			{
+				i = (challengesmenu.extradata[
+							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
+							+ challengesmenu.row]
+						& CHE_CONNECTEDLEFT) ? 2 : 1;
+				while (i > 0)
+				{
+					// Slide the focus counter to movement, if we can.
+					if (challengesmenu.focusx < LEFTUNLOCKSCROLL)
+					{
+						challengesmenu.focusx++;
+					}
+
+					// Step the actual column left.
+					if (challengesmenu.col > 0)
+					{
+						challengesmenu.col--;
+					}
+					else
+					{
+						challengesmenu.col = gamedata->challengegridwidth-1;
+					}
+
+					i--;
+				}
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+			}
+
+			// After movement has been determined, figure out the current selection.
+			i = (challengesmenu.col * CHALLENGEGRIDHEIGHT) + challengesmenu.row;
+			challengesmenu.currentunlock = (gamedata->challengegrid[i]);
+			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+
+			challengesmenu.hilix = challengesmenu.col;
+			challengesmenu.hiliy = challengesmenu.row;
+
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES
+				&& unlockables[challengesmenu.currentunlock].majorunlock)
+			{
+				// Adjust highlight coordinates up/to the left for large tiles.
+
+				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
+				{
+					challengesmenu.hiliy--;
+				}
+
+				if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
+				{
+					if (challengesmenu.hilix > 0)
+					{
+						challengesmenu.hilix--;
+					}
+					else
+					{
+						challengesmenu.hilix = gamedata->challengegridwidth-1;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		if (M_MenuConfirmPressed(pid)
+			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& gamedata->unlocked[challengesmenu.currentunlock])
+		{
+			switch (unlockables[challengesmenu.currentunlock].type)
+			{
+				case SECRET_ALTTITLE:
+					CV_AddValue(&cv_alttitle, 1);
+					S_StartSound(NULL, sfx_s3kc3s);
+					M_SetMenuDelay(pid);
+					break;
+				default:
+					break;
+			}
+
+			return true;
+		}
+	}
+
+	return true;
+}
+
+// Statistics menu
+
+struct statisticsmenu_s statisticsmenu;
+
+void M_Statistics(INT32 choice)
+{
+	UINT16 i = 0;
+
+	(void)choice;
+
+	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * nummapheaders, PU_STATIC, NULL);
+	statisticsmenu.nummaps = 0;
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU))
+			continue;
+
+		if (M_MapLocked(i+1))
+			continue;
+
+		statisticsmenu.maplist[statisticsmenu.nummaps++] = i;
+	}
+	statisticsmenu.maplist[statisticsmenu.nummaps] = NEXTMAP_INVALID;
+	statisticsmenu.maxscroll = (statisticsmenu.nummaps + M_CountMedals(true, true) + 2) - 10;
+	statisticsmenu.location = 0;
+
+	if (statisticsmenu.maxscroll < 0)
+	{
+		statisticsmenu.maxscroll = 0;
+	}
+
+	MISC_StatisticsDef.prevMenu = currentMenu;
+	M_SetupNextMenu(&MISC_StatisticsDef, false);
+}
+
+boolean M_StatisticsInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+
+	(void)ch;
+
+	if (M_MenuBackPressed(pid))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+
+		Z_Free(statisticsmenu.maplist);
+		statisticsmenu.maplist = NULL;
+
+		return true;
+	}
+
+	if (M_MenuExtraPressed(pid))
+	{
+		if (statisticsmenu.location > 0)
+		{
+			statisticsmenu.location = 0;
+			S_StartSound(NULL, sfx_s3k5b);
+			M_SetMenuDelay(pid);
+		}
+	}
+	else if (menucmd[pid].dpad_ud > 0)
+	{
+		if (statisticsmenu.location < statisticsmenu.maxscroll)
+		{
+			statisticsmenu.location++;
+			S_StartSound(NULL, sfx_s3k5b);
+			M_SetMenuDelay(pid);
+		}
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		if (statisticsmenu.location > 0)
+		{
+			statisticsmenu.location--;
+			S_StartSound(NULL, sfx_s3k5b);
+			M_SetMenuDelay(pid);
+		}
+	}
+
+	return true;
 }

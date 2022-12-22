@@ -255,7 +255,8 @@ typedef enum
 	MFE_DAMAGEHITLAG      = 1<<13,
 	// Slope physics sent you airborne
 	MFE_SLOPELAUNCHED     = 1<<14,
-	// free: to and including 1<<15
+	// Thinker is paused due to hitlag
+	MFE_PAUSED            = 1<<15,
 } mobjeflag_t;
 
 //
@@ -275,13 +276,16 @@ struct mobj_t
 	// List: thinker links.
 	thinker_t thinker;
 
-	mobjtype_t type;
-	const mobjinfo_t *info; // &mobjinfo[mobj->type]
-
 	// Info for drawing: position.
 	fixed_t x, y, z;
+	// --- Please make sure you keep the fields up to this
+	// --- point in sync with degenmobj_t.
+
 	fixed_t old_x, old_y, old_z; // position interpolation
 	fixed_t old_x2, old_y2, old_z2;
+
+	mobjtype_t type;
+	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
 	// More list: links in sector (if needed)
 	mobj_t *snext;
@@ -428,13 +432,13 @@ struct precipmobj_t
 	// List: thinker links.
 	thinker_t thinker;
 
-	mobjtype_t type;
-	const mobjinfo_t *info; // &mobjinfo[mobj->type]
-
 	// Info for drawing: position.
 	fixed_t x, y, z;
 	fixed_t old_x, old_y, old_z; // position interpolation
 	fixed_t old_x2, old_y2, old_z2;
+
+	mobjtype_t type;
+	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
 	// More list: links in sector (if needed)
 	precipmobj_t *snext;
