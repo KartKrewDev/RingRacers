@@ -277,6 +277,12 @@ P_DoSpringEx
 		angle_t finalAngle,
 		UINT16 starcolor)
 {
+	if (object->eflags & MFE_SPRUNG)
+	{
+		// Object was already sprung this tic
+		return;
+	}
+
 	if (horizspeed < 0)
 	{
 		horizspeed = -(horizspeed);
@@ -402,7 +408,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		return false;
 	}
 
-	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
+	spring->flags |= MF_NOCLIPTHING; // De-solidify
 
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
@@ -445,7 +451,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			spring->angle, starcolor);
 
 	// Re-solidify
-	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
+	spring->flags = (spring->flags & ~(MF_NOCLIPTHING)) | (spring->info->flags & (MF_NOCLIPTHING));
 
 	if (object->player)
 	{
@@ -2131,9 +2137,6 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 	// reset special lines
 	numspechit = 0U;
 
-	if (tm.flags & MF_NOCLIP)
-		return true;
-
 	// Check things first, possibly picking things up.
 
 	// MF_NOCLIPTHING: used by camera to not be blocked by things
@@ -2158,6 +2161,15 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 				}
 			}
 		}
+	}
+
+	if (tm.flags & MF_NOCLIP)
+	{
+		// Sal 12/19/2022 -- PIT_CheckThing code will still run
+		// with MF_NOCLIP enabled, but they won't be blocked
+		// regardless of the result. This allows for SPBs and
+		// the UFO to collide.
+		return true;
 	}
 
 	validcount++;
@@ -2628,7 +2640,10 @@ increment_move
 	radius = min(radius, 16*mapobjectscale);
 
 	do {
-		if (thing->flags & MF_NOCLIP)
+		// Sal 12/19/2022 -- PIT_CheckThing code now runs
+		// with MF_NOCLIP enabled, so we want step-by-step
+		// for anything that doesn't have both enabled.
+		if ((thing->flags & (MF_NOCLIP|MF_NOCLIPTHING)) == (MF_NOCLIP|MF_NOCLIPTHING))
 		{
 			tryx = x;
 			tryy = y;

@@ -525,7 +525,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
 
-		for (j = 0; i < MAXAVAILABILITY; j++)
+		for (j = 0; j < MAXAVAILABILITY; j++)
 		{
 			players[i].availabilities[j] = READUINT8(save_p);
 		}
@@ -4875,6 +4875,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	size_t i, j;
 	size_t numTasks;
+	UINT8 *old_save_p;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4917,11 +4918,16 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	encoremode = (boolean)READUINT8(save_p);
 
+	// FIXME: save_p should not be global!!!
+	old_save_p = save_p;
+
 	if (!P_LoadLevel(true, reloading))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
 	}
+
+	save_p = old_save_p;
 
 	// get the time
 	leveltime = READUINT32(save_p);
