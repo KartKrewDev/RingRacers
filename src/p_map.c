@@ -277,6 +277,12 @@ P_DoSpringEx
 		angle_t finalAngle,
 		UINT16 starcolor)
 {
+	if (object->eflags & MFE_SPRUNG)
+	{
+		// Object was already sprung this tic
+		return;
+	}
+
 	if (horizspeed < 0)
 	{
 		horizspeed = -(horizspeed);
@@ -402,7 +408,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 		return false;
 	}
 
-	spring->flags &= ~(MF_SOLID|MF_SPECIAL); // De-solidify
+	spring->flags |= MF_NOCLIPTHING; // De-solidify
 
 	if (spring->eflags & MFE_VERTICALFLIP)
 		vertispeed *= -1;
@@ -445,7 +451,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			spring->angle, starcolor);
 
 	// Re-solidify
-	spring->flags |= (spring->info->flags & (MF_SPRING|MF_SPECIAL));
+	spring->flags = (spring->flags & ~(MF_NOCLIPTHING)) | (spring->info->flags & (MF_NOCLIPTHING));
 
 	if (object->player)
 	{
