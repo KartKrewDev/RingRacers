@@ -521,7 +521,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
 
-		for (j = 0; i < MAXAVAILABILITY; j++)
+		for (j = 0; j < MAXAVAILABILITY; j++)
 		{
 			players[i].availabilities[j] = READUINT8(save_p);
 		}
