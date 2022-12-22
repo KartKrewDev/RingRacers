@@ -9,4 +9,5 @@ target_sources(SRB2SDL2 PRIVATE
 	jawz.c
 	duel-bomb.c
 	broly.c
+	ufo.c
 )
